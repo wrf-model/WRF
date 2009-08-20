@@ -70,6 +70,7 @@ CONTAINS
      &                 ,LOWLYR,XLAND                                   &
      &                 ,USTAR,ZNT,Z0BASE,PBLH,MAVAIL,RMOL              &
      &                 ,AKHS,AKMS                                      &
+     &                 ,RIB                                            &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC         &
      &                 ,QGH,CPM,CT                                     &
      &                 ,U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR          &
@@ -105,6 +106,7 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
      &                                                ,PBLH,QSFC
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT)   :: RIB
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: QZ0,RMOL,THZ0   &
      &                                                ,USTAR,UZ0,VZ0   &
@@ -283,7 +285,7 @@ CONTAINS
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
      &               ,UZ0(I,J),VZ0(I,J),TZ0,THZ0(I,J),QZ0(I,J)         &
      &               ,USTAR(I,J),ZNT(I,J),Z0BASE(I,J),CT(I,J),RMOL(I,J) &
-     &               ,AKMS(I,J),AKHS(I,J),PBLH(I,J),MAVAIL(I,J)        &
+     &               ,AKMS(I,J),AKHS(I,J),RIB(I,J),PBLH(I,J),MAVAIL(I,J) &
      &               ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
      &               ,HFX(I,J),QFX(I,J),FLX_LH(I,J)                    &
      &               ,FLHC(I,J),FLQC(I,J),QGH(I,J),CPM(I,J)            &
@@ -328,7 +330,7 @@ CONTAINS
 !----------------------------------------------------------------------
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
      &                 ,UZ0,VZ0,TZ0,THZ0,QZ0                           &
-     &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,PBLH,WETM    &
+     &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,RIB,PBLH,WETM &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
      &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
      &                 ,ZSL,PLOW                                       &
@@ -357,7 +359,7 @@ CONTAINS
      &                  ,Z0BASE
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
-     &                   ,PSHLTR,Q02,Q10,QFX,QGH,RLMO,TH02,TH10,U10,V10
+     &                   ,PSHLTR,Q02,Q10,QFX,QGH,RIB,RLMO,TH02,TH10,U10,V10
 !
       REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS
 !----------------------------------------------------------------------
@@ -368,7 +370,7 @@ CONTAINS
 !
       REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,DTHV,DU2,ELFC,FCT              &
      &       ,HLFLX,HSFLX,HV,PSH02,PSH10,PSHZ,PSHZL,PSM10,PSMZ,PSMZL   &
-     &       ,RDZ,RDZT,RIB,RLMA,RLMN,RLMP                              &
+     &       ,RDZ,RDZT,RLMA,RLMN,RLMP                                  &
      &       ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM,TEM,THM          &
      &       ,UMFLX,USTARK,VMFLX,WGHT,WGHTT,WGHTQ,WSTAR2               &
      &       ,X,XLT,XLT4,XLU,XLU4,XT,XT4,XU,XU4,ZETALT,ZETALU          &
@@ -505,8 +507,7 @@ CONTAINS
             RZST=ZSLT/ZT
 !
             RLOGU=LOG(RZSU)
-!           RLOGT=LOG(RZST)
-            RLOGT=LOG(RZST)/1.4     !The factor 1.4 accounts for neutral value of Pr=0.7
+            RLOGT=LOG(RZST)
 !
 !----------------------------------------------------------------------
 !***  1./MONIN-OBUKHOV LENGTH
@@ -558,7 +559,12 @@ CONTAINS
             K=MAX(K,0)
             PSHZL=(PSIH1(K+2)-PSIH1(K+1))*RDZT+PSIH1(K+1)
 !
-            SIMH=(PSHZL-PSHZ+RLOGT)*FH01
+            IF(RLMO.LE.0.)THEN
+              SIMH=(PSHZL-PSHZ+RLOGT)*FH01
+            ELSE
+! Pr=0.7 used in stable case
+              SIMH=(PSHZL-PSHZ+RLOGT/1.4)*FH01
+            ENDIF
 !----------------------------------------------------------------------
             USTARK=USTAR*VKARMAN
             AKMS=MAX(USTARK/SIMM,CXCHS)
@@ -655,8 +661,7 @@ CONTAINS
             ZT=MAX(ZT,ZU*ZTFC)               !Quick fix by S. Sukoriansky
 !
             RZST=ZSLT/ZT
-!           RLOGT=LOG(RZST)
-            RLOGT=LOG(RZST)/1.4             !To account for Pr0=0.7
+            RLOGT=LOG(RZST)
 !
 !----------------------------------------------------------------------
 !***  1./MONIN-OBUKHOV LENGTH-SCALE
@@ -707,7 +712,12 @@ CONTAINS
             K=MAX(K,0)
             PSHZL=(PSIH2(K+2)-PSIH2(K+1))*RDZT+PSIH2(K+1)
 !
-            SIMH=(PSHZL-PSHZ+RLOGT)*FH02
+            IF(RLMO.LE.0.)THEN
+              SIMH=(PSHZL-PSHZ+RLOGT)*FH02
+            ELSE
+! Pr=0.7 used in stable case
+              SIMH=(PSHZL-PSHZ+RLOGT/1.4)*FH02
+            ENDIF
 !----------------------------------------------------------------------
             USTARK=USTAR*VKARMAN
             AKMS=MAX(USTARK/SIMM,CXCHL)

@@ -26,6 +26,9 @@ MODULE module_write
   USE module_date
   USE module_decoded
   USE module_map
+#ifdef BUFR
+  USE da_bufr, only: openbf, openmb, ufbseq, ufbint, writsb, closbf
+#endif
 
   INCLUDE 'constants.inc'
 
@@ -102,7 +105,8 @@ counts: &
 ! 0.  FORMAT
 ! ==========
 
-     fmt_info = '(a12,1x,a19,1x,a40,1x,i6,3(f12.3,11x),6x,a5)'
+!     fmt_info = '(a12,1x,a19,1x,a40,1x,i6,3(f12.3,11x),6x,a5)'
+     fmt_info = '(a12,1x,a19,1x,a40,1x,i6,3(f12.3,11x),6x,a40)'
      fmt_srfc = '(7(:,f12.3,i4,f7.2))'
      fmt_each = '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2))'
 
@@ -472,7 +476,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                          nsatobs, naireps, ngpspws, ngpsztd, ngpsref,  &
                          ngpseph, nssmt1s, nssmt2s, nssmis,  ntovss,   &
                          nothers, namdars, nqscats, nprofls,nbuoyss,   &
-                         nboguss, nairss, missing_r, time_analysis)
+                         nboguss, nairss, ntamdar, missing_r, time_analysis)
 
 !-------------------------------------------------------------------------------
 ! Write observation at MM5 3D-VAR SYSTEM VERSION 2.0
@@ -501,11 +505,11 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                                                                nprofls,nbuoyss,&
                                                                ngpsztd,ngpsref,&
                                                                ngpseph,nboguss,&
-                                                               nairss
+                                                               nairss,ntamdar
 
   TYPE (measurement ) , POINTER :: current
   INTEGER                       :: loop_index
-  INTEGER                       :: i, ii, n, ntotal
+  INTEGER                       :: i, ii, n, ntotal, k_levels
   INTEGER                       :: nvalids, nmultis, nsingles, nlevels, nwrites
   INTEGER                       :: is_sound, fm
   LOGICAL                       :: connected
@@ -515,7 +519,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                                    fmt_each
   CHARACTER (LEN=40) :: SID
   INTEGER   ::    kx
-  REAL                          :: val_slp, val_pw
+  REAL                          :: val_slp, val_pw, pressure_error
   REAL                          :: val_u,  val_v,  val_p, val_t
   REAL                          :: val_td, val_rh, val_qv
 !------------------------------------------------------------------------------
@@ -532,7 +536,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                  nssmt1s + nssmt2s + ntovss  + &
                  namdars + nqscats + nprofls + &
                  nbuoyss + nothers + ngpsztd + &
-                 ngpsref + ngpseph + nboguss + nairss
+                 ngpsref + ngpseph + nboguss + nairss + ntamdar
 
 !------------------------------------------------------------------------------!
 !     B. PRINT OBS USING THE NEW STRUCTURE
@@ -545,9 +549,10 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
 ! 0.  FORMAT
 ! ==========
 
-     fmt_info = '(A12,1X,A19,1X,A40,1X,I6,3(F12.3,11X),6X,A5)'
+!     fmt_info = '(A12,1X,A19,1X,A40,1X,I6,3(F12.3,11X),6X,A5)'
+     fmt_info = '(A12,1X,A19,1X,A40,1X,I6,3(F12.3,11X),6X,A40)'
      fmt_srfc = '(F12.3,I4,F7.2,F12.3,I4,F7.3)'
-     fmt_each = '(3(F12.3,I4,F7.2),11X,3(F12.3,I4,F7.2),11X,3(F12.3,I4,F7.2)))'
+     fmt_each = '(3(F12.3,I4,F7.2),11X,3(F12.3,I4,F7.2),11X,3(F12.3,I4,F7.2))'
 
 
 ! 1. OPEN FILE FOR VALID OBSERVATIONS OUTPUT
@@ -619,6 +624,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
       "TEMP  =",nsounds,", ", &
       "AMDAR =",namdars,", ", &
       "AIREP =",naireps,", ", &
+      "TAMDAR=",ntamdar,", ", &
       "PILOT =",npilots,", ", &
       "SATEM =",nsatems,", ", &
       "SATOB =",nsatobs,", ", &
@@ -797,6 +803,18 @@ stations_valid: &
         sid = obs (loop_index) % location % id
       END SELECT
 
+! To keep the levels for use later. Because some of the BUOY data have the empty 
+! data record from the NCAR archived LITTLE_R file, the number of levels could 
+! become 0, which is not cosistent with the usage in WRFVar (YRG, 02/24/2009):
+
+      k_levels = obs (loop_index) % info % levels 
+      if ( (fm == 18 .or. fm == 19 ) .and. &
+           obs (loop_index) % info   % elevation == 0.0 ) then
+           if ( obs (loop_index) % info % levels == 0 ) &
+                obs (loop_index) % info % levels = 1
+      endif
+! ..............................................................................
+
       WRITE (UNIT = 99, FMT = TRIM (fmt_info))          &
              obs (loop_index) % info     % platform,    &
              obs (loop_index) % valid_time % date_mm5,  &
@@ -838,6 +856,47 @@ stations_valid: &
 
       current => obs (loop_index) % surface
 
+!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! In the NCAR archie LITTLE_R files (created by Jim Bresch), there is another 
+! problem,
+!
+! The data record for some of BUOY (FM-18, 19) were filled with all parameters 
+! (p, h, t, td,...) missing even though SLP and elevation=0.0m in the header 
+! record are available. This caused the BUOY report has only 0-level data, 
+! which will be discarded by WRFDA/var/da/da_obs_io/da_read_obs_ascii.inc.
+!
+! In tropical storm cases, however, assimilation of the SLP obs from BUOY could 
+! be important. This BUOY SLP obs should not be discarded. 
+!
+! The following modifications attempt to fix these problems.
+!
+! In CWB, AFWA, and KMA LITTLE_R files, we did not find the above problems, and
+! the following modifications may not needed. 
+!
+!                                        Yong-Run Guo, 02/19/2009
+! .................................................................................  
+
+      if ( (fm == 18 .or. fm == 19 ) .and. &
+           obs (loop_index) % info   % elevation == 0.0 ) then
+
+           pressure_error = 100. ! for BUOY
+
+           if ( k_levels == 0 ) then
+
+             WRITE (UNIT = 99, FMT = TRIM (fmt_each))    &
+               obs (loop_index) % ground % slp % data,    &
+               obs (loop_index) % ground % slp % qc,      &
+               pressure_error, &
+               missing_r, -88, 1.40,  &  ! speed 
+               missing_r, -88, 5.00,  &  ! direction
+               obs (loop_index) % info   % elevation, 0, 6.0, &
+               missing_r, -88,  2.0,  &  ! temperature
+               missing_r, -88,  2.0,  &  ! dew-point
+               missing_r, -88, 10.0      ! RH
+               CYCLE  stations
+           endif
+      endif
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! 2.7 Loop over levels
 !     ----------------
@@ -867,6 +926,16 @@ levels:&
             current % meas % pressure % qc = -88
          end if
       end if
+
+! Because there is no "qc" in pressure and height in data structure in WRFVar,
+! all pressure and height with bad flags(<0), the data value are set to be missing 
+! (YRG, 02/11/2009)
+
+      if (current % meas % pressure % qc < 0) &
+          current % meas % pressure % data = missing_r
+      if (current % meas % height   % qc < 0) &
+          current % meas % height   % data = missing_r
+! ...............................................................
 
           if (fm == 118 .or. fm == 116) then
 
@@ -995,6 +1064,7 @@ SUBROUTINE output_prep (max_number_of_obs, obs, number_of_obs, windex,&
 
   IMPLICIT NONE
 
+
   INTEGER,                                      INTENT (in) :: max_number_of_obs
   TYPE (report), DIMENSION (max_number_of_obs), INTENT (inout) :: obs
   INTEGER,                                      INTENT (in) :: number_of_obs
@@ -1036,6 +1106,7 @@ SUBROUTINE output_prep (max_number_of_obs, obs, number_of_obs, windex,&
 !---------------------------------------------------------------------
 !  REAL                          :: rew_cross, rns_cross
 
+#ifdef BUFR
 
 ! rew_cross=real(nestjx(idd)-1)
 ! rns_cross=real(nestix(idd)-1)
@@ -1722,6 +1793,8 @@ REF: &
       ENDDO stations
 
       CALL CLOSBF (bfout)
+
+#endif
 
    RETURN
 

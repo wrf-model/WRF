@@ -366,7 +366,7 @@ call wrf_get_myproc(myproc)
 
 !!!!!!!!!!!!!!!!!!!!!!!
 ! SCALAR
-   IF ( flag_chem .GE. PARAM_FIRST_SCALAR ) THEN
+   IF ( flag_scalar .GE. PARAM_FIRST_SCALAR ) THEN
      itrace = flag_scalar
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_SCALAR_z2x.inc"

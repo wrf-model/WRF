@@ -68,7 +68,7 @@ CONTAINS
       do j=jts,jte
 !
       if(xland(i,j).ge.1.5) then
-      qo=glw(i,j)-emiss(i,j)*stbolt*(sstsk(i,j)**4)-qfx(i,j)-hfx(i,j)
+      qo=glw(i,j)-emiss(i,j)*stbolt*(sstsk(i,j)**4)-2.5e6*qfx(i,j)-hfx(i,j)
       swo=gsw(i,j)
       us=MAX(ust(i,j), 0.01)
       tb=tsk(i,j)-273.15
@@ -77,7 +77,9 @@ CONTAINS
 !
       q=qo/(rhow*cw)
       sw=swo/(rhow*cw)
-      f1=1.-0.28*exp(-71.5*z1)-0.27*exp(-2.8*z1)-0.45*exp(-0.07*z1)
+! TEMPORARY KLUDGE
+!     f1=1.-0.28*exp(-71.5*z1)-0.27*exp(-2.8*z1)-0.45*exp(-0.07*z1)
+      f1=1.                   -0.27*exp(-2.8*z1)-0.45*exp(-0.07*z1)
 ! cool skin
       dtc=0.0
 ! tb in C
@@ -125,7 +127,6 @@ CONTAINS
       skinmin=amin1(skinmin,ts-tb)
       sstsk(i,j)=ts+273.15      ! convert ts (in C) to sstsk (in K)
       dtw1(i,j)=dtw              ! dtw always in C
-if(i.eq.5.and.j.eq.5)print *,'sstsk tsk',i,j,sstsk(i,j),tsk(i,j)
       endif
 !
       end do

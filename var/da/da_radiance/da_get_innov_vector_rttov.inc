@@ -288,6 +288,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             iv%instid(inst)%v10)
       end if
 
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( n, temp, temp2, temp3 )
       do n=n1,n2
          con_vars(n) % nlevels = nlevels 
          allocate (con_vars(n) % t(nlevels))
@@ -328,6 +330,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
          deallocate(temp,temp2,temp3)
       end do
+      !$OMP END PARALLEL DO
 
       if (iv%instid(inst)%nchannels > nchan) then
          iv%instid(inst)%emiss(nchan+1:iv%instid(inst)%nchannels,n1:n2) = 0.0

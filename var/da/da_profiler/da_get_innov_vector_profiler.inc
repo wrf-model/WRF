@@ -23,6 +23,7 @@ subroutine da_get_innov_vector_profiler( it,num_qcstat_conv, grid, ob, iv)
    real, allocatable :: model_u(:,:)  ! Model value u at ob location.
    real, allocatable :: model_v(:,:)  ! Model value v at ob location.
 
+   real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
    real    :: v_p(kms:kme)      ! Model value p at ob hor. location.
    integer :: itu,ituf,itvv,itvvf
    
@@ -49,17 +50,20 @@ subroutine da_get_innov_vector_profiler( it,num_qcstat_conv, grid, ob, iv)
       dym = iv%info(profiler)%dym(1,n)
 
       do k=kts,kte
+         v_h(k) = dym*(dxm*grid%xb%h(i,j,k) + dx*grid%xb%h(i+1,j,k)) + dy *(dxm*grid%xb%h(i,j+1,k) + dx*grid%xb%h(i+1,j+1,k))
          v_p(k) = dym*(dxm*grid%xb%p(i,j,k) + dx*grid%xb%p(i+1,j,k)) + dy *(dxm*grid%xb%p(i,j+1,k) + dx*grid%xb%p(i+1,j+1,k))
       end do
 
       do k=1, iv%info(profiler)%levels(n)
          if (iv % profiler(n) % p(k) > 1.0) then
             call da_to_zk(iv % profiler(n) % p(k), v_p, v_interp_p, iv%info(profiler)%zk(k,n))
+         else if (iv % profiler(n) % h(k) > missing_r) then
+            call da_to_zk(iv % profiler(n) % h(k), v_h, v_interp_h, iv%info(profiler)%zk(k,n))
          end if
 
          if (iv%info(profiler)%zk(k,n) < 0.0 .and.  .not.anal_type_verify) then
-            iv % profiler(n) % u(k) % qc = missing
-            iv % profiler(n) % v(k) % qc = missing
+            iv % profiler(n) % u(k) % qc = missing_data
+            iv % profiler(n) % v(k) % qc = missing_data
          end if
       end do
    end do

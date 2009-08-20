@@ -113,6 +113,7 @@ CONTAINS
 
    LOGICAL :: moisture_init
    LOGICAL :: dry_sounding
+   character (len=256) :: mminlu2
 
 ! soil input
    INTEGER :: ns_input
@@ -182,13 +183,18 @@ CONTAINS
 
     grid%itimestep=0
 
-    CALL nl_set_mminlu(1, 'USGS')
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
     CALL nl_set_truelat1(1,0.)
     CALL nl_set_truelat2(1,0.)
     CALL nl_set_moad_cen_lat (1,0.)
     CALL nl_set_stand_lon(1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
     CALL nl_set_map_proj(1,0)
 !   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
     CALL nl_get_iswater(1,grid%iswater)
@@ -267,15 +273,18 @@ CONTAINS
       grid%sst = tsk_input
       grid%tmn = tmn_input
 
-      flag_soilt000 = 0 ! go ahead and put skin temp in
-      flag_soilm000 = 0 ! go ahead and put skin moisture in
-      flag_sst      = 0 ! don't modify for ocean
+      flag_soil_layers  = 0 ! go ahead and put skin temp in
+      flag_soil_levels  = 0 ! go ahead and put skin moisture in
+      flag_sst          = 0 ! don't modify for ocean
+      flag_tavgsfc      = 0 
+      flag_soilhgt      = 0 
 
-      CALL process_soil_real ( grid%tsk , grid%tmn , &
-                   grid%landmask , grid%sst , &
-                   st_input , sm_input , sw_input , st_levels_input , sm_levels_input , sw_levels_input , &
+      CALL process_soil_real ( grid%tsk , grid%tmn , grid%tavgsfc, &
+                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
+                   st_input , sm_input , sw_input , &
+                   st_levels_input , sm_levels_input , sw_levels_input , &
                    grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
-                   flag_sst , flag_soilt000, flag_soilm000, &
+                   flag_sst , flag_tavgsfc, flag_soilhgt, flag_soil_layers, flag_soil_levels,  &
                    ids , ide , jds , jde , kds , kde , &
                    ims , ime , jms , jme , kms , kme , &
                    its , ite , jts , jte , kts , kte , &
@@ -634,8 +643,8 @@ CONTAINS
 
 ! local data
 
-      real p1000mb,cv,cp,r,cvpm,g
-      parameter (p1000mb = 1.e+05, r = 287, cp = 1003., cv = cp-r, cvpm = -cv/cp, g=9.81 )
+      real r
+      parameter (r = r_d)
       integer k, it, nl
       real qvf, qvf1, dz
 

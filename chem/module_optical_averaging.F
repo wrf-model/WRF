@@ -1,14 +1,16 @@
-!*********************************************************************************
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!************************************************************************
+! This computer software was prepared by Battelle Memorial Institute,
+! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
+! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+! LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
 ! Module to Compute Aerosol Optical Properties
 ! * Author: Jerome D. Fast
 ! * Originators of parts of code:
-!   Rahul A. Zaveri, Jim Barnard, Richard C. Easter, William I. Gustafson Jr.
-! Last update: April 2007
+!   Rahul A. Zaveri, Jim Barnard, Richard C. Easter, William I.
+!   Gustafson Jr.
+! Last update: February 2009
 !
 ! Contact:
 ! Jerome D. Fast, PhD
@@ -19,46 +21,48 @@
 ! Phone: (509) 372-6116
 ! Email: Jerome.Fast@pnl.gov
 !
-! Please report any bugs or problems to Jerome Fast, the WRF-chem implmentation
-! team leader for PNNL
+! Please report any bugs or problems to Jerome Fast, the WRF-chem
+! implmentation team leader for PNNL.
 !
 ! Terms of Use:
-! 1) Users are requested to consult the primary author prior to modifying
-!    this module or incorporating it or its submodules in another code. This is 
-!   meant to ensure that the any linkages and/or assumptions will not adversely
-!   affect its operation.
-! 2) This module is intended for research and educational purposes.
-!   Users are requested to contact the primary author regarding the use of
-!   this module for any commercial application.
-! 3) Users preparing publications resulting from the usage of this module are requested
-!   to cite one or more of the references below (depending on the application) 
-!   for proper acknowledgement.
-
+!  1) Users are requested to consult the primary author prior to
+!     modifying this module or incorporating it or its submodules in
+!     another code. This is meant to ensure that the any linkages and/or
+!     assumptions will not adversely affect the operation of this module.
+!  2) The source code in this module is intended for research and
+!     educational purposes. Users are requested to contact the primary
+!     author regarding the use of the code for any commercial application.
+!  3) Users preparing publications resulting from the usage of this code
+!     are requested to cite one or more of the references below
+!     (depending on the application) for proper acknowledgement.
 !
 ! References: 
-! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
-!   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
-!   and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
-!   coupled meteorology-chemistry-aerosol model. JGR, 111, doi:10.1029/2005JD006721.
-! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al. (2009),
-!   Closure on the single scattering albedo in the WRF-Chem framework using
-!   data from the MILAGRO campaign, Atmos. Chem. Phys., to be submitted.
+! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C.
+!   Barnard, E.G. Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution
+!   of ozone, particulates, and aerosol direct radiative forcing in the
+!   vicinity of Houston using a fully-coupled meteorology-chemistry-
+!   aerosol model. JGR, 111, doi:10.1029/2005JD006721.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al.
+!   (2009), Closure on the single scattering albedo in the WRF-Chem
+!   framework using data from the MILAGRO campaign, Atmos. Chem. Phys.,
+!   submitted.
 !
-! Contact Jerome Fast for updates on the status of manuscripts under review.  
+! Contact Jerome Fast for updates on the status of manuscripts under
+! review.  
 !
 ! Additional information:
 ! *  www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support:
-! Funding for this code development was provided by the U.S. Department of Energy
-! under the auspices of Atmospheric Science Program of the Office of Biological
-! and Environmental Research the PNNL Laboratory Research and Directed Research
-! and Development program.
-!**********************************************************************************
+! Funding for this code development was provided by the U.S. Department
+! of Energy under the auspices of Atmospheric Science Program of the
+! Office of Biological and Environmental Research the PNNL Laboratory
+! Research and Directed Research and Development program.
+!************************************************************************
 	module module_optical_averaging
 	
         implicit none
- 	integer, parameter :: lunerr = -1
+ 	integer, parameter, private :: lunerr = -1
 	
 	contains
 
@@ -1242,7 +1246,7 @@
 
 !       USE module_data_mosaic_other, only : kmaxd
 !       USE module_data_mosaic_therm, ONLY: nbin_a_maxd
-        USE module_peg_util, only:  peg_message
+        USE module_peg_util, only:  peg_error_fatal, peg_message
         
         IMPLICIT NONE
 !   subr arguments        
@@ -1636,17 +1640,16 @@
                      write ( msg, '(a,1x, e14.5)' )  &
            'mieaer /refr/ outside range 1e-3 - 10 ' //  &
            'refr= ', refr
-         	     call peg_message( lunerr, msg )
 !                      print *,'refr=',refr
-                      call exit(1)
+         	     call peg_error_fatal( lunerr, msg )
+
                   endif
                   if(abs(refi).gt.10.)then
                      write ( msg, '(a,1x, e14.5)' )  &
            'mieaer /refi/ >10 '  //  &
             'refi', refi
-         	     call peg_message( lunerr, msg )                  
 !                      print *,'refi=',refi
-                      call exit(1)
+         	     call peg_error_fatal( lunerr, msg )                  
                   endif
 
 ! interpolate coefficients linear in refractive index
@@ -1887,9 +1890,8 @@
 !!$        write ( msg, '(a, 1x,i6)' )  &
 !!$           'FASTJ mie nmodes too small in fitcurv, '  //  &
 !!$           'maxm ', maxm
-!!$          call peg_message( lunerr, msg )
 !!$!        write(*,*)'nmodes too small in fitcurv',maxm
-!!$        call exit(1)
+!!$        call peg_error_fatal( lunerr, msg )
 !!$      endif
 
       do 100 m=1,maxm
@@ -1934,9 +1936,8 @@
 !!$        write ( msg, '(a,1x, i6)' )  &
 !!$           'FASTJ mie nmodes too small in fitcurv '  //  &
 !!$           'maxm ', maxm
-!!$          call peg_message( lunerr, msg )
 !!$!        write(*,*)'nmodes too small in fitcurv',maxm
-!!$        call exit(1)
+!!$        call peg_error_fatal( lunerr, msg )
 !!$      endif
 
       do 100 m=1,maxm
@@ -3583,8 +3584,6 @@
 !
 !
       if ( fatal )  then
-!         write ( *, '(2a)' )  ' ******* error >>>>>>  ', messag
-!         stop
    	  write( msg, '(a)' )   &
                   'optical averaging mie fatal error ' //   &
                   messag                  
@@ -4340,7 +4339,7 @@
       IF ( JX .LE. IT )   GO TO 20
          WRITE( 6,7 )                                                   
          WRITE( 6,6 )
-         STOP 30                                                        
+	 call errmsg( 'DMIESS: 30', .true.)
    20 RF =  CMPLX( RFR,  -RFI )
       RC =  CMPLX( RE2,-TMAG2 )
       X  =  RO * WVNO
@@ -4364,7 +4363,7 @@
 !
       IF ( NMX1 .LE. LL-1 )   GO TO 21
          WRITE(6,8)
-         STOP 32                                                        
+	 call errmsg( 'DMIESS: 32', .true.)
    21 NMX2 = T(1) * 1.2
 	nmx1=min(nmx1+5,150)  ! jcb
 	nmx2=min(nmx2+5,135)  ! jcb
@@ -4405,7 +4404,7 @@
       GO TO 30                                                          
    28 WRITE( 6,5 )  THETD(J)
       WRITE( 6,6 )                                                      
-      STOP 34
+      call errmsg( 'DMIESS: 34', .true.)
    30 CONTINUE                                                          
 !
       DO 35  J = 1,JX                                                   
@@ -4686,7 +4685,7 @@
       TE(2) = DIMAG(FNBP)
       IF ( N .LE. NMX2 )   GO TO 65
          WRITE( 6,8 )                                                   
-         STOP 36
+	 call errmsg( 'DMIESS: 36', .true.)
   100 CONTINUE
 !      DO 120 J = 1,JX
 !      DO 120 K = 1,2
@@ -5070,7 +5069,7 @@
 
          IF ( NSCATA .gt. IT2  .OR.  NSCATH .gt. IT)  then
               WRITE( 6,105 )  NSCATA, NSCATH, IT2, IT
-              STOP 11
+              call errmsg( 'PFCNPARTICLE: 11', .true.)
          ENDIF
 
 !     /*--------------------------------------------------------*/

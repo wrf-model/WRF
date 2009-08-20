@@ -70,8 +70,14 @@ subroutine da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
       if( iv%ships(n)%q%qc == fails_error_max .and. it > 1) iv%ships(n)%q%qc =0
       if( iv%ships(n)%q%qc >= obs_qc_pointer ) then
       failed=.false.
+      if( iv%ships(n)%t%qc == fails_error_max .or. iv%ships(n)%p%qc == fails_error_max) then
+      failed=.true.  
+      iv%ships(n)%q%qc  = fails_error_max
+      iv%ships(n)%q%inv = 0.0
+      else
       if( check_max_iv) &
       call da_max_error_qc (it, iv%info(ships), n, iv%ships(n)%q, max_error_q , failed)
+      endif
       if( iv%info(ships)%proc_domain(1,n) ) then
       num_qcstat_conv(1,ships,4,1)= num_qcstat_conv(1,ships,4,1) + 1
       if(failed) then

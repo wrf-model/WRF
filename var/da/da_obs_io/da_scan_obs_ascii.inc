@@ -2,6 +2,10 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    !---------------------------------------------------------------------------
    ! Purpose: Scan WRFVAR GTS observation file
+   !
+   !       Date: 03/19/2009 -        Y.-R. Guo
+   !
+   !           Added the time range check when reading in observations.
    !---------------------------------------------------------------------------
 
    implicit none
@@ -11,15 +15,18 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    character (len =  10)   :: fmt_name
    character (len = 160)   :: info_string
-   character (len = 160)   :: fmt_info
-   character (len = 160)   :: fmt_loc
-   character (len = 160)   :: fmt_each
+!   character (len = 160)   :: fmt_info
+!   character (len = 160)   :: fmt_srfc
+!   character (len = 160)   :: fmt_each
 
    integer                 :: i, iost, fm, report, iunit
    type (multi_level_type) :: platform
    logical                 :: outside, outside_all
    real                    :: height_error
    integer                 :: ndup, n, obs_index
+
+   real                  :: obs_time
+   integer               :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_scan_obs_ascii")
 
@@ -60,7 +67,7 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    read (iunit, fmt = '(A,1X,A)', iostat = iost) &
        fmt_name, fmt_info, &
-       fmt_name, fmt_loc,  &
+       fmt_name, fmt_srfc,  &
        fmt_name, fmt_each
 
    if (iost /= 0) then
@@ -122,7 +129,7 @@ subroutine da_scan_obs_ascii (iv, filename)
       read (platform%info%platform(4:6), '(I3)') fm
 
       ! read model location
-      read (iunit, fmt = fmt_loc)  &
+      read (iunit, fmt = fmt_srfc)  &
          platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
          platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
@@ -160,6 +167,16 @@ subroutine da_scan_obs_ascii (iv, filename)
             platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
             platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
       end do
+
+      ! Check if outside of the time range:
+
+      read (platform%info%date_char,'(i4,4(1x,i2))') &
+                                    iyear, imonth, iday, ihour, imin
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+      if ( obs_time < time_slots(0) .or. &
+           obs_time >= time_slots(num_fgat_time) ) then
+           cycle
+      endif
 
       ! Restrict to a range of reports, useful for debugging
 
@@ -214,6 +231,13 @@ subroutine da_scan_obs_ascii (iv, filename)
             if (outside) cycle reports
             iv%info(sound)%nlocal     = iv%info(sound)%nlocal + 1
             iv%info(sonde_sfc)%nlocal = iv%info(sonde_sfc)%nlocal + 1
+         case (101) ;
+            if (.not.use_tamdarobs .or. iv%info(tamdar)%ntotal == max_tamdar_input) cycle reports
+            if (n==1) iv%info(tamdar)%ntotal     = iv%info(tamdar)%ntotal + 1
+            if (n==1) iv%info(tamdar_sfc)%ntotal     = iv%info(tamdar_sfc)%ntotal + 1
+            if (outside) cycle reports
+            iv%info(tamdar)%nlocal         = iv%info(tamdar)%nlocal + 1
+            iv%info(tamdar_sfc)%nlocal     = iv%info(tamdar_sfc)%nlocal + 1
          case (161) ;
             if (.not.use_mtgirsobs .or. iv%info(mtgirs)%ntotal == max_mtgirs_input) cycle reports
             if (n==1) iv%info(mtgirs)%ntotal     = iv%info(mtgirs)%ntotal + 1
@@ -318,12 +342,18 @@ subroutine da_scan_obs_ascii (iv, filename)
             write(unit=message(3), fmt='(a, i3)') &
                  'platform%info%levels=', platform%info%levels
             call da_warning(__FILE__,__LINE__,message(1:3))
+            cycle
          end select
          iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, platform%info%levels)
       end do        !  loop over duplicate
    end do reports
 
    iv%info(sonde_sfc)%max_lev=1
+   iv%info(tamdar_sfc)%max_lev=1
+   iv%info(synop)%max_lev=1   ! To prevent some bad observations with more than 1 level, should I add more?
+   iv%info(ships)%max_lev=1   
+   iv%info(qscat)%max_lev=1   
+   iv%info(metar)%max_lev=1   
 
    close(iunit)
 

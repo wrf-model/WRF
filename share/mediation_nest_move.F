@@ -919,6 +919,7 @@ USE module_timing
                   nids, nide, njds, njde, nkds, nkde, &
                   nims, nime, njms, njme, nkms, nkme, &
                   nips, nipe, njps, njpe, nkps, nkpe
+   REAL        :: xtime, time_to_move
 ! interface
    INTERFACE
      LOGICAL FUNCTION time_for_move2 ( parent , nest , dx , dy )
@@ -937,6 +938,17 @@ USE module_timing
      CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
    ENDIF
    kid = 1
+
+!  Check if it is time to move the nest
+     xtime = grid%xtime
+     CALL nl_get_time_to_move ( grid%id , time_to_move )
+     if ( xtime .lt. time_to_move ) then
+        time_for_move = .FALSE.
+        move_cd_x = 0
+        move_cd_y = 0
+!       write(0,*) 'it is not the time to move ', xtime, time_to_move
+        return
+     endif
 !
 ! find out if this is the innermost nest (will not have kids)
    IF   ( grid%num_nests .EQ. 0 ) THEN
@@ -1073,7 +1085,7 @@ LOGICAL FUNCTION should_not_move ( id )
   INTEGER, INTENT(IN) :: id
  ! Local
   LOGICAL retval
-  INTEGER cu_physics, ra_sw_physics, ra_lw_physics, ucmcall, obs_nudge_opt
+  INTEGER cu_physics, ra_sw_physics, ra_lw_physics, sf_urban_physics, sf_surface_physics, obs_nudge_opt
 
   retval = .FALSE.
 ! check for GD ensemble cumulus, which can not move
@@ -1094,9 +1106,15 @@ LOGICAL FUNCTION should_not_move ( id )
     retval = .TRUE.
   ENDIF
 ! check for urban canopy Noah LSM, which can not move
-  CALL nl_get_ucmcall( id , ucmcall )
-  IF ( ucmcall .EQ. 1 ) THEN
-    CALL wrf_message('UCM Noah LSM can not be specified with moving nests. Movement disabled.')
+  CALL nl_get_sf_urban_physics( id , sf_urban_physics )
+  IF ( sf_urban_physics .EQ. 1 .OR. sf_urban_physics .EQ. 2 ) THEN
+    CALL wrf_message('UCMs Noah LSM can not be specified with moving nests. Movement disabled.')
+    retval = .TRUE.
+  ENDIF
+! check for PX lsm scheme, which can not move
+  CALL nl_get_sf_surface_physics( id , sf_surface_physics )
+  IF ( sf_surface_physics .EQ. PXLSMSCHEME ) THEN
+    CALL wrf_message('PX LSM can not be specified with moving nests. Movement disabled.')
     retval = .TRUE.
   ENDIF
 #if ( EM_CORE == 1 )

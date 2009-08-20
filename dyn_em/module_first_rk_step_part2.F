@@ -21,7 +21,7 @@ CONTAINS
                              , cu_act_flag , hol , th_phy        &
                              , pi_phy , p_phy , t_phy , u_phy , v_phy     &
                              , dz8w , p8w , t8w , rho_phy , rho           &
-                             , z_at_w , mu_3d                   &
+                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -31,7 +31,12 @@ CONTAINS
     USE module_model_constants
     USE module_domain, ONLY : domain
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
+#ifdef DM_PARALLEL
+    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval, wrf_err_message
+#else
     USE module_dm
+#endif
+    USE module_comm_dm
     USE module_diffusion_em, ONLY : phy_bc, cal_deform_and_div, compute_diff_metrics, &
                                     vertical_diffusion_2, horizontal_diffusion_2, calculate_km_kh, &
                                     tke_rhs
@@ -80,7 +85,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: z_at_w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: mu_3d
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
@@ -572,7 +576,7 @@ BENCH_END(hor_diff_tim)
                    p_phy, t_tendf, t0,                                  &
                    grid%u_2, grid%v_2, grid%t_2,               &
                    moist(ims,kms,jms,P_QV),                                   &
-                   grid%pb, grid%p_top, grid%p,                   &
+                   grid%pb, grid%p_top, grid%p, grid%phb, grid%ph_2,    &
                    grid%uratx, grid%vratx, grid%tratx,                  &
                    ru_tendf, rv_tendf,                                  &
                    moist_tend(ims,kms,jms,P_QV), grid%obs_savwt,           &

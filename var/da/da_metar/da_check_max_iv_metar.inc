@@ -67,21 +67,6 @@ subroutine da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%metar(n)%q%qc == fails_error_max .and. it > 1 )iv%metar(n)%q%qc =0
-      if( iv%metar(n)%q%qc >= obs_qc_pointer ) then
-      failed=.false.
-      if( check_max_iv) &
-      call da_max_error_qc (it, iv%info(metar), n, iv%metar(n)%q, max_error_q , failed)
-      if( iv%info(metar)%proc_domain(1,n) ) then
-      num_qcstat_conv(1,metar,4,1)= num_qcstat_conv(1,metar,4,1) + 1
-      if(failed) then
-      num_qcstat_conv(2,metar,4,1)= num_qcstat_conv(2,metar,4,1) + 1
-      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-      'metar',ob_vars(4),iv%info(metar)%lat(1,n),iv%info(metar)%lon(1,n),0.01*ob%metar(n)%p
-      end if
-      end if
-      end if 
-
       if( iv%metar(n)%p%qc == fails_error_max .and. it > 1 )iv%metar(n)%p%qc =0
       if( iv%metar(n)%p%qc >= obs_qc_pointer ) then
       failed=.false.
@@ -93,6 +78,27 @@ subroutine da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(2,metar,5,1)= num_qcstat_conv(2,metar,5,1) + 1
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
       'metar',ob_vars(5),iv%info(metar)%lat(1,n),iv%info(metar)%lon(1,n),0.01*ob%metar(n)%p
+      end if
+      end if
+      end if 
+
+      if( iv%metar(n)%q%qc == fails_error_max .and. it > 1 )iv%metar(n)%q%qc =0
+      if( iv%metar(n)%q%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( iv%metar(n)%t%qc == fails_error_max .or. iv%metar(n)%p%qc == fails_error_max) then
+      failed=.true.
+      iv%metar(n)%q%qc  = fails_error_max
+      iv%metar(n)%q%inv = 0.0
+      else
+      if( check_max_iv) &
+      call da_max_error_qc (it, iv%info(metar), n, iv%metar(n)%q, max_error_q , failed)
+      endif
+      if( iv%info(metar)%proc_domain(1,n) ) then
+      num_qcstat_conv(1,metar,4,1)= num_qcstat_conv(1,metar,4,1) + 1
+      if(failed) then
+      num_qcstat_conv(2,metar,4,1)= num_qcstat_conv(2,metar,4,1) + 1
+      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+      'metar',ob_vars(4),iv%info(metar)%lat(1,n),iv%info(metar)%lon(1,n),0.01*ob%metar(n)%p
       end if
       end if
       end if 

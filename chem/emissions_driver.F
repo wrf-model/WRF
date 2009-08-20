@@ -239,6 +239,8 @@ CONTAINS
 ! As of NOV 2008 these only are used for MOSAIC and SORGAM
 ! gocart  dust and seasalt will only work for GOCART and SORGAM
 !
+      dust_emiss_active    = 0
+      seasalt_emiss_active = 0
       if(config_flags%dust_opt == 2 )dust_emiss_active    = 1
       if(config_flags%seas_opt == 2 )seasalt_emiss_active = 1
 !

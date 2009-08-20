@@ -23,6 +23,7 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
    real, allocatable :: model_u(:,:)  ! Model value u at ob location.
    real, allocatable :: model_v(:,:)  ! Model value v at ob location.
 
+   real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
    real    :: v_p(kms:kme)      ! Model value p at ob hor. location.
    
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_pilot")
@@ -44,17 +45,20 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
       dym = iv%info(pilot)%dym(1,n)
 
       do k=kts,kte
+         v_h(k) = dym*(dxm*grid%xb%h(i,j,k) + dx*grid%xb%h(i+1,j,k)) + dy *(dxm*grid%xb%h(i,j+1,k) + dx*grid%xb%h(i+1,j+1,k))
          v_p(k) = dym*(dxm*grid%xb%p(i,j,k) + dx*grid%xb%p(i+1,j,k)) + dy *(dxm*grid%xb%p(i,j+1,k) + dx*grid%xb%p(i+1,j+1,k))
       end do
 
       do k=1, iv%info(pilot)%levels(n)
          if (iv % pilot(n) % p(k) > 1.0) then
             call da_to_zk(iv % pilot(n) % p(k), v_p, v_interp_p, iv%info(pilot)%zk(k,n))
+         else if (iv%pilot(n) % h(k) > missing_r) then
+            call da_to_zk(iv % pilot(n) % h(k), v_h, v_interp_h, iv%info(pilot)%zk(k,n))
          end if
 
          if (iv%info(pilot)%zk(k,n) < 0.0 .and.  .not.anal_type_verify) then
-            iv % pilot(n) % u(k) % qc = missing
-            iv % pilot(n) % v(k) % qc = missing
+            iv % pilot(n) % u(k) % qc = missing_data
+            iv % pilot(n) % v(k) % qc = missing_data
          end if
       end do
    end do

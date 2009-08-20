@@ -377,7 +377,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
       p = buffer_for_proc( yp , 0 , da_buf ) ;
       if ( pu == 0 ) {
         if ( sendwp > 0 ) {
-          js = jpe - shw + sendbegp ; je = js + sendwp - 1 ;
+          je = jpe - sendbegp + 1 ; js = je - sendwp + 1 ;
           ks = kps           ; ke = kpe ;
           is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
           nbytes = buffer_size_for_proc( yp, da_buf ) ;
@@ -460,7 +460,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 	}
       } else {
         if ( recvwm > 0 ) {
-          js = jps-shw+recvbegm-1  ; je = js + recvwm - 1 ;
+          je = jps-recvbegm ; js = je - recvwm + 1 ;
           ks = kps           ; ke = kpe ;
           is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
           if ( typesize == 8 ) {
@@ -491,7 +491,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
         if ( sendwp > 0 ) {
           js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
           ks = kps           ; ke = kpe ;
-          is = ipe - shw + sendbegp ; ie = is + sendwp - 1 ;
+          ie = ipe - sendbegp + 1 ; is = ie - sendwp + 1 ;
           nbytes = buffer_size_for_proc( xp, da_buf ) ;
           if ( xp_curs + RANGE( js, je, kps, kpe, ipe-shw+1, ipe, 1, typesize ) > nbytes ) {
 #ifndef MS_SUA
@@ -576,7 +576,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
         if ( recvwm > 0 ) {
           js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
           ks = kps           ; ke = kpe ;
-          is = ips-shw+recvbegm-1  ; ie = is + recvwm - 1 ;
+          ie = ips-recvbegm ; is = ie - recvwm + 1 ;
           if ( typesize == 8 ) {
             F_UNPACK_LINT ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                                   &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;

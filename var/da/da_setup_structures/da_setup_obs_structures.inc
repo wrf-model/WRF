@@ -15,6 +15,12 @@ subroutine da_setup_obs_structures( grid, ob, iv)
 
    if (trace_use) call da_trace_entry("da_setup_obs_structures")
 
+! Default values for fmt_info, fmt_srfc, and fmt_each(YRG, 02/25/2009):
+
+   fmt_info = '(a12,1x,a19,1x,a40,1x,i6,3(f12.3,11x),6x,a40)'
+   fmt_srfc = '(7(:,f12.3,i4,f7.2))'
+   fmt_each = '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2))'
+
    call da_message((/'Set up observations (ob)'/))
 
    ! Adjust obs switches
@@ -22,7 +28,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    if (use_synopobs .OR. use_shipsobs .OR. use_metarobs .OR. use_pilotobs .OR. &
       use_profilerobs .OR. use_buoyobs .OR. use_soundobs .OR. use_mtgirsobs .OR. use_bogusobs .OR. &
       use_radarobs .OR. use_radar_rv .OR. use_radar_rf .OR. use_satemobs .OR. &
-      use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. &
+      use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .or. &
       use_airsretobs ) then
@@ -34,7 +40,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
 
    if (use_hirs2obs .OR. use_hirs3obs .OR. use_msuobs .OR. use_amsuaobs .OR. &
       use_amsubobs .OR. use_airsobs .OR. use_eos_amsuaobs .OR. &
-      use_eos_radobs .OR. use_hsbobs .OR. use_kma1dvar .OR. use_filtered_rad .or. &
+      use_hsbobs .OR. use_kma1dvar .OR. use_filtered_rad .or. &
       use_ssmisobs .or. use_hirs4obs .or. use_mhsobs .or. use_pseudo_rad .or. &
       use_simulated_rad ) then
       use_rad = .true.
@@ -82,7 +88,6 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_amsubobs         = .false.
       use_airsobs          = .false.
       use_eos_amsuaobs     = .false.
-      use_eos_radobs       = .false.
       use_hsbobs           = .false.
       use_obsgts           = .false.
       use_rad              = .false.
@@ -96,6 +101,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_metarobs         = .false.
       use_soundobs         = .false.
       use_mtgirsobs        = .false.
+      use_tamdarobs        = .false.
       use_bogusobs         = .false.
       use_pilotobs         = .false.
       use_airepobs         = .false.
@@ -121,12 +127,11 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_amsubobs         = .false.
       use_airsobs          = .false.
       use_eos_amsuaobs     = .false.
-      use_eos_radobs       = .false.
       use_hsbobs           = .false.
       use_obsgts           = .true.
       use_rad              = .false.
       use_airsretobs       = .false.
-      ob_format = 2
+      ob_format = ob_format_ascii
    end if
 
    if ( use_pseudo_rad ) then
@@ -189,14 +194,16 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       end if
    end if
 
-#if defined(CRTM) || defined(RTTOV)
-   ! Radiance files can only be in BUFR
 
    if (use_rad) then
+#if defined(CRTM) || defined(RTTOV)
+      ! Radiance files can only be in BUFR
       call da_message((/'Using NCEP BUFR radiance 1b input'/))
       call da_setup_radiance_structures(grid, ob, iv)
-   end if
+#else
+      call da_error(__FILE__,__LINE__,(/"options to use radiance data are turned on in wrfvar4 namelist, the code needs to be compiled with CRTM or RTTOV library"/))
 #endif
+   end if
 
    ! Summarize observations 
 
@@ -204,12 +211,13 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    do i=1,num_fgat_time
       write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
       do j=1,num_ob_indexes
+         if(j.eq.27)cycle
          if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
             ob_name = 'gpsztd        '
          else
             ob_name = obs_names(j)
          endif
-         write(unit=stdout, fmt='(6x,a,i6,a,i6,a)') &
+         write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
             ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
             iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
       end do

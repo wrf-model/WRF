@@ -1,5 +1,7 @@
 ######################
 
+FGREP = fgrep -iq
+
 ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                      $(ARCH_LOCAL) \
                      $(DA_ARCHFLAGS) \
@@ -19,7 +21,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORD
                       -DMAX_DOMAINS_F=$(MAX_DOMAINS) \
 		      -DNMM_NEST=$(WRF_NMM_NEST)
 CFLAGS          =    $(CFLAGS_LOCAL) CONFIGURE_DMPARALLEL CONFIGURE_STUBMPI
-FCFLAGS         =    $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+FCFLAGS         =    $(FCOPTIM) $(FCBASEOPTS)
 ESMF_LIB_FLAGS  =    ESMFLIBFLAG
 ESMF_IO_LIB     =    ESMFIOLIB
 ESMF_IO_LIB_EXT =    ESMFIOEXTLIB
@@ -159,7 +161,14 @@ wrfio_esmf :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
 	$(RM) $*.b $*.bb
-	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
+        fi
+        
 
 .F.f90:
 	$(RM) $@

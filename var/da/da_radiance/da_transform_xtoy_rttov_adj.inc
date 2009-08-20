@@ -262,10 +262,13 @@ subroutine da_transform_xtoy_rttov_adj ( iv, jo_grad_y, jo_grad_x )
                call da_rttov_ad (i, nchan, d_num_rad, d_con_vars, &
                d_aux_vars, d_con_vars_ad, d_tb)
             else
-               do n=1,d_num_rad
-                  call da_rttov_ad (i, nchan, 1, d_con_vars(n:n), &
-                  d_aux_vars(n:n), d_con_vars_ad(n:n), d_tb(:,n:n))
+               !$OMP PARALLEL DO  &
+               !$OMP PRIVATE ( n )
+                do n=1,d_num_rad
+                   call da_rttov_ad (i, nchan, 1, d_con_vars(n:n), &
+                   d_aux_vars(n:n), d_con_vars_ad(n:n), d_tb(:,n:n))
                end do
+               !$OMP END PARALLEL DO
             end if
          end if
 

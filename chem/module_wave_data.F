@@ -826,7 +826,7 @@
       allocate( sq(nw-1,nz,nj), stat=astat )
       if( astat /= 0 ) then
          write(*,*) 'wave_data_inti: sq allocate failed; error = ',astat
-         stop
+         call wrf_error_fatal('wave_data_inti: sq allocate failed')
       end if
 
 !     intialize sq
@@ -1111,7 +1111,7 @@ wave_loop : &
       allocate( a(nw-1), b(nw-1), stat=astat )
       if( astat /= 0 ) then
          write(*,*) 'r44_inti: a,b allocate failed; error = ',astat
-         stop
+         call wrf_error_fatal('r44_inti: a,b allocate failed')
       end if
       do iw = 1,nw-1
          lambda = wc(iw)
@@ -1210,7 +1210,7 @@ wave_loop : &
       allocate( suma(nw-1), sumb(nw-1), stat=astat )
       if( astat /= 0 ) then
          write(*,*) 'r08_inti: suma,sumb allocate failed; error = ',astat
-         stop
+         call wrf_error_fatal('r08_inti: suma,sumb allocate failed')
       end if
       do iw = 1,nw-1
          if( wl(iw) >= 260. .and. wl(iw) < 350. ) then

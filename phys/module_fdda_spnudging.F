@@ -1,11 +1,13 @@
 !wrf:model_layer:physics
 !
-!
+! Code contributed by Gonzalo Miguez-Macho, Univ. de Santiago de Compostela, Galicia, Spain
 !
 MODULE module_fdda_spnudging
 
-  USE module_dm
-  USE module_wrf_error
+#ifdef DM_PARALLEL
+  USE module_dm , ONLY : ntasks_x, ntasks_y, local_communicator_x, local_communicator_y, data_order_xzy
+#endif
+  USE module_wrf_error , ONLY : wrf_err_message
 
 CONTAINS
 !
@@ -143,6 +145,8 @@ CONTAINS
 
    CHARACTER (LEN=256) :: message
 
+#if  ! ( NMM_CORE == 1 )
+
       DO ij = 1 , num_tiles
           its=i_start(ij)
           ite=i_end(ij)
@@ -154,17 +158,8 @@ CONTAINS
    wzfac(:,:) = 1.0
 
  !$OMP PARALLEL DO   &
- !$OMP PRIVATE ( ij, i,j,k ) ! only for part of the calculation. 
- !GMM Transpose and filtering needs to be done on patch
- 
+ !$OMP PRIVATE ( ij, i,j,k ) ! only for part of the calculation.
  DO ij = 1 , num_tiles
-
-   actual_end_fdda_min = end_fdda_hour*60.0
-   IF( if_ramping == 1 .AND. dtramp_min > 0.0 ) &
-       actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
-   IF( xtime > actual_end_fdda_min ) THEN
-!  If xtime is greater than the end time, no need to calculate tendencies. Just set the tnedencies 
-!  to zero to turn off nudging and return.
      DO j = jts, jte
      DO k = kts, kte
      DO i = its, ite
@@ -175,8 +170,23 @@ CONTAINS
      ENDDO
      ENDDO
      ENDDO
-!    RETURN
-   ENDIF
+ ENDDO
+ !$OMP END PARALLEL DO
+
+ actual_end_fdda_min = end_fdda_hour*60.0
+ IF( if_ramping == 1 .AND. dtramp_min > 0.0 ) &
+       actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
+ IF( xtime > actual_end_fdda_min ) RETURN
+
+ !$OMP PARALLEL DO   &
+ !$OMP PRIVATE ( ij, i,j,k ) ! only for part of the calculation. 
+ !GMM Transpose and filtering needs to be done on patch
+ 
+ DO ij = 1 , num_tiles
+
+!  actual_end_fdda_min = end_fdda_hour*60.0
+!  IF( if_ramping == 1 .AND. dtramp_min > 0.0 ) &
+!      actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
 
    xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
@@ -725,7 +735,7 @@ IF(gph > 0. ) then
 
 ENDIF
 
-
+#endif
 
    END SUBROUTINE spectral_nudging
 

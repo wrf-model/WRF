@@ -85,12 +85,9 @@ CONTAINS
                                   its, ite, jts, jte, kts, kte, &
                                   i, j, k
 
-   ! Local data
-
    INTEGER, PARAMETER :: nl_max = 1000
    REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
    INTEGER :: nl_in
-
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
@@ -106,7 +103,7 @@ CONTAINS
 
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
-
+   character (len=256) :: mminlu2
    
 #ifdef DM_PARALLEL
 #    include <data_calls.inc>
@@ -182,7 +179,10 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( jcm , IWORDSIZE )
 #endif
 
-    CALL nl_set_mminlu(1, 'USGS')
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
     CALL nl_set_cen_lat(1,20.)
@@ -191,6 +191,8 @@ CONTAINS
     CALL nl_set_truelat2(1,0.)
     CALL nl_set_moad_cen_lat (1,0.)
     CALL nl_set_stand_lon (1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
     CALL nl_set_map_proj(1,0)
 !   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
     CALL nl_get_iswater(1,grid%iswater)
@@ -679,8 +681,8 @@ CONTAINS
 
 ! local data
 
-      real p1000mb,cv,cp,r,cvpm,g
-      parameter (p1000mb = 1.e+05, r = 287, cp = 1003., cv = cp-r, cvpm = -cv/cp, g=9.81 )
+      real r
+      parameter (r = r_d)
       integer k, it, nl
       real qvf, qvf1, dz
 

@@ -18,7 +18,7 @@ subroutine da_wrf_tpq_2_slp (grid)
 
    type (domain), intent(inout) :: grid
 
-   integer              :: I, J, K, KLO, KHI
+   integer              :: I, J, K, KLO, KHI, ij
    real                 :: PL, T0, TS, XTERM,    &
                           TLO, THI, TL
 
@@ -37,7 +37,11 @@ subroutine da_wrf_tpq_2_slp (grid)
    ! compute pressure at pconst mb above surface (pl)              
                                                                           
 
-   j_loop: do j=jts, jte
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE (ij, i, j, k, PL, klo, khi, tlo, thi, tl, ts, t0)
+   do ij = 1, grid%num_tiles
+
+   j_loop: do j=grid%j_start(ij), grid%j_end(ij)
       i_loop: do i=its, ite
          if (grid%xb%terr(i,j) <= 0.0) then
             grid%xb%slp(i,j) = grid%xb%psfc(i,j)
@@ -91,6 +95,9 @@ subroutine da_wrf_tpq_2_slp (grid)
             (gas_constant*(TS+T0)))
       end do i_loop
    end do j_loop
+
+   end do 
+   !$OMP END PARALLEL DO  
 
    if (trace_use_dull) call da_trace_exit("da_wrf_tpq_2_slp")
 

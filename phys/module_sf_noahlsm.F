@@ -65,7 +65,7 @@ CONTAINS
                        RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                        RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
                        SOILW,SOILM,Q1,                                  &    !D
-                       RDLAI2D,                                         &
+                       RDLAI2D,USEMONALB,                               &
                        SNOTIME1,                                        &
                        RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)                    !P
@@ -282,16 +282,17 @@ CONTAINS
 ! 2. LOGICAL:
 ! ----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: RDLAI2D
+      LOGICAL, INTENT(IN) :: USEMONALB
 
       REAL, INTENT(IN)   :: SHDMIN,SHDMAX,DT,DQSDT2,LWDN,PRCP,PRCPRAIN,     &
                             Q2,Q2SAT,SFCPRS,SFCSPD,SFCTMP, SNOALB,          &
                             SOLDN,SOLNET,TBOT,TH2,ZLVL,                            &
                             FFROZP
       REAL, INTENT(OUT)  :: EMBRD
-      REAL, INTENT(OUT)  :: ALBEDO, ALB
+      REAL, INTENT(OUT)  :: ALBEDO
       REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,CH,CM,                        &
                             CMC,SNEQV,SNCOVR,SNOWH,T1,XLAI,SHDFAC,Z0BRD,    &
-                            EMISSI
+                            EMISSI, ALB
       REAL, INTENT(INOUT):: SNOTIME1
       REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SLDPTH
@@ -385,14 +386,18 @@ CONTAINS
             IF (.NOT. RDLAI2D) THEN
                XLAI  = LAIMAX
             ENDIF
-            ALB   = ALBEDOMAX
+            IF (.NOT. USEMONALB) THEN
+               ALB   = ALBEDOMIN
+            ENDIF
             Z0BRD = Z0MAX
          ELSE IF ( SHDFAC <= SHDMIN ) THEN
             EMBRD = EMISSMIN
             IF(.NOT. RDLAI2D) THEN
                XLAI  = LAIMIN
             ENDIF
-            ALB   = ALBEDOMIN
+            IF(.NOT. USEMONALB) then
+               ALB   = ALBEDOMAX
+            ENDIF
             Z0BRD = Z0MIN
          ELSE
 
@@ -407,7 +412,9 @@ CONTAINS
                IF (.NOT. RDLAI2D) THEN
                   XLAI  = ( ( 1.0 - INTERP_FRACTION ) * LAIMIN    ) + ( INTERP_FRACTION * LAIMAX    )
                ENDIF
-               ALB   = ( ( 1.0 - INTERP_FRACTION ) * ALBEDOMIN ) + ( INTERP_FRACTION * ALBEDOMAX )
+               if (.not. USEMONALB) then
+                  ALB   = ( ( 1.0 - INTERP_FRACTION ) * ALBEDOMAX ) + ( INTERP_FRACTION * ALBEDOMIN )
+               endif
                Z0BRD = ( ( 1.0 - INTERP_FRACTION ) * Z0MIN     ) + ( INTERP_FRACTION * Z0MAX     )
 
             ELSE
@@ -416,7 +423,9 @@ CONTAINS
                IF (.NOT. RDLAI2D) THEN
                   XLAI  = 0.5 * LAIMIN    + 0.5 * LAIMAX
                ENDIF
-               ALB   = 0.5 * ALBEDOMIN + 0.5 * ALBEDOMAX
+               if (.not. USEMONALB) then
+                  ALB   = 0.5 * ALBEDOMIN + 0.5 * ALBEDOMAX
+               endif
                Z0BRD = 0.5 * Z0MIN     + 0.5 * Z0MAX
 
             ENDIF
@@ -946,7 +955,6 @@ CONTAINS
 !            ENDIF
 !          ENDIF
 !
-!!print *, 'MUKUL PRINTS in ALCALC'
 !!               print*,'SNOALB2',SNOALB2,'ALBEDO',ALBEDO,'DT',DT
 !          ALBEDO = ALB + SNCOVR*(SNOALB2-ALB)
 !          IF (ALBEDO .GT. SNOALB2) ALBEDO=SNOALB2
@@ -969,13 +977,14 @@ CONTAINS
              SNOTIME1 = 0.
           ELSE
            SNOTIME1=SNOTIME1+DT
-                IF (TSNOW.LT.273.16) THEN
+!               IF (TSNOW.LT.273.16) THEN
                    SNOALB2=SNOALB1*(SNACCA**((SNOTIME1/86400.0)**SNACCB))
-                ELSE
-                   SNOALB2 =SNOALB1*(SNTHWA**((SNOTIME1/86400.0)**SNTHWB))
-                ENDIF
+!               ELSE
+!                  SNOALB2 =SNOALB1*(SNTHWA**((SNOTIME1/86400.0)**SNTHWB))
+!               ENDIF
           ENDIF
 !
+           SNOALB2 = MAX ( SNOALB2, ALB )
            ALBEDO = ALB + SNCOVR*(SNOALB2-ALB)
            IF (ALBEDO .GT. SNOALB2) ALBEDO=SNOALB2
 
@@ -1813,8 +1822,8 @@ CONTAINS
           ZMD = 0.5 * (ZSOIL(K)+ZSOIL(K-1))
           ! For the land-ice case
 ! kmh 09/03/2006 use Yen (1981)'s values for Antarctic snow firn
-!         IF ( K .eq. 2 ) HCPCT = 0.855108E5
-!         IF ( K .eq. 3 ) HCPCT = 0.922906E5
+!         IF ( K .eq. 2 ) HCPCT = 0.855108E6
+!         IF ( K .eq. 3 ) HCPCT = 0.922906E6
 !         IF ( K .eq. 4 ) HCPCT = 1.009986E6
 
           ! Least squares fit to the four points supplied by Keith Hines

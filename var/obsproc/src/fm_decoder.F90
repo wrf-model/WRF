@@ -4,7 +4,7 @@
                                        gpsrf, gpsep, &
                                        ssmt1, ssmt2, ssmi , &
                                        tovs , other, amdar, &
-                                       qscat, profl, buoy , bogus, airs)
+                                       qscat, profl, buoy , bogus, airs, tamdar)
 !------------------------------------------------------------------------------!
 ! Given the WMO code fm, return the observation platform type and increment
 ! the corresponding counter if present.
@@ -63,7 +63,7 @@
                                                       bogus, &
                                                       ssmi,  ssmt1, ssmt2, &
                                                       tovs,  amdar, qscat, &
-                                                      profl, buoy, airs, other
+                                                      profl, buoy, airs, tamdar, other
 !------------------------------------------------------------------------------!
        SELECT CASE ( fm )
 
@@ -334,6 +334,11 @@
           CASE (96:97) ; platform = 'AIREP'
                          IF (PRESENT (airep)) airep = airep + 1
 
+          ! tamdar reports ( not a WMO report)
+
+          CASE (101) ; platform = 'TAMDAR'
+                         IF (PRESENT (tamdar)) tamdar = tamdar + 1 
+
           !  GPS Precipitable Water Vapor (not a WMO report)
 
           CASE (111) ; platform = 'GPSPW'
@@ -409,6 +414,7 @@
        CASE ('SATEM');                                     platform = "SATEM";
        CASE ('SATOB');                                     platform = "SATOB";
        CASE ('AIREP');                                     platform = "AIREP";
+       CASE ('TAMDAR');                                    platform = "TAMDAR";
        CASE ('GPSPW');                                     platform = "GPSPW";
        CASE ('GPSZD');                                     platform = "GPSZD";
        CASE ('GPSRF');                                     platform = "GPSRF";

@@ -39,3 +39,13 @@ To run an fdda job
  dtramp_min                          = 60.0     ; time (min) for ramping function, 60.0=ramping starts at last analysis time, 
                                                                                   -60.0=ramping ends at last analysis time
 
+ grid_sfdda (max_dom)                = 0        ; surface fdda switch (1, on; 0, off)
+ sgfdda_inname                       = "wrfsfdda_d<domain>" ; defined name for sfc nudgingn input file (from program obsgrid)
+ sgfdda_end_h (max_dom)              = 6        ; time (in hours) to stop sfc nudging after start of forecast
+ sgfdda_interval_m (max_dom)         = 180      ; time interval (in min) between sfc analysis times (must use minutes)
+ io_form_sgfdda                      = 2        ; sfc analysis data io format (2 = netCDF)
+ guv_sfc (max_dom)                   = 0.0003   ; nudging coefficient for sfc u and v (sec-1)
+ gt_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc temp (sec-1)
+ gq_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc qvapor (sec-1)
+ rinblw                              = 250.0    ; radius
+

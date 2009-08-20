@@ -23,7 +23,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
 
    write(unit=filename, fmt='(a,i3.3)') 'gts_omb.', file_index
 
-   ! [1] Transfer surface obs:
+   ! [1] surface obs:
 
    if (iv%info(synop)%plocal(iv%time) - iv%info(synop)%plocal(iv%time-1) > 0) then
 
@@ -42,8 +42,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
              n , iv%info(synop)%id(n), &  ! Station
              iv%info(synop)%lat(1,n), &       ! Latitude
              iv%info(synop)%lon(1,n)          ! Longitude
-         write(ounit,'(E22.13,5(E22.13,i8,E22.13))')&
-             iv % synop(n) % h, &
+         write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
+             iv%synop(n)%h, &
              iv%synop(n)%u, &!  O-B u
              iv%synop(n)%v, &!  O-B v
              iv%synop(n)%t, &!  O-B t
@@ -53,7 +53,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [2] Transfer metar obs:
+   ! [2] metar obs:
 
    if (iv%info(metar)%plocal(iv%time) - iv%info(metar)%plocal(iv%time-1) > 0) then
 
@@ -72,8 +72,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, iv%info(metar)%id(n), &  ! Station
                  iv%info(metar)%lat(1,n), &       ! Latitude
                  iv%info(metar)%lon(1,n)          ! Longitude
-         write(ounit,'(E22.13,5(E22.13,i8,E22.13))')&
-                 iv % metar(n) % h, & 
+         write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
+                 iv%metar(n)%h, & 
                  iv%metar(n)%u, &! O-B u
                  iv%metar(n)%v, &! O-B v
                  iv%metar(n)%t, &! O-B t
@@ -83,7 +83,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [3] Transfer ships obs:
+   ! [3] ships obs:
 
    if (iv%info(ships)%plocal(iv%time) - iv%info(ships)%plocal(iv%time-1) > 0) then
 
@@ -102,8 +102,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, iv%info(ships)%id(n), &  ! Station
                  iv%info(ships)%lat(1,n), &       ! Latitude
                  iv%info(ships)%lon(1,n)          ! Longitude
-         write(ounit,'(E22.13,5(E22.13,i8,E22.13))')&
-                 iv % ships(n) % h, &
+         write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
+                 iv%ships(n)%h, &
                  iv%ships(n)%u, &! O-B u
                  iv%ships(n)%v, &! O-B v
                  iv%ships(n)%t, &! O-B t
@@ -113,7 +113,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [4] Transfer sonde_sfc obs:
+   ! [4] sonde_sfc obs:
 
    if (iv%info(sound)%plocal(iv%time) - iv%info(sound)%plocal(iv%time-1) > 0) then
 
@@ -132,8 +132,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, iv%info(sonde_sfc)%id(n), &  ! Station
                  iv%info(sonde_sfc)%lat(1,n), &       ! Latitude
                  iv%info(sonde_sfc)%lon(1,n)          ! Longitude
-         write(ounit,'(E22.13,5(E22.13,i8,E22.13))')&
-                 iv % sonde_sfc(n) % h, &
+         write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
+                 iv%sonde_sfc(n) % h, &
                  iv%sonde_sfc(n)%u, &! O-B u
                  iv%sonde_sfc(n)%v, &! O-B v
                  iv%sonde_sfc(n)%t, &! O-B t
@@ -143,7 +143,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [5] Transfer sound obs:
+   ! [5] sound obs:
 
    if (iv%info(sound)%plocal(iv%time) - iv%info(sound)%plocal(iv%time-1) > 0) then
 
@@ -163,7 +163,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(sound)%lat(1,n), &       ! Latitude
                  iv%info(sound)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(sound)%levels(n)
-            write(ounit,'(2E22.13,4(E22.13,i8,E22.13))')&
+            write(ounit,'(2E22.13,4(E22.13,i8,3E22.13))')&
                      iv%sound(n)%h(k), &
                      iv%sound(n)%p(k), &             ! Obs Pressure
                      iv%sound(n)%u(k), &! O-B u
@@ -175,7 +175,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [6] Transfer buoy obs:
+   ! [6] buoy obs:
 
    if (iv%info(buoy)%plocal(iv%time) - iv%info(buoy)%plocal(iv%time-1) > 0) then
 
@@ -194,8 +194,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, iv%info(buoy)%id(n), &  ! Station
                  iv%info(buoy)%lat(1,n), &       ! Latitude
                  iv%info(buoy)%lon(1,n)          ! Longitude
-         write(ounit,'(E22.13,5(E22.13,i8,E22.13))')&
-                 iv % buoy(n) % h, &
+         write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
+                 iv%buoy(n)%h, &
                  iv%buoy(n)%u, &! O-B u
                  iv%buoy(n)%v, &! O-B v
                  iv%buoy(n)%t, &! O-B t
@@ -205,7 +205,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [7] Transfer Geo AMVs obs:
+   ! [7] Geo AMVs obs:
 
    if (iv%info(geoamv)%plocal(iv%time) - iv%info(geoamv)%plocal(iv%time-1) > 0) then
 
@@ -225,8 +225,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(geoamv)%lat(1,n), &       ! Latitude
                  iv%info(geoamv)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(geoamv)%levels(n)
-            write(ounit,'(E22.13,2(E22.13,i8,E22.13))')&
-                      iv % geoamv(n) % p(k), &                ! Obs Pressure
+            write(ounit,'(E22.13,2(E22.13,i8,3E22.13))')&
+                      iv%geoamv(n)%p(k), &                ! Obs Pressure
                       iv%geoamv(n)%u(k), &! O-B u
                       iv%geoamv(n)%v(k)
          enddo
@@ -234,7 +234,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [8] Transfer gpspw obs:
+   ! [8] gpspw obs:
 
    if (iv%info(gpspw)%plocal(iv%time) - iv%info(gpspw)%plocal(iv%time-1) > 0) then
 
@@ -259,7 +259,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [9] Transfer SSM/I obs:
+   ! [9] SSM/I obs:
 
    if (iv%info(ssmi_rv)%plocal(iv%time) - iv%info(ssmi_rv)%plocal(iv%time-1) > 0) then
 
@@ -278,14 +278,14 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, &  ! Station
                  iv%info(ssmi_rv)%lat(1,n), &       ! Latitude
                  iv%info(ssmi_rv)%lon(1,n)          ! Longitude
-         write(ounit,'(2(E22.13,i8,E22.13))')&
+         write(ounit,'(2(E22.13,i8,3E22.13))')&
                  iv%ssmi_rv(n)%speed, & ! O-B speed
                  iv%ssmi_rv(n)%tpw ! O-BA tpw
       end do
       close (ounit)
    end if
 
-   ! [10] Transfer airep obs:
+   ! [10] airep obs:
 
    if (iv%info(airep)%plocal(iv%time) - iv%info(airep)%plocal(iv%time-1) > 0) then
 
@@ -305,9 +305,9 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(airep)%lat(1,n), &       ! Latitude
                  iv%info(airep)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(airep)%levels(n)
-            write(ounit,'(2E22.13,3(E22.13,i8,E22.13))')&
-                     iv % airep(n) % h(k), &
-                     iv % airep(n) % p(k), &             ! Obs pressure
+            write(ounit,'(2E22.13,3(E22.13,i8,3E22.13))')&
+                     iv%airep(n)%h(k), &
+                     iv%airep(n)%p(k), &             ! Obs pressure
                      iv%airep(n)%u(k), &! O-B u
                      iv%airep(n)%v(k), &! O-B v
                      iv%airep(n)%t(k)
@@ -316,7 +316,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [11] Transfer Polar AMVs obs:
+   ! [11] Polar AMVs obs:
 
    if (iv%info(polaramv)%plocal(iv%time) - iv%info(polaramv)%plocal(iv%time-1) > 0) then
 
@@ -336,8 +336,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(polaramv)%lat(1,n), &       ! Latitude
                  iv%info(polaramv)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(polaramv)%levels(n)
-            write(ounit,'(E22.13,2(E22.13,i8,E22.13))')&
-                      iv % polaramv(n) % p(k), &                ! Obs Pressure
+            write(ounit,'(E22.13,2(E22.13,i8,3E22.13))')&
+                      iv%polaramv(n)%p(k), &                ! Obs Pressure
                       iv%polaramv(n)%u(k), &! O-B u
                       iv%polaramv(n)%v(k)
          enddo
@@ -345,7 +345,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [12] Transfer pilot obs:
+   ! [12] pilot obs:
 
    if (iv%info(pilot)%plocal(iv%time) - iv%info(pilot)%plocal(iv%time-1) > 0) then
 
@@ -365,7 +365,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(pilot)%lat(1,n), &       ! Latitude
                  iv%info(pilot)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(pilot)%levels(n)
-            write(ounit,'(E22.13,2(E22.13,i8,E22.13))')&
+            write(ounit,'(E22.13,2(E22.13,i8,3E22.13))')&
                       iv%pilot(n)%p(k), &                ! Obs Pressure
                       iv%pilot(n)%u(k), &! O-B u
                       iv%pilot(n)%v(k)
@@ -374,7 +374,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [13] Transfer ssmi_tb obs:
+   ! [13] ssmi_tb obs:
 
    if (iv%info(ssmi_tb)%plocal(iv%time) - iv%info(ssmi_tb)%plocal(iv%time-1) > 0) then
 
@@ -393,7 +393,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, &  ! Station
                  iv%info(ssmi_tb)%lat(1,n), &       ! Latitude
                  iv%info(ssmi_tb)%lon(1,n)          ! Longitude
-         write(ounit,'(7(E22.13,i8,E22.13))')&
+         write(ounit,'(7(E22.13,i8,3E22.13))')&
                  iv%ssmi_tb(n)%tb19h, & ! O-B Tb19h
                  iv%ssmi_tb(n)%tb19v, & ! O-B Tb19v
                  iv%ssmi_tb(n)%tb22v, & ! O-B Tb22v
@@ -405,7 +405,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [14] Transfer satem obs:
+   ! [14] satem obs:
 
    if (iv%info(satem)%plocal(iv%time) - iv%info(satem)%plocal(iv%time-1) > 0) then
 
@@ -425,15 +425,15 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(satem)%lat(1,n), &       ! Latitude
                  iv%info(satem)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(satem)%levels(n)
-            write(ounit,'(E22.13,(E22.13,i8,E22.13))')&
-                 iv % satem(n) % p(k), &             ! Obs Pressure
+            write(ounit,'(E22.13,(E22.13,i8,3E22.13))')&
+                 iv%satem(n)%p(k), &             ! Obs Pressure
                  iv%satem(n)%thickness(k)
          enddo
       end do
       close (ounit)
    end if
 
-   ! [15] Transfer ssmt1 obs:
+   ! [15] ssmt1 obs:
 
    if (iv%info(ssmt1)%plocal(iv%time) - iv%info(ssmt1)%plocal(iv%time-1) > 0) then
 
@@ -453,15 +453,15 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(ssmt1)%lat(1,n), &       ! Latitude
                  iv%info(ssmt1)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(ssmt1)%levels(n)
-            write(ounit,'(E22.13,(E22.13,i8,E22.13))')&
-                  iv % ssmt1(n) % h(k), &             ! Obs height
+            write(ounit,'(E22.13,(E22.13,i8,3E22.13))')&
+                  iv%ssmt1(n)%h(k), &             ! Obs height
                   iv%ssmt1(n)%t(k)
          enddo
       end do
       close (ounit)
    end if
 
-   ! [16] Transfer ssmt2 obs:
+   ! [16] ssmt2 obs:
 
    if (iv%info(ssmt2)%plocal(iv%time) - iv%info(ssmt2)%plocal(iv%time-1) > 0) then
 
@@ -481,15 +481,15 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(ssmt2)%lat(1,n), &       ! Latitude
                  iv%info(ssmt2)%lon(1,n)           ! Longitude
          do k = 1 , iv%info(ssmt2)%levels(n)
-            write(ounit,'(E22.13,(E22.13,i8,E22.13))')&
-                  iv % ssmt2(n) % h(k), &             ! Obs height
+            write(ounit,'(E22.13,(E22.13,i8,3E22.13))')&
+                  iv%ssmt2(n)%h(k), &             ! Obs height
                   iv%ssmt2(n)%rh(k)
          enddo
       end do
       close (ounit)
    end if
 
-   ! [17] Transfer scatterometer obs:
+   ! [17] scatterometer obs:
 
    if (iv%info(qscat)%plocal(iv%time) - iv%info(qscat)%plocal(iv%time-1) > 0) then
 
@@ -508,15 +508,15 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, iv%info(qscat)%id(n), &  ! Station
                  iv%info(qscat)%lat(1,n), &       ! Latitude
                  iv%info(qscat)%lon(1,n)          ! Longitude
-         write(ounit,'(E22.13,2(E22.13,i8,E22.13))')&
-                   iv % qscat(n) % h, &                ! Obs height
+         write(ounit,'(E22.13,2(E22.13,i8,3E22.13))')&
+                   iv%qscat(n)%h, &                ! Obs height
                    iv%qscat(n)%u, &! O-B u
                    iv%qscat(n)%v   ! O-B v
       end do
       close (ounit)
    end if
 
-   ! [18] Transfer profiler obs:
+   ! [18] profiler obs:
 
    if (iv%info(profiler)%plocal(iv%time) - iv%info(profiler)%plocal(iv%time-1) > 0) then
 
@@ -536,8 +536,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(profiler)%lat(1,n), &       ! Latitude
                  iv%info(profiler)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(profiler)%levels(n)
-            write(ounit,'(E22.13,2(E22.13,i8,E22.13))')&
-                     iv % profiler(n) % p(k), &             ! Obs Pressure
+            write(ounit,'(E22.13,2(E22.13,i8,3E22.13))')&
+                     iv%profiler(n)%p(k), &             ! Obs Pressure
                      iv%profiler(n)%u(k), &! O-B u
                      iv%profiler(n)%v(k) ! O-B v
          enddo
@@ -545,7 +545,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [19] Transfer TC bogus obs:
+   ! [19] TC bogus obs:
 
    if (iv%info(bogus)%plocal(iv%time) - iv%info(bogus)%plocal(iv%time-1) > 0) then
 
@@ -564,12 +564,12 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, iv%info(bogus)%levels(n), iv%info(bogus)%id(n), &  ! Station
                  iv%info(bogus)%lat(1,n), &     ! Latitude
                  iv%info(bogus)%lon(1,n)        ! Longitude
-         write(ounit,'(E22.13,i8,E22.13)')&
+         write(ounit,'(E22.13,i8,3E22.13)')&
                  iv%bogus(n)%slp    ! O-B p
          do k = 1 , iv%info(bogus)%levels(n)
-            write(ounit,'(2E22.13,4(E22.13,i8,E22.13))')&
-                     iv % bogus(n) % h(k), &
-                     iv % bogus(n) % p(k), &             ! Obs Pressure
+            write(ounit,'(2E22.13,4(E22.13,i8,3E22.13))')&
+                     iv%bogus(n)%h(k), &
+                     iv%bogus(n)%p(k), &             ! Obs Pressure
                      iv%bogus(n)%u(k), &! O-B u
                      iv%bogus(n)%v(k), &! O-B v
                      iv%bogus(n)%t(k), &! O-B t
@@ -579,7 +579,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [20] Transfer AIRS retrievals:
+   ! [20] AIRS retrievals:
 
    if (iv%info(airsr)%plocal(iv%time) - iv%info(airsr)%plocal(iv%time-1) > 0) then
 
@@ -599,8 +599,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(airsr)%lat(1,n), &    ! Latitude
                  iv%info(airsr)%lon(1,n)       ! Longitude
          do k = 1 , iv%info(airsr)%levels(n)
-            write(ounit,'(E22.13,2(E22.13,i8,E22.13))')&
-                     iv % airsr(n) % p(k), &             ! Obs Pressure
+            write(ounit,'(E22.13,2(E22.13,i8,3E22.13))')&
+                     iv%airsr(n)%p(k), &             ! Obs Pressure
                      iv%airsr(n)%t(k), &! O-B t
                      iv%airsr(n)%q(k)   ! O-B q
          enddo
@@ -608,7 +608,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [21] Transfer gpsref obs:
+   ! [21] gpsref obs:
 
    if (iv%info(gpsref)%plocal(iv%time) - iv%info(gpsref)%plocal(iv%time-1) > 0) then
 
@@ -628,8 +628,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(gpsref)%lat(1,n), &    ! Latitude
                  iv%info(gpsref)%lon(1,n)       ! Longitude
          do k = 1 , iv%info(gpsref)%levels(n)
-            write(ounit,'(E22.13,(E22.13,i8,E22.13))')&
-                     iv % gpsref(n) % h(k), &             ! Obs Height
+            write(ounit,'(E22.13,(E22.13,i8,3E22.13))')&
+                     iv%gpsref(n)%h(k), &             ! Obs Height
                      iv%gpsref(n)%ref(k) ! O-B ref
          enddo
       end do

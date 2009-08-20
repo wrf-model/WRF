@@ -573,7 +573,7 @@ CONTAINS
          vgsa
    REAL, DIMENSION( its:ite, jts:jte ),                       &
          INTENT(INOUT ) ::                                             &
-         aer_res, rmol, pbl, znt
+         aer_res
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(INOUT ) ::                                             &
@@ -590,7 +590,7 @@ CONTAINS
                                                     rho_phy
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,    &
           INTENT(IN   ) ::                                      &
-                                                     ust
+               ust,rmol, pbl, znt
       REAL,      INTENT(IN   ) ::                               &
                              dtstep
                                                                                                
@@ -787,6 +787,9 @@ CONTAINS
       BLKTA(BLKSIZE)   = T(K)         ! temperature in K
       USTAR(BLKSIZE) = max(1.e-1,UST(i,j))
       WSTAR(BLKSIZE) = 0.
+      pblh(blksize) = pbl(i,j)
+      zntt(blksize) = znt(i,j)
+      rmolm(blksize)= rmol(i,j)
       convfac2=1./alt(i,k,j)
       BLKDENS(BLKSIZE)=convfac2
       cblk(1,vsulf) = max(epsilc,vsulf_in)
@@ -1485,7 +1488,7 @@ END SUBROUTINE sorgam_depdriver
         orgbio2rat,orgbio3rat,orgbio4rat,drog,ldrog,ncv,nacv,dgnuc,dgacc, &
         fconcn,fconca,fconcn_org,fconca_org,dmdt,dndt,deltaso4a,cgrn3,cgra3)
 
-        if(dndt(1).lt.-10.)print*,'dndt in aeroproc',dndt
+!       if(dndt(1).lt.-10.)print*,'dndt in aeroproc',dndt
         
 ! *** advance forward in time  DT seconds:
       CALL aerostep(layer,blksize,nspcsda,numcells,cblk,dt,so4rat,orgaro1rat, &
@@ -4434,7 +4437,7 @@ END SUBROUTINE sorgam_depdriver
 
 
 !       CALL klpnuc(blkta(1),blkrh(1),vapor1,dndt(1),dmdt(1),so4rat(1))
-        if(dndt(1).lt.-10.)print *,'after klpnuc',dndt(1),dmdt(1)
+!       if(dndt(1).lt.-10.)print *,'after klpnuc',dndt(1),dmdt(1)
         IF (dndt(1)==0.) dmdt(1) = 0.
         IF (dmdt(1)==0.) dndt(1) = 0.
 !       IF (firstime) THEN
@@ -6950,11 +6953,11 @@ END SUBROUTINE VDVG
       PARAMETER( BHAT =  1.246 ) ! Constant from Binkowski-Shankar approx to Cunningham slip correction.
       REAL COLCTR_BIGD,COLCTR_SMALD
       PARAMETER( COLCTR_BIGD=2.E-3,COLCTR_SMALD=20.E-6)  ! Collector diameters in Stokes number and Interception Efficiency (Needleleaf Forest)
-      REAL SUM0, SUM3, DQ, KNQ, CUNQ, VSEDQ, SCQ, STQ, RSURFQ
+      REAL SUM0, SUM3, DQ, KNQ, CUNQ, VSEDQ, SCQ, STQ, RSURFQ, vdplim
       REAL Eff_dif, Eff_imp, Eff_int, RBcor
       INTEGER ISTOPvd0,IdoWesCor
       PARAMETER (ISTOPvd0 = 0)  ! ISTOPvd0 = 1 means dont call VDVG, particle dep. velocities are set = 0; ISTOPvd0 = 0 means do depvel calcs.
-      PARAMETER (IdoWesCor = 1) ! IdoWesCor = 1 means do Wesley (85) convective correction to PM dry dep velocities; 0 means dont do correction
+      PARAMETER (IdoWesCor = 0) ! IdoWesCor = 1 means do Wesley (85) convective correction to PM dry dep velocities; 0 means dont do correction
       IF (ISTOPvd0.EQ.1)THEN
       RETURN
       ENDIF
@@ -6986,6 +6989,7 @@ END SUBROUTINE VDVG
          UTSCALE=1.+(-300.*RMOLM(LCELL))**0.6667
          ENDIF
          ENDIF
+        ENDIF   ! end of (IdoWesCor.EQ.1) test
          UTSCALE = USTAR(LCELL)*UTSCALE
       IF(iprnt.eq.1)THEN
       print *,'NGAUSdv,xxlsga,USTAR,UTSCALE'
@@ -6993,7 +6997,6 @@ END SUBROUTINE VDVG
       print *,'DCONST2,PDENSA,DGACC,GRAV,AMU'
       print *,DCONST2,PDENSA(LCELL),DGACC(LCELL),GRAV,AMU(LCELL)
       endif
-        ENDIF   ! end of (IdoWesCor.EQ.1) test
       
 ! *** nuclei mode 
       
@@ -7011,7 +7014,15 @@ END SUBROUTINE VDVG
 !       Eff_int=0.3*DQ/(COLCTR_SMALD+DQ) ! Slinn (1982) Interception term, 0.3 prefac insures .2 cm/s at .2 micron diam.
         Eff_int=(0.00116+0.0061*ZNTT(LCELL))*DQ/1.414E-7 ! McKeen(2008) Intercptn trm, val of .00421 @ ustr=0.475, diam=.1414 micrn, stable, needleleaf evergreen
         RBcor=1. ! Rebound correction factor
-        RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+        vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
+!       vdplim=.002*UTSCALE
+        vdplim=min(vdplim,.02)
+        RSURFQ=RA(LCELL)+1./vdplim
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!
+!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!
+!       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
         SUM3=SUM3+WGAUS(N)*(VSEDQ + 1./RSURFQ)*DQ**3  ! Quadrature sum for 3rd moment
         ENDDO
@@ -7034,7 +7045,14 @@ END SUBROUTINE VDVG
 !       Eff_int=0.3*DQ/(COLCTR_SMALD+DQ) ! Slinn (1982) Interception term, 0.3 prefac insures .2 cm/s at .2 micron diam.
         Eff_int=(0.00116+0.0061*ZNTT(LCELL))*DQ/1.414E-7 ! McKeen(2008) Intercptn term, val of .00421 @ ustr=0.475, diam=.1414 micrn, stable, needleleaf evergreen
         RBcor=1. ! Rebound correction factor
-        RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+        vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
+        vdplim=min(vdplim,.02)
+        RSURFQ=RA(LCELL)+1./vdplim
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!
+!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!
+!       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
         SUM3=SUM3+WGAUS(N)*(VSEDQ + 1./RSURFQ)*DQ**3  ! Quadrature sum for 3rd moment
       IF(iprnt.eq.1)THEN
@@ -7064,7 +7082,14 @@ END SUBROUTINE VDVG
         Eff_int=(0.00116+0.0061*ZNTT(LCELL))*DQ/1.414E-7 ! McKeen(2008) Intercptn term, val of .00421 @ ustr=0.475, diam=.1414 micrn, stable, needleleaf evergreen
         EFF_int=min(1.,EFF_int)
         RBcor=exp(-2.0*(STQ**0.5)) ! Rebound correction factor used in Slinn (1982)
-        RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+        vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
+        vdplim=min(vdplim,.02)
+        RSURFQ=RA(LCELL)+1./vdplim
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!
+!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!
+!       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
         SUM3=SUM3+WGAUS(N)*(VSEDQ + 1./RSURFQ)*DQ**3  ! Quadrature sum for 3rd moment
         ENDDO
@@ -7269,6 +7294,22 @@ END SUBROUTINE VDVG_2
         pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
         pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
 
+!SAM 10/08 Add in Gaussian quadrature points and weights - Use 7 points = NGAUSdv
+
+        Y_GQ(1)=-2.651961356835233
+        WGAUS(1)=0.0009717812450995
+        Y_GQ(2)=-1.673551628767471
+        WGAUS(2)=0.05451558281913
+        Y_GQ(3)=-0.816287882858965
+        WGAUS(3)=0.4256072526101
+        Y_GQ(4)=-0.0
+        WGAUS(4)=0.8102646175568
+        Y_GQ(5)=0.816287882858965
+        WGAUS(5)=WGAUS(3)
+        Y_GQ(6)=1.673551628767471
+        WGAUS(6)=WGAUS(2)
+        Y_GQ(7)=2.651961356835233
+        WGAUS(7)=WGAUS(1)
 !
 !
 !  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
@@ -7348,22 +7389,6 @@ END SUBROUTINE VDVG_2
       enddo
       enddo
 
-!SAM 10/08 Add in Gaussian quadrature points and weights - Use 7 points = NGAUSdv
-
-        Y_GQ(1)=-2.651961356835233
-        WGAUS(1)=0.0009717812450995
-        Y_GQ(2)=-1.673551628767471
-        WGAUS(2)=0.05451558281913
-        Y_GQ(3)=-0.816287882858965
-        WGAUS(3)=0.4256072526101
-        Y_GQ(4)=-0.0
-        WGAUS(4)=0.8102646175568
-        Y_GQ(5)=0.816287882858965
-        WGAUS(5)=WGAUS(3)
-        Y_GQ(6)=1.673551628767471
-        WGAUS(6)=WGAUS(2)
-        Y_GQ(7)=2.651961356835233
-        WGAUS(7)=WGAUS(1)
 
     return
     END SUBROUTINE aerosols_sorgam_init

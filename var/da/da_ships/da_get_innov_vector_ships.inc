@@ -73,16 +73,6 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
                if (iv % ships(n) % h < v_h(kts)) then
                   iv%info(ships)%zk(:,n) = 1.0+1.0e-6
                   call da_obs_sfc_correction(iv%info(ships), iv%ships(n), n, grid%xb)
-
-                  ! To keep the original "ob" with no change for multiple 
-                  ! outer-loops use:
-
-                  ! ob%ships(n)%p = iv%ships(n)%p%inv
-                  ! ob%ships(n)%t = iv%ships(n)%t%inv
-                  ! ob%ships(n)%q = iv%ships(n)%q%inv
-                  ! ob%ships(n)%u = iv%ships(n)%u%inv
-                  ! ob%ships(n)%v = iv%ships(n)%v%inv
-
                else
                   call da_to_zk(iv % ships(n) % h, v_h, v_interp_h, iv%info(ships)%zk(1,n))
                end if
@@ -97,7 +87,7 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
 
             if (iv%info(ships)%zk(1,n) < 0.0 .and.  .not.anal_type_verify) then
                iv % ships(n) % p % inv = missing_r
-               iv % ships(n) % p % qc  = missing
+               iv % ships(n) % p % qc  = missing_data
                iv%info(ships)%zk(:,n) = 1.0+1.0e-6
             end if
          end if
@@ -108,11 +98,11 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
       if (.not.anal_type_verify) then
          do n=iv%info(ships)%n1,iv%info(ships)%n2
             if (iv%info(ships)%zk(1,n) < 0.0) then
-               iv % ships(n) % u % qc = missing
-               iv % ships(n) % v % qc = missing
-               iv % ships(n) % t % qc = missing
-               iv % ships(n) % q % qc = missing
-               iv % ships(n) % p % qc = missing
+               iv % ships(n) % u % qc = missing_data
+               iv % ships(n) % v % qc = missing_data
+               iv % ships(n) % t % qc = missing_data
+               iv % ships(n) % q % qc = missing_data
+               iv % ships(n) % p % qc = missing_data
             end if
          end do
       end if
@@ -129,8 +119,8 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_3d (grid%xb%q, iv%info(ships), model_q)
       call da_interp_lin_3d (grid%xb%p, iv%info(ships), model_p)
 
-   else if (sfc_assi_options == 2) then
-      ! Surface data assmiilation approca 2
+   else if (sfc_assi_options == sfc_assi_options_2) then
+      ! Surface data assimilation approach 2
 
       ! 1.2.1 Surface assmiilation approach 2(10-m u, v, 2-m t, q, and 
       ! sfc_p)
@@ -142,6 +132,12 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_2d (grid%xb%psfc, iv%info(ships), 1, model_p)
 
       do n=iv%info(ships)%n1,iv%info(ships)%n2
+         iv%ships(n)%p%inv = ob%ships(n)%p
+         iv%ships(n)%t%inv = ob%ships(n)%t
+         iv%ships(n)%q%inv = ob%ships(n)%q
+         iv%ships(n)%u%inv = ob%ships(n)%u
+         iv%ships(n)%v%inv = ob%ships(n)%v
+
          if (iv%ships(n)%p%qc >= 0) then
 
             ! model surface p, t, q, h at observed site:

@@ -75,8 +75,8 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
       do n=iv%info(polaramv)%n1,iv%info(polaramv)%n2
          do k=1, iv%info(polaramv)%levels(n)
             if (iv%info(polaramv)%zk(k,n) < 0.0) then
-               iv%polaramv(n)%u(k)%qc = missing
-               iv%polaramv(n)%v(k)%qc = missing
+               iv%polaramv(n)%u(k)%qc = missing_data
+               iv%polaramv(n)%v(k)%qc = missing_data
             end if
          end do
       end do

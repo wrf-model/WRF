@@ -1,0 +1,69 @@
+
+# Available characters for dimspec: 0123456789@%+=|?.!&[{}]
+#<Table>  <Dim> <Order> <How defined>                <Coord-axis>  <Dimname in Datasets>
+
+dimspec    i       1     standard_domain                   x          west_east
+
+# Specific dimensional order for EM and NMM
+
+ifdef EM_CORE=1
+
+ifdef DA_CORE=0
+dimspec    j       3     standard_domain                   y     south_north
+dimspec    k       2     standard_domain                   z     bottom_top
+endif
+
+ifdef DA_CORE=1
+dimspec    j       2     standard_domain                   y     south_north
+dimspec    k       3     standard_domain                   z     bottom_top
+dimspec    9       4     namelist=ensdim_alpha             c     alpha ensemble dimension
+endif
+
+dimspec    lin     2     namelist=num_metgrid_soil_levels  z     num_metgrid_soil_levels
+dimspec    |       2     namelist=num_force_layers         z     force_layers
+dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
+dimspec    obs     -     namelist=max_obs                  c     max_obs
+dimspec    h       -     namelist=nobs_err_flds            c     nobs_err_flds
+dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
+dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
+dimspec    &       2     namelist=lagday                   z     lagday
+
+endif
+
+ifdef NMM_CORE=1
+dimspec    j       2     standard_domain                   y     south_north
+dimspec    k       3     standard_domain                   z     bottom_top
+#definitions for NMM slab arrays
+dimspec    q       -     constant=2600                     c     # a little crude right now
+dimspec    r       -     constant=2000                     c     # a little crude right now
+dimspec    z       -     constant=(-3:3)                   c
+dimspec    n       -     constant=(0:6)                    c
+endif
+
+dimspec    l       2     namelist=num_soil_layers          z     soil_layers
+dimspec    ulay    2     namelist=num_urban_layers         z     urban_layers
+dimspec    u       2     namelist=num_land_cat             z     land_cat
+dimspec    s       2     namelist=num_soil_cat             z     soil_cat
+dimspec    p       -     constant=7501                     c     microphysics_rstrt_state
+dimspec    w       -     namelist=spec_bdy_width           c     spec_bdy_width
+dimspec    e       3     namelist=ensdim                   z     ensemble dimension
+dimspec    g       2     namelist=num_metgrid_levels       z     num_metgrid_levels
+dimspec    m       2     constant=12                       z     months_per_year
+dimspec    a       -     namelist=cam_abs_dim1             c     cam_abs_dim1
+dimspec    c       -     namelist=cam_abs_dim2             z     cam_abs_dim2
+dimspec    ls      2     namelist=levsiz                   z     levsiz
+dimspec    d       2     namelist=paerlev                  z     paerlev
+dimspec    ?       -     namelist=ts_buf_size              c     ts_buf_size
+dimspec    !       -     namelist=max_ts_locs              c     max_ts_locs
+dimspec    v       -     constant=1                        z     one
+dimspec    =       -     constant=4                        c     num_bands
+
+# Dimensions required only for Chemistry
+
+ifdef BUILD_CHEM=1
+dimspec    o       3     namelist=ne_area                  z     bio_emissions_dimension
+dimspec    +       2     namelist=kemit                    z     emissions_zdim
+dimspec    nm      2     namelist=nmegan                   z     megan_species
+dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
+dimspec    .       3     namelist=errosion_dim             z     dust_errosion_dimension
+endif

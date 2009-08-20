@@ -3,7 +3,7 @@
 MODULE module_microphysics_zero_out
 CONTAINS
 
-SUBROUTINE microphysics_zero_out (                                       &
+SUBROUTINE microphysics_zero_outa (                                      &
                        moist_new , n_moist                               &
                       ,config_flags                                      &
                       ,ids,ide, jds,jde, kds,kde                         &
@@ -73,6 +73,33 @@ SUBROUTINE microphysics_zero_out (                                       &
          END IF
       ENDDO
    END IF
+END SUBROUTINE microphysics_zero_outa
+
+SUBROUTINE microphysics_zero_outb (                                      &
+                       moist_new , n_moist                               &
+                      ,config_flags                                      &
+                      ,ids,ide, jds,jde, kds,kde                         &
+                      ,ims,ime, jms,jme, kms,kme                         &
+                      ,its,ite, jts,jte, kts,kte                         )
+
+
+   USE module_state_description
+   USE module_configure
+   USE module_wrf_error
+
+   IMPLICIT NONE
+   TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
+   INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
+   INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
+   INTEGER,      INTENT(IN   )    ::       its,ite, jts,jte, kts,kte
+
+   INTEGER,      INTENT(IN   )    :: n_moist
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ) :: moist_new
+
+! Local
+
+   INTEGER i,j,k,n
 
    ! Make sure that the boundary is .GE. 0 if the config_flags%mp_zero_out option is selected (1 or 2)
    ! Just do the outer row/col, no interior points.
@@ -120,7 +147,7 @@ SUBROUTINE microphysics_zero_out (                                       &
 
    RETURN
 
-   END SUBROUTINE microphysics_zero_out
+   END SUBROUTINE microphysics_zero_outb
 
 END MODULE module_microphysics_zero_out
 

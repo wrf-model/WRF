@@ -332,7 +332,7 @@ CONTAINS
    !$OMP END PARALLEL DO
 
 !
-   IF( config_flags%grid_fdda == 1 ) THEN
+   IF( config_flags%grid_fdda /= 0 ) THEN
    fdda_select: SELECT CASE(config_flags%grid_fdda)
 
       CASE (PSUFDDAGD)
@@ -342,9 +342,13 @@ CONTAINS
        DO ij = 1 , num_tiles
         CALL wrf_debug(100,'in PSU FDDA scheme')
 
-           IF( config_flags%bl_pbl_physics == 2 ) THEN
-             DO i = ims, ime
-             DO j = jms, jme
+           IF( config_flags%bl_pbl_physics /= 1 &
+         .AND. config_flags%bl_pbl_physics /= 5 &
+         .AND. config_flags%bl_pbl_physics /= 6 &
+         .AND. config_flags%bl_pbl_physics /= 7 &
+         .AND. config_flags%bl_pbl_physics /= 99 ) THEN
+             DO j=MAX(j_start(ij)-1,jds),j_end(ij)
+             DO i=MAX(i_start(ij)-1,ids),i_end(ij)
                IF( pblh(i,j) > z_at_w(i,1,j)-ht(i,j) ) THEN
                  regime(i,j) = 4.0
                ELSE

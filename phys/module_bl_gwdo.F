@@ -1,4 +1,4 @@
-!wrf:model_layer:physics
+!WRf:model_layer:physics
 !
 !
 !
@@ -20,6 +20,31 @@ contains
 !-------------------------------------------------------------------
       implicit none
 !-------------------------------------------------------------------
+!  
+!  this code handles the time tendencies of u v due to the effect of  mountain 
+!  induced gravity wave drag from sub-grid scale orography. this routine 
+!  not only treats the traditional upper-level wave breaking due to mountain 
+!  variance (alpert 1988), but also the enhanced lower-tropospheric wave 
+!  breaking due to mountain convexity and asymmetry (kim and arakawa 1995). 
+!  thus, in addition to the terrain height data in a model grid gox, 
+!  additional 10-2d topographic statistics files are needed, including 
+!  orographic standard  deviation (var), convexity (oc1), asymmetry (oa4) 
+!  and ol (ol4). these data sets are prepared based on the 30 sec usgs orography
+!  hong (1999). the current scheme was implmented as in hong et al.(2008)
+!
+!  coded by song-you hong and young-joon kim and implemented by song-you hong
+!
+!     references:
+!        hong et al. (2008), wea. and forecasting
+!        kim and arakawa (1995), j. atmos. sci.
+!        alpet et al. (1988), NWP conference.
+!        hong (1999), NCEP office note 424.
+!
+!     notice : comparible or lower resolution orography files than model resolution
+!              are desirable in preprocess (wps) to prevent weakening of the drag  
+!
+!------------------------------------------------------------------------------
+!                                                                       
 !-- u3d         3d u-velocity interpolated to theta points (m/s)
 !-- v3d         3d v-velocity interpolated to theta points (m/s)
 !-- t3d         temperature (k)
@@ -104,7 +129,7 @@ contains
    do j = jts,jte
       do k = kts,kte
         do i = its,ite
-           delprsi(i,k) = p3di(i,k,j)-p3di(i,k+1,j)
+          delprsi(i,k) = p3di(i,k,j)-p3di(i,k+1,j)
         enddo
       enddo
         do i = its,ite
@@ -120,8 +145,8 @@ contains
       call gwdo2d(dudt=rublten(ims,kms,j),dvdt=rvblten(ims,kms,j)              &
               ,u1=u3d(ims,kms,j),v1=v3d(ims,kms,j)                             &
               ,t1=t3d(ims,kms,j),q1=qv3d(ims,kms,j)                            &
-              ,prsi=p3d(ims,kms,j),del=delprsi(ims,kms)                        &
-              ,prsl=p3di(ims,kms,j),prslk=pi3d(ims,kms,j)                      &
+              ,prsi=p3di(ims,kms,j),del=delprsi(its,kts)                       &
+              ,prsl=p3d(ims,kms,j),prslk=pi3d(ims,kms,j)                       &
               ,zl=z(ims,kms,j),rcl=1.0                                         &
               ,dusfc=dusfcg(ims,j),dvsfc=dvsfcg(ims,j)                         &
               ,var=var2d(ims,j),oc1=oc12d(ims,j)                               &
@@ -133,6 +158,7 @@ contains
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
    enddo
+!
 !
    end subroutine gwdo
 !
@@ -149,28 +175,6 @@ contains
 !-------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------
-!  
-!  save
-!  
-!  this code handles the time tendencies of u v due to the effect of  mountain 
-!  induced gravity wave drag from sub-grid scale orography. this routine 
-!  not only treats the traditional upper-level wave breaking due to mountain 
-!  variance (alpert 1988), but also the enhanced lower-tropospheric wave 
-!  breaking due to mountain convexity and asymmetry (kim and arakawa 1995). 
-!  thus, in addition to the terrain height data in a model grid gox, 
-!  additional 10-2d topographic statistics files are needed, including 
-!  orographic standard  deviation (var), convexity (oc1), asymmetry (oa4) 
-!  and ol (ol4). the current scheme follows the version in hong et al.(2008)
-!
-!  implemented by song-you hong, in february 2008
-!
-!     references:
-!        hong et al. (2008), wea. and forecasting
-!        kim and arakawa (1995), j. atmos. sci.
-!        alpet et al. (1988), NWP conference.
-!
-!------------------------------------------------------------------------------_
-!                                                                       
 !  input                                                                
 !        dudt (ims:ime,kms:kme)  non-lin tendency for u wind component               
 !        dvdt (ims:ime,kms:kme)  non-lin tendency for v wind component               
@@ -182,7 +186,7 @@ contains
 !        rcl     a scaling factor = reciprocal of square of cos(lat)
 !                for mrf gsm.  rcl=1 if u1 and v1 are wind components.
 !        deltim  time step    secs                                       
-!        del(kms:kme)  positive increment of pressure across layer (cb)             
+!        del(kts:kte)  positive increment of pressure across layer (pa)             
 !                                                                       
 !  output                                                               
 !        dudt, dvdt    as augmented by tendency due to gwdps              
@@ -268,7 +272,8 @@ contains
    lcap   = kte                                                         
    lcapp1 = lcap + 1                                                 
    fdir   = mdir / (2.0*pi)
-!                                                                       
+!
+!
 !!!!!!! cleff (subgrid mountain scale ) is highly tunable parameter
 !!!!!!! the bigger (smaller) value produce weaker (stronger) wave drag
 !
@@ -276,6 +281,8 @@ contains
 !
 ! initialize!!
 !
+   dtaux = 0.0
+   dtauy = 0.0
    do k = kts,kte
      do i = its,ite
        usqj(i,k) = 0.0
@@ -295,7 +302,7 @@ contains
      do i = its,ite
        vtj(i,k)  = t1(i,k)  * (1.+fv*q1(i,k))
        vtk(i,k)  = vtj(i,k) / prslk(i,k)
-       ro(i,k)   = 1./rd * prsl(i,k) / vtj(i,k) ! density tons/m**3
+       ro(i,k)   = 1./rd * prsl(i,k) / vtj(i,k) ! density kg/m**3
      enddo
    enddo
 !
@@ -373,7 +380,7 @@ contains
    enddo
 !                                                                       
 !---  saving richardson number in usqj for migwdi                       
-!                                                                       
+!
    do k = kts,kte-1                                                     
      do i = its,ite                                                     
        ti        = 2.0 / (t1(i,k)+t1(i,k+1))                                
@@ -407,7 +414,7 @@ contains
 !---- compute low level averages                                        
 !----  (u,v)*cos(lat)  use uv=(u1,v1) which is wind at t0-1             
 !----  use rcs=1/cos(lat) to get wind field                             
-!                                                                       
+!
    do k = 1,kpblmax                                                  
      do i = its,ite                                                    
        if (k .lt. kbl(i)) then
@@ -427,7 +434,7 @@ contains
      ulowc  = ulow(i)
      rulow(i) = 1./ulowc
    enddo                                                             
-!                                                                       
+!
    do k = kts,kte-1                                                    
      do i = its,ite                                                   
        velco(i,k)  = (0.5*rcs) * ((u1(i,k)+u1(i,k+1)) * ubar(i)                &
@@ -435,7 +442,7 @@ contains
        velco(i,k)  = velco(i,k) * rulow(i)                               
        if ((velco(i,k).lt.veleps) .and. (velco(i,k).gt.0.)) then
          velco(i,k) = veleps                                      
-       endif                                                       
+       endif
      enddo                                                          
    enddo                                                             
 !                                                                       
@@ -469,7 +476,7 @@ contains
      bnv2(i,1) = wtkbj * bnv2(i,1)                                
      usqj(i,1) = wtkbj * usqj(i,1)                                
    enddo                                                             
-!                                                                       
+!
    do k = kts+1,kpblmax-1                                                
      do i = its,ite                                                    
        if (k .lt. kbl(i)) then
@@ -585,8 +592,8 @@ contains
    if(lcap.lt.kte) then                                               
      do klcap = lcapp1,kte                                          
        do i = its,ite                                                 
-         sira = prsi(i,klcap) / prsi(i,lcap)                                 
-         taup(i,klcap) = sira * taup(i,lcap)                      
+         sira = prsi(i,klcap) / prsi(i,lcap) 
+         taup(i,klcap) = sira * taup(i,lcap)      
        enddo                                                       
      enddo                                                          
    endif                                                             
@@ -595,7 +602,7 @@ contains
 !
    do k = kts,kte                                                       
      do i = its,ite                                                       
-       taud(i,k) = (taup(i,k+1) - taup(i,k)) * csg / del(i,k)
+       taud(i,k) = 1. * (taup(i,k+1) - taup(i,k)) * csg / del(i,k)
      enddo                                                             
    enddo                                                             
 !                                                                       
@@ -604,7 +611,7 @@ contains
 !                                                                       
    do klcap = lcap,kte                                               
      do i = its,ite                                                    
-       taud(i,klcap) = taud(i,klcap) * factop                      
+       taud(i,klcap) = taud(i,klcap) * factop
      enddo                                                          
    enddo                                                             
 !                                                                       
@@ -628,20 +635,20 @@ contains
    enddo
 !
    do k = kts,kte                                                       
-     do i = its,ite                                                    
+     do i = its,ite 
        taud(i,k)  = taud(i,k) * dtfac(i)                              
-       dtaux      = taud(i,k) * xn(i)
-       dtauy      = taud(i,k) * yn(i)
-       dudt(i,k)  = dtaux     + dudt(i,k)
-       dvdt(i,k)  = dtauy     + dvdt(i,k)
-       dusfc(i)   = dusfc(i)  + dtaux * del(i,k)
-       dvsfc(i)   = dvsfc(i)  + dtauy * del(i,k)
+       dtaux = taud(i,k) * xn(i)
+       dtauy = taud(i,k) * yn(i)
+       dudt(i,k)  = dtaux + dudt(i,k)
+       dvdt(i,k)  = dtauy + dvdt(i,k)
+       dusfc(i)   = dusfc(i) + dtaux * del(i,k)
+       dvsfc(i)   = dvsfc(i) + dtauy * del(i,k)
      enddo                                                          
    enddo                                                             
 !
    do i = its,ite
-     dusfc(i) = (-1.e3/g*rcs) * dusfc(i)
-     dvsfc(i) = (-1.e3/g*rcs) * dvsfc(i)
+     dusfc(i) = (-1./g*rcs) * dusfc(i)
+     dvsfc(i) = (-1./g*rcs) * dvsfc(i)
    enddo
 !
    return                                                            

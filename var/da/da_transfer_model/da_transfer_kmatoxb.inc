@@ -401,7 +401,7 @@ subroutine da_transfer_kmatoxb(xbx, grid)
    ! Calculate dew point temperature:
    !---------------------------------------------------------------------------
 
-   call da_trh_to_td(grid%xb % rh, grid%xb % t, grid%xb % td)
+   call da_trh_to_td (grid)
 
    if (print_detail_xb) then
       i=is; j=js; k=ks

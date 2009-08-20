@@ -287,7 +287,7 @@
       ENDDO
       ENDDO
 !
-      EL_MYJ = 0.
+      EL_MYJ(its:ite,:,jts:jte) = 0.
 !
 !----------------------------------------------------------------------
       setup_integration:  DO J=JTS,JTE
@@ -410,7 +410,7 @@
             KFLIP=KTE+1-K
             Q2K(KFLIP)=AMAX1(Q2K(KFLIP),EPSQ2L)
             TKE(I,K,J)=0.5*Q2K(KFLIP)
-            IF(K<KTE)EL_MYJ(I,K,J)=EL(KFLIP)   ! EL IS NOT DEFINED AT KTE
+            IF(KFLIP/=KTE)EL_MYJ(I,K,J)=EL(KFLIP)   ! EL IS NOT DEFINED AT KTE
           ENDDO
 !
         ENDDO

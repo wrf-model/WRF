@@ -23,6 +23,8 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
       call da_transform_xtoy_sonde_sfc (grid, iv, y) 
    end if
    if (iv%info(mtgirs)%nlocal         > 0) call da_transform_xtoy_mtgirs   (grid, iv, y)
+   if (iv%info(tamdar)%nlocal         > 0) call da_transform_xtoy_tamdar   (grid, iv, y)
+   if (iv%info(tamdar)%nlocal         > 0) call da_transform_xtoy_tamdar_sfc(grid, iv, y)
    if (iv%info(synop)%nlocal          > 0) call da_transform_xtoy_synop    (grid, iv, y)
    if (iv%info(geoamv)%nlocal         > 0) call da_transform_xtoy_geoamv   (grid, iv, y)
    if (iv%info(polaramv)%nlocal       > 0) call da_transform_xtoy_polaramv (grid, iv, y)
@@ -52,10 +54,11 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
 
    if (iv%info(pseudo)%nlocal         > 0) call da_transform_xtoy_pseudo   (grid, iv, y)
 
-#if defined(CRTM) || defined(RTTOV)
    if (use_rad) then
       if (rtm_option == rtm_option_rttov) then
+#ifdef RTTOV
          call da_transform_xtoy_rttov (grid, iv, y)
+#endif
       elseif (rtm_option == rtm_option_crtm) then
 #ifdef CRTM
          !if (use_crtm_kmatrix) then
@@ -70,7 +73,6 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
           call da_warning(__FILE__,__LINE__,(/"Unknown radiative transfer model"/))
        end if
    end if
-#endif
 
    if (trace_use) call da_trace_exit("da_transform_xtoy")
 

@@ -38,7 +38,7 @@ subroutine da_random_seed
       end if
      
       seed_array(1) = seed_array1
-      seed_array(2) = seed_array2 + myproc*10000000
+      seed_array(2) = seed_array2 * seed_array1 + myproc*10000000
       write(unit=stdout,fmt='(a,i16)')' Setting seed_array(1) = ', seed_array(1)
       write(unit=stdout,fmt='(a,i16)')' Setting seed_array(2) = ', seed_array(2)
       call random_seed(put=seed_array(1:seed_size)) ! Set random seed.

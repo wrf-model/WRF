@@ -107,6 +107,7 @@ program da_rad_diags
 !
 ! find out how many dates to process
 !
+   ntime = 0
    valid_date = start_date
    do while ( valid_date <= end_date )
       ntime = ntime + 1
@@ -142,7 +143,7 @@ ntime_loop: do itime = 1, ntime
 
       nproc_loop_1: do iproc = 0, nproc - 1   ! loop for first getting number of pixels from each proc
 
-         write(unit=inpname(iproc), fmt='(a,i2.2)')  &
+         write(unit=inpname(iproc), fmt='(a,i4.4)')  &
             trim(datestr1(itime))//'/'//file_prefix//'_'//trim(instid(iinst))//'.', iproc
          iunit(iproc) = 101 + iproc
          inquire(file=trim(inpname(iproc)), exist=isfile)
@@ -428,6 +429,8 @@ ntime_loop: do itime = 1, ntime
 
          end do npixel_loop
 
+         close(iunit(iproc))
+
       end do nproc_loop_2
 
       write(0,*) 'Writing out data in netCDF format...'
@@ -570,6 +573,7 @@ ntime_loop: do itime = 1, ntime
       ios = NF_DEF_VAR(ncid, 'v10',          NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'ps',           NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'ts',           NF_FLOAT, 1, ishape(1), varid)
+      ios = NF_DEF_VAR(ncid, 'tslb',         NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'smois',        NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'snowh',        NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'isflg',        NF_INT,   1, ishape(1), varid)
@@ -851,9 +855,6 @@ ntime_loop: do itime = 1, ntime
          deallocate ( mdl_prf_qcw )
          deallocate ( mdl_prf_qrn )
       end if
-      do i = 0, nproc-1
-         close(iunit(i))
-      end do
 
    end do ninst_loop
 

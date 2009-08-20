@@ -220,33 +220,39 @@ SUBROUTINE adapt_timestep(grid, config_flags)
 
   !
   ! Assure that we fall on a BC time.  Due to a bug in WRF, the time
-  !   step must fall on the boundary times.
+  !   step must fall on the boundary times.  Only modify the dtInterval
+  !   when this is not the first time step on this domain.
   !
 
-  time_to_bc = grid%interval_seconds - grid%dtbc
-  num = INT(time_to_bc * precision + 0.5)
-  den = precision
-  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
+  if ( real_time(domain_get_current_time(grid) - domain_get_start_time(grid)) .GT. 0.01 ) THEN
+     time_to_bc = grid%interval_seconds - grid%dtbc
+     num = INT(time_to_bc * precision + 0.5)
+     den = precision
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
+      
+     if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
+          ( tmpTimeInterval .GT. dtInterval ) ) then
+        dtInterval = tmpTimeInterval / 2
+        
+        use_last2 = .TRUE.
+        stepping_to_bc = .true.
    
-  if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
-       ( tmpTimeInterval .GT. dtInterval ) ) then
-     dtInterval = tmpTimeInterval / 2
-     
-     use_last2 = .TRUE.
-     stepping_to_bc = .true.
-
-  elseif (tmpTimeInterval .LE. dtInterval) then
-
-     bc_time = NINT ( (curr_secs + time_to_bc) / ( grid%interval_seconds ) ) &
-          * ( grid%interval_seconds )
-     CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
-     dtInterval = tmpTimeInterval - &
-          (domain_get_current_time(grid) - domain_get_start_time(grid))
-
-     use_last2 = .TRUE.
-     stepping_to_bc = .true.
+     elseif (tmpTimeInterval .LE. dtInterval) then
+   
+        bc_time = NINT ( (curr_secs + time_to_bc) / ( grid%interval_seconds ) ) &
+             * ( grid%interval_seconds )
+        CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
+        dtInterval = tmpTimeInterval - &
+             (domain_get_current_time(grid) - domain_get_start_time(grid))
+   
+        use_last2 = .TRUE.
+        stepping_to_bc = .true.
+     else
+        stepping_to_bc = .false.
+     endif
   else
      stepping_to_bc = .false.
+     tmpTimeInterval = dtInterval
   endif
 
   !

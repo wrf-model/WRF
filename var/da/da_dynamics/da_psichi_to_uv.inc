@@ -58,6 +58,8 @@ subroutine da_psichi_to_uv(psi, chi, coefx,coefy, u, v)
    end if
 
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE (i, j, k)
    do k = kts, kte
       !------------------------------------------------------------------------
       !  [2.0] Compute u, v at interior points (2nd order central finite diffs):
@@ -258,6 +260,7 @@ subroutine da_psichi_to_uv(psi, chi, coefx,coefy, u, v)
          v(ite,jte,k) = 0.5 * (v(ite-1,jte,k) + v(ite,jte-1,k))
       end if
    end do
+   !$OMP END PARALLEL DO
 
    !---------------------------------------------------------------------------
    ! [5.0] For Global application, set Wast-Eest Periodic boundary

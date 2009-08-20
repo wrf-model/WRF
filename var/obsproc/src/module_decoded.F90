@@ -147,7 +147,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    CHARACTER ( LEN = 160)               :: error_message
    CHARACTER ( LEN =  14)               :: newstring
    LOGICAL                              :: fatal
-   INTEGER                              :: nlevels, num_unknown, m_miss 
+   INTEGER                              :: nlevels, num_unknown, m_miss, n101301 
    TYPE ( measurement ) , POINTER       :: current
 !-----------------------------------------------------------------------------!
   INCLUDE 'platform_interface.inc'
@@ -175,6 +175,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    num_empty = 0
    num_outside = 0
    m_miss = 0
+   n101301 = 0
 
    !  Open file for writing diagnostics
    IF (print_gts_read) THEN
@@ -761,7 +762,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
                           tovs =ntovss  (icor), other=nothers (icor), &
                           amdar=namdars (icor), qscat=nqscats (icor), &
                           profl=nprofls (icor), buoy =nbuoyss (icor), &
-                          bogus=nboguss (icor), airs = nairss(icor) )
+                          bogus=nboguss (icor), airs = nairss(icor),tamdar=ntamdar(icor) )
 
          !  Since no I/O errors, read 1 or more measurements.
          !  Note that obs(obs_num)%surface is pointer to first node in linked 
@@ -884,7 +885,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
                              tovs =ntovss  (icor+1), other=nothers (icor+1), &
                              amdar=namdars (icor+1), qscat=nqscats (icor+1), &
                              profl=nprofls (icor+1), buoy =nbuoyss (icor+1), &
-                             bogus=nboguss (icor+1), airs =nairss  (icor+1)  )
+                             bogus=nboguss (icor+1), airs =nairss  (icor+1), tamdar =ntamdar (icor+1)  )
 
             IF ( ASSOCIATED (obs(obs_num)%surface)) THEN
                !  dealloc entire linked list if it exists
@@ -926,7 +927,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
                              tovs =ntovss  (icor+2), other=nothers (icor+2), &
                              amdar=namdars (icor+2), qscat=nqscats (icor+2), &
                              profl=nprofls (icor+2), buoy =nbuoyss (icor+2), &
-                             bogus=nboguss (icor+2), airs =nairss  (icor+2)  )
+                             bogus=nboguss (icor+2), airs =nairss  (icor+2),tamdar =ntamdar (icor+2) )
 
             IF ( ASSOCIATED (obs(obs_num)%surface)) THEN
                !  dealloc entire linked list if it exists
@@ -991,16 +992,62 @@ time_window_min, time_window_max, map_projection , missing_flag)
          !  to ok.  This is the only way to get SHIP data into the surface 
          !  analysis.  Since we are at sea level, we also set the pressure 
          !  to equal to the sea level pressure.
+         !
+         ! This is necessary for NCAR archived LITTLE_R files.
+         ! All of the station pressure for SHIP (FM-13) were filled with a 
+         ! fake value of 101301 Pa with the quality flag = 0 (means good);
 
-!        IF ((obs (obs_num)%info%platform(1:10) .EQ. 'FM-13 SHIP' ) .AND. &
-!            (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
+        IF ((obs (obs_num)%info%platform(1:10) .EQ. 'FM-13 SHIP' ) .AND. &
+             obs(obs_num)%info%elevation == 0.0   .and.  &
+            (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
 !             obs(obs_num)%info%elevation             = 0.01
-!             obs(obs_num)%surface%meas%height%data   = 0.01
-!             obs(obs_num)%surface%meas%height%qc     = 0
-!             obs(obs_num)%surface%meas%pressure%data = &
-!             obs(obs_num)%ground%slp%data
-!             obs(obs_num)%surface%meas%pressure%qc   = 0
-!        END IF
+             obs(obs_num)%surface%meas%height%data   = &
+             obs(obs_num)%info%elevation
+             obs(obs_num)%surface%meas%height%qc     = 0
+             obs(obs_num)%surface%meas%pressure%data = &
+             obs(obs_num)%ground%slp%data
+             obs(obs_num)%surface%meas%pressure%qc   = 0
+         END IF
+
+         ! YRG 04/04/2009
+         ! For SYNOP, if surface%meas%pressure%data = 101301.000 
+         ! (101301.000 is a fake value in NCAR archived LITTLE_R file)
+         ! and the slp is missing (note if SLP is available, WRFVar 
+         ! will use the SLP to derive Psfc and ignore the original Psfc, 
+         ! see da_tools/da_obs_sfc_correction.inc),  
+         ! fill in surface%meas%pressure%data with ground%psfc%data:
+
+         IF ( (obs(obs_num)%info%platform(1:5).EQ.'FM-12') .and.  &
+              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
+
+            if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
+                                             101301.000, 1.) .and.  &
+                 eps_equal(obs(obs_num)%ground%slp%data,            &
+                                              missing_r, 1.) ) then
+             n101301 = n101301 + 1 
+             print '("num=",i6,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3,2(a,f13.2,i8))',&
+                    n101301,  &
+            obs(obs_num)%location%id   (1: 5),&
+            obs(obs_num)%location%name (1:20),&
+            obs(obs_num)%info%platform (1: 12),&
+            obs(obs_num)%location%latitude, 'N',&
+            obs(obs_num)%location%longitude,'E ', &
+            obs(obs_num)%valid_time%date_char,    &
+            obs(obs_num)%info % elevation,        &
+            "  pressure:",                        &
+                    obs(obs_num)%surface%meas%pressure%data, &
+                    obs(obs_num)%surface%meas%pressure%qc, &
+            "  Psfc:",                             &
+                    obs(obs_num)%ground%psfc%data, &
+                    obs(obs_num)%ground%psfc%qc
+
+               obs(obs_num)%surface%meas%pressure%data = &
+               obs(obs_num)%ground%psfc%data
+               obs(obs_num)%surface%meas%pressure%qc   = &
+               obs(obs_num)%ground%psfc%qc
+            endif
+
+         ENDIF 
 
          !  This may be wasted print-out, but it is comforting to see.
 
@@ -1125,6 +1172,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSRF reports:',ngpsref (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSEP reports:',ngpseph (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' AIREP reports:',naireps (0)
+   WRITE (UNIT = 0, FMT = '(A,I6)') 'TAMDAR reports:',ntamdar (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMT1 reports:',nssmt1s (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMT2 reports:',nssmt2s (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMI  reports:',nssmis  (0)
@@ -1135,7 +1183,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' OTHER reports:',nothers (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' Total reports:', &
           nsynops (0) + nshipss (0) + nmetars (0) + npilots (0) + nsounds (0)+&
-          nsatems (0) + nsatobs (0) + naireps (0) + ngpspws (0) + ngpsztd (0)+&
+          nsatems (0) + nsatobs (0) + naireps (0) +  ntamdar (0)+ ngpspws (0) + ngpsztd (0)+&
           ngpsref (0) + ngpseph (0) + &
           nssmt1s (0) + nssmt2s (0) + nssmis  (0) + ntovss  (0) + nboguss (0)+&
           nothers (0) + namdars (0) + nqscats (0) + nprofls(0)  + nbuoyss(0) +&

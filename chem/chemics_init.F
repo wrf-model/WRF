@@ -90,6 +90,7 @@
 !
 ! local stuff
 !
+   CHARACTER*256 :: mminlu_loc
    TYPE(WRFU_TimeInterval) :: tmpTimeInterval
    integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
    real, DIMENSION (1,1) :: sza,cosszax
@@ -99,7 +100,7 @@
 #endif
 
 call wrf_message("*********************************************************************")
-call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.0                         *")
+call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.1.1                       *")
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF/CHEM HELP at                     *")
 call wrf_message("*                                                                   *")
@@ -120,16 +121,12 @@ call wrf_message("**************************************************************
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
-       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
      CASE (GOCARTRADM2_KPP)
        CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
-       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
      CASE (GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
-       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart and racmkpp driver from chem_driver')
-       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
      CASE (CBM4_KPP )
        CALL wrf_debug(15,'calling CB4 from chem_driver')
        call wrf_message("WARNING: CB4 chemistry option is highly experimental and not recommended for use.")
@@ -142,26 +139,22 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQ chemistry from chem_driver')
        call wrf_message("WARNING: RADM2SORG_AQ chemistry option is experimental and not yet fully tested.")
        call wrf_message("         We recommend contacting wrfchemhelp for assistance.")
-     CASE (racmsorg_aq )
+     CASE (RACMSORG_AQ )
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM from chem_driver')
        call wrf_message("WARNING: RACMSORG_AQ chemistry option is highly experimental and not recommended for use.")
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    END SELECT chem_select
 
    if ( config_flags%dust_opt == 1 ) then
-       call wrf_message("WARNING: dust option  1 currently works only with the GOCART aerosol option.")
-       call wrf_message("WARNING: dust option is highly experimental and not recommended for use.")
+       call wrf_message("WARNING: dust option 1 currently works only with the GOCART aerosol option.")
    endif
 
    if ( config_flags%seas_opt == 1 ) then
        call wrf_message("WARNING: sea salt option 1 currently works only with the GOCART aerosol option.")
-       call wrf_message("WARNING: sea salt option is highly experimental and not recommended for use.")
    endif
 
    if ( config_flags%biomass_burn_opt == 1 ) then
-!      call wrf_message("WARNING: biomass burning option works only when chem_opt is set to RACMPM_KPP.")
-!      call wrf_message("WARNING: biomass burning option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+       CALL wrf_debug(15,'calling biomass burning')
    endif
 
    if ( config_flags%wetscav_onoff == 1 ) then
@@ -185,6 +178,15 @@ call wrf_message("**************************************************************
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")
+    ENDIF
+
+!   IF ( config_flags%chem_opt == 2 .AND. config_flags%dust_opt .NE. 2 ) THEN
+!       call wrf_error_fatal(" ERROR: USE dust_opt = 2 when using MADE/SORGAM aerosol option ")
+!   ENDIF
+
+    CALL nl_get_mminlu( 1, mminlu_loc )
+    IF (mminlu_loc .NE. 'USGS') THEN
+      call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
     ENDIF
 
     if( .NOT. config_flags%restart ) then

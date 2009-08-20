@@ -70,8 +70,14 @@ subroutine da_check_max_iv_mtgirs(iv, it, num_qcstat_conv)
          if( iv%mtgirs(n)%q(k)%qc == fails_error_max .and. it > 1 )iv%mtgirs(n)%q(k)%qc =0
          if( iv%mtgirs(n)%q(k)%qc >= obs_qc_pointer ) then
          failed=.false.
+         if( iv%mtgirs(n)%t(k)%qc == fails_error_max ) then
+         failed=.true.
+         iv%mtgirs(n)%q(k)%qc  = fails_error_max 
+         iv%mtgirs(n)%q(k)%inv = 0.0
+         else
          if( check_max_iv) &
          call da_max_error_qc (it,iv%info(mtgirs), n, iv%mtgirs(n)%q(k), max_error_q ,failed)
+         endif
          if( iv%info(mtgirs)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,mtgirs,4,ipr) = num_qcstat_conv(1,mtgirs,4,ipr) + 1
          if(failed) then

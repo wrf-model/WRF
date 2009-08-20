@@ -877,7 +877,8 @@ CONTAINS
 ! The exchange coefficient for cloud water is assumed to be the same as
 ! that for heat. CH is multiplied by WSPD.
 
-         ch(i)=chs(i)
+!!         ch(i)=chs(i)
+         ch(i)=flhc(i)/( cpm(i)*rhox(i) )
 
 
 !        GZ2OZ0(I)=ALOG(2./ZNT(I))
@@ -889,7 +890,7 @@ CONTAINS
 !         CHS2(I)=UST(I)*KARMAN/(GZ2OZ0(I)-PSIH2(I))
 
 
-         CQS2(I)=UST(I)*KARMAN/(ALOG(za(i)/z_q(i))-PSIH2(I))
+         CQS2(I)=UST(I)*KARMAN/(ALOG(2.0/z_q(i))-PSIH2(I))
          CHS2(I)=UST(I)*KARMAN/(GZ2OZt(I)-PSIH2(I))
 
 

@@ -134,7 +134,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
             if (iv%gpsref(n)%h(k) > 0.0) &
                call da_to_zk(iv%gpsref(n)%h(k), v_h, v_interp_h, iv%info(gpsref)%zk(k,n))
             if (iv%info(gpsref)%zk(k,n) < 0.0 .and. .not. anal_type_verify) then
-               iv%gpsref(n)%ref(k)%qc = missing
+               iv%gpsref(n)%ref(k)%qc = missing_data
             end if
          end do
       else

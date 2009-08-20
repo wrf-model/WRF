@@ -1,12 +1,18 @@
 NCEP BUFR tables used in reading AIRS radiance data.
   gmao_airs_bufr.tbl:     
-     used for reading NCEP center-FOV AIRS BUFR files before July 2007.
+     used for reading NCEP center-FOV AIRS BUFR files before 12Z Aug 14 2007.
   gmao_airs_bufr.tbl_new: 
-     used for reading NCEP every-FOV AIRS BUFR files after Aug 2007.
+     used for reading NCEP every-FOV AIRS BUFR files starting at 12Z Aug 14 2007.
 
 radiance_info/*.info
-  Used for switching on/off certain channels.
-  Currently, only the 4th column in each file is actually used.
-   1: use
-  -1: not use
+  Used for (1) switching on/off certain channels (2) assigning obs errors
+  Currently, only the 4th and 6th columns in each file are actually used.
+  4th column info: 1: use
+                  -1: not use
+  6th colum info: observation errors in K
 
+VARBC.in
+  Template input file for radiance Variational Bias Correction.
+
+be.dat.cv3
+  Background error covariance file for cv_options=3.

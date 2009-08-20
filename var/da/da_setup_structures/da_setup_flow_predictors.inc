@@ -1,4 +1,5 @@
-subroutine da_setup_flow_predictors(ix, jy, kz, ne, ep)
+subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, &
+                                     its, ite, jts, jte, kts, kte )
 
    !------------------------------------------------------------------------------
    ! Purpose: Setup structures for flow-dependent information and read it in.
@@ -7,6 +8,8 @@ subroutine da_setup_flow_predictors(ix, jy, kz, ne, ep)
    implicit none
 
    integer, intent(in)         :: ix, jy, kz            ! EP grid dimensions.
+   integer, intent(in)         :: its, jts, kts         ! Tile start.
+   integer, intent(in)         :: ite, jte, kte         ! Tile end.
    integer, intent(in)         :: ne                    ! Ensemble size.
    type (ep_type), intent(inout):: ep                   ! Flow-dependent info.
 
@@ -75,14 +78,16 @@ subroutine da_setup_flow_predictors(ix, jy, kz, ne, ep)
 
       read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
       close(unit=ep_unit)
-      ep % v1(1:ix,1:jy,1:kz,e) = ens_scaling_inv * temp3d(1:ix,1:jy,1:kz)
+      ep % v1(its:ite,jts:jte,kts:kte,e) = ens_scaling_inv * &
+                                           temp3d(its:ite,jts:jte,kts:kte)
 
       ! v2:
       filename = 'ep/'//trim(var(2))//'.e'//trim(ce)
       open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
       read(unit=ep_unit) ni, nj, nk
       read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-      ep % v2(1:ix,1:jy,1:kz,e) = ens_scaling_inv * temp3d(1:ix,1:jy,1:kz)
+      ep % v2(its:ite,jts:jte,kts:kte,e) = ens_scaling_inv * &
+                                           temp3d(its:ite,jts:jte,kts:kte)
       close(unit=ep_unit)
 
       ! v3:
@@ -90,7 +95,8 @@ subroutine da_setup_flow_predictors(ix, jy, kz, ne, ep)
       open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
       read(unit=ep_unit) ni, nj, nk
       read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-      ep % v3(1:ix,1:jy,1:kz,e) = ens_scaling_inv * temp3d(1:ix,1:jy,1:kz)
+      ep % v3(its:ite,jts:jte,kts:kte,e) = ens_scaling_inv * &
+                                           temp3d(its:ite,jts:jte,kts:kte)
       close(unit=ep_unit)
 
       ! v4:
@@ -98,7 +104,8 @@ subroutine da_setup_flow_predictors(ix, jy, kz, ne, ep)
       open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
       read(unit=ep_unit) ni, nj, nk
       read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
-      ep % v4(1:ix,1:jy,1:kz,e) = ens_scaling_inv * temp3d(1:ix,1:jy,1:kz)
+      ep % v4(its:ite,jts:jte,kts:kte,e) = ens_scaling_inv * &
+                                           temp3d(its:ite,jts:jte,kts:kte)
       close(unit=ep_unit)
 
       ! v5:
@@ -106,10 +113,36 @@ subroutine da_setup_flow_predictors(ix, jy, kz, ne, ep)
       open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
       read(unit=ep_unit) ni, nj, nkdum
       read(unit=ep_unit) temp2d(1:ix,1:jy)
-      ep % v5(1:ix,1:jy,1,e) = ens_scaling_inv * temp2d(1:ix,1:jy)
+      ep % v5(its:ite,jts:jte,1,e) = ens_scaling_inv * temp2d(its:ite,jts:jte)
       close(unit=ep_unit)
 
    end do 
+
+!  Optional include hydrometeors:
+
+   if( use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud & ! qt control variable
+       .and. alphacv_method == alphacv_method_xa .and. alpha_hydrometeors ) then    ! xa space
+
+      do e = 1, ne
+         write(unit=ce,fmt='(i3.3)')e
+
+         filename = 'ep/'//'qcloud'//'.e'//trim(ce)
+         open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
+         read(unit=ep_unit) ni, nj, nk
+         read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
+         ep % v4(its:ite,jts:jte,kts:kte,e) = ep % v4(its:ite,jts:jte,kts:kte,e) + &
+                                              ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
+         close(unit=ep_unit)
+
+         filename = 'ep/'//'qrain'//'.e'//trim(ce)
+         open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
+         read(unit=ep_unit) ni, nj, nk
+         read(unit=ep_unit) temp3d(1:ix,1:jy,1:kz)
+         ep % v4(its:ite,jts:jte,kts:kte,e) = ep % v4(its:ite,jts:jte,kts:kte,e) + &
+                                              ens_scaling_inv * temp3d(its:ite,jts:jte,kts:kte)
+         close(unit=ep_unit)
+      end do
+   end if
 
    call da_free_unit(ep_unit)
 

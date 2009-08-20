@@ -29,7 +29,7 @@ MODULE MODULE_PER_TYPE
                                             nssmis,  ntovss,  namdars, &
                                             nqscats, nprofls, nbuoyss, &
                                             ngpsztd, ngpsref, ngpseph, &
-                                            nboguss, nairss , ntotals
+                                            nboguss, nairss , ntamdar, ntotals
 
 CONTAINS
 !-----------------------------------------------------------------------------!
@@ -77,6 +77,7 @@ SUBROUTINE print_per_type (title, caption,iend)
    nbuoyss (iend) = 0.
    nboguss (iend) = 0.
    nairss  (iend) = 0.
+   ntamdar (iend) = 0.
    nothers (iend) = 0.
 
    DO i = 1, iend-1
@@ -102,6 +103,7 @@ SUBROUTINE print_per_type (title, caption,iend)
       nbuoyss (iend) = nbuoyss (iend) + nbuoyss (i)
       nboguss (iend) = nboguss (iend) + nboguss (i)
       nairss  (iend) = nairss  (iend) + nairss  (i)
+      ntamdar (iend) = ntamdar (iend) + ntamdar (i)
       nothers (iend) = nothers (iend) + nothers (i)
    ENDDO
 
@@ -127,6 +129,7 @@ SUBROUTINE print_per_type (title, caption,iend)
    nbuoyss (iend) = nbuoyss (0) - nbuoyss (iend)
    nboguss (iend) = nboguss (0) - nboguss (iend)
    nairss  (iend) = nairss  (0) - nairss  (iend)
+   ntamdar (iend) = ntamdar (0) - ntamdar (iend)
    nothers (iend) = nothers (0) - nothers (iend)
 
    !  Total  obs
@@ -135,7 +138,7 @@ SUBROUTINE print_per_type (title, caption,iend)
              nsatems + nsatobs + naireps + ngpspws + nssmt1s + &
              nssmt2s + ntovss  + nssmis  + namdars + nqscats + &
              nprofls + nbuoyss + nothers + ngpsztd + ngpsref + &
-             nairss  + nboguss + ngpseph
+             nairss  + nboguss + ngpseph + ntamdar
 
    !  Format
 
@@ -213,6 +216,8 @@ SUBROUTINE print_per_type (title, caption,iend)
          (nprofls (i),  i = 1, iend1) 
    WRITE (UNIT =   0, FMT = fmt_obs) " AIRS  reports:",nairss  (0), &
          (nairss  (i),  i = 1, iend1) 
+   WRITE (UNIT =   0, FMT = fmt_obs) "TAMDAR reports:",ntamdar (0), &
+         (ntamdar (i),  i = 1, iend1)
    WRITE (UNIT =   0, FMT = fmt_obs) " OTHER reports:",nothers (0), &
          (nothers (i),  i = 1, iend1) 
    WRITE (UNIT =   0, FMT = fmt_obs) " Total reports:",ntotals (0), &

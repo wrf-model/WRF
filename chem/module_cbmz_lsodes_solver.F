@@ -4804,7 +4804,7 @@
 ! abort the run if level = 2. ------------------------------------------
  100  if (level .ne. 2) return
       call peg_error_fatal( lun, '*** subr xerrwv fatal error' )
-      stop
+
 !----------------------- end of subroutine xerrwv ----------------------
       end subroutine xerrwv                                                 
 !-----------------------------------------------------------------------
@@ -5074,7 +5074,6 @@
       if (sc .ne. 987) then
           call peg_error_fatal( -1,   &
           '*** func r1mach fatal error -- all data statements inactive' )
-          stop
       end if
 
       if (i .lt. 1  .or.  i .gt. 5) goto 999
@@ -5131,7 +5130,6 @@
   999 write(errmsg,1999) i
  1999 format('*** func r1mach fatal error -- i out of bounds',i10)
       call peg_error_fatal( -1, errmsg )
-      stop
       end function r1mach   
 !
 ! subroutine xsetf

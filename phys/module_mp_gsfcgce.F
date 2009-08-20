@@ -1193,6 +1193,7 @@ CONTAINS
                        ims,ime, jms,jme, kms,kme, &
                        its,ite, jts,jte, kts,kte  &
                            )
+    IMPLICIT NONE
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !                                                                      c
 !   Tao, W.-K., and J. Simpson, 1989: Modeling study of a tropical     c
@@ -1265,6 +1266,22 @@ CONTAINS
 !      common/rsnw1/ rn10b,rn10c,rnn191,rnn192,rn30,rnn30a,rn33,rn331, &
 !                    rn332
 !JJS
+
+  integer ids,ide,jds,jde,kds,kde
+  integer ims,ime,jms,jme,kms,kme
+  integer its,ite,jts,jte,kts,kte
+  integer i,j,k, kp
+
+  real :: a0 ,a1 ,a2 ,afcp ,alvr ,ami100 ,ami40 ,ami50 ,ascp ,avcp ,betah &
+   ,bg3 ,bgh5 ,bs3 ,bs6 ,bsh5 ,bw3 ,bw6 ,bwh5 ,cmin ,cmin1 ,cmin2 ,cp409 &
+   ,cp580 ,cs580 ,cv409 ,d2t ,del ,dwvp ,ee1 ,ee2 ,f00 ,f2 ,f3 ,ft ,fv0 ,fvs &
+   ,pi0 ,pir ,pr0 ,qb0 ,r00 ,r0s ,r101f ,r10ar ,r10t ,r11at ,r11rt ,r12r ,r14f &
+   ,r14r ,r15af ,r15ar ,r15f ,r15r ,r16r ,r17aq ,r17as ,r17r ,r18r ,r19aq ,r19as &
+   ,r19bt ,r19rt ,r20bq ,r20bs ,r20t ,r22f ,r23af ,r23br ,r23t ,r25a ,r25rt ,r2ice &
+   ,r31r ,r32rt ,r3f ,r4f ,r5f ,r6f ,r7r ,r8r ,r9r ,r_nci ,rft ,rijl2 ,rp0 ,rr0 &
+   ,rrq ,rrs ,rt0 ,scc ,sccc ,sddd ,see ,seee ,sfff ,smmm ,ssss ,tb0 ,temp ,ucog &
+   ,ucor ,ucos ,uwet ,vgcf ,vgcr ,vrcf ,vscf ,zgr ,zrr ,zsr
+
 
   real, dimension (its:ite,jts:jte,kts:kte) ::  fv
   real, dimension (its:ite,jts:jte,kts:kte) ::  dpt, dqv
@@ -1431,7 +1448,7 @@ CONTAINS
 !JJS 1/3/2008  ^^^^^
 
 !
-      save
+!jm 20090220      save
 
 !    i24h=nint(86400./dt) 
 !    if (mod(itimestep,i24h).eq.1) then
@@ -2184,7 +2201,7 @@ CONTAINS
 !        modify to prevent underflow on some computers (JD)
                temp = 1./zr(i,j)
                temp = temp*temp*temp*temp*temp*temp*temp
-               pgfr(i,j)=r2ice*max(r18r*(y2(i,j)-1.)* &
+               pgfr(i,j)=r2ig*max(r18r*(y2(i,j)-1.)* &
                                     temp, 0.0)
             endif
 
@@ -2586,6 +2603,7 @@ CONTAINS
 !JJS         DO 275 I=3,ILES
 
             psdep(i,j)=0.0
+            pgdep(i,j)=0.0
             pssub(i,j)=0.0
             pgsub(i,j)=0.0
             tair(i,j)=(pt(i,j)+tb0)*pi0

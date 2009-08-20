@@ -29,10 +29,7 @@
       REAL MXM(ims:ime,jms:jme),MN(ims:ime,jms:jme)                                 
       REAL FL(ims:ime,jms:jme,0:1)                                            
       REAL XIG(NF*NF), XJG(NF*NF)  ! NF is parent to child grid refinement ratio
-      INTEGER IFRST
       integer rr
-      COMMON /DEPAR2/ IFRST
-      DATA IFRST /1/
 
       REAL rioff, rjoff
 !                                                                       
@@ -60,7 +57,6 @@
           XJG(J+(I-1)*rr)=(float(rr)-1.-rjoff)/float(2*rr)-FLOAT(I-1)*1./float(rr)   
         ENDDO
       ENDDO
-      IFRST = 0
 
       N2STAR = jts
       N2END  = jte
@@ -238,10 +234,7 @@
       REAL MXM(ims:ime,jms:jme),MN(ims:ime,jms:jme)                                 
       REAL FL(ims:ime,jms:jme,0:1)                                            
       REAL XIG(NF*NF), XJG(NF*NF)  ! NF is the parent to child grid refinement ratio
-      INTEGER IFRST
       integer rr
-      COMMON /DEPAR2B/ IFRST
-      DATA IFRST /1/
 
       REAL rioff, rjoff
 !                                                                       
@@ -268,7 +261,6 @@
           XJG(J+(I-1)*rr)=(float(rr)-1.-rjoff)/float(2*rr)-FLOAT(I-1)*1./float(rr)   
         ENDDO
       ENDDO
-      IFRST = 0
 
       N2STAR = jts
       N2END  = jte

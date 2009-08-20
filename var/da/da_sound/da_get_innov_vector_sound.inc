@@ -91,10 +91,10 @@ subroutine da_get_innov_vector_sound (it,num_qcstat_conv, grid, ob, iv)
       do n=iv%info(sound)%n1,iv%info(sound)%n2
          do k=1, iv%info(sound)%levels(n)
             if (iv%info(sound)%zk(k,n) < 0.0) then
-               iv%sound(n)%u(k)%qc = missing
-               iv%sound(n)%v(k)%qc = missing
-               iv%sound(n)%t(k)%qc = missing
-               iv%sound(n)%q(k)%qc = missing
+               iv%sound(n)%u(k)%qc = missing_data
+               iv%sound(n)%v(k)%qc = missing_data
+               iv%sound(n)%t(k)%qc = missing_data
+               iv%sound(n)%q(k)%qc = missing_data
             end if
          end do
       end do

@@ -67,10 +67,10 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
          end if
 
          if (iv%info(bogus)%zk(k,n) < 0.0 .and.  .not.anal_type_verify) then
-            iv % bogus(n) % u(k) % qc = missing
-            iv % bogus(n) % v(k) % qc = missing
-            iv % bogus(n) % t(k) % qc = missing
-            iv % bogus(n) % q(k) % qc = missing
+            iv % bogus(n) % u(k) % qc = missing_data
+            iv % bogus(n) % v(k) % qc = missing_data
+            iv % bogus(n) % t(k) % qc = missing_data
+            iv % bogus(n) % q(k) % qc = missing_data
          end if
       end do
    end do
@@ -160,6 +160,11 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
    !------------------------------------------------------------------------
 
     call da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
+
+    deallocate (model_u)
+    deallocate (model_v)
+    deallocate (model_t)
+    deallocate (model_q)
 
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_bogus")
 

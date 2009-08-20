@@ -338,7 +338,7 @@
       ENDDO
       ENDDO
 !
-      EL_MYJ = 0.
+      EL_MYJ(its:ite,:,jts:jte) = 0.
 !
 !----------------------------------------------------------------------
       setup_integration:  DO J=JTS,JTE

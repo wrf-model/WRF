@@ -79,8 +79,10 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    
 ! ARGUMENTS:
 
-   TYPE ( y_type), INTENT(OUT)  :: ob          ! Observation structure.
-   TYPE (iv_type), INTENT(OUT)  :: iv          ! O-B structure.
+   TYPE ( y_type), INTENT(OUT)    :: ob          ! Observation structure.
+   TYPE (iv_type), INTENT(INOUT)  :: iv          ! O-B structure.
+
+#ifdef MADIS
 
 ! LOCAL:
 
@@ -917,7 +919,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
                    keep(i) = 1         ! 1 = Process.
                    ntmp = ntmp + 1
 
-                   if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+                   if (global .and. (platform%loc%i < ids.or.platform%loc%i >= ide)) then
                       nlocal(metar) = nlocal(metar) + 2
                    else
                       nlocal(metar) = nlocal(metar) + 1
@@ -1045,7 +1047,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 		else
                    keep(i) = 1         
                    ntmp = ntmp + 1
-                   if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+                   if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
                       nlocal(ships) = nlocal(ships) + 2
                    else
                       nlocal(ships) = nlocal(ships) + 1
@@ -1135,7 +1137,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
                    keep(i) = 1         
                    pw(i) = pw(i) * 100.0 ! Convert from m to cm.
                    ntmp = ntmp + 1
-                   if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+                   if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
                       nlocal(gpspw) = nlocal(gpspw) + 2
                    else
                       nlocal(gpspw) = nlocal(gpspw) + 1
@@ -1181,18 +1183,6 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
  150  if(.not. use_airepobs)go to 250
 
-! Allocate the local memory for the MADIS arrays that have a level dimension.
-
-   allocate (p(max_acars))
-   allocate (q(max_acars))
-   allocate (t(max_acars))
-   allocate (z(max_acars))
-   allocate (dd(max_acars))
-   allocate (ff(max_acars))
-   allocate (qca(max_acars))
-   allocate (qcr(max_acars))
-   allocate (qcd(max_acars))
-
 ! Set the time window for this dataset with the user's choices.
 
    CALL MSETWIN(madis_airep_minbck,madis_airep_minfwd,madis_airep_recwin,istatus)
@@ -1202,6 +1192,18 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
    CALL MACARSSTA(atime,nsta,stanam,timeob,istatus)
    if(istatus /= success_p)go to 200
+
+! Allocate the local memory for the MADIS arrays that have a level dimension.
+
+   allocate (p(nsta))
+   allocate (q(nsta))
+   allocate (t(nsta))
+   allocate (z(nsta))
+   allocate (dd(nsta))
+   allocate (ff(nsta))
+   allocate (qca(nsta))
+   allocate (qcr(nsta))
+   allocate (qcd(nsta))
 
 ! Read in the observations.  Note that unlike the other MADIS datasets,
 ! the lat/lon are read in as obs, not station info.
@@ -1238,24 +1240,24 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
    do i = 1, nsta
 
-      if(abs(lat(i)).lt.90.and.abs(lon(i)).le.180)then
+      if (abs(lat(i)).lt.90.and.abs(lon(i)).le.180) then 
          platform % info % lat = lat(i)
          platform % info % lon = lon(i)
          CALL da_llxy(platform%info,platform%loc,outside,outside_all)
 
-         if (outside_all)then
+         if (outside_all) then
 
             keep(i) = 0         ! 0 = Not in domain.
 
          else 
 
-            iv%info(airep)%ntotal = iv%info(airep)%ntotal + 1
-            if(outside)then
+            ntotal(airep) = ntotal(airep) + 1
+            if (outside) then
                keep(i) = 0
 	    else	
                keep(i) = 1         ! 1 = Process.
                ntmp = ntmp + 1
-               if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+               if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
                   nlocal(airep) = nlocal(airep) + 2
                else
                   nlocal(airep) = nlocal(airep) + 1
@@ -1273,21 +1275,24 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    enddo
 
    if(nlocal(airep) > 0)then
-
       allocate (iv % airep(1:nlocal(airep)))
+   endif
    
-      fm = 96
-      nlev = 1
-      iv%info(airep)%max_lev = 1
+   fm = 96
+   nlev = 1
+   iv%info(airep)%max_lev = 1
 
 ! Move the data out of the ingest arrays into the IV structure.
 
-      CALL PROCESS_DATASET(nsta,nlev,fm,keep,lat,lon,elev,timeob, &
-                           slp,pw,stanam,p,q,t,dd,ff,z,nlocal,ntotal, &
-                           0,0,nlevels,iv,nlocal_out,ntotal_out,sfclev)
-      iv%info(airep)%nlocal = nlocal_out
+   CALL PROCESS_DATASET(nsta,nlev,fm,keep,lat,lon,elev,timeob, &
+                        slp,pw,stanam,p,q,t,dd,ff,z,nlocal,ntotal, &
+                        0,0,nlevels,iv,nlocal_out,ntotal_out,sfclev)
 
-   endif
+   iv%info(airep)%nlocal = nlocal_out
+   iv%info(airep)%plocal(1) = nlocal_out
+   iv%info(airep)%ptotal(1) = ntotal(airep)
+   iv%info(airep)%ntotal = ntotal(airep)
+
 
 ! Finish up with the MADIS ACARS datasets by deallocating the 
 ! levels-dimensioned arrays.
@@ -1336,7 +1341,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
             platform % info % lat = lat(i)
             platform % info % lon = lon(i)
             CALL da_llxy(platform%info,platform%loc,outside,outside_all)
-            if (outside)then
+            if (outside_all) then
                keep_r(i) = 0    ! 0 = Not in domain.
             else
 	       ntotal(sound) = ntotal(sound) + 1
@@ -1345,7 +1350,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 	       else
                    keep_r(i) = 1    ! 1 = Process.
                    ntmp_r = ntmp_r + 1
-                   if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+                   if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
                       nlocal(sound) = nlocal(sound) + 2
                    else
                       nlocal(sound) = nlocal(sound) + 1
@@ -1367,6 +1372,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! NPN
 
+   print*,'ntotal_raob=',ntotal(sound)
    ntmp_n = 0
 
    if(npn_init)then
@@ -1391,7 +1397,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 	          else
                      keep_n(i) = 1 ! 1 = Process.
                      ntmp_n = ntmp_n + 1
-                     if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+                     if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
                         nlocal(sound) = nlocal(sound) + 2
                      else
                         nlocal(sound) = nlocal(sound) + 1
@@ -1412,6 +1418,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    nl_npn = nlocal(sound) - nl_raob
    nt_npn = ntotal(sound) - nt_raob
 
+   print*,'ntotal_npn=',ntotal(sound)
 ! MAP
 
    ntmp_m = 0
@@ -1439,7 +1446,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 	          else
                      keep_m(i) = 1 ! 1 = Process.
                      ntmp_m = ntmp_m + 1
-                     if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+                     if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
                         nlocal(sound) = nlocal(sound) + 2
                       else
                         nlocal(sound) = nlocal(sound) + 1
@@ -1460,32 +1467,33 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    nl_map = nlocal(sound) - nl_raob - nl_npn
    nt_map = ntotal(sound) - nt_raob - nt_npn
 
+   print*,'ntotal_map=',ntotal(sound)
 ! If we didn't find anything, we're done with this WRF dataset.
 
-   if(nlocal(sound) == 0)go to 300
-
-   allocate (iv % sound(1:nlocal(sound)))
-   allocate (iv % sonde_sfc(1:nlocal(sound)))
-   iv%info(sonde_sfc)%max_lev=1
+   if (nlocal(sound) > 0) then
+      allocate (iv % sound(1:nlocal(sound)))
+      allocate (iv % sonde_sfc(1:nlocal(sound)))
+   endif
   
    fm = 35
    iv%info(sound)%max_lev = max_raoblev
+   iv%info(sonde_sfc)%max_lev=1
 
 ! Since we have the MAP station info, start with that dataset.
-
+  
    if(ntmp_m /= 0)then
 
 ! Allocate the local memory for the MADIS arrays that have a level dimension.
 
-      allocate (p(max_maplev*max_map))
-      allocate (q(max_maplev*max_map))
-      allocate (t(max_maplev*max_map))
-      allocate (z(max_maplev*max_map))
-      allocate (dd(max_maplev*max_map))
-      allocate (ff(max_maplev*max_map))
-      allocate (qca(max_maplev*max_map))
-      allocate (qcr(max_maplev*max_map))
-      allocate (qcd(max_maplev*max_map))
+      allocate (p(max_maplev*nsta))
+      allocate (q(max_maplev*nsta))
+      allocate (t(max_maplev*nsta))
+      allocate (z(max_maplev*nsta))
+      allocate (dd(max_maplev*nsta))
+      allocate (ff(max_maplev*nsta))
+      allocate (qca(max_maplev*nsta))
+      allocate (qcr(max_maplev*nsta))
+      allocate (qcd(max_maplev*nsta))
 
       nlev = max_maplev
 
@@ -1531,6 +1539,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! Now do the NPN dataset.
 
+   print*,'Haha 0'
    if(ntmp_n /= 0)then
 
 ! Allocate the local memory for the MADIS arrays that have a level dimension.
@@ -1541,22 +1550,22 @@ subroutine da_setup_obs_structures_madis( ob, iv)
          nlev = max_npnlev_awips
       endif         
 
-      allocate (p(nlev*max_npn))
-      allocate (q(nlev*max_npn))
-      allocate (t(nlev*max_npn))
-      allocate (z(nlev*max_npn))
-      allocate (dd(nlev*max_npn))
-      allocate (ff(nlev*max_npn))
-      allocate (qca(nlev*max_npn))
-      allocate (qcr(nlev*max_npn))
-      allocate (qcd(nlev*max_npn))
-
 ! Set the time window and load in the station info.
 
       CALL MSETWIN(madis_profiler_minbck,madis_profiler_minfwd,madis_profiler_recwin,istatus)
       if(istatus /= success_p)stop
       CALL MNPNSTA(atime,nsta,stanam,wmoid,lat,lon,elev,timeob,istatus)
       if(istatus /= success_p)stop   ! Can't possibly happen, so stop if it does.
+
+      allocate (p(nlev*nsta))
+      allocate (q(nlev*nsta))
+      allocate (t(nlev*nsta))
+      allocate (z(nlev*nsta))
+      allocate (dd(nlev*nsta))
+      allocate (ff(nlev*nsta))
+      allocate (qca(nlev*nsta))
+      allocate (qcr(nlev*nsta))
+      allocate (qcd(nlev*nsta))
 
 ! Read in the observations.
 
@@ -1597,20 +1606,8 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! Do the RAOB dataset.
 
+   print*,'Haha 1'
    if(ntmp_r /= 0)then
-
-! Allocate the local memory for the MADIS arrays that have a level dimension.
-
-      allocate (p(max_raoblev*max_raob))
-      allocate (q(max_raoblev*max_raob))
-      allocate (t(max_raoblev*max_raob))
-      allocate (z(max_raoblev*max_raob))
-      allocate (dd(max_raoblev*max_raob))
-      allocate (ff(max_raoblev*max_raob))
-      allocate (qca(max_raoblev*max_raob))
-      allocate (qcr(max_raoblev*max_raob))
-      allocate (qcd(max_raoblev*max_raob))
-      allocate (levtype(max_raoblev*max_raob))
 
       nlev = max_raoblev
 
@@ -1620,6 +1617,19 @@ subroutine da_setup_obs_structures_madis( ob, iv)
       if(istatus /= success_p)stop
       CALL MRAOBSTA(atime,nsta,stanam,wmoid,lat,lon,elev,timeob,istatus)
       if(istatus /= success_p)stop   ! Can't possibly happen, so stop if it does.
+
+! Allocate the local memory for the MADIS arrays that have a level dimension.
+
+      allocate (p(max_raoblev*nsta))
+      allocate (q(max_raoblev*nsta))
+      allocate (t(max_raoblev*nsta))
+      allocate (z(max_raoblev*nsta))
+      allocate (dd(max_raoblev*nsta))
+      allocate (ff(max_raoblev*nsta))
+      allocate (qca(max_raoblev*nsta))
+      allocate (qcr(max_raoblev*nsta))
+      allocate (qcd(max_raoblev*nsta))
+      allocate (levtype(max_raoblev*nsta))
 
 ! Read in the observations.
 
@@ -1668,7 +1678,9 @@ subroutine da_setup_obs_structures_madis( ob, iv)
                            ntotal_out,sfclev)
       iv%info(sound)%nlocal = nlocal_out
 
+      print*,'I am here',size(p),nsta,max_raoblev,nlev
       deallocate (p)
+      print*,'I am here 0'
       deallocate (q)
       deallocate (t)
       deallocate (z)
@@ -1681,6 +1693,15 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
    endif
 
+   iv%info(sound)%plocal(1) = nlocal_out
+   iv%info(sound)%ptotal(1) = ntotal(sound)
+   iv%info(sound)%ntotal = ntotal(sound)
+   iv%info(sonde_sfc)%plocal(1) = nlocal_out
+   iv%info(sonde_sfc)%ptotal(1) = ntotal(sound)
+   iv%info(sonde_sfc)%ntotal = ntotal(sound)
+   iv%info(sonde_sfc)%nlocal = nlocal_out
+
+   print*,'Haha 3'
  300  continue
 
 !***** Put the profiler or raob dataset here (at statement 300) when these
@@ -1779,7 +1800,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 	    else
                keep(i) = 1         ! 1 = Process.
                ntmp = ntmp + 1
-               if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+               if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
                   nlocal(geoamv) = nlocal(geoamv) + 2
                else
                   nlocal(geoamv) = nlocal(geoamv) + 1
@@ -1851,13 +1872,15 @@ subroutine da_setup_obs_structures_madis( ob, iv)
            iv%info(gpspw)%nlocal+iv%info(metar)%nlocal+iv%info(ships)%nlocal &
            == 0)then
       write(0,*)'ERROR:  No MADIS observations were found.'
-      stop
+!     stop
    endif
 
 ! Close the MADIS files and deallocate the memory used for the
 ! MADIS arrays that are dimensioned only by station.
 
+   print*,'Haha 4'
    CALL MMADISCLOSE
+   print*,'Haha 5'
    deallocate (stanam)
    deallocate (provdr)
    deallocate (timeob)
@@ -1869,6 +1892,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    deallocate (slp)
    deallocate (keep)
    deallocate (nlevels)
+   print*,'Haha 6'
 
 ! Output the same summary info as the MM5 ingest routine, but just
 ! for those datasets we handle.
@@ -2067,7 +2091,9 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
 ! Copy data out of the IV structure into the OB structure.
 
+   print*, 'Haha 7'
    CALL da_fill_obs_structures(iv,ob)
+   print*, 'Haha 8'
 
    if(madis_debug > 0)then
 
@@ -2083,10 +2109,15 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
    return
 
+#else
+   call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a MADIS library"/))
+#endif
+
    if (trace_use) CALL da_trace_exit("da_setup_obs_structures_madis")
 
 END SUBROUTINE da_setup_obs_structures_madis
 
+#ifdef MADIS
 
 SUBROUTINE PROCESS_DATASET(nsta,nlev,fm,keep,lat,lon,elev,timeob, &
                            slp,pw,stanam,p,q,t,dd,ff,z, &
@@ -2424,7 +2455,7 @@ SUBROUTINE PROCESS_DATASET(nsta,nlev,fm,keep,lat,lon,elev,timeob, &
 ! It's possible that there will be no data at this point.  One example of this
 ! is a RASS (temperature) only Multi-Agency Profiler report.
 
-         if(platform % info % levels == 0)go to 5
+         if(platform % info % levels == 0) go to 5
 
 ! Handle surface corrections, and other end-of-station processing.
 
@@ -2432,7 +2463,7 @@ SUBROUTINE PROCESS_DATASET(nsta,nlev,fm,keep,lat,lon,elev,timeob, &
 
 ! Move the data for this station from PLATFORM to IV.
 
-         if(global.and.platform%loc%i.lt.ids.or.platform%loc%i.ge.ide)then
+         if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) then
             ndup = 2
          else
             ndup = 1
@@ -2629,16 +2660,16 @@ SUBROUTINE PROCESS_DATASET(nsta,nlev,fm,keep,lat,lon,elev,timeob, &
    nlocal_out = n
    ntotal_out = ntot
 
-   iv%info(obs_index)%plocal(1) = nlocal_out
-   iv%info(obs_index)%ptotal(1) = ntotal_out
-   iv%info(obs_index)%ntotal = ntotal_out
-   if(fm == 35)then
-      iv%info(sonde_sfc)%obs_global_index(obs_index) = ntotal_out
-      iv%info(sonde_sfc)%plocal(1) = nlocal_out
-      iv%info(sonde_sfc)%ptotal(1) = ntotal_out
-      iv%info(sonde_sfc)%ntotal = ntotal_out
-      iv%info(sonde_sfc)%nlocal = nlocal_out
-   endif
+!zx   iv%info(obs_index)%plocal(1) = nlocal_out
+!zx   iv%info(obs_index)%ptotal(1) = ntotal(obs_index)
+!zx   iv%info(obs_index)%ntotal = ntotal(obs_index)
+!zx   if(fm == 35)then
+!zx      iv%info(sonde_sfc)%obs_global_index(obs_index) = ntotal_out
+!zx      iv%info(sonde_sfc)%plocal(1) = nlocal_out
+!zx      iv%info(sonde_sfc)%ptotal(1) = ntotal(sonde_sfc)
+!zx      iv%info(sonde_sfc)%ntotal = ntotal(sonde_sfc)
+!zx      iv%info(sonde_sfc)%nlocal = nlocal_out
+!zx   endif
 
    return
 
@@ -2932,3 +2963,5 @@ SUBROUTINE FILL_IV_INFO(obs_index,iv_index,platform,ntotal,nlevels,iv)
    return
 
 END SUBROUTINE FILL_IV_INFO
+
+#endif

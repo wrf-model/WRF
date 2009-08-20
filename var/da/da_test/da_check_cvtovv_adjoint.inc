@@ -28,6 +28,12 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
 
    if (trace_use) call da_trace_entry("da_check_cvtovv_adjoint")
 
+   if (cv_options == 3 ) then
+      write(unit=stdout, fmt='(/a,i2,a/)') 'cv_options =',cv_options, &
+                     '   no da_check_cvtovv_adjoint check...'
+      goto 1234
+   end if
+
    write(unit=stdout, fmt='(/a/)') 'da_check_cvtovv_adjoint: Test Results:'
       
    !-------------------------------------------------------------------------
@@ -51,7 +57,7 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
                + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2)
 
    if (be % ne > 0) then
-      adj_par_lhs = adj_par_lhs + sum(vv % alpha(its:ite,jts:jte,1:be%ne)**2)
+      adj_par_lhs = adj_par_lhs + sum(vv % alpha(its:ite,jts:jte,1:be%alpha%mz,1:be%ne)**2)
    end if
 
    !----------------------------------------------------------------------
@@ -99,6 +105,8 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
       
    write(unit=stdout, fmt='(/a/)') &
       'da_check_cvtovv_adjoint: Test Finished.'
+
+1234 continue
 
    if (trace_use) call da_trace_exit("da_check_cvtovv_adjoint")
 

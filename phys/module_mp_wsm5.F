@@ -169,7 +169,7 @@ CONTAINS
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
-                    ,snow(ims,j),snowncv(ims,j)                    &
+                    ,snow,snowncv                                  &
                                                                    )
 
          DO K=kts,kte
@@ -266,7 +266,7 @@ CONTAINS
                                                          rainncv, &
                                                               sr
 
-  REAL, DIMENSION( ims:ime ),     OPTIONAL,                       &
+  REAL, DIMENSION( ims:ime, jms:jme ),     OPTIONAL,              &
         INTENT(INOUT) ::                                    snow, &
                                                          snowncv
 
@@ -697,10 +697,10 @@ CONTAINS
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rain(i)
         endif
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-        snowncv(i) = 0.
+        snowncv(i,lat) = 0.
         if(fallsum_qsi.gt.0.) then
-          snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
-          snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
+          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
+          snow(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i,lat)
         endif
         ENDIF
         sr(i) = 0.

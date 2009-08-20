@@ -1,4 +1,4 @@
-subroutine da_trh_to_td (rh, t, td)
+subroutine da_trh_to_td (grid)
 
    !---------------------------------------------------------------------
    !
@@ -45,39 +45,41 @@ subroutine da_trh_to_td (rh, t, td)
 
    implicit none
 
-   real, dimension(ims:ime,jms:jme,kms:kme), &
-      intent(inout) :: rh ! relative humidity.
-   real, dimension(ims:ime,jms:jme,kms:kme), &
-      intent(in)    ::  t ! temperature.
-   real, dimension(ims:ime,jms:jme,kms:kme), &
-      intent(out)   :: td ! dew point in k.
+   type (domain), intent(inout) :: grid
 
-   integer :: i, j, k
+   integer :: i, j, k, ij
 
    real    :: invdifftd, invtd
 
    if (trace_use_dull) call da_trace_entry("da_trh_to_td")
 
-   do j=jts,jte
-      do k=kts,kte
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE( ij, i, j, k, invdifftd, invtd )
+   do ij = 1 , grid%num_tiles
+
+   do k=kts,kte
+      do j=grid%j_start(ij), grid%j_end(ij)
          do i=its,ite
-            if (rh(i,j,k) < 10.0) then
-               rh(i,j,k) = 10.0
-            else if (rh(i,j,k) > 105.0) then
-               rh(i,j,k) = 105.0
+            if (grid%xb%rh(i,j,k) < 10.0) then
+               grid%xb%rh(i,j,k) = 10.0
+            else if (grid%xb%rh(i,j,k) > 105.0) then
+               grid%xb%rh(i,j,k) = 105.0
             end if
 
-            invdifftd = log (rh(i,j,k)/100.0) / l_over_rv
+            invdifftd = log (grid%xb%rh(i,j,k)/100.0) / l_over_rv
 
-            invtd = 1/t(i,j,k)  - invdifftd
+            invtd = 1/grid%xb%t(i,j,k)  - invdifftd
 
-            td(i,j,k)  = 1.0 / invtd
+            grid%xb%td(i,j,k)  = 1.0 / invtd
 
-            if (td(i,j,k) > t(i,j,k)) &
-               td(i,j,k) = t(i,j,k)
+            if (grid%xb%td(i,j,k) > grid%xb%t(i,j,k)) &
+               grid%xb%td(i,j,k) = grid%xb%t(i,j,k)
          end do
       end do
    end do
+
+   end do
+   !$OMP END PARALLEL DO
 
    if (trace_use_dull) call da_trace_exit("da_trh_to_td")
 

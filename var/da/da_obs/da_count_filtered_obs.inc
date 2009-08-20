@@ -36,7 +36,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
    do files = 0, num_procs-1
       write(unit=filename, fmt='(a,i3.3)') 'filtered_obs.',files  
       open(unit=iunit, file= trim(filename), form='formatted',iostat=iost)
-      if (iost /= 0) call da_error(__FILE__,__LINE__, (/"Cannot open "//trim(filename)/))
+      if (iost /= 0) call da_error(__FILE__,__LINE__, (/"Cannot open "//filename/))
 
       !  loop over records
 
@@ -52,16 +52,20 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             platform%info%lon,         &
             platform%info%elv,         &
             platform%info%id
+
          if (iost /= 0) then
-            write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
-            write (0,'(/A,I9)') ' iostat:          ',iost
+            !write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
+            !write (0,'(/A,I9)') ' iostat:          ',iost
             exit reports
          end if
 
          ! Read surface Info
 
-         read (iunit, fmt = fmt_srfc) platform%loc%slp, platform%loc%pw
-
+         read (iunit, fmt = fmt_srfc)  &
+            platform%loc%slp%inv, platform%loc%slp%qc, &
+            platform%loc%slp%error,                    &
+            platform%loc%pw%inv, platform%loc%pw%qc,   &
+            platform%loc%pw%error
          ! levels < 1 and not GPSPW, go back to reports
 
          if ((platform%info%levels < 1) .AND.            &
@@ -73,25 +77,26 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
          ! read each level
          do i = 1, platform%info%levels
             platform%each (i) = each_level_type(missing_r, missing, -1.0, & ! height
-               field_type(missing_r, missing, missing_r, missing, missing_r), & ! u
-               field_type(missing_r, missing, missing_r, missing, missing_r), & ! v
-               field_type(missing_r, missing, missing_r, missing, missing_r), & ! p
-               field_type(missing_r, missing, missing_r, missing, missing_r), & ! t
-               field_type(missing_r, missing, missing_r, missing, missing_r), & ! q
-               field_type(missing_r, missing, missing_r, missing, missing_r), & ! rh
-               field_type(missing_r, missing, missing_r, missing, missing_r), & ! td
-               field_type(missing_r, missing, missing_r, missing, missing_r))  ! speed 
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! u
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! v
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! p
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! t
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! q
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! rh
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! td
+               field_type(missing_r, missing_data, missing_r, missing_r, missing_r))  ! speed 
 
             read (unit = iunit, fmt = trim (fmt_each)) &
-               platform%each (i)%p,            &
-               platform%each (i)%speed,        &
-               platform%each (i)%v,            &
-               platform%each (i)%height,       &
-               platform%each (i)%height_qc,    &
-               height_error,                   &
-               platform%each (i)%t,            &
-               platform%each (i)%td,           &
-               platform%each (i)%rh
+               platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
+               platform%each(i)%speed%inv, platform%each(i)%speed%qc,                   &
+               platform%each(i)%speed%error,                                            &
+               platform%each(i)%v%inv, platform%each(i)%v%qc, platform%each(i)%v%error, &
+               platform%each(i)%height,                                                 &
+               platform%each(i)%height_qc,                                              &
+               height_error,                                                            &
+               platform%each(i)%t%inv, platform%each(i)%t%qc, platform%each(i)%t%error, &
+               platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
+               platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
          end do
 
          if (platform%info%levels < 1) then
@@ -157,6 +162,10 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
 
             if (.not.use_airepobs) cycle reports
             nlocal(airep) = nlocal(airep) + 1
+
+         case (101) ;
+            if (.not.use_tamdarobs) cycle reports
+            nlocal(tamdar) = nlocal(tamdar) + 1
 
          case (111) ;
          
@@ -225,7 +234,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       nlocal(buoy) + nlocal(sound) + nlocal(airep) + nlocal(pilot) + &
       nlocal(geoamv) + nlocal(polaramv) + nlocal(gpspw) + nlocal(gpsref) + &
       nlocal(profiler) + nlocal(qscat) + nlocal(ssmt1) + nlocal(ssmt2) +  &
-      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + nlocal(mtgirs) + num_others
+      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + nlocal(mtgirs) + nlocal(tamdar) + num_others
 
    write  (unit = filtered_obs_unit, fmt = '(A,I7,A,F8.0,A)')    &
       "TOTAL =",total_obs, ", MISS. =",missing_r,","  
@@ -252,6 +261,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       "BOGUS =",nlocal(bogus),", ", &
       "AIRSR =",nlocal(airsr),", ", &
       "MTGIRS=",nlocal(mtgirs),", ", &
+      "TAMDAR=",nlocal(tamdar),", ", &
       "OTHER =",num_others,", "
 
    ! write reference state info
@@ -305,8 +315,13 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
 
    ! write end of header record
 
-   write (unit = filtered_obs_unit, fmt = '(A)') &
-      "#------------------------------------------------------------------------------#"
+   if (write_mod_filtered_obs) then    !cys_change
+      write (unit = filtered_obs_unit, fmt = '(A)') &
+         "MODIFIED FILTERED OBS #--------------------------------------------------------#"
+   else
+      write (unit = filtered_obs_unit, fmt = '(A)') &
+         "FILTERED OBS #-----------------------------------------------------------------#"
+   end if     
 
    if (trace_use) call da_trace_exit("da_count_filtered_obs")
 

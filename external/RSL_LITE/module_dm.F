@@ -85,7 +85,6 @@ CONTAINS
    END SUBROUTINE MPASPECT
 
    SUBROUTINE wrf_dm_initialize
-      USE module_configure
       IMPLICIT NONE
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
@@ -213,7 +212,6 @@ CONTAINS
                                 bdx , bdy )
 
       USE module_domain, ONLY : domain, head_grid, find_grid_by_id
-      USE module_machine
 
       IMPLICIT NONE
       INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy
@@ -478,7 +476,7 @@ CONTAINS
             c_jps = 0
          ENDIF
 
-         IF ( c_jps < c_jpe .AND. c_ips < c_ipe ) THEN
+         IF ( c_ips <= c_ipe ) THEN
 ! extend the patch dimensions out shw along edges of domain
            IF ( mytask_x .EQ. 0 ) THEN
              c_ips = c_ips - shw
@@ -488,8 +486,14 @@ CONTAINS
            ENDIF
            c_ims = max( c_ips - max(shw,thisdomain_max_halo_width), c_ids - bdx ) - 1
            c_ime = min( c_ipe + max(shw,thisdomain_max_halo_width), c_ide + bdx ) + 1
+         ELSE
+           c_ims = 0
+           c_ime = 0
+         ENDIF
+
 
 ! handle j dims
+         IF ( c_jps <= c_jpe ) THEN
 ! extend the patch dimensions out shw along edges of domain
            IF ( mytask_y .EQ. 0 ) THEN
               c_jps = c_jps - shw
@@ -501,8 +505,6 @@ CONTAINS
            c_jme = min( c_jpe + max(shw,thisdomain_max_halo_width), c_jde + bdx ) + 1
 ! handle k dims
          ELSE
-           c_ims = 0
-           c_ime = 0
            c_jms = 0
            c_jme = 0
          ENDIF
@@ -675,7 +677,6 @@ CONTAINS
                    ipsx, ipex, jpsx, jpex, kpsx, kpex, &
                    ipsy, ipey, jpsy, jpey, kpsy, kpey )
 
-    USE module_machine
     IMPLICIT NONE
     INTEGER, INTENT(IN)               ::  id , maxhalowidth
     INTEGER, INTENT(IN)               ::  shw, bdx, bdy
@@ -1299,16 +1300,14 @@ CONTAINS
         CALL wrf_set_dm_communicator( MPI_COMM_ATMOS )
         CALL wrf_termio_dup
       ENDIF
+#if (DA_CORE == 1)
+      CALL mpi_comm_split( MPI_COMM_ATMOS , 4 , 1 , mpi_comm_local, ierr )
+      CALL wrf_set_dm_communicator( mpi_comm_local )
+#endif
       CALL wrf_get_dm_communicator( mpi_comm_here )
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
       CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
-#if (DA_CORE == 1)
-      CALL mpi_comm_split( MPI_COMM_ATMOS , 4 , 1 , mpi_comm_local, ierr )
-      CALL wrf_set_dm_communicator( mpi_comm_local )
-      CALL wrf_termio_dup
-      CALL wrf_get_dm_communicator( mpi_comm_here )
-#endif
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
@@ -1414,6 +1413,7 @@ CONTAINS
     REAL UVT_BUFFER(NIOBF)    ! Buffer for holding U, V, or T
     REAL QRK_BUFFER(NIOBF)    ! Buffer for holding Q or RKO
     REAL SFP_BUFFER(NIOBF)    ! Buffer for holding Surface pressure
+    REAL PBL_BUFFER(NIOBF)    ! Buffer for holding (real) KPBL index
     INTEGER N_BUFFER(NIOBF)
     REAL FULL_BUFFER(NIOBF)
     INTEGER IFULL_BUFFER(NIOBF)
@@ -1519,6 +1519,7 @@ CONTAINS
        NLOCAL_CRS = NLOCAL_CRS + 1
        UVT_BUFFER(NLOCAL_CRS) = ERRF(3,N)     ! TEMPERATURE
        QRK_BUFFER(NLOCAL_CRS) = ERRF(4,N)     ! MOISTURE
+       PBL_BUFFER(NLOCAL_CRS) = ERRF(5,N)     ! KPBL
        SFP_BUFFER(NLOCAL_CRS) = ERRF(6,N)     ! SURFACE PRESSURE
        N_BUFFER(NLOCAL_CRS) = N
      ENDIF
@@ -1547,6 +1548,13 @@ CONTAINS
                         MPI_REAL, MPI_COMM_COMP, IERR)
    DO N = 1, NSTA
      ERRF(4,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+! KPBL
+   CALL MPI_ALLGATHERV( PBL_BUFFER, NLOCAL_CRS, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(5,IFULL_BUFFER(N)) = FULL_BUFFER(N)
    ENDDO
 ! SURF PRESS AT MASS POINTS
    CALL MPI_ALLGATHERV( SFP_BUFFER, NLOCAL_CRS, MPI_REAL,     &
@@ -1705,7 +1713,7 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
                                       sp3y , ep3y , sm3y , em3y , &
                           bdx , bdy )
    USE module_domain, ONLY : domain, head_grid, find_grid_by_id
-   USE module_dm
+   USE module_dm, ONLY : patch_domain_rsl_lite
    IMPLICIT NONE
 
    INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy
@@ -1957,7 +1965,6 @@ END
    END SUBROUTINE wrf_dm_shutdown
 
    LOGICAL FUNCTION wrf_dm_on_monitor()
-!     USE module_dm
       IMPLICIT NONE
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
@@ -2141,7 +2148,6 @@ END
    END FUNCTION rsl_comm_iter
 
    INTEGER FUNCTION wrf_dm_monitor_rank()
-!     USE module_dm
       IMPLICIT NONE
       wrf_dm_monitor_rank = 0
       RETURN
@@ -2284,8 +2290,9 @@ END
                                        PS1a,PE1a,PS2a,PE2a,PS3a,PE3a )
        USE module_driver_constants
        USE module_timing
-       USE module_wrf_error
-       USE module_dm
+       USE module_wrf_error, ONLY : wrf_at_debug_level
+       USE module_dm, ONLY : local_communicator, ntasks
+
        IMPLICIT NONE
        INTEGER                         DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
                                        MS1a,ME1a,MS2a,ME2a,MS3a,ME3a,&
@@ -2421,7 +2428,6 @@ END
   SUBROUTINE just_patch_i ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     INTEGER                         , INTENT(IN)  :: noutbuf
     INTEGER    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
@@ -2445,7 +2451,6 @@ END
   SUBROUTINE just_patch_r ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     INTEGER                      , INTENT(IN)  :: noutbuf
     REAL    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
@@ -2469,7 +2474,6 @@ END
   SUBROUTINE just_patch_d ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     INTEGER                                  , INTENT(IN)  :: noutbuf
     DOUBLE PRECISION    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
@@ -2493,7 +2497,6 @@ END
   SUBROUTINE just_patch_l ( inbuf , outbuf, noutbuf,     &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     INTEGER                         , INTENT(IN)  :: noutbuf
     LOGICAL    , DIMENSION(noutbuf) , INTENT(OUT) :: outbuf
@@ -2518,7 +2521,7 @@ END
   SUBROUTINE patch_2_outbuf_r( inbuf, outbuf,            &
                                DS1,DE1,DS2,DE2,DS3,DE3,  &
                                GPATCH ) 
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     REAL    , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -2543,7 +2546,7 @@ END
   SUBROUTINE patch_2_outbuf_i( inbuf, outbuf,         &
                                DS1,DE1,DS2,DE2,DS3,DE3,&
                                GPATCH )
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     INTEGER    , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -2567,7 +2570,7 @@ END
   SUBROUTINE patch_2_outbuf_d( inbuf, outbuf,         &
                                DS1,DE1,DS2,DE2,DS3,DE3,&
                                GPATCH )
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     DOUBLE PRECISION    , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -2591,7 +2594,7 @@ END
   SUBROUTINE patch_2_outbuf_l( inbuf, outbuf,         &
                                DS1,DE1,DS2,DE2,DS3,DE3,&
                                GPATCH )
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     LOGICAL    , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -2703,7 +2706,7 @@ END
                                        DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
                                        MS1a,ME1a,MS2a,ME2a,MS3a,ME3a,&
                                        PS1a,PE1a,PS2a,PE2a,PS3a,PE3a )
-       USE module_dm
+       USE module_dm, ONLY : local_communicator, ntasks
        USE module_driver_constants
        IMPLICIT NONE
        INTEGER                         DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
@@ -2829,7 +2832,6 @@ END
   SUBROUTINE all_sub_i ( inbuf , outbuf,              &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     INTEGER    , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
@@ -2852,7 +2854,6 @@ END
   SUBROUTINE all_sub_r ( inbuf , outbuf,              &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     REAL       , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
@@ -2876,7 +2877,6 @@ END
   SUBROUTINE all_sub_d ( inbuf , outbuf,              &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     DOUBLE PRECISION    , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
@@ -2899,7 +2899,6 @@ END
   SUBROUTINE all_sub_l ( inbuf , outbuf,              &
                                PS1,PE1,PS2,PE2,PS3,PE3,  &
                                MS1,ME1,MS2,ME2,MS3,ME3   )
-    USE module_dm
     IMPLICIT NONE
     LOGICAL    , DIMENSION(*) , INTENT(IN) :: inbuf
     INTEGER   MS1,ME1,MS2,ME2,MS3,ME3
@@ -2923,7 +2922,7 @@ END
                                DS1,DE1,DS2,DE2,DS3,DE3, &
                                MS1, ME1, MS2, ME2, MS3, ME3 , &
                                GPATCH )
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     REAL    , DIMENSION(*) , INTENT(OUT) :: outbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -2949,7 +2948,7 @@ END
   SUBROUTINE outbuf_2_patch_i( inbuf, outbuf,         &
                                DS1,DE1,DS2,DE2,DS3,DE3,&
                                GPATCH )
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     INTEGER    , DIMENSION(*) , INTENT(OUT) :: outbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -2973,7 +2972,7 @@ END
   SUBROUTINE outbuf_2_patch_d( inbuf, outbuf,         &
                                DS1,DE1,DS2,DE2,DS3,DE3,&
                                GPATCH )
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     DOUBLE PRECISION    , DIMENSION(*) , INTENT(OUT) :: outbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -2997,7 +2996,7 @@ END
   SUBROUTINE outbuf_2_patch_l( inbuf, outbuf,         &
                                DS1,DE1,DS2,DE2,DS3,DE3,&
                                GPATCH )
-    USE module_dm
+    USE module_dm, ONLY : ntasks
     IMPLICIT NONE
     LOGICAL    , DIMENSION(*) , INTENT(OUT) :: outbuf
     INTEGER   DS1,DE1,DS2,DE2,DS3,DE3,GPATCH(3,2,ntasks)
@@ -3034,7 +3033,8 @@ END
       USE module_state_description
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm
+      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, local_communicator, mytask
+      USE module_comm_dm, ONLY : halo_force_down_sub
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3053,6 +3053,7 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7,itrace
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -3090,7 +3091,8 @@ END
       USE module_state_description
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm
+      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, &
+                            mytask, get_dm_max_halo_width
       USE module_timing
       IMPLICIT NONE
 !
@@ -3112,6 +3114,8 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
 
       INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr 
       INTEGER thisdomain_max_halo_width
@@ -3165,7 +3169,9 @@ END
       USE module_state_description
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm
+      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, &
+                            mytask, get_dm_max_halo_width
+      USE module_comm_dm, ONLY : halo_interp_down_sub
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3184,6 +3190,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER myproc
       INTEGER ierr
       INTEGER thisdomain_max_halo_width
@@ -3225,7 +3234,8 @@ END
       USE module_state_description
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm
+      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask
+      USE module_comm_dm, ONLY : halo_interp_up_sub
       IMPLICIT NONE
 !
       TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3237,6 +3247,8 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
 
       INTEGER       :: idum1, idum2
 
@@ -3262,7 +3274,9 @@ END
       USE module_state_description
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
-      USE module_dm
+      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
+                            ipe_save, jpe_save, ips_save, jps_save
+ 
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3279,6 +3293,9 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER local_comm, myproc, nproc, idum1, idum2
       INTEGER thisdomain_max_halo_width
 
@@ -3362,7 +3379,9 @@ END
       USE module_state_description
       USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type, model_config_rec
-      USE module_dm
+      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
+                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
+      USE module_comm_dm, ONLY : halo_interp_up_sub
       USE module_utility
       IMPLICIT NONE
 
@@ -3385,6 +3404,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
       INTEGER iparstrt, jparstrt, sw, thisdomain_max_halo_width
@@ -3503,6 +3525,8 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
 
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
       INTEGER local_comm, myproc, nproc
       INTEGER thisdomain_max_halo_width
@@ -3577,6 +3601,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER myproc
       INTEGER ierr
 
@@ -3645,6 +3672,9 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
 #define COPY_IN
 #include <scalar_derefs.inc>
 !
@@ -3698,6 +3728,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
 integer myproc
 
 #ifdef DEREF_KLUDGE
@@ -3772,6 +3805,8 @@ integer myproc
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
 
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER       :: idum1, idum2
 
 
@@ -3827,6 +3862,9 @@ integer myproc
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER local_comm, myproc, nproc, idum1, idum2
 
 #ifdef DEREF_KLUDGE
@@ -3921,7 +3959,9 @@ integer myproc
       USE module_state_description
       USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm
+      USE module_dm, ONLY : halo_interp_up_sub, get_dm_max_halo_width, ips_save, ipe_save, &
+                            jps_save, jpe_save, ntasks, mytask, ntasks_x, ntasks_y, &
+                            local_communicator, itrace
       USE module_utility
       IMPLICIT NONE
 
@@ -3944,6 +3984,9 @@ integer myproc
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
       INTEGER iparstrt, jparstrt, sw
@@ -4184,7 +4227,6 @@ integer myproc
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
-   USE module_dm
    IMPLICIT NONE
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
@@ -4268,17 +4310,17 @@ SUBROUTINE tfp_message( fname, lno )
 END SUBROUTINE tfp_message
 
    SUBROUTINE set_dm_debug 
-    USE module_dm
+    USE module_dm, ONLY : dm_debug_flag
     IMPLICIT NONE
     dm_debug_flag = .TRUE.
    END SUBROUTINE set_dm_debug
    SUBROUTINE reset_dm_debug 
-    USE module_dm
+    USE module_dm, ONLY : dm_debug_flag
     IMPLICIT NONE
     dm_debug_flag = .FALSE.
    END SUBROUTINE reset_dm_debug
    SUBROUTINE get_dm_debug ( arg )
-    USE module_dm
+    USE module_dm, ONLY : dm_debug_flag
     IMPLICIT NONE
     LOGICAL arg
     arg = dm_debug_flag

@@ -1,3 +1,19 @@
+Updated for Version 3.1 release.  Mar 17 2009
+
+1, rename 3dvar_obs.F90 to obsproc.F90.
+2, rename 3dvar_obs.exe to obsproc.exe.
+3, rename namelist.3dvar_obs.wrfvar-tut to namelist.obsproc.wrfvar-tut.
+4, remove some unnecessary files only for development team internal use only.
+5, update README and README.namelist
+
+Updated Makefile to support more compilers.  Mar 5 2009
+
+1, to compile, add compiler choice in the make command line, for example,
+   make FC="pgf90"
+   make FC="ifort"     # for Linux only
+   make FC="gfortran"  # for Linux only
+   make FC="g95"       # for Mac only
+
 Updated by Y.-R. Guo, 7 May 2008
 
 1, To correct the "0 obs" ascii output file writing
@@ -784,11 +800,11 @@ To get the plots of the observation distribution
  
 ----------------------------------------------------------------------------
 
-To clean the directory 3DVAR_OBSPROC
+To clean the directory obsproc
 
      make clean
 
-   will clean the directory 3DVAR_OBSPROC and its sub-directory. Be sure
+   will clean the directory obsproc and its sub-directory. Be sure
    to keep the files: obs_gts.3dvar, etc. before cleaning.
 
 

@@ -39,6 +39,9 @@ subroutine da_calculate_grady(iv, re, jo_grad_y)
    if (iv%info(qscat)%nlocal     > 0) call da_calculate_grady_qscat    (iv, re, jo_grad_y)
    if (iv%info(radar)%nlocal     > 0) call da_calculate_grady_radar    (iv, re, jo_grad_y)
    if (iv%info(mtgirs)%nlocal    > 0) call da_calculate_grady_mtgirs   (iv, re, jo_grad_y)
+   if (iv%info(tamdar)%nlocal    > 0) call da_calculate_grady_tamdar   (iv, re, jo_grad_y)
+   if (iv%info(tamdar_sfc)%nlocal> 0) call da_calculate_grady_tamdar_sfc(iv, re, jo_grad_y)
+
 #if defined(CRTM) || defined(RTTOV)
    if (iv%num_inst               > 0) call da_calculate_grady_rad      (iv, re, jo_grad_y)
 #endif

@@ -1,0 +1,150 @@
+      SUBROUTINE NEMTAB(LUN,NEMO,IDN,TAB,IRET)
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!
+! SUBPROGRAM:    NEMTAB
+!   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
+!
+! ABSTRACT: THIS SUBROUTINE SEARCHES FOR MNEMONIC NEMO WITHIN THE
+!   INTERNAL TABLE B AND D ARRAYS HOLDING THE DICTIONARY TABLE (ARRAYS
+!   IN COMMON BLOCK /TABABD/) AND, IF FOUND, RETURNS INFORMATION ABOUT
+!   THAT MNEMONIC FROM WITHIN THESE ARRAYS.  OTHERWISE, IT CHECKS
+!   WHETHER NEMO IS A TABLE C OPERATOR DESCRIPTOR AND, IF SO, DIRECTLY
+!   COMPUTES AND RETURNS SIMILAR INFORMATION ABOUT THAT DESCRIPTOR.
+!   THIS SUBROUTINE MAY BE USEFUL TO APPLICATION PROGRAMS WHICH WANT
+!   TO CHECK WHETHER A PARTICULAR MNEMONIC IS IN THE DICTIONARY.  IN
+!   THIS CASE, BUFR ARCHIVE LIBRARY SUBROUTINE OPENBF MUST FIRST BE
+!   CALLED TO STORE THE DICTIONARY TABLE INTERNALLY, AND BUFR ARCHIVE
+!   LIBRARY SUBROUTINE STATUS MUST BE CALLED TO CONNECT THE LOGICAL
+!   UNIT NUMBER FOR THE BUFR FILE OPENED IN OPENBF TO LUN.
+!
+! PROGRAM HISTORY LOG:
+! 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
+! 1995-06-28  J. WOOLLEN -- INCREASED THE SIZE OF INTERNAL BUFR TABLE
+!                           ARRAYS IN ORDER TO HANDLE BIGGER FILES
+! 1999-11-18  J. WOOLLEN -- THE NUMBER OF BUFR FILES WHICH CAN BE
+!                           OPENED AT ONE TIME INCREASED FROM 10 TO 32
+!                           (NECESSARY IN ORDER TO PROCESS MULTIPLE
+!                           BUFR FILES UNDER THE MPI)
+! 2000-09-19  J. WOOLLEN -- ADDED CAPABILITY TO ENCODE AND DECODE DATA
+!                           USING THE OPERATOR DESCRIPTORS (BUFR TABLE
+!                           C) FOR CHANGING WIDTH AND CHANGING SCALE
+! 2003-11-04  J. ATOR    -- ADDED DOCUMENTATION
+! 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+!                           INTERDEPENDENCIES
+! 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
+!                           DOCUMENTATION
+! 2005-11-29  J. ATOR    -- ADDED SUPPORT FOR 207 AND 208 OPERATORS
+!
+! USAGE:    CALL NEMTAB (LUN, NEMO, IDN, TAB, IRET)
+!   INPUT ARGUMENT LIST:
+!     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
+!     NEMO     - CHARACTER*(*): MNEMONIC TO SEARCH FOR
+!
+!   OUTPUT ARGUMENT LIST:
+!     IDN      - INTEGER: BIT-WISE REPRESENTATION OF FXY VALUE
+!                CORRESPONDING TO NEMO (IF NEMO WAS FOUND)
+!     TAB      - CHARACTER*1: INTERNAL TABLE ARRAY IN WHICH NEMO WAS
+!                FOUND:
+!                     'B' = Table B array
+!                     'C' = Table C array
+!                     'D' = Table D array
+!     IRET     - INTEGER: POSITIONAL INDEX OF NEMO WITHIN TAB
+!                       0 = NEMO was not found within any of the Table
+!                           B, C, or D arrays
+!
+! REMARKS:
+!    THIS ROUTINE CALLS:        IFXY
+!    THIS ROUTINE IS CALLED BY: CHEKSTAB CMSGINI  ELEMDX   MSGINI
+!                               SEQSDX   TABSUB   UFBDMP   UFBQCD
+!                               UFDUMP   UPFTBV
+!                               Also called by application programs
+!                               (see ABSTRACT).
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 77
+!   MACHINE:  PORTABLE TO ALL PLATFORMS
+!
+!$$$
+
+      INCLUDE 'bufrlib.prm'
+
+      COMMON /TABABD/ NTBA(0:NFILES),NTBB(0:NFILES),NTBD(0:NFILES), &
+                      MTAB(MAXTBA,NFILES),IDNA(MAXTBA,NFILES,2), &
+                      IDNB(MAXTBB,NFILES),IDND(MAXTBD,NFILES), &
+                      TABA(MAXTBA,NFILES),TABB(MAXTBB,NFILES), &
+                      TABD(MAXTBD,NFILES)
+
+      CHARACTER*(*) NEMO
+      CHARACTER*600 TABD
+      CHARACTER*128 TABB
+      CHARACTER*128 TABA
+      CHARACTER*8   NEMT
+      CHARACTER*1   TAB
+      LOGICAL       FOLVAL
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+
+      FOLVAL = NEMO(1:1).EQ.'.'
+      IRET = 0
+      TAB = ' '
+
+!  LOOK FOR NEMO IN TABLE B
+!  ------------------------
+
+      DO 1 I=1,NTBB(LUN)
+      NEMT = TABB(I,LUN)(7:14)
+      IF(NEMT.EQ.NEMO) THEN
+         IDN  = IDNB(I,LUN)
+         TAB  = 'B'
+         IRET = I
+         GOTO 100
+      ELSEIF(FOLVAL.AND.NEMT(1:1).EQ.'.') THEN
+         DO J=2,LEN(NEMT)
+         IF(NEMT(J:J).NE.'.' .AND. NEMT(J:J).NE.NEMO(J:J)) GOTO 1
+         ENDDO
+         IDN  = IDNB(I,LUN)
+         TAB  = 'B'
+         IRET = I
+         GOTO 100
+      ENDIF
+1     ENDDO
+
+!  DON'T LOOK IN TABLE D FOR FOLLOWING VALUE-MNEMONICS
+!  ---------------------------------------------------
+
+      IF(FOLVAL) GOTO 100
+
+!  LOOK IN TABLE D IF WE GOT THIS FAR
+!  ----------------------------------
+
+      DO I=1,NTBD(LUN)
+      NEMT = TABD(I,LUN)(7:14)
+      IF(NEMT.EQ.NEMO) THEN
+         IDN  = IDND(I,LUN)
+         TAB  = 'D'
+         IRET = I
+         GOTO 100
+      ENDIF
+      ENDDO
+
+!  IF STILL NOTHING, CHECK HERE FOR TABLE C OPERATOR DESCRIPTORS
+!  -------------------------------------------------------------
+
+      IF(NEMO(1:3).EQ.'201' .OR. &
+         NEMO(1:3).EQ.'202' .OR. &
+         NEMO(1:3).EQ.'206' .OR. &
+         NEMO(1:3).EQ.'207' .OR. &
+         NEMO(1:3).EQ.'208' ) THEN
+         READ(NEMO,'(1X,I2)') IRET
+         IDN = IFXY(NEMO)
+         TAB = 'C'
+         GOTO 100
+      ENDIF
+
+!  EXIT
+!  ----
+
+100   RETURN
+      END SUBROUTINE NEMTAB

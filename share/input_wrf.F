@@ -80,6 +80,23 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
+! If this was not a training read (dry run) check for erroneous values.
+    CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+    IF ( ierr /= 0 ) THEN
+      WRITE(wrf_err_message,*)'module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
+      CALL wrf_error_fatal( wrf_err_message )
+    ENDIF
+
+    WRITE(wrf_err_message,*)'input_wrf: fid,filestate = ',fid,filestate
+    CALL wrf_debug( 300 , wrf_err_message )
+
+    dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+
+    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun
+    CALL wrf_debug( 300 , wrf_err_message )
+
+    check_if_dryrun : IF ( .NOT. dryrun ) THEN
+
 ! simulation start time is a Singleton maintained by head_grid
     IF ( ( switch .EQ.     model_input_only  ) .OR. &
          ( switch .EQ.          restart_only ) ) THEN
@@ -156,8 +173,7 @@
        ierr = max( ierr, ierr3 )
        CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' ,   kde_compare , 1 , icnt , ierr3 )
        ierr = max( ierr, ierr3 )
-!      IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
-       IF ( ierr3 .NE. 0 ) CALL wrf_debug( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
+       IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
 
 #if (EM_CORE == 1)
        !  Test to make sure that the grid distances are the right size.
@@ -223,6 +239,17 @@
     CALL nl_set_stand_lon ( grid%id , config_flags%stand_lon )
 
 #if ( NMM_CORE != 1 )
+
+    CALL wrf_get_dom_ti_real ( fid , 'POLE_LAT' ,  config_flags%pole_lat , 1 , icnt , ierr )
+    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for POLE_LAT returns ',config_flags%pole_lat
+    CALL wrf_debug ( 300 , wrf_err_message )
+    CALL nl_set_pole_lat ( grid%id , config_flags%pole_lat )
+
+    CALL wrf_get_dom_ti_real ( fid , 'POLE_LON' ,  config_flags%pole_lon , 1 , icnt , ierr )
+    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for POLE_LON returns ',config_flags%pole_lon
+    CALL wrf_debug ( 300 , wrf_err_message )
+    CALL nl_set_pole_lon ( grid%id , config_flags%pole_lon )
+
 ! program_name is defined in module_domain and set in the main program for whatever application
 ! is using subroutine input_wrf (that is, the subroutine you are looking at here). Data files
 ! written by SI have P_TOP as a metadata item; the real program and wrf model have it as a
@@ -259,6 +286,7 @@
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for MAP_PROJ returns ',config_flags%map_proj
     CALL wrf_debug ( 300 , wrf_err_message )
     CALL nl_set_map_proj ( grid%id , config_flags%map_proj )
+    grid%map_proj = config_flags%map_proj
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) THEN
@@ -274,7 +302,7 @@
     ELSE
        mminlu = " "
     END IF
-    call wrf_message("mminlu = '" // mminlu // "'")
+    call wrf_debug( 1 , "mminlu = '" // TRIM(mminlu) // "'")
     if (index(mminlu, char(0)) > 0) mminlu(index(mminlu, char(0)):) = " "
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_char for MMINLU returns ' // TRIM(mminlu)
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -286,7 +314,7 @@
 
     call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
     if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
-       call wrf_message("Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
+       call wrf_debug( 1 , "Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
        num_land_cat_compare = 24
 !      call wrf_error_fatal("Error trying to find global attribute 'NUM_LAND_CAT'")
     endif
@@ -298,6 +326,27 @@
        call wrf_message(wrf_err_message)
        call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
     endif
+
+    ! Test here to check that config_flags%num_metgrid_soil_levels in namelist
+    ! is equal to what is in the global attributes of the met_em files
+
+    IF ( switch .EQ. aux_model_input1_only ) THEN
+       CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
+   
+       IF ( ierr .EQ. 0 ) THEN
+          WRITE(wrf_err_message,*)'input_wrf: global attribute NUM_METGRID_SOIL_LEVELS returns ', itmp
+          CALL wrf_debug ( 300 , wrf_err_message )
+          IF ( config_flags%num_metgrid_soil_levels /= itmp ) THEN
+             call wrf_message("----------------- ERROR -------------------")
+             WRITE(wrf_err_message,'("namelist    : num_metgrid_soil_levels = ",I10)') config_flags%num_metgrid_soil_levels
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,'("input files : NUM_METGRID_SOIL_LEVELS = ",I10, " (from met_em files).")') itmp
+             call wrf_message(wrf_err_message)
+             call wrf_error_fatal("Mismatch between namelist and global attribute NUM_METGRID_SOIL_LEVELS")
+          END IF
+       END IF
+    END IF
+
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISWATER returns ',config_flags%iswater
@@ -370,23 +419,6 @@
       CALL nl_set_j_parent_start ( grid%id , config_flags%j_parent_start )
     ENDIF
 #endif
-
-! If this was not a training read (dry run) check for erroneous values.
-    CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
-    IF ( ierr /= 0 ) THEN
-      WRITE(wrf_err_message,*)'module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
-      CALL wrf_error_fatal( wrf_err_message )
-    ENDIF
-
-    WRITE(wrf_err_message,*)'input_wrf: fid,filestate = ',fid,filestate
-    CALL wrf_debug( 300 , wrf_err_message )
-
-    dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
-
-    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun
-    CALL wrf_debug( 300 , wrf_err_message )
-
-    check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
 #if (EM_CORE == 1)
 
@@ -491,11 +523,12 @@
 !
       SELECT CASE ( switch )
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
-               aux_model_input3_only, aux_model_input4_only, aux_model_input5_only, aux_model_input10_only )
+               aux_model_input3_only, aux_model_input4_only, aux_model_input5_only,  &
+               aux_model_input9_only, aux_model_input10_only )
 #ifdef WRF_CHEM
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
-              ((switch.eq.aux_model_input4_only) .or. (switch.eq.aux_model_input5_only) .or. &
-               (switch.eq.aux_model_input7_only)) ) then
+              ((switch.eq.aux_model_input5_only) .or. (switch.eq.aux_model_input6_only) .or. &
+               (switch.eq.aux_model_input7_only) .or. (switch.eq.aux_model_input8_only)) ) then
                CALL wrf_message( "**WARNING** Time in input file not being checked **WARNING**" )
            ELSE
 #endif

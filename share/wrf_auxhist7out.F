@@ -22,7 +22,7 @@
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
 
-    INTEGER       itrace
+    INTEGER       itrace,idim1,idim2,idim3,idim4,idim5,idim6,idim7
     INTEGER , DIMENSION(3) :: domain_start , domain_end
     INTEGER , DIMENSION(3) :: memory_start , memory_end
     INTEGER , DIMENSION(3) :: patch_start , patch_end

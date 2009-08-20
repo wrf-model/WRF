@@ -1,7 +1,7 @@
-subroutine da_obs_sensitivity(nbvar, npredmax, ktr, iv, ktd_global, ktdrad_global, ktbrad_global)
+subroutine da_obs_sensitivity(ktr, iv)
 
    !-------------------------------------------------------------------------
-   ! Purpose:        Apply R-1 to KT.dF/dx to obtain Observation Sensitivity
+   ! Purpose:        Apply R-1 to KT.dF/dx to obtain Observation sensitivity
    !                 stored in "iv" for every observation
    !
    ! Called from da_minimise_lz
@@ -12,14 +12,12 @@ subroutine da_obs_sensitivity(nbvar, npredmax, ktr, iv, ktd_global, ktdrad_globa
 
    implicit none
 
-   integer, intent(in)               :: nbvar
-   integer, intent(in)               :: npredmax
    type (y_type), intent(in)         :: ktr         
-   type (iv_type), intent(inout)     :: iv                     
-   real, intent(out)                  :: ktd_global(25,nbvar)
-   real, intent(out)                  :: ktdrad_global(iv%num_inst)
-   real, intent(out)                  :: ktbrad_global(iv%num_inst, npredmax) 
+   type (iv_type), intent(inout)     :: iv      
    
+   integer, parameter                :: nbvar = 6
+   integer, parameter                :: npredmax = 8
+
    integer, parameter                :: u     = 1
    integer, parameter                :: v     = 2
    integer, parameter                :: t     = 3
@@ -32,13 +30,16 @@ subroutine da_obs_sensitivity(nbvar, npredmax, ktr, iv, ktd_global, ktdrad_globa
    real                              :: ktd(25,nbvar)
    real                              :: ktdrad(iv%num_inst)
    real                              :: ktbrad(iv%num_inst,npredmax) 
+   real                              :: ktd_global(25,nbvar)
+   real                              :: ktdrad_global(iv%num_inst)
+   real                              :: ktbrad_global(iv%num_inst, npredmax) 
 
    if (trace_use) call da_trace_entry("da_obs_sensitivity")
 
    ktd    = 0.0
    ktdrad = 0.0
    ktbrad = 0.0
-    
+       
         if (num_pseudo > 0) then
             do n=1, iv%info(pseudo)%nlocal
 	       if (.not. iv%info(pseudo)%proc_domain(1,n)) cycle
@@ -174,6 +175,20 @@ subroutine da_obs_sensitivity(nbvar, npredmax, ktr, iv, ktd_global, ktdrad_globa
 	       ktd(sound,t) = ktd(sound,t) + iv%sonde_sfc(n)%t%imp 
                ktd(sound,p) = ktd(sound,p) + iv%sonde_sfc(n)%p%imp 
 	       ktd(sound,q) = ktd(sound,q) + iv%sonde_sfc(n)%q%imp	       	             	       	            	       
+	    end do
+	 end if   
+	 
+         if (iv%info(qscat)%nlocal > 0) then
+            do n=1, iv%info(qscat)%nlocal
+	       if (.not. iv%info(qscat)%proc_domain(1,n)) cycle
+	       iv%qscat(n)%u%sens = ktr%qscat(n)%u / (iv%qscat(n)%u%error **2)
+	       iv%qscat(n)%v%sens = ktr%qscat(n)%v / (iv%qscat(n)%v%error **2)
+	       
+	       iv%qscat(n)%u%imp  = iv%qscat(n)%u%inv * iv%qscat(n)%u%sens
+	       iv%qscat(n)%v%imp  = iv%qscat(n)%v%inv * iv%qscat(n)%v%sens
+	       
+	       ktd(qscat,u) = ktd(qscat,u) + iv%qscat(n)%u%imp
+               ktd(qscat,v) = ktd(qscat,v) + iv%qscat(n)%v%imp 
 	    end do
 	 end if   
 	 
@@ -392,8 +407,10 @@ subroutine da_obs_sensitivity(nbvar, npredmax, ktr, iv, ktd_global, ktdrad_globa
 		     npred = iv%instid(inst)%varbc(k)%npred
 	             do i = 1, npred
 		        ipred = iv%instid(inst)%varbc(k)%ipred(i)
-	                ktbrad(inst,ipred) = ktbrad(inst,ipred) + &
-			                     iv%instid(inst)%varbc(k)%param(i) * iv%instid(inst)%tb_imp(k,n)
+	                ktbrad(inst,ipred) = ktbrad(inst,ipred) - &
+			                     iv%instid(inst)%varbc(k)%param(i) * &
+					     iv%instid(inst)%varbc_info%pred(ipred,n) * &
+					     iv%instid(inst)%tb_imp(k,n)
 		     end do
 		     
                   end do                                                   ! loop for channel
@@ -412,6 +429,11 @@ subroutine da_obs_sensitivity(nbvar, npredmax, ktr, iv, ktd_global, ktdrad_globa
             call wrf_dm_sum_reals(ktbrad(:,i), ktbrad_global(:,i))
 	 end do
          
+	 write(stdout,*) 'ADJOINT_TEST1:', SUM(ktd_global)+SUM(ktdrad_global)
+         write(stdout,*) 'Conventional Observation Impact:',SUM(ktd_global,dim=1), '--->',SUM(ktd_global,dim=2)
+	 write(stdout,*) 'Satellite Observation Impact:', ktdrad_global
+	 write(stdout,*) 'Bias Correction Impact:', SUM(ktbrad_global,dim=1), '--->',SUM(ktbrad_global,dim=2)
+
    if (trace_use) call da_trace_exit("da_obs_sensitivity")
 
 end subroutine da_obs_sensitivity

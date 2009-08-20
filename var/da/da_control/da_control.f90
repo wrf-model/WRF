@@ -4,7 +4,7 @@ module da_control
    ! Purpose: Common reference point for WRFVAR control.
    !--------------------------------------------------------------------------
 
-   use module_driver_constants, only : max_domains, max_eta, max_moves, &
+   use module_driver_constants, only : max_domains, max_eta, max_moves, max_bogus, &
                                        max_outer_iterations, max_instruments
 
    implicit none
@@ -162,6 +162,7 @@ module da_control
    ! WRFVAR Minimisation:
 
    integer            :: iter
+   integer            :: cv_size
    integer, parameter :: MP = 6
    integer, parameter :: LP = 6
    integer, parameter :: MAXFEV = 10
@@ -170,7 +171,7 @@ module da_control
    real, parameter    :: XTOL = 1.0E-17
    real, parameter    :: STPMIN = 1.0E-20
    real, parameter    :: STPMAX = 1.0E+20
-
+   
    ! Background errors:
    real, parameter    :: pplow = 1.0e-8       ! Machine lowest number?
    real, parameter    :: pp_umin = 1.0e-2     ! Minimum u back. error (m/s).
@@ -371,24 +372,6 @@ module da_control
    real, parameter :: err_p(0:jperr+1) = &
                       (/ 100.0,100.0, 100.0, 100.0, 100.0, 100.0,100.0,100.0 /)
 
-   ! Maximum error check factors:  inV > (Obs_error*factor) --> fails_error_max
-
-   real, parameter :: max_error_t              = 5.0, &
-                      max_error_uv             = 5.0, &
-                      max_error_pw             = 5.0, &
-                      max_error_ref            = 5.0, &
-                      max_error_rh             = 5.0, &
-                      max_error_q              = 5.0, &
-                      max_error_p              = 5.0, &
-                      max_error_tb             = 5.0, &
-                      max_error_thickness      = 5.0, &
-                      max_error_rv             = 5.0, &
-                      max_error_rf             = 5.0, &
-                      max_error_buv            = 500.0, &
-                      max_error_bt             = 500.0, &
-                      max_error_bq             = 500.0, &
-                      max_error_slp            = 500.0
-
    ! Buddy check parameters (YRG, 10/3/2008):
 
    real, parameter :: max_buddy_t             =     8.0, &
@@ -466,7 +449,7 @@ module da_control
 
    integer, parameter            :: maxsensor = 30
 
-   integer, parameter :: num_ob_indexes = 25
+   integer, parameter :: num_ob_indexes = 27
    integer, parameter :: npres_print = 12
 
 
@@ -499,6 +482,9 @@ module da_control
    integer, parameter :: airsr     = 23
    integer, parameter :: sonde_sfc = 24
    integer, parameter :: mtgirs    = 25
+   integer, parameter :: tamdar    = 26
+   integer, parameter :: tamdar_sfc = 27
+
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
       "sound         ", &
       "synop         ", &
@@ -524,7 +510,10 @@ module da_control
       "radiance      ", &
       "airs retrieval", &
       "sonde_sfc     ", &
-      "mtgirs        " &
+      "mtgirs        ", &
+      "tamdar        ", &
+      "tamdar_sfc    " &
+
    /)
 
    integer, parameter :: max_no_fm = 290
@@ -566,7 +555,7 @@ module da_control
       0,0,0,0,0,0,0,0,0,0,                                & ! 71-80
       0,0,0,0,0,satem,0,geoamv,0,0,           & ! 81-90
       0,0,0,0,0,airep,airep,0,0,0,            & ! 91-100
-      0,0,0,0,0,0,0,0,0,0,                                & ! 101-110
+      tamdar,0,0,0,0,0,0,0,0,0,                                & ! 101-110
       gpspw,0,0,gpspw,0,gpsref,0,0,0,0, & ! 111-120
       ssmt1,ssmt2,0,0,ssmi_rv,0,0,0,0,0,            & ! 121-130
       0,profiler,airsr,0,bogus,0,0,0,0,0, & ! 131-140
@@ -588,8 +577,9 @@ module da_control
 
    character(len=120)  :: fmt_info ='(a12,1x,a19,1x,a40,1x,i6,3(f12.3,11x),6x,a5)'
    character(len=120)  :: fmt_srfc = '(7(:,f12.3,i4,f7.2))'
+!   character(len=120)  :: fmt_srfc = '(f12.3,i4,f7.2,F12.3,I4,F7.3)'
    character(len=120)  :: fmt_each = &
-      '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2))'
+      '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2))'
 
    ! lat/long information calculated in da_setup_firstguess_wrf
 
@@ -622,6 +612,7 @@ module da_control
                       299.9,  249.9, 199.9, 149.9, 99.9, 2000./)
 
    real, allocatable :: time_slots(:)
-   logical           :: thin_conv = .true.  ! hardwired for PREPBUFR obs
+
+   logical :: global
 
 end module da_control

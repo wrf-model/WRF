@@ -33,7 +33,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    character(10) date
    character(8) subset,subfgn
    character(80) hdr1b
-   integer(i_kind) ihh,i,j,k,ifov,idd,ireadmg,ireadsb
+   integer(i_kind) ihh,i,j,k,ifov,idd
    integer(i_kind) iret,idate,im,iy,nchan
 
    ! thinning variables
@@ -160,7 +160,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
-         (/"Cannot open file "//trim(infile)/))
+         (/"Cannot open file "//infile/))
       call da_free_unit(lnbufr)
       call da_trace_exit("da_read_obs_bufrtovs")
       return
@@ -294,6 +294,24 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          end do
          if (inst == 0) cycle
 
+         ! 3.4 extract satellite and solar angle
+   
+         panglr=(start+float(ifov-1)*step)*deg2rad
+         if (hirs2 .or. msu) then
+            satzen = asin(rato*sin(panglr))*rad2deg
+            satzen = abs(satzen)
+         else
+            satzen = bfr1bhdr(bufr_satzen) !*deg2rad   ! local zenith angle
+            satzen = abs(satzen)
+            ! if (amsua .and. ifov .le. 15) satzen=-satzen
+            ! if (amsub .and. ifov .le. 45) satzen=-satzen
+            ! if (hirs3 .and. ifov .le. 28) satzen=-satzen
+         end if
+         if ( satzen > 65.0 ) cycle   ! CRTM has a satzen > 65.0 check
+         satazi = panglr*rad2deg            ! look angle
+         ! if (satazi<0.0) satazi = satazi+360.0
+         solzen = bfr1bhdr(bufr_solzen)              ! solar zenith angle
+
          num_tovs_global = num_tovs_global + 1
          ptotal(ifgat) = ptotal(ifgat) + 1
 
@@ -343,23 +361,6 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
          num_tovs_used = num_tovs_used + 1
          nread(inst) = nread(inst) + 1
-
-         ! 3.4 extract satellite and solar angle
-   
-         panglr=(start+float(ifov-1)*step)*deg2rad
-         if (hirs2 .or. msu) then
-            satzen = asin(rato*sin(panglr))*rad2deg
-            satzen = abs(satzen)
-         else
-            satzen = bfr1bhdr(bufr_satzen) !*deg2rad   ! local zenith angle
-            satzen = abs(satzen)
-            ! if (amsua .and. ifov .le. 15) satzen=-satzen
-            ! if (amsub .and. ifov .le. 45) satzen=-satzen
-            ! if (hirs3 .and. ifov .le. 28) satzen=-satzen
-         end if
-         satazi = panglr*rad2deg            ! look angle
-         ! if (satazi<0.0) satazi = satazi+360.0
-         solzen = bfr1bhdr(bufr_solzen)              ! solar zenith angle
 
          ! 3.5 extract surface information
    

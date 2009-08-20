@@ -24,11 +24,12 @@ subroutine da_llxy (info, loc, outside, outside_all)
    
    ! get the (x, y) coordinates
 
-   if ( fg_format == fg_format_wrf_arw_regional .or. &
-        fg_format == fg_format_wrf_arw_global   ) then   
+   if ( fg_format == fg_format_wrf_arw_regional ) then
       call da_llxy_wrf(map_info, info%lat, info%lon, loc%x, loc%y)
    else if (fg_format == fg_format_wrf_nmm_regional) then
       call da_llxy_rotated_latlon(info%lat, info%lon, map_info, loc%x, loc%y)
+   else if (global) then
+      call da_llxy_global (info%lat, info%lon, loc%x, loc%y)
    else
       call da_llxy_default (info%lat, info%lon, loc%x, loc%y)
    end if

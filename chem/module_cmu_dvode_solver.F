@@ -1262,7 +1262,6 @@
          msg = '*** module_cmu_dvode_solver/dvode -- ' // &
                'fatal error, istate must be 1'
          call wrf_error_fatal( msg )
-         stop
       end if
 
       if (istate .lt. 1 .or. istate .gt. 3) go to 601
@@ -3720,7 +3719,8 @@
 !  abort the run if level = 2.
 !
  100  if (level .ne. 2) return
-      stop
+         call wrf_error_fatal(" ")
+
 !----------------------- end of subroutine xerrwd ----------------------
       end subroutine xerrwd
 !deck xsetf

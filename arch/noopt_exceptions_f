@@ -34,6 +34,7 @@ module_io_wrf.o : module_io_wrf.F
 module_si_io.o : module_si_io.F
 module_state_description.o : module_state_description.F 
 output_wrf.o : output_wrf.F
+NMM_NEST_UTILS1.o : NMM_NEST_UTILS1.F
 solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
 start_domain_nmm.o : start_domain_nmm.F
@@ -101,9 +102,7 @@ nl_set_1_routines.o : nl_set_1_routines.F
 
 convert_nmm.o \
 init_modules_em.o \
-module_comm_dm.o \
 module_dm.o \
-module_alloc_space.o \
 module_fddaobs_rtfdda.o \
 module_initialize.o \
 module_initialize_b_wave.o \
@@ -118,6 +117,7 @@ module_io_wrf.o \
 module_si_io.o \
 module_tiles.o \
 output_wrf.o \
+NMM_NEST_UTILS1.o \
 solve_interface.o \
 start_domain.o \
 start_domain_nmm.o \
@@ -129,7 +129,13 @@ wrf_tsin.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi
 
 #solve_em.o :
 #	$(RM) $@
@@ -139,14 +145,20 @@ wrf_tsin.o :
 #	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $(SOLVE_EM_SPECIAL) $(OMP) $*.f90
 
 module_sf_ruclsm.o : module_sf_ruclsm.F
-module_cu_kf.o : module_cu_kf.F
 
-module_sf_ruclsm.o module_cu_kf.o :
+module_sf_ruclsm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          echo COMPILING $*.F WITH OMP ; \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi
 
 # compile without OMP
 input_wrf.o \
@@ -213,6 +225,8 @@ nl_set_0_routines.o \
 nl_set_1_routines.o \
 nl_get_0_routines.o \
 nl_get_1_routines.o \
+module_alloc_space.o \
+module_comm_dm.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb

@@ -98,6 +98,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
          allocate(iv%instid(i)%snow_coverage(iv%instid(i)%num_rad))
          if (use_crtm_kmatrix) then
             allocate(iv%instid(i)%ts_jacobian(nchan,iv%instid(i)%num_rad))
+            allocate(iv%instid(i)%ps_jacobian(nchan,iv%instid(i)%num_rad))
             allocate(iv%instid(i)%windspeed_jacobian(nchan,iv%instid(i)%num_rad))
             allocate(iv%instid(i)%emiss_jacobian(nchan,iv%instid(i)%num_rad))
             allocate(iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))

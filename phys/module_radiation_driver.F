@@ -1222,7 +1222,7 @@ CONTAINS
 
      accumulate_lw_select: SELECT CASE(lw_physics)
 
-     CASE (CAMLWSCHEME)
+     CASE (CAMLWSCHEME,RRTMG_LWSCHEME)
    IF(PRESENT(LWUPTC))THEN
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
@@ -1253,7 +1253,7 @@ CONTAINS
 
      accumulate_sw_select: SELECT CASE(sw_physics)
 
-     CASE (CAMSWSCHEME)
+     CASE (CAMSWSCHEME,RRTMG_SWSCHEME)
    IF(PRESENT(SWUPTC))THEN
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
@@ -1302,8 +1302,8 @@ CONTAINS
               ,kts, kte                                                   &
               ,num_tiles                                                  )
 
-   USE module_dm
    USE module_domain
+   USE module_dm
    USE module_bc
    USE module_model_constants
 

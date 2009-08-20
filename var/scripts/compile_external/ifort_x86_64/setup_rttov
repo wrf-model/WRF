@@ -1,9 +1,0 @@
-#!/bin/ksh
-cd src
-# uncomment the ifort lines from Makefile
-make clean
-make
-make lib_basic lib_cld lib_scat
-rm *.o
-cd ..
-ln -fs src/librttov*.a librttov.a

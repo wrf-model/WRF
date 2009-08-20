@@ -17,6 +17,14 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    if (trace_use) call da_trace_entry("da_transform_vtox_adj")
 
+   if (  cv_options == 3 ) then
+
+      call da_transform_bal_adj( vp, be, grid)
+
+      call da_apply_be_adj( be, cv, vp, grid)
+
+   else
+  
    !-------------------------------------------------------------------------
    ! [3.0]: Perform x = u_p vp transform::
    !-------------------------------------------------------------------------
@@ -31,7 +39,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    call da_zero_vp_type (vv)
 
    if (vert_corr == 2) then      
-      call da_vertical_transform('u_adj', be, &
+      call da_vertical_transform(grid, 'u_adj', be, &
          grid%xb % vertical_inner_product, vv, vp)
    else
       vv % v1(its:ite,jts:jte,kts:kte) = vp % v1(its:ite,jts:jte,kts:kte)
@@ -42,9 +50,11 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    !  Uv for alpha is a null transform:
       if (be % ne > 0) then
-         vv % alpha(its:ite,jts:jte,1:be%ne) = &
-         vp % alpha(its:ite,jts:jte,1:be%ne) 
+         vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &
+         vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) 
       end if
+   end if
+   
    end if
 
    !-------------------------------------------------------------------------
@@ -53,8 +63,9 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    if (global) then
       call da_transform_vtovv_global_adj(cv_size, xbx, be, cv, vv)
-   else if (fg_format == fg_format_wrf_arw_regional .or. &
-            fg_format == fg_format_wrf_nmm_regional) then
+   else if ( (fg_format == fg_format_wrf_arw_regional .or. &
+              fg_format == fg_format_wrf_nmm_regional) .and. &
+              (.not. cv_options == 3) ) then
       call da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
    end if
 

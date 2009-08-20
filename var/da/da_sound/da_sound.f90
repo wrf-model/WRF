@@ -1,6 +1,6 @@
 module da_sound
 
-   use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, &
+   use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, missing_data, &
       check_max_iv_print, check_max_iv_unit, v_interp_p, v_interp_h, &
       check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
       max_error_p,max_error_q, sfc_assi_options, no_buddies, fails_error_max, &
@@ -10,7 +10,7 @@ module da_sound
       kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, num_procs, comm, &
       trace_use_dull, sound, sonde_sfc, position_lev_dependant, max_ext_its,qcstat_conv_unit,ob_vars
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_integer, mpi_real8, mpi_max
+!  use mpi, only : mpi_integer, mpi_real8, mpi_max
 #endif
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
@@ -64,6 +64,10 @@ module da_sound
       type (maxmin_sonde_sfc_stats_type)  :: maximum, minimum
       type (residual_sonde_sfc1_type)     :: average, rms_err
    end type stats_sonde_sfc_type
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

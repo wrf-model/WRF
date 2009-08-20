@@ -25,9 +25,8 @@
  io_form_boundary                    = 2
  auxinput3_inname                    = "force_ideal.nc"
  auxinput3_interval_h                = 59
- debug_level                         = 3
+ debug_level                         = 0
  /
-
 
  &domains
  time_step                           = 60,
@@ -78,9 +77,6 @@
  mp_zero_out                         = 0,
  /
 
- &fdda
- /
-
  &dynamics
  rk_ord                              = 3,
  diff_opt                            = 2,
@@ -114,9 +110,6 @@
  symmetric_ye                        = .false.,
  open_ys                             = .false.,
  open_ye                             = .false.,
- /
-
- &grib2
  /
 
  &namelist_quilt

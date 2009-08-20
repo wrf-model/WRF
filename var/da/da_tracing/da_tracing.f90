@@ -1,7 +1,7 @@
 module da_tracing
 
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_character
+!  use mpi, only : mpi_character
 #endif
 
    use da_control, only : num_procs, documentation_url, use_html, ierr, &
@@ -11,6 +11,9 @@ module da_tracing
    use da_par_util1, only : da_proc_sum_ints, da_proc_sum_real, da_proc_sum_int
    use da_reporting, only : da_error
 
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
    interface
       ! c code
       subroutine da_memory(memory_used)

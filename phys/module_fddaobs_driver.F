@@ -49,11 +49,11 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 #if ( EM_CORE == 1 ) 
                fdob,                                             &
 #endif
-               max_obs, nobs_ndg_vars,    &
+               max_obs, nobs_ndg_vars,                           &
                nobs_err_flds, nstat, varobs, errf, dx,           &
                KPBL, HT, mut, muu, muv,                          &
                msftx, msfty, msfux, msfuy, msfvx, msfvy, p_phy, t_tendf, t0,             &
-               ub, vb, tb, qvb, pbase, ptop, pp,                 &
+               ub, vb, tb, qvb, pbase, ptop, pp, phb, ph,        &
                uratx, vratx, tratx, ru_tendf, rv_tendf,          &
                moist_tend, savwt,                                &
                ids,ide, jds,jde, kds,kde,                        & ! domain dims
@@ -63,7 +63,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 !-----------------------------------------------------------------------
   USE module_domain
   USE module_bc
-  USE module_model_constants, ONLY : rovg, rcp
+  USE module_model_constants, ONLY : g, rcp
   USE module_fddaobs_rtfdda
 
 ! This driver calls subroutines for fdda obs-nudging and
@@ -126,7 +126,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, intent(inout)  :: varobs(nobs_ndg_vars, max_obs)
   REAL, intent(inout)  :: errf(nobs_err_flds, max_obs)
   REAL, intent(in)     :: dx           ! this-domain grid cell-size (m)
-  INTEGER, INTENT(IN) :: kpbl( ims:ime, jms:jme )
+  INTEGER, INTENT(IN) :: kpbl( ims:ime, jms:jme ) ! vertical layer index for PBL top
   REAL, INTENT(IN) :: ht( ims:ime, jms:jme )
   REAL, INTENT(IN) :: mut( ims:ime , jms:jme )   ! Air mass on t-grid 
   REAL, INTENT(IN) :: muu( ims:ime , jms:jme )   ! Air mass on u-grid 
@@ -154,6 +154,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL,   INTENT(IN) :: pbase( ims:ime, kms:kme, jms:jme ) ! Base press. (Pa)
   REAL,   INTENT(IN) :: ptop
   REAL,   INTENT(IN) :: pp( ims:ime, kms:kme, jms:jme )  ! Press. pert. (Pa)
+  REAL,   INTENT(IN) :: phb( ims:ime, kms:kme, jms:jme ) ! Base geopotential
+  REAL,   INTENT(IN) :: ph( ims:ime, kms:kme, jms:jme )  ! Perturbation geopotential
   REAL,   INTENT(IN) :: uratx( ims:ime, jms:jme )     ! On mass points
   REAL,   INTENT(IN) :: vratx( ims:ime, jms:jme )     !       "
   REAL,   INTENT(IN) :: tratx( ims:ime, jms:jme )     !       "
@@ -212,7 +214,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
     IF( MOD(ktau,infr).EQ.0 .OR. idarst.EQ.1) THEN
 
         CALL errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rcp,       &
-                   uratx, vratx, tratx,                              &
+                   phb, ph, g,                                       &
+                   uratx, vratx, tratx, kpbl,                        &
                    nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,    &
                    fdob%levidn, parid, fdob%nstat, fdob%nstaw,       &
                    nudge_wind, nudge_temp, nudge_mois, nudge_pstr,   &
@@ -286,6 +289,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   mut(ims,j), msftx(ims,j), msfty(ims,j),            &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
+                  fdob%nudge_t_pbl,                                  &
+                  fdob%sfcfact, fdob%sfcfacr,                        &
                   fdob%levidn,                                       &
                   parid, nstat,                                      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
@@ -310,6 +315,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   mut(ims,j), msftx(ims,j), msfty(ims,j),            &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
+                  fdob%nudge_q_pbl,                                  &
+                  fdob%sfcfact, fdob%sfcfacr,                        &
                   fdob%levidn,                                       &
                   parid, nstat,                                      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
@@ -335,6 +342,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 muu(ims,j), msfux(ims,j), msfuy(ims,j),              &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
+                fdob%nudge_uv_pbl,                                   &
+                fdob%sfcfact, fdob%sfcfacr,                          &
                 fdob%levidn,                                         &
                 parid, nstat,                                        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &
@@ -356,6 +365,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 muv(ims,j), msfvx(ims,j), msfvy(ims,j),              &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
+                fdob%nudge_uv_pbl,                                   &
+                fdob%sfcfact, fdob%sfcfacr,                          &
                 fdob%levidn,                                         &
                 parid, nstat,                                        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &

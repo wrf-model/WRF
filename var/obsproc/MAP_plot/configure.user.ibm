@@ -31,7 +31,7 @@ CCFLAGS		=	-DIBM -I.
 LIBDIR   = ${DEVTOP}/
 FDVARLIB = libfdvar.a 
 LIBS		= -L/usr/local/lib64/r4i4 -lncarg \
-                  -lncarg_gks -lncarg_c -lX11 -lm
+                  -lncarg_gks -lncarg_c -lX11 -lm -L/usr/local/lib64/r4i4 -lpng_ncl -lz_ncl
 #-----------------------------------------------------------------------------
 # General commands
 #-----------------------------------------------------------------------------

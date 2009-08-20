@@ -38,8 +38,8 @@ CONTAINS
 !-------------------------------------------------------------------
 !
 !   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted 
-!   and released in December 2006.  The surface analysis nudging capability was inititially added in
-!   December 2008.
+!   and released in December 2006.  The surface analysis nudging capability was added and 
+!   released in March 2009 with WRFV3.1.
 !
 !-- u3d         3d u-velocity staggered on u points
 !-- v3d         3d v-velocity staggered on v points
@@ -199,6 +199,7 @@ CONTAINS
      RETURN
    ENDIF
 
+   IF( analysis_interval <= 0 )CALL wrf_error_fatal('In grid FDDA, gfdda_interval_m must be > 0')
    xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
    IF( int4 == 1 ) THEN
@@ -574,8 +575,8 @@ CONTAINS
 !-------------------------------------------------------------------
 !  
 !   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted
-!   and released in December 2006.  The surface analysis nudging capability was inititially added in
-!   December 2008.
+!   and released in December 2006.  The surface analysis nudging capability was added and
+!   released in March 2009 with WRFV3.1.
 !
 !-- u3d         3d u-velocity staggered on u points
 !-- v3d         3d v-velocity staggered on v points
@@ -688,7 +689,7 @@ CONTAINS
    REAL, DIMENSION( kts:kte, 4 ),  &
          INTENT(IN)                                   :: wzfac ! 1: u, 2: v, 3: t, 4: q
    REAL, DIMENSION( its:ite, jts:jte)                 :: wndcor_u, wndcor_v
-   REAL, DIMENSION( its-1:ite+1, jts-1:jte+1)         :: blw_old, blw_new
+   REAL, DIMENSION( its-2:ite+1, jts-2:jte+1)         :: blw_old, blw_new
    REAL, DIMENSION( its:ite, kts:kte, jts:jte)        :: qsat
 
    REAL                                               :: m, b=1.8, blw, rindx, x
@@ -709,6 +710,7 @@ CONTAINS
    iqsat = 1     ! 1: Remove super saturation. eles: no
    int4 = 1      ! 1: temporal ionterpolation. else: target nudging toward *_ndg_new values
 
+   IF( analysis_interval_sfc <= 0 )CALL wrf_error_fatal('In grid sfc FDDA, sgfdda_interval_m must be > 0')
    xtime_old_sfc = FLOOR(xtime/analysis_interval_sfc) * analysis_interval_sfc * 1.0
    xtime_new_sfc = xtime_old_sfc + analysis_interval_sfc
    IF( int4 == 1 ) THEN
@@ -913,29 +915,40 @@ CONTAINS
 !
    IF( idd == 1 ) THEN
 
+     IF( rinblw < 0.001 ) THEN
+       IF ( wrf_dm_on_monitor()) THEN
+         WRITE(message,'(a)') 'Error in rinblw, please specify a reasonable value ***'
+         CALL wrf_message( TRIM(message) )
+       ENDIF
+       CALL wrf_error_fatal('In grid FDDA')
+     ENDIF
+
      rindx = rinblw*1000.0/dx
      m = -0.8*2.0/rindx
 
-     DO j=jts-1,jtf+1
-     DO i=its-1,itf+1
-       IF( odis_ndg_old(i,j) < 0.5*rinblw*1000.0 ) THEN
+     DO j=MAX(jts-2,jds),MIN(jtf+1,jde-1)
+     DO i=MAX(its-2,ids),MIN(itf+1,ide-1)
+       IF( odis_ndg_old(i,j) < 0.5*rinblw ) THEN
          blw_old(i,j) = 1.0
        ELSE
-         x = min( odis_ndg_old(i,j)/dx, rindx )
+         x = min( odis_ndg_old(i,j)*1000./dx, rindx )
          blw_old(i,j) = m * x + b
        ENDIF
 
-       IF( odis_ndg_new(i,j) < 0.5*rinblw*1000.0 ) THEN
+       IF( odis_ndg_new(i,j) < 0.5*rinblw ) THEN
          blw_new(i,j) = 1.0
        ELSE
-         x = min( odis_ndg_new(i,j)/dx, rindx )
+         x = min( odis_ndg_new(i,j)*1000./dx, rindx )
          blw_new(i,j) = m * x + b
        ENDIF
      ENDDO
      ENDDO
 
-     CALL smther(blw_old, its-1,itf+1, jts-1,jtf+1, 1, its, itf, jts, jtf)
-     CALL smther(blw_new, its-1,itf+1, jts-1,jtf+1, 1, its, itf, jts, jtf)
+! Smoother applies one point outside the tile, but one point in from boundaries
+     CALL smther(blw_old, its-2,itf+1, jts-2,jtf+1, 1, &
+                 MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
+     CALL smther(blw_new, its-2,itf+1, jts-2,jtf+1, 1, &
+                 MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
 
      WHERE ( blw_old > 1.0)
         blw_old = 1.0
@@ -956,8 +969,8 @@ CONTAINS
            i0 = (ite-its)/2+its
            j0 = (jte-jts)/2+jts
            WRITE(message,'(a,i1,a,2i4,4(a,f10.4))') &
-             '    D0',id,' sample blw values at i,k,j=', i0, j0, &
-             ' odis_ndg_old=', odis_ndg_old(i0,j0)/1000., ' km odis_ndg_new=', odis_ndg_new(i0,j0)/1000., &
+             '    D0',id,' sample blw values at i,j=', i0, j0, &
+             ' odis_ndg_old=', odis_ndg_old(i0,j0), ' km odis_ndg_new=', odis_ndg_new(i0,j0), &
              ' km  blw_old=', blw_old(i0,j0), ' blw_new=', blw_new(i0,j0)
            CALL wrf_message( TRIM(message) )
          ENDIF
@@ -979,8 +992,8 @@ CONTAINS
    DO k=kts,ktf
    DO i=itsu,itf
      IF( idd == 1 ) THEN
-       blw = 0.5* (blw_old(i,j)+blw_old(i,j)) * ( 1.0 - coef ) &
-           + 0.5* (blw_new(i,j)+blw_new(i,j)) * coef
+       blw = 0.5* (blw_old(i-1,j)+blw_old(i,j)) * ( 1.0 - coef ) &
+           + 0.5* (blw_new(i-1,j)+blw_new(i,j)) * coef
      ELSE
        blw = 1.0
      ENDIF
@@ -996,8 +1009,8 @@ CONTAINS
    DO k=kts,ktf 
    DO i=its,itf
      IF( idd == 1 ) THEN
-       blw = 0.5* (blw_old(i,j)+blw_old(i,j)) * ( 1.0 - coef ) &
-           + 0.5* (blw_new(i,j)+blw_new(i,j)) * coef
+       blw = 0.5* (blw_old(i,j-1)+blw_old(i,j)) * ( 1.0 - coef ) &
+           + 0.5* (blw_new(i,j-1)+blw_new(i,j)) * coef
      ELSE
        blw = 1.0
      ENDIF

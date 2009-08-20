@@ -9,11 +9,12 @@ module da_define_structures
    use da_control, only : anal_type_randomcv, stdout, max_fgat_time, &
       vert_corr, global, vert_evalue,print_detail_be, maxsensor, &
       max_ob_levels, trace_use, num_ob_indexes, kms, kme, &
-      vert_corr_1, vert_corr_2, vert_evalue_global, &
+      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, &
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      mtgirs, pseudo, radar, radiance, airsr, sonde_sfc, trace_use_dull,comm
+      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, &
+      trace_use_dull,comm, num_pseudo
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -134,7 +135,7 @@ module da_define_structures
    type info_type
       character (len = 40)   :: name          ! Station name
       character (len = 12)   :: platform      ! Instrument platform
-      character (len =  5)   :: id            ! 5 digit station identifer
+      character (len = 40)   :: id            ! 5 digit station identifer
       character (len = 19)   :: date_char     ! CCYY-MM-DD_HH:MM:SS date
       integer                :: levels        ! number of levels
       real                   :: lat           ! Latitude in degree
@@ -154,7 +155,7 @@ module da_define_structures
       integer                             :: n2
       character (len = 40) , allocatable  :: name(:)       ! Station name
       character (len = 12), allocatable   :: platform(:)   ! Instrument platform
-      character (len =  5), allocatable   :: id(:)         ! 5 digit station identifer
+      character (len = 40), allocatable   :: id(:)         ! 5 digit station identifer
       character (len = 19), allocatable   :: date_char(:)  ! CCYY-MM-DD_HH:MM:SS date
       integer, allocatable                :: levels(:)     ! number of levels
       real, allocatable                   :: lat(:,:)      ! Latitude in degree
@@ -179,6 +180,7 @@ module da_define_structures
       real, allocatable       :: dzm(:,:)
       real, allocatable       :: zk(:,:)
       logical, allocatable    :: proc_domain(:,:)
+      logical, allocatable    :: thinned(:,:)
       ! obs_global_index is the original index of this obs in the serial 
       ! code.  It is used to reassemble obs in serial-code-order to replicate 
       ! summation order for bitwise-exact testing of distributed-memory 
@@ -238,14 +240,15 @@ module da_define_structures
 
    type airep_type
       real                  , pointer :: h        (:) ! Height in m
-      real                  , pointer :: p        (:) ! Height QC
+      real                  , pointer :: p        (:) ! pressure
       type (field_type)     , pointer :: u        (:) ! u-wind.
       type (field_type)     , pointer :: v        (:) ! v-wind.
       type (field_type)     , pointer :: t        (:) ! temperature.
    end type airep_type
 
    type pilot_type
-      real                  , pointer :: p        (:) ! Height in m
+      real                  , pointer :: h        (:) ! Height in m
+      real                  , pointer :: p        (:) ! pressure
       type (field_type)     , pointer :: u        (:) ! u-wind.
       type (field_type)     , pointer :: v        (:) ! v-wind.
    end type pilot_type
@@ -317,6 +320,16 @@ module da_define_structures
       type (field_type)     , pointer :: q        (:) ! q.
    end type mtgirs_type
 
+   type tamdar_type
+      real                  , pointer :: h        (:) ! Height in m
+      real                  , pointer :: p        (:) ! pressure.
+
+      type (field_type)     , pointer :: u        (:) ! u-wind.
+      type (field_type)     , pointer :: v        (:) ! v-wind.
+      type (field_type)     , pointer :: t        (:) ! temperature.
+      type (field_type)     , pointer :: q        (:) ! q.
+   end type tamdar_type
+
    type airsr_type
       real                  , pointer :: h        (:) ! Height in m
       real                  , pointer :: p        (:) ! pressure.
@@ -326,7 +339,7 @@ module da_define_structures
 
    type gpspw_type
       type (field_type)       :: tpw  ! Toatl precipitable water cm from GPS
-   end type gpspw_type
+  end type gpspw_type
 
    type ssmi_rv_type
       type (field_type)       :: Speed          ! Wind speed in m/s
@@ -396,7 +409,9 @@ module da_define_structures
    type cv_index_type
       integer              :: ts
       integer              :: nclouds
+      integer              :: ncv
       integer, pointer     :: cc(:)
+      real, pointer        :: vtox(:,:)
    end type cv_index_type
 
    type instid_type
@@ -512,6 +527,8 @@ module da_define_structures
       real    :: gpspw_ef_tpw
       real    :: sound_ef_u, sound_ef_v, sound_ef_t, sound_ef_q
       real    :: mtgirs_ef_u, mtgirs_ef_v, mtgirs_ef_t, mtgirs_ef_q
+      real    :: tamdar_ef_u, tamdar_ef_v, tamdar_ef_t, tamdar_ef_q
+      real    :: tamdar_sfc_ef_u, tamdar_sfc_ef_v, tamdar_sfc_ef_t, tamdar_sfc_ef_p, tamdar_sfc_ef_q
       real    :: airep_ef_u, airep_ef_v, airep_ef_t
       real    :: pilot_ef_u, pilot_ef_v
       real    :: ssmir_ef_speed, ssmir_ef_tpw
@@ -551,6 +568,9 @@ module da_define_structures
       type (radar_type)    , pointer :: radar(:)
       type (instid_type)   , pointer :: instid(:)
       type (mtgirs_type)   , pointer :: mtgirs(:)
+      type (tamdar_type)   , pointer :: tamdar(:)
+      type (synop_type)    , pointer :: tamdar_sfc(:)
+
       real :: missing
       real :: ptop
    end type iv_type
@@ -635,6 +655,13 @@ module da_define_structures
       real, pointer :: t(:)                     ! temperature.
       real, pointer :: q(:)                     ! specific humidity.
    end type residual_mtgirs_type
+
+   type residual_tamdar_type
+      real, pointer :: u(:)                     ! u-wind.
+      real, pointer :: v(:)                     ! v-wind.
+      real, pointer :: t(:)                     ! temperature.
+      real, pointer :: q(:)                     ! specific humidity.
+   end type residual_tamdar_type
 
    type residual_airsr_type
       real, pointer :: t(:)                     ! temperature.
@@ -729,6 +756,8 @@ module da_define_structures
       type (residual_gpsref_type),   pointer :: gpsref(:)
       type (residual_sound_type),    pointer :: sound(:)
       type (residual_mtgirs_type),   pointer :: mtgirs(:)
+      type (residual_tamdar_type),   pointer :: tamdar(:)
+      type (residual_synop_type),    pointer :: tamdar_sfc(:)
       type (residual_airsr_type),    pointer :: airsr(:)
       type (residual_bogus_type),    pointer :: bogus(:)
       type (residual_synop_type),    pointer :: sonde_sfc(:) ! Same as synop type
@@ -779,6 +808,9 @@ module da_define_structures
       real                :: sonde_sfc_u, sonde_sfc_v, sonde_sfc_t, &
                              sonde_sfc_p, sonde_sfc_q
       real                :: mtgirs_u, mtgirs_v, mtgirs_t, mtgirs_q
+      real                :: tamdar_u, tamdar_v, tamdar_t, tamdar_q
+      real                :: tamdar_sfc_u, tamdar_sfc_v, tamdar_sfc_t, &
+                             tamdar_sfc_p, tamdar_sfc_q
       real                :: airep_u, airep_v, airep_t
       real                :: pilot_u, pilot_v
       real                :: ssmir_speed, ssmir_tpw
@@ -801,6 +833,7 @@ module da_define_structures
       real             :: jc
       real             :: je
       real             :: jp
+      real             :: js
       type (jo_type)   :: jo
    end type j_type
 
@@ -854,6 +887,23 @@ module da_define_structures
       real, pointer     :: reg_chi(:,:)
       real, pointer     :: reg_t  (:,:,:)
       real, pointer     :: reg_ps (:,:)
+
+!-----For cv option 3:
+      INTEGER          :: ndeg,nta
+      REAL             :: swidth
+      REAL, POINTER    :: be(:)
+      REAL, POINTER    :: rate(:)
+      REAL, POINTER    :: table(:,:)
+      REAL, POINTER    :: agvz(:,:,:,:)
+      REAL, POINTER    :: bvz(:,:,:)
+      REAL, POINTER    :: wgvz(:,:,:)
+      REAL, POINTER    :: slix(:,:,:,:)
+      REAL, POINTER    :: slipx(:,:)
+      REAL, POINTER    :: sljy(:,:,:,:)
+      REAL, POINTER    :: sljpy(:,:)
+      REAL, POINTER    :: vz(:,:,:,:)
+      REAL, POINTER    :: corz(:,:,:,:)
+      REAL, POINTER    :: corp(:,:)
    end type be_type
 
    ! Analysis_Stats maximum-minumum structure.
@@ -879,6 +929,7 @@ contains
 #include "da_deallocate_observations.inc"
 #include "da_deallocate_y.inc"
 #include "da_zero_x.inc"
+#include "da_zero_y.inc"
 #include "da_zero_vp_type.inc"
 #include "da_initialize_cv.inc"
 #include "da_random_seed.inc"

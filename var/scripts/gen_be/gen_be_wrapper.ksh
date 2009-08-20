@@ -17,16 +17,19 @@ export RUN_GEN_BE_DIAGS=true
 export RUN_GEN_BE_DIAGS_READ=true
 export RUN_GEN_BE_MULTICOV=true
 
-export WRFVAR_DIR=/karri/users/xinzhang/support/WRFDA
+export WRFVAR_DIR=/ptmp/xinzhang/blueice_ibm_opt/WRFDA
 
-#t46 45km:
-export START_DATE=2007010200
-export END_DATE=2007013100
-export NUM_LEVELS=28
-export REGION=con200
-export EXPT=expt
+export START_DATE=2008020612  # the first perturbation valid date
+export END_DATE=2008020700    # the last perturbation valid date
+export NUM_LEVELS=40          # e_vert - 1
 export BIN_TYPE=5
-export EXP_DIR=/karri/users/xinzhang/support/$REGION/$EXPT
+export FC_DIR=/mmm/mmmtmp/xinzhang/gen_be   # where wrf forecasts are
+export RUN_DIR=/mmm/mmmtmp/xinzhang/gen_be${BIN_TYPE}
+export DOMAIN=01
+export FCST_RANGE1=24
+export FCST_RANGE2=12
+export INTERVAL=12
+export STRIDE=1
 
 #Example of changes required for "be_method=ENS":
 #export BE_METHOD=ENS

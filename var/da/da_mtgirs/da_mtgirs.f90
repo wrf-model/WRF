@@ -2,7 +2,7 @@ module da_mtgirs
 
    use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, &
       check_max_iv_print, check_max_iv_unit, v_interp_p, v_interp_h, &
-      check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
+      check_max_iv, missing_data, max_error_uv, max_error_t, rootproc, &
       max_error_p,max_error_q, fails_error_max, &
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kms,kme,kts,kte, &
@@ -15,8 +15,6 @@ module da_mtgirs
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_max_error_qc, da_residual, da_convert_zk, da_get_print_lvl
    use da_par_util, only : da_proc_stats_combine
-!, &
-!     da_deallocate_global_mtgirs, da_to_global_mtgirs
    use da_par_util1, only : da_proc_sum_int
    use da_tracing, only : da_trace_entry, da_trace_exit
 

@@ -1,13 +1,7 @@
 !
-!   WRF-chem V3.0 : Original version of dry_dep_driver written by Georg Grell (ESRL/GSD)
-!                   VERTMX was originally developed by Mariusz Pagowski. It is written to 
-!                   conserve, it needs concentration as input, it will not keep a
-!                   constant mixing ratio profile untouched. Further modifications 
-!                   by Richard C. Easter. In addition
-!                   modifications by Richard C. Easter (PNNL) are available to 
-!                   use mixing ratio as input and keep the mixing ratio constant.
-!
-!                    !!!!!!         Both versions are conserving.    !!!!!!!!!!
+!   WRF-chem V3.1 : Original version of dry_dep_driver written by Georg Grell (ESRL/GSD)
+!                   VERTMX was originally developed by Mariusz Pagowski and modified by
+!                   Richard C. Easter (PNNL) 
 !
 !WRF:MODEL_LAYER:CHEMICS
 !
@@ -19,13 +13,13 @@ CONTAINS
     subroutine dry_dep_driver(id,curr_secs,ktau,dtstep,config_flags,      &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
                p_phy,chem,rho_phy,dz8w,exch_h,hfx,dx,                     &
-               cldfra, cldfra_old,                                        &
+               cldfra, cldfra_old,raincv,                                 &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                xland,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,                &
                anh3,cvaro1,cvaro2,   &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
-               e_co,kemit,numgas,                                         &
+               e_co,kemit,sf_urban_physics,numgas,                        &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -44,6 +38,7 @@ CONTAINS
   IMPLICIT NONE
 
    INTEGER,      INTENT(IN   ) :: id,julday,                    &
+                                  sf_urban_physics,             &
                                   numgas,                       &
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
@@ -92,7 +87,7 @@ CONTAINS
                                                      hfx,       &
                                                      xlat,      &
                                                      xlong,     &
-                                                   xland,znt
+                                          xland,znt,raincv
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
                     cldfra,     & ! cloud fraction current timestep
@@ -169,7 +164,7 @@ CONTAINS
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &
@@ -179,7 +174,7 @@ CONTAINS
        ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &
@@ -204,7 +199,7 @@ CONTAINS
 !
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &
@@ -302,12 +297,14 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
+      if (sf_urban_physics .eq. 0) then
         if (e_co(i,kts,j) .gt. 0) then
            ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
         endif
         if (e_co(i,kts,j) .gt. 200) then
            ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
         endif
+      endif
 !
       do k=kts,kte
          zz(k)=z(i,k,j)-z_at_w(i,kts,j)
@@ -318,36 +315,30 @@ CONTAINS
 !   do not need lho,lho2
 !   (03-may-2006 rce - calc dryrho_1d and pass it to vertmx)
 !
-      if(p_sulf.gt.1)dep_vel_o3(i,j)=ddvel(i,j,p_sulf)
+      dep_vel_o3(i,j)=ddvel(i,j,p_o3)
       do nv=2,num_chem-0
          do k=kts,kte
-!           pblst(k)=max(epsilc,chem(i,k,j,nv))
-            pblst(k)=max(epsilc,chem(i,k,j,nv)/alt(i,k,j))
+            pblst(k)=max(epsilc,chem(i,k,j,nv))
             dryrho_1d(k) = 1./alt(i,k,j)
          enddo
-!        if(ktau.ge.20)then
-!           write(0,*)i,j,nv,ddvel(i,j,nv),e_co(i,kts,j)
-!        endif
 
          mix_select: SELECT CASE(config_flags%chem_opt)
          CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
-!              call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
-!                          zzfull,zz,ddvel(i,j,nv),kts,kte)
-               call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte)
+               call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
+                           zzfull,zz,ddvel(i,j,nv),kts,kte)
 
             endif
 !        CASE (PRESCRIBE_AEROSOL)
 
          CASE DEFAULT
-            call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte)
+            call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
+                        zzfull,zz,ddvel(i,j,nv),kts,kte)
 
          END SELECT mix_select
 
          do k=kts,kte-1
-
-!           chem(i,k,j,nv)=max(epsilc,pblst(k))
-            chem(i,k,j,nv)=max(epsilc,pblst(k)*alt(i,k,j))
+            chem(i,k,j,nv)=max(epsilc,pblst(k))
          enddo
       enddo
 100   continue
@@ -356,11 +347,9 @@ CONTAINS
 !
    where( alt(its:ite,kts:kte,jts:jte) /= 0. )  !get dry density to conserve mass in mixactivate, wig, 24-apr-2006
       dryrho_phy(its:ite,kts:kte,jts:jte) = 1./alt(its:ite,kts:kte,jts:jte)
-!      dryrho_phy(its:ite,kts:kte,jts:jte) = 1. <---wig: this got into the Jan 2007 release by mistake, above is correct
    elsewhere
       dryrho_phy(its:ite,kts:kte,jts:jte) = 0.
    end where
-   dryrho_phy(its:ite,kte+1,jts:jte) = 0. !wig: testing, should never need this
 
    mixactivate_select: SELECT CASE(config_flags%chem_opt)
 

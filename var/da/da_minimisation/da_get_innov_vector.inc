@@ -37,7 +37,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       iostat=ios)
    if (ios /= 0) then
       call da_error(__FILE__,__LINE__, &
-         (/"Cannot open qc observation file"//trim(filename)/))
+         (/"Cannot open qc observation file"//filename/))
    end if
 
 
@@ -64,6 +64,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       end if
       if (iv%info(mtgirs)%nlocal    > 0) &
          call da_get_innov_vector_mtgirs    (it, num_qcstat_conv, grid, ob, iv)
+      if (iv%info(tamdar)%nlocal    > 0) &
+         call da_get_innov_vector_tamdar    (it, num_qcstat_conv, grid, ob, iv)
+      if (iv%info(tamdar_sfc)%nlocal> 0) &
+         call da_get_innov_vector_tamdar_sfc(it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(synop)%nlocal     > 0) &
          call da_get_innov_vector_synop     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(geoamv)%nlocal    > 0) &
@@ -136,6 +140,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
        call da_system("touch wrf_stop_now")
 #endif
        call wrf_message("*** WRF-Var multi-increment stage 1 completed successfully ***")
+       if (trace_use) call da_trace_exit("da_get_innov_vector")
        call wrfu_finalize
        call wrf_shutdown
 
@@ -192,6 +197,9 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call da_med_initialdata_input( grid , config_flags, 'fg')
       call da_setup_firstguess(xbx, grid, config_flags)
    end if
+
+   close(qcstat_conv_unit)
+   call da_free_unit(qcstat_conv_unit)
 
    if (trace_use) call da_trace_exit("da_get_innov_vector")
 

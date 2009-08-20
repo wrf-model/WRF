@@ -85,8 +85,8 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
       do n = iv%info(geoamv)%n1, iv%info(geoamv)%n2
          do k=1, iv%info(geoamv)%levels(n)
             if (iv%info(geoamv)%zk(k,n) < 0.0) then
-               iv%geoamv(n)%u(k)% qc = missing
-               iv%geoamv(n)%v(k)% qc = missing
+               iv%geoamv(n)%u(k)% qc = missing_data
+               iv%geoamv(n)%v(k)% qc = missing_data
             end if
          end do
       end do

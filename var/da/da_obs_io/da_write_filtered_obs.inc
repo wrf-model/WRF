@@ -75,7 +75,7 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
       status='replace', iostat=iost)
    if (iost /= 0) then
       call da_error(__FILE__,__LINE__, &
-         (/"Cannot open filtered observation file"//trim(filename)/))
+         (/"Cannot open filtered observation file"//filename/))
    end if
 
    zero = 0
@@ -137,7 +137,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
          end if
 
          write(ounit, fmt = fmt_srfc) &
-            slp_inv,slp_qc,iv%info(synop)%slp(n)%error, iv%info(synop)%pw(n)
+            slp_inv,slp_qc,iv%info(synop)%slp(n)%error, &
+            iv%info(synop)%pw(n)%inv, iv%info(synop)%pw(n)%qc, iv%info(synop)%pw(n)%error
 
          ! get speed and direction
          if (iv%synop(n)%u%qc >= obs_qc_pointer .and. &
@@ -239,7 +240,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
          end if
 
          write(ounit, fmt = fmt_srfc) &
-            slp_inv,slp_qc,iv%info(metar)%slp(n)%error, iv%info(metar)%pw(n)
+            slp_inv,slp_qc,iv%info(metar)%slp(n)%error, &
+            iv%info(metar)%pw(n)%inv, iv%info(metar)%pw(n)%qc, iv%info(metar)%pw(n)%error
 
          ! get speed and direction
          if (iv%metar(n)%u%qc >= obs_qc_pointer .and. &
@@ -337,7 +339,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
          end if
 
          write(ounit, fmt = fmt_srfc) &
-            slp_inv,slp_qc,iv%info(ships)%slp(n)%error, iv%info(ships)%pw(n)
+            slp_inv,slp_qc,iv%info(ships)%slp(n)%error, &
+            iv%info(ships)%pw(n)%inv, iv%info(ships)%pw(n)%qc, iv%info(ships)%pw(n)%error
 
          ! get speed and direction
          if (iv%ships(n)%u%qc >= obs_qc_pointer .and. &
@@ -435,7 +438,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
          end if
 
          write(ounit, fmt = fmt_srfc) &
-            slp_inv,slp_qc,iv%info(buoy)%slp(n)%error, iv%info(buoy)%pw(n)
+            slp_inv,slp_qc,iv%info(buoy)%slp(n)%error, &
+            iv%info(buoy)%pw(n)%inv, iv%info(buoy)%pw(n)%qc, iv%info(buoy)%pw(n)%error
 
          ! get speed and direction
          if (iv%buoy (n)%u%qc >= obs_qc_pointer .and. &
@@ -516,7 +520,9 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(geoamv)%lon(1,n),         &
             iv%info(geoamv)%elv(n),         &
             iv%info(geoamv)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(geoamv)%slp(n), iv%info(geoamv)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(geoamv)%slp(n)%inv, iv%info(geoamv)%slp(n)%qc, iv%info(geoamv)%slp(n)%error, &
+            iv%info(geoamv)%pw(n)%inv, iv%info(geoamv)%pw(n)%qc, iv%info(geoamv)%pw(n)%error
 
          do k = 1, iv%info(geoamv)%levels(n)
 
@@ -572,7 +578,10 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(polaramv)%id(n)
 
          write(ounit, fmt = fmt_srfc) &
-            iv%info(polaramv)%slp(n), iv%info(polaramv)%pw(n)
+            iv%info(polaramv)%slp(n)%inv, iv%info(polaramv)%slp(n)%qc,   &
+            iv%info(polaramv)%slp(n)%error,                              &
+            iv%info(polaramv)%pw(n)%inv, iv%info(polaramv)%pw(n)%qc,     &
+            iv%info(polaramv)%pw(n)%error
 
          do k = 1, iv%info(polaramv)%levels(n)
             ! get speed and direction
@@ -681,7 +690,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
          end if
 
          write(ounit, fmt = fmt_srfc) &
-            slp_inv,slp_qc,iv%info(sound)%slp(n)%error, iv%info(sound)%pw(n)
+            slp_inv,slp_qc,iv%info(sound)%slp(n)%error,  &
+            iv%info(sound)%pw(n)%inv, iv%info(sound)%pw(n)%qc, iv%info(sound)%pw(n)%error
  
          nz = 0
          j  = 0
@@ -834,7 +844,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(airep)%lon(1,n),         &
             iv%info(airep)%elv(n),         &
             iv%info(airep)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(airep)%slp(n), iv%info(airep)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(airep)%slp(n)%inv, iv%info(airep)%slp(n)%qc, &
+            iv%info(airep)%slp(n)%error,                         &
+            iv%info(airep)%pw(n)%inv, iv%info(airep)%pw(n)%qc,   &
+            iv%info(airep)%pw(n)%error
 
          do k = 1, iv%info(airep)%levels(n)
 
@@ -897,7 +911,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(pilot)%lon(1,n),         &
             iv%info(pilot)%elv(n),         &
             iv%info(pilot)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(pilot)%slp(n), iv%info(pilot)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(pilot)%slp(n)%inv, iv%info(pilot)%slp(n)%qc, &
+            iv%info(pilot)%slp(n)%error,                         &
+            iv%info(pilot)%pw(n)%inv, iv%info(pilot)%pw(n)%qc,   &
+            iv%info(pilot)%pw(n)%error
 
          do k = 1, iv%info(pilot)%levels(n)
 
@@ -954,7 +972,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(satem)%lon(1,n),         &
             iv%info(satem)%elv(n),         &
             iv%info(satem)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(satem)%slp(n),iv%info(satem)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(satem)%slp(n)%inv, iv%info(satem)%slp(n)%qc, &
+            iv%info(satem)%slp(n)%error,                         &
+            iv%info(satem)%pw(n)%inv, iv%info(satem)%pw(n)%qc,   &
+            iv%info(satem)%pw(n)%error
 
          do k = 1, iv%info(satem)%levels(n) 
             thick_qc = iv%satem(n)%thickness(k)%qc
@@ -998,7 +1020,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(qscat)%elv(n),         &
             iv%info(qscat)%id(n)
 
-         write(ounit, fmt = fmt_srfc) iv%info(qscat)%slp(n), iv%info(qscat)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(qscat)%slp(n)%inv, iv%info(qscat)%slp(n)%qc, &
+            iv%info(qscat)%slp(n)%error,                         &
+            iv%info(qscat)%pw(n)%inv, iv%info(qscat)%pw(n)%qc,   &
+            iv%info(qscat)%pw(n)%error
 
          ! get speed and direction
          if (iv%qscat(n)%u%qc >= obs_qc_pointer .and. &
@@ -1052,7 +1078,10 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(profiler)%elv(n),         &
             iv%info(profiler)%id(n)
          write(ounit, fmt = fmt_srfc) &
-            iv%info(profiler)%slp(n), iv%info(profiler)%pw(n)
+            iv%info(profiler)%slp(n)%inv, iv%info(profiler)%slp(n)%qc, &
+            iv%info(profiler)%slp(n)%error,                            &
+            iv%info(profiler)%pw(n)%inv, iv%info(profiler)%pw(n)%qc,   &
+            iv%info(profiler)%pw(n)%error
 
          do k = 1, iv%info(profiler)%levels(n)
 
@@ -1076,7 +1105,7 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
               iv%profiler(n)%p(k),zero,pr_error,        &
               speed,speed_qc              ,speed_error, &
               dir  ,dir_qc                ,dir_error,   &
-              iv%info(profiler)%elv(n), zero, elv_error, &
+              iv%profiler(n)%h(k), zero, elv_error, &
               missing_r, missing_data, xmiss,           & 
               missing_r, missing_data, xmiss,           & 
               missing_r, missing_data, xmiss
@@ -1104,7 +1133,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(ssmt1)%lon(1,n),         &
             iv%info(ssmt1)%elv(n),         &
             iv%info(ssmt1)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(ssmt1)%slp(n), iv%info(ssmt1)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(ssmt1)%slp(n)%inv, iv%info(ssmt1)%slp(n)%qc, &
+            iv%info(ssmt1)%slp(n)%error,                         &
+            iv%info(ssmt1)%pw(n)%inv, iv%info(ssmt1)%pw(n)%qc,   &
+            iv%info(ssmt1)%pw(n)%error
 
          do k = 1, iv%info(ssmt1)%levels(n)
             write(ounit, fmt = trim (fmt_each))                            &
@@ -1140,7 +1173,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(ssmt2)%lon(1,n),         &
             iv%info(ssmt2)%elv(n),         &
             iv%info(ssmt2)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(ssmt2)%slp(n), iv%info(ssmt2)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(ssmt2)%slp(n)%inv, iv%info(ssmt2)%slp(n)%qc, &
+            iv%info(ssmt2)%slp(n)%error,                         &
+            iv%info(ssmt2)%pw(n)%inv, iv%info(ssmt2)%pw(n)%qc,   &
+            iv%info(ssmt2)%pw(n)%error
 
          do k = 1, iv%info(ssmt2)%levels(n)
             write(ounit, fmt = trim (fmt_each))                  &
@@ -1178,7 +1215,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(gpspw)%lon(1,n),         &
             iv%info(gpspw)%elv(n),         &
             iv%info(gpspw)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(gpspw)%slp(n), iv%info(gpspw)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(gpspw)%slp(n)%inv, iv%info(gpspw)%slp(n)%qc, &
+            iv%info(gpspw)%slp(n)%error,                         &
+            iv%info(gpspw)%pw(n)%inv, iv%info(gpspw)%pw(n)%qc,   &
+            iv%info(gpspw)%pw(n)%error
       end do 
    end if
 
@@ -1200,7 +1241,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(gpsref) %lon(1,n),         &
             iv%info(gpsref) %elv(n),         &
             iv%info(gpsref) %id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(gpsref)%slp(n), iv%info(gpsref)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(gpsref)%slp(n)%inv, iv%info(gpsref)%slp(n)%qc, &
+            iv%info(gpsref)%slp(n)%error,                          &
+            iv%info(gpsref)%pw(n)%inv, iv%info(gpsref)%pw(n)%qc,   &
+            iv%info(gpsref)%pw(n)%error
 
          do k = 1, iv%info(gpsref)%levels(n)
 
@@ -1274,7 +1319,10 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(airsr)%elv(n),         &
             iv%info(airsr)%id(n)
          write(ounit, fmt = fmt_srfc) &
-            iv%info(airsr)%slp(n), iv%info(airsr)%pw(n)
+            iv%info(airsr)%slp(n)%inv, iv%info(airsr)%slp(n)%qc, &
+            iv%info(airsr)%slp(n)%error,                         &
+            iv%info(airsr)%pw(n)%inv, iv%info(airsr)%pw(n)%qc,   &
+            iv%info(airsr)%pw(n)%error
 
          do k = 1, iv%info(airsr)%levels(n)
             ! get RH from Q & T    
@@ -1317,7 +1365,7 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
    if (iv%info(mtgirs)%nlocal > 0) then
       if (print_detail_f_obs) then
          write(unit=stdout,fmt='(A,I5)') &
-            ' writing filtered obs for airep  ',iv%info(mtgirs)%nlocal
+            ' writing filtered obs for mtgirs  ',iv%info(mtgirs)%nlocal
       end if
 
       do n = 1, iv%info(mtgirs)%nlocal
@@ -1332,7 +1380,11 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             iv%info(mtgirs)%lon(1,n),         &
             iv%info(mtgirs)%elv(n),         &
             iv%info(mtgirs)%id(n)
-         write(ounit, fmt = fmt_srfc) iv%info(mtgirs)%slp(n), iv%info(mtgirs)%pw(n)
+         write(ounit, fmt = fmt_srfc)  &
+            iv%info(mtgirs)%slp(n)%inv, iv%info(mtgirs)%slp(n)%qc, &
+            iv%info(mtgirs)%slp(n)%error,                          &
+            iv%info(mtgirs)%pw(n)%inv, iv%info(mtgirs)%pw(n)%qc,   &
+            iv%info(mtgirs)%pw(n)%error
 
          do k = 1, iv%info(mtgirs)%levels(n)
 
@@ -1376,6 +1428,145 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
       end do    
    end if
 
+   !--------------------------------------------------------------------------
+   ! Write tamdar
+   !--------------------------------------------------------------------------
+
+   if (iv%info(tamdar)%nlocal > 0) then
+      if (print_detail_f_obs) then
+         write(unit=stdout,fmt='(A,I5)') &
+            ' writing filtered obs for tamdar  ',iv%info(tamdar)%nlocal
+      end if
+
+      do n = 1, iv%info(tamdar)%nlocal
+         if (.not. iv%info(tamdar)%proc_domain(1,n)) cycle
+
+         write(ounit, fmt = fmt_info, iostat = iost) &
+            iv%info(tamdar)%platform(n),    &
+            iv%info(tamdar)%date_char(n),   &
+            iv%info(tamdar)%name(n),        &
+            iv%info(tamdar)%levels(n),      &
+            iv%info(tamdar)%lat(1,n),         &
+            iv%info(tamdar)%lon(1,n),         &
+            iv%info(tamdar)%elv(n),         &
+            iv%info(tamdar)%id(n)
+         write(ounit, fmt = fmt_srfc) &
+            iv%info(tamdar)%slp(n)%inv, iv%info(tamdar)%slp(n)%qc, iv%info(tamdar)%slp(n)%error, &
+            iv%info(tamdar)%pw(n)%inv,  iv%info(tamdar)%pw(n)%qc,  iv%info(tamdar)%pw(n)%error
+            ! First write surface level information
+            ! get speed and direction
+            if (iv%tamdar_sfc(n)%u%qc >= obs_qc_pointer .and. &
+                iv%tamdar_sfc(n)%v%qc >= obs_qc_pointer) then
+               uu = ob%tamdar_sfc(n)%u
+               vv = ob%tamdar_sfc(n)%v
+               call da_ffdduv(speed, dir, uu, vv, iv%info(tamdar)%lon(1,n), &
+                  convert_uv2fd)
+               speed_qc  = iv%tamdar_sfc(n)%u%qc
+               dir_qc    = speed_qc
+               speed_err = iv%tamdar_sfc(n)%u%error
+            else
+               speed     = missing_r
+               speed_qc    = missing_data
+               dir       = missing_r
+               dir_qc    = missing_data
+               speed_err = xmiss
+            end if
+            t     =  ob%tamdar_sfc(n)%t
+            t_qc  =  iv%tamdar_sfc(n)%t%qc
+            t_err =  iv%tamdar_sfc(n)%t%error
+            if (iv%tamdar_sfc(n)%t%qc <= fails_error_max) then
+               t_qc  = missing_data
+               t     = missing_r
+               t_err = xmiss
+            end if
+
+            ! get RH from Q & T
+            p     = ob%tamdar_sfc(n)%p
+            p_qc  = iv%tamdar_sfc(n)%p%qc
+            p_err = iv%tamdar_sfc(n)%p%error
+            if (iv%tamdar_sfc(n)%p%qc <= fails_error_max) then
+               p_qc  = missing_data
+               p     = missing_r
+               p_err   = pr_error
+               rh    = missing_r
+               rh_qc = missing_data
+               rh_error= xmiss
+            else
+              if (iv%tamdar_sfc(n)%q%qc >= obs_qc_pointer .and.  &
+               iv%tamdar_sfc(n)%q%error > 0.001.and.  &
+               iv%tamdar_sfc(n)%t%qc > fails_error_max ) then
+!               print*,ob%tamdar_sfc(n)%t, ob%tamdar_sfc(n)%p, es, qs
+               call da_tp_to_qs(ob%tamdar_sfc(n)%t, ob%tamdar_sfc(n)%p, es, qs)
+               rh = (ob%tamdar_sfc(n)%q/qs) * 100.
+               rh_qc = iv%tamdar_sfc(n)%q%qc
+               if (rh_qc < 0) rh_qc = missing_data
+              endif
+            end if
+
+            if(p.ne.missing_r)then
+            write(ounit, fmt = trim (fmt_each))           &
+               p,  p_qc,   p_err,                         &
+               speed,speed_qc, speed_err ,                &
+               dir  , dir_qc,  dir_err ,                  &
+               iv%tamdar_sfc(n)%h, zero, elv_error,        &
+               t, t_qc, t_err,                            &
+               td, td_qc, td_error,                       &
+               rh, rh_qc,  rh_error
+           endif
+! write high level information
+         do k = 1, iv%info(tamdar)%levels(n)
+            ! get speed and direction
+            if (iv%tamdar(n)%u(k)%qc >= obs_qc_pointer .and. &
+                iv%tamdar(n)%v(k)%qc >= obs_qc_pointer) then
+               uu = ob%tamdar(n)%u(k)
+               vv = ob%tamdar(n)%v(k)
+               call da_ffdduv(speed, dir, uu, vv, iv%info(tamdar)%lon(k,n), convert_uv2fd)
+               speed_qc  = iv%tamdar(n)%u(k)%qc
+               dir_qc    = speed_qc
+               speed_err = iv%tamdar(n)%u(k)%error
+            else
+               speed     = missing_r
+               speed_qc    = missing_data
+               dir       = missing_r
+               dir_qc    = missing_data
+               speed_err = xmiss
+            end if
+               ! get RH from Q & T
+               if (iv%tamdar(n)%q(k)%qc >= obs_qc_pointer .and.  &
+                   abs(iv%tamdar(n)%q(k)%error - missing_r) > 1. .and.  &
+                   abs(ob%tamdar(n)%t(k)       - missing_r) > 1. .and.  &
+                   abs(iv%tamdar(n)%p(k)       - missing_r) > 1.   ) then
+                  call da_tp_to_qs(ob%tamdar(n)%t(k), iv%tamdar(n)%p(k), es, qs)
+                  rh = (ob%tamdar(n)%q(k)/qs) * 100.
+                  rh_qc = iv%tamdar(n)%q(k)%qc
+               else
+                  rh    = missing_r
+                  rh_qc = missing_data
+                  rh_error= xmiss
+               end if
+               if (rh_qc < 0) rh_qc = missing_data
+
+               t    =  ob%tamdar(n)%t(k)
+               t_qc =  iv%tamdar(n)%t(k)%qc
+               t_err= iv%tamdar(n)%t(k)%error
+               if (iv%tamdar(n)%t(k)%qc <= fails_error_max) then
+                  t_qc = missing_data
+                  t   = missing_r
+                  t_err= xmiss
+               end if
+            if(iv%tamdar(n)%p(k).ne.missing_r)then
+            write(ounit, fmt = trim (fmt_each))       &
+               iv%tamdar(n)%p(k),zero , pr_error,      &
+               speed, speed_qc, speed_err,            &
+               dir  , dir_qc, dir_error,              &
+               iv%tamdar(n)%h(k), zero, elv_error,         &
+                   t,  t_qc, t_err,                           &
+               missing_r, missing_data, xmiss,        &
+                  rh, rh_qc,  rh_error
+            endif
+         end do
+      end do
+   end if
 
    if (iv%info(ssmi_tb)%nlocal > 0) then
       call da_warning(__FILE__,__LINE__, &     

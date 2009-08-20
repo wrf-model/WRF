@@ -24,6 +24,7 @@ subroutine da_qc_airs (i, nchan, ob, iv)
                 nrej_clw,nrej_sst,nrej_topo, num_proc_domain
 
    real      :: SST_model, SST_airs, SST_pred, diffSST, diffSST2
+   real      :: inv_grosscheck
 
    character(len=30)  :: filename
 
@@ -205,11 +206,14 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 
            !  j.1. check absolute value of innovation
            !------------------------------------------------
-            if (abs(iv%instid(i)%tb_inv(k,n)) > 15.0) then
+	    inv_grosscheck = 15.0
+ 	    if (use_satcv(2)) inv_grosscheck = 100.0
+            if (abs(iv%instid(i)%tb_inv(k,n)) > inv_grosscheck) then 
                iv%instid(i)%tb_qc(k,n)  = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_omb_abs(k) = nrej_omb_abs(k) + 1
             end if
+	    if (use_satcv(2)) cycle
 
            !  j.2. check relative value of innovation
            !      and assign of the observation error (standard deviation)
@@ -240,11 +244,11 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 	    
          end do ! chan
 	 		    
-      end do ! end loop pixel           
-			  
+      end do ! end loop pixel      
+      			  
     ! Do inter-processor communication to gather statistics.
 #ifdef CRTM_MODIF
-      if (use_airs_mmr) then
+      if (use_airs_mmr .and. (.not.use_satcv(2))) then
          do k = 1, nchan
             bias_global(k)   = wrf_dm_sum_real(bias_local(k))
             numrad_global(k) = wrf_dm_sum_integer(numrad_local(k))
@@ -257,11 +261,11 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 
            ! 1. Cloud detection scheme (NESDIS or MMR)
            !---------------------------------------------
-#ifdef CRTM_MODIF
-         if (use_airs_mmr) then
+         if (use_airs_mmr .and. (.not.use_satcv(2))) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
 	    
 	    if (rtm_option == rtm_option_rttov) then
+#ifdef RTTOV
   	       kte_surf   = iv%instid(i)%nlevels     
                kts_100hPa = MAXLOC(coefs(i)%ref_prfl_p(1:kte_surf), &
 	                    MASK = coefs(i)%ref_prfl_p(1:kte_surf) < 100.0)
@@ -271,7 +275,9 @@ subroutine da_qc_airs (i, nchan, ob, iv)
                   iv%instid(i)%rad_obs(k,n) = coefs(i)%planck1(k) / &
 		                             (EXP(coefs(i)%planck2(k)/tstore) - 1.0)
 	       end do   
+#endif
             elseif (rtm_option == rtm_option_crtm) then
+#ifdef CRTM_MODIF
   	       kte_surf   = kte
    	       kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
 	                    MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
@@ -279,18 +285,18 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 	          CALL CRTM_Planck_Radiance(i,k,ob%instid(i)%tb(k,n) - bias_global(k), &
 		                                iv%instid(i)%rad_obs(k,n))
                end do	 	       	 
+#endif
             end if
 	    
 	    ndim = kte_surf - kts_100hPa(1) + 1
 	 
             call da_cloud_detect_airs(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)	       
          end if	          
-#endif
 	 
 	 do k = 1, nchan
 	    if (iv%instid(i)%cloud_flag(k,n) == qc_bad) iv%instid(i)%tb_qc(k,n) = qc_bad
          end do
-	 
+ 	 
            !  2. Check iuse from information file (channel selection)
            !-----------------------------------------------------------
          do k = 1, nchan

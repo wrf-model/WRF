@@ -16,10 +16,13 @@ subroutine da_interp_lin_2d_partial(fm2d, info, k, n1, n2, fo2d)
 
    if (trace_use_frequent) call da_trace_entry("da_interp_lin_2d_partial")
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( n )
    do n=n1,n2
       fo2d(n) = info%dym(k,n)*(info%dxm(k,n)*fm2d(info%i(k,n),info%j(k,n))   + info%dx(k,n)*fm2d(info%i(k,n)+1,info%j(k,n))) &
               + info%dy(k,n) *(info%dxm(k,n)*fm2d(info%i(k,n),info%j(k,n)+1) + info%dx(k,n)*fm2d(info%i(k,n)+1,info%j(k,n)+1))
    end do
+   !$OMP END PARALLEL DO
 
    if (trace_use_frequent) call da_trace_exit("da_interp_lin_2d_partial")
 

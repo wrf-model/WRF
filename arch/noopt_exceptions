@@ -8,9 +8,6 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_integrate.o : mediation_integrate.F
 mediation_interp_domain.o : mediation_interp_domain.F
-module_radiation_driver.o : module_radiation_driver.F
-NMM_NEST_UTILS1.o : NMM_NEST_UTILS1.F
-mediation_nest_move.o : mediation_nest_move.F
 module_comm_dm.o : module_comm_dm.F
 module_configure.o : module_configure.F
 module_dm.o : module_dm.F
@@ -34,6 +31,7 @@ module_io_wrf.o : module_io_wrf.F
 module_si_io.o : module_si_io.F
 module_state_description.o : module_state_description.F 
 output_wrf.o : output_wrf.F
+NMM_NEST_UTILS1.o : NMM_NEST_UTILS1.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_interface.o : solve_interface.F
@@ -107,10 +105,6 @@ mediation_feedback_domain.o \
 mediation_force_domain.o \
 mediation_integrate.o \
 mediation_interp_domain.o \
-module_radiation_driver.o \
-NMM_NEST_UTILS1.o \
-mediation_nest_move.o \
-module_comm_dm.o \
 module_dm.o \
 module_fddaobs_rtfdda.o \
 module_initialize.o \
@@ -126,19 +120,25 @@ module_io_wrf.o \
 module_si_io.o \
 module_tiles.o \
 output_wrf.o \
+NMM_NEST_UTILS1.o \
 shift_domain_em.o \
 solve_interface.o \
 start_domain.o \
 start_domain_nmm.o \
 start_em.o \
 wrf_fddaobs_in.o \
-module_alloc_space.o \
 wrf_tsin.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
 	$(RM) $*.b $*.bb
-	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi
 
 solve_em.o :
 	$(RM) $@
@@ -148,14 +148,19 @@ solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(SOLVE_EM_SPECIAL) $(FCSUFFIX) $*.f90
 
 module_sf_ruclsm.o : module_sf_ruclsm.F
-module_cu_kf.o : module_cu_kf.F
 
-module_sf_ruclsm.o module_cu_kf.o :
+module_sf_ruclsm.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
 	$(RM) $*.b $*.bb
-	$(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi
 
 # compile without OMP
 input_wrf.o \
@@ -222,6 +227,8 @@ nl_set_0_routines.o \
 nl_set_1_routines.o \
 nl_get_0_routines.o \
 nl_get_1_routines.o \
+module_alloc_space.o \
+module_comm_dm.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb

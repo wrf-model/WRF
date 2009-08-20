@@ -1,0 +1,11 @@
+&control_param
+wrfvar_output_file = './wrfvar_output'
+wrf_bdy_file       = './wrfbdy_d01'
+wrf_input          = './wrfinput_d01'
+domain_id          = 1
+cycling = .false. 
+debug   = .true.
+low_bdy_only = .false.             
+update_lsm = .false. 
+/
+

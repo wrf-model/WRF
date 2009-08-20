@@ -40,6 +40,7 @@
   USE module_phot_mad
   USE module_aerosols_sorgam
   USE module_chem_utilities
+  USE module_gocart_so2so4
   USE module_ctrans_grell
   USE module_convtrans_prep
   USE module_dry_dep_driver
@@ -791,7 +792,7 @@
                  grid%gmt,grid%julday,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
                  rri,p_phy,chem,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,                &
-                 grid%cldfra, grid%cldfra_old,                                        &
+                 grid%cldfra, grid%cldfra_old,grid%raincv_b,                          &
 	             grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
@@ -799,7 +800,8 @@
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
-                 emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,numgas,              &
+                 emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,                     &
+                 config_flags%sf_urban_physics,numgas,                                &
                  ids,ide, jds,jde, kds,kde,                                           &
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
@@ -918,6 +920,18 @@ CALL kpp_mechanism_driver (chem,                                                
        chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
 !      chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
    endif
+   so2so4_select: SELECT CASE(config_flags%chem_opt)
+     CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP)
+       CALL wrf_debug(15,'gocart so2-so4 conversion')
+          call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+         grid%gd_cloud_b,                                                   &
+         NUM_CHEM,NUM_MOIST,                                                &
+         ids,ide, jds,jde, kds,kde,                                         &
+         ims,ime, jms,jme, kms,kme,                                         &
+         its,ite, jts,jte, kts,kte                                          )
+     CASE DEFAULT
+       CALL wrf_debug(15,'no gocart so2-so4 conversion')
+   END SELECT so2so4_select                              
 
 
 

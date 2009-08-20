@@ -24,6 +24,13 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
 
    if (trace_use) call da_trace_entry("da_transform_xtovp")
 
+   if ( cv_options == 3 ) then
+      write(unit=*, fmt='(a,i6)') &
+           'Cannot perform transform_xtovp for cv_options:', cv_options
+      CALL wrf_shutdown
+      stop 'Wrong cv_options.'
+   endif
+
    !----------------------------------------------------------------
    ! [1.0] Perform transform v = U^{-1} x
    !----------------------------------------------------------------      

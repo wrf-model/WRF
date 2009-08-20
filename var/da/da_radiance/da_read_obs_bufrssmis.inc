@@ -35,7 +35,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    logical :: outside, outside_all
 
    integer(i_kind) :: iost, inst, lnbufr, ifgat
-   integer(i_kind) :: ihh, i, j, n, k, slnm, ifov, idd, ireadmg, ireadsb
+   integer(i_kind) :: ihh, i, j, n, k, slnm, ifov, idd
    integer(i_kind) :: iret, idate, im, iy
    integer(i_kind) :: jc, incangl, bch, landsea_mask, rain_flag
    integer(i_kind) :: platform_id, satellite_id, sensor_id, nchan, num_ssmis_file
@@ -83,7 +83,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
-         (/"Cannot open file "//trim(infile)/))
+         (/"Cannot open file "//infile/))
       return
    end if
 

@@ -29,7 +29,7 @@
     CONTAINS
        subroutine wesely_driver(id,ktau,dtstep,                           &
                config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &
@@ -91,7 +91,7 @@
                                                      ust,                 &
                                                      xlat,                &
                                                      xlong,               &
-                                                     znt
+                                                     znt,raincv
 
 !--- deposition and emissions stuff
 ! ..
@@ -139,7 +139,7 @@
       wetflag = .FALSE.
       highnh3 = .FALSE.
       if(p_qr.gt.1)then
-         if(moist(i,kts,j,p_qr).gt.0.)rainflag = .true.
+         if(moist(i,kts,j,p_qr).gt.1.e-18 .or. raincv(i,j).gt.0.)rainflag = .true.
       endif
       rhchem = MIN( 100.,100. * moist(i,kts,j,p_qv) / &
                (3.80*exp(17.27*(t_phy(i,kts,j)-273.)/(t_phy(i,kts,j)-36.))/pa))
@@ -358,8 +358,8 @@ END SUBROUTINE wesely_driver
         rgsx = rgso(iland,iseason) + resice
         IF (wetflag) rlux = rluo1
         IF (rainflag) rlux = rluo2
-        rcx(p_o3) = 1./(1./rsmx+1./rlux+1./(rdc+rclx)+1./(rac(iland, &
-          iseason)+rgsx))
+        rcx(p_o3) = 1./(1./rsmx+1./rlux+1./(rdc+rclx)+1./(min(100.,rac(iland, &
+          iseason))+rgsx))
         IF (rcx(p_o3)<1.) rcx(p_o3) = 1.
         endif
 
@@ -651,7 +651,8 @@ END SUBROUTINE wesely_driver
         REAL :: vgspec(numgas)
 ! ..
 !   Set the reference height (10.0 m)
-        zr = 10.0
+!       zr = 10.0
+        zr = 2.0
 
 !   CALCULATE THE DEPOSITION VELOCITY without any surface
 !   resistance term, i.e. 1 / (ra + rb)

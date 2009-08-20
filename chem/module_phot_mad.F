@@ -2286,7 +2286,7 @@ END SUBROUTINE madronich1_driver
         ! .. Scalar Arguments ..
 
         INTEGER :: iprt, nlevel
-        REAL :: zenith, mu0
+        REAL :: zenith
         REAL :: gaer, gcld, gray, omaer, omcld, omray
 
         ! .. Local Scalars ..

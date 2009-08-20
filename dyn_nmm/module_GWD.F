@@ -19,6 +19,8 @@
 !
       INTEGER, PARAMETER :: KIND_PHYS=SELECTED_REAL_KIND(13,60) ! the '60' maps to 64-bit real
       INTEGER,PRIVATE,SAVE :: IMX, NMTVR, IDBG, JDBG
+      REAL,PRIVATE,SAVE :: RAD_TO_DEG   !-- Convert radians to degrees
+      REAL,PRIVATE,SAVE :: DEG_TO_RAD   !-- Convert degrees to radians
       REAL (KIND=KIND_PHYS),PRIVATE,SAVE :: DELTIM,RDELTIM
       REAL(kind=kind_phys),PRIVATE,PARAMETER :: SIGFAC=0.0   !-- Key tunable parameter
 !dbg      real,private,save :: dumin,dumax,dvmin,dvmax   !dbg
@@ -109,9 +111,14 @@
 !   but pass back out cosine (CROT) and sine (SROT) of this angle
 !
       DTR=ACOS(-1.)/180. !-- convert from degrees to radians
+      DEG_TO_RAD=DTR     !-- save conversion from degrees to radians
+!
       LAT0=DTR*CEN_LON   !-- central latitude of grid in radians
       LoN0=DTR*CEN_LAT   !-- central longitude of grid in radians
+!
       DTR=1./DTR         !-- convert from radians to degrees
+      RAD_TO_DEG=DTR     !-- save conversion from radians to degrees
+!
       CLAT0=COS(LAT0)
       SLAT0=SIN(LAT0)
       DO J=JTS,JTE
@@ -279,6 +286,8 @@ real :: hzmaxmin,hzmaxmax,hanglmin,hanglmax,hslopmin,hslopmax,hanismin,hanismax 
 ,hstdvmin,hstdvmax,hcnvxmin,hcnvxmax,hasywmin,hasywmax,hasysmin,hasysmax  &
 ,hasyswmin,hasyswmax,hasynwmin,hasynwmax,hlenwmin,hlenwmax,hlensmin,hlensmax  &
 ,hlenswmin,hlenswmax,hlennwmin,hlennwmax,zsmin,zsmax,delu,delv
+! Added this declaration
+real :: helvmin,helvmax
 !dbg
 
 !
@@ -321,6 +330,9 @@ if (itime <= 1) then
   hlennwmax=-1.e6
   zsmin=1.e6
   zsmax=-1.e6
+! Added initialization of helvmin and helvmax
+  helvmin=1.e6
+  helvmax=-1.e6
   do j=jts,jte
     do i=its,ite
       kpblmin=min(kpblmin,kpbl(i,j))
@@ -890,7 +902,7 @@ label,' => k=',k,'  dudt=',dudt(i,k,j),'  dvdt=',dvdt(i,k,j)
 !
 ! for lm mtn blocking
 !
-      real(kind=kind_phys) :: ZLEN, DBTMP, R, PHIANG, CDmb, DBIM        &
+      real(kind=kind_phys) :: ZLEN, DBTMP, R, PHIANG, DBIM              &
      &,                   xl,     rcsks, bnv,   fr                      &
      &,                   brvf,   cleff, tem,   tem1,  tem2, temc, temv &
      &,                   wdir,   ti,    rdz,   dw2,   shr2, bvf2       &
@@ -1168,7 +1180,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 !dbg ,'     ang(i,k)     uds(i,k)      pe(i)     up(i)     ek(i)'
 
           DO K = iwklm(I), 1, -1
-            PHIANG   =  atan2D(V1(J,K),U1(J,K))
+            PHIANG   =  RAD_TO_DEG*atan2(V1(J,K),U1(J,K))
             ANG(I,K) = ( THETA(J) - PHIANG )
             if ( ANG(I,K) .gt.  90. ) ANG(I,K) = ANG(I,K) - 180.
             if ( ANG(I,K) .lt. -90. ) ANG(I,K) = ANG(I,K) + 180.
@@ -1194,7 +1206,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 ! --- Wind projected on the line perpendicular to mtn range, U(Zb(K)).
 ! --- kinetic energy is at the layer Zb
 ! --- THETA ranges from -+90deg |_ to the mtn "largest topo variations"
-              UP(I)  =  UDS(I,K) * cosD(ANG(I,K))
+              UP(I)  =  UDS(I,K) * cos(DEG_TO_RAD*ANG(I,K))
               EK(I)  = 0.5 *  UP(I) * UP(I) 
 
 ! --- Dividing Stream lime  is found when PE =exceeds EK.
@@ -1238,12 +1250,12 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
                 ZLEN = SQRT( ( PHIL(J,IDXZB(I))-PHIL(J,K) ) /           &
      &                       ( PHIL(J,K ) + G * hprime(J) ) )
 ! --- lm eq 14:
-                R = (cosD(ANG(I,K))**2 + GAMMA(J) * sinD(ANG(I,K))**2) / &
-     &              (gamma(J) * cosD(ANG(I,K))**2 + sinD(ANG(I,K))**2)
+                R = (cos(DEG_TO_RAD*ANG(I,K))**2 + GAMMA(J) * sin(DEG_TO_RAD*ANG(I,K))**2) / &
+     &              (gamma(J) * cos(DEG_TO_RAD*ANG(I,K))**2 + sin(DEG_TO_RAD*ANG(I,K))**2)
 ! --- (negative of DB -- see sign at tendency)
                 DBTMP = 0.25 *  CDmb *                                  &
      &                  MAX( 2. - 1. / R, HZERO ) * sigma(J) *          &
-     &                  MAX(cosD(ANG(I,K)), gamma(J)*sinD(ANG(I,K))) *  &
+     &                  MAX(cos(DEG_TO_RAD*ANG(I,K)), gamma(J)*sin(DEG_TO_RAD*ANG(I,K))) *  &
      &                  ZLEN / hprime(J) 
                 DB(I,K) =  DBTMP * UDS(I,K)    
 !

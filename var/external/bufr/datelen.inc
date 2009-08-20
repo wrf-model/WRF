@@ -1,0 +1,73 @@
+      SUBROUTINE DATELEN(LEN)
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!
+! SUBPROGRAM:    DATELEN
+!   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1998-07-08
+!
+! ABSTRACT: THIS SUBROUTINE IS USED TO SPECIFY THE LENGTH OF DATE-TIME
+!   VALUES THAT WILL BE OUTPUT BY FUTURE CALLS TO ANY OF THE BUFR
+!   ARCHIVE LIBRARY SUBROUTINES WHICH READ BUFR MESSAGES (E.G. READMG,
+!   READERME, ETC.).  POSSIBLE VALUES ARE "8" (WHICH IS THE DEFAULT)
+!   AND "10".
+!
+! PROGRAM HISTORY LOG:
+! 1998-07-08  J. WOOLLEN -- ORIGINAL AUTHOR (ENTRY POINT IN READMG)
+! 2002-05-14  J. WOOLLEN -- CHANGED FROM AN ENTRY POINT TO INCREASE
+!                           PORTABILITY TO OTHER PLATFORMS
+! 2003-11-04  J. ATOR    -- ADDED DOCUMENTATION
+! 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+!                           INTERDEPENDENCIES
+! 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
+!                           DOCUMENTATION; OUTPUTS MORE COMPLETE
+!                           DIAGNOSTIC INFO WHEN ROUTINE TERMINATES
+!                           ABNORMALLY
+! 2004-12-20  D. KEYSER  -- CALLS WRDLEN TO INITIALIZE LOCAL MACHINE
+!                           INFORMATION (IN CASE IT HAS NOT YET BEEN
+!                           CALLED), THIS ROUTINE DOES NOT REQUIRE IT
+!                           BUT IT MAY SOMEDAY CALL OTHER ROUTINES THAT
+!                           DO REQUIRE IT
+!
+! USAGE:    CALL DATELEN (LEN)
+!   INPUT ARGUMENT LIST:
+!     LEN      - INTEGER: LENGTH OF DATE-TIME VALUES TO BE OUTPUT BY
+!                READ SUBROUTINES:  *
+!                       8 =   YYMMDDHH (2-digit year)
+!                      10 = YYYYMMDDHH (4-digit year)
+!
+! REMARKS:
+!    THIS ROUTINE CALLS:        BORT     WRDLEN
+!    THIS ROUTINE IS CALLED BY: None
+!                               Normally called only by application
+!                               programs.
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 77
+!   MACHINE:  PORTABLE TO ALL PLATFORMS
+!
+!$$$
+
+      COMMON /DATELN/ LENDAT
+
+      CHARACTER*128 BORT_STR
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+
+!  CALL SUBROUTINE WRDLEN TO INITIALIZE SOME IMPORTANT INFORMATION
+!  ABOUT THE LOCAL MACHINE (IN CASE IT HAS NOT YET BEEN CALLED)
+!  ---------------------------------------------------------------
+
+      CALL WRDLEN
+
+      IF(LEN.NE.8 .AND. LEN.NE.10) GOTO 900
+      LENDAT = LEN
+
+!  EXITS
+!  -----
+
+      RETURN
+900   WRITE(BORT_STR,'("BUFRLIB: DATELEN - INPUT ARGUMENT IS",I4," - '// &
+       'IT MUST BE EITHER 8 OR 10")') LEN
+      CALL BORT(BORT_STR)
+      END SUBROUTINE DATELEN

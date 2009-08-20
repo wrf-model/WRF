@@ -10,6 +10,8 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
    type (y_type),  intent(out)   :: ob          ! Observation structure.
    type (iv_type), intent(inout) :: iv          ! O-B structure.
 
+#ifdef BUFR
+
    character(len=filename_len) :: filename
    integer                     :: n,i,j
 
@@ -30,10 +32,10 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
       rlon_min =  r999
       rlon_max = -r999
 
-      istart=grid%i_start(1)
-      iend  =grid%i_end  (1)
-      jstart=grid%j_start(1)
-      jend  =grid%j_end  (1)
+      istart=MINVAL( grid%i_start(1:grid%num_tiles) )
+      iend  =MAXVAL( grid%i_end  (1:grid%num_tiles) )
+      jstart=MINVAL( grid%j_start(1:grid%num_tiles) )
+      jend  =MAXVAL( grid%j_end  (1:grid%num_tiles) ) 
 
       do i = istart, iend
          do j = jstart, jend
@@ -103,6 +105,12 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
       !    call da_scan_bufr_radar(iv, 'radar.dat')
    end if
 
+   if ( use_gpsrefobs ) then
+      call da_scan_obs_bufrgpsro(iv, 'gpsro.bufr')
+      iv%info(gpsref)%plocal(iv%time) = iv%info(gpsref)%nlocal
+      iv%info(gpsref)%ptotal(iv%time) = iv%info(gpsref)%ntotal
+   end if
+
    !-------------------------------------------------------------------------
    ! Allocate the iv based on input number of obs:
    !--------------------------------------------------------------------------
@@ -137,6 +145,10 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
       ! end if
    end if
 
+   if ( use_gpsrefobs ) then
+      call da_read_obs_bufrgpsro(iv, 'gpsro.bufr')
+   end if
+
    if ( thin_conv ) then
       do n = 1, num_ob_indexes
          call destroygrids_conv (n)
@@ -151,6 +163,10 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
    call da_fill_obs_structures(iv, ob)
 
    iv%time = 1
+
+#else
+   call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/)) 
+#endif
 
    if (trace_use) call da_trace_exit("da_setup_obs_structures_bufr")
 

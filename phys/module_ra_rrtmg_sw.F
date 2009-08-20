@@ -2376,7 +2376,7 @@
       hvrrft = '$Revision: 1.3 $'
 
       zsr3=sqrt(3._rb)
-      zwcrit=0.9995_rb
+      zwcrit=0.9999995_rb
       kmodts=2
 
       do jk=1, nlayers
@@ -3155,7 +3155,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng16
-      use rrsw_kg16, only : absa, absb, forref, selfref, &
+      use rrsw_kg16, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, rayl, layreffr, strrat1
 
 ! ------- Declarations -------
@@ -3250,7 +3250,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng17, ngs16
-      use rrsw_kg17, only : absa, absb, forref, selfref, &
+      use rrsw_kg17, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, rayl, layreffr, strrat
 
 ! ------- Declarations -------
@@ -3369,7 +3369,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng18, ngs17
-      use rrsw_kg18, only : absa, absb, forref, selfref, &
+      use rrsw_kg18, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, rayl, layreffr, strrat
 
 ! ------- Declarations -------
@@ -3465,7 +3465,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng19, ngs18
-      use rrsw_kg19, only : absa, absb, forref, selfref, &
+      use rrsw_kg19, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, rayl, layreffr, strrat
 
 ! ------- Declarations -------
@@ -3561,7 +3561,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng20, ngs19
-      use rrsw_kg20, only : absa, absb, forref, selfref, &
+      use rrsw_kg20, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, absch4, rayl, layreffr
 
       implicit none
@@ -3645,7 +3645,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng21, ngs20
-      use rrsw_kg21, only : absa, absb, forref, selfref, &
+      use rrsw_kg21, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, rayl, layreffr, strrat
 
 ! ------- Declarations -------
@@ -3764,7 +3764,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng22, ngs21
-      use rrsw_kg22, only : absa, absb, forref, selfref, &
+      use rrsw_kg22, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, rayl, layreffr, strrat
 
 ! ------- Declarations -------
@@ -3870,7 +3870,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng23, ngs22
-      use rrsw_kg23, only : absa, forref, selfref, &
+      use rrsw_kg23, only : absa, ka, forref, selfref, &
                             sfluxref, rayl, layreffr, givfac
 
 ! ------- Declarations -------
@@ -3939,7 +3939,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng24, ngs23
-      use rrsw_kg24, only : absa, absb, forref, selfref, &
+      use rrsw_kg24, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, abso3a, abso3b, rayla, raylb, &
                             layreffr, strrat
 
@@ -4039,7 +4039,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng25, ngs24
-      use rrsw_kg25, only : absa, &
+      use rrsw_kg25, only : absa, ka, &
                             sfluxref, abso3a, abso3b, rayl, layreffr
 
 ! ------- Declarations -------
@@ -4152,7 +4152,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng27, ngs26
-      use rrsw_kg27, only : absa, absb, &
+      use rrsw_kg27, only : absa, ka, absb, kb, &
                             sfluxref, rayl, layreffr, scalekur
 
 ! ------- Declarations -------
@@ -4220,7 +4220,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng28, ngs27
-      use rrsw_kg28, only : absa, absb, &
+      use rrsw_kg28, only : absa, ka, absb, kb, &
                             sfluxref, rayl, layreffr, strrat
 
 ! ------- Declarations -------
@@ -4325,7 +4325,7 @@
 ! ------- Modules -------
 
       use parrrsw, only : ng29, ngs28
-      use rrsw_kg29, only : absa, absb, forref, selfref, &
+      use rrsw_kg29, only : absa, ka, absb, kb, forref, selfref, &
                             sfluxref, absh2o, absco2, rayl, layreffr
 
 ! ------- Declarations -------
@@ -4889,7 +4889,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg16, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
-                            ka, kb, selfref, forref, sfluxref
+                            absa, ka, absb, kb, selfref, forref, sfluxref
 
 ! ------- Local -------
       integer(kind=im) :: jn, jt, jp, igc, ipr, iprsm
@@ -4970,7 +4970,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg17, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
-                            ka, kb, selfref, forref, sfluxref
+                            absa, ka, absb, kb, selfref, forref, sfluxref
 
 ! ------- Local -------
       integer(kind=im) :: jn, jt, jp, igc, ipr, iprsm
@@ -5055,7 +5055,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg18, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
-                            ka, kb, selfref, forref, sfluxref
+                            absa, ka, absb, kb, selfref, forref, sfluxref
 
 ! ------- Local -------
       integer(kind=im) :: jn, jt, jp, igc, ipr, iprsm
@@ -5138,7 +5138,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg19, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
-                            ka, kb, selfref, forref, sfluxref
+                            absa, ka, absb, kb, selfref, forref, sfluxref
 
 ! ------- Local -------
       integer(kind=im) :: jn, jt, jp, igc, ipr, iprsm
@@ -5221,7 +5221,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg20, only : kao, kbo, selfrefo, forrefo, sfluxrefo, absch4o, &
-                            ka, kb, selfref, forref, sfluxref, absch4
+                            absa, ka, absb, kb, selfref, forref, sfluxref, absch4
 
 ! ------- Local -------
       integer(kind=im) :: jt, jp, igc, ipr, iprsm
@@ -5300,7 +5300,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg21, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
-                            ka, kb, selfref, forref, sfluxref
+                            absa, ka, absb, kb, selfref, forref, sfluxref
 
 ! ------- Local -------
       integer(kind=im) :: jn, jt, jp, igc, ipr, iprsm
@@ -5385,7 +5385,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg22, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
-                            ka, kb, selfref, forref, sfluxref
+                            absa, ka, absb, kb, selfref, forref, sfluxref
 
 ! ------- Local -------
       integer(kind=im) :: jn, jt, jp, igc, ipr, iprsm
@@ -5468,7 +5468,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg23, only : kao, selfrefo, forrefo, sfluxrefo, raylo, &
-                            ka, selfref, forref, sfluxref, rayl
+                            absa, ka, selfref, forref, sfluxref, rayl
 
 ! ------- Local -------
       integer(kind=im) :: jt, jp, igc, ipr, iprsm
@@ -5537,7 +5537,7 @@
 
       use rrsw_kg24, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
                             abso3ao, abso3bo, raylao, raylbo, &
-                            ka, kb, selfref, forref, sfluxref, &
+                            absa, ka, absb, kb, selfref, forref, sfluxref, &
                             abso3a, abso3b, rayla, raylb
 
 ! ------- Local -------
@@ -5641,7 +5641,7 @@
 
       use rrsw_kg25, only : kao, sfluxrefo, &
                             abso3ao, abso3bo, raylo, &
-                            ka, sfluxref, &
+                            absa, ka, sfluxref, &
                             abso3a, abso3b, rayl
 
 ! ------- Local -------
@@ -5722,7 +5722,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg27, only : kao, kbo, sfluxrefo, raylo, &
-                            ka, kb, sfluxref, rayl
+                            absa, ka, absb, kb, sfluxref, rayl
 
 ! ------- Local -------
       integer(kind=im) :: jt, jp, igc, ipr, iprsm
@@ -5777,7 +5777,7 @@
 !-----------------------------------------------------------------------
 
       use rrsw_kg28, only : kao, kbo, sfluxrefo, &
-                            ka, kb, sfluxref
+                            absa, ka, absb, kb, sfluxref
 
 ! ------- Local -------
       integer(kind=im) :: jn, jt, jp, igc, ipr, iprsm
@@ -5839,7 +5839,7 @@
 
       use rrsw_kg29, only : kao, kbo, selfrefo, forrefo, sfluxrefo, &
                             absh2oo, absco2o, &
-                            ka, kb, selfref, forref, sfluxref, &
+                            absa, ka, absb, kb, selfref, forref, sfluxref, &
                             absh2o, absco2
 
 ! ------- Local -------
@@ -10201,6 +10201,19 @@ CONTAINS
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
+      else
+         if (present(swupt)) then 
+! Output up and down toa fluxes for total and clear sky
+            swupt(i,j)     = 0.
+            swuptc(i,j)    = 0.
+            swdnt(i,j)     = 0.
+            swdntc(i,j)    = 0.
+! Output up and down surface fluxes for total and clear sky
+            swupb(i,j)     = 0.
+            swupbc(i,j)    = 0.
+            swdnb(i,j)     = 0.
+            swdnbc(i,j)    = 0.
+         endif
 
       endif
 !
@@ -10290,6 +10303,8 @@ IMPLICIT NONE
       call sw_kgb27(rrtmg_unit)
       call sw_kgb28(rrtmg_unit)
       call sw_kgb29(rrtmg_unit)
+
+     IF ( wrf_dm_on_monitor() ) CLOSE (rrtmg_unit)
 
      RETURN
 9009 CONTINUE

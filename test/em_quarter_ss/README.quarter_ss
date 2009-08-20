@@ -34,3 +34,5 @@ similarity theory.  These momentum and heat fluxes will
 not be active if surface and boundary layer formulations are
 activated in the model physics.
 
+The sounding used in this case is from Weisman and Klemp, MWR 1982, 504-520,
+with subtle different in mixing ratio above troposphere.

@@ -25,8 +25,9 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
 
    if (global) then
       call da_transform_vtovv_global(cv_size, xbx, be, cv, vv)
-   else if (fg_format == fg_format_wrf_arw_regional .or. &
-            fg_format == fg_format_wrf_nmm_regional) then
+   else if ( (fg_format == fg_format_wrf_arw_regional .or.   &
+              fg_format == fg_format_wrf_nmm_regional) .and. &
+              (.not. cv_options == 3) )then
       call da_transform_vtovv(grid, cv_size, be, cv, vv)
    end if
    
@@ -34,8 +35,15 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
    ! [2.0]: Perform vp = u_v vv transform:
    !----------------------------------------------------------------------
 
+   if (  cv_options == 3 ) then
+
+      call da_apply_be( be, cv, vp, grid)
+      call da_transform_bal( vp, be, grid)
+   
+   else
+
    if (vert_corr == vert_corr_2) then      
-      call da_vertical_transform('u', be, grid%xb % vertical_inner_product, vv, vp)
+      call da_vertical_transform(grid, 'u', be, grid%xb % vertical_inner_product, vv, vp)
    else
       vp % v1(its:ite,jts:jte,kts:kte) = vv % v1(its:ite,jts:jte,kts:kte)
       vp % v2(its:ite,jts:jte,kts:kte) = vv % v2(its:ite,jts:jte,kts:kte)
@@ -44,16 +52,18 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
       vp % v5(its:ite,jts:jte,kts:kte) = vv % v5(its:ite,jts:jte,kts:kte)
 
       if (be % ne > 0) then
-         vp % alpha(its:ite,jts:jte,1:be%ne) = vv%alpha(its:ite,jts:jte,1:be%ne)
+         vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv%alpha(its:ite,jts:jte,kts:kte,1:be%ne)
       end if
    end if
-   
+
    !----------------------------------------------------------------------  
    ! [3.0]: Perform x = u_p vp transform::
    !----------------------------------------------------------------------
 
    call da_transform_vptox(grid, vp, be, ep)
 
+   end if
+   
    if (trace_use) call da_trace_exit("da_transform_vtox")
 
 end subroutine da_transform_vtox

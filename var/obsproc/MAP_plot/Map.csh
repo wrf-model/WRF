@@ -10,12 +10,17 @@
 #set echo
  unalias mv rm
 
- set TIME_WINDOW_MIN = '2007010121'
- set TIME_ANALYSIS   = '2007010200'
- set TIME_WINDOW_MAX = '2007010203'
+ set Map_plot = /users/noname/WRFDA/var/obsproc/MAP_plot
 
- set OBSDATA  = ../obs_gts_2007-01-02_00:00:00.3DVAR
+ set TIME_WINDOW_MIN = '2008020511'
+ set TIME_ANALYSIS   = '2008020512'
+ set TIME_WINDOW_MAX = '2008020513'
 
+ set OBSDATA  = ../obs_gts_2008-02-05_12:00:00.3DVAR.GPS
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#          ============== END OF CHANGES =================
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  echo " "
 
  if (-e $OBSDATA) then
@@ -74,11 +79,13 @@ cat >! namelist.file << EOF
  &
 EOF
 
+if (! -e no_comment.sed ) ln -sf ${Map_plot}/no_comment.sed    no_comment.sed
+if (! -e mapco.tbl )      ln -sf ${Map_plot}/mapco.tbl         mapco.tbl
+if (! -e Map.exe )        ln -sf ${Map_plot}/Map.exe           Map.exe
+
  sed -f no_comment.sed  namelist.file >! tmp.file
  mv tmp.file  namelist.file
 # ==========================================================================
-# make clean
-  make
 
  ln -s -f $OBSDATA        fort.99
  ln -s -f namelist.file   fort.15

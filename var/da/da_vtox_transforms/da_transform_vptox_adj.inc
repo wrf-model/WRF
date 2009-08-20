@@ -13,7 +13,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    type (ep_type), intent(in)           :: ep  ! Ensemble perturbation.
    type (be_type), intent(in), optional :: be  ! Background errors.
 
-   integer :: k, j, k1              ! Loop counters.
+   integer :: i, k, j, ij, k1              ! Loop counters.
 
    if (trace_use) call da_trace_entry("da_transform_vptox_adj")
 
@@ -35,8 +35,18 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          + grid%xa%qt(its:ite,jts:jte,kts:kte) * grid%xb%qs(its:ite,jts:jte,kts:kte)
    else 
       ! Pseudo RH --> Water vapor mixing ratio:
-      vp%v4(its:ite,jts:jte,kts:kte)  = vp%v4(its:ite,jts:jte,kts:kte) &
-         + grid%xa%q (its:ite,jts:jte,kts:kte) * grid%xb%qs(its:ite,jts:jte,kts:kte)
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij )
+      do ij = 1 , grid%num_tiles
+         do k = kts,kte
+            do j = grid%j_start(ij),grid%j_end(ij)
+               do i =  its, ite
+                  vp%v4(i,j,k)  = vp%v4(i,j,k) + grid%xa%q(i,j,k) * grid%xb%qs(i,j,k)   
+               end do
+            end do
+         end do
+      end do
+      !$OMP END PARALLEL DO
    end if
 
 #ifdef A2C
@@ -79,30 +89,53 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    ! [2] Impose statistical balance constraints:
    !--------------------------------------------------------------------------
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, k, j, k1, i )
+   do ij = 1 , grid%num_tiles
+
    ! Surface Pressure
-   do k=kts,kte
-      do j=jts,jte
-         vp%v1(its:ite,j,k) = vp%v1(its:ite,j,k) + be%reg_ps(j,k)*grid%xa%psfc(its:ite,j)
+   do k= kts,kte
+      do j= grid%j_start(ij),grid%j_end(ij)
+         do i =  its, ite
+            vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_ps(j,k)*grid%xa%psfc(i,j)
+         end do
       end do
    end do
-   vp%v5(its:ite,jts:jte,1) = grid%xa%psfc(its:ite,jts:jte) 
+   do j= grid%j_start(ij),grid%j_end(ij)
+      do i =  its, ite
+         vp%v5(i,j,1) = grid%xa%psfc(i,j) 
+      end do
+   end do
 
    ! Temperature
    do k1 = kts,kte
       do k = kts,kte
-         do j = jts,jte
-            vp%v1(its:ite,j,k1) = vp%v1(its:ite,j,k1) + be%reg_t(j,k,k1)*grid%xa%t(its:ite,j,k)
+         do j = grid%j_start(ij),grid%j_end(ij)
+            do i =  its, ite
+               vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_t(j,k,k1)*grid%xa%t(i,j,k)
+            end do
          end do
       end do
    end do
-   vp%v3(its:ite,jts:jte,kts:kte) = grid%xa%t(its:ite,jts:jte,kts:kte)
+   do k = kts,kte
+      do j = grid%j_start(ij),grid%j_end(ij)
+         do i =  its, ite
+            vp%v3(i,j,k) = grid%xa%t(i,j,k)
+         end do
+      end do
+   end do
 
    ! Chi
    do k = kts,kte
-      do j = jts,jte
-         vp%v1(its:ite,j,k) = vp%v1(its:ite,j,k) + be%reg_chi(j,k)*vp%v2(its:ite,j,k)
+      do j = grid%j_start(ij),grid%j_end(ij)
+         do i =  its, ite
+            vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_chi(j,k)*vp%v2(i,j,k)
+         end do
        end do
    end do
+
+   enddo
+   !$OMP END PARALLEL DO
 
    !---------------------------------------------------------------------------
    !  [1] Add flow-dependent increments in control variable space (vp):

@@ -98,7 +98,7 @@ ifdef EM_CORE=1
 rconfig   character  auxinput1_inname   namelist,time_control            1  "met_em.d<domain>.<date>"   -     "name of auxinput1 infile" ""      ""
 endif
 ifdef NMM_CORE=1
-rconfig   character  auxinput1_inname   namelist,time_control            1  "met_nm.d<domain>.<date>"   -     "name of auxinput1 infile" ""      ""
+rconfig   character  auxinput1_inname   namelist,time_control            1  "met_nmm.d<domain>.<date>"   -     "name of auxinput1 infile" ""      ""
 endif
 
 rconfig   character  auxinput2_inname   namelist,time_control            1  "auxinput2_d<domain>"   -     "name of auxinput2 infile" ""      ""

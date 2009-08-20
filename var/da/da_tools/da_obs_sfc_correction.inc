@@ -87,7 +87,7 @@ subroutine da_obs_sfc_correction(info, sfc_obs, n, xb)
    end if
 
    if (sfc_obs % p % inv < 1.0) then
-      sfc_obs % p % qc  = missing
+      sfc_obs % p % qc  = missing_data
    end if
 
    po = sfc_obs % p % inv

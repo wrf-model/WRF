@@ -1,4 +1,5 @@
 
+
 !TODO:  remove duplication between ext_esmf_read_field and 
 !TODO:  ext_esmf_write_field
 
@@ -99,7 +100,8 @@ call wrf_debug( 300, TRIM(mess) )
 !TODO:  Some copies of these exist in ../../frame/module_io.F.  
 !TODO:  Then use ESMF_ArrayDataMap class to handle index mapping.  
   IF ( kms /= kme ) THEN
-    CALL wrf_error_fatal( 'ext_esmf_write_field:  rank > 2 not yet supported')
+    write(mess,*)'ext_esmf_write_field: rank > 2 not yet supported. field = ',TRIM(VarName)
+    CALL wrf_error_fatal( mess )
   ENDIF
 
 ! The non-staggered variables come in at one-less than

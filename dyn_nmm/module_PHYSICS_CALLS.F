@@ -14,7 +14,7 @@
       USE MODULE_DM
       USE MODULE_CONFIGURE
       USE MODULE_TILES
-      USE MODULE_STATE_DESCRIPTION,ONLY : P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,P_QNI
+      USE MODULE_STATE_DESCRIPTION,ONLY : P_QV,P_QC,P_QR,P_QI,P_QS,P_QG,P_QNI,P_QNR
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_RA_GFDLETA,ONLY : CAL_MON_DAY,ZENITH
       USE MODULE_RADIATION_DRIVER
@@ -734,7 +734,8 @@
      &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
      &                ,HLENS,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX      & ! GWD
      &                ,CROT,SROT                                        & ! GWD
-     &                                             ,SST,VBM2,VEGFRC
+     &                                             ,VBM2,VEGFRC
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SST
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR       & !Bandaid
                                                       ,TG,SICE          &
@@ -820,7 +821,7 @@
 !***
 !-----------------------------------------------------------------------
       INTEGER :: I,I_M,IDUMMY,IEND,ISFFLX,ISTAT,ISTR,J,K,KOUNT_ALL      &
-     &          ,LENGTH_ROW,LLIJ,LLYR,N,SST_UPDATE,UCMCALL
+     &          ,LENGTH_ROW,LLIJ,LLYR,N,SST_UPDATE,SF_URBAN_PHYSICS,NUM_URBAN_LAYERS
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LOWLYR
 !
@@ -831,8 +832,8 @@
      &       ,ROG,RWMSK,SDEPTH,SNO_FACTR,TL,TLMH,TLMH4,TNEW,TSFC2       &
      &       ,U_FRAME,V_FRAME,XLVRW
 !
-      REAL :: APES,CKLQ,EXNER,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX,RLIVWV   &
-     &       ,THBOT,DPL
+      REAL :: APES,CAPA,CKLQ,EXNER,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX     &
+     &       ,RLIVWV,THBOT,DPL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: BR,CHKLOWQ,CT,CWMLOW,ELFLX     &
      &                                  ,EXNSFC,FACTRS,FLHC,FLQC,GZ1OZ0 &
@@ -860,6 +861,7 @@
       LOGICAL :: E_BDY,WARM_RAIN
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
+      INTEGER :: FRACTIONAL_SEAICE
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I                    !BSF
@@ -876,13 +878,23 @@
 !
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
 !
-      UCMCALL=CONFIG_FLAGS%UCMCALL
+      SF_URBAN_PHYSICS=CONFIG_FLAGS%SF_URBAN_PHYSICS
+
+      if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
+         call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
+      endif
+      
+      FRACTIONAL_SEAICE = CONFIG_FLAGS%FRACTIONAL_SEAICE
+      IF ( FRACTIONAL_SEAICE == 1 ) THEN
+         CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1.")
+      ENDIF
 !
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
       G_INV=1./G
       ROG=R_D*G_INV
       FACTOR=-XLV*RHOWATER/DTPHS
+      CAPA=R_D/CP
 !
       U_FRAME=0.
       V_FRAME=0.
@@ -1174,7 +1186,8 @@
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &
      &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,SWDOWN=RSW_DN_SFC        &
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
-     &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX,ISLTYP=ISLTYP      &
+     &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
+     &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE,ISLTYP=ISLTYP      &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
      &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &
@@ -1199,8 +1212,10 @@
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
-     &          ,UCMCALL=UCMCALL                                        &
      &          ,LAI=GRID%LAI                                           &
+     &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
+!     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
+     &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
      &          ,I_START=GRID%I_START,I_END=GRID%I_END                  &
@@ -1230,6 +1245,7 @@
      &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
      &        ,SNOTIME = grid%SNOTIME &
      &        ,RDLAI2D=config_flags%rdlai2d                                   &
+     &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
      &                                                          )
 !
@@ -1314,7 +1330,8 @@
      &               ,QR_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR &
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
-     &               ,HOL=HOL)
+     &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
+     &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
@@ -2751,6 +2768,7 @@
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &                 ,QNI_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNI),F_QNI=F_QNI  &
+     &                 ,QNR_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNR),F_QNR=F_QNR  &
      &                 ,QT_CURR=CWM_PHY,F_QT=QT_PRESENT                 &
      &                 ,MP_RESTART_STATE=MP_RESTART_STATE               &
      &                 ,TBPVS_STATE=TBPVS_STATE                         &
@@ -2766,7 +2784,7 @@
 !$omp parallel do                                                       &
 !$omp& private(ij)
       DO IJ=1,GRID%NUM_TILES
-        CALL MICROPHYSICS_ZERO_OUT(                                     &
+        CALL MICROPHYSICS_ZERO_OUTA(                                    &
                      MOIST_TRANS,N_MOIST,CONFIG_FLAGS                   &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &

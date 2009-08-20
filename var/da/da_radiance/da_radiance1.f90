@@ -4,8 +4,11 @@ module da_radiance1
    ! Purpose: module for radiance data assimilation. 
    !---------------------------------------------------------------------------
 
-   use module_radiance, only : satinfo,q2ppmv,rttov_inst_name, &
-      CRTM_Planck_Radiance
+#if defined(RTTOV) || defined(CRTM)
+   use module_radiance, only : satinfo,q2ppmv,rttov_inst_name
+#ifdef CRTM
+   use module_radiance, only : CRTM_Planck_Radiance, CRTM_Planck_Temperature
+#endif
 #ifdef RTTOV
    use module_radiance, only : coefs
 #endif
@@ -17,9 +20,11 @@ module da_radiance1
       rtm_option_rttov,rtm_option_crtm, radiance, only_sea_rad, &
       global, gas_constant, gravity, monitor_on,kts,kte, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
-      use_crtm_kmatrix,use_airs_mmr
+      use_crtm_kmatrix,use_airs_mmr, use_satcv, cv_size_domain, &
+      cv_size_domain_js
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
-      iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type
+      iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
+      be_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use da_par_util, only : da_proc_stats_combine
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
@@ -30,13 +35,9 @@ module da_radiance1
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace_int_sort
 
 #if defined(RTTOV) || defined(CRTM)
-   use da_control, only : rtminit_sensor
-   use da_reporting, only : da_warning
-#endif
-#ifdef RTTOV
-   use da_control, only : write_profile,num_procs,tovs_min_transfer
+   use da_control, only : rtminit_sensor,write_profile,num_procs,tovs_min_transfer
+   use da_reporting, only : da_warning, da_message
    use da_tracing, only : da_trace
-   use da_reporting, only : da_message
 #endif
 
    implicit none
@@ -226,6 +227,9 @@ contains
 #include "da_oi_stats_rad.inc"
 #include "da_print_stats_rad.inc"
 #include "da_qc_rad.inc"
+#include "da_setup_satcv.inc"
+
+#endif
 
 end module da_radiance1
 

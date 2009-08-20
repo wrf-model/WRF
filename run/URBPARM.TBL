@@ -1,0 +1,280 @@
+# Urban Parameters depending on Urban type 
+# USGS 
+
+Number of urban categories: 3
+
+#
+#  Where there are multiple columns of values, the values refer, in
+#  order, to: 1) Commercial, 2) High intensity residential, and 3) Low
+#  intensity residential:  I.e.:
+#
+#  Index:     1           2              3
+#  Type:  Commercial, Hi-dens Res, Low-dens Res
+#
+
+
+#
+# ZR:  Roof level (building height)  [ m ]
+#
+
+ZR: 10.0,  7.5,  5.0
+
+#
+# ROOF_WIDTH:  Roof (i.e., building) width  [ m ]
+#      (KWM Just made up some numbers for the time being)
+#
+
+ROOF_WIDTH: 10.0, 9.4, 8.3
+
+#
+# ROAD_WIDTH:  road width  [ m ]
+#      (KWM Just made up some numbers for the time being)
+#
+
+ROAD_WIDTH: 10.0, 9.4, 8.3
+
+#
+# AH:  Anthropogenic heat [ W m{-2} ]
+#
+
+AH:  90.0, 50.0, 20.0
+
+#
+# FRC_URB:  Fraction of the urban landscape which does not have natural
+#           vegetation. [ Fraction ]
+#
+
+FRC_URB: 0.95, 0.9, 0.5
+
+#
+# CAPR:  Heat capacity of roof  [ J m{-3} K{-1} ]
+#
+
+CAPR: 1.0E6, 1.0E6, 1.0E6, 
+
+#
+# CAPB:  Heat capacity of building wall [ J m{-3} K{-1} ]
+#
+
+CAPB: 1.0E6, 1.0E6, 1.0E6, 
+
+#
+# CAPG:  Heat capacity of ground (road) [ J m{-3} K{-1} ]
+#
+
+CAPG:  1.4E6, 1.4E6, 1.4E6, 
+
+#
+# AKSR:  Thermal conductivity of roof [ J m{-1} s{-1} K{-1} ]
+#
+
+AKSR:  0.67, 0.67, 0.67,
+
+#
+# AKSB:  Thermal conductivity of building wall [ J m{-1} s{-1} K{-1} ]
+#
+
+AKSB:  0.67, 0.67, 0.67,
+
+#
+# AKSG:  Thermal conductivity of ground (road) [ J m{-1} s{-1} K{-1} ]
+#
+
+AKSG: 0.4004, 0.4004, 0.4004,
+
+#
+# ALBR:   Surface albedo of roof [ fraction ]
+#
+
+ALBR: 0.20, 0.20, 0.20
+
+#
+# ALBB:  Surface albedo of building wall [ fraction ]
+#
+
+ALBB: 0.20, 0.20, 0.20
+
+#
+# ALBG:  Surface albedo of ground (road) [ fraction ]
+#
+
+ALBG: 0.20, 0.20, 0.20 
+
+#
+# EPSR:  Surface emissivity of roof [ - ]
+#
+
+EPSR: 0.90, 0.90, 0.90
+
+#
+# EPSB:  Surface emissivity of building wall [-]
+#
+
+EPSB: 0.90, 0.90, 0.90
+
+#
+# EPSG:  Surface emissivity of ground (road) [ - ]
+#
+
+EPSG: 0.95, 0.95, 0.95
+
+#
+# Z0R:  Roughness length for momentum, over roof [ m ]
+#
+
+Z0R: 0.01, 0.01, 0.01
+
+#
+# Z0B:  Roughness length for momentum, over building wall [ m ]
+#       Only active for CH_SCHEME == 1
+#
+
+Z0B: 0.0001, 0.0001, 0.0001 
+
+#
+# Z0G:  Roughness length for momentum, over ground (road) [ m ]
+#       Only active for CH_SCHEME == 1
+#
+
+Z0G: 0.01, 0.01, 0.01 
+
+#ifdef _FOR_ALBERTO_
+STREET PARAMETERS:
+
+#  urban      street      street     building
+# category  direction     width      width
+# [index]  [deg from N]    [m]        [m]
+
+    1         0.0          15.0       15.0
+    1        90.0          15.0       15.0
+    2         0.0          15.0       15.0
+    2        90.0          15.0       15.0
+    3         0.0          15.0       15.0
+    3        90.0          15.0       15.0
+
+END STREET PARAMETERS
+
+BUILDING HEIGHTS: 1
+
+#     height   Percentage
+#      [m]       [%]
+
+       5.0      30.0
+      10.0      40.0
+      15.0      30.0
+END BUILDING HEIGHTS
+
+BUILDING HEIGHTS: 2
+
+#     height   Percentage
+#      [m]       [%]
+
+      10.0       3.0
+      15.0       7.0
+      20.0      12.0
+      25.0      18.0
+      30.0      20.0
+      35.0      18.0
+      40.0      12.0
+      45.0       7.0
+      50.0       3.0
+END BUILDING HEIGHTS
+
+BUILDING HEIGHTS: 3
+
+#     height   Percentage
+#      [m]       [%]
+
+       5.0      50.0
+      10.0      50.0
+END BUILDING HEIGHTS
+#endif
+#
+# DDZR:  Thickness of each roof layer [ m ] 
+#        This is currently NOT a function urban type, but a function
+#        of the number of layers.  Number of layers must be 4, for now.
+#
+
+DDZR:  0.05, 0.05, 0.05, 0.05
+
+#
+# DDZB:  Thickness of each building wall layer [ m ] 
+#        This is currently NOT a function urban type, but a function
+#        of the number of layers.  Number of layers must be 4, for now.
+#
+
+DDZB: 0.05, 0.05, 0.05, 0.05
+
+#
+# DDZG:  Thickness of each ground (road) layer [ m ] 
+#        This is currently NOT a function urban type, but a function
+#        of the number of layers.  Number of layers must be 4, for now.
+#
+
+DDZG: 0.05, 0.25, 0.50, 0.75
+
+#
+# BOUNDR:  Lower boundary condition for roof layer temperature [ 1: Zero-Flux,  2: T = Constant ]
+#
+
+BOUNDR: 1 
+
+#
+# BOUNDB:  Lower boundary condition for wall layer temperature [ 1: Zero-Flux,  2: T = Constant ]
+#
+
+BOUNDB: 1 
+
+#
+# BOUNDG:  Lower boundary condition for ground (road) layer temperature [ 1: Zero-Flux,  2: T = Constant ] 
+#
+
+BOUNDG: 1 
+
+#
+# TRLEND:  Lower boundary condition for roof temperature [ K ]
+#
+
+TRLEND: 293.00, 293.00, 293.00
+
+#
+# TBLEND:  Lower boundary temperature for building wall temperature [ K ]
+#
+
+TBLEND: 293.00, 293.00, 293.00
+
+#
+# TGLEND:  Lower boundary temperature for ground (road) temperature [ K ]
+#
+
+TGLEND: 293.00, 293.00, 293.00
+
+#
+# Ch of Wall and Road [ 1: M-O Similarity Theory,  2: Empirical Form of Narita et al., 1997 (recommended) ] 
+#
+
+CH_SCHEME: 2 
+
+#
+# Surface and Layer Temperatures [ 1: 4-layer model,  2: Force-Restore method ]
+#
+
+TS_SCHEME: 1 
+
+#
+# AHOPTION [ 0: No anthropogenic heating,  1: Anthropogenic heating will be added to sensible heat flux term ]
+#
+
+AHOPTION: 0
+
+#
+# Anthropogenic Heating diurnal profile.
+#   Multiplication factor applied to AH (as defined in the table above)
+#   Hourly values ( 24 of them ), starting at 01 hours Local Time.
+#   For sub-hourly model time steps, value changes on the hour and is
+#   held constant until the next hour.
+#
+#
+
+AHDIUPRF: 0.16 0.13 0.08 0.07 0.08 0.26 0.67 0.99 0.89 0.79 0.74 0.73 0.75 0.76 0.82 0.90 1.00 0.95 0.68 0.61 0.53 0.35 0.21 0.18
+ 

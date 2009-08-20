@@ -13,7 +13,7 @@ module da_test
       ntasks, data_order_xy
    use module_comm_dm, only : halo_psichi_uv_adj_sub, halo_xa_sub, &
       halo_sfc_xa_sub, halo_ssmi_xa_sub
-   use mpi, only : mpi_sum
+!  use mpi, only : mpi_sum
 #endif
 
    use da_control, only : num_procs                                
@@ -35,12 +35,12 @@ module da_test
       balance_geocyc, var4d, num_fgat_time,cv_options_hum_specific_humidity, &
       cv_options_hum_relative_humidity, ids, ide, jds, jde, kds, kde, &
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar,&
       bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs, &
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
-      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type
@@ -75,9 +75,14 @@ module da_test
       da_transform_xtogpsref_adj,da_transform_vptox_adj,da_transform_vtox, &
       da_transform_vtox_adj,da_transform_vtovv,da_transform_vtovv_global, &
       da_transform_vtovv_global_adj, da_transform_vtovv_adj, da_transform_xtoxa, &
-      da_transform_xtoxa_adj
+      da_transform_xtoxa_adj, da_apply_be, da_apply_be_adj, da_transform_bal, &
+      da_transform_bal_adj
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 
@@ -105,6 +110,8 @@ contains
 #include "da_check_xtoy_adjoint_sound.inc"
 #include "da_check_xtoy_adjoint_sonde_sfc.inc"
 #include "da_check_xtoy_adjoint_mtgirs.inc"
+#include "da_check_xtoy_adjoint_tamdar.inc"
+#include "da_check_xtoy_adjoint_tamdar_sfc.inc"
 #include "da_check_xtoy_adjoint_synop.inc"
 #include "da_check_xtoy_adjoint_rad.inc"
 #include "da_transform_xtovp.inc"

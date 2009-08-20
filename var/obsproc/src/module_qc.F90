@@ -28,7 +28,7 @@ MODULE module_qc
               ntovss_qc  (2), nothers_qc (2), namdars_qc (2), &
               nqscats_qc (2), nbuoyss_qc (2), nprofls_qc (2), &
               ngpsztd_qc (2), ngpsref_qc (2), ngpseph_qc (2), &
-              nboguss_qc (2), nairss_qc(2)
+              nboguss_qc (2), nairss_qc(2)  , ntamdar_qc (2)
 
 CONTAINS
 
@@ -165,7 +165,7 @@ consistency_check: &
                               tovs =ntovss_qc (1), other=nothers_qc(1), &
                               amdar=namdars_qc(1), qscat=nqscats_qc(1), &
                               profl=nprofls_qc(1), buoy =nbuoyss_qc(1), &
-                              airs =nairss_qc(1) )
+                              airs =nairss_qc(1) , tamdar=ntamdar_qc(1) )
 
 
          ENDIF
@@ -226,7 +226,7 @@ convective_check: &
                               tovs =ntovss_qc (2), other=nothers_qc(2), &
                               amdar=namdars_qc(2), qscat=nqscats_qc(2), &
                               profl=nprofls_qc(2), buoy =nbuoyss_qc(2), &
-                              airs =nairss_qc(2) )
+                              airs =nairss_qc(2) , tamdar=ntamdar_qc(2) )
 
          ENDIF
 

@@ -67,8 +67,8 @@ subroutine da_get_innov_vector_airsr( it,num_qcstat_conv, grid, ob, iv)
          end if
 
          if (iv%info(airsr)%zk(k,n) < 0.0 .and. .not. anal_type_verify) then
-            iv%airsr(n)%t(k)%qc = missing
-            iv%airsr(n)%q(k)%qc = missing
+            iv%airsr(n)%t(k)%qc = missing_data
+            iv%airsr(n)%q(k)%qc = missing_data
          end if
       end do
    end do

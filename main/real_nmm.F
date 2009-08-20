@@ -349,7 +349,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
          CALL init_module_optional_input ( grid , config_flags )
       CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
 !
-      CALL optional_input ( grid , idsi )
+      CALL optional_input ( grid , idsi , config_flags )
 	write(0,*) 'maxval st_input(1) within real_nmm: ', maxval(st_input(:,1,:))
       END IF
 !
@@ -411,7 +411,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 !      END IF
 !      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
 !
-!      CALL optional_input ( grid , idsi )
+!      CALL optional_input ( grid , idsi , config_flags)
 !        flag_metgrid=1
  
 !

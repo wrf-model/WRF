@@ -7,7 +7,7 @@ module da_minimisation
    use module_configure, only : grid_config_rec_type
    use module_dm, only : wrf_dm_sum_real
    use module_domain, only : domain, ep_type, vp_type
-   use module_state_description, only : dyn_em,dyn_em_tl,p_g_qv
+   use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_g_qv
 
 !#ifdef DM_PARALLEL
 !   use mpi, only : mpi_barrier
@@ -36,14 +36,15 @@ module da_minimisation
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, &
       cv_size_domain_je,cv_size_domain_jb, num_pseudo, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_crtm_kmatrix, &
       precondition_cg, precondition_factor, cv_size_domain_jp, use_varbc, varbc_factor, &
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, &
-      orthonorm_gradient, its, ite, jts, jte
+      orthonorm_gradient, its, ite, jts, jte, kte, ids, ide, jds, jde, &
+      use_satcv, sensitivity_option
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
-      xbx_type, jo_type, da_allocate_y,da_zero_x,da_deallocate_y, &
+      xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type
    use da_obs, only : da_transform_xtoy_adj,da_transform_xtoy, &
       da_add_noise_to_ob,da_random_omb_all, da_obs_sensitivity
@@ -82,8 +83,15 @@ module da_minimisation
    use da_mtgirs, only : da_calculate_grady_mtgirs, &
       da_ao_stats_mtgirs, da_oi_stats_mtgirs,da_oi_stats_mtgirs, &
       da_get_innov_vector_mtgirs, &
-      da_jo_and_grady_mtgirs, da_residual_mtgirs, &
-      da_jo_and_grady_mtgirs
+      da_jo_and_grady_mtgirs, da_residual_mtgirs
+   use da_tamdar, only : da_calculate_grady_tamdar, &
+      da_ao_stats_tamdar, da_oi_stats_tamdar,da_oi_stats_tamdar, &
+      da_get_innov_vector_tamdar, &
+      da_jo_and_grady_tamdar, da_residual_tamdar, &
+      da_calculate_grady_tamdar_sfc, &
+      da_ao_stats_tamdar_sfc, da_oi_stats_tamdar_sfc,da_oi_stats_tamdar_sfc, &
+      da_get_innov_vector_tamdar_sfc, &
+      da_jo_and_grady_tamdar_sfc, da_residual_tamdar_sfc
 
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_calculate_grady_rad, da_write_filtered_rad, &
@@ -130,6 +138,7 @@ module da_minimisation
    use da_wrf_interfaces, only : wrf_dm_bcast_real, wrf_get_dm_communicator
    use da_wrfvar_io, only : da_med_initialdata_input
    use module_symbols_util, only : wrfu_finalize
+   use da_lapack, only : dsteqr
 
    implicit none
 
@@ -152,4 +161,5 @@ contains
 #include "da_transform_vtoy.inc"
 #include "da_transform_vtoy_adj.inc"
 #include "da_adjoint_sensitivity.inc"
+#include "da_sensitivity.inc"
 end module da_minimisation

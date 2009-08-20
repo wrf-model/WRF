@@ -42,15 +42,31 @@ CONTAINS
              !  Optional moisture tracer flags
                  ,f_qv,f_qc,f_qr                                   &
                  ,f_qi,f_qs,f_qg                                   &
-                                                                   )
+! variables added for BEP
+               ,frc_urb2d                                  &
+               ,a_u_bep,a_v_bep,a_t_bep,a_q_bep            &
+               ,b_u_bep,b_v_bep,b_t_bep,b_q_bep            &
+               ,sf_bep,vl_bep                              &
+               ,sf_sfclay_physics,sf_urban_physics         &
+#if (NMM_CORE != 1)
+               ,tke_pbl,el_pbl,wu_tur,wv_tur,wt_tur,wq_tur &
+#endif
+               ,a_e_bep,b_e_bep,dlg_bep                              &
+               ,dl_u_bep                                             &
+                                                                     )       
 !------------------------------------------------------------------
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
+                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
+                   BEPSCHEME,MYJSFCSCHEME
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    ,QNSEPBLSCHEME, HWRFBLSCHEME, p_qi,param_first_scalar
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,&
+                   MYJSFCSCHEME
 #endif
 
    USE module_model_constants
@@ -155,6 +171,12 @@ CONTAINS
 !-- el_myj        mixing length from Mellor-Yamada-Janjic (MYJ) (m)
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
 !-- akms          sfc exchange coefficient of momentum from MYJ
+!-- tke_pbl       turbulence kinetic energy from Bougeault and Lacarrere (BOULAC) (m^2/s^2)
+!-- el_pbl        length scale from Bougeault and Lacarrere (BOULAC) (m)
+!-- wu_tur        turbulent flux of momentum (x) (m^2/s^2)
+!-- wv_tur        turbulent flux of momentum (y) (m^2/s^2)
+!-- wt_tur        turbulent flux of potential temperature  (K m/s)
+!-- wq_tur        turbulent flux of water vapor  (- m/s)
 !-- thz0          potential temperature at roughness length (K)
 !-- uz0           u wind component at roughness length (m/s)
 !-- vz0           v wind component at roughness length (m/s)
@@ -288,6 +310,13 @@ CONTAINS
                                                          RVBLTEN, &
                                                         RTHBLTEN, &
                                                   EXCH_H,EXCH_M,TKE_MYJ
+#if (NMM_CORE != 1)
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(INOUT)    ::                 tke_pbl,el_pbl
+ REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(OUT)    ::                       WU_TUR,WV_TUR,WT_TUR,WQ_TUR
+!
+#endif
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), &
         &OPTIONAL, INTENT(INOUT) :: &
@@ -391,6 +420,8 @@ CONTAINS
 
    INTEGER :: i,J,K,NK,jj,ij,its,ite,jts,jte
    LOGICAL :: radiation
+   LOGICAL :: flag_bep
+   LOGICAL :: flag_myjsfc
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
    CHARACTER*256 :: message
    REAL    :: next_bl_time
@@ -399,7 +430,22 @@ CONTAINS
 
 !------------------------------------------------------------------
 !
-
+!!!!!!!if using BEP set flag_bep to true
+    SELECT CASE(sf_urban_physics)
+#if (NMM_CORE != 1)
+      CASE (BEPSCHEME)
+      flag_bep=.true.
+#endif
+      CASE DEFAULT
+      flag_bep=.false.
+    End Select
+    SELECT CASE(sf_sfclay_physics)
+    CASE (MYJSFCSCHEME)
+       flag_myjsfc=.true.
+    CASE DEFAULT
+       flag_myjsfc=.false.
+    END SELECT
+!
   flag_qv = .FALSE. ; IF ( PRESENT( F_QV ) ) flag_qv = F_QV
   flag_qc = .FALSE. ; IF ( PRESENT( F_QC ) ) flag_qc = F_QC
   flag_qr = .FALSE. ; IF ( PRESENT( F_QR ) ) flag_qr = F_QR
@@ -472,7 +518,14 @@ CONTAINS
       DTBL=DT*STEPBL
    endif
 
-
+#if (NMM_CORE != 1)
+!!Alberto. If idiff=1, then compute the tendencies at the end in the routine diff3d
+!!Alberto. If idiff=0, then compute the tendencies in each PBL routine (standard version).
+       idiff=0
+#else
+! Added this else clause so that idiff is always initialized regardless of which core we are using
+       idiff=0
+#endif
 ! SAVE OLD VALUES
 
    !$OMP PARALLEL DO   &
@@ -513,6 +566,87 @@ CONTAINS
       ENDDO
       ENDDO
 
+#if (NMM_CORE != 1)
+      if(idiff.eq.1)then
+!Alberto
+! Here we should put a switch: 
+! if we do not use BEP, just initialize the values of the a, and b to zero, except for the lowest model level, 
+! where the heat and momentum fluxes are introduced         
+! if we use BEP, use the values computed by BEP weigthed by the urban fraction.
+! for the moment I put a simple "if" but it should be changed to a more elegant way after(using the CASE, maybe?)
+!!!!!!!!!!!!!!
+! This is the more general way to go, however some of these variables (e. g. a_t, a_q) may be zero nearly all time. 
+! if we need to be as tight as possible for the memory we can think how to reduce the storage.
+!!!!!!!!!!!!!!!!!!
+! This stuff is becoming large, probably better to put in a subroutine
+!!!!!!!!!!!!!!!!!!!
+! preparing the a, b, sf, and vl terms
+         
+         
+         IF (flag_bep) THEN    
+           do j=j_start(ij),j_end(ij)
+           do i=i_start(ij),i_end(ij)            
+           do k=kts,kte
+             a_u(i,k,j)=a_u_bep(i,k,j)
+             a_v(i,k,j)=a_v_bep(i,k,j)
+             a_t(i,k,j)=a_t_bep(i,k,j)
+             a_q(i,k,j)=a_q_bep(i,k,j)
+             b_u(i,k,j)=b_u_bep(i,k,j)
+             b_v(i,k,j)=b_v_bep(i,k,j)
+             b_t(i,k,j)=b_t_bep(i,k,j)
+             b_q(i,k,j)=b_q_bep(i,k,j)
+             vl(i,k,j)=vl_bep(i,k,j)
+             sf(i,k,j)=sf_bep(i,k,j)
+           enddo
+           sf(i,kte+1,j)=1.
+           enddo
+           enddo
+         else
+           do j=j_start(ij),j_end(ij)
+           do i=i_start(ij),i_end(ij)
+           do k=kts,kte
+             a_u(i,k,j)=0.
+             a_v(i,k,j)=0.
+             a_t(i,k,j)=0.
+             a_q(i,k,j)=0.
+             b_u(i,k,j)=0.
+             b_v(i,k,j)=0.
+             b_t(i,k,j)=0.
+             b_q(i,k,j)=0.
+             vl(i,k,j)=1.
+             sf(i,k,j)=1.
+           enddo
+           sf(i,kte+1,j)=1.
+! fix the values for the surface fluxes (source/sink terms)
+! here for momentum the resolution is done implicitely
+! while for heat and moisture is done explicitely 
+            a_u(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)           
+            a_v(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)
+            b_t(i,1,j)=hfx(i,j)/rho(i,1,j)/CP/dz8w(i,1,j)
+            b_q(i,1,j)=qfx(i,j)/rho(i,1,j)/dz8w(i,1,j)
+!! if you want to solve also the heat and moisture fluxes implicitely, uncomment the following lines.
+!! (of course you will need the values of thz0,qz0,akhs).
+!             b_t(i,1,j)=akhs(i,j)*(thz0(I,J))/dz8w(i,1,j)
+!             b_q(i,1,j)=akhs(i,j)*(qz0(I,J))/dz8w(i,1,j)
+!             a_t(i,1,j)=-1.*akhs(i,j)/dz8w(i,1,j)
+!             a_q(i,1,j)=-1.*akhs(i,j)/dz8w(i,1,j)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+           enddo
+           enddo
+           
+         endif
+
+        endif      
+                                           
+     
+ 
+!Alberto. From this point if some PBL scheme has a non local term 
+! (not dependent on the local values of the variable)
+! this can be added to b_t, b_q, or b_u, b_v.
+!!!!!!!!!!!!!!!!!!!           
+ 
+#endif 
+      
    ENDDO
    !$OMP END PARALLEL DO
 !
@@ -651,8 +785,8 @@ CONTAINS
                                                         .TRUE.  ) THEN
 
              CALL wrf_debug(100,'in MYJPBL')
-             CALL myjpbl(                                           &
-               DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
+            IF ( .not.flag_bep .and. idiff.ne.1) THEN
+             CALL myjpbl(DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w          &
               ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
               ,QV=qv_curr,QCW=qc_curr,QCI=qi_curr,QCS=qs_curr       & !BSF
               ,QCR=qr_curr,QCG=qg_curr                              & !BSF
@@ -672,6 +806,39 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
+            ELSE !(SF_URBAN_PHYSICS.EQ.2)
+! Bep changes begin
+
+             CALL myjurb(IDIFF=idiff,FLAG_BEP=flag_bep              &
+              ,DT=dtbl,STEPBL=stepbl,HT=ht,DZ=dz8w                  &
+              ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
+              ,QV=qv_curr, CWM=qc_curr                              &
+              ,U=u_phy,V=v_phy,RHO=rho                              &
+              ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
+              ,QZ0=qz0,UZ0=uz0,VZ0=vz0                              &
+              ,LOWLYR=lowlyr                                        &
+              ,XLAND=xland,SICE=xice,SNOW=snow                      &
+              ,TKE_MYJ=tke_myj,EXCH_H=exch_h,EXCH_M=exch_m          &
+              ,USTAR=ust,ZNT=znt                                    &
+              ,EL_MYJ=el_myj,PBLH=pblh,KPBL=kpbl,CT=ct              &
+              ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
+! Multi-layer UCM
+              ,FRC_URB2D=frc_urb2d                                  &
+              ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep      &
+              ,A_Q_BEP=a_q_bep                                      &
+              ,A_E_BEP=a_e_bep,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep      &
+              ,B_T_BEP=b_t_bep,B_Q_BEP=b_q_bep                      &
+              ,B_E_BEP=b_e_bep,DLG_BEP=dlg_bep                      &
+              ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep        &
+! UCM end
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+            ENDIF
+
            ELSE
                CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
            ENDIF
@@ -770,6 +937,33 @@ CONTAINS
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
 
+        CASE (BOULACSCHEME)
+
+             CALL wrf_debug(100,'in boulac')
+
+             CALL BOULAC(FRC_URB2D=frc_urb2d,IDIFF=idiff,FLAG_BEP=flag_bep     &
+              ,DZ8W=dz8w,DT=dt,U_PHY=u_phytmp                                  &
+              ,V_PHY=v_phytmp,TH_PHY=th_phy                                    &
+              ,RHO=rho,QV_CURR=qv_curr,HFX=hfx                                 &
+              ,QFX=qfx,USTAR=ust,CP=cp,G=g                                     &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten               &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqvblten                             &
+              ,TKE=tke_pbl,DLK=el_pbl,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur  &
+              ,EXCH_H=exch_h,EXCH_M=exch_m                                     &
+              ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep                 &
+              ,A_Q_BEP=a_q_bep                                                 &
+              ,A_E_BEP=a_e_bep,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep                 &
+              ,B_T_BEP=b_t_bep,B_E_BEP=b_e_bep,DLG_BEP=dlg_bep                 &
+              ,B_Q_BEP=b_q_bep                                                 &
+              ,DL_U_BEP=dl_u_bep,SF_BEP=sf_bep,VL_BEP=vl_bep                   &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                 &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                 &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )
+
+              if(flag_myjsfc)then
+               tke_myj(its:ite,kts:kte,jts:jte)=tke_pbl(its:ite,kts:kte,jts:jte)
+              endif
+
 #endif
 
 
@@ -800,10 +994,374 @@ CONTAINS
        ENDIF
    ENDIF
 
+
+#if (NMM_CORE != 1)
+
+          if(idiff.eq.1)then
+!Alberto: here we call the general routine to solve the diffusion
+! + all the source/sink terms.
+! the only thing that should be passed from the PBL schemes is the value of the exch_h, and exch_m 
+! (and the non local terms, if present, through the b).
+! So, this routine can be used by any of the previous schemes. We only need to pass the right variables
+! (and eliminate the computation of the tendencies from the previous routines, to avoid doing twice the job).
+! As I explain below, in the routine, here we could extract the vertical turbulent 
+! fluxes (something that will be general for all the routines).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+            
+          CALL diff3d  (DT=dtbl,CP=cp,DZ=dz8w,TH=th_phy,QV=qv_curr,QC=qc_curr,T=t_phy  &
+              ,U=u_phy,V=v_phy,RHO=rho,EXCH_H=exch_h                  &
+              ,EXCH_M=exch_m                                          &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten      &
+             ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                    &
+              ,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur                    &
+              ,A_U=a_u,A_V=a_v,A_T=a_t,A_Q=a_q        &
+              ,B_U=b_u,B_V=b_v,B_T=b_t,B_Q=b_q        &
+              ,SF=sf,VL=vl            &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde        &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
+
+      
+      endif       !idiff
+#endif
+
    ENDDO
    !$OMP END PARALLEL DO
 
    ENDIF
 !
    END SUBROUTINE pbl_driver
+
+!=============================================================================
+          SUBROUTINE diff3d(DT,CP,DZ,TH ,QV,QC,T,U,V,RHO                              &
+              ,EXCH_H,EXCH_M                   &  
+              ,RUBLTEN,RVBLTEN,RTHBLTEN    &
+              ,RQVBLTEN,RQCBLTEN                  &
+              ,WU,WV,WT,WQ                 &
+              ,A_U,A_V,A_T,A_Q      &
+              ,B_U,B_V,B_T,B_Q      &
+              ,SF,VL        &
+              ,IDS,IDE,JDS,JDE,KDS,KDE      &
+              ,IMS,IME,JMS,JME,KMS,KME      &
+              ,ITS,ITE,JTS,JTE,KTS,KTE      &
+                                                                    )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!    Subroutine written by Alberto Martilli, CIEMAT, Spain,
+!    e-mail:alberto_martilli@ciemat.es
+!    August 2008.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! ALberto
+! This routine solves the vertical diffusion 
+! + other source/sink terms (surface fluxes, building drag, non local terms, etc.)
+! for U,V, potential temperature and moisture. The equation should be written 
+! as follow, for a generic variable M:
+! 
+!      dM      1     d      dM
+!     ---- =----  ---(rho*K----)+AM+B
+!      dt     rho    dz     dz  
+! where A and B are the implict and explcit coefficients of the source/sink terms
+! (at the lowest level the surface fluxes should go in these terms)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!-----------------------------------------------------------------------
+
+      IMPLICIT NONE
+!
+!----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
+
+! INputs
+      real DT,CP
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: DZ ! Depth of vertical levels
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: TH ! Potential Temperature
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: QV ! water vapor mixing ratio (kg/kg)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: QC ! cloud water mixing ratio (kg/kg)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: T  ! temperature
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: U ! X-compnent of the wind
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: V ! Y-compnent of the wind
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: RHO ! Air Density
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_H ! Turbulent coefficient for heat
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_M ! Turbulent coefficient for momentum 
+      
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_U ! Implicit coefficient for DRAG (x -component)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_U ! Explicit coefficient for DRAG (x -component)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_V ! Implicit coefficient for DRAG (y -component)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_V ! Explicit coefficient for DRAG (y -component)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_T ! Implicit coefficient for Heat flux from buildings
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_T ! Explicit coefficient for Heat flux from buildings
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_Q ! Implicit coefficient for moisture flux
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_Q ! Explicit coefficient for moisture flux 
+    
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: VL ! fraction of air volume in the grid cell
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: SF ! fraction of air at the face of the grid cell
+!outputs
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: RUBLTEN ! tendency for x-wind component
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: RVBLTEN ! tendency for y-wind component
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: RTHBLTEN ! tendency for Potential Temperature
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: RQVBLTEN ! tendency for water vapor mixing ratio (kg/kg)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: RQCBLTEN ! tendency for cloud water mixing ratio (kg/kg)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: WU ! turbulent flux of momentum (x)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: WV ! turbulent flux of momentum (y)
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: WT ! turbulent flux of potential temperature
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: WQ ! turbulent flux of water vapor
+! Parameters
+     REAL ELOCP 
+! locals (same meaning as above, but 1D)
+
+      real u1d(kms:kme),v1d(kms:kme),exch_h1d(kms:kme)
+      real the1d(kms:kme) ! Equivalent potential temperature
+      real exch_m1d(kms:kme),qv1d(kms:kme),qc1d(kms:kme)
+      real dz1d(kms:kme),rho1d(kms:kme),rhoz1d(kms:kme)
+      real sf1d(kms:kme),vl1d(kms:kme)   
+      real a_u1d(kms:kme),b_u1d(kms:kme)
+      real a_v1d(kms:kme),b_v1d(kms:kme)
+      real a_t1d(kms:kme),b_t1d(kms:kme)
+      real a_q1d(kms:kme),b_q1d(kms:kme)
+      real a_qc1d(kms:kme),b_qc1d(kms:kme)
+      real wu1d(kms:kme),wv1d(kms:kme),wt1d(kms:kme),wq1d(kms:kme),wqc1d(kms:kme)
+      real thnew
+!
+      integer i,k,j  
+!----------------------------------------------------------------------
+      ELOCP=2.72E6/CP
+      u1d=0.
+      v1d=0.
+      exch_h1d=0.
+      exch_m1d=0.
+      qv1d=0.
+      qc1d=0.
+      dz1d=0.
+      rho1d=0.
+      rhoz1d=0.
+      sf1d=0.
+      vl1d=0.
+      a_u1d=0.
+      a_v1d=0.
+      a_t1d=0.
+      a_q1d=0.
+      a_qc1d=0.
+      b_u1d=0.
+      b_v1d=0.
+      b_t1d=0.
+      b_q1d=0.
+      b_qc1d=0.
+       
+      do j=jts,jte
+      do i=its,ite
+
+! put three D variables in temporary 1D variables
+
+       do k=kts,kte
+        u1d(k)=U(i,k,j)
+        v1d(k)=V(i,k,j)
+        the1d(k)=TH(i,k,j)*(QC(i,k,j)*(-ELOCP/T(i,k,j))+1)
+        qv1d(k)=qv(i,k,j)
+        dz1d(k)=dz(i,k,j)
+        rho1d(k)=rho(i,k,j) 
+        a_u1d(k)=a_u(i,k,j)
+        b_u1d(k)=b_u(i,k,j)
+        a_v1d(k)=a_v(i,k,j)
+        b_v1d(k)=b_v(i,k,j)
+        a_t1d(k)=a_t(i,k,j)
+        b_t1d(k)=b_t(i,k,j)
+        a_q1d(k)=a_q(i,k,j)
+        b_q1d(k)=b_q(i,k,j)
+        a_qc1d(k)=0.
+        b_qc1d(k)=0.
+        vl1d(k)=vl(i,k,j)
+        sf1d(k)=sf(i,k,j)
+       enddo
+       sf1d(kte+1)=1. 
+       do k=kts,kte    
+        exch_h1d(k)=exch_h(i,k,j)
+        exch_m1d(k)=exch_m(i,k,j)
+       enddo
+       exch_h1d(kts)=0.
+!       exch_h1d(kte+1)=0  
+       exch_m1d(kts)=0.
+!       exch_m1d(kte+1)=0
+        rhoz1d(kts)=rho1d(kts)
+        do k=kts+1,kte
+         rhoz1d(k)=(rho1d(k)*dz1d(k-1)+rho1d(k-1)*dz1d(k))/       &
+     &                      (dz1d(k-1)+dz1d(k))
+        enddo
+        rhoz1d(kte+1)=rho1d(kte)
+
+
+! solve the diffusion for x-component of the wind   
+          
+       call diff(kms,kme,kts,kte,dt,u1d,rho1d,rhoz1d,exch_m1d,a_u1d,b_u1d,sf1d, &
+     &            vl1d,dz1d,wu1d) 
+
+! solve the diffusion for y-component of the wind              
+
+       call diff(kms,kme,kts,kte,dt,v1d,rho1d,rhoz1d,exch_m1d,a_v1d,b_v1d,sf1d, &
+     &            vl1d,dz1d,wv1d) 
+
+! solve the diffusion for equivalent potential temperature
+
+       call diff(kms,kme,kts,kte,dt,the1d,rho1d,rhoz1d,exch_h1d,a_t1d,b_t1d,sf1d, &
+     &            vl1d,dz1d,wt1d) 
+
+! solve the diffusion for the water vapor mixing ratio
+
+       call diff(kms,kme,kts,kte,dt,qv1d,rho1d,rhoz1d,exch_h1d,a_q1d,b_q1d,sf1d, &
+     &            vl1d,dz1d,wq1d) 
+
+! solve the diffusion for the cloud water mixing ratio
+
+       call diff(kms,kme,kts,kte,dt,qc1d,rho1d,rhoz1d,exch_h1d,a_qc1d,b_qc1d,sf1d, &
+     &            vl1d,dz1d,wqc1d)        
+
+!     
+! compute the tendencies
+
+        do k=kts,kte
+          rublten(i,k,j)=(u1d(k)-u(i,k,j))/dt
+          rvblten(i,k,j)=(v1d(k)-v(i,k,j))/dt
+          thnew=the1d(k)/(QC(i,k,j)*(-ELOCP/T(i,k,j))+1)
+          rthblten(i,k,j)=(thnew-th(i,k,j))/dt
+          rqvblten(i,k,j)=(qv1d(k)-qv(i,k,j))/dt
+          rqcblten(i,k,j)=(qc1d(k)-qc(i,k,j))/dt
+          wu(i,k,j)=wu1d(k)
+          wv(i,k,j)=wv1d(k)
+          wt(i,k,j)=wt1d(k)
+          wq(i,k,j)=wq1d(k)
+        enddo
+      enddo
+      enddo 
+!!!!!!!!!!!!
+
+        
+      END SUBROUTINE diff3d
+! ===6=8===============================================================72
+! ===6=8===============================================================72
+
+       subroutine diff(kms,kme,kts,kte,dt,co,da,daz,cd,aa,bb,sf,vl,dz,fc)
+
+!------------------------------------------------------------------------
+!           Calculation of the diffusion in 1D
+!------------------------------------------------------------------------
+!  - Input:
+!       nz    : number of points
+!       iz1   : first calculated point
+!       co    : concentration of the variable of interest
+!       dz    : vertical levels
+!       cd    : diffusion coefficients
+!       da    : density of the air at the center
+!       daz   : density of the air at the face
+!       dt    : diffusion time step
+!  - Output:
+!       co :concentration of the variable of interest
+
+!  - Internal:
+!       cddz  : constant terms in the equations
+!---------------------------------------------------------------------
+
+        implicit none
+        integer iz,iz1,izf
+        integer kms,kme,kts,kte
+        real dt,dzv
+        real co(kms:kme),cd(kms:kme),dz(kms:kme)
+        real da(kms:kme),daz(kms:kme)
+        real cddz(kms:kme),fc(kms:kme),df(kms:kme)
+        real a(kms:kme,3),c(kms:kme)
+        real sf(kms:kme),vl(kms:kme)
+        real aa(kms:kme),bb(kms:kme)
+
+        
+! Compute cddz=2*cd/dz
+
+        cddz(kts)=sf(kts)*daz(kts)*cd(kts)/dz(kts)
+        do iz=kts+1,kte
+         cddz(iz)=2.*sf(iz)*daz(iz)*cd(iz)/(dz(iz)+dz(iz-1))
+        enddo
+        cddz(kte+1)=sf(kte+1)*daz(kte+1)*cd(kte+1)/dz(kte)
+
+          iz1=1
+          izf=1
+
+          do iz=iz1,kte-1
+
+           dzv=vl(iz)*dz(iz)
+           a(iz,1)=-cddz(iz)*dt/dzv/da(iz)
+           a(iz,2)=1+dt*(cddz(iz)+cddz(iz+1))/dzv/da(iz)-aa(iz)*dt
+           a(iz,3)=-cddz(iz+1)*dt/dzv/da(iz)
+           c(iz)=co(iz)+bb(iz)*dt
+          enddo
+
+          do iz=kte-(izf-1),kte
+           a(iz,1)=0.
+           a(iz,2)=1
+           a(iz,3)=0.
+           c(iz)=co(iz)
+          enddo
+          call invert (kms,kme,kts,kte,a,c,co)
+           
+!let compute the fluxes, as diagnostic variable
+
+          do iz=kts,iz1
+           fc(iz)=0.
+          enddo
+
+          do iz=iz1+1,kte
+           fc(iz)=-(cddz(iz)*(co(iz)-co(iz-1)))/da(iz)
+          enddo
+
+
+
+       return
+       end subroutine diff
+! ===6=8===============================================================72
+
+       subroutine invert(kms,kme,kts,kte,a,c,x)
+
+!ccccccccccccccccccccccccccccccc
+! Aim: Inversion and resolution of a tridiagonal matrix
+!          A X = C
+! Input:
+!  a(*,1) lower diagonal (Ai,i-1)
+!  a(*,2) principal diagonal (Ai,i)
+!  a(*,3) upper diagonal (Ai,i+1)
+!  c
+! Output
+!  x     results
+!ccccccccccccccccccccccccccccccc
+
+       implicit none
+       integer kms,kme,kts,kte,in
+       real a(kms:kme,3),c(kms:kme),x(kms:kme)
+
+        do in=kte-1,kts,-1
+         c(in)=c(in)-a(in,3)*c(in+1)/a(in+1,2)
+         a(in,2)=a(in,2)-a(in,3)*a(in+1,1)/a(in+1,2)
+        enddo
+
+        do in=kts+1,kte
+         c(in)=c(in)-a(in,1)*c(in-1)/a(in-1,2)
+        enddo
+
+        do in=kts,kte
+         x(in)=c(in)/a(in,2)
+        enddo
+
+        return
+        end subroutine invert
+
+! ===6=8===============================================================72
+
+
+
+
+
+
+
+
+
+
+
+
+
 END MODULE module_pbl_driver

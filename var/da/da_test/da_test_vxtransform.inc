@@ -65,6 +65,11 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       go to 1111
    end if
 
+   if ( cv_options /= 5 ) then
+      write(unit=stdout, fmt='(/a/)') ' Inverse tests not performed for cv_options=',cv_options
+      go to 1111
+   end if
+
 #ifdef DM_PARALLEL
    write(unit=stdout, fmt='(/a/)') ' Inverse tests will not be done as it is MPP run'
 #else
@@ -106,7 +111,7 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
 
    if ( vert_corr == vert_corr_2 ) then
       ! perform vv = u_v^{-1} vp transform:
-      call da_vertical_transform ('u_inv', be, grid%xb % vertical_inner_product, vv, vp)
+      call da_vertical_transform (grid, 'u_inv', be, grid%xb % vertical_inner_product, vv, vp)
    else
       vv % v1(its:ite,jts:jte,1:kz_vv(1)) = vp % v1(its:ite,jts:jte,1:kz_vp(1))
       vv % v2(its:ite,jts:jte,1:kz_vv(2)) = vp % v2(its:ite,jts:jte,1:kz_vp(2))
@@ -124,7 +129,7 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    !----------------------------------------------------------------------
    if ( vert_corr == vert_corr_2 ) then
       ! perform vp = u_v (vv) transform:
-      call da_vertical_transform ('u', be, grid%xb % vertical_inner_product, vv, vp)
+      call da_vertical_transform (grid, 'u', be, grid%xb % vertical_inner_product, vv, vp)
    else
       vp % v1(its:ite,jts:jte,1:kz_vv(1)) = vv % v1(its:ite,jts:jte,1:kz_vv(1))
       vp % v2(its:ite,jts:jte,1:kz_vv(2)) = vv % v2(its:ite,jts:jte,1:kz_vv(2))

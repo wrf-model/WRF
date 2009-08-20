@@ -1316,7 +1316,9 @@ updraft:    DO NK=K,KL-1
         PEFF=.5*(PEF+PEFCBH)
         PEFF2 = PEFF                                ! JSK MODS
        IF(IPRNT)THEN  
-         WRITE(98,1035)PEF,PEFCBH,LC,LET,WKL,VWS
+!         WRITE(98,1035)PEF,PEFCBH,LC,LET,WKL,VWS
+         WRITE(message,1035)PEF,PEFCBH,LC,LET,WKL,VWS
+         CALL wrf_message( message )
 !       call flush(98)   
        endif     
 !        WRITE(98,1035)PEF,PEFCBH,LC,LET,WKL,VWS
@@ -1504,7 +1506,9 @@ d_mf:   IF(TDER.LT.1.)THEN
          PPTFLX = TRPPT-TDER
          PEFF=PPTFLX/TRPPT
          IF(IPRNT)THEN
-           write(98,*)'PRECIP EFFICIENCY =',PEFF
+!           write(98,*)'PRECIP EFFICIENCY =',PEFF
+           write(message,*)'PRECIP EFFICIENCY =',PEFF
+           CALL wrf_message(message)
 !          call flush(98)   
          ENDIF
 !
@@ -2028,7 +2032,9 @@ iter:     DO NCOUNT=1,10
 !     WRITE(98,1080)LFS,LDB,LDT,TIMEC,TADVEC,NSTEP,NCOUNT,FABE,AINC 
 !     ENDIF
        IF(IPRNT)THEN  
-         WRITE(98,1080)LFS,LDB,LDT,TIMEC,TADVEC,NSTEP,NCOUNT,FABE,AINC
+!         WRITE(98,1080)LFS,LDB,LDT,TIMEC,TADVEC,NSTEP,NCOUNT,FABE,AINC
+         WRITE(message,1080)LFS,LDB,LDT,TIMEC,TADVEC,NSTEP,NCOUNT,FABE,AINC
+         CALL wrf_message(message)
 !        call flush(98)   
        endif  
 !     
@@ -2040,23 +2046,32 @@ iter:     DO NCOUNT=1,10
 !      IF(ISTOP.EQ.1)THEN
          write(98,*)
 !        write(98,*)'At t(h), I, J =',float(NTSD)*72./3600.,I,J
-         write(98,*)'P(LC), DTP, WKL, WKLCL =',p0(LC)/100.,       &
+         write(message,*)'P(LC), DTP, WKL, WKLCL =',p0(LC)/100.,       &
                      TLCL+DTLCL+dtrh-TENV,WKL,WKLCL
-         write(98,*)'TLCL, DTLCL, DTRH, TENV =',TLCL,DTLCL,       &
+         call wrf_message(message)
+         write(message,*)'TLCL, DTLCL, DTRH, TENV =',TLCL,DTLCL,       &
                       DTRH,TENV   
-         WRITE(98,1025)KLCL,ZLCL,DTLCL,LTOP,P0(LTOP),IFLAG,       &
+         call wrf_message(message)
+         WRITE(message,1025)KLCL,ZLCL,DTLCL,LTOP,P0(LTOP),IFLAG,       &
          TMIX-T00,PMIX,QMIX,ABE
-         WRITE(98,1030)P0(LET)/100.,P0(LTOP)/100.,VMFLCL,PLCL/100.,  &
+         call wrf_message(message)
+         WRITE(message,1030)P0(LET)/100.,P0(LTOP)/100.,VMFLCL,PLCL/100.,  &
          WLCL,CLDHGT(LC)
-         WRITE(98,1035)PEF,PEFCBH,LC,LET,WKL,VWS 
-         write(98,*)'PRECIP EFFICIENCY =',PEFF 
-      WRITE(98,1080)LFS,LDB,LDT,TIMEC,TADVEC,NSTEP,NCOUNT,FABE,AINC
+         call wrf_message(message)
+         WRITE(message,1035)PEF,PEFCBH,LC,LET,WKL,VWS 
+         call wrf_message(message)
+         write(message,*)'PRECIP EFFICIENCY =',PEFF 
+         call wrf_message(message)
+      WRITE(message,1080)LFS,LDB,LDT,TIMEC,TADVEC,NSTEP,NCOUNT,FABE,AINC
+         call wrf_message(message)
 !      ENDIF
 !!!!! HERE !!!!!!!
-           WRITE(98,1070)'  P  ','   DP ',' DT K/D ',' DR K/D ','   OMG  ',        &
+           WRITE(message,1070)'  P  ','   DP ',' DT K/D ',' DR K/D ','   OMG  ',        &
           ' DOMGDP ','   UMF  ','   UER  ','   UDR  ','   DMF  ','   DER  '        &
           ,'   DDR  ','   EMS  ','    W0  ','  DETLQ ',' DETIC '
-           write(98,*)'just before DO 300...'
+         call wrf_message(message)
+           write(message,*)'just before DO 300...'
+         call wrf_message(message)
 !          call flush(98)
            DO NK=1,LTOP
              K=LTOP-NK+1
@@ -2067,13 +2082,15 @@ iter:     DO NCOUNT=1,10
              UEFRC=UER(K)*TIMEC*EMSD(K)
              DDFRC=DDR(K)*TIMEC*EMSD(K)
              DEFRC=-DER(K)*TIMEC*EMSD(K)
-             WRITE(98,1075)P0(K)/100.,DP(K)/100.,DTT,DR,OMG(K),DOMGDP(K)*1.E4,       &
+             WRITE(message,1075)P0(K)/100.,DP(K)/100.,DTT,DR,OMG(K),DOMGDP(K)*1.E4,       &
              UMF(K)/1.E6,UEFRC,UDFRC,DMF(K)/1.E6,DEFRC,DDFRC,EMS(K)/1.E11,           &
              W0AVG1D(K)*1.E2,DETLQ(K)*TIMEC*EMSD(K)*1.E3,DETIC(K)*                   &
              TIMEC*EMSD(K)*1.E3
+         call wrf_message(message)
            ENDDO
-           WRITE(98,1085)'K','P','Z','T0','TG','DT','TU','TD','Q0','QG',             &
+           WRITE(message,1085)'K','P','Z','T0','TG','DT','TU','TD','Q0','QG',             &
                   'DQ','QU','QD','QLG','QIG','QRG','QSG','RH0','RHG'
+         call wrf_message(message)
            DO NK=1,KL
              K=KX-NK+1
              DTT=TG(K)-T0(K)
@@ -2089,10 +2106,11 @@ iter:     DO NCOUNT=1,10
              QGS=ES*0.622/(P0(K)-ES)
              RH0=Q0(K)/QES(K)
              RHG=QG(K)/QGS
-             WRITE(98,1090)K,P0(K)/100.,Z0(K),T0(K)-T00,TG(K)-T00,DTT,TUC,            &
+             WRITE(message,1090)K,P0(K)/100.,Z0(K),T0(K)-T00,TG(K)-T00,DTT,TUC,            &
              TDC,Q0(K)*1000.,QG(K)*1000.,(QG(K)-Q0(K))*1000.,QU(K)*                   &
              1000.,QD(K)*1000.,QLG(K)*1000.,QIG(K)*1000.,QRG(K)*1000.,                &
              QSG(K)*1000.,RH0,RHG
+         call wrf_message(message)
            ENDDO
 !     
 !...IF CALCULATIONS ABOVE SHOW AN ERROR IN THE MASS BUDGET, PRINT OUT A
@@ -2187,7 +2205,7 @@ iter:     DO NCOUNT=1,10
 !...TIMEC, ALLOW FEEDBACK TO OCCUR ONLY DURING TADVEC...
 !     
         IF(TADVEC.LT.TIMEC)NIC=NINT(TADVEC/DT)
-        NCA(I,J) = TADVEC
+        NCA(I,J) = REAL(NIC)*DT
         IF(ISHALL.EQ.1)THEN
            TIMEC = 2400.
            NCA(I,J) = CUDT*60.

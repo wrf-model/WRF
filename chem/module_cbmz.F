@@ -1,13 +1,14 @@
-!**********************************************************************************  
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!************************************************************************
+! This computer software was prepared by Battelle Memorial Institute,
+! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
+! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+! LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
 ! Chemistry Option:  CBMZ (Carbon Bond Mechanism IV - Zaveri)
 ! * Primary investigator: Rahul A. Zaveri
 ! * Co-investigator: Richard C. Easter, William I. Gustafson Jr.
-! Last update: September 2005
+! Last update: February 2009
 !
 ! Contacts:
 ! Rahul A. Zaveri, PhD                    Jerome D. Fast, PhD
@@ -18,41 +19,41 @@
 ! Phone: (509) 372-6159                   Phone: (509) 372-6116
 ! Email: Rahul.Zaveri@pnl.gov             Email: Jerome.Fast@pnl.gov
 !
-! Please report any bugs or problems to Rahul Zaveri, the primary author of the
-! code, or Jerome Fast, the WRF-chem implementation team leader
+! Please report any bugs or problems to Rahul Zaveri, the primary author
+! of the code, or Jerome Fast, the WRF-chem implementation team leader.
 !
 ! Terms of Use:
-! 1) Users are requested to consult the primary author prior to modifying the
-!   CBMZ code or incorporating it or its submodules in another code. This is 
-!   meant to ensure that the any linkages and/or assumptions will not adversely
-!   affect the operation of CBMZ.
-! 2) The CBMZ source code is intended for research and educational purposes.
-!   Users are requested to contact the primary author regarding the use of
-!   CBMZ code for any commercial application.
-! 3) Users preparing publications resulting from the usage of CBMZ are requested
-!   to cite one or more of the references below (depending on the application) 
-!   for proper acknowledgement.
-
+!  1) Users are requested to consult the primary author prior to
+!     modifying the CBMZ code or incorporating it or its submodules in
+!     another code. This is meant to ensure that the any linkages and/or
+!     assumptions will not adversely affect the operation of CBMZ.
+!  2) The CBMZ source code is intended for research and educational
+!     purposes. Users are requested to contact the primary author
+!     regarding the use of CBMZ code for any commercial application.
+!  3) Users preparing publications resulting from the usage of CBMZ are
+!     requested to cite one or more of the references below (depending on
+!     the application) for proper acknowledgement.
 !
 ! References: 
-! 1) Zaveri R.A., and L.K. Peters (1999), A new lumped structure photochemical
-!    mechanism for large-scale applications, J. Geophys. Res., 104, 30387-30415.
-! 2) Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
-!    Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
-!    and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
-!    coupled meteorology-chemistry-aerosol model, Submitted to J. Geophys. Res.
-!
-! Contact Jerome Fast for updates on the status of manuscripts under review.  
+! 1) Zaveri R.A., and L.K. Peters (1999), A new lumped structure
+!    photochemical mechanism for large-scale applications, J. Geophys.
+!    Res., 104, 30387-30415.
+! 2) Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C.
+!    Barnard, E.G., Chapman, G.A. Grell, and S.E. Peckham (2005),
+!    Evolution of ozone, particulates, and aerosol direct radiative
+!    forcing in the vicinity of Houston using a fully-coupled
+!    meteorology- chemistry-aerosol model, J. Geophys. Res., 111, D21305,
+!    doi:10.1029/2005JD006721.
 !
 ! Additional information:
 ! * www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support: 
-! Funding for developing and evaluating CBMZ was provided by the U.S. Department
-! of Energy under the auspices of Atmospheric Science Program of the Office of
-! Biological and Environmental Research the the PNNL Laboratory Research and 
-! Directed Research and Development program.
-!**********************************************************************************  
+! Funding for developing and evaluating CBMZ was provided by the U.S.
+! Department of Energy under the auspices of Atmospheric Science Program
+! of the Office of Biological and Environmental Research the the PNNL
+! Laboratory Research and Directed Research and Development program.
+!************************************************************************
       module module_cbmz
 
 

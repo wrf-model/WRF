@@ -78,6 +78,8 @@ real::t1,t2
      END SUBROUTINE Setup_Timekeeping
    END INTERFACE
 
+   LOGICAL :: ok_so_far
+
 #include "version_decl"
 
    !  Define the name of this program (program_name defined in module_domain)
@@ -214,6 +216,20 @@ real::t1,t2
 
          CALL       wrf_debug ( 100 , 'real_em: calling model_to_grid_config_rec ' )
          CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+         !  Some simple checks.
+         
+         ok_so_far = .TRUE.
+
+         DO loop = 2 , model_config_rec%max_dom
+            IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(1) ) THEN
+               CALL  wrf_message ( 'e_vert must be the same for each domain' )
+               ok_so_far = .FALSE.
+            END IF
+         END DO
+         IF ( .NOT. ok_so_far ) THEN
+            CALL wrf_error_fatal( 'fix namelist.input settings' )
+         END IF
 
          !  Initialize the WRF IO: open files, init file handles, etc.
 
@@ -403,7 +419,7 @@ real::t1,t2,t3,t4
          CALL init_module_optional_input ( grid , config_flags )
       END IF
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
-      CALL  optional_input ( grid , idsi )
+      CALL optional_input ( grid , idsi , config_flags )
 
       !  Initialize the mother domain for this time period with input data.
 
@@ -752,9 +768,9 @@ real::t1,t2
          DO j = jps , jpe
             DO i = ips , ipe
                grid%fdda2d(i,1,j,p_mu_ndg_old) = grid%mu_2(i,j)
-               grid%fdda2d(i,1,j,p_t2_ndg_old) = grid%t2(i,j)
-               grid%fdda2d(i,1,j,p_q2_ndg_old) = grid%q2(i,j)
-               grid%fdda2d(i,1,j,p_sn_ndg_old) = grid%snow(i,j)
+!              grid%fdda2d(i,1,j,p_t2_ndg_old) = grid%t2(i,j)
+!              grid%fdda2d(i,1,j,p_q2_ndg_old) = grid%q2(i,j)
+!              grid%fdda2d(i,1,j,p_sn_ndg_old) = grid%snow(i,j)
             END DO
          END DO
       END IF
@@ -877,9 +893,9 @@ real::t1,t2
          DO j = jps , jpe
             DO i = ips , ipe
                grid%fdda2d(i,1,j,p_mu_ndg_new) = grid%mu_2(i,j)
-               grid%fdda2d(i,1,j,p_t2_ndg_new) = grid%t2(i,j)
-               grid%fdda2d(i,1,j,p_q2_ndg_new) = grid%q2(i,j)
-               grid%fdda2d(i,1,j,p_sn_ndg_new) = grid%snow(i,j)
+!              grid%fdda2d(i,1,j,p_t2_ndg_new) = grid%t2(i,j)
+!              grid%fdda2d(i,1,j,p_q2_ndg_new) = grid%q2(i,j)
+!              grid%fdda2d(i,1,j,p_sn_ndg_new) = grid%snow(i,j)
             END DO
          END DO
       END IF
@@ -1070,9 +1086,9 @@ real::t1,t2
             DO j = jps , jpe
                DO i = ips , ipe
                   grid%fdda2d(i,1,j,p_mu_ndg_old) = grid%fdda2d(i,1,j,p_mu_ndg_new)
-                  grid%fdda2d(i,1,j,p_t2_ndg_old) = grid%fdda2d(i,1,j,p_t2_ndg_new)
-                  grid%fdda2d(i,1,j,p_q2_ndg_old) = grid%fdda2d(i,1,j,p_q2_ndg_new)
-                  grid%fdda2d(i,1,j,p_sn_ndg_old) = grid%fdda2d(i,1,j,p_sn_ndg_new)
+!                 grid%fdda2d(i,1,j,p_t2_ndg_old) = grid%fdda2d(i,1,j,p_t2_ndg_new)
+!                 grid%fdda2d(i,1,j,p_q2_ndg_old) = grid%fdda2d(i,1,j,p_q2_ndg_new)
+!                 grid%fdda2d(i,1,j,p_sn_ndg_old) = grid%fdda2d(i,1,j,p_sn_ndg_new)
                END DO
             END DO
          END IF

@@ -21,9 +21,6 @@
    !
    !  local arguments
    !------------------- 
-   integer, parameter   :: nobsmin_varbc_coldstart = 100 ! Minimum number of obs to keep
-                                                         ! coldstart values for next cycle
-
    integer              :: inst, ichan, npred, i, npredmax, id
    integer              :: iunit, iost
    character(len=filename_len) :: filename
@@ -80,7 +77,7 @@
       do ichan = 1, iv%instid(inst)%nchan
          npred    = iv%instid(inst)%varbc(ichan)%npred
          if (npred <= 0) cycle               !! VarBC channels only	 
-	 if (iv%instid(inst)%varbc(ichan)%nobs >= nobsmin_varbc_coldstart) then
+	 if (iv%instid(inst)%varbc(ichan)%nobs >= varbc_nobsmin) then
 	    where (iv%instid(inst)%varbc(ichan)%pred_use == 0) &
 	           iv%instid(inst)%varbc(ichan)%pred_use = 1
 	 else

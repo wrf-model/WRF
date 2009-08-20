@@ -104,13 +104,14 @@ MODULE module_ra_cam_support
       real(r8):: amd   ! Molecular weight of dry air (g/mol)
       real(r8):: p0    ! Standard pressure (dynes/cm**2)
 
-  real(r8):: ah2onw(n_p, n_tp, n_u, n_te, n_rh)   ! absorptivity (non-window)
-  real(r8):: eh2onw(n_p, n_tp, n_u, n_te, n_rh)   ! emissivity   (non-window)
-  real(r8):: ah2ow(n_p, n_tp, n_u, n_te, n_rh)    ! absorptivity (window, for adjacent layers)
-  real(r8):: cn_ah2ow(n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for absorptivity (window)
-  real(r8):: cn_eh2ow(n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for emissivity   (window)
-  real(r8):: ln_ah2ow(n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for absorptivity (window)
-  real(r8):: ln_eh2ow(n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for emissivity   (window)
+! These are now allocatable. JM 20090612
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ah2onw   ! (n_p, n_tp, n_u, n_te, n_rh)   ! absorptivity (non-window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: eh2onw   ! (n_p, n_tp, n_u, n_te, n_rh)   ! emissivity   (non-window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ah2ow    ! (n_p, n_tp, n_u, n_te, n_rh)    ! absorptivity (window, for adjacent layers)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: cn_ah2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for absorptivity (window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: cn_eh2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for emissivity   (window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ln_ah2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for absorptivity (window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ln_eh2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for emissivity   (window)
 
 !
 ! Constant coefficients for water vapor overlap with trace gases.
@@ -215,18 +216,21 @@ real(r8) pcf(6)     ! polynomial coeffs -> es transition water to ice
 integer, parameter :: idxVIS = 8     ! index to visible band
 integer, parameter :: nrh = 1000   ! number of relative humidity values for look-up-table
 integer, parameter :: nspint = 19   ! number of spectral intervals
-real(r8) :: ksul(nrh, nspint)    ! sulfate specific extinction  ( m^2 g-1 )
-real(r8) :: wsul(nrh, nspint)    ! sulfate single scattering albedo
-real(r8) :: gsul(nrh, nspint)    ! sulfate asymmetry parameter
+
+! These are now allocatable,  JM 20090612
+real(r8), allocatable, dimension(:,:) :: ksul    ! (nrh, nspint)    ! sulfate specific extinction  ( m^2 g-1 )
+real(r8), allocatable, dimension(:,:) :: wsul    ! (nrh, nspint)    ! sulfate single scattering albedo
+real(r8), allocatable, dimension(:,:) :: gsul    ! (nrh, nspint)    ! sulfate asymmetry parameter
+real(r8), allocatable, dimension(:,:) :: ksslt   ! (nrh, nspint)   ! sea-salt specific extinction  ( m^2 g-1 )
+real(r8), allocatable, dimension(:,:) :: wsslt   ! (nrh, nspint)   ! sea-salt single scattering albedo
+real(r8), allocatable, dimension(:,:) :: gsslt   ! (nrh, nspint)   ! sea-salt asymmetry parameter
+real(r8), allocatable, dimension(:,:) :: kcphil  ! (nrh, nspint)  ! hydrophilic carbon specific extinction  ( m^2 g-1 )
+real(r8), allocatable, dimension(:,:) :: wcphil  ! (nrh, nspint)  ! hydrophilic carbon single scattering albedo
+real(r8), allocatable, dimension(:,:) :: gcphil  ! (nrh, nspint)  ! hydrophilic carbon asymmetry parameter
+
 real(r8) :: kbg(nspint)          ! background specific extinction  ( m^2 g-1 )
 real(r8) :: wbg(nspint)          ! background single scattering albedo
 real(r8) :: gbg(nspint)          ! background asymmetry parameter
-real(r8) :: ksslt(nrh, nspint)   ! sea-salt specific extinction  ( m^2 g-1 )
-real(r8) :: wsslt(nrh, nspint)   ! sea-salt single scattering albedo
-real(r8) :: gsslt(nrh, nspint)   ! sea-salt asymmetry parameter
-real(r8) :: kcphil(nrh, nspint)  ! hydrophilic carbon specific extinction  ( m^2 g-1 )
-real(r8) :: wcphil(nrh, nspint)  ! hydrophilic carbon single scattering albedo
-real(r8) :: gcphil(nrh, nspint)  ! hydrophilic carbon asymmetry parameter
 real(r8) :: kcphob(nspint)       ! hydrophobic carbon specific extinction  ( m^2 g-1 )
 real(r8) :: wcphob(nspint)       ! hydrophobic carbon single scattering albedo
 real(r8) :: gcphob(nspint)       ! hydrophobic carbon asymmetry parameter
@@ -236,6 +240,7 @@ real(r8) :: gcb(nspint)          ! black carbon asymmetry parameter
 real(r8) :: kvolc(nspint)        ! volcanic specific extinction  ( m^2 g-1)
 real(r8) :: wvolc(nspint)        ! volcanic single scattering albedo
 real(r8) :: gvolc(nspint)        ! volcanic asymmetry parameter
+
 real(r8) :: kdst(ndstsz, nspint) ! dust specific extinction  ( m^2 g-1 )
 real(r8) :: wdst(ndstsz, nspint) ! dust single scattering albedo
 real(r8) :: gdst(ndstsz, nspint) ! dust asymmetry parameter
@@ -336,6 +341,30 @@ integer, parameter :: cyr = 233  ! number of years of co2 data
       logical :: trace_gas=.false.             ! set true for chemistry
       logical :: strat_volcanic   = .false.    ! True => volcanic aerosol mass available
 
+    real(r8) retab(95)
+    !
+    !       Tabulated values of re(T) in the temperature interval
+    !       180 K -- 274 K; hexagonal columns assumed:
+    !
+    data retab / 						&
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,	&
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,	&
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319, 	&
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,	&
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,	&
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943, 	&
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601, 	&
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,	&
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,	&
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,	&
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,	&
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,	&
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
+    !
+    save retab
 contains
 
 
@@ -2315,34 +2344,10 @@ end subroutine vert_interpolate
     integer, intent(in) :: ncol, pcols, pver
     real(r8), intent(out) :: re(pcols,pver)
     real(r8), intent(in) :: t(pcols,pver)
-    real(r8) retab(95)
     real(r8) corr
     integer i
     integer k
     integer index
-    !
-    !       Tabulated values of re(T) in the temperature interval
-    !       180 K -- 274 K; hexagonal columns assumed:
-    !
-    data retab / 						&
-         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,	&
-         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,	&
-         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319, 	&
-         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,	&
-         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,	&
-         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943, 	&
-         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601, 	&
-         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,	&
-         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,	&
-         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,	&
-         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,	&
-         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,	&
-         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
-         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
-         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
-         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
-    !
-    save retab
     !
     do k=1,pver
        do i=1,ncol

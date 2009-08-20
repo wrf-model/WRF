@@ -64,6 +64,8 @@ subroutine da_psichi_to_uv_adj(u, v, coefx, coefy, psi, chi)
       if (its == ids) is = ids+1
       if (ite == ide) ie = ide-1
 
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( k ) 
       do k = kts, kte
 
          !---------------------------------------------------------------------
@@ -124,11 +126,14 @@ subroutine da_psichi_to_uv_adj(u, v, coefx, coefy, psi, chi)
             v(ite,jte-1,k) = v(ite,jte-1,k) + 0.5 * v(ite,jte,k)
          end if
       end do
+      !$OMP END PARALLEL DO
    end if
 
 
    ! [3.0] Compute u, v at domain boundaries:
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, k, message ) 
    do k = kts, kte
 #ifdef A2C
    if (.not. (fg_format == fg_format_kma_global) ) then
@@ -322,6 +327,7 @@ subroutine da_psichi_to_uv_adj(u, v, coefx, coefy, psi, chi)
          end do
       end do
    end do    !  loop over levels
+   !$OMP END PARALLEL DO
 
    !---------------------------------------------------------------------------
    ! [5.0] For Global application, set Wast-Eest Periodic boundary

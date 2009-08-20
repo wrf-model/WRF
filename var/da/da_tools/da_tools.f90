@@ -19,12 +19,12 @@ module da_tools
       missing_r, x_start_sub_domain, global, myproc, comm, &
       x_end_sub_domain, y_end_sub_domain, def_sub_domain, &
       y_start_sub_domain, start_lat, delt_lat, delt_lon, start_lon, cp, &
-      missing, surface_correction,print_detail_map, use_rad, stderr, &
+      missing_data, surface_correction,print_detail_map, use_rad, stderr, &
       t_kelvin, trace_use_frequent, jds, jde, pptop,ppbot,npres_print, &
       rad_to_deg, deg_to_rad, num_procs, print_detail_obs
 
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_integer
+!  use mpi, only : mpi_integer
 #endif
 
    use da_define_structures, only : info_type, field_type, x_type,  &
@@ -33,9 +33,14 @@ module da_tools
    use da_tools_serial, only : da_array_print
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_reporting, only : da_error, message, da_warning, da_message
+   use da_lapack, only : dsyev
    
    implicit none
    
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
+
    ! Code copied from SI, see header below
 #include "da_map_utils_defines.inc"
 

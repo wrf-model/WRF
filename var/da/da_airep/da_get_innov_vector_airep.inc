@@ -87,9 +87,9 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
       do n=iv%info(airep)%n1,iv%info(airep)%n2
          do k=1, iv%info(airep)%levels(n)
             if (iv%info(airep)%zk(k,n) < 0.0) then
-               iv%airep(n)%u(k)%qc = missing
-               iv%airep(n)%v(k)%qc = missing
-               iv%airep(n)%t(k)%qc = missing
+               iv%airep(n)%u(k)%qc = missing_data
+               iv%airep(n)%v(k)%qc = missing_data
+               iv%airep(n)%t(k)%qc = missing_data
             end if
          end do
       end do

@@ -13,18 +13,23 @@
    type (be_type)               :: be          ! Background error structure.
    real, allocatable            :: cvt(:)      ! Control variable structure.
    real, allocatable            :: xhat(:)     ! Control variable structure.
+   real, allocatable            :: qhat(:,:)   ! Control variable structure.
+   real, allocatable            :: eignvec(:,:)
+   real, allocatable            :: eignval(:)   
+!   real, allocatable            :: full_eignvec(:)   
    type (y_type)                :: ob          ! Observation structure.
    type (iv_type)               :: iv          ! Obs. increment structure.
    type (y_type)                :: re          ! Residual (o-a) structure.
    type (y_type)                :: y           ! y = H(x_inc) structure.
    integer                      :: it          ! External loop counter.
+   integer                      :: neign       
    type (j_type)                :: j           ! Cost function.
 
-   integer                      :: cv_size, i, ichan, k
+   integer                      :: cv_size, i, ichan, k, n
    real                         :: j_grad_norm_target ! Target j norm.
 
-   integer                      :: n, size_js, js_start, nclouds, kts_100hPa(1)
-
+   character (len=3)            :: ci
+   
 #ifdef DM_PARALLEL
    integer                      :: wrf_done_unit
 #endif
@@ -35,14 +40,26 @@
    call mpi_barrier(comm,ierr)
 #endif
 
-   !---------------------------------------------------------------------------
-   ! If it is verification run set check_max_iv as .false.
-   !---------------------------------------------------------------------------
-
-   if (anal_type_verify) then
-      check_max_iv = .false.
-      ntmax=0
+   if ( config_flags%use_baseparam_fr_nml ) then
+      call nl_get_base_pres  ( 1 , base_pres )
+      call nl_get_base_temp  ( 1 , base_temp )
+      call nl_get_base_lapse ( 1 , base_lapse )
+      call nl_get_iso_temp   ( 1 , iso_temp )
+   else
+      base_pres  = grid%p00
+      base_temp  = grid%t00
+      base_lapse = grid%tlp
+      iso_temp   = grid%tiso
+      if ( base_temp < 100.0 .or. base_pres < 10000.0 ) then
+         write(unit=message(1),fmt='(A)') &
+         'did not find base state parameters in fg. Add use_baseparam_fr_nml = .t. in &dynamics and rerun '
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
    end if
+
+   !---------------------------------------------------------------------------
+   ! [1.0] Initial checks
+   !---------------------------------------------------------------------------
 
    if (cv_options_hum /= cv_options_hum_specific_humidity .and. &
        cv_options_hum /= cv_options_hum_relative_humidity) then
@@ -90,6 +107,7 @@
    ! [4.0] Set up observations (ob):
    !---------------------------------------------------------------------------
    call da_setup_obs_structures (grid, ob, iv)
+   
    if (use_rad) then
       allocate (j % jo % rad(1:iv%num_inst))
       do i=1,iv%num_inst
@@ -98,18 +116,35 @@
       end do
    end if
 
+   if (anal_type_verify) then
+      check_max_iv = .false.
+      ntmax=0
+      it = 1
+      num_qcstat_conv=0
+
+#if defined(RTTOV) || defined(CRTM)
+      if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
+#endif
+      call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
+      call da_allocate_y (iv, re)
+ 
+      ! write out O-B statistics
+      call da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
+      call da_deallocate_y(re)
+      call da_deallocate_observations (iv)
+      return   
+   end if
+   
    !---------------------------------------------------------------------------
    ! [5.0] Set up background errors (be):
    !---------------------------------------------------------------------------
 
-   if( .not. anal_type_verify) then
-      call da_setup_background_errors (grid%xb, be)
+      call da_setup_background_errors (grid, be)
 
    !---------------------------------------------------------------------------
    ! [5.1] Set up observation bias correction (Varbc):
    !---------------------------------------------------------------------------
 
-      be % cv % size_jp = 0.0
 #if defined(RTTOV) || defined(CRTM)
       if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
 #endif
@@ -118,31 +153,10 @@
    ! [5.2] Set up satellite control variable:
    !---------------------------------------------------------------------------
 
-   if (use_satcv) then  
-      be % cv % size_js = 0.0
-      size_js  = 0                        
-      js_start = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
-      
-      do i= 1, iv % num_inst
-         allocate(iv%instid(i)%cv_index(iv%instid(i)%num_rad))
-         do n = 1,iv%instid(i)%num_rad
-           kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
-                        MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
-           nclouds = kte - kts_100hPa(1) + 1
-           allocate(iv%instid(i)%cv_index(n)%cc(nclouds))
-            iv%instid(i)%cv_index(n)%ts    = js_start + size_js + 1
-           iv%instid(i)%cv_index(n)%cc(:) = (/ (js_start + size_js + 1 + k, k=1,nclouds) /)  
-           iv%instid(i)%cv_index(n)%nclouds = nclouds
-           size_js =  size_js + nclouds + 1
-        end do
-      end do
-      
-      be % cv % size_js = size_js
-      be % cv % size    = be % cv % size + be % cv % size_js               
-      cv_size_domain_js = be % cv % size_js
-      cv_size_domain    = cv_size_domain + cv_size_domain_js
-   end if   
-
+#if defined(RTTOV) || defined(CRTM)
+   if (ANY(use_satcv)) call da_setup_satcv(iv, be)
+#endif
+   
    cv_size = be % cv % size
 
    !---------------------------------------------------------------------------
@@ -151,7 +165,8 @@
 
       grid%ep % ne = be % ne
       if (be % ne > 0) then
-         call da_setup_flow_predictors (ide, jde, kde, be % ne, grid%ep )
+         call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
+                                         its, ite, jts, jte, kts, kte )
       end if
 
    !---------------------------------------------------------------------------
@@ -160,66 +175,26 @@
 
       allocate (cvt(1:cv_size))
       allocate (xhat(1:cv_size))
+      if (use_lanczos) then
+         allocate (qhat(1:cv_size, 0:ntmax))
+         allocate (eignvec(ntmax, ntmax))
+	 allocate (eignval(ntmax))
+!	 allocate (full_eignvec(cv_size))
+      end if	 
+      
       call da_initialize_cv (cv_size, cvt)
-      call da_initialize_cv (cv_size, xhat)
       
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
 
-   else      ! anal_type_verify
-      it = 1
-      num_qcstat_conv=0
-#if defined(RTTOV) || defined(CRTM)
-      if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
-#endif
-      call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
-      call da_allocate_y (iv, re)
- 
-      ! write out O-B statistics
-      iv%nstats(:) = 0
-      if (iv%info(sound)%ntotal > 0) then
-         call da_oi_stats_sound     (stats_unit, iv)
-         call da_oi_stats_sonde_sfc (stats_unit, iv)
-      end if
-      if (iv%info(mtgirs)%ntotal   > 0) call da_oi_stats_mtgirs   (stats_unit, iv)
-      if (iv%info(synop)%ntotal    > 0) call da_oi_stats_synop    (stats_unit, iv)
-      if (iv%info(geoamv)%ntotal   > 0) call da_oi_stats_geoamv   (stats_unit, iv)
-      if (iv%info(polaramv)%ntotal > 0) call da_oi_stats_polaramv (stats_unit, iv)
-      if (iv%info(airep)%ntotal    > 0) call da_oi_stats_airep    (stats_unit, iv)
-      if (iv%info(pilot)%ntotal    > 0) call da_oi_stats_pilot    (stats_unit, iv)
-      if (iv%info(metar)%ntotal    > 0) call da_oi_stats_metar    (stats_unit, iv)
-      if (iv%info(ships)%ntotal    > 0) call da_oi_stats_ships    (stats_unit, iv)
-      if (iv%info(gpspw)%ntotal    > 0) call da_oi_stats_gpspw    (stats_unit, iv)
-      if (iv%info(gpsref)%ntotal   > 0) call da_oi_stats_gpsref   (stats_unit, iv)
-      if (iv%info(ssmi_tb)%ntotal  > 0) call da_oi_stats_ssmi_tb  (stats_unit, iv)
-      if (iv%info(ssmi_rv)%ntotal  > 0) call da_oi_stats_ssmi_rv  (stats_unit, iv)
-      if (iv%info(satem)%ntotal    > 0) call da_oi_stats_satem    (stats_unit, iv)
-      if (iv%info(ssmt1)%ntotal    > 0) call da_oi_stats_ssmt1    (stats_unit, iv)
-      if (iv%info(ssmt2)%ntotal    > 0) call da_oi_stats_ssmt2    (stats_unit, iv)
-      if (iv%info(qscat)%ntotal    > 0) call da_oi_stats_qscat    (stats_unit, iv)
-      if (iv%info(profiler)%ntotal > 0) call da_oi_stats_profiler (stats_unit, iv)
-      if (iv%info(buoy)%ntotal     > 0) call da_oi_stats_buoy     (stats_unit, iv)
-      if (iv%info(radar)%ntotal    > 0) call da_oi_stats_radar    (stats_unit, iv)
-      if (iv%info(bogus)%ntotal    > 0) call da_oi_stats_bogus    (stats_unit, iv)
-      if (iv%info(airsr)%ntotal    > 0) call da_oi_stats_airsr    (stats_unit, iv)
-#if defined(RTTOV) || defined(CRTM)
-      if (iv%num_inst > 0) call da_oi_stats_rad (stats_unit, iv)
-#endif
-
-      call da_write_obs(it, ob, iv, re)
-      call da_write_obs_etkf(ob, iv, re)
-      call da_final_write_obs(it, iv)
-      call da_deallocate_y(re)
-      call da_deallocate_observations (iv)
-      return
-
-   endif
    !---------------------------------------------------------------------------
    ! [8] Outerloop
    !---------------------------------------------------------------------------
 
    j_grad_norm_target = 1.0
    do it = 1, max_ext_its
+
+      call da_initialize_cv (cv_size, xhat)
 
       ! [8.1] Calculate nonlinear model trajectory 
 
@@ -281,7 +256,16 @@
 
       if (use_lanczos) then
          call da_minimise_lz( grid, config_flags, it, be % cv % size, & 
-            xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)  
+            xbx, be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign)  
+	 
+!	 do i = 1, neign
+!	    full_eignvec = SQRT(eignval(i)) * MATMUL(qhat(1:cv_size,1:neign), eignvec(1:neign,i))
+!            call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,full_eignvec,grid%vv,grid%vp)
+!            call da_transform_xtoxa (grid)   
+!            call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
+!            write(UNIT=ci,FMT='(i2.2)') i
+!            call da_med_initialdata_output(grid, config_flags, 'wrfvar_output.e'//trim(ci))	    
+!	 end do   	    
       else
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
             xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
@@ -316,9 +300,14 @@
       ! Write "clean" QCed observations if requested:
       if (anal_type_qcobs) then
          if (it == 1) then
+          if (write_mod_filtered_obs) then    !cys_change
+            call da_write_modified_filtered_obs (grid, ob, iv, &
+               coarse_ix, coarse_jy, start_x, start_y)
+          else
             call da_write_filtered_obs (grid, ob, iv, &
                coarse_ix, coarse_jy, start_x, start_y)
           end if     
+         end if     
       end if
 
       ! [8.3] Interpolate x_g to low resolution grid
@@ -354,6 +343,12 @@
 
    deallocate (cvt)
    deallocate (xhat)
+   if (use_lanczos) then
+      deallocate (qhat)
+      deallocate (eignvec)
+      deallocate (eignval)
+!      deallocate (full_eignvec)
+   end if
 
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
@@ -365,13 +360,11 @@
          deallocate (satinfo(i) % error)
          deallocate (satinfo(i) % polar)
 
-         if (read_biascoef) then
-            deallocate (satinfo(i) % scanbias)
-            deallocate (satinfo(i) % scanbias_b)
-            deallocate (satinfo(i) % bcoef)
-            deallocate (satinfo(i) % bcoef0)
-            deallocate (satinfo(i) % error_std)
-         end if
+         deallocate (satinfo(i) % scanbias)
+         deallocate (satinfo(i) % scanbias_b)
+         deallocate (satinfo(i) % bcoef)
+         deallocate (satinfo(i) % bcoef0)
+         deallocate (satinfo(i) % error_std)
 
          deallocate (ob%instid(i) % ichan)
          deallocate (iv%instid(i)%ichan)
@@ -458,27 +451,13 @@
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
 
-	    if ( (use_varbc).or.(freeze_varbc) ) then
-               deallocate (iv%instid(i)%varbc_info%pred)
-               deallocate (iv%instid(i)%varbc_info%pred_mean)
-               deallocate (iv%instid(i)%varbc_info%pred_std)
-               deallocate (iv%instid(i)%varbc_info%nbgerr)
-	       do ichan = 1, iv%instid(i)%nchan
-	         if (iv%instid(i)%varbc(ichan)%npred <= 0) cycle	 
-		 deallocate (iv%instid(i)%varbc(ichan)%pred_use)
-		 deallocate (iv%instid(i)%varbc(ichan)%ipred)
-		 deallocate (iv%instid(i)%varbc(ichan)%index)
-		 deallocate (iv%instid(i)%varbc(ichan)%param)
-    	         deallocate (iv%instid(i)%varbc(ichan)%bgerr)
-		 deallocate (iv%instid(i)%varbc(ichan)%vtox)
-	       end do
-   	       deallocate (iv%instid(i)%varbc)
-	    end if
-
-           if (use_satcv) then
-              do n = 1,iv%instid(i)%num_rad
-                 deallocate (iv%instid(i)%cv_index(n)%cc)
-              end do
+           if (ANY(use_satcv)) then
+	      if (use_satcv(2)) then
+                 do n = 1,iv%instid(i)%num_rad
+                    deallocate (iv%instid(i)%cv_index(n)%cc)
+                    deallocate (iv%instid(i)%cv_index(n)%vtox)
+                 end do
+	      end if
               deallocate (iv%instid(i)%cv_index)  
            end if
 
@@ -511,8 +490,27 @@
               end if
             end if
 
-            deallocate(iv%instid(i)%cv_index)
          end if
+
+	  if ( (use_varbc).or.(freeze_varbc) ) then
+	     if (iv%instid(i)%varbc_info%npredmax > 0) then
+                deallocate (iv%instid(i)%varbc_info%pred)
+                deallocate (iv%instid(i)%varbc_info%pred_mean)
+                deallocate (iv%instid(i)%varbc_info%pred_std)
+                deallocate (iv%instid(i)%varbc_info%nbgerr)
+	     end if
+	     do ichan = 1, iv%instid(i)%nchan
+	        if (iv%instid(i)%varbc(ichan)%npred <= 0) cycle	 
+	        deallocate (iv%instid(i)%varbc(ichan)%pred_use)
+	        deallocate (iv%instid(i)%varbc(ichan)%ipred)
+	        deallocate (iv%instid(i)%varbc(ichan)%index)
+	        deallocate (iv%instid(i)%varbc(ichan)%param)
+    	        deallocate (iv%instid(i)%varbc(ichan)%bgerr)
+	        deallocate (iv%instid(i)%varbc(ichan)%vtox)
+	     end do
+   	     deallocate (iv%instid(i)%varbc)
+	  end if
+
 #ifdef RTTOV
          if (rtm_option == rtm_option_rttov) then
             call rttov_dealloc_coef (ierr,coefs(i))

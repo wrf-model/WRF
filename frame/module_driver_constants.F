@@ -57,6 +57,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_instruments =   30
 
+   !  The maximum number of bogus storms
+
+   INTEGER , PARAMETER :: max_bogus =  5
+
    !  2. Following related to driver leve data structures for DM_PARALLEL communications
 
 #ifdef DM_PARALLEL

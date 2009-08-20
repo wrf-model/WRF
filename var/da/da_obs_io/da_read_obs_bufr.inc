@@ -12,19 +12,16 @@ subroutine da_read_obs_bufr (iv, filename)
 #ifdef BUFR
 
    real, parameter              :: r8bfms = 9.0D08  ! BUFR missing value threshold
-   integer, parameter           :: mxr8pm = 9       ! max number of BUFR parameters
-   integer, parameter           :: mxr8lv = 255     ! max number of BUFR levels
-   integer, parameter           :: mxr8vn = 10      ! max number of BUFR events
    logical                      :: match, end_of_file
    character(len=8)             :: subst2, csid, csid2
-   integer                      :: idate2, nlevels2, lv1, lv2, idate_save
-   real                         :: hdr2(7), hdr_save(7)
-   real                         :: r8sid, r8sid2, pob1, pob2
-   equivalence                  (r8sid, csid), (r8sid2, csid2)
-   real                         :: obs2(9,255), obs_save(9,255)
-   real                         :: qms2(9,255), qms_save(9,255)
-   real                         :: oes2(9,255), oes_save(9,255)
-   real                         :: pmo2(2,1), temp(9)
+   integer                      :: idate2, nlevels2, lv1, lv2
+   real                         :: hdr2(7), hdr_save(7), r8sid, r8sid2
+   real                         :: pob1, pob2
+   real                         :: temp(8,255)
+   real                         :: obs2(8,255), qms2(8,255)
+   real                         :: oes2(8,255), pco2(8,255)
+   real                         :: pmo2(2,1), pmo_save(2,1)
+   equivalence                     (r8sid, csid), (r8sid2, csid2)
    ! for thinning
    real                         :: tdiff                       ! DHR
    real                         :: dlat_earth,dlon_earth,crit
@@ -32,30 +29,35 @@ subroutine da_read_obs_bufr (iv, filename)
    logical                      :: iuse
 
    type (multi_level_type)      :: platform
-   logical                      :: outside, outside_all
+   logical                      :: outside, outside_all, outside_time
    integer                      :: nlocal(num_ob_indexes), ilocal(num_ob_indexes)
    integer                      :: ntotal(num_ob_indexes)
 
-   character(len=40)     :: obstr,drift,hdstr,qmstr,oestr
-   character(len=8)      :: subset, c8id
-   character(len=80)     :: date, dmn, obs_date
+   character(len=40)     :: obstr,hdstr,qmstr,oestr, pcstr
+   character(len=8)      :: subset
+   character(len=14)     :: cdate, dmn, obs_date
    real                  :: hdr(7)
    real                  :: pmo(2,1)
-   ! real :: drf9,255)
-   real                  :: obs(9,255),qms(9,255),oes(9,255)
-   real                  :: obs_time,woe,qob,toe,qoe,poe,pob,tob,zob,rob,roe
+   real                  :: obs(8,255),qms(8,255),oes(8,255),pco(8,255)
+   real                  :: obs_time,woe,toe,qoe,poe,pob,pwe
    integer               :: iyear, imonth, iday, ihour, imin
 
-   integer               :: iost, ndup, n, i, j, k, surface_level, report, i1, i2
-   integer               :: iret, idate, kx, old_nlevels,nlevels, t29, jx, ix
-   integer               :: cat,zqm,pqm,qqm,tqm,wqm,pwq,pmq,rqm
+   integer               :: iost, ndup, n, i, j, k, surface_level, num_report, i1, i2
+   integer               :: iret, idate, kx, old_nlevels,nlevels, t29
+   integer               :: cat,zqm,pqm,qqm,tqm,wqm,pwq,pmq
+   integer               :: tpc, wpc
    integer               :: iunit, fm , obs_index
 
    integer, parameter    :: qflag=4         ! Flag for retaining data
-   equivalence     (hdr(1), c8id)
 
    real, allocatable     :: in(:), out(:)
    logical               :: found
+
+   logical               :: use_errtable
+   integer               :: junit, itype, ivar
+   real                  :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
+   real                  :: err_uv, err_t, err_p, err_q, err_pw, coef
+   integer               :: num_outside_all, num_outside_time, num_thinned
 
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
 
@@ -63,61 +65,112 @@ subroutine da_read_obs_bufr (iv, filename)
    nlocal(:) = 0
    ntotal(:) = 0
 
+   err_uv = 10.0 ! m/s
+   err_t  = 5.0  ! degree
+   err_p  = 200  ! Pa
+   err_q  = 10   ! RH percent
+   err_pw = 0.2  ! cm
+
    ! open file
    !  ---------
    call da_get_unit(iunit)
    if (present(filename)) then
+      call closbf(iunit)
       open(unit   = iunit, FILE   = trim(filename), &
          iostat =  iost, form = 'unformatted', STATUS = 'OLD')
       if (iost /= 0) then
-         write(unit=stdout, fmt='(/A,I3,3(2X,A)/)') &
-              'error in obs input file unit ',iunit, &
-              'obs filename:', trim(filename), &
-              'for gts observations cannot be found or cannot be opened'
+         write(unit=message(1),fmt='(A,I5,A)') &
+            "Error",iost," opening PREPBUFR obs file "//trim(filename)
+         call da_warning(__FILE__,__LINE__,message(1:1))
+         call da_free_unit(iunit)
+         if (trace_use) call da_trace_exit("da_read_obs_bufr")
          return
       end if
    end if
 
-   hdstr='SID XOB YOB DHR TYP ELV T29     '
-   obstr='POB QOB TOB ZOB UOB VOB PWO ROB CAT '
-   drift='XDR YDR HRDR                    '
-   qmstr='PQM QQM TQM ZQM WQM NUL PWQ PMQ RQM '
-   oestr='POE QOE TOE NUL WOE NUL PWE ROE '
+   ! open observation error table if provided.
+   call da_get_unit(junit)
+   open (unit=junit, file='obs_errtable', form='formatted', status='old', &
+         iostat=iost)
+   if ( iost /= 0 ) then
+      use_errtable = .false.
+      call da_free_unit(junit)
+   else
+      use_errtable = .true.
+      write(unit=message(1),fmt='(A)') &
+            "obs_errtable file is found. Will use user-provided obs errors."
+      call da_message(message(1:1))
+   end if
+   if ( use_errtable ) then
+      read_loop: do
+         read (junit,'(1x,i3)',iostat=iost) itype
+         if ( iost /=0 ) exit read_loop
+         do k = 1, 33
+            read (junit,'(1x,6e12.5)',iostat=iost) (oetab(itype,k,ivar),ivar=1,6)
+            if ( iost /=0 ) exit read_loop
+         end do
+      end do read_loop
+   end if
+
+   hdstr='SID XOB YOB DHR TYP ELV T29'
+   obstr='POB QOB TOB ZOB UOB VOB PWO CAT' ! observation
+   qmstr='PQM QQM TQM ZQM WQM NUL PWQ NUL' ! quality marker
+   oestr='POE QOE TOE NUL WOE NUL PWE NUL' ! observation error
+   pcstr='PPC QPC TPC ZPC WPC NUL PWP NUL' ! program code
 
    ! read bufr observation file
    call openbf(iunit,'IN',iunit)
+   call datelen(10)
 
    call readns(iunit,subset,idate,iret)  ! read in the next subset
    if ( iret /= 0 ) then
-      write(unit=stdout, fmt='(a, i4)') &
-         'return code from readns:', iret, &
-         'Reach the end of obs unit: ', iunit       
-      call da_error(__FILE__,__LINE__, &
-         (/"No BUFR observations"/))
+      write(unit=message(1),fmt='(A,I5,A)') &
+         "Error",iret," reading PREPBUFR obs file "//trim(filename)
+      call da_warning(__FILE__,__LINE__,message(1:1))
+      call closbf(iunit)
+      call da_free_unit(iunit)
+      if (trace_use) call da_trace_exit("da_read_obs_bufr")
+      return
    end if
-   rewind(iunit)
+   !rewind(iunit)
 
-   match = .true.
-   end_of_file = .false.
-   report = 0 ! report number in file
+   num_report       = 0
+   num_outside_all  = 0
+   num_outside_time = 0
+   num_thinned      = 0
+
+   match        = .false.
+   end_of_file  = .false.
+   outside_all  = .false.
+   outside_time = .false.
+
    reports: do while ( .not. end_of_file )
-      report = report+1
 
-      if ( match .or. outside_all ) then
+      if ( match .or. outside_all .or. outside_time ) then
          call readns(iunit,subset,idate,iret)  ! read in the next subset
          if ( iret /= 0 ) then 
-            write(unit=stdout, fmt='(a, i4)') &
-                 'return code from readns:', iret, &
-                 'Reach the end of obs unit: ', iunit
+            write(unit=message(1),fmt='(A,I3,A,I3)') & 
+               "return code from readns",iret,       &
+               "reach the end of PREPBUFR obs unit",iunit
+            !call da_warning(__FILE__,__LINE__,message(1:1))
             exit reports
          end if
       end if
 
+      num_report = num_report+1
+
       call ufbint(iunit,hdr,7,1,iret,hdstr)
+      call ufbint(iunit,pmo,2,1,nlevels,'PMO PMQ')
+      call ufbint(iunit,qms,8,255,nlevels,qmstr)
+      call ufbint(iunit,oes,8,255,nlevels,oestr)
+      call ufbint(iunit,pco,8,255,nlevels,pcstr)
+      call ufbint(iunit,obs,8,255,nlevels,obstr)
       
+      r8sid = hdr(1)
       platform % info % name(1:8)  = subset
       platform % info % name(9:40) = '                                '
-      platform % info % id         = c8id(1:5)
+      platform % info % id(1:5)    = csid(1:5)
+      platform % info % id(6:40)   = '                                   '
       platform % info % dhr        = hdr(4)    ! difference in hour
       platform % info % elv        = hdr(6)
       platform % info % lon        = hdr(2)
@@ -125,28 +178,63 @@ subroutine da_read_obs_bufr (iv, filename)
 
       ! Put a check on Lon and Lat
       if ( platform%info%lon >= 180.0 ) platform%info%lon = platform%info%lon - 360.0
+      ! Fix funny wind direction at Poles
+      !if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
+      !   platform%info%lon = 0.0
+      !end if
       platform%info%lat = max(platform%info%lat, -89.95)
       platform%info%lat = min(platform%info%lat,  89.95)
-      ! Fix funny wind direction at Poles
-      if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
-         platform%info%lon = 0.0
-      end if
 
       ! Restrict to a range of reports, useful for debugging
 
-      if (report < report_start) cycle
-
-      if (report > report_end)  exit
+      if (num_report < report_start) cycle reports
+      if (num_report > report_end)  exit reports
 
       call da_llxy (platform%info, platform%loc,outside, outside_all)
 
-      if (outside_all) cycle reports
+      if (outside_all) then
+         num_outside_all = num_outside_all + 1
+         if ( print_detail_obs ) then
+            write(unit=stderr,fmt='(a,1x,a,2(1x,f8.3),a)')  &
+               platform%info%name(1:8),platform%info%id(1:5), &
+               platform%info%lat, platform%info%lon, '  -> outside_domain'
+         end if
+         cycle reports
+      end if
+
+      ! check date
+      write(cdate,'(i10)') idate
+      write(dmn,'(i4,a1)') int(platform%info%dhr*60.0), 'm'
+      call da_advance_time (cdate(1:10), trim(dmn), obs_date)
+      if ( obs_date(13:14) /= '00' ) then
+         write(0,*) 'wrong date: ', trim(cdate), trim(dmn), trim(obs_date)
+         call da_error(__FILE__,__LINE__,(/"Wrong date"/))
+      else
+         read (obs_date(1:12),'(i4,4i2)') iyear, imonth, iday, ihour, imin
+      end if
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+      if (obs_time < time_slots(0) .or.  &
+         obs_time >= time_slots(num_fgat_time)) then
+         outside_time = .true.
+         num_outside_time = num_outside_time + 1
+         if ( print_detail_obs ) then
+            write(unit=stderr,fmt='(a,1x,a,1x,a,a)')  &
+               platform%info%name(1:8),platform%info%id(1:5), &
+               trim(obs_date), '  -> outside_time'
+         end if
+         cycle reports       
+      else
+         outside_time = .false.
+      end if
+
+      write(unit=platform%info%date_char, fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
+         iyear, '-', imonth, '-', iday, '_', ihour, ':', imin, ':', 0
 
       if (print_detail_obs) then
          ! Simplistic approach, could be improved to get it all done on PE 0
          if (.NOT. outside) then
             write(unit=stdout,fmt='(A,1X,I8,1X,A,F8.2,A,F8.2,A,1X,A,I3,1X,A,2F8.3)') &
-               "Report",report,"at",platform%info%lon,"E",platform%info%lat,"N", &
+               "Report",num_report,"at",platform%info%lon,"E",platform%info%lat,"N", &
                "on processor", myproc,"position", platform%loc%x,platform%loc%y
          end if
       end if
@@ -154,187 +242,202 @@ subroutine da_read_obs_bufr (iv, filename)
       t29 = int(0.1 + hdr(7))
       kx=int(0.1+hdr(5))
 
-      if (kx == 183) then          ! reset kx based on t29
-         if (t29 .eq. 511) kx = 181
-         if (t29 .eq. 512) kx = 187
-         if (t29 .eq. 522) kx = 180
-         if (t29 .eq. 523) kx = 180
-         if (t29 .eq. 531) kx = 180
-         if (t29 .eq. 561) kx = 180
-         if (t29 .eq. 562) kx = 180
+      if ( use_errtable ) then
+         do k = 1, nlevels
+            pob = obs(1,k)
+            do lv1 = 1, 32
+               if ( pob >= oetab(kx,lv1+1,1) .and. pob <= oetab(kx,lv1,1) ) then
+                  coef = (pob-oetab(kx,lv1,1))/(oetab(kx,lv1,1)-oetab(kx,lv1+1,1))
+                  oes(1,k) = (1.0+coef)*oetab(kx,lv1,5)-coef*oetab(kx,lv1+1,5) !p
+                  oes(2,k) = (1.0+coef)*oetab(kx,lv1,3)-coef*oetab(kx,lv1+1,3) !q
+                  oes(3,k) = (1.0+coef)*oetab(kx,lv1,2)-coef*oetab(kx,lv1+1,2) !t
+                  oes(5,k) = (1.0+coef)*oetab(kx,lv1,4)-coef*oetab(kx,lv1+1,4) !uv
+                  oes(7,k) = (1.0+coef)*oetab(kx,lv1,6)-coef*oetab(kx,lv1+1,6) !pw
+                  exit
+               end if
+            end do
+         end do
       end if
 
-      ! WHY?
-      ! if ((kx >= 160) .and. (kx <= 179)) then    ! bypass satellite data
-      ! if (t29 .eq. 61 .or. t29 .eq. 63 .or. t29 .ge. 571) then
-      !    cycle reports
-      ! end if
-
-      ! Conventional data
-
-      call ufbint(iunit,pmo,2,1,nlevels,'PMO PMQ')
-
-      call ufbint(iunit,obs,9,255,nlevels,obstr)
-      call ufbint(iunit,qms,9,255,nlevels,qmstr)
-      call ufbint(iunit,oes,9,255,nlevels,oestr)
-
-      !hcl begin
       call readns(iunit,subst2,idate2,iret)
-      match_check: do
-         if ( iret /= 0 ) then
-            end_of_file = .true.
-            exit match_check
-         end if
-         call ufbint(iunit,hdr2,7,1,iret,hdstr)
-         !hcl check if this subset and the previous one are matching mass and wind
-         match = .true.
-         if ( subset /= subst2 ) then
-            match = .false.
-            exit match_check
-         end if
-         r8sid  = hdr(1)
-         r8sid2 = hdr2(1)
-         if ( csid /= csid2 ) then
-            match = .false.
-            exit match_check
-         end if
-         do i = 2, 4   ! check XOB, YOB, DHR
-            if ( hdr(i) /= hdr2(i) ) then
+
+      if ( iret /= 0 ) then
+         end_of_file = .true.
+      else
+         match_check: do
+            call ufbint(iunit,hdr2,7,1,iret,hdstr)
+            ! check if this subset and the previous one are matching mass and wind
+            match = .true.
+            if ( subset /= subst2 ) then
                match = .false.
                exit match_check
             end if
-         end do
-         if ( hdr(6) /= hdr2(6) ) then   ! check ELV
-            match = .false.
-            exit match_check
-         end if
-         !The two headers match, now read data from the second subset
-         call ufbint(iunit,pmo2,2,1,nlevels2,'PMO PMQ')
-         call ufbint(iunit,obs2,9,255,nlevels2,obstr)
-         call ufbint(iunit,qms2,9,255,nlevels2,qmstr)
-         call ufbint(iunit,oes2,9,255,nlevels2,oestr)
+            r8sid2 = hdr2(1)
+            if ( csid /= csid2 ) then  ! check SID
+               match = .false.
+               exit match_check
+            end if
+            do i = 2, 4   ! check XOB, YOB, DHR
+               if ( hdr(i) /= hdr2(i) ) then
+                  match = .false.
+                  exit match_check
+               end if
+            end do
+            if ( hdr(6) /= hdr2(6) ) then   ! check ELV
+               match = .false.
+               exit match_check
+            end if
+            !The two headers match, now read data from the second subset
+            call ufbint(iunit,pmo2,2,1,nlevels2,'PMO PMQ')
+            call ufbint(iunit,qms2,8,255,nlevels2,qmstr)
+            call ufbint(iunit,oes2,8,255,nlevels2,oestr)
+            call ufbint(iunit,pco2,8,255,nlevels2,pcstr)
+            call ufbint(iunit,obs2,8,255,nlevels2,obstr)
 
-         ! If this is a surface report, the wind subset precedes the
-         ! mass subset - switch the subsets around in order to combine
-         ! the surface pressure properly
-         if ( nint(hdr(5)) >= 280 ) then
-            obs_save = obs2
-            obs2 = obs
-            obs = obs_save
-            hdr_save = hdr2
-            hdr2 = hdr
-            hdr = hdr_save
-            qms_save = qms2
-            qms2 = qms
-            qms = qms_save
-            oes_save = oes2
-            oes2 = oes
-            oes = oes_save
-         end if
-         ! combine the two matching subsets
-         lev_loop: do lv2 = 1, nlevels2
-            do lv1 = 1, nlevels
-               pob1 = obs(1,lv1)
-               pob2 = obs2(1,lv2)
-               if ( pob1 == pob2 ) then
-                  do i = 1, 8   ! skip the CAT
-                     if ( obs(i,lv1) > r8bfms ) then
-                        obs(i,lv1) = obs2(i,lv2)
-                        qms(i,lv1) = qms2(i,lv2)
-                        oes(i,lv1) = oes2(i,lv2)
-                        if ( obs2(i,lv2) <= r8bfms ) then
-                           obs(9,lv1) = obs2(9,lv2)  ! rewrite CAT
+            if ( use_errtable ) then
+               kx = nint(hdr2(5))
+               do k = 1, nlevels2
+                  pob = obs2(1,k)
+                  do lv1 = 1, 32
+                     if ( pob >= oetab(kx,lv1+1,1) .and. pob <= oetab(kx,lv1,1) ) then
+                        coef = (pob-oetab(kx,lv1,1))/(oetab(kx,lv1,1)-oetab(kx,lv1+1,1))
+                        oes2(1,k) = (1.0+coef)*oetab(kx,lv1,5)-coef*oetab(kx,lv1+1,5) !p
+                        oes2(2,k) = (1.0+coef)*oetab(kx,lv1,3)-coef*oetab(kx,lv1+1,3) !q
+                        oes2(3,k) = (1.0+coef)*oetab(kx,lv1,2)-coef*oetab(kx,lv1+1,2) !t
+                        oes2(5,k) = (1.0+coef)*oetab(kx,lv1,4)-coef*oetab(kx,lv1+1,4) !uv
+                        oes2(7,k) = (1.0+coef)*oetab(kx,lv1,6)-coef*oetab(kx,lv1+1,6) !pw
+                        exit
+                     end if
+                  end do
+               end do
+            end if
+
+            ! If this is a surface report, the wind subset precedes the
+            ! mass subset - switch the subsets around in order to combine
+            ! the surface pressure properly
+            kx = nint(hdr(5))
+            if ( kx == 280 .or. kx == 281 .or. kx == 284  .or.  &
+                 kx == 287 .or. kx == 288  ) then
+               pmo_save = pmo2
+               pmo2 = pmo
+               pmo = pmo_save
+               temp = obs2
+               obs2 = obs
+               obs = temp
+               hdr_save = hdr2
+               hdr2 = hdr
+               hdr = hdr_save
+               temp = qms2
+               qms2 = qms
+               qms = temp
+               temp = oes2
+               oes2 = oes
+               oes = temp
+               temp = pco2
+               pco2 = pco
+               pco = temp
+            end if
+
+            ! combine the two matching subsets
+            do i = 1, 2
+               if ( pmo(i,1) > r8bfms ) then
+                  pmo(i,1) = pmo2(i,1)
+               end if
+            end do
+            lev_loop: do lv2 = 1, nlevels2
+               do lv1 = 1, nlevels
+                  pob1 = obs(1,lv1)
+                  pob2 = obs2(1,lv2)
+                  if ( pob1 == pob2 ) then
+                     do i = 1, 7   ! skip the CAT
+                        if ( obs(i,lv1) > r8bfms ) then
+                           obs(i,lv1) = obs2(i,lv2)
+                           if ( obs2(i,lv2) <= r8bfms ) then
+                              obs(8,lv1) = obs2(8,lv2)  ! rewrite CAT
+                           end if
                         end if
-                     end if
-                  end do
-                  do i = 1, 9
-                     if ( qms(i,lv1) > r8bfms ) then
-                        qms(i,lv1) = qms2(i,lv2)
-                     end if
-                  end do
-                  do i = 1, 8
-                     if ( oes(i,lv1) > r8bfms ) then
-                        oes(i,lv1) = oes2(i,lv2)
-                     end if
-                  end do
-                  cycle lev_loop
-               else if ( (pob2 > pob1) .or. (lv1 .eq. nlevels) ) then
-                  nlevels = nlevels + 1
-                  obs(:,nlevels) = obs2(:,lv2)
-                  qms(:,nlevels) = qms2(:,lv2)
-                  oes(:,nlevels) = oes2(:,lv2)
-                  cycle lev_loop
-               end if
+                        if ( oes(i,lv1) > r8bfms ) then
+                           oes(i,lv1) = oes2(i,lv2)
+                        end if
+                        if ( pco(i,lv1) > r8bfms ) then
+                           pco(i,lv1) = pco2(i,lv2)
+                        end if
+                     end do
+                     do i = 1, 8
+                        if ( qms(i,lv1) > r8bfms ) then
+                           qms(i,lv1) = qms2(i,lv2)
+                        end if
+                     end do
+                     cycle lev_loop
+                  else if ( (pob2 > pob1) .or. (lv1 .eq. nlevels) ) then
+                     nlevels = nlevels + 1
+                     obs(:,nlevels) = obs2(:,lv2)
+                     qms(:,nlevels) = qms2(:,lv2)
+                     oes(:,nlevels) = oes2(:,lv2)
+                     pco(:,nlevels) = pco2(:,lv2)
+                     cycle lev_loop
+                  end if
+               end do
+            end do lev_loop
+            ! sort combined report in descending pressure order
+            do i1 = 1, nlevels-1
+               do i2 = i1+1, nlevels
+                  if ( obs(1,i2) .gt. obs(1,i1) ) then
+                     temp(:,1) = obs(:,i1)
+                     obs(:,i1) = obs(:,i2)
+                     obs(:,i2) = temp(:,1)
+                     temp(:,1) = qms(:,i1)
+                     qms(:,i1) = qms(:,i2)
+                     qms(:,i2) = temp(:,1)
+                     temp(:,1) = oes(:,i1)
+                     oes(:,i1) = oes(:,i2)
+                     oes(:,i2) = temp(:,1)
+                     temp(:,1) = pco(:,i1)
+                     pco(:,i1) = pco(:,i2)
+                     pco(:,i2) = temp(:,1)
+                  end if
+               end do
             end do
-         end do lev_loop
-         ! sort combined report in descending pressure order
-         do i1 = 1, nlevels-1
-            do i2 = i1+1, nlevels
-               if ( obs(1,i2) .gt. obs(1,i1) ) then
-                  temp(:) = obs(:,i1)
-                  obs(:,i1) = obs(:,i2)
-                  obs(:,i2) = temp(:)
-                  temp(:) = qms(:,i1)
-                  qms(:,i1) = qms(:,i2)
-                  qms(:,i2) = temp(:)
-                  temp(:) = oes(:,i1)
-                  oes(:,i1) = oes(:,i2)
-                  oes(:,i2) = temp(:)
-               end if
-            end do
-         end do
+            exit match_check
+         end do match_check
 
-         exit match_check
-      end do match_check
+         if ( .not. match ) then
+            subset = subst2
+            idate = idate2
+         end if
 
-      idate_save = idate
-      if ( .not. match ) then
-         subset = subst2
-         idate = idate2
       end if
 
       ! skip some types
       !  61: Satellite soundings/retrievals/radiances
       !  66: SSM/I rain rate product
-      if ( t29 == 61 .or. t29 == 66 ) then
-         if ( end_of_file ) then
-            exit reports        
-         else                   
-            cycle reports       
-         end if                 
+      !  72: NEXTRAD VAD winds
+      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) cycle reports       
+
+      platform % info % levels    = nlevels
+
+      platform % loc % slp %inv   = missing_r     
+      platform % loc % slp %qc    = missing_data
+      platform % loc % slp %error = err_p
+      platform % loc % pw %inv    = missing_r     
+      platform % loc % pw %qc     = missing_data
+      platform % loc % pw %error  = err_pw
+      pmq=nint(pmo(2,1))
+      if (pmq < qflag .and. pmq >= 0) then
+         platform % loc % slp % inv =pmo(1,1)*100.0
+         platform % loc % slp % qc  =pmq
+         platform % loc % slp % error = err_p          ! hardwired
+      end if
+      pwq=nint(qms(7,1))
+      pwe = min(err_pw, oes(7,1))
+      if (pwq < qflag .and. pwq >= 0) then
+         platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
+         platform % loc % pw % qc  =  pwq
+         platform % loc % pw % error = pwe          ! hardwired
       end if
 
-      ! check date
-      write(date,'(i10)') idate_save
-      write(dmn,'(i4,a1)') int(platform%info%dhr*60.0), 'm'
-      call da_advance_time (date, trim(dmn), obs_date)
-      if ( len_trim(obs_date) == 12 ) then
-         read (obs_date,'(i4,4i2)') iyear, imonth, iday, ihour, imin
-      else if ( len_trim(obs_date) == 10 ) then
-         imin = 0
-         read (obs_date,'(i4,3i2)') iyear, imonth, iday, ihour
-      end if
-      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
-      if (obs_time < time_slots(0) .or.  &
-         obs_time >= time_slots(num_fgat_time)) then
-         if ( end_of_file ) then
-            exit reports        
-         else                   
-            cycle reports       
-         end if                 
-      end if
-      write(unit=platform%info%date_char, fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
-         iyear, '-', imonth, '-', iday, '_', ihour, ':', imin, ':', 0
-
-      platform  % info % levels   =nlevels
-
-      platform % loc % slp %inv  = missing_r     
-      platform % loc % slp %qc   = missing_data
-      platform % loc % slp %error=200.0           
-      platform % loc % pw %inv  = missing_r     
-      platform % loc % pw %qc   = missing_data
-      platform % loc % pw %error=0.2             
-
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE (i)
       do i=1,max_ob_levels
          platform % each (i) % height  = missing_r
          platform % each (i) % height_qc = missing_data
@@ -343,90 +446,65 @@ subroutine da_read_obs_bufr (iv, filename)
             
          platform % each (i) % u % inv = missing_r
          platform % each (i) % u % qc  = missing_data
-         platform % each (i) % u % error =10.0       
+         platform % each (i) % u % error = err_uv
 
          platform % each (i) % v = platform % each (i) % u
 
          platform % each (i) % t % inv = missing_r
          platform % each (i) % t % qc  = missing_data
-         platform % each (i) % t % error =5.0       
+         platform % each (i) % t % error = err_t
 
          platform % each (i) % p % inv = missing_r      
          platform % each (i) % p % qc  = missing_data
-         platform % each (i) % p % error =200.0  
+         platform % each (i) % p % error = err_p
 
          platform % each (i) % q % inv = missing_r
          platform % each (i) % q % qc  = missing_data
-         platform % each (i) % q % error =0.1      
+         platform % each (i) % q % error = err_q
       end do 
+      !$OMP END PARALLEL DO
 
+      !!$OMP PARALLEL DO &
+      !!$OMP PRIVATE (k, tpc, wpc, pqm, qqm, tqm, wqm, zqm, cat, toe, poe, qoe, woe) 
       do k = 1, platform % info % levels
-         pob=obs(1,k)
-         ! scale q and compute t from tv and set units to Kelvin, if they aren't missing
 
-         if (obs(2,k) > 0.0 .and. obs(2,k) < 1e9) then   
-            obs(2,k) = obs(2,k)*1e-6
-            if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
-               obs(3,k) = (obs(3,k)+t_kelvin) / (1.0 + 0.608 * obs(2,k))
-            end if
-         else
-            if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
-               obs(3,k) = obs(3,k) + t_kelvin
-           end if
+         tpc = nint(pco(3,k))
+         wpc = nint(pco(5,k))
+
+         ! set t units to Kelvin
+         if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
+            obs(3,k) = obs(3,k) + t_kelvin
          end if
-         qob=obs(2,k)
-         tob=obs(3,k)
-         zob=obs(4,k)
-         rob=obs(8,k)
+
+         ! scale q and compute t from tv, if they aren't missing
+         if (obs(2,k) > 0.0 .and. obs(2,k) < r8bfms) then   
+            obs(2,k) = obs(2,k)*1e-6
+            if (obs(3,k) > -200.0 .and. obs(3,k) < 350.0) then
+               if ( tpc >= 8 ) then   ! program code 008 VIRTMP
+                  obs(3,k) = obs(3,k) / (1.0 + 0.608 * obs(2,k))
+               end if
+            end if
+         end if
+
          pqm=nint(qms(1,k))
          qqm=nint(qms(2,k))
          tqm=nint(qms(3,k))
          zqm=nint(qms(4,k))
          wqm=nint(qms(5,k))
-         pwq=nint(qms(7,k))
-         rqm=nint(qms(9,k))
-         pmq=nint(pmo(2,1))
-         ! pqm = qflag
-         ! if (abs(qms(1,k)) < qflag) pqm=nint(qms(1,k))
-         ! qqm = qflag
-         ! if (abs(qms(2,k)) < qflag) qqm=nint(qms(2,k))
-         ! tqm = qflag
-         ! if (abs(qms(3,k)) < qflag) tqm=nint(qms(3,k))
-         ! zqm = qflag
-         ! if (abs(qms(4,k)) < qflag) zqm=nint(qms(4,k))
-         ! wqm = qflag
-         ! if (abs(qms(5,k)) < qflag) wqm=nint(qms(5,k))
-         ! pwq = qflag
-         ! if (abs(qms(7,k)) < qflag) pwq=nint(qms(7,k))
-         ! rqm = qflag
-         ! if (abs(qms(9,k)) < qflag) rqm=nint(qms(9,k))
-         ! pmq = qflag
-         ! if (abs(pmo(2,1)) < qflag) pmq=nint(pmo(2,1))
-         cat=nint(obs(9,k))
+         cat=nint(obs(8,k))
 
-         if (pmq < qflag) then
-            platform % loc % slp % inv =pmo(1,1)*100.0
-            platform % loc % slp % qc  =pmq
-            platform % loc % slp % error = 200.0
-         end if
+         toe = min(err_t, oes(3,k))
+         woe = min(err_uv, oes(5,k))
+         qoe = min(err_q, oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+         poe = min(err_p, oes(1,k)*100.0) ! convert to Pa
 
-         if (pwq < qflag) then
-            platform % loc % pw % inv = obs(7,k) * 0.1    ! convert to cm
-            platform % loc % pw % qc  =  pwq
-            platform % loc % pw % error = 0.2     ! hardwired to 0.2 cm
-         end if
-
-         poe=100.0
-
-         if (tqm<qflag) then
-            toe=oes(3,k)
+         if (tqm < qflag .and. tqm >= 0) then
             platform % each (k) % t % inv =obs(3,k)
             platform % each (k) % t % qc  =tqm
             platform % each (k) % t % error =toe
          end if
 
-         if (wqm < qflag) then
-            woe=oes(5,k)
+         if (wqm < qflag .and. wqm >= 0) then
             platform % each (k) % u % inv =obs(5,k)
             platform % each (k) % v % inv =obs(6,k)
             platform % each (k) % u % qc  =wqm
@@ -435,64 +513,100 @@ subroutine da_read_obs_bufr (iv, filename)
             platform % each (k) % v % error =woe
 
             ! Convert earth wind to model wind.
-!            if( kx /= 283 .and. kx /= 152) &     ! skip SSMI speed or TPW
-            call da_earth_2_model_wind(obs(5,k), obs(6,k), &
-               platform % each (k) % u % inv, &
-               platform % each (k) % v % inv, &
-               platform%info%lon)
+            ! note on SPSSMI wind: only wspd available (stored in VOB)
+            ! and direction is initially set to to zero and stored in UOB
+            ! in wpc = 1 stage. u and v are computed in program wpc = 10 (OIQC).
+            if ( kx /= 283 .or. ( kx == 283 .and. wpc == 10 ) ) then
+               call da_earth_2_model_wind(obs(5,k), obs(6,k), &
+                  platform % each (k) % u % inv, &
+                  platform % each (k) % v % inv, &
+                  platform%info%lon)
+            end if
             if (platform % each (k) % u % inv == 0.0 .and. platform % each (k) % v % inv == 0.0) then
-               platform % each (k) % u % inv =  missing_r  
+               platform % each (k) % u % inv = missing_r  
                platform % each (k) % v % inv = missing_r  
                platform % each (k) % u % qc  = missing_data
                platform % each (k) % v % qc  = missing_data
             end if
          end if
 
-         if (qqm<qflag .and. obs(2,k)<1.0e9) then
-            qoe=oes(2,k)
+         if (qqm<qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
             platform % each (k) % q % inv =obs(2,k)
             platform % each (k) % q % qc  =qqm
-            platform % each (k) % q % error =qoe
+            platform % each (k) % q % error = qoe
          end if
 
-         if (zqm<qflag)then
-            platform % each (k) % height  =zob
+         if (zqm < qflag .and. zqm >= 0)then
+            platform % each (k) % height  = obs(4,k)
             platform % each (k) % height_qc =zqm
          end if
 
-         if (rqm<qflag)then
-            roe = oes(8,k)
-            platform % each (k) % u % inv =rob
-            platform % each (k) % u % qc =rqm
-            platform % each (k) % u % error =roe
-         end if
-
-         if (pqm<qflag)then
-            platform % each (k) % p % inv =obs(1,k)*100.0
+         if (pqm < qflag .and. pqm >= 0)then
+            platform % each (k) % p % inv =obs(1,k)*100.0  ! convert to Pa
             platform % each (k) % p % qc  =pqm
             platform % each (k) % p % error =poe
          end if
       end do
+      !!$OMP END PARALLEL DO
 
       ! assign u,v,t,q obs errors for synop and metar
       if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
-         if ( wqm  == 8 .or. wqm  == 9 .or. wqm  == 15) then
-            platform%each(1)%u%inv = obs(5,1)
-            platform%each(1)%v%inv = obs(6,1)
+         qqm=nint(qms(2,1))
+         tqm=nint(qms(3,1))
+         wqm=nint(qms(5,1))
+         toe = min(err_t, oes(3,1))
+         woe = min(err_uv, oes(5,1))
+         qoe = min(err_q, oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+         if ( wqm == 8 .or. wqm  == 9 .or. wqm  == 15) then
             platform%each(1)%u%qc  = 88
             platform%each(1)%v%qc  = 88
-            platform%each(1)%u%error = 1.1
-            platform%each(1)%v%error = 1.1
+            if ( use_errtable ) then
+               platform%each(1)%u%error = woe
+               platform%each(1)%v%error = woe
+            else
+               platform%each(1)%u%error = 1.1
+               platform%each(1)%v%error = 1.1
+            end if
+            ! Convert earth wind to model wind.
+            call da_earth_2_model_wind(obs(5,1), obs(6,1),     &
+               platform%each(1)%u%inv, platform%each(1)%v%inv, &
+               platform%info%lon)
+            if ( platform%each(1)%u%inv == 0.0 .and. platform%each(1)%v%inv == 0.0 ) then
+               platform%each(1)%u%inv = missing_r  
+               platform%each(1)%v%inv = missing_r  
+               platform%each(1)%u%qc  = missing_data
+               platform%each(1)%v%qc  = missing_data
+            end if
          end if
          if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
             platform%each(1)%t%inv = obs(3,1)
             platform%each(1)%t%qc  = 88
-            platform%each(1)%t%error = 2.0
+            if ( use_errtable ) then
+               platform%each(1)%t%error = toe
+            else
+               platform%each(1)%t%error = 2.0
+            end if
          end if
          if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
             platform%each(1)%q%inv = obs(2,1)
             platform%each(1)%q%qc  = 88
-            platform%each(1)%q%error = 1.0   ! RH percent divided by 10
+            if ( use_errtable ) then
+               platform%each(1)%q%error = qoe  ! RH percent
+            else
+               platform%each(1)%q%error = 10   ! RH percent
+            end if
+         end if
+      end if
+      ! assign tpw obs errors for gpspw
+      if ( t29 == 74 ) then
+         if ( pwq == 8 .or. pwq  == 9 .or. pwq  == 15) then
+            platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
+            platform%loc%pw%qc    = 88
+            if ( use_errtable ) then
+               platform%loc%pw%error = pwe
+            else
+               platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
+            end if
          end if
       end if
 
@@ -591,7 +705,10 @@ subroutine da_read_obs_bufr (iv, filename)
                   crit = tdiff
                   call map2grids_conv(sound,dlat_earth,dlon_earth,crit,nlocal(sound),itx,1,itt,ilocal(sound),iuse)
                   call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,nlocal(sonde_sfc),itx,1,itt,ilocal(sonde_sfc),iuse)
-                  if ( .not. iuse ) cycle reports
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
                else
                   nlocal(sound) = nlocal(sound) + 1
                   nlocal(sonde_sfc) = nlocal(sound)
@@ -632,7 +749,7 @@ subroutine da_read_obs_bufr (iv, filename)
                else
                   iv%sonde_sfc(ilocal(sonde_sfc))%h = missing_r
                   iv%sonde_sfc(ilocal(sonde_sfc))%u%inv   = missing_r
-                  iv%sonde_sfc(ilocal(sonde_sfc))%u%qc    = missing
+                  iv%sonde_sfc(ilocal(sonde_sfc))%u%qc    = missing_data
                   iv%sonde_sfc(ilocal(sonde_sfc))%u%error = abs(missing_r)
                   iv%sonde_sfc(ilocal(sonde_sfc))%v = iv%sonde_sfc(ilocal(sonde_sfc))%u
                   iv%sonde_sfc(ilocal(sonde_sfc))%t = iv%sonde_sfc(ilocal(sonde_sfc))%u
@@ -640,22 +757,16 @@ subroutine da_read_obs_bufr (iv, filename)
                   iv%sonde_sfc(ilocal(sonde_sfc))%q = iv%sonde_sfc(ilocal(sonde_sfc))%u
                end if
 
-               ! Xin comment it out based on ascii obs. becasue it will cause uninitialed error.
-               ! if (nlevels < 1) cycle reports
                if (nlevels > 0) then
 
-                  nullify  (iv%sound(ilocal(sound))%h)
-                  nullify  (iv%sound(ilocal(sound))%p)
-                  nullify  (iv%sound(ilocal(sound))%u)
-                  nullify  (iv%sound(ilocal(sound))%v)
-                  nullify  (iv%sound(ilocal(sound))%t)
-                  nullify  (iv%sound(ilocal(sound))%q)
-                  allocate (iv%sound(ilocal(sound))%h(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%p(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%u(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%v(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%t(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%q(1:nlevels))
+                  if ( ilocal(sound) == nlocal(sound) ) then
+                     allocate (iv%sound(ilocal(sound))%h(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%p(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%u(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%v(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%t(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%q(1:iv%info(sound)%max_lev))
+                  end if
 
                   j = 0
                   do i = 1, old_nlevels
@@ -680,7 +791,10 @@ subroutine da_read_obs_bufr (iv, filename)
                if ( thin_conv ) then
                   crit = tdiff
                   call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,nlocal(pilot),itx,1,itt,ilocal(pilot),iuse)
-                  if ( .not. iuse ) cycle reports
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
                else
                   nlocal(pilot) = nlocal(pilot) + 1
                   ilocal(pilot) = nlocal(pilot)
@@ -689,14 +803,16 @@ subroutine da_read_obs_bufr (iv, filename)
                platform  % info % platform ='FM-32 PILOT '
                if (nlocal(pilot) > iv%info(pilot)%nlocal) cycle reports
                fm = 32
-               nullify  (iv%pilot(ilocal(pilot))%p)
-               nullify  (iv%pilot(ilocal(pilot))%u)
-               nullify  (iv%pilot(ilocal(pilot))%v)
-               allocate (iv%pilot(ilocal(pilot))%p(1:nlevels))
-               allocate (iv%pilot(ilocal(pilot))%u(1:nlevels))
-               allocate (iv%pilot(ilocal(pilot))%v(1:nlevels))
+
+               if ( ilocal(pilot) == nlocal(pilot) ) then
+                  allocate (iv%pilot(ilocal(pilot))%h(1:iv%info(pilot)%max_lev))
+                  allocate (iv%pilot(ilocal(pilot))%p(1:iv%info(pilot)%max_lev))
+                  allocate (iv%pilot(ilocal(pilot))%u(1:iv%info(pilot)%max_lev))
+                  allocate (iv%pilot(ilocal(pilot))%v(1:iv%info(pilot)%max_lev))
+               end if
 
                do i = 1, nlevels
+                  iv%pilot(ilocal(pilot))%h(i) = platform%each(i)%height
                   iv%pilot(ilocal(pilot))%p(i) = platform%each(i)%p%inv
                   iv%pilot(ilocal(pilot))%u(i) = platform%each(i)%u
                   iv%pilot(ilocal(pilot))%v(i) = platform%each(i)%v
@@ -716,7 +832,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(airep,dlat_earth,dlon_earth,crit,nlocal(airep),itx,1,itt,ilocal(airep),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(airep) = nlocal(airep) + 1
                ilocal(airep) = nlocal(airep)
@@ -725,16 +844,14 @@ subroutine da_read_obs_bufr (iv, filename)
             platform  % info % platform ='FM-97 AIREP '
             if (nlocal(airep) > iv%info(airep)%nlocal) cycle reports
             fm = 42
-            nullify  (iv%airep(ilocal(airep))%h)
-            nullify  (iv%airep(ilocal(airep))%p)
-            nullify  (iv%airep(ilocal(airep))%u)
-            nullify  (iv%airep(ilocal(airep))%v)
-            nullify  (iv%airep(ilocal(airep))%t)
-            allocate (iv%airep(ilocal(airep))%h(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%p(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%u(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%v(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%t(1:nlevels))
+
+            if ( ilocal(airep) == nlocal(airep) ) then
+               allocate (iv%airep(ilocal(airep))%h(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%p(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%u(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%v(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%t(1:iv%info(airep)%max_lev))
+            end if
 
             do i = 1, nlevels
                iv % airep (ilocal(airep)) % h(i) = platform % each(i) % height
@@ -743,8 +860,6 @@ subroutine da_read_obs_bufr (iv, filename)
                iv % airep (ilocal(airep)) % v(i) = platform % each(i) % v
                iv % airep (ilocal(airep)) % t(i) = platform % each(i) % t
             end do
-
-            ! case (180, 182, 280, 282) ;         ! Ships and  buoys
 
          case (522, 523);        ! Ships
             if (.not.use_shipsobs) cycle reports
@@ -756,7 +871,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(ships,dlat_earth,dlon_earth,crit,nlocal(ships),itx,1,itt,ilocal(ships),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(ships) = nlocal(ships) + 1
                ilocal(ships) = nlocal(ships)
@@ -769,8 +887,6 @@ subroutine da_read_obs_bufr (iv, filename)
             iv % ships (ilocal(ships)) % u = platform % each(1) % u
             iv % ships (ilocal(ships)) % v = platform % each(1) % v
             iv % ships (ilocal(ships)) % t = platform % each(1) % t
-            ! WHY?
-            ! iv % ships (ilocal(ships)) % p = platform % loc     % slp
             iv % ships (ilocal(ships)) % p = platform % each(1) % p
             iv % ships (ilocal(ships)) % q = platform % each(1) % q
 
@@ -784,7 +900,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,nlocal(buoy),itx,1,itt,ilocal(buoy),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(buoy) = nlocal(buoy) + 1
                ilocal(buoy) = nlocal(buoy)
@@ -798,7 +917,14 @@ subroutine da_read_obs_bufr (iv, filename)
             iv%buoy(ilocal(buoy))%u = platform%each(1)%u
             iv%buoy(ilocal(buoy))%v = platform%each(1)%v
             iv%buoy(ilocal(buoy))%t = platform%each(1)%t
-            iv%buoy(ilocal(buoy))%p = platform%each(1)%p
+            if ( kx == 282 ) then  ! ATLAS BUOY, reported Pstn and Pmslp are both
+                                   ! missing. Pstn is set to 1013hPa in PREPBUFR
+               iv%buoy(ilocal(buoy))%p%inv   = missing_r
+               iv%buoy(ilocal(buoy))%p%qc    = missing_data
+               iv%buoy(ilocal(buoy))%p%error = err_p
+            else
+               iv%buoy(ilocal(buoy))%p = platform%each(1)%p
+            end if
             iv%buoy(ilocal(buoy))%q = platform%each(1)%q
 
          case (511, 514)
@@ -813,7 +939,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(synop,dlat_earth,dlon_earth,crit,nlocal(synop),itx,1,itt,ilocal(synop),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(synop) = nlocal(synop) + 1
                ilocal(synop) = nlocal(synop)
@@ -822,25 +951,10 @@ subroutine da_read_obs_bufr (iv, filename)
             platform  % info % platform ='FM-12 SYNOP '
             if (nlocal(synop) > iv%info(synop)%nlocal) cycle reports
             fm = 12
-            ! assign u,v,t obs errors
-            if ( platform%each(1)%u%qc == 9 ) then
-               platform%each(1)%u%qc = 88
-               platform%each(1)%u%error = 1.1
-            end if
-            if ( platform%each(1)%v%qc == 9 ) then
-               platform%each(1)%v%qc = 88
-               platform%each(1)%v%error = 1.1
-            end if
-            if ( platform%each(1)%t%qc == 9 ) then
-               platform%each(1)%t%qc = 88
-               platform%each(1)%t%error = 2.0
-            end if
             iv % synop (ilocal(synop)) % h = platform % each(1) % height
             iv % synop (ilocal(synop)) % u = platform % each(1) % u
             iv % synop (ilocal(synop)) % v = platform % each(1) % v
             iv % synop (ilocal(synop)) % t = platform % each(1) % t
-            ! WHY?
-            ! iv % synop (ilocal(synop)) % p = platform % loc     % slp
             iv % synop (ilocal(synop)) % p = platform % each(1) % p
             iv % synop (ilocal(synop)) % q = platform % each(1) % q
  
@@ -859,7 +973,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(metar,dlat_earth,dlon_earth,crit,nlocal(metar),itx,1,itt,ilocal(metar),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(metar) = nlocal(metar) + 1
                ilocal(metar) = nlocal(metar)
@@ -886,7 +1003,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,nlocal(geoamv),itx,1,itt,ilocal(geoamv),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(geoamv) = nlocal(geoamv) + 1
                ilocal(geoamv) = nlocal(geoamv)
@@ -896,12 +1016,11 @@ subroutine da_read_obs_bufr (iv, filename)
             if (nlocal(geoamv) > iv%info(geoamv)%nlocal) cycle reports
             fm = 88
 
-            nullify  (iv%geoamv(ilocal(geoamv))%p)
-            nullify  (iv%geoamv(ilocal(geoamv))%u)
-            nullify  (iv%geoamv(ilocal(geoamv))%v)
-            allocate (iv%geoamv(ilocal(geoamv))%p (1:nlevels))
-            allocate (iv%geoamv(ilocal(geoamv))%u (1:nlevels))
-            allocate (iv%geoamv(ilocal(geoamv))%v (1:nlevels))
+            if ( ilocal(geoamv) == nlocal(geoamv) ) then
+               allocate (iv%geoamv(ilocal(geoamv))%p(1:iv%info(geoamv)%max_lev))
+               allocate (iv%geoamv(ilocal(geoamv))%u(1:iv%info(geoamv)%max_lev))
+               allocate (iv%geoamv(ilocal(geoamv))%v(1:iv%info(geoamv)%max_lev))
+            end if
 
             do i = 1, nlevels
                iv % geoamv (ilocal(geoamv)) % p(i)  = platform % each(i) % p % inv
@@ -909,7 +1028,7 @@ subroutine da_read_obs_bufr (iv, filename)
                iv % geoamv (ilocal(geoamv)) % v(i)  = platform % each(i) % v
             end do
 
-         case (582)
+         case (582, 583)
             if (.not.use_qscatobs) cycle reports
             if( n==1 ) ntotal(qscat) = ntotal(qscat) + 1
             if (outside) then
@@ -919,7 +1038,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,nlocal(qscat),itx,1,itt,ilocal(qscat),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(qscat) = nlocal(qscat) + 1
                ilocal(qscat) = nlocal(qscat)
@@ -929,8 +1051,6 @@ subroutine da_read_obs_bufr (iv, filename)
             if (nlocal(qscat) > iv%info(qscat)%nlocal) cycle reports
             fm = 281
 
-            ! WHY?
-            ! iv%qscat(nlocal(qscat))%h = platform%each(1)%height
             ! prepbufr uses pressure not height, so hardwire height to 
             ! 0 (sea-level)
             iv%qscat(ilocal(qscat))%h = 0.0
@@ -939,7 +1059,6 @@ subroutine da_read_obs_bufr (iv, filename)
             iv%qscat(ilocal(qscat))%u%error = max(platform%each(1)%u%error,1.0)
             iv%qscat(ilocal(qscat))%v%error = max(platform%each(1)%v%error,1.0)
 
-         !hcl case (583)       ! GPS PW
          case (74)       ! GPS PW
             if (.not.use_gpspwobs) cycle reports
             if( n==1 ) ntotal(gpspw) = ntotal(gpspw) + 1
@@ -950,7 +1069,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,nlocal(gpspw),itx,1,itt,ilocal(gpspw),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(gpspw) = nlocal(gpspw) + 1
                ilocal(gpspw) = nlocal(gpspw)
@@ -962,49 +1084,7 @@ subroutine da_read_obs_bufr (iv, filename)
 
             iv%gpspw(ilocal(gpspw))%tpw  = platform%loc%pw
 
-         case (584)       ! GPS REF
-            if (.not.use_gpsrefobs) cycle reports
-            if( n==1 ) ntotal(gpsref) = ntotal(gpsref) + 1
-            if (outside) then
-               cycle reports
-            end if
-
-            if ( thin_conv ) then
-               crit = tdiff
-               call map2grids_conv(gpsref,dlat_earth,dlon_earth,crit,nlocal(gpsref),itx,1,itt,ilocal(gpsref),iuse)
-               if ( .not. iuse ) cycle reports
-            else
-               nlocal(gpsref) = nlocal(gpsref) + 1
-               ilocal(gpsref) = nlocal(gpsref)
-            end if
-
-            platform  % info % platform ='FM-116 GPSRF'
-            if (nlocal(gpsref) > iv%info(gpsref)%nlocal) cycle reports
-            fm = 116
-
-            nullify  (iv%gpsref(ilocal(gpsref))%h)
-            nullify  (iv%gpsref(ilocal(gpsref))%ref)
-            nullify  (iv%gpsref(ilocal(gpsref))%p)
-            nullify  (iv%gpsref(ilocal(gpsref))%t)
-            nullify  (iv%gpsref(ilocal(gpsref))%q)
-            allocate (iv%gpsref(ilocal(gpsref))%h(1:nlevels))
-            allocate (iv%gpsref(ilocal(gpsref))%ref(1:nlevels))
-            allocate (iv%gpsref(ilocal(gpsref))%p(1:nlevels))
-            allocate (iv%gpsref(ilocal(gpsref))%t(1:nlevels))
-            allocate (iv%gpsref(ilocal(gpsref))%q(1:nlevels))
-
-            do i = 1, nlevels
-               iv%gpsref(ilocal(gpsref))%h(i)   = platform%each(i)%height
-               ! u is used to store ref in this routine (ascii version uses td)
-               iv%gpsref(ilocal(gpsref))%ref(i) = platform%each(i)%u
-               ! Keep the retrieved p and t (and q) as "field_type":
-               iv%gpsref(ilocal(gpsref))%p(i)   = platform%each(i)%p
-               iv%gpsref(ilocal(gpsref))%t(i)   = platform%each(i)%t
-               iv%gpsref(ilocal(gpsref))%q(i)   = platform%each(i)%q
-            end do
-
-         !hcl case (71, 72)
-         case (71, 72, 73, 75, 76)
+         case (71, 73, 75, 76, 77)
             ! case (223, 224 )        ;         !  Profiler & VADWND - NEXRAD winds    
             if (.not.use_profilerobs) cycle reports
             if( n==1 ) ntotal(profiler) = ntotal(profiler) + 1
@@ -1015,7 +1095,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,nlocal(profiler),itx,1,itt,ilocal(profiler),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(profiler) = nlocal(profiler) + 1
                ilocal(profiler) = nlocal(profiler)
@@ -1024,14 +1107,16 @@ subroutine da_read_obs_bufr (iv, filename)
             platform  % info % platform ='FM-132 PRFLR'
             if (nlocal(profiler) > iv%info(profiler)%nlocal) cycle reports
             fm = 132
-            nullify  (iv%profiler(ilocal(profiler))%p)
-            nullify  (iv%profiler(ilocal(profiler))%u)
-            nullify  (iv%profiler(ilocal(profiler))%v)
-            allocate (iv%profiler(ilocal(profiler))%p (1:nlevels))
-            allocate (iv%profiler(ilocal(profiler))%u (1:nlevels))
-            allocate (iv%profiler(ilocal(profiler))%v (1:nlevels))
+
+            if ( ilocal(profiler) == nlocal(profiler) ) then
+               allocate (iv%profiler(ilocal(profiler))%h(1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%p(1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%u(1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%v(1:iv%info(profiler)%max_lev))
+            end if
 
             do i = 1, nlevels
+               iv%profiler(ilocal(profiler))%h(i) = platform%each(i)%height
                iv%profiler(ilocal(profiler))%p(i) = platform%each(i)%p%inv
                iv%profiler(ilocal(profiler))%u(i) = platform%each(i)%u
                iv%profiler(ilocal(profiler))%v(i) = platform%each(i)%v
@@ -1047,7 +1132,10 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,nlocal(ssmi_rv),itx,1,itt,ilocal(ssmi_rv),iuse)
-               if ( .not. iuse ) cycle reports
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
             else
                nlocal(ssmi_rv) = nlocal(ssmi_rv) + 1
                ilocal(ssmi_rv) = nlocal(ssmi_rv)
@@ -1056,43 +1144,27 @@ subroutine da_read_obs_bufr (iv, filename)
             if (nlocal(ssmi_rv) > iv%info(ssmi_rv)%nlocal) cycle reports
             platform  % info % platform ='FM-125 SSMI '
             fm = 125
+
             select case (kx)
-             case ( 283)
-!------------------
-!          write(unit=stdout,fmt=*) 'report, ',c8id(1:5),' typ = ',kx, &
-!            ' nlevels = ',nlevels
-!          do ix = 1,nlevels
-!            write(unit=stdout,fmt='(a5,2x,6(f10.4,2x))')c8id(1:5), (hdr(jx),jx=2,7)
-!            write(unit=stdout,fmt='(9(f10.4,2x))') (obs(jx,ix),jx=1,9)
-!            write(unit=stdout,fmt='(9(f10.4,2x))') (qms(jx,ix),jx=1,9)
-!            write(unit=stdout,fmt=*) 'PMO = ',pmo(1,1)
-!          end do
-!------------------
-            do i = 1, nlevels
-              iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%u
-              iv%ssmi_rv(ilocal(ssmi_rv))%speed%inv  = sqrt ( &
-                platform%each(i)%u%inv * platform%each(i)%u%inv + & 
-                platform%each(i)%v%inv * platform%each(i)%v%inv  )
-              iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = platform%loc%pw
-            end do
-             case ( 152 )
-!------------------
-!          write(unit=stdout,fmt=*) 'report, ',c8id(1:5),' typ = ',kx, &
-!            ' nlevels = ',nlevels
-!          do ix = 1,nlevels
-!            write(unit=stdout,fmt='(a5,2x,6(f10.4,2x))')c8id(1:5), (hdr(jx),jx=2,7)
-!            write(unit=stdout,fmt='(9(f10.4,2x))') (obs(jx,ix),jx=1,9)
-!            write(unit=stdout,fmt='(9(f10.4,2x))') (qms(jx,ix),jx=1,9)
-!            write(unit=stdout,fmt=*) 'PMO = ',pmo(1,1)
-!          end do
-!------------------
-            do i = 1, nlevels
-              iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%u
-              iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = platform%loc%pw
-            end do
-             case default
-               exit dup_loop
-             end select  
+            case ( 283)  ! wind speed
+               do i = 1, nlevels
+                  ! if wpc == 1, UOB is set to zero, VOB is speed
+                  iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%v
+                  if ( wpc == 10 ) then
+                     iv%ssmi_rv(ilocal(ssmi_rv))%speed%inv  = sqrt ( &
+                        platform%each(i)%u%inv * platform%each(i)%u%inv + & 
+                        platform%each(i)%v%inv * platform%each(i)%v%inv  )
+                  end if
+                  iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = platform%loc%pw
+               end do
+           case ( 152 )  ! tpw
+              do i = 1, nlevels
+                 iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%u
+                 iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = platform%loc%pw
+               end do
+           case default
+              exit dup_loop
+           end select  
 
          case default 
             select case (kx)
@@ -1107,7 +1179,10 @@ subroutine da_read_obs_bufr (iv, filename)
                if ( thin_conv ) then
                   crit = tdiff
                   call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,nlocal(bogus),itx,1,itt,ilocal(bogus),iuse)
-                  if ( .not. iuse ) cycle reports
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
                else
                   nlocal(bogus) = nlocal(bogus) + 1
                   ilocal(bogus) = nlocal(bogus)
@@ -1115,24 +1190,15 @@ subroutine da_read_obs_bufr (iv, filename)
 
                platform  % info % platform ='FM-135 TCBOG'
                fm = 135
-               if (nlocal(bogus) > max_bogus_input) then
-                 write(unit=message(1),fmt='(A,I6,A,I6)') &
-                   'Bogus #=', nlocal(bogus), ' > max_bogus_input=', max_bogus_input
-                 call da_error(__FILE__,__LINE__,message(1:1))
-               end if
 
-               nullify  (iv%bogus(ilocal(bogus))%h)
-               nullify  (iv%bogus(ilocal(bogus))%p)
-               nullify  (iv%bogus(ilocal(bogus))%u)
-               nullify  (iv%bogus(ilocal(bogus))%v)
-               nullify  (iv%bogus(ilocal(bogus))%t)
-               nullify  (iv%bogus(ilocal(bogus))%q)
-               allocate (iv%bogus(ilocal(bogus))%h (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%p (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%u (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%v (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%t (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%q (1:nlevels))
+               if ( ilocal(bogus) == nlocal(bogus) ) then
+                  allocate (iv%bogus(ilocal(bogus))%h(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%p(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%u(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%v(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%t(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%q(1:iv%info(bogus)%max_lev))
+               end if
 
                do i = 1, nlevels
                   iv%bogus(ilocal(bogus))%h(i) = platform%each(i)%height
@@ -1150,7 +1216,6 @@ subroutine da_read_obs_bufr (iv, filename)
             end select
          end select
 
-!   rizvi's add start
          obs_index = fm_index(fm)
          iv%info(obs_index)%name(ilocal(obs_index))      = platform%info%name
          iv%info(obs_index)%platform(ilocal(obs_index))  = platform%info%platform
@@ -1203,7 +1268,6 @@ subroutine da_read_obs_bufr (iv, filename)
 
             iv%info(sonde_sfc)%obs_global_index(ilocal(sonde_sfc)) = ntotal(sonde_sfc)
          end if
-!rizvi add ends
 
          if (global .and. n < 2) then
            if (test_transforms) exit dup_loop
@@ -1215,59 +1279,79 @@ subroutine da_read_obs_bufr (iv, filename)
             platform%loc%proc_domain = .not. platform%loc%proc_domain
          end if
       end do dup_loop   
-      if ( end_of_file ) exit reports
    end do reports
 
-   ! thinning check
-   do n = 1, num_ob_indexes
+   write(unit=message(1),fmt='(A,4(1x,i7))') &   
+      'da_read_obs_bufr: num_report, num_outside_all, num_outside_time, num_thinned: ', &
+      num_report, num_outside_all, num_outside_time, num_thinned
+   call da_message(message(1:1))
 
-      if ( thin_conv .and. ntotal(n)>0 ) then
+   do n = 1, num_ob_indexes
+      if ( n /= 9 ) then   ! skip checking for gpsref because gpsref data are read in separate subroutine
+         if ( nlocal(n) /= iv%info(n)%nlocal ) then
+            call da_error(__FILE__,__LINE__,(/"numbers mismatch between scanning and reading PREPBUFR file"/))
+         end if
+      end if
+   end do
+
+   ! thinning check
+   if ( thin_conv ) then
+      do n = 1, num_ob_indexes
+
+         if ( ntotal(n)>0 ) then
 
 #ifdef DM_PARALLEL
-         ! Get minimum crit and associated processor index.
-         allocate ( in  (thinning_grid_conv(n)%itxmax) )
-         allocate ( out (thinning_grid_conv(n)%itxmax) )
-         do i = 1, thinning_grid_conv(n)%itxmax
-            in(i) = thinning_grid_conv(n)%score_crit(i)
-         end do
-
-         call mpi_reduce(in, out, thinning_grid_conv(n)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
-         call wrf_dm_bcast_real (out, thinning_grid_conv(n)%itxmax)
-
-         do i = 1, thinning_grid_conv(n)%itxmax
-            if ( abs(out(i)-thinning_grid_conv(n)%score_crit(i)) > 1.0E-10 ) then
-               thinning_grid_conv(n)%ibest_obs(i) = 0
-            end if
-         end do
-
-         deallocate( in  )
-         deallocate( out )
-#endif
-
-         do j = 1, nlocal(n)
-            found = .false.
+            ! Get minimum crit and associated processor index.
+            allocate ( in  (thinning_grid_conv(n)%itxmax) )
+            allocate ( out (thinning_grid_conv(n)%itxmax) )
             do i = 1, thinning_grid_conv(n)%itxmax
-               if ( thinning_grid_conv(n)%ibest_obs(i) == j .and.         &
-                    thinning_grid_conv(n)%score_crit(i) < 9.99e6 ) then
-                  found = .true.
-                  exit
+               in(i) = thinning_grid_conv(n)%score_crit(i)
+            end do
+
+            call mpi_reduce(in, out, thinning_grid_conv(n)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
+            call wrf_dm_bcast_real (out, thinning_grid_conv(n)%itxmax)
+
+            do i = 1, thinning_grid_conv(n)%itxmax
+               if ( abs(out(i)-thinning_grid_conv(n)%score_crit(i)) > 1.0E-10 ) then
+                  thinning_grid_conv(n)%ibest_obs(i) = 0
                end if
             end do
-            if ( .not. found ) then
-               ! iv%info(n)%proc_domain(:,j) = .false.
-               ! hcl this is a quick and dirty way to flag thinned obs to be not-used.
-               ! hcl need to figure out a better solution in the future.
-               iv%info(n)%i(:,j) = ite + 1
-               iv%info(n)%j(:,j) = jte + 1
-            end if
-         end do
-      end if ! thin_conv
 
-   end do
+            deallocate( in  )
+            deallocate( out )
+#endif
+
+            do j = 1, nlocal(n)
+               found = .false.
+               do i = 1, thinning_grid_conv(n)%itxmax
+                  if ( thinning_grid_conv(n)%ibest_obs(i) == j .and.         &
+                       thinning_grid_conv(n)%score_crit(i) < 9.99e6 ) then
+                     found = .true.
+                     exit
+                  end if
+               end do
+               if ( .not. found ) then
+                  iv%info(n)%thinned(:,j) = .true.
+               end if
+            end do
+
+            if ( nlocal(n) > 0 ) then
+               if ( ANY(iv%info(n)%thinned(:,:)) ) then
+                  call da_set_obs_missing(iv,n)  ! assign missing values to those thinned=true data
+               end if
+            end if
+
+         end if
+      end do
+   end if  ! thin_conv
 
    call closbf(iunit)
    close(iunit)
    call da_free_unit(iunit)
+   if ( use_errtable ) then
+      close(junit)
+      call da_free_unit(junit)
+   end if
 
    if (trace_use) call da_trace_exit("da_read_obs_bufr")
 #else

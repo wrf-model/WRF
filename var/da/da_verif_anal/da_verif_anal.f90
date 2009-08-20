@@ -10,8 +10,8 @@ program da_verif_anal !---------------------------------------------------------
    use da_verif_anal_control, only : control_main, control_times, control_vars, &
        max_3d_variables, max_2d_variables,num_vert_levels,verification_file_string,&
        missing,namelist_unit,time_series_unit,time_average_unit,&
-       ncl_info_unit, grads_ctl_unit, out_dat_unit, profile_time_series,&
-       profile_time_average, filename, stime, etime, &
+       ncl_info_unit, grads_ctl_unit, out_dat_unit, time_series_2d, profile_time_series_3d,&
+       time_average_2d, profile_time_average_3d, filename, stime, etime, &
        hstart, hend, hdate, date, pdate, desc3d, desc2d, var_to_get, var_to_plot,&
        length_var, length_plot, output_input_grid, use_lowest_heights, vert_args, &
        nx, ny, nz, number_of_levels, io_status,  debug1, debug2, verify_its_own_analysis, &
@@ -34,12 +34,11 @@ program da_verif_anal !---------------------------------------------------------
    integer                              :: time(6), ptime(6)
    integer                              :: nx1, ny1, nz1
    integer                              :: nx2, ny2, nz2
-   integer                              :: i,k,ifound
+   integer                              :: i,k
    integer                              :: ivar, iexp, iscore
    integer, allocatable,dimension(:)    :: count_recs
    integer                              :: irec, dat_unit
    character (len=10)                   :: sdate
-!   character (len=10)                   :: new_date
    character (len=20)                   :: file_string, domain_string, out_hr
    logical, allocatable,dimension(:)    :: first_score
 
@@ -63,9 +62,6 @@ program da_verif_anal !---------------------------------------------------------
 
 !---------------------------------------------------------------------
    verify_forecast_hour = 0
-
-   profile_time_series = 'profile_time_series'
-   profile_time_average = 'profile_time_average'
 
    namelist_file    = 'namelist.in'
    grads_file       = 'statistics'
@@ -94,18 +90,18 @@ program da_verif_anal !---------------------------------------------------------
 !--2D need update
    num2dvar=max_2d_variables
    var2d(1)='SLP'
-   var2d(2)='U10M'
-   var2d(3)='V10M'
-   var2d(4)='SST'
-   var2d(5)='HGT'
-   var2d(6)='TSK'
+   var2d(2)='PSFC'
+   var2d(3)='U10M'
+   var2d(4)='V10M'
+   var2d(5)='T2M'
+   var2d(6)='Q2M'
 
    desc2d(1)='Sea Level Pressure       '
-   desc2d(2)='10 meter Wind U compoment'
-   desc2d(3)='10 meter Wind V compoment'
-   desc2d(4)='Sea Surface Temperature  '
-   desc2d(5)='Terrain Height           '
-   desc2d(6)='Skin Temperature         '
+   desc2d(2)='Surface Pressure         '
+   desc2d(3)='10 meter Wind U compoment'
+   desc2d(4)='10 meter Wind V compoment'
+   desc2d(5)='2 meter Temperature      '
+   desc2d(6)='2 meter Specific Humidity'
 
 !--Score names
    num_scores = 3
@@ -246,11 +242,12 @@ program da_verif_anal !---------------------------------------------------------
 
 !  Open profile units
 
-        profile_time_average = trim(out_dir)//trim(var3d(ivar))//'_'//'profile'//trim(out_hr) 
-        open(time_average_unit, file=trim(profile_time_average), form='formatted', &
+!        profile_time_average_3d = trim(out_dir)//trim(var3d(ivar))//'_average'//trim(out_hr) 
+        profile_time_average_3d = trim(out_dir)//trim(var3d(ivar))//'_profile'//trim(out_hr) 
+        open(time_average_unit, file=trim(profile_time_average_3d), form='formatted', &
                               status='unknown')
-        profile_time_series = trim(out_dir)//trim(var3d(ivar))//'_'//'time_series'//trim(out_hr) 
-        open(time_series_unit, file=profile_time_series,form='formatted', &
+        profile_time_series_3d = trim(out_dir)//trim(var3d(ivar))//'_time_series'//trim(out_hr) 
+        open(time_series_unit, file=profile_time_series_3d,form='formatted', &
                                status='unknown')
        
 !----------------------------------------------------------------------------
@@ -277,7 +274,6 @@ program da_verif_anal !---------------------------------------------------------
            call build_hdate(date, time )
            ptime = time
            call advance_date(ptime,-verify_forecast_hour) 
-!           call da_advance_cymdh(ptime,-verify_forecast_hour,new_date) 
            call build_hdate(pdate, ptime)
 
 
@@ -330,7 +326,6 @@ program da_verif_anal !---------------------------------------------------------
            allocate(sqdiff(nx,ny,number_of_levels))
            call get_diffs(data_out1_z, data_out2_z, diff, absdiff, sqdiff, nx, ny,  &
                           number_of_levels, missing)
-         
            deallocate(data_out1_z)
            deallocate(data_out2_z)
 
@@ -427,6 +422,16 @@ program da_verif_anal !---------------------------------------------------------
 !--------------------------------------------------------------------------------
      loop_2d : do ivar = 1, num2dvar
 
+!  Open profile units
+
+        time_average_2d = trim(out_dir)//trim(var2d(ivar))//'_average'//trim(out_hr) 
+        open(time_average_unit, file=trim(time_average_2d), form='formatted', &
+                              status='unknown')
+        time_series_2d  = trim(out_dir)//trim(var2d(ivar))//'_time_series'//trim(out_hr) 
+        open(time_series_unit, file=time_series_2d,form='formatted', &
+                               status='unknown')
+       
+!----------------------------------------------------------------------------
         var_to_get = var2d(ivar)
         var_to_plot = var_to_get
 
@@ -437,10 +442,6 @@ program da_verif_anal !---------------------------------------------------------
 !
 !----------------------------------------------------------------------------
         
-        ifound = index(var_to_plot,'HGT')
-        if (  ifound == 0 ) then 
-         
-!----------------------------------------------------------------------------
         time_loop_count = 0
         hdate = hstart
         time = stime
@@ -505,7 +506,26 @@ program da_verif_anal !---------------------------------------------------------
            call get_diffs(data_out1, data_out2, diff, absdiff, sqdiff, nx, ny, 1, missing)
            deallocate(data_out1)
            deallocate(data_out2)
-           
+
+           allocate( avg_prof(1) )
+           allocate( num_counter(1) )
+           allocate( score_avg_prof(num_scores, 1) )
+           do iscore = 1, num_scores
+             if ( trim(score_names(iscore)) == 'BIAS' ) then
+                call domain_average( diff, avg_prof, num_counter, nx, ny, 1, missing,0)
+             elseif ( trim(score_names(iscore)) == 'RMSE' ) then
+                call domain_average( sqdiff, avg_prof, num_counter, nx, ny, 1, missing,1)
+             elseif ( trim(score_names(iscore)) == 'ABIAS' ) then
+                call domain_average( absdiff, avg_prof, num_counter, nx, ny, 1, missing,0)
+             endif
+             score_avg_prof(iscore,:) = avg_prof(:)
+           enddo
+           call write_profile(date, score_avg_prof, num_counter, 1, num_scores, &
+                              time_series_unit)
+           deallocate( avg_prof )
+           deallocate( num_counter )
+           deallocate( score_avg_prof )
+
            call get_sum(sum3d,diff,nx,ny,1,missing)
            call get_sum(asum3d,absdiff,nx,ny,1,missing)
            call get_sum(sqr3d,sqdiff,nx,ny,1,missing)
@@ -522,83 +542,61 @@ program da_verif_anal !---------------------------------------------------------
 
         enddo  time_loop_2d
         
+        close(time_series_unit)
+
 !---------------------------------------------------------------------
 ! calculate bias and RMSE
 !---------------------------------------------------------------------
         call time_average(sum3d,nx,ny,1,time_loop_count,missing,0)
         call time_average(asum3d,nx,ny,1,time_loop_count,missing,0)
         call time_average(sqr3d,nx,ny,1,time_loop_count,missing,1)
+
+        allocate( avg_prof(1) )
+        allocate( num_counter(1) )
+        allocate( score_avg_prof(num_scores, 1) )
+
 !---------------------------------------------------------------------
 ! Writting the results in grads file
 !---------------------------------------------------------------------
-!        do iscore = 1, num_scores
+        do iscore = 1, num_scores
 !           grads_file = trim(out_dir)//trim(score_names(iscore))//out_hr
-!           if ( trim(score_names(iscore)) == 'BIAS' ) then
+           if ( trim(score_names(iscore)) == 'BIAS' ) then
 !              dat_unit = out_dat_unit + (iscore -1) 
 !              irec = count_recs(iscore)
 !              call write_out_data( grads_file, irec, sum3d, nx, ny, 1, &
 !                               first_score(iscore), dat_unit )
 !              count_recs(iscore) = irec
-!           elseif ( trim(score_names(iscore)) == 'RMSE' ) then
+            call domain_average( sum3d, avg_prof, num_counter,nx, ny, 1, missing,0)
+
+           elseif ( trim(score_names(iscore)) == 'RMSE' ) then
 !              dat_unit = out_dat_unit + (iscore -1) 
 !              irec = count_recs(iscore)
 !              call write_out_data( grads_file, irec, sqr3d, nx, ny, 1, &
 !                               first_score(iscore), dat_unit )
 !              count_recs(iscore) = irec
-!           else
+            call domain_average( sqr3d, avg_prof, num_counter,nx, ny, 1, missing,1)
+           else
 !              dat_unit = out_dat_unit + (iscore -1) 
 !              irec = count_recs(iscore)
 !              call write_out_data( grads_file, irec, asum3d, nx, ny, 1, &
 !                               first_score(iscore), dat_unit )
 !              count_recs(iscore) = irec
-!           endif
-!        enddo
+            call domain_average( asum3d, avg_prof, num_counter,nx, ny, 1, missing,0)
+           endif
+           score_avg_prof(iscore,:) = avg_prof(:)
+        enddo
 !---------------------------------------------------------------------
         deallocate(sum3d)
         deallocate(asum3d)
         deallocate(sqr3d)
 
-!---------------------------------------------------------------------
-        else
+        call write_profile(sdate, score_avg_prof, num_counter, 1, num_scores, &
+                           time_average_unit)
 
-           filename = trim(file_string)//hdate
-           if( verify_its_own_analysis) then
-           control_file = trim(verif_dirs(iexp))//'/'//date//'/'//trim(filename) 
-           else
-           control_file = trim(control_exp_dir)//'/'//date//'/'//trim(filename) 
-           endif
+        deallocate(score_avg_prof)
+        deallocate(avg_prof)
+        deallocate( num_counter )
 
-           verif_file = trim(verif_dirs(iexp))//'/'//pdate//'/'//trim(filename)
-
-           call get_dimensions(control_file,nx,ny,nz)
-           allocate(data_out1(nx, ny, 1))
-           call g_output_2d (control_file, 1, var_to_plot, length_plot,         &
-                             nx, ny, nz, data_out1, debug1)
-!           do iscore = 1, num_scores
-!              grads_file = trim(out_dir)//trim(score_names(iscore))//out_hr
-!              if ( trim(score_names(iscore)) == 'BIAS' ) then
-!                 dat_unit = out_dat_unit + (iscore -1) 
-!                 irec = count_recs(iscore)
-!                 call write_out_data( grads_file, irec, data_out1, nx, ny, 1, &
-!                                  first_score(iscore), dat_unit )
-!                 count_recs(iscore) = irec
-!              elseif ( trim(score_names(iscore)) == 'RMSE' ) then
-!                 dat_unit = out_dat_unit + (iscore -1) 
-!                 irec = count_recs(iscore)
-!                 call write_out_data( grads_file, irec, data_out1, nx, ny, 1, &
-!                                  first_score(iscore), dat_unit )
-!                 count_recs(iscore) = irec
-!              else
-!                 dat_unit = out_dat_unit + (iscore -1) 
-!                 irec = count_recs(iscore)
-!                 call write_out_data( grads_file, irec, data_out1, nx, ny, 1, &
-!                                  first_score(iscore), dat_unit )
-!                 count_recs(iscore) = irec
-!              endif
-!           enddo
-           deallocate(data_out1)
-
-        endif 
 
      enddo loop_2d
      print*, ' successful completion of loop_2d '
@@ -1798,6 +1796,7 @@ program da_verif_anal !---------------------------------------------------------
   logical, intent(in)                                   ::   debug
   integer, allocatable, dimension(:,:,:)    ::   data_int
   real,    allocatable, dimension(:,:,:)    ::   u10, v10
+  real,    allocatable, dimension(:,:)      ::   psfc,t2m,q2m
   real,    allocatable, dimension(:,:)      ::   xlat, xlon
   real,    allocatable, dimension(:,:,:)    ::   z,ph,phb  
   real,    allocatable, dimension(:,:,:)    ::   p,pb  
@@ -1847,6 +1846,27 @@ program da_verif_anal !---------------------------------------------------------
           deallocate (  pb )                       
           deallocate (  ts )                       
           deallocate (  qv )                       
+
+  else if(var == 'PSFC' ) then
+          allocate ( psfc(nx,ny) )
+          call da_get_var_2d_real_cdf( file,"PSFC", psfc, nx, ny,                 &
+                                file_time_index, debug  )
+          data_out(:,:,1) = psfc(:,:)
+          deallocate ( psfc )
+
+  else if(var == 'T2M'  ) then
+          allocate ( t2m(nx,ny) )
+          call da_get_var_2d_real_cdf( file,"T2", t2m, nx, ny,                  &
+                                file_time_index, debug  )
+          data_out(:,:,1) = t2m(:,:)
+          deallocate ( t2m )
+
+  else if(var == 'Q2M'  ) then
+          allocate ( q2m(nx,ny) )
+          call da_get_var_2d_real_cdf( file,"Q2", q2m, nx, ny,                  &
+                                file_time_index, debug  )
+          data_out(:,:,1) = q2m(:,:)
+          deallocate ( q2m )
 
   else if(var == 'U10M' ) then
 
@@ -2240,9 +2260,6 @@ program da_verif_anal !---------------------------------------------------------
          sea_level_pressure(i,j) = p(i,j,1) *              &
                                EXP((2.*g*z_half_lowest)/   &
                                    (R*(t_sea_level(i,j)+t_surf(i,j))))
-
-         sea_level_pressure(i,j) = sea_level_pressure(i,j)*0.01
-
       END DO
       END DO
 
@@ -2478,6 +2495,12 @@ program da_verif_anal !---------------------------------------------------------
           if ( rcode == 0 ) rcode = trcode
           trcode = rcode
           rcode = nf_inq_varid ( ncid, "QVAPOR", id_var )
+          if ( rcode == 0 ) rcode = trcode
+        else if ( variables2d(i) == 'T2M' ) then
+          rcode = nf_inq_varid ( ncid, "T2", id_var )
+          if ( rcode == 0 ) rcode = trcode
+        else if ( variables2d(i) == 'Q2M' ) then
+          rcode = nf_inq_varid ( ncid, "Q2", id_var )
           if ( rcode == 0 ) rcode = trcode
         else
           rcode = nf_inq_varid ( ncid, variables2d(i), id_var )

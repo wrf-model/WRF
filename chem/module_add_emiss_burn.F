@@ -179,12 +179,12 @@ CONTAINS
                          +r_q*ebu_pm10(i,k,j)/rho_phy(i,k,j)/dz8w(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
         enddo
-      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP)
+      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RACMSORG_AQ)
           do j=jts,jte
           do i=its,ite
            do k=kts+1,kte
         conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60./dz8w(i,k,j)
-            if(i.eq.56.and.j.eq.132)write(0,*)k,ebu_co(i,k,j),conv_rho,r_q,dtstep
+
         chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2)                        &
                          +ebu_so2(i,k,j)*conv_rho
         chem(i,k,j,p_sulf)  =  chem(i,k,j,p_sulf)                        &

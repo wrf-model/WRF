@@ -4572,29 +4572,29 @@ CONTAINS
      &         ids, ide, jds, jde, kds, kde,                              &
      &         ips, ipe, jps, jpe, kps, kpe,                              &
      &         ims, ime, jms, jme, kms, kme,                              &
-     &         i_start,i_end,j_start,j_end,kts,kte   )
+     &         its, ite, jts, jte, kts, kte   )
 
 !
 
    INTEGER,      INTENT(IN   )    ::   num_tiles,imomentum
-   INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
-     &           i_start,i_end,j_start,j_end
    INTEGER,      INTENT(IN   )    ::   ids, ide, jds, jde, kds, kde,&
                                        ims,ime, jms,jme, kms,kme, &
                                        ips,ipe, jps,jpe, kps,kpe, &
-                                       kts,kte,cugd_avedx
+                                       its,ite, jts,jte, kts,kte, &
+                                       cugd_avedx
    REAL, DIMENSION (ims:ime,kms:kme,jms:jme), optional,INTENT (INOUT) ::     &
-     &  rthcuten,rqvcuten,rqccuten,rqicuten,cugd_tten,                       &
-     &  cugd_qvten,cugd_ttens,cugd_qvtens,cugd_qcten
+     &  rthcuten,rqvcuten,rqccuten,rqicuten
+   REAL, DIMENSION (ims:ime,kms:kme,jms:jme), optional,INTENT (IN   ) ::     &
+     &  cugd_tten,cugd_qvten,cugd_ttens,cugd_qvtens,cugd_qcten
    REAL, DIMENSION (ims:ime,kms:kme,jms:jme),INTENT (IN) ::        &
           moist_qv
    REAL, DIMENSION (ims:ime,kms:kme,jms:jme), INTENT (IN) ::        &
           PI_PHY
    REAL, DIMENSION (ims:ime,jms:jme), INTENT (INOUT) ::             &
-          RAINCV,PRATEC
+          raincv,pratec
    REAL,                              INTENT(IN) ::   dt
    INTEGER                        :: ikk1,ikk2,ikk11,i,j,k,kk,nn,smoothh,smoothv
-   INTEGER                        :: ifs,ife,jfs,jfe,its,ite,jts,jte,ido,jdo,cugd_spread
+   INTEGER                        :: ifs,ife,jfs,jfe,ido,jdo,cugd_spread
    LOGICAL                        :: new
 !
 ! Flags relating to the optional tendency arrays declared above
@@ -4609,256 +4609,247 @@ CONTAINS
                                                   ,F_QR      &
                                                   ,F_QI      &
                                                   ,F_QS
-   REAL, DIMENSION (ips-2:ipe+2,kps:kpe,jps-2:jpe+2) ::     &
-          rthcutent,rqvcutent
-   real, dimension (ips-2:ipe+2,jps-2:jpe+2) :: qmem
-   real, dimension (ips-1:ipe+1,jps-1:jpe+1) :: smtt,smtq
-   real, dimension (kps:kpe) :: conv_trasht,conv_trashq
-   REAL                           :: qmem1,qmem2,qmemf,thresh
-      smoothh=1
-      smoothv=1
-      cugd_spread=cugd_avedx/2
-! SET START AND END POINTS FOR TILES
-      !$OMP PARALLEL DO   &
-      !$OMP PRIVATE ( ij ,ifs,ife,jfs,jfe,its,ite,jts,jte, i,j,k,kk,nn,ikk1,ikk2,ikk11) &
-      !$OMP PRIVATE ( ido,jdo,qmemf,qmem1,qmem2,qmem,thresh,conv_trasht,conv_trashq,smtt,smtq)
+   REAL, DIMENSION (its-2:ite+2,kts:kte,jts-2:jte+2) ::     &
+          RTHcutent,RQVcutent
+   real, dimension (its-2:ite+2,jts-2:jte+2) :: Qmem
+   real, dimension (its-1:ite+1,jts-1:jte+1) :: smTT,smTQ
+   real, dimension (kts:kte) :: conv_TRASHT,conv_TRASHQ
+   REAL                           :: Qmem1,Qmem2,Qmemf,Thresh
 
-      DO ij = 1 , num_tiles
-        its = i_start(ij)
-        ite = min(i_end(ij),ide-1)
-        jts = j_start(ij)
-        jte = min(j_end(ij),jde-1)
+   smoothh=1
+   smoothv=1
+   cugd_spread=cugd_avedx/2
 
-        do j=jts-2,jte+2
-        do i=its-2,ite+2
-          qmem(i,j)=1.
-        enddo
-        enddo
-        do j=jts-1,jte+1
-        do i=its-1,ite+1
-          smtt(i,j)=0.
-          smtq(i,j)=0.
-        enddo
-        enddo
-        do j=jts,jte              
-        do k=kts,kte              
-        do i=its,ite
-          rthcuten(i,k,j)=0. 
-          rqvcuten(i,k,j)=0.      
-        enddo
-        enddo
-        enddo
-        do j=jts-2,jte+2              
-        do k=kts,kte              
-        do i=its-2,ite+2
-          rthcutent(i,k,j)=0. 
-          rqvcutent(i,k,j)=0.      
-        enddo
-        enddo
-        enddo
+   ifs=max(its,ids)
+   jfs=max(jts,jds)
+   ife=min(ite,ide-1)
+   jfe=min(jte,jde-1)
+
+   do j=jfs-2,jfe+2
+   do i=ifs-2,ife+2
+     Qmem(i,j)=1.
+   enddo
+   enddo
+   do j=jfs-1,jfe+1
+   do i=ifs-1,ife+1
+     smTT(i,j)=0.
+     smTQ(i,j)=0.
+   enddo
+   enddo
+   do j=jfs,jfe              
+   do k=kts,kte              
+   do i=ifs,ife
+     rthcuten(i,k,j)=0. 
+     rqvcuten(i,k,j)=0.      
+   enddo
+   enddo
+   enddo
+   do j=jfs-2,jfe+2              
+   do k=kts,kte              
+   do i=ifs-2,ife+2
+     RTHcutent(i,k,j)=0. 
+     RQVcutent(i,k,j)=0.      
+   enddo
+   enddo
+   enddo
 !     
-        ifs=max(its,ids)
-        jfs=max(jts,jds)
-        ife=min(ite,ide-1)
-        jfe=min(jte,jde-1)
 !
 !       
 !  
 ! prelims finished, now go real for every grid point
 !  
-   ifs=max(its,ids)
-   ife=min(ite,ide-1)
-   jfs=max(jts,jds)
-   jfe=min(jte,jde-1)
    if(cugd_spread.gt.0.or.smoothh.eq.1)then
-      if(its.eq.ips)ifs=max(its-1,ids)
-      if(ite.eq.ipe)ife=min(ite+1,ide-1)
-      if(jts.eq.jps)jfs=max(jts-1,jds)
-      if(jte.eq.jpe)jfe=min(jte+1,jde-1)
+      !if(its.eq.ips)ifs=max(its-1,ids)
+      !if(ite.eq.ipe)ife=min(ite+1,ide-1)
+      !if(jts.eq.jps)jfs=max(jts-1,jds)
+      !if(jte.eq.jpe)jfe=min(jte+1,jde-1)
+      ifs=max(its-1,ids)
+      ife=min(ite+1,ide-1)
+      jfs=max(jts-1,jds)
+      jfe=min(jte+1,jde-1)
    endif
-        do j=jfs,jfe
-        do i=ifs,ife
+
+! *** jm note -- for smoothing this goes out one row/column beyond tile in i and j
+   do j=jfs,jfe
+     do i=ifs,ife
 !
-        do k=kts,kte
-        rthcutent(i,k,j)=cugd_tten(i,k,j)
-        rqvcutent(i,k,j)=cugd_qvten(i,k,j)
-        enddo
+       do k=kts,kte
+         RTHcutent(i,k,j)=cugd_tten(i,k,j)
+         RQVcutent(i,k,j)=cugd_qvten(i,k,j)
+       enddo
 !
 ! for high res run, spread the subsidence
 ! this is tricky......only consider grid points where there was no rain,
 ! so cugd_tten and such are zero!
 !
-        if(cugd_spread.gt.0)then
-        do k=kts,kte
-          do nn=-1,1,1
-            jdo=max(j+nn,jds)
-            jdo=min(jdo,jde-1)
-            do kk=-1,1,1
-             ido=max(i+kk,ids)
-             ido=min(ido,ide-1)
-             rthcutent(i,k,j)=rthcutent(i,k,j)     &
-                                  +qmem(ido,jdo)*cugd_ttens(ido,k,jdo)
-             rqvcutent(i,k,j)=rqvcutent(i,k,j)     &
-                                  +qmem(ido,jdo)*cugd_qvtens(ido,k,jdo)
-          enddo
-          enddo
-        enddo
-        endif
+       if(cugd_spread.gt.0)then
+         do k=kts,kte
+           do nn=-1,1,1
+             jdo=max(j+nn,jds)
+             jdo=min(jdo,jde-1)
+             do kk=-1,1,1
+               ido=max(i+kk,ids)
+               ido=min(ido,ide-1)
+               RTHcutent(i,k,j)=RTHcutent(i,k,j)     &
+                                    +Qmem(ido,jdo)*cugd_ttens(ido,k,jdo)
+               RQVcutent(i,k,j)=RQVcutent(i,k,j)     &
+                                    +Qmem(ido,jdo)*cugd_qvtens(ido,k,jdo)
+             enddo
+           enddo
+         enddo
+       endif
 !       
 ! end spreading
-       
-        if(cugd_spread.eq.0)then
-        do k=kts,kte
-           rthcutent(i,k,j)=rthcutent(i,k,j)+cugd_ttens(i,k,j)
-           rqvcutent(i,k,j)=rqvcutent(i,k,j)+cugd_qvtens(i,k,j)
-        enddo
-        endif
-        enddo  ! end j
-        enddo  ! end i
-! smooth
-        do k=kts,kte
-          if(smoothh.eq.0)then
-             ifs=max(its,ids+4)
-             ife=min(ite,ide-5)
-             jfs=max(jts,jds+4)
-             jfe=min(jte,jde-5)
-             do i=ifs,ife
-             do j=jfs,jfe
-               rthcuten(i,k,j)=rthcutent(i,k,j)
-               rqvcuten(i,k,j)=rqvcutent(i,k,j)
-             enddo  ! end j
-             enddo  ! end j
-          else if(smoothh.eq.1)then   ! smooth
-             ifs=max(its,ids)
-             ife=min(ite,ide-1)
-             jfs=max(jts,jds)
-             jfe=min(jte,jde-1)
-! we need an extra row for j (halo comp)
-             if(jts.eq.jps)jfs=max(jts-1,jds)
-             if(jte.eq.jpe)jfe=min(jte+1,jde-1)
-             do i=ifs,ife
-             do j=jfs,jfe
-                smtt(i,j)=.25*(rthcutent(i-1,k,j)+2.*rthcutent(i,k,j)+rthcutent(i+1,k,j))
-                smtq(i,j)=.25*(rqvcutent(i-1,k,j)+2.*rqvcutent(i,k,j)+rqvcutent(i+1,k,j))
-             enddo  ! end j
-             enddo  ! end j
-             ifs=max(its,ids+4)
-             ife=min(ite,ide-5)
-             jfs=max(jts,jds+4)
-             jfe=min(jte,jde-5)
-             do i=ifs,ife
-               do j=jfs,jfe
-                 rthcuten(i,k,j)=.25*(smtt(i,j-1)+2.*smtt(i,j)+smtt(i,j+1))
-                 rqvcuten(i,k,j)=.25*(smtq(i,j-1)+2.*smtq(i,j)+smtq(i,j+1))
-              enddo  ! end j
-              enddo  ! end i
-           endif  ! smoothh
+    
+       if(cugd_spread.eq.0)then
+         do k=kts,kte
+           RTHcutent(i,k,j)=RTHcutent(i,k,j)+cugd_ttens(i,k,j)
+           RQVcutent(i,k,j)=RQVcutent(i,k,j)+cugd_qvtens(i,k,j)
+         enddo
+       endif
+     enddo  ! end j
+   enddo  ! end i
 
-        enddo  ! end k
-!       
-! check moistening rates
-!         
+! smooth
+   do k=kts,kte
+     if(smoothh.eq.0)then
           ifs=max(its,ids+4)
           ife=min(ite,ide-5)
           jfs=max(jts,jds+4)
           jfe=min(jte,jde-5)
-        do j=jfs,jfe
-        do i=ifs,ife
-         qmemf=1.
-        thresh=1.e-20
+          do i=ifs,ife
+            do j=jfs,jfe
+              rthcuten(i,k,j)=RTHcutent(i,k,j)
+              rqvcuten(i,k,j)=RQVcutent(i,k,j)
+            enddo  ! end j
+          enddo  ! end j
+     else if(smoothh.eq.1)then   ! smooth
+          ifs=max(its,ids)
+          ife=min(ite,ide-1)
+          jfs=max(jts,jds)
+          jfe=min(jte,jde-1)
+! we need an extra row for j (halo comp)
+          !if(jts.eq.jps)jfs=max(jts-1,jds)
+          !if(jte.eq.jpe)jfe=min(jte+1,jde-1)
+          jfs=max(jts-1,jds)
+          jfe=min(jte+1,jde-1)
+          do i=ifs,ife
+            do j=jfs,jfe
+               smTT(i,j)=.25*(RTHcutent(i-1,k,j)+2.*RTHcutent(i,k,j)+RTHcutent(i+1,k,j))
+               smTQ(i,j)=.25*(RQVcutent(i-1,k,j)+2.*RQVcutent(i,k,j)+RQVcutent(i+1,k,j))
+            enddo  ! end j
+          enddo  ! end j
+          ifs=max(its,ids+4)
+          ife=min(ite,ide-5)
+          jfs=max(jts,jds+4)
+          jfe=min(jte,jde-5)
+          do i=ifs,ife
+            do j=jfs,jfe
+              rthcuten(i,k,j)=.25*(smTT(i,j-1)+2.*smTT(i,j)+smTT(i,j+1))
+              rqvcuten(i,k,j)=.25*(smTQ(i,j-1)+2.*smTQ(i,j)+smTQ(i,j+1))
+            enddo  ! end j
+          enddo  ! end i
+      endif  ! smoothh
+    enddo  ! end k
+!       
+! check moistening rates
+!         
+    ifs=max(its,ids+4)
+    ife=min(ite,ide-5)
+    jfs=max(jts,jds+4)
+    jfe=min(jte,jde-5)
+    do j=jfs,jfe
+      do i=ifs,ife
+        Qmemf=1.
+        Thresh=1.e-20
         do k=kts,kte              
-         if(rqvcuten(i,k,j).lt.0.)then
-
-           qmem1=moist_qv(i,k,j)+rqvcuten(i,k,j)*dt
-           if(qmem1.lt.thresh)then
-              qmem1=rqvcuten(i,k,j)
-              qmem2=(thresh-moist_qv(i,k,j))/dt
-              qmemf=min(qmemf,qmem2/qmem1)
-              qmemf=max(0.,qmemf)
-              qmemf=min(1.,qmemf)
-           endif
-
-         endif
-         enddo
+          if(rqvcuten(i,k,j).lt.0.)then
+            Qmem1=moist_qv(i,k,j)+rqvcuten(i,k,j)*dt
+            if(Qmem1.lt.Thresh)then
+              Qmem1=rqvcuten(i,k,j)
+              Qmem2=(Thresh-moist_qv(i,k,j))/dt
+              Qmemf=min(Qmemf,Qmem2/Qmem1)
+              Qmemf=max(0.,Qmemf)
+              Qmemf=min(1.,Qmemf)
+            endif
+          endif
+        enddo
         do k=kts,kte
-         rqvcuten(i,k,j)=rqvcuten(i,k,j)*qmemf
-         rthcuten(i,k,j)=rthcuten(i,k,j)*qmemf
+          rqvcuten(i,k,j)=rqvcuten(i,k,j)*Qmemf
+          rthcuten(i,k,j)=rthcuten(i,k,j)*Qmemf
         enddo
         if(present(rqccuten))then
           if(f_qc) then
-           do k=kts,kte
-               rqccuten(i,k,j)=rqccuten(i,k,j)*qmemf
-           enddo
+            do k=kts,kte
+              rqccuten(i,k,j)=rqccuten(i,k,j)*Qmemf
+            enddo
           endif
         endif
         if(present(rqicuten))then
           if(f_qi) then
-           do k=kts,kte
-               rqicuten(i,k,j)=rqicuten(i,k,j)*qmemf
-           enddo
+            do k=kts,kte
+              rqicuten(i,k,j)=rqicuten(i,k,j)*Qmemf
+            enddo
           endif
         endif
-        RAINCV(I,J)=RAINCV(I,J)*qmemf
-        PRATEC(I,J)=PRATEC(I,J)*qmemf
+        raincv(I,J)=raincv(I,J)*Qmemf
+        pratec(I,J)=pratec(I,J)*Qmemf
 !
 ! check heating rates
 
 !
-        thresh=200.
-        qmemf=1.
-        qmem1=0.
+        Thresh=200.
+        Qmemf=1.
+        Qmem1=0.
         do k=kts,kte
-        qmem1=abs(rthcuten(i,k,j))*86400. 
+          Qmem1=abs(rthcuten(i,k,j))*86400. 
 
-        if(qmem1.gt.thresh)then
-          qmem2=thresh/qmem1
-          qmemf=min(qmemf,qmem2)
-          qmemf=max(0.,qmemf) 
-        endif
+          if(Qmem1.gt.Thresh)then
+            Qmem2=Thresh/Qmem1
+            Qmemf=min(Qmemf,Qmem2)
+            Qmemf=max(0.,Qmemf) 
+          endif
 
         enddo
-        RAINCV(I,J)=RAINCV(I,J)*qmemf
-        PRATEC(I,J)=PRATEC(I,J)*qmemf
+        raincv(i,j)=raincv(i,j)*Qmemf
+        pratec(i,j)=pratec(i,j)*Qmemf
         do k=kts,kte
-           rqvcuten(i,k,j)=rqvcuten(i,k,j)*qmemf
-           rthcuten(i,k,j)=rthcuten(i,k,j)*qmemf
+          rqvcuten(i,k,j)=rqvcuten(i,k,j)*Qmemf
+          rthcuten(i,k,j)=rthcuten(i,k,j)*Qmemf
         enddo
         if(present(rqccuten))then
           if(f_qc) then
-             do k=kts,kte
-               rqccuten(i,k,j)=rqccuten(i,k,j)*qmemf
-             enddo
+            do k=kts,kte
+              rqccuten(i,k,j)=rqccuten(i,k,j)*Qmemf
+            enddo
           endif
         endif
         if(present(rqicuten))then
           if(f_qi) then
-             do k=kts,kte
-               rqicuten(i,k,j)=rqicuten(i,k,j)*qmemf
-             enddo
+            do k=kts,kte
+              rqicuten(i,k,j)=rqicuten(i,k,j)*Qmemf
+            enddo
           endif
         endif
         if(smoothv.eq.1)then
 ! 
 ! smooth for now
 !
-           do k=kts+2,kte-2
-               conv_trasht(k)= .25*(rthcuten(i,k-1,j)+2.*rthcuten(i,k,j)+rthcuten(i,k+1,j))
-               conv_trashq(k)= .25*(rqvcuten(i,k-1,j)+2.*rqvcuten(i,k,j)+rqvcuten(i,k+1,j))
-           enddo
-           do k=kts+2,kte-2
-                rthcuten(i,k,j)=conv_trasht(k)
-                rqvcuten(i,k,j)=conv_trashq(k)
-           enddo
+          do k=kts+2,kte-2
+            conv_TRASHT(k)= .25*(rthcuten(i,k-1,j)+2.*rthcuten(i,k,j)+rthcuten(i,k+1,j))
+            conv_TRASHQ(k)= .25*(rqvcuten(i,k-1,j)+2.*rqvcuten(i,k,j)+rqvcuten(i,k+1,j))
+          enddo
+          do k=kts+2,kte-2
+            rthcuten(i,k,j)=conv_TRASHT(k)
+            rqvcuten(i,k,j)=conv_TRASHQ(k)
+          enddo
         endif
         do k=kts,kte
-            rthcuten(i,k,j)=rthcuten(i,k,j)/pi_phy(i,k,j)
+          rthcuten(i,k,j)=rthcuten(i,k,j)/pi_phy(i,k,j)
         enddo
-        enddo  ! end j
-        enddo  ! end i
-      ENDDO  
-!$OMP END PARALLEL DO
+      enddo  ! end j
+    enddo  ! end i
 
-
-   END SUBROUTINE CONV_GRELL_SPREAD3D
+  END SUBROUTINE CONV_GRELL_SPREAD3D
 !-------------------------------------------------------
 END MODULE module_cu_g3

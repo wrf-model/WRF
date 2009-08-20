@@ -44,19 +44,21 @@ endif
 #       What these tests do, must be a single string.
 
 set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"        "NONE"  	1	\
-                 "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
-                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	3	\
-                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	4	\
-                 "Chemistry2"           "KPP=FALSE"           "KPP=TRUE"            "NONE"  	5	\
-                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	6	\
-                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	7	\
-                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	8	\
-                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	9 	\
-                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	10	\
-                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	11	\
-                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  12    	\
-                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"      13      \
-                 "Adaptive"             "ADAPTIVE=FALSE"      "ADAPTIVE=TRUE"       "NONE"      14      \
+                 "Moving_Nest1"         "NESTED1=FALSE"       "NESTED1=TRUE"        "NONE"  	2	\
+                 "Moving_Nest2"         "NESTED2=FALSE"       "NESTED2=TRUE"        "NONE"  	3	\
+                 "NMM_Nest"             "NESTED2=FALSE"       "NESTED2=FALSE"       "NONE"  	4	\
+                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	5	\
+                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	6	\
+                 "Chemistry2"           "KPP=FALSE"           "KPP=TRUE"            "NONE"  	7	\
+                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	8	\
+                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	9	\
+                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	10	\
+                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"	11 	\
+                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	12	\
+                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	13	\
+                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  14    	\
+                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"      15      \
+                 "Adaptive"             "ADAPTIVE=FALSE"      "ADAPTIVE=TRUE"       "NONE"      16      \
                )
 
 #	Where are we located.
@@ -90,7 +92,7 @@ if ( ! $?TAG ) then
 		set initials = XX
 	endif
 	echo the TAG is NOT defined
-	echo Please define an environment variable that is the WRFV2 tag
+	echo Please define an environment variable that is the WRFV3 tag
 	echo Something such as: setenv TAG trunk_${date}_${initials}
 	echo " " 
 	exit ( 1 )
@@ -231,10 +233,12 @@ FINISHED_TEST_LIST:
 
 if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
 	else if   ( `uname` == AIX ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
+	else if ( ( `uname` == Linux  ) && ( `hostname` == basswood ) ) then
+		set SAVE_DIR = /basswood/${user}/Regression_Tests/BASELINE/`uname`
 	else if ( ( `uname` == Darwin  ) && ( `hostname` == stink ) ) then
 		set SAVE_DIR = /stink/${user}/Regression_Tests/BASELINE/`uname`
 	else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
@@ -318,10 +322,12 @@ FOUND_SELECTED_TEST:
 
 		if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 			if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-			                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+			                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else if   ( `uname` == AIX ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
+			else if ( ( `uname` == Linux ) && ( `hostname` == basswood ) ) then
+				set SAVE_DIR = /basswood/${USER}/Regression_Tests/BASELINE/`uname`/$tests[$count_test]
 			else if ( ( `uname` == Darwin ) && ( `hostname` == stink ) ) then
 				set SAVE_DIR = /stink/${USER}/Regression_Tests/BASELINE/`uname`/$tests[$count_test]
 			else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
@@ -350,31 +356,38 @@ FOUND_SELECTED_TEST:
                 set OLDT = `echo $OLD_TEXT[$count_test] | sed 's/=/ = /'`
                 set NEWT = `echo $NEW_TEXT[$count_test] | sed 's/=/ = /'`
 
-		if      ( ( $BASELINE == RUN_ONLY ) || ( $tests[$count_test] == Full_Optimization ) ) then
-			if ( -e ed.in ) rm ed.in
-			cat >! ed_in << EOF
+                if ( $tests[$count_test] == "NMM_Nest" ) then
+			cp regtest_nmmnest.csh reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
+		else
+			if      ( ( $BASELINE == RUN_ONLY ) || ( $tests[$count_test] == Full_Optimization ) ) then
+				if ( -e ed.in ) rm ed.in
+				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
+,s/1 2 3 4 5 6 7 8 9 10 11 12 13 14/1 2 3 4 5 6 7 8 9 10 11 12/
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
-		else if ( $BASELINE == GENERATE ) then
-			if ( -e ed.in ) rm ed.in
-			cat >! ed_in << EOF
+			else if ( $BASELINE == GENERATE ) then
+				if ( -e ed.in ) rm ed.in
+				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
+,s/1 2 3 4 5 6 7 8 9 10 11 12 13 14/1 2 3 4 5 6 7 8 9 10 11 12/
 ,s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
-		else if ( $BASELINE == COMPARE  ) then
-			if ( -e ed.in ) rm ed.in
-			cat >! ed_in << EOF
+			else if ( $BASELINE == COMPARE  ) then
+				if ( -e ed.in ) rm ed.in
+				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
+,s/1 2 3 4 5 6 7 8 9 10 11 12 13 14/1 2 3 4 5 6 7 8 9 10 11 12/
 ,s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
+			endif
+			ed regtest.csh < ed_in >& /dev/null
 		endif
-		ed regtest.csh < ed_in >& /dev/null
 		chmod +x reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 
 		#	On AIX, we submit jobs to the load leveler queue for bluesky and to the LSF queue for 
@@ -396,7 +409,7 @@ EOF
 			end
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm llsub.out llq.report
-		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) ) then
+		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) ) then
 			bsub < reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! bsub.out
 			set ok = 0
 			set in_already = 0
@@ -412,7 +425,7 @@ EOF
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm bsub.out bjobs.report
 		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-		                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+		                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 			llsubmit reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! llsub.out
 			set ok = 0
 			set in_already = 0
@@ -445,7 +458,7 @@ EOF
 end
 
 if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 	echo no web page building, stopping
 	exit
 endif
@@ -453,7 +466,7 @@ endif
 PASSFAIL:
 
 #	Build the html page.  We only need the middle portion.  It's
-#	a table with 5 columns: Date of test, WRFV2 tag, Developer
+#	a table with 5 columns: Date of test, WRFV3 tag, Developer
 #	who conducted the test, machine the test was run on, and the
 #	pass/fail status of the all_reg.csh script when compared
 #	to the benchmark results (usually a released code).

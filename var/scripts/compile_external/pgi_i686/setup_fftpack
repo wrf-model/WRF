@@ -1,5 +1,0 @@
-#!/bin/ksh
-make clean
-make library FC=pgf90 LD=ar LDFLAGS=ru FFLAGS="-O2 -r8 -Mfixed" TARGET="libfftpack.a"
-rm *.o
-

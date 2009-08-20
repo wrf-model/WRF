@@ -27,10 +27,11 @@ program da_advance_time
 
    implicit none
 
-   interface
-      integer function iargc()
-      end function iargc
-   end interface
+!  interface
+!     integer function iargc()
+!     end function iargc
+!  end interface
+   integer, external :: iargc
 
    integer :: ccyy, mm, dd, hh, nn, ss, dday, dh, dn, ds, gday, gsec
 

@@ -37,7 +37,7 @@ subroutine da_final_write_y(iv)
       open(unit=ounit,file=trim(file_prefix),form='formatted', &
          status='replace' , iostat=ios)
       if (ios /= 0) call da_error(__FILE__,__LINE__, &
-         (/"Cannot open random observation error file"//trim(file_prefix)/))
+         (/"Cannot open random observation error file"//file_prefix/))
    end if
 
    !------------------------------------------------------------------

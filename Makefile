@@ -65,13 +65,11 @@ wrf : framework_only
 	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
 
-# The "da" target is a subset of the "be" target, so all_wrfvar need only build "be"
-all_wrfvar : be
-
-be : 
+all_wrfvar : 
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
-	( cd var/da; touch depend.txt; make links; make depend; $(MAKE) all_wrfvar )
+	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) all_wrfvar )
+	( cd var/obsproc; $(MAKE) BUFR_CPP="$(BUFR_CPP)" )
 
 ### 3.a.  rules to build the framework and then the experimental core
 
@@ -230,12 +228,14 @@ em_real : wrf
                ln -sf ../../run/ozone_plev.formatted . ;               \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
-                  ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;           \
+                  ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA         ;   \
+                  ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;   \
+                  ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;   \
                fi ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . ) ; \
-	  ( cd test/em_esmf_exp ; /bin/rm -f urban_param.tbl ; ln -s ../../run/urban_param.tbl . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . ) ; \
@@ -260,13 +260,13 @@ em_real : wrf
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
-                ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA_DBL ;          \
-                ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA_DBL ;          \
+                ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;  \
+                ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;  \
              fi )
 	( cd test/em_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
 	( cd test/em_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
-	( cd test/em_real ; /bin/rm -f urban_param.tbl ; ln -s ../../run/urban_param.tbl . )
+	( cd test/em_real ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
 	( cd test/em_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )

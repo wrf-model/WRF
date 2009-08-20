@@ -225,12 +225,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" )
-{
-  @platforms = qw ( serial dmpar ) ;
-} else {
-  @platforms = qw ( serial smpar dmpar dm+sm ) ;
-}
+@platforms = qw ( serial smpar dmpar dm+sm ) ;
 
 # Display the choices to the user and get selection
 until ( $validresponse ) {
@@ -286,6 +281,7 @@ while ( <CONFIGURE_DEFAULTS> )
   if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 1 )
   {
     close CONFIGURE_DEFAULTS ;
+   printf("  opt_leve is = %s\n",$sw_opt_level);
     if ( $sw_opt_level eq "-f" ) {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_f |"  or die "horribly" ;
     } else {
@@ -327,9 +323,9 @@ while ( <CONFIGURE_DEFAULTS> )
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
         if ( $sw_os == Interix ) {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib -lnetcdf $sw_usenetcdff : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
         } else {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib -lnetcdf $sw_usenetcdff : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
         }
 	 }
     else                   

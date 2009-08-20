@@ -28,6 +28,8 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
       call da_oi_stats_sonde_sfc (stats_unit, iv)
    end if
    if (iv%info(mtgirs)%ntotal   > 0) call da_oi_stats_mtgirs   (stats_unit, iv)
+   if (iv%info(tamdar)%ntotal   > 0) call da_oi_stats_tamdar   (stats_unit, iv)
+   if (iv%info(tamdar)%ntotal   > 0) call da_oi_stats_tamdar_sfc(stats_unit, iv)
    if (iv%info(synop)%ntotal    > 0) call da_oi_stats_synop    (stats_unit, iv)
    if (iv%info(geoamv)%ntotal   > 0) call da_oi_stats_geoamv   (stats_unit, iv)
    if (iv%info(polaramv)%ntotal > 0) call da_oi_stats_polaramv (stats_unit, iv)
@@ -58,12 +60,15 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
    !---- ----------------------------------------------------------------------
    ! [2.0] Calculate residual vector (O-A) statistics:
    !---------------------------------------------------------------------------
+if (.not. anal_type_verify) then
 
    if (iv%info(sound)%ntotal > 0) then
       call da_ao_stats_sound (stats_unit, iv, re)
       call da_ao_stats_sonde_sfc (stats_unit, iv, re)
    end if
    if (iv%info(mtgirs)%ntotal   > 0) call da_ao_stats_mtgirs   (stats_unit, iv, re)
+   if (iv%info(tamdar)%ntotal   > 0) call da_ao_stats_tamdar   (stats_unit, iv, re)
+   if (iv%info(tamdar)%ntotal   > 0) call da_ao_stats_tamdar_sfc(stats_unit, iv, re)
    if (iv%info(synop)%ntotal    > 0) call da_ao_stats_synop    (stats_unit, iv, re)
    if (iv%info(geoamv)%ntotal   > 0) call da_ao_stats_geoamv   (stats_unit, iv, re)
    if (iv%info(polaramv)%ntotal > 0) call da_ao_stats_polaramv (stats_unit, iv, re)
@@ -103,6 +108,8 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
 
    call da_get_var_diagnostics ( iv, j)
 
+end if
+
    !---- -------------------------------------------------------------------------
    !  [5.0] Write observation data (O, O-B, O-A, y=hx'):
    !------------------------------------------------------------------------------
@@ -116,11 +123,12 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
 
    call da_final_write_obs(it, iv)
 
+if (.not. anal_type_verify) then
    call da_write_y(iv, y)
 
    call da_final_write_y(iv)
    call da_print_qcstat(it, iv, num_qcstat_conv)
-
+end if
 
    if (trace_use) call da_trace_exit("da_write_diagnostics")
 

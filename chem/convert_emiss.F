@@ -15,26 +15,32 @@ PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    USE module_machine
-   USE module_domain
-   USE module_io
    USE module_wrf_error
-   USE module_io_wrf
-   USE module_integrate 
+   USE module_integrate
+   USE module_domain, ONLY : domain
+   USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver
    USE module_driver_constants
-   USE module_state_description
-   USE module_configure
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec
+   USE module_io_domain
    USE module_timing
    USE module_utility
-   USE module_input_gocart_background
-   USE module_initialize_real
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !new for bc
    USE module_bc
-   USE module_big_step_utilities_em
    USE module_get_file_names
+#if (EM_CORE ==1)
+   USE module_big_step_utilities_em
+#endif
+!#ifdef WRF_CHEM
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! for chemistry
+!   USE module_input_chem_data
+!!  USE module_input_chem_bioemiss
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    IMPLICIT NONE
@@ -95,6 +101,10 @@ PROGRAM convert_emissions
    REAL, ALLOCATABLE :: dumc1(:,:)
    real mmax
 
+#if (NMM_CORE == 1)
+   REAL, ALLOCATABLE :: plvl(:,:,:)
+   REAL, ALLOCATABLE :: pdsl(:,:)
+#endif
 
    CHARACTER (LEN=80)     :: message
 
@@ -151,7 +161,7 @@ PROGRAM convert_emissions
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "WRF V3 EMISSIONS PREPROCESSOR"
+   program_name = "WRF-CHEM " // TRIM(release_version) // " EMISSIONS PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting
@@ -415,12 +425,12 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 00, message )
 
    CALL construct_filename1( inpname , 'wrfchemi_gocart_bg' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input9 , "DATASET=AUXINPUT9", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input8 , "DATASET=AUXINPUT8", ierr )
    write(message,FMT='(A,A)') '  GOCART BACKGROUND DATA file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    
    IF ( ierr .NE. 0 ) THEN
-     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+     CALL wrf_error_fatal( 'convert_emiss: error opening wrfchem emissions file for writing' )
    ENDIF
 
    write(message,FMT='(A)') ' PAST OPEN  GOCART BACKGROUND DATA WRF file '
@@ -455,6 +465,8 @@ PROGRAM convert_emissions
      a=50.
 !    p00=100000.
 !    p_top=5000.
+
+#if (EM_CORE == 1) 
      do j=jps,jpe
      do i=ips,ipe
         p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
@@ -484,11 +496,69 @@ PROGRAM convert_emissions
 
      enddo
      enddo
+#endif
+#if ( NMM_CORE == 1 )
+
+   ! Get scalar grid point heights
+   ALLOCATE(  plvl(ips:ipe,kps:kpe,jps:jpe) )
+   ALLOCATE(  pdsl(ips:ipe,jps:jpe) )
+
+       IF(grid%sigma.EQ. 1)THEN
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=grid%pd(i,j)
+         ENDDO
+         ENDDO
+       ELSE
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=grid%res(i,j)*grid%pd(i,j)
+         enddo
+         enddO
+       ENDIF
+
+      do j=jps,jpe
+        do k=kps,kpe
+        do i=ips,ipe
+          plvl(i,k,j)=grid%eta1(k)*grid%pdtop+grid%eta2(k)*pdsl(i,j)+grid%pt
+        ENDDO
+        ENDDO
+      ENDDO
+
+     do j=jps,jpe
+     do i=ips,ipe
+
+      do kw=kpe-1,kps,-1
+       do kg=iklev-1,1,-1
+          if( p_g(kg) <= log10(.01*plvl(i,kw,j)) ) then
+             kbot = max(1,kg-1)
+             ktop = max(min(kg,iklev-1),2)
+          endif
+       enddo ! kg loop
+
+       fac= (tmp_no3(i  ,j  ,ktop)-tmp_no3(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+       grid%backg_no3(i, kw, j) = tmp_no3(i  ,j  ,kbot)+fac*(log10(.01*plvl(i,kw,j))-p_g(kbot))
+
+! OH
+       fac= (tmp_oh(i  ,j  ,ktop)-tmp_oh(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+       grid%backg_oh(i, kw, j) = tmp_oh(i  ,j  ,kbot)+fac*(log10(.01*plvl(i,kw,j))-p_g(kbot))
+
+! H2O2
+       fac= (tmp_h2o2(i  ,j  ,ktop)-tmp_h2o2(i  ,j  ,kbot) )/(p_g(ktop) - p_g(kbot))
+       grid%backg_h2o2(i, kw, j) = tmp_h2o2(i  ,j  ,kbot)+fac*(log10(.01*plvl(i,kw,j))-p_g(kbot))
+
+      enddo  ! kw loop
+
+     enddo
+     enddo
+
+#endif
+
    ENDIF ! chem_opt gocart_simple or gocartracm
 
-   CALL output_aux_model_input9 ( id1 , grid , config_flags , ierr )
+   CALL output_aux_model_input8 ( id1 , grid , config_flags , ierr )
 
-   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT9" )
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT8" )
 
    ENDIF ! chem_opt gocart_simple,dmsgocart,dustgocart
 
@@ -1199,7 +1269,12 @@ PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    NOW DO BIG TIMEDEPENDENT EMISSIONS FILE
 !
-    if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG) then
+    if(CONFIG_FLAGS%EMISS_OPT == ECBMZ_MOSAIC ) then
+       write(message, FMT='(A,I10)') ' convert_emiss: error: conversion for all CBMZ emission arrays not available '
+       CALL wrf_error_fatal( TRIM( message ) )
+    endif
+    if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG .or.  &
+       CONFIG_FLAGS%EMISS_OPT == ECBMZ_MOSAIC ) then
    !  Figure out our loop count for the processing times.
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -1594,7 +1669,7 @@ PROGRAM convert_emissions
    write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    IF ( ierr .NE. 0 ) THEN
-     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+     CALL wrf_error_fatal( 'convert_emiss: error opening wrfchem emissions file for writing' )
    ENDIF
 
    CALL calc_current_date ( grid%id , 0. )
@@ -2013,7 +2088,7 @@ PROGRAM convert_emissions
      write(message,FMT='(A)') ' DONE WRITING TIME DEPENDENT EMISSIONS FILE'
      CALL  wrf_message ( message )
 
-    endif  !    ERADM .or.ERADMSORG
+    endif  !    ERADM .or.ERADMSORG .or. ECBMZ
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    NOW DO BIOGENIC EMISSIONS FILE
@@ -2273,20 +2348,20 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 100, message )
 
    CALL construct_filename1( inpname , 'wrfbiochemi' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input6 , "DATASET=AUXINPUT6", ierr )
    write(message,FMT='(A,A)') ' BIOGENIC EMISSIONS file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
 
    IF ( ierr .NE. 0 ) THEN
-     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+     CALL wrf_error_fatal( 'convert_emiss: error opening wrfchem emissions file for writing' )
    ENDIF
 
    write(message,FMT='(A)') ' WRITE BIOGENIC EMISSIONS WRF file '
    CALL  wrf_debug ( 100, message )
 
-   CALL output_aux_model_input4 ( id1 , grid , config_flags , ierr )
+   CALL output_aux_model_input6 ( id1 , grid , config_flags , ierr )
 
-   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT4" )
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT6" )
 
     endif  !    BIO_EMIS_OPT = BEIS313
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

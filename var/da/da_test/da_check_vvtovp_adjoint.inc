@@ -1,4 +1,4 @@
-subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
+subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
 
    !---------------------------------------------------------------------------
    ! Purpose: Test Vv to Vp routine and adjoint for compatibility.
@@ -8,6 +8,7 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
 
    implicit none
 
+   type (domain), intent(in)         :: grid
    integer, intent(in)               :: ne    ! Ensemble size.
    type (xb_type), intent(in)        :: xb    ! first guess (local).
    type (be_type), intent(in)        :: be    ! background error structure.
@@ -24,9 +25,15 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
    real                              :: vv2_v3(ims:ime,jms:jme,kms:kme)
    real                              :: vv2_v4(ims:ime,jms:jme,kms:kme)
    real                              :: vv2_v5(ims:ime,jms:jme,kms:kme)
-   real                              :: vv2_alpha(ims:ime,jms:jme,1:ne)
+   real                              :: vv2_alpha(ims:ime,jms:jme,kts:kte,1:ne)
 
    if (trace_use) call da_trace_entry("da_check_vvtovp_adjoint")
+
+   if (cv_options == 3 ) then
+      write(unit=stdout, fmt='(/a,i2,a/)') 'cv_options =',cv_options, &
+                     '   no da_check_vvtovp_adjoint check...'
+      goto 1235
+   end if
 
    !----------------------------------------------------------------------
    ! [1.0] Initialise:
@@ -38,7 +45,7 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
    ! [2.0] Perform Vp = U_v Vv transform:
    !----------------------------------------------------------------------
 
-   call da_vertical_transform('u', be, &
+   call da_vertical_transform(grid, 'u', be, &
                                xb % vertical_inner_product, &
                                vv, vp)
 
@@ -54,7 +61,7 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
 
    if (be % ne > 0) then
       adj_par_lhs = adj_par_lhs + &
-         sum(vp % alpha(its:ite,jts:jte,1:be%ne)**2) * inv_typ_vpalpha_sumsq
+         sum(vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne)**2) * inv_typ_vpalpha_sumsq
    end if
 
    !----------------------------------------------------------------------
@@ -73,8 +80,8 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
       inv_typ_vp5_sumsq
 
    if (be % ne > 0) then
-      vp % alpha(its:ite,jts:jte,1:be%ne) = &
-         vp % alpha(its:ite,jts:jte,1:be%ne) * inv_typ_vpalpha_sumsq
+      vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &
+         vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) * inv_typ_vpalpha_sumsq
    end if
 
    !----------------------------------------------------------------------
@@ -88,10 +95,10 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
    vv2_v5(its:ite,jts:jte,1:be%v5%mz) = vv % v5(its:ite,jts:jte,1:be%v5%mz)
 
    if (be % ne > 0) then
-      vv2_alpha(its:ite,jts:jte,1:be%ne) = vv % alpha(its:ite,jts:jte,1:be%ne)
+      vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne)
    end if      
 
-   call da_vertical_transform('u_adj', be, &
+   call da_vertical_transform(grid, 'u_adj', be, &
                                xb % vertical_inner_product, &
                                vv, vp)
 
@@ -116,8 +123,8 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
       adj_par_rhs = sum(vv % v5(its:ite,jts:jte,1:be%v5%mz) * &
          vv2_v5(its:ite,jts:jte,1:be%v5%mz)) + adj_par_rhs
    if (be % ne > 0) &
-      adj_par_rhs = sum(vv % alpha(its:ite,jts:jte,1:be%ne) * &
-         vv2_alpha(its:ite,jts:jte,1:be%ne)) + adj_par_rhs
+      adj_par_rhs = sum(vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) * &
+         vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne)) + adj_par_rhs
 
    !----------------------------------------------------------------------
    ! [7.0] Print output:
@@ -145,10 +152,12 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
    vv % v5(its:ite,jts:jte,1:be%v5%mz) = vv2_v5(its:ite,jts:jte,1:be%v5%mz)
 
    if (be % ne > 0) then
-      vv % alpha(its:ite,jts:jte,1:be%ne) = vv2_alpha(its:ite,jts:jte,1:be%ne)
+      vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne)
    end if
 
    write(unit=stdout, fmt='(/a/)') 'da_check_vvtovp_adjoint: Test Finished.'
+
+1235 continue
 
    if (trace_use) call da_trace_exit("da_check_vvtovp_adjoint")
 

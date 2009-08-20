@@ -12,9 +12,9 @@ module da_par_util
    use module_dm, only : local_communicator_x, &
       local_communicator_y, ntasks_x, ntasks_y, data_order_xyz
    use da_par_util1, only : true_mpi_real, true_mpi_complex
-   use mpi, only : mpi_2double_precision, mpi_status_size, &
-      mpi_integer, mpi_maxloc, mpi_status_size, &
-      mpi_minloc, mpi_sum
+!   use mpi, only : mpi_2double_precision, mpi_status_size, &
+!     mpi_integer, mpi_maxloc, mpi_status_size, &
+!     mpi_minloc, mpi_sum
 #else
    use da_reporting, only : message
 #endif
@@ -37,6 +37,10 @@ module da_par_util
       wrf_dm_xpose_z2y, wrf_dm_xpose_y2z, wrf_patch_to_global_real, wrf_debug
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 #include "da_generic_typedefs.inc"
 

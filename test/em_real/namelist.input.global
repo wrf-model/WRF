@@ -33,13 +33,12 @@
  time_step_fract_num                 = 00
  time_step_fract_den                 = 112
  max_dom                             = 1,
- s_we                                = 1,     1,     1,
  e_we                                = 257,    41,    41,
- s_sn                                = 1,     1,     1,
  e_sn                                = 129,    81,    81,
- s_vert                              = 1,     1,     1,
  e_vert                              = 41,    41,    41,
- num_metgrid_levels                  = 27
+ p_top_requested                     = 5000,
+ num_metgrid_levels                  = 27,
+ num_metgrid_soil_levels             = 4,
  dx                                  = 156343.322,20000, 4000,
  dy                                  = 156343.322,20000, 4000,
  p_top_requested                     = 5000
@@ -90,10 +89,10 @@
  khdif                               = 0,      0,      0,
  kvdif                               = 0,      0,      0,
  non_hydrostatic                     = .true.,.true., .true.,
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 0,      0,      0,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
  fft_filter_lat                      = 45.,
  w_damping                           = 1,
  /

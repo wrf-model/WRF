@@ -56,7 +56,7 @@ SUBROUTINE THIN_OB (max_number_of_obs, obs, number_of_obs, mix, mjx, &
 
        if (Ob_fm == 88) then
          LV      = 100
-         max_box =  20
+         max_box =  50
 
    ! For SSMI
 

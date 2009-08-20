@@ -1,4 +1,0 @@
-#!/bin/ksh
-make clean
-make library FC=xlf_r LD=ar LDFLAGS=ru FFLAGS="-O2 -qmaxmem=32767 -qrealsize=8" TARGET="libfftpack.a"
-rm *.o

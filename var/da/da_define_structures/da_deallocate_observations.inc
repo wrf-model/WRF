@@ -48,6 +48,21 @@ subroutine da_deallocate_observations (iv)
 
    end if
 
+   if (iv%info(tamdar)%nlocal > 0) then
+      do n = 1, iv%info(tamdar)%nlocal
+         if (iv%info(tamdar)%levels(n) > 0) then
+            deallocate (iv%tamdar (n) % h)
+            deallocate (iv%tamdar (n) % p)
+            deallocate (iv%tamdar (n) % u)
+            deallocate (iv%tamdar (n) % v)
+            deallocate (iv%tamdar (n) % t)
+            deallocate (iv%tamdar (n) % q)
+         end if
+      end do
+
+      deallocate (iv%tamdar)
+      deallocate (iv%tamdar_sfc)
+   end if
    if (iv%info(synop)%nlocal > 0) deallocate (iv%synop)
 
    if (iv%info(airep)%nlocal > 0) then
@@ -95,6 +110,7 @@ subroutine da_deallocate_observations (iv)
 
    if (iv%info(pilot)%nlocal > 0) then
       do n = 1, iv%info(pilot)%nlocal
+         deallocate (iv%pilot (n) % h)
          deallocate (iv%pilot (n) % p)
          deallocate (iv%pilot (n) % u)
          deallocate (iv%pilot (n) % v)
@@ -170,6 +186,7 @@ subroutine da_deallocate_observations (iv)
 
    if (iv%info(profiler)%nlocal > 0) then
       do n = 1, iv%info(profiler)%nlocal
+         deallocate (iv%profiler(n)%h)
          deallocate (iv%profiler(n)%p)
          deallocate (iv%profiler(n)%u)
          deallocate (iv%profiler(n)%v)
@@ -190,6 +207,37 @@ subroutine da_deallocate_observations (iv)
 
       deallocate (iv%airsr)
    end if
+
+   do n = 1, num_ob_indexes
+      if (n .ne. radiance .and. iv%info(n)%nlocal > 0) then
+         deallocate (iv%info(n)%name)
+         deallocate (iv%info(n)%platform)
+         deallocate (iv%info(n)%id)
+         deallocate (iv%info(n)%date_char)
+         deallocate (iv%info(n)%levels)
+         deallocate (iv%info(n)%lat)
+         deallocate (iv%info(n)%lon)
+         deallocate (iv%info(n)%elv)
+         deallocate (iv%info(n)%pstar)
+         deallocate (iv%info(n)%slp)
+         deallocate (iv%info(n)%pw)
+         deallocate (iv%info(n)%x)
+         deallocate (iv%info(n)%y)
+         deallocate (iv%info(n)%i)
+         deallocate (iv%info(n)%j)
+         deallocate (iv%info(n)%dx)
+         deallocate (iv%info(n)%dxm)
+         deallocate (iv%info(n)%dy)
+         deallocate (iv%info(n)%dym)
+         deallocate (iv%info(n)%k)
+         deallocate (iv%info(n)%dz)
+         deallocate (iv%info(n)%dzm)
+         deallocate (iv%info(n)%zk)
+         deallocate (iv%info(n)%proc_domain)
+         deallocate (iv%info(n)%thinned)
+         deallocate (iv%info(n)%obs_global_index)
+      end if
+   end do
 
    if (trace_use) call da_trace_exit("da_deallocate_observations")
 

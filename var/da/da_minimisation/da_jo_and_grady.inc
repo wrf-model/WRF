@@ -19,7 +19,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
               jo_ssmi_tb, jo_ssmi_rv, jo_ssmt1, jo_ssmt2, &
               jo_pseudo, jo_qscat, jo_buoy, &
               jo_profiler, jo_radar, jo_gpsref, jo_bogus, &
-              jo_radiance, jo_airsr, jo_mtgirs
+              jo_radiance, jo_airsr, jo_mtgirs, jo_tamdar, jo_tamdar_sfc
    integer :: i,k
 
    if (trace_use) call da_trace_entry("da_jo_and_grady")
@@ -82,7 +82,52 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       end if
 
    else
+      jo % mtgirs_u = 0.0
+      jo % mtgirs_v = 0.0
+      jo % mtgirs_t = 0.0
+      jo % mtgirs_q = 0.0
       jo_mtgirs     = 0.0
+   end if
+
+   if (iv%info(tamdar)%nlocal > 0) then
+      call da_jo_and_grady_tamdar(iv, re, jo, jo_grad_y)
+      jo_tamdar = jo%tamdar_u + jo%tamdar_v + jo%tamdar_t + jo%tamdar_q
+
+      if (print_detail_grad) then
+         write(unit=stdout, fmt='(a, e24.12)') &
+            '   jo_tamdar             ', jo_tamdar, &
+            '   jo%tamdar_u      ', jo%tamdar_u, &
+            '   jo%tamdar_v      ', jo%tamdar_v, &
+            '   jo%tamdar_t      ', jo%tamdar_t, &
+            '   jo%tamdar_q      ', jo%tamdar_q
+      end if
+      call da_jo_and_grady_tamdar_sfc(iv, re, jo, jo_grad_y)
+      jo_tamdar_sfc = jo%tamdar_sfc_u + jo%tamdar_sfc_v + jo%tamdar_sfc_t + &
+         jo%tamdar_sfc_q + jo%tamdar_sfc_p
+
+      if (print_detail_grad) then
+         write(unit=stdout, fmt='(a, e24.12)') &
+            '   jo_tamdar_sfc    ', jo_tamdar_sfc,     &
+            '   jo%tamdar_sfc_u  ', jo%tamdar_sfc_u, &
+            '   jo%tamdar_sfc_v  ', jo%tamdar_sfc_v, &
+            '   jo%tamdar_sfc_t  ', jo%tamdar_sfc_t, &
+            '   jo%tamdar_sfc_p  ', jo%tamdar_sfc_p, &
+            '   jo%tamdar_sfc_q  ', jo%tamdar_sfc_q
+      end if
+
+   else
+      jo % tamdar_u = 0.0
+      jo % tamdar_v = 0.0
+      jo % tamdar_t = 0.0
+      jo % tamdar_q = 0.0
+      jo % tamdar_sfc_u = 0.0
+      jo % tamdar_sfc_v = 0.0
+      jo % tamdar_sfc_t = 0.0
+      jo % tamdar_sfc_p = 0.0
+      jo % tamdar_sfc_q = 0.0
+      jo_tamdar     = 0.0
+      jo_tamdar_sfc = 0.0
+
    end if
 
    if (iv%info(synop)%nlocal > 0) then
@@ -308,11 +353,11 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo_buoy = 0.0
    end if
 
+   jo_radiance = 0.0
 #if defined(CRTM) || defined(RTTOV)
    if (iv%num_inst > 0) then
       call da_jo_and_grady_rad (iv, re, jo, jo_grad_y)
 
-      jo_radiance = 0.0 
       if (use_rad) then
          do i=1,iv%num_inst
             do k=1,iv%instid(i)%nchan
@@ -328,11 +373,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
                trim('   jo_'//iv%instid(i)%rttovid_string), sum(jo%rad(i)%jo_ichan(:))
          end do
       end if
-   else
-      jo_radiance = 0.0
    end if
-#else
-   jo_radiance = 0.0
 #endif
 
    if (iv%info(airsr)%nlocal > 0) then
@@ -359,7 +400,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo_pilot + jo_airep + jo_metar + jo_ships + &
       jo_gpspw + jo_ssmi_tb + jo_ssmi_rv + jo_ssmt1 + jo_ssmt2 + &
       jo_pseudo + jo_qscat + jo_profiler + jo_buoy + &
-      jo_radar + jo_gpsref + jo_bogus + jo_radiance + jo_airsr + jo_mtgirs
+      jo_radar + jo_gpsref + jo_bogus + jo_radiance + jo_airsr + jo_mtgirs + jo_tamdar + jo_tamdar_sfc
 
    jot = jo%total
 
@@ -392,7 +433,9 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
          '   jo_bogus        ', jo_bogus,  &
          '   jo_radiance     ', jo_radiance, &
          '   jo_airsr        ', jo_airsr,&
-         '   jo_mtgirs       ', jo_mtgirs
+         '   jo_mtgirs       ', jo_mtgirs, &
+         '   jo_tamdar       ', jo_tamdar, &
+         '   jo_tamdar_sfc    ', jo_tamdar_sfc
 
    end if
 

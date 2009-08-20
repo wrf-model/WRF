@@ -27,7 +27,7 @@ module gr1_data_info
   integer                , parameter       :: DateStrLen       = 19
 
   integer                , parameter       :: firstFileHandle  = 8
-  integer                , parameter       :: maxFileHandles   = 200
+  integer                , parameter       :: maxFileHandles   = 30 
   integer                , parameter       :: maxLevels        = 1000
   integer                , parameter       :: maxSoilLevels    = 100
   integer                , parameter       :: maxDomains       = 500
@@ -88,8 +88,8 @@ module gr1_data_info
 
   integer                                  :: center, subcenter, parmtbl
 
-  character(len=30000), dimension(maxFileHandles) :: td_output
-  character(len=30000), dimension(maxFileHandles) :: ti_output
+  character(len=15000), dimension(firstFileHandle:maxFileHandles) :: td_output
+  character(len=15000), dimension(firstFileHandle:maxFileHandles) :: ti_output
 
   logical                                  :: WrfIOnotInitialized = .true.
 

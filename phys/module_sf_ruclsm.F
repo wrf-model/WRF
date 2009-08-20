@@ -7,11 +7,11 @@ MODULE module_sf_ruclsm
   USE module_wrf_error
 
 ! VEGETATION PARAMETERS
-        INTEGER :: LUCATS , BARE
+        INTEGER :: LUCATS , BARE, NATURAL
         integer, PARAMETER :: NLUS=50
         CHARACTER*8 LUTYPE
         INTEGER, DIMENSION(1:NLUS) :: NROTBL
-        real, dimension(1:NLUS) ::  SNUPTBL, RSTBL, RGLTBL, HSTBL, LAITBL,        &
+        real, dimension(1:NLUS) ::  SNUPTBL, RSTBL, RGLTBL, HSTBL, LAITBL,         &
                                     ALBTBL, Z0TBL, LEMITBL, PCTBL, SHDTBL, MAXALB
         REAL ::   TOPT_DATA,CMCMAX_DATA,CFACTR_DATA,RSMAX_DATA
 
@@ -49,7 +49,7 @@ CONTAINS
                    SOILMOIS,SH2O,SMAVAIL,SMMAX,                  &
                    TSO,SOILT,HFX,QFX,LH,                         &
                    SFCRUNOFF,UDRUNOFF,SFCEXC,                    &
-                   SFCEVP,GRDFLX,ACSNOW,                         &
+                   SFCEVP,GRDFLX,ACSNOW,SNOM,                    &
                    SMFR3D,KEEPFR3DFLAG,                          &
                    myj,                                          &
                    ids,ide, jds,jde, kds,kde,                    &
@@ -195,6 +195,7 @@ CONTAINS
                                                        UDRUNOFF, &
                                                          GRDFLX, &
                                                          ACSNOW, &
+                                                           SNOM, &
                                                             QVG, &
                                                             QCG, &
                                                            QSFC, &
@@ -217,7 +218,6 @@ CONTAINS
                                                           SMELT, &
                                                            SNOH, &
                                                           SNFLX, &
-                                                           SNOM, &
                                                            EDIR, &
                                                              EC, &
                                                             ETT, &
@@ -1149,6 +1149,7 @@ CONTAINS
 
         ELSE
 
+         alb=alb_snow_free
            snheiprint=0.
            snweprint=0.
 
@@ -2340,6 +2341,8 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !          snwe=0.
          ENDIF
 
+! 21apr2009
+! SNOM goes into the passed-in ACSNOM variable in the grid derived type
         SNOM=SNOM+SMELT*DELT
 
 !--- KEEPFR is 1 when the temperature and moisture in soil
@@ -4570,7 +4573,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         INTEGER , PARAMETER :: OPEN_OK = 0
 
         character*8 :: MMINLU, MMINSL
-        character*128 :: mess , message
+        character*128 :: mess , message, vege_parm_string
         logical, external :: wrf_dm_on_monitor
 
 
@@ -4615,64 +4618,67 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
         LUMATCH=0
 
-        READ (19,*)
-        READ (19,2000,END=2002)LUTYPE
-        READ (19,*)LUCATS,IINDEX
  2000   FORMAT (A8)
+        READ (19,'(A)') vege_parm_string
+        outer : DO 
+           READ (19,2000,END=2002)LUTYPE
+           READ (19,*)LUCATS,IINDEX
 
-        IF(LUTYPE.NE.MMINLU)THEN
-          DO LC=1,LUCATS
-              READ (19,*)IINDEX,ALBTBL(LC),Z0TBL(LC),                       &
-                        SHDTBL(LC),NROTBL(LC),RSTBL(LC),RGLTBL(LC),         &
-                        HSTBL(LC),SNUPTBL(LC),LAITBL(LC),MAXALB(LC)
-          ENDDO
-          READ (19,*)
-          READ (19,*)TOPT_DATA
-          READ (19,*)
-          READ (19,*)CMCMAX_DATA
-          READ (19,*)
-          READ (19,*)CFACTR_DATA
-          READ (19,*)
-          READ (19,*)RSMAX_DATA
-          READ (19,*)
-          READ (19,*)BARE
-        ENDIF
+           WRITE( mess , * ) 'VEGPARM FOR ',LUTYPE,' FOUND', LUCATS,' CATEGORIES'
+           CALL wrf_message( mess )
 
-        READ (19,*)
-        READ (19,2000,END=2002)LUTYPE
-        READ (19,*)LUCATS,IINDEX
+           IF(LUTYPE.NE.MMINLU)THEN    ! Skip over the undesired table
+              write ( mess , * ) 'Skipping ', LUTYPE, ' table'
+              CALL wrf_message( mess )
+              DO LC=1,LUCATS
+                 READ (19,*)
+              ENDDO
+              inner : DO               ! Find the next "Vegetation Parameters"
+                 READ (19,'(A)',END=2002) vege_parm_string
+                 IF (TRIM(vege_parm_string) .EQ. "Vegetation Parameters") THEN
+                    EXIT inner
+                 END IF
+               ENDDO inner
+           ELSE
+              LUMATCH=1
+              write ( mess , * ) 'Found ', LUTYPE, ' table'
+              CALL wrf_message( mess )
+              EXIT outer                ! Found the table, read the data
+           END IF
 
+        ENDDO outer
 
-        IF(LUTYPE.EQ.MMINLU)THEN
-          WRITE( mess , * ) 'VEGPARM FOR ',LUTYPE,' FOUND',              &
-                  LUCATS,' CATEGORIES'
-          CALL wrf_message( mess )
-          LUMATCH=1
-        ENDIF
-
-            IF(LUTYPE.EQ.MMINLU)THEN
-          DO LC=1,LUCATS
+        IF (LUMATCH == 1) then
+           write ( mess , * ) 'Reading ',LUTYPE,' table'
+           CALL wrf_message( mess )
+           DO LC=1,LUCATS
               READ (19,*)IINDEX,ALBTBL(LC),Z0TBL(LC),LEMITBL(LC),PCTBL(LC), &
-                        SHDTBL(LC),NROTBL(LC),RSTBL(LC),RGLTBL(LC),         &
-                        HSTBL(LC),SNUPTBL(LC),LAITBL(LC),MAXALB(LC)
-          ENDDO
+                         SHDTBL(LC),NROTBL(LC),RSTBL(LC),RGLTBL(LC),         &
+                         HSTBL(LC),SNUPTBL(LC),LAITBL(LC),MAXALB(LC)
+           ENDDO
 !
-          READ (19,*)
-          READ (19,*)TOPT_DATA
-          READ (19,*)
-          READ (19,*)CMCMAX_DATA
-          READ (19,*)
-          READ (19,*)CFACTR_DATA
-          READ (19,*)
-          READ (19,*)RSMAX_DATA
-          READ (19,*)
-          READ (19,*)BARE
-           ENDIF
-!
- 2002   CONTINUE
+           READ (19,*)
+           READ (19,*)TOPT_DATA
+           READ (19,*)
+           READ (19,*)CMCMAX_DATA
+           READ (19,*)
+           READ (19,*)CFACTR_DATA
+           READ (19,*)
+           READ (19,*)RSMAX_DATA
+           READ (19,*)
+           READ (19,*)BARE
+           READ (19,*)
+           READ (19,*)NATURAL
+        ENDIF
 
+ 2002   CONTINUE
         CLOSE (19)
-      ENDIF
+
+        IF (LUMATCH == 0) then
+           CALL wrf_error_fatal ("Land Use Dataset '"//MMINLU//"' not found in VEGPARM.TBL.")
+        ENDIF
+
+      END IF
 
       CALL wrf_dm_bcast_string  ( LUTYPE  , 8 )
       CALL wrf_dm_bcast_integer ( LUCATS  , 1 )

@@ -129,9 +129,6 @@
       LOGICAL :: START_OF_SIMULATION
       LOGICAL :: LRESTART
 
-#ifndef WRF_NMM_NEST
-      LOGICAL :: MOVED = .FALSE.
-#endif
 
       integer :: jam,retval
       CHARACTER(LEN=255) :: message
@@ -143,6 +140,7 @@
       integer :: i_v=49,j_v=475,n_v=07
       integer :: num_ozmixm, num_aerosolc
       real :: cen_lat,cen_lon,dtphs   ! GWD
+      integer :: num_urban_layers
 !Rogers GMT
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
@@ -168,6 +166,7 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
      &                       IMS,IME,JMS,JME,KMS,KME,                  &
@@ -1583,6 +1582,9 @@
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
+#ifndef WRF_NMM_NEST
+      MOVED = .FALSE.
+#endif
 
       IF (GRID%RESTART) THEN
          LRESTART = GRID%RESTART
@@ -1632,6 +1634,7 @@
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
+     &             ,NUM_URBAN_LAYERS                                    &
      &                )
 
 !-----------------------------------------------------------------------

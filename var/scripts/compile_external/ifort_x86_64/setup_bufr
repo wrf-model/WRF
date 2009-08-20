@@ -1,9 +1,0 @@
-#!/bin/ksh
-export CPPFLAGS="-C -P -traditional -DLINUX -Dlinux"
-export CC=gcc
-export FFC=ifort
-export FFCFLAGS="-O2 -r8"
-export CCFLAGS="-O2 -DUNDERSCORE"
-rm *.a
-make clean
-make all

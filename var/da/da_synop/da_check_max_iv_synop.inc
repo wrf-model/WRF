@@ -67,21 +67,6 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%synop(n)%q%qc == fails_error_max .and. it > 1) iv%synop(n)%q%qc =0
-      if( iv%synop(n)%q%qc >= obs_qc_pointer ) then
-      failed=.false.
-      if( check_max_iv) &
-      call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%q, max_error_q , failed)
-      if( iv%info(synop)%proc_domain(1,n) ) then
-      num_qcstat_conv(1,synop,4,1)= num_qcstat_conv(1,synop,4,1) + 1
-      if(failed) then
-      num_qcstat_conv(2,synop,4,1)= num_qcstat_conv(2,synop,4,1) + 1
-      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-           'synop',ob_vars(4),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
-      end if
-      end if
-      end if 
-
       if( iv%synop(n)%p%qc == fails_error_max .and. it > 1) iv%synop(n)%p%qc =0
       if( iv%synop(n)%p%qc >= obs_qc_pointer ) then
       failed=.false.
@@ -93,6 +78,27 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(2,synop,5,1)= num_qcstat_conv(2,synop,5,1) + 1
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'synop',ob_vars(5),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+      end if
+      end if
+      end if 
+
+      if( iv%synop(n)%q%qc == fails_error_max .and. it > 1) iv%synop(n)%q%qc =0
+      if( iv%synop(n)%q%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( iv%synop(n)%t%qc == fails_error_max .or. iv%synop(n)%p%qc == fails_error_max) then
+      failed=.true.
+      iv%synop(n)%q%qc  = fails_error_max
+      iv%synop(n)%q%inv = 0.0
+      else
+      if( check_max_iv) &
+      call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%q, max_error_q , failed)
+      endif
+      if( iv%info(synop)%proc_domain(1,n) ) then
+      num_qcstat_conv(1,synop,4,1)= num_qcstat_conv(1,synop,4,1) + 1
+      if(failed) then
+      num_qcstat_conv(2,synop,4,1)= num_qcstat_conv(2,synop,4,1) + 1
+      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'synop',ob_vars(4),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
       end if
       end if
       end if 

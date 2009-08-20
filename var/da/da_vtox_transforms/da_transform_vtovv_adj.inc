@@ -12,7 +12,9 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
    real,          intent(inout) :: cv(1:cv_size)   ! control variables.
    type(vp_type), intent(inout) :: vv   ! Grid point/EOF control var.
 
+   integer :: n    ! Loop counter.
    integer :: mz   ! Vertical truncation.
+   integer :: ne   ! Ensemble size.
 
    if (trace_use) call da_trace_entry("da_transform_vtovv_adj")
 
@@ -57,16 +59,20 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
 
    ! [2.6] Transform alpha control variable
 
-   mz = be % alpha % mz
-   if (mz > 0) then
-      call da_transform_through_rf_adj(grid, mz, be % alpha % rf_alpha, be % alpha % val, vv % alpha)
+   ne = be % ne
+   if (ne > 0) then
+      mz = be % alpha % mz
+      do n = 1, ne
+         call da_transform_through_rf_adj(grid, mz, be % alpha % rf_alpha, be % alpha % val, vv % alpha(:,:,:,n))
+      end do
    end if
 
    !-------------------------------------------------------------------------
    ! [1.0] Fill 1D cv array from 3-dimensional vv arrays.
    !-------------------------------------------------------------------------
 
-   call da_vv_to_cv(vv, grid%xp, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%ne /), cv_size, cv)
+   call da_vv_to_cv( vv, grid%xp, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be%ne /), &
+                     cv_size, cv)
 
    if (trace_use) call da_trace_exit("da_transform_vtovv_adj")
 

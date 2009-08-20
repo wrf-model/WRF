@@ -71,7 +71,7 @@ subroutine da_read_kma1dvar (inst,iv, ob, infile)
        iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_error(__FILE__,__LINE__,&
-         (/"Cannot open file "//trim(infile)/))
+         (/"Cannot open file "//infile/))
    end if
 
    read(unit=inunit,fmt='(A,I10,I12)') instrument,idate,npass

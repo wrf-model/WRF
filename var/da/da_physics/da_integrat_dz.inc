@@ -21,13 +21,17 @@ subroutine da_integrat_dz(grid)
 
    type (domain), intent(inout) :: grid
 
-   integer :: i, j, K 
+   integer :: i, j, K, ij 
 
    real    :: pw
 
    if (trace_use) call da_trace_entry("da_integrat_dz")
 
    ! weighted sum of vertical column 
+
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE (ij, i, j, pw)
+   do ij = 1, grid%num_tiles
 
    do j=jts, jte
       do i=its, ite
@@ -39,6 +43,9 @@ subroutine da_integrat_dz(grid)
          grid%xb%tpw(i,j) = 0.1*pw
       end do
    end do
+
+   end do
+   !$OMP END PARALLEL DO
 
    if (trace_use) call da_trace_exit("da_integrat_dz")
 

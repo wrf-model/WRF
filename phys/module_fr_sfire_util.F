@@ -16,7 +16,7 @@ module module_fr_sfire_util
 ! 3. (optional) add a line in Registry.EM to define the variable and set default value
 
 
-integer,save::          &
+integer ::              &
  fire_print_msg=1,      &  ! print SFIRE progress 
  fire_print_file=1,     &  ! write many files by write_array_m; compile with DEBUG_OUT, do not run in parallel
  fuel_left_method=1,    &  ! 1=simple, 2=exact in linear case
@@ -32,7 +32,7 @@ integer,save::          &
  
 
 
-real, save::            &
+real ::                 &
  fire_atm_feedback=1. , &  ! 1 = normal, 0. = one way coupling atmosphere -> fire only
  fire_back_weight=0.5,  &  ! RK parameter, 0 = Euler method, 0.5 = Heun, 1 = fake backward Euler
  fire_viscosity=0.4,    &  ! artificial viscosity
@@ -44,7 +44,6 @@ contains
 !****************
 !
 subroutine crash(s)
-use module_wrf_error
 implicit none
 character(len=*), intent(in)::s
 character(len=128)msg
@@ -57,7 +56,6 @@ end subroutine crash
 !
 
 subroutine message(s)
-use module_wrf_error
 !$ use OMP_LIB 
 implicit none
 character(len=*), intent(in)::s
@@ -1035,7 +1033,6 @@ end subroutine write_array_m
 subroutine write_array_m3(its,ite,kts,kte,jts,jte,           &
                          ims,ime,kms,kme,jms,jme,               &
                          a,name,id)
-use module_dm
 
 implicit none
 ! debug

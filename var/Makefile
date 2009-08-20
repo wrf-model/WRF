@@ -1,9 +1,17 @@
 
 clean:
-	( cd da; /bin/rm -f *.o *.mod *.f *.c *.m4 *.stb *.out core *~ mpif.h da_generic_boilerplate.inc )
+	( cd build; /bin/rm -f *.o *.mod *.f *.c *.m4 *.stb *.out core *~ mpif.h da_generic_boilerplate.inc )
 	( cd gen_be; /bin/rm -f *.o *.f core *~ )
 
 superclean :
-	make clean
-	( cd da; /bin/rm -f mpif.h; /bin/rm -f *.inc; /bin/rm -f *.f90 *.c *.m4 *.exe )
+	( cd build; /bin/rm -f mpif.h; /bin/rm -f *.inc *.prm; /bin/rm -f *.f90 *.c *.m4 *.exe; \
+          /bin/rm -rf *.o *.mod *.b *.a *.f frame/*.F diffwrf \
+          Registry_tmp* module_state_description.f90 \
+          inc/dm_comm_cpp_flags testall.csh *.exe *.f90 *.F90 *.F inc/*.inc *.int *.c *.h *.m4 *.code \
+          *.sed qual_threshold.nl rsl_cpp_flags version_decl module_dm_warning \
+          decode_l2_airs.README time_window.nl Test1.out.correct \
+          links README* landread.c.dist Makefile \
+          depend depend.txt ./inc/namelist_script.inc )
+	( cd da; /bin/rm -f *.exe )
+	( cd da/makedepf90-2.8.8; /bin/rm -f makedepf90 config.log Makefile config.status )
 	( cd gen_be; /bin/rm -f *.exe )

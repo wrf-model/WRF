@@ -1179,6 +1179,7 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   integer                           :: stat
   character (7)                     :: Buffer
   integer                           :: VDimIDs(2)
+  integer                           :: info, ierr   ! added for Blue Gene (see NF_CREAT below)
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1195,13 +1196,31 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
 !  stat = NFMPI_CREATE(Comm, FileName, NF_CLOBBER, MPI_INFO_NULL, DH%NCID)
-   stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), MPI_INFO_NULL, DH%NCID)
+
+#ifndef BLUEGENE
+  stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), MPI_INFO_NULL, DH%NCID)
+#else
+!!!!!!!!!!!!!!!
+! rob latham suggested hint
+
+  call mpi_info_create( info, ierr )
+!  call mpi_info_set(info,'cd_buffer_size','4194304',ierr)
+  call mpi_info_set(info,'cd_buffer_size','8388608',ierr)
+  stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)
+  call mpi_info_free( info, ierr)
+!
+!!!!!!!!!!!!!!! 
+#endif
+
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_pnc_open_for_write_begin ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+  ! JPE added for performance
+  stat = NFMPI_SET_FILL(DH%NCID, NF_NOFILL, i)
+
   DH%FileStatus  = WRF_FILE_OPENED_NOT_COMMITTED
   DH%FileName    = FileName
   stat = NFMPI_DEF_DIM(DH%NCID,DH%DimUnlimName,i2offset(NF_UNLIMITED),DH%DimUnlimID)

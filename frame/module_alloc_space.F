@@ -86,9 +86,14 @@ CONTAINS
 
 # include <allocs.inc>
 
-      WRITE(message,*)&
-          'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
-      CALL  wrf_debug( 1, message )
+      IF ( .NOT. grid%have_displayed_alloc_stats ) THEN
+        ! we do not want to see this message more than once, as can happen with the allocation and
+        ! deallocation of intermediate domains used in nesting.
+        WRITE(message,*)&
+            'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
+        CALL  wrf_debug( 0, message )
+        grid%have_displayed_alloc_stats = .TRUE.   
+      ENDIF
 
    END SUBROUTINE alloc_space_field_core
 END MODULE module_alloc_space

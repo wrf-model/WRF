@@ -628,7 +628,7 @@
 	    if (icase .le. -5) then
 		write(*,*)   &
 		 '*** stopping in interface_to_aqop1 at icase =', icase
-		stop
+		call wrf_error_fatal('*** stopping in interface_to_aqop1')
 	    end if
 	end if
 9870	format( 8i5 )
@@ -924,7 +924,7 @@
 	    if (icase .le. -5) then
 		write(*,*)   &
 		 '*** stopping in interface_to_aqop1 at icase =', icase
-		stop
+		call wrf_error_fatal('*** stopping in interface_to_aqop1')
 	    end if
 	end if
 #endif
@@ -1247,7 +1247,7 @@
 	    write(lunxx,9820)  (tmpa-1.0), (tmpb-1.0), (tmpc-1.0)
 	    if (icase .le. -5) then
 		write(*,*) '*** stopping in partition_cldwtr at icase =', icase
-		stop
+		call wrf_error_fatal('*** stopping in partition_cldwtr')
 	    end if
 9800	    format( a )
 9810	    format( 5i10 )
@@ -1539,7 +1539,7 @@
 	    if (icase .le. -5) then
 		write(*,*)   &
 		'*** stop in distribute_bulk_changes diags, icase =', icase
-		stop
+		call wrf_error_fatal('*** stop in distribute_bulk_changes diags')
 	    end if
 	end if
 #endif
@@ -1813,7 +1813,7 @@
 		write(*,*)   &
 		'*** stop in sorgam_cloudchem_apply_mode_transfer diags, icase =',   &
 		icase
-		stop
+		call wrf_error_fatal('*** stop in sorgam_cloudchem_apply_mode_transfer diags')
 	    end if
 	end if
 #endif

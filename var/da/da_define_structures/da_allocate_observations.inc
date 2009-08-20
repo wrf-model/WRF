@@ -15,6 +15,8 @@ subroutine da_allocate_observations (iv)
    if (iv%info(sound)%nlocal     > 0) allocate(iv%sound    (1:iv%info(sound)%nlocal))
    if (iv%info(sonde_sfc)%nlocal > 0) allocate(iv%sonde_sfc(1:iv%info(sonde_sfc)%nlocal))
    if (iv%info(mtgirs)%nlocal    > 0) allocate(iv%mtgirs   (1:iv%info(mtgirs)%nlocal))
+   if (iv%info(tamdar)%nlocal    > 0) allocate(iv%tamdar   (1:iv%info(tamdar)%nlocal))
+   if (iv%info(tamdar_sfc)%nlocal > 0) allocate(iv%tamdar_sfc (1:iv%info(tamdar_sfc)%nlocal))
    if (iv%info(synop)%nlocal     > 0) allocate(iv%synop    (1:iv%info(synop)%nlocal))
    if (iv%info(airep)%nlocal     > 0) allocate(iv%airep    (1:iv%info(airep)%nlocal))
    if (iv%info(geoamv)%nlocal    > 0) allocate(iv%geoamv   (1:iv%info(geoamv)%nlocal))
@@ -65,9 +67,11 @@ subroutine da_allocate_observations (iv)
          allocate (iv%info(i)%dzm(iv%info(i)%max_lev,iv%info(i)%nlocal)) 
          allocate (iv%info(i)%zk (iv%info(i)%max_lev,iv%info(i)%nlocal)) 
          allocate (iv%info(i)%proc_domain(iv%info(i)%max_lev,iv%info(i)%nlocal)) 
+         allocate (iv%info(i)%thinned(iv%info(i)%max_lev,iv%info(i)%nlocal)) 
          allocate (iv%info(i)%obs_global_index(iv%info(i)%nlocal)) 
 
          iv%info(i)%proc_domain(:,:)  = .false.
+         iv%info(i)%thinned(:,:)      = .false.
          iv%info(i)%zk(:,:)           = missing_r
       end if
    end do

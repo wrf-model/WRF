@@ -1,0 +1,374 @@
+      SUBROUTINE UFBSEQ(LUNIN,USR,I1,I2,IRET,STR)
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!
+! SUBPROGRAM:    UFBSEQ
+!   PRGMMR: WOOLLEN          ORG: NP20       DATE: 2000-09-19
+!
+! ABSTRACT: THIS SUBROUTINE WRITES OR READS SPECIFIED VALUES TO OR FROM
+!   THE CURRENT BUFR DATA SUBSET WITHIN INTERNAL ARRAYS, WITH THE
+!   DIRECTION OF THE DATA TRANSFER DETERMINED BY THE CONTEXT OF
+!   ABS(LUNIN) {I.E., IF ABS(LUNIN) POINTS TO A BUFR FILE THAT IS OPEN
+!   FOR INPUT, THEN DATA VALUES ARE READ FROM THE INTERNAL DATA SUBSET;
+!   OTHERWISE, DATA VALUES ARE WRITTEN TO THE INTERNAL DATA SUBSET}.
+!   THE DATA VALUES CORRESPOND TO A SEQUENCE OF TABLE B MNEMONICS WHICH
+!   ARE REPRESENTED BY A SINGLE TABLE A OR TABLE D SEQUENCE MNEMONIC.
+!   THIS SEQUENCE MNEMONIC MAY ITSELF CONTAIN ONE OR MORE TABLE D
+!   SEQUENCE MNEMONICS ALONG WITH TABLE B MNEMONICS, THE SEQUENCE
+!   MNEMONICS HERE CAN USE EITHER DELAYED REPLICATION, REGULAR (I.E.,
+!   NON-DELAYED) REPLICATION OR THEY CAN HAVE NO REPLICATION AT ALL.
+!   HOWEVER, IN CASES WHERE THIS SUBROUTINE IS WRITING DATA VALUES TO
+!   SEQUENCES USING DELAYED-REPLICATION, THE APPLICATION PROGRAM MUST
+!   FIRST CALL BUFR ARCHIVE LIBRARY ROUTINE UFBINT TO PRE-ALLOCATE THE
+!   SPACE NEEDED TO EXPAND THE DELAYED-REPLICATION SEQUENCE (THE NUMBER
+!   OF REPLICATIONS IN DELAYED-REPLICATION IS SET TO ZERO BY DEFAULT).
+!   (SEE BUFR ARCHIVE LIBRARY UFBINT DOCBLOCK REMARKS FOR MORE
+!   INFORMATION.) IF UFBSEQ IS READING VALUES, THEN EITHER BUFR ARCHIVE
+!   LIBRARY SUBROUTINE READSB OR READNS MUST HAVE BEEN PREVIOUSLY
+!   CALLED TO READ THE SUBSET FROM UNIT ABS(LUNIN) INTO INTERNAL
+!   MEMORY.  IF IT IS WRITING VALUES, THEN EITHER BUFR ARCHIVE LIBRARY
+!   SUBROUTINE OPENMG OR OPENMB MUST HAVE BEEN PREVIOUSLY CALLED TO
+!   OPEN AND INITIALIZE A BUFR MESSAGE WITHIN MEMORY FOR THIS
+!   ABS(LUNIN).
+!
+! PROGRAM HISTORY LOG:
+! 2000-09-19  J. WOOLLEN -- ORIGINAL AUTHOR
+! 2002-05-14  J. WOOLLEN -- IMPROVED GENERALITY, PREVIOUSLY UFBSEQ
+!                           WOULD NOT RECOGNIZE COMPRESSED DELAYED
+!                           REPLICATION AS A LEGITIMATE DATA STRUCTURE
+! 2003-05-19  J. WOOLLEN -- CORRECTED THE LOGIC ARRAY OF EXIT
+!                           CONDITIONS FOR THE SUBROUTINE, PREVIOUSLY,
+!                           IN SOME CASES, PROPER EXITS WERE MISSED,
+!                           GENERATING BOGUS ERROR MESSAGES, BECAUSE OF
+!                           SEVERAL MISCELLANEOUS BUGS WHICH ARE NOW
+!                           REMOVED
+! 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+!                           INTERDEPENDENCIES
+! 2003-11-04  D. KEYSER  -- MAXJL (MAXIMUM NUMBER OF JUMP/LINK ENTRIES)
+!                           INCREASED FROM 15000 TO 16000 (WAS IN
+!                           VERIFICATION VERSION); UNIFIED/PORTABLE FOR
+!                           WRF; ADDED DOCUMENTATION (INCLUDING
+!                           HISTORY); OUTPUTS MORE COMPLETE DIAGNOSTIC
+!                           INFO WHEN ROUTINE TERMINATES ABNORMALLY OR
+!                           UNUSUAL THINGS HAPPEN
+! 2004-08-18  J. ATOR    -- ADDED SAVE FOR IFIRST1 AND IFIRST2 FLAGS
+! 2007-01-19  J. ATOR    -- REPLACED CALL TO PARSEQ WITH CALL TO PARSTR
+!
+! USAGE:    CALL UFBSEQ (LUNIN, USR, I1, I2, IRET, STR)
+!   INPUT ARGUMENT LIST:
+!     LUNIN    - INTEGER: ABSOLUTE VALUE IS FORTRAN LOGICAL UNIT
+!                NUMBER FOR BUFR FILE
+!                  - IF BUFR FILE OPEN FOR OUTPUT AND LUNIN IS LESS
+!                    THAN ZERO, UFBSEQ TREATS THE BUFR FILE AS THOUGH
+!                    IT WERE OPEN FOR INPUT
+!     USR      - ONLY IF BUFR FILE OPEN FOR OUTPUT:
+!                   REAL*8: (I1,I2) STARTING ADDRESS OF DATA VALUES
+!                   WRITTEN TO DATA SUBSET
+!     I1       - INTEGER: LENGTH OF FIRST DIMENSION OF USR OR THE
+!                NUMBER OF UNIQUE TABLE B MNEMONICS REPRESENTED BY THE
+!                SINGLE TABLE A OR TABLE D SEQUENCE MNEMONIC IN STR
+!                (FORMER MUST BE AT LEAST AS LARGE AS LATTER)
+!     I2       - INTEGER:
+!                  - IF BUFR FILE OPEN FOR INPUT:  LENGTH OF SECOND
+!                    DIMENSION OF USR
+!                  - IF BUFR FILE OPEN FOR OUTPUT: NUMBER OF "LEVELS"
+!                    OF DATA VALUES TO BE WRITTEN TO DATA SUBSET
+!                    (MAXIMUM VALUE IS 255) {THIS CORRESPONDS TO THE
+!                    NUMBER OF REPLICATIONS OF THE MNEMONIC IN STR}
+!     STR      - CHARACTER*(*): STRING CONTAINING A SINGLE TABLE A OR
+!                TABLE D SEQUENCE MNEMONIC WHOSE SEQUENCE OF TABLE B
+!                MNEMONICS ARE IN ONE-TO-ONE CORRESPONDENCE WITH FIRST
+!                DIMENSION OF USR
+!                  - IF BUFR FILE OPEN FOR INPUT: THERE ARE THREE
+!                     "GENERIC" MNEMONICS NOT RELATED TO TABLE A OR D,
+!                     THESE RETURN THE FOLLOWING INFORMATION IN
+!                     CORRESPONDING USR LOCATION:
+!                     'NUL'  WHICH ALWAYS RETURNS MISSING (10E10)
+!                     'IREC' WHICH ALWAYS RETURNS THE CURRENT BUFR
+!                            MESSAGE (RECORD) NUMBER IN WHICH THIS
+!                            SUBSET RESIDES
+!                     'ISUB' WHICH ALWAYS RETURNS THE CURRENT SUBSET
+!                            NUMBER OF THIS SUBSET WITHIN THE BUFR
+!                            MESSAGE (RECORD) NUMBER 'IREC'
+!
+!   OUTPUT ARGUMENT LIST:
+!     USR      - ONLY IF BUFR FILE OPEN FOR INPUT:
+!                   REAL*8: (I1,I2) STARTING ADDRESS OF DATA VALUES
+!                   READ FROM DATA SUBSET
+!     IRET     - INTEGER:
+!                  - IF BUFR FILE OPEN FOR INPUT: NUMBER OF "LEVELS" OF
+!                    DATA VALUES READ FROM DATA SUBSET (MUST BE NO
+!                    LARGER THAN I2)
+!                  - IF BUFR FILE OPEN FOR OUTPUT: NUMBER OF "LEVELS"
+!                    OF DATA VALUES WRITTEN TO DATA SUBSET (SHOULD BE
+!                    SAME AS I2)
+!
+!   OUTPUT FILES:
+!     UNIT 06  - STANDARD OUTPUT PRINT
+!
+! REMARKS:
+!    THIS ROUTINE CALLS:        BORT     INVTAG   INVWIN   PARSTR
+!                               STATUS
+!    THIS ROUTINE IS CALLED BY: None
+!                               Normally called only by application
+!                               programs.
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 77
+!   MACHINE:  PORTABLE TO ALL PLATFORMS
+!
+!$$$
+
+      INCLUDE 'bufrlib.prm'
+
+      PARAMETER (MTAG=10)
+
+      COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES), &
+                      INODE(NFILES),IDATE(NFILES)
+      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL), &
+                      JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL), &
+                      IBT(MAXJL),IRF(MAXJL),ISC(MAXJL), &
+                      ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL), &
+                      ISEQ(MAXJL,2),JSEQ(MAXJL)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /QUIET / IPRT
+
+      CHARACTER*(*) STR
+      CHARACTER*128 BORT_STR
+      CHARACTER*10  TAG,TAGS(MTAG)
+      CHARACTER*3   TYP
+      REAL*8        USR(I1,I2),VAL
+
+      DATA IFIRST1/0/,IFIRST2/0/
+
+      SAVE IFIRST1, IFIRST2
+
+!----------------------------------------------------------------------
+!----------------------------------------------------------------------
+
+      IRET = 0
+
+!  CHECK THE FILE STATUS AND I-NODE
+!  --------------------------------
+
+      LUNIT = ABS(LUNIN)
+      CALL STATUS(LUNIT,LUN,IL,IM)
+      IF(IL.EQ.0) GOTO 900
+      IF(IM.EQ.0) GOTO 901
+
+      IO = MIN(MAX(0,IL),1)
+      IF(LUNIT.NE.LUNIN) IO = 0
+
+      IF(I1.LE.0) THEN
+         IF(IPRT.GE.0) THEN
+      PRINT*
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+         PRINT*,'BUFRLIB: UFBSEQ - THIRD ARGUMENT (INPUT) IS .LE. 0', &
+          ' -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
+         PRINT*,'STR = ',STR
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+      PRINT*
+         ENDIF
+         GOTO 100
+      ELSEIF(I2.LE.0) THEN
+         IF(IPRT.EQ.-1)  IFIRST1 = 1
+         IF(IO.EQ.0 .OR. IFIRST1.EQ.0 .OR. IPRT.GE.1)  THEN
+      PRINT*
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+            PRINT*,'BUFRLIB: UFBSEQ - FOURTH ARGUMENT (INPUT) IS .LE.', &
+             ' 0 -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
+            PRINT*,'STR = ',STR
+            IF(IPRT.EQ.0 .AND. IO.EQ.1)  PRINT 101
+101   FORMAT('Note: Only the first occurrence of this WARNING message ', &
+       'is printed, there may be more.  To output'/6X,'ALL WARNING ', &
+       'messages, modify your application program to add ', &
+       '"CALL OPENBF(0,''QUIET'',1)" prior'/6X,'to the first call to a', &
+       ' BUFRLIB routine.')
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+      PRINT*
+            IFIRST1 = 1
+         ENDIF
+         GOTO 100
+      ENDIF
+
+!  CHECK FOR VALID SEQUENCE AND SEQUENCE LENGTH ARGUMENTS
+!  ------------------------------------------------------
+
+      CALL PARSTR(STR,TAGS,MTAG,NTAG,' ',.TRUE.)
+      IF(NTAG.LT.1) GOTO 902
+      IF(NTAG.GT.1) GOTO 903
+      IF(I1.LE.0) GOTO 904
+      IF(I2.LE.0) GOTO 905
+      IF(INODE(LUN).NE.INV(1,LUN)) GOTO 906
+
+
+!  INITIALIZE USR ARRAY PRECEEDING AN INPUT OPERATION
+!  --------------------------------------------------
+
+      IF(IO.EQ.0) THEN
+         DO J=1,I2
+         DO I=1,I1
+         USR(I,J) = BMISS
+         ENDDO
+         ENDDO
+      ENDIF
+
+!  FIND THE PARAMETERS OF THE SPECIFIED SEQUENCE
+!  ---------------------------------------------
+
+      DO NODE=INODE(LUN),ISC(INODE(LUN))
+      IF(STR.EQ.TAG(NODE)) THEN
+         IF(TYP(NODE).EQ.'SEQ'.OR.TYP(NODE).EQ.'RPC') THEN
+            INS1 = INVTAG(NODE,LUN,     1,NVAL(LUN))
+            INS2 = INVTAG(NODE,LUN,INS1+1,NVAL(LUN))
+            IF(INS1.EQ.0) GOTO 200
+            IF(INS2.EQ.0) INS2 = 10E5
+            NODS = NODE
+            DO WHILE(LINK(NODS).EQ.0.AND.JMPB(NODS).GT.0)
+            NODS = JMPB(NODS)
+            ENDDO
+            IF(LINK(NODS).EQ.0) THEN
+               INSX = NVAL(LUN)
+            ELSEIF(LINK(NODS).GT.0) THEN
+               INSX = INVWIN(LINK(NODS),LUN,INS1+1,NVAL(LUN))-1
+            ENDIF
+            INS2 = MIN(INS2,INSX)
+         ELSEIF(TYP(NODE).EQ.'SUB') THEN
+            INS1 = 1
+            INS2 = NVAL(LUN)
+         ELSE
+            GOTO 907
+         ENDIF
+         NSEQ = 0
+         DO ISQ=INS1,INS2
+         ITYP = ITP(INV(ISQ,LUN))
+         IF(ITYP.GT.1) NSEQ = NSEQ+1
+         ENDDO
+         IF(NSEQ.GT.I1) GOTO 908
+         GOTO 1
+      ENDIF
+      ENDDO
+
+      GOTO 200
+
+!  FRAME A SECTION OF THE BUFFER - RETURN WHEN NO FRAME
+!  ----------------------------------------------------
+
+1     INS1 = INVTAG(NODE,LUN,INS1,NVAL(LUN))
+!  .... previous SP version of BUFR ARCHIVE LIBRARY has line below
+!       (note ".gt.")
+      IF(INS1.GT.NVAL(LUN)) GOTO 200
+      IF(INS1.GT.0) THEN
+!  .... previous decoder version of BUFR ARCHIVE LIBRARY has line below
+!       (note ".ge.")
+!cccc    IF(INS1.GE.NVAL(LUN)) GOTO 200
+         IF(TYP(NODE).EQ.'RPC'.AND.VAL(INS1,LUN).EQ.0.) THEN
+            INS1 = INS1+1
+            GOTO 1
+         ELSEIF(IO.EQ.0.AND.IRET+1.GT.I2) THEN
+            GOTO 909
+         ENDIF
+      ELSEIF(INS1.EQ.0) THEN
+         IF(IO.EQ.1.AND.IRET.LT.I2) GOTO 910
+      ELSE
+         GOTO 911
+      ENDIF
+
+      IF(INS1.EQ. 0) GOTO 200
+      IF(IRET.EQ.I2) GOTO 200
+
+      IRET = IRET+1
+      INS1 = INS1+1
+
+!  READ/WRITE USER VALUES
+!  ----------------------
+
+      J = INS1
+      DO I=1,NSEQ
+      DO WHILE(ITP(INV(J,LUN)).LT.2)
+      J = J+1
+      ENDDO
+      IF(IO.EQ.0) USR(I,IRET) = VAL(J,LUN )
+      IF(IO.EQ.1) VAL(J,LUN ) = USR(I,IRET)
+      J = J+1
+      ENDDO
+
+!  CHECK FOR NEXT FRAME
+!  --------------------
+
+      GOTO 1
+
+200   CONTINUE
+
+      IF(IRET.EQ.0)  THEN
+         IF(IO.EQ.0) THEN
+            IF(IPRT.GE.1)  THEN
+      PRINT*
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+               PRINT*,'BUFRLIB: UFBSEQ - NO SPECIFIED VALUES READ IN', &
+                ' -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
+               PRINT*,'STR = ',STR
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+      PRINT*
+            ENDIF
+         ELSE
+            IF(IPRT.EQ.-1)  IFIRST2 = 1
+            IF(IFIRST2.EQ.0 .OR. IPRT.GE.1)  THEN
+      PRINT*
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+               PRINT*,'BUFRLIB: UFBSEQ - NO SPECIFIED VALUES WRITTEN ', &
+                'OUT -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
+               PRINT*,'STR = ',STR,' MAY NOT BE IN THE BUFR TABLE(?)'
+               IF(IPRT.EQ.0)  PRINT 101
+      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+      PRINT*
+               IFIRST2 = 1
+            ENDIF
+         ENDIF
+      ENDIF
+
+!  EXITS
+!  -----
+
+100   RETURN
+900   CALL BORT('BUFRLIB: UFBSEQ - BUFR FILE IS CLOSED, IT MUST BE'// &
+       ' OPEN')
+901   CALL BORT('BUFRLIB: UFBSEQ - A MESSAGE MUST BE OPEN IN BUFR '// &
+       'FILE, NONE ARE')
+902   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - THE INPUT STRING (",A,") '// &
+       'DOES NOT CONTAIN ANY MNEMONICS!!")') STR
+      CALL BORT(BORT_STR)
+903   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - THERE CANNOT BE MORE THAN '// &
+       'ONE MNEMONIC IN THE INPUT STRING (",A,") (HERE THERE ARE ",I3'// &
+       ',")")') STR,NTAG
+      CALL BORT(BORT_STR)
+904   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - THIRD ARGUMENT (INPUT) MUST'// &
+       ' BE .GT. ZERO (HERE IT IS",I4,") - INPUT MNEMONIC IS ",A)') &
+       I1,TAGS(1)
+      CALL BORT(BORT_STR)
+905   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - FOURTH ARGUMENT (INPUT) '// &
+       'MUST BE .GT. ZERO (HERE IT IS",I4,") - INPUT MNEMONIC IS ",A)') &
+       I2,TAGS(1)
+      CALL BORT(BORT_STR)
+906   CALL BORT('BUFRLIB: UFBSEQ - LOCATION OF INTERNAL TABLE FOR '// &
+       'BUFR FILE DOES NOT AGREE WITH EXPECTED LOCATION IN INTERNAL '// &
+       'SUBSET ARRAY')
+907   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - INPUT MNEMONIC ",A," MUST '// &
+       'BE A SEQUENCE (HERE IT IS TYPE """,A,""")")') TAGS(1),TYP(NODE)
+      CALL BORT(BORT_STR)
+908   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - INPUT SEQ. MNEM. ",A,'// &
+       '" CONSISTS OF",I4," TABLE B MNEM., .GT. THE MAX. SPECIFIED IN'// &
+       ' (INPUT) ARGUMENT 3 (",I3,")")') TAGS(1),NSEQ,I1
+      CALL BORT(BORT_STR)
+909   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - NO. OF ''LEVELS'' READ > '// &
+       'LIMIT OF",I4," IN THE 4-TH ARG. (INPUT) - INCOMPLETE READ '// &
+       '(INPUT MNEMONIC IS ",A,")")') I2,TAGS(1)
+      CALL BORT(BORT_STR)
+910   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - NO. OF ''LEVELS'' WRITTEN '// &
+       '(",I3,") .LT. NO. REQUESTED (",I3,") - INCOMPLETE WRITE '// &
+       '(INPUT MNEMONIC IS ",A,")")')  IRET,I2,TAGS(1)
+      CALL BORT(BORT_STR)
+911   WRITE(BORT_STR,'("BUFRLIB: UFBSEQ - VARIABLE INS1 MUST BE .GE. '// &
+       'ZERO, HERE IT IS",I4," - INPUT MNEMONIC IS ",A)') INS1,TAGS(1)
+      CALL BORT(BORT_STR)
+      END SUBROUTINE UFBSEQ

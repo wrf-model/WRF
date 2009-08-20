@@ -40,8 +40,14 @@ subroutine da_check_max_iv_airsr(iv, it,num_qcstat_conv)
         if( iv%airsr(n)%q(k)%qc == fails_error_max .and. it > 1  )iv%airsr(n)%q(k)%qc =0
         if( iv%airsr(n)%q(k)%qc >= obs_qc_pointer ) then
          failed=.false.
+         if( iv%airsr(n)%t(k)%qc == fails_error_max ) then
+         failed=.true.
+         iv%airsr(n)%q(k)%qc  = fails_error_max
+         iv%airsr(n)%q(k)%inv = 0.0
+         else
          if( check_max_iv) &
          call da_max_error_qc (it,iv%info(airsr), n, iv%airsr(n)%q(k), max_error_q ,failed)
+         endif
          if( iv%info(airsr)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,airsr,4,ipr) = num_qcstat_conv(1,airsr,4,ipr) + 1
          if(failed)then

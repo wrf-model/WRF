@@ -14,7 +14,13 @@
    USE module_bc_em
    USE module_configure, ONLY : grid_config_rec_type
    USE module_tiles, ONLY : set_tiles
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_maxval, ntasks_x, ntasks_y, &
+        local_communicator_periodic, local_communicator, mytask, ntasks 
+#else
    USE module_dm, ONLY : wrf_dm_min_real
+#endif
+   USE module_comm_dm
 
    USE module_physics_init
 #ifdef WRF_CHEM
@@ -319,10 +325,27 @@
          CALL wrf_error_fatal ( 'start_domain: Idealized case cannot have a separate nested input file' )
       END IF
 
+      IF ( config_flags%use_baseparam_fr_nml ) then
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
       CALL nl_get_iso_temp   ( 1 , tiso )
+
+      ELSE
+      ! get these constants from model data
+
+      t00  = grid%t00
+      p00  = grid%p00
+      a    = grid%tlp
+      tiso = grid%tiso
+
+      IF (t00 .LT. 100. .or. p00 .LT. 10000.) THEN
+      WRITE(wrf_err_message,*)&
+      'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
+      CALL wrf_error_fatal(TRIM(wrf_err_message))
+      ENDIF
+
+      ENDIF
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -572,7 +595,8 @@
                       grid%lu_state,                                      &
                       grid%xlat,grid%xlong,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
-                      grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_myj,     &
+                      grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_myj,    &
+                      grid%tke_pbl,                                                                  &
                       grid%exch_h,grid%thc,grid%snowc,grid%mavail,grid%hfx,grid%qfx,grid%rainbl, &
                       grid%tslb,grid%zs,grid%dzs,config_flags%num_soil_layers,grid%warm_rain,  &
                       grid%adv_moist_cond,                         &
@@ -590,6 +614,7 @@
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
+                      config_flags%num_urban_layers,                        & !multi-layer urban
                       ozmixm,grid%pin,                             &     ! Optional
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
@@ -604,8 +629,15 @@
                       grid%TRL_URB3D, grid%TBL_URB3D, grid%TGL_URB3D,        & !Optional urban
                       grid%SH_URB2D, grid%LH_URB2D, grid%G_URB2D, grid%RN_URB2D,  & !Optional urban
                       grid%TS_URB2D, grid%FRC_URB2D, grid%UTYPE_URB2D,      & !Optional urban
+                      grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,    & !multi-layer urban
+                      grid%SFW1_URB3D,grid%SFW2_URB3D,grid%SFR_URB3D,grid%SFG_URB3D,     & !multi-layer urban
+                      grid%A_U_BEP,grid%A_V_BEP,grid%A_T_BEP,grid%A_Q_BEP,             & !multi-layer urban
+                      grid%A_E_BEP,grid%B_U_BEP,grid%B_V_BEP,grid%B_T_BEP,             & !multi-layer urban
+                      grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
+                      grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
                       grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,     & !Optional oml
                       grid%itimestep, grid%fdob,            &
+                      t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
                       grid%achfx, grid%aclhf, grid%acgrdflx                 &
                       )
@@ -737,7 +769,7 @@
                            its , ite , jts , jte , &
                            its , ite , jts , jte   )
 
-   IF ( .not. config_flags%restart ) THEN
+   IF ( start_of_simulation ) THEN
    CALL set_w_surface(  config_flags, grid%znw,                         &
                         grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
@@ -806,11 +838,11 @@
                            ims , ime , jms , jme ,  &
                            its , ite , jts , jte ,  &
                            its , ite , jts , jte   )
-   CALL set_physical_bc2d( grid%mu0 , 't' , config_flags ,   &
-                           ids , ide , jds , jde ,  &
-                           ims , ime , jms , jme ,  &
-                           its , ite , jts , jte ,  &
-                           its , ite , jts , jte   )
+!  CALL set_physical_bc2d( grid%mu0 , 't' , config_flags ,   &
+!                          ids , ide , jds , jde ,  &
+!                          ims , ime , jms , jme ,  &
+!                          its , ite , jts , jte ,  &
+!                          its , ite , jts , jte   )
 
 
    CALL set_physical_bc3d( grid%phb , 'W' , config_flags ,                 &

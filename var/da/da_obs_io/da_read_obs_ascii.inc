@@ -1,4 +1,4 @@
-subroutine da_read_obs_ascii (iv, filename)
+subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
    !---------------------------------------------------------------------------
    ! Purpose: Read a GTS observation file
@@ -26,6 +26,10 @@ subroutine da_read_obs_ascii (iv, filename)
    !
    !           Satem thickness error should not be divided by gravity because
    !           the unit from obsproc is already meter, not geopotential meter.
+   !
+   !       Date: 03/19/2009 -        Y.-R. Guo
+   !
+   !           Added the time range check when reading in observations.
    !---------------------------------------------------------------------------
 
    implicit none
@@ -37,7 +41,7 @@ subroutine da_read_obs_ascii (iv, filename)
 
    character (len = 160)        :: info_string
 
-   character (len = 160)        :: fmt_info, fmt_loc, fmt_each
+!   character (len = 160)        :: fmt_info, fmt_srfc, fmt_each
 
    integer                      :: i, j, iost, nlevels, old_nlevels, fm,iunit
 
@@ -45,12 +49,16 @@ subroutine da_read_obs_ascii (iv, filename)
 
    logical                      :: outside
    logical                      :: outside_all
+   logical                      :: uvq_direct               ![cys_add]
    integer                      :: surface_level
    real                         :: height_error, u_comp, v_comp
    integer                      :: nlocal(num_ob_indexes)
    integer                      :: ntotal(num_ob_indexes)
 
    integer                      :: ndup, n, report, obs_index
+
+   real                  :: obs_time
+   integer               :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_read_obs_ascii")
 
@@ -99,7 +107,7 @@ subroutine da_read_obs_ascii (iv, filename)
 
    read (iunit, fmt = '(A,1X,A)', iostat = iost) &
       fmt_name, fmt_info, &
-      fmt_name, fmt_loc,  &
+      fmt_name, fmt_srfc,  &
       fmt_name, fmt_each
 
    if (iost /= 0) then
@@ -112,14 +120,21 @@ subroutine da_read_obs_ascii (iv, filename)
    if (print_detail_obs) then
       write(unit=stdout, fmt='(2a)') &
          'fmt_info=', fmt_info, &
-         'fmt_loc =', fmt_loc,  &
+         'fmt_srfc =', fmt_srfc,  &
          'fmt_each=', fmt_each
    end if
 
    ! skip line
    ! ----------
 
-   read (iunit, fmt = '(a)') fmt_name
+   ![cys_change]
+   ! read (iunit, fmt = '(a)') fmt_name
+   read (iunit, fmt = '(a)') info_string
+   if (info_string(1:21) == 'MODIFIED FILTERED OBS') then
+      uvq_direct=.true.
+   else
+      uvq_direct=.false.
+   endif
 
    ! loop over records
    ! -----------------
@@ -178,7 +193,7 @@ subroutine da_read_obs_ascii (iv, filename)
       ! read model location
       ! =========================
 
-      read (iunit, fmt = fmt_loc)  &
+      read (iunit, fmt = fmt_srfc)  &
          platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
          platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
@@ -217,18 +232,30 @@ subroutine da_read_obs_ascii (iv, filename)
             platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
             platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
 
+! cys_add
+         if (uvq_direct) then
+            platform%each (i)%u = platform%each (i)%speed
+            if (platform%each(i)%rh%inv .gt. missing_r)  &
+               platform%each(i)%rh%inv=platform%each(i)%rh%inv / 1e3    !convert back to kg/kg
+            if (platform%each(i)%rh%error .gt. 0.0)  &
+               platform%each(i)%rh%error=platform%each(i)%rh%error / 1e3  !convert back to kg/kg
+         end if
+! cys_add
+
          if (print_detail_obs) then
             write(unit=stdout, fmt = '(a, i6)') 'i=', i
+! because now the field_type included: inv, qc, error, sens, and imp (YRG, 02/23/2009):              
             write(unit=stdout, fmt = trim (fmt_each)) &
-               platform%each (i)%p,            &
-               platform%each (i)%speed,        &
-               platform%each (i)%v,            &
-               platform%each (i)%height,       &
-               platform%each (i)%height_qc,    &
-               height_error,                   &
-               platform%each (i)%t,            &
-               platform%each (i)%td,           &
-               platform%each (i)%rh
+               platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
+               platform%each(i)%speed%inv, platform%each(i)%speed%qc, &
+               platform%each(i)%speed%error,  &
+               platform%each(i)%v%inv, platform%each(i)%v%qc, platform%each(i)%v%error, &
+               platform%each(i)%height,       &
+               platform%each(i)%height_qc,    &
+               height_error,                  &
+               platform%each(i)%t%inv, platform%each(i)%t%qc, platform%each(i)%t%error, &
+               platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
+               platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
          end if
 
          ! Uncomment the following if errors in reported heights (test later):             
@@ -239,6 +266,7 @@ subroutine da_read_obs_ascii (iv, filename)
          ! To convert the wind speed and direction to 
          !      the model wind components: u, v
 
+         if (.not. uvq_direct) then   !cys_add
          if (platform%each (i)%speed%qc /= missing_data .and. &
              platform%each (i)%v%qc /= missing_data) then
             call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
@@ -255,7 +283,30 @@ subroutine da_read_obs_ascii (iv, filename)
             platform%each (i)%u%qc    = missing_data
             platform%each (i)%v%qc    = missing_data
          end if
+         end if   !cys_add
       end do
+
+      ! Check if outside of the time range:
+
+      read (platform%info%date_char,'(i4,4(1x,i2))') &
+                                    iyear, imonth, iday, ihour, imin
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+      if ( obs_time < time_slots(0) .or. &
+           obs_time >= time_slots(num_fgat_time) ) then
+         if (print_detail_obs) then
+           write(unit=stdout, fmt='(a)') '*** Outside of the time range:'
+           write(unit=stdout, fmt=fmt_info) &
+            platform%info%platform,    &
+            platform%info%date_char,   &
+            platform%info%name,        &
+            platform%info%levels,      &
+            platform%info%lat,         &
+            platform%info%lon,         &
+            platform%info%elv,         &
+            platform%info%id
+         end if
+         cycle
+      endif
 
       ! Restrict to a range of reports, useful for debugging
 
@@ -315,7 +366,7 @@ subroutine da_read_obs_ascii (iv, filename)
          end if
       end if
 
-      if (fm /= 86) call da_obs_proc_station(platform,fm)
+      if (fm /= 86) call da_obs_proc_station(platform,fm,uvq_direct)  !cys_change
 
       nlevels = platform%info%levels
       ! Loop over duplicating obs for global
@@ -400,11 +451,13 @@ subroutine da_read_obs_ascii (iv, filename)
             nlocal(pilot) = nlocal(pilot) + 1
             if (nlocal(pilot) > iv%info(pilot)%nlocal) cycle reports
 
+            allocate (iv%pilot(nlocal(pilot))%h (1:nlevels))
             allocate (iv%pilot(nlocal(pilot))%p (1:nlevels))
             allocate (iv%pilot(nlocal(pilot))%u (1:nlevels))
             allocate (iv%pilot(nlocal(pilot))%v (1:nlevels))
 
             do i = 1, nlevels
+              iv%pilot(nlocal(pilot))%h(i) = platform%each(i)%height
               iv%pilot(nlocal(pilot))%p(i) = platform%each(i)%p%inv
               iv%pilot(nlocal(pilot))%u(i) = platform%each(i)%u
               iv%pilot(nlocal(pilot))%v(i) = platform%each(i)%v
@@ -483,6 +536,97 @@ subroutine da_read_obs_ascii (iv, filename)
             end if
 
 !            iv%sound(nlocal(sound))%info%levels = nlevels
+         case (101) ;
+            if (.not. use_tamdarobs) cycle reports
+            if (n==1) ntotal(tamdar) = ntotal(tamdar) + 1
+            if (n==1) ntotal(tamdar_sfc) = ntotal(tamdar_sfc) + 1
+            if (outside) cycle reports
+            nlocal(tamdar) = nlocal(tamdar) + 1
+            nlocal(tamdar_sfc) = nlocal(tamdar_sfc) + 1
+            if (nlocal(tamdar) > iv%info(tamdar)%nlocal) cycle reports
+            ! Search to see if we have surface obs.
+
+            surface_level = 0
+
+            do i = 1, nlevels
+               ! if (elevation and height are the same, it is surface.)
+               if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
+                  surface_level = i
+
+                  ! Save surface pressure.
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%h = platform%each(i)%height
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%u = platform%each(i)%u
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%v = platform%each(i)%v
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%t = platform%each(i)%t
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%q = platform%each(i)%q
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%p = platform%each(i)%p
+                  exit
+               end if
+            end do
+            ! processing the tamdar_sfc data:
+
+            old_nlevels = nlevels
+
+           if (surface_level > 0) then
+               nlevels = nlevels - 1
+            else
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%h = missing_r
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%inv   = missing_r
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%qc    = missing
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%error = abs(missing_r)
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%v = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%t = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%p = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%q = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+            end if
+
+            if (nlevels > 0) then
+
+               allocate (iv%tamdar(nlocal(tamdar))%h (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%p (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%u (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%v (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%t (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%q (1:nlevels))
+
+               j = 0
+               do i = 1, nlevels
+
+                  j=j+1
+
+                  iv%tamdar(nlocal(tamdar))%h(j) = platform%each(i)%height
+                  iv%tamdar(nlocal(tamdar))%p(j) = platform%each(i)%p%inv
+                  iv%tamdar(nlocal(tamdar))%u(j) = platform%each(i)%u
+                  iv%tamdar(nlocal(tamdar))%v(j) = platform%each(i)%v
+                  iv%tamdar(nlocal(tamdar))%t(j) = platform%each(i)%t
+                  iv%tamdar(nlocal(tamdar))%q(j) = platform%each(i)%q
+                 if(iv%tamdar(nlocal(tamdar))%q(j)%inv.ne.missing_r)then
+                 iv%tamdar(nlocal(tamdar))%q(j)%inv = iv%tamdar(nlocal(tamdar))%q(j)%inv
+                 endif
+                 if(iv%tamdar(nlocal(tamdar))%q(j)%error.ne.missing_r)then
+                 iv%tamdar(nlocal(tamdar))%q(j)%error = iv%tamdar(nlocal(tamdar))%q(j)%error
+                 endif
+
+               end do
+            else
+               nlevels = 1
+               allocate (iv%tamdar(nlocal(tamdar))%h (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%p (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%u (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%v (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%t (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%q (1:nlevels))
+               j=1
+               iv%tamdar(nlocal(tamdar))%h = missing_r
+               iv%tamdar(nlocal(tamdar))%p = missing_r
+               iv%tamdar(nlocal(tamdar))%u%inv   = missing_r
+               iv%tamdar(nlocal(tamdar))%u%qc    = missing
+               iv%tamdar(nlocal(tamdar))%u%error = abs(missing_r)
+               iv%tamdar(nlocal(tamdar))%v = iv%tamdar(nlocal(tamdar))%u
+               iv%tamdar(nlocal(tamdar))%t = iv%tamdar(nlocal(tamdar))%u
+               iv%tamdar(nlocal(tamdar))%q = iv%tamdar(nlocal(tamdar))%u
+
+            end if
       
          case (161) ;
             if (.not. use_mtgirsobs) cycle reports
@@ -727,11 +871,13 @@ subroutine da_read_obs_ascii (iv, filename)
             nlocal(profiler) = nlocal(profiler) + 1
             if (nlocal(profiler) > iv%info(profiler)%nlocal) cycle reports
 
+            allocate (iv%profiler(nlocal(profiler))%h (1:nlevels))
             allocate (iv%profiler(nlocal(profiler))%p (1:nlevels))
             allocate (iv%profiler(nlocal(profiler))%u (1:nlevels))
             allocate (iv%profiler(nlocal(profiler))%v (1:nlevels))
 
             do i = 1, nlevels
+               iv%profiler(nlocal(profiler))%h(i) = platform%each(i)%height
                iv%profiler(nlocal(profiler))%p(i) = platform%each(i)%p%inv
                iv%profiler(nlocal(profiler))%u(i) = platform%each(i)%u
                iv%profiler(nlocal(profiler))%v(i) = platform%each(i)%v
@@ -823,7 +969,7 @@ subroutine da_read_obs_ascii (iv, filename)
             write(unit=message(3), fmt='(a, i3)') &
                'platform%info%levels=', platform%info%levels
             call da_warning(__FILE__,__LINE__,message(1:3))
-
+            cycle
          end select
 	   
          iv%info(obs_index)%name(nlocal(obs_index))      = platform%info%name
@@ -876,6 +1022,32 @@ subroutine da_read_obs_ascii (iv, filename)
             iv%info(sonde_sfc)%proc_domain(:,nlocal(sonde_sfc)) = platform%loc%proc_domain
 
             iv%info(sonde_sfc)%obs_global_index(nlocal(sonde_sfc)) = ntotal(sonde_sfc)
+         end if
+
+         if (obs_index == tamdar) then
+            iv%info(tamdar_sfc)%name(nlocal(tamdar_sfc))      = platform%info%name
+            iv%info(tamdar_sfc)%platform(nlocal(tamdar_sfc))  = platform%info%platform
+            iv%info(tamdar_sfc)%id(nlocal(tamdar_sfc))        = platform%info%id
+            iv%info(tamdar_sfc)%date_char(nlocal(tamdar_sfc)) = platform%info%date_char
+            iv%info(tamdar_sfc)%levels(nlocal(tamdar_sfc))    = 1
+            iv%info(tamdar_sfc)%lat(:,nlocal(tamdar_sfc))     = platform%info%lat
+            iv%info(tamdar_sfc)%lon(:,nlocal(tamdar_sfc))     = platform%info%lon
+            iv%info(tamdar_sfc)%elv(nlocal(tamdar_sfc))       = platform%info%elv
+            iv%info(tamdar_sfc)%pstar(nlocal(tamdar_sfc))     = platform%info%pstar
+
+            iv%info(tamdar_sfc)%slp(nlocal(tamdar_sfc))           = platform%loc%slp
+            iv%info(tamdar_sfc)%pw(nlocal(tamdar_sfc))            = platform%loc%pw
+            iv%info(tamdar_sfc)%x(:,nlocal(tamdar_sfc))           = platform%loc%x
+            iv%info(tamdar_sfc)%y(:,nlocal(tamdar_sfc))           = platform%loc%y
+            iv%info(tamdar_sfc)%i(:,nlocal(tamdar_sfc))           = platform%loc%i
+            iv%info(tamdar_sfc)%j(:,nlocal(tamdar_sfc))           = platform%loc%j
+            iv%info(tamdar_sfc)%dx(:,nlocal(tamdar_sfc))          = platform%loc%dx
+            iv%info(tamdar_sfc)%dxm(:,nlocal(tamdar_sfc))         = platform%loc%dxm
+            iv%info(tamdar_sfc)%dy(:,nlocal(tamdar_sfc))          = platform%loc%dy
+            iv%info(tamdar_sfc)%dym(:,nlocal(tamdar_sfc))         = platform%loc%dym
+            iv%info(tamdar_sfc)%proc_domain(:,nlocal(tamdar_sfc)) = platform%loc%proc_domain
+
+            iv%info(tamdar_sfc)%obs_global_index(nlocal(tamdar_sfc)) = ntotal(tamdar_sfc)
          end if
 
          if (global .and. n < 2) then

@@ -73,15 +73,6 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
                if (iv % synop(n) % h < v_h(kts)) then
                   iv%info(synop)%zk(:,n) = 1.0+1.0e-6
                   call da_obs_sfc_correction(iv%info(synop), iv%synop(n), n, grid%xb)
-
-                  ! To keep the original "ob" with no change for multiple 
-                  ! outer-loops use:
-                  ! ob%synop(n)%p = iv%synop(n)%p%inv
-                  ! ob%synop(n)%t = iv%synop(n)%t%inv
-                  ! ob%synop(n)%q = iv%synop(n)%q%inv
-                  ! ob%synop(n)%u = iv%synop(n)%u%inv
-                  ! ob%synop(n)%v = iv%synop(n)%v%inv
-
                else
                   call da_to_zk(iv % synop(n) % h, v_h, v_interp_h, iv%info(synop)%zk(1,n))
                end if
@@ -95,7 +86,7 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
             call da_to_zk(ob % synop(n) % p, v_p, v_interp_p, iv%info(synop)%zk(1,n))
             if (iv%info(synop)%zk(1,n) < 0.0 .and. .not.anal_type_verify ) then
                iv % synop(n) % p % inv = missing_r
-               iv % synop(n) % p % qc  = missing
+               iv % synop(n) % p % qc  = missing_data
                iv%info(synop)%zk(:,n) = 1.0+1.0e-6
             end if
          end if
@@ -106,11 +97,11 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       if (.not.anal_type_verify ) then
          do n=iv%info(synop)%n1,iv%info(synop)%n2
             if (iv%info(synop)%zk(1,n) < 0.0) then
-               iv % synop(n) % u % qc = missing
-               iv % synop(n) % v % qc = missing
-               iv % synop(n) % t % qc = missing
-               iv % synop(n) % q % qc = missing
-               iv % synop(n) % p % qc = missing
+               iv % synop(n) % u % qc = missing_data
+               iv % synop(n) % v % qc = missing_data
+               iv % synop(n) % t % qc = missing_data
+               iv % synop(n) % q % qc = missing_data
+               iv % synop(n) % p % qc = missing_data
             end if
          end do
       end if
@@ -127,7 +118,7 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_3d (grid%xb%q, iv%info(synop), model_q)
       call da_interp_lin_3d (grid%xb%p, iv%info(synop), model_p)
    else if (sfc_assi_options == sfc_assi_options_2) then
-      ! Surface data assmiilation approach 2
+      ! Surface data assimilation approach 2
       !------------------------------------
 
       ! 1.2.1 Surface assmiilation approach 2(10-m u, v, 2-m t, q, and sfc_p)
@@ -140,6 +131,13 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_2d (grid%xb%terr, iv%info(synop), 1, model_hsm(1,:))
 
       do n=iv%info(synop)%n1,iv%info(synop)%n2
+
+         iv%synop(n)%p%inv = ob%synop(n)%p
+         iv%synop(n)%t%inv = ob%synop(n)%t
+         iv%synop(n)%q%inv = ob%synop(n)%q
+         iv%synop(n)%u%inv = ob%synop(n)%u
+         iv%synop(n)%v%inv = ob%synop(n)%v
+
          if (iv%synop(n)%p%qc >= 0) then
             ho = iv%synop(n)%h
             to = -888888.0
@@ -167,7 +165,6 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       !--------------------------------------------------------------------
       !     [3.0] Fast interpolation:
       !--------------------------------------------------------------------
-
       if (ob % synop(n) % u > missing_r .AND. iv % synop(n) % u % qc >= obs_qc_pointer) then
          iv % synop(n) % u % inv = iv%synop(n)%u%inv - model_u(1,n)
       else

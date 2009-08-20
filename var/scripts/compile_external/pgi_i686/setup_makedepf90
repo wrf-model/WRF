@@ -1,6 +1,0 @@
-#!/bin/ksh
-export CC=pgcc
-./configure
-make clean
-make
-rm *.o

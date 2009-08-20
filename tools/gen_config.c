@@ -459,6 +459,8 @@ gen_config_reads ( char * dirname )
   fprintf(fp,"    END SELECT\n") ;
   fprintf(fp,"9201 CALL wrf_message(\"Error while reading namelist \"//TRIM(nml_name))\n") ;
   fprintf(fp,"    nml_read_error = .TRUE.\n") ;
+
+  fprintf(fp,"    CALL wrf_alt_nml_obsolete(nml_read_unit, TRIM(nml_name))\n") ;
   fprintf(fp,"    CYCLE NML_LOOP\n") ;
   fprintf(fp,"9202 CALL wrf_message(\"Namelist \"//TRIM(nml_name)//\" not found in namelist.input.\"// & \n") ;
   fprintf(fp,"                      \" Using registry defaults for variables in \"//TRIM(nml_name))\n") ;

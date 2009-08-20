@@ -31,6 +31,7 @@ MODULES =                           \
   module_data_gocart_seas.o        \
   module_data_gocartchem.o        \
   module_gocart_chem.o                     \
+  module_gocart_so2so4.o                     \
   module_gocart_dust.o                     \
   module_gocart_seasalt.o                     \
   module_gocart_dmsemis.o                     \
@@ -60,7 +61,6 @@ MODULES =                           \
   module_input_chem_data.o          \
   module_input_chem_bioemiss.o      \
   module_input_dust_errosion.o      \
-  module_input_gocart_background.o  \
   module_input_gocart_dms.o         \
   module_fastj_data.o               \
   module_fastj_mie.o                \
@@ -124,6 +124,8 @@ module_gocart_seasalt.o: module_data_gocart_seas.o
 
 module_gocart_chem.o: module_data_gocartchem.o module_phot_mad.o
 
+module_gocart_so2so4.o:
+
 module_gocart_settling.o: module_data_gocart_dust.o
 
 module_gocart_aerosols.o: 
@@ -175,8 +177,6 @@ module_input_chem_emissopt3.o:
 module_input_chem_bioemiss.o: 
 
 module_input_dust_errosion.o:
-
-module_input_gocart_background.o:
 
 module_input_gocart_dms.o:
 

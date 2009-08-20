@@ -60,7 +60,7 @@ program da_update_bc
    character(len=80), allocatable, dimension(:) :: times, &
                                                    thisbdytime, nextbdytime
  
-   integer :: east_end, north_end, io_status, cdfid, varid
+   integer :: east_end, north_end, io_status, cdfid, varid, domain_id
 
    logical :: cycling, debug, low_bdy_only, update_lsm
 
@@ -72,12 +72,13 @@ program da_update_bc
 
    namelist /control_param/ wrfvar_output_file, &
                             wrf_bdy_file, &
-                            wrf_input, &
+                            wrf_input, domain_id, &
                             cycling, debug, low_bdy_only, update_lsm
 
    wrfvar_output_file = 'wrfvar_output'
    wrf_bdy_file       = 'wrfbdy_d01'
    wrf_input          = 'wrfinput_d01'
+   domain_id          = 1
 
    cycling = .false.
    debug   = .false. 
@@ -145,6 +146,13 @@ program da_update_bc
    varsf(17)='RHOSN'
    varsf(18)='SNOWH'
 
+   if ( domain_id > 1 ) then
+      write(unit=stdout, fmt='(a,i2)') 'Nested domain ID=',domain_id
+      write(unit=stdout, fmt='(a)') &
+        'No wrfbdy file needed, only low boundary need to be updated.'
+        low_bdy_only = .true.
+   else
+
    ! First, the boundary times
    call da_get_dims_cdf(wrf_bdy_file, 'Times', dims, ndims, debug)
 
@@ -180,6 +188,8 @@ program da_update_bc
            'thisbdytime (', n, ')=', trim(thisbdytime(n)), &
            'nextbdytime (', n, ')=', trim(nextbdytime(n))
       end do
+   end if
+
    end if
 
    east_end=0
@@ -321,6 +331,8 @@ program da_update_bc
       write(unit=stdout, fmt='(a)') 'Wrong data for Boundary.'
       stop
    end if
+
+   write(unit=stdout,fmt='(/a/)') 'Processing the lateral boundary condition:'
 
    ! boundary variables
    bdyname(1)='_BXS'
@@ -740,13 +752,14 @@ program da_update_bc
 
    print *,' '
    print *,'=================================================================='
-   if(cycling) then
+   if(cycling .and. domain_id == 1) then
      print *, &
     'Both low boudary and lateral boundary updated.for cycling run with WRFvar'
      if (update_lsm) print *,'  LSM variables updated from wrf_input file.' 
    else
      if(low_bdy_only) then
-       print *, 'Only low boudary updated for long-term forecast.'
+       print *, 'Only low boudary updated for long-term forecast. domain_id=',&
+                 domain_id
        if (update_lsm) print *,'  LSM variables updated from wrf_input file.' 
      else
        print *, 'Only lateral boundary updated for Cold-start run with WRFVar.'

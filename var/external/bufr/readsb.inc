@@ -1,0 +1,130 @@
+      SUBROUTINE READSB(LUNIT,IRET)
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!
+! SUBPROGRAM:    READSB
+!   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
+!
+! ABSTRACT: THIS SUBROUTINE SHOULD ONLY BE CALLED WHEN LOGICAL UNIT
+!   LUNIT HAS BEEN OPENED FOR INPUT OPERATIONS.  IT READS A SUBSET FROM
+!   A BUFR MESSAGE INTO INTERNAL SUBSET ARRAYS.  THE BUFR MESSAGE MUST
+!   HAVE BEEN PREVIOUSLY READ FROM UNIT LUNIT USING BUFR ARCHIVE
+!   LIBRARY SUBROUTINE READMG OR READERME AND MAY BE EITHER COMPRESSED
+!   OR UNCOMPRESSED.
+!
+! PROGRAM HISTORY LOG:
+! 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
+! 1998-07-08  J. WOOLLEN -- REPLACED CALL TO CRAY LIBRARY ROUTINE
+!                           "ABORT" WITH CALL TO NEW INTERNAL BUFRLIB
+!                           ROUTINE "BORT"
+! 1999-11-18  J. WOOLLEN -- THE NUMBER OF BUFR FILES WHICH CAN BE
+!                           OPENED AT ONE TIME INCREASED FROM 10 TO 32
+!                           (NECESSARY IN ORDER TO PROCESS MULTIPLE
+!                           BUFR FILES UNDER THE MPI)
+! 2000-09-19  J. WOOLLEN -- ADDED CALL TO NEW ROUTINE RDCMPS ALLOWING
+!                           SUBSETS TO NOW BE DECODED FROM COMPRESSED
+!                           BUFR MESSAGES; MAXIMUM MESSAGE LENGTH
+!                           INCREASED FROM 10,000 TO 20,000 BYTES
+! 2002-05-14  J. WOOLLEN -- CORRECTED ERROR RELATING TO CERTAIN
+!                           FOREIGN FILE TYPES; REMOVED OLD CRAY
+!                           COMPILER DIRECTIVES
+! 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+!                           INTERDEPENDENCIES
+! 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
+!                           DOCUMENTATION (INCLUDING HISTORY); OUTPUTS
+!                           MORE COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
+!                           TERMINATES ABNORMALLY
+! 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
+!                           20,000 TO 50,000 BYTES
+!
+! USAGE:    CALL READSB (LUNIT, IRET)
+!   INPUT ARGUMENT LIST:
+!     LUNIT    - INTEGER: FORTRAN LOGICAL UNIT NUMBER FOR BUFR FILE
+!
+!   OUTPUT ARGUMENT LIST:
+!     IRET     - INTEGER: RETURN CODE:
+!                       0 = normal return
+!                      -1 = there are no more subsets in the BUFR
+!                           message
+!
+! REMARKS:
+!    THIS ROUTINE CALLS:        BORT     RDCMPS   RDTREE   STATUS
+!                               UPB
+!    THIS ROUTINE IS CALLED BY: COPYSB   IREADSB  RDMEMS   READNS
+!                               RDMSGB   UFBINX   UFBPOS
+!                               Also called by application programs.
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 77
+!   MACHINE:  PORTABLE TO ALL PLATFORMS
+!
+!$$$
+
+      INCLUDE 'bufrlib.prm'
+
+      COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES), &
+                      INODE(NFILES),IDATE(NFILES)
+      COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES), &
+                      MBAY(MXMSGLD4,NFILES)
+      COMMON /UNPTYP/ MSGUNP(NFILES)
+
+      CHARACTER*128 BORT_STR
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+
+      IRET = 0
+
+!  CHECK THE FILE STATUS
+!  ---------------------
+
+      CALL STATUS(LUNIT,LUN,IL,IM)
+      IF(IL.EQ.0) GOTO 900
+      IF(IL.GT.0) GOTO 901
+      IF(IM.EQ.0) THEN
+         IRET = -1
+         GOTO 100
+      ENDIF
+
+!  SEE IF THERE IS ANOTHER SUBSET IN THE MESSAGE
+!  ---------------------------------------------
+
+      IF(NSUB(LUN).EQ.MSUB(LUN)) THEN
+         IRET = -1
+         GOTO 100
+      ELSE
+         NSUB(LUN) = NSUB(LUN) + 1
+      ENDIF
+
+!  READ THE NEXT SUBSET AND RESET THE POINTERS
+!  -------------------------------------------
+
+      IF(MSGUNP(LUN).EQ.0) THEN
+         IBIT = MBYT(LUN)*8
+         CALL UPB(NBYT,16,MBAY(1,LUN),IBIT)
+         CALL RDTREE(LUN)
+         MBYT(LUN) = MBYT(LUN) + NBYT
+      ELSEIF(MSGUNP(LUN).EQ.1) THEN
+!  .... message with "standard" Section 3
+         IBIT = MBYT(LUN)
+         CALL RDTREE(LUN)
+         MBYT(LUN) = IBIT
+      ELSEIF(MSGUNP(LUN).EQ.2) THEN
+!  .... compressed message
+         CALL RDCMPS(LUN)
+      ELSE
+         GOTO 902
+      ENDIF
+
+!  EXITS
+!  -----
+
+100   RETURN
+900   CALL BORT('BUFRLIB: READSB - INPUT BUFR FILE IS CLOSED, IT MUST'// &
+       ' BE OPEN FOR INPUT')
+901   CALL BORT('BUFRLIB: READSB - INPUT BUFR FILE IS OPEN FOR OUTPUT'// &
+       ', IT MUST BE OPEN FOR INPUT')
+902   WRITE(BORT_STR,'("BUFRLIB: READSB - MESSAGE UNPACK TYPE",I3,"IS'// &
+       ' NOT RECOGNIZED")') MSGUNP
+      CALL BORT(BORT_STR)
+      END SUBROUTINE READSB

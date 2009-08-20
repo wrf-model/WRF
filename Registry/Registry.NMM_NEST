@@ -39,25 +39,7 @@
 # here.
 #
 
-#<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
-dimspec    i      1     standard_domain           x          west_east
-dimspec    j      2     standard_domain           y          south_north
-dimspec    k      3     standard_domain           z          bottom_top
-dimspec    l      2     namelist=num_soil_layers  z          soil_layers
-dimspec    w      -     namelist=spec_bdy_width   c          spec_bdy_width
-dimspec    u      2     namelist=num_land_cat     z          land_cat
-dimspec    s      2     namelist=num_soil_cat     z          soil_cat
-dimspec    e      3     namelist=ensdim           z          gd ensemble dimension
-dimspec    p      -     constant=7501             c          microphysics_rstrt_state
-dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
-dimspec    m      2     constant=12                  z          months_per_year
-dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
-dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
-dimspec    o      2     namelist=levsiz           z          levsiz
-dimspec    d      2     namelist=paerlev          z          paerlev
-dimspec    ?      -     namelist=ts_buf_size      c          ts_buf_size
-dimspec    !      -     namelist=max_ts_locs      c          max_ts_locs
-
+include registry.dimspec
 
 #### 7. Edit the Registry file and create the state data assocaited with this
 ####    solver.  Single entry:
@@ -116,9 +98,6 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 # module_BC
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
-#definitions for NMM slab arrays
-dimspec    q      -     constant=2600             c  # a little crude right now
-dimspec    v      -     constant=1             c  # a little crude right now
 
 # The following arrays were added to avoid using _b and _bt arrays for nesting.
 # This is gopal' doing:
@@ -187,9 +166,9 @@ rconfig  real sbd0    derived   max_domains    0       - "sbd0"                 
 
 state  real   PSTD      k      dyn_nmm     1      Z      -
 state  integer KZMAX    -      dyn_nmm     -      -      r
-state  real   Z3D       ijk    dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
-state  real   T3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
-state  real   Q3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Z3D       ijk   dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
+state  real   T3D       ijk   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Q3D       ijk   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
 state  real HRES_FIS    ij     dyn_nmm     1      -      r  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
 
 #
@@ -279,7 +258,7 @@ state  real   rtop      ijk    dyn_nmm     1      -      r       "RTOP"    "Rd *
 #
 state real  pblh        ij    dyn_nmm   1    -     rh       "PBLH"     "PBL Height"                           "m"
 state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model layer of PBL top"               ""
-state  real   mixht     ij    dyn_nmm   1    -     h        "MIXHT"                 "MXL HEIGHT"              "m"
+state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "Z0"       "Roughness height"                     "m"
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
@@ -467,10 +446,7 @@ state integer iheg      q    dyn_nmm     1    -    -
 state integer ihwg      q    dyn_nmm     1    -    -
 state integer iveg      q    dyn_nmm     1    -    -
 state integer ivwg      q    dyn_nmm     1    -    -
-dimspec    r      -     constant=2000             c  # a little crude right now
 state integer iradg     r    dyn_nmm     1    -    -
-dimspec    z      -     constant=(-3:3)            c
-dimspec    n      -     constant=(0:6)             c
 state integer n_iup_h   j    dyn_nmm     1    -    -      "N_IUP_H"    "# mass points needed in each row for upstream advection"  ""
 state integer n_iup_v   j    dyn_nmm     1    -    -      "N_IUP_V"    "# velocity points needed in each row for upstream advection"  ""
 state integer n_iup_adh j    dyn_nmm     1    -    -      "N_IUP_ADH"  "# mass points in each row of upstream advection"  ""
@@ -693,7 +669,7 @@ state    real   SST              ij     misc        1         -     i01rhd=(inte
 state    real   WEASD            ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
-state    real  NOAHRES          ij      misc        1         -      h        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
+state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
 state    real   tke_myj         ijk     misc        1         -     r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
@@ -839,6 +815,7 @@ rconfig   logical adjust_output_times     namelist,time_control         1       
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
 rconfig   real    tstart                  namelist,time_control     max_domains       0.       irh   "tstart"  "forecast hour at the start of the NMM integration"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
+rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 
 # Domains
 rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     
@@ -851,6 +828,7 @@ rconfig   integer s_sn                    namelist,domains	max_domains    1     
 rconfig   integer e_sn                    namelist,domains	max_domains    32      irh    "e_sn"          ""      ""
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
+rconfig   integer num_metgrid_soil_levels namelist,domains	1             4        irh    "num_metgrid_soil_levels"               "number of input levels or layers in 3D sm, st, sw arrays"      ""
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
 rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
 rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""
@@ -914,6 +892,7 @@ rconfig   integer ICLOUD                  namelist,physics	1             1      
 rconfig   real    swrad_scat              namelist,physics      1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
+rconfig   integer num_urban_layers        namelist,physics      1            400       irh    "num_urban_layers"               ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
@@ -925,8 +904,9 @@ rconfig   integer num_soil_cat            namelist,physics	1            16      
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
+rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
 rconfig   integer sst_update              namelist,physics      1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
-rconfig   integer ucmcall                 namelist,physics      max_domains  0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
+rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"   "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
 rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
@@ -962,6 +942,7 @@ rconfig   integer movemin                 namelist,physics      max_domains  10 
 
 # Dynamics
 # dynamics option (see package definitions, below)
+rconfig   integer dyn_opt                 namelist,dynamics	1             - 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
@@ -1026,8 +1007,22 @@ rconfig   real    truelat1                derived                  max_domains  
 rconfig   real    truelat2                derived                  max_domains    0       -        "true_lat2"             "second standard parallel"      "degrees, negative is south"
 rconfig   real    moad_cen_lat            derived                  max_domains    0       -        "moad_cen_lat"             "center latitude of the most coarse grid"      "degrees, negative is south"
 rconfig   real    stand_lon               derived                  max_domains    0       -        "stand_lon"             "standard longitude, parallel to j-direction, perpendicular to i-direction "      "degrees, negative is west"
+rconfig   integer  FLAG_METGRID           derived                      1          0       -        "FLAG_METGRID"         "Flag in global attributes for metgrid data"
+rconfig   integer  FLAG_SNOW              derived                      1          0       -        "FLAG_SNOW"             "Flag for snow in the global attributes for metgrid data"
+rconfig   integer  FLAG_PSFC              derived                      1          0       -        "FLAG_PSFC"             "Flag for surface pressure in the global attributes for metgrid data"
+rconfig   integer  FLAG_SM000010          derived                      1          0       -        "FLAG_SM000010"         "Flag for soil moisture in the global attributes for metgrid data"
+rconfig   integer  FLAG_SM010040          derived                      1          0       -        "FLAG_SM010040"         "Flag for soil moisture in the global attributes for metgrid data"
+rconfig   integer  FLAG_SM040100          derived                      1          0       -        "FLAG_SM040100"         "Flag for soil moisture in the global attributes for metgrid data"
+rconfig   integer  FLAG_SM100200          derived                      1          0       -        "FLAG_SM100200"         "Flag for soil moisture in the global attributes for metgrid data"
+rconfig   integer  FLAG_ST000010          derived                      1          0       -        "FLAG_ST000010"         "Flag for soil temperature in the global attributes for metgrid data"
+rconfig   integer  FLAG_ST010040          derived                      1          0       -        "FLAG_ST000010"         "Flag for soil temperature  in the global attributes for metgrid data"
+rconfig   integer  FLAG_ST040100          derived                      1          0       -        "FLAG_ST010040"         "Flag for soil temperature  in the global attributes for metgrid data"
+rconfig   integer  FLAG_ST100200          derived                      1          0       -        "FLAG_ST100200"         "Flag for soil temperature  in the global attributes for metgrid data"
+rconfig   integer  FLAG_SLP               derived                      1          0       -        "FLAG_SLP"              "Flag for sea level pressure in the global attributes for metgrid data"
+rconfig   integer  FLAG_SOILHGT           derived                      1          0       -        "FLAG_SOILHGT"          "Flag for soil height in the global attributes for metgrid data"
+rconfig   integer  FLAG_MF_XY             derived                      1          0       -        "FLAG_MF_XY"            "Flag for MF_XYin the global attributes for metgrid data"
 rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
-rconfig   character mminlu                derived                  max_domains    0       -        "mminlu"               "land use dataset"
+rconfig   character mminlu                derived                  max_domains    " "     -        "mminlu"               "land use dataset"
            ""
 rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
 rconfig   integer islake                  derived                  max_domains    0       -        "islake"               "land use index of inland lake"      "index category"
@@ -1094,12 +1089,12 @@ package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
 package   gfdlslab       sf_surface_physics==88      -             -
 package   pxlsmscheme    sf_surface_physics==7       -             -
-package   nmmlsmscheme   sf_surface_physics==99      -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
+package   boulacscheme   bl_pbl_physics==8           -             - 
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   hwrfblscheme   bl_pbl_physics==98
 

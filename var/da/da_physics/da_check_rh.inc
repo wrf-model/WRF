@@ -14,7 +14,7 @@ subroutine da_check_rh(grid)
    real      :: x_qs(kts:kte)
    real      :: dz(kts:kte)
 
-   integer :: i, j, k
+   integer :: i, j, k, ij
    real    :: tol_adjust_moist, tol_moist, oldrha, each_moist, es, weight
    real    :: upper_modify_rh, lower_modify_rh
 
@@ -30,8 +30,14 @@ subroutine da_check_rh(grid)
       call da_tpq_to_rh_lin (grid)
    end if
 
+   !$OMP PARALLEL DO  SCHEDULE (DYNAMIC, 1) &
+   !$OMP PRIVATE ( i, j, k, tol_adjust_moist, tol_moist) &
+   !$OMP PRIVATE ( weight, oldrha, each_moist, imod, dz, x_qs, rhtol, es)
+!  do ij = 1 , grid%num_tiles
+
    do i=its,ite
-      do j=jts,jte
+      !do j=grid%j_start(ij), grid%j_end(ij)
+      do j=jts, jte
 
          tol_adjust_moist = 0.0
          tol_moist        = 0.0
@@ -140,6 +146,9 @@ subroutine da_check_rh(grid)
          end if
       end do
    end do
+
+!  end do
+   !$OMP END PARALLEL DO
 
    if (trace_use) call da_trace_exit("da_check_rh")
 

@@ -14,7 +14,7 @@ begin
    region = getenv("REGION")
    dir    = getenv("BE_DIR")
    nrow   = stringtointeger(getenv("BE_NROW"))
-   resolution = 45.0
+   resolution = stringtofloat(getenv("RESOLUTION"))
 
    ncol = 2
 

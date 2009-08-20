@@ -24,7 +24,7 @@ subroutine da_final_write_filtered_obs
       open(unit=iunit, file= trim(filename),form='formatted', &
        status='old', iostat=iost)
       if(iost /= 0) &
-      call da_error(__FILE__,__LINE__, (/"Cannot open "//trim(filename)/))
+      call da_error(__FILE__,__LINE__, (/"Cannot open "//filename/))
 
       !  loop over records
       !  -----------------
@@ -41,8 +41,8 @@ subroutine da_final_write_filtered_obs
                       platform%info%elv,         &
                       platform%info%id
          if (iost /= 0) then
-             write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
-             write (0,'(/A,I9)') ' iostat:          ',iost
+            !write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
+            !write (0,'(/A,I9)') ' iostat:          ',iost
             exit reports
          end if
          write(filtered_obs_unit, fmt = fmt_info)           &
@@ -76,14 +76,14 @@ subroutine da_final_write_filtered_obs
          do i = 1, platform%info%levels
 
             platform%each (i) = each_level_type(missing_r, missing, -1.0, & ! height
-                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! u
-                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! v
-                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! p
-                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! t
-                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! q
-                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! rh
-                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! td
-                          field_type(missing_r, missing, missing_r, missing, missing_r))  ! speed 
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! u
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! v
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! p
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! t
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! q
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! rh
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r), & ! td
+                          field_type(missing_r, missing_data, missing_r, missing_r, missing_r))  ! speed 
 
             read (unit = iunit, fmt = trim (fmt_each)) &
                platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &

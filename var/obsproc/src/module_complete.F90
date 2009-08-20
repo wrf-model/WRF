@@ -224,7 +224,7 @@ single_level:&
                             amdar=namdars (icor), qscat=nqscats (icor), &
                             profl=nprofls (icor), buoy=nbuoyss  (icor), &
                             bogus=nboguss (icor), gpsep=ngpseph (icor), &
-                            airs=nairss(icor) )
+                            airs=nairss(icor),tamdar=ntamdar(icor) )
 
 ! 3.2.2 Print removed station
 !       ---------------------

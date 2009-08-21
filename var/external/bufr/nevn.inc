@@ -56,12 +56,12 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
                                                                         
       CHARACTER(128) BORT_STR 
       DIMENSION USR (I1, I2, I3) 
-      REAL(8) VAL, USR 
+      REAL(8) USR !, VAL 
                                                                         
 !---------------------------------------------------------------------- 
 !---------------------------------------------------------------------- 

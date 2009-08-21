@@ -22,6 +22,23 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.1.1 Release Notes:
+-----------------------
+
+Version 3.1.1 is released on July 31, 2009.
+
+- Radiance data assimilation using K Matrix capability is completed in V3.1.1 release, 
+  which dramatically speedup the analysis. To use K Matrix , please 
+  set USE_CRTM_KMATRIX=true in wrfvar14@namelist.input. 
+  Note: it only applied on CRTM in V3.1.1.
+
+- Improved software portability; only NETCDF library is mandatory 
+  if only LITTLE_R formated conventional observational data to be used. 
+  To use Prepbufr observational files, just set environmental variable 
+  BUFR equal to 1 before the code is compiled. To use radiance BUFR 
+  format data, CRTM or RTTOV is needed.
+
+
 V3.1 Release Notes:
 -----------------------
 

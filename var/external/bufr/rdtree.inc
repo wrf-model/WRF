@@ -54,20 +54,20 @@
                                                                         
       COMMON / BITBUF / MAXBYT, IBIT, IBAY (MXMSGLD4), MBYT (NFILES),   &
       MBAY (MXMSGLD4, NFILES)                                           
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / USRBIT / NBIT (MAXJL), MBIT (MAXJL) 
                                                                         
-      CHARACTER(10) TAG 
+!     CHARACTER(10) TAG 
       CHARACTER(8) CVAL 
-      CHARACTER(3) TYP 
+!     CHARACTER(3) TYP 
       DIMENSION IVAL (MAXJL) 
       EQUIVALENCE (CVAL, RVAL) 
-      REAL(8) VAL, RVAL, UPS, TEN 
+      REAL(8) RVAL, UPS, TEN !, VAL
                                                                         
       DATA TEN / 10. / 
                                                                         

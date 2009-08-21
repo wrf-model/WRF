@@ -25,14 +25,9 @@ links :
 	@ mv makefile.old makefile
 	@ touch links
 
-WRFVAR_LIBS = libwrfvar.a $(ESMF_TIME_LIBS) $(NETCDF_LIBS) $(PNETCDF_LIBS) \
-        $(GRIB1_LIBS) $(GRIB2_LIBS) $(GRIB_SHARE_LIBS) $(MPI_LIBS) $(FFTPACK_LIB)
+WRFVAR_LIBS = libwrfvar.a 
 
-WRFVAR_LIB = -L. -lwrfvar $(LAPACK_LIB) $(NETCDF_LIB) $(PNETCDF_LIB) \
-        $(GRIB1_LIB) $(GRIB2_LIB) $(GRIB_SHARE_LIB) \
-        $(ESMF_TIME_LIB) \
-        $(FFTPACK_LIB) \
-        $(RTTOV_LIB) $(CRTM_LIB) $(MPI_LIB) $(LOCAL_LIB)
+WRFVAR_LIB = -L. -lwrfvar $(RTTOV_LIB) $(CRTM_LIB)
 
 FPPFLAGS   = -I$(WRF_SRC_ROOT_DIR)/inc
 

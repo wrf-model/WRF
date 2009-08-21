@@ -84,21 +84,25 @@
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL), &
-                      JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL), &
-                      IBT(MAXJL),IRF(MAXJL),ISC(MAXJL), &
-                      ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL), &
-                      ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+!     COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL), &
+!                     JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL), &
+!                     IBT(MAXJL),IRF(MAXJL),ISC(MAXJL), &
+!                     ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL), &
+!                     ISEQ(MAXJL,2),JSEQ(MAXJL)
+!     COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
       COMMON /USRSTR/ NNOD,NCON,NODS(20),NODC(10),IVLS(10),KONS(10)
       COMMON /QUIET / IPRT
 
-      CHARACTER*10 TAG
-      CHARACTER*3  TYP
-      REAL*8       USR(I1,I2),VAL
+!     CHARACTER*10 TAG
+!     CHARACTER*3  TYP
+      REAL*8       USR(I1,I2)!,VAL
 
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
+
+      IF ( .NOT. ALLOCATED (NVAL) ) ALLOCATE ( NVAL(NFILES) )
+      IF ( .NOT. ALLOCATED (INV) ) ALLOCATE ( INV(MAXJL,NFILES) )
+      IF ( .NOT. ALLOCATED (VAL) ) ALLOCATE ( VAL(MAXJL,NFILES) )
 
       IRET = 0
 

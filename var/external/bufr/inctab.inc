@@ -51,15 +51,15 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
                                                                         
       CHARACTER ( * ) ATAG, ATYP 
       CHARACTER(128) BORT_STR 
-      CHARACTER(10) TAG 
-      CHARACTER(3) TYP 
+!     CHARACTER(10) TAG 
+!     CHARACTER(3) TYP 
                                                                         
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------

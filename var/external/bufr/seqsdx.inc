@@ -78,7 +78,7 @@
 !     entry within TABD(*,LUN) so that we can access the entry and then 
 !     add the decoded sequence information to it.                       
                                                                         
-      CALL NEMTAB (LUN, NEMO, IDN, TAB, ISEQ) 
+      CALL NEMTAB (LUN, NEMO, IDN, TAB, ISEQ_S) 
       IF (TAB.NE.'D') GOTO 900 
       CALL PARSTR (SEQS, TAGS, MAXTGS, NTAG, ' ', .TRUE.) 
       IF (NTAG.EQ.0) GOTO 901 
@@ -167,9 +167,9 @@
 !  WRITE THE DESCRIPTOR STRING INTO TABD ARRAY                          
 !  -------------------------------------------                          
 !  .... first look for a replication descriptor                         
-      IF (IREP.GT.0) CALL PKTDD (ISEQ, LUN, IDNR (IREP, 1) + NUMR, IRET) 
+      IF (IREP.GT.0) CALL PKTDD (ISEQ_S, LUN, IDNR (IREP, 1) + NUMR, IRET) 
       IF (IRET.LT.0) GOTO 913 
-      CALL PKTDD (ISEQ, LUN, IDN, IRET) 
+      CALL PKTDD (ISEQ_S, LUN, IDN, IRET) 
       IF (IRET.LT.0) GOTO 914 
                                                                         
       ENDDO 

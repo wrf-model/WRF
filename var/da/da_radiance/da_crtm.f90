@@ -46,7 +46,7 @@ module da_crtm
    use da_tools, only: da_get_time_slots, da_eof_decomposition
    use da_tracing, only : da_trace_entry, da_trace_exit
 
-    TYPE (CRTM_ChannelInfo_type), allocatable, save :: ChannelInfo(:)
+   TYPE (CRTM_ChannelInfo_type), allocatable, save :: ChannelInfo(:)
 
 contains
 

@@ -127,12 +127,12 @@
                                                                         
       COMMON / MSGCWD / NMSG (NFILES), NSUB (NFILES), MSUB (NFILES),    &
       INODE (NFILES), IDATE (NFILES)                                    
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / TABABD / NTBA (0:NFILES), NTBB (0:NFILES), NTBD (0:      &
       NFILES), MTAB (MAXTBA, NFILES), IDNA (MAXTBA, NFILES, 2), IDNB (  &
       MAXTBB, NFILES), IDND (MAXTBD, NFILES), TABA (MAXTBA, NFILES),    &
@@ -144,13 +144,13 @@
                                                                         
       CHARACTER(20) LCHR 
       CHARACTER(14) BITS 
-      CHARACTER(10) TAG, TG, TG_RJ 
+      CHARACTER(10) TG, TG_RJ !,TAG
       CHARACTER(8) VC 
       CHARACTER(7) FMTF 
-      CHARACTER(3) TYP, TP 
+      CHARACTER(3) TP !, TYP
       CHARACTER(1) TAB, YOU 
       EQUIVALENCE (VL, VC) 
-      REAL(8) VAL, VL 
+      REAL(8) VL!, VAL 
                                                                         
       PARAMETER (MXFV = 31) 
       INTEGER IFV (MXFV) 

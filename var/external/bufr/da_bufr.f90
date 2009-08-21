@@ -6,6 +6,35 @@ module da_bufr
 
 #ifdef BUFR
 
+   integer :: MUNIT, MLAST
+   integer, allocatable, dimension(:) :: MSGP
+   integer, allocatable, dimension(:) :: MSGS
+
+   integer, allocatable, dimension(:,:) :: MATX_S
+   integer, allocatable, dimension(:) :: KMIN_S
+   integer, allocatable, dimension(:) :: KMAX_S
+   logical, allocatable, dimension(:) :: KMIS_S
+   integer, allocatable, dimension(:) :: KBIT_S
+   integer, allocatable, dimension(:) :: ITYP_S
+   integer, allocatable, dimension(:) :: IWID_S
+   character*8, allocatable, dimension(:,:) :: CATX_S
+   character*8, allocatable, dimension(:) :: CSTR_S
+   logical :: FLUSH_S, WRIT1_S
+   integer :: NROW_S, NCOL_S, LUNC_S, KBYT_S
+
+   integer :: MAXTAB, NTAB
+   character*10, allocatable, dimension(:) :: TAG
+   character*3, allocatable, dimension(:) :: TYP
+   integer, allocatable, dimension(:) :: KNT, JUMP, LINK, JMPB, IBT, IRF, ISC, ITP, VALI, KNTI, JSEQ
+   integer, allocatable, dimension(:,:) :: ISEQ
+
+   integer, allocatable, dimension(:) :: NVAL(:)
+   integer, allocatable, dimension(:,:) :: INV(:,:)
+   real*8 , allocatable, dimension(:,:) :: VAL(:,:)
+
+   integer, allocatable, dimension(:,:) :: ITMP 
+   real*8 , allocatable, dimension(:,:) :: VTMP
+
 contains
 
 #include "addate.inc"

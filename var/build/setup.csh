@@ -107,9 +107,9 @@ endif
 #if (-d ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}) then
 #   setenv FFTPACK ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}
 #endif
-#if (-d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}) then
-#   setenv BUFR ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
-#endif
+if (-d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}) then
+   setenv BUFR ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
+endif
 if (-d ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}) then
    setenv ZLIB ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}
 endif

@@ -52,11 +52,11 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
                                                                         
       CHARACTER(128) BORT_STR 
-      REAL(8) VAL 
+!     REAL(8) VAL 
                                                                         
 !---------------------------------------------------------------------- 
 !---------------------------------------------------------------------- 

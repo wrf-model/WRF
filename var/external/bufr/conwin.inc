@@ -48,12 +48,12 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / USRSTR / NNOD, NCON, NODS (20), NODC (10), IVLS (10),    &
       KONS (10)                                                         
                                                                         
-      REAL(8) VAL 
+!     REAL(8) VAL 
                                                                         
 !---------------------------------------------------------------------- 
 !---------------------------------------------------------------------- 

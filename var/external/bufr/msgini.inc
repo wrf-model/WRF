@@ -68,17 +68,17 @@
                       INODE(NFILES),IDATE(NFILES)
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES), &
                       MBAY(MXMSGLD4,NFILES)
-      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL), &
-                      JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL), &
-                      IBT(MAXJL),IRF(MAXJL),ISC(MAXJL), &
-                      ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL), &
-                      ISEQ(MAXJL,2),JSEQ(MAXJL)
+!     COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL), &
+!                     JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL), &
+!                     IBT(MAXJL),IRF(MAXJL),ISC(MAXJL), &
+!                     ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL), &
+!                     ISEQ(MAXJL,2),JSEQ(MAXJL)
 
       CHARACTER*128 BORT_STR
-      CHARACTER*10  TAG
+!     CHARACTER*10  TAG
       CHARACTER*8   SUBTAG
       CHARACTER*4   BUFR0,SEVN
-      CHARACTER*3   TYP
+!     CHARACTER*3   TYP
       CHARACTER*1   TAB
 
       DATA BUFR0/'BUFR'/

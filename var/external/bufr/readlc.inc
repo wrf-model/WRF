@@ -49,22 +49,22 @@
                                                                         
       COMMON / BITBUF / MAXBYT, IBIT, IBAY (MXMSGLD4), MBYT (NFILES),   &
       MBAY (MXMSGLD4, NFILES)                                           
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / USRBIT / NBIT (MAXJL), MBIT (MAXJL) 
       COMMON / UNPTYP / MSGUNP (NFILES) 
       COMMON / QUIET / IPRT 
                                                                         
       CHARACTER ( * ) CHR, STR 
       CHARACTER(128) BORT_STR 
-      CHARACTER(10) TAG, TGS (100) 
+      CHARACTER(10) TGS (100) !, TAG
       CHARACTER(8) CTAG 
-      CHARACTER(3) TYP 
-      REAL(8) VAL 
+!     CHARACTER(3) TYP 
+!     REAL(8) VAL 
                                                                         
       DATA MAXTG / 100 / 
                                                                         

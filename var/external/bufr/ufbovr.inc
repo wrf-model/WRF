@@ -75,12 +75,12 @@
                                                                         
       COMMON / MSGCWD / NMSG (NFILES), NSUB (NFILES), MSUB (NFILES),    &
       INODE (NFILES), IDATE (NFILES)                                    
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
                                                                         
       CHARACTER(128) BORT_STR1, BORT_STR2 
       CHARACTER ( * ) STR 
-      REAL(8) USR (I1, I2), VAL 
+      REAL(8) USR (I1, I2)!, VAL 
                                                                         
       DATA IFIRST1 / 0 /, IFIRST2 / 0 / 
                                                                         

@@ -107,28 +107,28 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
+!     COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
       COMMON / MSGCWD / NMSG (NFILES), NSUB (NFILES), MSUB (NFILES),    &
       INODE (NFILES), IDATE (NFILES)                                    
       COMMON / BITBUF / MAXBYT, IBIT, IBAY (MXMSGLD4), MBYT (NFILES),   &
       MBAY (MXMSGLD4, NFILES)                                           
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / USRSTR / NNOD, NCON, NODS (20), NODC (10), VALS (10),    &
       KONS (10)                                                         
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
       COMMON / QUIET / IPRT 
                                                                         
       CHARACTER ( * ) STR 
       CHARACTER(128) BORT_STR 
-      CHARACTER(10) TAG, TGS (100) 
+      CHARACTER(10) TGS (100) !, TAG 
       CHARACTER(8) SUBSET, CVAL 
-      CHARACTER(3) TYP 
+!     CHARACTER(3) TYP 
       EQUIVALENCE (CVAL, RVAL) 
-      REAL(8) TAB (I1, I2), VAL, RVAL, UPS, TEN 
+      REAL(8) TAB (I1, I2), RVAL, UPS, TEN !, VAL
                                                                         
       DATA MAXTG / 100 / 
       DATA TEN / 10 / 

@@ -291,7 +291,10 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             Atmosphere(n)%level_pressure(k) = iv%instid(inst)%pf(k,n)
             Atmosphere(n)%temperature(k) = iv%instid(inst)%tm(k,n)
             Atmosphere(n)%absorber(k,1) = iv%instid(inst)%qm(k,n)
-            if (crtm_cloud) then
+         end do
+
+         if (crtm_cloud) then
+            do k=1,Atmosphere(n)%n_layers
                Atmosphere(n)%cloud(1)%water_content(k)=iv%instid(inst)%qcw(k,n)
                Atmosphere(n)%cloud(2)%water_content(k)=iv%instid(inst)%qci(k,n)
                Atmosphere(n)%cloud(3)%water_content(k)=iv%instid(inst)%qrn(k,n)
@@ -304,8 +307,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
                Atmosphere(n)%cloud(4)%effective_radius(k)=iv%instid(inst)%rsn(k,n)
                Atmosphere(n)%cloud(5)%effective_radius(k)=iv%instid(inst)%rgr(k,n)
                Atmosphere(n)%cloud(6)%effective_radius(k)=iv%instid(inst)%rhl(k,n)
-            end if
-         end do
+            end do
+         end if
 
          ! [1.1] User-supplied emissivity
          ! Options%emissivity_switch = 1
@@ -491,16 +494,17 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
        ! [1.6] Adjoint of Interpolate horizontally from ob to grid:
 
-         do k=kts,kte ! from bottom to top
-
-            if (crtm_cloud) then
+         if (crtm_cloud) then
+            do k=kts,kte ! from bottom to top
                qcw(k,n)=Atmosphere_AD(n)%Cloud(1)%Water_Content(kte-k+1)
                qci(k,n)=Atmosphere_AD(n)%Cloud(2)%Water_Content(kte-k+1)
                qrn(k,n)=Atmosphere_AD(n)%Cloud(3)%Water_Content(kte-k+1)
                qsn(k,n)=Atmosphere_AD(n)%Cloud(4)%Water_Content(kte-k+1)
                qgr(k,n)=Atmosphere_AD(n)%Cloud(5)%Water_Content(kte-k+1)
-            end if    
+            end do
+         end if
 
+         do k=kts,kte ! from bottom to top
             if (atmosphere(n)%pressure(kte-k+1) >= 75.0) &        ! Zero Jacobian for top level(s)
                q_ad(k,n) = Atmosphere_AD(n)%Absorber(kte-k+1,1) * 1000.0            ! in g/kg
             if (k < kte) &                                        ! Zero Jacobian for top level

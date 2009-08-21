@@ -9,8 +9,6 @@ MODULES =                           \
   module_chem_utilities.o           \
   module_data_radm2.o               \
   module_data_sorgam.o              \
-  module_data_isrpia.o              \
-  module_isrpia.o                   \
   module_input_chem_emissopt3.o     \
   module_plumerise1.o     \
   module_add_emiss_burn.o     \
@@ -196,11 +194,7 @@ module_emissions_anthropogenics.o:
 
 module_data_sorgam.o: 
 
-module_data_isrpia.o:
-
-module_isrpia.o: module_data_isrpia.o module_mosaic_addemiss.o
-
-module_aerosols_sorgam.o: module_isrpia.o
+module_aerosols_sorgam.o: 
 
 module_cbmz_lsodes_solver.o: 
 
@@ -216,7 +210,7 @@ module_data_mosaic_therm.o:
 
 module_mosaic_addemiss.o: module_data_mosaic_asect.o 
 
-module_aerosols_sorgam.o: module_mosaic_addemiss.F
+module_aerosols_sorgam.o: module_mosaic_addemiss.o
 
 module_mosaic_drydep.o: module_peg_util.o module_data_mosaic_asect.o module_data_mosaic_other.o
 

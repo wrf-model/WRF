@@ -4,7 +4,7 @@ MODULE module_aerosols_sorgam
   USE module_data_radm2
   USE module_data_sorgam
   USE module_radm
-  USE module_isrpia, only: isoropia
+! USE module_isrpia, only: isoropia
 !
       IMPLICIT NONE
 #define cw_species_are_in_registry
@@ -2873,7 +2873,7 @@ END SUBROUTINE sorgam_depdriver
          print *,wi(1),wi(2),wi(3),wi(4),wi(5)
         endif
 
-        call isoropia(wi,rhi,tempi,cntrl,wt,gas,aerliq,aersld,scasi,other)
+!       call isoropia(wi,rhi,tempi,cntrl,wt,gas,aerliq,aersld,scasi,other)
 
 
 ! *** the following is an interim procedure. Assume the i-mode has the

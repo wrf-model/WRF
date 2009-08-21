@@ -736,7 +736,8 @@
           iozone1,tauaer_550,jvalue,sza,lpar,jpnl, &
           sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
      	
-	cos_sza = cosd(sza)
+	!cos_sza = cosd(sza)
+	cos_sza = cos(sza*3.141592653/180.)
 	
 
 ! array jvalue (real*8) is returned from fastj.  array valuej(unspecified

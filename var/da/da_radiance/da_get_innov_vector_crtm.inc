@@ -630,8 +630,10 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                   iv%instid(inst)%q_jacobian(l,k,n) = Atmosphere_k(l,1)%absorber(k,1)
                end do
 	    end if
+         end do
 	       
-            if (crtm_cloud) then
+         if (crtm_cloud) then
+            do k=1,Atmosphere(1)%n_layers
                iv%instid(inst)%qcw(k,n) = Atmosphere(1)%cloud(1)%water_content(k)
                iv%instid(inst)%qci(k,n) = Atmosphere(1)%cloud(2)%water_content(k)
                iv%instid(inst)%qrn(k,n) = Atmosphere(1)%cloud(3)%water_content(k)
@@ -675,8 +677,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                         Atmosphere_k(l,1)%cloud(6)%effective_radius(k)
                   end do
 	       end if	  
-            end if
-         end do
+            end do
+         end if
 
          !----------------------------------------------
          ! [4.0] store surface information to innovation structure

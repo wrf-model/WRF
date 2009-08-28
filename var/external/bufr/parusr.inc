@@ -87,14 +87,14 @@
 !  DETERMINE IF THIS UTG IS A CONDITION NODE OR A STORE NODE
 !  ---------------------------------------------------------
 
-      CALL PARUTG(LUN,IO,UTG(N),NOD,KON,VAL)
+      CALL PARUTG(LUN,IO,UTG(N),NOD,KON,VAL_S)
       IF(KON.NE.0) THEN
 !  .... it is a condition node
          NCON = NCON+1
          IF(NCON.GT.MAXCON) GOTO 901
          NODC(NCON) = NOD
          KONS(NCON) = KON
-         IVLS(NCON) = NINT(VAL)
+         IVLS(NCON) = NINT(VAL_S)
       ELSE
 !  .... it is a store node
          NNOD = NNOD+1
@@ -117,9 +117,9 @@
          KONS(I) = KONS(J)
          KONS(J) = KON
 
-         VAL     = IVLS(I)
+         VAL_S     = IVLS(I)
          IVLS(I) = IVLS(J)
-         IVLS(J) = VAL
+         IVLS(J) = VAL_S
       ENDIF
       ENDDO
       ENDDO

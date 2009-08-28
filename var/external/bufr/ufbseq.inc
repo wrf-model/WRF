@@ -125,19 +125,19 @@
 
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES), &
                       INODE(NFILES),IDATE(NFILES)
-      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL), &
-                      JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL), &
-                      IBT(MAXJL),IRF(MAXJL),ISC(MAXJL), &
-                      ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL), &
-                      ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+!     COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL), &
+!                     JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL), &
+!                     IBT(MAXJL),IRF(MAXJL),ISC(MAXJL), &
+!                     ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL), &
+!                     ISEQ(MAXJL,2),JSEQ(MAXJL)
+!     COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
       COMMON /QUIET / IPRT
 
       CHARACTER*(*) STR
       CHARACTER*128 BORT_STR
-      CHARACTER*10  TAG,TAGS(MTAG)
-      CHARACTER*3   TYP
-      REAL*8        USR(I1,I2),VAL
+      CHARACTER*10  TAGS(MTAG) !, TAG
+!     CHARACTER*3   TYP
+      REAL*8        USR(I1,I2)!,VAL
 
       DATA IFIRST1/0/,IFIRST2/0/
 
@@ -145,6 +145,10 @@
 
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
+
+      IF ( .NOT. ALLOCATED (NVAL) ) ALLOCATE ( NVAL(NFILES) )
+      IF ( .NOT. ALLOCATED (INV) ) ALLOCATE ( INV(MAXJL,NFILES) )
+      IF ( .NOT. ALLOCATED (VAL) ) ALLOCATE ( VAL(MAXJL,NFILES) )
 
       IRET = 0
 

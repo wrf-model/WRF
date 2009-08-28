@@ -80,22 +80,22 @@
       INODE (NFILES), IDATE (NFILES)                                    
       COMMON / BITBUF / MAXBYT, IBIT, IBAY (MXMSGLD4), MBYT (NFILES),   &
       MBAY (MXMSGLD4, NFILES)                                           
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / USRSTR / NNOD, NCON, NODS (20), NODC (10), IVLS (10),    &
       KONS (10)                                                         
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
       COMMON / USRBIT / NBIT (MAXJL), MBIT (MAXJL) 
                                                                         
       CHARACTER ( * ) STR 
-      CHARACTER(10) TAG 
+!     CHARACTER(10) TAG 
       CHARACTER(8) CVAL 
-      CHARACTER(3) TYP 
+!     CHARACTER(3) TYP 
       EQUIVALENCE (CVAL, RVAL) 
-      REAL(8) VAL, RVAL, TAB (I1), UPS, TEN 
+      REAL(8) RVAL, TAB (I1), UPS, TEN !, VAL
                                                                         
       DATA TEN / 10 / 
                                                                         

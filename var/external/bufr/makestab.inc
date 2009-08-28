@@ -68,27 +68,27 @@
                                                                         
       COMMON / QUIET / IPRT 
       COMMON / STBFR / IOLUN (NFILES), IOMSG (NFILES) 
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / TABABD / NTBA (0:NFILES), NTBB (0:NFILES), NTBD (0:      &
       NFILES), MTAB (MAXTBA, NFILES), IDNA (MAXTBA, NFILES, 2), IDNB (  &
       MAXTBB, NFILES), IDND (MAXTBD, NFILES), TABA (MAXTBA, NFILES),    &
       TABB (MAXTBB, NFILES), TABD (MAXTBD, NFILES)                      
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
                                                                         
       CHARACTER(600) TABD 
       CHARACTER(128) TABB 
       CHARACTER(128) TABA 
       CHARACTER(128) BORT_STR 
-      CHARACTER(10) TAG 
+!     CHARACTER(10) TAG 
       CHARACTER(8) NEMO 
-      CHARACTER(3) TYP 
+!     CHARACTER(3) TYP 
       DIMENSION LUS (NFILES) 
       LOGICAL EXPAND 
-      REAL(8) VAL 
+!     REAL(8) VAL 
                                                                         
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------

@@ -116,14 +116,14 @@
                                                                         
       COMMON / MSGCWD / NMSG (NFILES), NSUB (NFILES), MSUB (NFILES),    &
       INODE (NFILES), IDATE (NFILES)                                    
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / USRSTR / NNOD, NCON, NODS (20), NODC (10), IVLS (10),    &
       KONS (10)                                                         
       COMMON / QUIET / IPRT 
                                                                         
       CHARACTER ( * ) STR 
-      REAL(8) VAL, USR (I1, I2, I3) 
+      REAL(8) USR (I1, I2, I3) !, VAL
                                                                         
 !---------------------------------------------------------------------- 
 !---------------------------------------------------------------------- 

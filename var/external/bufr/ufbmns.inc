@@ -69,7 +69,7 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
+!     COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
                                                                         
       CHARACTER(128) BORT_STR 
       CHARACTER(8) SUBSET 

@@ -88,7 +88,7 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
+!     COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
                                                                         
       CHARACTER(128) BORT_STR 
       DIMENSION MBAY (MXMSGLD4) 
@@ -101,6 +101,9 @@
                                                                         
       CALL OPENBF (LUNIT, 'IN', LUNIT) 
                                                                         
+      IF ( .NOT. ALLOCATED (MSGS) ) ALLOCATE ( MSGS(MAXMEM) )
+      IF ( .NOT. ALLOCATED (MSGP) ) ALLOCATE ( MSGP(MAXMSG) )
+
       IF (INEW.EQ.0) THEN 
          MSGP (0) = 0 
          MUNIT = 0 

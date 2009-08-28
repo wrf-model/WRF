@@ -177,16 +177,16 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
       COMMON / TABCCC / ICDW, ICSC, ICRV, INCW 
                                                                         
       CHARACTER(128) BORT_STR 
-      CHARACTER(10) TAG 
+!     CHARACTER(10) TAG 
       CHARACTER(8) NEMO, NEMS, NEM 
-      CHARACTER(3) TYP 
+!     CHARACTER(3) TYP 
       CHARACTER(1) TAB 
       DIMENSION NEM (MAXCD, 10), IRP (MAXCD, 10), KRP (MAXCD, 10) 
       DIMENSION DROP (10), JMP0 (10), NODL (10), NTAG (10, 2) 
@@ -205,6 +205,21 @@
 !     Table D mnemonics within internal BUFR Table D array TABD(*,LUN). 
 !     Thus, the following test is valid.                                
                                                                         
+      IF ( .NOT. ALLOCATED (TAG) ) ALLOCATE ( TAG (MAXJL) )
+      IF ( .NOT. ALLOCATED (TYP) ) ALLOCATE ( TYP (MAXJL) )
+      IF ( .NOT. ALLOCATED (KNT) ) ALLOCATE ( KNT (MAXJL) )
+      IF ( .NOT. ALLOCATED (JUMP) ) ALLOCATE ( JUMP (MAXJL) )
+      IF ( .NOT. ALLOCATED (LINK) ) ALLOCATE ( LINK (MAXJL) )
+      IF ( .NOT. ALLOCATED (JMPB) ) ALLOCATE ( JMPB (MAXJL) )
+      IF ( .NOT. ALLOCATED (IBT) ) ALLOCATE ( IBT (MAXJL) )
+      IF ( .NOT. ALLOCATED (IRF) ) ALLOCATE ( IRF (MAXJL) )
+      IF ( .NOT. ALLOCATED (ISC) ) ALLOCATE ( ISC (MAXJL) )
+      IF ( .NOT. ALLOCATED (ITP) ) ALLOCATE ( ITP (MAXJL) )
+      IF ( .NOT. ALLOCATED (VALI) ) ALLOCATE ( VALI (MAXJL) )
+      IF ( .NOT. ALLOCATED (KNTI) ) ALLOCATE ( KNTI (MAXJL) )
+      IF ( .NOT. ALLOCATED (ISEQ) ) ALLOCATE ( ISEQ (MAXJL,2) )
+      IF ( .NOT. ALLOCATED (JSEQ) ) ALLOCATE ( JSEQ (MAXJL) )
+
       CALL NEMTAB (LUN, NEMO, IDN, TAB, ITAB) 
       IF (TAB.NE.'D') GOTO 900 
                                                                         

@@ -85,12 +85,12 @@
                                                                         
       COMMON / MSGCWD / NMSG (NFILES), NSUB (NFILES), MSUB (NFILES),    &
       INODE (NFILES), IDATE (NFILES)                                    
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / TABABD / NTBA (0:NFILES), NTBB (0:NFILES), NTBD (0:      &
       NFILES), MTAB (MAXTBA, NFILES), IDNA (MAXTBA, NFILES, 2), IDNB (  &
       MAXTBB, NFILES), IDND (MAXTBD, NFILES), TABA (MAXTBA, NFILES),    &
@@ -104,14 +104,14 @@
       CHARACTER(64) DESC 
       CHARACTER(24) UNIT 
       CHARACTER(20) LCHR 
-      CHARACTER(10) TAG, NEMO 
+      CHARACTER(10) NEMO !,TAG 
       CHARACTER(6) NUMB 
       CHARACTER(7) FMTF 
       CHARACTER(8) CVAL, PMISS 
-      CHARACTER(3) TYP 
+!     CHARACTER(3) TYP 
       CHARACTER(1) TAB, YOU 
       EQUIVALENCE (RVAL, CVAL) 
-      REAL(8) VAL, RVAL 
+      REAL(8) RVAL !, VAL 
                                                                         
       PARAMETER (MXFV = 31) 
       INTEGER IFV (MXFV) 

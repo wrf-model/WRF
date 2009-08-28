@@ -78,7 +78,7 @@
       INODE (NFILES), IDATE (NFILES)                                    
       COMMON / BITBUF / MAXBYT, IBIT, IBAY (MXMSGLD4), MBYT (NFILES),   &
       MBAY (MXMSGLD4, NFILES)                                           
-      COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
+!     COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
       COMMON / QUIET / IPRT 
                                                                         
       CHARACTER(8) SUBSET 

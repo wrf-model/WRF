@@ -288,7 +288,22 @@ PROGRAM convert_emissions
    end_minute = model_config_rec%  end_minute(grid%id)
    end_second = model_config_rec%  end_second(grid%id)
 
-   interval_seconds    = config_flags%interval_seconds
+   interval_seconds    = config_flags%auxinput5_interval
+   if ( interval_seconds == 0 ) then
+     interval_seconds    = config_flags%auxinput5_interval_s
+   endif
+   if ( interval_seconds == 0 ) then
+     interval_seconds    = 60 * config_flags%auxinput5_interval_m
+   endif
+   if ( interval_seconds == 0 ) then
+     interval_seconds    = 3600 * config_flags%auxinput5_interval_h
+   endif
+   if ( interval_seconds == 0 ) then
+     interval_seconds    = 86400 * config_flags%auxinput5_interval_d
+   endif
+   if ( interval_seconds == 0 ) then
+     interval_seconds    = 2592000 * config_flags%auxinput5_interval_m
+   endif
 
    real_data_init_type = model_config_rec%real_data_init_type
 
@@ -1661,7 +1676,12 @@ PROGRAM convert_emissions
 
 !  grid%input_from_file = .false.
 
-   CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
+   if (config_flags%io_style_emissions.eq.1)then
+      write(eminame,FMT='(A9,i2.2,a1)') 'wrfchemi_',ihour,'z'
+      CALL construct_filename1 ( inpname ,TRIM(eminame), grid%id , 2 )
+   else
+      CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
+   endif
 
    write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
    CALL  wrf_debug ( 100, message )
@@ -1721,17 +1741,32 @@ PROGRAM convert_emissions
      write(message,FMT='(A,I4)') ' Hour ',ihour
      CALL  wrf_message ( message )
      ihour = mod(ihour + 1,24)
-     if(ihour.eq.0)then
-         close(91)
-         CALL construct_filename1 ( bdyname , 'wrfem_00to12z' , grid%id , 2 )
-         open (91,file=bdyname,form='unformatted')
-     endif
-     if(ihour.eq.12) then 
-         close(91)
-         CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
-         open (91,file=bdyname,form='unformatted')
-     endif
 
+! Allow writing of both 12h files with 1 submission when io_style_emissions=1 (2 12h files)
+     if(ihour.eq.0 .or. ihour.eq.12)then
+! Read from next binary emissions file
+         close(91)
+         if(ihour.eq.0) then
+           CALL construct_filename1 ( bdyname , 'wrfem_00to12z' , grid%id , 2 )
+         elseif(ihour.eq.12) then
+           CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
+         endif
+         open (91,file=bdyname,form='unformatted')
+!Write a 2nd netcdf emiss file?
+         if (config_flags%io_style_emissions .eq.1) then
+           CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+           write(eminame,FMT='(A9,i2.2,a1)') 'wrfchemi_',ihour,'z'
+           CALL construct_filename1 ( inpname ,TRIM(eminame), grid%id , 2 )
+           write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
+           CALL  wrf_debug ( 0, message )
+           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+           write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
+           CALL  wrf_message ( message )
+           IF ( ierr .NE. 0 ) THEN
+             CALL wrf_error_fatal( 'Error opening wrfchem emissions file for writing' )
+           ENDIF
+         endif
+     endif
 
      ENDIF
      CALL wrf_dm_bcast_bytes ( ihour , rnum8 )
@@ -1762,6 +1797,33 @@ PROGRAM convert_emissions
          close(91)
          CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
          open (91,file=bdyname,form='unformatted')
+     endif
+! Allow writing of both 12h files with 1 submission when io_style_emissions=1 (2 12h files)
+     if(ihour.eq.0 .or. ihour.eq.12)then
+! Read from next emissions file
+         close(91)
+         if(ihour.eq.0) then
+           CALL construct_filename1 ( bdyname , 'wrfem_00to12z' , grid%id , 2 )
+         elseif(ihour.eq.12) then
+           CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
+         endif
+         open (91,file=bdyname,form='unformatted')
+!Write a 2nd netcdf emiss file?
+         if (config_flags%io_style_emissions .eq.1) then
+           CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+           write(message,FMT='(A)') ' CLOSED FIRST FILE, OPENING SECOND FILE'
+           CALL  wrf_message ( message )
+           write(eminame,FMT='(A9,i2.2,a1)') 'wrfchemi_',ihour,'z'
+           CALL construct_filename1 ( inpname , TRIM(eminame) , grid%id , 2 )
+           write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
+           CALL  wrf_debug ( 0, message )
+           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+           write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
+           CALL  wrf_message ( message )
+           IF ( ierr .NE. 0 ) THEN
+             CALL wrf_error_fatal( 'Error opening wrfchem emissions file for writing' )
+           ENDIF
+         endif
      endif
 #endif
 

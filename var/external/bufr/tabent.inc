@@ -62,17 +62,17 @@
                                                                         
       COMMON / REPTAB / IDNR (5, 2), TYPS (5, 2), REPS (5, 2), LENS (5) 
                                                                         
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
       COMMON / TABCCC / ICDW, ICSC, ICRV, INCW 
                                                                         
       CHARACTER(128) BORT_STR 
       CHARACTER(24) UNIT 
-      CHARACTER(10) TAG, RTAG 
+      CHARACTER(10) RTAG !, TAG
       CHARACTER(8) NEMO 
-      CHARACTER(3) TYP, TYPS, TYPT 
+      CHARACTER(3) TYPS, TYPT !, TYP 
       CHARACTER(1) REPS, TAB 
                                                                         
 !-----------------------------------------------------------------------

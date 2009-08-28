@@ -979,7 +979,7 @@ CONTAINS
        ENDIF
      ENDIF
      IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput9( 1, io_form )
+       CALL nl_get_io_form_sgfdda( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
          CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT9_ALARM ), &
                              RingInterval=couplingInterval, rc=rc )
@@ -1102,7 +1102,7 @@ CONTAINS
        ENDIF
      ENDIF
      IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist9( 1, io_form )
+       CALL nl_get_io_form_sgfdda( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
          CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST9_ALARM ), &
                              RingInterval=couplingInterval, rc=rc )
@@ -1323,11 +1323,11 @@ CONTAINS
                         input_aux_model_input8, ierr )
        IF ( ierr /= 0 ) RETURN
      ENDIF
-     CALL nl_get_io_form_auxinput9( 1, io_form )
+     CALL nl_get_io_form_sgfdda( 1, io_form )
      IF ( use_package( io_form ) == IO_ESMF ) THEN
        stream = 9
        CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
-                        config_flags%auxinput9_inname, grid%auxinput9_oid, &
+                        config_flags%sgfdda_inname, grid%auxinput9_oid, &
                         input_aux_model_input9, ierr )
        IF ( ierr /= 0 ) RETURN
      ENDIF
@@ -1415,6 +1415,7 @@ CONTAINS
                          output_aux_hist8, fname, n2, ierr )
        IF ( ierr /= 0 ) RETURN
      ENDIF
+#if 0
      CALL nl_get_io_form_auxhist9( 1, io_form )
      IF ( use_package( io_form ) == IO_ESMF ) THEN
        stream = 9
@@ -1423,6 +1424,7 @@ CONTAINS
                          output_aux_hist9, fname, n2, ierr )
        IF ( ierr /= 0 ) RETURN
      ENDIF
+#endif
      CALL nl_get_io_form_auxhist10( 1, io_form )
      IF ( use_package( io_form ) == IO_ESMF ) THEN
        stream = 10

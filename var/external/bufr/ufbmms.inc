@@ -68,7 +68,7 @@
                                                                         
       INCLUDE 'bufrlib.prm' 
                                                                         
-      COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
+!     COMMON / MSGMEM / MUNIT, MLAST, MSGP (0:MAXMSG), MSGS (MAXMEM) 
       COMMON / MSGCWD / NMSG (NFILES), NSUB (NFILES), MSUB (NFILES),    &
       INODE (NFILES), IDATE (NFILES)                                    
                                                                         

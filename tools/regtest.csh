@@ -34,6 +34,20 @@
 #		IBM            P4     :  2.0 hours (empty)
 
 if ( `uname` == AIX ) then
+
+	xlf -qversion
+	source ~gill/sourceme_modules
+	module load xlf12
+	xlf -qversion
+
+	set VERSION = `xlf -qversion | grep AIX | cut -f2 -d, | cut -f2 -dV | cut -f1 -d.`
+	if ( $VERSION != 12 ) then
+		echo wrong xlf version $VERSION
+		exit
+	else
+		echo right xlf version $VERSION
+	endif
+
 	set tdir = 1
 	if ( ! -d /ptmp/${USER}/${tdir} ) then
 		mkdir /ptmp/${USER}/${tdir}

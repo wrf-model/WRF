@@ -65,24 +65,30 @@
       MBAY (MXMSGLD4, NFILES)                                           
       COMMON / MSGCWD / NMSG (NFILES), NSUB (NFILES), MSUB (NFILES),    &
       INODE (NFILES), IDATE (NFILES)                                    
-      COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
-      MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
-      IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
-      ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
-      COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
-      NFILES)                                                           
+!     COMMON / TABLES / MAXTAB, NTAB, TAG (MAXJL), TYP (MAXJL), KNT (   &
+!     MAXJL), JUMP (MAXJL), LINK (MAXJL), JMPB (MAXJL), IBT (MAXJL),    &
+!     IRF (MAXJL), ISC (MAXJL), ITP (MAXJL), VALI (MAXJL), KNTI (MAXJL),&
+!     ISEQ (MAXJL, 2), JSEQ (MAXJL)                                     
+!     COMMON / USRINT / NVAL (NFILES), INV (MAXJL, NFILES), VAL (MAXJL, &
+!     NFILES)                                                           
       COMMON / USRBIT / NBIT (MAXJL), MBIT (MAXJL) 
-      COMMON / USRTMP / ITMP (MAXJL, MAXRCR), VTMP (MAXJL, MAXRCR) 
+!     COMMON / USRTMP / ITMP (MAXJL, MAXRCR), VTMP (MAXJL, MAXRCR) 
                                                                         
       CHARACTER(128) BORT_STR 
-      CHARACTER(10) TAG 
-      CHARACTER(3) TYP 
+!     CHARACTER(10) TAG 
+!     CHARACTER(3) TYP 
       DIMENSION NBMP (2, MAXRCR), NEWN (2, MAXRCR) 
       DIMENSION KNX (MAXRCR) 
-      REAL(8) VAL, VTMP 
+!     REAL(8) VTMP !, VAL
                                                                         
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+      IF ( .NOT. ALLOCATED (NVAL) ) ALLOCATE ( NVAL(NFILES) )
+      IF ( .NOT. ALLOCATED (INV) ) ALLOCATE ( INV(MAXJL,NFILES) )
+      IF ( .NOT. ALLOCATED (VAL) ) ALLOCATE ( VAL(MAXJL,NFILES) )
+
+      IF ( .NOT. ALLOCATED (ITMP) ) ALLOCATE (ITMP (MAXJL, MAXRCR))
+      IF ( .NOT. ALLOCATED (VTMP) ) ALLOCATE (VTMP (MAXJL, MAXRCR))
                                                                         
 !  SET THE INITIAL VALUES FOR THE TEMPLATE                              
 !  ---------------------------------------                              

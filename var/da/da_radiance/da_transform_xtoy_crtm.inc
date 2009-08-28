@@ -312,7 +312,9 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
             Atmosphere(n)%level_pressure(k) = iv%instid(inst)%pf(k,n)
             Atmosphere(n)%temperature(k)    = iv%instid(inst)%tm(k,n)
             Atmosphere(n)%absorber(k,1)     = iv%instid(inst)%qm(k,n)
-           if (crtm_cloud) then
+         end do
+         if (crtm_cloud) then
+            do k=1,Atmosphere(n)%n_layers
               Atmosphere(n)%cloud(1)%water_content(k)=iv%instid(inst)%qcw(k,n)
               Atmosphere(n)%cloud(2)%water_content(k)=iv%instid(inst)%qci(k,n)
               Atmosphere(n)%cloud(3)%water_content(k)=iv%instid(inst)%qrn(k,n)
@@ -325,8 +327,8 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
               Atmosphere(n)%cloud(4)%effective_radius(k)=iv%instid(inst)%rsn(k,n)
               Atmosphere(n)%cloud(5)%effective_radius(k)=iv%instid(inst)%rgr(k,n)
               Atmosphere(n)%cloud(6)%effective_radius(k)=iv%instid(inst)%rhl(k,n)
-           end if
-         end do
+           end do
+         end if
 
       ! [1.4] User-supplied emissivity
            !Options%emissivity_switch = 1

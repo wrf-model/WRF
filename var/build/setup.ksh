@@ -84,9 +84,9 @@ fi
 #if test -d ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}; then
 #   export FFTPACK=${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}
 #fi
-#if test -d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}; then
-#   export BUFR=${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
-#fi
+if test -d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}; then
+   export BUFR=${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
+fi
 if test -d ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}; then
    export ZLIB=${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}
 fi

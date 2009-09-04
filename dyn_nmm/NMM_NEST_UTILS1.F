@@ -1878,8 +1878,12 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  real, allocatable, dimension(:,:,:) :: real_domain
 
- character (len=10), dimension(4)  :: name = (/ "XLAT_M    ", &
+ character (len=10), dimension(8)  :: name = (/ "XLAT_M    ", &
                                                 "XLONG_M   ", &
+                                                "XLAT_V    ", &
+                                                "XLONG_V   ", &
+                                                "E         ", &
+                                                "F         ", &
                                                 "LANDMASK  ", &
                                                 "HGT_M     " /)
 
@@ -1988,7 +1992,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
              if (istatus /= 0) CALL wrf_error_fatal('NEST_TERRAIN error after ext_XXX_open_for_read '//trim(input_fname))
 
 
-             do n=1,4
+             do n=1,8
 
              cname = name(n)
 

@@ -2028,7 +2028,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
   ! Local data
    LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
 
-   INTEGER                                :: ierr, efid, ifile_time
+   INTEGER                                :: ierr, efid
+   INTEGER                                :: ihr, ihrdiff, i
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
@@ -2060,9 +2061,17 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
       else if( config_flags%io_style_emissions == 1 ) then
 
          tupdate = mod( time, (12. * 3600.) )
+         read(current_date_char(12:13),'(I2)') ihr
+         ihr = MOD(ihr,24)
+         ihrdiff = 0  
+
          IF( tupdate .LT. grid%dt ) THEN
             tupdate = 0.
          ENDIF
+         IF( ihr .EQ. 00 .OR. ihr .EQ. 12 ) THEN 
+            tupdate = 0. 
+         ENDIF
+
          IF( currentTime + stepTime .GE. stopTime .AND. &
               grid%auxinput5_oid .NE. 0 ) THEN
             CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
@@ -2072,10 +2081,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 !        write(message,FMT='(A,F10.1,A)') ' EMISSIONS UPDATE TIME ',time,TRIM(current_date_char(12:13))
 !        CALL wrf_message( TRIM(message) )
 
-         IF ( tupdate .EQ. 0. ) THEN
-          read( current_date_char(12:13),'(i2)') ifile_time
-          IF ( ifile_time .LT. 12  .AND. ifile_time .GE. 0 ) THEN
-
+         IF ( tupdate .EQ. 0. .AND.  ihr .LT. 12 ) THEN 
+            ihrdiff = ihr  
             CALL construct_filename1 ( inpname , 'wrfchemi_00z' , grid%id , 2 )
             WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
             CALL wrf_message( TRIM(message) )
@@ -2091,7 +2098,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
                CALL wrf_error_fatal( TRIM( message ) )
             ENDIF
 
-          ELSE IF ( ifile_time .LT. 24  .AND. ifile_time .GE. 12 ) THEN
+          ELSE IF ( tupdate .EQ. 0. .AND. ihr .GE. 12 ) THEN
+             ihrdiff = ihr - 12
 
             CALL construct_filename1 ( inpname , 'wrfchemi_12z' , grid%id , 2 )
             WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
@@ -2108,10 +2116,9 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
                CALL wrf_error_fatal( TRIM( message ) )
             ENDIF
           ELSE 
-             WRITE( message , '(A,I10)' ) 'med_read_wrf_chem_emissions: error in emissions file time ', ifile_time
+             WRITE( message , '(A,I10)' ) 'med_read_wrf_chem_emissions: error in emissions file time ', ihr
              CALL wrf_error_fatal( TRIM( message ) )
           ENDIF
-         ENDIF
 
          WRITE( message, '(A,2F10.1)' ) ' HOURLY EMISSIONS UPDATE TIME ',time,mod(time,3600.)
          CALL wrf_message( TRIM(message) )
@@ -2124,12 +2131,23 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
             WRITE(message,'(A,A)')'mediation_integrate: med_read_wrf_chem_emissions: Read emissions for time ',TRIM(current_date_char)
             CALL wrf_message( TRIM(message) )
 
+            IF ( tupdate .EQ. 0. .AND. ihrdiff .GT. 0) THEN
+               IF( ihrdiff .GT. 12) THEN
+                 WRITE(message,'(A)')'mediation_integrate: med_read_wrf_chem_emissions: Error in emissions time, skipping all times in file '
+                 CALL wrf_message( TRIM(message) )
+               ENDIF
+               DO i=1,ihrdiff
+                 WRITE(message,'(A,I4)')'mediation_integrate: med_read_wrf_chem_emissions: Skip emissions ',i
+                 CALL wrf_message( TRIM(message) )
+                 CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+               ENDDO
+            ENDIF
+
             CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input5' )
             CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
          ELSE
             CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_emissions: Do not read emissions' )
          ENDIF
-
 
 !---
 ! io_style_emissions option 2: use dated emission files whose length is
@@ -2420,7 +2438,7 @@ SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
   ! Local data
    LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
 
-   INTEGER                                :: ierr, efid, ifile_time
+   INTEGER                                :: ierr, efid, ihr
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
@@ -2462,8 +2480,8 @@ SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
          ENDIF
 
          IF ( tupdate .EQ. 0. ) THEN
-          read( current_date_char(12:13),'(i2)') ifile_time
-          IF ( ifile_time .LT. 12  .AND. ifile_time .GE. 0 ) THEN
+          read( current_date_char(12:13),'(i2)') ihr
+          IF ( ihr .LT. 12  .AND. ihr .GE. 0 ) THEN
             CALL construct_filename1 ( inpname , 'wrffirechemi_00z' , grid%id , 2 )
             WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemiss: Open file ',TRIM(inpname)
             CALL wrf_message( TRIM(message) )
@@ -2478,7 +2496,7 @@ SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
                WRITE( message , * ) 'med_read_wrf_chem_fireemiss: error opening ', TRIM( inpname )
                CALL wrf_error_fatal( TRIM( message ) )
             ENDIF
-          ELSE IF ( ifile_time .LT. 24  .AND. ifile_time .GE. 12 ) THEN
+          ELSE IF ( ihr .LT. 24  .AND. ihr .GE. 12 ) THEN
             CALL construct_filename1 ( inpname , 'wrffirechemi_12z' , grid%id , 2 )
             WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemiss: Open file ',TRIM(inpname)
             CALL wrf_message( TRIM(message) )
@@ -2494,7 +2512,7 @@ SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
                CALL wrf_error_fatal( TRIM( message ) )
             ENDIF
           ELSE 
-             WRITE( message , '(A,I10)' ) 'med_read_wrf_chem_fireemiss: error in fire emissions file time ', ifile_time
+             WRITE( message , '(A,I10)' ) 'med_read_wrf_chem_fireemiss: error in fire emissions file time ', ihr
              CALL wrf_error_fatal( TRIM( message ) )
           ENDIF
          ENDIF

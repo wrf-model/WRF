@@ -2549,14 +2549,20 @@ end subroutine fillitup
                   forig(i,kn,j)           = fo   (i,generic+2-kn,j)
                   forig(i,generic+2-kn,j) = fo   (i,kn,j)
                END DO
-               DO i = istart , iend
-                  forig(i,1,j)           = fo   (i,1,j)
-               END DO
             END DO
+            DO i = istart , iend
+               forig(i,1,j)               = fo   (i,1,j)
+            END DO
+            IF ( MOD(generic,2) .EQ. 0 ) THEN
+               k=generic/2 + 1
+               DO i = istart , iend
+                  forig(i,k,j)            = fo   (i,k,j)
+               END DO
+            END IF
          ELSE
             DO kn = 1 , generic
                DO i = istart , iend
-                  forig(i,kn,j)          = fo   (i,kn,j)
+                  forig(i,kn,j)           = fo   (i,kn,j)
                END DO
             END DO
          END IF
@@ -4712,11 +4718,8 @@ print *,'namelist p_top (Pa) = ',p_top
 
             !  Special cases
 
-            IF      ( ( height(i,1,j) .LT. 0 ) .OR. ( ter(i,j) .LT. 0 ) ) THEN
+            IF      ( ter(i,j) .LT. 50 ) THEN
                psfc(i,j) = slp(i,j) + ( p(i,2,j)-p(i,3,j) ) / ( height(i,2,j)-height(i,3,j) ) * ter(i,j)
-               CYCLE
-            ELSE IF ( ( height(i,1,j) .LT. 1 ) .OR. ( ter(i,j) .LT. 1 ) ) THEN
-               psfc(i,j) = slp(i,j)
                CYCLE
             END IF
 

@@ -4716,7 +4716,7 @@ print *,'namelist p_top (Pa) = ',p_top
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
 
-            !  Special cases
+            !  Special case where near the ocean level.  Assume that the SLP is a good value.
 
             IF      ( ter(i,j) .LT. 50 ) THEN
                psfc(i,j) = slp(i,j) + ( p(i,2,j)-p(i,3,j) ) / ( height(i,2,j)-height(i,3,j) ) * ter(i,j)

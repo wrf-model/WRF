@@ -769,7 +769,11 @@
                            its , ite , jts , jte , &
                            its , ite , jts , jte   )
 
-   IF ( start_of_simulation ) THEN
+! Set the w at the surface.  If this is the start of a forecast, or if this is a cycled run
+! and the start of that forecast, we define the w field.  However, if this a restart, then 
+! we leave w alone.
+
+   IF ( ( start_of_simulation .OR. config_flags%cycling ) .AND. ( .NOT. config_flags%restart ) ) THEN
    CALL set_w_surface(  config_flags, grid%znw,                         &
                         grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &

@@ -771,7 +771,8 @@
 
 ! Set the w at the surface.  If this is the start of a forecast, or if this is a cycled run
 ! and the start of that forecast, we define the w field.  However, if this a restart, then 
-! we leave w alone.
+! we leave w alone.  Initial value is V dot grad(topo) at surface, then smoothly decaying
+! above that.
 
    IF ( ( start_of_simulation .OR. config_flags%cycling ) .AND. ( .NOT. config_flags%restart ) ) THEN
    CALL set_w_surface(  config_flags, grid%znw,                         &

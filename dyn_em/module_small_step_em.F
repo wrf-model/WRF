@@ -111,43 +111,19 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
 !</DESCRIPTION>
 
     i_start = its
-    i_end   = ite
+    i_end   = min(ite,ide-1)
     j_start = jts
-    j_end   = jte
+    j_end   = min(jte,jde-1)
     k_start = kts
     k_end = min(kte,kde-1)
 
-    i_endu = i_end
-    j_endv = j_end
-
-    IF(i_end == ide) i_end = i_end - 1
-    IF(j_end == jde) j_end = j_end - 1
+    i_endu = ite
+    j_endv = jte
 
     !  if this is the first RK step, reset *_1 to *_2
     !  (we are replacing the t-dt fields with the time t fields)
 
     IF ((rk_step == 1) ) THEN
-
-! 1 jun 2001 -> added boundary copy to 2D boundary condition routines,
-!  should be OK now without the following data copy
-!#if 0
-!     DO j=j_start, j_end
-!       mu_2(0,j)=mu_2(1,j)
-!       mu_2(i_endu,j)=mu_2(i_end,j)
-!       mu_1(0,j)=mu_2(1,j)
-!       mu_1(i_endu,j)=mu_2(i_end,j)
-!       mub(0,j)=mub(1,j)
-!       mub(i_endu,j)=mub(i_end,j)
-!     ENDDO
-!     DO i=i_start, i_end
-!       mu_2(i,0)=mu_2(i,1)
-!       mu_2(i,j_endv)=mu_2(i,j_end)
-!       mu_1(i,0)=mu_2(i,1)
-!       mu_1(i,j_endv)=mu_2(i,j_end)
-!       mub(i,0)=mub(i,1)
-!       mub(i,j_endv)=mub(i,j_end)
-!     ENDDO
-!#endif
 
       DO j=j_start, j_end
       DO i=i_start, i_end
@@ -388,42 +364,12 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
 !</DESCRIPTION>
 
   i_start = its
-  i_end   = ite
+  i_end   = min(ite,ide-1)
   j_start = jts
-  j_end   = jte
+  j_end   = min(jte,jde-1)
 
-  i_endu = i_end
-  j_endv = j_end
-
-  IF(i_end == ide) i_end = i_end - 1
-  IF(j_end == jde) j_end = j_end - 1
-
-
-! 1 jun 2001 -> added boundary copy to 2D boundary condition routines,
-!  should be OK now without the following data copy
-
-!#if 0
-! DO j=j_start, j_end
-!   muts(0,j)=muts(1,j)
-!   muts(i_endu,j)=muts(i_end,j)
-! ENDDO
-! DO i=i_start, i_end
-!   muts(i,0)=muts(i,1)
-!   muts(i,j_endv)=muts(i,j_end)
-! ENDDO
-
-! DO j = j_start, j_endv
-! DO i = i_start, i_end
-!   muvs(i,j) = 0.5*(muts(i,j) + muts(i,j-1))
-! ENDDO
-! ENDDO
-
-! DO j = j_start, j_end
-! DO i = i_start, i_endu
-!   muus(i,j) = 0.5*(muts(i,j) + muts(i-1,j))
-! ENDDO
-! ENDDO
-!#endif
+  i_endu = ite
+  j_endv = jte
 
 !    addition of time level t back into variables
 
@@ -561,14 +507,11 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
 !</DESCRIPTION>
 
    i_start = its
-   i_end   = ite
+   i_end   = min(ite,ide-1)
    j_start = jts
-   j_end   = jte
+   j_end   = min(jte,jde-1)
    k_start = kts
    k_end = min(kte,kde-1)
-
-   IF(i_end == ide) i_end = i_end - 1
-   IF(j_end == jde) j_end = j_end - 1
 
    IF (non_hydrostatic) THEN
      DO j=j_start, j_end
@@ -681,16 +624,12 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
 !
 !</DESCRIPTION>
 
-                                                 
       i_start = its
-      i_end   = ite
+      i_end   = min(ite,ide-1)
       j_start = jts
-      j_end   = jte
+      j_end   = min(jte,jde-1)
       k_start = kts
       k_end   = kte-1
-
-      IF(j_end == jde) j_end = j_end - 1
-      IF(i_end == ide) i_end = i_end - 1
 
       lid_flag=1
       IF(top_lid)lid_flag=0
@@ -846,24 +785,20 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
       IF( config_flags%periodic_x) THEN
         i_start = its
-        i_end   = ite
-        i_endu = i_end
-        IF(i_end == ide) i_end = i_end - 1
+        i_end   = min(ite,ide-1)
+        i_endu = ite
       ENDIF
     ELSE
       i_start = its
-      i_end   = ite
+      i_end   = min(ite,ide-1)
       j_start = jts
-      j_end   = jte
+      j_end   = min(jte,jde-1)
       k_start = kts
       k_end   = kte-1
 
-      i_endu = i_end
-      j_endv = j_end
+      i_endu = ite
+      j_endv = jte
       k_endw = k_end
-
-      IF(j_end == jde) j_end = j_end - 1
-      IF(i_end == ide) i_end = i_end - 1
     ENDIF
 
       i_start_up = i_start
@@ -1219,32 +1154,24 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 !  set the loop bounds taking into account boundary conditions.
 
   i_start = its
-  i_end   = ite
+  i_end   = min(ite,ide-1)
   j_start = jts
-  j_end   = jte
+  j_end   = min(jte,jde-1)
   k_start = kts
   k_end   = kte-1
-     
-  i_endu = i_end
-  j_endv = j_end
-
-  IF(j_end == jde) j_end = j_end - 1
-  IF(i_end == ide) i_end = i_end - 1
-
   IF ( .NOT. config_flags%periodic_x )THEN
-    IF ( (config_flags%specified .or. config_flags%nested) .and. (its == ids) ) &
-             i_start = i_start + 1
-
-    IF ( (config_flags%specified .or. config_flags%nested) .and. (ite == ide) ) &
-             i_end   = i_end - 1
+     IF ( config_flags%specified .or. config_flags%nested ) then
+       i_start = max(its,ids+1)
+       i_end   = min(ite,ide-2)
+     ENDIF
+  ENDIF
+  IF ( config_flags%specified .or. config_flags%nested ) then
+     j_start = max(jts,jds+1)
+     j_end   = min(jte,jde-2)
   ENDIF
 
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (jts == jds) ) &
-             j_start = j_start + 1
-
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (jte == jde) ) &
-             j_end   = j_end - 1
-
+  i_endu = ite
+  j_endv = jte
 
 !        CALCULATION OF WW (dETA/dt)
    DO j = j_start, j_end
@@ -1479,29 +1406,21 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !  Currently set for periodic boundary conditions
 
       i_start = its
-      i_end   = ite
+      i_end   = min(ite,ide-1)
       j_start = jts
-      j_end   = jte
+      j_end   = min(jte,jde-1)
       k_start = kts
       k_end   = kte-1
-
-
-      IF(j_end == jde) j_end = j_end - 1
-      IF(i_end == ide) i_end = i_end - 1
-
-  IF ( .NOT. config_flags%periodic_x )THEN
-    IF ( (config_flags%specified .or. config_flags%nested) .and. (its == ids) ) &
-             i_start = i_start + 1
-
-    IF ( (config_flags%specified .or. config_flags%nested) .and. (ite == ide) ) &
-             i_end   = i_end - 1
-  ENDIF
-
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (jts == jds) ) &
-             j_start = j_start + 1
-
-  IF ( (config_flags%specified .or. config_flags%nested) .and. (jte == jde) ) &
-             j_end   = j_end - 1
+      IF ( .NOT. config_flags%periodic_x )THEN
+         IF ( config_flags%specified .or. config_flags%nested ) then
+           i_start = max(its,ids+1)
+           i_end   = min(ite,ide-2)
+         ENDIF
+      ENDIF
+      IF ( config_flags%specified .or. config_flags%nested ) then
+         j_start = max(jts,jds+1)
+         j_end   = min(jte,jde-2)
+      ENDIF
 
    pi = 4.*atan(1.)
    dampmag = dts*config_flags%dampcoef

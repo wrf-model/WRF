@@ -303,7 +303,7 @@ diffwrf: ../../external/io_netcdf/diffwrf.F90
         fi
 	$(SFC) -c $(FCFLAGS) -I$(NETCDFPATH)/include -I../../external/ioapi_share -I../../external/io_netcdf diffwrf.f
 	echo "diffwrf io_netcdf is being built now. " ; \
-	$(SFC) $(FCFLAGS) -I$(NETCDFPATH)/include -I../../external/ioapi_share $(LDFLAGS) -o diffwrf diffwrf.o ../../external/io_netcdf/wrf_io.o ../../external/io_netcdf/field_routines.o ../../external/io_netcdf/module_wrfsi_static.o ../../external/io_netcdf/bitwise_operators.o wrf_debug.o module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIB_EXTERNAL)
+	$(SFC) $(FCFLAGS) -I$(NETCDFPATH)/include -I../../external/ioapi_share $(LDFLAGS) -o diffwrf diffwrf.o ../../external/io_netcdf/wrf_io.o ../../external/io_netcdf/field_routines.o ../../external/io_netcdf/module_wrfsi_static.o wrf_debug.o module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIB_EXTERNAL)
 
 # Special cases, either needing special include files or too big to 
 # optimise/debug

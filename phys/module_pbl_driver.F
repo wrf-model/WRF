@@ -57,16 +57,14 @@ CONTAINS
 !------------------------------------------------------------------
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    BEPSCHEME,MYJSFCSCHEME
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
-                   ,QNSEPBLSCHEME, HWRFBLSCHEME, p_qi,param_first_scalar
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,&
-                   MYJSFCSCHEME
+                   ,QNSEPBLSCHEME, HWRFBLSCHEME, p_qi,param_first_scalar &
+                   , MYJSFCSCHEME
 #endif
 
    USE module_model_constants
@@ -80,6 +78,8 @@ CONTAINS
    USE module_bl_gfs
    USE module_bl_acm
    USE module_bl_gwdo
+   USE module_bl_myjurb
+   USE module_bl_boulac
 #if (EM_CORE==1)
    USE module_bl_mynn
 #endif
@@ -92,8 +92,10 @@ CONTAINS
    !      1. ysupbl
    !      2. myjpbl
    !      4. qnsepbl
-   !      5.  mynnpbl
-   !      7.  acmpbl
+   !      5. mynnpbl2
+   !      6. mynnpbl3
+   !      7. acmpbl
+   !      8. boulacpbl
    !      99. mrfpbl
    !
 !------------------------------------------------------------------
@@ -233,7 +235,7 @@ CONTAINS
 !
 
 
-   INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics
+   INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics 
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -293,7 +295,7 @@ CONTAINS
                                                             QSFC, &
                                                             AKHS, &
                                                             AKMS, &
-                                                           MIXHT, &   
+                                                           MIXHT, &
                                                              QZ0, &
                                                             THZ0, &
                                                              UZ0, &
@@ -346,6 +348,30 @@ CONTAINS
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN)    :: XICE, SNOW, LH
 
+! Bep changes: variable added for urban
+   real, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::FRC_URB2D   ! URBAN Landuse fraction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep        ! Implicit component for the momemtum in X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep        ! Implicit component for the momemtum in Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep        ! Implicit component for the Pot. Temp.
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep        ! Implicit component for Moisture
+
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_e_bep        ! Implicit component for the TKE
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_u_bep        ! Explicit component for the momemtum in X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_v_bep        ! Explicit component for the momemtum in Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_t_bep        ! Explicit component for the Pot. Temp.
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_q_bep        ! Explicit component for Moisture
+
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_e_bep        ! Explicit component for the TKE
+
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep        ! Height above ground (L_ground in formula (24) of the BLM paper). 
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep        ! Length scale (lb in formula (22) ofthe BLM paper).
+! urban surface and volumes        
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::sf_bep           ! surfaces
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::vl_bep            ! volumes
+
+! Bep changes end
+
+!
 !
 ! Optional
 !
@@ -407,9 +433,19 @@ CONTAINS
                                                           ZNTOLD, &
                                                              ZOL, &
                                                             PSFC
-
 !
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_u        ! Implicit component for the momemtum in X-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_v        ! Implicit component for the momemtum in Y-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_t        ! Implicit component for the Pot. Temp.
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_q        ! Implicit component for the water vapor
 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_u        ! Explicit component for the momemtum in X-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_v        ! Explicit component for the momemtum in Y-direction
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_t        ! Explicit component for the Pot. Temp.
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_q        ! Explicit component for the water vapor
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::sf           ! surfaces
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  ::vl            ! volumes
    REAL    :: DTMIN,DTBL
 !
 
@@ -427,6 +463,8 @@ CONTAINS
    REAL    :: next_bl_time
    LOGICAL :: run_param
    LOGICAL :: do_adapt
+   integer iu_bep,iurb,idiff
+   real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
 
 !------------------------------------------------------------------
 !
@@ -869,6 +907,7 @@ CONTAINS
            ELSE
                CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
            ENDIF
+
       CASE (ACMPBLSCHEME)
            
            !!  These are values that are not supplied to pbl driver, but are required by ACM
@@ -1031,6 +1070,9 @@ CONTAINS
 
    ENDIF
 !
+
+
+
    END SUBROUTINE pbl_driver
 
 !=============================================================================

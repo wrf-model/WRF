@@ -1171,21 +1171,23 @@ halo HALO_NMM_INIT_37	dyn_nmm 120:STC,SH2O,ALBEDO
 halo HALO_NMM_INIT_38   dyn_nmm 120:PINT,Z,DWDT
 halo HALO_NMM_INIT_39	dyn_nmm 120:TOLD,UOLD,VOLD
 
-halo      HALO_NMM_A  dyn_nmm 24:pd,t,u,v,q,cwm,dwdt,div;24:pint                          
+#zhang increase halo width to fix feedback bug for HALO_NMM_A (24 => 48)
+#zhang HALO_NMM_C (24 => 48), HALO_NMM_G (24 => 48), HALO_NMM_K (8 => 24)
+halo      HALO_NMM_A  dyn_nmm 48:pd,t,u,v,q,cwm,dwdt,div;24:pint                          
 halo      HALO_NMM_A_3  dyn_nmm 24:moist,scalar
 halo      HALO_NMM_B  dyn_nmm 24:div                   
-halo      HALO_NMM_C  dyn_nmm 8:u,v                    
+halo      HALO_NMM_C  dyn_nmm 48:u,v                    
 halo      HALO_NMM_D  dyn_nmm 24:pd          
 halo      HALO_NMM_E  dyn_nmm 24:petdt
 halo      HALO_NMM_F  dyn_nmm 24:t,u,v
 halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
-halo      HALO_NMM_G  dyn_nmm 24:u,v;24:z  
+halo      HALO_NMM_G  dyn_nmm 48:u,v;24:z  
 halo      HALO_NMM_H  dyn_nmm 24:w                  
 halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm                    
 halo      HALO_NMM_I_3  dyn_nmm 48:moist,scalar
 halo      HALO_NMM_J  dyn_nmm 8:pd,uz0,vz0,t,q,cwm                    
 halo      HALO_NMM_J_3  dyn_nmm 8:moist,scalar
-halo      HALO_NMM_K  dyn_nmm 8:q2;24:t,u,v,q,w,z
+halo      HALO_NMM_K  dyn_nmm 24:q2;24:t,u,v,q,w,z
 halo      HALO_NMM_L  dyn_nmm 8:pd,t,q,cwm,q2                    
 halo      HALO_NMM_L_3  dyn_nmm 8:moist,scalar
 halo      HALO_NMM_MG dyn_nmm 8:ht_gc

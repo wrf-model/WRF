@@ -1103,6 +1103,9 @@ CONTAINS
    END SUBROUTINE init_module_bc
 
 !------------------------------------------------------------------------
+
+! a couple versions of this call to allow a smaller-than-memory dimensioned field (e.g. tile sized)
+! to be passed in as the first argument.  Both of these call the _core version defined below.
    SUBROUTINE relax_bdytend   ( field, field_tend,                     &
                                 field_bdy_xs, field_bdy_xe,            &
                                 field_bdy_ys, field_bdy_ye,            &
@@ -1114,7 +1117,108 @@ CONTAINS
                                 ids,ide, jds,jde, kds,kde,  & ! domain dims
                                 ims,ime, jms,jme, kms,kme,  & ! memory dims
                                 ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                                its,ite, jts,jte, kts,kte )
+                                its,ite, jts,jte, kts,kte   &
+                                )
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_bdy_width, spec_zone, relax_zone
+      REAL,         INTENT(IN   )    :: dtbc
+      CHARACTER,    INTENT(IN   )    :: variable_in
+
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: field
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field_tend
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_xs, field_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_ys, field_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_xs, field_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_ys, field_bdy_tend_ye
+      REAL,  DIMENSION( spec_bdy_width ), INTENT(IN   ) :: fcx, gcx
+      TYPE( grid_config_rec_type ) config_flags
+
+      CALL relax_bdytend_core   ( field, field_tend,                     &
+                                field_bdy_xs, field_bdy_xe,            &
+                                field_bdy_ys, field_bdy_ye,            &
+                                field_bdy_tend_xs, field_bdy_tend_xe,  &
+                                field_bdy_tend_ys, field_bdy_tend_ye,  &
+                                variable_in, config_flags,             &
+                                spec_bdy_width, spec_zone, relax_zone, &
+                                dtbc, fcx, gcx,             &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                its,ite, jts,jte, kts,kte,  & ! patch  dims
+                                ims,ime, jms,jme, kms,kme )  ! dimension of the field argument
+   END SUBROUTINE relax_bdytend
+
+! version that allows tile-sized version of field. Note, caller should define the
+! field to be -+1 of tile size in each dimension because routine is going off onto halo
+! for example, see relax_bdytend in dyn_em/module_bc_em.F 
+   SUBROUTINE relax_bdytend_tile   ( field, field_tend,                     &
+                                field_bdy_xs, field_bdy_xe,            &
+                                field_bdy_ys, field_bdy_ye,            &
+                                field_bdy_tend_xs, field_bdy_tend_xe,  &
+                                field_bdy_tend_ys, field_bdy_tend_ye,  &
+                                variable_in, config_flags,             &
+                                spec_bdy_width, spec_zone, relax_zone, &
+                                dtbc, fcx, gcx,             &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                its,ite, jts,jte, kts,kte,  &
+                                iXs,iXe, jXs,jXe, kXs,kXe   &  ! dims of first argument
+                                )
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: iXs,iXe, jXs,jXe, kXs,kXe
+      INTEGER,      INTENT(IN   )    :: spec_bdy_width, spec_zone, relax_zone
+      REAL,         INTENT(IN   )    :: dtbc
+      CHARACTER,    INTENT(IN   )    :: variable_in
+
+      REAL,  DIMENSION( iXs:iXe , kXs:kXe , jXs:jXe ), INTENT(IN   ) :: field
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field_tend
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_xs, field_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_ys, field_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_xs, field_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_ys, field_bdy_tend_ye
+      REAL,  DIMENSION( spec_bdy_width ), INTENT(IN   ) :: fcx, gcx
+      TYPE( grid_config_rec_type ) config_flags
+
+      CALL relax_bdytend_core   ( field, field_tend,                     &
+                                field_bdy_xs, field_bdy_xe,            &
+                                field_bdy_ys, field_bdy_ye,            &
+                                field_bdy_tend_xs, field_bdy_tend_xe,  &
+                                field_bdy_tend_ys, field_bdy_tend_ye,  &
+                                variable_in, config_flags,             &
+                                spec_bdy_width, spec_zone, relax_zone, &
+                                dtbc, fcx, gcx,             &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                its,ite, jts,jte, kts,kte,  &
+                                iXs,iXe, jXs,jXe, kXs,kXe )  ! dimension of the field argument
+   END SUBROUTINE relax_bdytend_tile
+
+   SUBROUTINE relax_bdytend_core   ( field, field_tend,                     &
+                                field_bdy_xs, field_bdy_xe,            &
+                                field_bdy_ys, field_bdy_ye,            &
+                                field_bdy_tend_xs, field_bdy_tend_xe,  &
+                                field_bdy_tend_ys, field_bdy_tend_ye,  &
+                                variable_in, config_flags,             &
+                                spec_bdy_width, spec_zone, relax_zone, &
+                                dtbc, fcx, gcx,             &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                its,ite, jts,jte, kts,kte,  & ! patch  dims
+                                iXs,iXe, jXs,jXe, kXs,kXe   & ! field (1st arg) dims; might be tile or patch
+                                )
 
 !  This subroutine adds the tendencies in the boundary relaxation region, for specified
 !  boundary conditions.  
@@ -1129,12 +1233,13 @@ CONTAINS
       INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
       INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
       INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: iXs,iXe, jXs,jXe, kXs,kXe
       INTEGER,      INTENT(IN   )    :: spec_bdy_width, spec_zone, relax_zone
       REAL,         INTENT(IN   )    :: dtbc
       CHARACTER,    INTENT(IN   )    :: variable_in
 
 
-      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: field
+      REAL,  DIMENSION( iXs:iXe , kXs:kXe , jXs:jXe ), INTENT(IN   ) :: field
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field_tend
       REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_xs, field_bdy_xe
       REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_ys, field_bdy_ye
@@ -1171,6 +1276,7 @@ CONTAINS
       IF (variable == 'm') ktf = kte
       IF (variable == 'h') ktf = kte
 
+
       IF (jts - jbs .lt. relax_zone) THEN
 ! Y-start boundary
         DO j = max(jts,jbs+spec_zone), min(jtf,jbs+relax_zone-1)
@@ -1205,11 +1311,15 @@ CONTAINS
       ENDIF
 
       IF (jbe - jtf .lt. relax_zone) THEN
+
+
 ! Y-end boundary
         DO j = max(jts,jbe-relax_zone+1), min(jtf,jbe-spec_zone)
           b_dist = jbe - j
           b_limit = b_dist
           IF(periodic_x)b_limit = 0
+
+
           DO k = kts, ktf
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               im1 = max(i-1,ibs)
@@ -1300,7 +1410,8 @@ CONTAINS
     ENDIF
 
 
-   END SUBROUTINE relax_bdytend
+
+   END SUBROUTINE relax_bdytend_core
 !------------------------------------------------------------------------
 
    SUBROUTINE spec_bdytend   ( field_tend,                           &
@@ -1379,11 +1490,15 @@ CONTAINS
         ENDDO
       ENDIF 
       IF (jbe - jtf .lt. spec_zone) THEN 
+
+
 ! Y-end boundary 
         DO j = max(jts,jbe-spec_zone+1), jtf 
           b_dist = jbe - j 
           b_limit = b_dist
           IF(periodic_x)b_limit = 0
+
+
           DO k = kts, ktf 
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
               field_tend(i,k,j) = field_bdy_tend_ye(i, k, b_dist+1)

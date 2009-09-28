@@ -32,6 +32,7 @@ module_si_io.o : module_si_io.F
 module_state_description.o : module_state_description.F 
 output_wrf.o : output_wrf.F
 NMM_NEST_UTILS1.o : NMM_NEST_UTILS1.F
+module_radiation_driver.o: module_radiation_driver.F
 shift_domain_em.o : shift_domain_em.F
 solve_em.o : solve_em.F
 solve_interface.o : solve_interface.F
@@ -121,6 +122,7 @@ module_si_io.o \
 module_tiles.o \
 output_wrf.o \
 NMM_NEST_UTILS1.o \
+module_radiation_driver.o \
 shift_domain_em.o \
 solve_interface.o \
 start_domain.o \

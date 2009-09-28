@@ -408,7 +408,7 @@ CONTAINS
      real,    dimension (ims:ime,jms:jme)                              &
         ,intent (in   )                   ::                           &
                xland,gsw
-     integer, dimension (ims:ime,jms:jme)                              &
+     integer, dimension (its:ite,jts:jte)                              &
         ,intent (in   )                   ::                           &
         iact
   ! outtem = output temp tendency (per s)
@@ -2526,7 +2526,7 @@ CONTAINS
      real                                                              &
         ,intent (in   )                   ::                           &
         dtime
-     integer, dimension (ims:ime,jms:jme)                              &
+     integer, dimension (its:ite,jts:jte)                              &
         ,intent (in   )                   ::                           &
         iact_old_gr
      integer, dimension (its:ite)                                      &
@@ -3391,7 +3391,7 @@ CONTAINS
      real,    dimension (its:ite)                                      &
         ,intent (inout  )                   ::                           &
         closure_n,xland1
-     real,    dimension (its:ite,kts:kte,1:ensdim)                     &
+     real,    dimension (its:ite,kts:kte,1:nx)                         &
         ,intent (in   )                   ::                           &
        dellat,dellaqc,dellaq,pw
      integer, dimension (its:ite)                                      &

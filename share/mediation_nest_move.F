@@ -204,8 +204,10 @@ SUBROUTINE med_nest_move ( parent, nest )
      ENDIF
 #endif
 
-     WRITE(mess,*)' moving ',grid%id,dx,dy
-     CALL wrf_message(mess)
+     IF (  wrf_dm_on_monitor() ) THEN
+       WRITE(mess,*)' moving ',grid%id,dx,dy
+       CALL wrf_message(mess)
+     ENDIF
 
      CALL get_ijk_from_grid (  grid ,                   &
                                ids, ide, jds, jde, kds, kde,    &
@@ -842,20 +844,24 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
 
    CALL domain_clock_get( grid, current_timestr=timestr )
 
-   WRITE(mess,*)timestr(1:19),' vortex center (in nest x and y): ',grid%vc_i, grid%vc_j
-   CALL wrf_message(TRIM(mess))
-   WRITE(mess,*)timestr(1:19),' grid   center (in nest x and y): ',     dc_i,      dc_j
-   CALL wrf_message(TRIM(mess))
-   WRITE(mess,*)timestr(1:19),' disp          : ',   disp_x,    disp_y
-   CALL wrf_message(TRIM(mess))
-   WRITE(mess,*)timestr(1:19),' move (rel cd) : ',move_cd_x, move_cd_y
-   CALL wrf_message(TRIM(mess))
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE(mess,*)timestr(1:19),' vortex center (in nest x and y): ',grid%vc_i, grid%vc_j
+     CALL wrf_message(TRIM(mess))
+     WRITE(mess,*)timestr(1:19),' grid   center (in nest x and y): ',     dc_i,      dc_j
+     CALL wrf_message(TRIM(mess))
+     WRITE(mess,*)timestr(1:19),' disp          : ',   disp_x,    disp_y
+     CALL wrf_message(TRIM(mess))
+     WRITE(mess,*)timestr(1:19),' move (rel cd) : ',move_cd_x, move_cd_y
+     CALL wrf_message(TRIM(mess))
+   ENDIF
 
    grid%vc_i = grid%vc_i - move_cd_x * pgr
    grid%vc_j = grid%vc_j - move_cd_y * pgr
 
 #  ifdef MOVING_DIAGS
+   IF ( wrf_dm_on_monitor() ) THEN
 write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, move_cd_x, pgr
+   ENDIF
 #  endif
 
    IF ( ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 ) ) THEN

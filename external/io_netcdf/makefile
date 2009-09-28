@@ -13,16 +13,16 @@ AR      = ar
 
 all : libwrfio_nf.a 
 
-libwrfio_nf.a:         $(OBJS) bitwise_operators.o $(CODE)
+libwrfio_nf.a:         $(OBJS) $(CODE)
 			/bin/rm -f $@
 			if [ "$(AR)" != "lib.exe" ] ; then \
-                          $(AR) cr libwrfio_nf.a $(OBJSL) bitwise_operators.o ; \
+                          $(AR) cr libwrfio_nf.a $(OBJSL) ; \
                         else \
-                          $(AR) /out:libwrfio_nf.a $(OBJSL) bitwise_operators.o ; \
+                          $(AR) /out:libwrfio_nf.a $(OBJSL) ; \
                         fi
 			$(RANLIB) $@
 
-wrf_io.o:               wrf_io.F90 bitwise_operators.o $(CODE)
+wrf_io.o:               wrf_io.F90 $(CODE)
 			grep nf_format_64bit $(NETCDFPATH)/include/netcdf.inc ;\
                         a=$$? ; export a ; \
 			if [ $$a -a "$$WRFIO_NCD_LARGE_FILE_SUPPORT" = "1" ] ; then \
@@ -37,9 +37,6 @@ module_wrfsi_static.o:  module_wrfsi_static.F90
 			$(CPP1) -I../ioapi_share module_wrfsi_static.F90 > module_wrfsi_static.f
 			$(FC) -o $@ $(FFLAGS) -c module_wrfsi_static.f
 
-bitwise_operators.o :
-	$(CC) -c $(CFLAGS) bitwise_operators.c
-
 # gfortran treats iargc as intrinsic, so get rid of external declaration in that case
 diffwrf:                diffwrf.F90
 	x=`echo "$(FC)" | awk '{print $$1}'` ; export x ; \
@@ -53,9 +50,9 @@ diffwrf:                diffwrf.F90
 	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) ] ; then \
 	  echo "diffwrf io_netcdf is being built now. " ; \
           if [ -f $(NETCDFPATH)/lib/libnetcdff.a ] ; then \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) bitwise_operators.o ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) -lnetcdff ;\
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) -lnetcdff ;\
           else \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) bitwise_operators.o ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
           fi ; \
         else \
 	   echo "***************************************************************************** " ; \

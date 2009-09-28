@@ -67,7 +67,6 @@ module da_wrfvar_top
 #ifdef CRTM
    use module_radiance, only : crtm_destroy
    use da_crtm, only : channelinfo, sensor_descriptor
-   use da_control, only : rtm_option, use_rad
 #endif
 
    use da_airep, only : da_oi_stats_airep

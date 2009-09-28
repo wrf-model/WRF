@@ -199,7 +199,8 @@
       KNTI (NODE) = 0 
       ITP (NODE) = 0 
       ELSEIF (TYP (NODE) .EQ.'REP') THEN 
-      VALI (NODE) = BMISS 
+!     VALI (NODE) = BMISS 
+      VALI (NODE) = 2147483647
       KNTI (NODE) = IRF (NODE) 
       ITP (NODE) = 0 
       ELSEIF (TYP (NODE) .EQ.'DRS') THEN 
@@ -215,11 +216,13 @@
       KNTI (NODE) = 0 
       ITP (NODE) = 1 
       ELSEIF (TYP (NODE) .EQ.'NUM') THEN 
-      VALI (NODE) = BMISS 
+!     VALI (NODE) = BMISS 
+      VALI (NODE) = 2147483647 
       KNTI (NODE) = 1 
       ITP (NODE) = 2 
       ELSEIF (TYP (NODE) .EQ.'CHR') THEN 
-      VALI (NODE) = BMISS 
+!     VALI (NODE) = BMISS 
+      VALI (NODE) = 2147483647 
       KNTI (NODE) = 1 
       ITP (NODE) = 3 
       ELSE 

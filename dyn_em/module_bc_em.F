@@ -231,7 +231,8 @@ CONTAINS
                                                                                mu_btys,mu_btye
    REAL, INTENT(IN   ) :: dtbc
 
-   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) :: rfield
+! changed to tile dimensions, 20090923, JM
+   REAL , DIMENSION( its-1:ite+1 , kts:kte, jts-1:jte+1  ) :: rfield
    INTEGER :: i_start, i_end, j_start, j_end, i, j, k
 
            CALL relax_bdytend ( ru, ru_tendf,             &
@@ -268,8 +269,7 @@ CONTAINS
            ENDDO
            ENDDO
            ENDDO
-           
-           CALL relax_bdytend ( rfield, ph_tendf,             &
+           CALL relax_bdytend_tile ( rfield, ph_tendf,             &
                                ph_bxs,ph_bxe,ph_bys,ph_bye, ph_btxs,ph_btxe,ph_btys,ph_btye,       &
                                'h'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
@@ -277,7 +277,8 @@ CONTAINS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                               its,ite, jts,jte, kts,kte )
+                               its,ite, jts,jte, kts,kte,  &
+                               its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
            DO j=j_start,j_end
            DO k=kts,kte-1
            DO i=i_start,i_end
@@ -285,7 +286,7 @@ CONTAINS
            ENDDO
            ENDDO
            ENDDO
-           CALL relax_bdytend ( rfield, t_tendf,              &
+           CALL relax_bdytend_tile ( rfield, t_tendf,              &
                                t_bxs,t_bxe,t_bys,t_bye, t_btxs,t_btxe,t_btys,t_btye,       &
                                't'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
@@ -293,7 +294,8 @@ CONTAINS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                               its,ite, jts,jte, kts,kte )
+                               its,ite, jts,jte, kts,kte,  &
+                               its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
            CALL relax_bdytend ( mu, mu_tend,               &
                                mu_bxs,mu_bxe,mu_bys,mu_bye, mu_btxs,mu_btxe,mu_btys,mu_btye,                &
                                'm'        , config_flags,  &
@@ -319,7 +321,7 @@ CONTAINS
            ENDDO
            ENDDO
            
-           CALL relax_bdytend ( rfield, rw_tendf,             &
+           CALL relax_bdytend_tile ( rfield, rw_tendf,             &
                                w_bxs,w_bxe,w_bys,w_bye, w_btxs,w_btxe,w_btys,w_btye,       &
                                'h'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
@@ -327,7 +329,8 @@ CONTAINS
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                               its,ite, jts,jte, kts,kte )
+                               its,ite, jts,jte, kts,kte,  &
+                               its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
 
         END IF
 

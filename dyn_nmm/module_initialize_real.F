@@ -3914,7 +3914,7 @@ CONTAINS
     ENDIF
 
         allocate(xnew(lm))
-        allocate(sgm(lm))
+        allocate(sgm(lm+1))
         allocate(pps(lm))
         allocate(qqs(lm))
         allocate(y2s(lm))
@@ -3925,7 +3925,7 @@ CONTAINS
 
     y2s=0.
 
-    CALL spline(kold,kold,xold,dold,y2s,lm,xnew,dsg,pps,qqs)
+    CALL spline(kold,xold,dold,y2s,lm,xnew,dsg,pps,qqs)
 
     sum=0.
     DO l=1,lm
@@ -3946,7 +3946,8 @@ CONTAINS
 
 ! -------------------------------------------------------------------
 
-     subroutine spline(JTBX,NOLD,XOLD,YOLD,Y2,NNEW,XNEW,YNEW,P,Q)
+     subroutine spline(NOLD,XOLD,YOLD,Y2,NNEW,XNEW,YNEW,P,Q)
+
 !   ********************************************************************
 !   *                                                                  *
 !   *  THIS IS A ONE-DIMENSIONAL CUBIC SPLINE FITTING ROUTINE          *
@@ -3972,20 +3973,27 @@ CONTAINS
 !
 !   LOG:
 !
+!     JOVIC - July 2008 - fixed incorrectly dimensioned arrays,
+!     PYLE                and do loop leading to out of bound array
+!                         reference
+!------
+!
 !     PYLE - June 2007 - eliminated use of GO TO statements.
 !
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-      INTEGER,INTENT(IN) :: JTBX,NNEW,NOLD
-      REAL,DIMENSION(JTBX),INTENT(IN) :: XNEW,XOLD,YOLD
-      REAL,DIMENSION(JTBX),INTENT(INOUT) :: P,Q,Y2
-      REAL,DIMENSION(JTBX),INTENT(OUT) :: YNEW
+      INTEGER,INTENT(IN) :: NNEW,NOLD
+      REAL,DIMENSION(NOLD),INTENT(IN) :: XOLD,YOLD
+      REAL,DIMENSION(NNEW),INTENT(IN)  :: XNEW
+      REAL,DIMENSION(NNEW),INTENT(OUT) :: YNEW
+      REAL,DIMENSION(NOLD+2),INTENT(INOUT) :: P,Q,Y2
 !
-      INTEGER :: K,K1,K2,KOLD,NOLDM1
+      INTEGER :: K,K1,K2,KOLD,NOLDM1, K2_hold, K_hold
       REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                   &
      &       ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
 !-----------------------------------------------------------------------
+
       NOLDM1=NOLD-1
 
       DXL=XOLD(2)-XOLD(1)
@@ -3997,8 +4005,8 @@ CONTAINS
       P(1)= RTDXC*(6.*(DYDXR-DYDXL)-DXL*Y2(1))
       Q(1)=-RTDXC*DXR
 
+      K=3
       first_loop: DO K=3,NOLD-1
-        IF(NOLD==3) exit first_loop   ! should be impossible to execute
         DXL=DXR
         DYDXL=DYDXR
         DXR=XOLD(K+1)-XOLD(K)
@@ -4011,19 +4019,25 @@ CONTAINS
 
       DO K=NOLDM1,2,-1
          Y2(K)=P(K-1)+Q(K-1)*Y2(K+1)
+         K_hold=K
       END DO
 
+      K=K_hold
+
 !-----------------------------------------------------------------------
-      second_loop:  DO K1=1,NNEW+1
+      second_loop:  DO K1=1,NNEW
         XK=XNEW(K1)
         third_loop:  DO K2=2,NOLD
+
           IF(XOLD(K2)>XK)THEN
             KOLD=K2-1
+            K2_hold=K2
             exit third_loop
           ENDIF
+        K2_hold=K2
         END DO third_loop
 
-        IF (XOLD(K2) .le. XK) THEN
+        IF (XOLD(K2_hold) .le. XK) THEN
           YNEW(K1)=YOLD(NOLD)
           CYCLE second_loop
         ENDIF
@@ -4042,10 +4056,10 @@ CONTAINS
         X=XK-XOLD(K)
         XSQ=X*X
         YNEW(K1)=AK*XSQ*X+BK*XSQ+CK*X+YOLD(K)
+
       END DO second_loop
 
       END SUBROUTINE SPLINE
-
 !--------------------------------------------------------------------
       SUBROUTINE NMM_SH2O(IMS,IME,JMS,JME,ISTART,IM,JSTART,JM,&
                         NSOIL,ISLTPK, &

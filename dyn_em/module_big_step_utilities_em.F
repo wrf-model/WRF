@@ -1375,7 +1375,6 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    advective_order = config_flags%h_sca_adv_order 
-!   advective_order = 2  !  original configuration (pre Oct 2001)
 
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
@@ -1691,6 +1690,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    ELSE IF (advective_order <= 6) THEN
 
+!!! NOTE: this branch has been looked at and fixed with changes for overdecomposition
+!!!       the branches covering the other advective_order cases have not.  20090923. JM
+
 !  y (v) advection
 
    i_start = its
@@ -1737,7 +1739,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  4th order stencil for open or specified conditions two in form the boundary
 
-   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+2 )  THEN
+   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+2 .and. jds+2 <= jte )  THEN
 
      j = jds+2
      DO k = 2, kte-1
@@ -1768,8 +1770,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
-   IF ( (config_flags%open_ye .or. specified) .and. jte >= jde-3 )  THEN
-
+   IF ( (config_flags%open_ye .or. specified) .and. jts <= jde-3 .and. jde-3 <= jte )  THEN
      j = jde-3
      DO k = 2, kte-1
      DO i = i_start, itf
@@ -1801,7 +1802,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  2nd order stencil for open and specified conditions one row in from boundary
 
-   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+1 )  THEN
+   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+1 .and. jds+1 <= jte )  THEN
 
      j = jds+1
      DO k = 2, kte-1
@@ -1825,7 +1826,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
-   IF ( (config_flags%open_ye .or. specified) .and. jte >= jde-2 )  THEN
+   IF ( (config_flags%open_ye .or. specified) .and. jts <= jde-2 .and. jde-2 <= jte )  THEN
 
      j = jde-2
      DO k = 2, kte-1
@@ -1892,7 +1893,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  4th order stencil two in from the boundary for open and specified conditions
 
-   IF ( (config_flags%open_xs) .and. its <= ids+2 ) THEN
+   IF ( (config_flags%open_xs) .and. its <= ids+2 .and. ids+2 <= ite ) THEN
      i = ids + 2
      DO j = j_start, jtf
        DO k = 2, kte-1
@@ -1916,7 +1917,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      ENDDO
    END IF
 
-   IF ( (config_flags%open_xe) .and. ite >= ide-3 ) THEN
+   IF ( (config_flags%open_xe) .and. its <= ide-3 .and. ide-3 <= ite ) THEN
      i = ide-3
      DO j = j_start, jtf
        DO k = 2, kte-1
@@ -1942,7 +1943,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 !  2nd order stencil for open and specified conditions one in from the boundary
 
-   IF ( (config_flags%open_xs .or. specified) .and. its <= ids+1 ) THEN
+   IF ( (config_flags%open_xs .or. specified) .and. its <= ids+1 .and. ids+1 <= ite ) THEN
 
      i = ids + 1
 
@@ -1967,7 +1968,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
-   IF ( (config_flags%open_xe .or. specified) .and. ite >= ide-2 ) THEN
+   IF ( (config_flags%open_xe .or. specified) .and. its <= ide-2 .and. ide-2 <= ite ) THEN
 
      i = ide-2
      DO j = j_start, jtf

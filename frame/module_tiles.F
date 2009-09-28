@@ -174,10 +174,12 @@ CONTAINS
      INTEGER                                :: smx, emx, smy, emy
      INTEGER                                :: ntiles
      INTEGER                                :: one
+     INTEGER                                :: nt
 #ifdef _OPENMP
      INTEGER , EXTERNAL        :: omp_get_max_threads
 #endif
      CHARACTER*80              :: mess
+     LOGICAL                   :: verbose ! whether to output tile info messages
 
      data_ordering : SELECT CASE ( model_data_order )
        CASE  ( DATA_ORDER_XYZ )
@@ -213,7 +215,9 @@ CONTAINS
      !          use 1.
      !
 
+     verbose = .false.
      IF ( grid%num_tiles_spec .EQ. 0 ) THEN
+       verbose = .true.
        CALL nl_get_numtiles( 1, num_tiles )
        IF ( num_tiles .EQ. 1 ) THEN
 #ifdef _OPENMP
@@ -249,8 +253,20 @@ CONTAINS
        grid%num_tiles_spec = num_tiles
        grid%num_tiles_x = num_tiles_x
        grid%num_tiles_y = num_tiles_y
-       WRITE(mess,'("WRF NUMBER OF TILES = ",I3)')num_tiles
-       CALL WRF_MESSAGE ( mess )
+     ELSE
+       num_tiles = grid%num_tiles_spec
+       IF      ( machine_info%tile_strategy == TILE_X ) THEN
+         num_tiles_x = num_tiles
+         num_tiles_y = 1
+       ELSE IF ( machine_info%tile_strategy == TILE_Y ) THEN
+         num_tiles_x = 1
+         num_tiles_y = num_tiles
+       ELSE ! Default ( machine_info%tile_strategy == TILE_XY ) THEN
+         one = 1
+         call least_aspect( num_tiles, one, one, num_tiles_y, num_tiles_x )
+       ENDIF
+       grid%num_tiles_x = num_tiles_x
+       grid%num_tiles_y = num_tiles_y
      ENDIF
 
      num_tiles   = grid%num_tiles_spec
@@ -269,11 +285,16 @@ CONTAINS
        grid%max_tiles = num_tiles
      ENDIF
 
+     nt = 1
      DO t = 0, num_tiles-1
-        ntiles = mod(t,num_tiles_x)
-        CALL region_bounds( spx, epx,                                  &
-                            num_tiles_x, ntiles,                       &
+
+       ! do y
+        ntiles = t / num_tiles_x
+        CALL region_bounds( spy, epy,                                  &
+                            num_tiles_y, ntiles,                       &
                             ts, te )
+        ! first y (major dimension)
+        IF ( ts .LE. te ) THEN  ! converse happens if number of tiles > number of points in dim
 !!!
 ! This bit allows the user to specify execution out onto the halo region
 ! in the call to set_tiles. If the low patch boundary specified by the arguments
@@ -281,22 +302,37 @@ CONTAINS
 ! the user hasn't erred by specifying something that would fall off memory
 ! (safety tests are higher up in this routine, outside the IF) then adjust
 ! the tile boundary of the low edge tiles accordingly. Likewise for high edges.
-        IF ( ips .lt. spx .and. ts .eq. spx ) ts = ips ;
-        IF ( ipe .gt. epx .and. te .eq. epx ) te = ipe ;
+          IF ( jps .lt. spy .and. ts .eq. spy ) ts = jps ;
+          IF ( jpe .gt. epy .and. te .eq. epy ) te = jpe ;
+!
+          grid%j_start(nt) = max ( ts , jds )
+          grid%j_end(nt)   = min ( te , jde )
+
+          ! now x
+          ntiles = mod(t,num_tiles_x)
+          CALL region_bounds( spx, epx,                                  &
+                              num_tiles_x, ntiles,                       &
+                              ts, te )
+          IF ( ts .LE. te ) THEN  ! converse happens if number of tiles > number of points in dim
+            IF ( ips .lt. spx .and. ts .eq. spx ) ts = ips ;
+            IF ( ipe .gt. epx .and. te .eq. epx ) te = ipe ;
 !!!
-        grid%i_start(t+1) = max ( ts , ids )
-        grid%i_end(t+1)   = min ( te , ide )
-        ntiles = t / num_tiles_x
-        CALL region_bounds( spy, epy,                                  &
-                            num_tiles_y, ntiles,                       &
-                            ts, te )
-!
-        IF ( jps .lt. spy .and. ts .eq. spy ) ts = jps ;
-        IF ( jpe .gt. epy .and. te .eq. epy ) te = jpe ;
-!
-        grid%j_start(t+1) = max ( ts , jds )
-        grid%j_end(t+1)   = min ( te , jde )
+            grid%i_start(nt) = max ( ts , ids )
+            grid%i_end(nt)   = min ( te , ide )
+            IF ( verbose ) THEN
+              WRITE(mess,'("WRF TILE ",I3," IS ",I6," IE ",I6," JS ",I6," JE ",I6)') &
+                        nt,grid%i_start(nt),grid%i_end(nt),grid%j_start(nt),grid%j_end(nt)
+              CALL WRF_MESSAGE ( mess )
+            ENDIF
+            nt = nt + 1
+          ENDIF
+        ENDIF
      END DO
+     num_tiles = nt-1
+     IF ( verbose ) THEN
+       WRITE(mess,'("WRF NUMBER OF TILES = ",I3)')num_tiles
+       CALL WRF_MESSAGE ( mess )
+     ENDIF
      grid%num_tiles = num_tiles
 
      RETURN
@@ -328,7 +364,7 @@ CONTAINS
      !  Output data.
 
      !  Local data.
-  
+     INTEGER nt
      CHARACTER*80              :: mess
 
      CALL set_tiles_masked ( imask, ims, ime, jms, jme, ips, ipe, jps, jpe, &
@@ -350,6 +386,13 @@ CONTAINS
      grid%i_end(1:num_tiles)   = i_end(1:num_tiles)
      grid%j_start(1:num_tiles) = j_start(1:num_tiles)
      grid%j_end(1:num_tiles)   = j_end(1:num_tiles)
+     DO nt = 1, num_tiles
+        WRITE(mess,'("WRF TILE ",I3," IS ",I6," IE ",I6," JS ",I6," JE ",I6)') &
+                      nt,grid%i_start(nt),grid%i_end(nt),grid%j_start(nt),grid%j_end(nt)
+        CALL wrf_debug ( 1, mess )
+     ENDDO
+     WRITE(mess,'("set_tiles3: NUMBER OF TILES = ",I3)')num_tiles
+     CALL wrf_debug ( 1, mess )
 
      RETURN
   END SUBROUTINE set_tiles3

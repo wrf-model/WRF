@@ -475,7 +475,7 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !
-        IF(.NOT.LAST_TIME)THEN    !Do not execute block at last timestep
+!        IF(.NOT.LAST_TIME)THEN    !Do not execute block at last timestep
 !
 !-----------------------------------------------------------------------
 !***  LATITUDINAL AND LONGITUDINAL FLUXES AND OMEGA-ALPHA COMPONENTS
@@ -555,7 +555,7 @@
 !
 !-----------------------------------------------------------------------
 !
-        ENDIF   !End block to skip execution at last timestep
+!        ENDIF   !End block to skip execution at last timestep
 !
 !-----------------------------------------------------------------------
 !

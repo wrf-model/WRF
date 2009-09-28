@@ -1228,7 +1228,6 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   integer                           :: stat
   character (7)                     :: Buffer
   integer                           :: VDimIDs(2)
-  integer                , external :: bit_or
 
   if(WrfIOnotInitialized) then
     Status = WRF_IO_NOT_INITIALIZED 
@@ -1245,7 +1244,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
 #ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-  stat = NF_CREATE(FileName, bit_or(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
+  stat = NF_CREATE(FileName, IOR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
 #else
   stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
 #endif
@@ -3418,15 +3417,6 @@ subroutine ext_ncd_warning_str( Code, ReturnString, Status)
 
   return
 end subroutine ext_ncd_warning_str
-
-!returns integer bitwise OR of two input integers
-integer function bit_or ( Input1 , Input2 ) result ( BWOr ) 
-   implicit none
-   integer, intent(in) :: Input1 , Input2
-   !  A C function is called.  We do not want to rely on a return value from C, so we
-   !  wrap the bitwise_or function and hide a Fortran subr call.
-   call bitwise_or ( Input1, Input2, BWOr )  
-end function bit_or
 
 !returns message string for all WRF and netCDF warning/error status codes
 !Other i/o packages must  provide their own routines to return their own status messages

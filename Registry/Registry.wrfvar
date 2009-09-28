@@ -1329,7 +1329,7 @@ rconfig   logical   interpolate_stats       namelist,wrfvar10  1  .true.   - "in
 rconfig   logical   test_dm_exact           namelist,wrfvar10  1  .false.  - "test_dm_exact"           ""  ""  
 
 rconfig   integer   cv_options_hum          namelist,wrfvar11  1  1        - "cv_options_hum"          ""  ""  
-rconfig   integer   check_rh                namelist,wrfvar11  1  2        - "check_rh"                ""  ""  
+rconfig   integer   check_rh                namelist,wrfvar11  1  0        - "check_rh"                ""  ""  
 rconfig   real      set_omb_rand_fac        namelist,wrfvar11  1  1.0      - "set_omb_rand_fac"        ""  ""  
 rconfig   integer   seed_array1             namelist,wrfvar11  1  0        - "seed_array1"             ""  ""  
 rconfig   integer   seed_array2             namelist,wrfvar11  1  0        - "seed_array2"             ""  ""  

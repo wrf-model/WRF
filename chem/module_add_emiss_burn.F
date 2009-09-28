@@ -287,7 +287,7 @@ CONTAINS
         chem(i,k,j,p_p25j)  =  chem(i,k,j,p_p25j)                        &
                          +.75*r_q*ebu_pm25(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_pm_10)  =  chem(i,k,j,p_pm_10)                        &
-                         +r_q*ebu_pm10(i,k,j)/rho_phy(i,k,j)/dz8w(i,k,j)*dtstep/dz8w(i,k,j)
+                         +r_q*ebu_pm10(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
         enddo
       CASE (GOCART_SIMPLE)

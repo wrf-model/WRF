@@ -204,9 +204,9 @@
   902 WRITE (BORT_STR, '("BUFRLIB: NEMTBD - TABLE D MNEMONIC ",A," IS A'&
      &//' ZERO LENGTH SEQUENCE")') NEMO                                 
       CALL BORT (BORT_STR) 
-  903 WRITE (BORT_STR, '("BUFRLIB: NEMTBD - THERE ARE MORE THAN '//'(",I&
-     &4,") DESCRIPTORS (THE LIMIT) IN TABLE D SEQUENCE '//'MNEMONIC ",A)&
-     &') MAXCD, NEMO                                                    
+  903 WRITE (BORT_STR, '("BUFRLIB: NEMTBD - THERE ARE MORE THAN '//'(",I4&
+     &,") DESCRIPTORS (THE LIMIT) IN TABLE D SEQUENCE '//'MNEMONIC ",A)')&
+      MAXCD, NEMO                                                    
       CALL BORT (BORT_STR) 
   904 WRITE (BORT_STR, '("BUFRLIB: NEMTBD - REPLICATOR IS OUT OF ORDER '&
      &//'IN TABLE D SEQUENCE MNEMONIC ",A)') NEMO                       

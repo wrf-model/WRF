@@ -17,9 +17,11 @@ SUBROUTINE med_nest_move ( parent, nest )
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
    INTEGER ierr, fid
+#ifdef HWRF
    REAL,PARAMETER           :: con_g       =9.80665e+0! gravity             (m/s2)
    REAL,PARAMETER           :: con_rd      =2.8705e+2 ! gas constant air    (J/kg/K)
    REAL                     :: TLAP,TBAR,EPSI
+#endif
    LOGICAL input_from_hires
    LOGICAL saved_restart_value
    TYPE (grid_config_rec_type)   :: config_flags
@@ -119,6 +121,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      END FUNCTION time_for_move
 
 
+#ifdef HWRF
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 !     LOGICAL FUNCTION nest_roam ( parent , nest , dx , dy )  !REPLACED BY KWON
 !
@@ -129,6 +132,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      END FUNCTION direction_of_move
 !
 !     END FUNCTION nest_roam                                  !REPLACED BY KWON
+#endif
 #endif
 
      SUBROUTINE  input_terrain_rsmas ( grid ,                  &
@@ -182,8 +186,11 @@ SUBROUTINE med_nest_move ( parent, nest )
 
 ! mask should be defined in nest domain
 
-!   check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN
+#ifdef HWRF
   check_direction_of_move: IF ( direction_of_move ( parent , nest , dx, dy ) ) THEN
+#else
+  check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN
+#endif
 
 #if ( EM_CORE == 1 )
      IF ( (dx .gt. 1 .or. dx .lt. -1 ) .or.  &
@@ -282,6 +289,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
+#ifdef HWRF
 !   adjust pint & pressure depth due to height change in nest_terrain
 !     assume lapse rate of 6.1K/1km
       TLAP=6.1/(con_g*1000.)
@@ -301,6 +309,7 @@ SUBROUTINE med_nest_move ( parent, nest )
        endif
      ENDDO
     ENDDO
+#endif
 
 
 
@@ -457,8 +466,12 @@ SUBROUTINE med_nest_move ( parent, nest )
       where ( nest%imask_nostag .EQ. 1 ) nest%mu_1(:,:)  = nest%mu_2(:,:)
 #endif
 !
-!   ENDIF check_for_move
+#ifdef HWRF
    ENDIF check_direction_of_move
+#else
+   ENDIF check_for_move
+#endif
+
 #endif
 END SUBROUTINE med_nest_move
 
@@ -1134,6 +1147,7 @@ LOGICAL FUNCTION should_not_move ( id )
   should_not_move = retval
 END FUNCTION
 
+#ifdef HWRF
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 LOGICAL FUNCTION nest_roam ( parent , grid , move_cd_x, move_cd_y )
    USE module_domain
@@ -1316,4 +1330,5 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
 
 END FUNCTION direction_of_move 
 
+#endif
 #endif

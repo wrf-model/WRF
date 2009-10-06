@@ -21,16 +21,11 @@ MODULES =       module_driver_constants.o  \
                 module_sm.o                \
                 module_io.o                \
                 module_comm_dm.o           \
-                module_PATCH_QUILT.o       \
-                cmpcomm.o                  \
-                atm_comm_pom.o             \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
                 module_io_quilt.o
 
-OBJS    =       mpi_more.o                 \
-                atm_tiles.o                \
-                wrf_num_bytes_between.o    \
+OBJS    =       wrf_num_bytes_between.o    \
                 wrf_shutdown.o             \
                 wrf_debug.o                \
                 libmassv.o                 \
@@ -40,6 +35,14 @@ OBJS    =       mpi_more.o                 \
                 nl_set_1_routines.o        \
                 collect_on_comm.o
 
+HWRF_MODULES = \
+                module_PATCH_QUILT.o       \
+                cmpcomm.o                  \
+                atm_comm_pom.o             \
+                atm_tiles.o                \
+                mpi_more.o                 
+
+
 #compile as a .o but do not link into the main library
 SPECIAL =       module_internal_header_util.o pack_utils.o
    
@@ -48,10 +51,18 @@ include ../configure.wrf
 
 LIBTARGET    =  framework
 TARGETDIR    =  ./
-$(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL)
-		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)
-		$(RANLIB) ../main/$(LIBWRFLIB)
 
+$(LIBTARGET) :
+		if [ $(HWRF) -eq 1 ] ; then \
+                  $(MAKE) hwrf_contrib                                      ; \
+                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(HWRF_MODULES) $(MODULES) $(OBJS) ; \
+                else                                                         \
+                  $(MAKE) non_hwrf                                         ; \
+                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES)  $(OBJS)             ; \
+                fi
+
+hwrf_contrib : $(HWRF_MODULES) $(MODULES) $(OBJS) $(SPECIAL) 
+non_hwrf : $(MODULES) $(OBJS) $(SPECIAL) 
 
 wrf_num_bytes_between.o :
 	$(CC) -c $(CFLAGS) wrf_num_bytes_between.c
@@ -84,11 +95,11 @@ module_configure.o: \
                 module_wrf_error.o \
 		module_driver_constants.o 
 
-module_dm.o: atm_comm_pom.o module_machine.o module_state_description.o module_wrf_error.o \
+module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_domain.o \
 		module_driver_constants.o \
 		module_timing.o \
-		module_configure.o module_comm_dm.o
+		module_configure.o module_comm_dm.o $(HWRF_MOD_DEPENDENCE)
 
 module_comm_dm.o: \
 		module_domain.o \
@@ -155,4 +166,6 @@ module_wrf_error.o: \
 wrf_debug.o: \
 		module_wrf_error.o
 
+atm_tiles.o: \
+		module_PATCH_QUILT.o
 # DO NOT DELETE

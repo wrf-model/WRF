@@ -225,7 +225,15 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-@platforms = qw ( serial smpar dmpar dm+sm ) ;
+if ( $ENV{HWRF} )
+{
+  printf "HWRF requires Parallel compilation...\n" ;
+  @platforms = qw ( dmpar dm+sm ) ;
+  } 
+else
+  {
+  @platforms = qw ( serial smpar dmpar dm+sm ) ;
+  }
 
 # Display the choices to the user and get selection
 until ( $validresponse ) {
@@ -281,7 +289,6 @@ while ( <CONFIGURE_DEFAULTS> )
   if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 1 )
   {
     close CONFIGURE_DEFAULTS ;
-   printf("  opt_leve is = %s\n",$sw_opt_level);
     if ( $sw_opt_level eq "-f" ) {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_f |"  or die "horribly" ;
     } else {
@@ -437,6 +444,9 @@ while ( <CONFIGURE_DEFAULTS> )
           }
           if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" ) {
              $response = 1 ;
+          } elsif ( $ENV{HWRF} ) {
+             printf "HWRF requires moving nests";
+             $response = 2;
           } else {
              $response = <STDIN> ;
           } 
@@ -517,6 +527,14 @@ while ( <ARCH_PREAMBLE> )
     $_ =~ s:ESMFIOINC:-I\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90:g ;
     $_ =~ s:ESMFIODEFS::g ;
     $_ =~ s:ESMFTARGET:esmf_time:g ;
+    }
+  if ( $ENV{HWRF} )
+    {
+    $_ =~ s:HWRFMODDEPENDENCE:atm_comm_pom.o:g ;
+    }
+  else
+    {
+    $_ =~ s:HWRFMODDEPENDENCE::g ;
     }
   $_ =~ s:CONFIGURE_EM_CORE:$sw_em_core:g ;
   $_ =~ s:CONFIGURE_DA_CORE:$sw_da_core:g ;

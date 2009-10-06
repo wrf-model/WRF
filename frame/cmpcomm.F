@@ -1,3 +1,4 @@
+#if defined( DM_PARALLEL ) 
       MODULE CMP_COMM
 
       implicit none
@@ -960,3 +961,4 @@
 
       return
       END
+#endif

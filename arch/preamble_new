@@ -74,6 +74,9 @@ ESMF_IO_DEFS        = ESMFIODEFS
 # select build target for external/io_esmf vs. external/esmf_time_f90
 ESMF_TARGET         = ESMFTARGET
 
+# select dependences on atm_comm_pom.o (ocean coupler)
+HWRF_MOD_DEPENDENCE = HWRFMODDEPENDENCE
+
 ##############################################################################
 
 LIBWRFLIB = libwrflib.a

@@ -56,12 +56,14 @@ MODULE module_wrf_quilt
 ! of subroutines and their arguments that are not duplicated here.
 !</PRE>
 !</DESCRIPTION>
+#ifdef HWRF
 ! Coupling insertion->
    USE ATM_cc, ONLY: MPI_COMM_Atmos
 !     All occurences of MPI_COMM_WORLD in this unit are replaced
 !     by MPI_COMM_Atmos to enable coupling. The value of MPI_COMM_Atmos
 !     is obtained via call ATM_CMP_START
 !<-Coupling insertion
+#endif
 
   USE module_internal_header_util
   USE module_timing
@@ -1421,11 +1423,17 @@ okay_to_w = .false.
         ENDIF
 #  else
         CALL mpi_init ( ierr )
+#ifdef HWRF
 ! Coupling insertion->
         call ATM_CMP_START
 !<-Coupling insertion
+#endif
 #  endif
+#ifdef HWRF
         CALL wrf_set_dm_communicator( MPI_COMM_atmos )
+#else
+        CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
+#endif
         CALL wrf_termio_dup
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_here )

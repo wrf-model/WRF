@@ -302,7 +302,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 nest%HLAT,nest%HLON,                     & ! target (nest) input lat lon in degrees
                 parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,   & ! parent res, western and south boundaries
                 parent_CLAT,parent_CLON,                         & ! parent central lat,lon, all in degrees
-                parent%ed31,parent%ed33,                         & ! parent imax and jmax
+                parent%ed31,parent%ed32,                         & ! parent imax and jmax
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & ! 
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
@@ -316,7 +316,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 nest%VLAT,nest%VLON,                     & ! target (nest) input lat lon in degrees
                 parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,   & ! parent res, western and south boundaries
                 parent_CLAT,parent_CLON,                         & ! parent central lat,lon, all in degrees
-                parent%ed31,parent%ed33,                         & ! parent imax and jmax
+                parent%ed31,parent%ed32,                         & ! parent imax and jmax
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & !
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !

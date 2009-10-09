@@ -181,13 +181,6 @@ CONTAINS
 
         if (ALLOCATED(ADUM2D)) DEALLOCATE(ADUM2D)
         if (ALLOCATED(TG_ALT)) DEALLOCATE(TG_ALT)
-       IF ( CONFIG_FLAGS%FRACTIONAL_SEAICE == 1 ) THEN
-          CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1")
-       ENDIF
-
-      if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
-         call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
-      endif
 
 #define COPY_IN
 #include <scalar_derefs.inc>
@@ -321,6 +314,14 @@ CONTAINS
 
 
     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+       IF ( CONFIG_FLAGS%FRACTIONAL_SEAICE == 1 ) THEN
+          CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1")
+       ENDIF
+
+      if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
+         call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
+      endif
 
         write(message,*) 'cen_lat: ', config_flags%cen_lat
         CALL wrf_debug(100,message)

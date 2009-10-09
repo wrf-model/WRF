@@ -11,7 +11,8 @@ module da_radar
       use_radar_rv, use_radar_rf,below_model_surface,mkz,above_model_lid,&
       fg_format,fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional,fg_format_wrf_arw_global,&
       fg_format_kma_global,max_error_rv,max_error_rf, &
-      far_below_model_surface,kms,kme,kts,kte, trace_use_dull
+      far_below_model_surface,kms,kme,kts,kte, trace_use_dull,filename_len,&
+      myproc
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       infa_type, field_type
@@ -21,6 +22,8 @@ module da_radar
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, map_info, da_llxy_wrf, da_llxy_default, da_convert_zk
    use da_tracing, only : da_trace_entry, da_trace_exit
+   use da_reporting, only : da_error
+   use da_tools_serial, only : da_get_unit, da_free_unit
 
    ! The "stats_radar_type" is ONLY used locally in da_radar:
 
@@ -58,6 +61,7 @@ contains
 #include "da_radial_velocity_adj.inc"
 #include "da_calculate_grady_radar.inc"
 #include "da_max_error_qc_radar.inc"
+#include "da_write_oa_radar_ascii.inc"
 
 end module da_radar
 

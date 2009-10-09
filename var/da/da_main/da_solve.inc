@@ -310,6 +310,14 @@
          end if     
       end if
 
+      ! [8.7.1] Write Ascii radar OMB and OMA file
+
+      if (use_radarobs) then
+         write(unit=stdout,fmt='(A)')  'Writing radar OMB and OMA ascii file'
+         write(unit=stdout,fmt=*)  " "
+         call da_write_oa_radar_ascii (ob,iv,re)
+      end if
+
       ! [8.3] Interpolate x_g to low resolution grid
 
       ! [8.8] Write Ascii radiance OMB and OMA file

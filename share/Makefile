@@ -90,7 +90,8 @@ OBJS    = 		\
         wrf_histin.o            	\
         wrf_restartin.o                 \
         wrf_tsin.o                      \
-        landread.o
+        landread.o			\
+        julian_gregorian_converter.o
 
 
 NMM_MODULES = 

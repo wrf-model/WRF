@@ -58,6 +58,7 @@
 !***
 !***  LOCAL DATA
 !***
+  LOGICAL :: ANAL   !zhang's doing, added for analysis option
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,IPS,IPE,JPS,JPE,KPS,KPE
@@ -95,6 +96,9 @@
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
       REAL :: TEND
+!zhang's doing 
+      REAL :: TSTART,TEND
+!zhang's doing ends
 
 !
 !!!   REAL,ALLOCATABLE,DIMENSION(:,:) :: RAINBL,RAINNC,RAINNC           &
@@ -183,6 +187,10 @@
      &                             ,config_flags)
 !
         RESTRT=config_flags%restart
+!zhang's doing added for analysis option
+        ANAL=config_flags%analysis                ! gopal's doing
+        write(0,*) 'set RESTRT to: ', RESTRT,'set ANALYSIS to: ',ANAL
+!zhang's doing ends
 
 #if 1
       IF(IME>NMM_MAX_DIM )THEN
@@ -435,7 +443,10 @@
       JFE=MIN(JPE,JDE-1)
       IFE=MIN(IPE,IDE-1)
 !
-      IF(.NOT.RESTRT)THEN
+!zhang's doing
+!zhang      IF(.NOT.RESTRT)THEN
+  IF((.NOT.RESTRT .AND. .NOT.ANAL) .OR. .NOT.allowed_to_read)THEN
+!end of zhang's doing
         DO J=JFS,JFE
         DO I=IFS,IFE
           PDSL(I,J)  =PD(I,J)*RES(I,J)
@@ -684,6 +695,9 @@
 
       TSPH=3600./GRID%DT ! needed?
       NPHS0=GRID%NPHS
+!zhang's doing
+      tstart = grid%TSTART
+!zhang's doing ends
 
       IF(MYPE==0)THEN
         WRITE( wrf_err_message, * )' start_nmm TSTART=',grid%tstart
@@ -718,6 +732,141 @@
       NRDSW  = INT(grid%TRDSW *TSPH+0.5)
       NRDLW  = INT(grid%TRDLW *TSPH+0.5)
       NSRFC  = INT(grid%TSRFC *TSPH+0.5)
+!zhang's dong for analysis option:
+      NCNVC0  = grid%NCNVC
+      NPHS0   = grid%NPHS
+  IF((RESTRT .AND. ANAL) .AND. allowed_to_read)THEN
+!
+!***
+!***    AVERAGE CLOUD AMOUNT ARRAY
+!***
+!zhang's doing        IF(MOD(NTSD,NCLOD).LT.NPHS)THEN
+        IF(MOD(NTSD,NCLOD).LT.NPHS0)THEN
+          CALL wrf_message('  ZERO AVG CLD AMT ARRAY')
+          DO J=JFS,JFE
+          DO I=IFS,IFE
+            ACFRCV(I,J)=0.
+            NCFRCV(I,J)=0
+            ACFRST(I,J)=0.
+            NCFRST(I,J)=0
+          ENDDO
+          ENDDO
+        ENDIF
+!***
+!***     GRID-SCALE AND CONVECTIVE LATENT HEATING ARRAYS.
+!***
+!zhang's doing        IF(MOD(NTSD,NHEAT).LT.NCNVC)THEN
+        IF(MOD(NTSD,NHEAT).LT.NCNVC0)THEN
+          CALL wrf_message('  ZERO ACCUM LATENT HEATING ARRAYS')
+!
+          AVRAIN=0.
+          AVCNVC=0.
+          DO J=JFS,JFE
+          DO K=KPS,KPE
+          DO I=IFS,IFE
+            TRAIN(I,K,J)=0.
+            TCUCN(I,K,J)=0.
+          ENDDO
+          ENDDO
+          ENDDO
+        ENDIF
+!***
+!***  IF THIS IS NOT A NESTED RUN, INITIALIZE TKE
+!***
+!       IF(.NOT.NEST)THEN
+!         DO K=1,LM
+!           DO J=JFS,JFE
+!           DO I=IFS,IFE
+!             Q2(I,K,J)=AMAX1(Q2(I,K,J)*HBM2(I,J),EPSQ2)
+!           ENDDO
+!           ENDDO
+!         ENDDO
+!       ENDIF
+!***
+!***  CLOUD EFFICIENCY
+!***
+!       DO J=JFS,JFE
+!       DO I=IFS,IFE
+!!!       CLDEFI(I,J)=AVGEFI*SM(I,J)+STEFI*(1.-SM(I,J))
+!         CLDEFI(I,J)=1.
+!       ENDDO
+!       ENDDO
+!***
+!***  TOTAL AND CONVECTIVE PRECIPITATION ARRAYS.
+!***  TOTAL SNOW AND SNOW MELT ARRAYS.
+!***  STORM SURFACE AND BASE GROUND RUN OFF ARRAYS.
+!
+!zhang's doing        IF(MOD(NTSD,NPREC).LT.NPHS)THEN
+        IF(MOD(NTSD,NPREC).LT.NPHS0)THEN
+          CALL wrf_message('  ZERO ACCUM PRECIP ARRAYS')
+          DO J=JFS,JFE
+          DO I=IFS,IFE
+            IF(allowed_to_read)ACPREC(I,J)=0.  ! This is gopal's inclusion for moving nest
+            CUPREC(I,J)=0.
+            ACSNOW(I,J)=0.
+            ACSNOM(I,J)=0.
+            SSROFF(I,J)=0.
+            BGROFF(I,J)=0.
+          ENDDO
+          ENDDO
+        ENDIF
+!***
+!***  LONG WAVE RADIATION ARRAYS.
+!***
+!zhang's doing        IF(MOD(NTSD,NRDLW).LT.NPHS)THEN
+        IF(MOD(NTSD,NRDLW).LT.NPHS0)THEN
+          CALL wrf_message('  ZERO ACCUM LW RADTN ARRAYS')
+          ARDLW=0.
+          DO J=JFS,JFE
+          DO I=IFS,IFE
+            ALWIN(I,J) =0.
+            ALWOUT(I,J)=0.
+            ALWTOA(I,J)=0.
+          ENDDO
+          ENDDO
+        ENDIF
+!***
+!***  SHORT WAVE RADIATION ARRAYS.
+!***
+!zhang's doing        IF(MOD(NTSD,NRDSW).LT.NPHS)THEN
+        IF(MOD(NTSD,NRDSW).LT.NPHS0)THEN
+          CALL wrf_message('  ZERO ACCUM SW RADTN ARRAYS')
+          ARDSW=0.
+          DO J=JFS,JFE
+          DO I=IFS,IFE
+            ASWIN(I,J) =0.
+            ASWOUT(I,J)=0.
+            ASWTOA(I,J)=0.
+          ENDDO
+          ENDDO
+        ENDIF
+!***
+!***  SURFACE SENSIBLE AND LATENT HEAT FLUX ARRAYS.
+!***
+!zhang's doing        IF(MOD(NTSD,NSRFC).LT.NPHS)THEN
+        IF(MOD(NTSD,NSRFC).LT.NPHS0)THEN
+          CALL wrf_message('  ZERO ACCUM SFC FLUX ARRAYS')
+          ASRFC=0.
+          DO J=JFS,JFE
+          DO I=IFS,IFE
+            SFCSHX(I,J)=0.
+            SFCLHX(I,J)=0.
+            SUBSHX(I,J)=0.
+            SNOPCX(I,J)=0.
+            SFCUVX(I,J)=0.
+            SFCEVP(I,J)=0.
+            POTEVP(I,J)=0.
+            POTFLX(I,J)=0.
+          ENDDO
+          ENDDO
+        ENDIF
+!***
+!***  ENDIF FOR RESTART FILE ACCUMULATION ZERO BLOCK.
+!***
+  CALL wrf_message('INIT 3:  INITIALIZED ARRAYS FOR RESTART START')
+  ENDIF ! <--- (restart or analysis is true)
+!
+!end of zhang's doing
 !
 !----------------------------------------------------------------------
 !
@@ -1043,7 +1192,9 @@
 !***
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
 !***
-      IF(NSTART.EQ.0)THEN
+!zhang'sdoing       IF(NSTART.EQ.0)THEN
+      IF(NSTART.EQ.0 .or. .not.allowed_to_read )THEN
+!zhang's doing ends
 !
          GRID%NSOIL= GRID%NUM_SOIL_LAYERS
         DO J=JFS,JFE
@@ -1188,7 +1339,12 @@
 !***
 !***  TRY A SIMPLE LINEAR INTERP TO GET 2/10 M VALUES
 !***
+!zhang's doing
+!zhang        PDSL(I,J)=PD(I,J)*RES(I,J)
+        IF(.NOT.RESTRT .OR. .NOT.allowed_to_read) then
         PDSL(I,J)=PD(I,J)*RES(I,J)
+        endif
+!end of zhang's doing
 !
         ULM=U(I,J,KTS)
         VLM=V(I,J,KTS)
@@ -1209,7 +1365,10 @@
           FAC2=0.
         ENDIF
 !
-        IF(.NOT.RESTRT)THEN
+!zhang's doing
+!zhang        IF(.NOT.RESTRT)THEN
+        IF(.NOT.RESTRT .OR. .NOT.allowed_to_read)THEN
+!end of zhang's doing
           TH10(I,J)=FAC2*THS(I,J)+FAC1*THLM
           Q10(I,J)=FAC2*QSH(I,J)+FAC1*QLM
 #ifdef HWRF
@@ -1281,7 +1440,9 @@
 !***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH 
 !----------------------------------------------------------------------
 !
-      IF(.NOT.RESTRT)THEN
+!zhang's doing
+!zhang      IF(.NOT.RESTRT)THEN
+      IF(.NOT.RESTRT .OR. .NOT.allowed_to_read)THEN !zhang's doing
         DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=ifs,ife
@@ -1309,6 +1470,7 @@
         ENDDO
       ENDIF
 !***
+      IF(.NOT.RESTRT .OR. .NOT.allowed_to_read) THEN !zhang's doing
       IF(GRID%SIGMA==1)THEN
         DO J=JFS,JFE
         DO I=IFS,IFE
@@ -1322,6 +1484,7 @@
         ENDDO
         ENDDO
       ENDIF
+      ENDIF !zhang's doing
 !
 !***
 !
@@ -1333,7 +1496,10 @@
       WRITE( wrf_err_message, * )' pdtop=',pdtop,' pt=',pt
         CALL wrf_debug( 0, TRIM(wrf_err_message) )
 
-      IF(.NOT.RESTRT.OR.NEST)THEN
+!zhang's doing
+!zhang      IF(.NOT.RESTRT.OR.NEST)THEN
+        IF(.NOT.RESTRT.OR.NEST .OR. .NOT.allowed_to_read)THEN
+!end of zhang's doing
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
@@ -1500,7 +1666,12 @@
       DO I=MYIS,MYIE
         SFCZ=FIS(I,J)*G_INV
         ZINT(I,KTS,J)=SFCZ
+!zhang's doing
+!zhang        PDSL(I,J)=PD(I,J)*RES(I,J)
+        IF(.NOT.RESTRT .OR. .NOT.allowed_to_read) then
         PDSL(I,J)=PD(I,J)*RES(I,J)
+        endif
+!end of zhang's doing
         PSURF=PINT(I,J,KTS)
         EXNSFC=(1.E5/PSURF)**CAPA
         XLAND(I,J)=SM(I,J)+1.
@@ -1548,7 +1719,10 @@
 !
 !-----------------------------------------------------------------------
 
-      LU_INDEX=IVGTYP
+!zhang's doing
+!zhang      LU_INDEX=IVGTYP
+      if(.NOT.RESTRT .OR. .NOT.allowed_to_read)LU_INDEX=IVGTYP
+!end of zhang's doing
 
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
@@ -1654,6 +1828,11 @@
      &             ,NUM_URBAN_LAYERS                                    &
      &                )
 
+!zhang's doing
+      julyr_rst=grid%julyr_rst
+      julday_rst=grid%julday_rst
+      gmt_rst=grid%gmt_rst
+!end of zhang's doing
 !-----------------------------------------------------------------------
 !---- Initialization for gravity wave drag (GWD) & mountain blocking (MB)
 !
@@ -1680,7 +1859,7 @@
 
         DO J=JMS,JME
         DO I=IMS,IME
-          Z0(I,J)=Z0BASE(I,J)
+!          Z0(I,J)=Z0BASE(I,J)
         ENDDO
         ENDDO
 
@@ -1824,7 +2003,8 @@
         ENDIF
       ENDIF
 
-      IF(.NOT.RESTRT)THEN
+      if(.NOT. RESTRT .OR. .NOT.allowed_to_read) then !zhang's doing
+!zhang's doing      IF(.NOT.RESTRT)THEN
         DO J=JMS,JME
         DO I=IMS,IME
           APREC(I,J)=RAINNC(I,J)*1.E-3

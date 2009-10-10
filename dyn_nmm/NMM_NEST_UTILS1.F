@@ -125,9 +125,15 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
 !   soil configuration
 
+!zhang test
+    if ( .not.nest%analysis ) then
+!zhang test ends
     nest%sldpth  = parent%sldpth
     nest%dzsoil  = parent%dzsoil
     nest%rtdpth  = parent%rtdpth
+!zhang test
+    endif
+!zhang test ends
 
 !   numerical set up
 
@@ -1878,13 +1884,15 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  real, allocatable, dimension(:,:,:) :: real_domain
 
- character (len=10), dimension(8)  :: name = (/ "XLAT_M    ", &
+ character (len=10), dimension(10)  :: name = (/ "XLAT_M    ", &
                                                 "XLONG_M   ", &
                                                 "XLAT_V    ", &
                                                 "XLONG_V   ", &
                                                 "E         ", &
                                                 "F         ", &
                                                 "LANDMASK  ", &
+                                                "LANDUSEF  ", &
+                                                "LU_INDEX  ", &
                                                 "HGT_M     " /)
 
  integer, parameter :: IO_BIN=1, IO_NET=2
@@ -1992,7 +2000,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
              if (istatus /= 0) CALL wrf_error_fatal('NEST_TERRAIN error after ext_XXX_open_for_read '//trim(input_fname))
 
 
-             do n=1,8
+             do n=1,10
 
              cname = name(n)
 
@@ -2326,6 +2334,9 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !   to find where sea ice is. That's why alogirthm here is slightly different than the
 !   one used in module_initalize_real.F
 
+!zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
+   IF(.not. grid%analysis)THEN
+!zhang's doing ends
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
 
@@ -2476,6 +2487,9 @@ SUBROUTINE med_initialize_nest_nmm( grid &
         SLDPTH(3)=0.6
         SLDPTH(4)=1.0
 
+!zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
+   ENDIF ! <------ for analysis set to false
+!zhang's doing ends
 !-----------  END OF LAND SURFACE INITIALIZATION -------------------------------------
 !
     DO J = JTS, MIN(JTE,JDE-1)
@@ -2999,7 +3013,7 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
     KTE  = parent%ep33
 
     NIDE = nest%ed31
-    NJDE = nest%ed33
+    NJDE = nest%ed32
 
     parent_DLMD = parent%dx          ! DLMD: dlamda in degrees
     parent_DPHD = parent%dy          ! DPHD: dphi in degrees

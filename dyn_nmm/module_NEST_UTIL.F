@@ -320,6 +320,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
                           ,PINT,T,Q,U,V                          &
                           ,FIS,PD,SM,PDTOP,PTOP                  &
                           ,DETA1,DETA2                           &
+                          ,RESTART,NTIME0                        & ! zhang's doing
 #ifdef HWRF
                           ,MOVED,MVNEST,NTSD,NPHS,CFREQ          & ! CFREQ*DT*NPHS=540s
 #else
@@ -374,7 +375,10 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 !
 !     LOCAL
 
-      INTEGER,SAVE                                          :: NTIME0
+!zhang's doing
+!zhang      INTEGER,SAVE                                          :: NTIME0
+      INTEGER                                               :: NTIME0
+      LOGICAL,INTENT(IN)                                    :: RESTART
       INTEGER                                               :: IM,JM,IP,JP
       INTEGER                                               :: I,K,J,XR,YR,DTMOVE,IDUM,JDUM,ITF,JTF
       REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608
@@ -522,7 +526,10 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       PGR=STMP1-STMP0
       XDIFF=ABS(XLOC - IDE/2)
       YDIFF=ABS(YLOC - JDE/2)
-      IF(NTSD==0 .OR. MOVED)NTIME0=NTSD
+!zhang's doing
+!zhang      IF(NTSD==0 .OR. MOVED)NTIME0=NTSD
+      IF((.NOT.RESTART .AND. NTSD==0) .OR. MOVED)NTIME0=NTSD
+!end of zhang's doing
       DTMOVE=NTSD-NTIME0                    ! TIME INTERVAL SINCE THE PREVIOUS MOVE
 !
       IF(DTMOVE .LE. 45 .OR. PGR .LE. 200.)THEN

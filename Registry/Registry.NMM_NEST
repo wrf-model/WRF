@@ -98,24 +98,33 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 # module_BC
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
+#definitions for NMM slab arrays
+#dimspec    q      -     constant=2600             c  # a little crude right now
+#dimspec    v      -     constant=1             c  # a little crude right now
+
+# zhang's doing
+dimspec    z      -     constant=2             c  # seed dimension for random number generator
+state  integer    nrnd1    z    dyn_nmm     1      -      r    "NRND1"
+# end of zhang's doing
 
 # The following arrays were added to avoid using _b and _bt arrays for nesting.
 # This is gopal' doing:
 
-state  real    pdnest_b     ij      dyn_nmm     1      -      -
-state  real    pdnest_bt    ij      dyn_nmm     1      -      -
-state  real    tnest_b      ijk     dyn_nmm     1      -      -
-state  real    tnest_bt     ijk     dyn_nmm     1      -      -
-state  real    qnest_b      ijk     dyn_nmm     1      -      -
-state  real    qnest_bt     ijk     dyn_nmm     1      -      -
-state  real    unest_b      ijk     dyn_nmm     1      -      -
-state  real    unest_bt     ijk     dyn_nmm     1      -      -
-state  real    vnest_b      ijk     dyn_nmm     1      -      -
-state  real    vnest_bt     ijk     dyn_nmm     1      -      -
-state  real    q2nest_b     ijk     dyn_nmm     1      -      -
-state  real    q2nest_bt    ijk     dyn_nmm     1      -      -
-state  real    cwmnest_b    ijk     dyn_nmm     1      -      -
-state  real    cwmnest_bt   ijk     dyn_nmm     1      -      -
+#zhang's doing: added a 'r' at end to store these variables in restart file
+state  real    pdnest_b     ij      dyn_nmm     1      -      r
+state  real    pdnest_bt    ij      dyn_nmm     1      -      r
+state  real    tnest_b      ijk     dyn_nmm     1      -      r
+state  real    tnest_bt     ijk     dyn_nmm     1      -      r
+state  real    qnest_b      ijk     dyn_nmm     1      -      r
+state  real    qnest_bt     ijk     dyn_nmm     1      -      r
+state  real    unest_b      ijk     dyn_nmm     1      -      r
+state  real    unest_bt     ijk     dyn_nmm     1      -      r
+state  real    vnest_b      ijk     dyn_nmm     1      -      r
+state  real    vnest_bt     ijk     dyn_nmm     1      -      r
+state  real    q2nest_b     ijk     dyn_nmm     1      -      r
+state  real    q2nest_bt    ijk     dyn_nmm     1      -      r
+state  real    cwmnest_b    ijk     dyn_nmm     1      -      r
+state  real    cwmnest_bt   ijk     dyn_nmm     1      -      r
 
 #
 # For the moving nest. This is gopal's doing
@@ -127,48 +136,68 @@ state  real   sqws       ij     dyn_nmm     1      -    r  "SQWS"  "SQUARE OF WI
 state integer xloc         -    dyn_nmm     2      -    r  "XLOC"  "I-LOCATION OF MINIMUM DYNAMIC PRESSURE"
 state integer yloc         -    dyn_nmm     2      -    r  "YLOC"  "J-LOCATION OF MINIMUM DYNAMIC PRESSURE"
 state logical mvnest       -    dyn_nmm     1      -    rm  "MVNEST" "LOGICAL SWITCH FOR NMM GRID MOTION" 
+
+#zhang's doing added to calculate radiation constant for moving nest for restart
+state integer julyr_rst      -     dyn_nmm     1      -    r  "JULYR_RST" "JULYR for restart moving nest "
+state integer julday_rst     -     dyn_nmm     1      -    r  "JULDAY_RST" "JULDAY for restart moving nest "
+state real    gmt_rst        -     dyn_nmm     1      -    r  "GMT_RST" "GMT for restart moving nest "
+state integer NTIME0         -     dyn_nmm     1      -    r  "NTIME0" "COUNT FOR PREVIOUS MOVING NEST"
+#end of zhang's doing
+
+#zhang's doing added r for restart
+#zzstate logical mvnest      -     dyn_nmm     1      -    r  "MVNEST" "LOGICAL SWITCH FOR NMM GRID MOTION"
+# flag for nest movement
+#zhang's doing added r for restart
+state  logical moved       -     misc       1      -     r
+
 # flag for nest movement
 state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
 state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
 # For random number in SAS convection in HWRF 
 
-state real store_rand        ij     dyn_nmm     1      -    h  "RANDOM" "RANDOM NUMBER FOR SAS"
+#zhang's doing added r for restart
+state real store_rand        ij     dyn_nmm     1      -    rh  "RANDOM" "RANDOM NUMBER FOR SAS"
 
-state  logical moved       -     misc       1      -     -
+#zhang commented out, moved up: state  logical moved       -     misc       1      -     -
 
 # Location of the SOUTH-WEST nested pointed in terms of parent grid 
 
-state integer  IIH      ij     dyn_nmm     1      -      -
-state integer  JJH      ij     dyn_nmm     1      -      -
-state integer  IIV      ij     dyn_nmm     1      -      -
-state integer  JJV      ij     dyn_nmm     1      -      -
+#zhang's doing: added a 'r' at end to store these variables in restart file
+state integer  IIH      ij     dyn_nmm     1      -      r
+state integer  JJH      ij     dyn_nmm     1      -      r
+state integer  IIV      ij     dyn_nmm     1      -      r
+state integer  JJV      ij     dyn_nmm     1      -      r
 
 # Bi-linear weights
 
-state  real   HBWGT1       ij     dyn_nmm     1      -      -
-state  real   HBWGT2       ij     dyn_nmm     1      -      -
-state  real   HBWGT3       ij     dyn_nmm     1      -      -
-state  real   HBWGT4       ij     dyn_nmm     1      -      -
-state  real   VBWGT1       ij     dyn_nmm     1      -      -
-state  real   VBWGT2       ij     dyn_nmm     1      -      -
-state  real   VBWGT3       ij     dyn_nmm     1      -      -
-state  real   VBWGT4       ij     dyn_nmm     1      -      -
+state  real   HBWGT1       ij     dyn_nmm     1      -      r
+state  real   HBWGT2       ij     dyn_nmm     1      -      r
+state  real   HBWGT3       ij     dyn_nmm     1      -      r
+state  real   HBWGT4       ij     dyn_nmm     1      -      r
+state  real   VBWGT1       ij     dyn_nmm     1      -      r
+state  real   VBWGT2       ij     dyn_nmm     1      -      r
+state  real   VBWGT3       ij     dyn_nmm     1      -      r
+state  real   VBWGT4       ij     dyn_nmm     1      -      r
+#end of zhang's addition
 
 #
 state  real   HLON        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
 state  real   HLAT        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
-state  real   VLON        ij     dyn_nmm     1      -      -
-state  real   VLAT        ij     dyn_nmm     1      -      -
+state  real   VLON        ij     dyn_nmm     1      -      irh
+state  real   VLAT        ij     dyn_nmm     1      -      irh
 
 #
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain"
 rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain"
+#zhang added for second domain
+rconfig   logical analysis               namelist,time_control    max_domains        .false.      irh   "days"     "analysis control for the nested domain"
 
-state  real   PSTD      k      dyn_nmm     1      Z      -
+#zhang newstate  real   PSTD      k      dyn_nmm     1      Z      -
+state  real   PSTD      k      dyn_nmm     1      Z      r
 state  integer KZMAX    -      dyn_nmm     -      -      r
-state  real   Z3D       ijk   dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
-state  real   T3D       ijk   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
-state  real   Q3D       ijk   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Z3D       ijk    dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
+state  real   T3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Q3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
 state  real HRES_FIS    ij     dyn_nmm     1      -      r  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
 
 #
@@ -214,11 +243,11 @@ state  real   aeta      k      dyn_nmm     1      -      i01r
 state  real   f4q2      k      dyn_nmm     1      -      ir
 state  real   etax      k      dyn_nmm     1      -      i01r
 state  real   dfl       k      dyn_nmm     1      Z      i01r    "DFL"     "Standard atmosphere geopotential"              "m2 s-2"
-state  real   deta1     k      dyn_nmm     1      -      i01r    "DETA1"   "Delta sigma in pressure domain"                ""
-state  real   aeta1     k      dyn_nmm     1      -      i01r    "AETA1"   "Midlayer sigma value in pressure domain"       ""
+state  real   deta1     k      dyn_nmm     1      -      i01rh    "DETA1"   "Delta sigma in pressure domain"                ""
+state  real   aeta1     k      dyn_nmm     1      -      i01rh    "AETA1"   "Midlayer sigma value in pressure domain"       ""
 state  real   eta1      k      dyn_nmm     1      Z      i01rh   "ETA1"    "Interface sigma value in pressure domain"      ""
-state  real   deta2     k      dyn_nmm     1      -      i01r    "DETA2"   "Delta sigma in sigma domain"                   ""
-state  real   aeta2     k      dyn_nmm     1      -      i01r    "AETA2"   "Midlayer sigma value in sigma domain"          ""
+state  real   deta2     k      dyn_nmm     1      -      i01rh    "DETA2"   "Delta sigma in sigma domain"                   ""
+state  real   aeta2     k      dyn_nmm     1      -      i01rh    "AETA2"   "Midlayer sigma value in sigma domain"          ""
 state  real   eta2      k      dyn_nmm     1      Z      i01rh   "ETA2"    "Interface sigma value in sigma domain"         ""
 state  real   em        q      dyn_nmm     1      -      ir
 state  real   emt       q      dyn_nmm     1      -      ir
@@ -235,8 +264,8 @@ state  real   f4d       -      dyn_nmm     -      -      ir
 state  real   f4q       -      dyn_nmm     -      -      ir
 state  real   ef4t      -      dyn_nmm     -      -      ir
 state  logical upstrm   -      dyn_nmm     -      -      -       "UPSTRM"  ".TRUE. => In upstream advec region of grid"    ""
-state  real   dlmd      -      dyn_nmm     -      -      ir      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
-state  real   dphd      -      dyn_nmm     -      -      ir      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
+state  real   dlmd      -      dyn_nmm     -      -      ihr      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
+state  real   dphd      -      dyn_nmm     -      -      ihr      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
 state  real   pdtop     -      dyn_nmm     -      -      i01rh   "PDTOP"   "Mass at I,J in pressure domain"                "Pa"
 state  real   pt        -      dyn_nmm     -      -      i01rh   "PT"      "Pressure at top of domain"                     "Pa"
 #
@@ -307,7 +336,7 @@ state  real   epsr      ij    dyn_nmm   1    -     irh      "EPSR"      "Radiati
 state  real   gffc      ij    dyn_nmm   1    -     ir
 state  real   glat      ij    dyn_nmm   1    -     i01rh    "GLAT"      "Geographic latitude, radians"                    ""
 state  real   glon      ij    dyn_nmm   1    -     i01rh    "GLON"      "Geographic longitude, radians"                   ""
-state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)     "TSK"       "Skin temperature"                                "K"
+state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)     "TSK"       "Skin temperature"                                "K"
 state  real   hdac      ij    dyn_nmm   1    -     ir       "HDAC"      "Composite diffusion coeff for mass points"       "s m-1"
 state  real   hdacv     ij    dyn_nmm   1    -     ir       "HDACV"     "Composite diffusion coeff for velocity points"   "s m-1"
 state  real   mxsnal    ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "MXSNAL"    "Maximum deep snow albedo"                        ""
@@ -419,6 +448,8 @@ state  real   train     ijk   dyn_nmm     1    -    -     "TRAIN"     "Accum str
 state integer ncfrcv    ij    dyn_nmm     1    -    irh   "NCFRCV"    "# times convec cloud >0 between rad calls"  ""
 state integer ncfrst    ij    dyn_nmm     1    -    irh   "NCFRST"    "# times stratiform cloud >0 between rad calls"  ""
 state integer nphs0     -     dyn_nmm     -    -    rh
+#zhang's doing
+state integer ncnvc0     -     dyn_nmm     -    -    rh
 state integer nprec     -     dyn_nmm     -    -    irh   "NPREC"     "# timesteps between resetting precip bucket"  ""
 state integer nclod     -     dyn_nmm     -    -    irh   "NCLOD"     "# timesteps between resetting cloud frac accum"    ""
 state integer nheat     -     dyn_nmm     -    -    irh   "NHEAT"     "# timesteps between resetting latent heat accum"   ""
@@ -446,7 +477,10 @@ state integer iheg      q    dyn_nmm     1    -    -
 state integer ihwg      q    dyn_nmm     1    -    -
 state integer iveg      q    dyn_nmm     1    -    -
 state integer ivwg      q    dyn_nmm     1    -    -
+dimspec    r      -     constant=2000             c  # a little crude right now
 state integer iradg     r    dyn_nmm     1    -    -
+dimspec    z      -     constant=(-3:3)            c
+dimspec    n      -     constant=(0:6)             c
 state integer n_iup_h   j    dyn_nmm     1    -    -      "N_IUP_H"    "# mass points needed in each row for upstream advection"  ""
 state integer n_iup_v   j    dyn_nmm     1    -    -      "N_IUP_V"    "# velocity points needed in each row for upstream advection"  ""
 state integer n_iup_adh j    dyn_nmm     1    -    -      "N_IUP_ADH"  "# mass points in each row of upstream advection"  ""
@@ -667,11 +701,11 @@ state    real   SNOW             ij     misc        1         -     i01rh       
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
 state    real   SST              ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
-state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
+state    real  ZNT              ij      misc        1         -     irh        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
-state    real   tke_myj         ijk     misc        1         -     r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
+state    real   tke_myj         ijk     misc        1         -     rh        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
 state    real   EXCH_M         ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
@@ -750,7 +784,9 @@ state    real     lu_state        p      misc       -          -     -
 state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
 
 # State for derived time quantities.  
-state   integer itimestep      -        -          -         -     h         "itimestep"             ""         ""      
+#zhang'addition added a 'r' for restart
+state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
+#zhang end of addition
 state   real    xtime          -        -          -         -     h         "xtime"                 "minutes since simulation start"         ""      
 state   real    julian         -        -          -         -     -         "julian"                "day of year, 0.0 at 0Z on 1 Jan."         "days"
 
@@ -800,20 +836,26 @@ rconfig   integer fine_input_stream       namelist,time_control         max_doma
 
 include registry.io_boilerplate
 
-rconfig   integer JULYR                   namelist,time_control		max_domains    0       h    "JULYR"                 ""      ""
-rconfig   integer JULDAY                  namelist,time_control		max_domains    1       h    "JULDAY"                ""      ""
-rconfig   real    GMT                     namelist,time_control		max_domains    0.      h    "GMT"           ""      ""
+#zhang's doing added a 'r' for restart
+rconfig   integer JULYR                   namelist,time_control		max_domains    0       hr    "JULYR"                 ""      ""
+rconfig   integer JULDAY                  namelist,time_control		max_domains    1       hr    "JULDAY"                ""      ""
+rconfig   real    GMT                     namelist,time_control		max_domains    0.      hr    "GMT"           ""      ""
+#end of zhang's doing
 rconfig   character  input_inname      namelist,time_control		1  "wrfinput_d<domain>"          -     "name of input   infile"   ""      ""
 rconfig   character  input_outname     namelist,time_control		1  "wrfinput_d<domain>"          -     "name of input   outfile"  ""      ""
 rconfig   character  bdy_inname        namelist,time_control		1  "wrfbdy_d<domain>"            -     "name of boundary infile"  ""      ""
 rconfig   character  bdy_outname       namelist,time_control		1  "wrfbdy_d<domain>"            -     "name of boundary outfile" ""      ""
 rconfig   character  rst_inname        namelist,time_control		1  "wrfrst_d<domain>_<date>"     -     "name of restrt infile"    ""      ""
 rconfig   character  rst_outname       namelist,time_control		1  "wrfrst_d<domain>_<date>"     -     "name of restrt outfile"   ""      ""
+#zhang
+rconfig   character  anl_outname         namelist,time_control    max_domains  "wrfanl_d<domain>_<date>"     -     "name of analysis outfile"   ""      ""
 rconfig   logical write_input             namelist,time_control		1             .false. -    "write input data for 3dvar etc."              ""      ""
 rconfig   logical write_restart_at_0h     namelist,time_control		1             .false. h    "write_restart_at_0h"              ""      ""
 rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
+#zhang's 'r' is already here
 rconfig   real    tstart                  namelist,time_control     max_domains       0.       irh   "tstart"  "forecast hour at the start of the NMM integration"
+#zhang end of addition
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 

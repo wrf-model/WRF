@@ -77,6 +77,9 @@
 !
       INTEGER :: I,ICLTEND,IDF,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST &
      &          ,NTSD_current,L
+!zhang's doing
+      INTEGER,SAVE :: NTSD_restart1,NTSD_restart2
+!end of zhang's doing
       integer :: ierr
       INTEGER,SAVE :: NTSD_restart
 !     INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
@@ -188,16 +191,28 @@
 !
       IF(NTSD_current==0)THEN
         IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
+!zhang's doing
+          if( grid%id .eq. 1 ) NTSD_restart1=NSTART/3
+          if( grid%id .eq. 2 ) NTSD_restart2=NSTART
+!zhang's doing ends
           IHRST=NSTART_HOUR
           NTSD_restart=NTSD
         ELSE
           IHRST=GRID%GMT
           NSTART_HOUR=IHRST
-          NTSD_restart=0
+!zhang's doing
+!zhang's doing          NTSD_restart=0
+          NTSD_restart1=0
+          NTSD_restart2=0
+!zhang's doing ends
         ENDIF
       ENDIF
 !
-      NTSD=NTSD_restart+NTSD_current
+!zhang's doing
+!zhang's doing      NTSD=NTSD_restart+NTSD_current
+      if( grid%id .eq. 1 ) NTSD=NTSD_restart1+NTSD_current
+      if( grid%id .eq. 2 ) NTSD=NTSD_restart2+NTSD_current
+!end of zhang's doing
       LAST_TIME=domain_last_time_step(GRID)
 !
 !-----------------------------------------------------------------------
@@ -461,7 +476,8 @@
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
 !
-      IF(NTSD==0)THEN
+!zhang's doing      IF(NTSD==0)THEN
+      IF(NTSD_current==0)THEN
         FIRST=.TRUE.
 !       call hpm_init()
         btimx=timef()
@@ -497,7 +513,14 @@
 !       exch_tim_max=exch_tim_max+et_max
 !-----------------------------------------------------------------------
 !
-        GO TO 2003
+!zhang's doing
+!zhang        GO TO 2003
+       if(GRID%RESTART) then
+       FIRST=.FALSE.
+       else
+       GO TO 2003
+       endif
+!end of zhang's doing
       ENDIF
 !
 !-----------------------------------------------------------------------
@@ -507,7 +530,9 @@
 !-----------------------------------------------------------------------
 ! Coupling insertion:->
 !
-      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+!zhang's doing      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+      call ATM_TSTEP_INIT(NTSD_current,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+!end of zhang's doing
       ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
                        kds,kde,kts,kte,kms,kme,                  &
 !??  What are KDS etc. for??
@@ -1361,6 +1386,7 @@
 #endif
      &             ,AVCNVC,ACUTIM,IHE,IHW                              &
      &             ,GRID,CONFIG_FLAGS                                  &
+     &             ,NRND1                                              & ! NRND1 zhang's doing
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &
@@ -1832,6 +1858,7 @@
                       ,PINT,T,Q,U,V                                   &
                       ,FIS,PD,SM,PDTOP,PT                             &
                       ,DETA1,DETA2                                    &
+                      ,GRID%RESTART,NTIME0                            & ! zhang's doing
                       ,GRID%MOVED,MVNEST,NTSD,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
                       ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
                       ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry

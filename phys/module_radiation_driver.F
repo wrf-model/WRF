@@ -655,6 +655,7 @@ CONTAINS
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
+
      ENDIF
 
         CASE (RRTMG_LWSCHEME)
@@ -663,12 +664,13 @@ CONTAINS
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
-   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
+        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
+
      ENDIF
  
         CASE DEFAULT
@@ -819,6 +821,7 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+                  F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
@@ -881,7 +884,7 @@ CONTAINS
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
-   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
+        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
                    ids,ide, jds,jde, kds,kde,              &
@@ -1044,6 +1047,7 @@ CONTAINS
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
                      dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
+                     F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
@@ -1562,11 +1566,18 @@ CONTAINS
                                                                  QC, &
                                                                  QS, &
                                                               t_phy, &
-                                                              p_phy, &
+                                                              p_phy
+!                                                              p_phy, &
+!                                                          F_ICE_PHY, &
+!                                                         F_RAIN_PHY
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
+         OPTIONAL,                                                   &
+         INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
                                                          F_RAIN_PHY
 
-   LOGICAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
+   LOGICAL,OPTIONAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
 
 !  REAL thresh
    INTEGER:: i,j,k
@@ -1633,38 +1644,59 @@ CONTAINS
       QVSW = EP_2 * esw / ( p_phy(i,k,j) - esw )
       QVSI = EP_2 * esi / ( p_phy(i,k,j) - esi )
 
-      IF ( F_QI .and. F_QC .and. F_QS) THEN
-        QCLD=QI(i,k,j)+QC(i,k,j)+QS(I,k,j)
-        IF (QCLD .LT. QCLDMIN) THEN
-          weight = 0.
-        ELSE
-          weight = (QI(i,k,j)+QS(I,k,j)) / QCLD
-        ENDIF
-      ELSE IF ( F_QC ) THEN
+      IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) ) THEN
+
+! mji - For MP options 2, 4, 6, 7, 8, etc. (qc = liquid, qi = ice, qs = snow)
+         IF ( F_QI .and. F_QC .and. F_QS) THEN
+            QCLD = QI(i,k,j)+QC(i,k,j)+QS(i,k,j)
+            IF (QCLD .LT. QCLDMIN) THEN
+               weight = 0.
+            ELSE
+               weight = (QI(i,k,j)+QS(i,k,j)) / QCLD
+            ENDIF
+         ENDIF
+
+! mji - For MP options 1 and 3, (qc only)
+!  For MP=1, qc = liquid, for MP=3, qc = liquid or ice depending on temperature
+         IF ( F_QC .and. .not. F_QI .and. .not. F_QS ) THEN
+            QCLD = QC(i,k,j)
+            IF (QCLD .LT. QCLDMIN) THEN
+               weight = 0.
+            ELSE
+               if (t_phy(i,k,j) .gt. 273.15) weight = 0.
+               if (t_phy(i,k,j) .le. 273.15) weight = 1.
+            ENDIF
+         ENDIF
+
+! mji - For MP option 5; (qc = liquid, qs = ice)
+         IF ( F_QC .and. .not. F_QI .and. F_QS .and. PRESENT(F_ICE_PHY) ) THEN
 
 ! Mixing ratios of cloud water & total ice (cloud ice + snow).
 ! Mixing ratios of rain are not considered in this scheme.
 ! F_ICE is fraction of ice
 ! F_RAIN is fraction of rain
 
-      QIMID=QC(i,k,j)*F_ICE_PHY(i,k,j)
-      QWMID=(QC(i,k,j)-QIMID)*(1.-F_RAIN_PHY(i,k,j))
-
-
+           QIMID = QS(i,k,j)
+           QWMID = QC(i,k,j)
+! old method
+!           QIMID = QC(i,k,j)*F_ICE_PHY(i,k,j)
+!           QWMID = (QC(i,k,j)-QIMID)*(1.-F_RAIN_PHY(i,k,j))
 !
 !--- Total "cloud" mixing ratio, QCLD.  Rain is not part of cloud,
 !    only cloud water + cloud ice + snow
 !
-      QCLD=QWMID+QIMID
-        IF (QCLD .LT. QCLDMIN) THEN
-          weight = 0.
-        ELSE
-          weight = F_ICE_PHY(i,k,j)
-        ENDIF
+           QCLD=QWMID+QIMID
+           IF (QCLD .LT. QCLDMIN) THEN
+              weight = 0.
+           ELSE
+              weight = F_ICE_PHY(i,k,j)
+           ENDIF
+         ENDIF
 
       ELSE
-        CLDFRA(i,k,j)=0.
-      ENDIF !  IF ( F_QI .and. F_QC )
+         CLDFRA(i,k,j)=0.
+
+      ENDIF !  IF ( F_QI .and. F_QC .and. F_QS)
 
 
       QVS_WEIGHT = (1-weight)*QVSW + weight*QVSI

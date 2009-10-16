@@ -996,6 +996,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
+              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
               ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &

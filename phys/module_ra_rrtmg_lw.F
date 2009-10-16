@@ -1620,10 +1620,10 @@
 
       end module rrlw_wvn
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/mcica_random_numbers.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 16:04:15 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
 
 ! Fortran-95 implementation of the Mersenne Twister 19937, following 
@@ -2035,10 +2035,10 @@ contains
 
   end module mcica_random_numbers
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/mcica_subcol_gen_lw.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.5 $
-!     created:   $Date: 2008/08/29 16:53:45 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module mcica_subcol_gen_lw
 
@@ -2599,10 +2599,10 @@ contains
 
       end module mcica_subcol_gen_lw
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_cldprmc.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.7 $
-!     created:   $Date: 2008/09/17 18:45:28 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_lw_cldprmc
 
@@ -2742,7 +2742,7 @@ contains
 !                     Linear interpolation is used to get the absorption 
 !                     coefficients for the input effective radius.
 
-      hvrclc = '$Revision: 1.7 $'
+      hvrclc = '$Revision: 1.3 $'
 
       ncbands = 1
 
@@ -2853,10 +2853,10 @@ contains
 
       end module rrtmg_lw_cldprmc
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_rtrnmc.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.5 $
-!     created:   $Date: 2008/09/17 18:45:30 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_lw_rtrnmc
 
@@ -3075,7 +3075,7 @@ contains
 !    htrc                         ! clear sky longwave heating rate (k/day)
 
 
-      hvrrtc = '$Revision: 1.5 $'
+      hvrrtc = '$Revision: 1.3 $'
 
       do ibnd = 1,nbndlw
          if (ibnd.eq.1 .or. ibnd.eq.4 .or. ibnd.ge.10) then
@@ -3349,10 +3349,10 @@ contains
 
       end module rrtmg_lw_rtrnmc
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_setcoef.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 16:04:16 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_lw_setcoef
 
@@ -4617,10 +4617,10 @@ contains
 
       end module rrtmg_lw_setcoef
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_taumol.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.4 $
-!     created:   $Date: 2008/08/29 16:04:16 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_lw_taumol
 
@@ -4872,7 +4872,7 @@ contains
       real(kind=rb), intent(out) :: taug(:,:)         ! gaseous optical depth 
                                                       !    Dimensions: (nlayers,ngptlw)
 
-      hvrtau = '$Revision: 1.4 $'
+      hvrtau = '$Revision: 1.3 $'
 
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
@@ -7903,10 +7903,10 @@ contains
 
       end module rrtmg_lw_taumol
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_init.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 16:04:15 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_lw_init
 
@@ -10562,10 +10562,10 @@ contains
 
       end module rrtmg_lw_init
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_rad.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.9 $
-!     created:   $Date: 2008/09/17 18:45:29 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
        module rrtmg_lw_rad
 
@@ -11461,6 +11461,7 @@ CONTAINS
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
+                       f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
@@ -11508,7 +11509,6 @@ CONTAINS
          INTENT(IN   )  ::                                 XLAND, &
                                                             XICE, &
                                                             SNOW
-
 !
 ! Optional
 !
@@ -11522,6 +11522,12 @@ CONTAINS
                                                             QI3D, &
                                                             QS3D, &
                                                             QG3D
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+         OPTIONAL                                               , &
+         INTENT(IN   ) ::                                         &
+                                                       F_ICE_PHY, &
+                                                      F_RAIN_PHY
 
    LOGICAL, OPTIONAL, INTENT(IN)   ::                             &
                                    F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
@@ -11580,11 +11586,11 @@ CONTAINS
                                                         cfc22vmr, &
                                                          ccl4vmr
     real, dimension( kts:kte+1 )  ::                       o3mmr
-! For old lw cloud property specification
-!    real, dimension( kts:kte )  ::                          clwp, &
-!                                                            ciwp, &
-!                                                            plwp, &
-!                                                            piwp
+! For old cloud property specification for rrtm_lw
+    real, dimension( kts:kte )  ::                          clwp, &
+                                                            ciwp, &
+                                                            plwp, &
+                                                            piwp
 ! Surface emissivity (for 16 LW spectral bands)
     real, dimension( 1, nbndlw )  ::                        emis
 ! Dimension with extra layer from model top to TOA, 
@@ -11645,13 +11651,13 @@ CONTAINS
     integer :: iplon, irng, permuteseed
     integer :: nb
 
-! For old lw cloud property specification
+! For old cloud property specification for rrtm_lw
 ! Cloud and precipitation absorption coefficients
-!    real :: abcw,abice,abrn,absn
-!    data abcw /0.144/
-!    data abice /0.0735/
-!    data abrn /0.330e-3/
-!    data absn /2.34e-3/
+    real :: abcw,abice,abrn,absn
+    data abcw /0.144/
+    data abice /0.0735/
+    data abrn /0.330e-3/
+    data absn /2.34e-3/
 
 ! Molecular weights and ratios for converting mmr to vmr units
 !    real :: amd       ! Effective molecular weight of dry air (g/mol)  
@@ -11785,6 +11791,7 @@ CONTAINS
               predicate = .FALSE.
             ENDIF
 
+! For MP option 3
             IF (.NOT. predicate .and. .not. warm_rain) THEN
                DO K=kts,kte
                   IF (T1D(K) .lt. 273.15) THEN
@@ -11797,11 +11804,13 @@ CONTAINS
             ENDIF
 
             IF (PRESENT(F_QI) .AND. PRESENT(QI3D)) THEN
-               DO K=kts,kte
-                  QI1D(K)=QI3D(I,K,J)
-                  QI1D(K)=max(0.,QI1D(K))
-               ENDDO
-           ENDIF
+               IF (F_QI) THEN
+                  DO K=kts,kte
+                     QI1D(K)=QI3D(I,K,J)
+                     QI1D(K)=max(0.,QI1D(K))
+                  ENDDO
+               ENDIF
+            ENDIF
 
             IF (PRESENT(F_QS) .AND. PRESENT(QS3D)) THEN
                IF (F_QS) THEN
@@ -11817,6 +11826,18 @@ CONTAINS
                   DO K=kts,kte
                      QG1D(K)=QG3D(I,K,J)
                      QG1D(K)=max(0.,QG1D(K))
+                  ENDDO
+               ENDIF
+            ENDIF
+
+! mji - For MP option 5
+            IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) .and. PRESENT(F_ICE_PHY) ) THEN
+               IF ( F_QC .and. .not. F_QI .and. F_QS ) THEN
+                  DO K=kts,kte
+                     qi1d(k) = qs3d(i,k,j)
+                     qc1d(k) = qc3d(i,k,j)
+                     qi1d(k) = max(0.,qi1d(k))
+                     qc1d(k) = max(0.,qc1d(k))
                   ENDDO
                ENDIF
             ENDIF
@@ -11837,12 +11858,12 @@ CONTAINS
          nlay = (kte - kts + 1) + 1
 
 ! Select cloud liquid and ice optics parameterization options
-! For passing in cloud optical properties directly
+! For passing in cloud optical properties directly:
 !         icld = 2
 !         inflglw = 0
 !         iceflglw = 0
 !         liqflglw = 0
-! For passing in cloud physical properties; cloud optics parameterized in RRTMG
+! For passing in cloud physical properties; cloud optics parameterized in RRTMG:
          icld = 2
          inflglw = 2
          iceflglw = 3
@@ -11903,81 +11924,99 @@ CONTAINS
             emis(ncol, nb) = emiss(i,j)
          enddo
 
-!! Cloud and precipitation paths in g/m2 (old approach used with RRTM_LW)
-!! qi=0 if no ice phase
-!! qs=0 if no ice phase
-!         do k = kts,kte
-!            ro = p1d(k) / (r * t1d(k))*100. 
-!            dz = dz1d(k)
-!            clwp(k) = ro*qc1d(k)*dz*1000.         
-!            ciwp(k) = ro*qi1d(k)*dz*1000.         
-!            plwp(k) = (ro*qr1d(k))**0.75*dz*1000. 
-!            piwp(k) = (ro*qs1d(k))**0.75*dz*1000. 
-!         enddo
+! Define cloud optical properties for radiation (inflglw = 0)
+! This is approach used with older RRTM_LW;
+! Cloud and precipitation paths in g/m2 
+! qi=0 if no ice phase
+! qs=0 if no ice phase
+         if (inflglw .eq. 0) then
+            do k = kts,kte
+               ro = p1d(k) / (r * t1d(k))*100. 
+               dz = dz1d(k)
+               clwp(k) = ro*qc1d(k)*dz*1000.         
+               ciwp(k) = ro*qi1d(k)*dz*1000.         
+               plwp(k) = (ro*qr1d(k))**0.75*dz*1000. 
+               piwp(k) = (ro*qs1d(k))**0.75*dz*1000. 
+            enddo
 
-!! Cloud fraction and cloud optical depth; old approach used with RRTM_LW
-!         do k = kts, kte
-!            cldfrac(ncol,k) = cldfra1d(k)
-!            do nb = 1, nbndlw
-!               taucld(nb,ncol,k) = abcw*clwp(k) + abice*ciwp(k) & 
-!                            +abrn*plwp(k) + absn*piwp(k) 
-!               if (taucld(nb,ncol,k) .gt. 0.01) cldfrac(ncol,k) = 1. 
-!            enddo
-!         enddo
+! Cloud fraction and cloud optical depth; old approach used with RRTM_LW
+            do k = kts, kte
+               cldfrac(ncol,k) = cldfra1d(k)
+               do nb = 1, nbndlw
+                  taucld(nb,ncol,k) = abcw*clwp(k) + abice*ciwp(k) & 
+                            +abrn*plwp(k) + absn*piwp(k) 
+                  if (taucld(nb,ncol,k) .gt. 0.01) cldfrac(ncol,k) = 1. 
+               enddo
+            enddo
 
+! Zero out cloud physical property arrays; not used when passing optical properties
+! into radiation
+            do k = kts, kte
+               clwpth(ncol,k) = 0.0
+               ciwpth(ncol,k) = 0.0
+               rel(ncol,k) = 10.0
+               rei(ncol,k) = 10.0
+            enddo
+         endif
+
+! Define cloud physical properties for radiation (inflglw = 1 or 2)
 ! Cloud fraction
-         do k = kts, kte
-            cldfrac(ncol,k) = cldfra1d(k)
-         enddo
+! Set cloud arrays if passing cloud physical properties into radiation
+         if (inflglw .gt. 0) then 
+            do k = kts, kte
+               cldfrac(ncol,k) = cldfra1d(k)
+            enddo
 
 ! Compute cloud water/ice paths and particle sizes for input to radiation (CAM method)
-      pcols = ncol
-      pver = kte - kts + 1
-      gravmks = g
-      landfrac(ncol) = 2.-XLAND(I,J)
-      landm(ncol) = landfrac(ncol)
-      snowh(ncol) = 0.001*SNOW(I,J)
-      icefrac(ncol) = XICE(I,J)
+            pcols = ncol
+            pver = kte - kts + 1
+            gravmks = g
+            landfrac(ncol) = 2.-XLAND(I,J)
+            landm(ncol) = landfrac(ncol)
+            snowh(ncol) = 0.001*SNOW(I,J)
+            icefrac(ncol) = XICE(I,J)
 
 ! From module_ra_cam: Convert liquid and ice mixing ratios to water paths;
 ! pdel is in mb here; convert back to Pa (*100.)
 ! Water paths are in units of g/m2
-    do k = kts, kte
-       gicewp = qi1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box ice water path.
-       gliqwp = qc1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box liquid water path.
-       cicewp(ncol,k) = gicewp / max(0.01,cldfrac(ncol,k))               ! In-cloud ice water path.
-       cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
-    end do
+            do k = kts, kte
+               gicewp = qi1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box ice water path.
+               gliqwp = qc1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box liquid water path.
+               cicewp(ncol,k) = gicewp / max(0.01,cldfrac(ncol,k))               ! In-cloud ice water path.
+               cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
+            end do
 
 ! following Kiehl
-    call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+            call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
 
 ! following Kristjansson and Mitchell
-    call reicalc(ncol, pcols, pver, tlay, reice)
+            call reicalc(ncol, pcols, pver, tlay, reice)
 
 ! Limit upper bound of reice for Fu ice parameterization and convert
 ! from effective radius to generalized effective size (*1.0315; Fu, 1996)
-    if (iceflglw .eq. 3) then
-       do k = kts, kte
-          reice(ncol,k) = reice(ncol,k) * 1.0315
-          reice(ncol,k) = min(140.0,reice(ncol,k))
-       end do
-    endif
+            if (iceflglw .eq. 3) then
+               do k = kts, kte
+                  reice(ncol,k) = reice(ncol,k) * 1.0315
+                  reice(ncol,k) = min(140.0,reice(ncol,k))
+               end do
+            endif
 
 ! Set cloud physical property arrays
-         do k = kts, kte
-            clwpth(ncol,k) = cliqwp(ncol,k)
-            ciwpth(ncol,k) = cicewp(ncol,k)
-            rel(ncol,k) = reliq(ncol,k)
-            rei(ncol,k) = reice(ncol,k)
-         enddo
-
-! Zero out cloud optical properties here, calculated in radiation 
-         do k = kts, kte
-            do nb = 1, nbndlw
-               taucld(nb,ncol,k) = 0.0
+            do k = kts, kte
+               clwpth(ncol,k) = cliqwp(ncol,k)
+               ciwpth(ncol,k) = cicewp(ncol,k)
+               rel(ncol,k) = reliq(ncol,k)
+               rei(ncol,k) = reice(ncol,k)
             enddo
-         enddo
+
+! Zero out cloud optical properties here; not used when passing physical properties
+! to radiation and taucld is calculated in radiation 
+            do k = kts, kte
+               do nb = 1, nbndlw
+                  taucld(nb,ncol,k) = 0.0
+               enddo
+            enddo
+         endif
 
 ! No clouds are allowed in the extra layer from model top to TOA
          clwpth(ncol,kte+1) = 0.

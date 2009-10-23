@@ -130,6 +130,7 @@ state    real   ru_tend        ikj     dyn_em      1         X      -        "ru
 i1       real   ru_tendf       ikj     dyn_em      1         X                                          
 state    real   u_save         ikj     dyn_em      1         X      -        "u_save"
 state    real   z_force        |       dyn_em      1         -      i3rh     "Z_FORCE" "height of forcing input" "m"
+state    real   z_force_tend   |       dyn_em      1         -      i3rh     "Z_FORCE_TEND" "tendency height of forcing input" "m"
 state    real   u_g            |       dyn_em      1         -      i3rh     "U_G" "x-direction geostrophic wind" "m s-1"
 state    real   u_g_tend       |       dyn_em      1         -      i3rh     "U_G_TEND" "tendency x-direction geostrophic wind" "m s-1"
 #                                               
@@ -199,6 +200,11 @@ state    real   v_upstream_x        |     dyn_em      1      -      i3rh     "V_
 state    real   v_upstream_x_tend   |     dyn_em      1      -      i3rh     "V_UPSTREAM_X_TEND" "tendency upstream v x-advection" "m s-3"
 state    real   v_upstream_y        |     dyn_em      1      -      i3rh     "V_UPSTREAM_Y" "upstream v y-advection" "m s-2"
 state    real   v_upstream_y_tend   |     dyn_em      1      -      i3rh     "V_UPSTREAM_Y_TEND" "tendency upstream v y-advection" "m s-3"
+
+state    real   tau_x               |     dyn_em      1      -      i3rh     "TAU_X" "X-direction advective timescale" "s"
+state    real   tau_x_tend          |     dyn_em      1      -      i3rh     "TAU_X_TEND" "tendency X-direction advective timescale" ""
+state    real   tau_y               |     dyn_em      1      -      i3rh     "TAU_Y" "Y-direction advective timescale" "s"
+state    real   tau_y_tend          |     dyn_em      1      -      i3rh     "TAU_Y_TEND" "tendency Y-direction advective timescale" ""
 
 # Mass
 state    real   mu              ijb     dyn_em      2         -     \

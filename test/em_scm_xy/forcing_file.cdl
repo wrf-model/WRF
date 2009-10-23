@@ -12,6 +12,13 @@ variables:
 		Z_FORCE:units = "" ;
 		Z_FORCE:stagger = "" ;
 		Z_FORCE:_FillValue = -999.f ;
+	float Z_FORCE_TEND(Time, force_layers) ;
+		Z_FORCE_TEND:FieldType = 104 ;
+		Z_FORCE_TEND:MemoryOrder = "Z  " ;
+		Z_FORCE_TEND:description = "tendency height of forcing time series" ;
+		Z_FORCE_TEND:units = "" ;
+		Z_FORCE_TEND:stagger = "" ;
+		Z_FORCE_TEND:_FillValue = -999.f ;
 	float U_G(Time, force_layers) ;
 		U_G:FieldType = 104 ;
 		U_G:MemoryOrder = "Z  " ;
@@ -147,6 +154,30 @@ variables:
 		V_UPSTREAM_Y_TEND:description = "tendency upstream V y-advection" ;
 		V_UPSTREAM_Y_TEND:units = "m s-3" ;
 		V_UPSTREAM_Y_TEND:stagger = "" ;
+	float TAU_X(Time, force_layers) ;
+		TAU_X:FieldType = 104 ;
+		TAU_X:MemoryOrder = "Z  " ;
+		TAU_X:description = "X-direction advective timescale" ;
+		TAU_X:units = "s" ;
+		TAU_X:stagger = "" ;
+	float TAU_X_TEND(Time, force_layers) ;
+		TAU_X_TEND:FieldType = 104 ;
+		TAU_X_TEND:MemoryOrder = "Z  " ;
+		TAU_X_TEND:description = "tendency X-direction advective timescale" ;
+		TAU_X_TEND:units = "" ;
+		TAU_X_TEND:stagger = "" ;
+	float TAU_Y(Time, force_layers) ;
+		TAU_Y:FieldType = 104 ;
+		TAU_Y:MemoryOrder = "Z  " ;
+		TAU_Y:description = "Y-direction advective timescale" ;
+		TAU_Y:units = "s" ;
+		TAU_Y:stagger = "" ;
+	float TAU_Y_TEND(Time, force_layers) ;
+		TAU_Y_TEND:FieldType = 104 ;
+		TAU_Y_TEND:MemoryOrder = "Z  " ;
+		TAU_Y_TEND:description = "tendency Y-direction advective timescale" ;
+		TAU_Y_TEND:units = "" ;
+		TAU_Y_TEND:stagger = "" ;
 
 // global attributes:
 		:TITLE = "AUXILIARY FORCING FOR SCM" ;

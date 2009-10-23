@@ -90,6 +90,7 @@ do itime = 0, nt-1
 end do
 
 do itime = 0, nt-2
+  oFl->Z_FORCE_TEND(itime,:)=(/0.0/)
   oFl->U_G_TEND(itime,:)=(/0.0/)
   oFl->V_G_TEND(itime,:)=(/0.0/)
   oFl->W_SUBS_TEND(itime,:)=(/0.0/)
@@ -101,6 +102,10 @@ do itime = 0, nt-2
   oFl->U_UPSTREAM_Y_TEND(itime,:)=(/0.0/)
   oFl->V_UPSTREAM_X_TEND(itime,:)=(/0.0/)
   oFl->V_UPSTREAM_Y_TEND(itime,:)=(/0.0/)
+  oFl->TAU_X(itime,:)=(/0.0/)
+  oFl->TAU_X_TEND(itime,:)=(/0.0/)
+  oFl->TAU_Y(itime,:)=(/0.0/)
+  oFl->TAU_Y_TEND(itime,:)=(/0.0/)
 end do
 
 end

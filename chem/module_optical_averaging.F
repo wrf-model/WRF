@@ -102,7 +102,7 @@
 !
       subroutine optical_averaging(id,curr_secs,dtstep,config_flags,    &
                  nbin_o,haveaer,option_method,option_mie,chem,dz8w,alt, &
-                 h2oai,h2oaj,                                           &
+                 relhum,h2oai,h2oaj,                                    &
                  tauaer1,tauaer2,tauaer3,tauaer4,                       &
                  gaer1,gaer2,gaer3,gaer4,                               &
                  waer1,waer2,waer3,waer4,                               &
@@ -131,7 +131,7 @@
          INTENT(IN ) ::  chem
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
-         INTENT(IN ) ::  dz8w, alt, h2oai, h2oaj
+         INTENT(IN ) ::  relhum,dz8w, alt, h2oai, h2oaj
 !
 ! arrays that hold the aerosol optical properties
 !
@@ -191,6 +191,13 @@
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
      call optical_prep_sectional(nbin_o, chem, alt,                    &
           refindx, radius_wet, number_bin,                             &
+          radius_core, refindx_core, refindx_shell,                    &
+          ids,ide, jds,jde, kds,kde,                                   &
+          ims,ime, jms,jme, kms,kme,                                   &
+          its,ite, jts,jte, kts,kte                                    )
+   CASE (GOCART_SIMPLE)
+     call optical_prep_gocart(nbin_o, chem, alt,relhum,                &
+                        refindx, radius_wet, number_bin,               &
           radius_core, refindx_core, refindx_shell,                    &
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
@@ -1092,19 +1099,19 @@
         ss1=alog(sginin)
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_ai/(num_ai*ss2))**0.3333333
-        dgnum_um=max(dgmin,ss3)*1.0e+04
+        dgnum_um=amax1(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sginin,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_secti,xmas_secti)
         ss1=alog(sginia)
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_aj/(num_aj*ss2))**0.3333333
-        dgnum_um=max(dgmin,ss3)*1.0e+04
+        dgnum_um=amax1(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sginia,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectj,xmas_sectj)
         ss1=alog(sginic)
         ss2=exp(ss1*ss1*36.0/8.0) 
         ss3=(sixpi*vol_ac/(num_ac*ss2))**0.3333333
-        dgnum_um=max(dgmin,ss3)*1.0e+04
+        dgnum_um=amax1(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sginic,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectc,xmas_sectc)
 
@@ -1210,6 +1217,571 @@
 
       end subroutine optical_prep_modal
 !
+!----------------------------------------------------------------------------------
+! 9/21/09, SAM a modification of optical_prep_modal subroutine for GOCART aerosol model -
+! SAM 7/18/09 - Modal parameters for OC1 (hydrophobic) OC2 (hydrophylic), BC1,BC2,
+! and sulfate - just use dginia (meters) and sginia from module_data_sorgam.
+! Not using accumulation mode from d'Almedia 1991 Table 7.1 and 7.2 global model
+!
+! This subroutine computes volume-averaged refractive index and wet radius needed 
+! by the mie calculations. Aerosol number is also passed into the mie calculations
+! in terms of other units.
+!
+      subroutine optical_prep_gocart(nbin_o, chem, alt,relhum,   &
+                      refindx, radius_wet, number_bin,           &
+        radius_core, refindx_core, refindx_shell,                &
+        ids,ide, jds,jde, kds,kde,                               &
+        ims,ime, jms,jme, kms,kme,                               &
+        its,ite, jts,jte, kts,kte                                )
+!
+   USE module_configure
+   USE module_model_constants
+   USE module_data_sorgam
+   USE module_data_gocart_seas
+   USE module_data_mosaic_asect, only: hygro_msa_aer
+! real*8, DIMENSION (4), PARAMETER :: ra(4)=(/1.d-1,5.d-1,1.5d0,5.0d0/)
+! real*8, DIMENSION (4), PARAMETER :: rb(4)=(/5.d-1,1.5d0,5.d0,1.d1/)
+! real*8, DIMENSION (4), PARAMETER :: den_seas(4)=(/2.2d3,2.2d3,2.2d3,2.2d3/)
+! real*8, DIMENSION (4), PARAMETER :: reff_seas(4)=(/0.30D-6,1.00D-6,3.25D-6,7.50D-6/)
+   USE module_data_gocart_dust, only:  ndust, reff_dust, den_dust
+!  real*8, DIMENSION (5), PARAMETER :: den_dust(5)=(/2500.,2650.,2650.,2650.,2650./)
+!  real*8, DIMENSION (5), PARAMETER :: reff_dust(5)=(/0.73D-6,1.4D-6,2.4D-6,4.5D-6,8.0D-6/)
+
+!
+   INTEGER, INTENT(IN   ) :: its,ite, jts,jte, kts,kte, nbin_o
+   INTEGER, INTENT(IN   ) :: ims,ime, jms,jme, kms,kme
+   INTEGER, INTENT(IN   ) :: ids,ide, jds,jde, kds,kde
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),             &
+         INTENT(IN ) ::  chem
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+         INTENT(IN ) ::  alt,relhum
+   REAL, DIMENSION( its:ite, kts:kte, jts:jte, 1:nbin_o),              &
+         INTENT(OUT ) ::                                               &
+           radius_wet, number_bin, radius_core
+   COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte, 1:nbin_o),           &
+         INTENT(OUT ) ::                                               &
+           refindx, refindx_core, refindx_shell
+!
+! local variables
+!
+   integer i, j, k, l, m, n, isize, itype, iphase
+   complex  ref_index_nh4so4 , ref_index_lvcite  , ref_index_nh4hso4, &
+            ref_index_nh4msa , ref_index_nh4no3  , ref_index_nh4cl , &
+            ref_index_nacl   , ref_index_nano3   , ref_index_na2so4, &
+            ref_index_na3hso4, ref_index_nahso4  , ref_index_namsa,  &
+            ref_index_caso4  , ref_index_camsa2  , ref_index_cano3,  &
+            ref_index_cacl2  , ref_index_caco3   , ref_index_h2so4,  &
+            ref_index_hhso4  , ref_index_hno3    , ref_index_hcl,    &
+            ref_index_msa    , ref_index_oc      , ref_index_bc,     &
+            ref_index_oin    , ref_index_aro1    , ref_index_aro2,   &
+            ref_index_alk1   , ref_index_ole1    , ref_index_api1,   &
+            ref_index_api2   , ref_index_im1     , ref_index_im2,    &
+            ref_index_h2o    , ri_dum            , ri_ave_a
+   real  dens_so4  , dens_no3  , dens_cl   , dens_msa  , dens_co3 ,  &
+         dens_nh4  , dens_na   , dens_ca   , dens_oin  , dens_oc  ,  &
+         dens_bc   , dens_aro1 , dens_aro2 , dens_alk1 , dens_ole1,  &
+         dens_api1 , dens_api2 , dens_lim1 , dens_lim2 , dens_h2o
+   real  mass_so4  , mass_no3  , mass_cl   , mass_msa  , mass_co3 ,  &
+         mass_nh4  , mass_na   , mass_ca   , mass_oin  , mass_oc  ,  &
+         mass_bc   , mass_aro1 , mass_aro2 , mass_alk1 , mass_ole1,  &
+         mass_api1 , mass_api2 , mass_lim1 , mass_lim2 , mass_h2o
+   real  mass_so4i , mass_no3i , mass_cli  , mass_msai , mass_co3i,  &
+         mass_nh4i , mass_nai  , mass_cai  , mass_oini , mass_oci ,  &
+         mass_bci  , mass_aro1i, mass_aro2i, mass_alk1i, mass_ole1i, &
+         mass_ba1i , mass_ba2i,  mass_ba3i , mass_ba4i , mass_pai,   &
+         mass_h2oi
+   real  mass_so4j , mass_no3j , mass_clj  , mass_msaj , mass_co3j,  &
+         mass_nh4j , mass_naj  , mass_caj  , mass_oinj , mass_ocj ,  &
+         mass_bcj  , mass_aro1j, mass_aro2j, mass_alk1j, mass_ole1j, &
+         mass_ba1j , mass_ba2j,  mass_ba3j , mass_ba4j , mass_paj,   &
+         mass_h2oj
+   real  mass_antha, mass_seas, mass_soil
+   real  num_ai, num_aj, num_ac,  vol_ai, vol_aj, vol_ac
+   real  vol_so4   , vol_no3   , vol_cl    , vol_msa   , vol_co3  ,  &
+         vol_nh4   , vol_na    , vol_ca    , vol_oin   , vol_oc   ,  &
+         vol_bc    , vol_aro1  , vol_aro2  , vol_alk1  , vol_ole1 ,  &
+         vol_api1  , vol_api2  , vol_lim1  , vol_lim2  , vol_h2o
+   real  conv1a, conv1b, conv1sulf
+   real  mass_dry_a, mass_wet_a, vol_dry_a , vol_wet_a , vol_shell,  &
+         dp_dry_a  , dp_wet_a  , num_a     , dp_bc_a
+   real  ifac, jfac, cfac
+   real  refr
+   real  dgnum_um,drydens,duma,dlo_um,dhi_um,dgmin,sixpi,ss1,ss2,ss3,dtemp
+   integer  iflag
+   real, dimension(1:nbin_o) :: xnum_secti,xnum_sectj,xnum_sectc
+   real, dimension(1:nbin_o) :: xmas_secti,xmas_sectj,xmas_sectc
+   real, dimension(1:nbin_o) :: xdia_um, xdia_cm
+   REAL, PARAMETER :: FRAC2Aitken=0.25   ! Fraction of modal mass in Aitken mode - applied globally to each species
+
+! 7/21/09  SAM variables needed to convert GOCART sectional dust and seasalt to MOZAIC sections
+   real  dgnum, dhi,  dlo, xlo, xhi, dxbin, relh_frc
+   real dlo_sectm(nbin_o), dhi_sectm(nbin_o)
+   integer, parameter :: nbin_omoz=8
+   real, save :: seasfrc_goc8bin(4,nbin_omoz)   ! GOCART seasalt size distibution - mass fracs in MOSAIC 8-bins
+   real, save :: dustfrc_goc8bin(ndust,nbin_omoz)   ! GOCART dust size distibution - mass fracs in MOSAIC 8-bins
+   real  mass_bc1 , mass_bc2 , vol_bc2  , mass_bc1j , mass_bc2j,  &
+         mass_bc1i , mass_bc2i  , vol_soil
+   real*8 dlogoc, dhigoc
+   integer istop
+   integer, save :: kcall
+   data  kcall / 0 /
+
+!
+!  real  sginin,sginia,sginic from module_data_sorgam.F
+! 
+! Mass from modal distribution is divided into individual sections before
+! being passed back into the Mie routine.
+! * currently use the same size bins as 8 default MOSAIC size bins
+! * dlo_um and dhi_um define the lower and upper bounds of individual sections
+!   used to compute optical properties
+! * sigmas for 3 modes taken from module_sorgam_data.F
+! * these parameters are needed by sect02 that is called later
+! * sginin=1.7, sginia=2.0, sginic=2.5
+!
+      sixpi=6.0/3.14159265359
+      dlo_um=0.0390625
+      dhi_um=10.0
+      drydens=1.8
+      iflag=2
+      duma=1.0
+      dgmin=1.0e-07 ! in (cm)
+      dtemp=dlo_um
+      do isize=1,nbin_o
+        xdia_um(isize)=(dtemp+dtemp*2.0)/2.0
+        dtemp=dtemp*2.0
+      enddo
+        if (kcall .eq. 0) then
+! 7/21/09 SAM calculate sectional contributions from GOCART seasalt and dust
+        dlo = dlo_um*1.0e-6
+        dhi = dhi_um*1.0e-6
+        xlo = log( dlo )
+        xhi = log( dhi )
+        dxbin = (xhi - xlo)/nbin_o
+        do n = 1, nbin_o
+            dlo_sectm(n) = exp( xlo + dxbin*(n-1) )
+            dhi_sectm(n) = exp( xlo + dxbin*n )
+        end do
+!  real, save :: seasfrc_goc8bin(4,nbin_o)   ! GOCART seasalt size distibution - mass fracs in MOSAIC 8-bins
+!  real, save :: dustfrc_goc8bin(ndust,nbin_o)   ! GOCART dust size distibution - mass fracs in MOSAIC 8-bins
+!  USE module_data_gocart_seas
+! real*8, DIMENSION (4), PARAMETER :: ra(4)=(/1.d-1,5.d-1,1.5d0,5.0d0/)
+! real*8, DIMENSION (4), PARAMETER :: rb(4)=(/5.d-1,1.5d0,5.d0,1.d1/)
+! real*8, DIMENSION (4), PARAMETER :: den_seas(4)=(/2.2d3,2.2d3,2.2d3,2.2d3/)
+! real*8, DIMENSION (4), PARAMETER :: reff_seas(4)=(/0.30D-6,1.00D-6,3.25D-6,7.50D-6/)
+!  USE module_data_gocart_dust, only:  ndust, reff_dust, den_dust
+!  real*8, DIMENSION (5), PARAMETER :: den_dust(5)=(/2500.,2650.,2650.,2650.,2650./)
+!  real*8, DIMENSION (5), PARAMETER :: reff_dust(5)=(/0.73D-6,1.4D-6,2.4D-6,4.5D-6,8.0D-6/)
+! Seasalt bin mass fractions
+        seasfrc_goc8bin=0.
+!      WRITE(*,*)'Seasalt mass fractions'
+!      WRITE(*,*)'         ','       ',(dlo_sectm(n),n=1,nbin_o)
+!      WRITE(*,*)'         ','       ',(dhi_sectm(n),n=1,nbin_o)
+       do m =1, 4  ! loop over seasalt size bins
+       dlogoc = ra(m)*2.E-6  ! low diameter limit (m)
+       dhigoc = rb(m)*2.E-6  ! hi diameter limit (m)
+        do n = 1, nbin_o
+        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
+                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+       end do
+!      WRITE(*,*)m,dlogoc,dhigoc,(seasfrc_goc8bin(m,n),n=1,nbin_o)
+       end do
+! Dust bin mass fractions
+!      WRITE(*,*)'Dust mass fractions'
+!      WRITE(*,*)'         ','       ',(dlo_sectm(n),n=1,nbin_o)
+!      WRITE(*,*)'         ','       ',(dhi_sectm(n),n=1,nbin_o)
+        dustfrc_goc8bin=0.
+        dlogoc=0.46*2.E-6 ! Begin lower dust bin, makes upper limit diam 20 micron diameter 
+       do m =1, ndust  ! loop over dust size bins
+       dhigoc = 2.*2.*reff_dust(m)-dlogoc ! hi diameter limit (m)
+        do n = 1, nbin_o
+        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
+                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+       end do
+!      WRITE(*,*)m,dlogoc,dhigoc,(dustfrc_goc8bin(m,n),n=1,nbin_o)
+       dlogoc=dhigoc
+       end do
+        kcall=kcall+1
+!       ISTOP=1
+!       IF(ISTOP.EQ.1)THEN
+!       STOP
+!       ENDIF
+        endif
+!
+! Define refractive indicies
+! * assume na and cl are the same as nacl
+! * assume so4, no3, and nh4 are the same as nh4no3
+! * assume ca and co3 are the same as caco3
+! * assume msa is just msa
+! Further work:
+! * to be more precise, need to compute electrolytes to apportion
+!   so4, no3, nh4, na, cl, msa, ca, co3 among various componds
+!   as was done previously in module_mosaic_therm.F
+!
+      ref_index_nh4so4 = cmplx(1.52,0.)
+      ref_index_lvcite = cmplx(1.50,0.)
+      ref_index_nh4hso4= cmplx(1.47,0.)
+      ref_index_nh4msa = cmplx(1.50,0.)     ! assumed
+      ref_index_nh4no3 = cmplx(1.50,0.)
+      ref_index_nh4cl  = cmplx(1.50,0.)
+      ref_index_nacl   = cmplx(1.45,0.)
+      ref_index_nano3  = cmplx(1.50,0.)
+      ref_index_na2so4 = cmplx(1.50,0.)
+      ref_index_na3hso4= cmplx(1.50,0.)
+      ref_index_nahso4 = cmplx(1.50,0.)
+      ref_index_namsa  = cmplx(1.50,0.)     ! assumed
+      ref_index_caso4  = cmplx(1.56,0.006)
+      ref_index_camsa2 = cmplx(1.56,0.006)  ! assumed
+      ref_index_cano3  = cmplx(1.56,0.006)
+      ref_index_cacl2  = cmplx(1.52,0.006)
+      ref_index_caco3  = cmplx(1.68,0.006)
+      ref_index_h2so4  = cmplx(1.43,0.)
+      ref_index_hhso4  = cmplx(1.43,0.)
+      ref_index_hno3   = cmplx(1.50,0.)
+      ref_index_hcl    = cmplx(1.50,0.)
+      ref_index_msa    = cmplx(1.43,0.)     ! assumed
+      ref_index_oc     = cmplx(1.45,0.)  ! JCB, Feb. 20, 2008: no complex part?
+! JCB, Feb. 20, 2008:  set the refractive index of BC equal to the
+! midpoint of ranges given in Bond and Bergstrom, Light absorption by
+! carboneceous particles: an investigative review 2006, Aerosol Sci.
+! and Tech., 40:27-67.
+!     ref_index_bc     = cmplx(1.82,0.74) old value
+      ref_index_bc     = cmplx(1.85,0.71)
+      ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: if  "other inorganics" includes dust, then this refractive index should be wavelength depedent
+      ref_index_aro1   = cmplx(1.45,0.)
+      ref_index_aro2   = cmplx(1.45,0.)
+      ref_index_alk1   = cmplx(1.45,0.)
+      ref_index_ole1   = cmplx(1.45,0.)
+      ref_index_api1   = cmplx(1.45,0.)
+      ref_index_api2   = cmplx(1.45,0.)
+      ref_index_im1   = cmplx(1.45,0.)
+      ref_index_im2   = cmplx(1.45,0.)
+      ref_index_h2o    = cmplx(1.33,0.)
+!
+! densities in g/cc
+!
+      dens_so4   = 1.8        ! used
+      dens_no3   = 1.8        ! used
+      dens_cl    = 2.2        ! used
+      dens_msa   = 1.8        ! used
+      dens_co3   = 2.6        ! used
+      dens_nh4   = 1.8        ! used
+      dens_na    = 2.2        ! used
+      dens_ca    = 2.6        ! used
+      dens_oin   = 2.6        ! used
+      dens_oc    = 1.0        ! used
+! JCB, Feb. 20, 2008:  the density of BC is updated to reflect values
+! published by Bond and Bergstrom, Light absorption by carboneceous
+! particles: an investigative review 2006, Aerosol Sci. and Tech., 40:27-67.
+!      dens_bc    = 1.7        ! used, old value
+      dens_bc    =  1.8        !  midpoint of Bond and Bergstrom value
+      dens_aro1  = 1.0
+      dens_aro2  = 1.0
+      dens_alk1  = 1.0
+      dens_ole1  = 1.0
+      dens_api1  = 1.0
+      dens_api2  = 1.0
+      dens_lim1  = 1.0
+      dens_lim2  = 1.0
+      dens_h2o   = 1.0
+!
+      do isize = 1, nbin_o
+      do j = jts, jte
+      do k = kts, kte
+      do i = its, ite
+        refindx(i,k,j,isize)=0.0
+        radius_wet(i,k,j,isize)=0.0
+        number_bin(i,k,j,isize)=0.0
+        radius_core(i,k,j,isize)=0.0
+        refindx_core(i,k,j,isize)=0.0
+        refindx_shell(i,k,j,isize)=0.0
+      enddo
+      enddo
+      enddo
+      enddo
+!
+! units:
+! * mass     - g/cc(air)
+! * number   - #/cc(air)
+! * volume   - cc(air)/cc(air)
+! * diameter - cm
+!
+      do j = jts, jte
+      do k = kts, kte
+      do i = its, ite
+        mass_so4i = 0.0
+        mass_so4j = 0.0
+        mass_no3i = 0.0
+        mass_no3j = 0.0
+        mass_nh4i = 0.0
+        mass_nh4j = 0.0
+        mass_oini = 0.0
+        mass_oinj = 0.0
+        mass_aro1i = 0.0
+        mass_aro1j = 0.0
+        mass_aro2i = 0.0
+        mass_aro2j = 0.0
+        mass_alk1i = 0.0
+        mass_alk1j = 0.0
+        mass_ole1i = 0.0
+        mass_ole1j = 0.0
+        mass_ba1i = 0.0
+        mass_ba1j = 0.0
+        mass_ba2i = 0.0
+        mass_ba2j = 0.0
+        mass_ba3i = 0.0
+        mass_ba3j = 0.0
+        mass_ba4i = 0.0
+        mass_ba4j = 0.0
+        mass_pai = 0.0
+        mass_paj = 0.0
+        mass_oci = 0.0
+        mass_ocj = 0.0
+        mass_bci = 0.0
+        mass_bcj = 0.0
+        mass_bc1i = 0.0
+        mass_bc1j = 0.0
+        mass_bc2i = 0.0
+        mass_bc2j = 0.0
+        mass_cai = 0.0
+        mass_caj = 0.0
+        mass_co3i = 0.0
+        mass_co3j = 0.0
+        mass_nai = 0.0
+        mass_naj = 0.0
+        mass_cli = 0.0
+        mass_clj = 0.0
+        mass_msai = 0.0
+        mass_msaj = 0.0
+        mass_nai = 0.0
+        mass_naj = 0.0
+        mass_cli = 0.0
+        mass_clj = 0.0
+        mass_h2oi = 0.0
+        mass_h2oj = 0.0
+        mass_antha = 0.0
+        mass_seas = 0.0
+        mass_soil = 0.0
+        mass_cl = 0.0
+        mass_na = 0.0
+        mass_msa = 0.0
+        vol_aj = 0.0
+        vol_ai = 0.0
+        vol_ac = 0.0
+        num_aj = 0.0
+        num_ai = 0.0
+        num_ac = 0.0
+
+! convert ug / kg dry air to g / cc  air
+        conv1a = (1.0/alt(i,k,j)) * 1.0e-12
+! convert # / kg dry air to # / cc  air
+        conv1b = (1.0/alt(i,k,j)) * 1.0e-6
+! convert ppmv sulfate (and coincidentally MSA) to g / cc  air
+        conv1sulf = (1.0/alt(i,k,j)) * 1.0e-9 * 96./28.97
+
+! Accumulation mode...
+! SAM 7/18/09 - Put fraction of GOCART sulfate, organic, black carbon masses into modal accumulation mode
+        mass_oinj = (1.-FRAC2Aitken)*chem(i,k,j,p_p25)*conv1a
+        mass_so4j= (1.-FRAC2Aitken)*chem(i,k,j,p_sulf)*conv1sulf
+        mass_aro1j= (1.-FRAC2Aitken)*chem(i,k,j,p_oc1)*conv1a
+        mass_aro2j= (1.-FRAC2Aitken)*chem(i,k,j,p_oc2)*conv1a
+        mass_bc1j= (1.-FRAC2Aitken)*chem(i,k,j,p_bc1)*conv1a
+        mass_bc2j= (1.-FRAC2Aitken)*chem(i,k,j,p_bc2)*conv1a
+        mass_bcj= mass_bc1j + mass_bc2j
+        mass_msaj= (1.-FRAC2Aitken)*chem(i,k,j,p_msa)*conv1sulf
+
+! Aitken mode...
+! SAM 7/18/09 - Put fraction of GOCART sulfate, organic, black carbon masses into modal Aitken mode
+        mass_oini = FRAC2Aitken*chem(i,k,j,p_p25)*conv1a
+        mass_so4i= FRAC2Aitken*chem(i,k,j,p_sulf)*conv1sulf
+        mass_aro1i= FRAC2Aitken*chem(i,k,j,p_oc1)*conv1a
+        mass_aro2i= FRAC2Aitken*chem(i,k,j,p_oc2)*conv1a
+        mass_bc1i= FRAC2Aitken*chem(i,k,j,p_bc1)*conv1a
+        mass_bc2i= FRAC2Aitken*chem(i,k,j,p_bc2)*conv1a
+        mass_bci= mass_bc1i + mass_bc2i
+        mass_msai= FRAC2Aitken*chem(i,k,j,p_msa)*conv1sulf
+
+        vol_ai = (mass_so4i/dens_so4)+(mass_no3i/dens_no3)+ &
+                 (mass_nh4i/dens_nh4)+(mass_oini/dens_oin)+ &
+                 (mass_aro1i/dens_oc)+(mass_alk1i/dens_oc)+ &
+                 (mass_ole1i/dens_oc)+(mass_ba1i/dens_oc)+  &
+                 (mass_ba2i/dens_oc)+(mass_ba3i/dens_oc)+   &
+                 (mass_ba4i/dens_oc)+(mass_pai/dens_oc)+    &
+                 (mass_aro2i/dens_oc)+(mass_bci/dens_bc)+   &
+                 (mass_nai/dens_na)+(mass_cli/dens_cl)+     &
+                 (mass_msai/dens_msa)
+        vol_aj = (mass_so4j/dens_so4)+(mass_no3j/dens_no3)+ &
+                 (mass_nh4j/dens_nh4)+(mass_oinj/dens_oin)+ &
+                 (mass_aro1j/dens_oc)+(mass_alk1j/dens_oc)+ &
+                 (mass_ole1j/dens_oc)+(mass_ba1j/dens_oc)+  &
+                 (mass_ba2j/dens_oc)+(mass_ba3j/dens_oc)+   &
+                 (mass_ba4j/dens_oc)+(mass_paj/dens_oc)+    &
+                 (mass_aro2j/dens_oc)+(mass_bcj/dens_bc)+   &
+                 (mass_naj/dens_na)+(mass_clj/dens_cl)+     &
+                 (mass_msaj/dens_msa)
+!
+! Now divide mass into sections which is done by sect02:
+! * xmas_secti is for aiken mode
+! * xmas_sectj is for accumulation mode
+! * xmas_sectc is for coarse mode
+! * sect02 expects input in um
+! * pass in generic mass of 1.0 just to get a percentage distribution of mass among bins
+!
+!!      ss1=alog(sginin)
+!!      ss2=exp(ss1*ss1*36.0/8.0) 
+!!      ss3=(sixpi*vol_ai/(num_ai*ss2))**0.3333333
+!!      dgnum_um=amax1(dgmin,ss3)*1.0e+04
+        dgnum_um=dginin*1.E6
+        call sect02(dgnum_um,sginin,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
+          xnum_secti,xmas_secti)
+!!      ss1=alog(sginia)
+!!      ss2=exp(ss1*ss1*36.0/8.0) 
+!!      ss3=(sixpi*vol_aj/(num_aj*ss2))**0.3333333
+!!      dgnum_um=amax1(dgmin,ss3)*1.0e+04
+        dgnum_um=dginia*1.E6
+        call sect02(dgnum_um,sginia,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
+          xnum_sectj,xmas_sectj)
+!!      ss1=alog(sginic)
+!!      ss2=exp(ss1*ss1*36.0/8.0) 
+!!      ss3=(sixpi*vol_ac/(num_ac*ss2))**0.3333333
+        dgnum_um=dginic*1.E6
+        call sect02(dgnum_um,sginic,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
+          xnum_sectc,xmas_sectc)
+
+        do isize = 1, nbin_o
+          xdia_cm(isize)=xdia_um(isize)*1.0e-04
+          mass_so4 = mass_so4i*xmas_secti(isize) + mass_so4j*xmas_sectj(isize)
+          mass_no3 = mass_no3i*xmas_secti(isize) + mass_no3j*xmas_sectj(isize)
+          mass_nh4 = mass_nh4i*xmas_secti(isize) + mass_nh4j*xmas_sectj(isize)
+          mass_oin = mass_oini*xmas_secti(isize) + mass_oinj*xmas_sectj(isize) + &
+                     mass_soil*xmas_sectc(isize) + mass_antha*xmas_sectc(isize)
+! GOCART OC mass_aero1 is hydrophobic, mass_aero2 is hydrophylic
+          mass_aro1 = mass_aro1j*xmas_sectj(isize) + mass_aro1i*xmas_secti(isize)
+          mass_aro2 = mass_aro2j*xmas_sectj(isize) + mass_aro2i*xmas_secti(isize)
+          mass_oc = mass_aro1 + mass_aro2
+! GOCART BC mass_bc1 is hydrophobic, mass_bc2 is hydrophylic
+          mass_bc1  = mass_bc1i*xmas_secti(isize) + mass_bc1j*xmas_sectj(isize)
+          mass_bc2  = mass_bc2i*xmas_secti(isize) + mass_bc2j*xmas_sectj(isize)
+          mass_bc = mass_bc1 + mass_bc2
+! Add in seasalt and dust from GOCART sectional distributions
+       n = 0
+       mass_seas = 0.0
+       do m =p_seas_1,  p_seas_3 ! loop over seasalt size bins less than 10 um diam
+       n = n+1
+        mass_seas=mass_seas+seasfrc_goc8bin(n,isize)*chem(i,k,j,m)
+       end do
+       n = 0
+       mass_soil = 0.0
+       do m =p_dust_1,  p_dust_1+ndust-2 ! loop over dust size bins less than 10 um diam
+       n = n+1
+        mass_soil=mass_soil+dustfrc_goc8bin(n,isize)*chem(i,k,j,m)
+       end do
+       mass_cl=mass_seas*conv1a*22.9897/58.4428
+       mass_na=mass_seas*conv1a*35.4270/58.4428
+       mass_soil=mass_soil*conv1a
+!         mass_h2o = 0.0 ! testing purposes only
+          vol_so4 = mass_so4 / dens_so4
+          vol_no3 = mass_no3 / dens_no3
+          vol_nh4 = mass_nh4 / dens_nh4
+          vol_oin = mass_oin / dens_oin
+          vol_oc  = mass_oc  / dens_oc
+          vol_aro2 = mass_aro2 / dens_oc
+          vol_bc  = mass_bc  / dens_bc
+          vol_bc2 = mass_bc2 / dens_bc
+          vol_na  = mass_na  / dens_na
+          vol_cl  = mass_cl  / dens_cl
+          vol_soil  = mass_soil  / dens_oin
+!         vol_h2o = mass_h2o / dens_h2o
+! 7/23/09 SAM calculate vol_h2o from kappas in Petters and Kreidenweis ACP, 2007, vol. 7, 1961-1971.
+!  Their kappas are the hygroscopicities used in Abdul-Razzak and Ghan, 2004, JGR, V105, p. 6837-6844. 
+!  These kappas are defined in module_data_sorgam and module_data_mosaic_asect.
+!  Note that hygroscopicities are at 298K and specific surface tension - further refinement could
+!  include temperature dependence in Petters and Kreidenweis
+! Also, for hygroscopic BC part, assume kappa of OC (how can BC be hydrophylic?)
+               relh_frc=amin1(.9,relhum(i,k,j)) !0.8   ! Put in fractional relative humidity, max of .9, here
+                  vol_h2o = vol_so4*hygro_so4_aer + vol_aro2*hygro_oc_aer + &
+                  vol_cl*hygro_cl_aer + vol_na*hygro_na_aer + vol_msa*hygro_msa_aer + &
+                  vol_oin*hygro_oin_aer + vol_bc2*hygro_oc_aer  + vol_soil*hygro_dust_aer
+                  vol_h2o = relh_frc*vol_h2o/(1.-relh_frc)
+                  mass_h2o = vol_h2o*dens_h2o
+          mass_dry_a = mass_so4 + mass_no3 + mass_nh4 + mass_oin + &
+                       mass_oc  + mass_bc  + mass_na  + mass_cl
+          mass_wet_a = mass_dry_a + mass_h2o 
+          vol_dry_a  = vol_so4  + vol_no3  + vol_nh4  + vol_oin  + &
+                       vol_oc   + vol_bc   + vol_na   + vol_cl
+          vol_wet_a  = vol_dry_a + vol_h2o
+          vol_shell  = vol_wet_a - vol_bc
+          num_a      = vol_wet_a / (0.52359877*xdia_cm(isize)*xdia_cm(isize)*xdia_cm(isize))
+          ri_dum     = (0.0,0.0)
+          ri_dum     = (ref_index_nh4so4 * mass_so4 / dens_so4) +  &
+                       (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
+                       (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
+                       (ref_index_oin    * mass_oin / dens_oin) +  &
+                       (ref_index_oc     * mass_oc  / dens_oc) +   &
+                       (ref_index_bc     * mass_bc  / dens_bc) +   &
+                       (ref_index_nacl   * mass_na  / dens_na) +   &
+                       (ref_index_nacl   * mass_cl  / dens_cl) +   &
+                       (ref_index_msa    * mass_msa / dens_msa) +  &
+                       (ref_index_h2o    * mass_h2o / dens_h2o) 
+!
+! for some reason MADE/SORGAM occasionally produces zero aerosols so
+! need to add a check here to avoid divide by zero
+!
+          IF(num_a .lt. 1.0e-20 .or. vol_wet_a .lt. 1.0e-20) then
+            dp_dry_a   = 0.0
+            dp_wet_a   = 0.0
+            dp_bc_a    = 0.0
+            ri_ave_a   = 0.0
+            ri_dum     = 0.0
+          else
+            dp_dry_a   = (1.90985*vol_dry_a/num_a)**0.3333333
+            dp_wet_a   = (1.90985*vol_wet_a/num_a)**0.3333333
+            dp_bc_a    = (1.90985*vol_bc/num_a)**0.3333333
+            ri_ave_a   = ri_dum/vol_wet_a
+            ri_dum   = (ref_index_nh4so4 * mass_so4 / dens_so4) +  &
+                       (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
+                       (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
+                       (ref_index_oin    * mass_oin / dens_oin) +  &
+                       (ref_index_oc     * mass_oc  / dens_oc) +   &
+                       (ref_index_nacl   * mass_na  / dens_na) +   &
+                       (ref_index_nacl   * mass_cl  / dens_cl) +   &
+                       (ref_index_msa    * mass_msa / dens_msa) +  &
+                       (ref_index_h2o    * mass_h2o / dens_h2o) 
+          endif
+          if(dp_wet_a/2.0 .lt. dlo_um*1.0e-4/2.0) then
+            refindx(i,k,j,isize)    = (1.5,0.0)
+            radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
+            number_bin(i,k,j,isize) =num_a
+            radius_core(i,k,j,isize) =0.0
+            refindx_core(i,k,j,isize) = ref_index_bc
+            refindx_shell(i,k,j,isize) = ref_index_oin
+          elseif(vol_shell .lt. 1.0e-20) then
+            refindx(i,k,j,isize)    = (1.5,0.0)
+            radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
+            number_bin(i,k,j,isize) =num_a
+            radius_core(i,k,j,isize) =0.0
+            refindx_core(i,k,j,isize) = ref_index_bc
+            refindx_shell(i,k,j,isize) = ref_index_oin
+          else
+            refindx(i,k,j,isize)    =ri_ave_a
+            radius_wet(i,k,j,isize) =dp_wet_a/2.0
+            number_bin(i,k,j,isize) =num_a
+            radius_core(i,k,j,isize) =dp_bc_a/2.0
+            refindx_core(i,k,j,isize) =ref_index_bc
+            refindx_shell(i,k,j,isize) =ri_dum/vol_shell
+          endif
+!
+          refr=real(refindx(i,k,j,isize))
+        enddo
+      enddo
+      enddo
+      enddo
+
+      return
+
+      end subroutine optical_prep_gocart
+
+!
 !***********************************************************************
 ! <1.> subr mieaer
 ! Purpose:  calculate aerosol optical depth, single scattering albedo,
@@ -1282,7 +1854,8 @@
 	real x
 	real thesum ! for normalizing things
 	real sizem ! size in microns
-	integer kcallmieaer
+	integer, save :: kcallmieaer
+        data  kcallmieaer / 0 /
 !
 	integer m, j, nc, klevel
         real pext	    ! parameterized specific extinction (cm2/g)
@@ -1390,7 +1963,8 @@
 
       integer irams, jrams
 ! diagnostic declarations
-      integer kcallmieaer2
+	integer, save :: kcallmieaer2
+        data  kcallmieaer2 / 0 /
       integer ibin
       character*150 msg
 
@@ -3883,6 +4457,8 @@
       real*8 qextc,qscatc,qbackc,extc,scatc,backc,gscac
       real*8 vlambc
       integer n,kkk,jjj
+	integer, save :: kcallmieaer
+        data  kcallmieaer / 0 /
       real*8 pmom(0:7,1)
       real weighte, weights, pscat
       real pie,sizem
@@ -3894,7 +4470,8 @@
 	data rmin /0.010e-04/   ! rmin in cm, 5e-3 microns min allowable size
 	data rmax /7.0e-04/    ! rmax in cm. 50 microns, big particle, max allowable size
 ! diagnostic declarations
-      integer kcallmieaer2
+	integer, save :: kcallmieaer2
+        data  kcallmieaer2 / 0 /
       integer ibin
       character*150 msg
 

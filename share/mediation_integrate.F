@@ -771,7 +771,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    endif
 !end of zhang's doing
 
-!zhang's doing: adding analysis later on:
+!zhang's doing for analysis option
   IF(.not. nest%analysis .and. .not. config_flags%restart)THEN    ! initialize for cold-start
 !----------------------------------------------------------------------------
 !  initialize nested domain configurations including setting up wbd,sbd, etc 
@@ -876,29 +876,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     nest%imask_ystag  = 0 
     nest%imask_xystag = 0 
 
-!    CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
-
-!    IF ( .not. ( config_flags%restart .AND. strt_time .EQ. cur_time ) ) THEN
-
-     CALL med_interp_domain( parent, nest )
-
-!    ELSE
-
-!     CALL domain_clock_get( nest, current_timestr=timestr )
-!     CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
-!
-!     WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading'
-!     CALL wrf_message ( message )
-!     CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
-!     CALL open_r_dataset ( fid , TRIM(rstname) , nest , nest_config_flags , "DATASET=RESTART", ierr )
-!     IF ( ierr .NE. 0 ) THEN
-!       WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)
-!       CALL WRF_ERROR_FATAL ( message )
-!     ENDIF
-!     CALL input_restart ( fid,   nest , nest_config_flags , ierr )
-!     CALL close_dataset ( fid , nest_config_flags , "DATASET=RESTART" )
-!
-!    END IF
+   CALL med_interp_domain( parent, nest )
 
 !------------------------------------------------------------------------------
 !  set up constants (module_initialize_real.F for nested nmm domain)

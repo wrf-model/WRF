@@ -39,6 +39,7 @@ solve_em.o : solve_em.F
 solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
 start_domain_nmm.o : start_domain_nmm.F
+mediation_nest_move.o : mediation_nest_move.F
 start_em.o : start_em.F
 wrf_auxhist10in.o : wrf_auxhist10in.F
 wrf_auxhist10out.o : wrf_auxhist10out.F
@@ -129,6 +130,7 @@ shift_domain_nmm.o \
 solve_interface.o \
 start_domain.o \
 start_domain_nmm.o \
+mediation_nest_move.o \
 start_em.o \
 wrf_fddaobs_in.o \
 wrf_tsin.o :

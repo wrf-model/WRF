@@ -99,8 +99,8 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
 #definitions for NMM slab arrays
-#dimspec    q      -     constant=2600             c  # a little crude right now
-#dimspec    v      -     constant=1             c  # a little crude right now
+dimspec    q      -     constant=2600             c  # a little crude right now
+dimspec    v      -     constant=1             c  # a little crude right now
 
 # zhang's doing
 dimspec    z      -     constant=2             c  # seed dimension for random number generator
@@ -183,8 +183,8 @@ state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #
 state  real   HLON        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
 state  real   HLAT        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
-state  real   VLON        ij     dyn_nmm     1      -      irh
-state  real   VLAT        ij     dyn_nmm     1      -      irh
+state  real   VLON        ij     dyn_nmm     1      -      ir
+state  real   VLAT        ij     dyn_nmm     1      -      ir
 
 #
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain"
@@ -243,17 +243,19 @@ state  real   aeta      k      dyn_nmm     1      -      i01r
 state  real   f4q2      k      dyn_nmm     1      -      ir
 state  real   etax      k      dyn_nmm     1      -      i01r
 state  real   dfl       k      dyn_nmm     1      Z      i01r    "DFL"     "Standard atmosphere geopotential"              "m2 s-2"
-state  real   deta1     k      dyn_nmm     1      -      i01rh    "DETA1"   "Delta sigma in pressure domain"                ""
-state  real   aeta1     k      dyn_nmm     1      -      i01rh    "AETA1"   "Midlayer sigma value in pressure domain"       ""
+state  real   deta1     k      dyn_nmm     1      -      i01r    "DETA1"   "Delta sigma in pressure domain"                ""
+state  real   aeta1     k      dyn_nmm     1      -      i01r    "AETA1"   "Midlayer sigma value in pressure domain"       ""
 state  real   eta1      k      dyn_nmm     1      Z      i01rh   "ETA1"    "Interface sigma value in pressure domain"      ""
-state  real   deta2     k      dyn_nmm     1      -      i01rh    "DETA2"   "Delta sigma in sigma domain"                   ""
-state  real   aeta2     k      dyn_nmm     1      -      i01rh    "AETA2"   "Midlayer sigma value in sigma domain"          ""
+state  real   deta2     k      dyn_nmm     1      -      i01r    "DETA2"   "Delta sigma in sigma domain"                   ""
+state  real   aeta2     k      dyn_nmm     1      -      i01r    "AETA2"   "Midlayer sigma value in sigma domain"          ""
 state  real   eta2      k      dyn_nmm     1      Z      i01rh   "ETA2"    "Interface sigma value in sigma domain"         ""
 state  real   em        q      dyn_nmm     1      -      ir
 state  real   emt       q      dyn_nmm     1      -      ir
-state  real   adt       ij     dyn_nmm     1      -      -       "ADT"     "Change of T due to advection"                  "K"
-state  real   adu       ij     dyn_nmm     1      -      -       "ADU"     "Change of U due to advection"                  "m s-1"
-state  real   adv       ij     dyn_nmm     1      -      -       "ADV"     "Change of V due to advection"                  "m s-1"
+#zhang's doing: added a 'r' at end to store these variables in restart file
+state  real   adt       ij     dyn_nmm     1      -      r       "ADT"     "Change of T due to advection"                  "K"
+state  real   adu       ij     dyn_nmm     1      -      r       "ADU"     "Change of U due to advection"                  "m s-1"
+state  real   adv       ij     dyn_nmm     1      -      r       "ADV"     "Change of V due to advection"                  "m s-1"
+#zhang's doing ends
 state  real   em_loc    q      dyn_nmm     1      -      r
 state  real   emt_loc   q      dyn_nmm     1      -      r
 state  real   dy_nmm    -      dyn_nmm     -      -      ir      "DY_NMM"  "North-south distance H-to-V points"            "m"
@@ -263,24 +265,32 @@ state  real   ent       -      dyn_nmm     -      -      ir
 state  real   f4d       -      dyn_nmm     -      -      ir
 state  real   f4q       -      dyn_nmm     -      -      ir
 state  real   ef4t      -      dyn_nmm     -      -      ir
-state  logical upstrm   -      dyn_nmm     -      -      -       "UPSTRM"  ".TRUE. => In upstream advec region of grid"    ""
-state  real   dlmd      -      dyn_nmm     -      -      ihr      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
-state  real   dphd      -      dyn_nmm     -      -      ihr      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
+#zhang's doing: added a 'r' at end to store these variables in restart file
+state  logical upstrm   -      dyn_nmm     -      -      r       "UPSTRM"  ".TRUE. => In upstream advec region of grid"    ""
+#zhang's doing ends
+state  real   dlmd      -      dyn_nmm     -      -      ir      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
+state  real   dphd      -      dyn_nmm     -      -      ir      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
 state  real   pdtop     -      dyn_nmm     -      -      i01rh   "PDTOP"   "Mass at I,J in pressure domain"                "Pa"
 state  real   pt        -      dyn_nmm     -      -      i01rh   "PT"      "Pressure at top of domain"                     "Pa"
 #
 # module_CONTIN
 #
-state  real   pdsl      ij     dyn_nmm     1      -      -       "PDSL"    "Sigma-domain pressure at sigma=1"           "Pa"
-state  real   pdslo     ij     dyn_nmm     1      -      -       "PDSLO"   "PDSL from previous timestep"                "Pa"
+#zhang's doing: added a 'r' at end to store these variables in restart file
+state  real   pdsl      ij     dyn_nmm     1      -      r       "PDSL"    "Sigma-domain pressure at sigma=1"           "Pa"
+state  real   pdslo     ij     dyn_nmm     1      -      r       "PDSLO"   "PDSL from previous timestep"                "Pa"
+#zhang's doing ends
 state  real   psdt      ij     dyn_nmm     1      -      r       "PSDT"    "Surface pressure tendency"                  "Pa s-1"
 state  real   div       ijk    dyn_nmm     1      -      r       "DIV"     "Divergence"                                 "Pa s-1"
-state  real   few       ijk    dyn_nmm     1      -      -       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
-state  real   fne       ijk    dyn_nmm     1      -      -       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"
-state  real   fns       ijk    dyn_nmm     1      -      -       "FNS"     "Integrated north-south mass flux"           "Pa m2 s-1"
-state  real   fse       ijk    dyn_nmm     1      -      -       "FSE"     "Integrated southeast-northwest mass flux"   "Pa m2 s-1"
+#zhang's doing: added a 'r' at end to store these variables in restart file
+state  real   few       ijk    dyn_nmm     1      -      r       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
+state  real   fne       ijk    dyn_nmm     1      -      r       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"
+state  real   fns       ijk    dyn_nmm     1      -      r       "FNS"     "Integrated north-south mass flux"           "Pa m2 s-1"
+state  real   fse       ijk    dyn_nmm     1      -      r       "FSE"     "Integrated southeast-northwest mass flux"   "Pa m2 s-1"
+#zhang's doing ends
 state  real   omgalf    ijk    dyn_nmm     1      -      r       "OMGALF"  "Omega-alpha"                                "K"
-state  real   petdt     ijk    dyn_nmm     1      -      -       "PETDT"   "Vertical mass flux"                         "Pa s-1"
+#zhang's doing: added a 'r' at end to store these variables in restart file
+state  real   petdt     ijk    dyn_nmm     1      -      r       "PETDT"   "Vertical mass flux"                         "Pa s-1"
+#zhang's doing ends
 state  real   rtop      ijk    dyn_nmm     1      -      r       "RTOP"    "Rd * Tv / P"                                "m3 kg-1"
 #
 # module_PVRBLS
@@ -336,7 +346,7 @@ state  real   epsr      ij    dyn_nmm   1    -     irh      "EPSR"      "Radiati
 state  real   gffc      ij    dyn_nmm   1    -     ir
 state  real   glat      ij    dyn_nmm   1    -     i01rh    "GLAT"      "Geographic latitude, radians"                    ""
 state  real   glon      ij    dyn_nmm   1    -     i01rh    "GLON"      "Geographic longitude, radians"                   ""
-state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)     "TSK"       "Skin temperature"                                "K"
+state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)     "TSK"       "Skin temperature"                                "K"
 state  real   hdac      ij    dyn_nmm   1    -     ir       "HDAC"      "Composite diffusion coeff for mass points"       "s m-1"
 state  real   hdacv     ij    dyn_nmm   1    -     ir       "HDACV"     "Composite diffusion coeff for velocity points"   "s m-1"
 state  real   mxsnal    ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "MXSNAL"    "Maximum deep snow albedo"                        ""
@@ -405,7 +415,7 @@ state  real   dwdtmn    ij    dyn_nmm   1    -     -        "DWDTMN"    "Minimum
 state  real   dwdtmx    ij    dyn_nmm   1    -     -        "DWDTMX"    "Maximum value for DWDT"           "m s-2"
 state  real   dwdt      ijk   dyn_nmm   1    -     rd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r
-state  real   pint      ijk   dyn_nmm   1    Z     rhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "PINT"      "Model layer interface pressure"   "Pa"
+state  real   pint      ijk   dyn_nmm   1    Z     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "PINT"      "Model layer interface pressure"   "Pa"
 state  real   w         ijk   dyn_nmm   1    Z     rh       "W"         "Vertical velocity"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
 #
@@ -424,7 +434,8 @@ state  real   alwtoa    ij    dyn_nmm     1    -    rh    "ALWTOA"    "Accum RLW
 state  real   rswin     ij    dyn_nmm     1    -    rhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)    "RSWIN"     "Downward shortwave at surface"     "W m-2"
 state  real   rswinc    ij    dyn_nmm     1    -    rh    "RSWINC"    "Clear-sky equivalent of RSWIN"     "W m-2"
 state  real   rswout    ij    dyn_nmm     1    -    rh    "RSWOUT"    "Upward shortwave at surface"       "W m-2"
-state  real   rswtoa    ij    dyn_nmm     1    -    -     "RSWTOA"    "Outgoing SW flux at top of atmos"  "W m-2"
+#zhang added 'r' for restart
+state  real   rswtoa    ij    dyn_nmm     1    -    r     "RSWTOA"    "Outgoing SW flux at top of atmos"  "W m-2"
 state  real   aswin     ij    dyn_nmm     1    -    rh    "ASWIN"     "Accum SW down at surface"          "W m-2"
 state  real   aswout    ij    dyn_nmm     1    -    rh    "ASWOUT"    "Accum RSWOUT"                      "W m-2"
 state  real   aswtoa    ij    dyn_nmm     1    -    rh    "ASWTOA"    "Accum RSWTOA"                      "W m-2"
@@ -443,8 +454,10 @@ state  real   rh02_min  ij    dyn_nmm     1    -    rh    "RH02_MIN" "Hourly Min
 state  real   rh02_max  ij    dyn_nmm     1    -    rh    "RH02_MAX" "Hourly Max Relative Humidity"    ""
 state  real   rlwtt     ijk   dyn_nmm     1    -    rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "RLWTT"     "Longwave temperature tendency"     "K s-1"
 state  real   rswtt     ijk   dyn_nmm     1    -    rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "RSWTT"     "Shortwave temperature tendency"    "K s-1"
-state  real   tcucn     ijk   dyn_nmm     1    -    -     "TCUCN"     "Accum convec temperature tendency" "K s-1"
-state  real   train     ijk   dyn_nmm     1    -    -     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
+#zhang's doing added r for restart
+state  real   tcucn     ijk   dyn_nmm     1    -    r     "TCUCN"     "Accum convec temperature tendency" "K s-1"
+state  real   train     ijk   dyn_nmm     1    -    r     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
+#zhang's doing ends
 state integer ncfrcv    ij    dyn_nmm     1    -    irh   "NCFRCV"    "# times convec cloud >0 between rad calls"  ""
 state integer ncfrst    ij    dyn_nmm     1    -    irh   "NCFRST"    "# times stratiform cloud >0 between rad calls"  ""
 state integer nphs0     -     dyn_nmm     -    -    rh
@@ -701,11 +714,11 @@ state    real   SNOW             ij     misc        1         -     i01rh       
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
 state    real   SST              ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
-state    real  ZNT              ij      misc        1         -     irh        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
+state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
-state    real   tke_myj         ijk     misc        1         -     rh        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
+state    real   tke_myj         ijk     misc        1         -     ir        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
 state    real   EXCH_M         ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"

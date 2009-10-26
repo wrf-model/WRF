@@ -1766,7 +1766,10 @@ CONTAINS
       KTF=MIN0(KTE,KDE-1)
       ITF=MIN0(ITE,IDE-1)
 ! 
-      IF(.NOT.RESTART)THEN
+!zhang's doing
+!zhang      IF(.NOT.RESTART)THEN
+      IF(.NOT.RESTART .OR. .NOT.ALLOWED_TO_READ)THEN
+!end of zhang's doing
         DO J=JTS,JTF
         DO K=KTS,KTF
         DO I=ITS,ITF

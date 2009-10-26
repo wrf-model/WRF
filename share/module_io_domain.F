@@ -401,6 +401,9 @@ CONTAINS
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr 
     IF ( config_flags%io_form_restart .GT. 0 ) THEN
+!zhang's doing For bit reproducibility of random numbers when restarting
+             call random_seed(get=grid%nrnd1)
+!end of zhang's doing
       CALL output_wrf ( fid , grid , config_flags , restart_only , ierr )
     ENDIF
     RETURN

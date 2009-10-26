@@ -1253,7 +1253,10 @@ contains
    ktf = min0(kte,kde-1)
    itf = min0(ite,ide-1)
 !
-   if(.not.restart)then
+!zhang's doing
+!zhang   if(.not.restart)then
+   if(.not.restart .or. .not.allowed_to_read)then
+!end of zhang's doing
      do j = jts,jtf
      do k = kts,ktf
      do i = its,itf
@@ -1267,7 +1270,10 @@ contains
      enddo
    endif
 !
-   if (p_qi .ge. p_first_scalar .and. .not.restart) then
+!zhang's doing
+!zhang    if (p_qi .ge. p_first_scalar .and. .not.restart) then
+   if (p_qi .ge. p_first_scalar .and. (.not.restart .or. .not.allowed_to_read)) then
+!end of zhang's doing
       do j = jts,jtf
       do k = kts,ktf
       do i = its,itf

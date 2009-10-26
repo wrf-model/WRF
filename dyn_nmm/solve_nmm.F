@@ -191,10 +191,9 @@
 !
       IF(NTSD_current==0)THEN
         IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
-!zhang's doing
-          if( grid%id .eq. 1 ) NTSD_restart1=NSTART/3
-          if( grid%id .eq. 2 ) NTSD_restart2=NSTART
-!zhang's doing ends
+!zhang's doing: temporarily hardwired for two domains
+          if( grid%id .eq. 1 ) NTSD_restart1=INT(grid%TSTART*3600./GRID%DT+0.5)
+          if( grid%id .eq. 2 ) NTSD_restart2=INT(grid%TSTART*3600./GRID%DT+0.5)
           IHRST=NSTART_HOUR
           NTSD_restart=NTSD
         ELSE

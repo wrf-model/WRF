@@ -174,16 +174,25 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
    CALL nl_get_truelat1 (parent%id, parent%truelat1 )
    CALL nl_get_truelat2 (parent%id, parent%truelat2 )
+! bao : to make the restart output identical at the restart initial time for stand_lon
+   CALL nl_get_stand_lon (parent%id, parent%stand_lon )
+! bao
    CALL nl_get_map_proj (parent%id, parent%map_proj )
    CALL nl_get_iswater (parent%id, parent%iswater )
 
    nest%truelat1=parent%truelat1
    nest%truelat2=parent%truelat2
+!bao
+   nest%stand_lon=parent%stand_lon
+!bao
    nest%map_proj=parent%map_proj
    nest%iswater=parent%iswater
 
    CALL nl_set_truelat1(nest%id, nest%truelat1)
    CALL nl_set_truelat2(nest%id, nest%truelat2)
+!bao
+   CALL nl_set_stand_lon(nest%id, nest%stand_lon)
+!bao
    CALL nl_set_map_proj(nest%id, nest%map_proj)
    CALL nl_set_iswater(nest%id, nest%iswater)
 

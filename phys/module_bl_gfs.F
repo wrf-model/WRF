@@ -394,7 +394,10 @@ CONTAINS
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
 
-   IF(.not.restart)THEN
+!zhang's doing
+!zhang   IF(.not.restart)THEN
+   IF(.not.restart .or. .not.allowed_to_read)THEN
+!end of zhang's doing
      DO j=jts,jtf
      DO k=kts,ktf
      DO i=its,itf
@@ -408,7 +411,10 @@ CONTAINS
      ENDDO
    ENDIF
 
-   IF (P_QI .ge. P_FIRST_SCALAR .and. .not.restart) THEN
+!zhang's doing
+!zhang   IF (P_QI .ge. P_FIRST_SCALAR .and. .not.restart) THEN
+   IF (P_QI .ge. P_FIRST_SCALAR .and. (.not.restart .or. .not.allowed_to_read)) THEN
+!end of zhang's doing
       DO j=jts,jtf
       DO k=kts,ktf
       DO i=its,itf

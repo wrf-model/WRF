@@ -244,9 +244,6 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 
     ! on restart do not force the nest the first time since it has already been forced
     ! prior to the writing of the restart file
-!zhang test    IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
-!zhang test    IF ( .NOT. ( (config_flags%restart .or. nested_grid%analysis) .AND. nested_grid%first_force ) ) THEN
-    IF ( .NOT. (  nested_grid%analysis .AND. nested_grid%first_force ) ) THEN
        ! couple nested domain
        grid => nested_grid
        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -260,11 +257,8 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #         include "actual_args.inc"
 !
                                      )
-    ENDIF ! not restart and first force
 
     grid => nested_grid%intermediate_grid
-!zhang test    IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
-     IF ( .NOT. ( nested_grid%analysis .AND. nested_grid%first_force ) ) THEN
        ! perform 2nd part: run interpolation on the intermediate domain
        ! and compute the values for the nest boundaries
        ! note that this is all local (no communication)
@@ -274,8 +268,6 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #         include "actual_args.inc"
 !
                                     )
-    ENDIF ! not restart and first_force
-
     IF ( nested_grid%first_force ) THEN
        nested_grid%first_force = .FALSE.
     ENDIF

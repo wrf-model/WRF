@@ -944,6 +944,12 @@ integer myproc
    LOGICAL :: etamp = .false.
    integer :: month,iday
    INTEGER :: i, j, k, itf, jtf, ktf
+!zhang's doing
+   INTEGER :: JULDAY_start,JULYR_start
+   REAL :: GMT_start
+   INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
+   real (kind=8) :: day_in_sec,day_in_sec_ref
+!end of zhang's doing
 !---------------------------------------------------------------------
 
    jtf=min0(jte,jde-1)
@@ -1045,7 +1051,20 @@ integer myproc
         CASE (HWRFLWSCHEME)
              CALL nl_get_start_month(id,month)
              CALL nl_get_start_day(id,iday)
-             CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+!zhang's doing
+     CALL nl_get_start_year(id,start_year)
+     CALL nl_get_start_month(id,start_month)
+     CALL nl_get_start_day(id,start_day)
+     CALL nl_get_start_hour(id,start_hour)
+     CALL nl_get_start_minute(id,start_minute)
+     CALL nl_get_start_second(id,start_second)
+     CALL jdn_sec(day_in_sec,start_year,start_month,start_day,0,0,0)
+     CALL jdn_sec(day_in_sec_ref,start_year,1,1,0,0,0)
+     julyr_start=start_year
+     julday_start=(day_in_sec-day_in_sec_ref)/(3600.*24.)+1
+     gmt_start=start_hour+real(start_minute)/60.+real(start_second)/3600.
+!zhang's doing             CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+             CALL hwrfrainit(sfull,shalf,pptop,JULYR_start,MONTH,IDAY,GMT_start,&
                            allowed_to_read ,                         &
                            kds, kde, kms, kme, kts, kte     )
              hwrflw = .true.

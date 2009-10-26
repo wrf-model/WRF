@@ -97,7 +97,7 @@
       REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
       REAL :: TEND
 !zhang's doing 
-      REAL :: TSTART,TEND
+      REAL :: TSTART
 !zhang's doing ends
 
 !
@@ -735,138 +735,6 @@
 !zhang's dong for analysis option:
       NCNVC0  = grid%NCNVC
       NPHS0   = grid%NPHS
-  IF((RESTRT .AND. ANAL) .AND. allowed_to_read)THEN
-!
-!***
-!***    AVERAGE CLOUD AMOUNT ARRAY
-!***
-!zhang's doing        IF(MOD(NTSD,NCLOD).LT.NPHS)THEN
-        IF(MOD(NTSD,NCLOD).LT.NPHS0)THEN
-          CALL wrf_message('  ZERO AVG CLD AMT ARRAY')
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            ACFRCV(I,J)=0.
-            NCFRCV(I,J)=0
-            ACFRST(I,J)=0.
-            NCFRST(I,J)=0
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***     GRID-SCALE AND CONVECTIVE LATENT HEATING ARRAYS.
-!***
-!zhang's doing        IF(MOD(NTSD,NHEAT).LT.NCNVC)THEN
-        IF(MOD(NTSD,NHEAT).LT.NCNVC0)THEN
-          CALL wrf_message('  ZERO ACCUM LATENT HEATING ARRAYS')
-!
-          AVRAIN=0.
-          AVCNVC=0.
-          DO J=JFS,JFE
-          DO K=KPS,KPE
-          DO I=IFS,IFE
-            TRAIN(I,K,J)=0.
-            TCUCN(I,K,J)=0.
-          ENDDO
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***  IF THIS IS NOT A NESTED RUN, INITIALIZE TKE
-!***
-!       IF(.NOT.NEST)THEN
-!         DO K=1,LM
-!           DO J=JFS,JFE
-!           DO I=IFS,IFE
-!             Q2(I,K,J)=AMAX1(Q2(I,K,J)*HBM2(I,J),EPSQ2)
-!           ENDDO
-!           ENDDO
-!         ENDDO
-!       ENDIF
-!***
-!***  CLOUD EFFICIENCY
-!***
-!       DO J=JFS,JFE
-!       DO I=IFS,IFE
-!!!       CLDEFI(I,J)=AVGEFI*SM(I,J)+STEFI*(1.-SM(I,J))
-!         CLDEFI(I,J)=1.
-!       ENDDO
-!       ENDDO
-!***
-!***  TOTAL AND CONVECTIVE PRECIPITATION ARRAYS.
-!***  TOTAL SNOW AND SNOW MELT ARRAYS.
-!***  STORM SURFACE AND BASE GROUND RUN OFF ARRAYS.
-!
-!zhang's doing        IF(MOD(NTSD,NPREC).LT.NPHS)THEN
-        IF(MOD(NTSD,NPREC).LT.NPHS0)THEN
-          CALL wrf_message('  ZERO ACCUM PRECIP ARRAYS')
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            IF(allowed_to_read)ACPREC(I,J)=0.  ! This is gopal's inclusion for moving nest
-            CUPREC(I,J)=0.
-            ACSNOW(I,J)=0.
-            ACSNOM(I,J)=0.
-            SSROFF(I,J)=0.
-            BGROFF(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***  LONG WAVE RADIATION ARRAYS.
-!***
-!zhang's doing        IF(MOD(NTSD,NRDLW).LT.NPHS)THEN
-        IF(MOD(NTSD,NRDLW).LT.NPHS0)THEN
-          CALL wrf_message('  ZERO ACCUM LW RADTN ARRAYS')
-          ARDLW=0.
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            ALWIN(I,J) =0.
-            ALWOUT(I,J)=0.
-            ALWTOA(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***  SHORT WAVE RADIATION ARRAYS.
-!***
-!zhang's doing        IF(MOD(NTSD,NRDSW).LT.NPHS)THEN
-        IF(MOD(NTSD,NRDSW).LT.NPHS0)THEN
-          CALL wrf_message('  ZERO ACCUM SW RADTN ARRAYS')
-          ARDSW=0.
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            ASWIN(I,J) =0.
-            ASWOUT(I,J)=0.
-            ASWTOA(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***  SURFACE SENSIBLE AND LATENT HEAT FLUX ARRAYS.
-!***
-!zhang's doing        IF(MOD(NTSD,NSRFC).LT.NPHS)THEN
-        IF(MOD(NTSD,NSRFC).LT.NPHS0)THEN
-          CALL wrf_message('  ZERO ACCUM SFC FLUX ARRAYS')
-          ASRFC=0.
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            SFCSHX(I,J)=0.
-            SFCLHX(I,J)=0.
-            SUBSHX(I,J)=0.
-            SNOPCX(I,J)=0.
-            SFCUVX(I,J)=0.
-            SFCEVP(I,J)=0.
-            POTEVP(I,J)=0.
-            POTFLX(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***  ENDIF FOR RESTART FILE ACCUMULATION ZERO BLOCK.
-!***
-  CALL wrf_message('INIT 3:  INITIALIZED ARRAYS FOR RESTART START')
-  ENDIF ! <--- (restart or analysis is true)
-!
-!end of zhang's doing
 !
 !----------------------------------------------------------------------
 !
@@ -1491,15 +1359,16 @@
 !
 !!!!	SHOULD PINT,Z,W BE REDEFINED IF RESTRT?
 
-      WRITE( wrf_err_message, * )' restrt=',restrt,' nest=',nest
+      WRITE( wrf_err_message, * )' test restrt=',restrt,' test nest=',nest
         CALL wrf_debug( 0, TRIM(wrf_err_message) )
-      WRITE( wrf_err_message, * )' pdtop=',pdtop,' pt=',pt
+      WRITE( wrf_err_message, * )' test pdtop=',pdtop,' test pt=',pt
         CALL wrf_debug( 0, TRIM(wrf_err_message) )
-
+      WRITE( 0, * )' RESTRT=',RESTRT,' NEST=',NEST,' a_t_r=', allowed_to_read
 !zhang's doing
 !zhang      IF(.NOT.RESTRT.OR.NEST)THEN
         IF(.NOT.RESTRT.OR.NEST .OR. .NOT.allowed_to_read)THEN
 !end of zhang's doing
+        WRITE( 0, *) 'Clobbering PINT, Z and W'
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
@@ -1509,7 +1378,7 @@
         ENDDO
         ENDDO
         ENDDO
-      ENDIF
+!zhang test      ENDIF
 
         DO K=KTS,KTE-1
         DO J=JFS,JFE
@@ -1519,6 +1388,7 @@
         ENDDO
         ENDDO
         ENDDO
+      ENDIF    !zhang test
 
 #ifndef NO_RESTRICT_ACCEL
 !----------------------------------------------------------------------
@@ -1762,12 +1632,17 @@
       CALL domain_setgmtetc( GRID, START_OF_SIMULATION )
 
       if(restrt) then
-        CALL domain_clock_get( grid, current_time=currentTime )
-        CALL WRFU_TimeGet( currentTime, YY=grid%julyr, dayOfYear=grid%julday, &
-                           H=hr, M=mn, S=sec, MS=ms, rc=rc)
-        grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-        WRITE( wrf_err_message , * ) 'DEBUG start_domain_nmm():  gmt = ',grid%gmt
-        CALL wrf_debug( 150, TRIM(wrf_err_message) )
+!zhang test
+!zhang        CALL domain_clock_get( grid, current_time=currentTime )
+!zhang        CALL WRFU_TimeGet( currentTime, YY=grid%julyr, dayOfYear=grid%julday, &
+!zhang                           H=hr, M=mn, S=sec, MS=ms, rc=rc)
+!zhang        grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+!zhang        WRITE( wrf_err_message , * ) 'DEBUG start_domain_nmm():  gmt = ',grid%gmt
+!zhang        CALL wrf_debug( 150, TRIM(wrf_err_message) )
+     CALL nl_get_julyr (grid%id, grid%julyr)
+     CALL nl_get_julday (grid%id, grid%julday)
+     CALL nl_get_gmt (grid%id, grid%gmt)
+!zhang test end
       endif
 
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
@@ -1855,7 +1730,8 @@
 
 !-----------------------------------------------------------------------
 !
-      IF(NSTART==0)THEN
+      IF(NSTART.EQ.0 .or. .not.allowed_to_read )THEN
+!zhang test       IF(NSTART==0)THEN
 
         DO J=JMS,JME
         DO I=IMS,IME
@@ -1877,10 +1753,12 @@
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 #ifdef HWRF
+      IF (.NOT. RESTRT) THEN   !zhang test
         moist = 0.0
         F_ICE = F_ICE_PHY
         F_RIMEF = F_RIMEF_PHY
         F_RAIN = F_RAIN_PHY
+      ENDIF                  !zhang test
 #endif
 
       IF (.NOT. RESTRT) THEN

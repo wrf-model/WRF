@@ -12,6 +12,7 @@ contains
                   rublten,rvblten,                                             &
                   dusfcg,dvsfcg,                                               &
                   var2d,oc12d,oa2d1,oa2d2,oa2d3,oa2d4,ol2d1,ol2d2,ol2d3,ol2d4, &
+                  znu,znw,mut,p_top,                                           & 
                   cp,g,rd,rv,ep1,pi,                                           &
                   dt,dx,kpbl2d,itimestep,                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
@@ -119,17 +120,47 @@ contains
                                                       oa2d1,oa2d2,oa2d3,oa2d4, &
                                                       ol2d1,ol2d2,ol2d3,ol2d4
 !
+   real,     dimension( kms:kme )                                            , &
+             optional                                                        , &
+             intent(in   )   ::                                           znu, &
+                                                                          znw
+!
+   real,     dimension( ims:ime, jms:jme )                                   , &
+             optional                                                        , &
+             intent(in   )   ::                                           mut
+!
+   real,     optional, intent(in   )   ::                               p_top
+!
 !local
 !
   real,   dimension( its:ite, kts:kte )  ::                           delprsi
   real,   dimension( its:ite, 4 )        ::                               oa4, &
                                                                           ol4
   integer ::  i,j,k,kdt
+  real,     dimension( its:ite, kts:kte )  ::                            pdh
+  real,     dimension( its:ite, kts:kte+1 )  ::                         pdhi
 !
    do j = jts,jte
+      if(present(mut))then
+! For ARW we will replace p and p8w with dry hydrostatic pressure
+        do k = kts,kte+1
+          do i = its,ite
+             if(k.le.kte)pdh(i,k) = mut(i,j)*znu(k) + p_top
+             pdhi(i,k) = mut(i,j)*znw(k) + p_top
+          enddo
+        enddo
+      else
+        do k = kts,kte+1
+          do i = its,ite
+             if(k.le.kte)pdh(i,k) = p3d(i,k,j)
+             pdhi(i,k) = p3di(i,k,j)
+          enddo
+        enddo
+      endif
+!
       do k = kts,kte
         do i = its,ite
-          delprsi(i,k) = p3di(i,k,j)-p3di(i,k+1,j)
+          delprsi(i,k) = pdhi(i,k)-pdhi(i,k+1)
         enddo
       enddo
         do i = its,ite
@@ -145,8 +176,8 @@ contains
       call gwdo2d(dudt=rublten(ims,kms,j),dvdt=rvblten(ims,kms,j)              &
               ,u1=u3d(ims,kms,j),v1=v3d(ims,kms,j)                             &
               ,t1=t3d(ims,kms,j),q1=qv3d(ims,kms,j)                            &
-              ,prsi=p3di(ims,kms,j),del=delprsi(its,kts)                       &
-              ,prsl=p3d(ims,kms,j),prslk=pi3d(ims,kms,j)                       &
+              ,prsi=pdhi(its,kts),del=delprsi(its,kts)                         &
+              ,prsl=pdh(its,kts),prslk=pi3d(ims,kms,j)                         &
               ,zl=z(ims,kms,j),rcl=1.0                                         &
               ,dusfc=dusfcg(ims,j),dvsfc=dvsfcg(ims,j)                         &
               ,var=var2d(ims,j),oc1=oc12d(ims,j)                               &
@@ -202,8 +233,9 @@ contains
    real                 ::  dudt(ims:ime,kms:kme),dvdt(ims:ime,kms:kme),       &
                             u1(ims:ime,kms:kme),v1(ims:ime,kms:kme),           & 
                             t1(ims:ime,kms:kme),q1(ims:ime,kms:kme),           &
-                            zl(ims:ime,kms:kme),prsl(ims:ime,kms:kme),         &
-                            prslk(ims:ime,kms:kme),prsi(ims:ime,kms:kme)
+                            zl(ims:ime,kms:kme),prsl(its:ite,kts:kte),         &
+                            prslk(ims:ime,kms:kme),prsi(its:ite,kts:kte+1),    &
+                            dusfc(ims:ime),dvsfc(ims:ime)
    real                 ::  del(its:ite,kts:kte)
 !
    integer              ::  kpbl(ims:ime)
@@ -248,7 +280,6 @@ contains
                             rulow(its:ite),bnv(its:ite),                       &
                             oa(its:ite),ol(its:ite),                           &
                             roll(its:ite),dtfac(its:ite),                      &
-                            dusfc(its:ite),dvsfc(its:ite),                     &
                             brvf(its:ite),xlinv(its:ite),                      &
                             delks(its:ite),delks1(its:ite),                    &
                             bnv2(its:ite,kts:kte),usqj(its:ite,kts:kte),       &

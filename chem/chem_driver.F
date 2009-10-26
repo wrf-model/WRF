@@ -106,7 +106,7 @@
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::              &
                                                               p_phy,u_phy,v_phy                   &
                                                              ,t_phy,dz8w,t8w,p8w                  &
-                                                             ,rho,rri,z_at_w,vvel,zmid
+                                                             ,rho,rri,z_at_w,vvel,zmid,rh
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: pbl_h
       REAL,DIMENSION(grid%sm32:grid%em32-1) :: QL,TL
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: REXNSFC,FACTRS                &
@@ -600,7 +600,7 @@
                          moist, num_3d_m, rho,                                        &
                          p_phy,  u_phy, v_phy,                                        &
                          p8w, t_phy, t8w, grid%z, z_at_w,                          &
-                         dz8w, grid%fnm, grid%fnp,                              &
+                         dz8w, rh,grid%fnm, grid%fnp,                              &
                          ids, ide, jds, jde, kds, kde,                                &
                          ims, ime, jms, jme, kms, kme,                                &
                          its,ite,jts,jte,                                             &
@@ -710,7 +710,7 @@
            config_flags%chem_opt /= CHEM_TRACE2 ) then
          call wrf_debug(15,'calling optical driver')
          call optical_driver (grid%id,curr_secs,grid%dt,config_flags,haveaer,         &
-              chem,dz8w,rri,                                                          &
+              chem,dz8w,rri,rh,                                                       &
               grid%h2oai,grid%h2oaj,                                                  &
               grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                    &
               grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                            &

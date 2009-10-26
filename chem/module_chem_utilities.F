@@ -10,7 +10,7 @@ CONTAINS
                          phb, t, moist, n_moist,                 &  ! input
                          rho, p_phy ,          &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
-                         z, z_at_w, dz8w,                             &  ! output
+                         z, z_at_w, dz8w,rh,                          &  ! output
                          fzm, fzp,                                    &  ! params
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
@@ -39,7 +39,7 @@ CONTAINS
                                                                 rho, &
                                                                   z, &
                                                                dz8w, &
-                                                              z_at_w
+                                                         rh,  z_at_w
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
           INTENT(IN   )                                  ::      pb, &
@@ -127,9 +127,14 @@ CONTAINS
     do k = k_start, k_end
     do i = i_start, i_end
       z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
+      rh(i,k,j) = max(.1,MIN( .95, moist(i,k,j,p_qv) / &
+               (3.80*exp(17.27*(t_phy(i,k,j)-273.)/ &
+               (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j)))))
+!      rh(i,k,j)=max(.1,rh(i,k,j))
     enddo
     enddo
     enddo
+
 
 !  interp t and p at w points
 

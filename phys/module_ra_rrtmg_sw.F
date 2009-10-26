@@ -1344,10 +1344,10 @@
 
       end module rrsw_wvn
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/mcica_subcol_gen_sw.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.5 $
-!     created:   $Date: 2008/08/29 17:59:08 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module mcica_subcol_gen_sw
 
@@ -1918,10 +1918,10 @@
 
       end module mcica_subcol_gen_sw
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_cldprmc.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.6 $
-!     created:   $Date: 2008/09/17 21:47:54 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 
       module rrtmg_sw_cldprmc
 
@@ -2024,7 +2024,7 @@
 
 ! Initialize
 
-      hvrclc = '$Revision: 1.6 $'
+      hvrclc = '$Revision: 1.3 $'
 
 ! Some of these initializations are done elsewhere
       do lay = 1, nlayers
@@ -2248,10 +2248,10 @@
 
       end module rrtmg_sw_cldprmc
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_reftra.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 17:59:10 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 
       module rrtmg_sw_reftra
 
@@ -2557,10 +2557,10 @@
 
       end module rrtmg_sw_reftra
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_setcoef.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 17:59:10 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 
       module rrtmg_sw_setcoef
 
@@ -2903,10 +2903,10 @@
 
       end module rrtmg_sw_setcoef
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_taumol.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 17:59:11 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 
       module rrtmg_sw_taumol
 
@@ -4396,10 +4396,10 @@
 
       end module rrtmg_sw_taumol
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_init.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 17:59:08 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 
       module rrtmg_sw_init
 
@@ -7700,10 +7700,10 @@
 
       end module rrtmg_sw_init
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_vrtqdr.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 17:59:12 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_sw_vrtqdr
 
@@ -7855,10 +7855,10 @@
 
       end module rrtmg_sw_vrtqdr
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_spcvmc.f90,v $
-!     author:    $Author: mike $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
 !     revision:  $Revision: 1.3 $
-!     created:   $Date: 2008/08/29 17:59:11 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 
       module rrtmg_sw_spcvmc
 
@@ -8456,10 +8456,10 @@
 
       end module rrtmg_sw_spcvmc
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_sw/src/rrtmg_sw_rad.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.9 $
-!     created:   $Date: 2008/09/17 21:47:54 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_sw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
        module rrtmg_sw_rad
 
@@ -9508,7 +9508,7 @@
          liqflag = liqflgsw
 
 ! Move incoming GCM cloud arrays to RRTMG cloud arrays.
-! For GCM input, incoming reicmcl is defined based on selected ice parameterization (inflglw)
+! For GCM input, incoming reicmcl is defined based on selected ice parameterization (inflgsw)
 
          do l = 1, nlayers
             do ig = 1, ngptsw
@@ -9574,6 +9574,7 @@ CONTAINS
                        p3d, p8w, pi3d, rho3d,                     &
                        dz8w, cldfra3d, r, g,                      &
                        icloud, warm_rain,                         &
+                       f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
@@ -9623,8 +9624,6 @@ CONTAINS
                                                             SNOW, &
                                                              TSK, &
                                                           ALBEDO
-                                      
-!
 !
    REAL, INTENT(IN  )   ::                                   R,G
 !
@@ -9640,6 +9639,12 @@ CONTAINS
                                                             QI3D, &
                                                             QS3D, &
                                                             QG3D
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+         OPTIONAL                                               , &
+         INTENT(IN   ) ::                                         &
+                                                       F_ICE_PHY, &
+                                                      F_RAIN_PHY
 
    LOGICAL, OPTIONAL, INTENT(IN)   ::                             &
                                    F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
@@ -9927,6 +9932,7 @@ CONTAINS
               predicate = .FALSE.
             ENDIF
 
+! For MP option 3
             IF (.NOT. predicate .and. .not. warm_rain) THEN
                DO K=kts,kte
                   IF (T1D(K) .lt. 273.15) THEN
@@ -9939,10 +9945,12 @@ CONTAINS
             ENDIF
 
             IF (PRESENT(F_QI) .AND. PRESENT(QI3D)) THEN
-               DO K=kts,kte
-                  QI1D(K)=QI3D(I,K,J)
-                  QI1D(K)=max(0.,QI1D(K))
-               ENDDO
+               IF (F_QI) THEN
+                  DO K=kts,kte
+                     QI1D(K)=QI3D(I,K,J)
+                     QI1D(K)=max(0.,QI1D(K))
+                  ENDDO
+               ENDIF
             ENDIF
 
             IF (PRESENT(F_QS) .AND. PRESENT(QS3D)) THEN
@@ -9963,6 +9971,18 @@ CONTAINS
                ENDIF
             ENDIF
 
+! mji - For MP option 5
+            IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) .and. PRESENT(F_ICE_PHY) ) THEN
+               IF ( F_QC .and. .not. F_QI .and. F_QS ) THEN
+                  DO K=kts,kte
+                     qi1d(k) = qs3d(i,k,j)
+                     qc1d(k) = qc3d(i,k,j)
+                     qi1d(k) = max(0.,qi1d(k))
+                     qc1d(k) = max(0.,qc1d(k))
+                  ENDDO
+               ENDIF
+            ENDIF
+
          ENDIF
 
 !         EMISS0=EMISS(I,J)
@@ -9979,12 +9999,12 @@ CONTAINS
          nlay = (kte - kts + 1) + 1
 
 ! Select cloud liquid and ice optics parameterization options
-! For passing in cloud optical properties directly
+! For passing in cloud optical properties directly:
 !         icld = 2
 !         inflgsw = 0
 !         iceflgsw = 0
 !         liqflgsw = 0
-! For passing in cloud physical properties; cloud optics parameterized in RRTMG
+! For passing in cloud physical properties; cloud optics parameterized in RRTMG:
          icld = 2
          inflgsw = 2
          iceflgsw = 3
@@ -10052,62 +10072,94 @@ CONTAINS
          aldir(ncol) = albedo(i,j)
          aldif(ncol) = albedo(i,j)
 
+! Define cloud optical properties for radiation (inflgsw = 0)
+! This option is not currently active
+! Cloud and precipitation paths in g/m2 
+! qi=0 if no ice phase
+! qs=0 if no ice phase
+         if (inflgsw .eq. 0) then
+
+! Set cloud fraction and cloud optical properties here; not yet active
+            do k = kts, kte
+               cldfrac(ncol,k) = cldfra1d(k)
+               do nb = 1, nbndsw
+                  taucld(nb,ncol,k) = 0.0
+                  ssacld(nb,ncol,k) = 1.0
+                  asmcld(nb,ncol,k) = 0.0
+                  fsfcld(nb,ncol,k) = 0.0
+               enddo
+            enddo
+
+! Zero out cloud physical property arrays; not used when passing optical properties
+! into radiation
+            do k = kts, kte
+               clwpth(ncol,k) = 0.0
+               ciwpth(ncol,k) = 0.0
+               rel(ncol,k) = 10.0
+               rei(ncol,k) = 10.
+            enddo
+         endif
+
+! Define cloud physical properties for radiation (inflgsw = 1 or 2)
 ! Cloud fraction
-         do k = kts, kte
-            cldfrac(ncol,k) = cldfra1d(k)
-         enddo
+! Set cloud arrays if passing cloud physical properties into radiation
+         if (inflgsw .gt. 0) then 
+            do k = kts, kte
+               cldfrac(ncol,k) = cldfra1d(k)
+            enddo
 
 ! Compute cloud water/ice paths and particle sizes for input to radiation (CAM method)
-      pcols = ncol
-      pver = kte - kts + 1
-      gravmks = g
-      landfrac(ncol) = 2.-XLAND(I,J)
-      landm(ncol) = landfrac(ncol)
-      snowh(ncol) = 0.001*SNOW(I,J)
-      icefrac(ncol) = XICE(I,J)
+            pcols = ncol
+            pver = kte - kts + 1
+            gravmks = g
+            landfrac(ncol) = 2.-XLAND(I,J)
+            landm(ncol) = landfrac(ncol)
+            snowh(ncol) = 0.001*SNOW(I,J)
+            icefrac(ncol) = XICE(I,J)
 
 ! From module_ra_cam: Convert liquid and ice mixing ratios to water paths;
 ! pdel is in mb here; convert back to Pa (*100.)
 ! Water paths are in units of g/m2
-    do k = kts, kte
-       gicewp = qi1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box ice water path.
-       gliqwp = qc1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box liquid water path.
-       cicewp(ncol,k) = gicewp / max(0.01,cldfrac(ncol,k))               ! In-cloud ice water path.
-       cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
-    end do
+            do k = kts, kte
+               gicewp = qi1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box ice water path.
+               gliqwp = qc1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box liquid water path.
+               cicewp(ncol,k) = gicewp / max(0.01,cldfrac(ncol,k))               ! In-cloud ice water path.
+               cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
+            end do
 
 ! following Kiehl
-    call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+            call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
 
 ! following Kristjansson and Mitchell
-    call reicalc(ncol, pcols, pver, tlay, reice)
+            call reicalc(ncol, pcols, pver, tlay, reice)
 
 ! Limit upper bound of reice for Fu ice parameterization and convert
 ! from effective radius to generalized effective size (*1.0315; Fu, 1996)
-    if (iceflgsw .eq. 3) then
-       do k = kts, kte
-          reice(ncol,k) = reice(ncol,k) * 1.0315
-          reice(ncol,k) = min(140.0,reice(ncol,k))
-       end do
-    endif
+            if (iceflgsw .eq. 3) then
+               do k = kts, kte
+                  reice(ncol,k) = reice(ncol,k) * 1.0315
+                  reice(ncol,k) = min(140.0,reice(ncol,k))
+               end do
+            endif
 
 ! Set cloud physical property arrays
-         do k = kts, kte
-            clwpth(ncol,k) = cliqwp(ncol,k)
-            ciwpth(ncol,k) = cicewp(ncol,k)
-            rel(ncol,k) = reliq(ncol,k)
-            rei(ncol,k) = reice(ncol,k)
-         enddo
+            do k = kts, kte
+               clwpth(ncol,k) = cliqwp(ncol,k)
+               ciwpth(ncol,k) = cicewp(ncol,k)
+               rel(ncol,k) = reliq(ncol,k)
+               rei(ncol,k) = reice(ncol,k)
+            enddo
 
 ! Zero out cloud optical properties here, calculated in radiation 
-         do k = kts, kte
-            do nb = 1, nbndsw
-               taucld(nb,ncol,k) = 0.0
-               ssacld(nb,ncol,k) = 1.0
-               asmcld(nb,ncol,k) = 0.0
-               fsfcld(nb,ncol,k) = 0.0
+            do k = kts, kte
+               do nb = 1, nbndsw
+                  taucld(nb,ncol,k) = 0.0
+                  ssacld(nb,ncol,k) = 1.0
+                  asmcld(nb,ncol,k) = 0.0
+                  fsfcld(nb,ncol,k) = 0.0
+               enddo
             enddo
-         enddo
+         endif
 
 ! No clouds are allowed in the extra layer from model top to TOA
          clwpth(ncol,kte+1) = 0.

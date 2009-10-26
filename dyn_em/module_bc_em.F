@@ -1100,5 +1100,74 @@ CONTAINS
      ENDIF
   
   END SUBROUTINE lbc_fcx_gcx
+
+  SUBROUTINE set_w_surface2(                                             &
+                            w, ht, u, v, cf1, cf2, cf3, rdx, rdy,        &
+                            msftx, msfty,                                &
+                            ids, ide, jds, jde, kds, kde,                &
+                            ims, ime, jms, jme, kms, kme,                &
+                            its, ite, jts, jte, kts, kte                 )
+  implicit none
+
+! TYPE( grid_config_rec_type ) config_flags
+
+  INTEGER ,       INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                   ims, ime, jms, jme, kms, kme, &
+                                   its, ite, jts, jte, kts, kte
+
+   REAL :: rdx, rdy, cf1, cf2, cf3
+
+
+   REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
+                                               INTENT(IN   ) ::  u,       &
+                                                                 v
+
+   REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
+                                               INTENT(INOUT) ::  w
+
+   REAL , DIMENSION(  ims:ime , jms:jme ) , INTENT(IN   ) ::  ht,         &
+                                                              msftx,      &
+                                                              msfty
+
+   INTEGER :: i,j,k
+   INTEGER :: ip1,im1,jp1,jm1
+
+!  set kinematic lower boundary condition on W
+
+!  Comments on directional map scale factors:
+!  Chain rule: if Z=Z(X,Y) [true at the surface] then
+!  dZ/dt = dZ/dX * dX/dt + dZ/dY * dY/dt, U=dX/dt, V=dY/dt
+!  using capitals to denote actual values
+!  in mapped values, u=U, v=V, z=Z, 1/dX=mx/dx, 1/dY=my/dy
+!     => w = dz/dt = mx u dz/dx + my v dz/dy
+!  [where dz/dx is just the surface height change between x
+!   gridpoints, and dz/dy is the change between y gridpoints]
+!  [NB - cf1, cf2 and cf3 do vertical weighting of u or v values
+!   nearest the surface]
+
+     DO j = jts,min(jte,jde-1)
+       jm1 = max(j-1,jds)
+       jp1 = min(j+1,jde-1)
+     DO i = its,min(ite,ide-1)
+       im1 = max(i-1,ids)
+       ip1 = min(i+1,ide-1)
+
+         w(i,1,j)=  msfty(i,j)*                              &
+                  .5*rdy*(                                   &
+                           (ht(i,jp1)-ht(i,j  ))             &
+          *(cf1*v(i,1,j+1)+cf2*v(i,2,j+1)+cf3*v(i,3,j+1))    &
+                          +(ht(i,j  )-ht(i,jm1))             &
+          *(cf1*v(i,1,j  )+cf2*v(i,2,j  )+cf3*v(i,3,j  ))  ) &
+                    +msftx(i,j)*                             &
+                  .5*rdx*(                                   &
+                           (ht(ip1,j)-ht(i,j  ))             &
+          *(cf1*u(i+1,1,j)+cf2*u(i+1,2,j)+cf3*u(i+1,3,j))    &
+                          +(ht(i  ,j)-ht(im1,j))             &
+          *(cf1*u(i  ,1,j)+cf2*u(i  ,2,j)+cf3*u(i  ,3,j))  )
+
+      ENDDO
+      ENDDO
+
+  END SUBROUTINE set_w_surface2
   
 END MODULE module_bc_em

@@ -13,7 +13,7 @@
 !WRF:MODEL_LAYER:CHEMISTRY
 !
       SUBROUTINE optical_driver(id,curr_secs,dtstep,config_flags,haveaer,&
-               chem,dz8w,alt,                                            &
+               chem,dz8w,alt,relhum,                                     &
                h2oai,h2oaj,                                              &
                tauaer1,tauaer2,tauaer3,tauaer4,                          &
                gaer1,gaer2,gaer3,gaer4,                                  &
@@ -43,7 +43,7 @@
          INTENT(IN ) ::  chem
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
-         INTENT(IN ) ::  dz8w, alt, h2oai, h2oaj
+         INTENT(IN ) ::  relhum, dz8w, alt, h2oai, h2oaj
 !
 ! arrays that hold the aerosol optical properties
 !
@@ -76,7 +76,7 @@
    ENDIF
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
-                               RACMSORG_KPP,       RACMSORG_AQ,  &
+          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
       processingAerosols = .true.
@@ -95,7 +95,7 @@
 !
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
-                               RACMSORG_KPP,       RACMSORG_AQ   )
+          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ   )
      nbin_o = 8
    case (CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
@@ -131,7 +131,7 @@
         call wrf_debug(15,'optical driver: call optical averaging')
         call optical_averaging(id,curr_secs,dtstep,config_flags,     &
              nbin_o,haveaer,option_method,option_mie,chem,dz8w,alt,  &
-             h2oai,h2oaj,                                            &
+             relhum,h2oai,h2oaj,                                     &
              tauaer1,tauaer2,tauaer3,tauaer4,                        &
              gaer1,gaer2,gaer3,gaer4,                                &
              waer1,waer2,waer3,waer4,                                &

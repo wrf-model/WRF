@@ -9,6 +9,10 @@
 # define O_WRONLY _O_WRONLY
 #endif
 
+#ifdef _WIN32
+#include <Winsock2.h>
+#endif
+
 #define STANDARD_ERROR 2
 
 #define STANDARD_OUTPUT 1
@@ -30,7 +34,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 /* redirect standard out and standard error based on compile options*/
                                                                                                                                               
 #ifndef NCEP_DEBUG_MULTIDIR
-# ifndef MS_SUA
+# if !defined( MS_SUA ) 
     gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
@@ -174,6 +178,16 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 # endif
 #endif
 }
+
+#ifdef _WIN32
+/* Windows doesn't have a gethostid function so add a stub.
+   TODO: Create a version that will work on Windows. */
+int
+gethostid ()
+{
+        return 0;
+}
+#endif
 
 RSL_LITE_GET_HOSTNAME ( char * hn, int * size, int *n, int *hostid ) 
 {
@@ -680,7 +694,7 @@ RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
 #endif
 }
 
-#ifndef MS_SUA
+#if !defined( MS_SUA)  && !defined(_WIN32)
 #include <sys/time.h>
 RSL_INTERNAL_MILLICLOCK ()
 {

@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #ifdef XT3_Catamount
 #include <features.h>
+#elif defined(_WIN32)
+#include <Winsock2.h>
 #else
 #include <netinet/in.h>
 #endif

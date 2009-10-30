@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define index(X,Y) strchr(X,Y)
+#endif
+
 #include "protos.h"
 #include "registry.h"
 #include "data.h"

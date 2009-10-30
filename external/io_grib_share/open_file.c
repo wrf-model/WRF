@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+ 
+#ifdef _WIN32
+#include <io.h>
+#endif
 
 #ifndef CRAY
 # ifdef NOUNDERSCORE
@@ -103,7 +107,11 @@ int CLOSE_FILE (int *fd)
 
 int FLUSH_FILE (int *fd)
 {
+#ifdef _WIN32
+  _commit(*fd);
+#else
   fsync(*fd);
+#endif
   return 0;
 }
 

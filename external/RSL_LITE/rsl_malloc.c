@@ -65,6 +65,10 @@
 # define BASE_FREE     free
 #endif
 
+#ifdef _WIN32
+#define bzero(X,Y) memset(X,0,Y)
+#endif
+
 #ifndef MS_SUA
 # include <stdio.h>
 #endif
@@ -160,7 +164,7 @@ EF_PROTECT_FREE = 1 ;
 "rsl_malloc failed allocating %d bytes, called %s, line %d, try %d\n",
        s,f,l,tries) ;
        perror(mess) ;
-#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount) || defined(crayx1) || defined(MACOS) || defined(MS_SUA) )
+#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount) || defined(crayx1) || defined(MACOS) || defined(MS_SUA) || defined(_WIN32)) 
        minf = mallinfo() ;
        fprintf(stderr,"mallinfo: arena %d\n",minf.arena)  ;
        fprintf(stderr,"mallinfo: ordblks %d\n",minf.ordblks)  ;
@@ -184,7 +188,7 @@ EF_PROTECT_FREE = 1 ;
        if ( tries >= 2 )
        { 
 	 system("lsps -a") ;
-#ifndef MS_SUA
+#if !defined (MS_SUA) && !defined(_WIN32)
 	 sleep(1) ;
 #endif
        }

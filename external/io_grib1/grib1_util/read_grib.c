@@ -1899,6 +1899,11 @@ char *advance_time_str(char startdatein[], int amount, char enddate[])
   starttp.tm_year -= 1900;
   time = mktime(&starttp);
   time += amount;
+ #ifdef _WIN32
+   localtime_s(&endtp, &time);
+ #else
+    localtime_r(&time, &endtp);
+ #endif
   localtime_r(&time, &endtp);
   strftime(enddate,15,"%Y%m%d%H%M%S",&endtp);
   

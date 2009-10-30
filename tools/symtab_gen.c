@@ -33,7 +33,9 @@ For a sample main or calling program see the end of this file.
 
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
+#ifndef _WIN32
+# include <strings.h>
+#endif
 
 #define HASHSIZE 1024
 
@@ -92,6 +94,7 @@ int flag ;		/* 1 is create if not there, 0 return NULL if not there */
     return(p) ;
 }
 
+int
 hash(name)
 char * name ;
 {

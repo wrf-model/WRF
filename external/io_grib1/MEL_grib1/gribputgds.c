@@ -5,6 +5,8 @@
 #include <features.h>
 #undef htonl
 #define htonl(x)     swap_byte4(x)
+#elif defined(_WIN32)
+#include <Winsock2.h>
 #else
 #include <netinet/in.h>
 #endif
@@ -53,6 +55,10 @@ NCAR AIX does not have lrint, make one up.
 */
 #ifdef NCARIBM_NOC99
 #define lrint(dbl) ((long)rint(dbl))
+#endif
+
+#ifdef _WIN32
+#define lrint(x) (floor(x+(x>0) ? 0.5 : -0.5))
 #endif
 
 #if PROTOTYPE_NEEDED

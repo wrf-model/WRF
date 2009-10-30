@@ -21,6 +21,7 @@
 # endif
 #endif
 
+void
 WRF_NUM_BYTES_BETWEEN ( a , b , n )
   char * a ;
   char * b ;
@@ -32,12 +33,14 @@ WRF_NUM_BYTES_BETWEEN ( a , b , n )
 
 /*#define NAN_VALUE */
 #ifdef NAN_VALUE
+void
 GET_INITIAL_DATA_VALUE ( n )
   int * n ;
 {
   *n = 0xffc00000 ;
 }
 #else
+void
 GET_INITIAL_DATA_VALUE ( n )
   float * n ;
 {
@@ -45,6 +48,7 @@ GET_INITIAL_DATA_VALUE ( n )
 }
 #endif
 
+void
 WHAT_IS_A_NAN ( n )
   int * n ;
 {
@@ -65,6 +69,7 @@ fprintf(stderr,"WHAT_IS_NAN disabled\n") ;
     RETURN
     END SUBROUTINE wrf_mem_copy */
 
+void
 WRF_MEM_COPY ( a , b, n )
   char * a ; 
   char * b ; 

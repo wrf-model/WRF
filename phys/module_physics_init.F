@@ -1345,7 +1345,7 @@ integer myproc
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )
-           isfc = 1
+           isfc = 7
       CASE (MYJSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
 #if ( NMM_CORE == 1 )
@@ -1374,7 +1374,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 2
+           isfc = 4
 
       CASE (GFSSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
@@ -1389,7 +1389,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 1
+           isfc = 2
 #if (NMM_CORE==1)
       CASE (GFDLSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
@@ -1400,7 +1400,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 1
+           isfc = 2
 #endif
 
 #if ( EM_CORE == 1 )
@@ -1422,7 +1422,7 @@ integer myproc
            END SELECT
 
            CALL mynn_sf_init_driver(allowed_to_read,mynn_closure_level)
-           isfc=3
+           isfc=5
 
 #endif
 
@@ -1554,8 +1554,8 @@ integer myproc
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
       CASE (ACMPBLSCHEME)
-           if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           if(isfc .ne. 1 .and. isfc .ne. 7)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay or pxsfc scheme for this pbl option' )
            CALL acminit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1565,8 +1565,8 @@ integer myproc
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
       CASE (GFSSCHEME)
-           if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           if(isfc .ne. 2)CALL wrf_error_fatal &
+            ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            CALL gfsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1595,6 +1595,8 @@ integer myproc
                         its, ite, jts, jte, kts, kte          )
           END IF
       CASE (QNSEPBLSCHEME)
+           if(isfc .ne. 4)CALL wrf_error_fatal &
+            ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
            CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_MYJ,EXCH_H,restart,               &
                         allowed_to_read ,                     &
@@ -1603,6 +1605,8 @@ integer myproc
                         its, ite, jts, jte, kts, kte          )
 #if (NMM_CORE != 1)
       CASE (BOULACSCHEME)
+           if(isfc .ne. 1 .and. isfc .ne. 2)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay or myjsfc scheme for this pbl option' )
            CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                          TKE_PBL,EXCH_H,restart,               &
                          allowed_to_read ,                     &
@@ -1616,8 +1620,8 @@ integer myproc
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
-           IF(isfc .NE. 3 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
-                ( 'module_physics_init: use mynn sfc scheme or sfclay scheme for this pbl option')
+           IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
+                ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
            
            CALL mynn_bl_init_driver(&
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN&

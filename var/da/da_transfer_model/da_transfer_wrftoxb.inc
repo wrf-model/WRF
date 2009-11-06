@@ -345,6 +345,10 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       ! Adapted the code from WRF module_big_step_utilitites_em.F ----
       !         subroutine calc_p_rho_phi      Y.-R. Guo (10/20/2004)
 
+      ! NOTE: as of V3.1, P (pressure perturbation) and PB (base state pressure)
+      ! are included in the wrfinput file. However, P and PB are still
+      ! re-calculated here.
+
       cvpm =  - (1.0 - gas_constant/cp)
       cpovcv = cp / (cp - gas_constant)
 
@@ -352,6 +356,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          do i=its,ite
             ! The base specific volume (from real.init.code)
             ppb  = grid%znu(k) * grid%mub(i,j) + ptop
+            grid%pb(i,j,k) = ppb
             temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
             ttb  = temp * (base_pres/ppb)**kappa
             ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
@@ -395,8 +400,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
-            if (num_pseudo == 0 .and. grid%xb%q(i,j,k) < 1.0e-6) &
-               grid%xb%q(i,j,k) = 1.0e-6
+            if (num_pseudo == 0 .and. grid%xb%q(i,j,k) < 1.0e-9) &
+               grid%xb%q(i,j,k) = 1.0e-9
    
             ! Background qrn needed for radar radial velocity assmiilation:
 

@@ -14,6 +14,8 @@ subroutine da_transfer_xatowrf(grid)
    !    grid%t_2
    !    grid%moist
    !    grid%p
+   !    grid%psfc
+   !    grid%t2, grid%q2, grid%u10, grid%v10, grid%th2
    !
    !---------------------------------------------------------------------------
 
@@ -36,12 +38,14 @@ subroutine da_transfer_xatowrf(grid)
 
    real, dimension(ims:ime,jms:jme) :: mu_cgrid
 
-   real    :: t_full  , p_full, rho_full, q_full, ph_full , ph_xb_hd, &
+   real    :: t_full  , p_full, rho_dry, q_full, ph_full , ph_xb_hd, &
               qvf1, qvf2, qvf1_b, qvf2_b
+
+   real :: uu, vv, ps1, ps2, ts1, ts2, qv1, qv2, height
 
    if (trace_use) call da_trace_entry("da_transfer_xatowrf")
 
-   ! To kteep the background PH perturbation:
+   ! To keep the background PH perturbation:
 
    do j=jts,jte
       do i=its,ite
@@ -203,16 +207,16 @@ subroutine da_transfer_xatowrf(grid)
             p_full   = grid%xa%p(i,j,k) + grid%xb%p(i,j,k)
             q_full   = grid%moist(i,j,k,P_QV) + q_cgrid(i,j,k)
 
-            ! Note: According to WRF, thits its the dry air density used to
+            ! Note: According to WRF, this is the dry air density used to
             !       compute the geopotential height: 
-            rho_full = p_full / (gas_constant*t_full*(1.0+q_full/rd_over_rv))
+            rho_dry = p_full / (gas_constant*t_full*(1.0+q_full/rd_over_rv))
 
             ! To compute the theta increment with the full fitelds:
             grid%t_2(i,j,k) = t_full*(base_pres/p_full)**kappa - t0
 
             ! The full fiteld of analysis ph:
             ph_full  = ph_full  &
-                       - grid%xb%dnw(k) * (grid%xb%psac(i,j)+mu_cgrid(i,j)) / rho_full
+                       - grid%xb%dnw(k) * (grid%xb%psac(i,j)+mu_cgrid(i,j)) / rho_dry
 
             ! background hydrostatic phi:
             ph_xb_hd  = ph_xb_hd  &
@@ -348,6 +352,7 @@ subroutine da_transfer_xatowrf(grid)
       do i=its,ite
          grid%mu_2(i,j) = grid%mu_2(i,j) + mu_cgrid(i,j)
          grid%w_2(i,j,kte+1)=  grid%w_2(i,j,kte+1) + grid%xa%w(i,j,kte+1)
+         grid%psfc(i,j) = grid%psfc(i,j) + grid%xa%psfc(i,j)
       end do
 
       do k=kts,kte
@@ -358,9 +363,6 @@ subroutine da_transfer_xatowrf(grid)
 #endif
             grid%w_2(i,j,k) = grid%w_2(i,j,k) + grid%xa%w(i,j,k)
             grid%moist(i,j,k,P_QV) = grid%moist(i,j,k,P_QV) + q_cgrid(i,j,k)
-            ! makte sure qv its positive.
-            if (num_pseudo == 0 .and. grid%moist(i,j,k,P_QV) < 1.0e-6) &
-                grid%moist(i,j,k,P_QV) = 1.0e-6
 
             if (size(grid%moist,dim=4) >= 4) then
                grid%moist(i,j,k,p_qc) = grid%moist(i,j,k,p_qc) + grid%xa%qcw(i,j,k)
@@ -421,6 +423,40 @@ subroutine da_transfer_xatowrf(grid)
       end do
    end if
 #endif
+
+#ifdef DM_PARALLEL
+#include "HALO_EM_C.inc"
+#endif
+! re-calculate T2, Q2, U10, V10, TH2 using updated fields
+
+   do j=jts,jte
+      do i=its,ite 
+         uu = 0.5*(grid%u_2(i,j,kts)+grid%u_2(i+1,j,kts) )
+         vv = 0.5*(grid%v_2(i,j,kts)+grid%v_2(i,j+1,kts) )
+         ps1 = grid%p(i,j,kts)   + grid%pb(i,j,kts)
+         ps2 = grid%p(i,j,kts+1) + grid%pb(i,j,kts+1)
+         ts1 = (t0+grid%t_2(i,j,kts))*(ps1/base_pres)**kappa
+         ts2 = (t0+grid%t_2(i,j,kts+1))*(ps2/base_pres)**kappa
+         qv1 = grid%moist(i,j,kts, p_qv)/(1.0+grid%moist(i,j,kts,p_qv))
+         qv2 = grid%moist(i,j,kts+1, p_qv)/(1.0+grid%moist(i,j,kts+1,p_qv))
+         height = 0.5*(grid%phb(i,j,kts)+grid%ph_2(i,j,kts)+ &
+                       grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
+         height = height - grid%ht(i,j)
+         if (height <= 0.0) then
+            message(1) = "Negative height found"
+            write (unit=message(2),FMT='(2I6,A,F10.2,A,F10.2)') &
+               i,j,' ht = ',height ,' terr =  ',grid%ht(i,j)
+            call da_error(__FILE__,__LINE__, message(1:2))
+         end if
+         call da_sfc_wtq(grid%psfc(i,j), grid%tsk(i,j), &
+            ps1, ts1, qv1, uu, vv, &
+            ps2, ts2, qv2, &
+            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), &
+            grid%u10(i,j), grid%v10(i,j), grid%t2(i,j), &
+            grid%q2(i,j), grid%xb%regime(i,j))
+         grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
+      end do
+   end do
 
    if (print_detail_xa) then
       write(unit=stdout, fmt=*) 'simple variables:'

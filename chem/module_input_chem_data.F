@@ -77,6 +77,9 @@ MODULE module_input_chem_data
    
     INTEGER, DIMENSION(logg)                     :: iref
 
+    real, allocatable :: ch4_lbc(:,:)
+    real, allocatable :: n2o_lbc(:,:)
+    real, allocatable :: h2_lbc(:,:)
     REAL, DIMENSION(logg)                        :: fracref
     REAL, DIMENSION(kx)                          :: dens
     REAL, DIMENSION(kx+1)                        :: zfa
@@ -342,6 +345,13 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
   case (GOCART_SIMPLE)
      call wrf_debug("setup_profile_maps: nothing done for gocart simple")
+
+  case (MOZART_KPP)
+     call wrf_debug("setup_profile_maps: nothing done for mozart_kpp")
+
+  case (MOZCART_KPP)
+     call wrf_debug("setup_profile_maps: nothing done for mozcart_kpp")
+
   case default
      call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
 
@@ -2797,6 +2807,12 @@ SUBROUTINE input_chem_profile (si_grid)
      case (CBM4_KPP)
         get_last_gas = p_ho2
 
+     case (MOZART_KPP)
+        get_last_gas = p_meko2
+
+     case (MOZCART_KPP)
+        get_last_gas = p_meko2
+
      case default
         call wrf_error_fatal("get_last_gas: could not decipher chem_opt value")
 
@@ -3747,6 +3763,65 @@ SUBROUTINE med_read_bin_chem_fireemiss ( grid , config_flags ,intime, itime_max)
    RETURN
 END SUBROUTINE med_read_bin_chem_fireemiss
 
+SUBROUTINE mozcart_lbc_init( chem, num_chem,  &
+                             ims, ime, jms, jme, kms, kme,    &
+                             its, ite, jts, jte, kts )
+
+    USE module_state_description, only : p_ch4, p_n2o, p_h2
+
+integer, intent(in) :: num_chem
+integer, intent(in) :: ims, ime, jms, jme, kms, kme,    &
+                       its, ite, jts, jte, kts
+real, intent(in)    :: chem(ims:ime,kms:kme,jms:jme,num_chem)
+
+   integer           :: astat
+
+   if( p_ch4 > 1 ) then
+      allocate( ch4_lbc(its:ite,jts:jte),stat=astat )
+      if( astat /= 0 ) then
+         call wrf_error_fatal("mozcart_lbc_init: failed to allocate ch4 lbc")
+      end if
+      ch4_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_ch4)
+   end if
+   if( p_n2o > 1 ) then
+      allocate( n2o_lbc(its:ite,jts:jte),stat=astat )
+      if( astat /= 0 ) then
+         call wrf_error_fatal("mozcart_lbc_init: failed to allocate n2o lbc")
+      end if
+      n2o_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_n2o)
+   end if
+   if( p_h2 > 1 ) then
+      allocate( h2_lbc(its:ite,jts:jte),stat=astat )
+      if( astat /= 0 ) then
+         call wrf_error_fatal("mozcart_lbc_init: failed to allocate h2 lbc")
+      end if
+   end if
+   h2_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_h2)
+
+END SUBROUTINE mozcart_lbc_init
+
+SUBROUTINE mozcart_lbc_set( chem, num_chem,  &
+                            ims, ime, jms, jme, kms, kme,    &
+                            its, ite, jts, jte, kts )
+
+    USE module_state_description, only : p_ch4, p_n2o, p_h2
+
+integer, intent(in) :: num_chem
+integer, intent(in) :: ims, ime, jms, jme, kms, kme,    &
+                       its, ite, jts, jte, kts
+real, intent(inout) :: chem(ims:ime,kms:kme,jms:jme,num_chem)
+
+   if( p_ch4 > 1 ) then
+      chem(its:ite,kts,jts:jte,p_ch4) = ch4_lbc(its:ite,jts:jte)
+   end if
+   if( p_n2o > 1 ) then
+      chem(its:ite,kts,jts:jte,p_n2o) = n2o_lbc(its:ite,jts:jte)
+   end if
+   if( p_h2 > 1 ) then
+      chem(its:ite,kts,jts:jte,p_h2) = h2_lbc(its:ite,jts:jte)
+   end if
+
+END SUBROUTINE mozcart_lbc_set
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE module_input_chem_data
-

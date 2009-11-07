@@ -4,17 +4,23 @@
                config_flags,haveaer,                                     &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,              &
                chem,rho_phy,dz8w,xlat,xlong,z_at_w,gd_cloud,gd_cloud2,   &
-               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
-               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,      &
-               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,           &
-               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,  &
-               ph_n2o5,ph_o2,                                            &
+               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,                  &
+               ph_no3o,ph_hno2,ph_hno3,ph_hno4,ph_h2o2,                  &
+               ph_ch2or,ph_ch2om,ph_ch3cho,ph_ch3coch3,                  &
+               ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,                       &
+               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,             &
+               ph_hcochob, ph_n2o5,ph_o2,ph_n2o,                         &
+               ph_pan,ph_mpan,ph_acetol,ph_gly,                          &
+               ph_bigald,ph_mek,ph_c2h5ooh,ph_c3h7ooh,ph_pooh,           &
+               ph_rooh,ph_xooh,ph_isopooh,ph_alkooh,                     &
+               ph_mekooh,ph_tolooh,ph_terpooh,ph_mvk,                    &
+               ph_glyald,ph_hyac,                                        &
                tauaer1,tauaer2,tauaer3,tauaer4,                          &
                gaer1,gaer2,gaer3,gaer4,                                  &
                waer1,waer2,waer3,waer4,                                  &
                bscoef1,bscoef2,bscoef3,bscoef4,                          &
                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                      &
-               pm2_5_dry,pm2_5_water,uvrad,                              &
+               pm2_5_dry,pm2_5_water,uvrad,ivgtyp,                       &
                ids,ide, jds,jde, kds,kde,                                &
                ims,ime, jms,jme, kms,kme,                                &
                its,ite, jts,jte, kts,kte                                 )
@@ -55,7 +61,11 @@
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,        &  
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,             &  
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,    &
-           ph_n2o5,ph_o2
+           ph_n2o5,ph_o2,ph_n2o,ph_pan,ph_mpan,ph_acetol,ph_gly,       &
+           ph_bigald,ph_mek,ph_c2h5ooh,ph_c3h7ooh,ph_pooh,ph_rooh,     &
+           ph_xooh,ph_isopooh,ph_alkooh,ph_mekooh,ph_tolooh,           &
+           ph_terpooh,ph_mvk,ph_glyald,ph_hyac
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
          INTENT(INOUT ) ::                                             &
            gd_cloud,gd_cloud2
@@ -95,6 +105,7 @@
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    LOGICAL, INTENT(IN) :: haveaer
+   integer, INTENT(IN )        :: ivgtyp(ims:ime,jms:jme)
 !         
 !                                                    
 ! LOCAL  VAR
@@ -141,8 +152,7 @@
                its,ite, jts,jte, kts,kte                               )
      CASE (FTUV)
        call wrf_debug(15,'calling ftuv_driver')
-       call ftuv_radm2_driver(                                         &
-                              id, curr_secs, dtstep, config_flags,     &
+       call ftuv_radm2_driver( id, curr_secs, dtstep, config_flags,          &
                               gmt, julday,                             &
                               p_phy, t_phy, rho_phy, p8w, t8w,         &
                               xlat, xlong,    z_at_w,                  &

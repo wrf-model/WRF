@@ -944,7 +944,7 @@ PROGRAM convert_emissions
 
      write(message, FMT='(A)') ' put dumc1 into ebu_in_so2'
      call wrf_debug(100, TRIM( message ) )
-     grid%ebu_in_so2(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+     grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_so2) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -954,7 +954,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_no(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_no) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -964,7 +964,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_ald(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ald) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -974,7 +974,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_hcho(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hcho) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -984,7 +984,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_ora2(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ora2) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -994,7 +994,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-   !   grid%ebu_in_nh3(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+     ! grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_nh3) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1004,7 +1004,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_hc3(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hc3) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1014,7 +1014,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_hc5(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hc5) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1024,7 +1024,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_hc8(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hc8) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1034,7 +1034,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_eth(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_eth) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1044,7 +1044,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_co(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_co) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1054,7 +1054,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-   !   grid%ebu_in_ol2(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+   !   grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ol2) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1064,7 +1064,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_olt(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_olt) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1074,7 +1074,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_oli(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_oli) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1084,7 +1084,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_tol(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_tol) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1094,7 +1094,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_xyl(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_xyl) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1104,7 +1104,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_ket(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ket) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1114,7 +1114,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_csl(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_csl) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1124,7 +1124,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_iso(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_iso) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1134,7 +1134,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_pm25(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_pm25) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1144,7 +1144,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_pm10(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_pm10) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1154,7 +1154,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_oc(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_oc) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1164,7 +1164,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_bc(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_bc) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1174,7 +1174,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_dms(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_dms) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1184,7 +1184,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in_sulf(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_sulf) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN

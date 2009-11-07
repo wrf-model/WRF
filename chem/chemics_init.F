@@ -23,6 +23,8 @@
    USE module_configure
    USE module_state_description
    USE module_phot_mad
+
+!  USE module_ftuv_driver, only : ftuv_init
    USE module_aerosols_sorgam
    USE module_dep_simple
    USE module_data_gocart_dust
@@ -35,6 +37,7 @@
    USE module_mosaic_initmixrats, only:   mosaic_init_wrf_mixrats
    USE module_input_chem_data, only:      get_last_gas,              &
                                           gasprofile_init_pnnl,      &
+                                          mozcart_lbc_init,          &
                                           last_chem_time,            &
                                           setup_gasprofile_maps
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
@@ -156,6 +159,12 @@ call wrf_message("**************************************************************
    if ( config_flags%biomass_burn_opt == 1 ) then
        CALL wrf_debug(15,'calling biomass burning')
    endif
+   if( config_flags%chem_opt == MOZCART_KPP ) then
+       call wrf_message("chem_init: calling mozcart_lbc_init")
+       call mozcart_lbc_init( chem, num_chem, &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts )
+   endif
 
    if ( config_flags%wetscav_onoff == 1 ) then
       if ( config_flags%chem_opt >= 13 .OR. config_flags%chem_opt <= 8) then
@@ -267,7 +276,8 @@ call wrf_message("**************************************************************
     stepbioe=nint(bioemdt*60./dt)
     stepphot=nint(photdt*60./dt)
     stepchem=nint(chemdt*60./dt)
-    stepfirepl=plumerisefire_frq*60/nint(dt)
+  ! stepfirepl=plumerisefire_frq*60/nint(dt)
+    stepfirepl=nint(plumerisefire_frq*60/dt)
     stepbioe=max(stepbioe,1)
     stepphot=max(stepphot,1)
     stepchem=max(stepchem,1)
@@ -296,6 +306,11 @@ call wrf_message("**************************************************************
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
+!     CASE (FTUV)
+!     CALL wrf_debug(00,'call ftuv phot initialization')
+!       call ftuv_init( its, ite, jts, jte, kte, &
+!                       ide, jde, config_flags%chem_opt )
+
   END SELECT phot_select
 !
 ! initialization for aerosols
@@ -451,6 +466,10 @@ call wrf_message("**************************************************************
                  if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
            enddo
           enddo
+      CASE (MOZCART_KPP)
+        CALL wrf_debug(15,'MOZCART dust initialization')
+        ch_dust(:,:) = 0.8e-9_8
+
      CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG_KPP)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 

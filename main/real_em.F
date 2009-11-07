@@ -17,7 +17,7 @@ PROGRAM real_data
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
-   USE module_input_chem_emissopt3
+!  USE module_input_chem_emissopt3
 #endif
    USE module_utility, ONLY : WRFU_finalize
 
@@ -282,7 +282,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
-   USE module_input_chem_emissopt3
+!  USE module_input_chem_emissopt3
 #endif
 
    USE module_date_time

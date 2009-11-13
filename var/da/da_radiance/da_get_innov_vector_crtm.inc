@@ -319,7 +319,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
             Atmosphere(1)%Pressure(kte-k+1)    = 0.01   * p(1)  ! convert Pa to hPa
             Atmosphere(1)%Temperature(kte-k+1) = t(1)
-            Atmosphere(1)%Absorber(kte-k+1,1)  = 1000.0 * a(1)  ! in g/kg
+            Atmosphere(1)%Absorber(kte-k+1,1)  = 1000.0 * a(1)/(1.0-a(1))  ! in g/kg mixing ratio
 
             ! NOTE: WRF high-level q values seems too big, replaced by constants
             if (p(1)*0.01 < 75.0) Atmosphere(1)%Absorber(kte-k+1,1) = 0.001

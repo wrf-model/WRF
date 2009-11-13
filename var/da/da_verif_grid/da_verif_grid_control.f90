@@ -12,7 +12,7 @@ module da_verif_grid_control
   implicit none
 
   integer, parameter                     :: max_3d_variables = 6
-  integer, parameter                     :: max_2d_variables = 6
+  integer, parameter                     :: max_2d_variables = 7
   integer, parameter                     :: num_vert_levels = 20 
   integer, parameter                     :: max_num_scores = 3
   integer, parameter                     :: max_num_exps = 10

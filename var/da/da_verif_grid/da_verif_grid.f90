@@ -73,6 +73,7 @@ program da_verif_grid
    var2d(4)='V10M'
    var2d(5)='T2M'
    var2d(6)='Q2M'
+   var2d(7)='MU'
 
 !--Score names
    num_scores = 3
@@ -1000,7 +1001,7 @@ program da_verif_grid
   logical, intent(in)                                   ::   debug
   integer, allocatable, dimension(:,:,:)    ::   data_int
   real,    allocatable, dimension(:,:,:)    ::   u10, v10
-  real,    allocatable, dimension(:,:)      ::   psfc,t2m,q2m
+  real,    allocatable, dimension(:,:)      ::   psfc,t2m,q2m,mu
   real,    allocatable, dimension(:,:)      ::   xlat, xlon
   real,    allocatable, dimension(:,:,:)    ::   z,ph,phb  
   real,    allocatable, dimension(:,:,:)    ::   p,pb  
@@ -1050,6 +1051,13 @@ program da_verif_grid
           deallocate (  pb )                       
           deallocate (  ts )                       
           deallocate (  qv )                       
+
+  else if(var == 'MU' ) then
+          allocate ( mu(nx,ny) )
+          call da_get_var_2d_real_cdf( file,"MU", mu, nx, ny,                 &
+                                file_time_index, debug  )
+          data_out(:,:,1) = mu(:,:)
+          deallocate ( mu )
 
   else if(var == 'PSFC' ) then
           allocate ( psfc(nx,ny) )

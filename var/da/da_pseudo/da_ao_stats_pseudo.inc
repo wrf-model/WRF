@@ -98,6 +98,7 @@ subroutine da_ao_stats_pseudo  (stats_unit, iv, re)
    call da_proc_sum_int (nt)
    call da_proc_sum_int (np)
    call da_proc_sum_int (nq)
+   iv%nstats(pseudo) = nu + nv + nt + np + nq
    
    call da_proc_stats_combine(stats%average%u, stats%rms_err%u, &
       stats%minimum%u%value, stats%maximum%u%value, &

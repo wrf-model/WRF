@@ -14,5 +14,6 @@ superclean :
 	( cd ioapi_share ;  make superclean )
 	( cd RSL_LITE ; make superclean )
 	( cd fftpack/fftpack5 ; make superclean )
+	( cd atm_pom ; make superclean )
 
 

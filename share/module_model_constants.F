@@ -85,8 +85,13 @@
    REAL    , PARAMETER ::  w_beta  = 1.0 ! activation cfl number
 
        REAL , PARAMETER ::  pq0=379.90516
+#ifdef HWRF
+!Modified by Kwon for 0 tke
+       REAL , PARAMETER ::  epsq2=0.0
+#else
        REAL , PARAMETER ::  epsq2=0.2
-!      REAL , PARAMETER ::  epsq2=0.02
+!       REAL , PARAMETER ::  epsq2=0.02
+#endif
        REAL , PARAMETER ::  a2=17.2693882
        REAL , PARAMETER ::  a3=273.16
        REAL , PARAMETER ::  a4=35.86
@@ -104,7 +109,11 @@
        REAL , PARAMETER ::  epsfc=1./1.05
        REAL , PARAMETER ::  epswet=0.0
        REAL , PARAMETER ::  fcdif=1./3.
+#ifdef HWRF
+       REAL , PARAMETER ::  fcm=0.0
+#else
        REAL , PARAMETER ::  fcm=0.00003
+#endif
        REAL , PARAMETER ::  gma=-r_d*(1.-rcp)*0.5
        REAL , PARAMETER ::  p400=40000.0
        REAL , PARAMETER ::  phitp=15000.0
@@ -125,7 +134,11 @@
        REAL , PARAMETER ::  wght=0.35
        REAL , PARAMETER ::  wpc=0.075
        REAL , PARAMETER ::  z0land=0.10
+#ifdef HWRF 
+       REAL , PARAMETER ::  z0max=0.01
+#else
        REAL , PARAMETER ::  z0max=0.008
+#endif
        REAL , PARAMETER ::  z0sea=0.001
 !#endif
 

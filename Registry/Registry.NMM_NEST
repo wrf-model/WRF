@@ -929,6 +929,8 @@ rconfig   integer paerlev                 namelist,physics      1             1 
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
+rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
+rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "nmm input 12"
 
 # Dynamics
 # dynamics option (see package definitions, below)

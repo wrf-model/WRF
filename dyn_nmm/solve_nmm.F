@@ -117,7 +117,11 @@
      &,            radiation_tim,rdtemp_tim,turbl_tim,cltend_tim        &
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
      &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim    &
+#ifdef HWRF
+     &,            adjppt_tim,sst_tim,flux_tim
+#else
      &,            adjppt_tim
+#endif
       real,save :: exch_tim_max
       real :: btim,btimx
       real :: et_max,this_tim
@@ -505,7 +509,20 @@
  2000 CONTINUE
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+#ifdef HWRF
+! Coupling insertion:->
 !
+      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+      ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
+                       kds,kde,kts,kte,kms,kme,                  &
+                       HLON,HLAT,VLON,VLAT,SM,                   &
+                       grid%i_parent_start,grid%j_parent_start)
+!     CALL ATM_RECVdtc(NPHS*dt) <-  now called from ATM_TSTEP_INIT with no arg.
+!     CALL ATM_SENDGRIDS(HLON,HLAT,VLON,VLAT) <- now called from ATM_TSTEP_INIT
+!     CALL ATM_SENDSLM(SM)                    <- now called from ATM_TSTEP_INIT
+!<-:oupling insertion
+!
+#endif
 !-----------------------------------------------------------------------
 !***  PRESSURE TENDENCY, SIGMA DOT, VERTICAL PART OF OMEGA-ALPHA
 !-----------------------------------------------------------------------
@@ -1092,6 +1109,20 @@
 !
       rdtemp_tim=rdtemp_tim+timef()-btimx
 !
+#ifdef HWRF
+!
+!-------------------------------------------------------------------------------------
+!*** GET SSTs FROM DMITRY's COUPLER ON TO THE PARENT AND NESTED GRID
+!-------------------------------------------------------------------------------------
+! Coupling insertion:->
+        CALL ATM_GETSST(SST,SM)
+!<-:Coupling insertion
+      IF(GRID%ID .EQ. 1 .AND. MOD(NTSD,grid%NPHS)==0)THEN
+        btimx=timef()
+        sst_tim=sst_tim+timef()-btimx
+      ENDIF
+
+#endif
 !----------------------------------------------------------------------
 !***  TURBULENT PROCESSES 
 !----------------------------------------------------------------------
@@ -1156,6 +1187,39 @@
 !                     ***  NOTE  ***
 !
         turbl_tim=turbl_tim+timef()-btimx
+#ifdef HWRF
+
+
+!------------------------------------------------------------------------------
+!*** ATMOSPHERIC MODEL OUTPUTS FROM PARENT AND NESTED GRID FOR DMITRYs COUPLER
+!------------------------------------------------------------------------------
+!
+!-- TWBS  :  surface sensible heat flux, positive downward (W/m2)
+!-- QWBS  :  surface latent heat flux, positive downward (W/m2)
+!-- RLWIN :  downward long wave flux at ground surface,positive downward (W/m2)
+!-- RSWIN :  downward short wave flux at ground surface, positive downward (W/m2)
+!-- RADOT :  outgoing long wave flux at ground surface, positive upward (W/m2)
+!-- RSWOUT:  outgoing short wave flux at ground surface, positive upward (W/m2)
+!-- TAUX  :  x component of surface stress, u positive Eastward
+!-- TAUY  :  y component of surface stress, v positive Northward
+!-- PINT  :  3d array of interface pressure (pascals)
+!-- PREC  :  prec (m/timestep;timestep on grid1=60 sec)
+
+!
+!
+
+! Coupling insertion:->
+      call ATM_DOFLUXES(TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT, &
+                        TAUX,TAUY,PINT(:,1,:),PREC)
+!<-:Coupling insertion
+!
+
+      IF(GRID%ID .EQ. 1 .AND. MOD(NTSD,grid%NPHS)==0)THEN
+        btimx=timef()
+        flux_tim=flux_tim+timef()-btimx
+      ENDIF
+
+#endif
 !
         btimx=timef()
 !-----------------
@@ -1227,7 +1291,7 @@
 !----------------------------------------------------------------------
 !
       IF(MOD(NTSD,GRID%NCNVC)==0.AND.                                  &
-     &   CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN
+     &   CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN                       
 !
         btimx=timef()
 !-----------------
@@ -1397,7 +1461,11 @@
 !
       CALL HDIFF(NTSD,GRID%DT,FIS,DY_NMM,HDAC,HDACV                    &
      &          ,HBM2,DETA1,GRID%SIGMA                                 &
+#ifdef HWRF
+     &          ,T,Q,U,V,Q2,Z,W,SM,SICE,grid%h_diff                    &
+#else
      &          ,T,Q,U,V,Q2,Z,W,SM,SICE                                &
+#endif
      &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
@@ -1706,8 +1774,53 @@
       DEALLOCATE(CHEM_TRANS,STAT=ISTAT)
 #endif
 !
+! FOR VORTEX FOLLOWING MOVING NEST
+!
+!-----------------------------------------------------------------------------
+!***  CRITERIA SET FOR GRID MOTION. This is gopal's doing
+!-----------------------------------------------------------------------------
+!
+#ifdef MOVE_NESTS
+   IF(grid%id .NE. 1 .AND. MOD(NTSD,1)==0 .AND. grid%num_moves.EQ.-99)THEN
+!-----------------
+#ifdef DM_PARALLEL
+#    include "HALO_NMM_TRACK.inc"
+#endif
+!-----------------
+
+   CALL STATS_FOR_MOVE (XLOC_2,YLOC_2,PDYN,MSLP,SQWS                   &
+                      ,PINT,T,Q,U,V                                   &
+                      ,FIS,PD,SM,PDTOP,PT                             &
+                      ,DETA1,DETA2                                    &
+                      ,GRID%MOVED,MVNEST,NTSD,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
+                      ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
+                      ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry
+                      ,ITS,ITE,JTS,JTE,KTS,KTE              )           ! FOR NEST:DT=18,NPHS=3
+   CALL wrf_debug ( 100 , 'nmm stats_for_move: after advection' )
+   ENDIF
+#endif
+
+
 #define COPY_OUT
 #include <scalar_derefs.inc>
+#ifdef HWRF
+!-----------------------------------------------------------------------
+!*** ACCUMULATED ATMOSPHERIC MODEL FLUXES FOR DMITRYs COUPLER
+!-----------------------------------------------------------------------
+!
+!
+!
+! Coupling insertion:->
+      call ATM_SENDFLUXES
+!<-:Coupling insertion
+!
+! Kwon's doing to check heat flux
+!
+!  IF(grid%id==2)WRITE(0,*)'AFTER ATM_SENDFLUX QWBS TWBS AT 10 10 ',NTSD,QWBS(10,10),TWBS(10,10)
+!
+#endif
+
+
       Return
 !----------------------------------------------------------------------
 !**********************************************************************

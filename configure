@@ -369,6 +369,14 @@ if [ -n "$WRF_VENUS" ] ; then
     compileflags="${compileflags}!-DPLANET!-DVENUS"
   fi
 fi
+if [ $WRF_NMM_CORE = 1 ]; then
+if [ -n "$HWRF" ]; then
+    if [ $HWRF = 1 ]; then
+      echo building WRF with HWRF option
+      compileflags="${compileflags}!-DHWRF=1"
+    fi
+fi
+fi
 if [ -n "$WRF_CHEM" ] ; then
   if [ $WRF_CHEM = 1 ] ; then
     echo building WRF with chemistry option

@@ -394,6 +394,18 @@ while ( <CONFIGURE_DEFAULTS> )
            $_ =~ s:ESMFIOEXTLIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90 -lesmf_time:g ;
         }
       }
+     if ( $ENV{HWRF} )
+       {
+        $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
+        $_ =~ s:CONFIGURE_ATMPOM_INC:-I\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom:g;
+        $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
+       }
+     else
+       {
+        $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
+        $_ =~ s/CONFIGURE_ATMPOM//g ;
+        $_ =~ s:CONFIGURE_ATMPOM_INC::g;
+       }
 
     if ( ! (substr( $_, 0, 5 ) eq "#ARCH") ) { @machopts = ( @machopts, $_ ) ; }
     if ( substr( $_, 0, 10 ) eq "ENVCOMPDEF" )
@@ -436,6 +448,9 @@ while ( <CONFIGURE_DEFAULTS> )
           }
           if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" ) {
              $response = 1 ;
+          } elsif ( $ENV{HWRF} ) {
+             printf "HWRF requires moving nests";
+             $response = 2;
           } else {
              $response = <STDIN> ;
           } 
@@ -516,6 +531,16 @@ while ( <ARCH_PREAMBLE> )
     $_ =~ s:ESMFIOINC:-I\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90:g ;
     $_ =~ s:ESMFIODEFS::g ;
     $_ =~ s:ESMFTARGET:esmf_time:g ;
+    }
+  if ( $ENV{HWRF} )
+    {
+    $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
+    $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
+    }
+  else
+    {
+    $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
+    $_ =~ s/CONFIGURE_ATMPOM//g ;
     }
   $_ =~ s:CONFIGURE_EM_CORE:$sw_em_core:g ;
   $_ =~ s:CONFIGURE_DA_CORE:$sw_da_core:g ;

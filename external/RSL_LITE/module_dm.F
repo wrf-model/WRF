@@ -1288,17 +1288,23 @@ CONTAINS
 #  else
         CALL mpi_init ( ierr )
 #  endif
-        CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
-        CALL wrf_termio_dup
-      ENDIF
-#if (DA_CORE == 1)
-      CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
-      CALL wrf_set_dm_communicator( mpi_comm_local )
+        mpi_comm_here = MPI_COMM_WORLD
+#ifdef HWRF
+        CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
 #endif
+        CALL wrf_set_dm_communicator( mpi_comm_here )
+      ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_here )
+      CALL wrf_termio_dup( mpi_comm_here )
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
       CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
+#if (DA_CORE == 1)
+      CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
+      CALL wrf_set_dm_communicator( mpi_comm_local )
+      CALL wrf_termio_dup( mpi_comm_here ) 
+      CALL wrf_get_dm_communicator( mpi_comm_here )
+#endif
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
@@ -1336,21 +1342,22 @@ CONTAINS
    SUBROUTINE init_module_dm
 #ifndef STUBMPI
       IMPLICIT NONE
-      INTEGER mpi_comm_local, ierr, mytask, nproc
+      INTEGER mpi_comm_local, mpi_comm_here, ierr, mytask, nproc
       INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       CALL mpi_initialized( mpi_inited, ierr )
       IF ( .NOT. mpi_inited ) THEN
-	! If MPI has not been initialized then initialize it and 
-	! make comm_world the communicator
-	! Otherwise, something else (e.g. quilt-io) has already 
-	! initialized MPI, so just grab the communicator that
-	! should already be stored and use that.
-	CALL mpi_init ( ierr )
-        CALL wrf_termio_dup
-	CALL wrf_set_dm_communicator ( MPI_COMM_WORLD )
+        ! If MPI has not been initialized then initialize it and
+        ! make comm_world the communicator
+        ! Otherwise, something else (e.g. split_communicator) has already
+        ! initialized MPI, so just grab the communicator that
+        ! should already be stored and use that.
+        CALL mpi_init ( ierr )
+        mpi_comm_here = MPI_COMM_WORLD
+        CALL wrf_set_dm_communicator ( mpi_comm_here )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
+      CALL wrf_termio_dup( mpi_comm_local )
 #endif
    END SUBROUTINE init_module_dm
 
@@ -1730,14 +1737,15 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
    RETURN
 END SUBROUTINE wrf_dm_patch_domain
 
-SUBROUTINE wrf_termio_dup
+SUBROUTINE wrf_termio_dup( comm )
   IMPLICIT NONE
+  INTEGER, INTENT(IN) :: comm
   INTEGER mytask, ntasks
 #ifndef STUBMPI
   INTEGER ierr
   INCLUDE 'mpif.h'
-  CALL mpi_comm_size(MPI_COMM_WORLD, ntasks, ierr )
-  CALL mpi_comm_rank(MPI_COMM_WORLD, mytask, ierr )
+  CALL mpi_comm_size(comm, ntasks, ierr )
+  CALL mpi_comm_rank(comm, mytask, ierr )
   write(0,*)'starting wrf task ',mytask,' of ',ntasks
   CALL rsl_error_dup1( mytask )
 #else
@@ -1912,7 +1920,8 @@ SUBROUTINE write_68( grid, v , s , &
 END
 
    SUBROUTINE wrf_abort
-      IMPLICIT NONE
+
+    implicit none
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER ierr

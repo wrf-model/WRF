@@ -93,7 +93,7 @@
      &       ,SLPM,TERM1,THLM,TIME,TLM,TSFCK,ULM,VLM
 !
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
-      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
+      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
       REAL :: TEND
 
 !
@@ -485,11 +485,22 @@
           APEM1=(1.E5/PM1)**CAPA
 
         IF(NMM_TSK(I,J)>=200.)THEN         ! have a specific skin temp, use it
+#ifdef HWRF
+          THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,J,KTS+1))*APEM1
+          TSFCK=NMM_TSK(I,J)*(1.+P608*Q(I,J,KTS+1))
+#else
           THS(I,J)=NMM_TSK(I,J)*APEM1
           TSFCK=NMM_TSK(I,J)
+#endif
+
 	ELSE                               ! use lowest layer as a proxy
+#ifdef HWRF
+          THS(I,J)=T(I,J,KTS)*(1.+P608*Q(I,J,KTS+1))*APEM1
+          TSFCK=T(I,J,KTS)*(1.+P608*Q(I,J,KTS+1))
+#else
           THS(I,J)=T(I,J,KTS)*APEM1
           TSFCK=T(I,J,KTS)
+#endif
 	ENDIF
 
           PSFCK=PD(I,J)+PDTOP+PT
@@ -598,7 +609,11 @@
         DO K=KPS,KPE-1
         DO J=JFS,JFE
         DO I=IFS,IFE
+#ifdef HWRF
+          Q2(I,J,K)=0.
+#else
           Q2(I,J,K)=HBM2(I,J)*EPSQ2
+#endif
         ENDDO
         ENDDO
         ENDDO
@@ -606,8 +621,13 @@
         DO J=JFS,JFE
         DO I=IFS,IFE
           Q2(I,J,LM)    = 0.
+#ifdef HWRF
+          Q2(I,J,KTE-2)= 0.
+          Q2(I,J,KTE-1)= 0.
+#else
           Q2(I,J,KTE-2)= HBM2(I,J)*Q2INI
           Q2(I,J,KTE-1)= HBM2(I,J)*Q2INI
+#endif
         ENDDO
         ENDDO
       ENDIF
@@ -1192,8 +1212,30 @@
         IF(.NOT.RESTRT)THEN
           TH10(I,J)=FAC2*THS(I,J)+FAC1*THLM
           Q10(I,J)=FAC2*QSH(I,J)+FAC1*QLM
+#ifdef HWRF
+          IF(SM(I,J).LT.0.5)THEN
+              U10(I,J)=ULM*(log(10./Z0(I,J))/log(DZLM/Z0(I,J)))      ! this is all Qingfu's doing
+              V10(I,J)=VLM*(log(10./Z0(I,J))/log(DZLM/Z0(I,J)))
+              ZOQING=1.944*SQRT(U10(I,J)*U10(I,J)+V10(I,J)*V10(I,J))
+            IF(ZOQING.GT.60.)THEN
+              U10(I,J)=U10(I,J)*(1.12-7.2/ZOQING)
+              V10(I,J)=V10(I,J)*(1.12-7.2/ZOQING)
+             ENDIF
+          ELSE
+             ZOQING=(0.074*SQRT(ULM*ULM+VLM*VLM)-0.58)*1.0e-3
+             ZOQING=MAX(ZOQING,Z0(I,J))          ! for winds greater than 12.5 m/s
+             U10(I,J)=ULM*(log(10./ZOQING))/log(DZLM/ZOQING)      ! this is all Qingfu's doing
+             V10(I,J)=VLM*(log(10./ZOQING))/log(DZLM/ZOQING)
+             ZOQING=1.944*SQRT(U10(I,J)*U10(I,J)+V10(I,J)*V10(I,J))
+           IF(ZOQING.GT.60.)THEN
+              U10(I,J)=U10(I,J)*(1.12-7.2/ZOQING)
+              V10(I,J)=V10(I,J)*(1.12-7.2/ZOQING)
+           END IF
+          ENDIF          
+#else
           U10(I,J)=ULM
           V10(I,J)=VLM
+#endif
         ENDIF
 !
 !        FAC1=2./DZLM
@@ -1213,10 +1255,13 @@
             FAC2=0.2
           ENDIF
 
+#ifdef HWRF
+          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
+          QSHLTR(I,J)=0.2*QSH(I,J)+0.8*QLM
+#else
           TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
-!          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
           QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
-!          QSHLTR(I,J)=0.2*QSH(I,J)+0.8*QLM
+#endif
         ENDIF
 !***
 !***  NEED TO CONVERT TO THETA IF IS THE RESTART CASE
@@ -1652,6 +1697,12 @@
 !
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?
+#ifdef HWRF
+        moist = 0.0
+        F_ICE = F_ICE_PHY
+        F_RIMEF = F_RIMEF_PHY
+        F_RAIN = F_RAIN_PHY
+#endif
 
       IF (.NOT. RESTRT) THEN
 ! Added by Greg Thompson, NCAR-RAL, for initializing water vapor

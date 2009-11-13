@@ -320,7 +320,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
                           ,PINT,T,Q,U,V                          &
                           ,FIS,PD,SM,PDTOP,PTOP                  &
                           ,DETA1,DETA2                           &
+#ifdef HWRF
+                          ,MOVED,MVNEST,NTSD,NPHS,CFREQ          & ! CFREQ*DT*NPHS=540s
+#else
                           ,MOVED,MVNEST,NTSD,NPHS                &
+#endif
                           ,IDS,IDE,JDS,JDE,KDS,KDE               &
                           ,IMS,IME,JMS,JME,KMS,KME               &
                           ,ITS,ITE,JTS,JTE,KTS,KTE               )
@@ -355,7 +359,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       INTEGER,INTENT(IN)                                    :: IDS,IDE,JDS,JDE,KDS,KDE   &
                                                               ,IMS,IME,JMS,JME,KMS,KME   &
                                                               ,ITS,ITE,JTS,JTE,KTS,KTE   &
+#ifdef HWRF
+                                                              ,NTSD,NPHS,CFREQ
+#else
                                                               ,NTSD,NPHS
+#endif
 !
       INTEGER, INTENT(OUT)                                  :: XLOC,YLOC
       REAL, DIMENSION(KMS:KME),                 INTENT(IN)  :: DETA1,DETA2
@@ -387,19 +395,21 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 !----------------------------------------------------------------------------------
 
 !     KEEP NEST MOTION IN SINK WITH PHYSICS TIME STEPS
-
+#ifdef HWRF
+      IF(MOD(NTSD+1,CFREQ*NPHS)/=0)THEN   !FOR FULL COUPLING
+        IF(MOVED) NTIME0=NTSD             !FOR UPDATING NTIM0
+#else
       IF(MOD(NTSD+1,NPHS)/=0)THEN
+#endif
         MVNEST=.FALSE.
         RETURN
       ENDIF
-
-      WRITE(0,*)'PHYSICS IN SINK',NTSD,NPHS
 
 !     DETERMINE THE HEIGHTS ON THE PARENT DOMAIN
 
       DO J = JTS, MIN(JTE,JDE)
        DO I = ITS, MIN(ITE,IDE)
-         Z(I,1,J)=FIS(I,J)*GI
+         Z(I,J,1)=FIS(I,J)*GI
        ENDDO
       ENDDO
 !
@@ -409,7 +419,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
           APELP      = (PINT(I,J,K+1)+PINT(I,J,K))
           RTOPP      = TRG*T(I,J,K)*(1.0+Q(I,J,K)*P608)/APELP
           DZ         = RTOPP*(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
-          Z(I,K+1,J) = Z(I,J,K) + DZ
+          Z(I,J,K+1) = Z(I,J,K) + DZ
         ENDDO
        ENDDO
       ENDDO
@@ -463,6 +473,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 
 !     DETERMINE THE LOCATION OF CENTER OF THE CIRCULATION DEFINED BY MIJ AND FIND THE CORRESPONDING MSLP 
 
+      STMP0=MAXGBL_PDYN*100.                 ! define arbitrary maximum
       MINGBL_MIJ=MINVAL(MIJ(ITS:ITF,JTS:JTF))
       DO J = JTS, MIN(JTE,JDE)
         DO I = ITS, MIN(ITE,IDE)
@@ -479,6 +490,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 
 !     DETERMINE THE MAXIMUM MSLP AT ABOUT 18 GRID POINTS AWAY FROM THE STORM CENTER 
 
+      STMP1=0.0
       DO J = JTS, MIN(JTE,JDE)
         DO I = ITS, MIN(ITE,IDE)
            IF(I .EQ. XLOC+18)THEN

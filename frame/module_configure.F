@@ -340,7 +340,21 @@ CONTAINS
      uses = 0
      in_use = .TRUE.
 
-#  include <in_use_for_config.inc>
+     IF      ( vname(1:1) .GE. 'x' ) THEN
+#  include <in_use_for_config_xz.inc>
+     ELSE IF ( vname(1:1) .GE. 't' ) THEN
+#  include <in_use_for_config_tw.inc>
+     ELSE IF ( vname(1:1) .GE. 'o' ) THEN
+#  include <in_use_for_config_os.inc>
+     ELSE IF ( vname(1:1) .GE. 'l' ) THEN
+#  include <in_use_for_config_ln.inc>
+     ELSE IF ( vname(1:1) .GE. 'g' ) THEN
+#  include <in_use_for_config_gk.inc>
+     ELSE IF ( vname(1:1) .GE. 'd' ) THEN
+#  include <in_use_for_config_df.inc>
+     ELSE 
+#  include <in_use_for_config_ac.inc>
+     ENDIF
 
      RETURN
    END FUNCTION

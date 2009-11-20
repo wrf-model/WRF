@@ -59,7 +59,7 @@ CONTAINS
      &          ,capg,hol,mol                                         &
      &          ,rainncv,rainbl,regime,thc                            &
      &          ,qsg,qvg,qcg,soilt1,tsnav                             &
-     &          ,smfr3d,keepfr3dflag                                  &
+     &          ,smfr3d,keepfr3dflag,dew                              &
              !  Other optionals (more or less nmm specific)
      &          ,potevp,snopcx,soiltb,sr                              &
              !  Optional observation PX LSM surface nudging
@@ -140,6 +140,7 @@ CONTAINS
    USE module_sf_slab
 !
    USE module_sf_sfcdiags
+   USE module_sf_sfcdiags_ruclsm
    USE module_sf_sstskin
    USE module_sf_tmnupdate
 !
@@ -563,6 +564,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   qsg
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   qvg
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   qcg
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   dew
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   soilt1
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   tsnav
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   potevp ! NMM LSM
@@ -764,6 +766,9 @@ CONTAINS
           IVGTYP(I,J) = ISWATER
           ISLTYP(I,J) = 14
           VEGFRA(I,J) = 0.
+          SNOW(I,J)  = 0.
+          SNOWC(I,J) = 0.
+          SNOWH(I,J) = 0.
           TMN(I,J) = SST(I,J)
           DO nk = 1, num_soil_layers
             TSLB(I,NK,J) = SST(I,J)
@@ -773,27 +778,35 @@ CONTAINS
         ENDIF
       ENDDO
       ENDDO
-    IF(PRESENT(SST_SKIN))THEN
+    ENDDO
+    !$OMP END PARALLEL DO
+  ENDIF
+
+  IF(PRESENT(SST_SKIN))THEN
     IF (sst_skin .EQ. 1) THEN
- ! Calculate skin sst based on Zeng and Beljaars (2005)
-        CALL wrf_debug( 100, 'in SST_UPDATE' )
+! Calculate skin sst based on Zeng and Beljaars (2005)
+        CALL wrf_debug( 100, 'in SST_SKIN_UPDATE' )
         CALL sst_skin_update(xland,glw,gsw,hfx,qfx,tsk,ust,         &
                 emiss,dtw,sstsk,dt,stbolt,                          &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j, k )
+    DO ij = 1 , num_tiles
         DO j=j_start(ij),j_end(ij)
           DO i=i_start(ij),i_end(ij)
             IF(XLAND(i,j) .GT. 1.5)TSK(i,j)=SSTSK(i,j)
           ENDDO
         ENDDO
-    ENDIF
-    ENDIF
     ENDDO
     !$OMP END PARALLEL DO
+    ENDIF
   ENDIF
+
   IF(PRESENT(TMN_UPDATE))THEN
   IF (tmn_update .EQ. 1) THEN
+      CALL wrf_debug( 100, 'in TMN_UPDATE' )
       CALL tmnupdate(tsk,tmn,tlag,tyr,tyra,tdly,nday,nyear,lagday, &
                 julian_in, dt, yr,                                  &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -802,8 +815,6 @@ CONTAINS
 
   ENDIF
   ENDIF
-
-
 !
 ! Modified for adaptive time step
 !
@@ -1461,6 +1472,7 @@ CONTAINS
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
+           PRESENT(dew)                                .AND.    &
                                                       .TRUE. ) THEN
 
            IF( PRESENT(sr) ) THEN
@@ -1507,10 +1519,11 @@ CONTAINS
                 dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 chs,flqc,flhc,mavail,canwat,vegfra,albedo,znt,  &
-                snoalb, albbck,                                 &   !new
-                qsfc,qsg,qvg,qcg,soilt1,tsnav,                  &
-                tmn,ivgtyp,isltyp,xland,xice,                   &
-                cp,g,xlv,stbolt,                                &
+                z0,snoalb, albbck,                              &   !new
+                qsfc,qsg,qvg,qcg,dew,soilt1,tsnav,              &
+                tmn,ivgtyp,isltyp,xland,                        &
+                isice,xice,xice_threshold,                      &
+                cp,rovcp,g,xlv,stbolt,                          &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
                 sfcrunoff,udrunoff,sfcexc,                      &
                 sfcevp,grdflx,acsnow,acsnom,                    &
@@ -1556,14 +1569,13 @@ CONTAINS
                  ENDDO
               endif
            ENDIF
-!tgs     IF(.not. MYJ) then
-             
-          CALL SFCDIAGS(HFX,QFX,TSK,QVG,CHS2,CQS2,T2,TH2,Q2,      &
-                     PSFC,CP,R_d,RCP,                              &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-!tgs     ENDIF
+
+          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+                     T_PHY,QV_CURR,RHO,P8W,                              &
+                     PSFC,CP,R_d,RCP,                                    &
+                     ids,ide, jds,jde, kds,kde,                          &
+                     ims,ime, jms,jme, kms,kme,                          &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
 
        ELSE

@@ -568,6 +568,21 @@
 !
    DO ij = 1, grid%num_tiles
 
+!tgs do not need physics initialization for backward DFI integration
+       IF ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FST) THEN     !tgs
+     grid%stepra=nint(grid%RADT*60./grid%DT)
+     grid%stepra=max(grid%stepra,1)
+     grid%stepbl=nint(grid%BLDT*60./grid%DT)
+     grid%stepbl=max(grid%stepbl,1)
+     grid%stepcu=nint(grid%CUDT*60./grid%DT)
+     grid%stepcu=max(grid%stepcu,1)
+     grid%stepfg=nint(grid%FGDT*60./grid%DT)
+     grid%stepfg=max(grid%stepfg,1)
+       ENDIF
+     
+     IF ( ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FWD) .or.            &
+          ( grid%dfi_opt .EQ. DFI_NODFI)) THEN
+
      CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       grid%rthcuten, grid%rqvcuten, grid%rqrcuten,           &
@@ -641,6 +656,7 @@
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
                       grid%achfx, grid%aclhf, grid%acgrdflx                 &
                       )
+       ENDIF   !tgs
 
    ENDDO
 

@@ -612,7 +612,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                 current_timestr=current_date(1:19) )
 #ifdef WRF_CHEM
 !
-! SEP     Put in chemistry data
+!         Put in chemistry data
 !
          IF( nested_grid%chem_opt .NE. 0 ) then
 !           IF( nested_grid%chem_in_opt .EQ. 0 ) then
@@ -623,11 +623,24 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
 !             CALL input_chem_profile ( nested_grid )
 
+              if(nested_grid%biomass_burn_opt == BIOMASSB) THEN
+                message = 'READING BIOMASS BURNING EMISSIONS DATA '
+                CALL  wrf_message ( message )
+                CALL med_read_wrf_chem_emissopt3 ( nested_grid , config_flags)
+              end if
+
+              if(nested_grid%dust_opt == 1 .or. nested_grid%dmsemis_opt == 1         &
+                 .or. nested_grid%chem_opt == 300  .or. nested_grid%chem_opt == 301) then 
+                 message = 'READING GOCART BG AND/OR DUST and DMS REF FIELDS'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_gocart_bg ( nested_grid , config_flags)
+              end if
+
               if( nested_grid%bio_emiss_opt .eq. 2 )then
                  message = 'READING BEIS3.11 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
-              else IF( nested_grid%bio_emiss_opt == 3 ) THEN !shc
+              else if( nested_grid%bio_emiss_opt == 3 ) THEN 
                  message = 'READING MEGAN 2 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)

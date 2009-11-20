@@ -1,5 +1,4 @@
 MODULE module_sf_noahlsm
-
   USE module_model_constants
 
 !   REAL, PARAMETER    :: CP = 1004.5
@@ -36,6 +35,7 @@ MODULE module_sf_noahlsm
         REAL ::  SBETA_DATA,FXEXP_DATA,CSOIL_DATA,SALP_DATA,REFDK_DATA,           &
                  REFKDT_DATA,FRZK_DATA,ZBOT_DATA,  SMLOW_DATA,SMHIGH_DATA,        &
                         CZIL_DATA
+        REAL ::  LVCOEF_DATA
 
         CHARACTER*256  :: err_message
 
@@ -312,6 +312,7 @@ CONTAINS
               RSNOW,SNDENS,SNCOND,SBETA,SN_NEW,SLOPE,SNUP,SALP,SOILWM,      &
               SOILWW,T1V,T24,T2V,TH2V,TOPT,TFREEZ,TSNOW,ZBOT,Z0,PRCPF,      &
               ETNS,PTU,LSUBS
+        REAL ::  LVCOEF
       REAL :: INTERP_FRACTION
       REAL :: LAIMIN,    LAIMAX
       REAL :: ALBEDOMIN, ALBEDOMAX
@@ -369,7 +370,7 @@ CONTAINS
                          RTDIS,SLDPTH,ZSOIL,NROOT,NSOIL,CZIL,              &
                          LAIMIN, LAIMAX, EMISSMIN, EMISSMAX, ALBEDOMIN,    &
                          ALBEDOMAX, Z0MIN, Z0MAX, CSOIL, PTU, LLANDUSE,    &
-                         LSOIL,LOCAL)
+                         LSOIL,LOCAL,LVCOEF)
 
 !urban
          IF(VEGTYP==ISURBAN)THEN
@@ -557,7 +558,7 @@ CONTAINS
               SNCOVR = MIN(SNCOVR,0.98)
             endif
               CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,T1,ALBEDO,EMISSI,   &
-                         DT,SNOWNG,SNOTIME1)
+                         DT,SNOWNG,SNOTIME1,LVCOEF)
             END IF
 ! ----------------------------------------------------------------------
 ! SNOW COVER, ALBEDO OVER SEA-ICE, GLACIAL ICE
@@ -676,7 +677,7 @@ CONTAINS
 ! THE PREVIOUS TIMESTEP.
 ! ----------------------------------------------------------------------
          IF (SNCOVR  > 0. ) THEN
-            CALL SNOWZ0 (SNCOVR,Z0,Z0BRD)
+            CALL SNOWZ0 (SNCOVR,Z0,Z0BRD,SNOWH)
          ELSE
             Z0=Z0BRD
          END IF
@@ -884,7 +885,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
       SUBROUTINE ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO,EMISSI,   &
-                         DT,SNOWNG,SNOTIME1)
+                         DT,SNOWNG,SNOTIME1,LVCOEF)
 
 ! ----------------------------------------------------------------------
 ! CALCULATE ALBEDO INCLUDING SNOW EFFECT (0 -> 1)
@@ -911,7 +912,8 @@ CONTAINS
       REAL, INTENT(OUT) ::  ALBEDO, EMISSI
       REAL              :: SNOALB2
       REAL              :: TM,SNOALB1
-      REAL, PARAMETER   :: COEF=0.5, SNACCA=0.94,SNACCB=0.58,SNTHWA=0.82,SNTHWB=0.46
+      REAL, INTENT(IN)  :: LVCOEF
+      REAL, PARAMETER   :: SNACCA=0.94,SNACCB=0.58,SNTHWA=0.82,SNTHWB=0.46
 ! turn of vegetation effect
 !      ALBEDO = ALB + (1.0- (SHDFAC - SHDMIN))* SNCOVR * (SNOALB - ALB)
 !      ALBEDO = (1.0-SNCOVR)*ALB + SNCOVR*SNOALB !this is equivalent to below
@@ -970,7 +972,7 @@ CONTAINS
 ! IS INDEED ACCUMULATION SEASON. I.E. THAT SNOW SURFACE TEMP IS BELOW
 ! ZERO AND THE DATE FALLS BETWEEN OCTOBER AND FEBRUARY
 ! ----------------------------------------------------------------------
-         SNOALB1 = SNOALB+COEF*(0.85-SNOALB)
+         SNOALB1 = SNOALB+LVCOEF*(0.85-SNOALB)
          SNOALB2=SNOALB1
 ! ---------------- Initial LSTSNW --------------------------------------
           IF (SNOWNG) THEN
@@ -2215,7 +2217,7 @@ CONTAINS
                          RTDIS,SLDPTH,ZSOIL, NROOT,NSOIL,CZIL,             &
                          LAIMIN, LAIMAX, EMISSMIN, EMISSMAX, ALBEDOMIN,    &
                          ALBEDOMAX, Z0MIN, Z0MAX, CSOIL, PTU, LLANDUSE,    &
-                         LSOIL, LOCAL)
+                         LSOIL, LOCAL,LVCOEF)
 
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
@@ -2316,6 +2318,7 @@ CONTAINS
       REAL,    INTENT(OUT)   :: SLOPE,CZIL,SBETA,FXEXP,                     &
                                 CSOIL,SALP,FRZX,KDT,CFACTR,      &
                                 ZBOT,REFKDT,PTU
+      REAL,    INTENT(OUT)   :: LVCOEF
       REAL,DIMENSION(1:NSOIL),INTENT(IN) :: SLDPTH,ZSOIL
       REAL,DIMENSION(1:NSOIL),INTENT(OUT):: RTDIS
       REAL                   :: FRZFACT,FRZK,REFDK
@@ -2362,6 +2365,7 @@ CONTAINS
       KDT = REFKDT * DKSAT / REFDK
       CZIL = CZIL_DATA
       SLOPE = SLOPE_DATA (SLOPETYP)
+      LVCOEF = LVCOEF_DATA
 
 ! ----------------------------------------------------------------------
 ! TO ADJUST FRZK PARAMETER TO ACTUAL SOIL TYPE: FRZK * FRZFACT
@@ -3339,7 +3343,7 @@ CONTAINS
   END SUBROUTINE SNOWPACK
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE SNOWZ0 (SNCOVR,Z0, Z0BRD)
+      SUBROUTINE SNOWZ0 (SNCOVR,Z0, Z0BRD, SNOWH)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOWZ0
@@ -3353,9 +3357,19 @@ CONTAINS
       REAL, INTENT(IN)        :: SNCOVR, Z0BRD
       REAL, INTENT(OUT)       :: Z0
       REAL, PARAMETER         :: Z0S=0.001
+      REAL, INTENT(IN)        :: SNOWH
+      REAL BURIAL, Z0EFF
 
 !m      Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0S
-      Z0 =  Z0BRD
+      BURIAL = 7.0*Z0BRD - SNOWH
+      IF(BURIAL.LE.0.0007) THEN
+        Z0EFF = Z0S
+      ELSE      
+        Z0EFF = BURIAL/7.0
+      ENDIF
+      
+      Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0EFF
+
 ! ----------------------------------------------------------------------
   END SUBROUTINE SNOWZ0
 ! ----------------------------------------------------------------------

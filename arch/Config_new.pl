@@ -225,15 +225,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-if ( $ENV{HWRF} )
-{
-  printf "HWRF requires Parallel compilation...\n" ;
-  @platforms = qw ( dmpar dm+sm ) ;
-  } 
-else
-  {
-  @platforms = qw ( serial smpar dmpar dm+sm ) ;
-  }
+@platforms = qw ( serial smpar dmpar dm+sm ) ;
 
 # Display the choices to the user and get selection
 until ( $validresponse ) {
@@ -402,6 +394,18 @@ while ( <CONFIGURE_DEFAULTS> )
            $_ =~ s:ESMFIOEXTLIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90 -lesmf_time:g ;
         }
       }
+     if ( $ENV{HWRF} )
+       {
+        $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
+        $_ =~ s:CONFIGURE_ATMPOM_INC:-I\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom:g;
+        $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
+       }
+     else
+       {
+        $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
+        $_ =~ s/CONFIGURE_ATMPOM//g ;
+        $_ =~ s:CONFIGURE_ATMPOM_INC::g;
+       }
 
     if ( ! (substr( $_, 0, 5 ) eq "#ARCH") ) { @machopts = ( @machopts, $_ ) ; }
     if ( substr( $_, 0, 10 ) eq "ENVCOMPDEF" )
@@ -530,11 +534,13 @@ while ( <ARCH_PREAMBLE> )
     }
   if ( $ENV{HWRF} )
     {
-    $_ =~ s:HWRFMODDEPENDENCE:atm_comm_pom.o:g ;
+    $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
+    $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
     }
   else
     {
-    $_ =~ s:HWRFMODDEPENDENCE::g ;
+    $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
+    $_ =~ s/CONFIGURE_ATMPOM//g ;
     }
   $_ =~ s:CONFIGURE_EM_CORE:$sw_em_core:g ;
   $_ =~ s:CONFIGURE_DA_CORE:$sw_da_core:g ;

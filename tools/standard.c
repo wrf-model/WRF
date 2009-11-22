@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int drop_comment( char *);
+int change_to_lower( char *, int );
+
+int
 main( int argc , char *argv[] )
 {
   FILE *fp ;
@@ -125,6 +129,7 @@ next_line:
     state = 0 ;
   }
   fclose(fp) ;
+  exit(0) ;
 }
 
 int

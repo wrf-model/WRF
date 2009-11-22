@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#ifdef _WIN32
+# define rindex(X,Y) strrchr(X,Y)
+# define index(X,Y) strchr(X,Y)
+#else
+# include <strings.h>
+#endif
 
 #include "protos.h"
 #include "registry.h"
@@ -250,6 +255,7 @@ index_with_firstelem( char * pre , char * dref , int bdy ,  /* as defined in dat
   return(tmp) ;
 }
 
+int
 get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t * p , int first_last )
 {
    char dref[NAMELEN], nlstruct[NAMELEN] ;
@@ -404,6 +410,7 @@ fprintf(fp,"!\n") ;
 return(0) ;
 }
 
+int
 close_the_file( FILE * fp )
 {
 fprintf(fp,"!ENDOFREGISTRYGENERATEDINCLUDE\n") ;

@@ -45,6 +45,10 @@
       call nl_get_base_temp  ( 1 , base_temp )
       call nl_get_base_lapse ( 1 , base_lapse )
       call nl_get_iso_temp   ( 1 , iso_temp )
+      grid%p00   = base_pres
+      grid%t00   = base_temp
+      grid%tlp   = base_lapse
+      grid%tiso  = iso_temp
    else
       base_pres  = grid%p00
       base_temp  = grid%t00

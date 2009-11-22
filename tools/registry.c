@@ -4,7 +4,16 @@
 #include <sys/resource.h>
 #include <unistd.h>
 #include <string.h>
-#include <strings.h>
+#ifdef _WIN32
+# include <io.h>
+# define rindex(X,Y) strrchr(X,Y)
+# define index(X,Y) strchr(X,Y)
+#else
+# include <sys/time.h>
+# include <sys/resource.h>
+# include <unistd.h>
+# include <strings.h>
+#endif
 
 #define DEFINE_GLOBALS
 #include "protos.h"
@@ -12,13 +21,16 @@
 #include "data.h"
 #include "sym.h"
 
+void
 main( int argc, char *argv[], char *env[] )
 {
   char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
   FILE * fp_in, *fp_tmp ;
   char * thisprog  ;
   int mypid ;
+#ifndef _WIN32
   struct rlimit rlim ;
+#endif
 
   mypid = (int) getpid() ;
   strcpy( thiscom, argv[0] ) ;
@@ -40,8 +52,10 @@ main( int argc, char *argv[], char *env[] )
 
   strcpy( fname_in , "" ) ;
 
+#ifndef _WIN32
   rlim.rlim_cur = RLIM_INFINITY ;
   rlim.rlim_max = RLIM_INFINITY ;
+#endif
 
   setrlimit ( RLIMIT_STACK , &rlim ) ;
 
@@ -191,8 +205,12 @@ main( int argc, char *argv[], char *env[] )
                           /* stubs routine.                                */
 
 cleanup:
-  sprintf(command,"/bin/rm -f %s\n",fname_tmp );
-  system( command ) ;
+#ifdef _WIN32
+   sprintf(command,"del /F /Q %s\n",fname_tmp );
+#else
+   sprintf(command,"/bin/rm -f %s\n",fname_tmp );
+#endif
+   system( command ) ;
 
 }
 

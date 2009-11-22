@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#ifdef _WIN32
+#define rindex(X,Y) strrchr(X,Y)
+#define index(X,Y) strchr(X,Y)
+#define bzero(X,Y) memset(X,0,Y)
+#else
+#  include <strings.h>
+#endif
 
 #include "registry.h"
 #include "protos.h"

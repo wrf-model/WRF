@@ -73,7 +73,7 @@ int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;
 
 int gen_scalar_indices ( char * dirname ) ;
-int gen_scalar_indices1 ( FILE * fp, FILE * fp2 ) ;
+int gen_scalar_indices1 ( FILE * fp, FILE ** fp2 ) ;
 
 int gen_actual_args ( char * dirname ) ;
 int gen_dummy_args ( char * dirname ) ;
@@ -110,7 +110,38 @@ int get_elem ( char * structname , char * nlstructname , char * tx , int i , nod
 
 int associated_with_4d_array( node_t * p ) ;
 
-
+  
+/* PGI Addition to resolve non-prototype function warnings  */
+char * array_size_expression ( char *, char *, int, char *, node_t *, char * ,char * ); 
+int range_of_dimension ( char *, char * , int, node_t *, char * );
+int dimension_size_expression ( char *, char *, int, node_t *, char *);
+int gen_alloc_count ( char *);
+int gen_alloc_count1 ( char *);
+int gen_ddt_write ( char * );
+int gen_ddt_write1 ( FILE *, char *, node_t *);
+int gen_dealloc ( char * );
+int gen_dealloc1 ( char * );
+int gen_dealloc2 ( FILE *, char *, node_t *);
+int gen_scalar_tables ( FILE *);
+int gen_scalar_tables_init ( FILE *);
+int gen_scalar_indices_init ( FILE *);
+int hash(char *);
+int gen_nest_interp1 ( FILE *, node_t *, char *, int, int );
+int gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname );
+int gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname );
+int gen_periods ( char * dirname , node_t * periods );
+int gen_swaps ( char * dirname , node_t * swaps );
+int gen_cycles ( char * dirname , node_t * cycles );
+int gen_xposes ( char * dirname );
+int gen_comm_descrips ( char * dirname );
+int gen_shift (  char * dirname );
+int gen_datacalls ( char * dirname );
+int gen_nest_packing ( char * dirname );
+int gen_nest_pack ( char * dirname );
+int gen_nest_unpack ( char * dirname );
+int gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path );
+int count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int down_path );
+int gen_debug (  char * dirname );
 
 #define PROTOS_H
 #endif

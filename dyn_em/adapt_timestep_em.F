@@ -382,6 +382,6 @@ FUNCTION real_time_r8( timeinterval ) RESULT ( out_time )
       if (ABS(dt_den) < 1) then
          out_time = REAL(dt_whole)
       else
-         out_time = REAL(dt_whole) + REAL(dt_num/dt_den,8)
+         out_time = REAL(dt_whole) + REAL(dt_num,8)/REAL(dt_den,8)
       endif
 END FUNCTION real_time_r8

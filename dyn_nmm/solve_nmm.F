@@ -120,7 +120,11 @@
      &,            radiation_tim,rdtemp_tim,turbl_tim,cltend_tim        &
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
      &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim    &
+#ifdef HWRF
      &,            adjppt_tim,sst_tim,flux_tim
+#else
+     &,            adjppt_tim
+#endif
       real,save :: exch_tim_max
       real :: btim,btimx
       real :: et_max,this_tim
@@ -527,6 +531,7 @@
  2000 CONTINUE
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+#ifdef HWRF
 ! Coupling insertion:->
 !
 !zhang's doing      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
@@ -534,14 +539,14 @@
 !end of zhang's doing
       ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
                        kds,kde,kts,kte,kms,kme,                  &
-!??  What are KDS etc. for??
                        HLON,HLAT,VLON,VLAT,SM,                   &
                        grid%i_parent_start,grid%j_parent_start)
 !     CALL ATM_RECVdtc(NPHS*dt) <-  now called from ATM_TSTEP_INIT with no arg.
 !     CALL ATM_SENDGRIDS(HLON,HLAT,VLON,VLAT) <- now called from ATM_TSTEP_INIT
 !     CALL ATM_SENDSLM(SM)                    <- now called from ATM_TSTEP_INIT
-!<-:oupling insertion
+!<-:coupling insertion
 !
+#endif
 !-----------------------------------------------------------------------
 !***  PRESSURE TENDENCY, SIGMA DOT, VERTICAL PART OF OMEGA-ALPHA
 !-----------------------------------------------------------------------
@@ -1134,6 +1139,8 @@
       rdtemp_tim=rdtemp_tim+timef()-btimx
 !
 !
+#ifdef HWRF
+!
 !-------------------------------------------------------------------------------------
 !*** GET SSTs FROM DMITRY's COUPLER ON TO THE PARENT AND NESTED GRID
 !-------------------------------------------------------------------------------------
@@ -1145,6 +1152,7 @@
         sst_tim=sst_tim+timef()-btimx
       ENDIF
 
+#endif
 !----------------------------------------------------------------------
 !***  TURBULENT PROCESSES 
 !----------------------------------------------------------------------
@@ -1210,6 +1218,7 @@
 !                     ***  NOTE  ***
 !
         turbl_tim=turbl_tim+timef()-btimx
+#ifdef HWRF
 
 
 !------------------------------------------------------------------------------
@@ -1241,6 +1250,7 @@
         flux_tim=flux_tim+timef()-btimx
       ENDIF
 
+#endif
 !
         btimx=timef()
 !-----------------
@@ -1527,7 +1537,11 @@
 !
       CALL HDIFF(NTSD,GRID%DT,FIS,DY_NMM,HDAC,HDACV                    &
      &          ,HBM2,DETA1,GRID%SIGMA                                 &
+#ifdef HWRF
      &          ,T,Q,U,V,Q2,Z,W,SM,SICE,grid%h_diff                    &
+#else
+     &          ,T,Q,U,V,Q2,Z,W,SM,SICE                                &
+#endif
      &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
@@ -1869,6 +1883,7 @@
 
 #define COPY_OUT
 #include <scalar_derefs.inc>
+#ifdef HWRF
 !-----------------------------------------------------------------------
 !*** ACCUMULATED ATMOSPHERIC MODEL FLUXES FOR DMITRYs COUPLER
 !-----------------------------------------------------------------------
@@ -1883,6 +1898,7 @@
 !
 !  IF(grid%id==2)WRITE(0,*)'AFTER ATM_SENDFLUX QWBS TWBS AT 10 10 ',NTSD,QWBS(10,10),TWBS(10,10)
 !
+#endif
 
 
       Return

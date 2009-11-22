@@ -35,6 +35,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    real, allocatable              :: q_ad(:,:)
    real, allocatable              :: t_ad(:,:)
    real, allocatable              :: p_ad(:)
+   real, allocatable              :: xb_q(:,:)
 
 !! for crtm_cloud
    real, allocatable              :: qcw(:,:)
@@ -194,6 +195,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       allocate (q_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
       allocate (t_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
       allocate (p_ad(iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+      allocate (xb_q(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
 
       if (crtm_cloud) then
          allocate (qcw(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
@@ -206,6 +208,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       q_ad = 0.0
       t_ad = 0.0
       p_ad = 0.0
+      xb_q = 0.0
 
 !      info => iv%instid(inst)%info
 
@@ -291,6 +294,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             Atmosphere(n)%level_pressure(k) = iv%instid(inst)%pf(k,n)
             Atmosphere(n)%temperature(k) = iv%instid(inst)%tm(k,n)
             Atmosphere(n)%absorber(k,1) = iv%instid(inst)%qm(k,n)
+            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+iv%instid(inst)%qm(k,n)) ! specific humidity
          end do
 
          if (crtm_cloud) then
@@ -506,7 +510,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
          do k=kts,kte ! from bottom to top
             if (atmosphere(n)%pressure(kte-k+1) >= 75.0) &        ! Zero Jacobian for top level(s)
-               q_ad(k,n) = Atmosphere_AD(n)%Absorber(kte-k+1,1) * 1000.0            ! in g/kg
+               q_ad(k,n) = Atmosphere_AD(n)%Absorber(kte-k+1,1) * 1000.0 /  &
+                           (1.0-xb_q(kte-k+1,n))**2               ! in g/kg
             if (k < kte) &                                        ! Zero Jacobian for top level
                t_ad(k,n)=Atmosphere_AD(n)%Temperature(kte-k+1)
          end do
@@ -564,6 +569,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
          deallocate (q_ad)
          deallocate (t_ad)
          deallocate (p_ad)
+         deallocate (xb_q)
 
          if (crtm_cloud) then
             deallocate (qcw)

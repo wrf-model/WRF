@@ -19,7 +19,7 @@ CONTAINS
                xland,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,                &
                anh3,cvaro1,cvaro2,   &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
-               e_co,kemit,sf_urban_physics,numgas,                        &
+               e_co,kemit,sf_urban_physics,numgas,current_month,          &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -40,6 +40,7 @@ CONTAINS
    INTEGER,      INTENT(IN   ) :: id,julday,                    &
                                   sf_urban_physics,             &
                                   numgas,                       &
+                                  current_month,                &
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte

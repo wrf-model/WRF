@@ -1374,6 +1374,7 @@ integer::oops1,oops2
                                     grid%soilcbot , grid%tmn , grid%vegfra , &
                                     grid%tslb , grid%smois , grid%sh2o , &
                                     grid%seaice_threshold , &
+                                    grid%sst,flag_sst, &
                                     config_flags%fractional_seaice, &
                                     num_veg_cat , num_soil_top_cat , num_soil_bot_cat , &
                                     model_config_rec%num_soil_layers , &
@@ -1430,6 +1431,14 @@ endif
          DO i = its, MIN(ide-1,ite)
            IF ( flag_sst .NE. 1 ) THEN
              grid%sst(i,j) = grid%tsk(i,j)
+           ENDIF
+         END DO
+      END DO
+!tgs set snoalb to land value if the water point is covered with ice
+      DO j = jts, MIN(jde-1,jte)
+         DO i = its, MIN(ide-1,ite)
+           IF ( grid%ivgtyp(i,j) .EQ. config_flags%isice) THEN
+             grid%snoalb(i,j) = 0.75
            ENDIF
          END DO
       END DO

@@ -5,7 +5,9 @@
 #include "registry.h"
 #include "data.h"
 #include <string.h>
-#include <strings.h>
+#ifndef _WIN32
+# include <strings.h>
+#endif
 #include "sym.h"
 
 int

@@ -83,6 +83,7 @@ foundit:
 }
 #endif
 
+int
 make_lower( char * s1 )
 {
   char * p ;

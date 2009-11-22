@@ -1006,8 +1006,9 @@ state    real  FLQC             ij      misc        1         -      r        "F
 state    real  QSG              ij      misc        1         -      r        "QSG"                   "SURFACE SATURATION WATER VAPOR MIXING RATIO"   "kg kg-1"
 state    real  QVG              ij      misc        1         -      r        "QVG"                   "WATER VAPOR MIXING RATIO AT THE SURFACE"      "kg kg-1"
 state    real  dfi_QVG          ij      misc        1         -      r        "QVG_dfi"               "WATER VAPOR MIXING RATIO AT THE SURFACE"      "kg kg-1"
-state    real  QCG              ij      misc        1         -      r        "QCG"                   "CLOUD WATER MIXING RATIO AT THE SURFACE"      "kg kg-1"
-state    real  SOILT1           ij      misc        1         -      r        "SOILT1"                "TEMPERATURE INSIDE SNOW "    "K"
+state    real  QCG              ij      misc        1         -      r        "QCG"                   "CLOUD WATER MIXING RATIO AT THE GROUND SURFACE"      "kg kg-1"
+state    real  DEW              ij      misc        1         -      r        "DEW"                   "DEW MIXING RATIO AT THE SURFACE"              "kg kg-1"
+state    real  SOILT1           ij      misc        1         -      i012rh   "SOILT1"                "TEMPERATURE INSIDE SNOW "    "K"
 state    real  dfi_SOILT1       ij      misc        1         -      r        "SOILT1_dfi"            "TEMPERATURE INSIDE SNOW "    "K"
 state    real  TSNAV            ij      misc        1         -      r        "TSNAV"                 "AVERAGE SNOW TEMPERATURE "                    "C"
 state    real  dfi_TSNAV        ij      misc        1         -      r        "TSNAV_dfi"             "AVERAGE SNOW TEMPERATURE "                    "C"
@@ -1614,7 +1615,7 @@ package   bepscheme      sf_urban_physics==2         -             state:a_u_bep
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
-package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag
+package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 
 package   ysuscheme      bl_pbl_physics==1           -             -

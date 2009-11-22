@@ -147,7 +147,7 @@ CONTAINS
                                                         SMSTAV, &
                                                         SMSTOT, &
                                                      SFCRUNOFF, &
-                                                   UDRUNOFF, &
+                                                      UDRUNOFF, &
                                                         SFCEVP, &
                                                         GRDFLX, &
                                                         ACSNOW, &
@@ -462,6 +462,7 @@ integer myproc
                 TRIM ( mminlu_loc ) ,                               &
                 landuse_ISICE, landuse_LUCATS,                      &
                 landuse_LUSEAS, landuse_ISN,                        &
+                config_flags%fractional_seaice,                      &
                 lu_state,                                           &
                 allowed_to_read , usemonalb ,                       &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -621,6 +622,7 @@ integer myproc
    SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
                 znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu,  &
                 ISICE, LUCATS, LUSEAS, ISN,                         &
+                fractional_seaice,                                  &
                 lu_state,                                           &
                 allowed_to_read , usemonalb ,                       &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -639,13 +641,14 @@ integer myproc
    REAL    , INTENT(IN)           :: cen_lat
    CHARACTER(LEN=*), INTENT(IN)        :: mminlu
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usemonalb
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice, snoalb
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice, snoalb 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
                                                                embck,                         &
                                                                znt, Z0, thc, xland, xicem
-   INTEGER , INTENT(INOUT)  :: ISICE, LUCATS, LUSEAS, ISN
+   INTEGER , INTENT(INOUT)  :: ISICE, LUCATS, LUSEAS, ISN, fractional_seaice
    REAL    , INTENT(INOUT)  , DIMENSION( : ) :: lu_state
 
+   REAL :: xice_threshold
 !---------------------------------------------------------------------
 ! Local
    CHARACTER*256 LUTYPE
@@ -669,6 +672,12 @@ integer myproc
    CALL wrf_debug( 100 , 'top of landuse_init' )
 
    NSN=-1  ! set this to suppress uninitalized data messages from tools
+
+  if ( fractional_seaice == 0 ) then
+     xice_threshold = 0.5
+  else if ( fractional_seaice == 1 ) then
+     xice_threshold = 0.02
+  endif
 
 ! recover LU variables from state
    IF ( 6*(max_cats*max_seas)+1*max_cats .GT. 7501 ) THEN
@@ -829,7 +838,7 @@ integer myproc
           ENDIF
 !    SET SEA-ICE POINTS TO LAND WITH ICE/SNOW SURFACE PROPERTIES
           XICEM(I,J)=XICE(I,J)
-          IF(XICE(I,J).GT.0.5)THEN
+          IF(XICE(I,J).GE.xice_threshold)THEN
             XLAND(I,J)=1.0
             ALBBCK(I,J)=ALBD(ISICE,ISN)/100.
             ALBEDO(I,J)=ALBBCK(I,J)
@@ -1387,7 +1396,7 @@ integer myproc
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )
-           isfc = 1
+           isfc = 7
       CASE (MYJSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
 #if ( NMM_CORE == 1 )
@@ -1416,7 +1425,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 2
+           isfc = 4
 
       CASE (GFSSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
@@ -1431,7 +1440,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 1
+           isfc = 2
 #if (NMM_CORE==1)
       CASE (GFDLSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
@@ -1442,7 +1451,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
-           isfc = 1
+           isfc = 2
 #endif
 
 #if ( EM_CORE == 1 )
@@ -1464,7 +1473,7 @@ integer myproc
            END SELECT
 
            CALL mynn_sf_init_driver(allowed_to_read,mynn_closure_level)
-           isfc=3
+           isfc=5
 
 #endif
 
@@ -1546,8 +1555,9 @@ integer myproc
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &
 !           ( 'module_physics_init: use myjsfc and myjpbl scheme for this lsm option' )
-           CALL lsmrucinit( SMFR3D,TSLB,SMOIS,ISLTYP,mavail,       &
-                     num_soil_layers, restart,                     &
+           CALL ruclsminit( SH2O,SMFR3D,TSLB,SMOIS,ISLTYP,IVGTYP,XICE,  &
+                     mavail,num_soil_layers, config_flags%iswater,      &
+                     config_flags%isice, restart,                  &
                      allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -1596,8 +1606,8 @@ integer myproc
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
       CASE (ACMPBLSCHEME)
-           if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           if(isfc .ne. 1 .and. isfc .ne. 7)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay or pxsfc scheme for this pbl option' )
            CALL acminit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1621,8 +1631,8 @@ integer myproc
 
 #endif
       CASE (GFSSCHEME)
-           if(isfc .ne. 1)CALL wrf_error_fatal &
-            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           if(isfc .ne. 2)CALL wrf_error_fatal &
+            ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            CALL gfsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1651,6 +1661,8 @@ integer myproc
                         its, ite, jts, jte, kts, kte          )
           END IF
       CASE (QNSEPBLSCHEME)
+           if(isfc .ne. 4)CALL wrf_error_fatal &
+            ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
            CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_MYJ,EXCH_H,restart,               &
                         allowed_to_read ,                     &
@@ -1659,6 +1671,8 @@ integer myproc
                         its, ite, jts, jte, kts, kte          )
 #if (NMM_CORE != 1)
       CASE (BOULACSCHEME)
+           if(isfc .ne. 1 .and. isfc .ne. 2)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay or myjsfc scheme for this pbl option' )
            CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                          TKE_PBL,EXCH_H,restart,               &
                          allowed_to_read ,                     &
@@ -1672,8 +1686,8 @@ integer myproc
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
-           IF(isfc .NE. 3 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
-                ( 'module_physics_init: use mynn sfc scheme or sfclay scheme for this pbl option')
+           IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
+                ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
            
            CALL mynn_bl_init_driver(&
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN&

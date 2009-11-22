@@ -425,6 +425,7 @@ nmm_real : nmm_wrf
 	( cd test/nmm_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )
 	( cd test/nmm_real ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/nmm_real ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd test/nmm_real ; /bin/rm -f co2_trans ; ln -s ../../run/co2_trans . )
 	( cd run ; /bin/rm -f real_nmm.exe ; ln -s ../main/real_nmm.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \

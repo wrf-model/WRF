@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#ifdef _WIN32
+# define rindex(X,Y) strrchr(X,Y)
+# define index(X,Y) strchr(X,Y)
+#else
+# include <strings.h>
+#endif
 
 #include "protos.h"
 #include "registry.h"
@@ -899,10 +904,10 @@ fprintf(fp, "ENDDO\n") ;
               else                                                { sprintf(dname,"%s%s%s",p->dname,tend_tag,bdytag) ; }
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
 	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
-                fprintf(fp,"                       %s%s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , 
+                fprintf(fp,"                       %s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , 
                                        structname , fourdname, tend_tag, ms1, bdy_indicator(ibdy), p->name ) ;
               } else {
-                fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , 
+                fprintf(fp,"                       %s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , 
                                        structname , fourdname, tend_tag, ibdy, bdy_indicator(ibdy), p->name ) ;
 	      }
             }

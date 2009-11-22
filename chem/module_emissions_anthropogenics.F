@@ -95,22 +95,42 @@ CONTAINS
        end if
 #endif
 
+        chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                         &
+                         +emis_ant(i,k,j,p_e_so2)*conv_rho
+        chem(i,k,j,p_co)  = chem(i,k,j,p_co)                           &
+                         +emis_ant(i,k,j,p_e_co)*conv_rho
+        chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
+                         +emis_ant(i,k,j,p_e_no)*conv_rho
+        chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
+                         +emis_ant(i,k,j,p_e_nh3)*conv_rho
+        if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+           chem(i,k,j,p_bigalk) = chem(i,k,j,p_bigalk) + emis_ant(i,k,j,p_e_bigalk)*conv_rho
+           chem(i,k,j,p_bigene) = chem(i,k,j,p_bigene) + emis_ant(i,k,j,p_e_bigene)*conv_rho
+           chem(i,k,j,p_c2h4)   = chem(i,k,j,p_c2h4)  + emis_ant(i,k,j,p_e_c2h4)*conv_rho
+           chem(i,k,j,p_c2h5oh) = chem(i,k,j,p_c2h5oh) + emis_ant(i,k,j,p_e_c2h5oh)*conv_rho
+           chem(i,k,j,p_c2h6)   = chem(i,k,j,p_c2h6) + emis_ant(i,k,j,p_e_c2h6)*conv_rho
+           chem(i,k,j,p_c3h6)   = chem(i,k,j,p_c3h6) + emis_ant(i,k,j,p_e_c3h6)*conv_rho
+           chem(i,k,j,p_c3h8)   = chem(i,k,j,p_c3h8) + emis_ant(i,k,j,p_e_c3h8)*conv_rho
+           chem(i,k,j,p_hcho)   = chem(i,k,j,p_hcho) + emis_ant(i,k,j,p_e_ch2o)*conv_rho
+           chem(i,k,j,p_ald)    = chem(i,k,j,p_ald) + emis_ant(i,k,j,p_e_ch3cho)*conv_rho
+           chem(i,k,j,p_acet)   = chem(i,k,j,p_acet) + emis_ant(i,k,j,p_e_ch3coch3)*conv_rho
+           chem(i,k,j,p_ch3oh)  = chem(i,k,j,p_ch3oh) + emis_ant(i,k,j,p_e_ch3oh)*conv_rho
+           chem(i,k,j,p_mek)    = chem(i,k,j,p_mek) + emis_ant(i,k,j,p_e_mek)*conv_rho
+           chem(i,k,j,p_tol)    = chem(i,k,j,p_tol) + emis_ant(i,k,j,p_e_toluene)*conv_rho
+           chem(i,k,j,p_isopr)  = chem(i,k,j,p_isopr) + emis_ant(i,k,j,p_e_isop)*conv_rho
+           chem(i,k,j,p_c10h16) = chem(i,k,j,p_c10h16) + emis_ant(i,k,j,p_e_c10h16)*conv_rho
+           chem(i,k,j,p_no2)    = chem(i,k,j,p_no2) + emis_ant(i,k,j,p_e_no2)*conv_rho
+          else
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &
                          +emis_ant(i,k,j,p_e_csl)*conv_rho
         chem(i,k,j,p_iso)  = chem(i,k,j,p_iso)                         &
                          +emis_ant(i,k,j,p_e_iso)*conv_rho
-        chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                         &
-                         +emis_ant(i,k,j,p_e_so2)*conv_rho
-        chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
-                         +emis_ant(i,k,j,p_e_no)*conv_rho
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
                          +emis_ant(i,k,j,p_e_ald)*conv_rho
         chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &
                          +emis_ant(i,k,j,p_e_hcho)*conv_rho
         chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                       &
                          +emis_ant(i,k,j,p_e_ora2)*conv_rho
-        chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
-                         +emis_ant(i,k,j,p_e_nh3)*conv_rho
         chem(i,k,j,p_hc3)  = chem(i,k,j,p_hc3)                         &
                          +emis_ant(i,k,j,p_e_hc3)*conv_rho
         chem(i,k,j,p_hc5)  = chem(i,k,j,p_hc5)                         &
@@ -119,8 +139,6 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_hc8)*conv_rho
         chem(i,k,j,p_eth)  = chem(i,k,j,p_eth)                         &
                          +emis_ant(i,k,j,p_e_eth)*conv_rho
-        chem(i,k,j,p_co)  = chem(i,k,j,p_co)                           &
-                         +emis_ant(i,k,j,p_e_co)*conv_rho
         if(p_ol2.gt.1)chem(i,k,j,p_ol2)  = chem(i,k,j,p_ol2)           &
                          +emis_ant(i,k,j,p_e_ol2)*conv_rho
         if(p_ete.gt.1)chem(i,k,j,p_ete)  = chem(i,k,j,p_ete)           &
@@ -135,6 +153,7 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_xyl)*conv_rho
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &     
                          +emis_ant(i,k,j,p_e_ket)*conv_rho
+       endif
       END DO                                                          
  100  continue
 

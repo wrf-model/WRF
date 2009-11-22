@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#ifdef _WIN32
+# define rindex(X,Y) strrchr(X,Y)
+# define index(X,Y) strchr(X,Y)
+#else
+# include <strings.h>
+#endif
 
 #include "protos.h"
 #include "registry.h"
@@ -11,27 +16,41 @@
 int
 gen_scalar_indices ( char * dirname )
 {
-  FILE * fp, *fp5 ;
+  FILE * fp, *fp5[7] ;
   char  fname[NAMELEN], fname5[NAMELEN] ;
   char * fn = "scalar_indices.inc" ;
   char * fn2 = "scalar_tables.inc" ;
   char * fn3 = "scalar_tables_init.inc" ;
   char * fn4 = "scalar_indices_init.inc" ;
-  char * fn5 = "in_use_for_config.inc" ;
+  int i ;
+
+  char fn5[7][NAMELEN] ;
+
+  strcpy( fn5[0], "in_use_for_config_ac.inc" ) ;   /* hashing to make the run time function being generated faster */
+  strcpy( fn5[1], "in_use_for_config_df.inc" ) ; 
+  strcpy( fn5[2], "in_use_for_config_gk.inc" ) ;
+  strcpy( fn5[3], "in_use_for_config_ln.inc" ) ;
+  strcpy( fn5[4], "in_use_for_config_os.inc" ) ;
+  strcpy( fn5[5], "in_use_for_config_tw.inc" ) ;
+  strcpy( fn5[6], "in_use_for_config_xz.inc" ) ;
 
   strcpy( fname, fn ) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
 
-  strcpy( fname5, fn5 ) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname5,"%s/%s",dirname,fn5) ; }
-  if ((fp5 = fopen( fname5 , "w" )) == NULL ) return(1) ;
-  print_warning(fp5,fname) ;
+  for ( i = 0 ; i < 7 ; i++ ) {
+    strcpy( fname5, fn5[i] ) ;
+    if ( strlen(dirname) > 0 ) { sprintf(fname5,"%s/%s",dirname,fn5[i]) ; }
+    if ((fp5[i] = fopen( fname5 , "w" )) == NULL ) return(1) ;
+    print_warning(fp5[i],fname) ;
+  }
 
   gen_scalar_indices1 ( fp, fp5 ) ;
   close_the_file( fp ) ;
-  close_the_file( fp5 ) ;
+  for ( i = 0 ; i < 7 ; i++ ) {
+    close_the_file( fp5[i] ) ;
+  }
 
   strcpy( fname, fn2 ) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn2) ; }
@@ -96,7 +115,7 @@ gen_scalar_indices_init ( FILE * fp )
 }
 
 int
-gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
+gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
 {
   node_t * p, * memb , * pkg, * rconfig, * fourd, *x ; 
   char * c , *pos1, *pos2 ;
@@ -159,7 +178,7 @@ gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
                 fprintf(fp,"   %s_units_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->units) ;
                 fprintf(fp,"   F_%s = .TRUE.\n",c) ;
               } else if ((p = get_entry( c , Domain.fields )) != NULL ) {
-                int tag ;
+                int tag, fo  ;
                 for ( tag = 1 ; tag <= p->ntl ; tag++ )
                   {
                   if ( !strcmp ( p->use , "_4d_bdy_array_") ) {
@@ -167,14 +186,26 @@ gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
                   } else {
                     strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
                   }
-                  fprintf(fp2,"IF(TRIM(vname).EQ.'%s')THEN\n",fname) ;
-                  fprintf(fp2,"  IF(uses.EQ.0)THEN\n");
-                  fprintf(fp2,"    in_use = model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
-                  fprintf(fp2,"    uses = 1\n") ;
-                  fprintf(fp2,"  ELSE\n") ;
-                  fprintf(fp2,"    in_use = in_use.OR.model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
-                  fprintf(fp2,"  ENDIF\n") ;
-                  fprintf(fp2,"ENDIF\n") ;
+                  make_lower_case(fname)  ;
+
+                  fo = 0 ;
+                  if      ( 'x' <= fname[0] ) { fo = 6 ; }
+                  else if ( 't' <= fname[0] ) { fo = 5 ; }
+                  else if ( 'o' <= fname[0] ) { fo = 4 ; }
+                  else if ( 'l' <= fname[0] ) { fo = 3 ; }
+                  else if ( 'g' <= fname[0] ) { fo = 2 ; }
+                  else if ( 'd' <= fname[0] ) { fo = 1 ; }
+                  else                        { fo = 0 ; }
+
+                  fprintf(fp2[fo],"IF(TRIM(vname).EQ.'%s')THEN\n",fname) ;
+                  fprintf(fp2[fo],"  IF(uses.EQ.0)THEN\n");
+                  fprintf(fp2[fo],"    in_use = model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
+                  fprintf(fp2[fo],"    uses = 1\n") ;
+                  fprintf(fp2[fo],"  ELSE\n") ;
+                  fprintf(fp2[fo],"    in_use = in_use.OR.model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
+                  fprintf(fp2[fo],"  ENDIF\n") ;
+                  fprintf(fp2[fo],"ENDIF\n") ;
+
                 }
               } else {
                 fprintf(stderr, "WARNING: %s is not a member of 4D array %s\n",c,assoc_4d);continue;

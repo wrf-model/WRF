@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 
+int
 main()
 {
    int in, cr, cr1, n ;
@@ -52,6 +53,7 @@ main()
    fprintf(stderr,"\n") ;
 }
 
+void
 swap4( a, b )
    char a[], b[] ;
 {
@@ -68,6 +70,7 @@ swap4( a, b )
 #endif
 }
 
+void
 swap8( a, b )
    char a[], b[] ;
 {

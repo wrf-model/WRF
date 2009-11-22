@@ -8037,9 +8037,10 @@ END SUBROUTINE VDVG_2
 !------------------------------------------------------------------------
 SUBROUTINE sorgam_addemiss(                                             &
      id, dtstep, u10, v10, alt, dz8w, xland, chem,                      &
+     ebu,                                   &
      slai,ust,smois,ivgtyp,isltyp,                                      &
      emis_ant,dust_emiss_active,                                        &
-     seasalt_emiss_active,kemit,num_soil_layers,                        &
+     seasalt_emiss_active,kemit,biom,num_soil_layers,emissopt,          &
      ids,ide, jds,jde, kds,kde,                                         &
      ims,ime, jms,jme, kms,kme,                                         &
      its,ite, jts,jte, kts,kte                                          )
@@ -8052,9 +8053,9 @@ SUBROUTINE sorgam_addemiss(                                             &
 
   USE module_state_description, only:  num_chem
 
-  INTEGER,      INTENT(IN   ) :: seasalt_emiss_active, kemit,           &
+  INTEGER,      INTENT(IN   ) :: seasalt_emiss_active, kemit,emissopt,  &
                                  dust_emiss_active,num_soil_layers,id,  &
-                                 ids,ide, jds,jde, kds,kde,             &
+                                 biom,ids,ide, jds,jde, kds,kde,        &
                                  ims,ime, jms,jme, kms,kme,             &
                                  its,ite, jts,jte, kts,kte
 
@@ -8066,9 +8067,15 @@ SUBROUTINE sorgam_addemiss(                                             &
 !
 ! aerosol emissions arrays ((ug/m3)*m/s)
 !
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_emis_ant ),                     &
+   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_emis_ant ),        &
          INTENT(IN    ) ::                                             &
          emis_ant
+!
+! biomass burning aerosol emissions arrays ((ug/m3)*m/s)
+!
+   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_ebu ),             &
+         INTENT(IN    ) ::                                             &
+         ebu
 
 ! 1/(dry air density) and layer thickness (m)
   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                      &
@@ -8084,15 +8091,16 @@ SUBROUTINE sorgam_addemiss(                                             &
        INTENT(INOUT) ::   smois
 
 ! Local variables...
-  real, dimension(its:ite,kts:kemit,jts:jte) :: factor
+  real, dimension(its:ite,kts:kte,jts:jte) :: factor
 !
 ! Get the emissions unit conversion factor including the time step.
 ! Changes emissions from [ug/m3 m/s] to [ug/kg_dryair/timestep]
 !
-  factor(its:ite,kts:kemit,jts:jte) = alt(its:ite,kts:kemit,jts:jte)*dtstep/ &
-                  dz8w(its:ite,kts:kemit,jts:jte)
+  factor(its:ite,kts:kte,jts:jte) = alt(its:ite,kts:kte,jts:jte)*dtstep/ &
+                  dz8w(its:ite,kts:kte,jts:jte)
 !
 ! Increment the aerosol numbers...
+    if(emissopt  .lt. 5 )then
 !
 ! Aitken mode first...
 
@@ -8164,6 +8172,105 @@ SUBROUTINE sorgam_addemiss(                                             &
   chem(its:ite,kts:kemit,jts:jte,p_no3ai) =                      &
        chem(its:ite,kts:kemit,jts:jte,p_no3ai) +                 &
        emis_ant(its:ite,kts:kemit,jts:jte,p_e_no3i)*factor(its:ite,kts:kemit,jts:jte)
+  elseif(emissopt == 5)then
+!
+! Aitken mode first...
+
+  chem(its:ite,kts:kemit,jts:jte,p_nu0) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_nu0) +                   &
+       factor(its:ite,kts:kemit,jts:jte)*factnumn*(                                  &
+       anthfac*( .25*emis_ant(its:ite,kts:kemit,jts:jte,p_e_bc) ) +                      &
+       orgfac*.25*emis_ant(its:ite,kts:kemit,jts:jte,p_e_oc) )
+
+! Accumulation mode next...
+  
+  chem(its:ite,kts:kemit,jts:jte,p_ac0) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_ac0) +                   &
+       factor(its:ite,kts:kemit,jts:jte)*factnuma*(                                  &
+       anthfac*( .75*emis_ant(its:ite,kts:kemit,jts:jte,p_e_bc) ) +                      &
+       orgfac*.75*emis_ant(its:ite,kts:kemit,jts:jte,p_e_oc) )
+
+!
+! Increment the aerosol masses...
+!
+
+  chem(its:ite,kts:kemit,jts:jte,p_ecj) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_ecj) +                   &
+       .75*emis_ant(its:ite,kts:kemit,jts:jte,p_e_bc)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_eci) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_eci) +                   &
+       .25*emis_ant(its:ite,kts:kemit,jts:jte,p_e_bc)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_orgpaj) =                     &
+       chem(its:ite,kts:kemit,jts:jte,p_orgpaj) +                &
+       .75*emis_ant(its:ite,kts:kemit,jts:jte,p_e_oc)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_orgpai) =                     &
+       chem(its:ite,kts:kemit,jts:jte,p_orgpai) +                &
+       .25*emis_ant(its:ite,kts:kemit,jts:jte,p_e_oc)*factor(its:ite,kts:kemit,jts:jte)
+
+  endif
+! add biomass burning emissions if present
+!
+  if(biom == 1 )then
+!
+! Aitken mode first...
+
+  chem(its:ite,kts:kte,jts:jte,p_nu0) =                        &
+       chem(its:ite,kts:kte,jts:jte,p_nu0) +                   &
+       factor(its:ite,kts:kte,jts:jte)*factnumn*(              &
+       anthfac*( .25*ebu(its:ite,kts:kte,jts:jte,p_ebu_pm25) +       &
+              .25*ebu(its:ite,kts:kte,jts:jte,p_ebu_bc) ) +          &
+       orgfac*.25*ebu(its:ite,kts:kte,jts:jte,p_ebu_oc) )
+
+! Accumulation mode next...
+  
+  chem(its:ite,kts:kte,jts:jte,p_ac0) =                        &
+       chem(its:ite,kts:kte,jts:jte,p_ac0) +                   &
+       factor(its:ite,kts:kte,jts:jte)*factnuma*(              &
+       anthfac*(.75*ebu(its:ite,kts:kte,jts:jte,p_ebu_pm25) +        &
+      .75*ebu(its:ite,kts:kte,jts:jte,p_ebu_bc) ) +                  &
+       orgfac*.75*ebu(its:ite,kts:kte,jts:jte,p_ebu_oc) )
+! coarse
+  chem(its:ite,kts:kte,jts:jte,p_corn) =                     &
+       chem(its:ite,kts:kte,jts:jte,p_corn) +                  &
+       factor(its:ite,kts:kte,jts:jte)*factnumc*anthfac*       &
+       ebu(its:ite,kts:kte,jts:jte,p_ebu_pm10)
+
+!
+! Increment the aerosol masses...
+!
+
+  chem(its:ite,kts:kte,jts:jte,p_ecj) =                        &
+       chem(its:ite,kts:kte,jts:jte,p_ecj) +                   &
+       .75*ebu(its:ite,kts:kte,jts:jte,p_ebu_bc)*factor(its:ite,kts:kte,jts:jte)
+
+  chem(its:ite,kts:kte,jts:jte,p_eci) =                        &
+       chem(its:ite,kts:kte,jts:jte,p_eci) +                   &
+       .25*ebu(its:ite,kts:kte,jts:jte,p_ebu_bc)*factor(its:ite,kts:kte,jts:jte)
+
+  chem(its:ite,kts:kte,jts:jte,p_orgpaj) =                     &
+       chem(its:ite,kts:kte,jts:jte,p_orgpaj) +                &
+       .75*ebu(its:ite,kts:kte,jts:jte,p_ebu_oc)*factor(its:ite,kts:kte,jts:jte)
+
+  chem(its:ite,kts:kte,jts:jte,p_orgpai) =                     &
+       chem(its:ite,kts:kte,jts:jte,p_orgpai) +                &
+       .25*ebu(its:ite,kts:kte,jts:jte,p_ebu_oc)*factor(its:ite,kts:kte,jts:jte)
+
+  chem(its:ite,kts:kte,jts:jte,p_antha) =                      &
+       chem(its:ite,kts:kte,jts:jte,p_antha) +                 &
+       ebu(its:ite,kts:kte,jts:jte,p_ebu_pm10)*factor(its:ite,kts:kte,jts:jte)
+
+  chem(its:ite,kts:kte,jts:jte,p_p25j) =                       &
+       chem(its:ite,kts:kte,jts:jte,p_p25j) +                  &
+       .75*ebu(its:ite,kts:kte,jts:jte,p_ebu_pm25)*factor(its:ite,kts:kte,jts:jte)
+
+  chem(its:ite,kts:kte,jts:jte,p_p25i) =                       &
+       chem(its:ite,kts:kte,jts:jte,p_p25i) +                  &
+       .25*ebu(its:ite,kts:kte,jts:jte,p_ebu_pm25)*factor(its:ite,kts:kte,jts:jte)
+
+   endif !end biomass burning
 !
 ! Get the sea salt emissions...
 !

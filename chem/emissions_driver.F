@@ -16,20 +16,7 @@ CONTAINS
          config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
          tsk,erod,g,emis_seas,emis_dust,                                   &
-         ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,                    &
-         ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,                         &
-         ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,                        &
-         ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,                         &
-         ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,                        &
-         ebu_oc,ebu_so2,ebu_dms,ebu_sulf,                                  &
-         ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,                        &
-         ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,                      &
-         ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,                    &
-         ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,                     &
-         ebu_in_tol,ebu_in_xyl,ebu_in_csl,ebu_in_hcho,                     &
-         ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1,                    &
-         ebu_in_ora2,ebu_in_bc,ebu_in_oc,ebu_in_so2,                       &
-         ebu_in_dms,ebu_in_sulf,mean_fct_agtf,mean_fct_agef,               &
+         ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
@@ -41,6 +28,10 @@ CONTAINS
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
+         ebio_c10h16,ebio_tol,ebio_bigalk,ebio_ch3oh,ebio_acet,            &
+         ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
+         ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
+         ebio_dms,                                                         &
          ! stuff for MEGAN v2.04                                                 
          T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
@@ -89,6 +80,10 @@ CONTAINS
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_ebu ),                  &
+         INTENT(INOUT ) ::                                   ebu
+   REAL, DIMENSION( ims:ime, jms:jme, num_ebu_in ),                        &
+         INTENT(INOUT ) ::                                   ebu_in
    REAL, DIMENSION( ims:ime, jms:jme, ne_area ),                           &
          INTENT(INOUT ) ::                               e_bio
    REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
@@ -107,24 +102,6 @@ CONTAINS
          OPTIONAL,                                                         &
          INTENT(INOUT ) ::                                                 &
          emis_seas
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
-         OPTIONAL,                                                         &
-         INTENT(INOUT ) ::                                                 &
-           ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
-           ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
-           ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
-           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,       &
-            ebu_dms,ebu_sulf
-
-   REAL, DIMENSION( ims:ime, jms:jme ),                                    &
-         OPTIONAL,                                                         &
-         INTENT(INOUT ) ::                                                 &
-           ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,           &
-           ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,         &
-           ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,      &
-           ebu_in_lim,ebu_in_tol,ebu_in_xyl,ebu_in_csl,ebu_in_hcho,        &
-           ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,      &
-           ebu_in_bc,ebu_in_oc,ebu_in_so2,ebu_in_dms,ebu_in_sulf
 
    REAL, DIMENSION( ims:ime,  jms:jme ),                                   &
          OPTIONAL,                                                         &
@@ -172,7 +149,12 @@ CONTAINS
                noag_grow,noag_nongrow,nononag,slai,                    &
                ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
-               ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no
+               ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
+               ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
+               ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
+               ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
+               ebio_so2,ebio_dms
+
 
    ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
    !  as declared in registry.chem
@@ -334,16 +316,7 @@ CONTAINS
           CALL wrf_debug(15,'fire emissions: calling biomassb')
           write(0,*)ktau,stepfirepl
          call plumerise_driver (id,ktau,dtstep,                            &
-           ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
-           ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
-           ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
-           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,       &
-           ebu_dms,ebu_sulf,                                               &
-           ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,      &
-           ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,  &
-           ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_xyl,   &
-           ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1, &
-           ebu_in_ora2,ebu_in_bc,ebu_in_oc,ebu_in_so2,ebu_in_dms,ebu_in_sulf,    &
+           ebu,ebu_in,                                                     &
            mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
            firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
            config_flags, t_phy,moist,                                      &
@@ -357,11 +330,7 @@ CONTAINS
        CALL wrf_debug(15,'fire emissions: adding biomassb emissions')
        call add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,&
             julday,gmt,xlat,xlong,t_phy,p_phy,                           &
-            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,       &
-            ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,  &
-            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,    &
-            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,    &
-            ebu_dms,ebu_sulf,config_flags%chem_opt,                      &
+            ebu,config_flags%chem_opt,config_flags%biomass_burn_opt,     &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
@@ -645,10 +614,12 @@ CONTAINS
           RACMSORG_AQ,RACMSORG_KPP)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
        call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
+            ebu,                                                        &
             slai,ust,smois,ivgtyp,isltyp,                               &
             emis_ant,dust_emiss_active,                                 &
             seasalt_emiss_active,config_flags%kemit,                    &
-            config_flags%num_soil_layers,                               &
+            config_flags%biomass_burn_opt,                              &
+            config_flags%num_soil_layers,config_flags%emiss_opt,        &
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )

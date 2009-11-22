@@ -30,7 +30,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
    integer           :: inst, num_rad, nchanl, n, icld
    integer           :: ipred, npred, gammapred, id
    real, allocatable :: temperature(:,:)
-   real, allocatable :: absorber(:,:)
+   real, allocatable :: absorber(:,:), xb_q(:,:)
    real, allocatable :: psfc(:)
 !! for crtm_cloud
    real, allocatable :: qcw(:,:),qci(:,:),qrn(:,:),qsn(:,:),qgr(:,:)
@@ -235,10 +235,12 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
 
       allocate (temperature(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
       allocate (absorber(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+      allocate (xb_q(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
       allocate (psfc(iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
 
       temperature(:,:) = 0.0
       absorber(:,:)    = 0.0
+      xb_q(:,:)        = 0.0
       psfc(:)          = 0.0
 
       if (crtm_cloud) then
@@ -312,6 +314,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
             Atmosphere(n)%level_pressure(k) = iv%instid(inst)%pf(k,n)
             Atmosphere(n)%temperature(k)    = iv%instid(inst)%tm(k,n)
             Atmosphere(n)%absorber(k,1)     = iv%instid(inst)%qm(k,n)
+            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+iv%instid(inst)%qm(k,n)) ! specific humidity
          end do
          if (crtm_cloud) then
             do k=1,Atmosphere(n)%n_layers
@@ -404,7 +407,9 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
         do k = kts, kte
           if ( iv%instid(inst)%pm(k,n) < 75.0 ) absorber(k,n) = 0.0
         end do
-        Atmosphere_TL(n)%Absorber(kts+1:kte,1)  = 1000.0 * absorber(kts+1:kte,n) ! in g/kg  Zero Jacobian for top level(s)
+        Atmosphere_TL(n)%Absorber(kts+1:kte,1)  = 1000.0 / (1.0-xb_q(kts+1:kte,n))**2  &
+                                                  * absorber(kts+1:kte,n)
+                                                  ! in g/kg  Zero Jacobian for top level(s)
         Atmosphere_TL(n)%Temperature(kts+1:kte) = temperature(kts+1:kte,n)       ! Zero Jacobian for top level
         Atmosphere_TL(n)%Level_Pressure(Atmosphere_TL(n)%n_Layers) = 0.01 * psfc(n)
 
@@ -534,6 +539,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
 
       deallocate (temperature)
       deallocate (absorber)
+      deallocate (xb_q)
       deallocate (psfc)     
 
       if (crtm_cloud) then

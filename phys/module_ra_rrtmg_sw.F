@@ -10120,8 +10120,9 @@ CONTAINS
 ! From module_ra_cam: Convert liquid and ice mixing ratios to water paths;
 ! pdel is in mb here; convert back to Pa (*100.)
 ! Water paths are in units of g/m2
+! snow added as ice cloud (JD 091022)
             do k = kts, kte
-               gicewp = qi1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box ice water path.
+               gicewp = (qi1d(k)+qs1d(k)) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box ice water path.
                gliqwp = qc1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box liquid water path.
                cicewp(ncol,k) = gicewp / max(0.01,cldfrac(ncol,k))               ! In-cloud ice water path.
                cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.

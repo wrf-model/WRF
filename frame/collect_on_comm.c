@@ -36,14 +36,20 @@
 # endif
 #endif
 
+  
+int col_on_comm ( int *, int *, void *, int *, void *, int *, int);
+int dst_on_comm ( int *, int *, void *, int *, void *, int *, int);
+
+void 
 COLLECT_ON_COMM ( int * comm, int * typesize ,
-                 void * inbuf, int *ninbuf , void * outbuf, int * noutbuf )
+                  void * inbuf, int *ninbuf , void * outbuf, int * noutbuf )
 {
   col_on_comm ( comm, typesize ,
                 inbuf, ninbuf , outbuf, noutbuf, 1 ) ;
 }
 
 /* collect on node 0*/
+void
 COLLECT_ON_COMM0 ( int * comm, int * typesize ,
                  void * inbuf, int *ninbuf , void * outbuf, int * noutbuf )
 {
@@ -116,7 +122,11 @@ col_on_comm ( int * Fcomm, int * typesize ,
   return(0) ;
 }
 
+int
+dst_on_comm ( int * Fcomm, int * typesize ,
+              void * inbuf, int *ninbuf , void * outbuf, int * noutbuf, int sw ) ;
 
+void
 DIST_ON_COMM ( int * comm, int * typesize ,
                  void * inbuf, int *ninbuf , void * outbuf, int * noutbuf )
 {
@@ -124,6 +134,7 @@ DIST_ON_COMM ( int * comm, int * typesize ,
                 inbuf, ninbuf , outbuf, noutbuf, 1 ) ;
 }
 
+void
 DIST_ON_COMM0 ( int * comm, int * typesize ,
                  void * inbuf, int *ninbuf , void * outbuf, int * noutbuf )
 {
@@ -131,6 +142,7 @@ DIST_ON_COMM0 ( int * comm, int * typesize ,
                 inbuf, ninbuf , outbuf, noutbuf, 0 ) ;
 }
 
+int
 dst_on_comm ( int * Fcomm, int * typesize ,
               void * inbuf, int *ninbuf , void * outbuf, int * noutbuf, int sw )
 {
@@ -181,6 +193,9 @@ dst_on_comm ( int * Fcomm, int * typesize ,
 #ifndef MS_SUA
 #ifndef MACOS
 #  include <malloc.h>
+#  ifndef _WIN32
+#     include <sys/resource.h>
+#  endif
 #  include <sys/resource.h>
 #endif
 

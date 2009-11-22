@@ -1,12 +1,6 @@
 !WRF:PACKAGE:RSL 
 !
 MODULE module_dm
-! Coupling insertion->
-   USE ATM_cc, ONLY: MPI_COMM_Atmos
-!     All occurences of MPI_COMM_WORLD in this unit are replaced
-!     by MPI_COMM_Atmos to enable coupling. The value of MPI_COMM_Atmos
-!     is obtained via call ATM_CMP_START
-!<-Coupling insertion
 
    USE module_machine
    USE module_wrf_error
@@ -1293,21 +1287,24 @@ CONTAINS
         ENDIF
 #  else
         CALL mpi_init ( ierr )
-! Coupling insertion->
-        call ATM_CMP_START
-!<-Coupling insertion
 #  endif
-        CALL wrf_set_dm_communicator( MPI_COMM_ATMOS )
-        CALL wrf_termio_dup
-      ENDIF
-#if (DA_CORE == 1)
-      CALL mpi_comm_split( MPI_COMM_ATMOS , 4 , 1 , mpi_comm_local, ierr )
-      CALL wrf_set_dm_communicator( mpi_comm_local )
+        mpi_comm_here = MPI_COMM_WORLD
+#ifdef HWRF
+        CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
 #endif
+        CALL wrf_set_dm_communicator( mpi_comm_here )
+      ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_here )
+      CALL wrf_termio_dup( mpi_comm_here )
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
       CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
+#if (DA_CORE == 1)
+      CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
+      CALL wrf_set_dm_communicator( mpi_comm_local )
+      CALL wrf_termio_dup( mpi_comm_here ) 
+      CALL wrf_get_dm_communicator( mpi_comm_here )
+#endif
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
@@ -1345,35 +1342,23 @@ CONTAINS
    SUBROUTINE init_module_dm
 #ifndef STUBMPI
       IMPLICIT NONE
-      INTEGER mpi_comm_local, ierr, mytask, nproc
+      INTEGER mpi_comm_local, mpi_comm_here, ierr, mytask, nproc
       INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       CALL mpi_initialized( mpi_inited, ierr )
       IF ( .NOT. mpi_inited ) THEN
-	! If MPI has not been initialized then initialize it and 
-	! make comm_world the communicator
-	! Otherwise, something else (e.g. quilt-io) has already 
-	! initialized MPI, so just grab the communicator that
-	! should already be stored and use that.
-	CALL mpi_init ( ierr )
-! Coupling insertion->
-        call ATM_CMP_START
-!<-Coupling insertion
-        CALL wrf_termio_dup
-	CALL wrf_set_dm_communicator ( MPI_COMM_ATMOS )
+        ! If MPI has not been initialized then initialize it and
+        ! make comm_world the communicator
+        ! Otherwise, something else (e.g. split_communicator) has already
+        ! initialized MPI, so just grab the communicator that
+        ! should already be stored and use that.
+        CALL mpi_init ( ierr )
+        mpi_comm_here = MPI_COMM_WORLD
+        CALL wrf_set_dm_communicator ( mpi_comm_here )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
+      CALL wrf_termio_dup( mpi_comm_local )
 #endif
-! Coupling insertion->
-!      call ATM_INIT_CHECK('ATM_CMP_START has not been called before'//
-!     >' exiting init_module_dm. Aborting...')
-
-!!!! Dmitry: is this correct ?; gopal's change
-
-      call ATM_INIT_CHECK('ATM_CMP_START has not been called before exiting init_module_dm. Aborting...')
-
-!<-Coupling insertion
-
    END SUBROUTINE init_module_dm
 
 ! stub
@@ -1752,19 +1737,15 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
    RETURN
 END SUBROUTINE wrf_dm_patch_domain
 
-SUBROUTINE wrf_termio_dup
-! Coupling insertion->
-   USE ATM_cc, ONLY: MPI_COMM_Atmos
-!     All occurences of MPI_COMM_WORLD in this unit are replaced
-!     by MPI_COMM_Atmos to enable coupling
-!<-Coupling insertion
+SUBROUTINE wrf_termio_dup( comm )
   IMPLICIT NONE
+  INTEGER, INTENT(IN) :: comm
   INTEGER mytask, ntasks
 #ifndef STUBMPI
   INTEGER ierr
   INCLUDE 'mpif.h'
-  CALL mpi_comm_size(MPI_COMM_ATMOS, ntasks, ierr )
-  CALL mpi_comm_rank(MPI_COMM_ATMOS, mytask, ierr )
+  CALL mpi_comm_size(comm, ntasks, ierr )
+  CALL mpi_comm_rank(comm, mytask, ierr )
   write(0,*)'starting wrf task ',mytask,' of ',ntasks
   CALL rsl_error_dup1( mytask )
 #else
@@ -1940,16 +1921,11 @@ END
 
    SUBROUTINE wrf_abort
 
-! Coupling insertion->
-   USE ATM_cc, ONLY: MPI_COMM_Atmos
-!     All occurences of MPI_COMM_WORLD in this unit are replaced
-!     by MPI_COMM_Atmos to enable coupling
-!<-Coupling insertion
     implicit none
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER ierr
-      CALL mpi_abort(MPI_COMM_ATMOS,1,ierr)
+      CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
 #else
       STOP
 #endif

@@ -54,7 +54,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_ebu ),                 &
          INTENT(INOUT ) ::                                   ebu
-   REAL, DIMENSION( ims:ime, jms:jme, num_ebu_in ),                 &
+   REAL, DIMENSION( ims:ime, 1, jms:jme, num_ebu_in ),                 &
          INTENT(INOUT ) ::                                   ebu_in
    REAL, DIMENSION( ims:ime, jms:jme ),                 &
          INTENT(IN ) ::                                                &
@@ -95,36 +95,36 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 
        do j=jts,jte
           do i=its,ite
-               ebu(i,kts,j,p_ebu_no)=ebu_in(i,j,p_ebu_in_no)
-               ebu(i,kts,j,p_ebu_co)=ebu_in(i,j,p_ebu_in_co)
-               ebu(i,kts,j,p_ebu_co2)=ebu_in(i,j,p_ebu_in_co2)
-               ebu(i,kts,j,p_ebu_eth)=ebu_in(i,j,p_ebu_in_eth)
-               ebu(i,kts,j,p_ebu_hc3)=ebu_in(i,j,p_ebu_in_hc3)
-               ebu(i,kts,j,p_ebu_hc5)=ebu_in(i,j,p_ebu_in_hc5)
-               ebu(i,kts,j,p_ebu_hc8)=ebu_in(i,j,p_ebu_in_hc8)
-               ebu(i,kts,j,p_ebu_ete)=ebu_in(i,j,p_ebu_in_ete)
-               ebu(i,kts,j,p_ebu_olt)=ebu_in(i,j,p_ebu_in_olt)
-               ebu(i,kts,j,p_ebu_oli)=ebu_in(i,j,p_ebu_in_oli)
-               ebu(i,kts,j,p_ebu_pm25)=ebu_in(i,j,p_ebu_in_pm25)
-               ebu(i,kts,j,p_ebu_pm10)=ebu_in(i,j,p_ebu_in_pm10)
-               ebu(i,kts,j,p_ebu_dien)=ebu_in(i,j,p_ebu_in_dien)
-               ebu(i,kts,j,p_ebu_iso)=ebu_in(i,j,p_ebu_in_iso)
-               ebu(i,kts,j,p_ebu_api)=ebu_in(i,j,p_ebu_in_api)
-               ebu(i,kts,j,p_ebu_lim)=ebu_in(i,j,p_ebu_in_lim)
-               ebu(i,kts,j,p_ebu_tol)=ebu_in(i,j,p_ebu_in_tol)
-               ebu(i,kts,j,p_ebu_xyl)=ebu_in(i,j,p_ebu_in_xyl)
-               ebu(i,kts,j,p_ebu_csl)=ebu_in(i,j,p_ebu_in_csl)
-               ebu(i,kts,j,p_ebu_hcho)=ebu_in(i,j,p_ebu_in_hcho)
-               ebu(i,kts,j,p_ebu_ald)=ebu_in(i,j,p_ebu_in_ald)
-               ebu(i,kts,j,p_ebu_ket)=ebu_in(i,j,p_ebu_in_ket)
-               ebu(i,kts,j,p_ebu_macr)=ebu_in(i,j,p_ebu_in_macr)
-               ebu(i,kts,j,p_ebu_ora1)=ebu_in(i,j,p_ebu_in_ora1)
-               ebu(i,kts,j,p_ebu_ora2)=ebu_in(i,j,p_ebu_in_ora2)
-               ebu(i,kts,j,p_ebu_sulf)=ebu_in(i,j,p_ebu_in_sulf)
-               ebu(i,kts,j,p_ebu_bc)=ebu_in(i,j,p_ebu_in_bc)
-               ebu(i,kts,j,p_ebu_oc)=ebu_in(i,j,p_ebu_in_oc)
-               ebu(i,kts,j,p_ebu_so2)=ebu_in(i,j,p_ebu_in_so2)
-               ebu(i,kts,j,p_ebu_dms)=ebu_in(i,j,p_ebu_in_dms)
+               ebu(i,kts,j,p_ebu_no)=ebu_in(i,1,j,p_ebu_in_no)
+               ebu(i,kts,j,p_ebu_co)=ebu_in(i,1,j,p_ebu_in_co)
+               ebu(i,kts,j,p_ebu_co2)=ebu_in(i,1,j,p_ebu_in_co2)
+               ebu(i,kts,j,p_ebu_eth)=ebu_in(i,1,j,p_ebu_in_eth)
+               ebu(i,kts,j,p_ebu_hc3)=ebu_in(i,1,j,p_ebu_in_hc3)
+               ebu(i,kts,j,p_ebu_hc5)=ebu_in(i,1,j,p_ebu_in_hc5)
+               ebu(i,kts,j,p_ebu_hc8)=ebu_in(i,1,j,p_ebu_in_hc8)
+               ebu(i,kts,j,p_ebu_ete)=ebu_in(i,1,j,p_ebu_in_ete)
+               ebu(i,kts,j,p_ebu_olt)=ebu_in(i,1,j,p_ebu_in_olt)
+               ebu(i,kts,j,p_ebu_oli)=ebu_in(i,1,j,p_ebu_in_oli)
+               ebu(i,kts,j,p_ebu_pm25)=ebu_in(i,1,j,p_ebu_in_pm25)
+               ebu(i,kts,j,p_ebu_pm10)=ebu_in(i,1,j,p_ebu_in_pm10)
+               ebu(i,kts,j,p_ebu_dien)=ebu_in(i,1,j,p_ebu_in_dien)
+               ebu(i,kts,j,p_ebu_iso)=ebu_in(i,1,j,p_ebu_in_iso)
+               ebu(i,kts,j,p_ebu_api)=ebu_in(i,1,j,p_ebu_in_api)
+               ebu(i,kts,j,p_ebu_lim)=ebu_in(i,1,j,p_ebu_in_lim)
+               ebu(i,kts,j,p_ebu_tol)=ebu_in(i,1,j,p_ebu_in_tol)
+               ebu(i,kts,j,p_ebu_xyl)=ebu_in(i,1,j,p_ebu_in_xyl)
+               ebu(i,kts,j,p_ebu_csl)=ebu_in(i,1,j,p_ebu_in_csl)
+               ebu(i,kts,j,p_ebu_hcho)=ebu_in(i,1,j,p_ebu_in_hcho)
+               ebu(i,kts,j,p_ebu_ald)=ebu_in(i,1,j,p_ebu_in_ald)
+               ebu(i,kts,j,p_ebu_ket)=ebu_in(i,1,j,p_ebu_in_ket)
+               ebu(i,kts,j,p_ebu_macr)=ebu_in(i,1,j,p_ebu_in_macr)
+               ebu(i,kts,j,p_ebu_ora1)=ebu_in(i,1,j,p_ebu_in_ora1)
+               ebu(i,kts,j,p_ebu_ora2)=ebu_in(i,1,j,p_ebu_in_ora2)
+               ebu(i,kts,j,p_ebu_sulf)=ebu_in(i,1,j,p_ebu_in_sulf)
+               ebu(i,kts,j,p_ebu_bc)=ebu_in(i,1,j,p_ebu_in_bc)
+               ebu(i,kts,j,p_ebu_oc)=ebu_in(i,1,j,p_ebu_in_oc)
+               ebu(i,kts,j,p_ebu_so2)=ebu_in(i,1,j,p_ebu_in_so2)
+               ebu(i,kts,j,p_ebu_dms)=ebu_in(i,1,j,p_ebu_in_dms)
              do nv=1,num_ebu
                 do k=kts+1,kte
                   ebu(i,k,j,nv)=0.

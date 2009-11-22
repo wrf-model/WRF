@@ -283,6 +283,14 @@
 !
 !initialize
 !
+  if (config_flags%lightning_opt > 0 ) then
+! initialize lightning flash rates
+     IF ( ktau==1 ) then
+      grid%ic_flshrate(:,:) = 0.
+      grid%cg_flshrate(:,:) = 0.
+     ENDIF
+  ENDIF
+
 #if ( NMM_CORE == 1 )
 !***  IN NMM SET CONTROLS FOR TILES TO PATCHES
 !
@@ -680,6 +688,13 @@
               grid%mebio_isop,grid%mebio_apin,grid%mebio_bpin, grid%mebio_bcar,            &
               grid%mebio_acet,grid%mebio_mbo,grid%mebio_no,                                &
               current_month,                                                               &
+         ! stuff for lightning NOx
+              grid%ht, grid%dy,                                                            &
+              grid%lightning_time_step, grid%lightning_start_seconds, grid%passive_ltng,   &
+              grid%temp_upper, grid%temp_lower, grid%N_IC, grid%N_CG,                      &
+              grid%lflash_data, grid%ic_flshrate, grid%cg_flshrate,                        &
+              grid%flashrate_factor, grid%flashrate_method, grid%iccg_method,              &
+              grid%cellcount_method,                                                       &
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)

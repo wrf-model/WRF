@@ -1694,6 +1694,8 @@ CONTAINS
           READ (19,*)SMLOW_DATA
           READ (19,*)
           READ (19,*)SMHIGH_DATA
+          READ (19,*)
+          READ (19,*)LVCOEF_DATA
         CLOSE (19)
       ENDIF
 
@@ -1711,6 +1713,7 @@ CONTAINS
       CALL wrf_dm_bcast_real    ( CZIL_DATA    ,  1 )
       CALL wrf_dm_bcast_real    ( SMLOW_DATA   ,  1 )
       CALL wrf_dm_bcast_real    ( SMHIGH_DATA  ,  1 )
+      CALL wrf_dm_bcast_real    ( LVCOEF_DATA  ,  1 )
 
 
 !-----------------------------------------------------------------

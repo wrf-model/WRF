@@ -102,11 +102,6 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 state  logical moved       -     misc       1      -     -
 
 #
-# module_LOOPS
-#
-state integer  lmh      ij     dyn_nmm     1      -      irh      "LMH"     "Lowest model layer at mass points from domain top"       ""
-state integer  lmv      ij     dyn_nmm     1      -      irh      "LMV"     "Lowest model layer at velocity points from domain top"   ""
-#
 # module_MASKS
 #
 state  real   hbm2      ij     dyn_nmm     1      -      irh     "HBM2"    "Height boundary mask; =0 outer 2 rows on H points"       "" 
@@ -115,8 +110,6 @@ state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velo
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
 state  real   sm        ij     dyn_nmm     1      -      i01rh   "SM"      "Sea mask; =1 for sea, =0 for land"                       ""
 state  real   sice      ij     dyn_nmm     1      -      irh     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
-state  real   htm       ijk    dyn_nmm     1      -      r      "HTM"     "Height mask; =1 at all mass points above ground"         ""
-state  real   vtm       ijk    dyn_nmm     1      -      r      "VTM"     "Velocity mask; =1 at all velocity points above ground"   ""
 #
 # module_VRBLS
 #
@@ -200,7 +193,7 @@ state  real   ustar     ij    dyn_nmm   1    -     irh      "USTAR"    "Friction
 state  real   z0        ij    dyn_nmm   1    -     i01rh    "Z0"       "Roughness height"                     "m"
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
 state  real   ths       ij    dyn_nmm   1    -     irh      "THS"      "Surface potential temperature"        "K"
-state  real   mavail    ij    dyn_nmm   1    -     irh
+state  real   mavail    ij    dyn_nmm   1    -     i  
 state  real   qsh       ij    dyn_nmm   1    -     irh      "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
@@ -258,6 +251,7 @@ state integer lvl       ij    dyn_nmm   1    -     ir
 # module_CLDWTR.F
 #
 state  real   cwm       ijkb  dyn_nmm   1    -     rh       "CWM"       "Total condensate"                     "kg kg-1"
+state  real   rrw       ijkb  dyn_nmm   1    -     rh       "RRW"       "Tracer"                               "kg kg-1"
 state  real   f_ice     ikj   dyn_nmm   1    -     rh       "F_ICE"     "Frozen fraction of CWM"               ""
 state  real   f_rain    ikj   dyn_nmm   1    -     rh       "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
 state  real   f_rimef   ikj   dyn_nmm   1    -     rh       "F_RIMEF"   "Rime factor"                          ""
@@ -384,7 +378,6 @@ state integer ihwg      q    dyn_nmm     1    -    -
 state integer iveg      q    dyn_nmm     1    -    -
 state integer ivwg      q    dyn_nmm     1    -    -
 state integer iradg     r    dyn_nmm     1    -    -
-state integer indx3_wrk zqn  dyn_nmm     1    -    -      "INDX3_WRK"  "Array of 3rd (J) indices for local arrays"  ""
 state integer n_iup_h   j    dyn_nmm     1    -    -      "N_IUP_H"    "# mass points needed in each row for upstream advection"  ""
 state integer n_iup_v   j    dyn_nmm     1    -    -      "N_IUP_V"    "# velocity points needed in each row for upstream advection"  ""
 state integer n_iup_adh j    dyn_nmm     1    -    -      "N_IUP_ADH"  "# mass points in each row of upstream advection"  ""
@@ -487,12 +480,12 @@ state    real   ts_clw          ?!       misc      -         -      r        "TS
 # dry code will will still link properly)                                               
 #                                               
 state   real    -              ijkft   moist       1         -     -    -                                       
-state   real    qv             ijkft   moist       1         h     rh       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ijkft   moist       1         h     rh       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ijkft   moist       1         h     rh       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ijkft   moist       1         h     rh       "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ijkft   moist       1         h     rh       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ijkft   moist       1         h     rh       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qv             ijkft   moist       1         -     rh       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ijkft   moist       1         -     rh       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ijkft   moist       1         -     rh       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ijkft   moist       1         -     rh       "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ijkft   moist       1         -     rh       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ijkft   moist       1         -     rh       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -    -
@@ -632,14 +625,11 @@ state   real   dvdt              ijk     misc        1         -     -
 state   real   QSFC             ij     misc        1         -     irh       "QSFC"                  "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
 state   real   AKHS             ij     misc        1         -     ir        "AKHS"                  "SFC EXCH COEFF FOR HEAT /DELTA Z"             "m s-1"
 state   real   AKMS             ij     misc        1         -     ir        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM /DELTA Z"         "m s-1"    
-i1      real   TSHLTR           ij     misc        1         -     -         "TSHLTR"                "SHELTER THETA FROM MYJ"                       "K"         
-i1      real   QSHLTR           ij     misc        1         -     -         "QSHLTR"                "SHELTER SPECIFIC HUMIDITY FROM MYJ"           "kg kg-1"
-i1      real   TH10             ij     misc        1         -     -         "TH10"                  "10-M THETA FROM MYJ"                          "K"        
-i1      real   Q10              ij     misc        1         -     -         "Q10"                   "10-M SPECIFIC HUMIDITY FROM MYJ"              "kg kg-1"
+i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
 state    real    HTOP            ij     misc        1         -     irh       "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
 state    real    HBOT            ij     misc        1         -     irh       "HBOT"                 "BOT OF CONVECTION LEVEL"         ""
-state    real    HTOPR           ij     misc        1         -     irh       "HTOPR"                "TOP OF CONVECTION LEVEL FOR RADIATION"         ""
-state    real    HBOTR           ij     misc        1         -     irh       "HBOTR"                "BOT OF CONVECTION LEVEL FOR RADIATION"         ""
+state    real    HTOPR           ij     misc        1         -     ir        "HTOPR"                "TOP OF CONVECTION LEVEL FOR RADIATION"         ""
+state    real    HBOTR           ij     misc        1         -     ir        "HBOTR"                "BOT OF CONVECTION LEVEL FOR RADIATION"         ""
 state    real    HTOPD           ij     misc        1         -     rh        "HTOPD"                "TOP DEEP CONVECTION LEVEL"         ""
 state    real    HBOTD           ij     misc        1         -     rh        "HBOTD"                "BOT DEEP CONVECTION LEVEL"         ""
 state    real    HTOPS           ij     misc        1         -     rh        "HTOPS"                "TOP SHALLOW CONVECTION LEVEL"         ""
@@ -680,7 +670,7 @@ state    real  GD_CLOUD2        ijk      misc        1         -      rh      "G
 state    real  RTHFTEN          ikj     misc        1         -      r       "RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"         "K/sec"
 state    real  RQVFTEN          ikj     misc        1         -      r       "RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"            "kg/sec"
 state    real   SNOWH            ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)      "SNOWH"                 "PHYSICAL SNOW DEPTH"  ""
-state    real   RHOSN            ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3"
+state    real   RHOSN            ij     misc        1         -     i01rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3"
 state    real   SMFR3D           ilj    misc        1         Z      rh       "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r         "KEEPFR3DFLAG"         "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
@@ -763,7 +753,7 @@ rconfig   logical write_input             namelist,time_control		1             .
 rconfig   logical write_restart_at_0h     namelist,time_control		1             .false. h    "write_restart_at_0h"              ""      ""
 rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
-rconfig   real    tstart                  namelist,time_control     max_domains       0       rh   "tstart"  "forecast hour at the start of the NMM integration"
+rconfig   real    tstart                  namelist,time_control     max_domains       0      irh   "tstart"  "forecast hour at the start of the NMM integration"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 
@@ -919,6 +909,9 @@ rconfig   real    tke_upper_bound         namelist,dynamics	max_domains    1000.
 rconfig   real    tke_drag_coefficient      namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      ""
 rconfig   real    tke_heat_flux           namelist,dynamics	max_domains    0.      h    "tke_heat_flux"              ""      ""
 rconfig   logical pert_coriolis           namelist,dynamics	max_domains  .false.  irh  "pert_coriolis"    ""   ""
+rconfig   logical euler_adv               namelist,dynamics     1            .false.  irh  "euler_adv"        "Logical flag to turn on/off Eulerian pasive advection"   ""
+rconfig   integer idtadt                  namelist,dynamics     1              1      irh  "idtadt"           "Fundamental timesteps between calls to Eulerian advection for dynamics"   ""
+rconfig   integer idtadc                  namelist,dynamics     1              1      irh  "idtadc"           "Fundamental timesteps between calls to Eulerian advection for chemistry"   ""
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""
@@ -1063,11 +1056,10 @@ package   io_pnetcdf  io_form_restart==11                     -             -
 
 # NMM communications
 
-#halo HALO_NMM_INIT_1	dyn_nmm 120:LMH,LMV,HBM2
 halo HALO_NMM_INIT_1	dyn_nmm 120:HBM2
 halo HALO_NMM_INIT_2	dyn_nmm 120:HBM3,VBM2,VBM3
-halo HALO_NMM_INIT_3	dyn_nmm 120:SM,SICE,HTM
-halo HALO_NMM_INIT_4	dyn_nmm 120:VTM,DX_NMM,WPDAR
+halo HALO_NMM_INIT_3	dyn_nmm 120:SM,SICE
+halo HALO_NMM_INIT_4	dyn_nmm 120:DX_NMM,WPDAR
 halo HALO_NMM_INIT_5	dyn_nmm 120:CPGFU,CURV,FCP
 halo HALO_NMM_INIT_6	dyn_nmm 120:FDIV,FAD,F
 halo HALO_NMM_INIT_7	dyn_nmm 120:DDMPU,DDMPV,GLAT
@@ -1117,8 +1109,8 @@ halo      HALO_NMM_E  dyn_nmm 24:petdt
 halo      HALO_NMM_F  dyn_nmm 24:t,u,v
 halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
 halo      HALO_NMM_G  dyn_nmm 24:u,v;24:z                    
-halo      HALO_NMM_H  dyn_nmm 24:w,lmh
-halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm                    
+halo      HALO_NMM_H  dyn_nmm 24:w
+halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm,rrw
 halo      HALO_NMM_I_2  dyn_nmm 48:CHEM
 halo      HALO_NMM_I_3  dyn_nmm 48:moist,scalar
 halo      HALO_NMM_J  dyn_nmm 8:pd,uz0,vz0,t,q,cwm                    

@@ -80,15 +80,15 @@
  /
 
  &dynamics
+ euler_adv                           = .false.,
+ idtadt                              = 1,
+ idtadc                              = 1
  /
 
  &bdy_control
  spec_bdy_width                      = 1,
  specified                           = .true.,
  nested                              = .false.
- /
-
- &fdda
  /
 
  &grib2

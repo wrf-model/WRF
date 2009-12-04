@@ -237,6 +237,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! - Look for boundary data after writing out history and restart files
    CALL med_latbound_in ( grid , config_flags )
 
+
    RETURN
 END SUBROUTINE med_before_solve_io
 

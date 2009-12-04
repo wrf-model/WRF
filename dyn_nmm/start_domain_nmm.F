@@ -5,7 +5,7 @@
 !
       SUBROUTINE START_DOMAIN_NMM(GRID, allowed_to_read                &
 !
-#include <dummy_args.inc>
+#include <dummy_new_args.inc>
 !
      &           )
 !----------------------------------------------------------------------
@@ -32,6 +32,7 @@
 !
 #ifdef WRF_CHEM
    USE MODULE_AEROSOLS_SORGAM, ONLY: SUM_PM_SORGAM
+   USE MODULE_GOCART_AEROSOLS, ONLY: SUM_PM_GOCART
    USE MODULE_MOSAIC_DRIVER, ONLY: SUM_PM_MOSAIC
 #endif
 !
@@ -46,7 +47,7 @@
       TYPE(DOMAIN),INTENT(INOUT) :: GRID
       LOGICAL , INTENT(IN)       :: allowed_to_read
 !
-#include <dummy_decl.inc>
+#include <dummy_new_decl.inc>
 !
       TYPE(GRID_CONFIG_REC_TYPE) :: CONFIG_FLAGS
 !
@@ -123,7 +124,7 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_OLD
 #endif
 #if 0
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: W0AVG
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: w0avg
 #endif
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN,ADV_MOIST_COND
       LOGICAL :: START_OF_SIMULATION
@@ -160,8 +161,8 @@
 ! end z0base new
 !
 !----------------------------------------------------------------------
-#define COPY_IN
-#include <scalar_derefs.inc>
+!#define COPY_IN
+!#include <scalar_derefs.inc>
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
@@ -414,17 +415,17 @@
 #endif
 !
       DO J=MYJS_P4,MYJE_P4
-        IHEG(J)=MOD(J+1,2)
-        IHWG(J)=IHEG(J)-1
-        IVEG(J)=MOD(J,2)
-        IVWG(J)=IVEG(J)-1
+        grid%iheg(J)=MOD(J+1,2)
+        grid%ihwg(J)=grid%iheg(J)-1
+        grid%iveg(J)=MOD(J,2)
+        grid%ivwg(J)=grid%iveg(J)-1
       ENDDO
 !
       DO J=MYJS_P4,MYJE_P4
-        IVW(J)=IVWG(J)
-        IVE(J)=IVEG(J)
-        IHE(J)=IHEG(J)
-        IHW(J)=IHWG(J)
+        grid%ivw(J)=grid%ivwg(J)
+        grid%ive(J)=grid%iveg(J)
+        grid%ihe(J)=grid%iheg(J)
+        grid%ihw(J)=grid%ihwg(J)
       ENDDO
 !
       CAPA=R_D/CP
@@ -438,31 +439,31 @@
       IF(.NOT.RESTRT)THEN
         DO J=JFS,JFE
         DO I=IFS,IFE
-          PDSL(I,J)  =PD(I,J)*RES(I,J)
-          PREC(I,J)  =0.
-          IF(allowed_to_read)ACPREC(I,J)=0.  ! This is gopal's inclusion for moving nest
-          CUPREC(I,J)=0.
+          grid%pdsl(I,J)  =grid%pd(I,J)*grid%res(I,J)
+          grid%prec(I,J)  =0.
+          IF(allowed_to_read)grid%acprec(I,J)=0.  ! This is gopal's inclusion for moving nest
+          grid%cuprec(I,J)=0.
           rg=1./g
-          ht=fis(i,j)*rg
+          ht=grid%fis(i,j)*rg
 !!!       fisx=ht*g
-!          fisx=max(fis(i,j),0.)
-!          prodx=Z0(I,J)*Z0MAX
-!          Z0(I,J)    =SM(I,J)*Z0SEA+(1.-SM(I,J))*                      &
-!     &                (Z0(I,J)*Z0MAX+FISx    *FCM+Z0LAND)
+!          fisx=max(grid%fis(i,j),0.)
+!          prodx=grid%z0(I,J)*Z0MAX
+!          grid%z0(I,J)    =grid%sm(I,J)*Z0SEA+(1.-grid%sm(I,J))*                      &
+!     &                (grid%z0(I,J)*Z0MAX+FISx    *FCM+Z0LAND)
 !!!  &                (prodx        +FISx    *FCM+Z0LAND)
-          QSH(I,J)   =0.
-          AKMS(I,J)  =0.
-          AKHS(I,J)  =0.
-          TWBS(I,J)  =0.
-          QWBS(I,J)  =0.
+          grid%qsh(I,J)   =0.
+          grid%akms(I,J)  =0.
+          grid%akhs(I,J)  =0.
+          grid%twbs(I,J)  =0.
+          grid%qwbs(I,J)  =0.
           IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
-          CLDEFI(I,J)=1.
-          HTOP(I,J)  =REAL(KTS)
-          HTOPD(I,J) =REAL(KTS)
-          HTOPS(I,J) =REAL(KTS)
-          HBOT(I,J)  =REAL(KTE)
-          HBOTD(I,J) =REAL(KTE)
-          HBOTS(I,J) =REAL(KTE)
+          grid%cldefi(I,J)=1.
+          grid%htop(I,J)  =REAL(KTS)
+          grid%htopd(I,J) =REAL(KTS)
+          grid%htops(I,J) =REAL(KTS)
+          grid%hbot(I,J)  =REAL(KTE)
+          grid%hbotd(I,J) =REAL(KTE)
+          grid%hbots(I,J) =REAL(KTE)
           ENDIF
 !***
 !***  AT THIS POINT, WE MUST CALCULATE THE INITIAL POTENTIAL TEMPERATURE
@@ -473,52 +474,52 @@
 !
 !***  BECAUSE WE REINITIALIZE TOPOGRAPHY, LAND SEA MASK AND FIND THE TEMPERATURE
 !***  FIELD OVER THE NEW TOPOGRAPHY, AFTER THE MOVE, I THINK IT MORE APPROPRIATE
-!***  TO USE NMM_TSK OR SST TO RE-DERIVE THS AND QS (AND CONSEQUENTLY THZ0 AND QZ0).
+!***  TO USE grid%nmm_tsk OR grid%sst TO RE-DERIVE grid%ths AND QS (AND CONSEQUENTLY grid%thz0 AND grid%qz0).
 !***  THIS MAY BE MORE CONSISTENT WITH THE PSEUDO-HYDROSTATIC BALANCING THAT IS
-!***  DONE OVER THE NEW TERRAIN (AND WITH NEW SM). gopal!
+!***  DONE OVER THE NEW TERRAIN (AND WITH NEW grid%sm). gopal!
 !***
 !***
 
       IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
 
-          PM1=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL(I,J)+PT
+          PM1=grid%aeta1(KTS)*grid%pdtop+grid%aeta2(KTS)*grid%pdsl(I,J)+grid%pt
           APEM1=(1.E5/PM1)**CAPA
 
-        IF(NMM_TSK(I,J)>=200.)THEN         ! have a specific skin temp, use it
+        IF(grid%nmm_tsk(I,J)>=200.)THEN         ! have a specific skin temp, use it
 #ifdef HWRF
-          THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,J,KTS+1))*APEM1
-          TSFCK=NMM_TSK(I,J)*(1.+P608*Q(I,J,KTS+1))
+          grid%ths(I,J)=grid%nmm_tsk(I,J)*(1.+P608*grid%q(I,J,KTS+1))*APEM1
+          TSFCK=grid%nmm_tsk(I,J)*(1.+P608*grid%q(I,J,KTS+1))
 #else
-          THS(I,J)=NMM_TSK(I,J)*APEM1
-          TSFCK=NMM_TSK(I,J)
+          grid%ths(I,J)=grid%nmm_tsk(I,J)*APEM1
+          TSFCK=grid%nmm_tsk(I,J)
 #endif
 
 	ELSE                               ! use lowest layer as a proxy
 #ifdef HWRF
-          THS(I,J)=T(I,J,KTS)*(1.+P608*Q(I,J,KTS+1))*APEM1
-          TSFCK=T(I,J,KTS)*(1.+P608*Q(I,J,KTS+1))
+          grid%ths(I,J)=grid%t(I,J,KTS)*(1.+P608*grid%q(I,J,KTS+1))*APEM1
+          TSFCK=grid%t(I,J,KTS)*(1.+P608*grid%q(I,J,KTS+1))
 #else
-          THS(I,J)=T(I,J,KTS)*APEM1
-          TSFCK=T(I,J,KTS)
+          grid%ths(I,J)=grid%t(I,J,KTS)*APEM1
+          TSFCK=grid%t(I,J,KTS)
 #endif
 	ENDIF
 
-          PSFCK=PD(I,J)+PDTOP+PT
+          PSFCK=grid%pd(I,J)+grid%pdtop+grid%pt
 !
-          IF(SM(I,J)<0.5) THEN
-            QSH(I,J)=PQ0/PSFCK*EXP(A2*(TSFCK-A3)/(TSFCK-A4))
-          ELSEIF(SM(I,J)>0.5) THEN
-            THS(I,J)=SST(I,J)*(1.E5/(PD(I,J)+PDTOP+PT))**CAPA
+          IF(grid%sm(I,J)<0.5) THEN
+            grid%qsh(I,J)=PQ0/PSFCK*EXP(A2*(TSFCK-A3)/(TSFCK-A4))
+          ELSEIF(grid%sm(I,J)>0.5) THEN
+            grid%ths(I,J)=grid%sst(I,J)*(1.E5/(grid%pd(I,J)+grid%pdtop+grid%pt))**CAPA
           ENDIF
 !
-          TERM1=-0.068283/T(I,J,KTS)
-          PSHLTR(I,J)=(PD(I,J)+PDTOP+PT)*EXP(TERM1)
+          TERM1=-0.068283/grid%t(I,J,KTS)
+          grid%pshltr(I,J)=(grid%pd(I,J)+grid%pdtop+grid%pt)*EXP(TERM1)
 !
-          USTAR(I,J)=0.1
-          THZ0(I,J)=THS(I,J)
-          QZ0(I,J)=QSH(I,J)
-          UZ0(I,J)=0.
-          VZ0(I,J)=0.
+          grid%ustar(I,J)=0.1
+          grid%thz0(I,J)=grid%ths(I,J)
+          grid%qz0(I,J)=grid%qsh(I,J)
+          grid%uz0(I,J)=0.
+          grid%vz0(I,J)=0.
 
       ENDIF  ! endif for allowed to read
 ! 
@@ -528,15 +529,15 @@
 !***
 !***  INITIALIZE CLOUD FIELDS
 !***
-      IF (MAXVAL(CWM) .gt. 0. .and. MAXVAL(CWM) .lt. 1.) then
-        CALL wrf_message('appear to have CWM values...do not zero')
+      IF (MAXVAL(grid%cwm) .gt. 0. .and. MAXVAL(grid%cwm) .lt. 1.) then
+        CALL wrf_message('appear to have grid%cwm values...do not zero')
       ELSE
         IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
-        CALL wrf_message('zeroing CWM')
+        CALL wrf_message('zeroing grid%cwm')
         DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
-            CWM(I,J,K)=0.
+            grid%cwm(I,J,K)=0.
           ENDDO
           ENDDO
         ENDDO
@@ -545,36 +546,36 @@
 !***
 !***  INITIALIZE ACCUMULATOR ARRAYS TO ZERO.
 !***
-        ARDSW=0.0
-        ARDLW=0.0
-        ASRFC=0.0
-        AVRAIN=0.0
-        AVCNVC=0.0
+        grid%ardsw=0.0
+        grid%ardlw=0.0
+        grid%asrfc=0.0
+        grid%avrain=0.0
+        grid%avcnvc=0.0
 !
         DO J=JFS,JFE
         DO I=IFS,IFE
-          ACFRCV(I,J)=0.
-          NCFRCV(I,J)=0
-          ACFRST(I,J)=0.
-          NCFRST(I,J)=0
-          ACSNOW(I,J)=0.
-          ACSNOM(I,J)=0.
-          SSROFF(I,J)=0.
-          BGROFF(I,J)=0.
-          ALWIN(I,J) =0.
-          ALWOUT(I,J)=0.
-          ALWTOA(I,J)=0.
-          ASWIN(I,J) =0.
-          ASWOUT(I,J)=0.
-          ASWTOA(I,J)=0.
-          SFCSHX(I,J)=0.
-          SFCLHX(I,J)=0.
-          SUBSHX(I,J)=0.
-          SNOPCX(I,J)=0.
-          SFCUVX(I,J)=0.
-          SFCEVP(I,J)=0.
-          POTEVP(I,J)=0.
-          POTFLX(I,J)=0.
+          grid%acfrcv(I,J)=0.
+          grid%ncfrcv(I,J)=0
+          grid%acfrst(I,J)=0.
+          grid%ncfrst(I,J)=0
+          grid%acsnow(I,J)=0.
+          grid%acsnom(I,J)=0.
+          grid%ssroff(I,J)=0.
+          grid%bgroff(I,J)=0.
+          grid%alwin(I,J) =0.
+          grid%alwout(I,J)=0.
+          grid%alwtoa(I,J)=0.
+          grid%aswin(I,J) =0.
+          grid%aswout(I,J)=0.
+          grid%aswtoa(I,J)=0.
+          grid%sfcshx(I,J)=0.
+          grid%sfclhx(I,J)=0.
+          grid%subshx(I,J)=0.
+          grid%snopcx(I,J)=0.
+          grid%sfcuvx(I,J)=0.
+          grid%sfcevp(I,J)=0.
+          grid%potevp(I,J)=0.
+          grid%potflx(I,J)=0.
         ENDDO
         ENDDO
 !***
@@ -585,10 +586,10 @@
       IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
         DO J=JFS,JFE
         DO I=IFS,IFE
-          IF(SM(I,J)>0.5)THEN
-            CLOGES =-CM1/SST(I,J)-CM2*ALOG10(SST(I,J))+CM3
+          IF(grid%sm(I,J)>0.5)THEN
+            CLOGES =-CM1/grid%sst(I,J)-CM2*ALOG10(grid%sst(I,J))+CM3
             ESE    = 10.**(CLOGES+2.)
-            QSH(I,J)= SM(I,J)*EPS*ESE/(PD(I,J)+PDTOP+PT-ESE*(1.-EPS))
+            grid%qsh(I,J)= grid%sm(I,J)*EPS*ESE/(grid%pd(I,J)+grid%pdtop+grid%pt-ESE*(1.-EPS))
           ENDIF
         ENDDO
         ENDDO
@@ -599,20 +600,20 @@
 !***  THE LOWEST MODEL LAYER.  IN THE LOWEST TWO ATMOSPHERIC
 !***  ETA LAYERS SET TKE TO A SMALL VALUE (Q2INI).
 !***
-!***EROGERS: add check for realistic values of q2
+!***EROGERS: add check for realistic values of grid%q2
 !
-      IF (MAXVAL(Q2) .gt. epsq2 .and. MAXVAL(Q2) .lt. 200.) then
-        CALL wrf_message('appear to have Q2 values...do not zero')
+      IF (MAXVAL(grid%q2) .gt. epsq2 .and. MAXVAL(grid%q2) .lt. 200.) then
+        CALL wrf_message('appear to have grid%q2 values...do not zero')
       ELSE
       IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
-        CALL wrf_message('zeroing Q2')
+        CALL wrf_message('zeroing grid%q2')
         DO K=KPS,KPE-1
         DO J=JFS,JFE
         DO I=IFS,IFE
 #ifdef HWRF
-          Q2(I,J,K)=0.
+          grid%q2(I,J,K)=0.
 #else
-          Q2(I,J,K)=HBM2(I,J)*EPSQ2
+          grid%q2(I,J,K)=grid%hbm2(I,J)*EPSQ2
 #endif
         ENDDO
         ENDDO
@@ -620,13 +621,13 @@
 !
         DO J=JFS,JFE
         DO I=IFS,IFE
-          Q2(I,J,LM)    = 0.
+          grid%q2(I,J,LM)    = 0.
 #ifdef HWRF
-          Q2(I,J,KTE-2)= 0.
-          Q2(I,J,KTE-1)= 0.
+          grid%q2(I,J,KTE-2)= 0.
+          grid%q2(I,J,KTE-1)= 0.
 #else
-          Q2(I,J,KTE-2)= HBM2(I,J)*Q2INI
-          Q2(I,J,KTE-1)= HBM2(I,J)*Q2INI
+          grid%q2(I,J,KTE-2)= grid%hbm2(I,J)*Q2INI
+          grid%q2(I,J,KTE-1)= grid%hbm2(I,J)*Q2INI
 #endif
         ENDDO
         ENDDO
@@ -639,9 +640,9 @@
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
-          IF(Q(I,J,K)<EPSQ)Q(I,J,K)=EPSQ
-          TRAIN(I,J,K)=0.
-          TCUCN(I,J,K)=0.
+          IF(grid%q(I,J,K)<EPSQ)grid%q(I,J,K)=EPSQ
+          grid%train(I,J,K)=0.
+          grid%tcucn(I,J,K)=0.
         ENDDO
         ENDDO
         ENDDO
@@ -651,8 +652,8 @@
 !***
         DO J=JFS,JFE
         DO I=IFS,IFE
-          TLMAX(I,J)=T(I,J,KPS)
-          TLMIN(I,J)=T(I,J,KPS)
+          grid%tlmax(I,J)=grid%t(I,J,KPS)
+          grid%tlmin(I,J)=grid%t(I,J,KPS)
         ENDDO
         ENDDO
 !
@@ -667,12 +668,12 @@
         DO J=JFS,JFE
         DO I=IFS,IFE
 !
-          IF(T(I,J,KTS)==0.)THEN
-            T(I,J,KTS)=T(I,J,KTS+1)
+          IF(grid%t(I,J,KTS)==0.)THEN
+            grid%t(I,J,KTS)=grid%t(I,J,KTS+1)
           ENDIF
 !
-          TERM1=-0.068283/T(I,J,KTS)
-          PSHLTR(I,J)=(PD(I,J)+PDTOP+PT)*EXP(TERM1)
+          TERM1=-0.068283/grid%t(I,J,KTS)
+          grid%pshltr(I,J)=(grid%pd(I,J)+grid%pdtop+grid%pt)*EXP(TERM1)
         ENDDO
         ENDDO
       ENDIF
@@ -683,7 +684,7 @@
 !----------------------------------------------------------------------
 
       TSPH=3600./GRID%DT ! needed?
-      NPHS0=GRID%NPHS
+      grid%nphs0=GRID%NPHS
 
       IF(MYPE==0)THEN
         WRITE( wrf_err_message, * )' start_nmm TSTART=',grid%tstart
@@ -706,18 +707,18 @@
 
       NSTART = INT(grid%TSTART*TSPH+0.5)
 !
-      NTSD = NSTART
+      grid%ntsd = NSTART
 
 
-!! want non-zero values for NPREC, NHEAT type vars to avoid problems
+!! want non-zero values for grid%nprec, grid%nheat type vars to avoid problems
 !! with mod statements below.
 
-      NPREC  = INT(grid%TPREC *TSPH+0.5)
-      NHEAT  = INT(grid%THEAT *TSPH+0.5)
-      NCLOD  = INT(grid%TCLOD *TSPH+0.5)
-      NRDSW  = INT(grid%TRDSW *TSPH+0.5)
-      NRDLW  = INT(grid%TRDLW *TSPH+0.5)
-      NSRFC  = INT(grid%TSRFC *TSPH+0.5)
+      grid%nprec  = INT(grid%TPREC *TSPH+0.5)
+      grid%nheat  = INT(grid%THEAT *TSPH+0.5)
+      grid%nclod  = INT(grid%TCLOD *TSPH+0.5)
+      grid%nrdsw  = INT(grid%TRDSW *TSPH+0.5)
+      grid%nrdlw  = INT(grid%TRDLW *TSPH+0.5)
+      grid%nsrfc  = INT(grid%TSRFC *TSPH+0.5)
 !
 !----------------------------------------------------------------------
 !
@@ -726,7 +727,7 @@
 !
 !----------------------------------------------------------------------
 !
-      MICRO_START=.TRUE.
+      grid%micro_start=.TRUE.
 !
 !----------------------------------------------------------------------
 !***
@@ -735,9 +736,9 @@
 !***
       DO J=JFS,JFE
       DO I=IFS,IFE
-        ADT(I,J)=0.
-        ADU(I,J)=0.
-        ADV(I,J)=0.
+        grid%adt(I,J)=0.
+        grid%adu(I,J)=0.
+        grid%adv(I,J)=0.
       ENDDO
       ENDDO
 !----------------------------------------------------------------------
@@ -746,40 +747,40 @@
 !***
 !----------------------------------------------------------------------
       DO J=JFS,JFE
-        N_IUP_H(J)=0
-        N_IUP_V(J)=0
-        N_IUP_ADH(J)=0
-        N_IUP_ADV(J)=0
+        grid%n_iup_h(J)=0
+        grid%n_iup_v(J)=0
+        grid%n_iup_adh(J)=0
+        grid%n_iup_adv(J)=0
 !
         DO I=IFS,IFE
-          IUP_H(I,J)=-999
-          IUP_V(I,J)=-999
-          IUP_ADH(I,J)=-999
-          IUP_ADV(I,J)=-999
+          grid%iup_h(I,J)=-999
+          grid%iup_v(I,J)=-999
+          grid%iup_adh(I,J)=-999
+          grid%iup_adv(I,J)=-999
         ENDDO
 !
       ENDDO
 
 #ifndef NO_UPSTREAM_ADVECTION
 !
-!***  N_IUP_H HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
+!***  n_iup_h HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR UPSTREAM ADVECTION (FULL ROWS IN THE 3RD THROUGH 7TH
 !***  ROWS FROM THE SOUTH AND NORTH GLOBAL BOUNDARIES AND 
 !***  FOUR POINTS ADJACENT TO THE WEST AND EAST GLOBAL BOUNDARIES
-!***  ON ALL OTHER INTERNAL ROWS).  SIMILARLY FOR N_IUP_V.
+!***  ON ALL OTHER INTERNAL ROWS).  SIMILARLY FOR n_iup_v.
 !***  BECAUSE OF HORIZONTAL OPERATIONS, THESE POINTS EXTEND OUTSIDE 
 !***  OF THE UPSTREAM REGION SOMEWHAT.
-!***  N_IUP_ADH HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
-!***  FOR THE COMPUTATION OF THE TENDENCIES THEMSELVES (ADT, ADQ2M
+!***  n_iup_adh HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
+!***  FOR THE COMPUTATION OF THE TENDENCIES THEMSELVES (adt, ADQ2M
 !***  AND ADQ2L); SPECIFICALLY THESE TENDENCIES ARE ONLY DONE IN
 !***  THE UPSTREAM REGION.
-!***  N_IUP_ADV HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
+!***  n_iup_adv HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR THE VELOCITY POINT TENDENCIES.
-!***  IUP_H AND IUP_V HOLD THE ACTUAL I VALUES USED IN EACH ROW.
-!***  LIKEWISE FOR IUP_ADH AND IUP_ADV. 
-!***  ALSO, SET UPSTRM FOR THOSE TASKS AROUND THE GLOBAL EDGE.
+!***  iup_h AND iup_v HOLD THE ACTUAL I VALUES USED IN EACH ROW.
+!***  LIKEWISE FOR iup_adh AND iup_adv. 
+!***  ALSO, SET upstrm FOR THOSE TASKS AROUND THE GLOBAL EDGE.
 !
-      UPSTRM=.FALSE.
+      grid%upstrm=.FALSE.
 !
       S_BDY=(JPS==JDS)
       N_BDY=(JPE==JDE)
@@ -792,19 +793,19 @@
       ILPAD2=2
 !
       IF(S_BDY)THEN
-        UPSTRM=.TRUE.
+        grid%upstrm=.TRUE.
         JBPAD2=0
 !
         DO JJ=1,7
           J=JJ      ! -MY_JS_GLB+1
           KNTI=0
           DO I=MYIS_P2,MYIE_P2
-            IUP_H(IMS+KNTI,J)=I
-            IUP_V(IMS+KNTI,J)=I
+            grid%iup_h(IMS+KNTI,J)=I
+            grid%iup_v(IMS+KNTI,J)=I
             KNTI=KNTI+1
           ENDDO
-          N_IUP_H(J)=KNTI
-          N_IUP_V(J)=KNTI
+          grid%n_iup_h(J)=KNTI
+          grid%n_iup_v(J)=KNTI
         ENDDO
 !
         DO JJ=3,5
@@ -814,37 +815,37 @@
           IEND=MYIE1_P2
           IF(E_BDY)IEND=IEND-MOD(JJ+1,2)
           DO I=ISTART,IEND
-            IUP_ADH(IMS+KNTI,J)=I
+            grid%iup_adh(IMS+KNTI,J)=I
             KNTI=KNTI+1
           ENDDO
-          N_IUP_ADH(J)=KNTI
+          grid%n_iup_adh(J)=KNTI
 !
           KNTI=0
           ISTART=MYIS1_P2
           IEND=MYIE1_P2
           IF(E_BDY)IEND=IEND-MOD(JJ,2)
           DO I=ISTART,IEND
-            IUP_ADV(IMS+KNTI,J)=I
+            grid%iup_adv(IMS+KNTI,J)=I
             KNTI=KNTI+1
           ENDDO
-          N_IUP_ADV(J)=KNTI
+          grid%n_iup_adv(J)=KNTI
         ENDDO
       ENDIF
 !
       IF(N_BDY)THEN
-        UPSTRM=.TRUE.
+        grid%upstrm=.TRUE.
         JTPAD2=0
 !
         DO JJ=JDE-7, JDE-1 ! JM-6,JM
           J=JJ      ! -MY_JS_GLB+1
           KNTI=0
           DO I=MYIS_P2,MYIE_P2
-            IUP_H(IMS+KNTI,J)=I
-            IUP_V(IMS+KNTI,J)=I
+            grid%iup_h(IMS+KNTI,J)=I
+            grid%iup_v(IMS+KNTI,J)=I
             KNTI=KNTI+1
           ENDDO
-          N_IUP_H(J)=KNTI
-          N_IUP_V(J)=KNTI
+          grid%n_iup_h(J)=KNTI
+          grid%n_iup_v(J)=KNTI
         ENDDO
 !
         DO JJ=JDE-5, JDE-3 ! JM-4,JM-2
@@ -854,36 +855,36 @@
           IEND=MYIE1_P2
           IF(E_BDY)IEND=IEND-MOD(JJ+1,2)
           DO I=ISTART,IEND
-            IUP_ADH(IMS+KNTI,J)=I
+            grid%iup_adh(IMS+KNTI,J)=I
             KNTI=KNTI+1
           ENDDO
-          N_IUP_ADH(J)=KNTI
+          grid%n_iup_adh(J)=KNTI
 !
           KNTI=0
           ISTART=MYIS1_P2
           IEND=MYIE1_P2
           IF(E_BDY)IEND=IEND-MOD(JJ,2)
           DO I=ISTART,IEND
-            IUP_ADV(IMS+KNTI,J)=I
+            grid%iup_adv(IMS+KNTI,J)=I
             KNTI=KNTI+1
           ENDDO
-          N_IUP_ADV(J)=KNTI
+          grid%n_iup_adv(J)=KNTI
         ENDDO
       ENDIF
 !
       IF(W_BDY)THEN
-        UPSTRM=.TRUE.
+        grid%upstrm=.TRUE.
         ILPAD2=0
         DO JJ=8,JDE-8   ! JM-7
           IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
 !
             DO I=1,4
-              IUP_H(IMS+I-1,J)=I
-              IUP_V(IMS+I-1,J)=I
+              grid%iup_h(IMS+I-1,J)=I
+              grid%iup_v(IMS+I-1,J)=I
             ENDDO
-            N_IUP_H(J)=4
-            N_IUP_V(J)=4
+            grid%n_iup_h(J)=4
+            grid%n_iup_v(J)=4
           ENDIF
         ENDDO
 !
@@ -893,18 +894,18 @@
             KNTI=0
             IEND=2+MOD(JJ,2)
             DO I=2,IEND
-              IUP_ADH(IMS+KNTI,J)=I
+              grid%iup_adh(IMS+KNTI,J)=I
               KNTI=KNTI+1
             ENDDO
-            N_IUP_ADH(J)=KNTI
+            grid%n_iup_adh(J)=KNTI
 !
             KNTI=0
             IEND=2+MOD(JJ+1,2)
             DO I=2,IEND
-              IUP_ADV(IMS+KNTI,J)=I
+              grid%iup_adv(IMS+KNTI,J)=I
               KNTI=KNTI+1
             ENDDO
-            N_IUP_ADV(J)=KNTI
+            grid%n_iup_adv(J)=KNTI
 !
           ENDIF
         ENDDO
@@ -913,7 +914,7 @@
       CALL WRF_GET_NPROCX(INPES)
 !
       IF(E_BDY)THEN
-        UPSTRM=.TRUE.
+        grid%upstrm=.TRUE.
         IRPAD2=0
         DO JJ=8,JDE-8   ! JM-7
           IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
@@ -926,14 +927,14 @@
 !***  POINTS TO THE EASTSIDE POINTS IN EACH ROW.
 !
             KNTI=0
-            IF(INPES.EQ.1)KNTI=N_IUP_H(J)
+            IF(INPES.EQ.1)KNTI=grid%n_iup_h(J)
 !
             DO II=ISTART,IEND
               I=II      ! -MY_IS_GLB+1
-              IUP_H(IMS+KNTI,J)=I
+              grid%iup_h(IMS+KNTI,J)=I
               KNTI=KNTI+1
             ENDDO
-            N_IUP_H(J)=KNTI
+            grid%n_iup_h(J)=KNTI
           ENDIF
         ENDDO
 !
@@ -943,13 +944,13 @@
             IEND=IM-1-MOD(JJ+1,2)
             ISTART=IEND-MOD(JJ,2)
             KNTI=0
-            IF(INPES==1)KNTI=N_IUP_ADH(J)
+            IF(INPES==1)KNTI=grid%n_iup_adh(J)
             DO II=ISTART,IEND
               I=II      ! -MY_IS_GLB+1
-              IUP_ADH(IMS+KNTI,J)=I
+              grid%iup_adh(IMS+KNTI,J)=I
               KNTI=KNTI+1
             ENDDO
-            N_IUP_ADH(J)=KNTI
+            grid%n_iup_adh(J)=KNTI
           ENDIF
         ENDDO
 !***
@@ -959,14 +960,14 @@
             IEND=IM-MOD(JJ,2)
             ISTART=IEND-3
             KNTI=0
-            IF(INPES==1)KNTI=N_IUP_V(J)
+            IF(INPES==1)KNTI=grid%n_iup_v(J)
 !
             DO II=ISTART,IEND
               I=II      ! -MY_IS_GLB+1
-              IUP_V(IMS+KNTI,J)=I
+              grid%iup_v(IMS+KNTI,J)=I
               KNTI=KNTI+1
             ENDDO
-            N_IUP_V(J)=KNTI
+            grid%n_iup_v(J)=KNTI
           ENDIF
         ENDDO
 !
@@ -976,30 +977,30 @@
             IEND=IM-1-MOD(JJ,2)
             ISTART=IEND-MOD(JJ+1,2)
             KNTI=0
-            IF(INPES==1)KNTI=N_IUP_ADV(J)
+            IF(INPES==1)KNTI=grid%n_iup_adv(J)
             DO II=ISTART,IEND
               I=II      ! -MY_IS_GLB+1
-              IUP_ADV(IMS+KNTI,J)=I
+              grid%iup_adv(IMS+KNTI,J)=I
               KNTI=KNTI+1
             ENDDO
-            N_IUP_ADV(J)=KNTI
+            grid%n_iup_adv(J)=KNTI
           ENDIF
         ENDDO
       ENDIF
 !----------------------------------------------------------------------
       jam=6+2*(JDE-JDS-1-9)
 !
-!***  EXTRACT EM AND EMT FOR THE LOCAL SUBDOMAINS
+!***  EXTRACT em AND emt FOR THE LOCAL SUBDOMAINS
 !
       DO J=MYJS_P5,MYJE_P5
-        EM_LOC(J)=-9.E9
-        EMT_LOC(J)=-9.E9
+        grid%em_loc(J)=-9.E9
+        grid%emt_loc(J)=-9.E9
       ENDDO
 !!!   IF(IBROW==1)THEN
       IF(S_BDY)THEN
         DO J=3,5
-          EM_LOC(J)=EM(J-2)
-          EMT_LOC(J)=EMT(J-2)
+          grid%em_loc(J)=grid%em(J-2)
+          grid%emt_loc(J)=grid%emt(J-2)
         ENDDO
       ENDIF
 !!!   IF(ITROW==1)THEN
@@ -1008,8 +1009,8 @@
         DO JJ=JDE-5,JDE-3 ! JM-4,JM-2
           KNT=KNT+1
           J=JJ      ! -MY_JS_GLB+1
-          EM_LOC(J)=EM(KNT)
-          EMT_LOC(J)=EMT(KNT)
+          grid%em_loc(J)=grid%em(KNT)
+          grid%emt_loc(J)=grid%emt(KNT)
         ENDDO
       ENDIF
 !!!   IF(ILCOL==1)THEN
@@ -1019,8 +1020,8 @@
           KNT=KNT+1
           IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
-            EM_LOC(J)=EM(KNT)
-            EMT_LOC(J)=EMT(KNT)
+            grid%em_loc(J)=grid%em(KNT)
+            grid%emt_loc(J)=grid%emt(KNT)
           ENDIF
         ENDDO
       ENDIF
@@ -1031,8 +1032,8 @@
           KNT=KNT+1
           IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
-            EM_LOC(J)=EM(KNT)
-            EMT_LOC(J)=EMT(KNT)
+            grid%em_loc(J)=grid%em(KNT)
+            grid%emt_loc(J)=grid%emt(KNT)
           ENDIF
         ENDDO
       ENDIF
@@ -1048,70 +1049,70 @@
          GRID%NSOIL= GRID%NUM_SOIL_LAYERS
         DO J=JFS,JFE
         DO I=IFS,IFE
-          PCTSNO(I,J)=-999.0
-          IF(SM(I,J)<0.5)THEN
-              CMC(I,J)=0.0
-!              CMC(I,J)=canwat(i,j)   ! tgs
-            IF(SICE(I,J)>0.5)THEN
+          grid%pctsno(I,J)=-999.0
+          IF(grid%sm(I,J)<0.5)THEN
+              grid%cmc(I,J)=0.0
+!              grid%cmc(I,J)=grid%canwat(i,j)   ! tgs
+            IF(grid%sice(I,J)>0.5)THEN
 !***
 !***  SEA-ICE CASE
 !***
-              SMSTAV(I,J)=1.0
-              SMSTOT(I,J)=1.0
-              SSROFF(I,J)=0.0
-              BGROFF(I,J)=0.0
-              CMC(I,J)=0.0
+              grid%smstav(I,J)=1.0
+              grid%smstot(I,J)=1.0
+              grid%ssroff(I,J)=0.0
+              grid%bgroff(I,J)=0.0
+              grid%cmc(I,J)=0.0
               DO NS=1,GRID%NSOIL
-                SMC(I,NS,J)=1.0
-!               SH2O(I,NS,J)=0.05
-                SH2O(I,NS,J)=1.0
+                grid%smc(I,NS,J)=1.0
+!               grid%sh2o(I,NS,J)=0.05
+                grid%sh2o(I,NS,J)=1.0
               ENDDO
             ENDIF
           ELSE
 !***
 !***  WATER CASE
 !***
-            SMSTAV(I,J)=1.0
-            SMSTOT(I,J)=1.0
-            SSROFF(I,J)=0.0
-            BGROFF(I,J)=0.0
-            SOILTB(I,J)=273.16
-            GRNFLX(I,J)=0.
-            SUBSHX(I,J)=0.0
-            ACSNOW(I,J)=0.0
-            ACSNOM(I,J)=0.0
-            SNOPCX(I,J)=0.0
-            CMC(I,J)=0.0
-            SNO(I,J)=0.0
+            grid%smstav(I,J)=1.0
+            grid%smstot(I,J)=1.0
+            grid%ssroff(I,J)=0.0
+            grid%bgroff(I,J)=0.0
+            grid%soiltb(I,J)=273.16
+            grid%grnflx(I,J)=0.
+            grid%subshx(I,J)=0.0
+            grid%acsnow(I,J)=0.0
+            grid%acsnom(I,J)=0.0
+            grid%snopcx(I,J)=0.0
+            grid%cmc(I,J)=0.0
+            grid%sno(I,J)=0.0
             DO NS=1,GRID%NSOIL
-              SMC(I,NS,J)=1.0
-              STC(I,NS,J)=273.16
-!             SH2O(I,NS,J)=0.05
-              SH2O(I,NS,J)=1.0
+              grid%smc(I,NS,J)=1.0
+              grid%stc(I,NS,J)=273.16
+!             grid%sh2o(I,NS,J)=0.05
+              grid%sh2o(I,NS,J)=1.0
             ENDDO
           ENDIF
 !
         ENDDO
         ENDDO
 !
-        APHTIM=0.0
-        ARATIM=0.0
-        ACUTIM=0.0
+        grid%aphtim=0.0
+        grid%aratim=0.0
+        grid%acutim=0.0
 !
       ENDIF
 !
 !----------------------------------------------------------------------
 !***  INITIALIZE RADTN VARIABLES
 !***  CALCULATE THE NUMBER OF STEPS AT EACH POINT.
-!***  THE ARRAY 'LVL' WILL COORDINATE VERTICAL LOCATIONS BETWEEN
+!***  THE ARRAY 'lvl' WILL COORDINATE VERTICAL LOCATIONS BETWEEN
 !***  THE LIFTED WORKING ARRAYS AND THE FUNDAMENTAL MODEL ARRAYS.
-!***  LVL HOLDS THE HEIGHT (IN MODEL LAYERS) OF THE TOPOGRAPHY AT
+!***  lvl HOLDS THE HEIGHT (IN MODEL LAYERS) OF THE TOPOGRAPHY AT
 !***  EACH GRID POINT.
 !----------------------------------------------------------------------
 !   
       DO J=JFS,JFE
       DO I=IFS,IFE
-        LVL(I,J)=LM-KTE
+        grid%lvl(I,J)=LM-KTE
       ENDDO
       ENDDO
 !***
@@ -1120,11 +1121,11 @@
 !***  (HEIGHT-WISE) 400 MB. (K400)
 !*** 
       K400=0
-      PSUM=PT
+      PSUM=grid%pt
       SLPM=101325.
-      PDIF=SLPM-PT
+      PDIF=SLPM-grid%pt
       DO K=1,LM
-        PSUM=PSUM+DETA(K)*PDIF
+        PSUM=PSUM+grid%deta(K)*PDIF
         IF(LPTOP(3)==0)THEN
           IF(PSUM>PHITP)LPTOP(3)=K
         ELSEIF(LPTOP(2)==0)THEN
@@ -1143,12 +1144,12 @@
 !*** CALCULATE THE MIDLAYER PRESSURES IN THE STANDARD ATMOSPHERE
 !***
       PSS=101325.
-      PDIF=PSS-PT
+      PDIF=PSS-grid%pt
 !
       ALLOCATE(PHALF(LM+1),STAT=I)
 !
       DO K=KPS,KPE-1
-        PHALF(K+1)=AETA(K)*PDIF+PT
+        PHALF(K+1)=grid%aeta(K)*PDIF+grid%pt
       ENDDO
       
 !
@@ -1166,7 +1167,7 @@
 !***  CALL ZENITH SIMPLY TO GET THE DAY OF THE YEAR FOR
 !***  THE SETUP OF THE OZONE DATA
 !***
-      TIME=(NTSD-1)*GRID%DT
+      TIME=(grid%ntsd-1)*GRID%DT
 !
 !!!   CALL ZENITH(TIME,DAYI,HOUR)
 !
@@ -1188,19 +1189,19 @@
 !***
 !***  TRY A SIMPLE LINEAR INTERP TO GET 2/10 M VALUES
 !***
-        PDSL(I,J)=PD(I,J)*RES(I,J)
+        grid%pdsl(I,J)=grid%pd(I,J)*grid%res(I,J)
 !
-        ULM=U(I,J,KTS)
-        VLM=V(I,J,KTS)
-        TLM=T(I,J,KTS)
-        QLM=Q(I,J,KTS)
-        PLM=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL(I,J)+PT
+        ULM=grid%u(I,J,KTS)
+        VLM=grid%v(I,J,KTS)
+        TLM=grid%t(I,J,KTS)
+        QLM=grid%q(I,J,KTS)
+        PLM=grid%aeta1(KTS)*grid%pdtop+grid%aeta2(KTS)*grid%pdsl(I,J)+grid%pt
         APELM=(1.0E5/PLM)**CAPA
-          TERM1=-0.068283/T(I,J,KTS)
-          PSHLTR(I,J)=(PD(I,J)+PDTOP+PT)*EXP(TERM1)
-        APELMNW=(1.0E5/PSHLTR(I,J))**CAPA
+          TERM1=-0.068283/grid%t(I,J,KTS)
+          grid%pshltr(I,J)=(grid%pd(I,J)+grid%pdtop+grid%pt)*EXP(TERM1)
+        APELMNW=(1.0E5/grid%pshltr(I,J))**CAPA
         THLM=TLM*APELM
-        DPLM=(DETA1(KTS)*PDTOP+DETA2(KTS)*PDSL(I,J))*0.5
+        DPLM=(grid%deta1(KTS)*grid%pdtop+grid%deta2(KTS)*grid%pdsl(I,J))*0.5
         DZLM=R_D*DPLM*TLM*(1.+P608*QLM)/(G*PLM)
         FAC1=10./DZLM
         FAC2=(DZLM-10.)/DZLM
@@ -1210,31 +1211,31 @@
         ENDIF
 !
         IF(.NOT.RESTRT)THEN
-          TH10(I,J)=FAC2*THS(I,J)+FAC1*THLM
-          Q10(I,J)=FAC2*QSH(I,J)+FAC1*QLM
+          grid%th10(I,J)=FAC2*grid%ths(I,J)+FAC1*THLM
+          grid%q10(I,J)=FAC2*grid%qsh(I,J)+FAC1*QLM
 #ifdef HWRF
-          IF(SM(I,J).LT.0.5)THEN
-              U10(I,J)=ULM*(log(10./Z0(I,J))/log(DZLM/Z0(I,J)))      ! this is all Qingfu's doing
-              V10(I,J)=VLM*(log(10./Z0(I,J))/log(DZLM/Z0(I,J)))
-              ZOQING=1.944*SQRT(U10(I,J)*U10(I,J)+V10(I,J)*V10(I,J))
+          IF(grid%sm(I,J).LT.0.5)THEN
+              grid%u10(I,J)=ULM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))      ! this is all Qingfu's doing
+              grid%v10(I,J)=VLM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
+              ZOQING=1.944*SQRT(grid%u10(I,J)*grid%u10(I,J)+grid%v10(I,J)*grid%v10(I,J))
             IF(ZOQING.GT.60.)THEN
-              U10(I,J)=U10(I,J)*(1.12-7.2/ZOQING)
-              V10(I,J)=V10(I,J)*(1.12-7.2/ZOQING)
+              grid%u10(I,J)=grid%u10(I,J)*(1.12-7.2/ZOQING)
+              grid%v10(I,J)=grid%v10(I,J)*(1.12-7.2/ZOQING)
              ENDIF
           ELSE
              ZOQING=(0.074*SQRT(ULM*ULM+VLM*VLM)-0.58)*1.0e-3
-             ZOQING=MAX(ZOQING,Z0(I,J))          ! for winds greater than 12.5 m/s
-             U10(I,J)=ULM*(log(10./ZOQING))/log(DZLM/ZOQING)      ! this is all Qingfu's doing
-             V10(I,J)=VLM*(log(10./ZOQING))/log(DZLM/ZOQING)
-             ZOQING=1.944*SQRT(U10(I,J)*U10(I,J)+V10(I,J)*V10(I,J))
+             ZOQING=MAX(ZOQING,grid%z0(I,J))          ! for winds greater than 12.5 m/s
+             grid%u10(I,J)=ULM*(log(10./ZOQING))/log(DZLM/ZOQING)      ! this is all Qingfu's doing
+             grid%v10(I,J)=VLM*(log(10./ZOQING))/log(DZLM/ZOQING)
+             ZOQING=1.944*SQRT(grid%u10(I,J)*grid%u10(I,J)+grid%v10(I,J)*grid%v10(I,J))
            IF(ZOQING.GT.60.)THEN
-              U10(I,J)=U10(I,J)*(1.12-7.2/ZOQING)
-              V10(I,J)=V10(I,J)*(1.12-7.2/ZOQING)
+              grid%u10(I,J)=grid%u10(I,J)*(1.12-7.2/ZOQING)
+              grid%v10(I,J)=grid%v10(I,J)*(1.12-7.2/ZOQING)
            END IF
           ENDIF          
 #else
-          U10(I,J)=ULM
-          V10(I,J)=VLM
+          grid%u10(I,J)=ULM
+          grid%v10(I,J)=VLM
 #endif
         ENDIF
 !
@@ -1247,7 +1248,7 @@
 !
         IF(.NOT.RESTRT.OR.NEST)THEN
 !
-          IF ( (THLM-THS(I,J))>2.0) THEN  ! weight differently in different scenarios
+          IF ( (THLM-grid%ths(I,J))>2.0) THEN  ! weight differently in different scenarios
             FAC1=0.3
             FAC2=0.7
           ELSE
@@ -1256,11 +1257,11 @@
           ENDIF
 
 #ifdef HWRF
-          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
-          QSHLTR(I,J)=0.2*QSH(I,J)+0.8*QLM
+          grid%tshltr(I,J)=0.2*grid%ths(I,J)+0.8*THLM
+          grid%qshltr(I,J)=0.2*grid%qsh(I,J)+0.8*QLM
 #else
-          TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
-          QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
+          grid%tshltr(I,J)=FAC2*grid%ths(I,J)+FAC1*THLM
+          grid%qshltr(I,J)=FAC2*grid%qsh(I,J)+FAC1*QLM
 #endif
         ENDIF
 !***
@@ -1270,7 +1271,7 @@
 !EROGERS: COMMENT OUT IN WRF-NMM
 !***
 !       IF(RESTRT)THEN
-!         TSHLTR(I,J)=TSHLTR(I,J)*APELMNW
+!         grid%tshltr(I,J)=grid%tshltr(I,J)*APELMNW
 !       ENDIF
       ENDDO
       ENDDO
@@ -1285,9 +1286,9 @@
         DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=ifs,ife
-          TOLD(I,J,K)=T(I,J,K)   ! T AT TAU-1
-          UOLD(I,J,K)=U(I,J,K)   ! U AT TAU-1
-          VOLD(I,J,K)=V(I,J,K)   ! V AT TAU-1
+          grid%told(I,J,K)=grid%t(I,J,K)   ! grid%t AT TAU-1
+          grid%uold(I,J,K)=grid%u(I,J,K)   ! grid%u AT TAU-1
+          grid%vold(I,J,K)=grid%v(I,J,K)   ! grid%v AT TAU-1
           ENDDO
           ENDDO
         ENDDO
@@ -1297,13 +1298,13 @@
 !***  INITIALIZE NONHYDROSTATIC QUANTITIES
 !----------------------------------------------------------------------
 !
-!!!!	SHOULD DWDT BE REDEFINED IF RESTRT?
+!!!!	SHOULD grid%dwdt BE REDEFINED IF RESTRT?
 
       IF((.NOT.RESTRT.OR.NEST).AND. allowed_to_read)THEN ! This is gopal's inclusion for moving nest
         DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
-            DWDT(I,J,K)=1.
+            grid%dwdt(I,J,K)=1.
           ENDDO
           ENDDO
         ENDDO
@@ -1312,13 +1313,13 @@
       IF(GRID%SIGMA==1)THEN
         DO J=JFS,JFE
         DO I=IFS,IFE
-          PDSL(I,J)=PD(I,J)
+          grid%pdsl(I,J)=grid%pd(I,J)
         ENDDO
         ENDDO
       ELSE
         DO J=JFS,JFE
         DO I=IFS,IFE
-          PDSL(I,J)=RES(I,J)*PD(I,J)
+          grid%pdsl(I,J)=grid%res(I,J)*grid%pd(I,J)
         ENDDO
         ENDDO
       ENDIF
@@ -1326,20 +1327,20 @@
 !***
 !
 !
-!!!!	SHOULD PINT,Z,W BE REDEFINED IF RESTRT?
+!!!!	SHOULD pint,z,w BE REDEFINED IF RESTRT?
 
       WRITE( wrf_err_message, * )' restrt=',restrt,' nest=',nest
         CALL wrf_debug( 0, TRIM(wrf_err_message) )
-      WRITE( wrf_err_message, * )' pdtop=',pdtop,' pt=',pt
+      WRITE( wrf_err_message, * )' grid%pdtop=',grid%pdtop,' grid%pt=',grid%pt
         CALL wrf_debug( 0, TRIM(wrf_err_message) )
 
       IF(.NOT.RESTRT.OR.NEST)THEN
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
-          PINT(I,J,K)=ETA1(K)*PDTOP+ETA2(K)*PDSL(I,J)+PT
-          Z(I,J,K)=PINT(I,J,K)
-          W(I,J,K)=0.
+          grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+          grid%z(I,J,K)=grid%pint(I,J,K)
+          grid%w(I,J,K)=0.
         ENDDO
         ENDDO
         ENDDO
@@ -1348,8 +1349,8 @@
         DO K=KTS,KTE-1
         DO J=JFS,JFE
         DO I=IFS,IFE
-          RTOP(I,J,K)=(Q(I,J,K)*P608-CWM(I,J,K)+1.)*T(I,J,K)*R_D/ &
-                      ((PINT(I,J,K+1)+PINT(I,J,K))*0.5)
+          grid%rtop(I,J,K)=(grid%q(I,J,K)*P608-grid%cwm(I,J,K)+1.)*grid%t(I,J,K)*R_D/ &
+                      ((grid%pint(I,J,K+1)+grid%pint(I,J,K))*0.5)
         ENDDO
         ENDDO
         ENDDO
@@ -1361,8 +1362,8 @@
 !
       DO J=JFS,JFE
       DO I=IFS,IFE
-        DWDTMN(I,J)=-EPSIN
-        DWDTMX(I,J)= EPSIN
+        grid%dwdtmn(I,J)=-EPSIN
+        grid%dwdtmx(I,J)= EPSIN
       ENDDO
       ENDDO
 !
@@ -1377,8 +1378,8 @@
             DO I=1,IDE-1 ! IM
               IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
-                DWDTMN(IX,JX)=-EPSB
-                DWDTMX(IX,JX)= EPSB
+                grid%dwdtmn(IX,JX)=-EPSB
+                grid%dwdtmx(IX,JX)= EPSB
               ENDIF
             ENDDO
           ENDIF
@@ -1390,8 +1391,8 @@
             DO I=1,IDE-1 ! IM
               IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
-                DWDTMN(IX,JX)=-EPSB
-                DWDTMX(IX,JX)= EPSB
+                grid%dwdtmn(IX,JX)=-EPSB
+                grid%dwdtmx(IX,JX)= EPSB
               ENDIF
             ENDDO
           ENDIF
@@ -1403,8 +1404,8 @@
             DO I=1,IHL
               IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
-                DWDTMN(IX,JX)=-EPSB
-                DWDTMX(IX,JX)= EPSB
+                grid%dwdtmn(IX,JX)=-EPSB
+                grid%dwdtmx(IX,JX)= EPSB
               ENDIF
             ENDDO
           ENDIF
@@ -1418,8 +1419,8 @@
             DO I=IHH,IDE-1 ! IM
               IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
-                DWDTMN(IX,JX)=-EPSB
-                DWDTMX(IX,JX)= EPSB
+                grid%dwdtmn(IX,JX)=-EPSB
+                grid%dwdtmx(IX,JX)= EPSB
               ENDIF
             ENDDO
           ENDIF
@@ -1443,7 +1444,7 @@
       ALLOCATE(GLW(IMS:IME,JMS:JME),STAT=I)     ; GLW      = 0.
       ALLOCATE(HFX(IMS:IME,JMS:JME),STAT=I)     ; HFX      = 0.
       ALLOCATE(LOWLYR(IMS:IME,JMS:JME),STAT=I)  ; LOWLYR   = 0.
-!     ALLOCATE(MAVAIL(IMS:IME,JMS:JME),STAT=I)  ; MAVAIL   = 0.
+!     ALLOCATE(grid%mavail(IMS:IME,JMS:JME),STAT=I)  ; grid%mavail   = 0.
       ALLOCATE(NCA(IMS:IME,JMS:JME),STAT=I)     ; NCA      = 0.
       ALLOCATE(QFX(IMS:IME,JMS:JME),STAT=I)     ; QFX      = 0.
       ALLOCATE(RAINBL(IMS:IME,JMS:JME),STAT=I)  ; RAINBL   = 0.
@@ -1485,7 +1486,7 @@
       ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
 #if 0
-      ALLOCATE(W0AVG(IMS:IME,KMS:KME,JMS:JME),STAT=I)       ; W0AVG = 0.
+      ALLOCATE(w0avg(IMS:IME,KMS:KME,JMS:JME),STAT=I)       ; w0avg = 0.
 #endif
 !-----------------------------------------------------------------------
 !jm added set of g_inv
@@ -1498,24 +1499,24 @@
 !
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
-        SFCZ=FIS(I,J)*G_INV
+        SFCZ=grid%fis(I,J)*G_INV
         ZINT(I,KTS,J)=SFCZ
-        PDSL(I,J)=PD(I,J)*RES(I,J)
-        PSURF=PINT(I,J,KTS)
+        grid%pdsl(I,J)=grid%pd(I,J)*grid%res(I,J)
+        PSURF=grid%pint(I,J,KTS)
         EXNSFC=(1.E5/PSURF)**CAPA
-        XLAND(I,J)=SM(I,J)+1.
-        THSIJ=(SST(I,J)*EXNSFC)*(XLAND(I,J)-1.)                         &
-     &        +THS(I,J)*(2.-SM(I,J))
+        grid%xland(I,J)=grid%sm(I,J)+1.
+        THSIJ=(grid%sst(I,J)*EXNSFC)*(grid%xland(I,J)-1.)                         &
+     &        +grid%ths(I,J)*(2.-grid%sm(I,J))
         TSFC(I,J)=THSIJ/EXNSFC
 !
         DO K=KTS,KTE-1
-          PLYR=(PINT(I,J,K)+PINT(I,J,K+1))*0.5
-          TL=T(I,J,K)
-          CWML=CWM(I,J,K)
-          RRI(I,K,J)=R_D*TL*(1.+P608*Q(I,J,K))/PLYR
+          PLYR=(grid%pint(I,J,K)+grid%pint(I,J,K+1))*0.5
+          TL=grid%t(I,J,K)
+          CWML=grid%cwm(I,J,K)
+          RRI(I,K,J)=R_D*TL*(1.+P608*grid%q(I,J,K))/PLYR
           ZINT(I,K+1,J)=ZINT(I,K,J)+TL/PLYR                             & 
-                     *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*ROG        & 
-                     *(Q(I,J,K)*P608-CWML+1.)
+                     *(grid%deta1(K)*grid%pdtop+grid%deta2(K)*grid%pdsl(I,J))*ROG        & 
+                     *(grid%q(I,J,K)*P608-CWML+1.)
         ENDDO
 !
 !        DO K=KTS,KTE
@@ -1530,45 +1531,45 @@
 !***  NOTE: KTE=NUMBER OF LAYERS PLUS ONE
 !-----------------------------------------------------------------------
 !
-      PDTOT=101325.-PT
+      PDTOT=101325.-grid%pt
       RPDTOT=1./PDTOT
-      PDBOT=PDTOT-PDTOP
+      PDBOT=PDTOT-grid%pdtop
       SFULL(KTS)=1.
       SFULL(KTE)=0.
       DSIGSUM = 0.
       DO K=KTS+1,KTE
-        DSIG=(DETA1(K-1)*PDTOP+DETA2(K-1)*PDBOT)*RPDTOT
+        DSIG=(grid%deta1(K-1)*grid%pdtop+grid%deta2(K-1)*PDBOT)*RPDTOT
         DSIGSUM=DSIGSUM+DSIG
         SFULL(K)=SFULL(K-1)-DSIG
         SMID(K-1)=0.5*(SFULL(K-1)+SFULL(K))
       ENDDO
-      DSIG=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDBOT)*RPDTOT
+      DSIG=(grid%deta1(KTE-1)*grid%pdtop+grid%deta2(KTE-1)*PDBOT)*RPDTOT
       DSIGSUM=DSIGSUM+DSIG
       SMID(KTE-1)=0.5*(SFULL(KTE-1)+SFULL(KTE))
 !
 !-----------------------------------------------------------------------
 
-      LU_INDEX=IVGTYP
+      grid%lu_index=grid%ivgtyp
 
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE
-          Z0_DUM(I,J)=Z0(I,J) ! hold
-          ALBEDO_DUM(I,J)=ALBEDO(I,J) ! Save albedos
+          Z0_DUM(I,J)=grid%z0(I,J) ! hold
+          ALBEDO_DUM(I,J)=grid%albedo(I,J) ! Save albedos
         ENDDO
         ENDDO
       ENDIF
 !
-!***  Always define the quantity Z0BASE
+!***  Always define the quantity grid%z0base
                                                                                                                                               
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE
 !
-          IF(SM(I,J)==0)then
-            Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0LAND
+          IF(grid%sm(I,J)==0)then
+            grid%z0base(I,J)=VZ0TBL_24(grid%ivgtyp(I,J))+Z0LAND
           ELSE
-            Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0SEA
+            grid%z0base(I,J)=VZ0TBL_24(grid%ivgtyp(I,J))+Z0SEA
           ENDIF
 !
         ENDDO
@@ -1600,13 +1601,13 @@
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
 #ifndef WRF_NMM_NEST
-      MOVED = .FALSE.
+      grid%moved = .FALSE.
 #endif
 
       IF (GRID%RESTART) THEN
          LRESTART = GRID%RESTART
       ELSE
-         IF (moved) THEN
+         IF (grid%moved) THEN
             LRESTART = .TRUE.
          ELSE
             LRESTART = .FALSE.
@@ -1614,39 +1615,39 @@
       END IF
 
       CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,LRESTART,SFULL,SMID    &
-     &             ,PT,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
+     &             ,grid%pt,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
      &             ,RQCCUTEN, RQSCUTEN, RQICUTEN                        &
      &             ,RUBLTEN,RVBLTEN,RTHBLTEN                            &
      &             ,RQVBLTEN,RQCBLTEN,RQIBLTEN                          &
      &             ,RTHRATEN,RTHRATENLW,RTHRATENSW                      &
      &             ,STEPBL,STEPRA,STEPCU                                &
-     &             ,W0AVG, RAINNC, RAINC, RAINCV, RAINNCV               &
+     &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
      &             ,NCA,GRID%SWRAD_SCAT                                 &
-     &             ,CLDEFI,LOWLYR                                       &
-     &             ,MASS_FLUX                                           &
-     &             ,RTHFTEN, RQVFTEN                                    &
-     &             ,CLDFRA_TRANS,CLDFRA_OLD,GLW,GSW,EMISS,EMTEMP,LU_INDEX&
+     &             ,grid%cldefi,LOWLYR                                       &
+     &             ,grid%mass_flux                                           &
+     &             ,grid%rthften, grid%rqvften                                    &
+     &             ,CLDFRA_TRANS,CLDFRA_OLD,GLW,grid%gsw,EMISS,EMTEMP,grid%lu_index&
      &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
      &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
      &             ,GRID%LU_STATE                                       &
-     &             ,XLAT,XLONG,ALBEDO,ALBBCK                            &
+     &             ,grid%xlat,grid%xlong,grid%albedo,grid%albbck                            &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
-     &             ,TMN,XLAND,ZNT,Z0,USTAR,MOL,PBLH,TKE_MYJ             &
-     &             ,EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL              &
-     &             ,STC,ZS,DZS,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
+     &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_myj             &
+     &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
+     &             ,grid%stc,ZS,DZS,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
      &             ,ADV_MOIST_COND                                      &
-     &             ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                   &
-     &             ,APR_CAPMA,APR_CAPME,APR_CAPMI                       &
-     &             ,XICE,XICE,VEGFRA,SNOW,CANWAT,SMSTAV                 &
-     &             ,SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW            &
-     &             ,ACSNOM,IVGTYP,ISLTYP,SFCEVP,SMC                     &
-     &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary
+     &             ,grid%apr_gr,grid%apr_w,grid%apr_mc,grid%apr_st,grid%apr_as                   &
+     &             ,grid%apr_capma,grid%apr_capme,grid%apr_capmi                       &
+     &             ,grid%xice,grid%xice,grid%vegfra,grid%snow,grid%canwat,grid%smstav                 &
+     &             ,grid%smstot, grid%sfcrunoff,grid%udrunoff,grid%grdflx,grid%acsnow            &
+     &             ,grid%acsnom,grid%ivgtyp,grid%isltyp,grid%sfcevp,grid%smc                     &
+     &             ,grid%sh2o, grid%snowh, grid%smfr3d                                 &  ! temporary
      &             ,grid%SNOALB                                         &
-     &             ,GRID%DX,GRID%DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY    &
-     &             ,MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE           &
-     &             ,.TRUE.,moved,START_OF_SIMULATION                    &
+     &             ,GRID%DX,GRID%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy    &
+     &             ,grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state           &
+     &             ,.TRUE.,grid%moved,START_OF_SIMULATION                    &
      &             ,1                                                   & ! lagday
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
@@ -1661,15 +1662,15 @@
       CALL nl_get_cen_lon(GRID%ID, CEN_LON)    !-- CEN_LON in deg
       DTPHS=grid%dt*grid%nphs
       CALL GWD_init(DTPHS,GRID%DX,GRID%DY,CEN_LAT,CEN_LON,RESTRT        &
-     &              ,GLAT,GLON,CROT,SROT,HANGL                          &
+     &              ,grid%glat,grid%glon,grid%crot,grid%srot,grid%hangl                          &
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                            &
      &              ,IMS,IME,JMS,JME,KMS,KME                            &
      &              ,ITS,ITE,JTS,JTE,KTS,KTE )
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE
-          UGWDsfc(I,J)=0.
-          VGWDsfc(I,J)=0.
+          grid%ugwdsfc(I,J)=0.
+          grid%vgwdsfc(I,J)=0.
         ENDDO
         ENDDO
       ENDIF
@@ -1680,14 +1681,14 @@
 
         DO J=JMS,JME
         DO I=IMS,IME
-          Z0(I,J)=Z0BASE(I,J)
+          grid%z0(I,J)=grid%z0base(I,J)
         ENDDO
         ENDDO
 
         DO K=KMS,KME
         DO J=JMS,JME
         DO I=IMS,IME
-          CLDFRA(I,J,K)=CLDFRA_TRANS(I,K,J)
+          grid%cldfra(I,J,K)=CLDFRA_TRANS(I,K,J)
         ENDDO
         ENDDO
         ENDDO
@@ -1699,9 +1700,9 @@
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 #ifdef HWRF
         moist = 0.0
-        F_ICE = F_ICE_PHY
-        F_RIMEF = F_RIMEF_PHY
-        F_RAIN = F_RAIN_PHY
+        grid%f_ice = grid%f_ice_phy
+        grid%f_rimef = grid%f_rimef_phy
+        grid%f_rain = grid%f_rain_phy
 #endif
 
       IF (.NOT. RESTRT) THEN
@@ -1709,43 +1710,43 @@
 ! mixing ratio (from NMM's specific humidity var) into moist array.
 
 !!mp
-        CALL wrf_message('Initializng moist(:,:,:, Qv) from Q')
+        CALL wrf_message('Initializng moist(:,:,:, Qv) from q')
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
-           moist(I,J,K,P_QV) = Q(I,J,K) / (1.-Q(I,J,K))                 
+           moist(I,J,K,P_QV) = grid%q(I,J,K) / (1.-grid%q(I,J,K))                 
         enddo      
         enddo      
         enddo      
      
-! Also sum cloud water, ice, rain, snow, graupel into Ferrier CWM       
+! Also sum cloud water, ice, rain, snow, graupel into Ferrier cwm       
 ! array (if any hydrometeors found and non-zero from initialization     
 ! package).  Then, determine fractions ice and rain from species.       
      
-        IF (.not. (MAXVAL(CWM).gt.0. .and. MAXVAL(CWM).lt.1.) ) then    
+        IF (.not. (MAXVAL(grid%cwm).gt.0. .and. MAXVAL(grid%cwm).lt.1.) ) then    
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
-     &       CALL wrf_message(' summing moist(:,:,:,i_m) into CWM array')
+     &       CALL wrf_message(' summing moist(:,:,:,i_m) into cwm array')
           DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
             IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. (i_m.ne.p_qv) ) THEN  
-               CWM(I,J,K) = CWM(I,J,K) + moist(I,J,K,i_m)               
+               grid%cwm(I,J,K) = grid%cwm(I,J,K) + moist(I,J,K,i_m)               
             ENDIF  
           enddo    
           enddo
           enddo
           enddo
 
-          IF (.not. ( (maxval(F_ICE)+maxval(F_RAIN)) .gt. EPSQ) ) THEN
-            CALL wrf_message(' computing F_ICE')
+          IF (.not. ( (maxval(grid%f_ice)+maxval(grid%f_rain)) .gt. EPSQ) ) THEN
+            CALL wrf_message(' computing grid%f_ice')
             do i_m = 2, num_moist
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
               IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. &
      &               ( (i_m.eq.p_qi).or.(i_m.eq.p_qs).or.(i_m.eq.p_qg) ) ) THEN
-                 F_ICE(I,K,J) = F_ICE(I,K,J) + moist(I,J,K,i_m)
+                 grid%f_ice(I,K,J) = grid%f_ice(I,K,J) + moist(I,J,K,i_m)
               ENDIF
               if (model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW) then
                 if ((i_m.eq.p_qi).or.(i_m.eq.p_qg) ) then
@@ -1757,21 +1758,21 @@
             enddo
             enddo
             enddo
-            CALL wrf_message(' computing F_RAIN')
+            CALL wrf_message(' computing f_rain')
 !
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
-              IF(F_ICE(i,k,j)<=EPSQ)THEN
-                F_ICE(I,K,J)=0.
+              IF(grid%f_ice(i,k,j)<=EPSQ)THEN
+                grid%f_ice(I,K,J)=0.
               ELSE
-                F_ICE(I,K,J) = F_ICE(I,K,J)/CWM(I,J,K)
+                grid%f_ice(I,K,J) = grid%f_ice(I,K,J)/grid%cwm(I,J,K)
               ENDIF
               IF ( (moist(I,J,K,p_qr)+moist(I,J,K,p_qc)).gt.EPSQ) THEN
                 IF(moist(i,j,k,p_qr)<=EPSQ)THEN
-                  F_RAIN(I,K,J)=0.
+                  grid%f_rain(I,K,J)=0.
                 ELSE
-                  F_RAIN(I,K,J) = moist(i,j,k,p_qr) &
+                  grid%f_rain(I,K,J) = moist(i,j,k,p_qr) &
      &                    / (moist(i,j,k,p_qr)+moist(i,j,k,p_qc))
                 ENDIF
               ENDIF
@@ -1782,31 +1783,31 @@
         ENDIF
 ! End addition by Greg Thompson
 
-        IF (maxval(F_ICE) .gt. 0.) THEN
+        IF (maxval(grid%f_ice) .gt. 0.) THEN
          do J=JMS,JME
          do K=KMS,KME
          do I=IMS,IME
-          F_ICE_PHY(I,K,J)=F_ICE(I,K,J)
+          grid%f_ice_phy(I,K,J)=grid%f_ice(I,K,J)
          enddo
          enddo
          enddo
         ENDIF
 
-        IF (maxval(F_RAIN) .gt. 0.) THEN
+        IF (maxval(grid%f_rain) .gt. 0.) THEN
          do J=JMS,JME
          do K=KMS,KME
          do I=IMS,IME
-          F_RAIN_PHY(I,K,J)=F_RAIN(I,K,J)
+          grid%f_rain_phy(I,K,J)=grid%f_rain(I,K,J)
          enddo
          enddo
          enddo
         ENDIF
 
-        IF (maxval(F_RIMEF) .gt. 0.) THEN
+        IF (maxval(grid%f_rimef) .gt. 0.) THEN
           do J=JMS,JME
           do K=KMS,KME
           do I=IMS,IME
-            F_RIMEF_PHY(I,K,J)=F_RIMEF(I,K,J)
+            grid%f_rimef_phy(I,K,J)=grid%f_rimef(I,K,J)
           enddo
           enddo
           enddo
@@ -1818,7 +1819,7 @@
         IF(MAXVAL(ALBEDO_DUM)>0.)THEN
           DO J=JMS,JME
           DO I=IMS,IME
-            ALBEDO(I,J)=ALBEDO_DUM(I,J)
+            grid%albedo(I,J)=ALBEDO_DUM(I,J)
           ENDDO
           ENDDO
         ENDIF
@@ -1827,8 +1828,8 @@
       IF(.NOT.RESTRT)THEN
         DO J=JMS,JME
         DO I=IMS,IME
-          APREC(I,J)=RAINNC(I,J)*1.E-3
-          CUPREC(I,J)=RAINCV(I,J)*1.E-3
+          grid%aprec(I,J)=RAINNC(I,J)*1.E-3
+          grid%cuprec(I,J)=grid%raincv(I,J)*1.E-3
         ENDDO
         ENDDO
       ENDIF
@@ -1841,7 +1842,7 @@
           KK=MIN(KDE-1,K)
           DO I=ITS,ITE
             II=MIN(IDE-1,I)
-            CONVFAC(I,K,J) = PINT(II,JJ,KK)/RGASUNIV/T(II,JJ,KK)
+            CONVFAC(I,K,J) = grid%pint(II,JJ,KK)/RGASUNIV/grid%t(II,JJ,KK)
           ENDDO
         ENDDO
       ENDDO
@@ -1849,20 +1850,36 @@
       DO J=JMS,JME
         DO K=KMS,KME
           DO I=IMS,IME
-            PINT_TRANS(I,K,J)=PINT(I,J,K)
-            T_TRANS(I,K,J)=T(I,J,K)
+            PINT_TRANS(I,K,J)=grid%pint(I,J,K)
+            T_TRANS(I,K,J)=grid%t(I,J,K)
           ENDDO
         ENDDO
       ENDDO 
-       CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
+      DO J=JMS,JME
+          DO I=IMS,IME
+           grid%xlat(i,j)=grid%glat(I,J)/DEGRAD
+           grid%xlong(I,J)=grid%glon(I,J)/DEGRAD
+
+          ENDDO
+        ENDDO
+!!!    write(0,*)'now do chem_init'
+       CALL CHEM_INIT (GRID%ID,CHEM,EMIS_ANT,scalar,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
                STEPBIOE,STEPPHOT,STEPCHEM,STEPFIREPL,GRID%PLUMERISEFIRE_FRQ,      &
-               ZINT,G,AERWRF,CONFIG_FLAGS,                     &
+               ZINT,grid%xlat,grid%xlong,G,AERWRF,CONFIG_FLAGS,grid,       &
                RRI,T_TRANS,PINT_TRANS,CONVFAC,                 &
-               GD_CLOUD,GD_CLOUD2,GD_CLOUD_B,GD_CLOUD2_B,            &
+               grid%ttday,grid%tcosz,grid%julday,grid%gmt,                         &
+               GD_CLOUD,GD_CLOUD2,raincv_a,raincv_b,           &
+               GD_CLOUD_a,GD_CLOUD2_a,            &
+               GD_CLOUD_B,GD_CLOUD2_B,            &
                TAUAER1,TAUAER2,TAUAER3,TAUAER4,                      &
                GAER1,GAER2,GAER3,GAER4,                              &
                WAER1,WAER2,WAER3,WAER4,                              &
-               PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC,GRID%CHEM_IN_OPT,  &
+               l2AER,l3AER,l4AER,l5AER,l6aer,l7aer,                 &
+               PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC,                  &
+               grid%last_chem_time_year,grid%last_chem_time_month,               &
+               grid%last_chem_time_day,grid%last_chem_time_hour,                 &
+               grid%last_chem_time_minute,grid%last_chem_time_second,            &
+               GRID%CHEM_IN_OPT,  &
                GRID%KEMIT,                                           &
                IDS , IDE , JDS , JDE , KDS , KDE ,                   &
                IMS , IME , JMS , JME , KMS , KME ,                   &
@@ -1872,7 +1889,14 @@
 ! calculate initial pm
 !     
         SELECT CASE (CONFIG_FLAGS%CHEM_OPT)
-        CASE (RADM2SORG, RACMSORG,RACMSORG_KPP)
+        case (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+           call sum_pm_gocart (                                             &
+                RRI, CHEM, PM2_5_DRY, PM2_5_DRY_EC,  PM10,                  &
+                IDS,IDE, JDS,JDE, KDS,KDE,                                  &
+                IMS,IME, JMS,JME, KMS,KME,                                  &
+                ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
+        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_KPP)
+!!!       write(0,*)'sum pm '
            CALL SUM_PM_SORGAM (                                             &
                 RRI, CHEM, H2OAJ, H2OAI,                              &
                 PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
@@ -1909,7 +1933,7 @@
       DEALLOCATE(GLW)
       DEALLOCATE(HFX)
       DEALLOCATE(LOWLYR)
-!     DEALLOCATE(MAVAIL)
+!     DEALLOCATE(grid%mavail)
       DEALLOCATE(NCA)
       DEALLOCATE(QFX)
       DEALLOCATE(RAINBL)
@@ -1946,14 +1970,14 @@
       DEALLOCATE(CLDFRA_OLD)
 #endif
 #if 0
-      DEALLOCATE(W0AVG)
+      DEALLOCATE(w0avg)
 #endif
 !-----------------------------------------------------------------------
 !----------------------------------------------------------------------
         DO J=jfs,jfe
         DO I=ifs,ife
-          DWDTMN(I,J)=DWDTMN(I,J)*HBM3(I,J)
-          DWDTMX(I,J)=DWDTMX(I,J)*HBM3(I,J)
+          grid%dwdtmn(I,J)=grid%dwdtmn(I,J)*grid%hbm3(I,J)
+          grid%dwdtmx(I,J)=grid%dwdtmx(I,J)*grid%hbm3(I,J)
         ENDDO
         ENDDO
 !----------------------------------------------------------------------
@@ -2000,8 +2024,8 @@
 #  include <HALO_NMM_INIT_38.inc>
 #  include <HALO_NMM_INIT_39.inc>
 #endif
-#define COPY_OUT
-#include <scalar_derefs.inc>
+!#define COPY_OUT
+!#include <scalar_derefs.inc>
 
    RETURN
 

@@ -1,7 +1,7 @@
 
 SUBROUTINE solve_nmm      ( grid , config_flags     &
 !
-#include <dummy_args.inc>
+#include <dummy_new_args.inc>
 !
                  )
 
@@ -13,7 +13,7 @@ SUBROUTINE solve_nmm      ( grid , config_flags     &
    TYPE(domain) , INTENT(INOUT)                  :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)      :: config_flags
 
-#include <dummy_decl.inc>
+#include <dummy_new_decl.inc>
 
 END SUBROUTINE solve_nmm
 

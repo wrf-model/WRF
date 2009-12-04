@@ -1,5 +1,5 @@
 
-WRF-NMM Model Version 3 (April 9, 2009)
+WRF-NMM Model Version 3.1 (April 9, 2009)
 
 ----------------------------
 WRF-NMM PUBLIC DOMAIN NOTICE
@@ -109,57 +109,81 @@ How to configure, compile and run?
 
 =============================================================================
 
-What is in WRF-NMM V3?
+What is in WRF-NMM V3.1?
 
 * Dynamics:
 
   - The WRF-NMM model is a fully compressible, non-hydrostatic model with a
-    hydrostatic option. 
+    hydrostatic option.
+
   - Supports One-way and two-way static nesting.
-    - Multiple domains and multiple nest levels
-    - Feedback option
-  - The terrain following hybrid pressure sigma vertical coordinate is used. 
-  - The grid staggering is the Arakawa E-grid. 
-  - The same time step is used for all terms.  
+
+  - The terrain following hybrid pressure sigma vertical coordinate is used.
+
+  - The grid staggering is the Arakawa E-grid.
+
+  - The same time step is used for all terms.
+
   - Time stepping:
      - Horizontally propagating fast-waves: Forward-backward scheme
      - Veryically propagating sound waves: Implicit scheme
+
   - Advection (time):
      T,U,V:
       - Horizontal: The Adams-Bashforth scheme
       - Vertical:   The Crank-Nicholson scheme
-     TKE, water species: Forward, flux-corrected (called every two timesteps).
+     TKE, water species: Forward, flux-corrected (called every two timesteps)/Eulerian, Adams-Bashforth
+     and Crank-Nicholson with monotonization.
+
   - Advection (space):
      T,U,V:
-      - Horizontal: Energy and enstrophy conserving, 
+      - Horizontal: Energy and enstrophy conserving,
       quadratic conservative,second order
-      - Vertical: Quadratic conservative,second order TKE, 
-      - Water species: Upstream, flux-corrected, positive definite, conservative
-  - Horizontal diffusion: Forward, second order "Smagorinsky-type" 
+
+      - Vertical: Quadratic conservative,second order, implicit
+
+      - Tracers (water species and TKE): upstream, positive definite, conservative antifiltering
+        gradient restoration, optional, see next bullet.
+
+      - Tracers (water species, TKE, and test tracer rrw): Eulerian with monotonization, coupled with
+        continuity equation, conservative, positive definite, monotone, optional.  To turn on/off, set
+        the logical switch "euler" in solve_nmm.F to .true./.false.  The monotonization parameter
+        steep in subroutine mono should be in the range 0.96-1.0.  For most natural tracers steep=1.
+        should be adequate.  Smaller values of steep are recommended for idealizaed tests with very
+        steep gradients.  This option is available only with Ferrier microphysics.
+
+  - Horizontal diffusion: Forward, second order "Smagorinsky-type"
+
   - Vertical Diffusion:
      See "Free atmosphere turbulence above surface layer" section
-     in "Physics" section given in below. 
+     in "Physics" section given in below.
 
 * Physics:
 
-  - Explicit Microphysics: ( WRF Single Moment 5 and 6 classes / Eta Ferrier  (Used operationally at NCEP) / Thompson )
-  - Cumulus parameterization ( Kain-Fritsch with shallow convection /
-    Betts-Miller-Janjic (Used operationally at NCEP) / 
-    Grell-Devenyi ensemble / Simplified Arakawa-Schubert )
-  - Free atmosphere turbulence above surface layer: Mellor-Yamada-Janjic (used operationally at NCEP)
-  - Planetary boundary layer ( Yosei University / Mellor-Yamada-Janjic (Used operationally
-at NCEP) / GFS / QNSE ) 
-  - Surface Layer ( similarity theory MM5 / Eta / MYJ (Used operationally
-at NCEP) / GFS / QNSE )
-  - Land Surface Model ( Noah land-surface model (4 levels) (Used operationally
-at NCEP) / RUC LSM (6 levels))
-  - Longwave Radiation ( RRTM / GFDL (Fels-Schwarzkopf) (Used operationally
-at NCEP))
-  - Shortwave Radiation ( Dudhia / GFDL (Lacis-Hansen) (Used operationally
-at NCEP))
-  - Gravity wave drag option 
-  - Land-use categories determine surface properties; support for 24 category USGS and
-    20 category MODIS (Noah LSM only in V3.1)
+  - Explicit Microphysics (WRF Single Moment 5 and 6 class /
+    Ferrier (Used operationally at NCEP.)/ Thompson [a new version in 2.2])
+
+  - Cumulus parameterization (Kain-Fritsch with shallow convection /
+    Betts-Miller-Janjic (Used operationally at NCEP.)/ Grell-Devenyi ensemble
+    / Simplified Arakawa-Schubert)
+
+  - Free atmosphere turbulence above surface layer: Mellor-Yamada-Janjic (Used operationally at NCEP.)
+
+  - Planetary boundary layer: YSU /  Mellor-Yamada-Janjic (Used operationally at NCEP.)
+    / GFS
+
+  - Surface layer: Similarity theory scheme with viscous sublayers
+                   over both solid surfaces and water points (Janjic - Used operatinally at NCEP).
+    / GFS / YSU
+
+  - Soil model: Noah land-surface model (4-level - Used operationally at NCEP) /
+    RUC LSM (6-level)
+
+  - Radiation:
+    - Longwave radiation: GFDL Scheme  (Fels-Schwarzkopf) (Used operationally at NCEP.) / RRTM
+    - Shortwave radiation: GFDL-scheme (Lacis-Hansen) (Used operationally at NCEP.) / Dudhia
+
+  - Gravity wave drag with mountain wave blocking (Alpert; Kim and Arakawa)
 
 * WRF Software:
 
@@ -175,8 +199,8 @@ at NCEP))
       Efficient: 5-8% overhead on 64 processes of IBM
   - Enhanced I/O options:
       NetCDF and Parallel HDF5 formats
-      Nine auxiliary input and history output streams separately controllable through the namel
-ist
+      Nine auxiliary input and history output streams separately controllable through the
+       namelist
       Output file names and time-stamps specifiable through namelist
   -  Efficient execution on a range of computing platforms:
       IBM SP systems, (e.g. NCAR "bluevista","blueice","bluefire" Power5-based system)
@@ -205,7 +229,7 @@ ist
   - Multi-level parallelism supporting shared-memory (OpenMP), distributed-memory (MPI), 
     and hybrid share/distributed modes of execution
   - Serial compilation can be used for single-domain runs but not for runs with
-nesting at this time.
+    nesting at this time.
   - Active data registry: defines and manages model state fields, I/O,
     configuration, and numerous other aspects of WRF through a single file, 
     called the Registry

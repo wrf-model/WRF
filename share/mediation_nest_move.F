@@ -101,7 +101,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 
      SUBROUTINE shift_domain_nmm ( grid, disp_x, disp_y &
 !
-# include <dummy_args.inc>
+# include <dummy_new_args.inc>
 !
                            )
         USE module_domain
@@ -110,7 +110,7 @@ SUBROUTINE med_nest_move ( parent, nest )
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
-#include <dummy_decl.inc>
+#include <dummy_new_decl.inc>
      END SUBROUTINE shift_domain_nmm
 #endif
      LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
@@ -242,7 +242,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if (NMM_CORE == 1 && NMM_NEST == 1)
      CALL shift_domain_nmm( grid, dx, dy &
 !
-# include <actual_args.inc>
+# include <actual_new_args.inc>
 !
                           )
 #endif

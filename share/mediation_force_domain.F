@@ -80,7 +80,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 
       SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
-# include "dummy_args.inc"
+# include "dummy_new_args.inc"
 !
                  )
          USE module_domain
@@ -89,12 +89,12 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_decl.inc>
+# include <dummy_new_decl.inc>
       END SUBROUTINE interp_domain_nmm_part1
 
       SUBROUTINE force_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
-# include "dummy_args.inc"
+# include "dummy_new_args.inc"
 !
                  )
          USE module_domain
@@ -103,7 +103,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
 
-# include <dummy_decl.inc>
+# include <dummy_new_decl.inc>
       END SUBROUTINE force_domain_nmm_part2
 !=======================================================================
 !  End of gopal's doing.
@@ -255,7 +255,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
        CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags    &
 !
-#         include "actual_args.inc"
+#         include "actual_new_args.inc"
 !
                                      )
     ENDIF ! not restart and first force
@@ -268,7 +268,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
        CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
        CALL force_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
-#         include "actual_args.inc"
+#         include "actual_new_args.inc"
 !
                                     )
     ENDIF ! not restart and first_force

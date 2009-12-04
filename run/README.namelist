@@ -732,6 +732,9 @@ The following are for observation nudging:
  nested (max_dom)                    = .false., ; nested boundary conditions (must be used for nests)
  polar                               = .false., ; polar boundary condition
                                                   (v=0 at polarward-most v-point)
+ euler_adv                           = .false., ; conservative Eulerian passive advection (NMM only)
+ idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)
+ idtadc                              = 1        ; fundamental timesteps between calls to Euler advection, chemistry (NMM only)
 
 
 

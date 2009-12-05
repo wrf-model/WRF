@@ -896,7 +896,7 @@
       IDUMMY=0
       ISFFLX=1
       DX=0.
-      SST_UPDATE=0
+      SST_UPDATE=config_flags%SST_UPDATE
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j)

@@ -1,7 +1,7 @@
 !REAL:MODEL_LAYER:INITIALIZATION
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains, specifically for the Eulerian, mass-based coordinate.
+!  for individual domains utilizing the NMM dynamical core.
 
 !-----------------------------------------------------------------------
 
@@ -695,7 +695,7 @@ CONTAINS
          !  for the traditional monthly
          !  fields of green-ness fraction and background grid%albedo.
 
-        if (internal_time_loop .eq. 1) then
+        if (internal_time_loop .eq. 1 .or. config_flags%sst_update .eq. 1) then
 
          CALL monthly_interp_to_date ( grid%greenfrac_gc , current_date , grid%vegfra , &
                                        ids , ide , jds , jde , kds , kde , &
@@ -752,6 +752,35 @@ CONTAINS
         DEALLOCATE(p3d_out,p3dv_out,p3dv_in)
 
      END IF     !   <----- END OF VERTICAL INTERPOLATION PART ---->
+
+
+!! compute SST at each time if updating SST
+        if (config_flags%sst_update == 1) then
+
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+
+        if (grid%SM(I,J) .lt. 0.5) then
+            grid%SST(I,J)=0.
+        endif
+
+        if (grid%SM(I,J) .gt. 0.5) then
+            grid%SST(I,J)=grid%NMM_TSK(I,J)
+            grid%NMM_TSK(I,J)=0.
+        endif
+
+        IF ( (grid%NMM_TSK(I,J)+grid%SST(I,J)) .lt. 200. .or. &
+             (grid%NMM_TSK(I,J)+grid%SST(I,J)) .gt. 350. ) THEN
+          write(message,*) 'TSK, SST trouble at : ', I,J
+          CALL wrf_message(message)
+          write(message,*) 'SM, NMM_TSK,SST ', grid%SM(I,J),grid%NMM_TSK(I,J),grid%SST(I,J)
+          CALL wrf_message(message)
+        ENDIF
+
+            ENDDO
+         ENDDO
+
+        endif ! sst_update test
 
         if (internal_time_loop .eq. 1) then
 

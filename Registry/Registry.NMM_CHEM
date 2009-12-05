@@ -71,7 +71,7 @@ state    real   vegcat         ij       misc         1     -     i12     "VEGCAT
 state    real   soilcat        ij       misc         1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 state    real   input_soil_cat ij       misc         1     -     i12     "SOIL_CAT"       "SOIL CAT DOMINANT TYPE" ""
 state    real   tsk_gc         ij       dyn_nmm      1     -     i1      "SKINTEMP"  "skin temperature"  "K"
-state    real   XICE_gc        ij       misc         1     -     i01r    "SEAICE"                 "SEA ICE"         ""
+state    real   XICE_gc        ij       misc         1     -     i014r    "SEAICE"                 "SEA ICE"         ""
 state    real   ght_gc         ijg      dyn_nmm      1     Z     i1      "GHT"   "geopotential height" "m"
 state    real   rh_gc          ijg      dyn_nmm      1     Z     i1      "RH"    "relative humidity"   "%"
 state    real   v_gc           ijg      dyn_nmm      1     Z     i1      "VV"     "y-wind component"    "m s-1"
@@ -272,7 +272,7 @@ state  real   cmc       ij    dyn_nmm   1    -     i01rh    "CMC"       "Canopy 
 state  real   grnflx    ij    dyn_nmm   1    -     irh      "GRNFLX"    "Deep soil heat flux"              "W m-2"
 state  real   pctsno    ij    dyn_nmm   1    -     irh
 state  real   soiltb    ij    dyn_nmm   1    -     i01rh    "SOILTB"    "Deep ground soil temperature"     "K"
-state  real   vegfrc    ij    dyn_nmm   1    -     i01rh    "VEGFRC"    "Vegetation fraction"              ""
+state  real   vegfrc    ij    dyn_nmm   1    -     i014rh    "VEGFRC"    "Vegetation fraction"              ""
 state  real   shdmin    ij    dyn_nmm   1    -     -
 state  real   shdmax    ij    dyn_nmm   1    -     -
 state  real   sh2o      ilj   dyn_nmm   1    Z     irh      "SH2O"      "Unfrozen soil moisture volume fraction"  ""
@@ -581,10 +581,10 @@ state    real   SFCRUNOFF        ij     misc        1         -     rh       "SF
 state    real   UDRUNOFF         ij     misc        1         -     rh       "UDROFF"               "UNDERGROUND RUNOFF" ""
 state  integer  IVGTYP           ij     misc        1         -     irh       "IVGTYP"               "VEGETATION TYPE" ""
 state  integer  ISLTYP           ij     misc        1         -     irh       "ISLTYP"               "SOIL TYPE"         " "
-state    real   VEGFRA           ij     misc        1         -     i01rh       "VEGFRA"               "VEGETATION FRACTION" ""
+state    real   VEGFRA           ij     misc        1         -     i014rh       "VEGFRA"               "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -     irh     "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
-state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
+state    real   ALBBCK           ij     misc        1         -     i0124r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
 state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
 state    real   SNOTIME          ij     misc        1         -     r        "SNOTIME"              "SNOTIME"                             ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
@@ -592,7 +592,7 @@ state    real   ACSNOM           ij     misc        1         -     irh       "A
 state    real   RMOL             ij     misc        1         -     irh      "RMOL"               ""         ""
 state    real   SNOW             ij     misc        1         -     i01rh       "SNOW"                 "SNOW WATER EQUIVALENT"         ""
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
-state    real   SST              ij     misc        1         -     i01rh       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state    real   SST              ij     misc        1         -     i014rh       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rh       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
@@ -840,7 +840,7 @@ rconfig   integer num_soil_cat            namelist,physics	1            16      
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
-rconfig   integer sst_update              namelist,physics      1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
+rconfig   integer sst_update              namelist,physics      1            0        i01rh    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM, 2=BEP_UCM"   ""
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
@@ -872,8 +872,6 @@ rconfig   integer paerlev                 namelist,physics      1             1 
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
-rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
-rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "nmm input 12"
 
 # Dynamics
 # dynamics option (see package definitions, below)

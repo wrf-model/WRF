@@ -111,7 +111,7 @@ state    real   soilcat        ij       misc         1     -     i12     "SOILCA
 
 state    real   input_soil_cat ij       misc         1     -     i12     "SOIL_CAT"       "SOIL CAT DOMINANT TYPE" ""
 state    real   tsk_gc         ij       dyn_nmm      1     -     i1      "SKINTEMP"  "skin temperature"  "K"
-state    real   XICE_gc        ij       misc         1     -     i01r    "SEAICE"                 "SEA ICE"         ""
+state    real   XICE_gc        ij       misc         1     -     i014r    "SEAICE"                 "SEA ICE"         ""
 state    real   ght_gc         ijg      dyn_nmm      1     Z     i1      "GHT"   "geopotential height" "m"
 state    real   rh_gc          ijg      dyn_nmm      1     Z     i1      "RH"    "relative humidity"   "%"
 state    real   v_gc           ijg      dyn_nmm      1     Z     i1      "VV"     "y-wind component"    "m s-1"
@@ -375,7 +375,7 @@ state  real   cmc       ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,
 state  real   grnflx    ij    dyn_nmm   1    -     irh      "GRNFLX"    "Deep soil heat flux"              "W m-2"
 state  real   pctsno    ij    dyn_nmm   1    -     irh
 state  real   soiltb    ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "SOILTB"    "Deep ground soil temperature"     "K"
-state  real   vegfrc    ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "VEGFRC"    "Vegetation fraction"              ""
+state  real   vegfrc    ij    dyn_nmm   1    -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "VEGFRC"    "Vegetation fraction"              ""
 state  real   shdmin    ij    dyn_nmm   1    -     -
 state  real   shdmax    ij    dyn_nmm   1    -     -
 state  real   sh2o      ilj   dyn_nmm   1    Z     irhd=(interp_hnear_ikj_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
@@ -688,10 +688,10 @@ state    real   SFCRUNOFF        ij     misc        1         -     rh       "SF
 state    real   UDRUNOFF         ij     misc        1         -     rh       "UDROFF"               "UNDERGROUND RUNOFF" ""
 state  integer  IVGTYP           ij     misc        1         -     irhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "IVGTYP"               "VEGETATION TYPE" ""
 state  integer  ISLTYP           ij     misc        1         -     irhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "ISLTYP"               "SOIL TYPE"         " "
-state    real   VEGFRA           ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "VEGFRA"               "VEGETATION FRACTION" ""
+state    real   VEGFRA           ij     misc        1         -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "VEGFRA"               "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -     irh     "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
-state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
+state    real   ALBBCK           ij     misc        1         -     i0124r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
 state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
 state    real   SNOTIME          ij     misc        1         -     r        "SNOTIME"              "SNOTIME"                             ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
@@ -699,7 +699,7 @@ state    real   ACSNOM           ij     misc        1         -     irh       "A
 state    real   RMOL             ij     misc        1         -     ir       "RMOL"               ""         ""
 state    real   SNOW             ij     misc        1         -     i01rh       "SNOW"                 "SNOW WATER EQUIVALENT"         ""
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
-state    real   SST              ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state    real   SST              ij     misc        1         -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
@@ -938,7 +938,7 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
-rconfig   integer sst_update              namelist,physics      1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
+rconfig   integer sst_update              namelist,physics      1            0        i01rh    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"   "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
@@ -1202,11 +1202,11 @@ halo HALO_NMM_INIT_37	dyn_nmm 120:STC,SH2O,ALBEDO
 halo HALO_NMM_INIT_38   dyn_nmm 120:PINT,Z,DWDT
 halo HALO_NMM_INIT_39	dyn_nmm 120:TOLD,UOLD,VOLD
 
-halo      HALO_NMM_A  dyn_nmm 24:pd,t,u,v,q,cwm,dwdt,div;24:pint                          
+halo      HALO_NMM_A  dyn_nmm 48:pd,t,u,v,q,cwm,dwdt,div;24:pint                          
 halo      HALO_NMM_A_3  dyn_nmm 24:moist,scalar
 halo      HALO_NMM_B  dyn_nmm 24:div                   
-halo      HALO_NMM_C  dyn_nmm 8:u,v                    
-halo      HALO_NMM_D  dyn_nmm 24:pd          
+halo      HALO_NMM_C  dyn_nmm 48:u,v                    
+halo      HALO_NMM_D  dyn_nmm 48:pd          
 halo      HALO_NMM_E  dyn_nmm 24:petdt
 halo      HALO_NMM_F  dyn_nmm 24:t,u,v
 halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
@@ -1216,7 +1216,7 @@ halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm,rrw
 halo      HALO_NMM_I_3  dyn_nmm 48:moist,scalar
 halo      HALO_NMM_J  dyn_nmm 8:pd,uz0,vz0,t,q,cwm                    
 halo      HALO_NMM_J_3  dyn_nmm 8:moist,scalar
-halo      HALO_NMM_K  dyn_nmm 8:q2;24:t,u,v,q,w,z
+halo      HALO_NMM_K  dyn_nmm 24:q2;24:t,u,v,q,w,z
 halo      HALO_NMM_L  dyn_nmm 8:pd,t,q,cwm,q2                    
 halo      HALO_NMM_L_3  dyn_nmm 8:moist,scalar
 halo      HALO_NMM_MG dyn_nmm 8:ht_gc

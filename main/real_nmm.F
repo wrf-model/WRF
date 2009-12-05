@@ -614,8 +614,8 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    INTEGER :: inc_h,inc_v
    INTEGER :: i , j , k , idts
 
-   INTEGER :: id1 , interval_seconds , ierr, rc
-   INTEGER , SAVE :: id 
+   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update
+   INTEGER , SAVE :: id ,id4
    CHARACTER (LEN=80) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER(LEN=132) :: message
@@ -697,12 +697,25 @@ character *24 :: temp24 , temp24b
 
    spec_bdy_width = model_config_rec%spec_bdy_width
    interval_seconds = model_config_rec%interval_seconds
+   sst_update = model_config_rec%sst_update
 
 !-----------------------------------------------------------------------
 !
    main_loop_test: IF ( loop .EQ. 1 ) THEN
 !
 !-----------------------------------------------------------------------
+
+      IF ( time_loop_max .NE. 1 ) THEN
+         IF(sst_update .EQ. 1)THEN
+           CALL construct_filename1( inpname , 'wrflowinp' , grid%id , 2 )
+           CALL open_w_dataset ( id4, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
+           IF ( ierr .NE. 0 ) THEN
+              CALL wrf_error_fatal( 'real: error opening wrflowinp for writing' )
+           END IF
+           CALL output_aux_model_input4 ( id4, grid , config_flags , ierr )
+         END IF
+      END IF
+
 
    !  This is the space needed to save the current 3d data for use in computing
    !  the lateral boundary tendencies.
@@ -962,6 +975,8 @@ character *24 :: temp24 , temp24b
 !
 !-----------------------------------------------------------------------
 
+           CALL output_aux_model_input4 ( id4, grid , config_flags , ierr )
+
       write(message,*)' assemble_output loop=',loop,' in IF block'
       call wrf_message(message)
 
@@ -982,7 +997,6 @@ character *24 :: temp24 , temp24b
          CALL domain_clockadvance( grid )
       END IF
 
-!
 !-----------------------------------------------------------------------
 !***  SOUTHERN BOUNDARY
 !-----------------------------------------------------------------------

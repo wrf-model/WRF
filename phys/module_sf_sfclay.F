@@ -23,7 +23,7 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx                   )
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -85,6 +85,7 @@ CONTAINS
 !-- cka         enthalpy exchange coeff at the lowest model level
 !-- cda         momentum exchange coeff at the lowest model level
 !-- isftcflx    =0, (Charnock and Carlson-Boland); =1, AHW Ck, Cd
+!-- iz0tlnd     =0 Carlson-Boland, =1 Czil_new, =2 Garratt
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -177,7 +178,7 @@ CONTAINS
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
 
 ! LOCAL VARS
 
@@ -223,7 +224,7 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
 #if ( EM_CORE == 1 )
-                ,isftcflx,                                         &
+                ,isftcflx,iz0tlnd,                                 &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j)                               &
 #endif
@@ -247,7 +248,7 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     isftcflx,                                     &
+                     isftcflx, iz0tlnd,                            &
                      ustm,ck,cka,cd,cda                            )
 !-------------------------------------------------------------------
       IMPLICIT NONE
@@ -321,7 +322,7 @@ CONTAINS
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
 
 ! LOCAL VARS
 
@@ -334,6 +335,8 @@ CONTAINS
                                                            PSIH10, &
                                                            PSIM10, &
                                                            DENOMQ, &
+                                                          DENOMQ2, &
+                                                          DENOMT2, &
                                                             WSPDI, &
                                                            GZ2OZ0, &
                                                            GZ10OZ0
@@ -352,7 +355,7 @@ CONTAINS
       REAL    ::  PL,THCON,TVCON,E1
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
-      REAL    ::  FLUXC,VSGD,Z0Q
+      REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL
 !-------------------------------------------------------------------
       KL=kte
 
@@ -693,6 +696,23 @@ CONTAINS
            Cka(I)=(karman/psix)*(karman/psiq)
            Cda(I)=(karman/psix)*(karman/psix)
         ENDIF
+        IF ( PRESENT(IZ0TLND) ) THEN
+           IF ( IZ0TLND.EQ.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
+              ZL=ZNT(I)
+!             CZIL RELATED CHANGES FOR LAND
+              VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
+              RESTAR=UST(I)*ZL/VISC
+!             Modify CZIL according to Chen & Zhang, 2009
+
+              CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+
+              PSIT=GZ1OZ0(I)-PSIH(I)+CZIL*KARMAN*SQRT(RESTAR)
+              PSIQ=GZ1OZ0(I)-PSIH(I)+CZIL*KARMAN*SQRT(RESTAR)
+              PSIT2=GZ2OZ0(I)-PSIH2(I)+CZIL*KARMAN*SQRT(RESTAR)
+              PSIQ2=GZ2OZ0(I)-PSIH2(I)+CZIL*KARMAN*SQRT(RESTAR)
+
+           ENDIF
+        ENDIF
 ! TO PREVENT OSCILLATIONS AVERAGE WITH OLD VALUE 
         UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
 ! TKE coupling: compute ust without vconv for use in tke scheme
@@ -717,6 +737,8 @@ CONTAINS
         ENDIF                                                                    
         MOL(I)=KARMAN*DTG/PSIT/PRT                              
         DENOMQ(I)=PSIQ
+        DENOMQ2(I)=PSIQ2
+        DENOMT2(I)=PSIT2
   330 CONTINUE                                                                   
 !                                                                                
   335 CONTINUE                                                                   
@@ -790,15 +812,13 @@ CONTAINS
          ELSE
            ZL=0.01
          ENDIF
-         CHS(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*ZA(I) &
-                /XKA+ZA(I)/ZL)-PSIH(I))
+         CHS(I)=UST(I)*KARMAN/DENOMQ(I)
 !        GZ2OZ0(I)=ALOG(2./ZNT(I))
 !        PSIM2(I)=-10.*GZ2OZ0(I)
 !        PSIM2(I)=AMAX1(PSIM2(I),-10.)
 !        PSIH2(I)=PSIM2(I)
-         CQS2(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*2.0  &
-               /XKA+2.0/ZL)-PSIH2(I))
-         CHS2(I)=UST(I)*KARMAN/(GZ2OZ0(I)-PSIH2(I))
+         CQS2(I)=UST(I)*KARMAN/DENOMQ2(I)
+         CHS2(I)=UST(I)*KARMAN/DENOMT2(I)
       ENDDO
                                                                         
   410 CONTINUE                                                                   

@@ -529,6 +529,7 @@ Namelist variables for controlling the adaptive time step option:
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
+ iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 - old, 1 - veg dependent Czil)
  mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
 
  &fdda

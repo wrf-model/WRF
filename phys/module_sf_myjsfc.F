@@ -30,8 +30,7 @@
       REAL,PARAMETER :: EPSU2=1.E-6,EPSUST=1.e-9,EPSZT=1.E-28
       REAL,PARAMETER :: A2S=17.2693882,A3S=273.16,A4S=35.86
       REAL,PARAMETER :: SEAFC=0.98,PQ0SEA=PQ0*SEAFC
-      REAL,PARAMETER :: BETA=1./273.,CZIL=0.1,EXCML=0.0001,EXCMS=0.0001  &
-!old      REAL,PARAMETER :: BETA=1./273.,CZIL=0.1,EXCML=0.001,EXCMS=0.001  &
+      REAL,PARAMETER :: BETA=1./273.,EXCML=0.0001,EXCMS=0.0001         &
      &                 ,GLKBR=10.,GLKBS=30.,PI=3.1415926               &
      &                 ,QVISC=2.1E-5,RIC=0.505,SMALL=0.35              &
      &                 ,SQPR=0.84,SQSC=0.84,SQVISC=258.2,TVISC=2.1E-5  &
@@ -50,8 +49,7 @@
      &                 ,PIHF=0.5*PI                                    &
      &                 ,RQVISC=1./QVISC                                &
      &                 ,USTFC=0.018/G                                  &
-     &                 ,WWST2=WWST*WWST                                &
-     &                 ,ZILFC=-CZIL*VKARMAN*SQVISC
+     &                 ,WWST2=WWST*WWST
 !
 !----------------------------------------------------------------------
       INTEGER, PARAMETER :: KZTM=10001,KZTM2=KZTM-2
@@ -68,7 +66,7 @@ CONTAINS
       SUBROUTINE MYJSFC(ITIMESTEP,HT,DZ                                &
      &                 ,PMID,PINT,TH,T,QV,QC,U,V,Q2                    &
      &                 ,TSK,QSFC,THZ0,QZ0,UZ0,VZ0                      &
-     &                 ,LOWLYR,XLAND                                   &
+     &                 ,LOWLYR,XLAND,IVGTYP,ISURBAN,IZ0TLND            &
      &                 ,USTAR,ZNT,Z0BASE,PBLH,MAVAIL,RMOL              &
      &                 ,AKHS,AKMS                                      &
      &                 ,RIB                                            &
@@ -100,6 +98,9 @@ CONTAINS
      &                                                     ,Q2,QC,QV   &
      &                                                     ,T,TH       &
      &                                                     ,U,V
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: IVGTYP
+      INTEGER,                           INTENT(IN) :: ISURBAN
+      INTEGER,                           INTENT(IN) :: IZ0TLND
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLX_LH,HFX,PSHLTR &
      &                                              ,QFX,Q10,QSHLTR    &
@@ -306,6 +307,7 @@ CONTAINS
      &               ,UZ0(I,J),VZ0(I,J),TZ0,TSK(I,J),THZ0(I,J),QZ0(I,J)         &
      &               ,USTAR(I,J),ZNT(I,J),Z0BASE(I,J),CT(I,J),RMOL(I,J) &
      &               ,AKMS(I,J),AKHS(I,J),RIB(I,J),PBLH(I,J),MAVAIL(I,J) &
+     &               ,IVGTYP(I,J),ISURBAN,IZ0TLND                      &
      &               ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
      &               ,HFX(I,J),QFX(I,J),FLX_LH(I,J)                    &
      &               ,FLHC(I,J),FLQC(I,J),QGH(I,J),CPM(I,J)            &
@@ -357,6 +359,7 @@ CONTAINS
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
      &                 ,UZ0,VZ0,TZ0,TSK,THZ0,QZ0                       &
      &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,RIB,PBLH,WETM &
+     &                 ,VEGTYP,ISURBAN,IZ0TLND                         &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
      &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
      &                 ,ZSL,PLOW                                       &
@@ -383,6 +386,7 @@ CONTAINS
       REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK,ZSFC       &
      &                  ,THELOW,THLOW,THS,TSK,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
      &                  ,Z0BASE
+      INTEGER, INTENT(IN) :: VEGTYP, ISURBAN, IZ0TLND
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
      &                   ,PSHLTR,Q02,Q10,QFX,QGH,RIB,RLMO              &
@@ -410,6 +414,8 @@ CONTAINS
      &       ,TERM1,RLOW,U10E,V10E,WSTAR,XLT02,XLT024,XLT10            &
      &       ,XLT104,XLU10,XLU104,XU10,XU104,ZT02,ZT10,ZTAT02,ZTAT10   &
      &       ,ZTAU,ZTAU10,ZU10,ZUUZ
+      REAL :: CZIL
+      REAL :: ZILFC
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
@@ -675,6 +681,17 @@ CONTAINS
           RLOGU=LOG(RZSU)
 
           ZSLT=ZSL+ZU ! u,v and t are at the same level
+
+          IF ( (IZ0TLND==0) .or. (VEGTYP == ISURBAN) ) THEN
+             ! Just use the original CZIL value.
+             CZIL = 0.1
+          ELSE
+             ! Modify CZIL according to Chen & Zhang, 2009
+             ! CZIL = 10 ** -0.40 H, ( where H = 10*Zo )
+             CZIL = 10.0 ** ( -0.40 * ( Z0 / 0.07 ) )
+          ENDIF
+          ZILFC=-CZIL*VKARMAN*SQVISC
+          
 !----------------------------------------------------------------------
 !
 !mp   Topo modification of ZILFC term

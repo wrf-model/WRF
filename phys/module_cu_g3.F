@@ -28,6 +28,10 @@ CONTAINS
               ,RQVCUTEN,RQCCUTEN,RQICUTEN                       &
               ,RQVFTEN,RTHFTEN,RTHCUTEN                         &
               ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS         &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+              ,do_capsuppress,cap_suppress_loc                  &
+#endif                                 
                                                                 )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -116,6 +120,18 @@ CONTAINS
                                                   ,F_QI      &
                                                   ,F_QS
 
+
+#if ( WRF_DFI_RADAR == 1 )
+!
+!  option of cap suppress: 
+!        do_capsuppress = 1   do
+!        do_capsuppress = other   don't
+!
+!
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
+   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(IN   ),OPTIONAL  :: cap_suppress_loc
+   REAL, DIMENSION( its:ite ) :: cap_suppress_j
+#endif
 
 
 ! LOCAL VARS
@@ -253,6 +269,8 @@ CONTAINS
         kbcon(i)=0
         ktop(i)=0
         tkm(i)=0.
+        HBOT(I,J)  =REAL(KTE)
+        HTOP(I,J)  =REAL(KTS)
         iact_old_gr(i,j)=0
         mass_flux(i,j)=0.
         massi_flx(i,j)=0.
@@ -436,6 +454,13 @@ CONTAINS
 !
 !---- CALL CUMULUS PARAMETERIZATION
 !
+#if ( WRF_DFI_RADAR == 1 )
+      if(do_capsuppress == 1 ) then
+        DO I= its,itf
+            cap_suppress_j(i)=cap_suppress_loc(i,j)
+        ENDDO
+      endif
+#endif
       CALL CUP_enss_3d(outqc,j,AAEQ,T2d,Q2d,TER11,subm,TN,QO,PO,PRET,&
            P2d,OUTT,OUTQ,DT,itimestep,tkm,PSUR,US,VS,tcrit,iens,tx,qx,          &
            mconv,massflni,iact_old_gr,omeg,direction,MASSi_FLX,  &
@@ -446,7 +471,11 @@ CONTAINS
 ! ruc          lv_p,rv_p,cpd_p,g0_p,ichoice,ipr,jpr,                  &
            xlv,r_v,cp,g,ichoice,ipr,jpr,ens4,high_resolution,     &
            itf,jtf,ktf,                                           &
-           its,ite, jts,jte, kts,kte                             )
+           its,ite, jts,jte, kts,kte                              &
+#if ( WRF_DFI_RADAR == 1 )
+           ,do_capsuppress,cap_suppress_j                         &             
+#endif
+                                                             )
 
 
             if(j.lt.jbegc.or.j.gt.jendc)go to 100
@@ -541,7 +570,12 @@ CONTAINS
               xf_ens,pr_ens,xland,gsw,edt_out,subt,subq,               &
               xl,rv,cp,g,ichoice,ipr,jpr,ens4,high_resolution,         &
               itf,jtf,ktf,                                             &
-              its,ite, jts,jte, kts,kte                         )
+              its,ite, jts,jte, kts,kte                                &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+                     ,do_capsuppress,cap_suppress_j                  &
+#endif                                 
+                                                )
 
    IMPLICIT NONE
 
@@ -608,6 +642,16 @@ CONTAINS
         ,intent (in   )                   ::                           &
         dtime,tcrit,xl,cp,rv,g
 
+#if ( WRF_DFI_RADAR == 1 )
+!
+!  option of cap suppress: 
+!        do_capsuppress = 1   do
+!        do_capsuppress = other   don't
+!
+!
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
+   REAL, DIMENSION( its:ite ),INTENT(IN   ) ,OPTIONAL   :: cap_suppress_j
+#endif
 
 !
 !  local ensemble dependent variables in this routine
@@ -812,12 +856,37 @@ CONTAINS
 !
 !--- first check for upstream convection
 !
+#if ( WRF_DFI_RADAR == 1 )
+  if(do_capsuppress == 1) then
+      do i=its,itf
+          cap_max(i)=cap_maxs
+          if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
+          if (abs(cap_suppress_j(i) - 1.0 ) < 0.1 ) then
+             cap_max(i)=cap_maxs+75.
+          elseif (abs(cap_suppress_j(i) - 0.0 ) < 0.1 ) then
+             cap_max(i)=10.0
+          endif
+          iresult=0
+      enddo
+  else
+     do i=its,itf
+         cap_max(i)=cap_maxs
+         if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
+       iresult=0
+     enddo
+  endif
+
+      do i=its,itf
+        edt_out(i,j)=cap_max(i)
+      enddo
+#else
       do i=its,itf
           cap_max(i)=cap_maxs
           if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
         iresult=0
 
       enddo
+#endif
 !
 !--- max height(m) above ground where updraft air can originate
 !

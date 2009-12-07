@@ -2853,6 +2853,9 @@ BENCH_START(moist_phys_end_tim)
 
        CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
                                       grid%h_diabatic, dtm, config_flags,    &
+#if ( WRF_DFI_RADAR == 1 )
+                                      grid%dfi_tten_rad,grid%dfi_stage,        &
+#endif
                                       ids, ide, jds, jde, kds, kde,     &
                                       ims, ime, jms, jme, kms, kme,     &
                                       its, ite, jts, jte,               &

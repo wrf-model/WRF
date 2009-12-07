@@ -44,6 +44,10 @@ CONTAINS
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+                     ,do_capsuppress                                   &
+#endif                                 
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
@@ -327,6 +331,16 @@ CONTAINS
                                                      ,f_qs      &
                                                      ,f_qg
 
+#if ( WRF_DFI_RADAR == 1 )
+!
+!  option of cap suppress: 
+!        do_capsuppress = 1   do
+!        do_capsuppress = other   don't
+!
+!
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
+   REAL, DIMENSION( ims:ime, jms:jme ) :: cap_suppress_loc
+#endif
 
 ! LOCAL  VAR
 
@@ -555,6 +569,17 @@ CONTAINS
                                                                 )
      CASE (G3SCHEME)
           CALL wrf_debug(100,'in grelldrv')
+#if ( WRF_DFI_RADAR == 1 )
+          if (do_capsuppress == 1) then
+            WRITE( wrf_err_message , * ) 'G3 do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
+            CALL wrf_debug(200, wrf_err_message)
+            DO j = jts, min( jte,jde-1 )
+            DO i = its, min( ite,ide-1 )
+               cap_suppress_loc(i,j) = grid%dfi_tten_rad(i,kte,j)
+            ENDDO
+            ENDDO
+         endif
+#endif
           CALL G3DRV(                                           &
                 DT=dt, ITIMESTEP=itimestep, DX=dx               &
                ,U=u,V=v,T=t,W=w ,RHO=rho                        &
@@ -591,6 +616,11 @@ CONTAINS
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+              ,do_capsuppress=do_capsuppress                    &
+              ,cap_suppress_loc=cap_suppress_loc                &
+#endif                                 
                                                                 )
 
      CASE DEFAULT 

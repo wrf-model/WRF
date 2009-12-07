@@ -30,6 +30,7 @@ $sw_nmm_core = "-DNMM_CORE=\$\(WRF_NMM_CORE\)" ;
 $sw_em_core = "-DEM_CORE=\$\(WRF_EM_CORE\)" ;
 $sw_exp_core = "-DEXP_CORE=\$\(WRF_EXP_CORE\)" ;
 $sw_coamps_core = "-DCOAMPS_CORE=\$\(WRF_COAMPS_CORE\)" ;
+$sw_dfi_radar = "-DDFI_RADAR=\$\(WRF_DFI_RADAR\)" ;
 $sw_dmparallel = "" ;
 $sw_ompparallel = "" ;
 $sw_stubmpi = "" ;
@@ -92,6 +93,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+      $sw_dfi_radar = "-DDFI_RADAR=0" ;
     }
     if ( index ( $sw_wrf_core , "DA_CORE" ) > -1 ) 
     {
@@ -100,6 +102,16 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+      $sw_dfi_radar = "-DDFI_RADAR=0" ;
+    }
+    if ( index ( $sw_wrf_core , "DFI_RADAR" ) > -1 )
+    {
+      $sw_em_core = "-DEM_CORE=1" ;
+      $sw_da_core = "-DDA_CORE=0" ;
+      $sw_nmm_core = "-DNMM_CORE=0" ;
+      $sw_exp_core = "-DEXP_CORE=0" ;
+      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+      $sw_dfi_radar = "-DDFI_RADAR=1" ;
     }
     if ( index ( $sw_wrf_core , "NMM_CORE" ) > -1 ) 
     {
@@ -108,6 +120,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_nmm_core = "-DNMM_CORE=1" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+      $sw_dfi_radar = "-DDFI_RADAR=0" ;
     }
     if ( index ( $sw_wrf_core , "EXP_CORE" ) > -1 ) 
     {
@@ -116,6 +129,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=1" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+      $sw_dfi_radar = "-DDFI_RADAR=0" ;
     }
     if ( index ( $sw_wrf_core , "COAMPS_CORE" ) > -1 ) 
     {
@@ -124,6 +138,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=1" ;
+      $sw_dfi_radar = "-DDFI_RADAR=0" ;
     }
   }
   if ( substr( $ARGV[0], 1, 13 ) eq "compileflags=" )
@@ -547,6 +562,7 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
   $_ =~ s:CONFIGURE_COAMPS_CORE:$sw_coamps_core:g ;
   $_ =~ s:CONFIGURE_EXP_CORE:$sw_exp_core:g ;
+  $_ =~ s:CONFIGURE_DFI_RADAR:$sw_dfi_radar:g ;
 
   @preamble = ( @preamble, $_ ) ;
   }

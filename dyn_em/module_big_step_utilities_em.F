@@ -5133,6 +5133,9 @@ END SUBROUTINE phy_prep
    SUBROUTINE moist_physics_finish_em( t_new, t_old, t0, mut,     &
                                        th_phy, h_diabatic, dt,    &
                                        config_flags,              &
+#if ( WRF_DFI_RADAR == 1 )
+                                       dfi_tten_rad,dfi_stage,    &
+#endif
                                        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte )
@@ -5153,6 +5156,14 @@ END SUBROUTINE phy_prep
                                                   t_old, &
                                                  th_phy, &
                                                   h_diabatic
+#if ( WRF_DFI_RADAR == 1 )
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
+         INTENT(IN), OPTIONAL ::               dfi_tten_rad
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: dfi_stage
+!  REAL :: dfi_tten_max, old_max
+#endif
+
+   REAL mpten, mptenmax, mptenmin
 
    REAL, DIMENSION( ims:ime , jms:jme ),  INTENT(INOUT) ::  mut
 
@@ -5160,7 +5171,7 @@ END SUBROUTINE phy_prep
    REAL, INTENT(IN   ) :: t0, dt
 
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
-   INTEGER :: i, j, k
+   INTEGER :: i, j, k, imax, jmax, imin, jmin
 
 !--------------------------------------------------------------------
 
@@ -5173,14 +5184,27 @@ END SUBROUTINE phy_prep
 
 !  set up loop bounds for this grid's boundary conditions
 
-
     i_start = its    
     i_end   = min( ite,ide-1 )
     j_start = jts    
     j_end   = min( jte,jde-1 )
+!      i_start=max(its,ids+4)
+!      i_end=min(ite,ide-5)
+!      j_start=max(jts,jds+4)
+!      j_end=min(jte,jde-5)
 
     k_start = kts
     k_end = min( kte, kde-1 )
+
+#if ( WRF_DFI_RADAR == 1 )
+         if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD  &
+             .and. PRESENT(dfi_tten_rad) ) then
+             WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
+             CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
+         endif
+     dfi_tten_max=-999
+     old_max=-999
+#endif
 
 !  add microphysics theta diff to perturbation theta, set h_diabatic
 
@@ -5188,8 +5212,32 @@ END SUBROUTINE phy_prep
      DO j = j_start, j_end
      DO k = k_start, k_end
      DO i = i_start, i_end
+#if ( WRF_DFI_RADAR == 1 )
+        mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
+
+        mpten=min(config_flags%mp_tend_lim*dt, mpten)
+        mpten=max(-config_flags%mp_tend_lim*dt, mpten)
+
+        if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  &
+           dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.      &
+           dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10. &
+           .and. k < k_end ) then
+! add radar temp tendency
+!tgs         if(dfi_tten_rad(i,k,j) > th_phy(i,k,j)-h_diabatic(i,k,j) ) then
+         if(dfi_tten_rad(i,k,j) > mpten ) then
+            t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))
+         else
+!tgs            t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
+            t_new(i,k,j) = t_new(i,k,j) + mpten
+         endif
+        else
+!tgs         t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))  
+         t_new(i,k,j) = t_new(i,k,j) + mpten
+        endif
+#else
          t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
-         h_diabatic(i,k,j) = (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
+#endif
+         h_diabatic(i,k,j) =  (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
      ENDDO
      ENDDO
      ENDDO

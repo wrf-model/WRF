@@ -115,6 +115,7 @@ Additional settings when running WRFVAR:
                                                   Example, if you want to use 60.3 sec as your time step,
                                                   set time_step = 60, time_step_fract_num = 3, and 
                                                   time_step_fract_den = 10
+ time_step_dfi                       = 60,	; time step for DFI, may be different from regular time_step
  max_dom                             = 1,	; number of domains - set it to > 1 if it is a nested run
  s_we (max_dom)                      = 1,	; start index in x (west-east) direction (leave as is)
  e_we (max_dom)                      = 91,	; end index in x (west-east) direction (staggered dimension)
@@ -295,6 +296,7 @@ Namelist variables for controlling the adaptive time step option:
  dfi_fwdstop_hour                    = 12       ; two-digit month of stop time for forward DFI integration
  dfi_fwdstop_minute                  = 00       ; two-digit month of stop time for forward DFI integration
  dfi_fwdstop_second                  = 00       ; two-digit month of stop time for forward DFI integration
+ dfi_radar                           = 0        ; DFI radar da switch
 
  &physics
 
@@ -527,6 +529,7 @@ Namelist variables for controlling the adaptive time step option:
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
+ mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain

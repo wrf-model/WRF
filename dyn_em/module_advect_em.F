@@ -5940,7 +5940,7 @@ END SUBROUTINE advect_w
 SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                                 ru, rv, rom,                   &
                                 mut, mub, mu_old,              &
-                                config_flags,                  &
+                                time_step, config_flags,       &
                                 msfux, msfuy, msfvx, msfvy,    &
                                 msftx, msfty,                  &
                                 fzm, fzp,                      &
@@ -5993,6 +5993,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
                                                                   dt
+   INTEGER ,                                     INTENT(IN   ) :: time_step
 
    ! Local data
    
@@ -6029,7 +6030,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+           sign(1,time_step)*sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
 
       flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
             (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
@@ -6037,7 +6038,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(1./60.)*(                             &
+            -sign(1,time_step)*sign(1.,ua)*(1./60.)*(           &
               (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
 
       flux_upwind(q_im1, q_i, cr ) = 0.5*min( 1.0,(cr+abs(cr)))*q_im1 &

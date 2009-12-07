@@ -903,7 +903,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                       scalar_old(ims,kms,jms,im),         &
                                       advect_tend(ims,kms,jms),           &
                                       ru, rv, ww, mut, mub, mu_old,       &
-                                      config_flags,                       &
+                                      time_step, config_flags,            &
                                       msfux, msfuy, msfvx, msfvy,         &
                                       msftx, msfty, fnm, fnp,             &
                                       rdx, rdy, rdnw,dt,                  &

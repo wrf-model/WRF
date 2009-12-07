@@ -108,6 +108,9 @@ CONTAINS
     INTEGER  num_road_layers
     INTEGER  iswater
     INTEGER  rk_step 
+#if ( WRF_DFI_RADAR == 1 )
+    INTEGER  i_start,i_end,j_start,j_end,i,j,k
+#endif
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
@@ -381,6 +384,28 @@ BENCH_START(update_phy_ten_tim)
        DO ij = 1 , grid%num_tiles
 
          CALL wrf_debug ( 200 , ' call update_phy_ten' )
+#if ( WRF_DFI_RADAR == 1 )
+         if (config_flags%cu_physics .gt. 0) then
+           i_start = grid%i_start(ij)
+           i_end   = min( grid%i_end(ij),ide-1 )
+           j_start = grid%j_start(ij)
+           j_end   = min( grid%j_end(ij),jde-1 )
+           if (config_flags%dfi_radar == 1 .and. grid%dfi_stage == DFI_FWD ) &
+                 CALL wrf_debug ( 200 , ' Zero out cu_physics' )
+           DO j = j_start, j_end
+           DO k = k_start, min( k_end,kde-1 ) - 1
+           DO i = i_start, i_end
+             if (config_flags%dfi_radar == 1 .and. grid%dfi_stage ==DFI_FWD  &
+             .and. grid%dfi_tten_rad(i,k,j) >= 1.0e-7 .and.  &
+                   grid%dfi_tten_rad(i,k,j) <= 10.) then
+! zero out cu-param temp tendency
+                grid%rthcuten(i,k,j) = 0.0
+             endif
+           ENDDO
+           ENDDO
+           ENDDO
+         ENDIF
+#endif
          CALL update_phy_ten(ph_tendf,t_tendf, ru_tendf, rv_tendf,moist_tend ,&
                            scalar_tend, mu_tendf,                           &
                            grid%rthraten,grid%rthblten,grid%rthcuten,       &

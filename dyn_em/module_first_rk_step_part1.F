@@ -132,6 +132,10 @@ CONTAINS
 
    CHARACTER (LEN=256) :: mminlu
 
+#if ( WRF_DFI_RADAR == 1 )
+    INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
+#endif
+
   CALL get_ijk_from_subgrid (  grid ,                   &
                             sids, side, sjds, sjde, skds, skde,    &
                             sims, sime, sjms, sjme, skms, skme,    &
@@ -580,6 +584,13 @@ BENCH_END(fire_driver_tim)
 
       CALL wrf_debug ( 200 , ' call cumulus_driver' )
 
+#if ( WRF_DFI_RADAR == 1 )
+      do_capsupress=0
+      if (config_flags%dfi_radar == 1) then
+         if(grid%dfi_stage == DFI_FWD ) do_capsupress=1
+         if(grid%itimestep <= 31 .and. grid%dfi_stage == DFI_FST ) do_capsupress=1
+      endif
+#endif
 
 BENCH_START(cu_driver_tim)
       CALL cumulus_driver(grid                                             &
@@ -635,7 +646,10 @@ BENCH_START(cu_driver_tim)
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
 #ifdef WRF_CHEM
-     &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2                          &
+     &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
+#endif
+#if ( WRF_DFI_RADAR == 1 )
+     &             ,DO_CAPSUPPRESS=do_capsupress                          &
 #endif
      &                                                          )
 BENCH_END(cu_driver_tim)

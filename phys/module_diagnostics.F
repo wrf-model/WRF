@@ -351,6 +351,8 @@ CONTAINS
    sfcevp_sum = 0.
    hfx_sum = 0.
    lh_sum = 0.
+   raincmax = 0.
+   rainncmax = 0.
 
    DO j = jps, min(jpe,jde-1)
      DO i = ips, min(ipe,ide-1)

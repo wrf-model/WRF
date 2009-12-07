@@ -88,6 +88,7 @@ else
 # calls to Make
   if ( ! $?WRF_DA_CORE )     setenv WRF_DA_CORE 0
   if ( ! $?WRF_EM_CORE )     setenv WRF_EM_CORE 0
+  if ( ! $?WRF_DFI_RADAR )   setenv WRF_DFI_RADAR 0
   if ( ! $?WRF_NMM_CORE )    setenv WRF_NMM_CORE 0
   if ( ! $?WRF_NMM_NEST )    setenv WRF_NMM_NEST 0
   if ( ! $?WRF_COAMPS_CORE ) setenv WRF_COAMPS_CORE 0

@@ -677,6 +677,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
+                 ,ITIMESTEP=itimestep                               & 
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -715,6 +716,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
                  ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
+                 ,ITIMESTEP=itimestep                               & 
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &

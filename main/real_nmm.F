@@ -376,47 +376,16 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
                                                                                                                                               
         write(message,*) 'binary WPS branch'
         CALL wrf_message(message)
-        CALL wrf_error_fatal("binary WPS support deferred for initial release")
-                                                                                                                                              
-!       WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
-!       CALL wrf_debug ( 100 , wrf_err_message )
-!       CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , config_flags%io_form_auxinput1 )
-!       CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-                                                                                                                                              
-!         IF ( ierr .NE. 0 ) THEN
-!            CALL wrf_debug( 1 , 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
-!            CALL wrf_debug( 1 , 'will try again without the extension' )
-!            CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
-!            CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-!            IF ( ierr .NE. 0 ) THEN
-!               CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
-!            ENDIF
-!         ENDIF
-                                                                                                                                              
-      !  Input data.
-                                                                                                                                              
-!!! believe problematic as binary data from WPS will be XYZ ordered, while this
-!!! version of WRF will read in as XZY.  OR read all fields in as unique
-!!! Registry items that are XYZ, then swap.  More memory, and more overhead, but
-!!! better than having a stand alone "read_si" type code??
-                                                                                                                                              
-!      CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
-!      CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
- 
-      !  Possible optional SI input.  This sets flags used by init_domain.
- 
-!      IF ( loop .EQ. 1 ) THEN
-!         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_input' )
-!         CALL init_module_optional_input ( grid , config_flags )
-!      END IF
-!      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
-!
-!      CALL optional_input ( grid , idsi , config_flags)
-!        flag_metgrid=1
- 
-!
-!      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
- 
+        CALL wrf_message(message)
+        current_date_char(11:11)='_'
+        CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , &
+                                     config_flags%io_form_auxinput1 )
+        CALL read_wps ( grid, trim(si_inpname), current_date_char, config_flags%num_metgrid_levels )
+!!! bogus set some flags??
+      flag_metgrid=1
+      flag_soilhgt=1
+
+
           ENDIF
 
 #endif

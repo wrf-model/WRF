@@ -37,10 +37,17 @@ SUBROUTINE microphysics_driver(                                          &
                       ,graupelnc, graupelncv                             &
                                                                          )
 ! Framework
+#if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07
+#else
+   USE module_state_description, ONLY :                                  &
+                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                    ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07
+#endif
 
 ! Model Layer
    USE module_model_constants
@@ -60,7 +67,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_morr_two_moment 
    USE module_mp_wdm5
    USE module_mp_wdm6
-
+   USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 !----------------------------------------------------------------------
@@ -724,7 +731,34 @@ SUBROUTINE microphysics_driver(                                          &
              ELSE
                CALL wrf_error_fatal ( 'arguments not present for calling wdm6')
              ENDIF
+#if(NMM_CORE==1)
+        CASE (ETAMP_HWRF)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew_HWRF')
 
+             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( mp_restart_state )                  .AND. &
+                  PRESENT( tbpvs_state )                      .AND. &
+                  PRESENT( tbpvs0_state )                       ) THEN
+
+               CALL ETAMP_NEW_HWRF(                                      &
+                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy, GID=id &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                 ,QV=qv_curr                                        &
+                 ,QT=qt_curr                                        &
+                 ,LOWLYR=LOWLYR,SR=SR                               &
+                 ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
+                 ,F_RIMEF_PHY=F_RIMEF_PHY                           &
+                 ,QC=qc_curr,QR=Qr_curr,QI=Qi_curr                  &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
+             ENDIF
+#endif
         CASE (ETAMPNEW)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew')
 

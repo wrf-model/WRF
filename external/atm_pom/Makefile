@@ -21,6 +21,9 @@ library: $(OBJ)
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+	rm -f *.f90 
+	rm -f *.mod
+
 
 superclean: clean
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)

@@ -125,9 +125,16 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
 !   soil configuration
 
+#ifdef HWRF
+!zhang 
+    if ( .not.nest%analysis ) then
+#endif
     nest%sldpth  = parent%sldpth
     nest%dzsoil  = parent%dzsoil
     nest%rtdpth  = parent%rtdpth
+#ifdef HWRF 
+    endif
+#endif
 
 !   numerical set up
 
@@ -168,16 +175,26 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
    CALL nl_get_truelat1 (parent%id, parent%truelat1 )
    CALL nl_get_truelat2 (parent%id, parent%truelat2 )
+#ifdef HWRF
+! bao : to make the restart output identical at the restart initial time for stand_lon
+   CALL nl_get_stand_lon (parent%id, parent%stand_lon )
+#endif
    CALL nl_get_map_proj (parent%id, parent%map_proj )
    CALL nl_get_iswater (parent%id, parent%iswater )
 
    nest%truelat1=parent%truelat1
    nest%truelat2=parent%truelat2
+!bao
+   nest%stand_lon=parent%stand_lon
+!bao
    nest%map_proj=parent%map_proj
    nest%iswater=parent%iswater
 
    CALL nl_set_truelat1(nest%id, nest%truelat1)
    CALL nl_set_truelat2(nest%id, nest%truelat2)
+!bao
+   CALL nl_set_stand_lon(nest%id, nest%stand_lon)
+!bao
    CALL nl_set_map_proj(nest%id, nest%map_proj)
    CALL nl_set_iswater(nest%id, nest%iswater)
 
@@ -302,7 +319,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 nest%HLAT,nest%HLON,                     & ! target (nest) input lat lon in degrees
                 parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,   & ! parent res, western and south boundaries
                 parent_CLAT,parent_CLON,                         & ! parent central lat,lon, all in degrees
-                parent%ed31,parent%ed33,                         & ! parent imax and jmax
+                parent%ed31,parent%ed32,                         & ! parent imax and jmax
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & ! 
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
@@ -316,7 +333,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 nest%VLAT,nest%VLON,                     & ! target (nest) input lat lon in degrees
                 parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,   & ! parent res, western and south boundaries
                 parent_CLAT,parent_CLON,                         & ! parent central lat,lon, all in degrees
-                parent%ed31,parent%ed33,                         & ! parent imax and jmax
+                parent%ed31,parent%ed32,                         & ! parent imax and jmax
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & !
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
@@ -1878,13 +1895,15 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  real, allocatable, dimension(:,:,:) :: real_domain
 
- character (len=10), dimension(8)  :: name = (/ "XLAT_M    ", &
+ character (len=10), dimension(10)  :: name = (/ "XLAT_M    ", &
                                                 "XLONG_M   ", &
                                                 "XLAT_V    ", &
                                                 "XLONG_V   ", &
                                                 "E         ", &
                                                 "F         ", &
                                                 "LANDMASK  ", &
+                                                "LANDUSEF  ", &
+                                                "LU_INDEX  ", &
                                                 "HGT_M     " /)
 
  integer, parameter :: IO_BIN=1, IO_NET=2
@@ -1992,7 +2011,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
              if (istatus /= 0) CALL wrf_error_fatal('NEST_TERRAIN error after ext_XXX_open_for_read '//trim(input_fname))
 
 
-             do n=1,8
+             do n=1,10
 
              cname = name(n)
 
@@ -2329,6 +2348,10 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !   to find where sea ice is. That's why alogirthm here is slightly different than the
 !   one used in module_initalize_real.f
 
+#ifdef HWRF
+!zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
+   IF(.not. grid%analysis)THEN
+#endif
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
 
@@ -2479,6 +2502,10 @@ SUBROUTINE med_initialize_nest_nmm( grid &
         grid%sldpth(3)=0.6
         grid%sldpth(4)=1.0
 
+#ifdef HWRF
+!zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
+   ENDIF ! <------ for analysis set to false
+#endif 
 !-----------  END OF LAND SURFACE INITIALIZATION -------------------------------------
 !
     DO J = JTS, MIN(JTE,JDE-1)
@@ -3002,7 +3029,7 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
     KTE  = parent%ep33
 
     NIDE = nest%ed31
-    NJDE = nest%ed33
+    NJDE = nest%ed32
 
     parent_DLMD = parent%dx          ! DLMD: dlamda in degrees
     parent_DPHD = parent%dy          ! DPHD: dphi in degrees

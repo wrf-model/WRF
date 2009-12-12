@@ -39,6 +39,14 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: rc
+#ifdef HWRF
+!zhang's doing
+   TYPE(WRFU_Time) :: CurrTime  !zhang new
+   INTEGER :: hr, min, sec, ms,julyr,julday
+   REAL :: GMT
+!end of zhang's doing
+#endif
+
    CHARACTER*256          :: message
 
 #if (EM_CORE == 1)
@@ -225,6 +233,14 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
+#ifdef HWRF
+!zhang's doing
+     CALL domain_clock_get( grid, current_time=CurrTime )
+     CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+      if (grid%id .eq. 2) call med_namelist_out ( grid , config_flags )
+!end of zhang's doing
+#endif
      IF ( grid%id .EQ. 1 ) THEN
        ! Only the parent initiates the restart writing. Otherwise, different
        ! domains may be written out at different times and with different 
@@ -751,6 +767,19 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
    END INTERFACE
 
+#ifdef HWRF
+!zhang's doing test
+   if (config_flags%restart .or. nest%analysis) then
+   nest%first_force = .true.
+   else
+   nest%first_force = .false.
+   endif
+!end of zhang's doing
+
+!zhang's doing for analysis option
+  IF(.not. nest%analysis .and. .not. config_flags%restart)THEN    ! initialize for cold-start
+#endif
+
 !----------------------------------------------------------------------------
 !  initialize nested domain configurations including setting up wbd,sbd, etc 
 !----------------------------------------------------------------------------
@@ -854,6 +883,9 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     nest%imask_ystag  = 0 
     nest%imask_xystag = 0 
 
+#ifdef HWRF
+   CALL med_interp_domain( parent, nest )
+#else
     CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
 
     IF ( .not. ( config_flags%restart .AND. strt_time .EQ. cur_time ) ) THEN
@@ -878,6 +910,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
     END IF
 
+#endif
 !------------------------------------------------------------------------------
 !  set up constants (module_initialize_real.F for nested nmm domain)
 !-----------------------------------------------------------------------------
@@ -889,6 +922,71 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 !--------------------------------------------------------------------------------------
 
     CALL start_domain ( nest, .TRUE.)
+
+#ifdef HWRF
+!zhang's doing: else for analysis or restart option
+
+!zhang test
+    CALL nl_set_isice ( nest%id , config_flags%isice )   
+    CALL nl_set_isoilwater ( nest%id , config_flags%isoilwater )   
+    CALL nl_set_isurban ( nest%id , config_flags%isurban )   
+    CALL nl_set_gmt    ( nest%id , config_flags%gmt    )   
+    CALL nl_set_julyr (nest%id, config_flags%julyr)       
+    CALL nl_set_julday ( nest%id , config_flags%julday )
+!zhang test ends
+    CALL med_analysis_out ( nest, config_flags )
+
+   ELSE
+
+!------------------------------------------------------------------------------------
+!  read in analysis (equivalent of restart for the nested domains)
+!------------------------------------------------------------------------------------
+
+!zhang's doing
+  IF( nest%analysis .and. .not. config_flags%restart)THEN
+   CALL med_analysis_in ( nest, config_flags )
+  ELSE IF (config_flags%restart)THEN
+   CALL med_restart_in ( nest, config_flags )
+  ENDIF
+!end of zhang's doing
+
+!----------------------------------------------------------------------------
+!  initialize nested domain configurations including setting up wbd,sbd, etc
+!----------------------------------------------------------------------------
+
+   CALL med_nest_egrid_configure ( parent , nest )
+
+!-------------------------------------------------------------------------
+!  initialize lat-lons and determine weights (overwrite for safety)
+!-------------------------------------------------------------------------
+
+   CALL med_construct_egrid_weights ( parent, nest )
+
+   nest%imask_nostag = 0
+   nest%imask_xstag  = 0
+   nest%imask_ystag  = 0
+   nest%imask_xystag = 0
+
+!------------------------------------------------------------------------------
+!  set up constants (module_initialize_real.F for nested nmm domain)
+!-----------------------------------------------------------------------------
+
+    CALL med_init_domain_constants_nmm ( parent, nest )
+
+!--------------------------------------------------------------------------------------
+! set some other initial fields, fill out halos, etc. (again, safety sake only)
+! Also, in order to accomodate some physics initialization after nest move, set
+! analysis back to false for future use
+!--------------------------------------------------------------------------------------
+
+    CALL start_domain ( nest, .TRUE.)
+
+    nest%analysis=.FALSE.
+    CALL nl_set_analysis( nest%id, nest%analysis)
+
+  ENDIF
+
+#endif
 
 !===================================================================================
 !  Added for the NMM core. End of gopal's doing.
@@ -1091,6 +1189,13 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: rc
+#ifdef HWRF
+!zhang's doing
+   TYPE(WRFU_Time) :: CurrTime  !zhang new
+   INTEGER :: hr, min, sec, ms,julyr,julday
+   REAL :: GMT
+!end of zhang's doing
+#endif
 
 #if (EM_CORE == 1)
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
@@ -1141,6 +1246,15 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
+#ifdef HWRF
+!zhang's doing
+!zhang new     CALL ESMF_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+     CALL domain_clock_get( grid, current_time=CurrTime )
+     CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+      if (grid%id .eq. 2) call med_namelist_out ( grid , config_flags )
+!end of zhang's doing
+#endif
      IF ( grid%id .EQ. 1 ) THEN
        CALL med_restart_out ( grid , config_flags )
      ENDIF
@@ -1153,6 +1267,127 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 END SUBROUTINE med_last_solve_io
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#ifdef HWRF
+!==================================================================================
+!  Added for the NMM 3d var. This is simply an extension of med_restart_out.
+!  The file is simply called wrfanal***. This is gopal's doing
+!===================================================================================
+!
+SUBROUTINE med_analysis_in ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+!zhang   USE WRF_ESMF_MOD
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   CHARACTER*80                           :: rstname , outname
+   INTEGER                                :: fid , rid
+   CHARACTER (LEN=256)                    :: message
+   INTEGER                                :: ierr
+   INTEGER                                :: myproc
+!zhang old    TYPE(ESMF_Time)                        :: CurrTime
+   TYPE(WRFU_Time)                        :: CurrTime
+   CHARACTER*80                           :: timestr
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
+   rid=grid%id
+
+!zhang's doing   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+!zhang's doing   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
+   CALL construct_filename2a ( rstname ,config_flags%anl_outname, grid%id , 2 , timestr )
+
+   WRITE( message , '("med_analysis_in: opening ",A," for reading")' ) TRIM ( rstname )
+   CALL wrf_debug( 1 , message )
+   CALL open_r_dataset ( rid, TRIM(rstname), grid , &
+                         config_flags , "DATASET=RESTART", ierr )
+
+   IF ( ierr .NE. 0 ) THEN
+!    CALL WRF_message( message )
+     CALL WRF_ERROR_FATAL('NESTED DOMAIN ERROR: FOR ANALYSIS SET TO TRUE, YOU NEED wrfanal FILE')
+   ENDIF
+   CALL input_restart ( rid, grid , config_flags , ierr )
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
+     CALL end_timing ( TRIM(message) )
+   END IF
+   CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
+   RETURN
+
+END SUBROUTINE med_analysis_in
+!=========================================================================================================
+!=========================================================================================================
+SUBROUTINE med_analysis_out ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+!zhang   USE WRF_ESMF_MOD
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   CHARACTER*80                           :: rstname , outname
+   INTEGER                                :: fid , rid
+   CHARACTER (LEN=256)                    :: message
+   INTEGER                                :: ierr
+   INTEGER                                :: myproc
+!zhang   TYPE(ESMF_Time)                        :: CurrTime
+   TYPE(WRFU_Time)                        :: CurrTime
+   CHARACTER*80                           :: timestr
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
+   rid=grid%id
+
+!zhang's doing   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+!zhang's doing   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
+   CALL construct_filename2a ( rstname ,config_flags%anl_outname, grid%id , 2 , timestr )
+
+   WRITE( message , '("med_analysis_out: opening ",A," for writing")' ) TRIM ( rstname )
+   CALL wrf_debug( 1 , message )
+   CALL open_w_dataset ( rid, TRIM(rstname), grid , &
+                         config_flags , output_restart , "DATASET=RESTART", ierr )
+
+   IF ( ierr .NE. 0 ) THEN
+     CALL WRF_message( message )
+   ENDIF
+   CALL output_restart ( rid, grid , config_flags , ierr )
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE ( message , FMT = '("Writing restart for domain ",I8)' ) grid%id
+     CALL end_timing ( TRIM(message) )
+   END IF
+   CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
+   RETURN
+END SUBROUTINE med_analysis_out
+
+#endif 
 
 RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
   ! Driver layer
@@ -1183,6 +1418,9 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    IF ( wrf_dm_on_monitor() ) THEN
      CALL start_timing
    END IF
+
+! take this out - no effect - LPC
+!   rid=grid%id !zhang's doing
 
    ! write out this domains restart file first
 
@@ -1216,6 +1454,67 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
 END SUBROUTINE med_restart_out
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#ifdef HWRF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!zhang's doing
+SUBROUTINE med_restart_in ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   CHARACTER*80                           :: rstname , outname
+   INTEGER                                :: fid , rid
+   CHARACTER (LEN=256)                    :: message
+   INTEGER                                :: ierr
+   INTEGER                                :: myproc
+!zhang old    TYPE(ESMF_Time)                        :: CurrTime
+   TYPE(WRFU_Time)                        :: CurrTime
+   CHARACTER*80                           :: timestr
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
+   rid=grid%id
+
+!zhang's doing   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=ierr )
+!zhang's doing   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
+   CALL construct_filename2a ( rstname ,config_flags%rst_outname, grid%id , 2 , timestr )
+
+   WRITE( message , '("med_restart_in: opening ",A," for reading")' ) TRIM ( rstname )
+   CALL wrf_debug( 1 , message )
+   CALL open_r_dataset ( rid, TRIM(rstname), grid , &
+                         config_flags , "DATASET=RESTART", ierr )
+
+   IF ( ierr .NE. 0 ) THEN
+!    CALL WRF_message( message )
+     CALL WRF_ERROR_FATAL('NESTED DOMAIN ERROR: FOR ANALYSIS SET TO TRUE, YOU NEED wrfanal FILE')
+   ENDIF
+   CALL input_restart ( rid, grid , config_flags , ierr )
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
+     CALL end_timing ( TRIM(message) )
+   END IF
+   CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
+   RETURN
+
+END SUBROUTINE med_restart_in
+!end of zhang's doing
+#endif
 
 SUBROUTINE med_hist_out ( grid , stream, config_flags )
   ! Driver layer
@@ -2856,3 +3155,81 @@ END SUBROUTINE  med_read_wrf_chem_gocart_bg
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#ifdef HWRF
+!zhang's doing for outputing restart namelist parameters
+RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+!zhang new   USE WRF_ESMF_MOD
+   USE module_utility
+!zhang new ends
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain), INTENT(IN)                   :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local
+!zhang new   TYPE(ESMF_Time)                        :: CurrTime
+   TYPE(WRFU_Time) :: CurrTime
+   INTEGER                                :: nout,rc,kid
+   INTEGER                                :: hr, min, sec, ms,julyr,julday
+   REAL                                   :: GMT
+   CHARACTER*80                           :: prefix, outname
+   CHARACTER*80                           :: timestr
+   LOGICAL                                :: exist
+   LOGICAL,EXTERNAL :: wrf_dm_on_monitor
+
+   TYPE (grid_config_rec_type)            :: kid_config_flags
+
+!zhang new
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
+   prefix = "wrfnamelist_d<domain>_<date>"
+   nout = 99
+
+!zhang new   CALL ESMF_ClockGet( grid%domain_clock, CurrTime=CurrTime, rc=rc )
+!zhang new   CALL wrf_timetoa ( CurrTime, timestr )
+   CALL domain_clock_get( grid, current_timestr=timestr )
+!zhang new ends
+   CALL construct_filename2a ( outname , prefix, grid%id , 2 , timestr )
+
+   IF ( wrf_dm_on_monitor() ) THEN
+
+   CLOSE (NOUT)
+   OPEN ( FILE   = trim(outname) , UNIT   = nout, STATUS = 'UNKNOWN', FORM   = 'FORMATTED')
+!zhang new   CALL ESMF_TimeGet( grid%current_time, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+   CALL domain_clock_get( grid, current_time=CurrTime )
+   CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+!zhang new ends
+   gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+   WRITE(NOUT,*) grid%i_parent_start
+   WRITE(NOUT,*) grid%j_parent_start
+   WRITE(NOUT,*) julyr
+   WRITE(NOUT,*) julday
+   WRITE(NOUT,*) gmt
+
+   CLOSE (NOUT)
+   ENDIF
+
+   ! call recursively for children, (if any)
+   DO kid = 1, max_nests
+      IF ( ASSOCIATED( grid%nests(kid)%ptr ) ) THEN
+        CALL model_to_grid_config_rec ( grid%nests(kid)%ptr%id , model_config_rec , kid_config_flags )
+        CALL med_namelist_out ( grid%nests(kid)%ptr , kid_config_flags )
+      ENDIF
+   ENDDO
+
+   RETURN
+END SUBROUTINE med_namelist_out
+!end of zhang's doing
+#endif

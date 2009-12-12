@@ -42,6 +42,9 @@ CONTAINS
 #if (NMM_CORE != 1)
                          TKE_PBL,  &
 #endif
+#if (NMM_CORE == 1)
+                         RUCUTEN, RVCUTEN,  &
+#endif
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
                          adv_moist_cond,                         &
@@ -217,6 +220,10 @@ CONTAINS
 #if (NMM_CORE != 1)
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    TKE_PBL
 #endif 
+#if (NMM_CORE == 1)
+   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(INOUT) :: &
+             RUCUTEN, RVCUTEN
+#endif
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
              cugd_qvtens,cugd_qcten
@@ -549,6 +556,9 @@ integer myproc
 
    CALL cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,      &
                 RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,           &
+#if (NMM_CORE == 1)
+                         RUCUTEN, RVCUTEN,  &
+#endif
                 RAINCV,W0AVG,config_flags,restart,              &
                 CLDEFI,LOWLYR,MASS_FLUX,                        &
                 RTHFTEN, RQVFTEN,                               &
@@ -896,6 +906,9 @@ integer myproc
    USE module_ra_sw
    USE module_ra_gsfcsw
    USE module_ra_gfdleta
+#if(NMM_CORE==1)
+   USE module_ra_hwrf
+#endif
    USE module_ra_hs
    USE module_domain
 !---------------------------------------------------------------------
@@ -945,6 +958,7 @@ integer myproc
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
    LOGICAL :: etalw = .false.
+   LOGICAL :: hwrflw= .false.
    LOGICAL :: camlw = .false.
    LOGICAL :: etamp = .false.
    integer :: month,iday
@@ -1046,6 +1060,28 @@ integer myproc
                               ims, ime, jms, jme, kms, kme, &
                               its, ite, jts, jte, kts, kte  )
              etalw = .true.
+#if(NMM_CORE==1)
+        CASE (HWRFLWSCHEME)
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
+! test this with standard jul-day calls
+!     CALL nl_get_start_year(id,start_year)
+!     CALL nl_get_start_month(id,start_month)
+!     CALL nl_get_start_day(id,start_day)
+!     CALL nl_get_start_hour(id,start_hour)
+!     CALL nl_get_start_minute(id,start_minute)
+!     CALL nl_get_start_second(id,start_second)
+!     CALL jdn_sec(day_in_sec,start_year,start_month,start_day,0,0,0)
+!     CALL jdn_sec(day_in_sec_ref,start_year,1,1,0,0,0)
+!     julyr_start=start_year
+!     julday_start=(day_in_sec-day_in_sec_ref)/(3600.*24.)+1
+!     gmt_start=start_hour+real(start_minute)/60.+real(start_second)/3600.
+              CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+!             CALL hwrfrainit(sfull,shalf,pptop,JULYR_start,MONTH,IDAY,GMT_start,&
+                           allowed_to_read ,                         &
+                           kds, kde, kms, kme, kts, kte     )
+             hwrflw = .true.
+#endif
         CASE (HELDSUAREZ)
              CALL hsinit(RTHRATEN,restart,             &
                          ids, ide, jds, jde, kds, kde, &
@@ -1102,7 +1138,16 @@ integer myproc
                               ims, ime, jms, jme, kms, kme, &
                               its, ite, jts, jte, kts, kte  )
              ENDIF
-
+#if(NMM_CORE==1)
+        CASE (HWRFSWSCHEME)
+             IF(.not.hwrflw)THEN
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
+             CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+                           allowed_to_read,                          &
+                           kds, kde, kms, kme, kts, kte     )
+             ENDIF
+#endif
         CASE DEFAULT
 
    END SELECT swrad_select
@@ -1652,6 +1697,9 @@ integer myproc
 !==================================================================
    SUBROUTINE cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,  &
                       RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,       &
+#if (NMM_CORE == 1)
+                         RUCUTEN, RVCUTEN,  &
+#endif
                       RAINCV,W0AVG,config_flags,restart,          &
                       CLDEFI,LOWLYR,MASS_FLUX,                    &
                       RTHFTEN, RQVFTEN,                           &
@@ -1708,6 +1756,10 @@ integer myproc
                                    APR_CAPMA,APR_CAPME,APR_CAPMI
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: LOWLYR
+#if (NMM_CORE == 1)
+   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(INOUT) :: &
+             RUCUTEN, RVCUTEN
+#endif
 
 ! LOCAL VAR
 
@@ -1790,6 +1842,9 @@ integer myproc
 #endif
      CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
+#if (NMM_CORE == 1)
+                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
+#endif
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
@@ -1817,6 +1872,7 @@ integer myproc
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_HWRF
    USE module_mp_thompson
    USE module_mp_thompson07
    USE module_mp_morr_two_moment
@@ -1878,6 +1934,15 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+#if(NMM_CORE==1)
+     CASE (etamp_HWRF)
+         CALL etanewinit_HWRF (MPDT,DT,DX,DY,LOWLYR,restart,           &
+                          F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+                          allowed_to_read,                        &
+                          ids, ide, jds, jde, kds, kde,           &
+                          ims, ime, jms, jme, kms, kme,           &
+                          its, ite, jts, jte, kts, kte            )
+#endif 
      CASE (THOMPSON)
 ! Cycling the WRF forecast with moving nests will cause this initialization to be
 ! called for each nest move. This is potentially very computationally expensive.

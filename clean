@@ -37,6 +37,7 @@ if ( "$1" == '-a' ) then
   /bin/rm -fr tools/code_dbase
   ( cd external ; make -i superclean )
   ( cd external/io_grib1/WGRIB ; make clean )
+  ( cd external/atm_pom ; make clean )
   ( cd tools ; /bin/rm -f registry gen_comms.c fseeko_test fseeko64_test )
   ( cd inc; /bin/rm -f dm_comm_cpp_flags wrf_io_flags.h wrf_status_codes.h )
   ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe ; \
@@ -47,7 +48,7 @@ if ( "$1" == '-a' ) then
 	*/RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */URBPARM.TBL */grib2map.tbl \
 	*/CAM_ABS_DATA */CAM_AEROPT_DATA */RRTMG_LW_DATA */RRTMG_SW_DATA \
 	*/ozone.formatted */ozone_lat.formatted */ozone_plev.formatted \
-	*/gribmap.txt */tr??t?? ) >& /dev/null
+	*/gribmap.txt */tr??t?? */co2_trans) >& /dev/null
 endif
 
 #cms++

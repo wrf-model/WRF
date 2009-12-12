@@ -138,8 +138,19 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
 
+state integer julyr_rst      -     dyn_nmm     1      -    r  "JULYR_RST" "JULYR for restart moving nest "
+state integer julday_rst     -     dyn_nmm     1      -    r  "JULDAY_RST" "JULDAY for restart moving nest "
+state real    gmt_rst        -     dyn_nmm     1      -    r  "GMT_RST" "GMT for restart moving nest "
+state integer NTIME0         -     dyn_nmm     1      -    r  "NTIME0" "COUNT FOR PREVIOUS MOVING NEST"
+
 # flag for nest movement
 state  logical moved       -     misc       1      -     -
+
+state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
+state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
+# For random number in SAS convection in HWRF
+
+state real store_rand        ij     dyn_nmm     1      -    rh  "RANDOM" "RANDOM NUMBER FOR SAS"
 
 #
 # module_MASKS
@@ -838,6 +849,8 @@ rconfig   real    p_top_requested   namelist,domains    1               5000    
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
+rconfig   real        mommix              namelist,physics     max_domains  0.7       irh    "MOMENTUM MIXING FOR SAS CONVECTION SCHEME"
+rconfig   logical     disheat             namelist,physics      max_domains  .true.    irh    "nmm input 7"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -1013,11 +1026,13 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   rrtmg_lwscheme  ra_lw_physics==4           -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
+package   hwrflwscheme  ra_lw_physics==98
 package   heldsuarez    ra_lw_physics==31            -             -
 
 package   swradscheme   ra_sw_physics==1             -             -
@@ -1025,6 +1040,7 @@ package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
+package   hwrfswscheme  ra_sw_physics==98
 
 package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
@@ -1141,4 +1157,6 @@ halo      HALO_NMM_MG3 dyn_nmm 8:p_gc
 halo      HALO_NMM_TURBL_A  dyn_nmm 8:uz0h,vz0h,hbm2
 halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 
+halo      HALO_NMM_SAS_A  dyn_nmm 24:uz0h,vz0h,hbm2
+halo      HALO_NMM_SAS_B  dyn_nmm 24:ducudt,dvcudt
 halo      HALO_TRACERS dyn_nmm 48:szj,s1z,spz,tcs

@@ -80,6 +80,10 @@
 !
       INTEGER :: I,ICLTEND,IDF,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST &
      &          ,NTSD_current,L
+#ifdef HWRF
+!zhang's doing
+      INTEGER,SAVE :: NTSD_restart1,NTSD_restart2
+#endif
       integer :: ierr
       INTEGER,SAVE :: NTSD_restart
 !     INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
@@ -87,7 +91,7 @@
       INTEGER :: KVH,NTSD_rad,RC
       INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
 !
-      REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,SFENTH
+      REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC
 !
       LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS
 !
@@ -210,16 +214,32 @@
 !
       IF(NTSD_current==0)THEN
         IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
+#ifdef HWRF
+!zhang's doing: temporarily hardwired for two domains
+          if( grid%id .eq. 1 ) NTSD_restart1=INT(grid%TSTART*3600./GRID%DT+0.5)
+          if( grid%id .eq. 2 ) NTSD_restart2=INT(grid%TSTART*3600./GRID%DT+0.5)
+#endif
           IHRST=grid%nstart_hour
           NTSD_restart=grid%ntsd
         ELSE
           IHRST=GRID%GMT
           grid%nstart_hour=IHRST
+#ifdef HWRF
+!zhang's doing
+          NTSD_restart1=0
+          NTSD_restart2=0
+#else
           NTSD_restart=0
+#endif
         ENDIF
       ENDIF
-!
+#ifdef HWRF
+!zhang's doing
+      if( grid%id .eq. 1 ) grid%ntsd=NTSD_restart1+NTSD_current
+      if( grid%id .eq. 2 ) grid%ntsd=NTSD_restart2+NTSD_current
+#else
       grid%ntsd=NTSD_restart+NTSD_current
+#endif
       LAST_TIME=domain_last_time_step(GRID)
 !
 !-----------------------------------------------------------------------
@@ -499,7 +519,12 @@
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
+!zhang
+      IF(NTSD_current==0)THEN
+#else
       IF(grid%ntsd==0)THEN
+#endif
         FIRST=.TRUE.
 !       call hpm_init()
         btimx=timef()
@@ -635,7 +660,17 @@
 !       exch_tim_max=exch_tim_max+et_max
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
+!zhang's doing
+       if(GRID%RESTART) then
+       FIRST=.FALSE.
+       else
+       GO TO 2003
+       endif
+!end of zhang's doing
+#else
         GO TO 2003
+#endif
       ENDIF
 !
 !-----------------------------------------------------------------------
@@ -646,7 +681,9 @@
 #ifdef HWRF
 ! Coupling insertion:->
 !
-      call ATM_TSTEP_INIT(grid%ntsd,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+!zhang's doing      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+      call ATM_TSTEP_INIT(NTSD_current,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+!end of zhang's doing
       ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
                        kds,kde,kts,kte,kms,kme,                  &
                        grid%HLON,grid%HLAT,grid%VLON,grid%VLAT,grid%sm,                   &
@@ -654,7 +691,7 @@
 !     CALL ATM_RECVdtc(NPHS*dt) <-  now called from ATM_TSTEP_INIT with no arg.
 !     CALL ATM_SENDGRIDS(HLON,HLAT,VLON,VLAT) <- now called from ATM_TSTEP_INIT
 !     CALL ATM_SENDSLM(grid%sm)                    <- now called from ATM_TSTEP_INIT
-!<-:oupling insertion
+!<-:coupling insertion
 !
 #endif
 !-----------------------------------------------------------------------
@@ -1268,8 +1305,15 @@
 !
               MOIST(I,J,K,P_QC)=QW
               MOIST(I,J,K,P_QR)=QR
-              MOIST(I,J,K,P_QI)=0.
-              MOIST(I,J,K,P_QS)=QI
+              if (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)then
+#ifdef HWRF
+                 MOIST(I,J,K,P_QI)=QI
+                 MOIST(I,J,K,P_QS)=0.
+#else
+                 MOIST(I,J,K,P_QI)=0.
+                 MOIST(I,J,K,P_QS)=QI
+#endif
+              endif
               MOIST(I,J,K,P_QG)=0.
             ENDDO
             ENDDO
@@ -1444,6 +1488,7 @@
 !
       rdtemp_tim=rdtemp_tim+timef()-btimx
 !
+!
 #ifdef HWRF
 !
 !-------------------------------------------------------------------------------------
@@ -1503,7 +1548,7 @@
      &            ,grid%rswout,grid%rswtoa,grid%rlwtoa                                &
      &            ,grid%aswin,grid%aswout,grid%aswtoa,grid%alwin,grid%alwout,grid%alwtoa             &
 #if (NMM_CORE==1)
-     &            ,grid%uz0h,grid%vz0h,grid%dudt,grid%dvdt,grid%ugwdsfc,grid%vgwdsfc,SFENTH          & 
+     &            ,grid%uz0h,grid%vz0h,grid%dudt,grid%dvdt,grid%ugwdsfc,grid%vgwdsfc,grid%sfenth          & 
 #else
      &            ,grid%uz0h,grid%vz0h,grid%dudt,grid%dvdt                                 & 
 #endif
@@ -1513,6 +1558,7 @@
      &            ,grid%hlensw,grid%hlennw,grid%hangl,grid%hanis,grid%hslop,grid%hzmax,grid%crot,grid%srot     & ! GWD
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                     &
+     &            ,GRID%DISHEAT                                             &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1619,14 +1665,15 @@
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
         cltend_tim=cltend_tim+timef()-btimx
-      ENDIF
+     ENDIF
 !
 !----------------------------------------------------------------------
 !***  CONVECTIVE PRECIPITATION
 !----------------------------------------------------------------------
 !
       IF(MOD(grid%ntsd,GRID%NCNVC)==0.AND.                                  &
-     &   CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN                       
+     &   (CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME .or.                     &
+         CONFIG_FLAGS%CU_PHYSICS==SASSCHEME))THEN                       ! Kwon's doing for SAS
 !
         btimx=timef()
 !-----------------
@@ -1639,7 +1686,7 @@
 !       call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max          &
 !    &                    ,mpi_comm_comp,irtn)
 !       exch_tim_max=exch_tim_max+et_max
-      ENDIF
+     ENDIF
 !
       convection: IF(CONFIG_FLAGS%CU_PHYSICS/=0)THEN
         btimx=timef()
@@ -1668,7 +1715,7 @@
      &                     ,IDS,IDF,JDS,JDF,KDS,KDE                    &
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE)
-        ENDIF
+       ENDIF
 !
 !----------------------------------------------------------------------
         CALL CUCNVC(grid%ntsd,GRID%DT,GRID%NCNVC,GRID%NRADS,GRID%NRADL      &
@@ -1692,8 +1739,14 @@
      &             ,grid%sm,grid%hbm2,grid%lpbl,grid%cnvbot,grid%cnvtop                         &
      &             ,grid%htop,grid%hbot,grid%htopd,grid%hbotd,grid%htops,grid%hbots                  &
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
+#if (NMM_CORE==1)                  
+     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%store_rand             &
+#endif
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
      &             ,GRID,CONFIG_FLAGS                                  &
+#ifdef HWRF
+     &             ,grid%NRND1                                              & ! NRND1 zhang's doing
+#endif
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &
@@ -1702,7 +1755,45 @@
 !
         cucnvc_tim=cucnvc_tim+timef()-btimx
 !
-      ENDIF convection
+
+
+#if (NMM_CORE==1)
+!#ifdef HWRF
+!-------------------------------------------------------------------------------------
+!       This is gopal's doing for HWRFSAS
+
+        IF(MOD(grid%ntsd,GRID%NCNVC).eq.0.and.(CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN
+!
+        btimx=timef()
+!-----------------
+#ifdef DM_PARALLEL
+# include "HALO_NMM_SAS_A.inc"
+#endif
+!-----------------
+#ifdef DM_PARALLEL
+# include "HALO_NMM_SAS_B.inc"
+#endif
+!-----------------
+        exch_tim=exch_tim+timef()-btimx
+
+!
+!***  INTERPOLATE WINDS FROM H POINTS BACK TO V POINTS AFTER SAS 
+!
+        btimx=timef()
+
+        CALL UV_H_TO_V(grid%NTSD,GRID%DT,GRID%NPHS,grid%UZ0H,grid%VZ0H,grid%UZ0,grid%VZ0         &
+     &                ,grid%DUCUDT,grid%DVCUDT,grid%U,grid%V,grid%HBM2,grid%IVE,grid%IVW                   &
+     &                ,IDS,IDF,JDS,JDF,KDS,KDE                          &
+     &                ,IMS,IME,JMS,JME,KMS,KME                          &
+     &                ,ITS,ITE,JTS,JTE,KTS,KTE)
+        uv_htov_tim=uv_htov_tim+timef()-btimx
+
+     ENDIF ! for SAS only 
+!#endif
+#endif
+!--------------------------------------------------------------------------------
+!
+  ENDIF convection
 !
 !----------------------------------------------------------------------
 !***  GRIDSCALE MICROPHYSICS (CONDENSATION & PRECIPITATION)
@@ -2127,6 +2218,9 @@
                       ,grid%fis,grid%pd,grid%sm,grid%pdtop,grid%pt                             &
                       ,grid%deta1,grid%deta2                                    &
                       ,GRID%MOVED,MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
+#ifdef HWRF
+                      ,GRID%RESTART,NTIME0                            & ! zhang's doing
+#endif
                       ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
                       ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry
                       ,ITS,ITE,JTS,JTE,KTS,KTE              )           ! FOR NEST:DT=18,NPHS=3

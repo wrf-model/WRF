@@ -41,6 +41,10 @@ CONTAINS
                      ,rqicuten,rqscuten,rqgcuten                      &
                      ,rqvblten,rqvften                                &
                      ,rthcuten,rthraten,rthblten,rthften              &
+#if (NMM_CORE==1)
+                 ! for hwrf-sas
+                     ,rucuten,rvcuten,mommix,store_rand               &
+#endif
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
@@ -54,6 +58,7 @@ CONTAINS
    USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
                                           ,KFETASCHEME,GDSCHEME       &
                                           ,G3SCHEME                   &
+                                          ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,SASSCHEME
 
 ! *** add new modules of schemes here
@@ -280,6 +285,14 @@ CONTAINS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
    REAL   :: cudt_pass, curr_secs_pass
    LOGICAL :: adapt_step_flag_pass
+
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
+                   INTENT(INOUT) :: rucuten,rvcuten
+   REAL, DIMENSION( ims:ime , jms:jme ),                         &
+                    INTENT(IN) ::  STORE_RAND
+   REAL,            INTENT(INOUT) :: mommix
+#endif
 
 !
 ! optional arguments
@@ -550,22 +563,29 @@ CONTAINS
           CALL wrf_debug(100,'in cu_sas')
           CALL CU_SAS(                                          &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+#if (NMM_CORE==1)
+               ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
+#endif
                ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
-               ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
+               ,U3D=u,V3D=v,W=w,T3D=t                           &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,PI3D=pi,RHO3D=rho                               &
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,P_QC=p_qc                                       &
+#if (NMM_CORE==1)
+               ,MOMMIX=MOMMIX  &
+               ,store_rand=store_rand  &
+               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
+#endif
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
-              ! optionals
-               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
-               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
-               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
-               ,F_QI=f_qi,F_QS=f_qs                             &
                                                                 )
      CASE (G3SCHEME)
           CALL wrf_debug(100,'in grelldrv')

@@ -1,24 +1,29 @@
-!
-MODULE module_cu_sas
+!!
+MODULE module_cu_sas 
 
 CONTAINS
 
 !-----------------------------------------------------------------
-      SUBROUTINE CU_SAS(                                        &
-                 DT,ITIMESTEP,STEPCU                            &
-                ,RAINCV,PRATEC,HTOP,HBOT                        &
-                ,U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D        &
-                ,DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG                &
-                ,CUDT, CURR_SECS, ADAPT_STEP_FLAG               &
-                ,ids,ide, jds,jde, kds,kde                      &
-                ,ims,ime, jms,jme, kms,kme                      &
-                ,its,ite, jts,jte, kts,kte                      &
-                ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
-                ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN            &
-                                                                )
+      SUBROUTINE CU_SAS(DT,ITIMESTEP,STEPCU,                        &
+                 RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,               &
+#if (NMM_CORE == 1)
+                 RUCUTEN,RVCUTEN,                                   & ! gopal's doing for SAS
+#endif
+                 RAINCV,PRATEC,HTOP,HBOT,                           &
+                 U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,           &
+                 DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
+                 P_QC,                                              & 
+#if (NMM_CORE == 1)
+                 STORE_RAND,MOMMIX, & ! gopal's doing
+                 P_QI,P_FIRST_SCALAR,                               & 
+#endif
+                 CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
+                 ids,ide, jds,jde, kds,kde,                         &
+                 ims,ime, jms,jme, kms,kme,                         &
+                 its,ite, jts,jte, kts,kte                          )
 
 !-------------------------------------------------------------------
-      USE MODULE_GFS_MACHINE , ONLY : kind_phys, kind_evod
+      USE MODULE_GFS_MACHINE , ONLY : kind_phys
       USE MODULE_GFS_FUNCPHYS , ONLY : gfuncphys
       USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP  &
      &,             RV => con_RV, FV => con_fvirt, T0C => con_T0C       &
@@ -51,6 +56,11 @@ CONTAINS
 !               PBL parameterization (kg/kg/s)
 !-- RQIBLTEN    Qi tendency due to
 !               PBL parameterization (kg/kg/s)
+!
+!-- MOMMIX      MOMENTUM MIXING COEFFICIENT (can be set in the namelist)
+!-- RUCUTEN     U tendency due to Cumulus Momentum Mixing (gopal's doing for SAS)
+!-- RVCUTEN     V tendency due to Cumulus Momentum Mixing (gopal's doing for SAS)
+!
 !-- CP          heat capacity at constant pressure for dry air (J/kg/K)
 !-- GRAV        acceleration due to gravity (m/s^2)
 !-- ROVCP       R/CP
@@ -94,18 +104,38 @@ CONTAINS
 !-- kte         end index for k in tile
 !-------------------------------------------------------------------
 
+      INTEGER ::                        ICLDCK
+
       INTEGER, INTENT(IN) ::            ids,ide, jds,jde, kds,kde,      &
                                         ims,ime, jms,jme, kms,kme,      &
                                         its,ite, jts,jte, kts,kte,      &
-                                        ITIMESTEP,                      &
+                                        ITIMESTEP,                      &     !NSTD
+                                        P_FIRST_SCALAR,                 &
+                                        P_QC,                           &
+                                        P_QI,                           &
                                         STEPCU
 
       REAL,    INTENT(IN) ::                                            &
                                         DT
 
+      REAL,    INTENT(IN) ::    MOMMIX
+
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::      &
+                                        RQCCUTEN,                       &
+                                        RQICUTEN,                       &
+                                        RQVCUTEN,                       &
+                                        RTHCUTEN
+#if (NMM_CORE == 1)
+      REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
+                                        RUCUTEN,                        &  ! gopal's doing for SAS
+                                        RVCUTEN                            ! gopal's doing for SAS 
+#endif
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         XLAND
+
+   REAL, DIMENSION( ims:ime , jms:jme ),                                &
+                         INTENT(IN) :: STORE_RAND
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            &
                                         RAINCV, PRATEC
@@ -132,29 +162,6 @@ CONTAINS
                                         V3D,                            &
                                         W
 
-!--------------------------- OPTIONAL VARS ----------------------------
-                                                                                                      
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme),                       &
-               OPTIONAL, INTENT(INOUT) ::                               &
-                                        RQCCUTEN,                       &
-                                        RQICUTEN,                       &
-                                        RQVCUTEN,                       &
-                                        RTHCUTEN
-                                                                                                      
-!
-! Flags relating to the optional tendency arrays declared above
-! Models that carry the optional tendencies will provdide the
-! optional arguments at compile time; these flags all the model
-! to determine at run-time whether a particular tracer is in
-! use or not.
-!
-   LOGICAL, OPTIONAL ::                                      &
-                                                   F_QV      &
-                                                  ,F_QC      &
-                                                  ,F_QR      &
-                                                  ,F_QI      &
-                                                  ,F_QS
- 
 ! Adaptive time-step variables
       REAL,  INTENT(IN   ) :: CUDT
       REAL,  INTENT(IN   ) :: CURR_SECS
@@ -165,18 +172,12 @@ CONTAINS
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
                                         PSFC
 
-      REAL     (kind=kind_evod),save :: seed0
-!      REAL     (kind=kind_evod) :: seed0
-      REAL     (kind=kind_evod) ::      wrk
 
       REAL     (kind=kind_phys) ::                                      &
                                         DELT,                           &
                                         DPSHC,                          &
                                         RDELT,                          &
                                         RSEED
-
-      REAL     (kind=kind_phys), DIMENSION(ids:ide,jds:jde) ::          & 
-                                        RANNUM
 
       REAL     (kind=kind_phys), DIMENSION(its:ite) ::                  &
                                         CLDWRK,                         &
@@ -212,7 +213,7 @@ CONTAINS
 
       INTEGER ::                                                        &
                                         I,                              &
-!                                        IGPVS,                          &
+                                        IGPVS,                          &
                                         IM,                             &
                                         J,                              &
                                         JCAP,                           &
@@ -222,17 +223,9 @@ CONTAINS
                                         KX,                             &
                                         NCLOUD 
 
-      INTEGER :: start_year,start_month,start_day,start_hour
-
-      integer :: iseed
-!      integer, save :: krsize
-      integer :: krsize
-      integer,  allocatable ::  nrnd(:)
-      real :: fsec
-
       LOGICAL :: run_param
 
-!      DATA IGPVS/0/
+      DATA IGPVS/0/
 
 !-----------------------------------------------------------------------
 !
@@ -245,7 +238,7 @@ CONTAINS
       else
          run_param = .FALSE.
       endif
-      
+
       else
          if (MOD(ITIMESTEP,STEPCU) .EQ. 0 .or. ITIMESTEP .eq. 0) then
             run_param = .TRUE.
@@ -274,46 +267,14 @@ CONTAINS
       NCLOUD=1
 
 
-   DO J=jts,jte
-     DO I=its,ite
+   DO J=jms,jme
+     DO I=ims,ime
        PSFC(i,j)=P8w(i,kms,j)
      ENDDO
    ENDDO
 
-   if(itimestep.eq.0) then
-      CALL GFUNCPHYS
-
-        CALL nl_get_start_year(1,start_year)   
-        CALL nl_get_start_month(1,start_month)   
-        CALL nl_get_start_day(1,start_day)   
-        CALL nl_get_start_hour(1,start_hour)   
-
-        call random_seed(size=krsize)
-        if (.not. allocated (nrnd)) allocate (nrnd(krsize))
-
-        seed0 = start_year + start_month + start_day + start_hour
-        nrnd = start_hour + start_day*24
-        call random_seed
-        call random_seed(put=nrnd)
-        call random_number(wrk)
-        seed0 = seed0 + nint(wrk*1000.0)
-  
-   endif
-
-   if (adapt_step_flag) then
-      fsec = CURR_SECS
-   else
-      fsec = ITIMESTEP*DT
-   endif
-   iseed = mod(100.0*sqrt(fsec),1.0e9) + 1 + seed0
-   call random_seed(size=krsize)
-   if (.not. allocated (nrnd)) allocate (nrnd(krsize))
-   nrnd = iseed
-   call random_seed
-   call random_seed(put=nrnd)
-   call random_number(rannum)
-
-!   igpvs=1
+   if(igpvs.eq.0) CALL GFUNCPHYS
+   igpvs=1
 
 !-------------  J LOOP (OUTER) --------------------------------------------------
 
@@ -345,9 +306,19 @@ CONTAINS
 ! --------------- end compute zi and zl -------------------------------------
 
 
-!      call random_number(XKT2)
+
+!    Based on some important findings from Morris Bender, XKT2 was defined in
+!    terms of random number instead of random number based cloud tops
+!    Also, these random numbers are stored and are changed only once in
+!    approximately 5 minutes interval now. This is gopal's doing for HWRF.
+
+!     call random_number(XKT2)
+
       DO i=its,ite
-        xkt2(i)=rannum(i,j)
+         XKT2(i) = STORE_RAND(i,j)
+      ENDDO
+
+      DO i=its,ite
         PS(i)=PSFC(i,j)*.001
         RCS(i)=1.
         SLIMSK(i)=ABS(XLAND(i,j)-2.)
@@ -389,9 +360,10 @@ CONTAINS
 
       CALL SASCNV(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
-                  KTOP,KUO,SLIMSK,DOT,XKT2,NCLOUD)
+                  KTOP,KUO,SLIMSK,DOT,XKT2,NCLOUD) 
 
-      CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KUO,Q1,T1,DPSHC)
+!!!   make more like GFDL ... eliminate shallow convection.....
+!!!   CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KUO,Q1,T1,DPSHC)
 
       DO I=ITS,ITE
         RAINCV(I,J)=RN(I)*1000./STEPCU
@@ -407,40 +379,55 @@ CONTAINS
         ENDDO
       ENDDO
 
-      IF(PRESENT(RQCCUTEN))THEN
-        IF ( F_QC ) THEN
-          DO K=KTS,KTE
-            DO I=ITS,ITE
-              RQCCUTEN(I,K,J)=(QL(I,K,2)/(1.-ql(i,k,2))-QC3D(I,K,J))*RDELT
-            ENDDO
+!===============================================================================
+!     ADD MOMENTUM MIXING TERM AS TENDENCIES. This is gopal's doing for SAS
+!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has 
+!     divergence damping term, a reducion factor for cumulum mixing may be
+!     required otherwise storms were too weak.
+!===============================================================================
+!
+#if (NMM_CORE == 1)
+      DO K=KTS,KTE
+        DO I=ITS,ITE
+         RUCUTEN(I,J,K)=MOMMIX*(U1(I,K)-U3D(I,K,J))*RDELT
+         RVCUTEN(I,J,K)=MOMMIX*(V1(I,K)-V3D(I,K,J))*RDELT
+        ENDDO
+      ENDDO
+#endif
+
+
+      IF(P_QC .ge. P_FIRST_SCALAR)THEN
+        DO K=KTS,KTE
+          DO I=ITS,ITE
+            RQCCUTEN(I,K,J)=(QL(I,K,2)/(1.-ql(i,k,2))-QC3D(I,K,J))*RDELT
           ENDDO
-        ENDIF
+        ENDDO
       ENDIF
 
-      IF(PRESENT(RQICUTEN))THEN
-        IF ( F_QI ) THEN
-          DO K=KTS,KTE
-            DO I=ITS,ITE
-              RQICUTEN(I,K,J)=(QL(I,K,1)/(1.-ql(i,k,1))-QI3D(I,K,J))*RDELT
-            ENDDO
+      IF(P_QI .ge. P_FIRST_SCALAR)THEN
+        DO K=KTS,KTE
+          DO I=ITS,ITE
+            RQICUTEN(I,K,J)=(QL(I,K,1)/(1.-ql(i,k,1))-QI3D(I,K,J))*RDELT
           ENDDO
-        ENDIF
+        ENDDO
       ENDIF
 
-
-   ENDDO
+   ENDDO    ! Outer most J loop
 
    ENDIF
 
    END SUBROUTINE CU_SAS
 
 !====================================================================
-   SUBROUTINE sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,              &
-                     RESTART,P_QC,P_QI,P_FIRST_SCALAR,                  &
-                     allowed_to_read,                                   &
-                     ids, ide, jds, jde, kds, kde,                      &
-                     ims, ime, jms, jme, kms, kme,                      &
-                     its, ite, jts, jte, kts, kte)
+   SUBROUTINE sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,          &
+#if (NMM_CORE == 1)
+                      RUCUTEN,RVCUTEN,                              &   ! gopal's doing for SAS
+#endif
+                      RESTART,P_QC,P_QI,P_FIRST_SCALAR,             &
+                      allowed_to_read,                              &
+                      ids, ide, jds, jde, kds, kde,                 &
+                      ims, ime, jms, jme, kms, kme,                 &
+                      its, ite, jts, jte, kts, kte                  )
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
@@ -455,6 +442,11 @@ CONTAINS
                                                               RQVCUTEN, &
                                                               RQCCUTEN, &
                                                               RQICUTEN
+#if (NMM_CORE == 1)
+   REAL,     DIMENSION( ims:ime , jms:jme , kms:kme ) , INTENT(OUT) ::  &
+                                                              RUCUTEN,  & ! gopal's doing for SAS
+                                                              RVCUTEN   
+#endif
 
    INTEGER :: i, j, k, itf, jtf, ktf
 
@@ -462,12 +454,22 @@ CONTAINS
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
 
+#ifdef HWRF
+!zhang's doing
+   IF(.not.restart .or. .not.allowed_to_read)THEN
+!end of zhang's doing
+#else
    IF(.not.restart)THEN
+#endif
      DO j=jts,jtf
      DO k=kts,ktf
      DO i=its,itf
        RTHCUTEN(i,k,j)=0.
        RQVCUTEN(i,k,j)=0.
+#if (NMM_CORE == 1)
+       RUCUTEN(i,j,k)=0.   ! gopal's doing for SAS
+       RVCUTEN(i,k,j)=0.    ! gopal's doing for SAS
+#endif
      ENDDO
      ENDDO
      ENDDO
@@ -507,7 +509,7 @@ CONTAINS
 !    &       Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,KTOP,KUO,SLIMSK,
 !    &       DOT,xkt2,ncloud)
 !
-      USE MODULE_GFS_MACHINE , ONLY : kind_phys,kind_evod
+      USE MODULE_GFS_MACHINE , ONLY : kind_phys
       USE MODULE_GFS_FUNCPHYS ,ONLY : fpvs
       USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP &
      &,             RV => con_RV, FV => con_fvirt, T0C => con_T0C       &
@@ -519,7 +521,7 @@ CONTAINS
 !     include 'constant.h'
 !
       integer            IM, IX,  KM, JCAP, ncloud,                     &
-     &                   KBOT(IM), KTOP(IM), KUO(IM)
+     &                   KBOT(IM), KTOP(IM), KUO(IM), J
       real(kind=kind_phys) DELT
       real(kind=kind_phys) PS(IM),      DEL(IX,KM),  PRSL(IX,KM),       &
 !     real(kind=kind_phys)              DEL(IX,KM),  PRSL(IX,KM),
@@ -654,9 +656,15 @@ CONTAINS
       betas   = .15
       BETAl   = .05
       betas   = .05
+!     change for hurricane model
+        BETAl = .5
+        betas = .5
 !     EVEF    = 0.07
       evfact  = 0.3
       evfactl = 0.3
+!     change for hurricane model
+         evfact = 0.6
+         evfactl = .6
       PDPDWN  = 0.
       PDETRN  = 200.
       xlambu  = 1.e-4

@@ -729,6 +729,23 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,7(L1,1X)' )              &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'qi_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'rqiblten, '//                                     &
+                 'hol = ' ,                                         &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( qi_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( rqiblten ) ,                             &
+                  PRESENT( hol      )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call YSU pbl')
            ENDIF
 
@@ -765,6 +782,19 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,5(L1,1X)' )              &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'hol = ' ,                                         &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( hol      )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call MRF pbl')
            ENDIF
 
@@ -796,6 +826,17 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ',                                     &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
 
@@ -860,6 +901,17 @@ CONTAINS
             ENDIF
 
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ' ,                                    &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
            ENDIF
  
@@ -887,6 +939,17 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ' ,                                    &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
            ENDIF
 
@@ -913,6 +976,17 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte                   &   
                                                                       )
            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ' ,                                    &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
 
@@ -924,7 +998,7 @@ CONTAINS
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 & PRESENT(qke) .AND. PRESENT(tsq) .AND. &
                 & PRESENT(qsq) .AND. PRESENT(cov) .AND. &
-                & PRESENT(rmol) .AND. PRESENT(rmol) .AND. &
+                & PRESENT(rmol) .AND. &
                 & PRESENT(qcg) .AND. PRESENT(ch) .AND. &
                 & PRESENT(grav_settling) ) THEN
 
@@ -955,6 +1029,33 @@ CONTAINS
                    )
 
            ELSE
+               WRITE ( message , FMT = '(A,12(L1,1X)' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten, '//                                     &
+                 'qke, '//                                          &
+                 'tsq = '//                                         &
+                 'qsq = '//                                         &
+                 'cov = '//                                         &
+                 'rmol = '//                                        &
+                 'qcg = '//                                         &
+                 'ch = '//                                          &
+                 'grav_settling = ',                                &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten ) ,                             &
+                  PRESENT( qke      ) ,                             &
+                  PRESENT( tsq      ) ,                             &
+                  PRESENT( qsq      ) ,                             &
+                  PRESENT( cov      ) ,                             &
+                  PRESENT( rmol     ) ,                             &
+                  PRESENT( qcg      ) ,                             &
+                  PRESENT( ch       ) ,                             &
+                  PRESENT( grav_settling)
+               CALL wrf_debug(0,message)
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
 

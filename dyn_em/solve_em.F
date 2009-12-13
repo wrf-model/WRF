@@ -117,6 +117,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval
    REAL                                       :: real_time
    LOGICAL                                    :: adapt_step_flag
+   LOGICAL                                    :: fill_w_flag
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include <bench_solve_em_def.h>
@@ -3214,14 +3215,16 @@ BENCH_END(bc_2d_tim)
 
 #ifdef DM_PARALLEL
 #  include "HALO_EM_C.inc"
+#  include "PERIOD_BDY_EM_E.inc"
 #endif
 
-   CALL wrf_debug ( 10 , ' call set_w_surface2' )
+   CALL wrf_debug ( 10 , ' call set_w_surface' )
+   fill_w_flag = .false.
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles
-      CALL set_w_surface2(                                                  &
+      CALL set_w_surface( config_flags, grid%znw, fill_w_flag,              &
                            grid%w_2, grid%ht,  grid%u_2, grid%v_2,          &
                            grid%cf1, grid%cf2, grid%cf3, grid%rdx, grid%rdy,&
                            grid%msftx, grid%msfty,                          &

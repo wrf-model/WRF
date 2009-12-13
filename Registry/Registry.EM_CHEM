@@ -1404,11 +1404,30 @@ rconfig   real        obs_coef_pstr       namelist,fdda            max_domains  
 rconfig   integer     obs_no_pbl_nudge_uv namelist,fdda            max_domains    0       rh       "obs_no_pbl_nudge_uv" "1=no wind-nudging within pbl"          ""
 rconfig   integer     obs_no_pbl_nudge_t  namelist,fdda            max_domains    0       rh       "obs_no_pbl_nudge_t"  "1=no temperature-nudging within pbl"   ""
 rconfig   integer     obs_no_pbl_nudge_q  namelist,fdda            max_domains    0       rh       "obs_no_pbl_nudge_q"  "1=no moisture-nudging within pbl"      ""
+rconfig   real        obs_nudgezfullr1_uv namelist,fdda            1              50      rh       "obs_nudgezfullr1_uv" "Vert infl full weight  height for LML obs, regime 1, winds"        ""
+rconfig   real        obs_nudgezrampr1_uv namelist,fdda            1              50      rh       "obs_nudgezrampr1_uv" "Vert infl ramp-to-zero height for LML obs, regime 1, winds"        ""
+rconfig   real        obs_nudgezfullr2_uv namelist,fdda            1              50      rh       "obs_nudgezfullr2_uv" "Vert infl full weight  height for LML obs, regime 2, winds"        ""
+rconfig   real        obs_nudgezrampr2_uv namelist,fdda            1              50      rh       "obs_nudgezrampr2_uv" "Vert infl ramp-to-zero height for LML obs, regime 2, winds"        ""
+rconfig   real        obs_nudgezfullr4_uv namelist,fdda            1              50      rh       "obs_nudgezfullr4_uv" "Vert infl full weight  height for LML obs, regime 4, winds"        ""
+rconfig   real        obs_nudgezrampr4_uv namelist,fdda            1              -5000   rh       "obs_nudgezrampr4_uv" "Vert infl ramp-to-zero height for LML obs, regime 4, winds"        ""
+rconfig   real        obs_nudgezfullr1_t  namelist,fdda            1              50      rh       "obs_nudgezfullr1_t" "Vert infl full weight  height for LML obs, regime 1, temperature"  ""
+rconfig   real        obs_nudgezrampr1_t  namelist,fdda            1              50      rh       "obs_nudgezrampr1_t" "Vert infl ramp-to-zero height for LML obs, regime 1, temperature"  ""
+rconfig   real        obs_nudgezfullr2_t  namelist,fdda            1              50      rh       "obs_nudgezfullr2_t" "Vert infl full weight  height for LML obs, regime 2, temperature"  ""
+rconfig   real        obs_nudgezrampr2_t  namelist,fdda            1              50      rh       "obs_nudgezrampr2_t" "Vert infl ramp-to-zero height for LML obs, regime 2, temperature"  ""
+rconfig   real        obs_nudgezfullr4_t  namelist,fdda            1              50      rh       "obs_nudgezfullr4_t" "Vert infl full weight  height for LML obs, regime 4, temperature"  ""
+rconfig   real        obs_nudgezrampr4_t  namelist,fdda            1              -5000   rh       "obs_nudgezrampr4_t" "Vert infl ramp-to-zero height for LML obs, regime 4, temperature"  ""
+rconfig   real        obs_nudgezfullr1_q  namelist,fdda            1              50      rh       "obs_nudgezfullr1_q" "Vert infl full weight  height for LML obs, regime 1, moisture"     ""
+rconfig   real        obs_nudgezrampr1_q  namelist,fdda            1              50      rh       "obs_nudgezrampr1_q" "Vert infl ramp-to-zero height for LML obs, regime 1, moisture"     ""
+rconfig   real        obs_nudgezfullr2_q  namelist,fdda            1              50      rh       "obs_nudgezfullr2_q" "Vert infl full weight  height for LML obs, regime 2, moisture"     ""
+rconfig   real        obs_nudgezrampr2_q  namelist,fdda            1              50      rh       "obs_nudgezrampr2_q" "Vert infl ramp-to-zero height for LML obs, regime 2, moisture"     ""
+rconfig   real        obs_nudgezfullr4_q  namelist,fdda            1              50      rh       "obs_nudgezfullr4_q" "Vert infl full weight  height for LML obs, regime 4, moisture"     ""
+rconfig   real        obs_nudgezrampr4_q  namelist,fdda            1              -5000   rh       "obs_nudgezrampr4_q" "Vert infl ramp-to-zero height for LML obs, regime 4, moisture"     ""
+rconfig   real        obs_nudgezfullmin   namelist,fdda            1                 50   rh       "obs_nudgezfullmin" "Minimum depth through which vertical influence fcn remains 1.0"     "m"
+rconfig   real        obs_nudgezrampmin   namelist,fdda            1                 50   rh       "obs_nudgezrampmin" "Minimum depth through which vertical influence fcn decreases from 1.0 to 0.0" "m"
+rconfig   real        obs_nudgezmax       namelist,fdda            1               3000   rh       "obs_nudgezmax" "Maximum depth in which vertical influence function is nonzero" "m"
 rconfig   real        obs_sfcfact         namelist,fdda            1              1.0     h        "obs_sfcfact"       "Scale factor applied to time window for surface obs"     ""
 rconfig   real        obs_sfcfacr         namelist,fdda            1              1.0     h        "obs_sfcfacr"       "Scale factor applied to horiz radius of influence for surface obs"     ""
 rconfig   real        obs_dpsmx           namelist,fdda            1              7.5     h        "obs_dpsmx"         "Max pressure change allowed within horiz radius of influence"     "centibars"
-rconfig   real        obs_lml_ht1         namelist,fdda            1              100.    h        "obs_lml_ht1"       "Height 1 for spreading of lowest model level obs"     "km"
-rconfig   real        obs_lml_ht2         namelist,fdda            1              100.    h        "obs_lml_ht2"       "Height 2 for spreading of lowest model level obs"     "km"
 rconfig   real        obs_rinxy           namelist,fdda            max_domains    0       rh       "obs_rinxy"         "Horizontal radius of influence"       "km"
 rconfig   real        obs_rinsig          namelist,fdda            1              0       h        "obs_rinsig"        "Vertical radius of influence"         "sigma"
 rconfig   real        obs_twindo          namelist,fdda            max_domains    0       rh       "obs_twindo"        "Half-period time window for nudging"  "hrs"
@@ -1791,6 +1810,7 @@ period    PERIOD_BDY_EM_CHEM_OLD dyn_em 4:chem_old
 period    PERIOD_BDY_EM_SCALAR_OLD dyn_em 4:scalar_old
 period    PERIOD_BDY_EM_TKE_OLD dyn_em 4:tke_1
 
+period    PERIOD_BDY_EM_E dyn_em 2:u_2,v_2,ht
 period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy,ustm
@@ -1828,8 +1848,6 @@ typedef fdob_type logical NUDGE_T_PBL  # Flag for temperature nudging within the
 typedef fdob_type logical NUDGE_Q_PBL  # Flag for moisture nudging within the PBL
 typedef fdob_type real    SFCFACT      # scale factor applied to time window for surface obs
 typedef fdob_type real    SFCFACR      # scale factor applied to horiz radius of influence for surface obs
-typedef fdob_type real    LML_OBS_HT1_LEV  # base-state model vertical coordinate of LML_OBS_HT1
-typedef fdob_type real    LML_OBS_HT2_LEV  # base-state model vertical coordinate of LML_OBS_HT2
 typedef fdob_type real    RINFMN       # minimum radius of influence
 typedef fdob_type real    RINFMX       # maximum radius of influence
 typedef fdob_type real    PFREE        # pressure level (cb) where terrain effect becomes small
@@ -1838,6 +1856,14 @@ typedef fdob_type real    DPSMX        # max pres change (cb) allowed within inf
 typedef fdob_type real    TFACI        # scale factor used for ramp-down in dynamic initialization
 typedef fdob_type real    KNOWN_LAT    # Latitude  of origin point (i,j)=(1,1)
 typedef fdob_type real    KNOWN_LON    # Longitude of origin point (i,j)=(1,1)
+typedef fdob_type character SDATE      # domain starting date (YYYY-MM-DD_hh:mm:ss)
+typedef fdob_type real    XTIME_AT_REST # xtime at restart time
+typedef fdob_type real    VIF_UV(6)    # Vertical influence function parameters for wind nudging
+typedef fdob_type real    VIF_T(6)     # Vertical influence function parameters for temperature nudging
+typedef fdob_type real    VIF_Q(6)     # Vertical influence function parameters for moisture nudging
+typedef fdob_type real    VIF_FULLMIN  # Minimum depth through which vert infl fcn remains 1.0 (m)
+typedef fdob_type real    VIF_RAMPMIN  # Minimum depth through which vif decreases 1.0 to 0.0 (m)
+typedef fdob_type real    VIF_MAX      # Maximum depth in which vif is nonzero (m)
 
 # table entries are of the form
 #      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
@@ -1857,6 +1883,7 @@ typedef fdob_type real    latprt               [        -         1        -    
 typedef fdob_type real    lonprt               [        -         1        -       -       "lonprt"          "obs longitude for diagnostic printout"
 typedef fdob_type real    mlatprt              [        -         1        -       -       "mlatprt"         "model latitude at obs location"
 typedef fdob_type real    mlonprt              [        -         1        -       -       "mlonprt"         "model longitude at obs location"
+typedef fdob_type real    base_state           k        -         1        -       -       "base_state"      "base-state height on half (mass) levels"   "meters"
 
 state fdob_type fdob - -
 

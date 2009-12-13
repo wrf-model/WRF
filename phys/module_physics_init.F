@@ -612,10 +612,35 @@ integer myproc
                   model_config_rec%obs_sfcfact,                 &
                   model_config_rec%obs_sfcfacr,                 &
                   model_config_rec%obs_dpsmx,                   &
-                  model_config_rec%obs_lml_ht1,                 &
-                  model_config_rec%obs_lml_ht2,                 &
+                  model_config_rec%obs_nudgezfullr1_uv,         &
+                  model_config_rec%obs_nudgezrampr1_uv,         &
+                  model_config_rec%obs_nudgezfullr2_uv,         &
+                  model_config_rec%obs_nudgezrampr2_uv,         &
+                  model_config_rec%obs_nudgezfullr4_uv,         &
+                  model_config_rec%obs_nudgezrampr4_uv,         &
+                  model_config_rec%obs_nudgezfullr1_t,          &
+                  model_config_rec%obs_nudgezrampr1_t,          &
+                  model_config_rec%obs_nudgezfullr2_t,          &
+                  model_config_rec%obs_nudgezrampr2_t,          &
+                  model_config_rec%obs_nudgezfullr4_t,          &
+                  model_config_rec%obs_nudgezrampr4_t,          &
+                  model_config_rec%obs_nudgezfullr1_q,          &
+                  model_config_rec%obs_nudgezrampr1_q,          &
+                  model_config_rec%obs_nudgezfullr2_q,          &
+                  model_config_rec%obs_nudgezrampr2_q,          &
+                  model_config_rec%obs_nudgezfullr4_q,          &
+                  model_config_rec%obs_nudgezrampr4_q,          &
+                  model_config_rec%obs_nudgezfullmin,           &
+                  model_config_rec%obs_nudgezrampmin,           &
+                  model_config_rec%obs_nudgezmax,               &
                   xlat,                                         &
                   xlong,                                        &
+                  model_config_rec%start_year(id),              &
+                  model_config_rec%start_month(id),             &
+                  model_config_rec%start_day(id),               &
+                  model_config_rec%start_hour(id),              &
+                  model_config_rec%start_minute(id),            &
+                  model_config_rec%start_second(id),            &
                   p00, t00, tlp,                                &
                   zhalf, p_top,                                 &
                   fdob,                                         &
@@ -2076,8 +2101,19 @@ integer myproc
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
                         sfcfact, sfcfacr, dpsmx,                   &
-                        lml_ht1, lml_ht2,                          &
+                        nudgezfullr1_uv, nudgezrampr1_uv,          &
+                        nudgezfullr2_uv, nudgezrampr2_uv,          &
+                        nudgezfullr4_uv, nudgezrampr4_uv,          &
+                        nudgezfullr1_t,  nudgezrampr1_t,           &
+                        nudgezfullr2_t,  nudgezrampr2_t,           &
+                        nudgezfullr4_t,  nudgezrampr4_t,           &
+                        nudgezfullr1_q,  nudgezrampr1_q,           &
+                        nudgezfullr2_q,  nudgezrampr2_q,           &
+                        nudgezfullr4_q,  nudgezrampr4_q,           &
+                        nudgezfullmin, nudgezrampmin, nudgezmax,   &
                         xlat, xlong,                               &
+                        start_year, start_month, start_day,        &
+                        start_hour, start_minute, start_second,    &
                         p00, t00, tlp,                             &
                         znu, p_top,                                &
                         fdob, ipf_init,                            &
@@ -2112,10 +2148,35 @@ integer myproc
    REAL    , INTENT(IN)    :: sfcfact      ! scale factor applied to time window for surface obs
    REAL    , INTENT(IN)    :: sfcfacr      ! scale fac applied to horiz rad of infl for sfc obs
    REAL    , INTENT(IN)    :: dpsmx        ! max pressure change allowed within horiz. infl. range
-   REAL    , INTENT(IN)    :: lml_ht1      ! height 1 for spreading of lowest model level obs
-   REAL    , INTENT(IN)    :: lml_ht2      ! height 2 for spreading of lowest model level obs
+   REAL    , INTENT(IN)    :: nudgezfullr1_uv  ! vert infl fcn, regime=1 full-wt   hght, winds
+   REAL    , INTENT(IN)    :: nudgezrampr1_uv  ! vert infl fcn, regime=1 ramp down hght, winds
+   REAL    , INTENT(IN)    :: nudgezfullr2_uv  ! vert infl fcn, regime=2 full-wt   hght, winds
+   REAL    , INTENT(IN)    :: nudgezrampr2_uv  ! vert infl fcn, regime=2 ramp down hght, winds
+   REAL    , INTENT(IN)    :: nudgezfullr4_uv  ! vert infl fcn, regime=4 full-wt   hght, winds
+   REAL    , INTENT(IN)    :: nudgezrampr4_uv  ! vert infl fcn, regime=4 ramp down hght, winds
+   REAL    , INTENT(IN)    :: nudgezfullr1_t   ! vert infl fcn, regime=1 full-wt   hght, temp
+   REAL    , INTENT(IN)    :: nudgezrampr1_t   ! vert infl fcn, regime=1 ramp down hght, temp
+   REAL    , INTENT(IN)    :: nudgezfullr2_t   ! vert infl fcn, regime=2 full-wt   hght, temp
+   REAL    , INTENT(IN)    :: nudgezrampr2_t   ! vert infl fcn, regime=2 ramp down hght, temp
+   REAL    , INTENT(IN)    :: nudgezfullr4_t   ! vert infl fcn, regime=4 full-wt   hght, temp
+   REAL    , INTENT(IN)    :: nudgezrampr4_t   ! vert infl fcn, regime=4 ramp down hght, temp
+   REAL    , INTENT(IN)    :: nudgezfullr1_q   ! vert infl fcn, regime=1 full-wt   hght, mois
+   REAL    , INTENT(IN)    :: nudgezrampr1_q   ! vert infl fcn, regime=1 ramp down hght, mois
+   REAL    , INTENT(IN)    :: nudgezfullr2_q   ! vert infl fcn, regime=2 full-wt   hght, mois
+   REAL    , INTENT(IN)    :: nudgezrampr2_q   ! vert infl fcn, regime=2 ramp down hght, mois
+   REAL    , INTENT(IN)    :: nudgezfullr4_q   ! vert infl fcn, regime=4 full-wt   hght, mois
+   REAL    , INTENT(IN)    :: nudgezrampr4_q   ! vert infl fcn, regime=4 ramp down hght, mois
+   REAL    , INTENT(IN)    :: nudgezfullmin    ! min dpth thru which vert infl fcn remains 1.0 (m)
+   REAL    , INTENT(IN)    :: nudgezrampmin    ! min dpth thru which vif decreases 1.0 to 0.0 (m)
+   REAL    , INTENT(IN)    :: nudgezmax        ! max dpth in which vif is nonzero (m)
    REAL    , INTENT(IN)    :: xlat ( ims:ime, jms:jme )        ! latitudes on mass-point grid
    REAL    , INTENT(IN)    :: xlong( ims:ime, jms:jme )        ! longitudes on mass-point grid
+   INTEGER , INTENT(INOUT) :: start_year
+   INTEGER , INTENT(INOUT) :: start_month
+   INTEGER , INTENT(INOUT) :: start_day
+   INTEGER , INTENT(INOUT) :: start_hour
+   INTEGER , INTENT(INOUT) :: start_minute
+   INTEGER , INTENT(INOUT) :: start_second
    REAL    , INTENT(IN)    :: p00                      ! base state pressure
    REAL    , INTENT(IN)    :: t00                      ! base state temperature
    REAL    , INTENT(IN)    :: tlp                      ! base state lapse rate
@@ -2139,8 +2200,19 @@ integer myproc
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
                         sfcfact, sfcfacr, dpsmx,                   &
-                        lml_ht1, lml_ht2,                          &
+                        nudgezfullr1_uv, nudgezrampr1_uv,          &
+                        nudgezfullr2_uv, nudgezrampr2_uv,          &
+                        nudgezfullr4_uv, nudgezrampr4_uv,          &
+                        nudgezfullr1_t,  nudgezrampr1_t,           &
+                        nudgezfullr2_t,  nudgezrampr2_t,           &
+                        nudgezfullr4_t,  nudgezrampr4_t,           &
+                        nudgezfullr1_q,  nudgezrampr1_q,           &
+                        nudgezfullr2_q,  nudgezrampr2_q,           &
+                        nudgezfullr4_q,  nudgezrampr4_q,           &
+                        nudgezfullmin,  nudgezrampmin, nudgezmax,  &
                         xlat, xlong,                               &
+                        start_year, start_month, start_day,        &
+                        start_hour, start_minute, start_second,    &
                         p00, t00, tlp,                             &
                         znu, p_top,                                &
                         fdob, ipf_init,                            &

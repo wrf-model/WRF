@@ -1920,8 +1920,7 @@ SUBROUTINE write_68( grid, v , s , &
 END
 
    SUBROUTINE wrf_abort
-
-    implicit none
+      IMPLICIT NONE
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER ierr
@@ -4262,6 +4261,63 @@ integer myproc
 
    END SUBROUTINE wrf_scatterv_integer
 ! end new stuff 20070124
+
+     SUBROUTINE wrf_dm_gatherv ( v, elemsize , km_s, km_e, wordsz )
+      IMPLICIT NONE
+      INTEGER  elemsize, km_s, km_e, wordsz
+      REAL v(*)
+#ifndef STUBMPI
+      INTEGER, DIMENSION(:), ALLOCATABLE :: recvcounts, displs
+      INTEGER send_type, myproc, nproc, local_comm, ierr, i
+   INCLUDE 'mpif.h'
+      send_type = MPI_REAL
+      IF ( wordsz .EQ. DWORDSIZE ) THEN
+        send_type = MPI_DOUBLE
+      ENDIF
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_nproc( nproc )
+      CALL wrf_get_myproc( myproc )
+      ALLOCATE( recvcounts(nproc), displs(nproc) )
+      i = (km_e-km_s+1)*elemsize
+      CALL mpi_allgather( i,1,MPI_INTEGER,recvcounts,1,MPI_INTEGER,local_comm,ierr) ;
+      i = (km_s)*elemsize
+      CALL mpi_allgather( i,1,MPI_INTEGER,displs,1,MPI_INTEGER,local_comm,ierr) ;
+      CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
+                           (km_e-km_s+1)*elemsize,                        &
+                           send_type,                                     &
+                           v,                                             &
+                           recvcounts,                                    &
+                           displs,                                        &
+                           send_type,                                     &
+                           local_comm,                                    &
+                           ierr )
+      DEALLOCATE(recvcounts)
+      DEALLOCATE(displs)
+#endif
+      return
+     END SUBROUTINE wrf_dm_gatherv
+
+
+      SUBROUTINE wrf_dm_decomp1d( nt, km_s, km_e )
+       IMPLICIT NONE
+       INTEGER, INTENT(IN)  :: nt
+       INTEGER, INTENT(OUT) :: km_s, km_e
+     ! local
+       INTEGER nn, nnp,  na, nb
+       INTEGER myproc, nproc
+
+       CALL wrf_get_myproc(myproc)
+       CALL wrf_get_nproc(nproc)
+       nn = nt / nproc           ! min number done by this task
+       nnp = nn
+       if ( myproc .lt. mod( nt, nproc ) )   nnp = nnp + 1 ! distribute remainder
+
+       na = min( myproc, mod(nt,nproc) ) ! Number of blocks with remainder that precede this one
+       nb = max( 0, myproc - na )        ! number of blocks without a remainder that precede this one
+       km_s = na * ( nn+1) + nb * nn     ! starting iteration for this task
+       km_e = km_s + nnp - 1             ! ending iteration for this task
+      END SUBROUTINE wrf_dm_decomp1d
+
 
 SUBROUTINE wrf_dm_define_comms ( grid )
    USE module_domain, ONLY : domain

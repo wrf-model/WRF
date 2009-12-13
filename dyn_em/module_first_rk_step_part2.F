@@ -567,6 +567,7 @@ BENCH_END(hor_diff_tim)
 
            CALL fddaobs_driver (grid%grid_id, model_config_rec%grid_id, &
                    model_config_rec%parent_id, config_flags%restart,    &
+                   config_flags,                                        &
                    grid%obs_nudge_opt,                                  &
                    grid%obs_ipf_errob,                                  &
                    grid%obs_ipf_nudob,                                  &
@@ -590,21 +591,23 @@ BENCH_END(hor_diff_tim)
                    grid%obs_dtramp,                                     &
                    grid%parent_grid_ratio,                              &
                    grid%max_dom, grid%itimestep,                        &
+                   grid%xtime,                                          &
                    grid%dt, grid%gmt, grid%julday, grid%fdob,           &
                    grid%max_obs,                                        &
                    model_config_rec%nobs_ndg_vars,                      &
                    model_config_rec%nobs_err_flds,                      &
                    grid%fdob%nstat, grid%fdob%varobs, grid%fdob%errf,   &
                    grid%dx, grid%KPBL,grid%HT,                          &
-                   grid%mut, grid%muu, grid%muv,               &
+                   grid%mut, grid%muu, grid%muv,                        &
                    grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
                    p_phy, t_tendf, t0,                                  &
-                   grid%u_2, grid%v_2, grid%t_2,               &
-                   moist(ims,kms,jms,P_QV),                                   &
+                   grid%u_2, grid%v_2, grid%t_2,                        &
+                   moist(ims,kms,jms,P_QV),                             &
                    grid%pb, grid%p_top, grid%p, grid%phb, grid%ph_2,    &
                    grid%uratx, grid%vratx, grid%tratx,                  &
                    ru_tendf, rv_tendf,                                  &
-                   moist_tend(ims,kms,jms,P_QV), grid%obs_savwt,           &
+                   moist_tend(ims,kms,jms,P_QV), grid%obs_savwt,        &
+                   grid%regime, grid%pblh, grid%z_at_w, grid%z,         &
                    ids,ide, jds,jde, kds,kde,                           &
                    ims,ime, jms,jme, kms,kme,                           &
                    grid%i_start(ij), min(grid%i_end(ij),ide-1),         &

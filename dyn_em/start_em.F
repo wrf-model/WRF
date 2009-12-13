@@ -72,7 +72,7 @@
    REAL :: qvf1, qvf2, qvf
    REAL :: MPDT
    REAL :: spongeweight
-   LOGICAL :: first_trip_for_this_domain, start_of_simulation
+   LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
 #ifndef WRF_CHEM
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
 #endif
@@ -791,20 +791,19 @@
 ! above that.
 
    IF ( ( start_of_simulation .OR. config_flags%cycling ) .AND. ( .NOT. config_flags%restart ) ) THEN
-   CALL set_w_surface(  config_flags, grid%znw,                         &
+   fill_w_flag = .true.
+   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
                         grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                      &
-                        ips, ipe, jps, jpe, kps, kpe,                      &
-                        its, ite, jts, jte, kts, kte,                      &
-                        ims, ime, jms, jme, kms, kme                      )
-   CALL set_w_surface(  config_flags, grid%znw,                         &
+                        ids, ide, jds, jde, kds, kde,                    &
+                        ims, ime, jms, jme, kms, kme,                    &
+                        its, ite, jts, jte, kts, kte                     )
+   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
                         grid%w_2, grid%ht, grid%u_2, grid%v_2, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                      &
-                        ips, ipe, jps, jpe, kps, kpe,                      &
-                        its, ite, jts, jte, kts, kte,                      &
-                        ims, ime, jms, jme, kms, kme                      )
+                        ids, ide, jds, jde, kds, kde,                    &
+                        ims, ime, jms, jme, kms, kme,                    &
+                        its, ite, jts, jte, kts, kte                     ) 
    END IF
 
 ! finished setting kinematic condition for w at the surface

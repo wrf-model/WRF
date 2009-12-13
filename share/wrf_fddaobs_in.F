@@ -73,7 +73,7 @@
                                          .OR.(ktau.EQ.krest) ) then
 ! Calculate forecast time.
       dtmin = grid%dt/60.
-      xtime = dtmin*grid%itimestep
+      xtime = grid%xtime
 
       CALL get_ijk_from_grid (  grid ,                                       &
                                 ids, ide, jds, jde, kds, kde,                &
@@ -89,7 +89,8 @@
          jts = grid%j_start(ij)
          jte = min(grid%j_end(ij),jde-1)
 
-         CALL in4dob(inest, xtime, ktau, krest, dtmin, grid%julday, grid%gmt,       &
+         CALL in4dob(inest, xtime, ktau, krest, dtmin,                              &
+                     grid%julyr, grid%julday, grid%gmt,                             &    !obsnypatch
                      grid%obs_nudge_opt,  grid%obs_nudge_wind, grid%obs_nudge_temp, &
                      grid%obs_nudge_mois, grid%obs_nudge_pstr, grid%obs_coef_wind,  &
                      grid%obs_coef_temp,  grid%obs_coef_mois,  grid%obs_coef_pstr,  &
@@ -132,7 +133,8 @@
 !------------------------------------------------------------------------------
 ! Begin subroutine in4dob and its subroutines
 !------------------------------------------------------------------------------
-  SUBROUTINE in4dob(inest, xtime, ktau, ktaur, dtmin, julday, gmt,       &
+  SUBROUTINE in4dob(inest, xtime, ktau, ktaur, dtmin,                    &
+                    myear, julday, gmt,                                  &      !obsnypatch
                     nudge_opt, iswind, istemp,                           &
                     ismois, ispstr, giv,                                 &
                     git, giq, gip,                                       &
@@ -164,6 +166,7 @@
 
   USE module_domain
   USE module_model_constants, ONLY : rcp
+  USE module_date_time , ONLY : geth_idts
   USE module_llxy
 
   IMPLICIT NONE
@@ -197,13 +200,14 @@
   INTEGER, intent(in)  :: KTAU          ! current timestep
   INTEGER, intent(in)  :: KTAUR         ! restart timestep
   REAL, intent(in)     :: dtmin         ! dt in minutes
+  INTEGER, intent(in)  :: myear         ! model year                           !obsnypatch
   INTEGER, intent(in)  :: julday        ! Julian day
-  REAL, intent(in)     :: gmt           ! Greenwich Mean Time
+  REAL, intent(in)     :: gmt           ! Model GMT at start of run
   INTEGER, intent(in)  :: nudge_opt     ! obs-nudge flag for this nest
   INTEGER, intent(in)  :: iswind        ! nudge flag for wind
   INTEGER, intent(in)  :: istemp        ! nudge flag for temperature
   INTEGER, intent(in)  :: ismois        ! nudge flag for moisture
-  INTEGER, intent(in)  :: ispstr        ! nudge flag for pressure
+  INTEGER, intent(in)  :: ispstr        ! nudge flag for pressure (obsolete)
   REAL, intent(in)     :: giv           ! coefficient for wind
   REAL, intent(in)     :: git           ! coefficient for temperature
   REAL, intent(in)     :: giq           ! coefficient for moisture
@@ -284,6 +288,8 @@
 ! Local variables
   TYPE (PROJ_INFO)   :: obs_proj        ! Structure for obs projection information.
   character*14 date_char
+  character*19 obs_date                                                        !obsnypatch
+  integer idts                                                                 !obsnypatch
   character*40 platform,source,id,namef
   character*2 fonc
   character(len=200) :: msg       ! Argument to wrf_message
@@ -297,6 +303,9 @@
   data ieof/0,0,0,0,0/
   data ifon/0,0,0,0,0/
   integer :: nmove, nvola
+  integer :: iyear, itimob                                                     !obsnypatch
+! external :: fcst_hours                                                       !obsnypatch
+! real :: fcst_hours                                                           !obsnypatch
   DATA NMOVE/0/,NVOLA/61/
 
 ! if(ieof(inest).eq.2.and.fdob%nstat.eq.0)then
@@ -315,11 +324,13 @@
     DO N=1,NIOBF
       TIMEOB(N)=99999.
     ENDDO
+    fdob%xtime_at_rest = xtime    !yliu 20080127
   ENDIF
 ! set number of obs=0 if at start or restart
   IF(KTAU.EQ.KTAUR)fdob%NSTAT=0
   NSTA=fdob%NSTAT
-  XHOUR=(XTIME-DTMIN)/60.
+
+  XHOUR=XTIME/60.
   XHOUR=AMAX1(XHOUR,0.0)
 
 10 CONTINUE
@@ -329,10 +340,14 @@
   TFORWD=XHOUR+TWINDO
 
   IF (iprt) then
-     write(msg,'(2(a,f8.3),a,i2)') 'TBACK = ',tback,            &
-                                 ' TFORWD = ',tforwd,'  for nest = ',inest
+     write(msg,'2(a,f8.3),a,i2')                                            &
+                  'OBS NUDGING: Reading new obs for time window TBACK = ',  &
+                  tback,' TFORWD = ',tforwd,' for grid = ',inest
      call wrf_message(msg)
   ENDIF
+
+! For obs that have become invalid because they are too old for the current time
+! window, mark with 99999 to set up for removal from the rolling valid-obs list.
 
   IF(NSTA.NE.0) THEN
     NDUM=0
@@ -343,6 +358,12 @@
       IF(TIMEOB(N).LT.9.E4) EXIT t_window
       NDUM=N
     ENDDO t_window
+
+    IF (iprt .and. ndum>0) THEN
+      write(msg,'(a,i5,2a)') 'OBS NUDGING: ',ndum,' previously read obs ',  &
+           'are now too old for the current window and have been removed.'
+      call wrf_message(msg)
+    ENDIF
 
 ! REMOVE OLD OBS DENOTED BY 99999. AT THE FRONT OF TIMEOB ARRAY
 !   IF (iprt) print *,'ndum at 20=',ndum
@@ -435,6 +456,7 @@
 ! DATA FILE.  CONTINUE READING UNTIL THE REACHING THE EOF
 ! (DATA TIME IS NEGATIVE) OR FIRST TIME PAST TFORWD. THE
 ! LAST OBS CURRENTLY AVAILABLE IS IN N=NMOVE.
+
   N=NLAST
   IF(N.EQ.0)GOTO 110
 
@@ -467,6 +489,7 @@
 ! THE TIME OF THE MOST RECENTLY ACQUIRED OBS IS .LE. TFORWD,
 ! SO CONTINUE READING
   110 continue
+
       IF(N.GT.NIOBF-1)GOTO 120
 ! REPLACE NVOLA WITH LUN 70, AND USE NVOLA AS A FILE COUNTER
       NVOL=NVOLA+INEST-1
@@ -476,27 +499,20 @@
 
       n=n+1
 
-      read(date_char(3:10),'(i8)')idate
-      read(date_char(11:12),'(i2)')imm
-      read(date_char(13:14),'(i2)')iss
-! output is rjdate (jjjhh.) and timanl (time in minutes since model start)
-      call julgmt(idate,rjdate1,timanl1,julday,gmt,0)
-      rtimob=rjdate1+real(imm)/60.+real(iss)/3600.
-      timeob(n)=rtimob
-      timeob(n) = int(timeob(n)*1000)/1000.0
+! Convert the form of the observation date for geth_idts.
+      call fmt_date(date_char, obs_date)
 
-! CONVERT TIMEOB FROM JULIAN DATE AND GMT FORM TO FORECAST
-! TIME IN HOURS (EX. TIMEOB=13002.4 REPRESENTS JULDAY 130
-! AND GMT (HOUR) = 2.4)
-      JULOB=TIMEOB(N)/100.+0.000001
-      RJULOB=FLOAT(JULOB)*100.
-      tempob = (timeob(n)*1000.)
-      tempob = int(tempob)
-      tempob = tempob/1000.
-      timeob(n) = tempob
-      HOUROB=TIMEOB(N)-RJULOB
-      TIMEOB(N)=FLOAT(JULOB-JULDAY)*24.-GMT+HOUROB
-      rtimob=timeob(n)
+! Compute the time period in seconds from the model reference
+! date (fdob%sdate) until the observation date.
+
+      call geth_idts(obs_date, fdob%sdate(1:19), idts)
+
+! Convert time in seconds to hours.
+      ! In case of restart, correct for new sdate.
+      idts = idts + nint(fdob%xtime_at_rest*60.)  ! yliu 20080127
+
+      rtimob =float(idts)/3600.
+      timeob(n)=rtimob
 
 !     print *,'read in ob ',n,timeob(n),rtimob
       IF(IDYNIN.EQ.1.AND.TIMEOB(N)*60..GT.fdob%DATEND) THEN
@@ -513,7 +529,7 @@
         rtimob=timeob(n)
       ENDIF
       read(nvol,102)latitude,longitude
- 102  FORMAT(2x,2(f7.2,3x))
+ 102  FORMAT(2x,2(f9.4,1x))
 
 ! save obs and model latitude and longitude for printout
       CALL collect_obs_info(newpass,inest,n,latitude,longitude,nprev,niobf,  &
@@ -584,7 +600,7 @@
 ! yliu: end
       if(plfo(n).eq.99.) then
          IF (iprt) then
-           write(msg,*) 'n=',n,' unknown ob of type',platform
+           write(msg,*) 'n=',n,' unknown ob of type ',platform
            call wrf_message(msg)
          ENDIF
       endif
@@ -704,7 +720,7 @@
 
             if( (pressure_qc.ge.0..and.pressure_qc.lt.30000.) .or.    &
                 (height_qc  .ge.0..and.height_qc  .lt.30000.) ) then
-    
+
               varobs(3,n) = temperature_data
             else
               varobs(3,n)=-888888.
@@ -1078,7 +1094,6 @@
 ! check if ob is in the domain
     if( (ri.lt.2.).or.(ri.gt.real(e_we-1)).or.(rj.lt.2.).or.         &
         (rj.gt.real(e_sn-1)) ) then
-! ajb bugfix end
 
         n=n-meas_count
 !ajb  Reset timeob for discarded indices.
@@ -1086,7 +1101,7 @@
           timeob(imc) = 99999.
         enddo
         goto 100
-      endif
+    endif
 
 ! check if an upper air ob is too high
 ! the ptop here is hardwired
@@ -1163,8 +1178,9 @@
 ! "OLD" OBS FIRST...
 130 CONTINUE
 
-! get here if at end of file, or if obs time is beyond what we
-! need right now
+! Get here if at end of file, or if obs time is beyond what we need right now.
+! On startup, we report the index of the last obs read.
+! For restarts, we need to remove any old obs and then repack obs list.
   IF(KTAU.EQ.KTAUR)THEN
     NSTA=0
     keep_obs : DO N=1,NIOBF
@@ -1174,11 +1190,15 @@
       IF(TIMEOB(N).GT.9.e4) EXIT keep_obs
       if(timeob(n).gt.tforwd) then
         if(iprt) then
-           write(msg,951)inest,n,timeob(n),tforwd
+           write(msg,950) inest
+           call wrf_message(msg)
+           write(msg,951) n,timeob(n),tforwd
            call wrf_message(msg)
         endif
- 951    FORMAT('saving ob beyond window,inest,n,timeob,tforwd=',   &
-               2i5,2f13.4) 
+ 950    FORMAT('Saving index of first ob after end of current time window ', &
+               'for nest = ', i3,':')
+ 951    FORMAT('  ob index = ',i8,',   time of ob = ',f8.4,                  &
+               ' hrs,   end of time window = ',f8.4,' hrs')
       endif
       NSTA=N
     ENDDO keep_obs
@@ -1196,10 +1216,12 @@
     ENDDO old_obs
 
 ! REMOVE OLD OBS DENOTED BY 99999. AT THE FRONT OF TIMEOB ARRAY
-    IF (iprt) THEN
-      write(msg,*) 'after 190 ndum=',ndum,nsta
+    IF (iprt .and. ktaur > 0) THEN
+      write(msg,'a,i5,a') 'OBS NUDGING: Upon restart, skipped over ',ndum,   &
+                ' obs that are now too old for the current obs window.'
       call wrf_message(msg)
     ENDIF
+
     NDUM=ABS(NDUM)
     NMOVE=NIOBF-NDUM
     IF( NMOVE.GT.0 .AND. NDUM.NE.0) THEN
@@ -1263,30 +1285,28 @@
         IF(ISWIND.EQ.1) then
           write(msg,1450) GIV
           call wrf_message(msg)
+        ELSE
+          write(msg,1455)
+          call wrf_message(msg)
         ENDIF
         IF(ISTEMP.EQ.1) then
           write(msg,1451) GIT
+          call wrf_message(msg)
+        ELSE
+          write(msg,1456)
           call wrf_message(msg)
         ENDIF
         IF(ISMOIS.EQ.1) then
           write(msg,1452) GIQ
           call wrf_message(msg)
-        ENDIF
-        IF(ISPSTR.EQ.1) then
-          write(msg,1453) GIP
+        ELSE
+          write(msg,1457)
           call wrf_message(msg)
         ENDIF
       ENDIF
     ENDIF
   ENDIF
   IF(KTAU.EQ.KTAUR)THEN
-!ajb 05042009 These messages are incorrect, remnant of MM5?
-!   IF (iprt) THEN
-!     write(msg,553)
-!     call wrf_message(msg)
-!     write(msg,554)
-!     call wrf_message(msg)
-!   ENDIF
     IF(fdob%IWTSIG.NE.1)THEN
       IF (iprt) THEN
         write(msg,555)
@@ -1298,6 +1318,7 @@
          call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 556' )
       ENDIF
 ! IS MINIMUM GREATER THAN MAXIMUM?
+
       IF (iprt) then
         write(msg,557) fdob%DPSMX*10.,fdob%DCON
         call wrf_message(msg)
@@ -1325,27 +1346,25 @@
 557   FORMAT(1X,'   IN THE SURFACE LAYER, WXY IS A FUNCTION OF ',        &
       'DPSMX = ',F7.2,' MB WITH DCON = ',E11.3,                          &
       ' - SEE SUBROUTINE NUDOB')
-601   FORMAT('0','FOR EFFICIENCY, THE OBS NUDGING FREQUENCY ',           &
+601   FORMAT('FOR EFFICIENCY, THE OBS NUDGING FREQUENCY ',               &
         'FOR MESH #',I2,' IS ',1I2,' CGM TIMESTEPS ')
-121   FORMAT('0','  WARNING: NOBS  = ',I4,' IS GREATER THAN NIOBF = ',   &
+121   FORMAT('  WARNING: NOBS  = ',I4,' IS GREATER THAN NIOBF = ',       &
       I4,': INCREASE PARAMETER NIOBF')
 5403  FORMAT(1H0,'-------------EOF REACHED FOR NVOL = ',I3,              &
        ' AND XTIME = ',F10.2,'-------------------')
 122   FORMAT(1X,'     ...OR THE CODE WILL REDUCE THE TIME WINDOW')
-160   FORMAT('0','****** CALL IN4DOB AT KTAU = ',I5,' AND XTIME = ',     &
+160   FORMAT('****** CALL IN4DOB AT KTAU = ',I5,' AND XTIME = ',         &
       F10.2,':  NSTA = ',I7,' ******')
-1449  FORMAT(1H0,'*****NUDGING INDIVIDUAL OBS ON MESH #',I2,             &
+1449  FORMAT('*****NUDGING INDIVIDUAL OBS ON MESH #',I2,                 &
        ' WITH RINXY = ',                                                 &
       E11.3,' KM, RINSIG = ',E11.3,' AND TWINDO (HALF-PERIOD) = ',       &
       E11.3,' MIN')
 1450  FORMAT(1X,'NUDGING IND. OBS WINDS WITH GIV = ',E11.3)
 1451  FORMAT(1X,'NUDGING IND. OBS TEMPERATURE WITH GIT = ',E11.3)
 1452  FORMAT(1X,'NUDGING IND. OBS MOISTURE WITH GIQ = ',E11.3)
-1453  FORMAT(1X,'NUDGING IND. OBS SURFACE PRESSURE WITH GIP = ,'E11.3)
-553   FORMAT(1X,'BY DEFAULT: OBS NUDGING OF TEMPERATURE AND MOISTURE ',  &
-      'IS RESTRICTED TO ABOVE THE BOUNDARY LAYER')
-554   FORMAT(1X,'...WHILE OBS NUDGING OF WIND IS INDEPENDENT OF THE ',   &
-      'BOUNDARY LAYER')
+1455  FORMAT(1X,'*** OBS WIND NUDGING TURNED OFF FOR THIS MESH!!')
+1456  FORMAT(1X,'*** OBS TEMPERATURE NUDGING IS TURNED OFF FOR THIS MESH!!')
+1457  FORMAT(1X,'*** OBS MOISTURE NUDGING IS TURNED OFF FOR THIS MESH!!')
 
   RETURN
   END SUBROUTINE in4dob
@@ -1632,6 +1651,33 @@ END SUBROUTINE rh2rb
 !       write(6,*) 'dx       = ',obs_proj%dx
 
   END SUBROUTINE set_projection
+
+  SUBROUTINE fmt_date(idate,odate)                                             !obsnypatch
+
+!*************************************************************************
+! Purpose: Re-format a character date string from YYYYMMDDHHmmss form
+!          to YYYY-MM-DD_HH:mm:ss form.
+! INPUT:
+!     IDATE - Date string as YYYYMMDDHHmmss
+! OUTPUT:
+!     ODATE - Date string as YYYY-MM-DD_HH:mm:ss
+!*************************************************************************
+
+      IMPLICIT NONE
+
+      CHARACTER*14, intent(in)  :: idate        ! input  date string
+      CHARACTER*19, intent(out) :: odate        ! output date string
+
+      odate(1:19) = "0000-00-00_00:00:00"
+      odate(1:4)   = idate(1:4)                 ! Year
+      odate(6:7)   = idate(5:6)                 ! Month
+      odate(9:10)  = idate(7:8)                 ! Day
+      odate(12:13) = idate(9:10)                ! Hours
+      odate(15:16) = idate(11:12)               ! Minutes
+      odate(18:19) = idate(13:14)               ! Seconds
+
+      RETURN
+  END SUBROUTINE fmt_date
 
   INTEGER FUNCTION nvals_le_limit(isize, values, limit)
 !------------------------------------------------------------------------------

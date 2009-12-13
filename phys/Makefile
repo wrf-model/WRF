@@ -168,7 +168,11 @@ module_ra_cam.o: module_ra_cam_support.o \
 
 module_mp_lin.o : ../frame/module_wrf_error.o
 
+module_mp_thompson.o : ../frame/module_wrf_error.o \
+			 ../frame/module_dm.o
+
 module_sf_myjsfc.o: ../share/module_model_constants.o 
+
 module_sf_qnsesfc.o: ../share/module_model_constants.o 
 
 module_sf_gfs.o: module_gfs_machine.o \

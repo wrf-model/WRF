@@ -352,7 +352,12 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
 
 
+! 2009-06009 rce - zero all these for safety
        IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.
+       IF( PRESENT(precr ) ) precr(its:ite,kts:kte,jts:jte)  = 0.
+       IF( PRESENT(preci ) ) preci(its:ite,kts:kte,jts:jte)  = 0.
+       IF( PRESENT(precs ) ) precs(its:ite,kts:kte,jts:jte)  = 0.
+       IF( PRESENT(precg ) ) precg(its:ite,kts:kte,jts:jte)  = 0.
 
 !-----------
        IF( PRESENT(chem_opt) .AND. PRESENT(progn) ) THEN

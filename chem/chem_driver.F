@@ -393,6 +393,9 @@
      CASE (CBMZ_BB)
        CALL wrf_debug(15,'calling cbmz_bb from chem_driver')
        haveaer = .false.
+     CASE (CBMZ_BB_KPP)
+       CALL wrf_debug(15,'calling cbmz_bb_kpp from chem_driver')
+       haveaer = .false.
      CASE (CBMZ_MOSAIC_4BIN)
        CALL wrf_debug(15,'calling cbmz_mosaic_4bin aerosols driver from chem_driver')
        haveaer = .true.
@@ -412,8 +415,23 @@
     CASE (CHEM_TRACER,CHEM_TRACE2)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
      CASE DEFAULT
+       if(config_flags%tracer_opt > 0 )then
+       CALL wrf_debug(15,'only doing tracer transport in chem_driver')
+       else
        CALL wrf_debug(15,'calling chem_opt=? from chem_driver')
+       endif
    END SELECT chem_select                              
+   tracer_select: SELECT CASE(config_flags%tracer_opt)
+    CASE (TRACER_SMOKE)
+       CALL wrf_debug(15,'tracer mode: 1 tracer for fires')
+    CASE (TRACER_ME)
+       CALL wrf_debug(15,'tracer mode: 8 tracers')
+    CASE (TRACER_SUS)
+       CALL wrf_debug(15,'tracer mode: ensemble of tracers')
+     CASE DEFAULT
+       CALL wrf_debug(15,'calling chem_opt=? from chem_driver')
+   END SELECT tracer_select
+
 !
 !
 !
@@ -652,7 +670,8 @@
 #if (EM_CORE == 1 )
               grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
 #endif
-              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,grid%tsk,grid%erod,g,emis_seas,emis_dust, &
+              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,grid%tsk,               &
+              grid%erod,g,emis_seas,emis_dust,tracer, &
               ebu , ebu_in,grid%mean_fct_agtf,grid%mean_fct_agef,grid%mean_fct_agsv,       &
               grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
@@ -814,7 +833,7 @@
 #if (EM_CORE == 1)
                  grid%gmt,grid%julday,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
-                 rri,p_phy,chem,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,                &
+                 rri,p_phy,chem,tracer,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,         &
                  grid%cldfra, grid%cldfra_old,grid%raincv_b,                          &
 	             grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
@@ -862,8 +881,9 @@
 !
 !
      if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0)then
-        call wrf_debug(15,'calling conv transport')
-        call grelldrvct(grid%DT,ktau,grid%DX,grid%id,config_flags,                    &
+        call wrf_debug(15,'calling conv transport for chemical species')
+        if(config_flags%chem_opt >0 )then
+        call grelldrvct(grid%DT,ktau,grid%DX,                                         &
              rho,grid%RAINCV_B,chem,                                                  &
 #if (NMM_CORE == 1)
              U_phy,V_phy,t_phy,moist_trans,dz8w,                                      &
@@ -872,19 +892,37 @@
              U_phy,V_phy,t_phy,moist,dz8w,                                            &
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
-             z_at_w,                                                                  &
-             grid%cu_co_ten,                                                          &
-             numgas,config_flags%chem_opt,                                            &
+             z_at_w,grid%cu_co_ten,                                                   &
+             num_moist,numgas,num_chem,config_flags%chem_opt,0,                       &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
-        if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP ) then
-           call mozcart_lbc_set( chem, num_chem, &
+             if( config_flags%chem_opt == MOZART_KPP .or. &
+                 config_flags%chem_opt == MOZCART_KPP ) then
+                     call mozcart_lbc_set( chem, num_chem, &
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
-        end if
+             end if
+        endif
+        if (config_flags%tracer_opt > 0)then
+        call wrf_debug(15,'calling conv transport for tracers')
+        call grelldrvct(grid%DT,ktau,grid%DX,                    &
+             rho,grid%RAINCV_B,tracer,                               &
+#if (NMM_CORE == 1)
+             U_phy,V_phy,t_phy,moist_trans,dz8w,                                      &
+#endif         
+#if (EM_CORE == 1)
+             U_phy,V_phy,t_phy,moist,dz8w,                                            &
+#endif
+             p_phy,XLV,CP,G,r_v,                                                      &
+             z_at_w, grid%cu_co_ten,                                                  &
+             num_moist,0,num_tracer,0,config_flags%tracer_opt,                        &
+             ids,ide, jds,jde, kds,kde,                                               &
+             ims,ime, jms,jme, kms,kme,                                               &
+             its,ite,jts,jte,kts,k_end)
 
+
+          end if
      end if
 !
 !

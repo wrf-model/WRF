@@ -24,7 +24,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
            ebu,ebu_in,mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
            firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
            config_flags, t_phy,moist,                                     &
-           chem,rho_phy,vvel,u_phy,v_phy,p_phy,                              &
+           rho_phy,vvel,u_phy,v_phy,p_phy,                              &
            emis_ant,z_at_w,z,                                                       &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -50,8 +50,6 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                                   its,ite, jts,jte, kts,kte
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
          INTENT(IN ) ::                                   moist
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
-         INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_ebu ),                 &
          INTENT(INOUT ) ::                                   ebu
    REAL, DIMENSION( ims:ime, 1, jms:jme, num_ebu_in ),                 &

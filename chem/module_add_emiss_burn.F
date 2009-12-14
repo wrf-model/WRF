@@ -1,9 +1,9 @@
 Module module_add_emiss_burn
 CONTAINS
-       subroutine add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,    &
+       subroutine add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,       &
             julday,gmt,xlat,xlong,t_phy,p_phy,                          &
-            ebu,chem_opt,biomass_burn_opt,                              &
-            ids,ide, jds,jde, kds,kde,                                  &
+            ebu,chem_opt,tracer_opt,biomass_burn_opt,                   &
+            num_c,ids,ide, jds,jde, kds,kde,                            &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
   USE module_configure, only: grid_config_rec_type
@@ -14,12 +14,12 @@ CONTAINS
 !  TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    INTEGER,      INTENT(IN   ) :: id,julday,chem_opt,biomass_burn_opt,     &
-                                  ids,ide, jds,jde, kds,kde,               &
+                                  num_c,ids,ide, jds,jde, kds,kde,      &
                                   ims,ime, jms,jme, kms,kme,               &
-                                  its,ite, jts,jte, kts,kte
+                                  its,ite, jts,jte, kts,kte,tracer_opt
    INTEGER,      INTENT(IN   ) ::                                          &
                                   ktau
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_c ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_ebu ),                 &
          INTENT(IN    ) ::                           ebu
@@ -59,6 +59,8 @@ CONTAINS
 
     !-------------biomass burning diurnal cycle --------------------
     !number of days of simulation
+    itime1=0
+    time=0.
     idays = int(( float(itime1)/100. + time/3600.)/24.+.00001)
     tign  = real(idays)*24.*3600.
     ! Modulacao da queimada media durante o ciclo diurno(unidade: 1/s)
@@ -79,6 +81,24 @@ CONTAINS
     !- weekly + diurnal cycle
     r_q=r_q*86400.
     r_q=1. ! no diurnal cycle
+!
+!tracer_opt has to come in as zero, if chem_opt is not =0!
+      temiss_select:  SELECT CASE(tracer_opt)
+         CASE (TRACER_SMOKE)
+!
+! for smoke only
+!
+          do j=jts,jte
+          do i=its,ite
+          do k=kts,kte
+             conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+             chem(i,k,j,p_smoke)  =  chem(i,k,j,p_smoke)+ebu(i,k,j,p_ebu_co)*conv_rho
+          enddo
+          enddo
+          enddo
+         CASE DEFAULT
+             call wrf_debug(15,'nothing done with burn emissions for tracers here')
+      END SELECT temiss_select
       emiss_select:  SELECT CASE(chem_opt)
       CASE (RACMPM_KPP)
           do j=jts,jte
@@ -352,7 +372,7 @@ CONTAINS
         enddo
         enddo
     CASE DEFAULT
-       call wrf_debug(15,'nothing done with burn emissions')
+       call wrf_debug(15,'nothing done with burn emissions for chem array')
     END SELECT emiss_select
 
 

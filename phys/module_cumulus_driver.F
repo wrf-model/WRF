@@ -33,9 +33,10 @@ CONTAINS
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
                      ,apr_capme,apr_capmi,edt_out,clos_choice         &
                      ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
-                     ,cugd_tten,cugd_qvten,cugd_qcten                 &
+                     ,ishallow,cugd_tten,cugd_qvten,cugd_qcten        &
                      ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2      &
+                     ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
@@ -279,7 +280,7 @@ CONTAINS
 
    REAL,  INTENT(IN   ) :: DT, DX
    INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
-                                      ips,ipe, jps,jpe, kps,kpe,imomentum
+                   ips,ipe, jps,jpe, kps,kpe,imomentum,ishallow
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
@@ -297,6 +298,9 @@ CONTAINS
 !
 ! optional arguments
 !
+   INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
+         OPTIONAL, INTENT(INOUT) ::                              &
+     k22_shallow,kbcon_shallow,ktop_shallow
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
                       ! optional moisture tracers
@@ -320,7 +324,7 @@ CONTAINS
                     OPTIONAL,                                    &
                     INTENT(INOUT) ::                             &
                 apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
-               ,apr_capme,apr_capmi,edt_out                      &
+               ,apr_capme,apr_capmi,edt_out,xmb_shallow          &
                                                     , MASS_FLUX
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
@@ -386,7 +390,6 @@ CONTAINS
    else
       tmppratec(:,:) = 0.
    end if
-
 
    IF (cu_physics .eq. 0) return
 #if  ( EM_CORE == 1 )
@@ -611,11 +614,15 @@ CONTAINS
                ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
                ,XF_ENS=xf_ens,PR_ENS=pr_ens,HT=ht               &
                ,xland=xland,gsw=gsw,edt_out=edt_out             &
-               ,GDC=gd_cloud,GDC2=gd_cloud2                     &
+               ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
+               ,k22_shallow=k22_shallow                         &
+               ,kbcon_shallow=kbcon_shallow                     &
+               ,ktop_shallow=ktop_shallow                       &
+               ,xmb_shallow=xmb_shallow                         &
                ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten       &
                ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens   &
                ,cugd_qcten=cugd_qcten,cugd_avedx=cugd_avedx     &
-               ,imomentum=imomentum                             &
+               ,imomentum=imomentum,ishallow_g3=ishallow        &
                ,ENSDIM=ensdim,MAXIENS=maxiens,MAXENS=maxens     &
                ,MAXENS2=maxens2,MAXENS3=maxens3,ichoice=clos_choice &
                ,STEPCU=STEPCU,htop=htop,hbot=hbot               &
@@ -632,6 +639,7 @@ CONTAINS
 #else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
+               ,rqvblten=rqvblten,rthblten=rthblten             &
 #endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &

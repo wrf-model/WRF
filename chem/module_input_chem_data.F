@@ -336,7 +336,7 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
         GOCARTRACM_KPP, GOCARTRADM2,GOCARTRADM2_KPP,CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
-  case (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
+  case (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
         CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
      call setup_gasprofile_map_cbmz(numgas)
 
@@ -1289,7 +1289,7 @@ SUBROUTINE input_chem_profile (si_grid)
 ! we have to treat it separately. (wig, 2-May-2007)
 !
       SELECT CASE(chem_opt)
-      CASE (CBMZ,CBMZ_BB,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
+      CASE (CBMZ,CBMZ_BB,CBMZ_BB_KPP,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
             CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
          do j = ny1,ny2
          do k = nz1,nz2
@@ -2792,7 +2792,7 @@ SUBROUTINE input_chem_profile (si_grid)
      case (CBMZ)
         get_last_gas = p_mtf
 
-     case (CBMZ_BB,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
+     case (CBMZ_BB,CBMZ_BB_KPP,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
         get_last_gas = p_isopo2
 
      case (CHEM_TRACER)

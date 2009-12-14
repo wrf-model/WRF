@@ -627,27 +627,28 @@ state   real   tracer_19    ikjftb   chem        1         -   irhusdf=(bdy_inte
 state   real   tracer_20    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "tracer_20"             "tracer20    mix ratio"        "ppmv"
 state   real   tracer_ens    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "tracer_ens"             "tracer- ensemble average    mix ratio"        "ppmv"
 
-state   real    -          ikjftb  scalar        1         -     -    -                                       
-state   real    tr17_0     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_0"         "tr17_0"          -
-state   real    tr17_1     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_1"         "tr17_1"          -
-state   real    tr17_2     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_2"         "tr17_2"          -
-state   real    tr17_3     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_3"         "tr17_3"          -
-state   real    tr17_4     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_4"         "tr17_4"          -
-state   real    tr17_5     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_5"         "tr17_5"          -
-state   real    tr17_6     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_6"         "tr17_6"          -
-state   real    tr17_7     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_7"         "tr17_7"          -
-state   real    tr17_8     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_8"         "tr17_8"          -
-state   real    tr17_9     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_9"         "tr17_9"          -
-state   real    tr18_0     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_0"         "tr18_0"          -
-state   real    tr18_1     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_1"         "tr18_1"          -
-state   real    tr18_2     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_2"         "tr18_2"          -
-state   real    tr18_3     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_3"         "tr18_3"          -
-state   real    tr18_4     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_4"         "tr18_4"          -
-state   real    tr18_5     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_5"         "tr18_5"          -
-state   real    tr18_6     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_6"         "tr18_6"          -
-state   real    tr18_7     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_7"         "tr18_7"          -
-state   real    tr18_8     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_8"         "tr18_8"          -
-state   real    tr18_9     ikjftb  scalar        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_9"         "tr18_9"          -
+state   real    -          ikjftb  tracer        1         -     -    -                                       
+state   real    smoke      ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "smoke"         "tracing smoke"          -
+state   real    tr17_0     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_0"         "tr17_0"          -
+state   real    tr17_1     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_1"         "tr17_1"          -
+state   real    tr17_2     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_2"         "tr17_2"          -
+state   real    tr17_3     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_3"         "tr17_3"          -
+state   real    tr17_4     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_4"         "tr17_4"          -
+state   real    tr17_5     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_5"         "tr17_5"          -
+state   real    tr17_6     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_6"         "tr17_6"          -
+state   real    tr17_7     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_7"         "tr17_7"          -
+state   real    tr17_8     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_8"         "tr17_8"          -
+state   real    tr17_9     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr17_9"         "tr17_9"          -
+state   real    tr18_0     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_0"         "tr18_0"          -
+state   real    tr18_1     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_1"         "tr18_1"          -
+state   real    tr18_2     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_2"         "tr18_2"          -
+state   real    tr18_3     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_3"         "tr18_3"          -
+state   real    tr18_4     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_4"         "tr18_4"          -
+state   real    tr18_5     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_5"         "tr18_5"          -
+state   real    tr18_6     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_6"         "tr18_6"          -
+state   real    tr18_7     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_7"         "tr18_7"          -
+state   real    tr18_8     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_8"         "tr18_8"          -
+state   real    tr18_9     ikjftb  tracer        1         -     i08rhusdf=(bdy_interp:dt)    "tr18_9"         "tr18_9"          -
 
 #Aerosol variables inside the chem array...
 # the first two are for simple advection of total pm25 and pm10 mass
@@ -1081,7 +1082,9 @@ rconfig   integer     cldchem_onoff       namelist,chem          max_domains    
 rconfig   integer     vertmix_onoff       namelist,chem          max_domains    1       rh    "vertmix_onoff"       ""      ""
 rconfig   integer     chem_in_opt         namelist,chem          max_domains    0       rh    "chem_in_opt"         ""      ""
 rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh    "phot_opt"            ""      ""
-rconfig   integer     drydep_opt          namelist,chem          max_domains    0       rh    "drydep_opt"          ""      ""
+rconfig   integer     gas_drydep_opt      namelist,chem          max_domains    1       rh    "gas_drydep_opt"      ""      ""
+rconfig   integer     aer_drydep_opt      namelist,chem          max_domains    1       rh    "aer_drydep_opt"      ""      ""
+rconfig   integer   aer_aerodynres_opt    namelist,chem          max_domains    1       rh    "aer_aerodynres_opt"      ""      ""
 rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"       ""      ""
 rconfig   integer     dmsemis_opt         namelist,chem          1              0       rh    "dmsemis_opt"       ""      ""
@@ -1095,10 +1098,11 @@ rconfig   integer     gas_ic_opt          namelist,chem          max_domains    
 rconfig   integer     aer_bc_opt          namelist,chem          max_domains    1       rh    "aer_bc_opt"          ""      ""
 rconfig   integer     aer_ic_opt          namelist,chem          max_domains    1       rh    "aer_ic_opt"          ""      ""
 rconfig   logical     have_bcs_chem       namelist,chem          max_domains    .false. rh    "have_bcs_chem"       ""      ""
+rconfig   logical     have_bcs_tracer     namelist,chem          max_domains    .false. rh    "have_bcs_tracer"     ""      ""
 rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
 rconfig   integer     aer_op_opt          namelist,chem          max_domains    1       rh    "aer_op_opt"          ""      ""
 rconfig   integer     opt_pars_out        namelist,chem          1    0       h    "opt_pars_out"          ""      ""
-rconfig   integer     scalar_opt          namelist,chem          max_domains    0       rh    "scalar_opt"          ""      ""
+rconfig   integer     tracer_opt          namelist,chem          max_domains    0       rh    "tracer_opt"          ""      ""
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
@@ -1115,8 +1119,8 @@ package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf
 package   cbmz_mosaic_4bin_aq  chem_opt==9           -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04
 package   cbmz_mosaic_8bin_aq  chem_opt==10          -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04,so4_cw05,no3_cw05,cl_cw05,nh4_cw05,na_cw05,oin_cw05,oc_cw05,bc_cw05,num_cw05,so4_cw06,no3_cw06,cl_cw06,nh4_cw06,na_cw06,oin_cw06,oc_cw06,bc_cw06,num_cw06,so4_cw07,no3_cw07,cl_cw07,nh4_cw07,na_cw07,oin_cw07,oc_cw07,bc_cw07,num_cw07,so4_cw08,no3_cw08,cl_cw08,nh4_cw08,na_cw08,oin_cw08,oc_cw08,bc_cw08,num_cw08
 
-package   radm2sorg_aq chem_opt==11                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
-package   racmsorg_aq  chem_opt==12                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
+package   radm2sorg_aq chem_opt==11                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
+package   racmsorg_aq  chem_opt==12                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 package   chem_tracer   chem_opt==13                 -             chem:so2,no,ald,hcho,ora2,co
 package   chem_trace2   chem_opt==14                 -             chem:tracer_1
 package   chem_trace_ens   chem_opt==15              -             chem:tracer_1,tracer_2,tracer_3,tracer_4,tracer_5,tracer_6,tracer_7,tracer_8,tracer_9,tracer_10,tracer_11,tracer_12,tracer_13,tracer_14,tracer_15,tracer_16,tracer_17,tracer_18,tracer_19,tracer_20,tracer_ens
@@ -1142,7 +1146,8 @@ package   mozart_kpp        chem_opt==111                  -          chem:o3,o1
 # KPP mechanism from mozart + gocart
 package   mozcart_kpp       chem_opt==112                  -          chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,so4,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,meko2,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4
 
-
+# KPP mechanism from CBMZ
+package   cbmz_bb_kpp       chem_opt==120                -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,ch4,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
 # KPP mechanism from MATCH-MPI Mainz used for global chemistry
 package   nmhc9_kpp     chem_opt==200                   -             chem:o3,h2o2,ch4,op1,hcho,ch3oh,co,hno3,no3,n2o5,hno4,no,no2,isopr,mvk,iso2,isooh,mvko2,mvkooh,ison,aca,acol,hcooh,mpan,naca,pan,pa,paa,mglo,c2h6,eTooh,ald,c3h8,pRooh,acet,acooh,eTo2,pRo2,aco2,c3h6,c3h6ooh,c2h4,c4h10,buooh,mek,mekooh,mEcoco,c3h6o2,c4h9o2,meko2,onit,pRono2,ch3o2,acetol,acetp,aceto2,ch3cooh,c4h9ooh,mEoh,ho,ho2,mEo2,mEo2no2
 
@@ -1172,7 +1177,7 @@ package   gocart_ecptec   emiss_opt==6                   -             emis_ant:
 package   photmad       phot_opt==1                  -             -
 package   photfastj     phot_opt==2                  -             -
 package   ftuv          phot_opt==3                  -             -
-package   wesely        drydep_opt==1                -             -
+package   wesely        gas_drydep_opt==1            -             -
 package   gunther1      bio_emiss_opt==1             -             -
 package   beis313       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
@@ -1214,8 +1219,9 @@ package   aer_bc_pnnl                 aer_bc_opt==101              -            
 package   aer_ic_default              aer_ic_opt==1                -             -
 package   aer_ic_pnnl                 aer_ic_opt==101              -             -
 
-package   scalar_me     scalar_opt==1       -             scalar:tr17_0,tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8,tr17_9,tr18_0,tr18_1,tr18_2,tr18_3,tr18_4,tr18_5,tr18_6,tr18_7,tr18_8,tr18_9
-package   scalar_sUS    scalar_opt==2       -             scalar:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
+package   tracer_smoke  tracer_opt==1       -             tracer:smoke
+package   tracer_me     tracer_opt==2       -             tracer:tr17_0,tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8,tr17_9,tr18_0,tr18_1,tr18_2,tr18_3,tr18_4,tr18_5,tr18_6,tr18_7,tr18_8,tr18_9
+package   tracer_sUS    tracer_opt==3       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 
 # Lightning
 package   crmpickering  lightning_opt==1   -   state:ic_flshrate,cg_flshrate

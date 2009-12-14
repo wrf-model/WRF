@@ -10,6 +10,7 @@ CONTAINS
   SUBROUTINE first_rk_step_part1 (   grid , config_flags              &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
+                             , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
                              , fdda3d, fdda2d                   &
                              , ru_tendf, rv_tendf               &
@@ -75,6 +76,8 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
@@ -157,7 +160,8 @@ BENCH_START(init_zero_tend_tim)
                                    ph_tendf, t_tendf, tke_tend,      &
                                    mu_tendf,                         &
                                    moist_tend,chem_tend,scalar_tend, &
-                                   num_moist,num_chem,num_scalar,       &
+                                   tracer_tend,num_tracer,           &
+                                   num_moist,num_chem,num_scalar,    &
                                    rk_step,                          &
                                    ids, ide, jds, jde, kds, kde,     &
                                    ims, ime, jms, jme, kms, kme,     &
@@ -612,12 +616,15 @@ BENCH_START(cu_driver_tim)
      &             ,MASS_FLUX=grid%mass_flux          ,XF_ENS=grid%xf_ens           &
      &             ,PR_ENS=grid%pr_ens ,HT=grid%ht,EDT_OUT=grid%edt_out             &
      &             ,imomentum=grid%imomentum,clos_choice=grid%clos_choice       &
+     &             ,ishallow=config_flags%ishallow                                  &
      &             ,cugd_tten=grid%cugd_tten,cugd_qvten=grid%cugd_qvten,cugd_qcten=grid%cugd_qcten   &
      &             ,cugd_ttens=grid%cugd_ttens,cugd_qvtens=grid%cugd_qvtens   &
      &             ,ENSDIM=config_flags%ensdim ,MAXIENS=config_flags%maxiens ,MAXENS=config_flags%maxens         &
      &             ,MAXENS2=config_flags%maxens2                ,MAXENS3=config_flags%maxens3       &
      &             ,CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=grid%warm_rain        &
      &             ,GSW=grid%gsw,cugd_avedx=config_flags%cugd_avedx &
+     &             ,k22_shallow=grid%k22_shallow,kbcon_shallow=grid%kbcon_shallow            &
+     &             ,ktop_shallow=grid%ktop_shallow,xmb_shallow=grid%xmb_shallow            &
      &             ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
      &             ,PERIODIC_Y=config_flags%periodic_y  &
                  ! Selection flag

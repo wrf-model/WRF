@@ -1316,6 +1316,7 @@ END SUBROUTINE rk_update_scalar_pd
 SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                               t_tendf,  tke_tendf, mu_tendf,           &
                               moist_tendf,chem_tendf,scalar_tendf,     &
+                              tracer_tendf,n_tracer,                   &
                               n_moist,n_chem,n_scalar,rk_step,         &
                               ids, ide, jds, jde, kds, kde,            &
                               ims, ime, jms, jme, kms, kme,            &
@@ -1328,7 +1329,7 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                                     ims, ime, jms, jme, kms, kme, &
                                     its, ite, jts, jte, kts, kte
 
-   INTEGER ,       INTENT(IN   ) :: n_moist,n_chem,n_scalar,rk_step
+   INTEGER ,       INTENT(IN   ) :: n_moist,n_chem,n_scalar,n_tracer,rk_step
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) ::  &
                                                              ru_tendf, &
@@ -1345,6 +1346,8 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_chem ),INTENT(INOUT)::&
                                                           chem_tendf
+   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_tracer ),INTENT(INOUT)::&
+                                                          tracer_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_scalar ),INTENT(INOUT)::&
                                                           scalar_tendf
@@ -1407,6 +1410,14 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
 !   DO ic=PARAM_FIRST_SCALAR,n_chem
    DO ic=1,n_chem                       ! make sure first one is zero too
       CALL zero_tend ( chem_tendf(ims,kms,jms,ic),   &
+                       ids, ide, jds, jde, kds, kde, &
+                       ims, ime, jms, jme, kms, kme, &
+                       its, ite, jts, jte, kts, kte  )
+   ENDDO
+
+!   DO ic=PARAM_FIRST_SCALAR,n_tracer
+   DO ic=1,n_tracer                     ! make sure first one is zero too
+      CALL zero_tend ( tracer_tendf(ims,kms,jms,ic), &
                        ids, ide, jds, jde, kds, kde, &
                        ims, ime, jms, jme, kms, kme, &
                        its, ite, jts, jte, kts, kte  )

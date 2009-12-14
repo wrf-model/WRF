@@ -211,7 +211,6 @@ CONTAINS
                         (3.80*exp(17.27*(t_phy(i,k,j)-273.)/      &
                         (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j)))   )
                rh(k)=max(.1,0.01*rh(k))
-!               rh(k) = .10
             enddo
             do k=kts,kte
 !           if(timer.gt.2.)then
@@ -544,7 +543,7 @@ CONTAINS
       enddo
     END SUBROUTINE sum_pm_sorgam
 ! ///////////////////////////////////////////////////
-    SUBROUTINE sorgam_depdriver (id,ktau,dtstep,                        &
+    SUBROUTINE sorgam_depdriver (id,config_flags,ktau,dtstep,           &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
                alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
@@ -554,6 +553,9 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
+
+   USE module_configure,only:  grid_config_rec_type
+   TYPE (grid_config_rec_type) , INTENT (IN) :: config_flags
    INTEGER,      INTENT(IN   )    ::                             &
                                       numaer,                    &
                                       ids,ide, jds,jde, kds,kde, &
@@ -801,6 +803,14 @@ CONTAINS
       cblk(1,VNH4AI   ) =   max(epsilc,chem(i,k,j,p_nh4ai)*convfac2)
       cblk(1,VNO3AJ   ) =   max(epsilc,chem(i,k,j,p_no3aj)*convfac2)
       cblk(1,VNO3AI   ) =   max(epsilc,chem(i,k,j,p_no3ai)*convfac2)
+      if (p_naai >= param_first_scalar) &
+         cblk(1,VNAAI ) =   max(epsilc,chem(i,k,j,p_naai)*convfac2)
+      if (p_naaj >= param_first_scalar) &
+         cblk(1,VNAAJ ) =   max(epsilc,chem(i,k,j,p_naaj)*convfac2)
+      if (p_clai >= param_first_scalar) &
+         cblk(1,VCLAI ) =   max(epsilc,chem(i,k,j,p_clai)*convfac2)
+      if (p_claj >= param_first_scalar) &
+         cblk(1,VCLAJ ) =   max(epsilc,chem(i,k,j,p_claj)*convfac2)
       cblk(1,VORGARO1J) =   max(epsilc,chem(i,k,j,p_orgaro1j)*convfac2)
       cblk(1,VORGARO1I) =   max(epsilc,chem(i,k,j,p_orgaro1i)*convfac2)
       cblk(1,VORGARO2J) =   max(epsilc,chem(i,k,j,p_orgaro2j)*convfac2)
@@ -869,24 +879,32 @@ CONTAINS
              DGNUC, DGACC, DGCOR,                             &
              KNNUC, KNACC,KNCOR    )                                   
 !       print *,'out modpar ',i,j
-!        CALL VDVG(  BLKSIZE, NSPCSDA, NUMCELLS,k,CBLK, &
-!             BLKTA, BLKDENS, AER_RES(I,j), USTAR, WSTAR,  AMU,   &   
-!             DGNUC, DGACC, DGCOR,                      &
-!             KNNUC, KNACC,KNCOR,                       &
-!             PDENSN, PDENSA, PDENSC,                   &
-!             VSED, VDEP )                                             
+        if (config_flags%aer_drydep_opt == 11) then
+        CALL VDVG(  BLKSIZE, NSPCSDA, NUMCELLS,k,CBLK, &
+             BLKTA, BLKDENS, AER_RES(I,j), USTAR, WSTAR,  AMU,   &   
+             DGNUC, DGACC, DGCOR,                      &
+             KNNUC, KNACC,KNCOR,                       &
+             PDENSN, PDENSA, PDENSC,                   &
+             VSED, VDEP )                                             
+        else
         CALL VDVG_2(  BLKSIZE, NSPCSDA, NUMCELLS,k,CBLK, &
              BLKTA, BLKDENS, AER_RES(I,j), USTAR, PBLH,&
              ZNTT, RMOLM, AMU, DGNUC, DGACC, DGCOR,XLM,&
              KNNUC, KNACC,KNCOR,                       &
              PDENSN, PDENSA, PDENSC,                   &
              VSED, VDEP )
+        endif
+
         VGSA(i, j, VSO4AJ   )  =  VDEP(1, VDMACC )
         VGSA(i, j, VSO4AI   )  =  VDEP(1, VDMNUC )
         VGSA(i, j, VNH4AJ   )  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VNH4AI   )  =  VGSA(i, j, VSO4AI )
         VGSA(i, j, VNO3AJ   )  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VNO3AI   )  =  VGSA(i, j, VSO4AI )
+        if (p_naai >= param_first_scalar) VGSA(i, j, VNAAI )  =  VGSA(i, j, VSO4AI )
+        if (p_naaj >= param_first_scalar) VGSA(i, j, VNAAJ )  =  VGSA(i, j, VSO4AJ )
+        if (p_clai >= param_first_scalar) VGSA(i, j, VCLAI )  =  VGSA(i, j, VSO4AI )
+        if (p_claj >= param_first_scalar) VGSA(i, j, VCLAJ )  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VORGARO1J)  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VORGARO1I)  =  VGSA(i, j, VSO4AI )
         VGSA(i, j, VORGARO2J)  =  VGSA(i, j, VSO4AJ )
@@ -1463,11 +1481,11 @@ END SUBROUTINE sorgam_depdriver
 !     for now, don't call if temp is below -40C (humidity
 !     for this wrf version is already limited to 10 percent)
 
-        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.1)then
-           CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh,igrid,jgrid,kgrid)
-        else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.0)then
+!       if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.1)then
+!          CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh,igrid,jgrid,kgrid)
+!       else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.0)then
            CALL eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
-        endif
+!       endif
 
 ! *** get size distribution information:
 
@@ -7084,6 +7102,7 @@ END SUBROUTINE VDVG
         RBcor=exp(-2.0*(STQ**0.5)) ! Rebound correction factor used in Slinn (1982)
         vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
         vdplim=min(vdplim,.02)
+        vdplim=max(vdplim,1e-35) !wig: add check since occasionally a lg particle causes overflow of rsurfq
         RSURFQ=RA(LCELL)+1./vdplim
 !       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
 !
@@ -8035,6 +8054,7 @@ END SUBROUTINE VDVG_2
     END SUBROUTINE sorgam_init_aer_ic_pnnl
 
 !------------------------------------------------------------------------
+
 SUBROUTINE sorgam_addemiss(                                             &
      id, dtstep, u10, v10, alt, dz8w, xland, chem,                      &
      ebu,                                   &
@@ -8299,7 +8319,6 @@ SUBROUTINE sorgam_addemiss(                                             &
   end if
 
 END SUBROUTINE sorgam_addemiss
-
 
 !------------------------------------------------------------------------
 SUBROUTINE sorgam_seasalt_emiss(                                        &

@@ -1104,7 +1104,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
         qndrop3d(i,k,j) = max(qndrop(k),1.e-6)
 
         if(qndrop3d(i,k,j).lt.-10.e6.or.qndrop3d(i,k,j).gt.1.E20)then
-           write(6,'(a,g12.2,a,3i5)')'after qndrop=',qndrop3d(i,k,j),' for i,k,j=',i,k,j
+           write(6,'(a,g12.2,a,3i5)')'after qndrop3d=',qndrop3d(i,k,j),' for i,k,j=',i,k,j
         endif
         if(qc(i,k,j).lt.-1..or.qc(i,k,j).gt.1.)then
            write(6,'(a,g12.2,a,3i5)')'qc=',qc(i,k,j),' for i,k,j=',i,k,j

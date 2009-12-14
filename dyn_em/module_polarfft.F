@@ -61,10 +61,11 @@ SUBROUTINE pxft ( grid                          &
                  ,flag_mu,flag_mut              &
                  ,flag_moist                    &
                  ,flag_chem                     &
+                 ,flag_tracer                   &
                  ,flag_scalar                   &
-                 ,fft_filter_lat, dclat        &
+                 ,fft_filter_lat, dclat         &
                  ,positive_definite             &
-                 ,moist,chem,scalar             &
+                 ,moist,chem,tracer,scalar      &
                  ,ids,ide,jds,jde,kds,kde       &
                  ,ims,ime,jms,jme,kms,kme       &
                  ,ips,ipe,jps,jpe,kps,kpe       &
@@ -93,8 +94,9 @@ integer myproc, i, j, k
                          ,flag_mu,flag_mut              &
                          ,flag_moist                    &
                          ,flag_chem                     &
+                         ,flag_tracer                   &
                          ,flag_scalar
-    REAL, DIMENSION(ims:ime,kms:kme,jms:jme,*) , INTENT(INOUT) :: moist, chem, scalar
+    REAL, DIMENSION(ims:ime,kms:kme,jms:jme,*) , INTENT(INOUT) :: moist, chem, scalar,tracer
 
    ! Local
    LOGICAL piggyback_mu, piggyback_mut
@@ -356,6 +358,28 @@ call wrf_get_myproc(myproc)
 # include "XPOSE_POLAR_FILTER_MOIST_x2z.inc"
 #else
      CALL polar_filter_3d( chem(ims,kms,jms,itrace), grid%clat, .false. ,     &
+                           fft_filter_lat, 0.,                &
+                           ids, ide, jds, jde, kds, kde,       &
+                           ims, ime, jms, jme, kms, kme, &
+                           ips, ipe, jps, jpe, kps, MIN(kpe,kde-1), &
+                           positive_definite = positive_definite )
+#endif
+   ENDIF
+
+! tracer
+   IF ( flag_tracer .GE. PARAM_FIRST_SCALAR ) THEN
+     itrace = flag_tracer
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+# include "XPOSE_POLAR_FILTER_TRACER_z2x.inc"
+     CALL polar_filter_3d( grid%fourd_xxx, grid%clat_xxx, .false. ,     &
+                           fft_filter_lat, 0.,                &
+                           ids, ide, jds, jde, kds, kde,       &
+                           imsx, imex, jmsx, jmex, kmsx, kmex, &
+                           ipsx, ipex, jpsx, jpex, kpsx, MIN(kpex,kde-1), &
+                           positive_definite = positive_definite )
+# include "XPOSE_POLAR_FILTER_TRACER_x2z.inc"
+#else
+     CALL polar_filter_3d( tracer(ims,kms,jms,itrace), grid%clat, .false. ,     &
                            fft_filter_lat, 0.,                &
                            ids, ide, jds, jde, kds, kde,       &
                            ims, ime, jms, jme, kms, kme, &

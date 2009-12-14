@@ -27,6 +27,7 @@
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
    USE module_mosaic_driver, ONLY: sum_pm_mosaic
+   USE module_input_tracer, ONLY: initialize_tracer
 #endif
 
 !!debug
@@ -942,6 +943,15 @@
 
 
 #ifdef WRF_CHEM
+        if(config_flags%tracer_opt > 0 )then
+           call initialize_tracer (tracer,config_flags%chem_in_opt, &
+                               config_flags%tracer_opt,num_tracer,  &
+                               ids,ide, jds,jde, kds,kde,      & ! domain dims
+                               ims,ime, jms,jme, kms,kme,      & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,      & ! patch  dims
+                               its,ite, jts,jte, kts,kte )
+
+        endif
 !
 !   we do this here, so we only have one chem_init routine for either core....
 !

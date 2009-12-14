@@ -2060,10 +2060,11 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                     moist_tendf, n_moist,                      &
                                     chem_tendf, n_chem,                        &
                                     scalar_tendf, n_scalar,                    &
+                                    tracer_tendf, n_tracer,                    &
                                     thp, theta, mu, tke, config_flags,         &
                                     defor11, defor22, defor12,                 &
                                     defor13, defor23, div,                     &
-                                    moist, chem, scalar,                       &
+                                    moist, chem, scalar,tracer,                &
                                     msfux, msfuy, msfvx, msfvy,                &
                                     msftx, msfty, xkmh, xkhh,km_opt,           &
                                     rdx, rdy, rdz, rdzw, fnm, fnp,             &
@@ -2083,7 +2084,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                             ims, ime, jms, jme, kms, kme, &
                                             its, ite, jts, jte, kts, kte
 
-   INTEGER ,        INTENT(IN   ) ::        n_moist, n_chem, n_scalar, km_opt
+   INTEGER ,        INTENT(IN   ) ::        n_moist,n_chem,n_scalar,n_tracer,km_opt
 
    REAL ,           INTENT(IN   ) ::        cf1, cf2, cf3
 
@@ -2115,6 +2116,9 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar),                &
           INTENT(INOUT) ::                                   scalar_tendf
 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer),                &
+          INTENT(INOUT) ::                                   tracer_tendf
+
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(IN   ) ::                                          moist
 
@@ -2123,6 +2127,9 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
           INTENT(IN   ) ::                                         scalar 
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer) ,               &
+          INTENT(IN   ) ::                                         tracer 
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::defor11, &
                                                                  defor22, &
@@ -2243,6 +2250,26 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                      its, ite, jts, jte, kts, kte     )
 
       ENDDO chem_loop
+
+    ENDIF
+
+    IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN 
+
+      tracer_loop: do ic = PARAM_FIRST_SCALAR, n_tracer
+
+        CALL horizontal_diffusion_s( tracer_tendf(ims,kms,jms,ic),     &
+                                     mu, config_flags,                 &
+                                     tracer(ims,kms,jms,ic),           &
+                                     msftx, msfty, msfux, msfuy,       &
+                                     msfvx, msfvy, xkhh, rdx, rdy,     &
+                                     fnm, fnp, cf1, cf2, cf3,          &
+                                     zx, zy, rdz, rdzw, dnw, dn,       &
+                                     .false.,                          &
+                                     ids, ide, jds, jde, kds, kde,     &
+                                     ims, ime, jms, jme, kms, kme,     &
+                                     its, ite, jts, jte, kts, kte     )
+
+      ENDDO tracer_loop
 
     ENDIF
     IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN 
@@ -3119,10 +3146,11 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                     tke_tendf, moist_tendf, n_moist,          &
                                     chem_tendf, n_chem,                       &
                                     scalar_tendf, n_scalar,                   &
+                                    tracer_tendf, n_tracer,                   &
                                     u_2, v_2,                                 &
                                     thp,u_base,v_base,t_base,qv_base,mu,tke,  &
                                     config_flags,defor13,defor23,defor33,div, &
-                                    moist, chem, scalar, xkmv, xkhv,km_opt,   &
+                                    moist,chem,scalar,tracer,xkmv,xkhv,km_opt,&
                                     fnm, fnp, dn, dnw, rdz, rdzw,             &
                                     hfx, qfx, ust, rho,                       &
                                     ids, ide, jds, jde, kds, kde,             &
@@ -3140,7 +3168,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                             ims, ime, jms, jme, kms, kme, &
                                             its, ite, jts, jte, kts, kte
 
-   INTEGER ,        INTENT(IN   ) ::        n_moist, n_chem, n_scalar, km_opt
+   INTEGER ,        INTENT(IN   ) ::        n_moist,n_chem,n_scalar,n_tracer,km_opt
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnp
@@ -3167,6 +3195,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
           INTENT(INOUT) ::                                   scalar_tendf
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer) ,               &
+          INTENT(INOUT) ::                                   tracer_tendf
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(INOUT) ::                                          moist
@@ -3176,6 +3206,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_scalar) ,               &
           INTENT(IN   ) ::                                         scalar
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer) ,               &
+          INTENT(IN   ) ::                                         tracer
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::defor13, &
                                                                  defor23, &
@@ -3490,6 +3522,22 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                      ims, ime, jms, jme, kms, kme,         &
                                      its, ite, jts, jte, kts, kte         )
      ENDDO chem_loop
+
+   ENDIF
+
+   IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN 
+
+     tracer_loop: do im = PARAM_FIRST_SCALAR, n_tracer
+
+          CALL vertical_diffusion_s( tracer_tendf(ims,kms,jms,im),         &
+                                     config_flags, tracer(ims,kms,jms,im), &
+                                     mu, xkhv,                             &
+                                     dn, dnw, rdz, rdzw, fnm, fnp,         &
+                                     .false.,                              &
+                                     ids, ide, jds, jde, kds, kde,         &
+                                     ims, ime, jms, jme, kms, kme,         &
+                                     its, ite, jts, jte, kts, kte         )
+     ENDDO tracer_loop
 
    ENDIF
 

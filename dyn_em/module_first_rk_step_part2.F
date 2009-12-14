@@ -10,6 +10,7 @@ CONTAINS
   SUBROUTINE first_rk_step_part2 (   grid , config_flags              &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
+                             , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
                              , fdda3d, fdda2d                   &
                              , ru_tendf, rv_tendf               &
@@ -61,6 +62,8 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
@@ -503,11 +506,12 @@ BENCH_START(vert_diff_tim)
                                       moist_tend, num_moist,                      &
                                       chem_tend, num_chem,                       &
                                       scalar_tend, num_scalar,                     &
+                                      tracer_tend, num_tracer,                     &
                                       grid%u_2, grid%v_2,                                  &
                                       grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base,          &
                                       grid%mut,grid%tke_2,config_flags, &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
-                                      grid%div, moist, chem, scalar,                  &
+                                      grid%div, moist, chem, scalar,tracer,         &
                                       grid%xkmv, grid%xkhv, config_flags%km_opt,                        &
                                       grid%fnm, grid%fnp, grid%dn, grid%dnw, grid%rdz, grid%rdzw, &
                                       grid%hfx, grid%qfx, grid%ustm, rho,        &
@@ -534,11 +538,12 @@ BENCH_START(hor_diff_tim)
                                       moist_tend, num_moist,                  &
                                       chem_tend, num_chem,                   &
                                       scalar_tend, num_scalar,                 &
+                                      tracer_tend, num_tracer,                 &
                                       grid%t_2, th_phy,                           &
                                       grid%mut, grid%tke_2, config_flags,              &
                                       grid%defor11, grid%defor22, grid%defor12,             &
                                       grid%defor13, grid%defor23, grid%div,                 &
-                                      moist, chem, scalar,                   &
+                                      moist, chem, scalar,tracer,               &
                                       grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,  &
                                       grid%msfty, grid%xkmh, grid%xkhh, config_flags%km_opt,     &
                                       grid%rdx, grid%rdy, grid%rdz, grid%rdzw,                   &

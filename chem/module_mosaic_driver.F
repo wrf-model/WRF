@@ -389,10 +389,10 @@
 !  note units for aerosol is now ug/m3
 
     call wrf_debug(300,"mosaic_aerchem_driver: back from aerchemistry")
-	if ((it .eq.45) .and. (jt .eq.71)   &
-			.and. (ktau.eq.240)) then
-	    call aerchem_debug_dump( 3, it, jt, dtchem )
-	end if
+!	if ((it .eq.45) .and. (jt .eq.71)   &
+!			.and. (ktau.eq.240)) then
+!	    call aerchem_debug_dump( 3, it, jt, dtchem )
+!	end if
 
 	if (i_force_dump > 0) call aerchem_debug_dump( 3, it, jt, dtchem )
 
@@ -542,7 +542,7 @@
 
    end subroutine sum_pm_mosaic
 
-! ----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 	subroutine mapaer_tofrom_host( imap,                  &
 		ims,ime, jms,jme, kms,kme,                    &
 		its,ite, jts,jte, kts,kte,                    &
@@ -2231,6 +2231,13 @@
 	end subroutine init_data_mosaic_ptr
 
 
+!-----------------------------------------------------------------------
+! aerchem_debug_dump is used to generate input for testing with Rahul's
+! offline MOSAIC box model. To use it, first determine which cell and
+! time is crashing. Then, turn on the calls to this routine for that
+! cell and time only. The routine is called once before aerchemistry
+! with iflag=1, and then again after with iflag=3, if the model makes it
+! that far. ;-)
 !-----------------------------------------------------------------------
 	subroutine aerchem_debug_dump(   &
       		iflag, iclm, jclm, dtchem )

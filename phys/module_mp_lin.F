@@ -455,19 +455,19 @@ CONTAINS
 !
   REAL                          :: tmp_tem, tmp_temcc !bloss
 !
+  real :: liqconc, dis, beta, kappa, p0, xc, capn,rhocgs
 
 !sg: begin
-! liqconc = liquid water content in gcm^-3
-! capn = droplet number concentration cm^-3
+! liqconc = liquid water content (g cm^-3)
+! capn = droplet number concentration (# cm^-3)
 ! dis = relative dispersion (dimensionless) between 0.2 and 1.
 ! Written by Yangang Liu based on Liu et al., GRL 32, 2005.
-! Autoconversion rate P = P0*T
-! p0 = rate function
-! kappa = constant in Long kernel
-! beta = Condensation rate constant
+! Autoconversion rate p = p0 * (threshold function)
+! p0 = "base" autoconversion rate (g cm^-3 s^-1)
+! kappa = constant in Long kernel = [kappa2 * (3/(4*pi*rhow))^3] in Liu papers
+! beta = Condensation rate constant = (beta6)^6 in Liu papers
 ! xc = Normalized critical mass
 ! ***********************************************************
-       real liqconc, dis, beta, kappa, p0, xc, capn,rhocgs
   if(flag_qndrop)then
      dis = 0.5 ! droplet dispersion, set to 0.5 per SG 8-Nov-2006
 !    Give  empirical constants
@@ -1415,16 +1415,16 @@ CONTAINS
            if( qndropz(k) >= 1. ) then
 !         Liu et al. autoconversion scheme
               rhocgs=rho(k)*1.e-3
-              liqconc=rhocgs*qlz(k)
-              capn=1.e-03*rhocgs*qndropz(k)
+              liqconc=rhocgs*qlz(k)   ! (kg/kg) to (g/cm3)
+              capn=1.0e-3*rhocgs*qndropz(k)   ! (#/kg) to (#/cm3)
 !         rate function
               if(liqconc.gt.1.e-10)then
-                 p0=kappa*beta/capn*(liqconc*liqconc*liqconc)
+                 p0=(kappa*beta/capn)*(liqconc*liqconc*liqconc)
                  xc=9.7d-17*capn*sqrt(capn)/(liqconc*liqconc)
 !         Calculate autoconversion rate (g/g/s)
                  if(xc.lt.10.)then
-                    praut(k)=p0/rhocgs*0.5d0*(xc*xc+2*xc+2.0d0)* &
-                         (1.0d0+xc)*dexp(-2.0d0*xc)
+                    praut(k)=(p0/rhocgs) * ( 0.5d0*(xc*xc+2*xc+2.0d0)* &
+                         (1.0d0+xc)*exp(-2.0d0*xc) )
                  endif
               endif
            endif

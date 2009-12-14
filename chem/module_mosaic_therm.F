@@ -1864,8 +1864,7 @@
       integer iaer, iconverge, iconverge_flux, iconverge_mass,   &
            idissolved, itdum, js, je, jp			! raz update 11/13/2008
       real(kind=8) tau_p(nsalt), tau_d(nsalt)
-      real(kind=8) frac_solid, sumflux, hsalt_min, alpha, xt, dumdum,   &
-           h_ion
+      real(kind=8) hsalt_min
       real(kind=8) phi_prod, alpha_fac, sum_dum		! raz update 11/13/2008
       real(kind=8) aer_H
 ! function
@@ -2869,6 +2868,7 @@
 !
 ! author: rahul a. zaveri
 ! update: jan 2005
+!         Oct 2009: William.Gustafson@pnl.gov - zero salt bug fixed
 !-----------------------------------------------------------------------
       subroutine mesa_convergence_criterion(ibin,  &  ! touch
                                        iconverge_mass,    &
@@ -2906,14 +2906,26 @@
 
 !      frac_solid = mass_solid/mass_dry_a(ibin)
 
-      frac_solid = mass_solid_salt/mass_dry_salt(ibin)
-
-      if(frac_solid .ge. 0.98)then
-        iconverge_mass = myes
-        return
-      endif
-
-
+!!$      frac_solid = mass_solid_salt/mass_dry_salt(ibin)
+!!$
+!!$      if(frac_solid .ge. 0.98)then
+!!$        iconverge_mass = myes
+!!$        return
+!!$      endif
+!beg: Modified above logic to handle zero salts, wig 28-Oct-2009
+! If mass of salts is zero, then this will force jaerosolstate to solid
+! in mesa_ptc.
+      if( mass_dry_salt(ibin) < 1e-30 ) then
+         iconverge_mass = myes
+         return
+      else
+         frac_solid = mass_solid_salt/mass_dry_salt(ibin)         
+         if(frac_solid .ge. 0.98)then
+            iconverge_mass = myes
+            return
+         endif
+      end if
+!end wig
 
 ! check relative driving force convergence
       iconverge_flux = myes

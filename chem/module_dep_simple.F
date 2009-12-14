@@ -30,7 +30,7 @@
        subroutine wesely_driver(id,ktau,dtstep,                           &
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
-               p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
+               p_phy,chem,rho_phy,dz8w,ddvel,aer_res_def,aer_res_zcen,    &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &
                ids,ide, jds,jde, kds,kde,                                 &
@@ -105,7 +105,8 @@
 !
 ! necessary for aerosols (module dependent)         
 !  
-      real :: aer_res(its:ite,jts:jte),rcx(numgas)
+      real :: aer_res_def(its:ite,jts:jte), aer_res_zcen(its:ite,jts:jte)
+      real :: rcx(numgas)
                                                      
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
           
@@ -161,13 +162,20 @@
       END DO
       CALL deppart(rmol(i,j),ustar,rhchem,clwchem,iland,dvpart,dvfog)
       ddvel0d=0.
-      aer_res(i,j)=0.
+      aer_res_def(i,j)=0.
+      aer_res_zcen(i,j)=0.
       CALL landusevg(ddvel0d,ustar,rmol(i,j),zntt,z1,dvpart,iland,        &
-           numgas,srfres,aer_res(i,j),p_sulf)
+           numgas,srfres,aer_res_def(i,j),aer_res_zcen(i,j),p_sulf)
 
 !wig: CMBZ does not have HO and HO2 last so need to copy all species
 !      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
       ddvel(i,j,1:numgas)=ddvel0d(1:numgas)
+      if ( (config_flags%chem_opt == RADM2         ) .or.   &
+           (config_flags%chem_opt == RADM2SORG     ) .or.   &
+           (config_flags%chem_opt == RADM2SORG_AQ) ) then
+               ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
+      end if
+
 
 100   continue
 !
@@ -177,6 +185,7 @@
 !
       if ( (config_flags%chem_opt == CBMZ          ) .or.   &
            (config_flags%chem_opt == CBMZ_BB       ) .or.   &
+           (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.   &
@@ -184,7 +193,6 @@
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_sulf)        = ddvel(i,j,p_hno3)
-               ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
                ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
                ddvel(i,j,p_ch3o2)       = 0
                ddvel(i,j,p_ethp)        = 0
@@ -248,6 +256,9 @@
                ddvel(i,j,p_sulf)        = 0.
                ddvel(i,j,p_dms)         = 0.
                ddvel(i,j,p_msa)         = ddvel(i,j,p_hno3)
+               if( config_flags%chem_opt == GOCARTRADM2 ) then
+               ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
+               end if
             end do
          end do
       end if
@@ -601,7 +612,7 @@ END SUBROUTINE wesely_driver
 
       END SUBROUTINE deppart
       SUBROUTINE landusevg(vgs,ustar,rmol,z0,zz,dvparx,iland,numgas, &
-          srfres,aer_res,p_sulf)
+          srfres,aer_res_def,aer_res_zcen,p_sulf)
 !     This subroutine calculates the species specific deposition velocit
 !     as a function of the local meteorology and land use.  The depositi
 !     Velocity is also landuse specific.
@@ -637,26 +648,30 @@ END SUBROUTINE wesely_driver
 !     Local Variables
 ! .. Scalar Arguments ..
         REAL :: dvparx, rmol, ustar, z0, zz
-        real :: aer_res, polint
+        real :: aer_res_def, aer_res_zcen, polint
         INTEGER :: iland, numgas, p_sulf
 ! ..
 ! .. Array Arguments ..
         REAL :: srfres(numgas), vgs(numgas)
 ! ..
 ! .. Local Scalars ..
-        REAL :: vgp, vgpart, zr
+        REAL :: rmol_tmp, vgp, vgpart, zr
         INTEGER :: jspec
 ! ..
 ! .. Local Arrays ..
         REAL :: vgspec(numgas)
 ! ..
+!   Calculate aerodynamic resistance for reference height = layer center
+        zr = zz*0.5
+        rmol_tmp = rmol
+        CALL depvel(numgas,rmol_tmp,zr,z0,ustar,vgspec,vgpart,aer_res_zcen)
 !   Set the reference height (10.0 m)
 !       zr = 10.0
         zr = 2.0
 
 !   CALCULATE THE DEPOSITION VELOCITY without any surface
 !   resistance term, i.e. 1 / (ra + rb)
-        CALL depvel(numgas,rmol,zr,z0,ustar,vgspec,vgpart,aer_res)
+        CALL depvel(numgas,rmol,zr,z0,ustar,vgspec,vgpart,aer_res_def)
 
 !   Calculate the deposition velocity for each species
 !   and grid cell by looping through all the possibile combinations
@@ -1159,8 +1174,20 @@ END SUBROUTINE wesely_driver
         hstar(p_ora2) = 9.63E+5
         hstar(p_nh3) = 1.04E+4
         hstar(p_n2o5) = 1.00E+10
-        if(p_ol2.gt.1)hstar(p_ol2) = 4.67E-3
-        hstar(p_par) = 1.13E-3  !wig, 1-May-2007: for CBMZ
+        if(p_ol2.gt.1) hstar(p_ol2) = 4.67E-3
+        if(p_par.gt.1) hstar(p_par) = 1.13E-3  !wig, 1-May-2007: for CBMZ
+        if(p_ch4.gt.1) then 
+           hstar(p_ch4) = 1.50E-3
+           dhr(p_ch4)=    0.
+           f0(p_ch4)=0.
+           dvj(p_ch4)=0.250
+        end if
+        if(p_co2.gt.1) then
+           hstar(p_co2) = 1.86E-1
+           dhr(p_co2)= 1636.
+           f0(p_co2)=0.
+           dvj(p_co2)=0.151
+        end if
 !
 !  FOLLOWING FOR RACM
 !
@@ -1169,8 +1196,6 @@ END SUBROUTINE wesely_driver
            HSTAR(p_API )=4.76E-3
            HSTAR(p_LIM )=4.76E-3
            HSTAR(p_DIEN)=4.76E-3
-           HSTAR(p_CH4 )=1.50E-3
-           HSTAR(p_CO2 )=1.86E-1
            HSTAR(p_MACR)=1.14E+1
            HSTAR(p_UDD )=1.40E+6
            HSTAR(p_HKET)=7.80E+3
@@ -1178,8 +1203,6 @@ END SUBROUTINE wesely_driver
            DHR(p_API )=    0.
            DHR(p_LIM )=    0.
            DHR(p_DIEN)=    0.
-           DHR(p_CH4 )=    0.
-           DHR(p_CO2 )= 1636.
            DHR(p_MACR)= 6266.
            DHR(p_UDD )=    0.
            DHR(p_HKET)=    0.
@@ -1187,8 +1210,6 @@ END SUBROUTINE wesely_driver
            F0(p_API )=0.
            F0(p_LIM )=0.
            F0(p_DIEN)=0.
-           F0(p_CH4 )=0.
-           F0(p_CO2 )=0.
            F0(p_MACR)=0.
            F0(p_UDD )=0.
            F0(p_HKET)=0.
@@ -1196,8 +1217,6 @@ END SUBROUTINE wesely_driver
            DVJ(p_API )=0.086
            DVJ(p_LIM )=0.086
            DVJ(p_DIEN)=0.136
-           DVJ(p_CH4 )=0.250
-           DVJ(p_CO2 )=0.151
            DVJ(p_MACR)=0.120
            DVJ(p_UDD )=0.092
            DVJ(p_HKET)=0.116
@@ -1243,7 +1262,7 @@ END SUBROUTINE wesely_driver
         dhr(p_nh3) = 3660.
         dhr(p_n2o5) = 0.
         if(p_ol2.gt.1)dhr(p_ol2) = 0.
-        dhr(p_par) = 0.   !wig, 1-May-2007: for CBMZ
+        if(p_par.gt.1)dhr(p_par) = 0.   !wig, 1-May-2007: for CBMZ
 !     REACTIVITY FACTORS
 !     [f0]=1
 
@@ -1285,7 +1304,7 @@ END SUBROUTINE wesely_driver
         f0(p_nh3) = 0.
         f0(p_n2o5) = 1.
         if(p_ol2.gt.1)f0(p_ol2) = 0.
-        f0(p_par) = 0.   !wig, 1-May-2007: for CBMZ
+        if(p_par.gt.1)f0(p_par) = 0.   !wig, 1-May-2007: for CBMZ
 !     DIFFUSION COEFFICIENTS
 !     [DV]=cm2/s (assumed: 1/SQRT(molar mass) when not known)
 
@@ -1329,7 +1348,7 @@ END SUBROUTINE wesely_driver
         dvj(p_ho) = 0.243
         dvj(p_ho2) = 0.174
         if(p_ol2.gt.1)dvj(p_ol2) = 0.189
-        dvj(p_par) = 0.118   !wig, 1-May-2007: for CBMZ
+        if(p_par.gt.1)dvj(p_par) = 0.118   !wig, 1-May-2007: for CBMZ
         DO l = 1, numgas
           hstar4(l) = hstar(l) ! preliminary              
 ! Correction of diff. coeff

@@ -15,7 +15,7 @@ CONTAINS
          bioemdt,stepbioe,                                                 &
          config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
-         tsk,erod,g,emis_seas,emis_dust,                                   &
+         tsk,erod,g,emis_seas,emis_dust,tracer,                            &
          ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
@@ -89,6 +89,8 @@ CONTAINS
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_tracer ),               &
+         INTENT(INOUT ) ::                                   tracer
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_ebu ),                  &
          INTENT(INOUT ) ::                                   ebu
    REAL, DIMENSION( ims:ime, 1, jms:jme, num_ebu_in ),                     &
@@ -282,6 +284,42 @@ CONTAINS
          do_bioemiss = .true.
       ENDIF
 !
+! we are doing the plumerise/fire emissions first, they may be needed for chem and tracer arrays
+!
+       if( do_plumerisefire )then
+          CALL wrf_debug(15,'fire emissions: calling biomassb')
+          write(0,*)ktau,stepfirepl
+          call plumerise_driver (id,ktau,dtstep,                            &
+           ebu,ebu_in,                                                     &
+           mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
+           firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
+           config_flags, t_phy,moist,                                      &
+           rho_phy,vvel,u_phy,v_phy,p_phy,                       &
+           emis_ant,z_at_w,z,                                                       &
+           ids,ide, jds,jde, kds,kde,                                      &
+           ims,ime, jms,jme, kms,kme,                                      &
+           its,ite, jts,jte, kts,kte                                       )
+        endif
+!
+! Only Scalar?
+!
+      tracer_select:  SELECT CASE(config_flags%tracer_opt)
+      CASE (TRACER_SMOKE)
+          CALL wrf_debug(15,'tracer fire emissions: calling biomassb, only CO')
+!
+! here for tracers only, set chem_opt to zero. Chem species are handled later!
+!
+       call add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,tracer,&
+            julday,gmt,xlat,xlong,t_phy,p_phy,                           &
+            ebu,0,config_flags%tracer_opt,config_flags%biomass_burn_opt,     &
+            num_tracer,ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+      CASE DEFAULT
+        CALL wrf_debug(15,'No tracer option selected')
+      END SELECT tracer_select
+
+!
 ! Gocart emissions...
 !
       seasalt_select:  SELECT CASE(config_flags%seas_opt)
@@ -333,30 +371,30 @@ CONTAINS
       END SELECT dms_select
 
     ksub=0
-!!! ***********   FIRE!!!! ****************************************
+!!! ***********   FIRE AND CHEM ****************************************
 !
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
      CASE (BIOMASSB)
-       if( do_plumerisefire )then
-          CALL wrf_debug(15,'fire emissions: calling biomassb')
-          write(0,*)ktau,stepfirepl
-         call plumerise_driver (id,ktau,dtstep,                            &
-           ebu,ebu_in,                                                     &
-           mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
-           firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
-           config_flags, t_phy,moist,                                      &
-           chem,rho_phy,vvel,u_phy,v_phy,p_phy,                       &
-           emis_ant,z_at_w,z,                                                       &
-           ids,ide, jds,jde, kds,kde,                                      &
-           ims,ime, jms,jme, kms,kme,                                      &
-           its,ite, jts,jte, kts,kte                                       )
+!      if( do_plumerisefire )then
+!         CALL wrf_debug(15,'fire emissions: calling biomassb')
+!         write(0,*)ktau,stepfirepl
+!        call plumerise_driver (id,ktau,dtstep,                            &
+!          ebu,ebu_in,                                                     &
+!          mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
+!          firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
+!          config_flags, t_phy,moist,                                      &
+!          chem,rho_phy,vvel,u_phy,v_phy,p_phy,                       &
+!          emis_ant,z_at_w,z,                                                       &
+!          ids,ide, jds,jde, kds,kde,                                      &
+!          ims,ime, jms,jme, kms,kme,                                      &
+!          its,ite, jts,jte, kts,kte                                       )
 
-       endif
+!      endif
        CALL wrf_debug(15,'fire emissions: adding biomassb emissions')
        call add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,&
             julday,gmt,xlat,xlong,t_phy,p_phy,                           &
-            ebu,config_flags%chem_opt,config_flags%biomass_burn_opt,     &
-            ids,ide, jds,jde, kds,kde,                                   &
+            ebu,config_flags%chem_opt,0,config_flags%biomass_burn_opt,     &
+            num_chem,ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
      CASE DEFAULT 
@@ -465,7 +503,7 @@ CONTAINS
 
        end if ! emiss_inpt_opt /= 3
 
-    CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+    CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        IF(config_flags%kemit .GT. kte-ksub) THEN
           message = ' EMISSIONS_DRIVER: KEMIT > KME '
           CALL WRF_ERROR_FATAL (message)

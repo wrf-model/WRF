@@ -4,28 +4,31 @@
 MODULE module_ctrans_grell
 USE module_cu_gd
 USE module_dep_simple
+USE module_state_description, only:p_co,p_qv,p_so2,p_o3,p_sulf,p_nh3,p_h2o2, &
+                              p_paa,p_hno3,p_n2o5,p_so4aj,p_nh4aj,p_no3aj
 
 CONTAINS
 
 !-------------------------------------------------------------
    SUBROUTINE GRELLDRVCT(DT,itimestep,DX,                       &
-              id,config_flags,rho_phy,RAINCV,chem,              &
+              rho_phy,RAINCV,chem,              &
               U,V,t_phy,moist,dz8w,p_phy,                       &
               XLV,CP,G,r_v,z,cu_co_ten,                         &
-              numgas,chemopt,                                   &
+              num_moist,numgas,num_chem,chemopt,scalaropt,      &
               ids,ide, jds,jde, kds,kde,                        &
               ims,ime, jms,jme, kms,kme,                        &
               its,ite, jts,jte, kts,kte                         )
-  USE module_configure
-  USE module_state_description
+! USE module_configure
+! USE module_state_description
 !-------------------------------------------------------------
    IMPLICIT NONE
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                               &
-                                  id, numgas,chemopt,           &
+                                  numgas,chemopt,scalaropt, &
                                   ids,ide, jds,jde, kds,kde,    & 
                                   ims,ime, jms,jme, kms,kme,    & 
-                                  its,ite, jts,jte, kts,kte
+                                  its,ite, jts,jte, kts,kte,    &
+                                  num_chem,num_moist
 
   
    INTEGER,      INTENT(IN   ) :: ITIMESTEP
@@ -82,7 +85,6 @@ CONTAINS
         Z1,PSUR,AAEQ
      integer, dimension (its:ite)            ::                    &
         ktop
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    INTEGER :: nv,i,j,k,ICLDCK,ipr,jpr,npr
    REAL    :: tcrit,dp,dq,epsilc
@@ -97,7 +99,8 @@ CONTAINS
 !  jpr=60
    ipr=0
    jpr=0
-   npr=p_co
+   npr=1
+   if(p_co.gt.1)npr=p_co
    tcrit=258.
    iopt=0
    itf=MIN(ite,ide-1)
@@ -130,7 +133,7 @@ CONTAINS
          IF(Q(I,K).LT.1.E-08)Q(I,K)=1.E-08
      ENDDO
      ENDDO
-     do nv=1,num_chem
+     do nv=2,num_chem
      DO K=kts,ktf
      DO I=ITS,ITF
          tracer(i,k,nv)=max(epsilc,chem(i,k,j,nv))
@@ -153,12 +156,12 @@ CONTAINS
 !
       CALL CUP_ct(ktop,tracer,j,AAEQ,T,Q,TER11,PRET,P,tracert, &
            hstary,DT,PSUR,US,VS,tcrit,                         &
-           xlv,r_v,cp,g,ipr,jpr,npr,num_chem,chemopt,          &
+           xlv,r_v,cp,g,ipr,jpr,npr,num_chem,chemopt,scalaropt,&
            numgas,ids,ide, jds,jde, kds,kde,                   &
            ims,ime, jms,jme, kms,kme,                          &
            its,ite, jts,jte, kts,kte                           )
 
-            do nv=1,num_chem
+            do nv=2,num_chem
             DO I=its,itf
               if(pret(i).le.0.)then
                  DO K=kts,ktf
@@ -169,7 +172,7 @@ CONTAINS
              enddo
       CALL neg_check_ct(pret,ktop,epsilc,dt,tracer,tracert,iopt,num_chem,   &
                         its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
-       do nv=1,num_chem
+       do nv=2,num_chem
             DO I=its,itf
               if(pret(i).gt.0.)then
                  DO K=kts,ktf
@@ -196,7 +199,7 @@ CONTAINS
 
    SUBROUTINE CUP_ct(ktop,tracer,J,AAEQ,T,Q,Z1,                        &
               PRE,P,tracert,hstary,DTIME,PSUR,US,VS,TCRIT,             &
-              xl,rv,cp,g,ipr,jpr,npr,num_chem,chemopt,                 &
+              xl,rv,cp,g,ipr,jpr,npr,num_chem,chemopt,scalaropt,       &
               numgas,ids,ide, jds,jde, kds,kde,                        &
               ims,ime, jms,jme, kms,kme,                               &
               its,ite, jts,jte, kts,kte                                )
@@ -206,7 +209,7 @@ CONTAINS
      integer                                                           &
         ,intent (in   )                   ::                           &
         num_chem,ids,ide, jds,jde, kds,kde,                            &
-        ims,ime, jms,jme, kms,kme,                                     &
+        ims,ime, jms,jme, kms,kme,scalaropt,                           &
         its,ite, jts,jte, kts,kte,ipr,jpr,npr,chemopt,numgas
      integer, intent (in   )              ::                           &
         j
@@ -539,6 +542,10 @@ CONTAINS
            its,ite, jts,jte, kts,kte)
       DO 100 i=its,ite
       IF(ierr(I).eq.0.)THEN
+           if(jmin(i).le.3)then
+             ierr(i)=9
+             go to 100
+           endif
 !
 !--- check whether it would have buoyancy, if there where
 !--- no entrainment/detrainment
@@ -579,6 +586,9 @@ CONTAINS
 !
       do i=its,itf
       IF(ierr(I).eq.0.)THEN
+           if(jmin(i).le.3)then
+             ierr(i)=9
+           endif
       IF(-z_cup(I,KBCON(I))+z_cup(I,KTOP(I)).LT.depth_min)then
             ierr(i)=6
       endif
@@ -675,9 +685,9 @@ CONTAINS
        if(j.eq.jpr)print *,'calling up_tracer'
        call cup_up_tracer(ierr,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr_up,tr_pw, &
                    tr_c,hstary,pw,clw_all,kbcon,ktop,cd,mentr_rate,zu,k22,&
-                   numgas,chemopt,ids,ide, jds,jde, kds,kde, &
+                   numgas,chemopt,scalaropt,ids,ide, jds,jde, kds,kde, &
                    ims,ime, jms,jme, kms,kme, &
-                   its,ite, jts,jte, kts,kte,ipr,jpr,j,npr)
+                   its,ite, jts,jte, kts,kte,ipr,jpr,j,npr,num_chem)
        if(j.eq.jpr)print *,'called up_tracer'
        call cup_dd_tracer(ierr,z_cup,qrcd,tracer,tre_cup,tr_up,tr_dd, &
                     tr_pw,tr_pwd,jmin,cdd,mentrd_rate,zd,pwdper,k22,        &
@@ -805,7 +815,7 @@ CONTAINS
       entdo=edt(i)*zd(i,2)*mentrd_rate*dz
       subin=-EDT(I)*zd(i,2)
       detdo=detdo1+detdo2-entdo+subin
-      do nv=1,num_chem
+      do nv=2,num_chem
       tracert(I,1,nv)=(detdo1*.5*(tr_dd(i,1,nv)+tr_dd(i,2,nv)) &
                  +detdo2*tr_dd(i,1,nv) &
                  +subin*tre_cup(i,2,nv) &
@@ -880,7 +890,7 @@ CONTAINS
         print *,'in dellas kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)'
         print *,kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)
       endif
-       do nv=1,num_chem
+       do nv=2,num_chem
        DO K=kts+1,kte
        do i=its,itf
           tracert(i,k,nv)=0.
@@ -951,7 +961,7 @@ CONTAINS
             CALL wrf_error_fatal ( 'cup_dellas_tr: TOTMAS > CRITICAL VALUE')
          endif
          dp=100.*(p_cup(i,k-1)-p_cup(i,k))
-         do nv=1,num_chem
+         do nv=2,num_chem
 !        tracert(i,k,nv)=(subin*tre_cup(i,k+1,nv) &
 !                   -subdown*tre_cup(i,k,nv) &
          tracert(i,k,nv)=(subin*tracer(i,k+1,nv) &
@@ -1004,7 +1014,7 @@ CONTAINS
        i,k,nv,itf,ktf
      itf=MIN(ite,ide-1)
      ktf=MIN(kte,kde-1)
-      do nv=1,num_chem
+      do nv=2,num_chem
       do k=kts+1,ktf
       do i=its,ite
         if(ierr(i).eq.0)then
@@ -1013,7 +1023,7 @@ CONTAINS
       enddo
       enddo
       enddo
-      do nv=1,num_chem
+      do nv=2,num_chem
       do i=its,ite
         if(ierr(i).eq.0)then
         tre_cup(i,kts,nv)=tracer(i,kts,nv)
@@ -1027,11 +1037,11 @@ END subroutine cup_env_clev_tr
 
    SUBROUTINE  cup_up_tracer(ierr,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr_up, &
                 tr_pw,tr_c,hstary,cupclw,clw_all,kbcon,ktop,cd,mentr_rate,zu,k22,  &
-                          numgas,chemopt,ids,ide, jds,jde, kds,kde, &
+                          numgas,chemopt,scalaropt,ids,ide, jds,jde, kds,kde, &
                           ims,ime, jms,jme, kms,kme, &
-                          its,ite, jts,jte, kts,kte,ipr,jpr,j,npr)
-  USE module_configure
-  USE module_state_description
+                          its,ite, jts,jte, kts,kte,ipr,jpr,j,npr,num_chem)
+! USE module_configure
+! USE module_state_description
   USE module_ctrans_aqchem
         implicit none
 ! Aqeuous species pointers INCLUDE File
@@ -1158,8 +1168,8 @@ END subroutine cup_env_clev_tr
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                         numgas,ids,ide, jds,jde, kds,kde,           &
-                            ims,ime, jms,jme, kms,kme,chemopt,         &
+                         numgas,ids,ide, jds,jde, kds,kde,scalaropt,   &
+                         num_chem,ims,ime, jms,jme, kms,kme,chemopt,   &
                             its,ite, jts,jte, kts,kte,ipr,jpr,j,npr
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in  )                   ::                           &
@@ -1229,7 +1239,7 @@ END subroutine cup_env_clev_tr
           if(radius.lt.900.)c0=0.
 !         if(radius.lt.900.)iall=0
         endif
-        do nv=1,num_chem
+        do nv=2,num_chem
         do k=kts,ktf
         do i=its,itf
           tr_pw(i,k,nv)=0.
@@ -1238,7 +1248,7 @@ END subroutine cup_env_clev_tr
         enddo
         enddo
         enddo
-      do nv=1,num_chem
+      do nv=2,num_chem
       do i=its,itf
       if(ierr(i).eq.0.)then
       do k=k22(i),kbcon(i)-1
@@ -1264,7 +1274,7 @@ END subroutine cup_env_clev_tr
 !------       tr_up would be the concentration if tr would be conserved
 !
 !
-        do nv=1,num_chem
+        do nv=2,num_chem
         if(i.eq.ipr.and.j.eq.jpr.and.nv.eq.npr)print *,k,tr_up(i,K-1,nv),tr_up(i,K,nv),tr_pw(i,k-1,nv),clw_all(i,k),cupclw(i,k)
         tr_up(i,K,nv)=(tr_up(i,K-1,nv)*(1.-.5*CD(i,K)*DZ)+mentr_rate* &
                 DZ*tracer(i,K-1,nv))/(1.+mentr_rate*DZ-.5*cd(i,k)*dz)
@@ -1358,7 +1368,7 @@ END subroutine cup_env_clev_tr
 !            FOLLOWING FOR WET DEPOSITION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-       do nv=1,num_chem
+       do nv=2,num_chem
           tr_c(i,k,nv)=0.
                   tr_pw(i,k,nv)=c0*dz*tr_C(I,K,nv)*zu(i,k)
         if(tr_c(i,k,nv).le.0.)then
@@ -1406,7 +1416,7 @@ END subroutine cup_env_clev_tr
           write(6,*)'a',tr_up(i,k,npr),tracer(i,K-1,npr),tr_pw(i,k,npr)
       endif
       else    ! NOT MADE SORGAM
-       do nv=1,num_chem
+       do nv=2,num_chem
 ! we definitely need wet deposition for sulf
 ! tr_c would be conc_mxr for other tracers, like:
 !              partialp=1.e-6*qc(i,k)*29./wtm(name)*p(i,k)/1013.
@@ -1463,11 +1473,11 @@ END subroutine cup_up_tracer
 
    SUBROUTINE  cup_dd_tracer(ierr,z_cup,qrcd,tracer,tre_cup,tr_up,tr_dd, &
                           tr_pw,tr_pwd,jmin,cdd,entr,zd,pwdper,k22,      &
-                          numch,ids,ide, jds,jde, kds,kde, &
+                          num_chem,ids,ide, jds,jde, kds,kde, &
                           ims,ime, jms,jme, kms,kme, &
                           its,ite, jts,jte, kts,kte)
-  USE module_configure
-  USE module_state_description
+! USE module_configure
+! USE module_state_description
         implicit none
 !
 !  on input
@@ -1477,7 +1487,7 @@ END subroutine cup_up_tracer
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                         numch,ids,ide, jds,jde, kds,kde,           &
+                         num_chem,ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
      real,    dimension (its:ite,kts:kte)                              &
@@ -1523,8 +1533,8 @@ END subroutine cup_up_tracer
      ktf=MIN(kte,kde-1)
 !
       qrch=0.
-      do nv=1,num_chem
-      do k=kts+1,kte
+      do nv=2,num_chem
+      do k=kts+0,kte
       do i=its,ite
          tr_dd(i,k,nv)=0.
          tr_pwd(i,k,nv)=0.
@@ -1551,12 +1561,13 @@ END subroutine cup_up_tracer
 !--- for now
 !
 !
-      do nv=1,num_chem
+      if(jmin(i).lt.3)write(0,*)i,jmin(i)
+      do nv=2,num_chem
          tr_dd(i,jmin(i),nv)=tre_cup(i,jmin(i),nv)
       enddo
       do ki=jmin(i)-1,1,-1
          DZ=Z_cup(i,Ki+1)-Z_cup(i,Ki)
-         do nv=1,num_chem
+         do nv=2,num_chem
          tr_pwd(i,jmin(i),nv)=0.
          tr_dd(i,Ki,nv)=(tr_dd(i,Ki+1,nv)*(1.-.5*CDD(i,Ki)*DZ) &
                   +entr*DZ*tracer(i,Ki,nv)                     &
@@ -1618,7 +1629,7 @@ END subroutine cup_dd_tracer
       thresh=epsilc
 !     thresh=1.e-30
       if(iopt.eq.0)then
-      do nv=1,num_chem
+      do nv=2,num_chem
       do 100 i=its,itf
          if(pret(i).le.0.)go to 100
          tracermin=q(i,kts,nv)
@@ -1701,7 +1712,7 @@ END subroutine cup_dd_tracer
       do i=its,itf
       qmemf=1.
       do k=kts,ktop(i)
-      do nv=1,num_chem
+      do nv=2,num_chem
 !
 ! tracer tendency
 !
@@ -1723,7 +1734,7 @@ END subroutine cup_dd_tracer
          endif
       enddo
       enddo
-      do nv=1,num_chem
+      do nv=2,num_chem
       do k=kts,ktop(i)
          outq(i,k,nv)=outq(i,k,nv)*qmemf
       enddo

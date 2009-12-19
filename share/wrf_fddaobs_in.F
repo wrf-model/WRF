@@ -340,7 +340,7 @@
   TFORWD=XHOUR+TWINDO
 
   IF (iprt) then
-     write(msg,'2(a,f8.3),a,i2')                                            &
+     write(msg,fmt='(2(a,f8.3),a,i2)')                                            &
                   'OBS NUDGING: Reading new obs for time window TBACK = ',  &
                   tback,' TFORWD = ',tforwd,' for grid = ',inest
      call wrf_message(msg)
@@ -1217,7 +1217,7 @@
 
 ! REMOVE OLD OBS DENOTED BY 99999. AT THE FRONT OF TIMEOB ARRAY
     IF (iprt .and. ktaur > 0) THEN
-      write(msg,'a,i5,a') 'OBS NUDGING: Upon restart, skipped over ',ndum,   &
+      write(msg,fmt='(a,i5,a)') 'OBS NUDGING: Upon restart, skipped over ',ndum,   &
                 ' obs that are now too old for the current obs window.'
       call wrf_message(msg)
     ENDIF

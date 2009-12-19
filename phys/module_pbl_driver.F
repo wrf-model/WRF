@@ -59,7 +59,7 @@ CONTAINS
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
-                   BEPSCHEME,MYJSFCSCHEME, p_qi,param_first_scalar 
+                   BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, p_qi,param_first_scalar 
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
@@ -472,6 +472,8 @@ CONTAINS
 #if (NMM_CORE != 1)
       CASE (BEPSCHEME)
       flag_bep=.true.
+      CASE (BEP_BEMSCHEME)
+      flag_bep=.true.
 #endif
       CASE DEFAULT
       flag_bep=.false.
@@ -729,7 +731,7 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
-               WRITE ( message , FMT = '(A,7(L1,1X)' )              &
+               WRITE ( message , FMT = '(A,7(L1,1X))' )             &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -782,7 +784,7 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
-               WRITE ( message , FMT = '(A,5(L1,1X)' )              &
+               WRITE ( message , FMT = '(A,5(L1,1X))' )             &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -826,7 +828,7 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -901,7 +903,7 @@ CONTAINS
             ENDIF
 
            ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -939,7 +941,7 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -976,7 +978,7 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte                   &   
                                                                       )
            ELSE
-               WRITE ( message , FMT = '(A,4(L1,1X)' )              &
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -1029,7 +1031,7 @@ CONTAINS
                    )
 
            ELSE
-               WRITE ( message , FMT = '(A,12(L1,1X)' )             &
+               WRITE ( message , FMT = '(A,12(L1,1X))' )            &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &

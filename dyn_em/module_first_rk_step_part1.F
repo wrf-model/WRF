@@ -426,8 +426,21 @@ BENCH_START(surf_driver_tim)
          ! Optional urban for BEP scheme
      &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
      &        ,NUM_URBAN_LAYERS=config_flags%num_urban_layers             & !multi-layer urban
-     &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d        & !multi-layer urban
-     &        ,TW2_URB4D=grid%tw2_urb4d,TGB_URB4D=grid%tgb_urb4d        & !multi-layer urban
+     &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d          & !multi-layer urban
+     &        ,TW2_URB4D=grid%tw2_urb4d,TGB_URB4D=grid%tgb_urb4d          & !multi-layer urban
+     &        ,TLEV_URB3D=grid%tlev_urb3d                               & !multi-layer urban
+     &        ,QLEV_URB3D=grid%qlev_urb3d                               & !multi-layer urban
+     &        ,TW1LEV_URB3D=grid%tw1lev_urb3d                           & !multi-layer urban
+     &        ,TW2LEV_URB3D=grid%tw2lev_urb3d                           & !multi-layer urban
+     &        ,TGLEV_URB3D=grid%tglev_urb3d                             & !multi-layer urban
+     &        ,TFLEV_URB3D=grid%tflev_urb3d                             & !multi-layer urban
+     &        ,SF_AC_URB3D=grid%sf_ac_urb3d                             & !multi-layer urban
+     &        ,LF_AC_URB3D=grid%lf_ac_urb3d                             & !multi-layer urban
+     &        ,CM_AC_URB3D=grid%cm_ac_urb3d                             & !multi-layer urban
+     &        ,SFVENT_URB3D=grid%sfvent_urb3d                           & !multi-layer urban
+     &        ,LFVENT_URB3D=grid%lfvent_urb3d                           & !multi-layer urban
+     &        ,SFWIN1_URB3D=grid%sfwin1_urb3d                           & !multi-layer urban
+     &        ,SFWIN2_URB3D=grid%sfwin2_urb3d                           & !multi-layer urban
      &        ,SFW1_URB3D=grid%sfw1_urb3d,SFW2_URB3D=grid%sfw2_urb3d      & !multi-layer urban
      &        ,SFR_URB3D=grid%sfr_urb3d,SFG_URB3D=grid%sfg_urb3d          & !multi-layer urban
      &        ,GMT=grid%gmt,XLAT=grid%xlat,XLONG=grid%xlong,JULDAY=grid%julday  &

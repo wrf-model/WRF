@@ -4,6 +4,7 @@ MODULE module_sf_noahdrv
   USE module_sf_noahlsm
   USE module_sf_urban
   USE module_sf_bep
+  USE module_sf_bep_bem
 #ifdef WRF_CHEM
   USE module_data_gocart_dust
 #endif
@@ -54,7 +55,13 @@ CONTAINS
                   num_road_layers, DZR, DZB, DZG,               & !I urban
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_layers,                             & !I multi-layer urban
-                  trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,   & !H multi-layer urban
+                  trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
+                  tlev_urb3d,qlev_urb3d,                        & !H multi-layer urban
+                  tw1lev_urb3d,tw2lev_urb3d,                    & !H multi-layer urban
+                  tglev_urb3d,tflev_urb3d,                      & !H multi-layer urban
+                  sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,          & !H multi-layer urban
+                  sfvent_urb3d,lfvent_urb3d,                    & !H multi-layer urban
+                  sfwin1_urb3d,sfwin2_urb3d,                    & !H multi-layer urban
                   sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,    & !H multi-layer urban
                   th_phy,rho,p_phy,ust,                         & !I multi-layer urban
                   gmt,julday,xlong,xlat,                        & !I multi-layer urban
@@ -471,6 +478,19 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tgb_urb4d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tlev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: qlev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tglev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tflev_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lf_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sf_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: cm_ac_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sfvent_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lfvent_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw1_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
@@ -497,6 +517,7 @@ CONTAINS
 !   REAL,    DIMENSION( ims:ime, jms:jme ) :: GRDFLX_URB
 !   REAL,    DIMENSION( ims:ime, jms:jme ) :: QFX_URB,QSFC_URB,UMOM_URB,VMOM_URB
    REAL,    DIMENSION( ims:ime, jms:jme ) :: HFX_URB,UMOM_URB,VMOM_URB
+   REAL,    DIMENSION( ims:ime, jms:jme ) :: QFX_URB
 !   REAL,    DIMENSION( ims:ime, jms:jme ) :: ALBEDO_URB,EMISS_URB,UMOM,VMOM,UST
    REAL, DIMENSION(ims:ime,jms:jme) ::EMISS_URB
    REAL, DIMENSION(ims:ime,jms:jme) :: RL_UP_URB
@@ -733,7 +754,7 @@ CONTAINS
 !Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
 ! the "NATURAL" category in the VEGPARM.TBL
 	
-	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2 ) THEN
+	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
                   IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
 		 VEGTYP = NATURAL
@@ -744,7 +765,7 @@ CONTAINS
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
            T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
-                   elseif(sf_urban_physics.eq.2)then
+                   elseif((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then
                 r1= (tsk(i,j)**4.)
                 r2= frc_urb2d(i,j)*(ts_urb2d(i,j)**4.)
                 r3= (1.-frc_urb2d(i,j))
@@ -1139,7 +1160,41 @@ CONTAINS
 
        ENDIF
 
-    if(sf_urban_physics.eq.2)then                                 !Bep begin
+       
+       IF (SF_URBAN_PHYSICS == 3) THEN
+
+
+         do j=jts,jte
+         do i=its,ite
+            EMISS_URB(i,j)=0.
+            RL_UP_URB(i,j)=0.
+            RS_ABS_URB(i,j)=0.
+            GRDFLX_URB(i,j)=0.
+         end do
+         end do
+          
+       CALL BEP_BEM(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
+                th_phy,rho,p_phy,swdown,glw,                           &
+                gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
+                num_urban_layers,                                      &
+                trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,               &
+                tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,       &
+                tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,       &
+                cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,                 &
+                sfwin1_urb3d,sfwin2_urb3d,                             &
+                sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,             &
+                a_u_bep,a_v_bep,a_t_bep,                               &
+                a_e_bep,b_u_bep,b_v_bep,                               &
+                b_t_bep,b_e_bep,b_q_bep,dlg_bep,                       &
+                dl_u_bep,sf_bep,vl_bep,                                &
+                rl_up_urb,rs_abs_urb,emiss_urb,grdflx_urb,qv3d,        &
+                ids,ide, jds,jde, kds,kde,                             &
+                ims,ime, jms,jme, kms,kme,                             &
+                its,ite, jts,jte, kts,kte )
+
+       ENDIF
+
+    if((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then         !Bep begin
 ! fix the value of the Stefan-Boltzmann constant
          sigma_sb=5.67e-08
          do j=jts,jte
@@ -1147,6 +1202,7 @@ CONTAINS
             UMOM_URB(I,J)=0.
             VMOM_URB(I,J)=0.
             HFX_URB(I,J)=0.
+            QFX_URB(I,J)=0.
          do k=kts,kte
             a_u_bep(i,k,j)=a_u_bep(i,k,j)*frc_urb2d(i,j)
             a_v_bep(i,k,j)=a_v_bep(i,k,j)*frc_urb2d(i,j)
@@ -1156,9 +1212,11 @@ CONTAINS
             b_u_bep(i,k,j)=b_u_bep(i,k,j)*frc_urb2d(i,j)
             b_v_bep(i,k,j)=b_v_bep(i,k,j)*frc_urb2d(i,j)
             b_t_bep(i,k,j)=b_t_bep(i,k,j)*frc_urb2d(i,j)
-            b_q_bep(i,k,j)=0.
+            b_q_bep(i,k,j)=b_q_bep(i,k,j)*frc_urb2d(i,j)
             b_e_bep(i,k,j)=b_e_bep(i,k,j)*frc_urb2d(i,j)
             HFX_URB(I,J)=HFX_URB(I,J)+B_T_BEP(I,K,J)*RHO(I,K,J)*CP*                &
+                          DZ8W(I,K,J)*VL_BEP(I,K,J)
+            QFX_URB(I,J)=QFX_URB(I,J)+B_Q_BEP(I,K,J)*               &
                           DZ8W(I,K,J)*VL_BEP(I,K,J)
             UMOM_URB(I,J)=UMOM_URB(I,J)+ (A_U_BEP(I,K,J)*U_PHY(I,K,J)+             &
                           B_U_BEP(I,K,J))*DZ8W(I,K,J)*VL_BEP(I,K,J)
@@ -1173,7 +1231,7 @@ CONTAINS
                            ((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)+a_v_bep(i,1,j)
             b_t_bep(i,1,j)=(1.-frc_urb2d(i,j))*hfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP+ &
                             b_t_bep(i,1,j)
-            b_q_bep(i,1,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)
+            b_q_bep(i,1,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)+b_q_bep(i,1,j)
             umom=(1.-frc_urb2d(i,j))*ust(i,j)*ust(i,j)*u_phy(i,1,j)/               &
                          ((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)+umom_urb(i,j)
             vmom=(1.-frc_urb2d(i,j))*ust(i,j)*ust(i,j)*v_phy(i,1,j)/               &
@@ -1199,11 +1257,12 @@ CONTAINS
           endif
 ! rename *_urb to sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d
          grdflx(i,j)= (1.-frc_urb2d(i,j))*grdflx_rural(i,j)+frc_urb2d(i,j)*grdflx_urb(i,j) 
-         qfx(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)
-         lh(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)*xlv
+         qfx(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)+qfx_urb(i,j)
+!        lh(i,j)=(1.-frc_urb2d(i,j))*qfx_rural(i,j)*xlv
+         lh(i,j)=qfx(i,j)*xlv
          HFX(I,J) = HFX_URB(I,J)+(1-FRC_URB2D(I,J))*HFX_RURAL(I,J)         ![W/m/m]
             SH_URB2D(I,J)    = HFX_URB(I,J)/FRC_URB2D(I,J)
-            LH_URB2D(I,J)    = 0.
+            LH_URB2D(I,J)    = qfx_urb(i,j)*xlv
             G_URB2D(I,J)     = grdflx_urb(i,j)
             RN_URB2D(I,J)    = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)
          ust(i,j)=(umom**2.+vmom**2.)**.25

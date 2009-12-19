@@ -8754,7 +8754,7 @@ CONTAINS
 	do J=109,1,-6
 !mp	write(6,697)(TRANSA(I,J),I=5,105,10)
 	enddo
- 697	format(11(f5.3,x))
+ 697	format(11(f5.3,1x))
 !mp
 !NOV89
       DO 4 I=1,IAP

@@ -52,6 +52,7 @@ module gr1_data_info
   character,     dimension(:), pointer     :: grid_info
   integer                                  :: full_xsize, full_ysize
   integer, dimension(maxDomains)           :: domains = -1
+  integer                                  :: this_domain = 0
   integer                                  :: max_domain = 0
   
   TYPE :: HandleVar
@@ -574,6 +575,7 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
   IMPLICIT NONE
 #include "wrf_status_codes.h"
 #include "wrf_io_flags.h"
+#include "wrf_projection.h"
   INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) :: DateStrIn
   CHARACTER(DateStrLen) :: DateStr
@@ -616,11 +618,11 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
   integer :: def(8)
   logical :: output = .true.
   integer :: idx1, idx2, idx3
-  integer :: this_domain
   logical :: new_domain
   real    :: region_center_lat, region_center_lon
   integer :: dom_xsize, dom_ysize;
   integer :: ierr
+  logical :: already_have_domain
 
   call wrf_debug ( DEBUG , 'Entering ext_gr1_write_field for parameter'//VarName)
 
@@ -644,17 +646,16 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
   ! Check if this is a domain that we haven't seen yet.  If so, add it to 
   !   the list of domains.
   !
-  this_domain = 0
   new_domain = .false.
+  already_have_domain = .false.
   do idx = 1, max_domain
-     if (DomainDesc .eq. domains(idx)) then
-        this_domain = idx
+     if (this_domain .eq. domains(idx)) then
+        already_have_domain = .true.
      endif
   enddo
-  if (this_domain .eq. 0) then
+  if (.NOT. already_have_domain) then
      max_domain = max_domain + 1
-     domains(max_domain) = DomainDesc
-     this_domain = max_domain
+     domains(max_domain) = this_domain
      new_domain = .true.
   endif
 
@@ -666,8 +667,6 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
 #ifdef GRIB_ONE_TIME_PER_FILE
   if (lastDateStr(this_domain) .ne. DateStr) then
      write(DataFile(DataHandle),'(A8,i2.2,A1,A19)') 'wrfout_d',this_domain,'_',DateStr
-     print *,'Opening new file: ',trim(DataFile(DataHandle))
-
      call ext_gr1_ioclose ( DataHandle, Status )
      CALL open_file(TRIM(DataFile(DataHandle)), 'w', FileFd(DataHandle), ierr)
      if (ierr .ne. 0) then
@@ -789,6 +788,15 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
      dom_ysize = full_ysize - 1
   else
      dom_ysize = full_ysize
+  endif
+
+  !
+  ! Handle case of polare stereographic centered on pole.  In that case,
+  !   always set center lon to be the projection central longitude.
+  !
+  if ((projection .eq. WRF_POLAR_STEREO) .AND. &
+       (abs(center_lat - 90.0) < 0.01)) then
+     center_lon = proj_central_lon
   endif
 
   CALL get_region_center(MemoryOrder, projection, center_lat, center_lon, &
@@ -2790,6 +2798,8 @@ SUBROUTINE ext_gr1_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  &
      projection = Data(1)
   else if (Element == 'WG_GRID_ID') then
      wg_grid_id = Data(1)
+  else if (Element == 'GRID_ID') then
+     this_domain = Data(1)
   endif
 
   if (committed(DataHandle)) then

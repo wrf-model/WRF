@@ -164,7 +164,7 @@ CONTAINS
   if (.not. nudge_flag) return
 
   call wrf_message("")
-  write(msg,'a,i2') ' OBSERVATION NUDGING IS ACTIVATED FOR MESH ',inest
+  write(msg,'(a,i2)') ' OBSERVATION NUDGING IS ACTIVATED FOR MESH ',inest
   call wrf_message(msg)
 
   ktau  = itimestep
@@ -336,7 +336,7 @@ CONTAINS
   if(nudgezmax.lt.nudgezfullmin+nudgezrampmin) then
     write(msg,*) 'STOP! INCONSISTENT OBS NAMELIST INPUTS.'
     call wrf_message(msg)
-    write(msg,'3(a,f12.3)') 'obs_nudgezmax = ',nudgezmax,                &
+    write(msg,'(3(a,f12.3))') 'obs_nudgezmax = ',nudgezmax,                &
                             ' obs_nudgezfullmin = ',nudgezfullmin,       &
                             ' obs_nudgezrampmin = ',nudgezrampmin
     call wrf_message(msg)
@@ -2839,13 +2839,13 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   nrampr4 = vif(6)
 
   if(var.eq.'wind') then
-    write(msg1,'a') '  For winds:'
+    write(msg1,'(a)') '  For winds:'
   elseif (var.eq.'temp') then
-    write(msg1,'a') '  For temperature:'
+    write(msg1,'(a)') '  For temperature:'
   elseif (var.eq.'mois') then
-    write(msg1,'a') '  For moisture:'
+    write(msg1,'(a)') '  For moisture:'
   else
-    write(msg1,'a,a4') 'Unknown variable type: ',var
+    write(msg1,'(a,a4)') 'Unknown variable type: ',var
     call wrf_error_fatal ( 'print_vif_var: module_fddaobs_rtfdda STOP' )
   endif
       
@@ -2876,45 +2876,45 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   character(len=8) :: regime
 
   if(reg.eq.1) then
-     write(regime,'a') 'Regime 1'
+     write(regime,'(a)') 'Regime 1'
   elseif (reg.eq.2) then
-     write(regime,'a') 'Regime 2'
+     write(regime,'(a)') 'Regime 2'
   elseif (reg.eq.4) then
-     write(regime,'a') 'Regime 4'
+     write(regime,'(a)') 'Regime 4'
   else
-     write(msg1,'a,i3') 'Unknown regime number: ',reg
+     write(msg1,'(a,i3)') 'Unknown regime number: ',reg
      call wrf_error_fatal ( 'print_vif_regime: module_fddaobs_rtfdda STOP' )
   endif
 
 !Set msg1 for description of full weighting range
   if(nfullr.lt.0) then
      if(nfullr.eq.-5000) then
-       write(msg1,'2x,a8,a') regime, ': Full weighting to the PBL top'
+       write(msg1,'(2x,a8,a)') regime, ': Full weighting to the PBL top'
      elseif (nfullr.lt.-5000) then
-       write(msg1,'2x,a8,a,i4,a') regime, ': Full weighting to ',int(-5000.-nfullr), &
+       write(msg1,'(2x,a8,a,i4,a)') regime, ': Full weighting to ',int(-5000.-nfullr), &
                                           ' m above the PBL top'
      else
-       write(msg1,'2x,a8,a,i4,a') regime, ': Full weighting to ',int(nfullr+5000.),  &
+       write(msg1,'(2x,a8,a,i4,a)') regime, ': Full weighting to ',int(nfullr+5000.),  &
                                           ' m below the PBL top'
      endif
   else
-     write(msg1,'2x,a8,a,i4,a') regime, ': Full weighting through ',                 &
+     write(msg1,'(2x,a8,a,i4,a)') regime, ': Full weighting through ',                 &
                                      int(max(nfullr,nfullmin)),' m'
   endif
 
 !Set msg2 for description of rampdown range
   if(nrampr.lt.0) then
      if(nrampr.eq.-5000) then
-       write(msg2,'a') ' and a vertical rampdown up to the PBL top.'
+       write(msg2,'(a)') ' and a vertical rampdown up to the PBL top.'
      elseif (nrampr.lt.-5000) then
-       write(msg2,'a,i4,a') ' and a vertical rampdown to ',int(-5000.-nrampr),    &
+       write(msg2,'(a,i4,a)') ' and a vertical rampdown to ',int(-5000.-nrampr),    &
                             ' m above the PBL top.'
      else
-       write(msg2,'a,i4,a') ' and a vertical rampdown to ',int(nrampr+5000.),     &
+       write(msg2,'(a,i4,a)') ' and a vertical rampdown to ',int(nrampr+5000.),     &
                             ' m below the PBL top.'
      endif
   else
-     write(msg2,'a,i4,a') ' and a vertical rampdown in the next ',                &
+     write(msg2,'(a,i4,a)') ' and a vertical rampdown in the next ',                &
                           int(max(nrampr,nrampmin)),' m.'
   endif
   call wrf_message(TRIM(msg1)//msg2)

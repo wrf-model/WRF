@@ -581,8 +581,8 @@ CONTAINS
 #if (NMM_CORE==1)
                ,MOMMIX=MOMMIX  &
                ,store_rand=store_rand  &
-               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
 #endif
+               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &

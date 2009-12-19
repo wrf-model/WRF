@@ -637,6 +637,32 @@ state    real   TRB_URB4D       i{ulay}j    misc       1         Z     r      "T
 state    real   TW1_URB4D       i{ulay}j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
 state    real   TW2_URB4D       i{ulay}j    misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
 state    real   TGB_URB4D       i{ulay}j    misc       1         Z     r      "TGB_URB4D" "ROAD LAYER TEMPERATURE"          "K"
+state    real   TLEV_URB3D      i{ulay}j    misc       1         Z     r      "TLEV_URB3D" "INDOOR TEMPERATURE"             "K"
+state    real   QLEV_URB3D      i{ulay}j    misc       1         Z     r      "QLEV_URB3D" "SPECIFIC HUMIDITY"              "dimensionless"
+state    real   TW1LEV_URB3D    i{ulay}j    misc       1         Z     r      "TW1LEV_URB3D" "WINDOW TEMPERATURE"           "K"
+state    real   TW2LEV_URB3D    i{ulay}j    misc       1         Z     r      "TW2LEV_URB3D" "WINDOW TEMPERATURE"           "K"
+state    real   TGLEV_URB3D     i{ulay}j    misc       1         Z     r      "TGLEV_URB3D" "GROUND TEMPERATURE BELOW A BUILDING"     "K"
+state    real   TFLEV_URB3D     i{ulay}j    misc       1         Z     r      "TFLEV_URB3D" "FLOOR TEMPERATURE"                       "K"
+state    real   SF_AC_URB3D     ij          misc       1         -     r      "SF_AC_URB3D"  "SENSIBLE HEAT FLUX FROM THE AIR COND." "W m{-2}"
+state    real   LF_AC_URB3D     ij          misc       1         -     r      "LF_AC_URB3D"  "LATENT HEAT FLUX FROM THE AIR COND." "W m{-2}"
+state    real   CM_AC_URB3D     ij          misc       1         -     r      "CM_AC_URB3D"  "CONSUMPTION OF THE AIR COND." "W m{-2}"
+state    real   SFVENT_URB3D    ij          misc       1         -     r      "SFVENT_URB3D" "SENSIBLE HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
+state    real   LFVENT_URB3D    ij          misc       1         -     r      "LFVENT_URB3D" "LATENT HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
+state    real   SFWIN1_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN1_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
+state    real   SFWIN2_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN2_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
+state    real   TLEV_URB3D      i{ulay}j    misc       1         Z     r      "TLEV_URB3D" "INDOOR TEMPERATURE"             "K"
+state    real   QLEV_URB3D      i{ulay}j    misc       1         Z     r      "QLEV_URB3D" "SPECIFIC HUMIDITY"              "dimensionless"
+state    real   TW1LEV_URB3D    i{ulay}j    misc       1         Z     r      "TW1LEV_URB3D" "WINDOW TEMPERATURE"           "K"
+state    real   TW2LEV_URB3D    i{ulay}j    misc       1         Z     r      "TW2LEV_URB3D" "WINDOW TEMPERATURE"           "K"
+state    real   TGLEV_URB3D     i{ulay}j    misc       1         Z     r      "TGLEV_URB3D" "GROUND TEMPERATURE BELOW A BUILDING"     "K"
+state    real   TFLEV_URB3D     i{ulay}j    misc       1         Z     r      "TFLEV_URB3D" "FLOOR TEMPERATURE"                       "K"
+state    real   SF_AC_URB3D     ij          misc       1         -     rh     "SF_AC_URB3D"  "SENSIBLE HEAT FLUX FROM THE AIR COND." "W m{-2}"
+state    real   LF_AC_URB3D     ij          misc       1         -     r      "LF_AC_URB3D"  "LATENT HEAT FLUX FROM THE AIR COND." "W m{-2}"
+state    real   CM_AC_URB3D     ij          misc       1         -     rh     "CM_AC_URB3D"  "CONSUMPTION OF THE AIR COND." "W m{-2}"
+state    real   SFVENT_URB3D    ij          misc       1         -     r      "SFVENT_URB3D" "SENSIBLE HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
+state    real   LFVENT_URB3D    ij          misc       1         -     r      "LFVENT_URB3D" "LATENT HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
+state    real   SFWIN1_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN1_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
+state    real   SFWIN2_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN2_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
 state    real   SFW1_URB3D      i{ulay}j    misc       1         Z     r      "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFW2_URB3D      i{ulay}j    misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFR_URB3D       i{ulay}j    misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
@@ -1521,6 +1547,7 @@ rconfig   real    target_cfl              namelist,domains      max_domains  1.2
 rconfig   integer max_step_increase_pct   namelist,domains      max_domains    5      h    "max_step_increase_pct"
 rconfig   integer starting_time_step      namelist,domains      max_domains   -1      h    "starting_time_step"
 rconfig   logical step_to_output_time     namelist,domains      1         .true.      h    "step_to_output_time"
+rconfig   integer adaptation_domain       namelist,domains      1              1      h    "adaptation_domain"
 rconfig   logical use_adaptive_time_step  namelist,domains      1         .false.     h    "use_adaptive_time_step"
 
 rconfig   integer max_dom                 namelist,domains	1             1       irh  "max_dom"               ""      ""
@@ -1976,8 +2003,9 @@ package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             state:qke,tsq,qsq,cov
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 
-package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
+package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep
 package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
+package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -

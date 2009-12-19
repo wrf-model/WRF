@@ -15,8 +15,8 @@ CONTAINS
                  P_QC,                                              & 
 #if (NMM_CORE == 1)
                  STORE_RAND,MOMMIX, & ! gopal's doing
-                 P_QI,P_FIRST_SCALAR,                               & 
 #endif
+                 P_QI,P_FIRST_SCALAR,                               & 
                  CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
@@ -118,7 +118,6 @@ CONTAINS
       REAL,    INTENT(IN) ::                                            &
                                         DT
 
-      REAL,    INTENT(IN) ::    MOMMIX
 
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::      &
                                         RQCCUTEN,                       &
@@ -126,16 +125,17 @@ CONTAINS
                                         RQVCUTEN,                       &
                                         RTHCUTEN
 #if (NMM_CORE == 1)
+      REAL,    INTENT(IN) ::    MOMMIX
       REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
                                         RUCUTEN,                        &  ! gopal's doing for SAS
                                         RVCUTEN                            ! gopal's doing for SAS 
+   REAL, DIMENSION( ims:ime , jms:jme ),                                &
+                         INTENT(IN) :: STORE_RAND
+
 #endif
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         XLAND
-
-   REAL, DIMENSION( ims:ime , jms:jme ),                                &
-                         INTENT(IN) :: STORE_RAND
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            &
                                         RAINCV, PRATEC
@@ -314,9 +314,11 @@ CONTAINS
 
 !     call random_number(XKT2)
 
+#if (NMM_CORE == 1)
       DO i=its,ite
          XKT2(i) = STORE_RAND(i,j)
       ENDDO
+#endif
 
       DO i=its,ite
         PS(i)=PSFC(i,j)*.001

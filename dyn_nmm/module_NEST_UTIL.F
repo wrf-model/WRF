@@ -378,10 +378,10 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 #ifdef HWRF
 !zhang's doing
       INTEGER                                               :: NTIME0
+      LOGICAL,INTENT(IN)                                    :: RESTART
 #else
       INTEGER,SAVE                                          :: NTIME0
 #endif
-      LOGICAL,INTENT(IN)                                    :: RESTART
       INTEGER                                               :: IM,JM,IP,JP
       INTEGER                                               :: I,K,J,XR,YR,DTMOVE,IDUM,JDUM,ITF,JTF
       REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608

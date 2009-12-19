@@ -46,6 +46,7 @@ int GRID_init(float central_lat, float central_lon, int projection,
 
   int status = 1;
 
+  fprintf(stderr,"central_lon: %f\n",central_lon);
   gridnav->proj.central_lon = central_lon;
   gridnav->proj.central_lat = central_lat;
   gridnav->proj.map_proj = projection;
@@ -90,6 +91,7 @@ int GRID_to_latlon(GridNav *gridnav, float column, float row, float *lat,
      */
     double X, Y, R;
     int status = 1;
+    double eps = 0.00001;
 
     switch (gridnav->proj.map_proj)
 	{
@@ -121,15 +123,18 @@ int GRID_to_latlon(GridNav *gridnav, float column, float row, float *lat,
 	    break;
 
 	case GRID_POLSTR:
-	    X = (column - gridnav->grid.origin_column)*gridnav->grid.dx;
-	    Y = (row - gridnav->grid.origin_row)*gridnav->grid.dy + 
-		gridnav->proj_transform.parm3;
-	    R = sqrt(X*X + Y*Y);
-	    *lat = gridnav->proj_transform.parm5*90 - 2 * RAD_TO_DEG *
-		atan((gridnav->proj_transform.parm5*R/EARTH_RAD)/
-		     (1+cos(gridnav->proj_transform.parm1)));
-	    *lon = gridnav->grid.lon_origin + RAD_TO_DEG * 
-		atan(X/(gridnav->proj_transform.parm5 * -Y));
+	    X = (column - gridnav->grid.origin_column) * 
+		gridnav->proj_transform.parm3 + 
+		gridnav->proj_transform.parm1;
+	    Y = (row - gridnav->grid.origin_row) * 
+		gridnav->proj_transform.parm3 +
+		gridnav->proj_transform.parm2 + eps;
+	    *lon = gridnav->proj_transform.parm5 * -1 * 
+		atan(X / Y) * RAD_TO_DEG + gridnav->proj.central_lon;
+	    *lat = 90 - 2 * RAD_TO_DEG *
+		atan(X / (2 * EARTH_RAD * 
+			  sin((*lon - gridnav->proj.central_lon ) / 
+			      RAD_TO_DEG) + eps) );
 	    while (*lon > 180) *lon -= 360;
 	    while (*lon <= -180) *lon += 360;
 	    break;
@@ -215,20 +220,18 @@ int GRID_from_latlon(GridNav *gridnav, float lat, float lon, float *column,
 		  gridnav->proj_transform.parm6 / gridnav->grid.dx));
 	    break;
 
-	case GRID_POLSTR:
-	    Rs = EARTH_RAD * sin((gridnav->proj_transform.parm5 * 90 - lat) 
-				 / RAD_TO_DEG)*
-		((1 + cos(gridnav->proj_transform.parm1)) /
-		 (1 + cos((gridnav->proj_transform.parm5 * 90 - lat) 
-			  / RAD_TO_DEG)) );
-	    *row = gridnav->grid.origin_row - 
-		(1 / gridnav->grid.dy) * 
-		(gridnav->proj_transform.parm3 + 
-		 Rs * cos((lon - gridnav->grid.lon_origin) / RAD_TO_DEG));
-	    *column = gridnav->grid.origin_column + 
-		gridnav->proj_transform.parm5 *
-		((Rs / gridnav->grid.dx) *
-		 sin((lon - gridnav->grid.lon_origin) / RAD_TO_DEG));
+	case GRID_POLSTR:	    
+	    Rs = 2 * EARTH_RAD * tan ( (45 - fabs(lat)/2) / RAD_TO_DEG );
+	    Y = gridnav->proj_transform.parm5 * -1 * Rs * 
+		cos ((lon - gridnav->proj.central_lon) / RAD_TO_DEG);
+	    X = Rs * sin ((lon - gridnav->proj.central_lon) / RAD_TO_DEG);
+
+	    *row = (Y - gridnav->proj_transform.parm2) / 
+		gridnav->proj_transform.parm3 
+		+ gridnav->grid.origin_row;
+	    *column = (X - gridnav->proj_transform.parm1) / 
+		gridnav->proj_transform.parm3 
+		+ gridnav->grid.origin_column;
 	    break;
     
 	case GRID_LATLON:
@@ -257,6 +260,8 @@ int fill_proj_parms(GridNav *gridnav)
 {
     double orig_lat_rad;
     double R_orig;
+    double r_not;
+    double r_truelat1;
     int hemifactor;
   
     switch (gridnav->proj.map_proj) 
@@ -333,33 +338,36 @@ int fill_proj_parms(GridNav *gridnav)
 			      gridnav->proj.central_lon) / RAD_TO_DEG));
 	    break;
 	case GRID_POLSTR:
-	    if (gridnav->proj.truelat1 > 0) 
-		{
-		    hemifactor = 1;
-		} 
-	    else 
-		{
-		    hemifactor = -1;
-		}
+            if (gridnav->proj.central_lat > 0) 
+                {
+                    hemifactor = 1;
+                } 
+            else 
+                {
+                    hemifactor = -1;
+                }
 
-	    /* This is Psi1 in MM5 speak */
-	    gridnav->proj_transform.parm1 = 
-		hemifactor * (PI/2 - fabs(gridnav->proj.truelat1) / RAD_TO_DEG);
+	    /* Calculate X for origin */
+	    r_not = 2 * EARTH_RAD * 
+		tan((45 - fabs(gridnav->grid.lat_origin) / 2) / RAD_TO_DEG);
+	    gridnav->proj_transform.parm1 =  
+		r_not * 
+		sin ( (gridnav->grid.lon_origin - gridnav->proj.central_lon) /
+		      RAD_TO_DEG);
+	    /* Calculate Y for origin */
 	    gridnav->proj_transform.parm2 = 
-		(1+log10(cos(gridnav->proj.truelat1 / RAD_TO_DEG))) / 
-		( -log10(tan(45 / RAD_TO_DEG - hemifactor * 
-			     gridnav->proj.truelat1 /
-			     (2 * RAD_TO_DEG) )) );
-	    /* This is Yc in MM5 speak */
+		hemifactor * -1 * r_not * 
+		cos ( (gridnav->grid.lon_origin - gridnav->proj.central_lon) / 
+		      RAD_TO_DEG);
+	    /* Calculate grid spacing at pole */
+	    r_truelat1 = 2 * EARTH_RAD * 
+		tan((45 - fabs(gridnav->proj.truelat1) / 2) / RAD_TO_DEG);
 	    gridnav->proj_transform.parm3 = 
-		-EARTH_RAD * sin((hemifactor * 90 - 
-				  gridnav->grid.lat_origin) / RAD_TO_DEG)*
-		( (1 + cos(gridnav->proj_transform.parm1))/
-		  (1 + cos((hemifactor*90 - gridnav->grid.lat_origin) / 
-			   RAD_TO_DEG)) );
-	    gridnav->proj_transform.parm4 = MISSING;
-	    gridnav->proj_transform.parm5 = hemifactor;
-	    break;
+		gridnav->grid.dx * r_truelat1 / 
+		( EARTH_RAD * cos (gridnav->proj.truelat1 / RAD_TO_DEG));
+            gridnav->proj_transform.parm4 = MISSING;
+            gridnav->proj_transform.parm5 = hemifactor;
+            break;
 	case GRID_LATLON:
 	  gridnav->proj_transform.parm1 = MISSING;
 	  gridnav->proj_transform.parm2 = MISSING;

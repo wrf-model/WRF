@@ -197,6 +197,31 @@ SUBROUTINE solve_em ( grid , config_flags  &
    ALLOCATE (max_vert_cfl_tmp(grid%num_tiles))
    ALLOCATE (max_horiz_cfl_tmp(grid%num_tiles))
 
+  !
+  ! Calculate current time in seconds since beginning of model run.
+  !   Unfortunately, ESMF does not seem to have a way to return
+  !   floating point seconds based on a TimeInterval.  So, we will
+  !   calculate it here--but, this is not clean!!
+  !
+   tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
+   curr_secs = real_time(tmpTimeInterval)
+
+!-----------------------------------------------------------------------------
+! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
+!   In this call, we do the time-step adaptation and set time-dependent lateral
+!   boundary condition nudging weights.
+!
+   IF ( (config_flags%use_adaptive_time_step) .and. &
+        ( (.not. grid%nested) .or. &
+        ( (grid%nested) .and. (abs(grid%dtbc) < 0.0001) ) ) )THEN
+      CALL adapt_timestep(grid, config_flags)
+      adapt_step_flag = .TRUE.
+   ELSE
+      adapt_step_flag = .FALSE.
+   ENDIF
+! End of adaptive time step modifications
+!-----------------------------------------------------------------------------
+
    grid%itimestep = grid%itimestep + 1
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
@@ -272,29 +297,6 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    rk_order = config_flags%rk_ord
 
-
-  !
-  ! Calculate current time in seconds since beginning of model run.
-  !   Unfortunately, ESMF does not seem to have a way to return
-  !   floating point seconds based on a TimeInterval.  So, we will
-  !   calculate it here--but, this is not clean!!
-  !
-   tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
-   curr_secs = real_time(tmpTimeInterval)
-
-!-----------------------------------------------------------------------------
-! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
-!   In this call, we do the time-step adaptation and set time-dependent lateral
-!   boundary condition nudging weights.
-!
-   IF (config_flags%use_adaptive_time_step) THEN
-     CALL adapt_timestep(grid, config_flags)
-     adapt_step_flag = .TRUE.
-   ELSE
-     adapt_step_flag = .FALSE.
-   ENDIF
-! End of adaptive time step modifications
-!-----------------------------------------------------------------------------
 
    IF ( grid%time_step_sound == 0 ) THEN
 ! This function will give 4 for 6*dx and 6 for 10*dx and returns even numbers only

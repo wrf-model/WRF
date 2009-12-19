@@ -740,6 +740,11 @@ CONTAINS
       new_grid%max_tiles   = 0
       new_grid%num_tiles_spec   = 0
       new_grid%nframes   = 0         ! initialize the number of frames per file (array assignment)
+#if (EM_CORE == 1)
+      new_grid%stepping_to_time = .FALSE.
+      new_grid%adaptation_domain = 1
+      new_grid%last_step_updated = -1
+#endif
 
       CALL alloc_space_field ( new_grid, domain_id , 3 , 3 , .FALSE. ,      &
                                sd1, ed1, sd2, ed2, sd3, ed3,       &

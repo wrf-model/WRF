@@ -24,6 +24,19 @@ MODULE module_sf_urban
    REAL, ALLOCATABLE, DIMENSION(:) :: BETG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: FRC_URB_TBL
 
+   REAL, ALLOCATABLE, DIMENSION(:) :: COP_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: PWIN_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: BETA_TBL
+   INTEGER, ALLOCATABLE, DIMENSION(:) :: SW_COND_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TIME_ON_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TIME_OFF_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TARGTEMP_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: GAPTEMP_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TARGHUM_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: GAPHUM_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: PERFLO_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: HSESF_TBL
+
    REAL, ALLOCATABLE, DIMENSION(:) :: CAPR_TBL, CAPB_TBL, CAPG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: AKSR_TBL, AKSB_TBL, AKSG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: ALBR_TBL, ALBB_TBL, ALBG_TBL
@@ -50,6 +63,7 @@ MODULE module_sf_urban
    INTEGER                         :: CH_SCHEME_DATA, TS_SCHEME_DATA
    INTEGER                         :: ahoption        ! Miao, 2007/01/17, cal. ah
    REAL, DIMENSION(1:24)           :: ahdiuprf        ! ah diurnal profile, tloc: 1-24
+   REAL, DIMENSION(1:24)           :: hsequip_tbl
 
    INTEGER                         :: allocate_status 
 
@@ -1335,6 +1349,7 @@ MODULE module_sf_urban
    INTEGER,                     INTENT(OUT) :: NUMHGT
    REAL,    DIMENSION(MAXHGTS), INTENT(OUT) :: HEIGHT_BIN
    REAL,    DIMENSION(MAXHGTS), INTENT(OUT) :: HPERCENT_BIN
+   
 !end BEP
 
    INTEGER, INTENT(OUT) :: BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME
@@ -1564,6 +1579,30 @@ MODULE module_sf_urban
             if(allocate_status /= 0) stop 'Error allocating HEIGHT_BIN_TBL in urban_param_init'
             ALLOCATE( HPERCENT_BIN_TBL(MAXHGTS , ICATE), stat=allocate_status )
             if(allocate_status /= 0) stop 'Error allocating HPERCENT_BIN_TBL in urban_param_init'
+            ALLOCATE( COP_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating COP_TBL in urban_param_init'
+            ALLOCATE( PWIN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating PWIN_TBL in urban_param_init'
+            ALLOCATE( BETA_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating BETA_TBL in urban_param_init'
+            ALLOCATE( SW_COND_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating SW_COND_TBL in urban_param_init'
+            ALLOCATE( TIME_ON_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating TIME_ON_TBL in urban_param_init'
+            ALLOCATE( TIME_OFF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating TIME_OFF_TBL in urban_param_init'
+            ALLOCATE( TARGTEMP_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating TARGTEMP_TBL in urban_param_init'
+            ALLOCATE( GAPTEMP_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating GAPTEMP_TBL in urban_param_init'
+            ALLOCATE( TARGHUM_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating TARGHUM_TBL in urban_param_init'
+            ALLOCATE( GAPHUM_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating GAPHUM_TBL in urban_param_init'
+            ALLOCATE( PERFLO_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating PERFLO_TBL in urban_param_init'
+            ALLOCATE( HSESF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating HSESF_TBL in urban_param_init'
          endif
          numdir_tbl = 0
          street_direction_tbl = -1.E36
@@ -1699,6 +1738,32 @@ MODULE module_sf_urban
             write (*,'("Currently, they sum to ", F6.2,/)') pctsum
             stop
          endif
+      else if ( name == "COP") then
+         read(string(indx+1:),*) cop_tbl(1:icate)
+      else if ( name == "PWIN") then
+         read(string(indx+1:),*) pwin_tbl(1:icate)
+      else if ( name == "BETA") then
+         read(string(indx+1:),*) beta_tbl(1:icate)
+      else if ( name == "SW_COND") then
+         read(string(indx+1:),*) sw_cond_tbl(1:icate)
+      else if ( name == "TIME_ON") then
+         read(string(indx+1:),*) time_on_tbl(1:icate)
+      else if ( name == "TIME_OFF") then
+         read(string(indx+1:),*) time_off_tbl(1:icate)
+      else if ( name == "TARGTEMP") then
+         read(string(indx+1:),*) targtemp_tbl(1:icate)
+      else if ( name == "GAPTEMP") then
+         read(string(indx+1:),*) gaptemp_tbl(1:icate)
+      else if ( name == "TARGHUM") then
+         read(string(indx+1:),*) targhum_tbl(1:icate)
+      else if ( name == "GAPHUM") then
+         read(string(indx+1:),*) gaphum_tbl(1:icate)
+      else if ( name == "PERFLO") then
+         read(string(indx+1:),*) perflo_tbl(1:icate)
+      else if (name == "HSEQUIP") then
+         read(string(indx+1:),*) hsequip_tbl(1:24)
+      else if (name == "HSEQUIP_SCALE_FACTOR") then
+         read(string(indx+1:),*) hsesf_tbl(1:icate)
 !end BEP         
       else
          print*, 'name = "'//trim(name)//'"'
@@ -1792,6 +1857,12 @@ MODULE module_sf_urban
                              TS_URB2D,                                     & ! inout
                              num_urban_layers,                             & ! in
                              TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,      & ! inout
+                             TLEV_URB3D,QLEV_URB3D,                        & ! inout
+                             TW1LEV_URB3D,TW2LEV_URB3D,                    & ! inout
+                             TGLEV_URB3D,TFLEV_URB3D,                      & ! inout
+                             SF_AC_URB3D,LF_AC_URB3D,CM_AC_URB3D,          & ! inout
+                             SFVENT_URB3D,LFVENT_URB3D,                    & ! inout
+                             SFWIN1_URB3D,SFWIN2_URB3D,                    & ! inout
                              SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,    & ! inout
                              A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,              & ! inout multi-layer urban
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
@@ -1839,6 +1910,19 @@ MODULE module_sf_urban
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TGB_URB4D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TLEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: QLEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1LEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2LEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TGLEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TFLEV_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LF_AC_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SF_AC_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CM_AC_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SFVENT_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LFVENT_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN1_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN2_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D
@@ -1953,22 +2037,52 @@ MODULE module_sf_urban
       END DO
       
 ! multi-layer urban
-!       write(*,*)i,j,TSURFACE0_URB(i,j),TLAYER0_URB(i,1,j),TLAYER0_URB(i,4,j)
-      IF( sf_urban_physics .EQ. 2)THEN
+!      IF( sf_urban_physics .EQ. 2)THEN
+       IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
       DO k=1,num_urban_layers
 !        TRB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW1_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW2_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TGB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
-        TRB_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        TW1_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        TW2_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        TGB_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        SFW1_URB3D(I,k,J)=0.
-        SFW2_URB3D(I,k,J)=0.
-        SFR_URB3D(I,k,J)=0.
-        SFG_URB3D(I,k,J)=0.
+        TRB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        TGB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        SFW1_URB3D(I,K,J)=0.
+        SFW2_URB3D(I,K,J)=0.
+        SFR_URB3D(I,K,J)=0.
+        SFG_URB3D(I,K,J)=0.
       ENDDO
+       
+       ENDIF 
+              
+      if (SF_URBAN_PHYSICS.EQ.3) then
+         LF_AC_URB3D(I,J)=0.
+         SF_AC_URB3D(I,J)=0.
+         CM_AC_URB3D(I,J)=0.
+         SFVENT_URB3D(I,J)=0.
+         LFVENT_URB3D(I,J)=0.
+
+         DO K=1,num_urban_layers
+            TLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TW1LEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TW2LEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TGLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TFLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            QLEV_URB3D(I,K,J)=0.01
+            SFWIN1_URB3D(I,K,J)=0.
+            SFWIN2_URB3D(I,K,J)=0.
+!rm         LF_AC_URB3D(I,J)=0.
+!rm         SF_AC_URB3D(I,J)=0.
+!rm         CM_AC_URB3D(I,J)=0.
+!rm         SFVENT_URB3D(I,J)=0.
+!rm         LFVENT_URB3D(I,J)=0.
+         ENDDO
+
+      endif
+
+!      IF( sf_urban_physics .EQ. 2 )THEN
+      IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
       DO K= KMS,KME
           SF_BEP(I,K,J)=1.
           VL_BEP(I,K,J)=1.
@@ -1976,10 +2090,12 @@ MODULE module_sf_urban
           A_V_BEP(I,K,J)=0.
           A_T_BEP(I,K,J)=0.
           A_E_BEP(I,K,J)=0.
+          A_Q_BEP(I,K,J)=0.
           B_U_BEP(I,K,J)=0.
           B_V_BEP(I,K,J)=0.
           B_T_BEP(I,K,J)=0.
           B_E_BEP(I,K,J)=0.
+          B_Q_BEP(I,K,J)=0.
           DLG_BEP(I,K,J)=0.
           DL_U_BEP(I,K,J)=0.
       END DO

@@ -348,12 +348,13 @@ CONTAINS
       IF ( first_time_in ) THEN
 
          CLOSE(12)
-         OPEN ( FILE   = 'real_input_nm.global.metadata' , &
-                UNIT   = 12                              , &
-                STATUS = 'OLD'                           , &
-                ACCESS = 'SEQUENTIAL'                    , &
-                FORM   = 'UNFORMATTED'                   , &
-                IOSTAT = ok_open                           )
+         OPEN ( FILE   = 'real_input_nm.global.metadata'   &
+                ,UNIT   = 12                                &
+                ,STATUS = 'OLD'                             &
+                ,ACCESS = 'SEQUENTIAL'                      &
+                ,FORM   = 'UNFORMATTED'                     &
+                                                      )
+!                IOSTAT = ok                           )
 
          IF ( ok_open .NE. 0 ) THEN
             PRINT '(A)','You asked for WRF SI data, but no real_input_nm.global.metadata file exists.'
@@ -1396,9 +1397,9 @@ print *,'------------------> skipping ', var_info%name(1:8)
       USE module_soil_pre
       USE module_domain
 
-      INCLUDE "mpif.h"
-
       IMPLICIT NONE
+
+      INCLUDE "mpif.h"
 
       TYPE(domain) , INTENT(INOUT)  :: grid
       CHARACTER (LEN=19) , INTENT(IN) :: file_date_string
@@ -3000,13 +3001,15 @@ subroutine retrieve_field(in_unit,wrfges,out,start_block,end_block,start_byte,en
 
   integer(i_kind),parameter:: lrecl=2**20
   integer(i_byte) buf(lrecl)
-  integer(i_kind) i,ii,k,ibegin,iend,ierr
+  integer(i_kind) i,ii,k,ibegin,iend
+  integer ierr
 
   open(in_unit,file=trim(wrfges),access='direct',recl=lrecl)
 
      write(6,*)' in retrieve_field, start_block,end_block=',start_block,end_block
      write(6,*)' in retrieve_field, start_byte,end_byte=',start_byte,end_byte
   ii=0
+  ierr=0
   do k=start_block,end_block
      read(in_unit,rec=k,iostat=ierr)buf
      ibegin=1 ; iend=lrecl

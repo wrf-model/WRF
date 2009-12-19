@@ -1885,14 +1885,15 @@
 !
       btimx=timef()
 !
-      CALL HDIFF(grid%ntsd,GRID%DT,grid%fis,grid%dy_nmm,grid%hdac,grid%hdacv                    &
-     &          ,grid%hbm2,grid%deta1,GRID%SIGMA                                 &
+      CALL HDIFF(grid%ntsd,GRID%DT,grid%fis,grid%dy_nmm,grid%hdac,grid%hdacv         &
+     &          ,grid%hbm2,grid%deta1,GRID%SIGMA                       &
 #ifdef HWRF
-     &          ,grid%t,grid%q,grid%u,grid%v,grid%q2,grid%z,grid%w,grid%sm,grid%sice,grid%h_diff                    &
+     &          ,grid%t,grid%q,grid%u,grid%v,grid%q2,grid%z,grid%w,grid%sm,grid%sice,grid%h_diff    &
 #else
-     &          ,grid%t,grid%q,grid%u,grid%v,grid%q2,grid%z,grid%w,grid%sm,grid%sice                                &
+     &          ,grid%t,grid%q,grid%u,grid%v,grid%q2,grid%z,grid%w,grid%sm,grid%sice                &
 #endif
-     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                       &
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                   &
+     &          ,CONFIG_FLAGS                                          &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)

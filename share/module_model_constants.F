@@ -85,13 +85,7 @@
    REAL    , PARAMETER ::  w_beta  = 1.0 ! activation cfl number
 
        REAL , PARAMETER ::  pq0=379.90516
-#ifdef HWRF
-!Modified by Kwon for 0 tke
-       REAL , PARAMETER ::  epsq2=0.0
-#else
        REAL , PARAMETER ::  epsq2=0.2
-!       REAL , PARAMETER ::  epsq2=0.02
-#endif
        REAL , PARAMETER ::  a2=17.2693882
        REAL , PARAMETER ::  a3=273.16
        REAL , PARAMETER ::  a4=35.86

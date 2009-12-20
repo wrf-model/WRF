@@ -1112,7 +1112,6 @@ CONTAINS
 
 
   SUBROUTINE  mym_condensation (kts,kte, &
-    &            levflag,  &
     &            dz, &
     &            thl, qw, &
     &            p,exner, &
@@ -1120,7 +1119,6 @@ CONTAINS
     &            Vt, Vq)
 
     INTEGER, INTENT(IN)   :: kts,kte
-    INTEGER, INTENT(in) :: levflag
 
     REAL, DIMENSION(kts:kte), INTENT(IN) :: dz
     REAL, DIMENSION(kts:kte), INTENT(IN) :: p,exner, thl, qw, &
@@ -1741,7 +1739,6 @@ CONTAINS
 !!!!!
 
           CALL  mym_condensation ( kts,kte,&
-               &levflag,  &
                &dz(i,kts:kte,j), &
                &thl, sqw, &
                &p(i,kts:kte,j),exner(i,kts:kte,j), &

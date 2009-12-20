@@ -4547,10 +4547,11 @@ END SUBROUTINE pole_point_bc
    SUBROUTINE phy_prep ( config_flags,                                &  ! input
                          mu, muu, muv, u, v, p, pb, alt, ph,          &  ! input
                          phb, t, tsk, moist, n_moist,                 &  ! input
-                         mu_3d, rho, th_phy, p_phy , pi_phy ,         &  ! output
+                         rho, th_phy, p_phy , pi_phy ,                &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
-                         fzm, fzp,                                    &  ! params
+                         p_hyd, p_hyd_w,                              &  ! output
+                         fzm, fzp, znw, p_top,                        &  ! params
                          RTHRATEN,                                    &
                          RTHBLTEN, RUBLTEN, RVBLTEN,                  &
                          RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
@@ -4587,11 +4588,16 @@ END SUBROUTINE pole_point_bc
                                                               t_phy, &
                                                              th_phy, &
                                                                 t8w, &
-                                                              mu_3d, &
                                                                 rho, &
                                                                   z, &
                                                                dz8w, &
                                                               z_at_w 
+
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
+          INTENT(  OUT)                                  ::   p_hyd, &
+                                                              p_hyd_w
+
+   REAL , INTENT(IN   )                                  ::   p_top
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
           INTENT(IN   )                                  ::      pb, &
@@ -4606,6 +4612,8 @@ END SUBROUTINE pole_point_bc
 
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     fzm,   &
                                                                 fzp
+
+   REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
           INTENT(INOUT)   ::                               RTHRATEN  
@@ -4643,6 +4651,7 @@ END SUBROUTINE pole_point_bc
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
    REAL    :: w1, w2, z0, z1, z2
+   REAL    :: e_vapor
 
 !-----------------------------------------------------------------------
 
@@ -4665,7 +4674,7 @@ END SUBROUTINE pole_point_bc
     k_start = kts
     k_end = min( kte, kde-1 )
 
-!  compute thermodynamics and velocities at pressure points
+!  compute thermodynamics and velocities at pressure points (or half levels)
 
     do j = j_start,j_end
     do k = k_start, k_end
@@ -4676,7 +4685,6 @@ END SUBROUTINE pole_point_bc
       pi_phy(i,k,j) = (p_phy(i,k,j)/p1000mb)**rcp
       t_phy(i,k,j) = th_phy(i,k,j)*pi_phy(i,k,j)
       rho(i,k,j) = 1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))
-      mu_3d(i,k,j) = mu(i,j)
       u_phy(i,k,j) = 0.5*(u(i,k,j)+u(i+1,k,j))
       v_phy(i,k,j) = 0.5*(v(i,k,j)+v(i,k,j+1))
 
@@ -4708,7 +4716,7 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
 
-!  compute z at p points (average of z at w points)
+!  compute z at p points or half levels (average of z at full levels)
 
     do j = j_start,j_end
     do k = k_start, k_end
@@ -4718,7 +4726,7 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
 
-!  interp t and p at w points
+!  interp t and p to full levels
 
     do j = j_start,j_end
     do k = 2, k_end
@@ -4758,6 +4766,36 @@ END SUBROUTINE pole_point_bc
       p8w(i,kde,j) = exp(w1*log(p_phy(i,kde-1,j))+w2*log(p_phy(i,kde-2,j)))
       t8w(i,kde,j) = w1*t_phy(i,kde-1,j)+w2*t_phy(i,kde-2,j)
 
+    enddo
+    enddo
+
+! calculate hydrostatic pressure at both full and half levels
+! first, full level p: assuming dry over model top
+
+    do j = j_start,j_end
+    do i = i_start, i_end
+       p_hyd_w(i,kte,j) = p_top
+    enddo
+    enddo
+
+    e_vapor = 0.
+    do j = j_start,j_end
+    do k = kte-1, k_start, -1
+    do i = i_start, i_end
+!      e_vapor = 1./alt(i,k,j)*moist(i,k,j,P_QV)*g*dz8w(i,k,j) 
+!      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+e_vapor
+       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))*g*dz8w(i,k,j)
+    enddo
+    enddo
+    enddo
+
+! now calculate hydrostatic pressure at half levels
+
+    do j = j_start,j_end
+    do k = k_start, k_end
+    do i = i_start, i_end
+       p_hyd(i,k,j) = 0.5*(p_hyd_w(i,k,j)+p_hyd_w(i,k+1,j))
+    enddo
     enddo
     enddo
 

@@ -24,9 +24,7 @@ CONTAINS
                    P1000mb,                                     &
                    ids,ide, jds,jde, kds,kde,                   &
                    ims,ime, jms,jme, kms,kme,                   &
-                   its,ite, jts,jte, kts,kte,                   &
-                   tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
-                   f,g,omlcall,oml_gamma                        )
+                   its,ite, jts,jte, kts,kte                    )
 !----------------------------------------------------------------
     IMPLICIT NONE
 !----------------------------------------------------------------
@@ -81,14 +79,6 @@ CONTAINS
 !-- TSLB        soil temperature in 5-layer model
 !-- ZS          depths of centers of soil layers
 !-- DZS         thicknesses of soil layers
-!-- TML         ocean mixed layer temperature (K)
-!-- T0ML        ocean mixed layer temperature (K) at initial time
-!-- HML         ocean mixed layer depth (m)
-!-- H0ML        ocean mixed layer depth (m) at initial time
-!-- HUML        ocean mixed layer u component of wind
-!-- HVML        ocean mixed layer v component of wind
-!-- OML_GAMMA   deep water lapse rate (K m-1)
-!-- OMLCALL     whether to call oml model
 !-- num_soil_layers   the number of soil layers
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
@@ -163,17 +153,6 @@ CONTAINS
                                                           FLHC, &
                                                           FLQC
 
-! Ocean Mixed Layer Vars
-   REAL,    DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::     &
-                                    TML,T0ML,HML,H0ML,HUML,HVML
-   REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL, INTENT(IN   ) ::     &
-                                             U_PHY,V_PHY
-   REAL,    DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN   ) ::     &
-                                             UST, F
-   REAL,     OPTIONAL, INTENT(IN   )   ::     G
-   REAL,     OPTIONAL, INTENT(IN   )   ::     OML_GAMMA
-   INTEGER,  OPTIONAL, INTENT(IN   )   ::     OMLCALL
-
 ! LOCAL VARS
 
    REAL,     DIMENSION( its:ite ) ::                      QV1D, &
@@ -206,27 +185,6 @@ CONTAINS
            ids,ide, jds,jde, kds,kde,                           &
            ims,ime, jms,jme, kms,kme,                           &
            its,ite, jts,jte, kts,kte                            )
-
-      IF (OMLCALL .EQ. 1) THEN
-!         CALL wrf_debug( 1, 'Call OCEANML' )
-          IF (PRESENT(tml)    .AND.   PRESENT(t0ml) &
-                              .AND.        .TRUE. ) THEN
-            DO i=its,ite
-               IF(XLAND(I,J).GT.1.5)THEN
-               CALL OCEANML(I,J,TML(i,j),T0ML(i,j),HML(i,j),H0ML(i,j),&
-                 HUML(i,j),HVML(i,j),TSK(i,j),HFX(i,j),               &
-                 LH(i,j),GSW(i,j),GLW(i,j),                           &
-                 U_PHY(i,kts,j),V_PHY(i,kts,j),UST(i,j),F(i,j),       &
-                 EMISS(i,j),STBOLT,G,DELTSM,OML_GAMMA,                &
-                 ids,ide, jds,jde, kds,kde,                           &
-                 ims,ime, jms,jme, kms,kme,                           &
-                 its,ite, jts,jte, kts,kte                            )
-               ENDIF
-            ENDDO
-          ELSE
-            CALL wrf_error_fatal('Lacking arguments for OCEANML in slab')
-          ENDIF
-      ENDIF
 
    ENDDO
 
@@ -557,9 +515,7 @@ CONTAINS
                        allowed_to_read, start_of_simulation,    &
                        ids,ide, jds,jde, kds,kde,               &
                        ims,ime, jms,jme, kms,kme,               &
-                       its,ite, jts,jte, kts,kte,               &
-                       oml_hml0, omlcall,                       &
-                       tml,t0ml,hml,h0ml,huml,hvml              )
+                       its,ite, jts,jte, kts,kte                )
 !----------------------------------------------------------------
    IMPLICIT NONE
 !----------------------------------------------------------------
@@ -578,10 +534,6 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN)    ::                               TSK, &
                                                            TMN
-   REAL,    DIMENSION( ims:ime, jms:jme ) , OPTIONAL          , &
-            INTENT(INOUT)    ::     TML, T0ML, HML, H0ML, HUML, HVML
-   REAL   , OPTIONAL, INTENT(IN   )    ::     oml_hml0
-   INTEGER, OPTIONAL, INTENT(IN   )    ::     omlcall
 
 !  LOCAR VAR
 
@@ -593,137 +545,7 @@ CONTAINS
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
-   IF ( PRESENT(omlcall) .AND. omlcall .EQ. 1) THEN
-   WRITE(message,*)'Initializing OML with HML0 = ', oml_hml0
-   CALL wrf_debug (1, TRIM(message))
-
-   IF(start_of_simulation .AND. &
-      PRESENT(tml) .AND. PRESENT(t0ml) ) THEN
-     DO J=jts,jtf
-     DO I=its,itf
-       TML(I,J)=TSK(I,J)
-       T0ML(I,J)=TSK(I,J)
-! MAY HAVE INPUT OF HML BUT FOR NOW SET HERE
-       HML(I,J)=oml_hml0
-       H0ML(I,J)=HML(I,J)
-       HUML(I,J)=0.
-       HVML(I,J)=0.
-     ENDDO
-     ENDDO
-   ENDIF
-   ENDIF
-
    END SUBROUTINE slabinit
-
-!-------------------------------------------------------------------          
-
-   SUBROUTINE OCEANML(I,J,TML,T0ML,H,H0,HUML,                   &
-           HVML,TSK,HFX,                                        &
-           LH,GSW,GLW,                                          &
-           UAIR,VAIR,UST,F,EMISS,STBOLT,G,DT,OML_GAMMA,         &
-           ids,ide, jds,jde, kds,kde,                           &
-           ims,ime, jms,jme, kms,kme,                           &
-           its,ite, jts,jte, kts,kte                            )
-
-!----------------------------------------------------------------
-   IMPLICIT NONE
-!----------------------------------------------------------------
-   INTEGER, INTENT(IN   )    ::      I, J
-   INTEGER, INTENT(IN   )    ::      ids,ide, jds,jde, kds,kde, &
-                                     ims,ime, jms,jme, kms,kme, &
-                                     its,ite, jts,jte, kts,kte
-
-   REAL,    INTENT(INOUT)    :: TML, H, H0, HUML, HVML, TSK
-
-   REAL,    INTENT(IN   )    :: T0ML, HFX, LH, GSW, GLW,        &
-                                UAIR, VAIR, UST, F, EMISS
-
-   REAL,    INTENT(IN) :: STBOLT, G, DT, OML_GAMMA
-
-! Local
-   REAL :: rhoair, rhowater, Gam, alp, BV2, A1, A2, B2, u, v, wspd, &
-           hu1, hv1, hu2, hv2, taux, tauy, tauxair, tauyair, q, hold, &
-           hsqrd, thp, cwater
-   CHARACTER(LEN=120) :: time_series
-
-      hu1=huml
-      hv1=hvml
-      rhoair=1.
-      rhowater=1000.
-      cwater=4200.
-! Deep ocean lapse rate (K/m) - from Rich
-      Gam=oml_gamma
-!     if(i.eq.1 .and. j.eq.1 .or. i.eq.105.and.j.eq.105) print *, 'gamma = ', gam
-!     Gam=0.14
-!     Gam=5.6/40.
-!     if(i.eq.1 .and. j.eq.1 ) print *, 'gamma = ', gam
-!     Gam=5./100.
-! Thermal expansion coeff (/K)
-!      alp=.0002
-!     temp dependence (/K)
-      alp=max((tml-273.15)*1.e-5, 1.e-6)
-      BV2=alp*g*Gam
-      thp=t0ml-Gam*(h-h0)
-      A1=(tml-thp)*h - 0.5*Gam*h*h
-      if(h.ne.0.)then
-        u=hu1/h
-        v=hv1/h
-      else
-        u=0.
-        v=0.
-      endif
-
-!  time step
-
-!       q=(-hfx-lh+gsw+glw-stbolt*emiss*tml*tml*tml*tml)/(rhowater*cwater)
-!       wspd=max(sqrt(uair*uair+vair*vair),0.1)
-        wspd=sqrt(uair*uair+vair*vair)
-        if (wspd .lt. 1.e-10 ) then
-!          print *, 'i,j,wspd are ', i,j,wspd
-           wspd = 1.e-10
-        endif
-        tauxair=ust*ust*uair/wspd
-        taux=rhoair/rhowater*tauxair
-        tauyair=ust*ust*vair/wspd
-        tauy=rhoair/rhowater*tauyair
-! note: forward-backward coriolis force for effective time-centering
-        hu2=hu1+dt*( f*hv1 + taux)
-        hv2=hv1+dt*(-f*hu2 + tauy)
-!       A2=A1+q*dt
-        A2=A1
-
-        huml=hu2
-        hvml=hv2
-
-        hold=h
-        B2=hu2*hu2+hv2*hv2
-        hsqrd=-A2/Gam + sqrt(A2*A2/(Gam*Gam) + 2.*B2/BV2)
-        h=sqrt(max(hsqrd,0.0))
-! limit to positive h change
-        if(h.lt.hold)h=hold
-
-        if(h.ne.0.)then
-          tml=max(t0ml - Gam*(h-h0) + 0.5*Gam*h + A2/h, 273.15)
-          u=hu2/h
-          v=hv2/h
-        else
-          tml=t0ml
-          u=0.
-          v=0.
-        endif
-        tsk=tml
-!        if(h.gt.100.)print *,i,j,h,tml,' h,tml'
-
-! ww: output point data
-!     if( (i.eq.190 .and. j.eq.115) .or. (i.eq.170 .and. j.eq.125) ) then
-!        write(jtime,fmt='("TS ",f10.0)') float(itimestep)
-!        CALL wrf_message ( TRIM(jtime) )
-!        write(time_series,fmt='("OML",2I4,2F9.5,2F8.2,2E15.5,F8.3)') &
-!              i,j,u,v,tml,h,taux,tauy,a2
-!        CALL wrf_message ( TRIM(time_series) )
-!     end if
-
-   END SUBROUTINE OCEANML
 !-------------------------------------------------------------------          
 
 END MODULE module_sf_slab

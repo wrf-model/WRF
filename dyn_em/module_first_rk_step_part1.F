@@ -22,7 +22,6 @@ CONTAINS
                              , cu_act_flag , hol , th_phy        &
                              , pi_phy , p_phy , t_phy , u_phy , v_phy     &
                              , dz8w , p8w , t8w , rho_phy , rho           &
-                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -102,7 +101,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: mu_3d
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf
@@ -186,11 +184,11 @@ BENCH_END(init_zero_tend_tim)
                         grid%mut, grid%muu, grid%muv, grid%u_2, &
                         grid%v_2, grid%p, grid%pb, grid%alt,              &
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
-                        mu_3d, rho,                             &
-                        th_phy, p_phy, pi_phy, u_phy, v_phy,    &
-                        p8w, t_phy, t8w, grid%z, grid%z_at_w,             &
-                        dz8w, grid%fnm, grid%fnp,                         &
-                        grid%rthraten,                               &
+                        rho,th_phy, p_phy, pi_phy, u_phy, v_phy,    &
+                        p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w, &
+                        grid%p_hyd, grid%p_hyd_w,                   &
+                        grid%fnm, grid%fnp, grid%znw, grid%p_top,   &
+                        grid%rthraten,                          &
                         grid%rthblten, grid%rublten, grid%rvblten,             &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,           &
                         grid%rthcuten, grid%rqvcuten, grid%rqccuten,           &

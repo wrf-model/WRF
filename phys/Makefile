@@ -61,6 +61,7 @@ MODULES = \
 	module_sf_sfcdiags_ruclsm.o \
 	module_sf_sstskin.o \
 	module_sf_tmnupdate.o \
+	module_sf_oml.o \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \
 	module_sf_mynn.o \

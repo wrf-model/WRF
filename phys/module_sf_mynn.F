@@ -20,20 +20,16 @@ MODULE module_sf_mynn
   
   REAL, DIMENSION(0:1000 ),SAVE          :: PSIMTB,PSIHTB
 
-  INTEGER :: mynn_level
 
 CONTAINS
 
-  SUBROUTINE mynn_sf_init_driver(allowed_to_read,level)
+  SUBROUTINE mynn_sf_init_driver(allowed_to_read)
 
     LOGICAL, INTENT(in) :: allowed_to_read
-    INTEGER, INTENT(in) :: level
 
 !fill the table 
        
     CALL sfclayinit(allowed_to_read)
-
-    mynn_level=level
 
   END SUBROUTINE mynn_sf_init_driver
 
@@ -221,9 +217,7 @@ CONTAINS
       REAL,     DIMENSION(kts:kts+1) ::  thl, qw, vt, vq
       REAL                           ::  ql
 
-      INTEGER ::  I,J,K, levflag
-
-      levflag = mynn_level
+      INTEGER ::  I,J,K
 
       DO J=jts,jte
         DO i=its,ite
@@ -254,7 +248,6 @@ CONTAINS
 
 ! NOTE: The last grid number is kts+1 instead of kte.
               CALL mym_condensation (kts,kts+1, &
-                   &            levflag, &
                    &            dz8w(i,kts:kts+1,j), &
                    &            thl(kts:kts+1), qw(kts:kts+1), &
                    &            p3d(i,kts:kts+1,j),&

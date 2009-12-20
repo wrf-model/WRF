@@ -355,7 +355,7 @@ CONTAINS
       REAL    ::  PL,THCON,TVCON,E1
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
-      REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL
+      REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL,RESTAR2
 !-------------------------------------------------------------------
       KL=kte
 
@@ -688,6 +688,20 @@ CONTAINS
               PSIQ2=ALOG(2./Z0Q)-PSIH2(I)
               PSIQ10=ALOG(10./Z0Q)-PSIH10(I)
               PSIT2=PSIQ2
+           ENDIF
+           IF ( ISFTCFLX.EQ.2 .AND. (XLAND(I)-1.5).GE.0. ) THEN
+! AHW: Garratt formula: Calculate roughness Reynolds number
+!        Kinematic viscosity of air (linear approc to
+!                 temp dependence at sea levle)
+              VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
+!!            VISC=1.5E-5
+              RESTAR=UST(I)*ZNT(I)/VISC
+              RESTAR2=2.48*SQRT(SQRT(RESTAR))-2.
+              PSIT=GZ1OZ0(I)-PSIH(I)+RESTAR2
+              PSIQ=GZ1OZ0(I)-PSIH(I)+2.28*SQRT(SQRT(RESTAR))-2.
+              PSIT2=GZ2OZ0(I)-PSIH2(I)+RESTAR2
+              PSIQ2=GZ2OZ0(I)-PSIH2(I)+2.28*SQRT(SQRT(RESTAR))-2.
+              PSIQ2=PSIT2
            ENDIF
         ENDIF
         IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN

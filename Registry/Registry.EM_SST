@@ -275,6 +275,10 @@ state    real    cfn            -       misc      -         -     irh       "cfn
 state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
 state    integer step_number    -       misc      -         -     ir        "step_number"  ""
 
+# hydrostatic pressure vars
+state    real   p_hyd           ikj     dyn_em      1         -      irh       "p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   p_hyd_w         ikj     dyn_em      1         Z      irh       "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+
 # 2m and 10m output diagnostics
 state    real   Q2               ij     misc        1         -     irhd      "Q2"                   "QV at 2 M"         "kg kg-1"
 state    real   T2               ij     misc        1         -     irhd      "T2"                   "TEMP at 2 M"       "K"

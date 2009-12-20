@@ -571,7 +571,6 @@ BENCH_END(set_phys_bc_tim)
                              , pi_phy , p_phy , t_phy           &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
-                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -599,7 +598,6 @@ BENCH_END(set_phys_bc_tim)
                              , pi_phy , p_phy , t_phy           &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
-                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &

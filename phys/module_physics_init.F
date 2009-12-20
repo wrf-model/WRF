@@ -1269,6 +1269,7 @@ integer myproc
    USE module_sf_bep_bem
    USE module_sf_ruclsm
    USE module_sf_pxlsm
+   USE module_sf_oml
    USE module_bl_myjpbl
    USE module_bl_myjurb
    USE module_bl_boulac
@@ -1532,21 +1533,9 @@ integer myproc
 
         CASE (MYNNSFCSCHEME)
 
-           SELECT CASE(config_flags%bl_pbl_physics)
-
-           CASE(MYNNPBLSCHEME2)
-              mynn_closure_level=2
-              
-           CASE(MYNNPBLSCHEME3)
-              mynn_closure_level=3
-
-           CASE DEFAULT
-              
-
-           END SELECT
-
-           CALL mynn_sf_init_driver(allowed_to_read,mynn_closure_level)
+           CALL mynn_sf_init_driver(allowed_to_read)
            isfc=5
+!          isfc=3
 
 #endif
 
@@ -1566,9 +1555,7 @@ integer myproc
                          allowed_to_read ,start_of_simulation ,&
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
-                         its, ite, jts, jte, kts, kte,         &
-                         oml_hml0, omlcall,                    &
-                         tml, t0ml, hml, h0ml, huml, hvml      )
+                         its, ite, jts, jte, kts, kte          )
 
 #if (NMM_CORE == 1)
      CASE (GFDLSLAB)
@@ -1658,6 +1645,17 @@ integer myproc
       CASE DEFAULT
 
    END SELECT sfc_select
+
+   IF(PRESENT(OMLCALL))THEN
+     IF (omlcall .EQ. 1) THEN
+        CALL omlinit(oml_hml0, tsk,                           &
+                     tml,t0ml,hml,h0ml,huml,hvml,             &
+                     allowed_to_read, start_of_simulation,    &
+                     ids,ide, jds,jde, kds,kde,               &
+                     ims,ime, jms,jme, kms,kme,               &
+                     its,ite, jts,jte, kts,kte                )
+     ENDIF
+   ENDIF
 
 !-- initialize pbl scheme
 
@@ -1755,6 +1753,18 @@ integer myproc
            IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
            
+           SELECT CASE(config_flags%bl_pbl_physics)
+
+             CASE(MYNNPBLSCHEME2)
+                mynn_closure_level=2
+
+             CASE(MYNNPBLSCHEME3)
+                mynn_closure_level=3
+
+             CASE DEFAULT
+
+           END SELECT
+
            CALL mynn_bl_init_driver(&
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN&
                 &,restart,allowed_to_read,mynn_closure_level &

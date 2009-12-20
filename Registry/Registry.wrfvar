@@ -297,6 +297,10 @@ state    real    cfn            -       misc      -         -     irh       "cfn
 state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
 state    integer step_number    -       misc      -         -     ir        "step_number"  ""
 
+# hydrostatic pressure vars
+state    real   p_hyd           ikj     dyn_em      1         -      irh       "p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   p_hyd_w         ikj     dyn_em      1         Z      irh       "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+
 # For KMA, pressure coefficient.
 state    real    kma_a          k       misc        1         Z     -         "A"  "KMA Constants A to convert surface presure to full level pressure" "dimensionless"
 state    real    kma_b          k       misc        1         Z     -         "B"  "KMA Constants B to convert surface presure to full level pressure" "dimensionless"

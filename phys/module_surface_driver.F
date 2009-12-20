@@ -137,6 +137,7 @@ CONTAINS
    USE module_sf_pxlsm
 #if ( EM_CORE==1)
    USE module_sf_mynn
+   USE module_sf_oml
 #endif
 
 #if ( NMM_CORE == 1 )
@@ -150,21 +151,23 @@ CONTAINS
    USE module_sf_sstskin
    USE module_sf_tmnupdate
 !
-
-   !  This driver calls subroutines for the surface parameterizations.
-   !
-   !  surface layer: (between surface and pbl)
-   !      1. sfclay
-   !      2. myjsfc
-   !      7. Pleim surface layer
-   !      5. MYNN surface layer
-   !  surface: ground temp/lsm scheme:
-   !      1. slab
-   !      2. Noah LSM
-   !      7. Pleim-Xiu LSM
-
-   !  surface: ground temp/lsm scheme for urban:
-   !      2.  BEP
+!  This driver calls subroutines for the surface parameterizations.
+!
+!  surface layer: (between surface and pbl)
+!      1. sfclay
+!      2. myjsfc
+!      7. Pleim surface layer
+!      5. MYNN surface layer
+!  surface: ground temp/lsm scheme:
+!      1. slab
+!      2. Noah LSM
+!      7. Pleim-Xiu LSM
+!
+!  surface: ground temp/lsm scheme for urban:
+!      2.  BEP
+!
+!  ocean mixed layer model
+!      omlcall = 1
 !------------------------------------------------------------------
    IMPLICIT NONE
 !======================================================================
@@ -1262,9 +1265,7 @@ CONTAINS
              p1000mb,                                             &
              ids,ide, jds,jde, kds,kde,                           &
              ims,ime, jms,jme, kms,kme,                           &
-             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,&
-             tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy,f,g,     &
-             omlcall,oml_gamma                                    )
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
 
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
@@ -1735,6 +1736,25 @@ CONTAINS
      !$OMP END PARALLEL DO
 
  430 CONTINUE
+
+#if ( EM_CORE==1)
+   IF (omlcall .EQ. 1) THEN
+! simple ocean mixed layer model based Pollard, Rhines and Thompson (1973)
+     CALL wrf_debug( 100, 'Call OCEANML' )
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , num_tiles
+        CALL oceanml(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
+                     f,g,oml_gamma,                               &
+                     xland,hfx,lh,tsk,gsw,glw,emiss,              &
+                     dtbl,STBOLT,                                 &
+                     ids,ide, jds,jde, kds,kde,                   &
+                     ims,ime, jms,jme, kms,kme,                   &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
+     ENDDO
+     !$OMP END PARALLEL DO
+   ENDIF
+#endif
 
 ! Reset RAINBL in mm (Accumulation between PBL calls)
 

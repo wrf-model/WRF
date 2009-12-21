@@ -86,6 +86,8 @@
    REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
 
    INTEGER :: idex, jdex
+   INTEGER :: im1,ip1,jm1,jp1
+   REAL :: hx,hy,pi
 
   CALL get_ijk_from_grid ( grid ,                               &
                            ids, ide, jds, jde, kds, kde,        &
@@ -809,6 +811,34 @@
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         its, ite, jts, jte, kts, kte                     ) 
+! set up slope-radiation constant arrays based on topography
+       DO j = jts,min(jte,jde-1)
+       DO i = its, min(ite,ide-1)
+          im1 = max(i-1,ids)
+          ip1 = min(i+1,ide-1)
+          jm1 = max(j-1,jds)
+          jp1 = min(j+1,jde-1)
+          grid%toposlpx(i,j)=(grid%ht(ip1,j)-grid%ht(im1,j))*grid%msftx(i,j)*grid%rdx/(ip1-im1)
+          grid%toposlpy(i,j)=(grid%ht(i,jp1)-grid%ht(i,jm1))*grid%msfty(i,j)*grid%rdy/(jp1-jm1)
+             hx = grid%toposlpx(i,j)
+             hy = grid%toposlpy(i,j)
+             pi = 4.*atan(1.)
+             grid%slope(i,j) = atan((hx**2+hy**2)**.5)
+             if (grid%slope(i,j).lt.1.e-4) then
+               grid%slope(i,j) = 0.
+               grid%slp_azi(i,j) = 0.
+             else
+               grid%slp_azi(i,j) = atan2(hx,hy)+pi
+
+! Rotate slope azimuth to lat-lon grid
+               if (grid%cosa(i,j).ge.0) then
+                 grid%slp_azi(i,j) = grid%slp_azi(i,j) - asin(grid%sina(i,j))
+               else
+                 grid%slp_azi(i,j) = grid%slp_azi(i,j) - (pi - asin(grid%sina(i,j)))
+               endif
+             endif
+       ENDDO
+       ENDDO
    END IF
 
 ! finished setting kinematic condition for w at the surface

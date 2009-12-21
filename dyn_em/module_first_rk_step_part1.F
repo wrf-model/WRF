@@ -116,7 +116,6 @@ CONTAINS
 ! Local
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
-    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask
     INTEGER                             :: ij
     INTEGER  num_roof_layers
     INTEGER  num_wall_layers
@@ -221,7 +220,7 @@ BENCH_END(phy_prep_tim)
      &        ,julian=grid%julian, xtime=grid%xtime, RADT=grid%radt            &
      &        ,STEPRA=grid%stepra                                              &
      &        ,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa  &
-     &        ,shadowmask=shadowmask,slope_rad=config_flags%slope_rad          &
+     &        ,shadowmask=grid%shadowmask,slope_rad=config_flags%slope_rad     &
      &        ,topo_shading=config_flags%topo_shading                          &
      &        ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc &
      &        ,ht_shad_bxs=grid%ht_shad_bxs, ht_shad_bxe=grid%ht_shad_bxe      &
@@ -262,9 +261,8 @@ BENCH_START(rad_driver_tim)
      &        ,TAUCLDI=grid%taucldi    ,TSK=grid%tsk            ,VEGFRA=grid%vegfra  &
      &        ,WARM_RAIN=grid%warm_rain ,XICE=grid%xice         ,XLAND=grid%xland    &
      &        ,XLAT=grid%xlat          ,XLONG=grid%xlong        ,YR=yr               &
-!Optional urban
-     &        ,DECLIN_URB=grid%declin_urb        ,COSZ_URB2D=grid%cosz_urb2d   &
-     &        ,OMG_URB2D=grid%omg_urb2d                                        &
+!Optional solar variables
+     &        ,DECLINX=grid%declin ,SOLCONX=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
 !
      &        ,Z=grid%z                                                   &
      &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
@@ -327,7 +325,7 @@ BENCH_START(rad_driver_tim)
      &        ,WAER300=grid%waer1, WAER400=grid%waer2, WAER600=grid%waer3, WAER999=grid%waer4 & ! jcb
 #endif
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
-     &         ,shadowmask=shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa    )
+     &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy    )
 
 BENCH_END(rad_driver_tim)
 
@@ -400,8 +398,11 @@ BENCH_START(surf_driver_tim)
      &        ,OMLCALL=config_flags%omlcall ,OML_HML0=config_flags%oml_hml0 ,OML_GAMMA=config_flags%oml_gamma &
      &        ,TML=grid%tml, T0ML=grid%t0ml, HML=grid%hml, H0ML=grid%h0ml, HUML=grid%huml, HVML=grid%hvml, F=grid%f &
      &        ,ISWATER=iswater &
-     &        ,DECLIN_URB=grid%declin_urb  ,COSZ_URB2D=grid%cosz_urb2d    & !I urban
-     &        ,OMG_URB2D=grid%omg_urb2d    ,xlat_urb2d=grid%XLAT          & !I urban
+     &        ,SLOPE_RAD=config_flags%slope_rad,TOPO_SHADING=config_flags%topo_shading & ! solar
+     &        ,SHADOWMASK=grid%shadowmask                                              & ! solar
+     &        ,SLOPE=grid%slope, SLP_AZI=grid%slp_azi, SWNORM=grid%swnorm              & ! solar
+     &        ,DECLIN=grid%declin ,SOLCON=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
+     &        ,xlat_urb2d=grid%XLAT                                       & !I urban
      &        ,NUM_ROOF_LAYERS=num_roof_layers                            & !I urban
      &        ,NUM_WALL_LAYERS=num_wall_layers                            & !I urban
      &        ,NUM_ROAD_LAYERS=num_road_layers                            &

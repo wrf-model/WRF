@@ -479,8 +479,10 @@ state   real   soilt300            ij    misc          1     -     i1      "SOIL
 # added to output 5 for ESMF
 state   real   landmask            ij    misc          1     -     i0125rh05d=(interp_fcnm)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""
 state   real   topostdv            ij    misc          1     -     i12     "TOPOSTDV"      "ELEVATION STD DEV"  "m"
-state   real   toposlpx            ij    misc          1     -     i12     "TOPOSLPX"      "ELEVATION X SLOPE"  ""
-state   real   toposlpy            ij    misc          1     -     i12     "TOPOSLPY"      "ELEVATION Y SLOPE"  ""
+state   real   toposlpx            ij    misc          1     -     i012rdu "TOPOSLPX"      "ELEVATION X SLOPE"  ""
+state   real   toposlpy            ij    misc          1     -     i012rdu "TOPOSLPY"      "ELEVATION Y SLOPE"  ""
+state   real   slope               ij    misc          1     -     rdu     "SLOPE"         "ELEVATION SLOPE"  ""
+state   real   slp_azi             ij    misc          1     -     rdu     "SLP_AZI"       "ELEVATION SLOPE AZIMUTH"  "rad"
 state   real   shdmax              ij    misc          1     -     i012rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "SHDMAX"        "ANNUAL MAX VEG FRACTION" ""
 state   real   shdmin              ij    misc          1     -     i012rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "SHDMIN"        "ANNUAL MIN VEG FRACTION" ""
 state   real   snoalb              ij    misc          1     -     i012r   "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
@@ -627,11 +629,11 @@ state    real   SFR_URB3D       i{ulay}j    misc       1         Z     r      "S
 state    real   SFG_URB3D       i{ulay}j    misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 
 
-# urban variables from radiation model
-state    real   COSZ_URB2D       ij     misc        1         -      r       "COSZ_URB"  "COS of SOLAR ZENITH ANGLE"         "dimensionless"
-state    real   OMG_URB2D        ij     misc        1         -      r       "OMG_URB"   "SOLAR HOUR ANGLE"         "dimensionless"
-state    real   DECLIN_URB       -     misc        1         -       r       "DECLIN_URB"  "SOLAR DECLINATION"         "dimensionless"
-
+# solar location variables from radiation driver
+state    real   COSZEN           ij     misc        1         -      r       "COSZEN"  "COS of SOLAR ZENITH ANGLE"     "dimensionless"
+state    real   HRANG            ij     misc        1         -      r       "HRANG"   "SOLAR HOUR ANGLE"          "radians"
+state    real   DECLIN            -     misc        1         -      r       "DECLIN"  "SOLAR DECLINATION"         "radians"
+state    real   SOLCON            -     misc        1         -      r       "SOLCON"  "SOLAR CONSTANT"         "W m-2"
 
 # RUC LSM
 state    real   SMFR3D           ilj    misc        1         Z      r        "SMFR3D"               "SOIL ICE" ""
@@ -802,7 +804,7 @@ state   real    ht_int         ij      misc         1         -     -          "
 state   real    ht_input       ij      misc         1         -     -          "HGT_INPUT"        "Terrain Height from FG Input File"   "m"
 state   real    ht_shad        ijb     misc         1         -     hdf=(bdy_interp:dt)         "HGT_SHAD"        "Height of orographic shadow"   "m"
 i1      real    ht_loc         ij      misc         1         -     - 
-i1      integer  shadowmask    ij      misc         1         -     - 
+state   integer  shadowmask    ij      misc         1         -     - 
 state   integer min_ptchsz     -       misc         1         -     r
 
 state   real    TSK            ij      misc         1         -     i012rhdu=(copy_fcnm)    "TSK"                   "SURFACE SKIN TEMPERATURE"                  "K"
@@ -886,6 +888,7 @@ state    real  SWDOWN           ij      misc        1         -      rhd      "S
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GSW              ij      misc        1         -      rd       "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GLW              ij      misc        1         -      rhd      "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
+state    real  SWNORM           ij      misc        1         -      rhd      "SWNORM"                "NORMAL SHORT WAVE FLUX AT GROUND SURFACE (SLOPE-DEPENDENT)"           "W m-2"
 
 # upward and downward clearsky and total diagnostic fluxes for CAM radiation
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"

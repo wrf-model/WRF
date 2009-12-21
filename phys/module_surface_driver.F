@@ -37,7 +37,9 @@ CONTAINS
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
             !  Optional urban
-     &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
+     &          ,slope_rad,topo_shading,shadowmask                    & !I solar
+     &          ,swnorm,slope,slp_azi                                 & !I solar
+     &          ,declin,solcon,coszen,hrang,xlat_urb2d                & !I solar/urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban
      &          ,num_road_layers, dzr, dzb, dzg                       & !I urban
      &          ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d         & !H urban
@@ -361,7 +363,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GLW
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GSW,SWDOWN
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   GSW,SWDOWN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SST
@@ -521,6 +523,11 @@ CONTAINS
 #endif
 
 
+   INTEGER, OPTIONAL, INTENT(IN )::   slope_rad, topo_shading
+   INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: shadowmask
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT):: swnorm
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: slope,slp_azi
+
    INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX,IZ0TLND
    INTEGER, OPTIONAL, INTENT(IN )::   OMLCALL
    REAL   , OPTIONAL, INTENT(IN )::   OML_HML0
@@ -622,12 +629,14 @@ CONTAINS
    REAL    :: julian
    REAL    :: total_depth,mid_point_depth
    REAL    :: tconst,tprior,tnew,yrday,deltat
+   REAL    :: SWSAVE
+   REAL,       DIMENSION( ims:ime, jms:jme )          ::  GSWSAVE
 !-------------------------------------------------
 ! urban related variables are added to declaration
 !-------------------------------------------------
-     REAL, OPTIONAL, INTENT(IN) :: DECLIN_URB                                 !urban
-     REAL, OPTIONAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D  !urban
-     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D   !urban
+     REAL, OPTIONAL, INTENT(IN) :: DECLIN, SOLCON
+     REAL, OPTIONAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZEN
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: HRANG
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: XLAT_URB2D  !urban
      INTEGER,  INTENT(IN) :: num_roof_layers                         !urban
      INTEGER,  INTENT(IN) :: num_wall_layers                         !urban
@@ -874,6 +883,25 @@ CONTAINS
 
   IF (ra_lw_physics .gt. 0) radiation = .true.
 
+  IF( PRESENT(slope_rad).AND. radiation )THEN
+! topographic slope effects modify SWDOWN and GSW here
+    IF (slope_rad .EQ. 1) THEN
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j, k )
+    DO ij = 1 , num_tiles
+           CALL TOPO_RAD_ADJ_DRVR (XLAT,XLONG,COSZEN,             &
+                    shadowmask,                                   &
+                    declin,                                       &
+                    SWDOWN,GSW,SWNORM,GSWSAVE,solcon,hrang,       &
+                    slope,slp_azi,                                &
+                ids, ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                     &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+    ENDDO
+    !$OMP END PARALLEL DO
+
+    ENDIF
+  ENDIF
 !----
 ! CALCULATE CONSTANT
 
@@ -1288,8 +1316,8 @@ CONTAINS
 
        IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.    &
 !          PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
-!          PRESENT(declin_urb) .AND.  PRESENT(cosz_urb2d)    .AND.    &
-!          PRESENT(omg_urb2d)  .AND. PRESENT( xlat_urb2d)    .AND.    &
+!          PRESENT(declin) .AND.  PRESENT(coszen)    .AND.    &
+!          PRESENT(hrang)  .AND. PRESENT( xlat_urb2d)    .AND.    &
 !          PRESENT(dzr)       .AND.    &
 !          PRESENT( dzb)            .AND. PRESENT(dzg)       .AND.    &
 !          PRESENT(tr_urb2d) .AND. PRESENT(tb_urb2d)         .AND.    &
@@ -1374,7 +1402,7 @@ CONTAINS
                 psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
                 GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
                 th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
-                declin_urb,cosz_urb2d,omg_urb2d,                & !I urban
+                declin,coszen,hrang,                            & !I solar
                 xlat_urb2d,                                     & !I urban
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
@@ -1769,6 +1797,31 @@ CONTAINS
          ENDDO
        ENDDO
        !$OMP END PARALLEL DO
+     ENDIF
+
+     IF( PRESENT(slope_rad).AND. radiation )THEN
+! topographic slope effects removed from SWDOWN and GSW here for output
+       IF (slope_rad .EQ. 1) THEN
+
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+         IF(SWNORM(I,J) .GT. 1.E-3)THEN  ! daytime
+            SWSAVE = SWDOWN(i,j)
+! SWDOWN contains unaffected SWDOWN in output
+            SWDOWN(i,j) = SWNORM(i,j)
+! SWNORM contains slope-affected SWDOWN in output
+            SWNORM(i,j) = SWSAVE
+            GSW(i,j) = GSWSAVE(i,j)
+         ENDIF
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
+
+       ENDIF
      ENDIF
 
    ENDIF
@@ -3182,6 +3235,138 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
    END SUBROUTINE pxsfclay_seaice_wrapper
 
 !-------------------------------------------------------------------------
+
+   SUBROUTINE TOPO_RAD_ADJ_DRVR (XLAT,XLONG,COSZEN,               &
+                    shadowmask,                                   &
+                    declin,                                       &
+                    SWDOWN,GSW,SWNORM,GSWSAVE,solcon,hrang2d,     &
+                    slope_in,slp_azi_in,                          &
+                ids, ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                     &
+                its, ite, jts, jte, kts, kte                      )
+!------------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------------
+   INTEGER, INTENT(IN)   ::       its,ite,jts,jte,kts,kte,        &
+                                  ims,ime,jms,jme,kms,kme,        &
+                                  ids,ide,jds,jde,kds,kde
+   INTEGER, DIMENSION( ims:ime, jms:jme ),                        &
+         INTENT(IN)      ::       shadowmask
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(IN   )   ::       XLAT,XLONG
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(INOUT)   ::       SWDOWN,GSW,SWNORM,GSWSAVE
+   real,intent(in)  :: solcon   
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: hrang2d,coszen 
+
+
+   REAL, INTENT(IN    )  ::       declin
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: slope_in,slp_azi_in
+
+
+! LOCAL VARS
+   integer    :: i,j
+   real       :: pi,degrad
+   integer    :: shadow
+   real       :: swdown_teradj,swdown_in,xlat1,xlong1
+
+!------------------------------------------------------------------
+
+     pi = 4.*atan(1.)
+     degrad=pi/180.
+
+       DO J=jts,jte
+       DO I=its,ite
+         SWNORM(i,j) = SWDOWN(i,j)     ! save
+         IF(SWDOWN(I,J) .GT. 1.E-3)THEN  ! daytime
+             shadow = shadowmask(i,j)
+
+         SWDOWN_IN = SWDOWN(i,j)
+         XLAT1 = XLAT(i,j)
+         XLONG1 = XLONG(i,j)
+         CALL TOPO_RAD_ADJ (XLAT1,XLONG1,COSZEN(i,j),             &
+                    DECLIN,DEGRAD,                                &
+                    SWDOWN_IN,solcon,hrang2d(i,j),SWDOWN_teradj,  &
+                    kts,kte,                                      &
+                    slope_in(i,j),slp_azi_in(i,j),                &
+                    shadow , i,j                                  &
+                    )
+
+         GSWSAVE(I,J) = GSW(I,J)       ! save
+         GSW(I,J) = GSW(I,J)*SWDOWN_teradj/SWDOWN(i,j)
+         SWDOWN(i,j) = SWDOWN_teradj
+
+         ENDIF ! daytime
+       ENDDO  ! i_loop
+       ENDDO  ! j_loop
+
+
+   END SUBROUTINE TOPO_RAD_ADJ_DRVR
+!------------------------------------------------------------------
+!------------------------------------------------------------------
+   SUBROUTINE TOPO_RAD_ADJ (XLAT1,XLONG1,COSZEN,                 &
+                    DECLIN,DEGRAD,                               &
+                    SWDOWN_IN,solcon,hrang,SWDOWN_teradj,        &
+                    kts,kte,                                     &
+                    slope,slp_azi,                               &
+                    shadow                                       &
+                    ,i,j)
+
+!------------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------------
+  INTEGER, INTENT(IN)       :: kts,kte
+  REAL, INTENT(IN)          :: COSZEN,DECLIN,              &
+                               XLAT1,XLONG1,DEGRAD
+  REAL, INTENT(IN)          :: SWDOWN_IN,solcon,hrang
+  INTEGER, INTENT(IN)       :: shadow
+  REAL, INTENT(IN)          :: slp_azi,slope
+
+  REAL, INTENT(OUT)         :: SWDOWN_teradj
+
+! LOCAL VARS
+   REAL            :: XT24,TLOCTM,CSZA,XXLAT
+   REAL            :: diffuse_frac,corr_fac,csza_slp
+   integer         :: i,j
+
+
+!------------------------------------------------------------------
+
+     SWDOWN_teradj=SWDOWN_IN
+
+     CSZA=COSZEN
+     XXLAT=XLAT1*DEGRAD
+
+! RETURN IF NIGHT
+         IF(CSZA.LE.1.E-9) return 
+        
+!  Parameterize diffuse fraction of global solar radiation as a function of the ratio between TOA radiation and surface global radiation
+              diffuse_frac = min(1.,1./(max(0.1,2.1-2.8*log(log(csza*solcon/max(SWDOWN_IN,1.e-3))))))
+        if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.lt.1.e-2)) then  ! no topographic effects when all radiation diffuse or sun too close to horizon
+          corr_fac = 1
+          goto 140
+        endif
+
+! cosine of zenith angle over sloping topography
+        csza_slp = ((SIN(XXLAT)*COS(HRANG))*                                          &
+                    (-cos(slp_azi)*sin(slope))-SIN(HRANG)*(sin(slp_azi)*sin(slope))+  &
+                    (COS(XXLAT)*COS(HRANG))*cos(slope))*                              &
+                   COS(DECLIN)+(COS(XXLAT)*(cos(slp_azi)*sin(slope))+                 &
+                   SIN(XXLAT)*cos(slope))*SIN(DECLIN)
+        IF(csza_slp.LE.1.E-4) csza_slp = 0
+
+! Topographic shading
+        if (shadow.eq.1) csza_slp = 0
+
+! Correction factor for sloping topography; the diffuse fraction of solar radiation is assumed to be unaffected by the slope
+        corr_fac = diffuse_frac + (1-diffuse_frac)*csza_slp/csza
+
+ 140        continue
+
+      SWDOWN_teradj=(1.)*SWDOWN_IN*corr_fac
+
+   END SUBROUTINE TOPO_RAD_ADJ
+
 !-------------------------------------------------------------------------
 
 END MODULE module_surface_driver

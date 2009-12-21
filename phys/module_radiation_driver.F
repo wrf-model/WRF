@@ -24,7 +24,7 @@ CONTAINS
               ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
               ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
               ,julyr, JULDAY, julian, YR, xtime, RADT, STEPRA, ICLOUD, warm_rain     &
-              ,declin_urb,COSZ_URB2D, omg_urb2d                           & !Optional urban
+              ,declinx,solconx,COSZEN, HRANG                              & !Optional 
               ,ra_call_offset,RSWTOA,RLWTOA, CZMEAN                       &
               ,CFRACL, CFRACM, CFRACH                                     &
               ,ACFRST,NCFRST,ACFRCV,NCFRCV,SWDOWNC                        &
@@ -51,7 +51,7 @@ CONTAINS
               ,waer300, waer400, waer600, waer999                         & ! jcb
               ,qc_adjust ,qi_adjust                                       & ! jm
               ,cu_rad_feedback, aer_ra_feedback                           & ! jm
-              ,ht,dx,dy,sina,cosa,shadowmask,slope_rad ,topo_shading      ) ! slope-dependent radiation
+              ,ht,dx,dy,shadowmask,slope_rad ,topo_shading                ) ! slope-dependent radiation
 
 !-------------------------------------------------------------------------
 
@@ -441,7 +441,7 @@ CONTAINS
 
      REAL, OPTIONAL, INTENT(IN) :: dx,dy
      INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,topo_shading
-     REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: sina,cosa,ht
+     REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: ht
      INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
 
 
@@ -451,7 +451,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    CEMISS
    REAL, DIMENSION( ims:ime, jms:jme ) ::             coszr
 
-   REAL    ::    DECLIN,SOLCON 
+   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
    LOGICAL ::    gfdl_lw,gfdl_sw
@@ -466,11 +466,11 @@ CONTAINS
    REAL    ::    next_rad_time
    LOGICAL ::    run_param
 !------------------------------------------------------------------
-! urban related variables are added to declaration
+! solar related variables are added to declaration
 !-------------------------------------------------
-   REAL, OPTIONAL, INTENT(OUT) :: DECLIN_URB  !urban
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZ_URB2D  !urban
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: omg_urb2d   !urban
+   REAL, OPTIONAL, INTENT(OUT) :: DECLINX,SOLCONX
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZEN
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: HRANG
 !------------------------------------------------------------------
 
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
@@ -645,8 +645,24 @@ CONTAINS
      CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
                    DEGRAD,DPD                                )
 
+     IF(PRESENT(declinx).AND.PRESENT(solconx))THEN
+! saved to state arrays used in surface driver
+       declinx=declin
+       solconx=solcon
+     ENDIF
 
-     if(present(DECLIN_URB))DECLIN_URB=DECLIN  ! urban
+     IF(PRESENT(coszen).AND.PRESENT(hrang))THEN
+! state arrays of hrang and coszen used in surface driver
+       XT24=MOD(XTIME+RADT*0.5,1440.)
+       DO j=jts,jte
+       DO i=its,ite
+          TLOCTM=GMT+XT24/60.+XLONG(I,J)/15.
+          HRANG(I,J)=15.*(TLOCTM-12.)*DEGRAD
+          XXLAT=XLAT(I,J)*DEGRAD
+          COSZEN(I,J)=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG(I,J))
+       ENDDO
+       ENDDO
+     ENDIF
 
      lwrad_cldfra_select: SELECT CASE(lw_physics)
 
@@ -742,7 +758,6 @@ CONTAINS
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
                  ,XTIME=xtime,JULIAN=julian                         &
-                 ,COSZ_URB2D=COSZ_URB2D  ,OMG_URB2D=omg_urb2d       &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &
@@ -948,13 +963,11 @@ CONTAINS
                     ,P3D=p,PI3D=pi,DZ8W=dz8w,GMT=gmt                   &
                     ,R=r_d,CP=cp,G=g,JULDAY=julday                     &
                     ,XTIME=xtime,DECLIN=declin,SOLCON=solcon           &
-!                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d            & !urban
                     ,RADFRQ=radt,ICLOUD=icloud,DEGRAD=degrad           &
                     ,warm_rain=warm_rain                               &
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        & !urban
                     ,QV3D=qv                                           &
                     ,QC3D=qc                                           &
                     ,QR3D=qr                                           &
@@ -962,10 +975,7 @@ CONTAINS
                     ,QS3D=qs                                           &
                     ,QG3D=qg                                           &
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
-                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
-                    ,slope_rad=slope_rad,topo_shading=topo_shading     &
-                    ,shadowmask=shadowmask                             &
-                    ,ht=ht,dx=dx,dy=dy,sina=sina,cosa=cosa             )
+                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     )
 
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
@@ -975,7 +985,6 @@ CONTAINS
                     ,DZ8W=dz8w,RHO_PHY=rho                             &
                     ,CLDFRA3D=cldfra,RSWTOA=rswtoa                     &
                     ,GMT=gmt,CP=cp,G=g                                 &
-!                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d            & !urban
                     ,JULDAY=julday,XTIME=xtime                         &
                     ,DECLIN=declin,SOLCON=solcon                       &
                     ,RADFRQ=radt,DEGRAD=degrad                         &
@@ -993,7 +1002,6 @@ CONTAINS
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        & !urban
                     ,QV3D=qv                                           &
                     ,QC3D=qc                                           &
                     ,QR3D=qr                                           &
@@ -1125,7 +1133,6 @@ CONTAINS
                  ,VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt               &
                  ,NSTEPRA=stepra,NPHS=nphs,ITIMESTEP=itimestep      &
                  ,XTIME=xtime,JULIAN=julian                         &
-                 ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d        &
                  ,JULYR=julyr,JULDAY=julday                         &
                  ,GFDL_LW=gfdl_lw,GFDL_SW=gfdl_sw                   &
                  ,CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach         &

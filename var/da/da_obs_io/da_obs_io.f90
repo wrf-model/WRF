@@ -26,7 +26,7 @@ module da_obs_io
 
    use da_define_structures, only : iv_type, multi_level_type, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
-      radar_each_level_type, info_type, model_loc_type
+      radar_each_level_type, info_type, model_loc_type,gpsref_type
    use da_grid_definitions, only : da_ffdduv
    use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station
    use da_par_util1, only : da_proc_sum_int
@@ -74,9 +74,7 @@ contains
 #include "da_write_modified_filtered_obs.inc"
 #include "da_write_y.inc"
 #include "da_read_obs_bufr.inc"
-#include "da_scan_obs_bufr.inc"
 #include "da_read_obs_bufrgpsro.inc"
-#include "da_scan_obs_bufrgpsro.inc"
 #include "da_final_write_obs.inc"
 #include "da_final_write_y.inc"
 #include "da_read_y_unit.inc"

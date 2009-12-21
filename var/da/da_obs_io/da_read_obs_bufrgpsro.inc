@@ -3,7 +3,18 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    !---------------------------------------------------------------------------
    ! Purpose: Read NCEP GPSRO BUFR observation file for input to wrfvar
    !---------------------------------------------------------------------------
-
+   !   METHOD: use F90 sequantial data structure to avoid read file twice
+   !            so that da_scan_obs_bufr is not necessary any more.
+   !            1. read file radiance data in sequential data structure
+   !            2. do gross QC check
+   !            3. assign sequential data structure to innovation structure
+   !                  and deallocate sequential data structure
+   !
+   !  HISTORY: 2009/12/17  - F90 sequantial structure  Peng Xiu
+   ! 
+   !----------------------------------------------------------------------------
+   use da_define_structures, only: da_allocate_observations
+   
    implicit none
 
    type (iv_type),             intent(inout) :: iv
@@ -12,12 +23,12 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    real,    parameter   :: r8bfms = 9.0D08  ! BUFR missing value threshold
    integer, parameter   :: maxlevs = 500
    real,    parameter   :: xmiss = -888.0
-   integer              :: iunit, iost, idate, iret, nlev1, nlev2, k, i
+   integer              :: iunit, iost, idate, iret, nlev1, nlev2,k,i,ii
    integer              :: num_report, num_outside_all, num_outside_time
    integer              :: iyear,imonth,iday,ihour,imin
    integer              :: ntotal, nlocal, nlev, ref_qc
    real                 :: obs_time
-   real                 :: hdr(10)
+   real                 :: hdr(10),ntotal_ifgat(num_fgat_time)
    real                 :: rdata1(25,maxlevs), rdata2(25,maxlevs)
    real                 :: height, ref_data, ref_error
    character(len=8)     :: subset
@@ -27,6 +38,20 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    type(model_loc_type) :: loc
    character(len=5)     :: id
    character(len=19)    :: date_char
+   integer :: ifgat,kk,num_p
+   type datalink_gpsro              !for gpsro data reading
+       type (info_type)         :: info
+       type(model_loc_type)     :: loc
+       type (gpsref_type)       :: gpsref
+       integer                  :: ifgat
+       type (field_type)        :: slp         
+       type (field_type)        :: pw
+       integer                  :: obs_global_index
+       type(datalink_gpsro), pointer :: next
+   end type datalink_gpsro
+   
+   
+   type(datalink_gpsro),pointer  :: head,plink
 
 #ifdef BUFR
 
@@ -75,7 +100,13 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    num_report       = 0
    num_outside_all  = 0
    num_outside_time = 0
-
+   num_p=0
+   ntotal_ifgat(:)=0
+   
+   allocate(head)
+   nullify(head%next)
+   plink => head
+   
    reports: do while ( ireadns(iunit,subset,idate) == 0 )
 
       num_report = num_report + 1
@@ -103,7 +134,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          end if
          cycle reports
       end if
-
+         
       if ( hdr(6) < 100.0 ) then   ! check percentage of confidence PCCF
          cycle reports
       end if
@@ -115,6 +146,13 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          cycle reports
       end if
 
+ !--------  determine FGAT index ifgat
+ 
+         do ifgat=1,num_fgat_time
+            if (obs_time >= time_slots(ifgat-1) .and.  &
+                obs_time  < time_slots(ifgat)) exit
+         end do  
+         
       lev_loop: do k = 1, nlev1
 
          info%lat  = rdata1(1,k)
@@ -144,6 +182,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
             cycle lev_loop
          end if
          ntotal = ntotal + 1
+         ntotal_ifgat(ifgat)=ntotal_ifgat(ifgat)+1
          if ( outside ) then
             cycle lev_loop
          end if
@@ -187,33 +226,110 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
                info%name,id(1:5),iyear,imonth,iday,ihour,imin, &
                info%lat,info%lon,height,ref_data,ref_qc,ref_error 
          end if
+         
 
-         iv%info(gpsref)%name(nlocal)      = info%name
-         iv%info(gpsref)%platform(nlocal)  = 'FM-116 GPSRF'
-         iv%info(gpsref)%id(nlocal)        = id
-         iv%info(gpsref)%date_char(nlocal) = date_char
-         iv%info(gpsref)%levels(nlocal)    = 1              ! each level is treated as separate obs
-         iv%info(gpsref)%elv(nlocal)       = 0.0            ! not used
-         iv%info(gpsref)%lat(:,nlocal)     = info%lat
-         iv%info(gpsref)%lon(:,nlocal)     = info%lon
+         plink%info%name      = info%name
+         plink%info%platform  = 'FM-116 GPSRF'
+         plink%info%id        = id
+         plink%info%date_char = date_char
+         plink%info%levels    = 1              ! each level is treated as separate obs
+         plink%info%elv       = 0.0            ! not used
+         plink%info%lat     = info%lat
+         plink%info%lon     = info%lon
 
-         iv%info(gpsref)%x(:,nlocal)       = loc%x
-         iv%info(gpsref)%y(:,nlocal)       = loc%y
-         iv%info(gpsref)%i(:,nlocal)       = loc%i
-         iv%info(gpsref)%j(:,nlocal)       = loc%j
-         iv%info(gpsref)%dx(:,nlocal)      = loc%dx
-         iv%info(gpsref)%dxm(:,nlocal)     = loc%dxm
-         iv%info(gpsref)%dy(:,nlocal)      = loc%dy
-         iv%info(gpsref)%dym(:,nlocal)     = loc%dym
+         plink%loc%x       = loc%x
+         plink%loc%y       = loc%y
+         plink%loc%i       = loc%i
+         plink%loc%j       = loc%j
+         plink%loc%dx      = loc%dx
+         plink%loc%dxm     = loc%dxm
+         plink%loc%dy      = loc%dy
+         plink%loc%dym     = loc%dym
 
-         iv%info(gpsref)%slp(nlocal)%inv   = missing_r
-         iv%info(gpsref)%slp(nlocal)%qc    = missing_data
-         iv%info(gpsref)%slp(nlocal)%error = xmiss
-         iv%info(gpsref)%pw(nlocal)%inv    = missing_r
-         iv%info(gpsref)%pw(nlocal)%qc     = missing_data
-         iv%info(gpsref)%pw(nlocal)%error  = xmiss
+         plink%slp%inv   = missing_r
+         plink%slp%qc    = missing_data
+         plink%slp%error = xmiss
+         plink%pw%inv    = missing_r
+         plink%pw%qc     = missing_data
+         plink%pw%error  = xmiss
 
-         iv%info(gpsref)%obs_global_index(nlocal) = ntotal
+         plink%obs_global_index = ntotal
+
+         nlev = 1
+         allocate (plink%gpsref%h  (1:nlev))
+         allocate (plink%gpsref%ref(1:nlev))
+         allocate (plink%gpsref%p  (1:nlev))
+         allocate (plink%gpsref%t  (1:nlev))
+         allocate (plink%gpsref%q  (1:nlev))
+         do i = 1, nlev
+            plink%gpsref%h(i)         = height
+            plink%gpsref%ref(i)%inv   = ref_data
+            plink%gpsref%ref(i)%qc    = ref_qc
+            plink%gpsref%ref(i)%error = ref_error
+            plink%gpsref%p(i)%inv     = missing_r
+            plink%gpsref%p(i)%qc      = missing_data
+            plink%gpsref%p(i)%error   = xmiss
+            plink%gpsref%t(i)%inv     = missing_r
+            plink%gpsref%t(i)%qc      = missing_data
+            plink%gpsref%t(i)%error   = xmiss
+            plink%gpsref%q(i)%inv     = missing_r
+            plink%gpsref%q(i)%qc      = missing_data
+            plink%gpsref%q(i)%error   = xmiss
+         end do
+         plink%ifgat=ifgat
+         num_p=num_p+1
+         allocate(plink%next)    
+         plink => plink%next
+         nullify(plink%next)
+         
+         end do lev_loop
+        end do reports  
+         
+         iv%info(gpsref)%ntotal=ntotal
+         iv%info(gpsref)%nlocal=nlocal
+         iv%info(gpsref)%max_lev=1
+         
+         call da_allocate_observations (iv) 
+!
+!sort for 4d var
+         nlocal=0
+         do kk=1,num_fgat_time
+         plink => head 
+         iv%info(gpsref)%ptotal(kk)=0
+         
+         reports2: do ii=1,num_p
+         
+         if (plink%ifgat /= kk) then  !sort iv
+            plink => plink%next
+            cycle reports2
+         else
+         nlocal=nlocal+1
+         iv%info(gpsref)%name(nlocal)      = plink%info%name
+         iv%info(gpsref)%platform(nlocal)  = plink%info%platform
+         iv%info(gpsref)%id(nlocal)        = plink%info%id
+         iv%info(gpsref)%date_char(nlocal) = plink%info%date_char
+         iv%info(gpsref)%levels(nlocal)    = plink%info%levels              ! each level is treated as separate obs
+         iv%info(gpsref)%elv(nlocal)       = plink%info%elv            ! not used
+         iv%info(gpsref)%lat(:,nlocal)     = plink%info%lat
+         iv%info(gpsref)%lon(:,nlocal)     = plink%info%lon
+
+         iv%info(gpsref)%x(:,nlocal)       = plink%loc%x
+         iv%info(gpsref)%y(:,nlocal)       = plink%loc%y
+         iv%info(gpsref)%i(:,nlocal)       = plink%loc%i
+         iv%info(gpsref)%j(:,nlocal)       = plink%loc%j
+         iv%info(gpsref)%dx(:,nlocal)      = plink%loc%dx
+         iv%info(gpsref)%dxm(:,nlocal)     = plink%loc%dxm
+         iv%info(gpsref)%dy(:,nlocal)      = plink%loc%dy
+         iv%info(gpsref)%dym(:,nlocal)     = plink%loc%dym
+
+         iv%info(gpsref)%slp(nlocal)%inv   = plink%slp%inv
+         iv%info(gpsref)%slp(nlocal)%qc    = plink%slp%qc
+         iv%info(gpsref)%slp(nlocal)%error = plink%slp%error
+         iv%info(gpsref)%pw(nlocal)%inv    = plink%pw%inv
+         iv%info(gpsref)%pw(nlocal)%qc     = plink%pw%qc
+         iv%info(gpsref)%pw(nlocal)%error  = plink%pw%error
+
+         iv%info(gpsref)%obs_global_index(nlocal) = plink%obs_global_index
 
          nlev = 1
          allocate (iv%gpsref(nlocal)%h  (1:nlev))
@@ -223,25 +339,28 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          allocate (iv%gpsref(nlocal)%q  (1:nlev))
 
          do i = 1, nlev
-            iv%gpsref(nlocal)%h(i)         = height
-            iv%gpsref(nlocal)%ref(i)%inv   = ref_data
-            iv%gpsref(nlocal)%ref(i)%qc    = ref_qc
-            iv%gpsref(nlocal)%ref(i)%error = ref_error
+            iv%gpsref(nlocal)%h(i)         = plink%gpsref%h(i)
+            iv%gpsref(nlocal)%ref(i)%inv   = plink%gpsref%ref(i)%inv
+            iv%gpsref(nlocal)%ref(i)%qc    = plink%gpsref%ref(i)%qc
+            iv%gpsref(nlocal)%ref(i)%error = plink%gpsref%ref(i)%error
 
-            iv%gpsref(nlocal)%p(i)%inv     = missing_r
-            iv%gpsref(nlocal)%p(i)%qc      = missing_data
-            iv%gpsref(nlocal)%p(i)%error   = xmiss
-            iv%gpsref(nlocal)%t(i)%inv     = missing_r
-            iv%gpsref(nlocal)%t(i)%qc      = missing_data
-            iv%gpsref(nlocal)%t(i)%error   = xmiss
-            iv%gpsref(nlocal)%q(i)%inv     = missing_r
-            iv%gpsref(nlocal)%q(i)%qc      = missing_data
-            iv%gpsref(nlocal)%q(i)%error   = xmiss
+            iv%gpsref(nlocal)%p(i)%inv     = plink%gpsref%p(i)%inv
+            iv%gpsref(nlocal)%p(i)%qc      = plink%gpsref%p(i)%qc
+            iv%gpsref(nlocal)%p(i)%error   = plink%gpsref%p(i)%error
+            iv%gpsref(nlocal)%t(i)%inv     = plink%gpsref%t(i)%inv
+            iv%gpsref(nlocal)%t(i)%qc      = plink%gpsref%t(i)%qc
+            iv%gpsref(nlocal)%t(i)%error   = plink%gpsref%t(i)%error
+            iv%gpsref(nlocal)%q(i)%inv     = plink%gpsref%q(i)%inv
+            iv%gpsref(nlocal)%q(i)%qc      = plink%gpsref%q(i)%qc
+            iv%gpsref(nlocal)%q(i)%error   = plink%gpsref%q(i)%error
          end do
-
-      end do lev_loop
-
-   end do reports
+        end if
+       plink => plink%next
+      end do reports2
+      ntotal_ifgat(kk)=ntotal_ifgat(kk)+ntotal_ifgat(kk-1)
+      iv%info(gpsref)%ptotal(kk)=ntotal_ifgat(kk)
+      iv%info(gpsref)%plocal(kk)=nlocal
+   end do 
 
    write(unit=message(1),fmt='(A,3(1x,i7))') &
       'da_read_obs_bufrgpsro: num_report, num_outside_all, num_outside_time: ', &
@@ -252,6 +371,8 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
       call da_error(__FILE__,__LINE__,(/"numbers mismatch between scanning and reading NCEP GSPRO BUFR file"/))
    end if
 
+   deallocate(plink)
+   deallocate(head)
    call closbf(iunit)
    close(iunit)
    call da_free_unit(iunit)

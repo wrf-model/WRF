@@ -45,17 +45,38 @@ subroutine da_get_innov_vector_pseudo(grid, ob, iv)
       ! [3.0] Calculate observation O = B +(O-B):
       !---------------------------------------------------------------
 
-      if (pseudo_var(1:1) == 'u' .or.  pseudo_var(1:1) == 'U') then
-         ob % pseudo(n) % u = model_u(1,n) + iv % pseudo(n) % u % inv
-      else if (pseudo_var(1:1) == 'v' .or.  pseudo_var(1:1) == 'V') then
-         ob % pseudo(n) % v = model_v(1,n) + iv % pseudo(n) % v % inv
-      else if (pseudo_var(1:1) == 't' .or.  pseudo_var(1:1) == 'T') then
-         ob % pseudo(n) % t = model_t(1,n) + iv % pseudo(n) % t % inv
-      else if (pseudo_var(1:1) == 'p' .or.  pseudo_var(1:1) == 'P') then
-         ob % pseudo(n) % p = model_p(1,n) + iv % pseudo(n) % p % inv
-      else if (pseudo_var(1:1) == 'q' .or.  pseudo_var(1:1) == 'Q') then
-         ob % pseudo(n) % q = model_q(1,n) + iv % pseudo(n) % q % inv
-      end if 
+      select case(pseudo_var(1:1))
+      case ('u', 'U')
+         if (ob % pseudo(n) % u > missing_r) then
+             iv % pseudo(n) % u % inv = ob%pseudo(n)%u - model_u(1,n)
+         else
+             ob % pseudo(n) % u = model_u(1,n) + iv % pseudo(n) % u % inv
+	 endif   
+      case ('v', 'V')
+         if (ob % pseudo(n) % v > missing_r) then
+             iv % pseudo(n) % v % inv = ob%pseudo(n)%v - model_v(1,n)
+         else
+             ob % pseudo(n) % v = model_v(1,n) + iv % pseudo(n) % v % inv
+	 endif   
+      case ('t', 'T')
+         if (ob % pseudo(n) % t > missing_r) then
+             iv % pseudo(n) % t % inv = ob%pseudo(n)%t - model_t(1,n)
+         else
+             ob % pseudo(n) % t = model_t(1,n) + iv % pseudo(n) % t % inv
+	 endif   
+      case ('p', 'P')
+         if (ob % pseudo(n) % p > missing_r) then
+             iv % pseudo(n) % p % inv = ob%pseudo(n)%p - model_p(1,n)
+         else
+             ob % pseudo(n) % p = model_p(1,n) + iv % pseudo(n) % p % inv
+	 endif   
+      case ('q', 'Q')
+         if (ob % pseudo(n) % q > missing_r) then
+             iv % pseudo(n) % q % inv = ob%pseudo(n)%q - model_q(1,n)
+         else
+             ob % pseudo(n) % q = model_q(1,n) + iv % pseudo(n) % q % inv
+	 endif   
+      end select 
    end do
 
    deallocate (model_u)

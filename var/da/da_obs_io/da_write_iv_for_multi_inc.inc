@@ -253,8 +253,8 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  n, iv%info(gpspw)%id(n), &  ! Station
                  iv%info(gpspw)%lat(1,n), &       ! Latitude
                  iv%info(gpspw)%lon(1,n)          ! Longitude
-         write(ounit,'(E22.13,i8,E22.13)')&
-                 iv%gpspw(n)%tpw
+         write(ounit,'(E22.13,i8,3E22.13)')&
+              iv%gpspw(n)%tpw
       end do
       close (ounit)
    end if
@@ -635,6 +635,39 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       end do
       close (ounit)
    end if
+
+   ! [22] radar obs:
+
+   if (iv%info(radar)%plocal(iv%time) - iv%info(radar)%plocal(iv%time-1) > 0) then
+
+      open (unit=ounit,file=trim(filename)//'.radar',form='formatted',status='replace', &
+         iostat=ios)
+      if (ios /= 0) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Cannot open conventional observation omb file"//filename/))
+      end if
+
+      write(ounit,'(a20,i8)')'radar', iv%info(radar)%plocal(iv%time) - &
+                                       iv%info(radar)%plocal(iv%time-1)
+      do n = iv%info(radar)%plocal(iv%time-1) + 1, &
+             iv%info(radar)%plocal(iv%time)
+         write(ounit,'(2i8,2E22.13)')&
+                 n, iv%info(radar)%levels(n),  &
+                 iv%info(radar)%lat(1,n), &      ! Latitude
+                 iv%info(radar)%lon(1,n)         ! Longitude
+         do k = 1 , iv%info(radar)%levels(n)
+            write(ounit,'(E22.13,i8,3E22.13)')&
+                     iv%radar(n)%rv(k)           ! radar_rv
+
+         enddo
+      end do
+      close (ounit)
+   end if
+
+
+
+   !-------------------------------------------------------------------------------
+
 
    call da_free_unit(ounit)
 

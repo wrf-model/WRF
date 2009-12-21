@@ -52,9 +52,9 @@ module da_setup_structures
       fmt_info, fmt_srfc, fmt_each   
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr
-   use da_obs_io, only : da_scan_obs_bufr,da_read_obs_bufr,da_read_obs_radar, &
+   use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
-      da_scan_obs_bufrgpsro, da_read_obs_bufrgpsro
+      da_read_obs_bufrgpsro
    use da_par_util, only : da_patch_to_global
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_setup_radiance_structures

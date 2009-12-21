@@ -88,12 +88,14 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    ! [2.0] calculate grad_v (jb):
    !-------------------------------------------------------------------------
-   if (cv_size_jb > 0) grad_jb(1:cv_size_jb) = jb_factor * xhat(1:cv_size_jb)
+   if (cv_size_jb > 0) &
+      grad_jb(1:cv_size_jb) = jb_factor * (xhat(1:cv_size_jb)+cv(1:cv_size_jb))
 
    !-------------------------------------------------------------------------
    ! [3.0] calculate grad_v (je):
    !-------------------------------------------------------------------------
-   if (cv_size_je > 0) grad_je(je_start:je_end) = je_factor * xhat(je_start:je_end)
+   if (cv_size_je > 0) &
+      grad_je(je_start:je_end) = je_factor * (xhat(je_start:je_end)+cv(je_start:je_end))
    
    !-------------------------------------------------------------------------
    ! [4.0] calculate grad_v (jp):
@@ -114,7 +116,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
 	    end do
          end do
       end do
-      grad_jp(jp_start:jp_end) = xhat_jp(1:cv_size_jp)
+      grad_jp(jp_start:jp_end) = xhat_jp(1:cv_size_jp) + cv(1:cv_size_jp)
    
       deallocate(xhat_jp)
    end if
@@ -128,17 +130,17 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
          ! Skin Temperature
          !-----------------
 !	    if (use_satcv(1)) &
-!            grad_js(iv%instid(inst)%cv_index(n)%ts) = xhat(iv%instid(inst)%cv_index(n)%ts)
+!            grad_js(iv%instid(inst)%cv_index(n)%ts) = xhat(iv%instid(inst)%cv_index(n)%ts) + cv(iv%instid(inst)%cv_index(n)%ts)
 	    
          ! Cloud cover(s)
          !---------------
 	    if (use_satcv(2)) then
-	    grad_js(iv%instid(inst)%cv_index(n)%cc) = xhat(iv%instid(inst)%cv_index(n)%cc)
+	    grad_js(iv%instid(inst)%cv_index(n)%cc) = xhat(iv%instid(inst)%cv_index(n)%cc) + cv(iv%instid(inst)%cv_index(n)%cc)
 
 	    WHERE (xhat(iv%instid(inst)%cv_index(n)%cc) < 0.0 .or.                              &
 	           xhat(iv%instid(inst)%cv_index(n)%cc) > 1.0 )                                 &
 	    grad_js(iv%instid(inst)%cv_index(n)%cc) = grad_js(iv%instid(inst)%cv_index(n)%cc) + &
-                                                       10.0 * xhat(iv%instid(inst)%cv_index(n)%cc)
+                                                       10.0 * (xhat(iv%instid(inst)%cv_index(n)%cc)+cv(iv%instid(inst)%cv_index(n)%cc))
             end if
 	 end do
       end do	      
@@ -160,7 +162,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    gnorm_j  = sqrt(da_dot_cv(cv_size, cv_size_domain, grad,    grad,    grid, mz, use_varbc))
  
    if (it == -1 .and. iter == 0 .and. rootproc) then
-      write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge           Gp           Gs'
+      write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb        Go          Ge          Gp          Gs'
       write(unit=grad_unit,fmt='(a)')'Iter             Iter                            '
    end if
 

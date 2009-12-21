@@ -110,7 +110,7 @@ main( int argc , char *argv[] )
             col-- ;
             if ( col <= 0 ) {
               col = 130 ;
-              putchar('&') ; putchar('\n') ; putchar('&') ;
+              if (*q!=')' || *(q+1) ) {  putchar('&') ; putchar('\n') ; putchar('&') ; }
             }
           }
           putchar('\n') ;

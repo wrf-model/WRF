@@ -215,6 +215,8 @@
 !     set total ozone and land use type
       dobson = 265.0; lu = 1
 
+      xlwc(:) = 0.  !initialize in case no cloud water is present
+
 !     get photolysis rates
       J_TILE_LOOP : do j = jts, jte
       I_TILE_LOOP : do i = its, ite

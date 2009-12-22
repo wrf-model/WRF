@@ -3,9 +3,9 @@
 PROGRAM tc_data
    USE module_machine
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
-        domain_clock_set, head_grid, program_name, domain_clockprint
+        domain_clock_set, head_grid, program_name, domain_clockprint, set_current_grid_ptr
    USE module_io_domain
-
+   USE module_initialize_real, ONLY : wrfu_initialize
    
    USE module_driver_constants
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &

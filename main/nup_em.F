@@ -60,8 +60,10 @@
 PROGRAM nup_em
 
    USE module_machine
-   USE module_domain, only : domain, wrfu_timeinterval, alloc_and_configure_domain, &
-      domain_clock_set
+   USE module_domain, ONLY : domain, wrfu_timeinterval, alloc_and_configure_domain, &
+      domain_clock_set, domain_get_current_time, domain_get_stop_time, head_grid, &
+      domain_clock_get, domain_clockadvance
+   USE module_domain_type, ONLY : program_name
    USE module_streams
    USE module_initialize_real, only : wrfu_initialize
    USE module_integrate

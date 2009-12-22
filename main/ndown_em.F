@@ -4,7 +4,9 @@
 PROGRAM ndown_em
 
    USE module_machine
-   USE module_domain, ONLY : domain
+   USE module_domain, ONLY : domain, head_grid, alloc_and_configure_domain, &
+                             domain_clock_set, domain_clock_get, get_ijk_from_grid
+   USE module_domain_type, ONLY : program_name
    USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver
    USE module_integrate
    USE module_driver_constants

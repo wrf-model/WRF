@@ -92,8 +92,6 @@
    INTEGER :: im1,ip1,jm1,jp1
    REAL :: hx,hy,pi
 
-   logical :: f_flux  ! flag for computing averaged fluxes in cu_gd
-
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &

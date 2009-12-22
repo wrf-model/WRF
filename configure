@@ -372,10 +372,10 @@ fi
 if [ -n "$WRF_NMM_CORE" ]; then
   if [ $WRF_NMM_CORE = 1 ]; then
     if [ -n "$HWRF" ]; then
-        if [ $HWRF = 1 ]; then
-          echo building WRF with HWRF option
-          compileflags="${compileflags}!-DHWRF=1"
-        fi
+      if [ $HWRF = 1 ]; then
+        echo building WRF with HWRF option
+        compileflags="${compileflags}!-DHWRF=1"
+      fi
     fi
   fi
 fi
@@ -394,6 +394,10 @@ if [ -n "$WRF_CHEM" ] ; then
   fi
 else
   compileflags="${compileflags} "
+fi
+
+if [ `which timex` ] ; then
+  FORTRAN_COMPILER_TIMER=timex
 fi
 
 # Found perl, so proceed with configuration
@@ -436,6 +440,7 @@ if test -f configure.wrf ; then
     if test -e tools/mpi2_test.o ; then
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
       sed '/^DM_CC.*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      sed '/^ARCH_LOCAL.*=/s/=/= -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
     else
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
     fi

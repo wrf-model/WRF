@@ -30,6 +30,7 @@ CONTAINS
                              , imsy,imey,jmsy,jmey,kmsy,kmey    &
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
+                             , f_flux                  &
                             )
     USE module_state_description
     USE module_model_constants
@@ -46,10 +47,8 @@ CONTAINS
     USE module_big_step_utilities_em, ONLY : phy_prep
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-#else
-    USE module_dm
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub
 #endif
-    USE module_comm_dm
     USE module_utility
 ! jm debug
     USE module_fr_sfire_util
@@ -112,6 +111,7 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: mu_tendf
 
     INTEGER , INTENT(IN)                          ::  k_start, k_end
+    LOGICAL, intent(in), OPTIONAL ::                   f_flux
 
 ! Local
 
@@ -121,6 +121,7 @@ CONTAINS
     INTEGER  num_wall_layers
     INTEGER  num_road_layers
     INTEGER  iswater
+    logical :: l_flux
     INTEGER  :: isurban
     INTEGER  rk_step
     INTEGER                         :: yr, month, day, hr, minute, sec, rc
@@ -143,6 +144,9 @@ CONTAINS
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
+
+   l_flux=.FALSE.
+   if (present(f_flux)) l_flux=f_flux
 
     rk_step = 1
 
@@ -456,7 +460,7 @@ BENCH_START(surf_driver_tim)
      &        ,RA=grid%ra, RS=grid%rs, LAI=grid%lai                       &   ! P-X LSM
      &        ,NLCAT=grid%num_land_cat,  NSCAT=grid%num_soil_cat          &   ! P-X LSM
      &        ,VEGF_PX=grid%vegf_px, SNOWNCV=grid%snowncv                 &   ! P-X LSM
-     &        ,ANAL_INTERVAL=config_flags%sgfdda_interval_s               &   ! P-X LSM
+     &        ,ANAL_INTERVAL=config_flags%auxinput9_interval_s               &   ! P-X LSM
      &        ,PXLSM_SMOIS_INIT=config_flags%pxlsm_smois_init             &   ! P-X LSM
      &        ,PXLSM_SOIL_NUDGE=config_flags%grid_sfdda                   &   ! P-X LSM
            ! Optional PX LSM nudging
@@ -670,7 +674,7 @@ BENCH_START(cu_driver_tim)
 #if ( WRF_DFI_RADAR == 1 )
      &             ,DO_CAPSUPPRESS=do_capsupress                          &
 #endif
-     &                                                          )
+     &             ,cfu1=grid%cfu1,cfd1=grid%cfd1,dfu1=grid%dfu1,efu1=grid%efu1,dfd1=grid%dfd1,efd1=grid%efd1,f_flux=l_flux)
 BENCH_END(cu_driver_tim)
 
 ! JPH call force_scm to update bl tendencies

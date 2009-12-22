@@ -401,7 +401,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
    
          CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfinput' )
          CALL construct_filename1( outname , 'wrfinput' , nested_grid%id , 2 )
-         CALL open_w_dataset     ( fido, TRIM(outname) , nested_grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
+         CALL open_w_dataset     ( fido, TRIM(outname) , nested_grid , config_flags , output_input , "DATASET=INPUT", ierr )
          IF ( ierr .NE. 0 ) THEN
             WRITE( wrf_err_message , FMT='(A,A,A,I8)' ) 'program ndown: error opening ',TRIM(outname),' for reading ierr=',ierr
             CALL WRF_ERROR_FATAL ( wrf_err_message )
@@ -503,8 +503,8 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Input data.
    
-         CALL       wrf_debug ( 100 , 'ndown_em: calling input_aux_model_input2' )
-         CALL input_aux_model_input2 ( idsi , nested_grid , config_flags , ierr )
+         CALL       wrf_debug ( 100 , 'ndown_em: calling input_auxinput2' )
+         CALL input_auxinput2 ( idsi , nested_grid , config_flags , ierr )
          nested_grid%ht_input = nested_grid%ht
    
          !  Close this fine grid static input file.
@@ -654,7 +654,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Output the first time period of the data.
    
-         CALL output_model_input ( fido , nested_grid , config_flags , ierr )
+         CALL output_input ( fido , nested_grid , config_flags , ierr )
 
          CALL wrf_put_dom_ti_integer ( fido , 'MAP_PROJ' , map_proj , 1 , ierr ) 
 !        CALL wrf_put_dom_ti_real    ( fido , 'DX'  , dx  , 1 , ierr ) 

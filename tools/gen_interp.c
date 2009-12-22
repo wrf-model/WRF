@@ -98,7 +98,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char * fn = "nest_interp.inc" ;
   char fname[NAMELEN] ;
   node_t *p, *p1, *dim ;
-  int d2, d3, xdex, ydex, zdex, io_mask ;
+  int d2, d3, xdex, ydex, zdex, nest_mask ;
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
@@ -128,18 +128,18 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
     if ( p1->node_kind & FOURD )
     {
       if ( p1->members->next ) {
-        io_mask = p1->members->next->io_mask ;
+        nest_mask = p1->members->next->nest_mask ;
       } else {
         continue ;
       }
     }
     else
     {
-      io_mask = p1->io_mask ;
+      nest_mask = p1->nest_mask ;
     }
     p = p1 ;
 
-    if ( io_mask & down_path )
+    if ( nest_mask & down_path )
     {
         if ( p->ntl > 1 ) { sprintf(tag,"_2") ; sprintf(tag2,"_%d", use_nest_time_level) ; }
         else              { sprintf(tag,"")   ; sprintf(tag2,"")                         ; }

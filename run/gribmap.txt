@@ -153,22 +153,22 @@
 151:PTOP:Pressure at model top [Pa]:P_TOP:3
 152:TIMESTEP:Timestep number:ITIMESTEP:3
 153:CLWMR:Cloud water [kg/kg]:QCLOUD,QCG:8
-154:var154:undefined::
+154:MUU:Total dry air mass in column on u-grid[Pa]:MUU:2
 155:GFLUX:Ground heat flux [W/m^2]:HFX:4
 156:RAINBL:Acc. precip. over Boundary Layer time step [kg/m^2]:RAINBL:2
-157:var157:undefined::
+157:MUV:Total dry air mass in column on v-grid[Pa]:MUV:2
 158:TKE:Turbulent kinetic energy [J/kg]:TKE:3
 159:TKE_MYJ:MYJ Turbulent kinetic energy [J/kg]:TKE_MYJ:3
 160:SOILL:Liquid volumetric soil moisture (non-frozen) [fraction]:SH2O:6
-161:var157:undefined::
-162:var157:undefined::
-163:var157:undefined::
-164:var157:undefined::
-165:var157:undefined::
-166:var157:undefined::
-167:var157:undefined::
-168:var157:undefined::
-169:var157:undefined::
+161:MU_U:mu-coupled u [Pa m s-1]:MU_U:2
+162:RU_M:avg mu-coupled u [Pa m s-1]:RU_M:2
+163:MU_V:mu-coupled v [Pa m s-1]:MU_V:2
+164:RV_M:avg mu-coupled v [Pa m s-1]:RV_M:2
+165:RW:mu-coupled w [Pa m s-1]:RW:2
+166:WWM:avg mu-coupled eta-dot [Pa s-1]:WW_M:5
+167:UST:U* IN SIMILARITY THEORY [m/s]:UST:4
+168:MASSFLX:DOWNDRAFT MASS FLUX GRELL [mb/hour]:MASS_FLUX:
+169:MUT:Total dry air mass in column on mass grid[Pa]:MUT:2
 170:RWMR:Rain water mixing ratio [kg/kg]:QRAIN:5
 171:SNMR:Snow mixing ratio [kg/kg]:QSNOW:5
 172:RESM:Time weight constant for small steps:RESM:3
@@ -186,7 +186,7 @@
 184:COSALPHA:Local cosine of map rotation:COSALPHA:4
 185:TURB:Turbulence SIGMET/AIRMET [non-dim]::
 186:EPSTS:EPSTS in WRF [?]:EPSTS:3
-187:var187:undefined::
+187:CFU1:AVERAGE updraft mass flux from GD-scheme [kg m-2 s-1]:CFU1:8
 188:AKMS:Surface Exchange for Momentum [m/s]:AKMS:3
 189:MAPFAC_M:Map Scale Factor [dimensionless]:MAPFAC_M:7
 190:MAPFAC_U:Map Scale Factor [dimensionless]:MAPFAC_U:7
@@ -200,7 +200,7 @@
 198:MAPFAC_UX:Map Scale Factor [dimensionless]:MAPFAC_UX:7
 199:MAPFAC_VX:Map Scale Factor [dimensionless]:MAPFAC_VX:7
 200:MF_VX_INV:Inverse Map Scale Factor:MF_VX_INV:8
-201:var201:undefined::
+201:EFD1:AVERAGE entrainment into downdraft from GD-scheme [kg m-2 s-1]:EFD1:8
 202:SNOWCU:Cumulative Snow [cm]:SNOWCU,ACSNOW:2
 203:ACSNOM:Accumulated Melted Snow [cm]:ACSNOM:2
 204:DSWRF:Downward short wave flux [W/m^2]:SWDOWN:3
@@ -218,10 +218,10 @@
 216:LANDUSEF:Land use categorical fraction on mass grid:LANDUSEF:3
 217:SOILCTOP:Top layer soil type as a categorical fraction:SOILCTOP:3
 218:SOILCBOT:Top layer soil type as a categorical fraction:SOILCBOT:3
-219:var219:undefined::
-220:var220:undefined::
+219:AVGFLX_RUM:hist-time-averaged mu-coupled u [Pa m s-1]:AVGFLX_RUM:
+220:AVGFLX_RVM:hist-time-averaged mu-coupled v [Pa m s-1]:AVGFLX_RVM:
 221:HPBL:Planetary boundary layer height [m]:PBLH:2
-222:var222:undefined::
+222:AVGFLX_WWM:hist-time-averaged mu-coupled eta-dot [Pa s-1]:AVGFLX_WWM:5
 223:CNWAT:Plant canopy surface water [kg/m^2]:CANWAT:8
 224:SOTYP:Soil type (Zobler) [0..9]:ISLTYP:0
 225:VGTYP:Vegetation type (as in SiB) [0..13]:IVGTYP:1
@@ -231,16 +231,16 @@
 229:CF1:Second-order extrapolation constant 1:CF1:5
 230:CF2:Second-order extrapolation constant 2:CF2:5
 231:CF3:Second-order extrapolation constant 3:CF3:5
-232:var232:undefined::
-233:var233:undefined::
+232:CFD1:AVERAGE downdraft mass flux from GD-scheme [kg m-2 s-1]:CFD1:8
+233:DFU1:AVERAGE detrainment from updraft from GD-scheme [kg m-2 s-1]:DFU1:8
 234:BGRUN:Baseflow-groundwater runoff [kg/m^2]:UDROFF:4
 235:SSRUN:Storm surface runoff [kg/m^2]:SFROFF:4
 236:SNOW:Snow Water Equivalent [kg/m^2]:SNOW:2
-237:var237:undefined::
+237:EFU1:AVERAGE entrainment into updraft from GD-scheme [kg m-2 s-1]:EFU1:8
 238:SNOWC:Snow cover [%]:SNOWC:1
-239:var239:undefined::
+239:DFD1:AVERAGE detrainment from downdraft from GD-scheme [kg m-2 s-1]:DFD1:8
 240:QFX:Upward moisture flux [kg/(m^s)]:QFX:8
-241:var241:undefined::
+241:ALT:inverse dry density [m3 kg-1]:ALT:8
 242:var242:undefined::
 243:var243:undefined::
 244:var244:undefined::

@@ -326,12 +326,12 @@
       CALL wrf_message(TRIM(wrf_err_message))
 
       rstname = 'wrfinput_initialized_d01'
-      CALL open_w_dataset ( fid, TRIM(rstname), head_grid, config_flags, output_model_input, "DATASET=INPUT", ierr )
+      CALL open_w_dataset ( fid, TRIM(rstname), head_grid, config_flags, output_input, "DATASET=INPUT", ierr )
       IF ( ierr .NE. 0 ) THEN
          WRITE( message , '("program wrf: error opening ",A," for writing")') TRIM(rstname)
          CALL WRF_ERROR_FATAL ( message )
       END IF
-      CALL output_model_input ( fid,   head_grid, config_flags, ierr )
+      CALL output_input ( fid,   head_grid, config_flags, ierr )
       CALL close_dataset ( fid, config_flags, "DATASET=INPUT" )
 
    END SUBROUTINE wrf_dfi_write_initialized_state

@@ -179,12 +179,12 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
    CALL calc_current_date ( grid%id, 0.)
 
    CALL construct_filename1 ( inpname , 'wrfinput' , grid%id , 2 )
-   CALL open_w_dataset ( id, TRIM(inpname) , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
+   CALL open_w_dataset ( id, TRIM(inpname) , grid , config_flags , output_input , "DATASET=INPUT", ierr )
    IF ( ierr .NE. 0 ) THEN
      WRITE (wrf_err_message,*)'ideal: error opening wrfinput for writing ',ierr
      CALL wrf_error_fatal( wrf_err_message )
    ENDIF
-   CALL output_model_input ( id, grid , config_flags , ierr )
+   CALL output_input ( id, grid , config_flags , ierr )
    CALL close_dataset ( id , config_flags, "DATASET=INPUT" )
 
 

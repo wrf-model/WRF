@@ -26,7 +26,8 @@ CONTAINS
               ,RQVFTEN,RQVBLTEN                                 &
               ,RTHFTEN,RTHCUTEN,RTHRATEN,RTHBLTEN               &
               ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS         &
-                                                                )
+              ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux             )
+
 !-------------------------------------------------------------
    IMPLICIT NONE
 !-------------------------------------------------------------
@@ -102,6 +103,15 @@ CONTAINS
                                                    RQVCUTEN,    &
                                                    RQCCUTEN,    &
                                                    RQICUTEN
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+         OPTIONAL,                                              &
+         INTENT(INOUT) ::                                       &
+                                                   CFU1,        &
+                                                   CFD1,        &
+                                                   DFU1,        &
+                                                   EFU1,        &
+                                                   DFD1,        &
+                                                   EFD1
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -115,6 +125,7 @@ CONTAINS
                                                   ,F_QR      &
                                                   ,F_QI      &
                                                   ,F_QS
+   LOGICAL, intent(in), OPTIONAL ::                f_flux
 
 
 
@@ -122,8 +133,10 @@ CONTAINS
      real,    dimension ( ims:ime , jms:jme , 1:ensdim) ::      &
         massfln,xf_ens,pr_ens
      real,    dimension (its:ite,kts:kte+1) ::                    &
-        OUTT,OUTQ,OUTQC,phh,cupclw
+        OUTT,OUTQ,OUTQC,phh,cupclw,     &
+        outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1
      real,    dimension (its:ite,kts:kte+1) ::  phf
+     logical :: l_flux
      real,    dimension (its:ite)         ::                    &
         pret, ter11, aa0, fp
 !+lxz
@@ -148,6 +161,14 @@ CONTAINS
    REAL    :: tcrit,dp,dq
    INTEGER :: itf,jtf,ktf
    REAL    :: rkbcon,rktop        !-lxz
+
+   l_flux=.FALSE.
+   if (present(f_flux)) l_flux=f_flux
+   if (l_flux) then
+      l_flux = l_flux .and. present(cfu1) .and. present(cfd1)   &
+               .and. present(dfu1) .and. present(efu1)          &
+               .and. present(dfd1) .and. present(efd1)
+   endif
 
    ichoice=0
    iens=1
@@ -305,6 +326,7 @@ CONTAINS
            APR_CAPMA,APR_CAPME,APR_CAPMI,kbcon,ktop,              &
            xf_ens,pr_ens,XLAND,gsw,cupclw,                        &
            xlv,r_v,cp,g,ichoice,ipr,jpr,                          &
+           outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1,l_flux,&
            ids,ide, jds,jde, kds,kde,                             &
            ims,ime, jms,jme, kms,kme,                             &
            its,ite, jts,jte, kts,kte                             )
@@ -366,6 +388,19 @@ CONTAINS
                 ENDDO
               ENDIF
             ENDIF
+
+            if (l_flux) then
+               DO K=kts,ktf
+               DO I=its,itf
+                  cfu1(i,k,j)=outcfu1(i,k)*cuten(i)
+                  cfd1(i,k,j)=outcfd1(i,k)*cuten(i)
+                  dfu1(i,k,j)=outdfu1(i,k)*cuten(i)
+                  efu1(i,k,j)=outefu1(i,k)*cuten(i)
+                  dfd1(i,k,j)=outdfd1(i,k)*cuten(i)
+                  efd1(i,k,j)=outefd1(i,k)*cuten(i)
+               enddo
+               enddo
+            endif
         endif !jbeg,jend
 
  100    continue
@@ -382,6 +417,7 @@ CONTAINS
               APR_CAPMA,APR_CAPME,APR_CAPMI,kbcon,ktop,                &   !-lxz
               xf_ens,pr_ens,xland,gsw,cupclw,                          &
               xl,rv,cp,g,ichoice,ipr,jpr,                              &
+              outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1,l_flux,  &
               ids,ide, jds,jde, kds,kde,                               &
               ims,ime, jms,jme, kms,kme,                               &
               its,ite, jts,jte, kts,kte                               )
@@ -417,7 +453,9 @@ CONTAINS
   ! pre    = output precip
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (out  )                   ::                           &
-        OUTT,OUTQ,OUTQC,CUPCLW
+        OUTT,OUTQ,OUTQC,CUPCLW,                                        &
+        outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1
+     logical, intent(in) :: l_flux
      real,    dimension (its:ite)                                      &
         ,intent (out  )                   ::                           &
         pre
@@ -460,6 +498,8 @@ CONTAINS
         edtc
      real,    dimension (its:ite,kts:kte,1:maxens2) ::                 &
         dellat_ens,dellaqc_ens,dellaq_ens,pwo_ens
+     real,    dimension (its:ite,kts:kte,1:maxens2) ::                 &
+        CFU1_ens,CFD1_ens,DFU1_ens,EFU1_ens,DFD1_ens,EFD1_ens
 !
 !
 !
@@ -551,7 +591,8 @@ CONTAINS
   ! dellaq = change of q per unit mass flux of cloud ensemble
   ! dellaqc = change of qc per unit mass flux of cloud ensemble
 
-        cd,cdd,scr1,DELLAH,DELLAQ,DELLAT,DELLAQC
+        cd,cdd,scr1,DELLAH,DELLAQ,DELLAT,DELLAQC,                      &
+        CFU1,CFD1,DFU1,EFU1,DFD1,EFD1
 
   ! aa0 cloud work function for downdraft
   ! edt = epsilon
@@ -1010,6 +1051,18 @@ CONTAINS
            pwo_ens(i,k,iedt)=0.
         enddo
         enddo
+        if (l_flux) then
+           do k=kts,ktf
+              do i=its,itf
+                 cfu1_ens(i,k,iedt)=0.
+                 cfd1_ens(i,k,iedt)=0.
+                 dfu1_ens(i,k,iedt)=0.
+                 efu1_ens(i,k,iedt)=0.
+                 dfd1_ens(i,k,iedt)=0.
+                 efd1_ens(i,k,iedt)=0.
+              enddo
+           enddo
+        endif
 !
       do i=its,itf
         aad(i)=0.
@@ -1041,12 +1094,14 @@ CONTAINS
 !--- 1. in bottom layer
 !
       call cup_dellabot(ipr,jpr,heo_cup,ierr,zo_cup,po,hcdo,edto, &
-           zdo,cdd,heo,dellah,j,mentrd_rate,zo,g, &
+           zuo,zdo,cdd,heo,dellah,j,mentrd_rate,zo,g, &
+           CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,l_flux,               &
            ids,ide, jds,jde, kds,kde, &
            ims,ime, jms,jme, kms,kme, &
            its,ite, jts,jte, kts,kte)
       call cup_dellabot(ipr,jpr,qo_cup,ierr,zo_cup,po,qrcdo,edto, &
-           zdo,cdd,qo,dellaq,j,mentrd_rate,zo,g,&
+           zuo,zdo,cdd,qo,dellaq,j,mentrd_rate,zo,g,&
+           CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,.FALSE.,               &
            ids,ide, jds,jde, kds,kde, &
            ims,ime, jms,jme, kms,kme, &
            its,ite, jts,jte, kts,kte)
@@ -1057,6 +1112,7 @@ CONTAINS
            heo,dellah,j,mentrd_rate,zuo,g,                     &
            cd,hco,ktop,k22,kbcon,mentr_rate,jmin,heo_cup,kdet, &
            k22,ipr,jpr,'deep',                                 &
+           CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,l_flux,               &
            ids,ide, jds,jde, kds,kde, &
            ims,ime, jms,jme, kms,kme, &
            its,ite, jts,jte, kts,kte)
@@ -1087,6 +1143,7 @@ CONTAINS
            qo,dellaq,j,mentrd_rate,zuo,g, &
            cd,scr1,ktop,k22,kbcon,mentr_rate,jmin,qo_cup,kdet, &
            k22,ipr,jpr,'deep',               &
+           CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,.FALSE.,            &
               ids,ide, jds,jde, kds,kde,                     &
               ims,ime, jms,jme, kms,kme,                     &
               its,ite, jts,jte, kts,kte    )
@@ -1315,6 +1372,28 @@ CONTAINS
 !      endif
       enddo
       enddo
+      if (l_flux) then
+         do k=kts,ktf
+            do i=its,itf
+               if(ierr(i).eq.0)then
+                 cfu1_ens(i,k,iedt)=cfu1(i,k)
+                 cfd1_ens(i,k,iedt)=cfd1(i,k)
+                 dfu1_ens(i,k,iedt)=dfu1(i,k)
+                 efu1_ens(i,k,iedt)=efu1(i,k)
+                 dfd1_ens(i,k,iedt)=dfd1(i,k)
+                 efd1_ens(i,k,iedt)=efd1(i,k)
+              else
+                 cfu1_ens(i,k,iedt)=0.
+                 cfd1_ens(i,k,iedt)=0.
+                 dfu1_ens(i,k,iedt)=0.
+                 efu1_ens(i,k,iedt)=0.
+                 dfd1_ens(i,k,iedt)=0.
+                 efd1_ens(i,k,iedt)=0.
+              end if
+           end do
+         end do
+      end if
+
  250  continue
 !
 !--- FEEDBACK
@@ -1325,6 +1404,9 @@ CONTAINS
            pr_ens,maxens3,ensdim,massfln,                    &
            APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                &
            APR_CAPMA,APR_CAPME,APR_CAPMI,closure_n,xland1,   &
+           outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1,  &
+           CFU1_ens,CFD1_ens,DFU1_ens,EFU1_ens,DFD1_ens,EFD1_ens,  &
+           l_flux,                                           &
            ids,ide, jds,jde, kds,kde, &
            ims,ime, jms,jme, kms,kme, &
            its,ite, jts,jte, kts,kte)
@@ -1876,7 +1958,8 @@ CONTAINS
 
 
    SUBROUTINE cup_dellabot(ipr,jpr,he_cup,ierr,z_cup,p_cup,  &
-              hcd,edt,zd,cdd,he,della,j,mentrd_rate,z,g,     &
+              hcd,edt,zu,zd,cdd,he,della,j,mentrd_rate,z,g,     &
+              CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,l_flux,  &
               ids,ide, jds,jde, kds,kde,                     &
               ims,ime, jms,jme, kms,kme,                     &
               its,ite, jts,jte, kts,kte                     )
@@ -1898,7 +1981,7 @@ CONTAINS
         della
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in  )                   ::                           &
-        z_cup,p_cup,hcd,zd,cdd,he,z,he_cup
+        z_cup,p_cup,hcd,zu,zd,cdd,he,z,he_cup
      real,    dimension (its:ite)                                      &
         ,intent (in   )                   ::                           &
         edt
@@ -1908,6 +1991,10 @@ CONTAINS
      integer, dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
         ierr
+     real,    dimension (its:ite,kts:kte)                              &
+        ,intent (inout  )                 ::                           &
+        CFU1,CFD1,DFU1,EFU1,DFD1,EFD1
+     logical, intent(in) :: l_flux
 !
 !  local variables in this routine
 !
@@ -1924,6 +2011,16 @@ CONTAINS
 !
 !      if(j.eq.jpr)print *,'in cup dellabot '
       do 100 i=its,itf
+      if (l_flux) then
+         cfu1(i,1)=0.
+         cfd1(i,1)=0.
+         cfu1(i,2)=0.
+         cfd1(i,2)=0.
+         dfu1(i,1)=0.
+         efu1(i,1)=0.
+         dfd1(i,1)=0.
+         efd1(i,1)=0.
+      endif
       della(i,1)=0.
       if(ierr(i).ne.0)go to 100
       dz=z_cup(i,2)-z_cup(i,1)
@@ -1937,6 +2034,11 @@ CONTAINS
                  +detdo2*hcd(i,1) &
                  +subin*he_cup(i,2) &
                  -entdo*he(i,1))*g/dp
+      if (l_flux) then
+         cfd1(i,2)   = -edt(i)*zd(i,2)  !only contribution to subin, subdown=0
+         dfd1(i,1)   =  detdo1+detdo2
+         efd1(i,1)   = -entdo
+      endif
  100  CONTINUE
 
    END SUBROUTINE cup_dellabot
@@ -1946,6 +2048,7 @@ CONTAINS
               he,della,j,mentrd_rate,zu,g,                             &
               cd,hc,ktop,k22,kbcon,mentr_rate,jmin,he_cup,kdet,kpbl,   &
               ipr,jpr,name,                                            &
+              CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,l_flux,  &
               ids,ide, jds,jde, kds,kde,                               &
               ims,ime, jms,jme, kms,kme,                               &
               its,ite, jts,jte, kts,kte                               )
@@ -1982,6 +2085,10 @@ CONTAINS
         ierr
       character *(*), intent (in)        ::                           &
        name
+     real,    dimension (its:ite,kts:kte)                              &
+        ,intent (inout  )                 ::                           &
+        CFU1,CFD1,DFU1,EFU1,DFD1,EFD1
+     logical, intent(in) :: l_flux
 !
 !  local variables in this routine
 !
@@ -2006,6 +2113,22 @@ CONTAINS
           della(i,k)=0.
        enddo
        enddo
+       if (l_flux) then
+          DO K=kts+1,ktf-1
+             do i=its,itf
+                cfu1(i,k+1)=0.
+                cfd1(i,k+1)=0.
+             enddo
+          enddo
+          DO K=kts+1,ktf
+             do i=its,itf
+                dfu1(i,k)=0.
+                efu1(i,k)=0.
+                dfd1(i,k)=0.
+                efd1(i,k)=0.
+             enddo
+          enddo
+       endif
 !
        DO 100 k=kts+1,ktf-1
        DO 100 i=its,ite
@@ -2048,6 +2171,22 @@ CONTAINS
          endif
          if(k.lt.kbcon(i))then
             detup=0.
+         endif
+         if (l_flux) then
+! z_cup(k+1):      zu(k+1), -zd(k+1) ==> subin   ==> cf[du]1   (k+1)  (full-eta level k+1)
+!
+! z(k)      :      detup, detdo, entup, entdo    ==> [de]f[du]1 (k)   (half-eta level  k )
+!
+! z_cup(k)  :      zu(k), -zd(k)     ==> subdown ==> cf[du]1    (k)   (full-eta level  k )
+
+! Store downdraft/updraft mass fluxes at full eta level k (z_cup(k)) in cf[ud]1(k):
+            cfu1(i,k+1)   =  zu(i,k+1)
+            cfd1(i,k+1)   = -edt(i)*zd(i,k+1)
+! Store detrainment/entrainment mass fluxes at half eta level k (z(k)) in [de]f[du]1(k):
+            dfu1(i,k) =   detup+detupk
+            efu1(i,k) = -(entup+entupk)
+            dfd1(i,k) =   detdo
+            efd1(i,k) = -(entdo+entdoj)
          endif
 !C
 !C--- CHANGED DUE TO SUBSIDENCE AND ENTRAINMENT
@@ -3342,6 +3481,9 @@ CONTAINS
               maxens3,ensdim,massfln,                            &
               APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                 &
               APR_CAPMA,APR_CAPME,APR_CAPMI,closure_n,xland1,    &
+              outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1,  &
+              CFU1_ens,CFD1_ens,DFU1_ens,EFU1_ens,DFD1_ens,EFD1_ens,  &
+              l_flux,                                           &
               ids,ide, jds,jde, kds,kde, &
               ims,ime, jms,jme, kms,kme, &
               its,ite, jts,jte, kts,kte)
@@ -3400,6 +3542,14 @@ CONTAINS
      integer, dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
         ierr,ierr2,ierr3
+     real,    dimension (its:ite,kts:kte,1:ensdim)                     &
+        ,intent (in   )                   ::                           &
+       CFU1_ens,CFD1_ens,DFU1_ens,EFU1_ens,DFD1_ens,EFD1_ens
+     real,    dimension (its:ite,kts:kte)                     &
+        ,intent (out)                   ::                           &
+           outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1
+     logical, intent(in) :: l_flux
+
 !
 !  local variables in this routine
 !
@@ -3417,6 +3567,7 @@ CONTAINS
      real,    dimension (its:ite,jts:jte)::                           &
                pr_gr,pr_w,pr_mc,pr_st,pr_as,pr_capma,     &
                pr_capme,pr_capmi
+     integer :: iedt, kk
 
 !
       character *(*), intent (in)        ::                           &
@@ -3565,6 +3716,40 @@ CONTAINS
         enddo
         endif
       ENDDO
+      if (l_flux) then
+         if (iens .eq. 1) then  ! Only do deep convection mass fluxes
+            do k=kts,ktf
+               do i=its,itf
+                  outcfu1(i,k)=0.
+                  outcfd1(i,k)=0.
+                  outdfu1(i,k)=0.
+                  outefu1(i,k)=0.
+                  outdfd1(i,k)=0.
+                  outefd1(i,k)=0.
+                  if (ierr(i) .eq. 0) then
+                     do iedt=1,nx
+                        do kk=1,nx2*maxens3
+                           n=(iens-1)*nx*nx2*maxens3 + &
+                                (iedt-1)*nx2*maxens3 + kk
+                           outcfu1(i,k)=outcfu1(i,k)+cfu1_ens(i,k,iedt)*xf_ens(i,j,n)
+                           outcfd1(i,k)=outcfd1(i,k)+cfd1_ens(i,k,iedt)*xf_ens(i,j,n)
+                           outdfu1(i,k)=outdfu1(i,k)+dfu1_ens(i,k,iedt)*xf_ens(i,j,n)
+                           outefu1(i,k)=outefu1(i,k)+efu1_ens(i,k,iedt)*xf_ens(i,j,n)
+                           outdfd1(i,k)=outdfd1(i,k)+dfd1_ens(i,k,iedt)*xf_ens(i,j,n)
+                           outefd1(i,k)=outefd1(i,k)+efd1_ens(i,k,iedt)*xf_ens(i,j,n)
+                        end do
+                     end do
+                     outcfu1(i,k)=outcfu1(i,k)/ensdim
+                     outcfd1(i,k)=outcfd1(i,k)/ensdim
+                     outdfu1(i,k)=outdfu1(i,k)/ensdim
+                     outefu1(i,k)=outefu1(i,k)/ensdim
+                     outdfd1(i,k)=outdfd1(i,k)/ensdim
+                     outefd1(i,k)=outefd1(i,k)/ensdim
+                  end if !ierr
+               end do !i 
+            end do !k
+         end if !iens .eq. 1
+      end if !l_flux
 
    END SUBROUTINE cup_output_ens
 

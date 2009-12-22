@@ -45,7 +45,6 @@ gen_scalar_indices ( char * dirname )
     if ((fp5[i] = fopen( fname5 , "w" )) == NULL ) return(1) ;
     print_warning(fp5[i],fname) ;
   }
-
   gen_scalar_indices1 ( fp, fp5 ) ;
   close_the_file( fp ) ;
   for ( i = 0 ; i < 7 ; i++ ) {
@@ -82,12 +81,12 @@ gen_scalar_tables ( FILE * fp )
   node_t * p ;
   for ( p = FourD ; p != NULL ; p=p->next4d )
   {
-    fprintf(fp,"  INTEGER :: %s_index_table( param_num_%s, max_domains )\n",p->name,p->name )  ;
-    fprintf(fp,"  INTEGER :: %s_num_table( max_domains )\n", p->name,p->name ) ;
-    fprintf(fp,"  INTEGER :: %s_stream_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
-    fprintf(fp,"  CHARACTER*256 :: %s_dname_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
-    fprintf(fp,"  CHARACTER*256 :: %s_desc_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
-    fprintf(fp,"  CHARACTER*256 :: %s_units_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  INTEGER, TARGET :: %s_index_table( param_num_%s, max_domains )\n",p->name,p->name )  ;
+    fprintf(fp,"  INTEGER, TARGET :: %s_num_table( max_domains )\n", p->name,p->name ) ;
+    fprintf(fp,"  LOGICAL, TARGET :: %s_boundary_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256, TARGET :: %s_dname_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256, TARGET :: %s_desc_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256, TARGET :: %s_units_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
   }
   return(0) ;
 }
@@ -169,10 +168,11 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                   /* arrays */
                   sprintf(fourd_bnd,"%s_b",assoc_4d) ;
                   if ( get_entry( fourd_bnd  ,Domain.fields) != NULL ) {
-                     x->io_mask |= BOUNDARY ;
+                     x->boundary = 1 ;
                   }
                 }
-                fprintf(fp,"   %s_stream_table( idomain, P_%s ) = %d\n",assoc_4d,c, x->io_mask ) ;
+                fprintf(fp,"   %s_boundary_table( idomain, P_%s ) = %s\n",assoc_4d,c, (x->boundary==1)?".TRUE.":".FALSE." ) ;
+                /* fprintf(fp,"   %s_stream_table( idomain, P_%s ) = %d\n",assoc_4d,c, x->io_mask ) ; */
                 fprintf(fp,"   %s_dname_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->dname) ;
                 fprintf(fp,"   %s_desc_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->descrip) ;
                 fprintf(fp,"   %s_units_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->units) ;

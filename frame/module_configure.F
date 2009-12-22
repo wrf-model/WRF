@@ -166,35 +166,6 @@ CONTAINS
 #define SOURCE_REC_DEX
 #include <config_assigns.inc>
 
-#ifdef PLANET
-!***************** special conversion for timesteps *********************
-! 2004-12-07 ADT Notes
-! NB: P2SI needs to defined in multiple places.  Right now this
-! requirement is a kludge, and if I can find something more elegant
-! I will try to implement it later.
-!
-! Beware: dt as the namelist timestep is now obsolete.  The new
-! variable "timestep" (which is an *integer* number of seconds),
-! with the (optional) additional specification of a fraction (to
-! make non-integer timesteps) now acts as the true timestep.
-! In share/set_timekeeping.F the integer(s) are converted to a real
-! number and put back in dt anyway!
-! We will deal with the case of the integer variables in
-! share/set_timekeeping.F itself.  For now, since they left dt in
-! the namelist definition, I will leave this here just in case ...
-      model_config_rec%dt    = dt    * P2SI
-! All of the following variables are told to be input in *MINUTES*
-! These values are converted to units of timesteps in the various
-! init routines in phys/module_physics_init.F by dividing by the
-! formula STEP = (xxDT*60./dt).  So it seems safe to multiply them
-! by P2SI here (with the exception of adding roundoff error later).
-! See notes in phys/module_radiation_driver for the radt example.
-      model_config_rec%radt  = radt  * P2SI
-      model_config_rec%bldt  = bldt  * P2SI
-      model_config_rec%cudt  = cudt  * P2SI
-      model_config_rec%gsmdt = gsmdt * P2SI
-!************************************************************************
-#endif
 
       CLOSE ( UNIT = nml_read_unit , IOSTAT = io_status )
 
@@ -208,6 +179,10 @@ CONTAINS
       IF ( io_status .NE. 0 ) THEN
         CALL WRF_ERROR_FATAL ( 'ERROR CLOSING namelist.output' )
       ENDIF
+#endif
+
+#if (EM_CORE == 1)
+#  include "../dyn_em/namelist_remappings_em.h"
 #endif
 
       RETURN
@@ -375,6 +350,8 @@ CONTAINS
 ! If there is an error reading the "nml_name" namelist, this routine is
 ! called to check for namelist variables that have been removed by the 
 ! developers and are still in user's namelists.
+! 
+! The calls to this routine are in registry-generated code: inc/config_reads.inc
 !</DESCRIPTION>
 !
      IMPLICIT NONE

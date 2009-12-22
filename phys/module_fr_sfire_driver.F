@@ -73,7 +73,12 @@ subroutine sfire_driver_em ( grid , config_flags                   &
     USE module_driver_constants
     USE module_machine
     USE module_tiles
-    USE module_dm
+#ifdef DM_PARALLEL
+    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
+    USE module_comm_dm   , ONLY : halo_fire_lfn_sub,halo_fire_longlat_sub,halo_fire_ht_sub   &
+                                ,halo_fire_zsf_sub, halo_fire_fuel_sub,halo_fire_wind_a_sub &
+                                ,halo_fire_wind_f_sub,halo_fire_tign_sub
+#endif
 
     implicit none
 !*** arguments

@@ -324,8 +324,10 @@ char *
 declare_array_as_pointer( char * tmp , node_t * p )
 {
   strcpy( tmp , "" ) ;
-  if ( p != NULL )
+  if ( p != NULL ) {
     if ( p->ndims > 0 || p->boundary_array ) strcpy ( tmp, ",POINTER" ) ;
+    /*if ( p->ndims == 0 ) strcpy ( tmp, ",TARGET" ) ; */
+  }
   return(tmp);
 }
 
@@ -638,3 +640,75 @@ dimension_size_expression ( char * r , char * tx , int i , node_t * p , char * n
    sprintf(tx,"((%s)-(%s)+1)", e , s ) ;
 
 }
+
+void
+reset_mask ( unsigned int * mask , int e )
+{
+   int w ;
+   unsigned int m, n ;
+
+   w = e / (8*sizeof(int)-1) ;
+   n = 1 ;
+   m = ~( n << e % (8*sizeof(int)-1) ) ;
+   if ( w >= 0 && w < IO_MASK_SIZE ) {
+     mask[w] &= m ;
+   }
+}
+
+void
+set_mask ( unsigned int * mask , int e )
+{
+   int w ;
+   unsigned int m, n ;
+
+   w = e / (8*sizeof(int)-1) ;
+   n = 1 ;
+   m = ( n << e % (8*sizeof(int)-1) ) ;
+   if ( w >= 0 && w < IO_MASK_SIZE ) {
+     mask[w] |= m ;
+   }
+}
+
+int
+get_mask ( unsigned int * mask , int e )
+{
+   int w ;
+   unsigned int m, n ;
+
+   w = e / (8*sizeof(int)-1) ;   /* 8 is number of bits per byte */
+   if ( w >= 0 && w < IO_MASK_SIZE ) {
+     m = mask[w] ;
+     n =  ( 1 << e % (8*sizeof(int)-1) ) ;;
+     return ( (m & n) != 0 ) ;
+   } else {
+     return(0) ;
+   }
+}
+
+#if 0
+main()
+{
+   unsigned int m[5] ;
+   int i, ii ; 
+
+   for ( i = 0 ; i < 5*32 ; i++ ) {
+     for ( ii = 0 ; ii < 5 ; ii++ ) { m[ii] = 0xffffffff ; }
+     reset_mask( m, i ) ;
+     for ( ii = 4 ; ii >= 0 ; ii-- ) { printf(" %08x ", m[ii]) ; }
+     printf("\n") ;
+   }
+
+   for ( i = 0 ; i < 5*32 ; i++ ) {
+     for ( ii = 0 ; ii < 5 ; ii++ ) { m[ii] = 0x0 ; }
+     set_mask( m, i ) ;
+     for ( ii = 4 ; ii >= 0 ; ii-- ) { printf(" %08x ", m[ii]) ; }
+     printf("\n") ;
+   }
+
+   for ( ii = 0 ; ii < 5 ; ii++ ) { m[ii] = 0x0 ; }
+   set_mask( m, 82 ) ;
+   for ( i = 0 ; i < 5*32 ; i++ ) {
+     printf("%d %0d\n",i,get_mask(m,i) ) ;
+   }
+}
+#endif

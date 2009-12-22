@@ -352,8 +352,8 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags, latc_loc, lonc_loc,vmax, r
 
       !  Input data.
 
-      CALL wrf_debug ( 100 , 'med_sidata_input: calling input_aux_model_input1' )
-      CALL input_aux_model_input1 ( idsi ,   grid , config_flags , ierr )
+      CALL wrf_debug ( 100 , 'med_sidata_input: calling input_auxinput1' )
+      CALL input_auxinput1 ( idsi ,   grid , config_flags , ierr )
       WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for input ',NINT(t4-t3) ,' s.'
       CALL wrf_debug( 0, wrf_err_message )
 
@@ -588,11 +588,11 @@ real::t1,t2,truelat1,truelat2
                                     current_date_char , config_flags%io_form_auxinput1 )
 
    print *,"outfile name from construct filename ",tcoutname
-   CALL open_w_dataset ( id1, TRIM(tcoutname) , grid , config_flags ,output_aux_model_input1,"DATASET=AUXINPUT1",ierr )
+   CALL open_w_dataset ( id1, TRIM(tcoutname) , grid , config_flags ,output_auxinput1,"DATASET=AUXINPUT1",ierr )
    IF ( ierr .NE. 0 ) THEN
         CALL wrf_error_fatal( 'tc_em: error opening tc bogus file for writing' )
    END IF
-   CALL output_aux_model_input1( id1, grid , config_flags , ierr )
+   CALL output_auxinput1( id1, grid , config_flags , ierr )
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXINPUT1" )
 
 

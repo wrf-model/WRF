@@ -2322,8 +2322,9 @@
           ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
 !
       ELSE
-        STORE_RAND(I,J) = 0.0
-     ENDIF
+!jm        STORE_RAND(I,J) = 0.0
+        STORE_RAND = 0.0
+      ENDIF
 
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)

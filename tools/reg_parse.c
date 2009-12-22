@@ -364,6 +364,17 @@ reg_parse( FILE * infile )
     }
     if      ( !strcmp( tokens[ TABLE ] , "rconfig" ) )
     {
+
+      char *pp, value[256] ;
+      for ( pp = tokens[RCNF_SYM_PRE] ; (*pp == ' ' || *pp == '	') && *pp ; pp++ ) ;
+      sprintf(value, "RCONFIG_%s" ,pp) ;
+      if ( sym_get(value) == NULL ) {
+        sym_add(value) ;
+      } else {
+        parseline[0] = '\0' ;  /* reset parseline */
+        continue ;
+      }
+
       /* turn a rconfig entry into a typedef to define a field in the top-level built-in type domain */
       for ( i = 0 ; i < MAXTOKENS ; i++ ) { toktmp[i] = tokens[i] ; tokens[i] = "-" ; }
       tokens[TABLE] = "typedef" ;
@@ -444,28 +455,89 @@ reg_parse( FILE * infile )
 	if ( tolower(tokens[FIELD_STAG][i]) == 'z' ) field_struct->stag_z = 1 ;
       }
 
-      field_struct->history  = 0 ; field_struct->input     = 0 ; 
-      field_struct->auxhist1 = 0 ; field_struct->auxinput1 = 0 ; 
-      field_struct->auxhist2 = 0 ; field_struct->auxinput2 = 0 ; 
-      field_struct->auxhist3 = 0 ; field_struct->auxinput3 = 0 ; 
-      field_struct->auxhist4 = 0 ; field_struct->auxinput4 = 0 ; 
-      field_struct->auxhist5 = 0 ; field_struct->auxinput5 = 0 ; 
       field_struct->restart  = 0 ; field_struct->boundary  = 0 ;
-      field_struct->io_mask  = 0 ;
+      for ( i = 0 ; i < MAX_STREAMS ; i++ ) { 
+        reset_mask( field_struct->io_mask, i ) ;
+      }
+
       {
 	char prev = '\0' ;
 	char x ;
+        char tmp[NAMELEN], tmp1[NAMELEN], tmp2[NAMELEN] ;
 	int len_of_tok ;
         char fcn_name[2048], aux_fields[2048] ;
 
+        strcpy(tmp,tokens[FIELD_IO]) ;
+        if (( p = index(tmp,'=') ) != NULL ) { *p = '\0' ; }
+        for ( i = 0 ; i < strlen(tmp) ; i++ )
+        {
+	  x = tolower(tmp[i]) ;
+          if ( x == 'h' || x == 'i' ) {
+            char c, *p, *pp ;
+            int unitid ;
+            int stream ;
+            unsigned int * mask ;
+            stream = ( x == 'h' )?HISTORY_STREAM:INPUT_STREAM ;
+            mask = field_struct->io_mask ;
+            set_mask( mask , stream ) ;
+            strcpy(tmp1, &(tmp[++i])) ;
+            for ( p = tmp1  ; *p ; i++, p++ ) { 
+              c = tolower(*p) ; if ( c >= 'a' && c <= 'z' ) { *p = '\0' ; break ; }
+              reset_mask( mask , stream ) ;
+            }
+            for ( p = tmp1  ; *p ; p++ ) { 
+              x = *p ;
+              if ( x >= '0' && x <= '9' ) { 
+                set_mask( mask , stream + x - '0' ) ; 
+              }
+	      else if ( x == '{' ) {
+                strcpy(tmp2,p+1) ;
+                if (( pp = index(tmp2,'}') ) != NULL ) {
+                  *pp = '\0' ;
+                  unitid = atoi(tmp+i+1) ;  /* JM 20091102 */
+                  if ( unitid >= 0  || unitid < MAX_STREAMS && stream + unitid < MAX_HISTORY ) {
+                    set_mask( mask , stream + unitid   ) ;
+                  }
+                } else {
+                  fprintf(stderr,"registry syntax error: unmatched {} in the io string for definition of %s\n",tokens[FIELD_SYM]) ;
+                  exit(9) ;
+                }
+              }
+            }
+          }
+        }
+
         for ( i = 0 ; i < (len_of_tok = strlen(tokens[FIELD_IO])) ; i++ )
         {
+          int unitid = -1 ;
 	  x = tolower(tokens[FIELD_IO][i]) ;
-	  if ( x >= 'a' && x <= 'z' && ! ( x == 'g' || x == 'o' ) ) {
-	    if ( x == 'h' ) {field_struct->history  = 10 ; field_struct->io_mask |= HISTORY ;}
-	    if ( x == 'i' ) {field_struct->input    = 10 ; field_struct->io_mask |= INPUT   ;}
-	    if ( x == 'r' ) {field_struct->restart  = 10 ; field_struct->io_mask |= RESTART ;}
-	    if ( x == 'b' ) {field_struct->boundary = 10 ; field_struct->io_mask |= BOUNDARY ;}
+	  if ( x == '{' ) {
+            int ii,iii ;
+            char * pp ;
+            char tmp[NAMELEN] ;
+            strcpy(tmp,tokens[FIELD_IO]) ;   
+
+            if (( pp = index(tmp,'}') ) != NULL ) {
+              *pp = '\0' ;
+              iii = pp - (tmp + i + 1) ;
+              unitid = atoi(tmp+i+1) ;  /* JM 20091102 */
+              if ( unitid >= 0  || unitid < MAX_STREAMS  && unitid < MAX_HISTORY ) {
+                if        ( prev == 'i' ) {
+                  set_mask( field_struct->io_mask , unitid + MAX_HISTORY  ) ;
+                } else if ( prev == 'h' ) {
+                  set_mask( field_struct->io_mask , unitid   ) ;
+                }
+              }
+              i += iii ;
+              continue ;
+            } else {
+              fprintf(stderr,"registry syntax error: unmatched {} in the io string for definition of %s\n",tokens[FIELD_SYM]) ;
+              exit(9) ;
+            }
+
+	  } else if ( x >= 'a' && x <= 'z' ) {
+	    if ( x == 'r' ) { field_struct->restart = 1 ; set_mask( field_struct->io_mask , RESTART_STREAM   ) ; }
+	    if ( x == 'b' ) { field_struct->boundary  = 1 ; set_mask( field_struct->io_mask , BOUNDARY_STREAM   ) ; }
 	    if ( x == 'f' || x == 'd' || x == 'u' || x == 's' ) { 
                                strcpy(aux_fields,"") ;
                                strcpy(fcn_name,"") ; 
@@ -509,93 +581,29 @@ reg_parse( FILE * infile )
 				 if ( x == 's' ) strcpy(fcn_name,"smoother") ;
 			       }
 	                       if      ( x == 'f' )  { 
-                                 field_struct->io_mask |= FORCE_DOWN ; 
+                                 field_struct->nest_mask |= FORCE_DOWN ; 
                                  strcpy(field_struct->force_fcn_name, fcn_name ) ;
                                  strcpy(field_struct->force_aux_fields, aux_fields ) ;
                                }
                                else if ( x == 'd' )  { 
-                                 field_struct->io_mask |= INTERP_DOWN ; 
+                                 field_struct->nest_mask |= INTERP_DOWN ; 
                                  strcpy(field_struct->interpd_fcn_name, fcn_name ) ;
                                  strcpy(field_struct->interpd_aux_fields, aux_fields ) ;
                                }
                                else if ( x == 's' )  { 
-                                 field_struct->io_mask |= SMOOTH_UP ; 
+                                 field_struct->nest_mask |= SMOOTH_UP ; 
                                  strcpy(field_struct->smoothu_fcn_name, fcn_name ) ;
                                  strcpy(field_struct->smoothu_aux_fields, aux_fields ) ;
                                }
                                else if ( x == 'u' )  { 
-                                 field_struct->io_mask |= INTERP_UP ; 
+                                 field_struct->nest_mask |= INTERP_UP ; 
                                  strcpy(field_struct->interpu_fcn_name, fcn_name ) ;
                                  strcpy(field_struct->interpu_aux_fields, aux_fields ) ;
                                }
             }
 	    prev = x ;
-	  } else if ( x >= '0' && x <= '9' || x == 'g' || x == 'o' )
-	  {
-	    if ( prev  == 'i' )
-	    {
-              field_struct->io_mask &= ! INPUT ;                /* turn off setting from 'i' */
-	      field_struct->input = field_struct->input % 10 ;  /* turn off setting from 'i' */
-	      if ( x == '0' ) field_struct->input = 1 ;
-	      if ( x == '1' ) field_struct->auxinput1 = 1 ;
-	      if ( x == '2' ) field_struct->auxinput2 = 1 ;
-	      if ( x == '3' ) field_struct->auxinput3 = 1 ;
-	      if ( x == '4' ) field_struct->auxinput4 = 1 ;
-	      if ( x == '5' ) field_struct->auxinput5 = 1 ;
-	      if ( x == '6' ) field_struct->auxinput6 = 1 ;
-	      if ( x == '7' ) field_struct->auxinput7 = 1 ;
-	      if ( x == '8' ) field_struct->auxinput8 = 1 ;
-	      if ( x == '9' ) field_struct->auxinput9 = 1 ;
-	      if ( x == 'g' ) field_struct->auxinput10 = 1 ;
-	      if ( x == 'o' ) field_struct->auxinput11 = 1 ;
-	    }
-	    if ( prev  == 'h' )
-	    {
-              field_struct->io_mask &= ! HISTORY ;                  /* turn off setting from 'h' */
-	      field_struct->history = field_struct->history % 10 ;  /* turn off setting from 'h' */
-	      if ( x == '0' ) field_struct->history = 1 ;
-	      if ( x == '1' ) field_struct->auxhist1 = 1 ;
-	      if ( x == '2' ) field_struct->auxhist2 = 1 ;
-	      if ( x == '3' ) field_struct->auxhist3 = 1 ;
-	      if ( x == '4' ) field_struct->auxhist4 = 1 ;
-	      if ( x == '5' ) field_struct->auxhist5 = 1 ;
-	      if ( x == '6' ) field_struct->auxhist6 = 1 ;
-	      if ( x == '7' ) field_struct->auxhist7 = 1 ;
-	      if ( x == '8' ) field_struct->auxhist8 = 1 ;
-	      if ( x == '9' ) field_struct->auxhist9 = 1 ;
-	      if ( x == 'g' ) field_struct->auxhist10 = 1 ;
-	      if ( x == 'o' ) field_struct->auxhist11 = 1 ;
-	    }
 	  }
         }
-	if ( field_struct->history   > 0 ) { field_struct->history   = 1 ; field_struct->io_mask |= HISTORY   ; }
-	if ( field_struct->auxhist1  > 0 ) { field_struct->auxhist1  = 1 ; field_struct->io_mask |= AUXHIST1  ; }
-	if ( field_struct->auxhist2  > 0 ) { field_struct->auxhist2  = 1 ; field_struct->io_mask |= AUXHIST2  ; }
-	if ( field_struct->auxhist3  > 0 ) { field_struct->auxhist3  = 1 ; field_struct->io_mask |= AUXHIST3  ; }
-	if ( field_struct->auxhist4  > 0 ) { field_struct->auxhist4  = 1 ; field_struct->io_mask |= AUXHIST4  ; }
-	if ( field_struct->auxhist5  > 0 ) { field_struct->auxhist5  = 1 ; field_struct->io_mask |= AUXHIST5  ; }
-	if ( field_struct->auxhist6  > 0 ) { field_struct->auxhist6  = 1 ; field_struct->io_mask |= AUXHIST6  ; }
-	if ( field_struct->auxhist7  > 0 ) { field_struct->auxhist7  = 1 ; field_struct->io_mask |= AUXHIST7  ; }
-	if ( field_struct->auxhist8  > 0 ) { field_struct->auxhist8  = 1 ; field_struct->io_mask |= AUXHIST8  ; }
-	if ( field_struct->auxhist9  > 0 ) { field_struct->auxhist9  = 1 ; field_struct->io_mask |= AUXHIST9  ; }
-	if ( field_struct->auxhist10  > 0 ) { field_struct->auxhist10  = 1 ; field_struct->io_mask |= AUXHIST10  ; }
-	if ( field_struct->auxhist11  > 0 ) { field_struct->auxhist11  = 1 ; field_struct->io_mask |= AUXHIST11  ; }
-
-	if ( field_struct->input     > 0 ) { field_struct->input     = 1 ; field_struct->io_mask |= INPUT     ; }
-	if ( field_struct->auxinput1 > 0 ) { field_struct->auxinput1 = 1 ; field_struct->io_mask |= AUXINPUT1 ; }
-	if ( field_struct->auxinput2 > 0 ) { field_struct->auxinput2 = 1 ; field_struct->io_mask |= AUXINPUT2 ; }
-	if ( field_struct->auxinput3 > 0 ) { field_struct->auxinput3 = 1 ; field_struct->io_mask |= AUXINPUT3 ; }
-	if ( field_struct->auxinput4 > 0 ) { field_struct->auxinput4 = 1 ; field_struct->io_mask |= AUXINPUT4 ; }
-	if ( field_struct->auxinput5 > 0 ) { field_struct->auxinput5 = 1 ; field_struct->io_mask |= AUXINPUT5 ; }
-	if ( field_struct->auxinput6 > 0 ) { field_struct->auxinput6 = 1 ; field_struct->io_mask |= AUXINPUT6 ; }
-	if ( field_struct->auxinput7 > 0 ) { field_struct->auxinput7 = 1 ; field_struct->io_mask |= AUXINPUT7 ; }
-	if ( field_struct->auxinput8 > 0 ) { field_struct->auxinput8 = 1 ; field_struct->io_mask |= AUXINPUT8 ; }
-	if ( field_struct->auxinput9 > 0 ) { field_struct->auxinput9 = 1 ; field_struct->io_mask |= AUXINPUT9 ; }
-	if ( field_struct->auxinput10 > 0 ) { field_struct->auxinput10 = 1 ; field_struct->io_mask |= AUXINPUT10 ; }
-	if ( field_struct->auxinput11 > 0 ) { field_struct->auxinput11 = 1 ; field_struct->io_mask |= AUXINPUT11 ; }
-
-	if ( field_struct->restart   > 0 ) { field_struct->restart   = 1 ; field_struct->io_mask |= RESTART   ; }
-	if ( field_struct->boundary  > 0 ) { field_struct->boundary  = 1 ; field_struct->io_mask |= BOUNDARY  ; }
       }
 
       field_struct->dname[0] = '\0' ;
@@ -681,8 +689,13 @@ reg_parse( FILE * infile )
 	strcpy( member->descrip , field_struct->descrip ) ;
 	strcpy( member->units , field_struct->units ) ;
 	member->next = NULL ;
-	member->io_mask = field_struct->io_mask ;
+        for ( i = 0 ; i < IO_MASK_SIZE ; i++ ) {
+	  member->io_mask[i] = field_struct->io_mask[i] ;
+        }
+	member->nest_mask = field_struct->nest_mask ;
 	member->ndims = field_struct->ndims ;
+	member->restart = field_struct->restart ;
+	member->boundary = field_struct->boundary ;
 	strcpy( member->interpd_fcn_name, field_struct->interpd_fcn_name) ;
 	strcpy( member->interpd_aux_fields,  field_struct->interpd_aux_fields)  ;
 	strcpy( member->interpu_fcn_name, field_struct->interpu_fcn_name) ;
@@ -835,7 +848,9 @@ get_dim_entry( char *s )
   node_t * p ;
   for ( p = Dim ; p != NULL ; p = p->next )
   {
-    if ( !strcmp(p->dim_name, s ) ) return( p ) ;
+    if ( !strcmp(p->dim_name, s ) ) {
+      return( p ) ;
+    }
   }
   return(NULL) ;
 }

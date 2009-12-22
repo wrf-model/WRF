@@ -41,11 +41,6 @@
 
 include registry.dimspec
 
-#### 7. Edit the Registry file and create the state data assocaited with this
-####    solver.  Single entry:
-state real x ikj dyn_exp 2 - ih "TOYVAR"
-####
-
 #############
 rconfig   integer ntracers                namelist,physics     1              4       -
 
@@ -600,15 +595,15 @@ state   real   soilcbot            isj   misc          1     Z     -      ""    
 #-------------------------------------------------------------------------------------------------------------------------------
 
 # Time series variables
-state    real   ts_hour         ?!       misc      -         -      r        "TS_HOUR"        "Model integration time, hours"
-state    real   ts_u            ?!       misc      -         -      r        "TS_U"           "Surface wind U-component, earth-relative"
-state    real   ts_v            ?!       misc      -         -      r        "TS_V"           "Surface wind V-component, earth-relative"
-state    real   ts_q            ?!       misc      -         -      r        "TS_Q"           "Surface mixing ratio"
-state    real   ts_t            ?!       misc      -         -      r        "TS_T"           "Surface temperature"
-state    real   ts_psfc         ?!       misc      -         -      r        "TS_PSFC"        "Surface pressure"
-state    real   ts_tsk          ?!       misc      -         -      r        "TS_TSK"         "Skin temperature"
-state    real   ts_tslb         ?!       misc      -         -      r        "TS_TSLB"        "Soil temperature"
-state    real   ts_clw          ?!       misc      -         -      r        "TS_CLW"         "Column integrated cloud water"
+state    real   ts_hour         ?!       misc      -         -      -        "TS_HOUR"        "Model integration time, hours"
+state    real   ts_u            ?!       misc      -         -      -        "TS_U"           "Surface wind U-component, earth-relative"
+state    real   ts_v            ?!       misc      -         -      -        "TS_V"           "Surface wind V-component, earth-relative"
+state    real   ts_q            ?!       misc      -         -      -        "TS_Q"           "Surface mixing ratio"
+state    real   ts_t            ?!       misc      -         -      -        "TS_T"           "Surface temperature"
+state    real   ts_psfc         ?!       misc      -         -      -        "TS_PSFC"        "Surface pressure"
+state    real   ts_tsk          ?!       misc      -         -      -        "TS_TSK"         "Skin temperature"
+state    real   ts_tslb         ?!       misc      -         -      -        "TS_TSLB"        "Soil temperature"
+state    real   ts_clw          ?!       misc      -         -      -        "TS_CLW"         "Column integrated cloud water"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 

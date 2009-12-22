@@ -8,6 +8,7 @@
 #include "protos.h"
 #include "registry.h"
 #include "data.h"
+#include "sym.h"
 
 int
 gen_alloc ( char * dirname )
@@ -23,31 +24,144 @@ gen_alloc1 ( char * dirname )
   FILE * fp ;
   char  fname[NAMELEN] ;
   char * fn = "allocs.inc" ;
+  int startpiece ;
+#define FRAC 8
 
   if ( dirname == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_alloc2( fp , "grid%", &Domain, 1 ) ;
+  startpiece = 0 ;
+  gen_alloc2( fp , "grid%", &Domain, &startpiece , FRAC, 1 ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_alloc2 ( FILE * fp , char * structname , node_t * node, int sw ) /* 1 = allocate, 2 = just count */
+nolistthese( char * ) ;
+
+int
+gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int frac, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
   int tag ;
   char post[NAMELEN], post_for_count[NAMELEN] ;
-  char fname[NAMELEN] ;
+  char fname[NAMELEN], dname[NAMELEN], dname_tmp[NAMELEN] ;
   char x[NAMELEN] ;
+  char dimname[3][NAMELEN] ;
   char tchar ;
+  unsigned int *io_mask ;
+  int nd ;
+  int restart ;
+  int numguys, iguy ;
+  int fraction ;
 
   if ( node == NULL ) return(1) ;
 
-  for ( p = node->fields ; p != NULL ; p = p->next )
+  for ( p = node->fields, numguys = 0 ; p != NULL ; p = p->next ) { if (p->ndims > 1) numguys++ ; }  /* howmany deez guys? */
+
+  for ( fraction = 0 ; fraction < numguys ; fraction += (numguys+1)/frac, (*j)++ ) { /* break the files in pieces
+                                                                                          so we don't kill the
+                                                                                          compilers as much */
+  fprintf(fp,"#if (NNN == %d)\n",*j) ;
+
+  for ( p = node->fields, iguy = -1 ; p != NULL ; p = p->next )
   {
+    if ( p->ndims > 1 ) iguy++ ;
+
+#if 1
+    if ( (iguy >= fraction) && (iguy < fraction + (numguys+1)/frac) ) {
+
+    nd = p->ndims + ((p->node_kind & FOURD)?1:0) ;
+
+    /* construct data name -- maybe same as vname if dname not spec'd  */
+    if ( strlen(p->dname) == 0 || !strcmp(p->dname,"-") || p->dname[0] == ' ' ) 
+                                                          { strcpy(dname_tmp,p->name) ; }
+    else                                                  { strcpy(dname_tmp,p->dname) ; }
+    make_upper_case(dname_tmp) ;
+
+/*
+   Generate error if input or output for two state variables would be generated with the same dataname
+
+   example wrong:
+     misc    tg      "SOILTB"   -> gen_tg,SOILTB
+     misc    soiltb  "SOILTB"   -> gen_soiltb,SOILTB
+
+*/
+if ( tag == 1 )
+{
+     char dname_symbol[128] ;
+     sym_nodeptr sym_node ;
+
+     sprintf(dname_symbol, "DNAME_%s", dname_tmp ) ;
+     /* check and see if it is in the symbol table already */
+
+     if ((sym_node = sym_get( dname_symbol )) == NULL ) {
+        /* add it */
+      sym_node = sym_add ( dname_symbol ) ;
+      strcpy( sym_node->internal_name , p->name ) ;
+    } else {
+      fprintf(stderr,"REGISTRY ERROR: Data-name collision on %s for %s -- %s\n",
+      dname_tmp,p->name,p->dname ) ;
+    }
+}
+/* end July 2004 */
+
+
+    if ( p->ndims == 0 ) {
+      if ( p->type->name[0] != 'c' && p->type->type_type != DERIVED && p->node_kind != RCONFIG && !nolistthese(p->name) ) {
+        for ( tag = 1 ; tag <= p->ntl ; tag++ )
+        {
+          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+          if ( p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,tag) ;
+          else              strcpy(dname,dname_tmp) ;
+
+          fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ;
+          fprintf(fp,"   ALLOCATE( grid%%tail_statevars%%next )\n") ;
+          fprintf(fp,"   grid%%tail_statevars => grid%%tail_statevars%%next\n") ;
+          fprintf(fp,"   NULLIFY( grid%%tail_statevars%%next )\n" ) ;
+          fprintf(fp,"   grid%%tail_statevars%%VarName = '%s'\n",fname ) ;
+          fprintf(fp,"   grid%%tail_statevars%%DataName = '%s'\n",dname ) ;
+          fprintf(fp,"   grid%%tail_statevars%%Type    = '%c'\n",p->type->name[0]) ;
+          fprintf(fp,"   grid%%tail_statevars%%Ntl     = %d\n",p->ntl<2?0:tag+p->ntl*100 ) ; /* if single tl, then 0, else tl itself */
+          fprintf(fp,"   grid%%tail_statevars%%Restart  = %s\n", (p->restart)?".TRUE.":".FALSE." ) ;
+          fprintf(fp,"   grid%%tail_statevars%%Ndim    = %d\n",p->ndims ) ;
+          fprintf(fp,"   grid%%tail_statevars%%scalar_array  = .FALSE. \n" ) ;
+          fprintf(fp,"   grid%%tail_statevars%%%cfield_%1dd => %s%s\n",p->type->name[0],p->ndims, structname, fname ) ;
+          io_mask = p->io_mask ;
+          if ( io_mask != NULL ) {
+            int i ;
+            for ( i = 0 ; i < IO_MASK_SIZE ; i++ ) {
+              fprintf(fp,"  grid%%tail_statevars%%streams(%d) = %d ! %08x \n", i+1, io_mask[i], io_mask[i] ) ;
+            }
+          }
+          fprintf(fp,"  ENDIF\n") ;
+        }
+      }
+      if ( sw == 1 ) {
+        for ( tag = 1 ; tag <= p->ntl ; tag++ )
+        {
+          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+          if ( p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,tag) ;
+          else              strcpy(dname,dname_tmp) ;
+          if( !strcmp( p->type->name , "real" ) ||
+              !strcmp( p->type->name , "doubleprecision" )  ) { /* if a real */
+            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=initial_data_value\n",
+                        structname ,
+                        fname ) ;
+          } else if ( !strcmp( p->type->name , "integer" ) ) {
+            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=0\n",
+                        structname ,
+                        fname ) ;
+          } else if ( !strcmp( p->type->name , "logical" ) ) {
+            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=.FALSE.\n",
+                        structname ,
+                        fname ) ;
+          }
+        }
+      }
+    }
     if ( (p->ndims > 0 || p->boundary_array) && (  /* any array or a boundary array and...   */
           (p->node_kind & FIELD) ||                /* scalar arrays                          */
           (p->node_kind & FOURD) )                 /* scalar arrays                          */
@@ -77,8 +191,9 @@ gen_alloc2 ( FILE * fp , char * structname , node_t * node, int sw ) /* 1 = allo
 
        if ( ! p->boundary_array ) { fprintf(fp,"IF(in_use_for_config(id,'%s')",fname) ; } 
        else                       { fprintf(fp,"IF(.TRUE.") ; }
+
        if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
-            ! ( p->io_mask & INTERP_DOWN || p->io_mask & FORCE_DOWN || p->io_mask & INTERP_UP || p->io_mask & SMOOTH_UP ) )
+            ! ( p->nest_mask & INTERP_DOWN || p->nest_mask & FORCE_DOWN || p->nest_mask & INTERP_UP || p->nest_mask & SMOOTH_UP ) )
        {
 	 fprintf(fp,".AND.(.NOT.inter_domain)",tag) ;
        }
@@ -128,13 +243,167 @@ gen_alloc2 ( FILE * fp , char * structname , node_t * node, int sw ) /* 1 = allo
            fprintf(fp, "  IF ( setinitval .EQ. 1 .OR. setinitval .EQ. 3 ) %s%s=", structname , fname);
 
            if( p->type != NULL  &&   (!strcmp( p->type->name , "real" ) 
-                                 || !strcmp( p->type->name , "doubleprecision") ) )   {
+                                   || !strcmp( p->type->name , "doubleprecision") ) )   {
            /* if a real */
              fprintf(fp, "initial_data_value\n");
            } else if ( !strcmp( p->type->name , "logical" ) ) {
              fprintf(fp, ".FALSE.\n");
            } else if ( !strcmp( p->type->name , "integer" ) ) {
              fprintf(fp, "0\n");
+           }
+
+           if ( p->type->name[0] == 'l' && p->ndims >= 3 ) {
+             fprintf(stderr,"ADVISORY: %1dd logical array %s is allowed but cannot be input or output\n",
+                             p->ndims, p->name ) ;
+
+           }
+
+           if ( p->type->type_type != DERIVED && p->node_kind != RCONFIG && !nolistthese(p->name) &&
+                ! ( p->type->name[0] == 'l' && p->ndims >= 3 ) )  /* dont list logical arrays larger than 2d  */
+           { 
+             char memord[NAMELEN], stagstr[NAMELEN] ;
+
+
+             strcpy(stagstr, "") ;
+             if ( p->node_kind & FOURD ) {
+               set_mem_order( p->members, memord , NAMELEN) ;
+               if ( p->members->stag_x ) strcat(stagstr, "X") ;
+               if ( p->members->stag_y ) strcat(stagstr, "Y") ;
+               if ( p->members->stag_z ) strcat(stagstr, "Z") ;
+             } else {
+               set_mem_order( p, memord , NAMELEN) ;
+               if ( p->stag_x ) strcat(stagstr, "X") ;
+               if ( p->stag_y ) strcat(stagstr, "Y") ;
+               if ( p->stag_z ) strcat(stagstr, "Z") ;
+             }
+             memord[3] = '\0' ; /* snip off any extra dimensions */
+
+             if ( p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,tag) ;
+             else                                    strcpy(dname,dname_tmp) ;
+
+             fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ; /*{*/
+             fprintf(fp,"  ALLOCATE( grid%%tail_statevars%%next )\n" ) ;
+             fprintf(fp,"  grid%%tail_statevars => grid%%tail_statevars%%next\n") ;
+             fprintf(fp,"  NULLIFY( grid%%tail_statevars%%next )\n") ;
+             fprintf(fp,"  grid%%tail_statevars%%VarName = '%s'\n", fname) ;
+             fprintf(fp,"  grid%%tail_statevars%%DataName = '%s'\n", dname) ;
+             fprintf(fp,"  grid%%tail_statevars%%Type    = '%c'\n", p->type->name[0]) ;
+             fprintf(fp,"  grid%%tail_statevars%%MemoryOrder  = '%s'\n", memord) ;
+             fprintf(fp,"  grid%%tail_statevars%%Stagger      = '%s'\n", stagstr) ;
+                           /* in next line for Ntl, if single tl, then zero, otherwise tl itself */
+             fprintf(fp,"  grid%%tail_statevars%%Ntl     = %d\n", p->ntl<2?0:tag+p->ntl*100 ) ;
+             fprintf(fp,"  grid%%tail_statevars%%Ndim    = %d\n", nd ) ;
+             restart = 0 ;
+             if ( p->node_kind & FOURD ) {
+               node_t *q ;
+               for ( q = p->members ; q->next != NULL ; q = q->next ) {  /* use the last one */
+                 if ( q != NULL ) {
+                   restart = q->restart ;
+                 }
+               }
+             } else {
+               restart = p->restart ;
+             }
+             fprintf(fp,"  grid%%tail_statevars%%Restart  = %s\n", (restart)?".TRUE.":".FALSE." ) ;
+             fprintf(fp,"  grid%%tail_statevars%%scalar_array = %s\n", (p->node_kind & FOURD)?".TRUE.":".FALSE.") ;
+             fprintf(fp,"  grid%%tail_statevars%%%cfield_%1dd => %s%s\n", p->type->name[0],nd, structname, fname ) ;
+             if ( p->node_kind & FOURD ) {
+               fprintf(fp,"  grid%%tail_statevars%%num_table => %s_num_table\n",   p->name ) ;
+               fprintf(fp,"  grid%%tail_statevars%%index_table => %s_index_table\n",   p->name ) ;
+               fprintf(fp,"  grid%%tail_statevars%%boundary_table => %s_boundary_table\n",   p->name ) ;
+               fprintf(fp,"  grid%%tail_statevars%%dname_table => %s_dname_table\n",   p->name ) ;
+               fprintf(fp,"  grid%%tail_statevars%%desc_table => %s_desc_table\n",   p->name ) ;
+               fprintf(fp,"  grid%%tail_statevars%%units_table => %s_units_table\n",   p->name ) ;
+             } 
+
+             if ( p->node_kind & FOURD ) {
+               node_t *q ;
+               io_mask = NULL ;
+               for ( q = p->members ; q->next != NULL ; q = q->next ) {  /* use the last one */
+                 if ( q != NULL ) {
+                   io_mask = q->io_mask ;
+                 }
+               }
+             } else {
+               io_mask = p->io_mask ;
+             }
+
+             if ( io_mask != NULL ) {
+               int i ;
+               for ( i = 0 ; i < IO_MASK_SIZE ; i++ ) {
+                 fprintf(fp,"  grid%%tail_statevars%%streams(%d) = %d ! %08x \n",  i+1, io_mask[i], io_mask[i] ) ;
+               }
+             }
+
+             {
+               char ddim[3][2][NAMELEN] ;
+               char mdim[3][2][NAMELEN] ;
+               char pdim[3][2][NAMELEN] ;
+
+               set_dim_strs( p, ddim, mdim, pdim , "", 0 ) ;           /* dimensions with staggering */
+
+               fprintf(fp,"  grid%%tail_statevars%%sd1 = %s\n", ddim[0][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%ed1 = %s\n", ddim[0][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sd2 = %s\n", ddim[1][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%ed2 = %s\n", ddim[1][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sd3 = %s\n", ddim[2][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%ed3 = %s\n", ddim[2][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sm1 = %s\n", mdim[0][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%em1 = %s\n", mdim[0][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sm2 = %s\n", mdim[1][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%em2 = %s\n", mdim[1][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sm3 = %s\n", mdim[2][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%em3 = %s\n", mdim[2][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sp1 = %s\n", pdim[0][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%ep1 = %s\n", pdim[0][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sp2 = %s\n", pdim[1][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%ep2 = %s\n", pdim[1][1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%sp3 = %s\n", pdim[2][0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%ep3 = %s\n", pdim[2][1] ) ;
+
+             }
+             {
+               int i ;
+               node_t * dimnode ;
+               for ( i = 0 ; i < 3 ; i++ ) strcpy(dimname[i],"") ;
+               for ( i = 0 ; i < 3 ; i++ )
+               {
+                 if (( dimnode = p->dims[i]) != NULL )
+                 {
+                   switch ( dimnode->coord_axis )
+                   {
+                   case (COORD_X) :
+                     if ( ( ! sw_3dvar_iry_kludge && p->stag_x ) || ( sw_3dvar_iry_kludge && p->stag_y ) )
+                      { sprintf( dimname[i] ,"%s_stag", dimnode->dim_data_name) ; }
+                     else if ( p->dims[i]->subgrid )
+                      { sprintf( dimname[i] ,"%s_subgrid", dimnode->dim_data_name) ; }
+                     else
+                      { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                     break ;
+                   case (COORD_Y) :
+                     if ( ( ! sw_3dvar_iry_kludge && p->stag_y ) || ( sw_3dvar_iry_kludge && p->stag_x ) )
+                      { sprintf( dimname[i] ,"%s_stag", dimnode->dim_data_name) ; }
+                     else if ( p->dims[i]->subgrid )
+                      { sprintf( dimname[i] ,"%s_subgrid", dimnode->dim_data_name) ; }
+                     else
+                      { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                     break ;
+                   case (COORD_Z) :
+                     if ( p->stag_z )
+                      { sprintf( dimname[i] ,"%s_stag", dimnode->dim_data_name) ; }
+                     else if ( p->dims[i]->subgrid )
+                      { sprintf( dimname[i] ,"%s_subgrid", dimnode->dim_data_name) ; }
+                     else
+                      { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                     break ;
+                   }
+                 }
+               }
+               fprintf(fp,"  grid%%tail_statevars%%dimname1 = '%s'\n", dimname[0] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%dimname2 = '%s'\n", dimname[1] ) ;
+               fprintf(fp,"  grid%%tail_statevars%%dimname3 = '%s'\n", dimname[2] ) ;
+             }
+             fprintf(fp,"  ENDIF\n") ; /*}*/
            }
 	 }
        }
@@ -162,41 +431,25 @@ gen_alloc2 ( FILE * fp , char * structname , node_t * node, int sw ) /* 1 = allo
     }
     if ( p->type != NULL )
     {
-      if ( p->type->type_type == SIMPLE && p->ndims == 0 &&
-               (!strcmp(p->type->name,"integer") || 
-                        !strcmp(p->type->name,"logical") || 
-                        !strcmp(p->type->name,"real") ||
-                        !strcmp(p->type->name,"doubleprecision"))
-              )
-      {
-          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-          if ( sw == 1 ) {
-            if( !strcmp( p->type->name , "real" ) || 
-                !strcmp( p->type->name , "doubleprecision" )  ) { /* if a real */
-              fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=initial_data_value\n",
-                          structname ,
-                          fname ) ;
-	    } else if ( !strcmp( p->type->name , "integer" ) ) {
-              fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=0\n",
-                          structname ,
-                          fname ) ;
-            } else if ( !strcmp( p->type->name , "logical" ) ) {
-              fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=.FALSE.\n",
-                          structname ,
-                          fname ) ;
-            }
-          }
-      }
-      else if ( p->type->type_type == DERIVED )
+      if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_alloc2(fp,x, p->type, sw) ;
+        (*j)++ ;
+        fprintf(fp,"#endif\n") ;
+        gen_alloc2(fp,x, p->type, j, 1, sw) ;
+        (*j)-- ;
+        fprintf(fp,"#if (NNN == %d)\n",*j) ;
       }
     }
+  } /* if this fraction */
+#endif
   }
+   fprintf(fp,"#endif\n") ;
+  } /* fraction loop */
   return(0) ;
 }
 
+#if 0
 int
 gen_alloc_count ( char * dirname )
 {
@@ -220,6 +473,7 @@ gen_alloc_count1 ( char * dirname )
   close_the_file( fp ) ;
   return(0) ;
 }
+#endif
 
 int
 gen_ddt_write ( char * dirname )
@@ -329,7 +583,7 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
                   fprintf(fp,
 "IF ( ASSOCIATED( %s%s%s ) ) THEN \n", structname, fname, bdy_indicator(bdy) ) ;
                   fprintf(fp,
-"  DEALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to dallocate %s%s%s. ')\n endif\n",
+"  DEALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to deallocate %s%s%s. ')\n endif\n",
           structname, fname, bdy_indicator(bdy), structname, fname, bdy_indicator(bdy) ) ;
                   fprintf(fp,
 "  NULLIFY(%s%s%s)\n",structname, fname, bdy_indicator(bdy) ) ;
@@ -341,7 +595,7 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
         fprintf(fp,
 "IF ( ASSOCIATED( %s%s ) ) THEN \n", structname, fname ) ;
         fprintf(fp, 
-"  DEALLOCATE(%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to dallocate %s%s. ')\n endif\n",
+"  DEALLOCATE(%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to deallocate %s%s. ')\n endif\n",
 structname, fname, structname, fname ) ;
         fprintf(fp,
 "  NULLIFY(%s%s)\n",structname, fname ) ;
@@ -369,4 +623,14 @@ structname, fname, structname, fname ) ;
     }
   }
   return(0) ;
+}
+
+int
+nolistthese( char * name )
+{
+   return(
+             !strncmp(name,"auxhist",7)
+          || !strncmp(name,"auxinput",8)
+          || !strncmp(name,"oid",3)
+         ) ;
 }

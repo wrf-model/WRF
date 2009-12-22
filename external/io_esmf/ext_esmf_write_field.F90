@@ -41,7 +41,6 @@ SUBROUTINE ext_esmf_write_field ( DataHandle , DateStr , VarName , Field , Field
   TYPE(ESMF_ArraySpec) :: arrayspec
 !  TYPE(ESMF_DataKind) :: esmf_kind
   INTEGER :: esmf_kind
-  TYPE(ESMF_RelLoc) :: horzRelloc
   REAL(ESMF_KIND_R4), POINTER :: data_esmf_real_ptr(:,:)
   REAL(ESMF_KIND_R4), POINTER :: tmp_esmf_r4_ptr(:,:)
   INTEGER(ESMF_KIND_I4), POINTER :: data_esmf_int_ptr(:,:)
@@ -204,7 +203,7 @@ write(0,*)__FILE__,__LINE__,'ext_esmf_write_field PatchEnd  ', PatchEnd(1:esmf_r
 !                                 rc=rc )
 ! END DOESNOTWORK
 !TODO:  Compute horzrelloc from Stagger as above once ESMF supports staggering
-    horzrelloc=ESMF_CELL_CENTER
+!    horzrelloc=ESMF_CELL_CENTER
 !TODO:  Add code for other data types here...  
 !    ALLOCATE( tmp_esmf_r4_ptr(ips:ipefull,jps:jpefull) )
     ALLOCATE( tmp_esmf_r4_ptr(ips:ipe,jps:jpe) )

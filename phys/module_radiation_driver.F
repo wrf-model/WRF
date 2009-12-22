@@ -74,17 +74,17 @@ CONTAINS
 
 ! *** add new modules of schemes here
 
-   USE module_ra_sw , ONLY : swrad
-   USE module_ra_gsfcsw , ONLY : gsfcswrad
-   USE module_ra_rrtm , ONLY : rrtmlwrad
-   USE module_ra_rrtmg_lw , ONLY : rrtmg_lwrad
-   USE module_ra_rrtmg_sw , ONLY : rrtmg_swrad
-   USE module_ra_cam , ONLY : camrad
-   USE module_ra_gfdleta , ONLY : etara
+   USE module_ra_sw         , ONLY : swrad
+   USE module_ra_gsfcsw     , ONLY : gsfcswrad
+   USE module_ra_rrtm       , ONLY : rrtmlwrad
+   USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad
+   USE module_ra_rrtmg_sw   , ONLY : rrtmg_swrad
+   USE module_ra_cam        , ONLY : camrad
+   USE module_ra_gfdleta    , ONLY : etara
 #ifdef HWRF
    USE module_ra_hwrf
 #endif
-   USE module_ra_hs , ONLY : hsrad
+   USE module_ra_hs         , ONLY : hsrad
 
 
    !  This driver calls subroutines for the radiation parameterizations.
@@ -1316,8 +1316,13 @@ CONTAINS
               ,kts, kte                                                   &
               ,num_tiles                                                  )
 
-   USE module_domain
-   USE module_dm
+   USE module_domain  , ONLY : domain
+#ifdef DM_PARALLEL
+   USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks,wrf_dm_minval_integer
+# if (EM_CORE == 1)
+   USE module_comm_dm   , ONLY : halo_toposhad_sub
+# endif
+#endif
    USE module_bc
    USE module_model_constants
 

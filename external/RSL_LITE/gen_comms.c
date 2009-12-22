@@ -191,11 +191,11 @@ int print_body( FILE * fp, char * commname )
   }
 
 int
-gen_halos ( char * dirname , char * incname , node_t * halos )
+gen_halos ( char * dirname , char * incname , node_t * halos, int split )
 {
   node_t * p, * q ;
   node_t * dimd ;
-  char commname[NAMELEN] ;
+  char commname[NAMELEN], subs_fname[NAMELEN] ;
   char fname[NAMELEN], fnamecall[NAMELEN], fnamesub[NAMELEN] ;
   char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG] ;
   char commuse[NAMELEN] ;
@@ -221,9 +221,28 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
   int need_config_flags;
 #define MAX_4DARRAYS 1000
   char name_4d[MAX_4DARRAYS][NAMELEN] ;
+#define FRAC 4
+  int num_halos, fraction, ihalo, j ;
 
   if ( dirname == NULL ) return(1) ;
 
+  if ( split ) {
+    for ( p = halos, num_halos=0 ; p != NULL ; p = p-> next ) {  /* howmany deez guys? */
+      if ( incname == NULL ) {
+        strcpy( commname, p->name ) ;
+        make_upper_case(commname) ;
+      }
+      else {
+        strcpy( commname, incname ) ;
+      }
+      if ( !(   !strcmp(commname,"HALO_INTERP_DOWN") || !strcmp(commname,"HALO_FORCE_DOWN"    )
+             || !strcmp(commname,"HALO_INTERP_UP"  ) || !strcmp(commname,"HALO_INTERP_SMOOTH" ) ) ) {
+        num_halos++ ;
+      }
+    } 
+  } 
+
+  ihalo = 0 ;
   for ( p = halos ; p != NULL ; p = p->next )
   {
     need_config_flags = 0;  /* 0 = do not need, 1 = need */
@@ -246,9 +265,23 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
         continue ; 
       }
       print_warning(fpcall,fnamecall) ;
+
+      if (   !strcmp(commname,"HALO_INTERP_DOWN") || !strcmp(commname,"HALO_FORCE_DOWN") 
+          || !strcmp(commname,"HALO_INTERP_UP"  ) || !strcmp(commname,"HALO_INTERP_SMOOTH") ) {
+         sprintf(subs_fname, "REGISTRY_COMM_NESTING_DM_subs.inc" ) ;
+      } else {
+         if ( split ) {
+           j = ihalo / ((num_halos+1)/FRAC+1) ;  /* the compiler you save may be your own */
+           sprintf(subs_fname, "REGISTRY_COMM_DM_%d_subs.inc", j ) ;
+           ihalo++ ;
+         } else {
+           sprintf(subs_fname, "REGISTRY_COMM_DM_subs.inc" ) ;
+         }
+      }
+
       /* Generate definition of custom routine that encapsulates inlined comm calls */
-      if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/REGISTRY_COMM_DM_subs.inc",dirname) ; }
-      else                       { sprintf(fnamesub,"REGISTRY_COMM_DM_subs.inc") ; }
+      if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/%s",dirname,subs_fname) ; }
+      else                       { sprintf(fnamesub,"%s",subs_fname) ; }
       if ((fpsub = fopen( fnamesub , "a" )) == NULL ) 
       {
         fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fnamesub ) ;
@@ -1655,7 +1688,7 @@ if ( p->subgrid != 0 ) {  /* moving nests not implemented for subgrid variables 
     if ( strlen(Shift.comm_define) > 0 )Shift.comm_define[strlen(Shift.comm_define)-1] = '\0' ;
     }
 
-    gen_halos( dirname , NULL, &Shift ) ;
+    gen_halos( dirname , NULL, &Shift, 0 ) ;
 
     sprintf(fname,"%s/shift_halo_%s.inc",dirname,*direction) ;
     if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
@@ -2058,7 +2091,7 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
   int i, d1 ;
   node_t *p, *p1, *dim ;
   int d2, d3, xdex, ydex, zdex ;
-  int io_mask ;
+  int nest_mask ;
   char * grid ; 
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
@@ -2073,17 +2106,17 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
     if ( p1->node_kind & FOURD )
     {
       if ( p1->members->next )
-        io_mask = p1->members->next->io_mask ;
+        nest_mask = p1->members->next->nest_mask ;
       else
         continue ;
     }
     else
     {
-      io_mask = p1->io_mask ;
+      nest_mask = p1->nest_mask ;
     }
     p = p1 ;
 
-    if ( io_mask & down_path )
+    if ( nest_mask & down_path )
     {
         if ( p->node_kind & FOURD ) {
           if ( p->members->next->ntl > 1 ) sprintf(tag,"_2") ;
@@ -2262,7 +2295,7 @@ count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int do
     }
     else
     {
-      if ( p->io_mask & down_path )
+      if ( p->nest_mask & down_path )
       {
           if ( p->node_kind == FOURD )
             zdex = get_index_for_coord( p->members , COORD_Z ) ;
@@ -2370,9 +2403,14 @@ gen_comms ( char * dirname )
     fprintf(stderr,"ADVISORY: RSL_LITE version of gen_comms is linked in with registry program.\n") ;
 
   /* truncate this file if it exists */
+  if ((fpsub = fopen( "inc/REGISTRY_COMM_NESTING_DM_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
   if ((fpsub = fopen( "inc/REGISTRY_COMM_DM_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
+  if ((fpsub = fopen( "inc/REGISTRY_COMM_DM_0_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
+  if ((fpsub = fopen( "inc/REGISTRY_COMM_DM_1_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
+  if ((fpsub = fopen( "inc/REGISTRY_COMM_DM_2_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
+  if ((fpsub = fopen( "inc/REGISTRY_COMM_DM_3_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
 
-  gen_halos( "inc" , NULL, Halos ) ;
+  gen_halos( "inc" , NULL, Halos, 1 ) ;
   gen_shift( "inc" ) ;
   gen_periods( "inc", Periods ) ;
   gen_swaps( "inc", Swaps ) ;

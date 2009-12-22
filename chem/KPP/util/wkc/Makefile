@@ -20,7 +20,7 @@ registry : $(OBJ)
 	$(SCC) -o registry_kpp $(DEBUG) $(LDFLAGS) $(OBJ)
 
 .c.o :
-	$(SCC) $(CFLAGS) -c $(DEBUG) $<
+	$(SCC) -I../../../../inc $(CFLAGS) -c $(DEBUG) $<
 
 clean:
 	/bin/rm -f $(OBJ) gen_comms.c

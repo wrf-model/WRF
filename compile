@@ -67,7 +67,7 @@ foreach a ( $argv )
   endif
 end
 
-if ( $arglist == "" ) then
+if ( "$arglist" == "" ) then
   goto hlp
 else
   unsetenv A2DCASE
@@ -155,7 +155,7 @@ else
     echo "Cannot compile because both EM and NMM cores are set to 0."
     exit 2
   endif
-  if ($arglist == 'nmm_real' && $WRF_NMM_CORE == 0) then
+  if ("$arglist" == 'nmm_real' && $WRF_NMM_CORE == 0) then
     echo WRF_NMM_CORE must be set to 1 in order to compile nmm_real
     exit 2
   endif
@@ -313,7 +313,7 @@ else
   endif
 
   echo " "
-  echo -n "**** Compiling: "
+  echo -n "Compiling: "
   if ( $WRF_DA_CORE ) echo -n "WRF_DA_CORE "
   if ( $WRF_EM_CORE ) echo -n "WRF_EM_CORE "
   if ( $WRF_NMM_CORE ) echo -n "WRF_NMM_CORE "

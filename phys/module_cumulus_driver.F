@@ -49,6 +49,7 @@ CONTAINS
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
+                     ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux            &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
                      ,do_capsuppress                                   &
@@ -64,14 +65,20 @@ CONTAINS
 
 ! *** add new modules of schemes here
 
-   USE module_cu_kf
-   USE module_cu_bmj
-   USE module_dm
-   USE module_domain, ONLY: domain
-   USE module_cu_kfeta
-   USE module_cu_gd, ONLY : GRELLDRV
-   USE module_cu_g3, ONLY : G3DRV,CONV_GRELL_SPREAD3D
+   USE module_cu_kf     ,  ONLY : kfcps
+   USE module_cu_bmj    ,  ONLY : bmjdrv
+#ifdef DM_PARALLEL
+   USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks 
+# if (EM_CORE == 1)
+   USE module_comm_dm   ,  ONLY : halo_cup_g3_in_sub, halo_cup_g3_out_sub
+# endif
+#endif
+   USE module_domain    , ONLY: domain
+   USE module_cu_kfeta  , ONLY : kf_eta_cps
+   USE module_cu_gd     , ONLY : grelldrv
+   USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
+   USE module_wrf_error , ONLY : wrf_err_message
 
    !  This driver calls subroutines for the cumulus parameterizations.
    !
@@ -332,6 +339,15 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+         OPTIONAL,                                              &
+         INTENT(INOUT) ::                                       &
+                                                   CFU1,        &
+                                                   CFD1,        &
+                                                   DFU1,        &
+                                                   EFU1,        &
+                                                   DFD1,        &
+                                                   EFD1
 
 !
 ! Flags relating to the optional tendency arrays declared above
@@ -347,6 +363,7 @@ CONTAINS
                                                      ,f_qi      &
                                                      ,f_qs      &
                                                      ,f_qg
+   LOGICAL, intent(in), OPTIONAL ::                   f_flux
 
 #if ( WRF_DFI_RADAR == 1 )
 !
@@ -362,9 +379,12 @@ CONTAINS
 ! LOCAL  VAR
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
+   logical :: l_flux
 
 !-----------------------------------------------------------------
 
+   l_flux=.FALSE.
+   if (present(f_flux)) l_flux=f_flux
    if (.not. PRESENT(CURR_SECS)) then
       curr_secs_pass = -1
    else 
@@ -556,7 +576,10 @@ CONTAINS
                ,RQVBLTEN=RQVBLTEN                               &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
-                                                                )
+               ,CFU1=CFU1,CFD1=CFD1,DFU1=DFU1,EFU1=EFU1         &
+               ,DFD1=DFD1,EFD1=EFD1,f_flux=l_flux               )
+          CALL wrf_debug(200,'back from grelldrv')
+
      CASE (SASSCHEME)
                                                                                                                                            
           IF ( adapt_step_flag_pass ) THEN
@@ -696,6 +719,7 @@ CONTAINS
       if (PRESENT(PRATEC)) then
          pratec(:,:) = tmppratec(:,:)
       endif
+          CALL wrf_debug(200,'returning from cumulus_driver')
    END SUBROUTINE cumulus_driver
 
 END MODULE module_cumulus_driver

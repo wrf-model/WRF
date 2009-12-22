@@ -34,6 +34,13 @@ MAX_DOMAINS	=	21
 
 CONFIG_BUF_LEN	=	32768
 
+#### Size of bitmasks (in 4byte integers) of stream masks for WRF I/O
+
+MAX_HISTORY = 35
+
+IWORDSIZE = 4
+DWORDSIZE = 8
+LWORDSIZE = 4
 
 ##############################################################################
 #### The settings in this section are defaults that may be overridden by the 

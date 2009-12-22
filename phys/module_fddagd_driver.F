@@ -360,8 +360,8 @@ CONTAINS
 
            CALL FDDAGD(itimestep,dx,dt,xtime, &
                id, &
-               config_flags%gfdda_interval_m, &
-               config_flags%gfdda_end_h, &
+               config_flags%auxinput10_interval_m, &
+               config_flags%auxinput10_end_h, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_q, &
@@ -375,8 +375,8 @@ CONTAINS
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
      config_flags%grid_sfdda, &
-     config_flags%sgfdda_interval_m, &
-     config_flags%sgfdda_end_h, &
+     config_flags%auxinput10_interval_m, &
+     config_flags%auxinput10_end_h, &
      config_flags%guv_sfc, &
      config_flags%gt_sfc, config_flags%gq_sfc, config_flags%rinblw, &
                u3d,v3d,th_phy,t_phy,                 &
@@ -401,8 +401,8 @@ CONTAINS
         CALL wrf_debug(100,'in SPECTRAL NUDGING scheme')
            CALL SPECTRAL_NUDGING(grid,itimestep,dt,xtime, &
                id, &
-               config_flags%gfdda_interval_m, &
-               config_flags%gfdda_end_h, &
+               config_flags%auxinput10_interval_m, &
+               config_flags%auxinput10_end_h, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_ph, &

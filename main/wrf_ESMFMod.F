@@ -72,7 +72,7 @@ CONTAINS
      timevals(4) = hour
      timevals(5) = minute
      timevals(6) = second
-     CALL ESMF_AttributeSet(state, 'ComponentStartTime', SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentStartTime', timevals, itemCount=SIZE(timevals), rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStartTime) failed' )
      ENDIF
@@ -88,7 +88,7 @@ CONTAINS
      timevals(4) = hour
      timevals(5) = minute
      timevals(6) = second
-     CALL ESMF_AttributeSet(state, 'ComponentStopTime', SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentStopTime', timevals, itemCount=SIZE(timevals), rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStopTime) failed' )
      ENDIF
@@ -104,7 +104,7 @@ CONTAINS
      timevals(4) = hour
      timevals(5) = minute
      timevals(6) = second
-     CALL ESMF_AttributeSet(state, 'ComponentCouplingInterval', SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentCouplingInterval', timevals, itemCount=SIZE(timevals), rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentCouplingInterval) failed' )
      ENDIF
@@ -117,7 +117,7 @@ CONTAINS
    ! Update later to use some form of meta-data standards/conventions for 
    ! model "time" meta-data.  
    SUBROUTINE GetTimesFromState( state, startTime, stopTime, couplingInterval, rc )
-     TYPE(ESMF_State),        INTENT(IN   ) :: state
+     TYPE(ESMF_State),        INTENT(INOUT) :: state
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
      TYPE(ESMF_Time),         INTENT(INOUT) :: stopTime
      TYPE(ESMF_TimeInterval), INTENT(INOUT) :: couplingInterval
@@ -125,11 +125,14 @@ CONTAINS
      ! locals
      INTEGER :: year, month, day, hour, minute, second
      INTEGER(ESMF_KIND_I4) :: timevals(6)   ! big enough to hold the vars listed above
+     INTEGER :: thecount  ! 'one attribute ... ah ah ah. TWO attributes!  ah ah ah!!
+     CHARACTER*256 mess
      ! start time
-     CALL ESMF_AttributeGet(state, 'ComponentStartTime', SIZE(timevals), timevals, rc=rc)
+     thecount = SIZE(timevals)
+     CALL ESMF_AttributeGet(state, 'ComponentStartTime', timevals, itemCount=thecount, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStartTime) failed' )
-       !RETURN
+!JM return but don't fail; let the caller figure out what to do
+       RETURN
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -137,21 +140,18 @@ CONTAINS
      hour   = timevals(4)
      minute = timevals(5)
      second = timevals(6)
-write(0,*) ' year ',year,__LINE__
-write(0,*) ' month ',month,__LINE__
-write(0,*) ' day ',day,__LINE__
-write(0,*) ' hour ',hour,__LINE__
-write(0,*) ' minute ',minute,__LINE__
-write(0,*) ' second ',second,__LINE__
      CALL ESMF_TimeSet(startTime, yy=year, mm=month, dd=day, &
                        h=hour, m=minute, s=second, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_TimeSet(startTime) failed' )
      ENDIF
      ! stop time
-     CALL ESMF_AttributeGet(state, 'ComponentStopTime', SIZE(timevals), timevals, rc=rc)
+     thecount = SIZE(timevals)
+     CALL ESMF_AttributeGet(state, 'ComponentStopTime', timevals, itemCount=thecount, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_AttributeGet(ComponentStopTime) failed' )
+!JM return but don't fail; let the caller figure out what to do
+       !CALL wrf_error_fatal ( 'ESMF_AttributeGet(ComponentStopTime) failed' )
+       RETURN
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -159,21 +159,18 @@ write(0,*) ' second ',second,__LINE__
      hour   = timevals(4)
      minute = timevals(5)
      second = timevals(6)
-write(0,*) ' year ',year,__LINE__
-write(0,*) ' month ',month,__LINE__
-write(0,*) ' day ',day,__LINE__
-write(0,*) ' hour ',hour,__LINE__
-write(0,*) ' minute ',minute,__LINE__
-write(0,*) ' second ',second,__LINE__
      CALL ESMF_TimeSet(stopTime, yy=year, mm=month, dd=day, &
                        h=hour, m=minute, s=second, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_TimeSet(stopTime) failed' )
      ENDIF
      ! coupling time step
-     CALL ESMF_AttributeGet(state, 'ComponentCouplingInterval', SIZE(timevals), timevals, rc=rc)
+     thecount = SIZE(timevals)
+     CALL ESMF_AttributeGet(state, 'ComponentCouplingInterval', timevals, itemCount=thecount, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_AttributeGet(ComponentCouplingInterval) failed' )
+!JM return but don't fail; let the caller figure out what to do
+       !CALL wrf_error_fatal ( 'ESMF_AttributeGet(ComponentCouplingInterval) failed' )
+       RETURN
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -181,12 +178,6 @@ write(0,*) ' second ',second,__LINE__
      hour   = timevals(4)
      minute = timevals(5)
      second = timevals(6)
-write(0,*) ' year ',year,__LINE__
-write(0,*) ' month ',month,__LINE__
-write(0,*) ' day ',day,__LINE__
-write(0,*) ' hour ',hour,__LINE__
-write(0,*) ' minute ',minute,__LINE__
-write(0,*) ' second ',second,__LINE__
      CALL ESMF_TimeIntervalSet(couplingInterval, yy=year, mm=month, d=day, &
                                h=hour, m=minute, s=second, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
@@ -202,7 +193,7 @@ write(0,*) ' second ',second,__LINE__
    ! is made to reconcile them.  
    SUBROUTINE GetTimesFromStates( state, startTime, stopTime, couplingInterval )
    USE ESMF_Mod
-     TYPE(ESMF_State),        INTENT(IN   ) :: state
+     TYPE(ESMF_State),        INTENT(INOUT) :: state
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
      TYPE(ESMF_Time),         INTENT(INOUT) :: stopTime
      TYPE(ESMF_TimeInterval), INTENT(INOUT) :: couplingInterval
@@ -215,6 +206,7 @@ write(0,*) ' second ',second,__LINE__
      TYPE(ESMF_Time),         ALLOCATABLE :: startTimes(:)
      TYPE(ESMF_Time),         ALLOCATABLE :: stopTimes(:)
      TYPE(ESMF_TimeInterval), ALLOCATABLE :: couplingIntervals(:)
+     CHARACTER (len=132) :: mess
 
 ! Unfortunately, implementing this is unnecessarily difficult due 
 ! to lack of Iterators for ESMF_State.  
@@ -267,8 +259,22 @@ write(0,*) ' second ',second,__LINE__
            ENDIF
          ENDIF
        ENDDO
-       CALL ReconcileTimes( startTimes, stopTimes, couplingIntervals, &
-                            startTime,  stopTime,  couplingInterval )
+       IF ( istate .EQ. 1 ) THEN
+        ! this presupposes that 1 of the child states exist and has
+        ! valid times in it.  Use that one.
+          CALL write(mess,'WARNING: Only ',TRIM(itemNames(1)), &
+                          ' is valid and has time info in it.  Using that.')
+          CALL wrf_message(mess) 
+          CALL ESMF_StateGet( state, itemName=TRIM(itemNames(1)), &
+                              nestedState=tmpState, rc=rc )
+          CALL GetTimesFromState( tmpState, startTime, stopTime, &
+                                  couplingInterval , rc )
+       ELSE IF ( istate .GT. 1 ) THEN
+          CALL ReconcileTimes( startTimes, stopTimes, couplingIntervals, &
+                               startTime,  stopTime,  couplingInterval )
+       ELSE 
+          CALL wrf_error_fatal('no valid states with times found. giving up.')
+       ENDIF
      ELSE
        ! there are no nested ESMF_States so use parent state only
        CALL GetTimesFromState( state, startTime, stopTime, &
@@ -296,8 +302,6 @@ write(0,*) ' second ',second,__LINE__
      TYPE(ESMF_TimeInterval), INTENT(INOUT) :: couplingInterval
      ! locals
      INTEGER :: numTimes, numTimesTmp, i
-character*256 buttwhump
-integer rc
 
      ! how many sets of time info?
      numTimes = SIZE(startTimes)
@@ -316,28 +320,22 @@ integer rc
      ! reconcile
 !TODO:  For now this is very simple.  Fancy it up later.  
      DO i = 1, numTimes
-call esmf_timeget(starttimes(i),timestring=buttwhump,rc=rc) 
-write(*,*)__LINE__,'startimes',i,trim(buttwhump)
-write(0,*)__LINE__,'startimes',i,trim(buttwhump)
-call esmf_timeget(stoptimes(i),timestring=buttwhump,rc=rc) 
-write(*,*)__LINE__,'stoptimes',i,trim(buttwhump)
-write(0,*)__LINE__,'stopimes',i,trim(buttwhump)
-call esmf_timeintervalget(couplingintervals(i),timestring=buttwhump,rc=rc) 
-write(*,*)__LINE__,'coupling intervals',i,trim(buttwhump)
-write(0,*)__LINE__,'coupling intervals',i,trim(buttwhump)
        IF ( i == 1 ) THEN
          startTime = startTimes(i)
          stopTime = stopTimes(i)
          couplingInterval = couplingIntervals(i)
        ELSE
          IF ( startTimes(i) /= startTime ) THEN
-           CALL wrf_error_fatal ( 'ReconcileTimes:  inconsistent startTimes' )
+           CALL wrf_message ( 'ReconcileTimes:  inconsistent startTimes. Using first.' )
+           startTimes(i) = startTime
          ENDIF
          IF ( stopTimes(i) /= stopTime ) THEN
-           CALL wrf_error_fatal ( 'ReconcileTimes:  inconsistent stopTimes' )
+           CALL wrf_message ( 'ReconcileTimes:  inconsistent stopTimes. Using first.' )
+           stopTimes(i) = stopTime
          ENDIF
          IF ( couplingIntervals(i) /= couplingInterval ) THEN
-           CALL wrf_error_fatal ( 'ReconcileTimes:  inconsistent couplingIntervals' )
+           CALL wrf_message ( 'ReconcileTimes:  inconsistent couplingIntervals. Using first.' )
+           couplingIntervals(i) = couplingInterval
          ENDIF
        ENDIF
 
@@ -365,19 +363,20 @@ write(0,*)__LINE__,'coupling intervals',i,trim(buttwhump)
      ! big enough to hold the integer values listed above
      INTEGER(ESMF_KIND_I4) :: intvals(19)
      ! big enough to hold the logical values listed above
-     TYPE(ESMF_Logical) :: logvals(4)
+!     TYPE(ESMF_Logical) :: logvals(4)
+     logical :: logvals(4)
 
      ! first the logicals
      ! Usually, when writing an API for a target language, it is considered 
      ! good practice to use native types of the target language in the 
      ! interfaces.  
-     logvals = ESMF_FALSE
+     logvals = .FALSE.
      DO i = 1, SIZE(bdy_mask)
        IF (bdy_mask(i)) THEN
-         logvals(i) = ESMF_TRUE
+         logvals(i) = .TRUE.
        ENDIF
      ENDDO
-     CALL ESMF_AttributeSet(state, 'DecompositionLogicals', SIZE(logvals), logvals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'DecompositionLogicals', logvals, itemCount=SIZE(logvals), rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionLogicals) failed' )
      ENDIF
@@ -401,7 +400,7 @@ write(0,*)__LINE__,'coupling intervals',i,trim(buttwhump)
      intvals(17) = kps
      intvals(18) = kpe
      intvals(19) = domdesc
-     CALL ESMF_AttributeSet(state, 'DecompositionIntegers', SIZE(intvals), intvals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'DecompositionIntegers', intvals, itemCount=SIZE(intvals), rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionIntegers) failed' )
      ENDIF
@@ -416,7 +415,7 @@ write(0,*)__LINE__,'coupling intervals',i,trim(buttwhump)
                                   ims, ime, jms, jme, kms, kme, &
                                   ips, ipe, jps, jpe, kps, kpe, &
                                   domdesc, bdy_mask )
-     TYPE(ESMF_State), INTENT(IN   ) :: state
+     TYPE(ESMF_State), INTENT(INOUT) :: state
      INTEGER,          INTENT(  OUT) :: ids, ide, jds, jde, kds, kde
      INTEGER,          INTENT(  OUT) :: ims, ime, jms, jme, kms, kme
      INTEGER,          INTENT(  OUT) :: ips, ipe, jps, jpe, kps, kpe
@@ -427,10 +426,12 @@ write(0,*)__LINE__,'coupling intervals',i,trim(buttwhump)
      ! big enough to hold the integer values listed above
      INTEGER(ESMF_KIND_I4) :: intvals(19)
      ! big enough to hold the logical values listed above
-     TYPE(ESMF_Logical) :: logvals(4)
+     logical :: logvals(4)
+     integer :: thecount ! ah ah ah
 
      ! first the logicals
-     CALL ESMF_AttributeGet(state, 'DecompositionLogicals', SIZE(logvals), logvals, rc=rc)
+     thecount = SIZE(logvals)
+     CALL ESMF_AttributeGet(state, 'DecompositionLogicals', logvals, itemCount=thecount, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeGet(DecompositionLogicals) failed' )
      ENDIF
@@ -439,12 +440,13 @@ write(0,*)__LINE__,'coupling intervals',i,trim(buttwhump)
      ! interfaces.  
      bdy_mask = .FALSE.
      DO i = 1, SIZE(logvals)
-       IF (logvals(i) == ESMF_TRUE) THEN
+       IF (logvals(i) ) THEN
          bdy_mask(i) = .TRUE.
        ENDIF
      ENDDO
      ! now the integers
-     CALL ESMF_AttributeGet(state, 'DecompositionIntegers', SIZE(intvals), intvals, rc=rc)
+     thecount = SIZE(intvals)
+     CALL ESMF_AttributeGet(state, 'DecompositionIntegers', intvals, itemCount=thecount, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeGet(DecompositionIntegers) failed' )
      ENDIF
@@ -484,12 +486,8 @@ MODULE module_wrf_component_top
 
    USE ESMF_Mod
    USE module_wrf_top, ONLY : wrf_init, wrf_run, wrf_finalize
-   USE module_domain, ONLY : head_grid, auxhist4_alarm, auxhist5_alarm, auxhist3_alarm, auxhist1_alarm, &
-       auxhist2_alarm, auxhist6_alarm, auxhist10_alarm, auxhist11_alarm, auxhist9_alarm, &
-       auxhist7_alarm, auxhist8_alarm, auxinput11_alarm, auxinput3_alarm, auxinput4_alarm, &
-       auxinput2_alarm, io_esmf, auxinput1_alarm, auxinput5_alarm, auxinput9_alarm, &
-       auxinput10_alarm, auxinput8_alarm, auxinput6_alarm, auxinput7_alarm, &
-       get_ijk_from_grid
+   USE module_domain, ONLY : head_grid, get_ijk_from_grid
+   USE module_streams
 
    USE module_esmf_extensions
    USE module_metadatautils, ONLY: AttachTimesToState, AttachDecompToState
@@ -518,6 +516,10 @@ CONTAINS
      TYPE(ESMF_State),    TARGET, INTENT(INOUT) :: importState
      TYPE(ESMF_State),    TARGET, INTENT(INOUT) :: exportState
      TYPE(ESMF_Clock),    TARGET, INTENT(INOUT) :: clock
+#ifdef DM_PARALLEL
+     TYPE(ESMF_VM) :: vm
+     INTEGER :: mpicomtmp
+#endif
      INTEGER,                     INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     WRF component init routine, phase 1.  Passes relevant coupling 
@@ -567,6 +569,18 @@ CONTAINS
      CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
                            exportState=p_exportState, clock=p_clock )
 
+#ifdef DM_PARALLEL
+     CALL ESMF_VMGetCurrent(vm, rc=rc)
+     IF ( rc /= ESMF_SUCCESS ) THEN
+       CALL wrf_error_fatal ( 'wrf_component_init1:  ESMF_VMGetCurrent failed' )
+     ENDIF
+     CALL ESMF_VMGet(vm, mpiCommunicator=mpicomtmp, rc=rc)
+     IF ( rc /= ESMF_SUCCESS ) THEN
+       CALL wrf_error_fatal ( 'wrf_component_init1:  ESMF_VMGet failed' )
+     ENDIF
+     CALL wrf_set_dm_communicator( mpicomtmp )
+#endif
+
      ! Call WRF "init" routine, which, for a DM_PARALLEL run, will recognize 
      ! that ESMF has already called MPI_INIT and respond appropriately.  
      CALL wrf_init( no_init1=.TRUE. )
@@ -596,6 +610,11 @@ CONTAINS
                              ips, ipe, jps, jpe, kps, kpe, &
                              domdesc, bdy_mask )
      CALL AttachDecompToState( exportState,                  &
+                               ids, ide, jds, jde, kds, kde, &
+                               ims, ime, jms, jme, kms, kme, &
+                               ips, ipe, jps, jpe, kps, kpe, &
+                               domdesc, bdy_mask )
+     CALL AttachDecompToState( importState,                  &
                                ids, ide, jds, jde, kds, kde, &
                                ims, ime, jms, jme, kms, kme, &
                                ips, ipe, jps, jpe, kps, kpe, &
@@ -890,6 +909,9 @@ CONTAINS
 !TODO:  Add support for coupling that does not begin immediately later...  
 !TODO:  Get rid of duplication once I/O refactoring is finished (and 
 !TODO:  auxio streams can be addressed via index).  
+
+!TODO:  NOTE THAT THIS ONLY USES THE FIRST 12 STREAMS... EXPAND LATER, AS ABOVE
+
      IF ( .NOT. foundcoupling ) THEN
        CALL nl_get_io_form_auxinput1( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
@@ -978,28 +1000,28 @@ CONTAINS
          foundcoupling = .TRUE.
        ENDIF
      ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_sgfdda( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT9_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT9_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_gfdda( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT10_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT10_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
+!     IF ( .NOT. foundcoupling ) THEN
+!       CALL nl_get_io_form_auxinput9( 1, io_form )
+!       IF ( use_package( io_form ) == IO_ESMF ) THEN
+!         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT9_ALARM ), &
+!                             RingInterval=couplingInterval, rc=rc )
+!         IF ( rc /= ESMF_SUCCESS ) THEN
+!           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT9_ALARM) failed' )
+!         ENDIF
+!         foundcoupling = .TRUE.
+!       ENDIF
+!     ENDIF
+!     IF ( .NOT. foundcoupling ) THEN
+!       CALL nl_get_io_form_gfdda( 1, io_form )
+!       IF ( use_package( io_form ) == IO_ESMF ) THEN
+!         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT10_ALARM ), &
+!                             RingInterval=couplingInterval, rc=rc )
+!         IF ( rc /= ESMF_SUCCESS ) THEN
+!           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT10_ALARM) failed' )
+!         ENDIF
+!         foundcoupling = .TRUE.
+!       ENDIF
+!     ENDIF
      IF ( .NOT. foundcoupling ) THEN
        CALL nl_get_io_form_auxinput11( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
@@ -1101,17 +1123,17 @@ CONTAINS
          foundcoupling = .TRUE.
        ENDIF
      ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_sgfdda( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST9_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST9_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
+!     IF ( .NOT. foundcoupling ) THEN
+!       CALL nl_get_io_form_sgfdda( 1, io_form )
+!       IF ( use_package( io_form ) == IO_ESMF ) THEN
+!         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST9_ALARM ), &
+!                             RingInterval=couplingInterval, rc=rc )
+!         IF ( rc /= ESMF_SUCCESS ) THEN
+!           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST9_ALARM) failed' )
+!         ENDIF
+!         foundcoupling = .TRUE.
+!       ENDIF
+!     ENDIF
      IF ( .NOT. foundcoupling ) THEN
        CALL nl_get_io_form_auxhist10( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
@@ -1323,22 +1345,22 @@ CONTAINS
                         input_aux_model_input8, ierr )
        IF ( ierr /= 0 ) RETURN
      ENDIF
-     CALL nl_get_io_form_sgfdda( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 9
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
-                        config_flags%sgfdda_inname, grid%auxinput9_oid, &
-                        input_aux_model_input9, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_gfdda( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 10
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT10_ALARM,   &
-                        config_flags%gfdda_inname, grid%auxinput10_oid, &
-                        input_aux_model_input10, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
+!     CALL nl_get_io_form_sgfdda( 1, io_form )
+!     IF ( use_package( io_form ) == IO_ESMF ) THEN
+!       stream = 9
+!       CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
+!                        config_flags%sgfdda_inname, grid%auxinput9_oid, &
+!                        input_aux_model_input9, ierr )
+!       IF ( ierr /= 0 ) RETURN
+!     ENDIF
+!     CALL nl_get_io_form_gfdda( 1, io_form )
+!     IF ( use_package( io_form ) == IO_ESMF ) THEN
+!       stream = 10
+!       CALL open_aux_u( grid, config_flags, stream, AUXINPUT10_ALARM,   &
+!                        config_flags%gfdda_inname, grid%auxinput10_oid, &
+!                        input_aux_model_input10, ierr )
+!       IF ( ierr /= 0 ) RETURN
+!     ENDIF
      CALL nl_get_io_form_auxinput11( 1, io_form )
      IF ( use_package( io_form ) == IO_ESMF ) THEN
        stream = 11
@@ -1424,7 +1446,6 @@ CONTAINS
                          output_aux_hist9, fname, n2, ierr )
        IF ( ierr /= 0 ) RETURN
      ENDIF
-#endif
      CALL nl_get_io_form_auxhist10( 1, io_form )
      IF ( use_package( io_form ) == IO_ESMF ) THEN
        stream = 10
@@ -1441,6 +1462,7 @@ CONTAINS
                          output_aux_hist11, fname, n2, ierr )
        IF ( ierr /= 0 ) RETURN
      ENDIF
+#endif
    END SUBROUTINE wrf_state_populate
 
 END MODULE module_wrf_component_top

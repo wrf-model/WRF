@@ -16,8 +16,10 @@ MODULES =                 		\
         module_init_utilities.o         \
 	module_damping_em.o		\
 	module_polarfft.o		\
+        module_force_scm.o              \
         module_first_rk_step_part1.o    \
         module_first_rk_step_part2.o    \
+        module_avgflux_em.o             \
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings
@@ -116,6 +118,8 @@ module_initialize_b_wave.o : \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		module_init_utilities.o
+
+module_force_scm.o: module_init_utilities.o
 
 module_initialize_grav2d_x.o: \
 		../frame/module_domain.o \
@@ -251,6 +255,7 @@ start_em.o: module_bc_em.o \
 		../frame/module_state_description.o \
 		../frame/module_timing.o \
 		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
 		../share/module_io_domain.o \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
@@ -272,6 +277,7 @@ solve_em.o:     module_small_step_em.o \
 		../frame/module_machine.o \
 		../frame/module_tiles.o \
 		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
 		../share/module_llxy.o	\
 		../share/module_model_constants.o \
 		../share/module_bc.o \
@@ -280,13 +286,18 @@ solve_em.o:     module_small_step_em.o \
 		../phys/module_physics_addtendc.o
 
 module_first_rk_step_part1.o : \
+                module_force_scm.o \
+		module_big_step_utilities_em.o \
+                module_em.o \
 		../phys/module_radiation_driver.o \
 		../phys/module_surface_driver.o \
 		../phys/module_cumulus_driver.o \
 		../phys/module_pbl_driver.o \
+		../frame/module_comm_dm.o \
 		../phys/module_fddagd_driver.o
 
 module_first_rk_step_part2.o : \
+                module_em.o \
 		module_diffusion_em.o  \
                 module_bc_em.o         \
 		../frame/module_domain.o \
@@ -295,6 +306,7 @@ module_first_rk_step_part2.o : \
 		../frame/module_configure.o \
 		../frame/module_dm.o \
 		../share/module_bc.o \
+		../frame/module_comm_dm.o \
 		../phys/module_fddaobs_driver.o
 
 adapt_timestep_em.o: \

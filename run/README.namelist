@@ -705,6 +705,12 @@ The following are for observation nudging:
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also
                                                   best to use even numbers)
+ do_avgflx_em (max_dom)               = 0,       ; whether to output time-averaged mass-coupled advective velocities
+                                                  0 = no (default)
+                                                  1 = yes
+ do_avgflx_cugd (max_dom)             = 0,       ; whether to output time-averaged convective mass-fluxes from Grell-Devenyi ensemble scheme
+                                                  0 = no (default)
+                                                  1 = yes (only takes effect if do_avgflx_em=1 and cu_physics= 3
  do_coriolis (max_dom)               = .true.,	; whether to do Coriolis calculations (idealized) (inactive)
  do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized) (inactive)
  do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized) (inactive)

@@ -533,6 +533,7 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   for ( Rbufsize = 0, P = 0, Rdisplacements[0] = 0 ; P < ntasks ; P++ )
   {
     Rdisplacements[P+1] = Rsizes[P] + Rdisplacements[P] ;
+
     Rbufsize += Rsizes[P] ;
   }
 

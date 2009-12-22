@@ -1,7 +1,14 @@
+!WRF:DRIVER_LAYER:DOMAIN_OBJECT
 MODULE module_domain_type
 
    USE module_driver_constants
    USE module_utility
+   USE module_streams
+
+   IMPLICIT NONE
+
+! needed to provide static definition of IO_MASK_SIZE
+#include "../inc/streams.h"
 
    CHARACTER (LEN=80) program_name
 
@@ -15,24 +22,85 @@ MODULE module_domain_type
       TYPE(domain), POINTER :: ptr
    END TYPE domain_ptr
 
-   INTEGER, PARAMETER :: HISTORY_ALARM=1, AUXHIST1_ALARM=2, AUXHIST2_ALARM=3,     &
-                         AUXHIST3_ALARM=4, AUXHIST4_ALARM=5, AUXHIST5_ALARM=6,    &
-                         AUXHIST6_ALARM=7, AUXHIST7_ALARM=8, AUXHIST8_ALARM=9,    &
-                         AUXHIST9_ALARM=10, AUXHIST10_ALARM=11, AUXHIST11_ALARM=12,    &
-                         AUXINPUT1_ALARM=13, AUXINPUT2_ALARM=14, AUXINPUT3_ALARM=15, &
-                         AUXINPUT4_ALARM=16, AUXINPUT5_ALARM=17,                  &
-                         AUXINPUT6_ALARM=18, AUXINPUT7_ALARM=19, AUXINPUT8_ALARM=20, &
-                         AUXINPUT9_ALARM=21, AUXINPUT10_ALARM=22, AUXINPUT11_ALARM=23, &
-                         RESTART_ALARM=24, BOUNDARY_ALARM=25, INPUTOUT_ALARM=26,  &  ! for outputing input (e.g. for 3dvar)
-                         ALARM_SUBTIME=27,                                        &
-                         COMPUTE_VORTEX_CENTER_ALARM=28,                          &
-                         MAX_WRF_ALARMS=28  ! WARNING:  MAX_WRF_ALARMS must be 
-                                            ! large enough to include all of 
-                                            ! the alarms declared above.  
+   TYPE fieldlist
+      CHARACTER*80    :: VarName
+      CHARACTER*1     :: Type
+      CHARACTER*80    :: DataName
+      CHARACTER*80    :: Description
+      CHARACTER*80    :: Units
+      CHARACTER*10    :: MemoryOrder
+      CHARACTER*10    :: Stagger
+      CHARACTER*80    :: dimname1
+      CHARACTER*80    :: dimname2
+      CHARACTER*80    :: dimname3
+      LOGICAL         :: scalar_array
+      LOGICAL         :: boundary_array
+      LOGICAL         :: restart
+   ! definition of IO_MASK_SIZE comes from build and must be the same as
+   ! in both definitions of GET_MASK (frame/pack_utils.c and tools/misc.c)
+      INTEGER, DIMENSION(IO_MASK_SIZE) :: streams
+      INTEGER :: sd1,ed1,sd2,ed2,sd3,ed3
+      INTEGER :: sm1,em1,sm2,em2,sm3,em3
+      INTEGER :: sp1,ep1,sp2,ep2,sp3,ep3
+      CHARACTER*80    :: MemberOf   ! only for 4+D tracer arrays
+      INTEGER :: Ndim
+      INTEGER :: Ntl                ! 0 single; 1, 2, ... if multi
+
+      INTEGER, POINTER :: num_table(:)
+      INTEGER, POINTER :: index_table(:,:)
+      LOGICAL, POINTER :: boundary_table(:,:)
+      CHARACTER*256, POINTER :: dname_table(:,:)
+      CHARACTER*256, POINTER :: desc_table(:,:)
+      CHARACTER*256, POINTER :: units_table(:,:)
+
+      TYPE ( fieldlist ) , POINTER :: next
+
+      REAL, POINTER                                       :: rfield_0d
+      REAL, POINTER, DIMENSION(:)                         :: rfield_1d
+      REAL, POINTER, DIMENSION(:,:)                       :: rfield_2d
+      REAL, POINTER, DIMENSION(:,:,:)                     :: rfield_3d
+      REAL, POINTER, DIMENSION(:,:,:,:)                   :: rfield_4d
+      REAL, POINTER, DIMENSION(:,:,:,:,:)                 :: rfield_5d
+      REAL, POINTER, DIMENSION(:,:,:,:,:,:)               :: rfield_6d
+      REAL, POINTER, DIMENSION(:,:,:,:,:,:,:)             :: rfield_7d
+
+      DOUBLE PRECISION, POINTER                           :: dfield_0d
+      DOUBLE PRECISION, POINTER, DIMENSION(:)             :: dfield_1d
+      DOUBLE PRECISION, POINTER, DIMENSION(:,:)           :: dfield_2d
+      DOUBLE PRECISION, POINTER, DIMENSION(:,:,:)         :: dfield_3d
+      DOUBLE PRECISION, POINTER, DIMENSION(:,:,:,:)       :: dfield_4d
+      DOUBLE PRECISION, POINTER, DIMENSION(:,:,:,:,:)     :: dfield_5d
+      DOUBLE PRECISION, POINTER, DIMENSION(:,:,:,:,:,:)   :: dfield_6d
+      DOUBLE PRECISION, POINTER, DIMENSION(:,:,:,:,:,:,:) :: dfield_7d
+
+      INTEGER, POINTER                                    :: ifield_0d
+      INTEGER, POINTER, DIMENSION(:)                      :: ifield_1d
+      INTEGER, POINTER, DIMENSION(:,:)                    :: ifield_2d
+      INTEGER, POINTER, DIMENSION(:,:,:)                  :: ifield_3d
+      INTEGER, POINTER, DIMENSION(:,:,:,:)                :: ifield_4d
+      INTEGER, POINTER, DIMENSION(:,:,:,:,:)              :: ifield_5d
+      INTEGER, POINTER, DIMENSION(:,:,:,:,:,:)            :: ifield_6d
+      INTEGER, POINTER, DIMENSION(:,:,:,:,:,:,:)          :: ifield_7d
+
+      LOGICAL, POINTER                                    :: lfield_0d
+      LOGICAL, POINTER, DIMENSION(:)                      :: lfield_1d
+      LOGICAL, POINTER, DIMENSION(:,:)                    :: lfield_2d
+! save some space; you can still have these but will not be part of list
+! so cannot do i/o, etc on 3d or greater logical arrays
+!      LOGICAL, POINTER, DIMENSION(:,:,:)                  :: lfield_3d
+!      LOGICAL, POINTER, DIMENSION(:,:,:,:)                :: lfield_4d
+!      LOGICAL, POINTER, DIMENSION(:,:,:,:,:)              :: lfield_5d
+!      LOGICAL, POINTER, DIMENSION(:,:,:,:,:,:)            :: lfield_6d
+!      LOGICAL, POINTER, DIMENSION(:,:,:,:,:,:,:)          :: lfield_7d
+
+   END TYPE fieldlist
 
 #include <state_subtypes.inc>
 
    TYPE domain
+
+      TYPE ( fieldlist ), POINTER :: head_statevars
+      TYPE ( fieldlist ), POINTER :: tail_statevars
 
 ! SEE THE INCLUDE FILE FOR DEFINITIONS OF STATE FIELDS WITHIN THE DOMAIN DATA STRUCTURE
 #include <state_struct.inc>
@@ -63,8 +131,8 @@ MODULE module_domain_type
       INTEGER      , DIMENSION( max_parents )             :: child_of_parent
       INTEGER      , DIMENSION( max_nests )               :: active
 
-      INTEGER      , DIMENSION(0:5)                       :: nframes          ! frames per outfile for history 
-                                                                              ! streams (0 is main history)                  
+      INTEGER      , DIMENSION(MAX_HISTORY)               :: nframes          ! frames per outfile for history 
+                                                                              ! 1 is main history
 
       TYPE(domain) , POINTER                              :: next
       TYPE(domain) , POINTER                              :: same_level

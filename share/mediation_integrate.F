@@ -38,6 +38,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    TYPE(domain)                               :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
+   INTEGER                                    :: ialarm
    INTEGER                                    :: rc
 #ifdef HWRF
 !zhang's doing
@@ -55,7 +56,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #else
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
 #endif
-     CALL med_hist_out ( grid , 0, config_flags )
+     CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
    ENDIF
 
@@ -64,172 +65,49 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( INPUTOUT_ALARM ), rc=rc )
    ENDIF
 
-! - AUX HISTORY OUTPUT 
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 1, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST1_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST2_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 2, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST2_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST3_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 3,  config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST3_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST4_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 4, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST4_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST5_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 5, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST5_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST6_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 6, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST6_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST7_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 7, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST7_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST8_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 8, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST8_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST9_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 9, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST9_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST10_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 10, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST10_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST11_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 11, config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST11_ALARM ), rc=rc )
-   ENDIF
+   DO ialarm = first_auxhist, last_auxhist
+     IF ( .FALSE.) THEN
+       rc = 1  ! dummy statement
+     ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+       CALL med_hist_out ( grid , ialarm, config_flags )
+       CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+     ENDIF
+   ENDDO
 
-! - AUX INPUT INPUT
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT1_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput1_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput1_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT1_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT2_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput2_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput2_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT2_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT3_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput3_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput3_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT3_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT4_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput4_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput4_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT4_ALARM ), rc=rc )
-   ENDIF
-
-! this needs to be looked at again so we can get rid of the special
-! handling of AUXINPUT5 but for now...
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! add for wrf_chem emiss input
-! - Get chemistry data
-  IF( config_flags%chem_opt > 0 ) THEN
+   DO ialarm = first_auxinput, last_auxinput
+     IF ( .FALSE.) THEN
+       rc = 1  ! dummy statement
 #ifdef WRF_CHEM
-   IF( config_flags%emiss_inpt_opt /= 0 ) THEN
-     IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
-       call wrf_debug(15,' CALL med_read_wrf_chem_emiss ')
-       CALL med_read_wrf_chem_emiss ( grid , config_flags )
-       CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-       call wrf_debug(15,' Back from CALL med_read_wrf_chem_emiss ')
-     ENDIF
-!    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) THEN
-!      call wrf_debug(00,' CALL med_read_wrf_chem_fireemiss ')
-!      CALL med_read_wrf_chem_emissopt3 ( grid , config_flags )
-!      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )
-!      call wrf_debug(15,' Back from CALL med_read_wrf_chem_fireemiss ')
-!    ENDIF
-!    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT9_ALARM ), rc=rc ) ) THEN
-!      call wrf_debug(00,' CALL med_read_wrf_chem_gocartbg ')
-!      CALL med_read_wrf_chem_gocartbg ( grid , config_flags )
-!      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT9_ALARM ), rc=rc )
-!      call wrf_debug(15,' Back from CALL med_read_wrf_chem_gocartbg ')
-!    ENDIF
-   ELSE
-     IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
-       CALL med_auxinput5_in ( grid , config_flags )
-       CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-     ENDIF
-   ENDIF
-! end for wrf chem emiss input
+! - Get chemistry data
+     ELSE IF( ialarm .EQ. AUXINPUT5_ALARM .AND. config_flags%chem_opt > 0 ) THEN
+       IF( config_flags%emiss_inpt_opt /= 0 ) THEN
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+           call wrf_debug(15,' CALL med_read_wrf_chem_emiss ')
+           CALL med_read_wrf_chem_emiss ( grid , config_flags )
+           CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+           call wrf_debug(15,' Back from CALL med_read_wrf_chem_emiss ')
+         ENDIF
+       ELSE
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+           CALL med_auxinput_in ( grid, ialarm, config_flags )
+           CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+         ENDIF
+       ENDIF
 #endif
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ELSE
-#ifndef WRF_CHEM
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput5_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput5_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-   ENDIF
-#endif
-  ENDIF
-
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT6_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput6_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput6_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT6_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput7_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput7_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT8_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput8_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput8_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT8_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT9_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput9_in ( grid , config_flags )
-     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%sgfdda_inname) , " for domain ",grid%id
-     CALL wrf_debug ( 0 , message )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT9_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT10_ALARM ), rc=rc ) ) THEN
-     CALL med_auxinput10_in ( grid , config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT10_ALARM ), rc=rc )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT11_ALARM ), rc=rc ) ) THEN
 #if ( EM_CORE == 1 )
-     IF( config_flags%obs_nudge_opt .EQ. 1) THEN
-        CALL med_fddaobs_in ( grid , config_flags )
-     ENDIF
-#else
-     CALL med_auxinput11_in ( grid , config_flags )
+     ELSE IF( ialarm .EQ. AUXINPUT11_ALARM ) THEN
+       IF( config_flags%obs_nudge_opt .EQ. 1) THEN
+         CALL med_fddaobs_in ( grid , config_flags )
+       ENDIF
 #endif
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT11_ALARM ), rc=rc )
-   ENDIF
+     ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+       CALL med_auxinput_in ( grid, ialarm, config_flags )
+       WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
+          ialarm , ' for domain ',grid%id
+       CALL wrf_debug ( 0 , message )
+       CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+     ENDIF
+   ENDDO
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
@@ -252,7 +130,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! - Look for boundary data after writing out history and restart files
    CALL med_latbound_in ( grid , config_flags )
-
 
    RETURN
 END SUBROUTINE med_before_solve_io
@@ -1203,46 +1080,18 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 #else
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
 #endif
-     CALL med_hist_out ( grid , 0 , config_flags )
+     CALL med_hist_out ( grid , HISTORY_ALARM , config_flags )
    ENDIF
 
    IF( WRFU_AlarmIsRinging( grid%alarms( INPUTOUT_ALARM ), rc=rc ) ) THEN
      CALL med_filter_out  ( grid , config_flags )
    ENDIF
 
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 1 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST2_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 2 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST3_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 3 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST4_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 4 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST5_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 5 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST6_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 6 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST7_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 7 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST8_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 8 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST9_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 9 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST10_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 10 , config_flags )
-   ENDIF
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST11_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 11 , config_flags )
-   ENDIF
+! registry-generated file of the following 
+!   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
+!     CALL med_hist_out ( grid , AUXHIST1_ALARM , config_flags )
+!   ENDIF
+#include "med_last_solve_io.inc"
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
@@ -1540,270 +1389,46 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      CALL start_timing
    END IF
 
-   IF ( stream .LT. 0 .OR. stream .GT. 11 ) THEN
+   IF ( stream .LT. first_history .OR. stream .GT. last_auxhist ) THEN
      WRITE(message,*)'med_hist_out: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
 
    SELECT CASE( stream )
-     CASE ( 0 )
+     CASE ( HISTORY_ALARM )
        CALL open_hist_w( grid, config_flags, stream, HISTORY_ALARM, &
                          config_flags%history_outname, grid%oid,    &
                          output_history, fname, n2, ierr )
        CALL output_history ( grid%oid, grid , config_flags , ierr )
-     CASE ( 1 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST1_ALARM,       &
-                         config_flags%auxhist1_outname, grid%auxhist1_oid, &
-                         output_aux_hist1, fname, n2, ierr )
-       CALL output_aux_hist1 ( grid%auxhist1_oid, grid , config_flags , ierr )
-     CASE ( 2 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST2_ALARM,       &
-                         config_flags%auxhist2_outname, grid%auxhist2_oid, &
-                         output_aux_hist2, fname, n2, ierr )
-       CALL output_aux_hist2 ( grid%auxhist2_oid, grid , config_flags , ierr )
-     CASE ( 3 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST3_ALARM,       &
-                         config_flags%auxhist3_outname, grid%auxhist3_oid, &
-                         output_aux_hist3, fname, n2, ierr )
-       CALL output_aux_hist3 ( grid%auxhist3_oid, grid , config_flags , ierr )
-     CASE ( 4 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST4_ALARM,       &
-                         config_flags%auxhist4_outname, grid%auxhist4_oid, &
-                         output_aux_hist4, fname, n2, ierr )
-       CALL output_aux_hist4 ( grid%auxhist4_oid, grid , config_flags , ierr )
-     CASE ( 5 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST5_ALARM,       &
-                         config_flags%auxhist5_outname, grid%auxhist5_oid, &
-                         output_aux_hist5, fname, n2, ierr )
-       CALL output_aux_hist5 ( grid%auxhist5_oid, grid , config_flags , ierr )
-     CASE ( 6 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST6_ALARM,       &
-                         config_flags%auxhist6_outname, grid%auxhist6_oid, &
-                         output_aux_hist6, fname, n2, ierr )
-       CALL output_aux_hist6 ( grid%auxhist6_oid, grid , config_flags , ierr )
-     CASE ( 7 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST7_ALARM,       &
-                         config_flags%auxhist7_outname, grid%auxhist7_oid, &
-                         output_aux_hist7, fname, n2, ierr )
-       CALL output_aux_hist7 ( grid%auxhist7_oid, grid , config_flags , ierr )
-     CASE ( 8 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST8_ALARM,       &
-                         config_flags%auxhist8_outname, grid%auxhist8_oid, &
-                         output_aux_hist8, fname, n2, ierr )
-       CALL output_aux_hist8 ( grid%auxhist8_oid, grid , config_flags , ierr )
-     CASE ( 9 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST9_ALARM,       &
-                         config_flags%auxhist9_outname, grid%auxhist9_oid, &
-                         output_aux_hist9, fname, n2, ierr )
-       CALL output_aux_hist9 ( grid%auxhist9_oid, grid , config_flags , ierr )
-     CASE ( 10 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST10_ALARM,        &
-                         config_flags%auxhist10_outname, grid%auxhist10_oid, &
-                         output_aux_hist10, fname, n2, ierr )
-       CALL output_aux_hist10 ( grid%auxhist10_oid, grid , config_flags , ierr )
-     CASE ( 11 )
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST11_ALARM,        &
-                         config_flags%auxhist11_outname, grid%auxhist11_oid, &
-                         output_aux_hist11, fname, n2, ierr )
-       CALL output_aux_hist11 ( grid%auxhist11_oid, grid , config_flags , ierr )
+
+! registry-generated selections and calls top open_hist_w for aux streams
+#include "med_hist_out_opens.inc"
+
    END SELECT
 
    WRITE(message,*)'med_hist_out: opened ',TRIM(fname),' as ',TRIM(n2)
    CALL wrf_debug( 1, message )
 
-     grid%nframes(stream) = grid%nframes(stream) + 1
+   grid%nframes(stream) = grid%nframes(stream) + 1
 
-     SELECT CASE( stream )
-       CASE ( 0 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_outfile ) THEN
-           CALL close_dataset ( grid%oid , config_flags , n2 ) 
-           grid%oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 1 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist1 ) THEN
-           CALL close_dataset ( grid%auxhist1_oid , config_flags , n2 ) 
-           grid%auxhist1_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 2 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist2 ) THEN
-           CALL close_dataset ( grid%auxhist2_oid , config_flags , n2 ) 
-           grid%auxhist2_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 3 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist3 ) THEN
-           CALL close_dataset ( grid%auxhist3_oid , config_flags , n2 ) 
-           grid%auxhist3_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 4 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist4 ) THEN
-           CALL close_dataset ( grid%auxhist4_oid , config_flags , n2 ) 
-           grid%auxhist4_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 5 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist5 ) THEN
-           CALL close_dataset ( grid%auxhist5_oid , config_flags , n2 ) 
-           grid%auxhist5_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 6 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist6 ) THEN
-           CALL close_dataset ( grid%auxhist6_oid , config_flags , n2 ) 
-           grid%auxhist6_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 7 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist7 ) THEN
-           CALL close_dataset ( grid%auxhist7_oid , config_flags , n2 ) 
-           grid%auxhist7_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 8 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist8 ) THEN
-           CALL close_dataset ( grid%auxhist8_oid , config_flags , n2 ) 
-           grid%auxhist8_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 9 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist9 ) THEN
-           CALL close_dataset ( grid%auxhist9_oid , config_flags , n2 ) 
-           grid%auxhist9_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 10 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist10 ) THEN
-           CALL close_dataset ( grid%auxhist10_oid , config_flags , n2 ) 
-           grid%auxhist10_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-       CASE ( 11 )
-         IF ( grid%nframes(stream) >= config_flags%frames_per_auxhist11 ) THEN
-           CALL close_dataset ( grid%auxhist11_oid , config_flags , n2 ) 
-           grid%auxhist11_oid = 0
-           grid%nframes(stream) = 0
-         ENDIF
-     END SELECT
-     IF ( wrf_dm_on_monitor() ) THEN
-       WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
-       CALL end_timing ( TRIM(message) )
-     END IF
+   SELECT CASE( stream )
+     CASE ( HISTORY_ALARM )
+       IF ( grid%nframes(stream) >= config_flags%frames_per_outfile ) THEN
+         CALL close_dataset ( grid%oid , config_flags , n2 ) 
+         grid%oid = 0
+         grid%nframes(stream) = 0
+       ENDIF
+! registry-generated selections and calls top close_dataset for aux streams
+#include "med_hist_out_closes.inc"
+
+   END SELECT
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
+     CALL end_timing ( TRIM(message) )
+   END IF
 
    RETURN
 END SUBROUTINE med_hist_out
-
-SUBROUTINE med_auxinput1_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 1 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput1_in
-
-SUBROUTINE med_auxinput2_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 2 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput2_in
-
-SUBROUTINE med_auxinput3_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 3 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput3_in
-
-SUBROUTINE med_auxinput4_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 4 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput4_in
-
-SUBROUTINE med_auxinput5_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 5 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput5_in
-
-SUBROUTINE med_auxinput6_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 6 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput6_in
-
-SUBROUTINE med_auxinput7_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 7 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput7_in
-
-SUBROUTINE med_auxinput8_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 8 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput8_in
-
-SUBROUTINE med_auxinput9_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 9 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput9_in
-
-SUBROUTINE med_auxinput10_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 10 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput10_in
-
-SUBROUTINE med_auxinput11_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
-   IMPLICIT NONE
-   TYPE(domain)                               :: grid
-   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   CALL med_auxinput_in( grid , 11 , config_flags )
-   RETURN
-END SUBROUTINE med_auxinput11_in
 
 SUBROUTINE med_fddaobs_in ( grid , config_flags )
    USE module_domain
@@ -1833,67 +1458,19 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
    CHARACTER (LEN=256)                        :: message
    INTEGER :: ierr
 
-   IF ( stream .LT. 1 .OR. stream .GT. 11 ) THEN
+   IF ( stream .LT. first_auxinput .OR. stream .GT. last_auxinput ) THEN
      WRITE(message,*)'med_auxinput_in: invalid input stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
 
    SELECT CASE( stream )
-     CASE ( 1 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT1_ALARM,       &
-                        config_flags%auxinput1_inname, grid%auxinput1_oid, &
-                        input_aux_model_input1, ierr )
-       CALL input_aux_model_input1 ( grid%auxinput1_oid, grid , config_flags , ierr )
-     CASE ( 2 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT2_ALARM,       &
-                        config_flags%auxinput2_inname, grid%auxinput2_oid, &
-                        input_aux_model_input2, ierr )
-       CALL input_aux_model_input2 ( grid%auxinput2_oid, grid , config_flags , ierr )
-     CASE ( 3 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT3_ALARM,       &
-                        config_flags%auxinput3_inname, grid%auxinput3_oid, &
-                        input_aux_model_input3, ierr )
-       CALL input_aux_model_input3 ( grid%auxinput3_oid, grid , config_flags , ierr )
-     CASE ( 4 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT4_ALARM,       &
-                        config_flags%auxinput4_inname, grid%auxinput4_oid, &
-                        input_aux_model_input4, ierr )
-       CALL input_aux_model_input4 ( grid%auxinput4_oid, grid , config_flags , ierr )
-     CASE ( 5 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT5_ALARM,       &
-                        config_flags%auxinput5_inname, grid%auxinput5_oid, &
-                        input_aux_model_input5, ierr )
-       CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
-     CASE ( 6 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT6_ALARM,       &
-                        config_flags%auxinput6_inname, grid%auxinput6_oid, &
-                        input_aux_model_input6, ierr )
-       CALL input_aux_model_input6 ( grid%auxinput6_oid, grid , config_flags , ierr )
-     CASE ( 7 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT7_ALARM,       &
-                        config_flags%auxinput7_inname, grid%auxinput7_oid, &
-                        input_aux_model_input7, ierr )
-       CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
-     CASE ( 8 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT8_ALARM,       &
-                        config_flags%auxinput8_inname, grid%auxinput8_oid, &
-                        input_aux_model_input8, ierr )
-       CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
-     CASE ( 9 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
-                        config_flags%sgfdda_inname, grid%auxinput9_oid, &
-                        input_aux_model_input9, ierr )
-       CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
-     CASE ( 10 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT10_ALARM,   &
-                        config_flags%gfdda_inname, grid%auxinput10_oid, &
-                        input_aux_model_input10, ierr )
-       CALL input_aux_model_input10 ( grid%auxinput10_oid, grid , config_flags , ierr )
-     CASE ( 11 )
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT11_ALARM,        &
-                        config_flags%auxinput11_inname, grid%auxinput11_oid, &
-                        input_aux_model_input11, ierr )
-       CALL input_aux_model_input11 ( grid%auxinput11_oid, grid , config_flags , ierr )
+! registry-generated file of calls to open filename
+!     CASE ( AUXINPUT1_ALARM )
+!       CALL open_aux_u( grid, config_flags, stream, AUXINPUT1_ALARM,       &
+!                        config_flags%auxinput1_inname, grid%auxinput1_oid, &
+!                        input_auxinput1, ierr )
+!       CALL input_auxinput1 ( grid%auxinput1_oid, grid , config_flags , ierr )
+#include "med_auxinput_in.inc"
    END SELECT
    RETURN
 END SUBROUTINE med_auxinput_in
@@ -1934,7 +1511,7 @@ SUBROUTINE med_filter_out ( grid , config_flags )
      CALL wrf_debug( 1, message )
 
      CALL open_w_dataset ( fid, TRIM(outname), grid ,  &
-                           config_flags , output_model_input , "DATASET=INPUT", ierr )
+                           config_flags , output_input , "DATASET=INPUT", ierr )
      IF ( ierr .NE. 0 ) THEN
        CALL wrf_error_fatal( message )
      ENDIF
@@ -1943,7 +1520,7 @@ SUBROUTINE med_filter_out ( grid , config_flags )
        CALL wrf_error_fatal( message )
      ENDIF
 
-   CALL output_model_input ( fid, grid , config_flags , ierr )
+   CALL output_input ( fid, grid , config_flags , ierr )
    CALL close_dataset ( fid , config_flags , "DATASET=INPUT" )
 
    IF ( wrf_dm_on_monitor() ) THEN
@@ -2155,7 +1732,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
    TYPE(WRFU_Time)                        :: ST,CT
    LOGICAL                                :: adjust
 
-   IF ( stream .LT. 1 .OR. stream .GT. 11 ) THEN
+   IF ( stream .LT. first_stream .OR. stream .GT. last_stream ) THEN
      WRITE(message,*)'open_aux_u: invalid input stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
@@ -2227,7 +1804,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    TYPE(WRFU_Time)                        :: ST,CT
    LOGICAL                                :: adjust
 
-   IF ( stream .LT. 0 .OR. stream .GT. 11 ) THEN
+   IF ( stream .LT. first_history .OR. stream .GE. last_history ) THEN
      WRITE(message,*)'open_hist_w: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
@@ -2244,11 +1821,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
-   IF      ( stream .EQ. 10 ) THEN
-     WRITE(n2,'("DATASET=AUXHIST10")')
-   ELSE IF ( stream .EQ. 11 ) THEN
-     WRITE(n2,'("DATASET=AUXHIST11")')
-   ELSE IF ( stream .EQ. 0 ) THEN
+   IF ( stream .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
    ELSE
      WRITE(n2,'("DATASET=AUXHIST",I1)')stream
@@ -2436,12 +2009,12 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
                DO i=1,ihrdiff
                  WRITE(message,'(A,I4)')'mediation_integrate: med_read_wrf_chem_emissions: Skip emissions ',i
                  CALL wrf_message( TRIM(message) )
-                 CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+                 CALL input_auxinput5 ( grid%auxinput5_oid, grid , config_flags , ierr )
                ENDDO
             ENDIF
 
-            CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input5' )
-            CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+            CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput5' )
+            CALL input_auxinput5 ( grid%auxinput5_oid, grid , config_flags , ierr )
          ELSE
             CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_emissions: Do not read emissions' )
          ENDIF
@@ -2470,8 +2043,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 !
 ! Read the emissions data.
 !
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input5' )
-         CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput5' )
+         CALL input_auxinput5 ( grid%auxinput5_oid, grid , config_flags , ierr )
 !
 ! If reached the indicated number of frames in the emissions file, close it.
 !
@@ -2554,8 +2127,8 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input6' )
-         CALL input_aux_model_input6 ( grid%auxinput6_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput6' )
+         CALL input_auxinput6 ( grid%auxinput6_oid, grid , config_flags , ierr )
 
          CALL close_dataset ( grid%auxinput6_oid , config_flags , "DATASET=AUXINPUT6" )
 
@@ -2618,8 +2191,8 @@ SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input8' )
-         CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput8' )
+         CALL input_auxinput8 ( grid%auxinput8_oid, grid , config_flags , ierr )
 
          CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
 
@@ -2681,8 +2254,8 @@ SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (00 , 'mediation_integrate: calling input_aux_model_input7' )
-         CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
+         CALL wrf_debug (00 , 'mediation_integrate: calling input_auxinput7' )
+         CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
 
          CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
 
@@ -2823,8 +2396,8 @@ SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
 
             WRITE(message,'(A,A)')'mediation_integrate: med_read_wrf_chem_fireemiss: Read emissions for time ',TRIM(current_date_char)
             CALL wrf_message( TRIM(message) )
-            CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input7' )
-            CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
+            CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput7' )
+            CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
          ELSE
             CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_fireemiss: Do not read emissions' )
          ENDIF
@@ -2854,8 +2427,8 @@ SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
 !
 ! Read the emissions data.
 !
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input7' )
-         CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput7' )
+         CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
 !
 ! If reached the indicated number of frames in the emissions file, close it.
 !
@@ -2935,8 +2508,8 @@ SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input5' )
-         CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput5' )
+         CALL input_auxinput5 ( grid%auxinput5_oid, grid , config_flags , ierr )
 
          CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
 
@@ -3002,8 +2575,8 @@ SUBROUTINE med_read_wrf_chem_dust_emiss ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input8' )
-         CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput8' )
+         CALL input_auxinput8 ( grid%auxinput8_oid, grid , config_flags , ierr )
 
          CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
 
@@ -3069,8 +2642,8 @@ SUBROUTINE med_read_wrf_chem_dms_emiss ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input7' )
-         CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput7' )
+         CALL input_auxinput7 ( grid%auxinput7_oid, grid , config_flags , ierr )
 
          CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
 
@@ -3136,8 +2709,8 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input8' )
-         CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_auxinput8' )
+         CALL input_auxinput8 ( grid%auxinput8_oid, grid , config_flags , ierr )
 
          CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
 

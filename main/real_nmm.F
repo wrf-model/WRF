@@ -338,9 +338,9 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       !  Input data.
 
-      CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
+      CALL wrf_debug (100, 'med_sidata_input: call input_auxinput1_wrf')
 
-      CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
+      CALL input_auxinput1 ( idsi, grid, config_flags, ierr )
 
       !  Possible optional SI input.  This sets flags used by init_domain.
 
@@ -375,7 +375,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       ELSE
                                                                                                                                               
         write(message,*) 'binary WPS branch'
-        CALL wrf_message(message)
         CALL wrf_message(message)
         current_date_char(11:11)='_'
         CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , &
@@ -677,11 +676,11 @@ character *24 :: temp24 , temp24b
       IF ( time_loop_max .NE. 1 ) THEN
          IF(sst_update .EQ. 1)THEN
            CALL construct_filename1( inpname , 'wrflowinp' , grid%id , 2 )
-           CALL open_w_dataset ( id4, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
+           CALL open_w_dataset ( id4, TRIM(inpname) , grid , config_flags , output_auxinput4 , "DATASET=AUXINPUT4", ierr )
            IF ( ierr .NE. 0 ) THEN
               CALL wrf_error_fatal( 'real: error opening wrflowinp for writing' )
            END IF
-           CALL output_aux_model_input4 ( id4, grid , config_flags , ierr )
+           CALL output_auxinput4 ( id4, grid , config_flags , ierr )
          END IF
       END IF
 
@@ -726,7 +725,7 @@ character *24 :: temp24 , temp24b
       CALL construct_filename1( inpname , 'wrfinput' , grid%id , 2 )
 
       CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , &
-                            output_model_input , "DATASET=INPUT", ierr )
+                            output_input , "DATASET=INPUT", ierr )
 
       IF ( ierr .NE. 0 ) THEN
       CALL wrf_error_fatal( 'real: error opening wrfinput for writing' )
@@ -735,10 +734,10 @@ character *24 :: temp24 , temp24b
 !     CALL calc_current_date ( grid%id , 0. )
 !      grid%write_metadata = .true.
 
-        write(message,*) 'making call to output_model_input'
+        write(message,*) 'making call to output_input'
         CALL wrf_message(message)
 
-        CALL output_model_input ( id1, grid , config_flags , ierr )
+        CALL output_input ( id1, grid , config_flags , ierr )
 
 !***
 !***  CLOSE THE WRFINPUT DATASET
@@ -944,7 +943,7 @@ character *24 :: temp24 , temp24b
 !
 !-----------------------------------------------------------------------
 
-           CALL output_aux_model_input4 ( id4, grid , config_flags , ierr )
+           CALL output_auxinput4 ( id4, grid , config_flags , ierr )
 
       write(message,*)' assemble_output loop=',loop,' in IF block'
       call wrf_message(message)
@@ -1190,14 +1189,14 @@ character *24 :: temp24 , temp24b
       !  start the model at any of the available analysis time periods.
 
 !  WRITE ( loop_char , FMT = '(I4.4)' ) loop
-!  CALL open_w_dataset ( id1, 'wrfinput'//loop_char , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
+!  CALL open_w_dataset ( id1, 'wrfinput'//loop_char , grid , config_flags , output_input , "DATASET=INPUT", ierr )
 !  IF ( ierr .NE. 0 ) THEN
 !    CALL wrf_error_fatal( 'real: error opening wrfinput'//loop_char//' for writing' )
 !  ENDIF
 !  grid%write_metadata = .true.
 
 !  CALL calc_current_date ( grid%id , 0. )
-!  CALL output_model_input ( id1, grid , config_flags , ierr )
+!  CALL output_input ( id1, grid , config_flags , ierr )
 !  CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
 
   !  Is this or is this not the last time time?  We can remove some unnecessary

@@ -33,11 +33,13 @@
 #		Intel  1.2 GHz (4-pe) :  3.0 hours (empty)
 #		IBM            P4     :  2.0 hours (empty)
 
+setenv WRF_NMM_NEST 1
+
 if ( `uname` == AIX ) then
 
-	xlf -qversion
-	source ~gill/sourceme_modules
-	module load xlf12
+#	xlf -qversion
+#	source ~gill/sourceme_modules
+#       module load xlf12
 	xlf -qversion
 
 	set VERSION = `xlf -qversion | grep AIX | cut -f2 -d, | cut -f2 -dV | cut -f1 -d.`

@@ -34,6 +34,8 @@
 !USE module_compute_geop
 
    USE module_model_constants
+   USE module_avgflx_em, ONLY : zero_avgflx
+
    IMPLICIT NONE
    !  Input data.
    TYPE (domain)          :: grid
@@ -84,12 +86,15 @@
    CHARACTER (LEN=132) :: message
    TYPE(WRFU_TimeInterval) :: stepTime
    REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
+   logical :: f_flux  ! flag for computing averaged fluxes in cu_gd
 
    INTEGER :: idex, jdex
    INTEGER :: im1,ip1,jm1,jp1
    REAL :: hx,hy,pi
 
-  CALL get_ijk_from_grid ( grid ,                               &
+   logical :: f_flux  ! flag for computing averaged fluxes in cu_gd
+
+   CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
                            ips, ipe, jps, jpe, kps, kpe,        &
@@ -667,9 +672,25 @@
 
    ENDDO
 
-
-
    CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )
+
+   if (config_flags%do_avgflx_em .EQ. 1) then
+      WRITE ( message , FMT = '("start_em: initializing avgflx on domain ",I3)' ) &
+           & grid%id
+      call wrf_message(trim(message)) 
+      grid%avgflx_count = 0
+      DO ij = 1, grid%num_tiles
+         call wrf_debug(200,'In start_em, before zero_avgflx call')
+         if (.not. grid%restart) call zero_avgflx(grid%avgflx_rum,grid%avgflx_rvm,grid%avgflx_wwm, &
+              &   ids, ide, jds, jde, kds, kde,           &
+              &   ims, ime, jms, jme, kms, kme,           &
+              &   grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, f_flux, &
+              &   grid%avgflx_cfu1,grid%avgflx_cfd1,grid%avgflx_dfu1, &
+              &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
+         call wrf_debug(200,'In start_em, after zero_avgflx call')
+      end DO
+   end if
+
 
 #ifdef MCELIO
    grid%LU_MASK = 0.

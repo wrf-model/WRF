@@ -15,7 +15,12 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
    USE module_driver_constants
    USE module_machine
    USE module_tiles
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic
+   USE module_comm_dm, ONLY : halo_em_couple_a_sub,halo_em_couple_b_sub,period_em_couple_a_sub,period_em_couple_b_sub
+#else
    USE module_dm
+#endif
    USE module_bc
 ! Mediation layer modules
 ! Registry generated module

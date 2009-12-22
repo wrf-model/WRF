@@ -5,6 +5,7 @@
     USE module_wrf_error
     USE module_io_wrf
     USE module_domain
+    USE module_domain_type, ONLY : fieldlist
     USE module_state_description
     USE module_configure
 !    USE module_date_time
@@ -22,6 +23,10 @@
     INTEGER ids , ide , jds , jde , kds , kde , &
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
+
+    TYPE( fieldlist ), POINTER :: p
+
+    INTEGER newswitch, itrace
 
     INTEGER , DIMENSION(3) :: domain_start , domain_end
     INTEGER , DIMENSION(3) :: memory_start , memory_end
@@ -63,6 +68,7 @@
     INTEGER, EXTERNAL :: use_package
     INTEGER p_hr, p_min, p_sec, p_ms
 
+    CHARACTER*80  dname, memord
     CHARACTER*256 message
     CHARACTER*80  fname
     CHARACTER*80  char_junk
@@ -89,54 +95,54 @@
 
     ! io_form is used to determine if multi-file I/O is enabled and to
     ! control writing of format-specific time-independent metadata
-    IF ( switch .EQ. model_input_only ) THEN
+    IF ( switch .EQ. input_only ) THEN
       CALL nl_get_io_form_input( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input1_only ) THEN
+    ELSE IF ( switch .EQ. auxinput1_only ) THEN
       CALL nl_get_io_form_auxinput1( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input2_only ) THEN
+    ELSE IF ( switch .EQ. auxinput2_only ) THEN
       CALL nl_get_io_form_auxinput2( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input3_only ) THEN
+    ELSE IF ( switch .EQ. auxinput3_only ) THEN
       CALL nl_get_io_form_auxinput3( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input4_only ) THEN
+    ELSE IF ( switch .EQ. auxinput4_only ) THEN
       CALL nl_get_io_form_auxinput4( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input5_only ) THEN
+    ELSE IF ( switch .EQ. auxinput5_only ) THEN
       CALL nl_get_io_form_auxinput5( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input6_only ) THEN
+    ELSE IF ( switch .EQ. auxinput6_only ) THEN
       CALL nl_get_io_form_auxinput6( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input7_only ) THEN
+    ELSE IF ( switch .EQ. auxinput7_only ) THEN
       CALL nl_get_io_form_auxinput7( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input8_only ) THEN
+    ELSE IF ( switch .EQ. auxinput8_only ) THEN
       CALL nl_get_io_form_auxinput8( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
-      CALL nl_get_io_form_sgfdda( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
-      CALL nl_get_io_form_gfdda( 1, io_form )
-    ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
+    ELSE IF ( switch .EQ. auxinput9_only ) THEN
+      CALL nl_get_io_form_auxinput9( 1, io_form )
+    ELSE IF ( switch .EQ. auxinput10_only ) THEN
+      CALL nl_get_io_form_auxinput10( 1, io_form )
+    ELSE IF ( switch .EQ. auxinput11_only ) THEN
       CALL nl_get_io_form_auxinput11( 1, io_form )
 
     ELSE IF ( switch .EQ. history_only ) THEN
       CALL nl_get_io_form_history( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist1_only ) THEN
+    ELSE IF ( switch .EQ. auxhist1_only ) THEN
       CALL nl_get_io_form_auxhist1( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist2_only ) THEN
+    ELSE IF ( switch .EQ. auxhist2_only ) THEN
       CALL nl_get_io_form_auxhist2( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist3_only ) THEN
+    ELSE IF ( switch .EQ. auxhist3_only ) THEN
       CALL nl_get_io_form_auxhist3( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist4_only ) THEN
+    ELSE IF ( switch .EQ. auxhist4_only ) THEN
       CALL nl_get_io_form_auxhist4( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist5_only ) THEN
+    ELSE IF ( switch .EQ. auxhist5_only ) THEN
       CALL nl_get_io_form_auxhist5( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist6_only ) THEN
+    ELSE IF ( switch .EQ. auxhist6_only ) THEN
       CALL nl_get_io_form_auxhist6( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist7_only ) THEN
+    ELSE IF ( switch .EQ. auxhist7_only ) THEN
       CALL nl_get_io_form_auxhist7( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist8_only ) THEN
+    ELSE IF ( switch .EQ. auxhist8_only ) THEN
       CALL nl_get_io_form_auxhist8( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist9_only ) THEN
+    ELSE IF ( switch .EQ. auxhist9_only ) THEN
       CALL nl_get_io_form_auxhist9( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist10_only ) THEN
+    ELSE IF ( switch .EQ. auxhist10_only ) THEN
       CALL nl_get_io_form_auxhist10( 1, io_form )
-    ELSE IF ( switch .EQ. aux_hist11_only ) THEN
+    ELSE IF ( switch .EQ. auxhist11_only ) THEN
       CALL nl_get_io_form_auxhist11( 1, io_form )
 
     ELSE IF ( switch .EQ. restart_only ) THEN
@@ -187,11 +193,11 @@
     CALL nl_get_diff_6th_opt  ( grid%id , diff_6th_opt )
     CALL nl_get_diff_6th_factor ( grid%id , diff_6th_factor )
     CALL nl_get_grid_fdda  ( grid%id , grid_fdda )
-    CALL nl_get_gfdda_end_h( grid%id , gfdda_end_h )
-    CALL nl_get_gfdda_interval_m ( grid%id , gfdda_interval_m )
+    CALL nl_get_auxinput10_end_h( grid%id , gfdda_end_h )
+    CALL nl_get_auxinput10_interval_m ( grid%id , gfdda_interval_m )
     CALL nl_get_grid_sfdda  ( grid%id , grid_sfdda )
-    CALL nl_get_sgfdda_end_h( grid%id , sgfdda_end_h )
-    CALL nl_get_sgfdda_interval_m ( grid%id , sgfdda_interval_m )
+    CALL nl_get_auxinput9_end_h( grid%id , sgfdda_end_h )
+    CALL nl_get_auxinput9_interval_m ( grid%id , sgfdda_interval_m )
 
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
@@ -287,7 +293,7 @@
             start_year,start_month,start_day,start_hour,start_minute,start_second
 #endif
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
-    IF ( switch .EQ. model_input_only) THEN
+    IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
        CALL nl_get_simulation_start_year   ( 1, simulation_start_year   )
@@ -574,7 +580,7 @@
     CALL wrf_put_dom_ti_real ( fid , 'POLE_LAT',  config_flags%pole_lat, 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'POLE_LON',  config_flags%pole_lon, 1 , ierr )
 #endif
-    IF ( switch .NE. boundary_only .AND. switch .NE. aux_model_input9_only .AND. switch .NE. aux_model_input10_only ) THEN
+    IF ( switch .NE. boundary_only .AND. switch .NE. auxinput9_only .AND. switch .NE. auxinput10_only ) THEN
 #ifdef PLANET
       ! When writing to restart files, use the values of the instantaneous
       ! time for determining the values of JULYR, JULDAY, and GMT.  If the
@@ -599,9 +605,7 @@
 #endif
     ENDIF
 #if (NMM_CORE == 1)
-        write(0,*) 'MMINLU would be: ', TRIM(MMINLU)
         ! MMINLU='USGS'
-        write(0,*) 'MMINLU now: ', TRIM(MMINLU)
 #endif
     CALL wrf_put_dom_ti_integer ( fid , 'MAP_PROJ' ,  config_flags%map_proj , 1 , ierr )
     IF(MMINLU(1:1) .EQ. " ")THEN
@@ -645,19 +649,20 @@
 #if (EM_CORE == 1)
       save_topo_orig = grid%save_topo_from_real
 
+! todo jm
       IF ( ( switch .EQ. history_only    ) .OR. &
-           ( switch .EQ. aux_hist1_only  ) .OR. &
-           ( switch .EQ. aux_hist2_only  ) .OR. &
-           ( switch .EQ. aux_hist3_only  ) .OR. &
-           ( switch .EQ. aux_hist4_only  ) .OR. &
-           ( switch .EQ. aux_hist5_only  ) .OR. &
-           ( switch .EQ. aux_hist6_only  ) .OR. &
-           ( switch .EQ. aux_hist7_only  ) .OR. &
-           ( switch .EQ. aux_hist8_only  ) .OR. &
-           ( switch .EQ. aux_hist9_only  ) .OR. &
-           ( switch .EQ. aux_hist10_only ) .OR. &
-           ( switch .EQ. aux_hist11_only ) .OR. &
-           ( (switch .EQ. model_input_only) .AND. (program_name(1:7) .NE. 'REAL_EM') ) .OR. &
+           ( switch .EQ. auxhist1_only  ) .OR. &
+           ( switch .EQ. auxhist2_only  ) .OR. &
+           ( switch .EQ. auxhist3_only  ) .OR. &
+           ( switch .EQ. auxhist4_only  ) .OR. &
+           ( switch .EQ. auxhist5_only  ) .OR. &
+           ( switch .EQ. auxhist6_only  ) .OR. &
+           ( switch .EQ. auxhist7_only  ) .OR. &
+           ( switch .EQ. auxhist8_only  ) .OR. &
+           ( switch .EQ. auxhist9_only  ) .OR. &
+           ( switch .EQ. auxhist10_only ) .OR. &
+           ( switch .EQ. auxhist11_only ) .OR. &
+           ( (switch .EQ. input_only) .AND. (program_name(1:7) .NE. 'REAL_EM') ) .OR. &
            ( switch .EQ. restart_only    ) ) THEN
 
          ! This flag sets the switch which defines the topography as the original
@@ -674,101 +679,513 @@
 
     CALL nl_get_adjust_output_times( grid%id, adjust )
     current_date_save = current_date
-#if 1
-    IF ( switch .EQ. model_input_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_inputout.inc' )
-      CALL wrf_inputout( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input1_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput1out.inc' )
-      CALL wrf_auxinput1out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input2_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput2out.inc' )
-      CALL wrf_auxinput2out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input3_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput3out.inc' )
-      CALL wrf_auxinput3out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input4_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput4out.inc' )
-      CALL wrf_auxinput4out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input5_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput5out.inc' )
-      CALL wrf_auxinput5out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input6_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput6out.inc' )
-      CALL wrf_auxinput6out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input7_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput7out.inc' )
-      CALL wrf_auxinput7out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input8_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput8out.inc' )
-      CALL wrf_auxinput8out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput9out.inc' )
-      CALL wrf_auxinput9out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput10out.inc' )
-      CALL wrf_auxinput10out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxinput11out.inc' )
-      CALL wrf_auxinput11out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. history_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_histout.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( HISTORY_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_histout( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist1_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist1out' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST1_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist1out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist2_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist2out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST2_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist2out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist3_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist3out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST3_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist3out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist4_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist4out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST4_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist4out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist5_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist5out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST5_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist5out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist6_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist6out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST6_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist6out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist7_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist7out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST7_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist7out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist8_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist8out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST8_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist8out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist9_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist9out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST9_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist9out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist10_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist10out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST10_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist10out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. aux_hist11_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_auxhist11out.inc' )
-      IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST11_ALARM ), currentTime, startTime, current_date )
-      CALL wrf_auxhist11out( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. restart_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_restartout.inc' )
-      CALL wrf_restartout( fid , grid , config_flags, switch, dryrun,  ierr )
-    ELSE IF ( switch .EQ. boundary_only ) THEN
-      CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_bdyout.inc' )
-      CALL wrf_bdyout( fid , grid , config_flags, switch, dryrun,  ierr )
+
+    IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
+         (first_history .LE. switch .AND. switch .LE. last_history ) .OR. &
+          switch .EQ. restart_only    ) THEN
+      newswitch = switch 
+      p => grid%head_statevars%next
+      DO WHILE ( ASSOCIATED( p ) ) 
+        IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
+          IF ( p%Ndim .EQ. 0 ) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              dname = p%DataName
+              IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+              memord = p%MemoryOrder
+              IF      ( p%Type .EQ. 'r' ) THEN
+                CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(p%DataName)        , & ! Data Name
+                                  p%rfield_0d             , & ! Field
+                                  WRF_FLOAT               , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  '0'                     , & ! MemoryOrder
+                                  ''                      , & ! Stagger
+                                  ''                      , & ! Dimname 1
+                                  ''                      , & ! Dimname 2
+                                  ''                      , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                  __FILE__ // ' writing 0d real ' // TRIM(p%VarName)     , & ! Debug message
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  ierr )
+              ELSE IF ( p%Type .EQ. 'd' ) THEN
+                CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(p%DataName)        , & ! Data Name
+                                  p%dfield_0d             , & ! Field
+                                  WRF_DOUBLE              , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  '0'                     , & ! MemoryOrder
+                                  ''                      , & ! Stagger
+                                  ''                      , & ! Dimname 1
+                                  ''                      , & ! Dimname 2
+                                  ''                      , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                  __FILE__ // ' writing 0d double ' // TRIM(p%VarName)     , & ! Debug message
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  ierr )
+              ELSE IF ( p%Type .EQ. 'i' ) THEN
+                CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(p%DataName)        , & ! Data Name
+                                  p%ifield_0d             , & ! Field
+                                  WRF_INTEGER             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  '0'                     , & ! MemoryOrder
+                                  ''                      , & ! Stagger
+                                  ''                      , & ! Dimname 1
+                                  ''                      , & ! Dimname 2
+                                  ''                      , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                  __FILE__ // ' writing 0d integer ' // TRIM(p%VarName)     , & ! Debug message
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  ierr )
+              ELSE IF ( p%Type .EQ. 'l' ) THEN
+                CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(p%DataName)        , & ! Data Name
+                                  p%lfield_0d             , & ! Field
+                                  WRF_LOGICAL             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  '0'                     , & ! MemoryOrder
+                                  ''                      , & ! Stagger
+                                  ''                      , & ! Dimname 1
+                                  ''                      , & ! Dimname 2
+                                  ''                      , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                  __FILE__ // ' writing 0d logical ' // TRIM(p%VarName)     , & ! Debug message
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  1 , 1 , 1 , 1 , 1 , 1 ,  &
+                  ierr )
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 1 ) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                dname = p%DataName
+                IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                memord = p%MemoryOrder
+                IF      ( p%Type .EQ. 'r' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%rfield_1d             , & ! Field
+                                  WRF_FLOAT               , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 1d real ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'd' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%dfield_1d             , & ! Field
+                                  WRF_DOUBLE              , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 1d double ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'i' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%ifield_1d             , & ! Field
+                                  WRF_INTEGER             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 1d integer ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'l' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%lfield_1d             , & ! Field
+                                  WRF_LOGICAL             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 1d logical ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 2 ) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                dname = p%DataName
+                IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                memord = p%MemoryOrder
+                IF      ( p%Type .EQ. 'r' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%rfield_2d             , & ! Field
+                                  WRF_FLOAT               , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 2d real ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'd' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%dfield_2d             , & ! Field
+                                  WRF_DOUBLE              , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 2d double ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'i' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%ifield_2d             , & ! Field
+                                  WRF_INTEGER             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 2d integer ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'l' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%lfield_2d             , & ! Field
+                                  WRF_LOGICAL             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 2d logical ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 3 ) THEN
+            IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                dname = p%DataName
+                IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                memord = p%MemoryOrder
+                IF      ( p%Type .EQ. 'r' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%rfield_3d             , & ! Field
+                                  WRF_FLOAT               , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 3d real ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'd' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%dfield_3d             , & ! Field
+                                  WRF_DOUBLE              , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 3d double ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'i' ) THEN
+                  CALL wrf_ext_write_field (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(dname)             , & ! Data Name
+                                  p%ifield_3d             , & ! Field
+                                  WRF_INTEGER             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%Description)     , & ! Desc
+                                  TRIM(p%Units)           , & ! Units
+                   __FILE__ // ' writing 3d integer ' // TRIM(p%VarName)     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+! NOTE no io on logical arrays greater than 2d
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 4 ) THEN
+            IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+! Use a different write routine, wrf_ext_write_field_arr, and pass in the 
+! tracer indeces so that p%rfield_4d can be passsed in without arguments,
+! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
+! Fortran is still a four letter word.  JM 20091208
+              DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                dname = p%dname_table( grid%id, itrace )
+                IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                memord = p%MemoryOrder
+                IF      ( p%Type .EQ. 'r' ) THEN
+                  CALL wrf_ext_write_field_arr (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(p%dname_table( grid%id, itrace ))         , & ! Data Name
+                                  p%rfield_4d             , & ! Field
+                                  itrace, 1, 1, 1         , & ! see comment above
+                                  1, 1, 1                 , & ! see comment above
+                                  RWORDSIZE               , &
+                                  WRF_FLOAT               , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%desc_table( grid%id, itrace))     , & ! Desc
+                                  TRIM(p%units_table( grid%id, itrace))           , & ! Units
+                   __FILE__ // ' writing 4d real ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'd' ) THEN
+                  CALL wrf_ext_write_field_arr (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(p%dname_table( grid%id, itrace ))         , & ! Data Name
+                                  p%dfield_4d             , & ! Field
+                                  itrace, 1, 1, 1         , & ! see comment above
+                                  1, 1, 1                 , & ! see comment above
+                                  DWORDSIZE               , &
+                                  WRF_DOUBLE              , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%desc_table( grid%id, itrace))     , & ! Desc
+                                  TRIM(p%units_table( grid%id, itrace))           , & ! Units
+                   __FILE__ // ' writing 4d double ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'i' ) THEN
+                  CALL wrf_ext_write_field_arr (  &
+                                  fid                     , & ! DataHandle
+                                  current_date(1:19)      , & ! DateStr
+                                  TRIM(p%dname_table( grid%id, itrace ))         , & ! Data Name
+                                  p%ifield_4d             , & ! Field
+                                  itrace, 1, 1, 1         , & ! see comment above
+                                  1, 1, 1                 , & ! see comment above
+                                  IWORDSIZE               , &
+                                  WRF_INTEGER             , & ! FieldType
+                                  grid%communicator       , & ! Comm
+                                  grid%iocommunicator     , & ! Comm
+                                  grid%domdesc            , & ! Comm
+                                  grid%bdy_mask           , & ! bdy_mask
+                                  dryrun                  , & ! flag
+                                  TRIM(memord)            , & ! MemoryOrder
+                                  TRIM(p%Stagger)         , & ! Stagger
+                                  TRIM(p%dimname1)        , & ! Dimname 1
+                                  TRIM(p%dimname2)        , & ! Dimname 2
+                                  TRIM(p%dimname3)        , & ! Dimname 3
+                                  TRIM(p%desc_table( grid%id, itrace))     , & ! Desc
+                                  TRIM(p%units_table( grid%id, itrace))           , & ! Units
+                   __FILE__ // ' writing 4d integer ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ENDIF
+              ENDDO  ! loop over tracers
+            ENDIF
+          ENDIF  ! if-then-else over dim
+        ENDIF
+        p => p%next
+      ENDDO
+    ELSE
+       IF ( switch .EQ. boundary_only ) THEN
+         CALL wrf_debug ( 300 , 'output_wrf: calling code in wrf_bdyout.inc' )
+         CALL wrf_bdyout( fid , grid , config_flags, switch, dryrun,  ierr )
+       ENDIF
     ENDIF
-#else
-    CALL wrf_message ( "ALL I/O DISABLED IN share/module_io_wrf.F")
-#endif
     current_date = current_date_save
 
 #if (EM_CORE == 1)
@@ -786,3 +1203,21 @@
 
     RETURN
   END SUBROUTINE output_wrf
+
+  SUBROUTINE traverse_statevars_debug (s,l)
+    USE module_domain
+    IMPLICIT NONE
+    character*(*)s
+    integer l
+    TYPE( fieldlist ), POINTER :: p
+    p => head_grid%head_statevars%next
+!    write(0,*)'traverse_statevars_debug called ',TRIM(s),' ',l
+    DO WHILE ( ASSOCIATED( p ) )
+      if ( TRIM(p%VarName) .EQ. 'store_rand' .OR. TRIM(p%VarName) .EQ. 'STORE_RAND' ) then
+!        write(0,*)'traverse_statevars_debug sees ',TRIM(p%VarName),' >',p%Type,'<'
+      endif
+      p => p%next
+    ENDDO
+    RETURN
+  END SUBROUTINE traverse_statevars_debug
+

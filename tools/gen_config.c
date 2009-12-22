@@ -207,31 +207,38 @@ gen_get_nl_config ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "_nl_config.inc" ;
+  char * fn = "nl_config.inc" ;
   char * gs, * intnt ;
   char  howset[NAMELEN] ;
   node_t *p ;
   int sw ;
   int num_rconfigs = 0 ;
-  int i, half, j ;
+  int i, fraction, j ;
+#define FRAC 8
+
+  strcpy( fname, fn ) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+  print_warning(fp,fname) ;
 
   for ( p = Domain.fields ; p != NULL ; p = p-> next ) { if ( p->node_kind & RCONFIG ) { num_rconfigs++ ; } }  /* howmany deez guys? */
 
-  for ( half = 0, j=0 ; half < num_rconfigs ; half += (num_rconfigs+1)/2, j++ ) {    /* break the files in half so we don't kill the compilers as much */
   for ( sw = 0 ; sw < 2 ; sw++ ) {
 
   if ( sw == 0 ) { gs = "get" ; intnt = "OUT" ; } else { gs = "set" ; intnt = "IN" ; }
 
-  strcpy( fname, fn ) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s_%d%s",dirname,gs,j,fn) ; }
-  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
-  print_warning(fp,fname) ;
+  fprintf(fp,"#ifdef NL_%s_ROUTINES\n",gs) ;
+
+  for ( fraction = 0, j=0 ; fraction < num_rconfigs ; fraction += (num_rconfigs+1)/FRAC, j++ ) { /* break the files in pieces
+                                                                                                    so we don't kill the 
+                                                                                                    compilers as much */
+  fprintf(fp,"#if (NNN == %d)\n",j) ;
 
   for ( p = Domain.fields, i = -1 ; p != NULL ; p = p-> next )
   {
     if ( p->node_kind & RCONFIG ) {
        i++ ;
-    if ( (i >= half) && (i < half + (num_rconfigs+1)/2) )
+    if ( (i >= fraction) && (i < fraction + (num_rconfigs+1)/FRAC) )
     {
       strcpy(howset,p->howset) ;
       fprintf(fp,"SUBROUTINE nl_%s_%s ( id_id , %s )\n",gs,p->name, p->name) ;
@@ -326,9 +333,11 @@ gen_get_nl_config ( char * dirname )
     }
     }
   }
-  close_the_file( fp ) ;
+  fprintf(fp,"#endif\n") ;
+  } /* fraction */
+  fprintf(fp,"#endif\n") ;
   }
-  } /* halfs */
+  close_the_file( fp ) ;
   return(0) ;
 }
 

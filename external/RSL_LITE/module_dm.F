@@ -3009,7 +3009,7 @@ END
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, local_communicator, mytask
-      USE module_comm_dm, ONLY : halo_force_down_sub
+      USE module_comm_nesting_dm, ONLY : halo_force_down_sub
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3146,7 +3146,7 @@ END
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, &
                             mytask, get_dm_max_halo_width
-      USE module_comm_dm, ONLY : halo_interp_down_sub
+      USE module_comm_nesting_dm, ONLY : halo_interp_down_sub
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3210,7 +3210,7 @@ END
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask
-      USE module_comm_dm, ONLY : halo_interp_up_sub
+      USE module_comm_nesting_dm, ONLY : halo_interp_up_sub
       IMPLICIT NONE
 !
       TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3356,7 +3356,7 @@ END
       USE module_configure, ONLY : grid_config_rec_type, model_config_rec
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
-      USE module_comm_dm, ONLY : halo_interp_up_sub
+      USE module_comm_nesting_dm, ONLY : halo_interp_up_sub
       USE module_utility
       IMPLICIT NONE
 
@@ -3558,6 +3558,7 @@ END
       USE module_domain, ONLY : domain, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
+      USE module_comm_nesting_dm, ONLY : halo_interp_down_sub
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3934,9 +3935,10 @@ integer myproc
       USE module_state_description
       USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : halo_interp_up_sub, get_dm_max_halo_width, ips_save, ipe_save, &
+      USE module_dm, ONLY : get_dm_max_halo_width, ips_save, ipe_save, &
                             jps_save, jpe_save, ntasks, mytask, ntasks_x, ntasks_y, &
                             local_communicator, itrace
+      USE module_comm_nesting_dm, ONLY : halo_interp_up_sub
       USE module_utility
       IMPLICIT NONE
 
@@ -4266,14 +4268,25 @@ integer myproc
       IMPLICIT NONE
       INTEGER  elemsize, km_s, km_e, wordsz
       REAL v(*)
+      IF ( wordsz .EQ. DWORDSIZE ) THEN
+         CALL wrf_dm_gatherv_double(v, elemsize , km_s, km_e)
+      ELSE
+         CALL wrf_dm_gatherv_single(v, elemsize , km_s, km_e)
+      ENDIF
+     END SUBROUTINE wrf_dm_gatherv
+
+     SUBROUTINE wrf_dm_gatherv_double ( v, elemsize , km_s, km_e )
+      IMPLICIT NONE
+      INTEGER  elemsize, km_s, km_e
+      REAL*8 v(*)
 #ifndef STUBMPI
+# ifndef MPI2_SUPPORT
+      REAL*8 v_local((km_e*km_s+1)*elemsize)
+# endif
       INTEGER, DIMENSION(:), ALLOCATABLE :: recvcounts, displs
       INTEGER send_type, myproc, nproc, local_comm, ierr, i
    INCLUDE 'mpif.h'
-      send_type = MPI_REAL
-      IF ( wordsz .EQ. DWORDSIZE ) THEN
-        send_type = MPI_DOUBLE
-      ENDIF
+      send_type = MPI_DOUBLE_PRECISION
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_nproc( nproc )
       CALL wrf_get_myproc( myproc )
@@ -4282,7 +4295,14 @@ integer myproc
       CALL mpi_allgather( i,1,MPI_INTEGER,recvcounts,1,MPI_INTEGER,local_comm,ierr) ;
       i = (km_s)*elemsize
       CALL mpi_allgather( i,1,MPI_INTEGER,displs,1,MPI_INTEGER,local_comm,ierr) ;
+#  ifdef MPI2_SUPPORT
       CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
+#  else
+      DO i = 1,elemsize*(km_e-km_s+1)
+        v_local(i) = v(i+km_s-1)
+      ENDDO
+      CALL mpi_allgatherv( v_local,                                       &
+#  endif
                            (km_e-km_s+1)*elemsize,                        &
                            send_type,                                     &
                            v,                                             &
@@ -4295,8 +4315,49 @@ integer myproc
       DEALLOCATE(displs)
 #endif
       return
-     END SUBROUTINE wrf_dm_gatherv
+     END SUBROUTINE wrf_dm_gatherv_double
 
+     SUBROUTINE wrf_dm_gatherv_single ( v, elemsize , km_s, km_e )
+      IMPLICIT NONE
+      INTEGER  elemsize, km_s, km_e
+      REAL*4 v(*)
+#ifndef STUBMPI
+# ifndef MPI2_SUPPORT
+      REAL*4 v_local((km_e*km_s+1)*elemsize)
+# endif
+      INTEGER, DIMENSION(:), ALLOCATABLE :: recvcounts, displs
+      INTEGER send_type, myproc, nproc, local_comm, ierr, i
+   INCLUDE 'mpif.h'
+      send_type = MPI_REAL
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_nproc( nproc )
+      CALL wrf_get_myproc( myproc )
+      ALLOCATE( recvcounts(nproc), displs(nproc) )
+      i = (km_e-km_s+1)*elemsize
+      CALL mpi_allgather( i,1,MPI_INTEGER,recvcounts,1,MPI_INTEGER,local_comm,ierr) ;
+      i = (km_s)*elemsize
+      CALL mpi_allgather( i,1,MPI_INTEGER,displs,1,MPI_INTEGER,local_comm,ierr) ;
+#  ifdef MPI2_SUPPORT
+      CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
+#  else
+      DO i = 1,elemsize*(km_e-km_s+1)
+        v_local(i) = v(i+km_s-1)
+      ENDDO
+      CALL mpi_allgatherv( v_local,                                       &
+#  endif
+                           (km_e-km_s+1)*elemsize,                        &
+                           send_type,                                     &
+                           v,                                             &
+                           recvcounts,                                    &
+                           displs,                                        &
+                           send_type,                                     &
+                           local_comm,                                    &
+                           ierr )
+      DEALLOCATE(recvcounts)
+      DEALLOCATE(displs)
+#endif
+      return
+     END SUBROUTINE wrf_dm_gatherv_single
 
       SUBROUTINE wrf_dm_decomp1d( nt, km_s, km_e )
        IMPLICIT NONE

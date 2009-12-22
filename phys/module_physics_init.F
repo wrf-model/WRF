@@ -12,7 +12,7 @@ MODULE module_physics_init
 
    USE module_state_description
    USE module_model_constants
-   USE module_configure
+   USE module_configure, ONLY : grid_config_rec_type
 
 CONTAINS
 
@@ -513,19 +513,19 @@ integer myproc
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
 
-   CALL ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
-                RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
-                levsiz,XLAT,n_ozmixm,                           &
-                cldfra_old,                                     & ! Optional
-                ozmixm,pin,                                     & ! Optional
-                m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
-                paerlev,n_aerosolc,                             &
-                sfull,shalf,pptop,swrad_scat,                   &
-                config_flags,restart,                           &
-                allowed_to_read, start_of_simulation,           &
-                ids, ide, jds, jde, kds, kde,                   &
-                ims, ime, jms, jme, kms, kme,                   &
-                its, ite, jts, jte, kts, kte                    )
+   CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
+                RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
+                levsiz=levsiz,XLAT=XLAT,n_ozmixm=n_ozmixm,                           &
+                cldfra_old=cldfra_old,                                     & ! Optional
+                ozmixm=ozmixm,pin=pin,                                     & ! Optional
+                m_ps_1=m_ps_1,m_ps_2=m_ps_2,m_hybi=m_hybi,aerosolc_1=aerosolc_1,aerosolc_2=aerosolc_2,     & ! Optional
+                paerlev=paerlev,n_aerosolc=n_aerosolc,                             &
+                sfull=sfull,shalf=shalf,pptop=pptop,swrad_scat=swrad_scat,                   &
+                config_flags=config_flags,restart=restart,                           &
+                allowed_to_read=allowed_to_read, start_of_simulation=start_of_simulation,           &
+                ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,                   &
+                ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme,                   &
+                its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte                    )
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to bl_init' )
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
@@ -949,17 +949,17 @@ integer myproc
                       ims, ime, jms, jme, kms, kme,                  &
                       its, ite, jts, jte, kts, kte                   )
 !---------------------------------------------------------------------
-   USE module_ra_rrtm
-   USE module_ra_rrtmg_lw
-   USE module_ra_rrtmg_sw
-   USE module_ra_cam
-   USE module_ra_sw
-   USE module_ra_gsfcsw
-   USE module_ra_gfdleta
+   USE module_ra_rrtm      , ONLY : rrtminit
+   USE module_ra_rrtmg_lw  , ONLY : rrtmg_lwinit
+   USE module_ra_rrtmg_sw  , ONLY : rrtmg_swinit
+   USE module_ra_cam       , ONLY : camradinit
+   USE module_ra_sw        , ONLY : swinit
+   USE module_ra_gsfcsw    , ONLY : gsfc_swinit
+   USE module_ra_gfdleta   , ONLY : gfdletainit
 #if(NMM_CORE==1)
-   USE module_ra_hwrf
+   USE module_ra_hwrf      , ONLY : hwrfrainit
 #endif
-   USE module_ra_hs
+   USE module_ra_hs        , ONLY : hsinit
    USE module_domain
 !---------------------------------------------------------------------
    IMPLICIT NONE
@@ -1927,7 +1927,6 @@ integer myproc
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 #endif
-     CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
 #if (NMM_CORE == 1)
                       RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
@@ -1959,7 +1958,9 @@ integer myproc
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+#if (NMM_CORE == 1)
    USE module_mp_HWRF
+#endif
    USE module_mp_thompson
    USE module_mp_thompson07
    USE module_mp_morr_two_moment
@@ -2114,7 +2115,7 @@ integer myproc
                config_flags%guv, &
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
-               config_flags%gfdda_end_h, &
+               config_flags%auxinput10_end_h, &
                config_flags%grid_sfdda, &
                config_flags%guv_sfc, &
                config_flags%gt_sfc, &
@@ -2142,7 +2143,7 @@ integer myproc
                config_flags%guv, &
                config_flags%gt, config_flags%gph, &
                config_flags%if_ramping, config_flags%dtramp_min, &
-               config_flags%gfdda_end_h, &
+               config_flags%auxinput9_end_h, &
                config_flags%xwavenum,config_flags%ywavenum, &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &

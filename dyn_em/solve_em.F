@@ -8,16 +8,37 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! Driver layer modules
    USE module_state_description
    USE module_domain, ONLY : domain, get_ijk_from_grid, get_ijk_from_subgrid, domain_get_current_time, domain_get_start_time
+   USE module_domain_type, ONLY : history_alarm
    USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
    USE module_machine
    USE module_tiles, ONLY : set_tiles
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-#else
-   USE module_dm
+   USE module_comm_dm, ONLY : &
+                  halo_em_a_sub,halo_em_b_sub,halo_em_c2_sub,halo_em_chem_e_3_sub          &
+                 ,halo_em_chem_e_5_sub,halo_em_chem_e_7_sub,halo_em_chem_old_e_5_sub       &
+                 ,halo_em_chem_old_e_7_sub,halo_em_c_sub,halo_em_d2_3_sub                  &
+                 ,halo_em_d2_5_sub,halo_em_d3_3_sub,halo_em_d3_5_sub,halo_em_d_sub         &
+                 ,halo_em_e_3_sub,halo_em_e_5_sub,halo_em_hydro_uv_sub                     &
+                 ,halo_em_moist_e_3_sub,halo_em_moist_e_5_sub,halo_em_moist_e_7_sub        &
+                 ,halo_em_moist_old_e_5_sub,halo_em_moist_old_e_7_sub                      &
+                 ,halo_em_scalar_e_3_sub,halo_em_scalar_e_5_sub,halo_em_scalar_e_7_sub     &
+                 ,halo_em_scalar_old_e_5_sub,halo_em_scalar_old_e_7_sub,halo_em_tke_3_sub  &
+                 ,halo_em_tke_5_sub,halo_em_tke_7_sub,halo_em_tke_advect_3_sub             &
+                 ,halo_em_tke_advect_5_sub,halo_em_tke_old_e_5_sub                         &
+                 ,halo_em_tke_old_e_7_sub,halo_em_tracer_e_3_sub,halo_em_tracer_e_5_sub    &
+                 ,halo_em_tracer_e_7_sub,halo_em_tracer_old_e_5_sub                        &
+                 ,halo_em_tracer_old_e_7_sub,period_bdy_em_a_sub                           &
+                 ,period_bdy_em_b3_sub,period_bdy_em_b_sub,period_bdy_em_chem2_sub         &
+                 ,period_bdy_em_chem_old_sub,period_bdy_em_chem_sub,period_bdy_em_d3_sub   &
+                 ,period_bdy_em_d_sub,period_bdy_em_e_sub,period_bdy_em_moist2_sub         &
+                 ,period_bdy_em_moist_old_sub,period_bdy_em_moist_sub                      &
+                 ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
+                 ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
+                 ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
+                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub
 #endif
-   USE module_comm_dm
    USE module_utility
 ! Mediation layer modules
 ! Model layer modules

@@ -627,7 +627,10 @@
 !***********************************************************************
 #ifdef DM_PARALLEL
       USE module_domain
-      USE module_dm
+      USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
+                                              ,MYTASK,NTASKS,NTASKS_X   &
+                                              ,NTASKS_Y
+      USE MODULE_COMM_DM
 #endif
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -898,7 +901,10 @@
 !***********************************************************************
 #ifdef DM_PARALLEL
       USE MODULE_DOMAIN
-      USE MODULE_DM
+      USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
+                                              ,MYTASK,NTASKS,NTASKS_X   &
+                                              ,NTASKS_Y
+      USE MODULE_COMM_DM
 #endif
 !-----------------------------------------------------------------------
       IMPLICIT NONE

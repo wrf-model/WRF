@@ -672,10 +672,10 @@
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )
 
-   if (config_flags%do_avgflx_em .EQ. 1) then
+   IF (config_flags%do_avgflx_em .EQ. 1) THEN
       WRITE ( message , FMT = '("start_em: initializing avgflx on domain ",I3)' ) &
            & grid%id
-      call wrf_message(trim(message)) 
+      CALL wrf_message(trim(message)) 
       grid%avgflx_count = 0
       DO ij = 1, grid%num_tiles
          call wrf_debug(200,'In start_em, before zero_avgflx call')
@@ -686,9 +686,8 @@
               &   grid%avgflx_cfu1,grid%avgflx_cfd1,grid%avgflx_dfu1, &
               &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
          call wrf_debug(200,'In start_em, after zero_avgflx call')
-      end DO
-   end if
-
+      ENDDO
+   ENDIF
 
 #ifdef MCELIO
    grid%LU_MASK = 0.

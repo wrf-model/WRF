@@ -30,7 +30,7 @@ CONTAINS
                              , imsy,imey,jmsy,jmey,kmsy,kmey    &
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
-                             , f_flux                  &
+                             , f_flux                           &
                             )
     USE module_state_description
     USE module_model_constants
@@ -110,8 +110,8 @@ CONTAINS
 
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: mu_tendf
 
-    INTEGER , INTENT(IN)                          ::  k_start, k_end
-    LOGICAL, intent(in), OPTIONAL ::                   f_flux
+    INTEGER, INTENT(IN)                           ::  k_start, k_end
+    LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
 
 ! Local
 
@@ -121,7 +121,7 @@ CONTAINS
     INTEGER  num_wall_layers
     INTEGER  num_road_layers
     INTEGER  iswater
-    logical :: l_flux
+    LOGICAL  :: l_flux
     INTEGER  :: isurban
     INTEGER  rk_step
     INTEGER                         :: yr, month, day, hr, minute, sec, rc

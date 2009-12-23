@@ -1,11 +1,13 @@
 
 SUBROUTINE med_nest_move ( parent, nest )
   ! Driver layer
-   USE module_domain
+   USE module_domain, ONLY : domain, get_ijk_from_grid, adjust_domain_dims_for_move
+   USE module_utility
    USE module_timing
-   USE module_configure
-   USE module_io_domain
-   USE module_dm
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
+   USE module_state_description
+!   USE module_io_domain
+   USE module_dm, ONLY : wrf_dm_move_nest
    TYPE(domain) , POINTER                     :: parent, nest, grid
    INTEGER dx, dy       ! number of parent domain points to move
 #ifdef MOVE_NESTS
@@ -30,11 +32,13 @@ SUBROUTINE med_nest_move ( parent, nest )
 
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
      SUBROUTINE start_domain ( grid , allowed_to_move )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) :: grid
         LOGICAL, INTENT(IN) :: allowed_to_move
      END SUBROUTINE start_domain
@@ -44,9 +48,8 @@ SUBROUTINE med_nest_move ( parent, nest )
 # include <dummy_new_args.inc>
 !
                            )
-        USE module_domain
-        USE module_configure
-        USE module_timing
+        USE module_domain, ONLY : domain
+        USE module_state_description
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
@@ -56,11 +59,13 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if ( NMM_CORE == 1 )
      SUBROUTINE med_nest_egrid_configure ( parent , nest )
         USE module_domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_nest_egrid_configure
 
      SUBROUTINE med_construct_egrid_weights ( parent , nest )
         USE module_domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_construct_egrid_weights
 
@@ -74,7 +79,6 @@ SUBROUTINE med_nest_move ( parent, nest )
                                     IPS,IPE,JPS,JPE,KPS,KPE  )
 !
 
-         USE MODULE_MODEL_CONSTANTS
          IMPLICIT NONE
          INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
          INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
@@ -89,13 +93,16 @@ SUBROUTINE med_nest_move ( parent, nest )
      END SUBROUTINE BASE_STATE_PARENT
 
      SUBROUTINE NEST_TERRAIN ( nest, config_flags )
-       USE module_domain
+       USE module_domain, ONLY : domain
+       USE module_configure, ONLY : grid_config_rec_type
+       IMPLICIT NONE
        TYPE(domain) , POINTER                        :: nest
        TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
      END SUBROUTINE NEST_TERRAIN
 
      SUBROUTINE med_init_domain_constants_nmm ( parent, nest )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                    :: parent , nest
      END SUBROUTINE med_init_domain_constants_nmm
 
@@ -104,9 +111,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 # include <dummy_new_args.inc>
 !
                            )
-        USE module_domain
-        USE module_configure
-        USE module_timing
+        USE module_domain, ONLY : domain
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
@@ -114,8 +119,8 @@ SUBROUTINE med_nest_move ( parent, nest )
      END SUBROUTINE shift_domain_nmm
 #endif
      LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
-        USE module_domain
-        USE module_utility
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move
@@ -126,7 +131,8 @@ SUBROUTINE med_nest_move ( parent, nest )
 !     LOGICAL FUNCTION nest_roam ( parent , nest , dx , dy )  !REPLACED BY KWON
 !
      LOGICAL FUNCTION direction_of_move ( parent , nest , dx , dy )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION direction_of_move
@@ -139,15 +145,17 @@ SUBROUTINE med_nest_move ( parent, nest )
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
-       USE module_domain
+       USE module_domain, ONLY : domain
+       IMPLICIT NONE
        TYPE ( domain ) :: grid
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
      END SUBROUTINE input_terrain_rsmas
      SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
-       USE module_domain
-       USE module_configure
+       USE module_domain, ONLY : domain
+       USE module_configure, ONLY : grid_config_rec_type
+        IMPLICIT NONE
        TYPE (domain), POINTER ::  nest , parent
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_feedback
@@ -155,6 +163,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
+       IMPLICIT NONE
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
@@ -165,6 +174,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
+       IMPLICIT NONE
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
@@ -310,9 +320,6 @@ SUBROUTINE med_nest_move ( parent, nest )
      ENDDO
     ENDDO
 #endif
-
-
-
 
     DO J = JPS, MIN(JPE,JDE-1)
       DO I = IPS, MIN(IPE,IDE-1)
@@ -477,11 +484,12 @@ END SUBROUTINE med_nest_move
 
 LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
   ! Driver layer
-   USE module_domain
-   USE module_configure
+   USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid, adjust_domain_dims_for_move
+!   USE module_configure
    USE module_compute_geop
-   USE module_dm
+   USE module_dm, ONLY : wrf_dm_max_real, wrf_dm_move_nest
    USE module_utility
+   USE module_streams, ONLY : compute_vortex_center_alarm
    IMPLICIT NONE
 ! Arguments
    TYPE(domain) , POINTER    :: parent, grid
@@ -918,9 +926,9 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
 END FUNCTION time_for_move2
 
 LOGICAL FUNCTION time_for_move ( parent , grid , move_cd_x, move_cd_y )
-   USE module_domain
-   USE module_configure
-   USE module_dm
+   USE module_domain, ONLY : domain, get_ijk_from_grid, adjust_domain_dims_for_move
+!   USE module_configure
+   USE module_dm, ONLY : wrf_dm_move_nest
 USE module_timing
    USE module_utility
    IMPLICIT NONE
@@ -942,8 +950,7 @@ USE module_timing
 ! interface
    INTERFACE
      LOGICAL FUNCTION time_for_move2 ( parent , nest , dx , dy )
-        USE module_domain
-        USE module_utility
+        USE module_domain, ONLY : domain
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move2
@@ -1099,7 +1106,7 @@ END FUNCTION time_for_move
 ! Put any tests for non-moving options or conditions in here
 LOGICAL FUNCTION should_not_move ( id )
   USE module_state_description
-  USE module_configure
+!  USE module_configure
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: id
  ! Local
@@ -1217,9 +1224,9 @@ END FUNCTION nest_roam
 !ADDED BY YOUNG KWON FOR VORTEX FOLLOWING NEST MOVE
 
 LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
-   USE module_domain
-   USE module_configure
-   USE module_dm
+   USE module_domain, ONLY : domain
+!   USE module_configure
+!   USE module_dm
 !!!   USE WRF_ESMF_MOD   !!COMMENTED OUT BY KWON TO FOLLOW DUSAN'S CODING
    IMPLICIT NONE
 ! arguments

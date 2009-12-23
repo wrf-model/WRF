@@ -17,7 +17,14 @@
       USE MODULE_WRF_ERROR
       USE MODULE_MPP
       USE MODULE_CTLBLK
+#ifdef DM_PARALLEL
+      USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
+                                              ,MYTASK,NTASKS,NTASKS_X   &
+                                              ,NTASKS_Y
+      USE MODULE_COMM_DM
+#else
       USE MODULE_DM
+#endif
 !
       USE MODULE_IGWAVE_ADJUST,ONLY: PDTE, PFDHT, DDAMP
       USE MODULE_ADVECTION,    ONLY: ADVE, VAD2, HAD2

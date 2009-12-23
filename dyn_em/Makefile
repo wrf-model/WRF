@@ -19,7 +19,7 @@ MODULES =                 		\
         module_force_scm.o              \
         module_first_rk_step_part1.o    \
         module_first_rk_step_part2.o    \
-        module_avgflux_em.o             \
+        module_avgflx_em.o              \
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings
@@ -249,7 +249,8 @@ nest_init_utils.o: \
 		../frame/module_domain.o \
 		../frame/module_configure.o
 
-start_em.o: module_bc_em.o \
+start_em.o:     module_bc_em.o \
+                module_avgflx_em.o              \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_state_description.o \
@@ -270,6 +271,7 @@ solve_em.o:     module_small_step_em.o \
 		module_big_step_utilities_em.o \
                 module_first_rk_step_part1.o \
                 module_first_rk_step_part2.o \
+                module_avgflx_em.o              \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_driver_constants.o \

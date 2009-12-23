@@ -17,7 +17,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 ! Driver layer modules
   USE module_domain
   USE module_configure
-  USE module_dm
+  USE module_dm, ONLY : wrf_dm_maxval, wrf_dm_minval, wrf_dm_mintile_double, wrf_dm_tile_val_int, wrf_dm_maxtile_real
   USE module_bc_em
 
   IMPLICIT NONE

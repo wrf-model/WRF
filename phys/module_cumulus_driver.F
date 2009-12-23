@@ -43,7 +43,7 @@ CONTAINS
                      ,rqvblten,rqvften                                &
                      ,rthcuten,rthraten,rthblten,rthften              &
 #if (NMM_CORE==1)
-                 ! for hwrf-sas
+                 ! for hwrf-sas                      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,rucuten,rvcuten,mommix,store_rand               &
 #endif
                  ! Optional moisture tracer flags 
@@ -51,8 +51,8 @@ CONTAINS
                      ,f_qi,f_qs,f_qg                                  &
                      ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux            &
 #if ( WRF_DFI_RADAR == 1 )
-                 ! Optional CAP suppress option
-                     ,do_capsuppress                                   &
+                 ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
+                     ,do_capsuppress                                  &
 #endif                                 
                                                                       )
 !----------------------------------------------------------------------
@@ -363,7 +363,7 @@ CONTAINS
                                                      ,f_qi      &
                                                      ,f_qs      &
                                                      ,f_qg
-   LOGICAL, intent(in), OPTIONAL ::                   f_flux
+   LOGICAL, INTENT(IN), OPTIONAL ::                   f_flux
 
 #if ( WRF_DFI_RADAR == 1 )
 !

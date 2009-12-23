@@ -1,10 +1,10 @@
    SUBROUTINE dfi_accumulate( grid )
 
-      USE module_domain
-      USE module_configure
+      USE module_domain, ONLY : domain
+!      USE module_configure
       USE module_driver_constants
       USE module_machine
-      USE module_dm
+!      USE module_dm
       USE module_model_constants
       USE module_state_description
 
@@ -62,8 +62,9 @@
 #if (EM_CORE == 1)
    SUBROUTINE wrf_dfi_bck_init ( )
 
-      USE module_domain
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
       USE module_utility
+      USE module_state_description
 
       IMPLICIT NONE
 
@@ -71,27 +72,27 @@
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE Setup_Timekeeping
 
          SUBROUTINE dfi_save_arrays(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_save_arrays
 
          SUBROUTINE dfi_clear_accumulation(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_clear_accumulation
 
          SUBROUTINE optfil_driver(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE optfil_driver
 
          SUBROUTINE start_domain(grid, allowed_to_read)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain)          :: grid
             LOGICAL, INTENT(IN)    :: allowed_to_read
          END SUBROUTINE start_domain
@@ -154,8 +155,9 @@
 
    SUBROUTINE wrf_dfi_fwd_init ( )
 
-      USE module_domain
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
       USE module_utility
+      USE module_state_description
 
       IMPLICIT NONE
 
@@ -163,27 +165,27 @@
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE Setup_Timekeeping
 
          SUBROUTINE dfi_save_arrays(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_save_arrays
 
          SUBROUTINE dfi_clear_accumulation(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_clear_accumulation
 
          SUBROUTINE optfil_driver(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE optfil_driver
 
          SUBROUTINE start_domain(grid, allowed_to_read)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain)          :: grid
             LOGICAL, INTENT(IN)    :: allowed_to_read
          END SUBROUTINE start_domain
@@ -250,7 +252,8 @@
 
    SUBROUTINE wrf_dfi_fst_init ( )
 
-      USE module_domain
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
+      USE module_state_description
 
       IMPLICIT NONE
 
@@ -258,27 +261,27 @@
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE Setup_Timekeeping
 
          SUBROUTINE dfi_save_arrays(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_save_arrays
 
          SUBROUTINE dfi_clear_accumulation(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_clear_accumulation
 
          SUBROUTINE optfil_driver(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE optfil_driver
 
          SUBROUTINE start_domain(grid, allowed_to_read)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain)          :: grid
             LOGICAL, INTENT(IN)    :: allowed_to_read
          END SUBROUTINE start_domain
@@ -307,9 +310,9 @@
    SUBROUTINE wrf_dfi_write_initialized_state( )
 
       ! Driver layer
-      USE module_domain
+      USE module_domain, ONLY : head_grid
       USE module_io_domain
-      USE module_configure
+      USE module_configure, ONLY : grid_config_rec_type, model_config_rec
 
       IMPLICIT NONE
 
@@ -339,13 +342,13 @@
 
    SUBROUTINE wrf_dfi_array_reset ( )
 
-      USE module_domain
+      USE module_domain, ONLY : head_grid
 
       IMPLICIT NONE
 
       INTERFACE
          SUBROUTINE dfi_array_reset(grid)
-            USE module_domain
+            USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
          END SUBROUTINE dfi_array_reset
       END INTERFACE
@@ -359,11 +362,12 @@
 
    SUBROUTINE optfil_driver( grid )
 
-      USE module_domain
-      USE module_wrf_error
-      USE module_timing
-      USE module_date_time
-      USE module_configure
+      USE module_domain, ONLY : domain
+      USE module_utility
+!      USE module_wrf_error
+!      USE module_timing
+!      USE module_date_time
+!      USE module_configure
       USE module_state_description
       USE module_model_constants
 
@@ -375,6 +379,7 @@
       integer :: nstep2, nstepmax, rundfi, i, rc
       real :: timestep, tauc
       TYPE(WRFU_TimeInterval) :: run_interval
+      CHARACTER*80 mess
 
       timestep=abs(grid%dt)
       run_interval = grid%stop_subtime - grid%start_subtime
@@ -392,7 +397,8 @@
       ! Get DFI coefficient
       grid%hcoeff(:) = 0.0
       IF ( grid%dfi_nfilter < 0 .OR. grid%dfi_nfilter > 8 ) THEN
-write(0,*) 'Invalid filter specified in namelist.'
+write(mess,*) 'Invalid filter specified in namelist.'
+call wrf_message(mess)
       ELSE
          call dfcoef(nstep2-1, grid%dt, tauc, grid%dfi_nfilter, grid%hcoeff)
       END IF
@@ -412,13 +418,13 @@ write(0,*) 'Invalid filter specified in namelist.'
 
    SUBROUTINE dfi_clear_accumulation( grid )
 
-      USE module_domain
-      USE module_configure
-      USE module_driver_constants
-      USE module_machine
-      USE module_dm
-      USE module_model_constants
-      USE module_state_description
+      USE module_domain, ONLY : domain
+!      USE module_configure
+!      USE module_driver_constants
+!      USE module_machine
+!      USE module_dm
+!      USE module_model_constants
+!      USE module_state_description
 
       IMPLICIT NONE
 
@@ -458,11 +464,11 @@ write(0,*) 'Invalid filter specified in namelist.'
 
    SUBROUTINE dfi_save_arrays( grid )
 
-      USE module_domain
-      USE module_configure
-      USE module_driver_constants
-      USE module_machine
-      USE module_dm
+      USE module_domain, ONLY : domain
+!      USE module_configure
+!      USE module_driver_constants
+!      USE module_machine
+!      USE module_dm
       USE module_model_constants
       USE module_state_description
 
@@ -542,11 +548,11 @@ write(0,*) 'Invalid filter specified in namelist.'
 
    SUBROUTINE dfi_array_reset( grid )
 
-      USE module_domain
-      USE module_configure
-      USE module_driver_constants
-      USE module_machine
-      USE module_dm
+      USE module_domain, ONLY : domain
+!      USE module_configure
+!      USE module_driver_constants
+!      USE module_machine
+!      USE module_dm
       USE module_model_constants
       USE module_state_description
 
@@ -1433,7 +1439,7 @@ write(0,*) 'Invalid filter specified in namelist.'
 !             DS     :  Deviation in stop-band (db)
 !----------------------------------------------------------
 !
-     USE module_domain
+     USE module_domain, ONLY : domain
     
      TYPE(domain) , POINTER :: grid
 

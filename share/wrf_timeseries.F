@@ -6,10 +6,11 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE calc_ts_locations( grid )
 
-   USE module_domain
-   USE module_configure
-   USE module_dm
+   USE module_domain, ONLY : domain, get_ijk_from_grid
+   USE module_configure, ONLY : model_config_rec, grid_config_rec_type, model_to_grid_config_rec
+   USE module_dm, ONLY : wrf_dm_min_real
    USE module_llxy
+   USE module_state_description
 
    IMPLICIT NONE
 
@@ -373,8 +374,9 @@ END SUBROUTINE calc_ts
 
 SUBROUTINE write_ts( grid )
 
-   USE module_domain
-   USE module_dm
+   USE module_domain, ONLY : domain
+   USE module_dm, ONLY : wrf_dm_min_reals
+   USE module_state_description
 
    IMPLICIT NONE
 

@@ -73,7 +73,41 @@ SUBROUTINE pxft ( grid                          &
                  ,ipsx,ipex,jpsx,jpex,kpsx,kpex )
    USE module_state_description
    USE module_domain, ONLY : domain
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y &
+                       , local_communicator_periodic, itrace                    &
+                       , local_communicator_x 
+   USE module_driver_constants
+#if 0
+   USE module_comm_dm, ONLY : &
+                 XPOSE_POLAR_FILTER_V_z2x_sub           &
+                ,XPOSE_POLAR_FILTER_V_x2z_sub           &
+                ,XPOSE_POLAR_FILTER_U_z2x_sub           &
+                ,XPOSE_POLAR_FILTER_U_x2z_sub           &
+                ,XPOSE_POLAR_FILTER_T_z2x_sub           &
+                ,XPOSE_POLAR_FILTER_T_x2z_sub           &
+                ,XPOSE_POLAR_FILTER_W_z2x_sub           &
+                ,XPOSE_POLAR_FILTER_W_x2z_sub           &
+                ,XPOSE_POLAR_FILTER_PH_z2x_sub          &
+                ,XPOSE_POLAR_FILTER_PH_x2z_sub          &
+                ,XPOSE_POLAR_FILTER_WW_z2x_sub          &
+                ,XPOSE_POLAR_FILTER_WW_x2z_sub          &
+                ,XPOSE_POLAR_FILTER_RV_z2x_sub          &
+                ,XPOSE_POLAR_FILTER_RV_x2z_sub          &
+                ,XPOSE_POLAR_FILTER_RU_z2x_sub          &
+                ,XPOSE_POLAR_FILTER_RU_x2z_sub          &
+                ,XPOSE_POLAR_FILTER_MOIST_z2x_sub       &
+                ,XPOSE_POLAR_FILTER_MOIST_x2z_sub       &
+                ,XPOSE_POLAR_FILTER_CHEM_z2x_sub        &
+                ,XPOSE_POLAR_FILTER_MOIST_x2z_sub       &
+                ,XPOSE_POLAR_FILTER_TRACER_z2x_sub      &
+                ,XPOSE_POLAR_FILTER_TRACER_x2z_sub      &
+                ,XPOSE_POLAR_FILTER_SCALAR_z2x_sub      &
+                ,XPOSE_POLAR_FILTER_SCALAR_x2z_sub
+#endif
+#else
    USE module_dm
+#endif
    IMPLICIT NONE
    !  Input data.
    TYPE(domain) , TARGET          :: grid

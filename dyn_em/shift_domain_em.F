@@ -7,7 +7,12 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
    USE module_domain, ONLY : domain, get_ijk_from_grid
    USE module_timing
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, itrace
+   USE module_comm_dm, ONLY : SHIFT_HALO_X_HALO_sub
+#else
    USE module_dm
+#endif
    IMPLICIT NONE
   ! Arguments
    INTEGER disp_x, disp_y       ! number of parent domain points to move
@@ -90,7 +95,12 @@ SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
    USE module_domain, ONLY : domain, get_ijk_from_grid
    USE module_timing
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, itrace
+   USE module_comm_dm, ONLY : SHIFT_HALO_Y_HALO_sub
+#else
    USE module_dm
+#endif
    IMPLICIT NONE
   ! Arguments
    INTEGER disp_x, disp_y       ! number of parent domain points to move

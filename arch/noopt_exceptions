@@ -9,6 +9,11 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_integrate.o : mediation_integrate.F
 mediation_interp_domain.o : mediation_interp_domain.F
 module_comm_dm.o : module_comm_dm.F
+module_comm_dm_0.o : module_comm_dm_0.F
+module_comm_dm_1.o : module_comm_dm_1.F
+module_comm_dm_2.o : module_comm_dm_2.F
+module_comm_dm_3.o : module_comm_dm_3.F
+module_comm_nesting_dm.o : module_comm_nesting_dm.F
 module_configure.o : module_configure.F
 module_dm.o : module_dm.F
 module_domain.o : module_domain.F
@@ -233,7 +238,22 @@ wrf_restartin.o \
 wrf_restartout.o \
 module_state_description.o \
 module_alloc_space.o \
+module_alloc_space_0.o \
+module_alloc_space_1.o \
+module_alloc_space_2.o \
+module_alloc_space_3.o \
+module_alloc_space_4.o \
+module_alloc_space_5.o \
+module_alloc_space_6.o \
+module_alloc_space_7.o \
+module_alloc_space_8.o \
+module_alloc_space_9.o \
 module_comm_dm.o \
+module_comm_dm_0.o \
+module_comm_dm_1.o \
+module_comm_dm_2.o \
+module_comm_dm_3.o \
+module_comm_nesting_dm.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb

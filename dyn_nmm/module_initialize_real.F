@@ -17,7 +17,10 @@ MODULE module_initialize_real
    USE module_timing
    USE module_soil_pre
 #ifdef DM_PARALLEL
-   USE module_dm
+   USE module_dm,                    ONLY : LOCAL_COMMUNICATOR       &
+                                           ,MYTASK,NTASKS,NTASKS_X   &
+                                           ,NTASKS_Y
+   USE module_comm_dm
    USE module_ext_internal
 #endif
 

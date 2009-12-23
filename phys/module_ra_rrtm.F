@@ -6563,7 +6563,7 @@ CONTAINS
 ! **************************************************************************     
 
 USE module_wrf_error
-USE module_dm
+!USE module_dm, ONLY : wrf_dm_bcast_bytes
 IMPLICIT NONE
 
 !  RRTM Longwave Radiative Transfer Model                                        

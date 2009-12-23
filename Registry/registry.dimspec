@@ -1,5 +1,4 @@
 
-# Available characters for dimspec: 0123456789@%+=|?.!&[{}]
 #<Table>  <Dim> <Order> <How defined>                <Coord-axis>  <Dimname in Datasets>
 
 dimspec    i       1     standard_domain                   x          west_east

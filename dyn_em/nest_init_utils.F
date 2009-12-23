@@ -351,7 +351,12 @@ SUBROUTINE update_after_feedback_em ( grid  &
    USE module_driver_constants
    USE module_machine
    USE module_tiles
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask
+   USE module_comm_dm, ONLY : HALO_EM_FEEDBACK_sub
+#else
    USE module_dm
+#endif
    USE module_bc
 ! Mediation layer modules
 ! Registry generated module

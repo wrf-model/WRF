@@ -59,6 +59,24 @@ MODULE module_dm
      RETURN
   END SUBROUTINE wrf_dm_minval
 
+   SUBROUTINE wrf_dm_maxtile_real ( val , tile)
+      IMPLICIT NONE
+      REAL val
+      INTEGER tile
+   END SUBROUTINE wrf_dm_maxtile_real
+
+   SUBROUTINE wrf_dm_mintile_double ( val , tile)
+      IMPLICIT NONE
+      DOUBLE PRECISION val
+      INTEGER tile
+   END SUBROUTINE wrf_dm_mintile_double
+
+   SUBROUTINE wrf_dm_tile_val_int ( val , tile)
+      IMPLICIT NONE
+      INTEGER val
+      INTEGER tile
+   END SUBROUTINE wrf_dm_tile_val_int
+
 ! stub
    SUBROUTINE wrf_dm_move_nest ( parent, nest, dx, dy )
       USE module_domain

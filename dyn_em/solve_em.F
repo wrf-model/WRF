@@ -7,14 +7,18 @@ SUBROUTINE solve_em ( grid , config_flags  &
                     )
 ! Driver layer modules
    USE module_state_description
-   USE module_domain, ONLY : domain, get_ijk_from_grid, get_ijk_from_subgrid, domain_get_current_time, domain_get_start_time
+   USE module_domain, ONLY : &
+                  domain, get_ijk_from_grid, get_ijk_from_subgrid                          &
+                 ,domain_get_current_time, domain_get_start_time, domain_clock_get
    USE module_domain_type, ONLY : history_alarm
    USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
    USE module_machine
    USE module_tiles, ONLY : set_tiles
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
+   USE module_dm, ONLY : &
+                  local_communicator, mytask, ntasks, ntasks_x, ntasks_y                   &
+                 ,local_communicator_periodic, wrf_dm_maxval
    USE module_comm_dm, ONLY : &
                   halo_em_a_sub,halo_em_b_sub,halo_em_c2_sub,halo_em_chem_e_3_sub          &
                  ,halo_em_chem_e_5_sub,halo_em_chem_e_7_sub,halo_em_chem_old_e_5_sub       &
@@ -64,6 +68,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_first_rk_step_part1
    USE module_first_rk_step_part2
    USE module_llxy, ONLY : proj_cassini
+   USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
 
    IMPLICIT NONE
 
@@ -123,7 +128,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
    REAL , ALLOCATABLE , DIMENSION(:)  :: max_vert_cfl_tmp, max_horiz_cfl_tmp
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
-   REAL :: curr_secs
+   LOGICAL :: f_flux  ! flag for computing averaged fluxes in cu_gd
+   REAL    :: curr_secs
    INTEGER :: num_sound_steps
    INTEGER :: idex, jdex
    REAL    :: max_msft
@@ -140,6 +146,14 @@ SUBROUTINE solve_em ( grid , config_flags  &
    REAL                                       :: real_time
    LOGICAL                                    :: adapt_step_flag
    LOGICAL                                    :: fill_w_flag
+
+! variables for flux-averaging code 20091223
+   CHARACTER*256                              :: message, message2
+   REAL                                       :: old_dt
+   TYPE(WRFU_Time)                            :: temp_time, CurrTime
+   INTEGER, PARAMETER                         :: precision = 100
+   INTEGER                                    :: num, den
+   TYPE(WRFU_TimeInterval)                    :: dtInterval
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include <bench_solve_em_def.h>
@@ -208,6 +222,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    num_3d_c        = num_chem
    num_3d_s        = num_scalar
 
+   f_flux = config_flags%do_avgflx_cugd .EQ. 1
 
 !  Compute these starting and stopping locations for each tile and number of tiles.
 !  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
@@ -227,6 +242,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
    curr_secs = real_time(tmpTimeInterval)
 
+   old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
 !   In this call, we do the time-step adaptation and set time-dependent lateral
@@ -600,6 +616,7 @@ BENCH_END(set_phys_bc_tim)
                              , imsy, imey, jmsy, jmey, kmsy, kmey    &
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
+                             , f_flux                           &
                             )
 
        CALL first_rk_step_part2 (    grid, config_flags         &
@@ -2908,6 +2925,65 @@ BENCH_END(bc_end_tim)
 
    END DO Runge_Kutta_loop
 
+   IF (config_flags%do_avgflx_em .EQ. 1) THEN
+! Reinitialize time-averaged fluxes if history output was written after the previous time step:
+      CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),temp_time)
+      CALL domain_clock_get ( grid, current_time=CurrTime, &
+           current_timestr=message2 )
+! use overloaded -, .LT. operator to check whether to initialize avgflx:
+! reinitialize after each history output (detect this here by comparing current time
+! against last history time and time step - this code follows what's done in adapt_timestep_em):
+      WRITE ( message , FMT = '("solve_em: old_dt =",g15.6,", dt=",g15.6," on domain ",I3)' ) &
+           & old_dt,grid%dt,grid%id
+      CALL wrf_debug(200,message)
+      old_dt=min(old_dt,grid%dt)
+      num = INT(old_dt * precision)
+      den = precision
+      CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
+      IF (CurrTime .lt. temp_time + dtInterval) THEN
+         WRITE ( message , FMT = '("solve_em: initializing avgflx at time ",A," on domain ",I3)' ) &
+              & TRIM(message2), grid%id
+         CALL wrf_message(trim(message)) 
+         grid%avgflx_count = 0
+!tile-loop for zero_avgflx
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+
+         DO ij = 1 , grid%num_tiles
+            CALL wrf_debug(200,'In solve_em, before zero_avgflx call')
+            CALL zero_avgflx(grid%avgflx_rum,grid%avgflx_rvm,grid%avgflx_wwm, &
+                 &   ids, ide, jds, jde, kds, kde,           &
+                 &   ims, ime, jms, jme, kms, kme,           &
+                 &   grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), &
+                 &   k_start    , k_end, f_flux, &
+                 &   grid%avgflx_cfu1,grid%avgflx_cfd1,grid%avgflx_dfu1, &
+                 &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
+            CALL wrf_debug(200,'In solve_em, after zero_avgflx call')
+         ENDDO
+      ENDIF
+
+! Update avgflx quantities
+!tile-loop for upd_avgflx
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+
+      DO ij = 1 , grid%num_tiles
+         CALL wrf_debug(200,'In solve_em, before upd_avgflx call')
+         CALL upd_avgflx(grid%avgflx_count,grid%avgflx_rum,grid%avgflx_rvm,grid%avgflx_wwm, &
+              &   grid%ru_m, grid%rv_m, grid%ww_m, &
+              &   ids, ide, jds, jde, kds, kde,           &
+              &   ims, ime, jms, jme, kms, kme,           &
+              &   grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), &
+              &   k_start    , k_end, f_flux, &
+              &   grid%cfu1,grid%cfd1,grid%dfu1,grid%efu1,grid%dfd1,grid%efd1,          &
+              &   grid%avgflx_cfu1,grid%avgflx_cfd1,grid%avgflx_dfu1, &
+              &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
+         CALL wrf_debug(200,'In solve_em, after upd_avgflx call')
+         
+      ENDDO
+      grid%avgflx_count = grid%avgflx_count + 1
+   ENDIF
+!
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles

@@ -19,7 +19,7 @@ MODULE module_wrf_top
    USE module_wrf_error
 
 #ifdef DM_PARALLEL
-   USE module_dm
+   USE module_dm, ONLY : wrf_dm_initialize
 #endif
 
    IMPLICIT NONE

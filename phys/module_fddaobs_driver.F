@@ -510,7 +510,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
         fullr(i) = vif(5)
         rampr(i) = vif(6)
       else
-        write(msg,'a,f5.1,2(a,i4)') 'Unknown regime type ', regime(i,j),    &
+        write(msg,'(a,f5.1,2(a,i4))') 'Unknown regime type ', regime(i,j),    &
                                  ' at grid coordinate i = ',i,' j = ',j
         call wrf_message(msg)
         call wrf_error_fatal ( 'fddaobs_driver: compute_VIH STOP' )

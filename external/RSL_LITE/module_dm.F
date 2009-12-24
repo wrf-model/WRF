@@ -4285,10 +4285,10 @@ integer myproc
      SUBROUTINE wrf_dm_gatherv_double ( v, elemsize , km_s, km_e )
       IMPLICIT NONE
       INTEGER  elemsize, km_s, km_e
-      REAL*8 v(*)
+      REAL*8 v(0:*)
 #ifndef STUBMPI
-# ifndef MPI2_SUPPORT
-      REAL*8 v_local((km_e*km_s+1)*elemsize)
+# ifndef USE_MPI_IN_PLACE
+      REAL*8 v_local((km_e-km_s+1)*elemsize)
 # endif
       INTEGER, DIMENSION(:), ALLOCATABLE :: recvcounts, displs
       INTEGER send_type, myproc, nproc, local_comm, ierr, i
@@ -4302,7 +4302,7 @@ integer myproc
       CALL mpi_allgather( i,1,MPI_INTEGER,recvcounts,1,MPI_INTEGER,local_comm,ierr) ;
       i = (km_s)*elemsize
       CALL mpi_allgather( i,1,MPI_INTEGER,displs,1,MPI_INTEGER,local_comm,ierr) ;
-#  ifdef MPI2_SUPPORT
+#  ifdef USE_MPI_IN_PLACE
       CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
 #  else
       DO i = 1,elemsize*(km_e-km_s+1)
@@ -4327,10 +4327,10 @@ integer myproc
      SUBROUTINE wrf_dm_gatherv_single ( v, elemsize , km_s, km_e )
       IMPLICIT NONE
       INTEGER  elemsize, km_s, km_e
-      REAL*4 v(*)
+      REAL*4 v(0:*)
 #ifndef STUBMPI
-# ifndef MPI2_SUPPORT
-      REAL*4 v_local((km_e*km_s+1)*elemsize)
+# ifndef USE_MPI_IN_PLACE
+      REAL*4 v_local((km_e-km_s+1)*elemsize)
 # endif
       INTEGER, DIMENSION(:), ALLOCATABLE :: recvcounts, displs
       INTEGER send_type, myproc, nproc, local_comm, ierr, i
@@ -4344,7 +4344,7 @@ integer myproc
       CALL mpi_allgather( i,1,MPI_INTEGER,recvcounts,1,MPI_INTEGER,local_comm,ierr) ;
       i = (km_s)*elemsize
       CALL mpi_allgather( i,1,MPI_INTEGER,displs,1,MPI_INTEGER,local_comm,ierr) ;
-#  ifdef MPI2_SUPPORT
+#  ifdef USE_MPI_IN_PLACE
       CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
 #  else
       DO i = 1,elemsize*(km_e-km_s+1)

@@ -440,7 +440,9 @@ if test -f configure.wrf ; then
     if test -e tools/mpi2_test.o ; then
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
       sed '/^DM_CC.*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
-      sed '/^ARCH_LOCAL.*=/s/=/= -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      if [ `hostname | cut -c 1-2` = "be" ] ; then
+         sed '/^ARCH_LOCAL.*=/s/$/ -DUSE_MPI_IN_PLACE/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      fi
     else
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
     fi

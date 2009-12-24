@@ -78,9 +78,8 @@ else
     echo 'None of WRF_EM_CORE, WRF_NMM_CORE, '
 #    echo '        WRF_COAMPS_CORE, or WRF_EXP_CORE '
     echo '        specified in shell environment.... '
-    setenv WRF_EM_CORE 0
-    setenv WRF_NMM_CORE 1
-    setenv WRF_NMM_NEST 1
+    setenv WRF_EM_CORE 1
+    setenv WRF_NMM_CORE 0
     setenv WRF_COAMPS_CORE 0
     setenv WRF_EXP_CORE 0
   endif

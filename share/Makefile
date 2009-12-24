@@ -171,6 +171,7 @@ mediation_nest_move.o: \
 		../frame/module_domain.o \
 		../frame/module_configure.o \
 		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
 		module_io_domain.o
 
 #mediation_conv_emissions.o: ../frame/module_domain.o ../frame/module_configure.o \

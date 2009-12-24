@@ -117,7 +117,8 @@ if ( tag == 1 )
           if ( p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,tag) ;
           else              strcpy(dname,dname_tmp) ;
 
-          fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ;
+/*          fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ;  */
+          fprintf(fp,"  IF (.NOT.grid%%is_intermediate) THEN\n") ;
           fprintf(fp,"   ALLOCATE( grid%%tail_statevars%%next )\n") ;
           fprintf(fp,"   grid%%tail_statevars => grid%%tail_statevars%%next\n") ;
           fprintf(fp,"   NULLIFY( grid%%tail_statevars%%next )\n" ) ;
@@ -195,7 +196,8 @@ if ( tag == 1 )
        if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
             ! ( p->nest_mask & INTERP_DOWN || p->nest_mask & FORCE_DOWN || p->nest_mask & INTERP_UP || p->nest_mask & SMOOTH_UP ) )
        {
-	 fprintf(fp,".AND.(.NOT.inter_domain)",tag) ;
+/*	 fprintf(fp,".AND.(.NOT.inter_domain)",tag) ; */
+	 fprintf(fp,".AND.(.NOT.grid%%is_intermediate)",tag) ;
        }
        if ( p->ntl > 1 && sw == 1 ) {
 	 fprintf(fp,".AND.(IAND(%d,tl).NE.0)",tag) ;
@@ -281,7 +283,8 @@ if ( tag == 1 )
              if ( p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,tag) ;
              else                                    strcpy(dname,dname_tmp) ;
 
-             fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ; /*{*/
+/*             fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ; /*{*/
+             fprintf(fp,"  IF (.NOT.grid%%is_intermediate) THEN\n") ; /*{*/
              fprintf(fp,"  ALLOCATE( grid%%tail_statevars%%next )\n" ) ;
              fprintf(fp,"  grid%%tail_statevars => grid%%tail_statevars%%next\n") ;
              fprintf(fp,"  NULLIFY( grid%%tail_statevars%%next )\n") ;

@@ -20,6 +20,13 @@ MODULE module_initialize_real
    USE module_llxy
 #ifdef DM_PARALLEL
    USE module_dm
+   USE module_comm_dm, ONLY : &
+                           HALO_EM_INIT_1_sub   &
+                          ,HALO_EM_INIT_2_sub   &
+                          ,HALO_EM_INIT_3_sub   &
+                          ,HALO_EM_INIT_4_sub   &
+                          ,HALO_EM_INIT_5_sub   &
+                          ,HALO_EM_VINTERP_UV_1_sub
 #endif
 
    REAL , SAVE :: p_top_save

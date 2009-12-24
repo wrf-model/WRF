@@ -486,6 +486,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
   ! Driver layer
    USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid, adjust_domain_dims_for_move
 !   USE module_configure
+   USE module_driver_constants, ONLY : max_moves
    USE module_compute_geop
    USE module_dm, ONLY : wrf_dm_max_real, wrf_dm_move_nest
    USE module_utility

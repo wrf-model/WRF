@@ -25,12 +25,12 @@ CONTAINS
    SUBROUTINE pxlsm(U3D, V3D, DZ8W, QV3D,T3D,TH3D, RHO,         &
                     PSFC, GSW, GLW, RAINBL, EMISS,              &
                     ITIMESTEP, NSOIL, DT, ANAL_INTERVAL,        &            
-                    XLAND, ALBBCK, ALBEDO, SNOALB,              &
+                    XLAND, XICE, ALBBCK, ALBEDO, SNOALB,        &
                     SMOIS, TSLB, MAVAIL, TA2, QA2,              &
                     ZS,DZS, PSIH,                               &
                     LANDUSEF,SOILCTOP,SOILCBOT,VEGFRA,VEGF_PX,  &
                     ISLTYP,RA,RS,LAI,NLCAT,NSCAT,               & 
-                    HFX,QFX,LH,TSK,ZNT,CANWAT,                  &
+                    HFX,QFX,LH,TSK,SST,ZNT,CANWAT,              &
                     GRDFLX,SHDMIN,SHDMAX,                       &
                     SNOWC,PBLH,RMOL,UST,CAPG,DTBL,              &
                     T2_NDG_OLD, T2_NDG_NEW,                     &     
@@ -97,6 +97,7 @@ CONTAINS
 !-- ANAL_INTERVAL       Interval of analyses used for soil moisture and temperature nudging
 
 !-- XLAND       	land mask (1 for land, 2 for water)
+!-- XICE          Sea ice
 !-- ALBBCK              Background Albedo
 !-- ALBEDO      	surface albedo with snow cover effects
 !-- SNOALB              Albedo of snow
@@ -133,6 +134,7 @@ CONTAINS
 !-- QFX           net upward moisture flux at the surface (kg/m^2/s)
 !-- LH            net upward latent heat flux at surface (W/m^2)
 !-- TSK 	  surface skin temperature (K)
+!-- SST     sea surface temperature
 !-- ZNT           rougness length
 !-- CANWAT        Canopy water (mm)
 
@@ -217,7 +219,7 @@ CONTAINS
                                                      EMISS, SNOALB,            &
                                                      ALBBCK, SHDMIN, SHDMAX,   &
                                                      PBLH, RMOL, SNOWNCV,      &
-                                                     UST, MAVAIL
+                                                     UST, MAVAIL, XICE, SST
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(IN) ::                            T2_NDG_OLD, T2_NDG_NEW,   &                
                                                      Q2_NDG_OLD, Q2_NDG_NEW,   & 
@@ -233,17 +235,21 @@ CONTAINS
 
    LOGICAL :: radiation
 
-!    <<<<  Local Variables >>>>
-       REAL:: G1000, ALN10
-       INTEGER:: J, I, NS, NUDGE, ISTI, WEIGHT
-!... Parameters
-      INTEGER, PARAMETER             :: NSTPS = 11     ! max. soil types
+!-------------------------------------------------------------------------
+!     ---------- Local Variables --------------------------------
 
-!... Integer
+
+      !----  PARAMETERS
+      INTEGER, PARAMETER  :: NSTPS  = 11     ! max. soil types
+      REAL, PARAMETER     :: DTPBLX = 40.0   ! Max PX timestep = 40 sec
+
+      
+      !----  INTEGERS
       INTEGER, DIMENSION( 1: NSTPS ) :: JP
+      INTEGER:: J, I, NS, NUDGE, ISTI, WEIGHT
+      INTEGER:: NTSPS, IT
 
-!... Real
-
+      !----  REALS
       REAL,     DIMENSION( ims:ime, jms:jme ) :: XLAI, XLAIMN, RSTMIN, &
                                                  XVEG, XVEGMN, XSNUP, &
                                                  XALB
@@ -256,25 +262,23 @@ CONTAINS
             RAIR,CPAIR,IFLAND,ISNOW,                  &
             ES,QSS,BETAP,                             &
             RH2_OLD, RH2_NEW, T2_OLD, T2_NEW,         &
-            CORE, CORB, TIME_BETWEEN_ANALYSIS
-      REAL:: FWSAT,FWFC,FWWLT,FB,FCGSAT,FJP,FAS,FC2R,FC1SAT
-      REAL:: RH2OBS, HU, SNOBS
-      REAL:: FSEAS, T2I, HC_SNOW, SNOW_FRA, SNOWALB
-      REAL:: QST12,ZFUNC,ZF1,ZA2,QV2, DT_FDDA, CURTIME
+            CORE, CORB, TIME_BETWEEN_ANALYSIS,        &
+            G1000, ALN10,RH2OBS, HU, SNOBS,           &
+            FWSAT,FWFC,FWWLT,FB,FCGSAT,FJP,FAS,       &
+            FSEAS, T2I, HC_SNOW, SNOW_FRA,SNOWALB,    &
+            QST12,ZFUNC,ZF1,ZA2,QV2, DT_FDDA,CURTIME, &
+            FC2R,FC1SAT, DTPBL
 
-      REAL, PARAMETER :: DTPBLX = 40.0  !   Max PX timestep = 40 sec
-      REAL:: DTPBL
-      INTEGER:: NTSPS, IT
-
-!
+!-------------------------------------------------------------------------
 !-------------------------------Executable starts here--------------------
 !
       ALN10  = ALOG(10.0)
       G1000  = g*1.0E-3            ! G/1000
       WEIGHT = 0
       DT_FDDA = ANAL_INTERVAL * 1.0    ! Convert DT of Analysis to real 
-      !IF (ITIMESTEP .EQ. 1) THEN
-      ! Calculate several soil and vegetation parameters, e.g., LAI,
+
+      ! Compute vegetation and land-use characteristics by land-use fraction weighting
+      ! These parameters include LAI, VEGF, ZNT, ALBEDO, RS, etc.
          CALL VEGELAND(LANDUSEF, VEGFRA, SHDMIN, SHDMAX,                &
                        SOILCTOP, SOILCBOT, NLCAT, NSCAT,                &
                        ZNT,XLAI,XLAIMN,RSTMIN,XVEG,XVEGMN,XSNUP,	&
@@ -282,7 +286,6 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,			&
                        ims,ime, jms,jme, kms,kme,			&
                        its,ite, jts,jte, kts,kte)
-      !ENDIF
       !-----------------------------------------------------------------------------------
       !--- Compute time relatve to old and new analysis time for timestep interpolation
       CURTIME = (ITIMESTEP-1) * DT
@@ -296,10 +299,10 @@ CONTAINS
       ENDIF 
       !-----------------------------------------------------------------------------------
 
-
-      DO J = jts,jte    !-- MAIN J LOOP
-
-       DO I = its,ite  !-- MAIN I LOOP
+      !-----------------------------------------------------------------------------------
+      ! Main loop over individual grid cells
+      DO J = jts,jte    !-- J LOOP
+       DO I = its,ite   !-- I LOOP
           
           IFLAND = XLAND(I,J)
 
@@ -328,8 +331,10 @@ CONTAINS
           PRECIP = MAX ( 1.0E-3*RAINBL(i,j)/DTBL,0.0) ! accumulated precip. rate during DT (=dtpbl)
                                                       ! convert RAINBL from mm to m for PXLSM
           WR     = 1.0E-3*CANWAT(I,J)                 ! convert CANWAT from mm to m for PXLSM
-          THETA1 = TH3D(i,1,j)			      ! potential temp at first layer
-          SNOBS = SNOW(I,J)
+          THETA1 = TH3D(i,1,j)			                  ! potential temp at first layer
+          SNOBS  = SNOW(I,J)                          ! Set snow cover to existing model value
+                                                      !   this is overwritten below if snow analysis is availiable
+                                                      !   otherwise snow cover remains constant through simulation
                    
           IF(PXLSM_SOIL_NUDGE .EQ. 1) THEN                   
             !-- 2 m Temp and RH for Nudging
@@ -346,13 +351,39 @@ CONTAINS
             Q2OBS(I,J) = CORB * Q2_NDG_OLD(I,J) +  CORE * Q2_NDG_NEW(I,J)
             SNOBS = CORB * SN_NDG_OLD(I,J) +  CORE * SN_NDG_NEW(I,J)  
           ENDIF
+
+          USTAR  = MAX(UST(I,J),0.005)
           IF (IFLAND .GT. 1.5) THEN ! if over water                            
             ZNT(I,J) = CZO * UST(I,J) * UST(I,J) / G + OZO
           ENDIF                                                              
-          USTAR  = MAX(UST(I,J),0.01)
           Z0     = ZNT(I,J)
           CPAIR  = CPD * (1.0 + 0.84 * QV1)            ! J/(K KG)
 
+          ! Compute fractional snow area and snow albedo
+          CALL PXSNOW (ITIMESTEP, SNOBS, SNOWNCV(I,J), SNOW(I,J),  &
+                       SNOWH(I,J), XSNUP(I,J),  XALB(i,j),         &
+                       SNOALB(I,J),VEGF_PX(I,J), SHDMIN(I,J),      &
+                       HC_SNOW, SNOW_FRA, SNOWC(I,J),  ALBEDO(I,J) ) 
+                                 
+          !-------------------------------------------------------------
+          ! Sea Ice from analysis and water cells that are very cold, but more than 50% water
+          ! are converted to ice/snow for more reasonable treatment.
+          IF( (XICE(I,J).GE.0.5) .OR.   &
+              (SST(I,J).LE.270.0.AND.XLAND(I,J).GT.1.50) ) THEN
+              XLAND(I,J) = 1.0
+              IFLAND = 1.0
+              ZNT(I,J) = 0.001  !  Ice
+              SMOIS(I,1,J) = FWSAT
+              SMOIS(I,2,J) = FWSAT
+              ALBEDO(I,J) = 0.7
+              SNOWC(I,J) = 1.0
+              SNOW_FRA = 1.0
+              VEGF_PX(I,J) = 0.0
+              LAI(I,J) = 0.0
+          ENDIF
+          !-------------------------------------------------------------
+
+          !-------------------------------------------------------------
           !-- Note that when IFGROW = 0 is selected in Vegeland then max and min           
           !-- LAI and Veg are the same                                                     
           T2I = TSLB(I,2,J)                                            
@@ -361,25 +392,22 @@ CONTAINS
           IF (T2I .GE. 290.0) FSEAS = 1.0                                          
           
           LAI(I,J)       = XLAIMN(I,J) + FSEAS*(XLAI(I,J) - XLAIMN(I,J))                 
-          VEGF_PX(I,J)   = XVEGMN(I,J) + FSEAS*(XVEG(I,J) - XVEGMN(I,J))              
+          VEGF_PX(I,J)   = XVEGMN(I,J) + FSEAS*(XVEG(I,J) - XVEGMN(I,J))                       
           
-          !!--- Set LAI and VEGFRC according to deep soil temp    
-
-          IF (IFLAND .GT. 1.5) THEN ! if over water                            
-             VEGF_PX(I,J) = 0. !MAKE Sure veg algorithms not used for water         
+          ! Ensure veg algorithms not used for water 
+          IF (IFLAND .GT. 1.5) THEN                        
+             VEGF_PX(I,J) = 0.0         
           ENDIF                                                                   
-          
-          ! Compute fractional snow area and snow albedo
-          CALL PXSNOW (ITIMESTEP, SNOBS, SNOWNCV(I,J), SNOW(I,J),  &
-                       SNOWH(I,J), XSNUP(I,J),  XALB(i,j),         &
-                       SNOALB(I,J),VEGF_PX(I,J), SHDMIN(I,J),      &
-                       HC_SNOW, SNOW_FRA, SNOWC(I,J),  ALBEDO(I,J) ) 
+          !-------------------------------------------------------------
+
 
           SOLDN  = GSW(I,J) / (1.0 - ALBEDO(I,J))     ! downward shortwave radiaton
           ISNOW = SNOWC(I,J)
 
+
           NUDGE=PXLSM_SOIL_NUDGE
-          IF ( J .LE. 2 .OR. J .GE. (jme-1) ) NUDGE=0
+         IF ( J .LE. 2 .OR. J .GE. (jde-1) ) NUDGE=0
+         IF ( I .LE. 2 .OR. I .GE. (ide-1) ) NUDGE=0
           
           IF ( RMOL(I,J) .GT. 0.0 )  THEN
               MOLX = AMIN1(1/RMOL(I,J),1000.0)
@@ -398,8 +426,9 @@ CONTAINS
         DTPBL = DT / NTSPS                                                       
 
         DO IT=1,NTSPS                                                     
-          !... SATURATION VAPOR PRESSURE (MB) OVER WATER OR LAND
-          IF ( TSLB(I,1,J) .LE. SVPT0 ) THEN        ! with snow
+          
+          !... SATURATION VAPOR PRESSURE (MB) 
+          IF ( TSLB(I,1,J) .LE. SVPT0 ) THEN        ! For ground that is below freezing
             ES = SVP1 * EXP(22.514 - 6.15E3 / TSLB(I,1,J))      ! cb
           ELSE
             ES = SVP1 * EXP(SVP2 * (TSLB(I,1,J) - SVPT0) /  (TSLB(I,1,J) - SVP3))
@@ -412,7 +441,6 @@ CONTAINS
             BETAP = 0.25 * (1.0 - COS(SMOIS(I,1,J) / FWFC * PI)) ** 2
           ENDIF
           
-         
           CALL SURFPX (DTPBL, IFLAND, SNOWC(I,J),  NUDGE,                       & !in
                       SOLDN,  GSW(I,J), LWDN,   EMISSI, ZLVL,                   & !in
                       MOLX,    Z0,    USTAR,                                    & !in
@@ -432,13 +460,12 @@ CONTAINS
           
         END DO                    ! Time internal PX time loop   
 
-
           TSK(I,J)= TSLB(I,1,J)     ! Skin temp set to 1 cm soil temperature in PX for now
           CANWAT(I,J) = WR * 1000.  ! convert WR back to mm for CANWAT
-                  
+          
        ENDDO !  END MIAN I LOOP
       ENDDO  !  END MAIN J LOOP
-
+      
 !------------------------------------------------------
    END SUBROUTINE pxlsm
 !------------------------------------------------------
@@ -523,7 +550,7 @@ CONTAINS
 ! 21  WdTun  200.   10.  30.  10.  1.0  0.5  Shrub and Brush Tundra
 ! 22  MxTun  150.    5.  20.  05.  1.0  0.5  Mixed Tundra
 ! 23  BGTun  100.    5.   5.  02.  0.1  0.1  Bare Ground Tundra
-! 24  SnwIc  300.    5.   5.  02.  0.1  0.1  Perennial Snowfields or Glaciers
+! 24  SnwIc  300.    5.   5.  02.  0.1  0.1  Perennial Snowfields or Glaciers 
 !-----------------------------------------------------------------------------
 
       REAL, DIMENSION(24)  :: RSMIN, Z00, VEG0, VEGMN0, &
@@ -548,8 +575,8 @@ CONTAINS
                     1.0,   1.0,   1.0,   1.0,   4.0,   3.0,   2.0,   0.0,   &
                     1.0,   3.0,  0.20,  0.50,  0.50,  0.50,  0.10,  0.10/
       DATA SNUP0/   0.04,  0.04,  0.04,  0.04,   0.04,  0.04,  0.04,  0.03,   &
-                   0.035,   0.04, 0.08,  0.08,   0.08,  0.08,  0.08, 0.01,   &
-                   0.01,  0.01,  0.02, 0.02, 0.025, 0.025, 0.025,  0.02/
+                    0.035, 0.04,  0.08,  0.08,   0.08,  0.08,  0.08,  0.01,   &
+                    0.01,  0.01,  0.02,  0.02,   0.025, 0.025, 0.025, 0.02/
       DATA ALBF/   15.0,  17.0,  18.0,  18.0,  18.0,  16.0,  19.0,  22.0,   &
                    20.0,  20.0,  16.0,  14.0,  12.0,  12.0,  13.0,   8.0,   &
                    14.0,  14.0,  25.0,  15.0,  15.0,  15.0,  25.0,  55.0/
@@ -560,16 +587,6 @@ CONTAINS
       DATA KWAT / 16/
       
       !--------------------------------------------------------------------
-      !-- Initialize 2 and 3-D veg parameters to be cacluated
-      DO K=1,NLCAT                                                               
-        LAIMX(K) = LAI0(K)                                                       
-        LAIMN(K) = LAIMN0(K)                                                   
-        Z0(K)    = Z00(K)                                                   
-        VEG(K)   = VEG0(K)                                              
-        VEGMN(K) = VEGMN0(K)
-        SNUP(K)  =  SNUP0(K)                                            
-      ENDDO                                              
-
       DO J = jts,jte
       DO I = its,ite
         XLAI(I,J)   = 0.0                                                        
@@ -586,6 +603,16 @@ CONTAINS
       DO J = jts,jte
       DO I = its,ite
       
+      !-- Initialize 2 and 3-D veg parameters to be cacluated
+      DO K=1,NLCAT                                                               
+        LAIMX(K) = LAI0(K)                                                       
+        LAIMN(K) = LAIMN0(K)                                                   
+        Z0(K)    = Z00(K)                                                   
+        VEG(K)   = VEG0(K)                                              
+        VEGMN(K) = VEGMN0(K)
+        SNUP(K)  =  SNUP0(K)                                            
+      ENDDO                                              
+
         !--  INITIALIZE SUMS
         SUMLAI = 0.0
         SUMLMN = 0.0
@@ -598,30 +625,18 @@ CONTAINS
         SUMALB = 0.0
 
        !--   ESTIMATE CROP EMERGANCE DATE FROM VEGFRAC
-        VFMX   = SHDMAX(I,J) + 0.001
+        VFMX   = SHDMAX(I,J)
         VFMN   = SHDMIN(I,J)
         VEGF   = VEGFRA(I,J) 
-        
-        !-- Consistency check for unknown
-          IF(VFMX*VFMN .LE. 0.001 .AND. VEGF .GT. 0.0) THEN
-            VFMX = VEGF
-            VFMN = VEGF
-          ENDIF
-        
+                
         !-- Computations for VEGETATION CELLS ONLY
         IF(VFMX.GT.0.0.AND.LANDUSEF(I,KWAT,J).LT.1.00) THEN
-           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          IF(VEGF.LE.VFMN) THEN
-            VSEAS = 0.0
-          ELSE
-            VSEAS = ((VEGF-VFMN)/(VFMX-VFMN))
-          ENDIF
-          ! print *,I,J,VSEAS,VEGF,VFMX-VFMN
+          VSEAS = VEGF/VFMX
           IF(VSEAS.GT.1.0.OR.VSEAS.LT.0.0) THEN
-             print *,' VSEAS NOT BETWEEN 0 AND 1, STOP',  &
-                     ' VSEAS=',VSEAS,VEGF,VFMX,VFMN
-            STOP
+            VSEAS = MIN(VSEAS,1.0)
+            VSEAS = MAX(VSEAS,0.0)
           ENDIF
+
           ZNOTC = ZNOTCMN * (1-VSEAS) + ZNOTCMX * VSEAS  ! Zo FOR CROPS
           DO K = 1, NLCAT
         !-- USE THE VEGFRAC DATA ONLY FOR CROPS 
@@ -632,7 +647,7 @@ CONTAINS
               VEGMN(K) = VEG(K)
         !-- SEASONALLY VARY Zo FOR DryCrop (k=2) OR Irigated Crop (k=3) OR  Mix Crop (k=4) 
               IF (K .GE. 2 .AND. K .LE. 4) THEN
-                Z0(K)  = ZNOTC
+                 Z0(K) = ZNOTC
               !-- CrGrM (k=5) or CrWdM (k=6) USE AVG WITH GRASS AND FOREST
               ELSE IF (K .GE.5 .AND. K .LE. 6) THEN
                 Z0(K)  = 0.5 * (ZNOTC + Z00(K))
@@ -693,7 +708,7 @@ CONTAINS
         XVEGMN(I,J) = XVEGMN(I,J) * 0.01
         XLAND(I,J)  = 1.0 + FWAT
         XALB(I,J)   = XALB(I,J) * 0.01
-
+        
       ENDDO		! END LOOP THROUGH GRID CELLS
       ENDDO		! END LOOP THROUGH GRID CELLS
       !--------------------------------------------------------------------
@@ -842,7 +857,6 @@ CONTAINS
       PARAMETER (CT_SNOW  = 2.0E-5)  
       ALN10  = ALOG(10.0)
         RADNET = SOLDN - (EMISSI *(STBOLT *TG **4 - LWDN))        ! NET RADIATION                             
-      
         !--------------------------------------------------------------------
         CPOT= (100.0 / PSURF) ** ROVCP       ! rcp is global constant(module_model_constants)                            
         THETAG = TG * CPOT
@@ -937,7 +951,6 @@ CONTAINS
         ENDIF
         !-----------------------------------------------------------------------------------------
 
-
         !--------------------------------------------------------------------
         !-- ASSIMILATION --- COMPUTE SOIL MOISTURE NUDGING FROM TA2 and RH2               
         !-------COMPUTE ASSIMILATION COEFFICIENTS FOR ALL I                            
@@ -965,6 +978,7 @@ CONTAINS
         !-----------------------------------------------------------------------------------------
         !-- Compute new values for TS,T2,WG,W2 and WR. No change over ice or water (XLAND > 1)
         IF (IFLAND .LT. 1.5 ) THEN
+
           !-- SOLVE BY CRANK-NIC --   TENDTS=CT*(RADNET-HFX-QFX)-SOILFLX 
           !-- Calculate the coefficients for implicit calculation of TG
           CQ1      = (1.0 - 0.622 * LV * CRANKP / (r_d * TG)) * QSS
@@ -973,21 +987,22 @@ CONTAINS
           COEFFNP1 = 1.0 + DTPBL * CRANKP * (4.0 * EMISSI *  STBOLT * TG ** 3    &
                      * CT + DENS1 * CPAIR / RAH * CPOT * CT + 2.0 * PI           &
                      * TAUINV ) + DTPBL * (CT * LV * CQ2 * (CQ3 + CQ4))
-          COEFFN   = CT * (GSW + EMISSI * (STBOLT * (4.0 * CRANKP - 1.0)       &
-                     * TG ** 4 + LWDN)                                           & !NET RAD
+          COEFFN   = CT * (GSW + EMISSI * (STBOLT * (4.0 * CRANKP - 1.0)         &
+                     * TG*TG*TG*TG + LWDN)                                       & !NET RAD
                      + DENS1 * CPAIR / RAH * (THETA1 - (1.0 - CRANKP) * THETAG)  &
-                     - LV * (CQ3 * (CQ1 - QV1) + CQ4 * (CQ1 - QV1)))       &       !SFC HEAT FLUX 
+                     - LV * (CQ3 * (CQ1 - QV1) + CQ4 * (CQ1 - QV1)))             & !SFC HEAT FLUX 
                      - 2.0 * PI * TAUINV * ((1.0 - CRANKP) * TG - T2)              !SOIL FLUX
           TSNEW    = (TG + DTPBL * COEFFN) / COEFFNP1
           !-- FOR SNOW COVERED SURFACE TEMPERATURE IS NOT MORE THAN ZERO
 !          IF (ISNOW .GT. 0.5) TSNEW = AMIN1(TSNEW,273.15)
           TSHLF = 0.5 * ( TSNEW + TG)
-          T2NEW = (T2 + DTPBL * TAUINV * T2TFAC * (TSHLF - (1 - CRANKP) * T2) &
+          T2NEW = (T2 + DTPBL * TAUINV * T2TFAC * (TSHLF - (1 - CRANKP) * T2)     &
                 + DTPBL*T2NUD)  &              ! Added deep temperature nudging 
                   / (1.0 + DTPBL * TAUINV * T2TFAC * CRANKP)
           !-- REPLACE OLD with NEW Value
           TG = TSNEW
           T2 = T2NEW
+
         ENDIF
         !-----------------------------------------------------------------------------------------
 
@@ -997,29 +1012,32 @@ CONTAINS
           !-- Compute WR
           ROFF  = 0.0
           WRMAX = 0.2E-3 * VEGFRC * LAI                     ! max. WRMAX IN m
-          !--  PC is precip. intercepted by veg.(M/S)
-          PC    = VEGFRC * SIGF * PRECIP
-          DWR   = (WRMAX - WR) / DTPBL                       !the tendency to reach max.
-          PNET  = PC - ER/ DENW                              ! residual of precip. and evap.
-          IF (PNET .GT. DWR) THEN
-            ROFF = PNET - DWR
-            PC   = PC - ROFF
-          ENDIF
-          IF (QSS .LT. QV1) THEN
-            TENDWR = PC - ER / DENW
-            WRNEW  = WR + DTPBL * TENDWR
+          
+          IF(WRMAX.GT.0.0) THEN
+            !--  PC is precip. intercepted by veg.(M/S)
+            PC    = VEGFRC * SIGF * PRECIP
+            DWR   = (WRMAX - WR) / DTPBL                       !the tendency to reach max.
+            PNET  = PC - ER/ DENW                              ! residual of precip. and evap.
+            IF (PNET .GT. DWR) THEN
+              ROFF = PNET - DWR
+              PC   = PC - ROFF
+            ENDIF
+            IF (QSS .LT. QV1) THEN
+              TENDWR = PC - ER / DENW
+              WRNEW  = WR + DTPBL * TENDWR
+            ELSE
+              COF1    = DENS1 / DENW * VEGFRC * (QSS - QV1) / RAW
+              !-- using delta=wr/wrmax
+              CFNP1WR = 1.0 + DTPBL * COF1 * CRANKP / WRMAX  
+              CFNWR   = PC - COF1 * (1.0 - CRANKP) * WR / WRMAX
+              WRNEW   = (WR + DTPBL * CFNWR) / CFNP1WR
+            ENDIF
           ELSE
-            COF1    = DENS1 / DENW * VEGFRC * (QSS - QV1) / RAW
-            !-- using delta=wr/wrmax
-            CFNP1WR = 1.0 + DTPBL * COF1 * CRANKP / WRMAX  
-            CFNWR   = PC - COF1 * (1.0 - CRANKP) * WR / WRMAX
-            WRNEW   = (WR + DTPBL * CFNWR) / CFNP1WR
+            WRNEW=0.0  
           ENDIF
+          !---------------------------------------------
           !-- Compute W2
-          !..........  
           PG     = DENW * (PRECIP - PC)               ! PG is precip. reaching soil (PC already including ROFF)
-          IF(ER.GT.0.5E-3)PRINT *,' PRECIP,PC,DTPBL,PNET='   &
-          ,PRECIP,PC,DTPBL,PNET
           TENDW2 = 1.0 / (DENW * DS2) * (PG - EG - ETR) &
                    + (W2NUDG + WGNUDG) / DS2                    ! NUDGING
           W2NEW  = W2 + DTPBL * TENDW2
@@ -1029,7 +1047,6 @@ CONTAINS
           !.. new values
           W2     = W2NEW
           WR     = AMIN1(WRMAX,WRNEW)
-          if (WR .lt. 1.0E-8) WR = 0.0                          
         ENDIF
         !-----------------------------------------------------------------------------------------
 
@@ -1155,13 +1172,15 @@ CONTAINS
 !... for water surface, no canopy evaporation and transpiration
       ER  = 0.0
       ETR = 0.0
-
+      CQ4 = 0.0
+      
 !... GROUND EVAPORATION (DEPOSITION)
       IF (QSS .LT. QV1) BETAP = 1.0
       EG = DENS1 * (1.0 - VEGFRC) * BETAP * (QSS - QV1) / RAW
 
+      !!---------------------------------------------------------------------
 !... CANOPY
-      IF (IFLAND .LT. 1.5 .AND. ISTI .GT. 0)  THEN
+      IF (IFLAND .LT. 1.5 .AND. VEGFRC .GT. 0.0)  THEN
          WRMAX = 0.2E-3 * VEGFRC * LAI   ! in unit m
           IF (WR .LE. 0.0) THEN
             DELTA = 0.0
@@ -1179,60 +1198,68 @@ CONTAINS
 !         IF(ER.GT.0.5E-3)PRINT *,' WR,SIGG,DENS1,VEGFRC,QSS,QV1,RAW=', &
 !                  WR,SIGG,DENS1,VEGFRC,QSS,QV1,RAW,' ER=',ER
       ENDIF
+      !!---------------------------------------------------------------------
 
-!-- TRANSPIRATION
-
-      IF (IFLAND .LT. 1.5 .AND. ISTI .GT. 0)  THEN
-!
-!-RADIATION
+      !-- TRANSPIRATION
+      !!---------------------------------------------------------------------
+      IF (IFLAND .LT. 1.5 .AND. VEGFRC .GT. 0.0)  THEN
+        
+        !!!-RADIATION
         IF (RSTMIN .GT. 130.0) THEN
           RADL = 30.0                                            ! W/M2
         ELSE
           RADL = 100.0                                           ! W/M2
         ENDIF
-       RADF = 1.1 * RG / (RADL * LAI)                  ! NP89 - EQN34
+        RADF = 1.1 * RG / (RADL * LAI)                  ! NP89 - EQN34
         F1   = (RSTMIN / RSMAX + RADF) / (1.0 + RADF)
 
-!-SOIL MOISTURE
+        !!!-SOIL MOISTURE
         W2AVAIL = W2 - WWLT
         W2MXAV  = WFC - WWLT
         F2      = 1.0 / (1.0 + EXP(-5.0 * ( W2AVAIL / W2MXAV -               &
                   (W2MXAV / 3.0 + WWLT))))    ! according JP, 9/94
 
-!-AIR TEMP
-!... according to Avissar (1985) and AX 7/95
+        !-AIR TEMP
+        !... according to Avissar (1985) and AX 7/95
         IF (TA1 .LE. 302.15) THEN
           F4 = 1.0 / (1.0 + EXP(-0.41 * (TA1 - 282.05)))
         ELSE
           F4 = 1.0 / (1.0 + EXP(0.5 * (TA1 - 314.0)))
         ENDIF
-!...
+
         FTOT = LAI * F1 * F2 * F4
-        FTOT = AMAX1(FTOT,FTMIN)
       ENDIF
 
-      IF (IFLAND .LT. 1.5 .AND. ISTI .GT. 0)  THEN
+      !!---------------------------------------------------------------------
+      IF (IFLAND .LT. 1.5 .AND. VEGFRC .GT. 0.0)  THEN
         FSHELT = 1.0   ! go back to NP89
         GS     = FTOT / (RSTMIN * FSHELT)
         GA     = 1.0 / RAW
-!-- Compute humidity effect according to RH at leaf surf
+        !-- Compute humidity effect according to RH at leaf surf
         F3 = 0.5 * (GS - GA + SQRT(GA * GA + GA * GS *                       &
              (4.0 * QV1 / QSS - 2.0) + GS * GS)) / GS
         F3 = AMIN1(AMAX1(F3,F3MIN),1.0)
-        RS = 1.0 / (GS * F3)
 
-!--- Compute Assimilation factor for soil moisture nudging - jp 12/94
-!--     Note that the 30 coef is to result in order 1 factor for max
+        RS = 1.0 / (GS * F3)
+        
+        !IF(RS .GT. 999999.0) THEN
+        !  print *,'RS,LAI,VEGFRC,ISTI-->',RS,LAI,VEGFRC,ISTI,ISNOW
+        !ENDIF
+        
+        !--- Compute Assimilation factor for soil moisture nudging - jp 12/94
+        !--  Note that the 30 coef is to result in order 1 factor for max
         IF (RG .LT. 0.00001) THEN   ! do not nudge during night
           FX = 0.0
         ELSE
           FX = 30.0 * F1 * F4 * LAI / (RSTMIN * FSHELT)
         ENDIF
+
         FASS = FX
         ETR = DENS1 * VEGFRC * (1.0 - SIGG) * (QSS - QV1) / (RAW + RS)
-!..... CQ4 is used for the implicit calculation of TG in SURFACE
+        !..... CQ4 is used for the implicit calculation of TG in SURFACE
         CQ4 = DENS1 * VEGFRC * ((1.0 - SIGG) / (RAW + RS) + SIGG / RAW)
-      ENDIF         ! endif for if IFLAND
+      ENDIF         
+      !!---------------------------------------------------------------------
 
     END SUBROUTINE qflux
 !------------------------------------------------------------------------------------------
@@ -1601,15 +1628,8 @@ CONTAINS
       END IF   
       
       SNOWC  = SNOW_FRA
-     
-	! ----------------------------------------------------------------------         
-	! SNOALB IS ARGUMENT REPRESENTING MAXIMUM ALBEDO OVER DEEP SNOW,                 
-	! AS PASSED INTO SFLX, AND ADAPTED FROM THE SATELLITE-BASED MAXIMUM              
-	! SNOW ALBEDO FIELDS PROVIDED BY D. ROBINSON AND G. KUKLA                        
-	! (1985, JCAM, VOL 24, 402-411)                                                  
-	! ----------------------------------------------------------------------         
-        SNOWALB = AMIN1(1.0,ALB + AMAX1(0.0,(1.0- SHDFAC -            &
-                      (SHDMIN/100)) * SNOW_FRA * (SNOALB - ALB)))
+
+      SNOWALB = ALB + SNOWC*(SNOALB-ALB)
 
     END SUBROUTINE pxsnow
 

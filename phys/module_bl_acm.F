@@ -166,6 +166,7 @@ CONTAINS
    ENDDO
 
    DSIGFI(kte) = DSIGFI(kte-1)
+   
     do j = jts,jte
       CALL ACM2D(j=J,xtime=XTIME, dtpbl=DTPBL, sigmaf=SIGMAF, sigmah=SIGMAH    &
               ,dsigfi=DSIGFI,dsighi=DSIGHI,dsigh=DSIGH             &
@@ -207,6 +208,7 @@ CONTAINS
               ,ims,ime, jms,jme, kms,kme   &
               ,its,ite, jts,jte, kts,kte   )
 
+!            USE module_wrf_error
             IMPLICIT NONE
 
 !.......Arguments
@@ -264,6 +266,7 @@ CONTAINS
 !... Integer
       INTEGER :: KL, jtf, ktf, itf, KMIX
 !...
+        character*256 :: message
 !-----initialize vertical tendencies and
 !
       do i = its,ite
@@ -333,14 +336,14 @@ CONTAINS
 
 !...  COMPUTE PBL WHERE RICHARDSON NUMBER = RIC (0.25) HOLTSLAG ET AL 1990  
      DO 100 I = its,ite
-       if(MOL(I).LT.0.0) then
+       if(MOL(I).LT.0.0 .AND. XTIME.GT.1) then
          WSS   = (UST(I) ** 3 + 0.6 * WST(I) ** 3) ** 0.33333
-         TMPFX = -UST(I) * TSTV(I)
-         TCONV = 8.5 * TMPFX / WSS
+         TCONV = -8.5 * UST(I) * TSTV(I) / WSS
          TH1   = THETAV(I,1) + TCONV
        else
          TH1   = THETAV(I,1)
        endif
+
 99     KMIX = 1
        DO K = 1,kte
          DTMP   = THETAV(I,K) - TH1
@@ -368,13 +371,13 @@ CONTAINS
          IF (RIB(I,K) .GE. RIC) GO TO 201
        ENDDO
 
-       print *,' RIB never exceeds RIC, RIB(i,kte) = ',rib(i,5),        &
+       write (message, *)' RIBX never exceeds RIC, RIB(i,kte) = ',rib(i,5),        &
                ' THETAV(i,1) = ',thetav(i,1),' MOL=',mol(i),            &
                ' TCONV = ',TCONV,' WST = ',WST(I),                      &
                ' KMIX = ',kmix,' UST = ',UST(I),                       &
                ' TST = ',TST(I),' U,V = ',US(I,1),VS(I,1),              &
                ' I,J=',I,J
-       STOP        
+       CALL wrf_error_fatal ( message )
 201    CONTINUE
 
        KPBLH(I) = K

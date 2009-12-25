@@ -48,6 +48,7 @@ CONTAINS
      &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
      &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
      &          ,frc_urb2d, utype_urb2d                               & !H urban
+     &          ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif          &
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
@@ -634,6 +635,10 @@ CONTAINS
 !-------------------------------------------------
 ! urban related variables are added to declaration
 !-------------------------------------------------
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
      REAL, OPTIONAL, INTENT(IN) :: DECLIN, SOLCON
      REAL, OPTIONAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZEN
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: HRANG
@@ -1394,6 +1399,7 @@ CONTAINS
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                 sf_urban_physics                                &
 !Optional urban
+                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                 ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
@@ -1640,10 +1646,7 @@ CONTAINS
      CASE (PXLSMSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
            PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
-           PRESENT(qsg)        .AND.  PRESENT(qvg)     .AND.    &
-           PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
-           PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
-           PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
+           PRESENT(rainbl) .AND.    &
                                                       .TRUE. ) THEN
           IF ( FRACTIONAL_SEAICE == 1 ) THEN
 
@@ -1684,12 +1687,12 @@ CONTAINS
           CALL PXLSM(u_phy, v_phy, dz8w, qv_curr, t_phy, th_phy, rho,&
                      psfc, gsw, glw, rainbl, emiss,                  &
                      ITIMESTEP, num_soil_layers, DT, anal_interval,  &
-                     xland, albbck, albedo, snoalb, smois, tslb,     &
+                     xland, xice, albbck, albedo, snoalb, smois, tslb, &
                      mavail,T2, Q2,                                  &
                      zs, dzs, psih,                                  &
                      landusef,soilctop,soilcbot,vegfra, vegf_px,     &
                      isltyp,ra,rs,lai,nlcat,nscat,                   &
-                     hfx,qfx,lh,tsk,znt,canwat,                      &
+                     hfx,qfx,lh,tsk,sst,znt,canwat,                  &
                      grdflx,shdmin,shdmax,                           &
                      snowc,pblh,rmol,ust,capg,dtbl,                  &
                      t2_ndg_old,t2_ndg_new,q2_ndg_old,q2_ndg_new,    &

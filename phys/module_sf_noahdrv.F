@@ -40,6 +40,7 @@ CONTAINS
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
                   sf_urban_physics,                             &
+                  CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,  &
 !Optional Urban
                   TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & !H urban
                   UC_URB2D,                                     & !H urban
@@ -291,6 +292,10 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
 
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMC_SFCDIF
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHC_SFCDIF
 ! Local variables (moved here from driver to make routine thread safe, 20031007 jm)
 
       REAL, DIMENSION(1:num_soil_layers) ::  ET
@@ -525,6 +530,7 @@ CONTAINS
    REAL, DIMENSION(ims:ime,jms:jme) ::GRDFLX_URB
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
    REAL :: r1,r2,r3
+   REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
 ! ----------------------------------------------------------------------
@@ -990,6 +996,12 @@ CONTAINS
 !
             CHS_URB  = CHS(I,J)
             CHS2_URB = CHS2(I,J)
+            IF (PRESENT(CMR_SFCDIF)) THEN
+               CMR_URB = CMR_SFCDIF(I,J)
+               CHR_URB = CHR_SFCDIF(I,J)
+               CMC_URB = CMC_SFCDIF(I,J)
+               CHC_URB = CHC_SFCDIF(I,J)
+            ENDIF
 !
 ! Call urban
 
@@ -1007,6 +1019,7 @@ CONTAINS
                        TS_URB,QS_URB,SH_URB,LH_URB,LH_KINEMATIC_URB,    & ! O
                        SW_URB,ALB_URB,LW_URB,G_URB,RN_URB,PSIM_URB,PSIH_URB, & ! O
                        GZ1OZ0_URB,                                      & !O
+                       CMR_URB, CHR_URB, CMC_URB, CHC_URB,              &
                        U10_URB, V10_URB, TH2_URB, Q2_URB,               & ! O
                        UST_URB)                                           !O
 
@@ -1102,7 +1115,12 @@ CONTAINS
             Q2_URB2D(I,J)    = Q2_URB
             UST_URB2D(I,J)   = UST_URB
             AKMS_URB2D(I,J)  = KARMAN * UST_URB2D(I,J)/(GZ1OZ0_URB2D(I,J)-PSIM_URB2D(I,J))
-
+            IF (PRESENT(CMR_SFCDIF)) THEN
+               CMR_SFCDIF(I,J) = CMR_URB
+               CHR_SFCDIF(I,J) = CHR_URB
+               CMC_SFCDIF(I,J) = CMC_URB
+               CHC_SFCDIF(I,J) = CHC_URB
+            ENDIF
           END IF
 
          ENDIF                                   ! end of UCM CALL if block

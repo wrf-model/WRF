@@ -619,6 +619,10 @@ state    real   SFW1_URB3D      i{ulay}j    misc       1         Z     r      "S
 state    real   SFW2_URB3D      i{ulay}j    misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFR_URB3D       i{ulay}j    misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   SFG_URB3D       i{ulay}j    misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   CMR_SFCDIF      ij          misc       1         -     r      "CMR_SFCDIF" "" ""
+state    real   CHR_SFCDIF      ij          misc       1         -     r      "CHR_SFCDIF" "" ""
+state    real   CMC_SFCDIF      ij          misc       1         -     r      "CMC_SFCDIF" "" ""
+state    real   CHC_SFCDIF      ij          misc       1         -     r      "CHC_SFCDIF" "" ""
 
 
 # solar location variables from radiation driver

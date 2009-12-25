@@ -2,8 +2,19 @@
 !
 
 ! THIS MODULE CONTAINS THE TWO-MOMENT MICROPHYSICS CODE DESCRIBED BY
-! MORRISON ET AL. 2005 JAS; MORRISON AND PINTO 2005 JAS.
-! ADDITIONAL CHANGES ARE DESCRIBED IN DETAIL BY MORRISON, THOMPSON, TATARSKII (MWR, SUBMITTED)
+!     MORRISON ET AL. (2009, MWR)
+
+! CHANGES FOR V3.2, RELATIVE TO MOST RECENT (BUG-FIX) CODE FOR V3.1
+
+! 1) ADDED ACCELERATED MELTING OF GRAUPEL/SNOW DUE TO COLLISION WITH RAIN, FOLLOWING LIN ET AL. (1983)
+! 2) INCREASED MINIMUM LAMBDA FOR RAIN, AND ADDED RAIN DROP BREAKUP FOLLOWING MODIFIED VERSION
+!     OF VERLINDE AND COTTON (1993)
+! 3) CHANGE MINIMUM ALLOWED MIXING RATIOS IN DRY CONDITIONS (RH < 90%), THIS IMPROVES RADAR REFLECTIIVITY
+!     IN LOW REFLECTIVITY REGIONS
+! 4) BUG FIX TO MAXIMUM ALLOWED PARTICLE FALLSPEEDS AS A FUNCTION OF AIR DENSITY
+! 5) BUG FIX TO CALCULATION OF LIQUID WATER SATURATION VAPOR PRESSURE (CHANGE IS VERY MINOR)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
 ! RATIOS AND NUMBER CONCENTRATIONS OF FIVE HYDROMETEOR SPECIES:
@@ -120,6 +131,8 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
      REAL, PRIVATE ::      EII         ! COLLECTION EFFICIENCY, ICE-ICE COLLISIONS
      REAL, PRIVATE ::      ECI         ! COLLECTION EFFICIENCY, ICE-DROPLET COLLISIONS
      REAL, PRIVATE ::      RIN     ! RADIUS OF CONTACT NUCLEI (M)
+! hm, add for V3.2
+     REAL, PRIVATE ::      CPW     ! SPECIFIC HEAT OF LIQUID WATER
 
 ! CCN SPECTRA FOR IACT = 1
 
@@ -302,6 +315,8 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
          QSMALL = 1.E-14
          EII = 0.1
          ECI = 0.7
+! HM, ADD FOR V3.2
+         CPW = 4218.
 
 ! SIZE DISTRIBUTION PARAMETERS
 
@@ -322,7 +337,10 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
          LAMMAXI = 1./1.E-6
          LAMMINI = 1./(2.*DCS+100.E-6)
          LAMMAXR = 1./20.E-6
-         LAMMINR = 1./500.E-6
+!         LAMMINR = 1./500.E-6
+! sensitivity
+         LAMMINR = 1./2800.E-6
+
          LAMMAXS = 1./10.E-6
          LAMMINS = 1./2000.E-6
          LAMMAXG = 1./20.E-6
@@ -1085,14 +1103,15 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             END IF
 
 ! AT SUBSATURATION, REMOVE SMALL AMOUNTS OF CLOUD/PRECIP WATER
+! hm modify 7/0/09 change limit to 1.e-8
 
              IF (QVQVS(K).LT.0.9) THEN
-               IF (QR3D(K).LT.1.E-6) THEN
+               IF (QR3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QR3D(K)
                   T3D(K)=T3D(K)-QR3D(K)*XXLV(K)/CPM(K)
                   QR3D(K)=0.
                END IF
-               IF (QC3D(K).LT.1.E-6) THEN
+               IF (QC3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QC3D(K)
                   T3D(K)=T3D(K)-QC3D(K)*XXLV(K)/CPM(K)
                   QC3D(K)=0.
@@ -1100,17 +1119,17 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
              END IF
 
              IF (QVQVSI(K).LT.0.9) THEN
-               IF (QI3D(K).LT.1.E-6) THEN
+               IF (QI3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QI3D(K)
                   T3D(K)=T3D(K)-QI3D(K)*XXLS(K)/CPM(K)
                   QI3D(K)=0.
                END IF
-               IF (QNI3D(K).LT.1.E-6) THEN
+               IF (QNI3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QNI3D(K)
                   T3D(K)=T3D(K)-QNI3D(K)*XXLS(K)/CPM(K)
                   QNI3D(K)=0.
                END IF
-               IF (QG3D(K).LT.1.E-6) THEN
+               IF (QG3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QG3D(K)
                   T3D(K)=T3D(K)-QG3D(K)*XXLS(K)/CPM(K)
                   QG3D(K)=0.
@@ -1445,10 +1464,13 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             UNR = ARN(K)*CONS6/LAMR(K)**BR
 
 ! SET REASLISTIC LIMITS ON FALLSPEEDS
-            UMS=MIN(UMS,1.2)
-            UNS=MIN(UNS,1.2)
-            UMR=MIN(UMR,9.1)
-            UNR=MIN(UNR,9.1)
+
+! bug fix, 10/08/09
+            dum=(rhosu/rho(k))**0.54
+            UMS=MIN(UMS,1.2*dum)
+            UNS=MIN(UNS,1.2*dum)
+            UMR=MIN(UMR,9.1*dum)
+            UNR=MIN(UNR,9.1*dum)
 
             PRACS(K) = CONS31*(((1.2*UMR-0.95*UMS)**2+              &
                   0.08*UMS*UMR)**0.5*RHO(K)*                     &
@@ -1477,13 +1499,15 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             UNR = ARN(K)*CONS6/LAMR(K)**BR
 
 ! SET REASLISTIC LIMITS ON FALLSPEEDS
-            UMG=MIN(UMG,20.)
-            UNG=MIN(UNG,20.)
-            UMR=MIN(UMR,9.1)
-            UNR=MIN(UNR,9.1)
+! bug fix, 10/08/09
+            dum=(rhosu/rho(k))**0.54
+            UMG=MIN(UMG,20.*dum)
+            UNG=MIN(UNG,20.*dum)
+            UMR=MIN(UMR,9.1*dum)
+            UNR=MIN(UNR,9.1*dum)
 
-! DUM IS MIXING RATIO OF RAIN PER SEC COLLECTED BY GRAUPEL/HAIL
-            DUM = CONS41*(((1.2*UMR-0.95*UMG)**2+                   &
+! PRACG IS MIXING RATIO OF RAIN PER SEC COLLECTED BY GRAUPEL/HAIL
+            PRACG(K) = CONS41*(((1.2*UMR-0.95*UMG)**2+                   &
                   0.08*UMG*UMR)**0.5*RHO(K)*                      &
                   N0RR(K)*N0G(K)/LAMR(K)**3*                              &
                   (5./(LAMR(K)**3*LAMG(K))+                    &
@@ -1492,7 +1516,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! ASSUME 1 MM DROPS ARE SHED, GET NUMBER SHED PER SEC
 
-            DUM = DUM/5.2E-7
+            DUM = PRACG(K)/5.2E-7
 
             NPRACG(K) = CONS32*RHO(K)*(1.7*(UNR-UNG)**2+            &
                 0.3*UNR*UNG)**0.5*N0RR(K)*N0G(K)*              &
@@ -1526,7 +1550,15 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! AS DESCRINED ABOVE FOR AUTOCONVERSION
 
          IF (QR3D(K).GE.1.E-8) THEN
-            NRAGG(K) = -8.*NR3D(K)*QR3D(K)*RHO(K)
+! include breakup add 10/09/09
+            dum1=300.e-6
+            if (1./lamr(k).lt.dum1) then
+            dum=1.
+            else if (1./lamr(k).ge.dum1) then
+            dum=2.-exp(2300.*(1./lamr(k)-dum1))
+            end if
+!            NRAGG(K) = -8.*NR3D(K)*QR3D(K)*RHO(K)
+            NRAGG(K) = -5.78*dum*NR3D(K)*QR3D(K)*RHO(K)
          END IF
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -1559,11 +1591,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
           IF (QNI3D(K).GE.1.E-8) THEN
 
+! HM, MODIFY FOR V3.2, ADD ACCELERATED MELTING DUE TO COLLISION WITH RAIN
+             DUM = -CPW/XLF(K)*T3D(K)*PRACS(K)
+
              PSMLT(K)=2.*PI*N0S(K)*KAP(K)*(273.15-T3D(K))/       &
                     XLF(K)*RHO(K)*(F1S/(LAMS(K)*LAMS(K))+        &
                     F2S*(ASN(K)*RHO(K)/MU(K))**0.5*                      &
                     SC(K)**(1./3.)*CONS10/                   &
-                   (LAMS(K)**CONS35))
+                   (LAMS(K)**CONS35))+DUM
 
 ! IN WATER SUBSATURATION, SNOW MELTS AND EVAPORATES
 
@@ -1588,11 +1623,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
           IF (QG3D(K).GE.1.E-8) THEN
 
+! HM, MODIFY FOR V3.2, ADD ACCELERATED MELTING DUE TO COLLISION WITH RAIN
+             DUM = -CPW/XLF(K)*T3D(K)*PRACG(K)
+
              PGMLT(K)=2.*PI*N0G(K)*KAP(K)*(273.15-T3D(K))/ 		 &
                     XLF(K)*RHO(K)*(F1S/(LAMG(K)*LAMG(K))+                &
                     F2S*(AGN(K)*RHO(K)/MU(K))**0.5*                      &
                     SC(K)**(1./3.)*CONS11/                   &
-                   (LAMG(K)**CONS36))
+                   (LAMG(K)**CONS36))+DUM
 
 ! IN WATER SUBSATURATION, GRAUPEL MELTS AND EVAPORATES
 
@@ -1608,6 +1646,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         PGMLT(K) = PGMLT(K)-EVPMG(K)
       END IF
       END IF
+
+! HM, V3.2
+! RESET PRACG AND PRACS TO ZERO, THIS IS DONE BECAUSE THERE IS NO
+! TRANSFER OF MASS FROM SNOW AND GRAUPEL TO RAIN DIRECTLY FROM COLLECTION
+! ABOVE FREEZING, IT IS ONLY USED FOR ENHANCEMENT OF MELTING AND SHEDDING
+
+      PRACG(K) = 0.
+      PRACS(K) = 0.
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
@@ -2159,10 +2205,13 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             UNR = ARN(K)*CONS6/LAMR(K)**BR
 
 ! SET REASLISTIC LIMITS ON FALLSPEEDS
-            UMS=MIN(UMS,1.2)
-            UNS=MIN(UNS,1.2)
-            UMR=MIN(UMR,9.1)
-            UNR=MIN(UNR,9.1)
+
+! bug fix, 10/08/09
+            dum=(rhosu/rho(k))**0.54
+            UMS=MIN(UMS,1.2*dum)
+            UNS=MIN(UNS,1.2*dum)
+            UMR=MIN(UMR,9.1*dum)
+            UNR=MIN(UNR,9.1*dum)
 
             PRACS(K) = CONS41*(((1.2*UMR-0.95*UMS)**2+                   &
                   0.08*UMS*UMR)**0.5*RHO(K)*                      &
@@ -2214,10 +2263,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             UNR = ARN(K)*CONS6/LAMR(K)**BR
 
 ! SET REASLISTIC LIMITS ON FALLSPEEDS
-            UMG=MIN(UMG,20.)
-            UNG=MIN(UNG,20.)
-            UMR=MIN(UMR,9.1)
-            UNR=MIN(UNR,9.1)
+! bug fix, 10/08/09
+            dum=(rhosu/rho(k))**0.54
+            UMG=MIN(UMG,20.*dum)
+            UNG=MIN(UNG,20.*dum)
+            UMR=MIN(UMR,9.1*dum)
+            UNR=MIN(UNR,9.1*dum)
 
             PRACG(K) = CONS41*(((1.2*UMR-0.95*UMG)**2+                   &
                   0.08*UMG*UMR)**0.5*RHO(K)*                      &
@@ -2460,7 +2511,15 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! AS DESCRINED ABOVE FOR AUTOCONVERSION
 
          IF (QR3D(K).GE.1.E-8) THEN
-            NRAGG(K) = -8.*NR3D(K)*QR3D(K)*RHO(K)
+! include breakup add 10/09/09
+            dum1=300.e-6
+            if (1./lamr(k).lt.dum1) then
+            dum=1.
+            else if (1./lamr(k).ge.dum1) then
+            dum=2.-exp(2300.*(1./lamr(k)-dum1))
+            end if
+!            NRAGG(K) = -8.*NR3D(K)*QR3D(K)*RHO(K)
+            NRAGG(K) = -5.78*dum*NR3D(K)*QR3D(K)*RHO(K)
          END IF
 
 !.......................................................................
@@ -3097,14 +3156,16 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! SET REALISTIC LIMITS ON FALLSPEED
 
-        UMS=MIN(UMS,1.2)
-        UNS=MIN(UNS,1.2)
-        UMI=MIN(UMI,1.2)
-        UNI=MIN(UNI,1.2)
-        UMR=MIN(UMR,9.1)
-        UNR=MIN(UNR,9.1)
-        UMG=MIN(UMG,20.)
-        UNG=MIN(UNG,20.)
+! bug fix, 10/08/09
+        dum=(rhosu/rho(k))**0.54
+        UMS=MIN(UMS,1.2*dum)
+        UNS=MIN(UNS,1.2*dum)
+        UMI=MIN(UMI,1.2*dum)
+        UNI=MIN(UNI,1.2*dum)
+        UMR=MIN(UMR,9.1*dum)
+        UNR=MIN(UNR,9.1*dum)
+        UMG=MIN(UMG,20.*dum)
+        UNG=MIN(UNG,20.*dum)
 
       FR(K) = UMR
       FI(K) = UMI
@@ -3297,14 +3358,15 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             QVQVSI(K) = QV3D(K)/QVI(K)
 
 ! AT SUBSATURATION, REMOVE SMALL AMOUNTS OF CLOUD/PRECIP WATER
+! hm 7/9/09 change limit to 1.e-8
 
              IF (QVQVS(K).LT.0.9) THEN
-               IF (QR3D(K).LT.1.E-6) THEN
+               IF (QR3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QR3D(K)
                   T3D(K)=T3D(K)-QR3D(K)*XXLV(K)/CPM(K)
                   QR3D(K)=0.
                END IF
-               IF (QC3D(K).LT.1.E-6) THEN
+               IF (QC3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QC3D(K)
                   T3D(K)=T3D(K)-QC3D(K)*XXLV(K)/CPM(K)
                   QC3D(K)=0.
@@ -3312,17 +3374,17 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
              END IF
 
              IF (QVQVSI(K).LT.0.9) THEN
-               IF (QI3D(K).LT.1.E-6) THEN
+               IF (QI3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QI3D(K)
                   T3D(K)=T3D(K)-QI3D(K)*XXLS(K)/CPM(K)
                   QI3D(K)=0.
                END IF
-               IF (QNI3D(K).LT.1.E-6) THEN
+               IF (QNI3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QNI3D(K)
                   T3D(K)=T3D(K)-QNI3D(K)*XXLS(K)/CPM(K)
                   QNI3D(K)=0.
                END IF
-               IF (QG3D(K).LT.1.E-6) THEN
+               IF (QG3D(K).LT.1.E-8) THEN
                   QV3D(K)=QV3D(K)+QG3D(K)
                   T3D(K)=T3D(K)-QG3D(K)*XXLS(K)/CPM(K)
                   QG3D(K)=0.
@@ -3634,7 +3696,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !  T IS INPUT IN UNITS OF K.
 !  TYPE REFERS TO SATURATION WITH RESPECT TO LIQUID (0) OR ICE (1)
 
-! REPLACE GOFF-GRATCH WITH FASTER FORMULATION FROM MARAT KHROUTDINOV
+! REPLACE GOFF-GRATCH WITH FASTER FORMULATION FROM FLATAU ET AL. 1992, TABLE 4 (RIGHT-HAND COLUMN)
 
       IMPLICIT NONE
 
@@ -3650,10 +3712,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! liquid
       real a0,a1,a2,a3,a4,a5,a6,a7,a8 
+
+! V1.7
       data a0,a1,a2,a3,a4,a5,a6,a7,a8 /&
-	6.105851, 0.4440316, 0.1430341e-1, &
-        0.2641412e-3, 0.2995057e-5, 0.2031998e-7, &
-        0.6936113e-10, 0.2564861e-13,-0.3704404e-15/
+	6.11239921, 0.443987641, 0.142986287e-1, &
+        0.264847430e-3, 0.302950461e-5, 0.206739458e-7, &
+        0.640689451e-10,-0.952447341e-13,-0.976195544e-15/
       real dt
 
 ! ICE

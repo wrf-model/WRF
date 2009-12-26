@@ -309,6 +309,8 @@ module_first_rk_step_part2.o : \
 		../frame/module_dm.o \
 		../share/module_bc.o \
 		../frame/module_comm_dm.o \
+		../phys/module_fddaobs_driver.o \
+		../phys/module_sfs_driver.o \
 		../phys/module_fddaobs_driver.o
 
 adapt_timestep_em.o: \

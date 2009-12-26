@@ -404,6 +404,11 @@ state   real    dfi_qs         ijkftb   dfi_moist       1         -     \
 state   real    dfi_qg         ijkftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QGRAUP"       "Graupel mixing ratio"          "kg kg-1"
 
+# LES---------------!JDM
+
+include registry.les
+
+#-------------------
 
 # Chem Scalars
 state   real    -              ijkftb   chem        1         -     -    -                                       

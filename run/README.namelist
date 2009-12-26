@@ -719,6 +719,11 @@ The following are for observation nudging:
  gwd_opt                             = 0       ; for running without gravity wave drag
                                      = 1       ; for running the WRF-ARW with its gravity wave drag
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
+ sfs_opt (max_dom)                   = 0       ; nonlinear backscatter and anisotropy (NBA) off
+                                     = 1       ; NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)
+                                     = 2       ; NBA2 using tke-based stress terms (km_opt=2 needed))
+ m_opt (max_dom)                     = 0       ; no added output
+                                     = 1       ; adds output of Mij stress terms when NBA is not used
 
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging

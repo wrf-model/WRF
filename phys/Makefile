@@ -12,6 +12,7 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
+	module_sfs_nba.o \
 	module_bl_mynn.o \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
@@ -21,7 +22,7 @@ MODULES = \
 	module_cu_bmj.o \
 	module_cu_kfeta.o \
 	module_cu_gd.o \
- 	module_cu_sas.o \
+	module_cu_sas.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
 	module_mp_wsm3.o \
@@ -73,6 +74,7 @@ MODULES = \
 	module_gfs_physcons.o \
 	module_progtm.o \
 	module_pbl_driver.o \
+	module_sfs_driver.o \
 	module_data_gocart_dust.o \
 	module_cumulus_driver.o \
 	module_microphysics_driver.o \
@@ -318,6 +320,16 @@ module_pbl_driver.o:  \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
+
+module_sfs_driver.o:  \
+		module_sfs_nba.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_machine.o \
+		../share/module_bc.o
 
 module_data_gocart_dust.o: 
 

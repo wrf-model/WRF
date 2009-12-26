@@ -636,6 +636,8 @@ BENCH_END(set_phys_bc_tim)
                              , pi_phy , p_phy , t_phy           &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
+                             , nba_mij, num_nba_mij             & !JDM 
+                             , nba_rij, num_nba_rij             & !JDM  
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &

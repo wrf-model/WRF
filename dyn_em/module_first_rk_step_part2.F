@@ -22,6 +22,8 @@ CONTAINS
                              , cu_act_flag , hol , th_phy        &
                              , pi_phy , p_phy , t_phy , u_phy , v_phy     &
                              , dz8w , p8w , t8w , rho_phy , rho           &
+                             , nba_mij, n_nba_mij         & !JDM
+                             , nba_rij, n_nba_rij         & !JDM
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -45,6 +47,8 @@ CONTAINS
     USE module_fddaobs_driver, ONLY : fddaobs_driver
     USE module_bc, ONLY : set_physical_bc3d, set_physical_bc2d
     USE module_physics_addtendc, ONLY : update_phy_ten
+
+    USE module_sfs_driver !JDM
 
     IMPLICIT NONE
 
@@ -99,6 +103,15 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: mu_tendf
 
     INTEGER , INTENT(IN)                          ::  k_start, k_end
+
+!JDM
+  INTEGER, INTENT(  IN ) :: n_nba_mij, n_nba_rij
+
+  REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,n_nba_mij) &
+  :: nba_mij
+
+  REAL ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,n_nba_rij) &
+  :: nba_rij
 
 ! Local
 
@@ -235,6 +248,7 @@ BENCH_START(deform_div_tim)
            CALL cal_deform_and_div ( config_flags,grid%u_2,grid%v_2,grid%w_2,grid%div,  &
                                      grid%defor11,grid%defor22,grid%defor33,            &
                                      grid%defor12,grid%defor13,grid%defor23,            &
+                                     nba_rij, n_nba_rij,                                & !JDM
                                      grid%u_base, grid%v_base,grid%msfux,grid%msfuy,    &
                                      grid%msfvx,grid%msfvy,grid%msftx,grid%msfty,       &
                                      grid%rdx, grid%rdy, grid%dn, grid%dnw, grid%rdz,   &
@@ -318,6 +332,15 @@ BENCH_START(phy_bc_tim)
        ENDDO
        !$OMP END PARALLEL DO
 BENCH_END(phy_bc_tim)
+
+!JDM
+IF ( ( config_flags%sfs_opt .GT. 0 ) .AND. ( config_flags%diff_opt .eq. 2 ) ) THEN
+
+ CALL sfs_driver( grid, config_flags,     &
+                  nba_mij, n_nba_mij,     & 
+                  nba_rij, n_nba_rij      ) 
+
+ENDIF
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------
@@ -510,6 +533,7 @@ BENCH_START(vert_diff_tim)
                                       grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base,          &
                                       grid%mut,grid%tke_2,config_flags, &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
+                                      nba_mij, num_nba_mij,          & !JDM
                                       grid%div, moist, chem, scalar,tracer,         &
                                       grid%xkmv, grid%xkhv, config_flags%km_opt,                        &
                                       grid%fnm, grid%fnp, grid%dn, grid%dnw, grid%rdz, grid%rdzw, &
@@ -541,7 +565,9 @@ BENCH_START(hor_diff_tim)
                                       grid%t_2, th_phy,                           &
                                       grid%mut, grid%tke_2, config_flags,              &
                                       grid%defor11, grid%defor22, grid%defor12,             &
-                                      grid%defor13, grid%defor23, grid%div,                 &
+                                      grid%defor13, grid%defor23,   &
+                                      nba_mij, num_nba_mij,         & !JDM
+                                      grid%div,                     &
                                       moist, chem, scalar,tracer,               &
                                       grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,  &
                                       grid%msfty, grid%xkmh, grid%xkhh, config_flags%km_opt,     &

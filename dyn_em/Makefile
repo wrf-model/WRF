@@ -20,6 +20,8 @@ MODULES =                 		\
         module_first_rk_step_part1.o    \
         module_first_rk_step_part2.o    \
         module_avgflx_em.o              \
+	module_sfs_nba.o		\
+	module_sfs_driver.o		\
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings
@@ -103,6 +105,16 @@ module_em.o:    module_big_step_utilities_em.o module_advect_em.o \
 
 module_polarfft.o: ../share/module_model_constants.o \
 		../frame/module_wrf_error.o
+
+module_sfs_driver.o:  \
+		module_sfs_nba.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_machine.o \
+		../share/module_bc.o
 
 module_small_step_em.o: \
 		../frame/module_configure.o  \
@@ -302,6 +314,7 @@ module_first_rk_step_part2.o : \
                 module_em.o \
 		module_diffusion_em.o  \
                 module_bc_em.o         \
+		module_sfs_driver.o \
 		../frame/module_domain.o \
 		../frame/module_state_description.o \
 		../frame/module_driver_constants.o \
@@ -310,7 +323,6 @@ module_first_rk_step_part2.o : \
 		../share/module_bc.o \
 		../frame/module_comm_dm.o \
 		../phys/module_fddaobs_driver.o \
-		../phys/module_sfs_driver.o \
 		../phys/module_fddaobs_driver.o
 
 adapt_timestep_em.o: \

@@ -13,7 +13,6 @@
 
    type (iv_type), intent (inout)   :: iv             ! Innovation
 
-   type (stats_rad_type), pointer   :: rad
    integer                          :: inst, n, i, j, k, ii, jj
    integer                          :: npred, npredmax, num_rad, num_rad_active
    real, allocatable 		    :: hessian(:,:), eignvec(:,:), eignval(:)

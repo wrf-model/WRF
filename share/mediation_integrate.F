@@ -1,6 +1,7 @@
 !
 !WRF:MEDIATION_LAYER:IO
 !
+#if (DA_CORE != 1)
 
 SUBROUTINE med_calc_model_time ( grid , config_flags )
   ! Driver layer
@@ -1115,6 +1116,8 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    RETURN
 END SUBROUTINE med_last_solve_io
 
+#endif
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef HWRF
@@ -1430,6 +1433,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    RETURN
 END SUBROUTINE med_hist_out
 
+#if (DA_CORE != 1)
 SUBROUTINE med_fddaobs_in ( grid , config_flags )
    USE module_domain
    USE module_configure
@@ -1439,6 +1443,7 @@ SUBROUTINE med_fddaobs_in ( grid , config_flags )
    CALL wrf_fddaobs_in( grid, config_flags )
    RETURN
 END SUBROUTINE med_fddaobs_in
+#endif
 
 SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
   ! Driver layer

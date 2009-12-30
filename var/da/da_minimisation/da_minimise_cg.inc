@@ -25,7 +25,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    type (be_type), intent(in)        :: be    ! background error structure.
    type (iv_type), intent(inout)     :: iv    ! ob. increment vector.
    real, intent(inout)               :: j_grad_norm_target ! Target norm.
-   real, intent(out)                 :: xhat(1:cv_size)  ! control variable (local).
+   real, intent(inout)               :: xhat(1:cv_size)  ! control variable (local).
    real, intent(inout)               :: cv(1:cv_size)    ! control variable (local).
    type (y_type), intent(inout)      :: re    ! residual (o-a) structure.
    type (y_type), intent(inout)      :: y     ! y = H(x_inc) structure.
@@ -107,7 +107,8 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    if (j_cost%total == 0.0) return
 
-   if (it == 1) j_grad_norm_target = sqrt (rrmold)
+   !if (it == 1) j_grad_norm_target = sqrt (rrmold)
+   j_grad_norm_target = sqrt (rrmold)
 
    if (orthonorm_gradient) then
       allocate(qhat(1:cv_size, 0:ntmax))

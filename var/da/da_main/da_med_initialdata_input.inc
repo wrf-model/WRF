@@ -110,7 +110,7 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
       end do
    end if
 
-   call input_model_input (fid ,   grid , config_flags , ierr)
+   call input_input (fid ,   grid , config_flags , ierr)
 
    call close_dataset (fid , config_flags , "DATASET=INPUT")
 

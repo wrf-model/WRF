@@ -69,8 +69,9 @@ subroutine da_read_obs_bufr (iv)
 
    logical                      :: use_errtable
    integer              :: junit, itype, ivar
-   real               :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
-   real               :: err_uv, err_t, err_p, err_q, err_pw, coef,ibufr
+   real                 :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
+   real                 :: err_uv, err_t, err_p, err_q, err_pw, coef
+   integer              :: ibufr
    integer              :: num_outside_all, num_outside_time, num_thinned,num_p,numbufr
 
    type datalink_BUFR              !for PREPBUFR data reading
@@ -1945,7 +1946,7 @@ end if
             select case (plink%kx_BUFR)
             case ( 283)  ! wind speed
                do i = 1, plink%nlevels_BUFR
-                  wpc = nint(plink%pco_BUFR(5,k))
+                  wpc = nint(plink%pco_BUFR(5,i))
                   ! if wpc == 1, UOB is set to zero, VOB is speed
                   iv%ssmi_rv(ilocal(ssmi_rv))%speed  = plink%platform_BUFR%each(i)%v
                   if ( wpc == 10 ) then
@@ -1962,6 +1963,8 @@ end if
                  iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = plink%platform_BUFR%loc%pw
                  
                end do
+          case default
+              exit dup_loop3
 
            end select  
 

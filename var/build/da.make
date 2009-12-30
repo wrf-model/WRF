@@ -91,7 +91,6 @@ WRFVAR_OBJS = \
    module_wrf_error.o \
    module_configure.o \
    module_state_description.o \
-   module_alloc_space.o \
    module_timing.o \
    module_driver_constants.o \
    module_domain.o \
@@ -114,16 +113,6 @@ WRFVAR_OBJS = \
    module_quilt_outbuf_ops.o \
    module_get_file_names.o \
    module_bc_time_utilities.o \
-   solve_interface.o \
-   mediation_feedback_domain.o \
-   mediation_force_domain.o \
-   mediation_interp_domain.o \
-   nl_get_0_routines.o \
-   nl_get_1_routines.o \
-   nl_set_0_routines.o \
-   nl_set_1_routines.o \
-   nest_init_utils.o \
-   wrf_fddaobs_in.o \
    landread.o \
    da_memory.o \
    wrf_debug.o \
@@ -134,69 +123,46 @@ WRFVAR_OBJS = \
    mediation_integrate.o \
    Meat.o \
    wrf_num_bytes_between.o \
-   wrf_timeseries.o \
    wrf_tsin.o \
-   module_llxy.o \
    input_wrf.o \
-   wrf_auxhist1in.o \
-   wrf_auxhist2in.o \
-   wrf_auxhist3in.o \
-   wrf_auxhist4in.o \
-   wrf_auxhist5in.o \
-   wrf_auxhist6in.o \
-   wrf_auxhist7in.o \
-   wrf_auxhist8in.o \
-   wrf_auxhist9in.o \
-   wrf_auxhist10in.o \
-   wrf_auxhist11in.o \
-   wrf_auxhist1out.o \
-   wrf_auxhist2out.o \
-   wrf_auxhist3out.o \
-   wrf_auxhist4out.o \
-   wrf_auxhist5out.o \
-   wrf_auxhist6out.o \
-   wrf_auxhist7out.o \
-   wrf_auxhist8out.o \
-   wrf_auxhist9out.o \
-   wrf_auxhist10out.o \
-   wrf_auxhist11out.o \
-   wrf_auxinput1in.o \
-   wrf_auxinput2in.o \
-   wrf_auxinput3in.o \
-   wrf_auxinput4in.o \
-   wrf_auxinput5in.o \
-   wrf_auxinput6in.o \
-   wrf_auxinput7in.o \
-   wrf_auxinput8in.o \
-   wrf_auxinput9in.o \
-   wrf_auxinput10in.o \
-   wrf_auxinput11in.o \
-   wrf_auxinput1out.o \
-   wrf_auxinput2out.o \
-   wrf_auxinput3out.o \
-   wrf_auxinput4out.o \
-   wrf_auxinput5out.o \
-   wrf_auxinput6out.o \
-   wrf_auxinput7out.o \
-   wrf_auxinput8out.o \
-   wrf_auxinput9out.o \
-   wrf_auxinput10out.o \
-   wrf_auxinput11out.o \
    wrf_bdyin.o \
    wrf_bdyout.o \
-   wrf_restartin.o \
-   wrf_restartout.o \
    output_wrf.o \
-   wrf_histin.o \
-   wrf_histout.o \
-   wrf_inputout.o \
-   wrf_inputin.o \
    wrf_ext_read_field.o \
    wrf_ext_write_field.o \
    collect_on_comm.o \
    start_domain.o \
-   interp_fcn.o \
-   couple_or_uncouple_em.o 
+   module_comm_dm.o \
+   module_comm_dm_0.o \
+   module_comm_dm_1.o \
+   module_comm_dm_2.o \
+   module_comm_dm_3.o \
+   module_alloc_space_0.o \
+   module_alloc_space_1.o \
+   module_alloc_space_2.o \
+   module_alloc_space_3.o \
+   module_alloc_space_4.o \
+   module_alloc_space_5.o \
+   module_alloc_space_6.o \
+   module_alloc_space_7.o \
+   module_alloc_space_8.o \
+   module_alloc_space_9.o \
+   nl_get_0_routines.o \
+   nl_get_1_routines.o \
+   nl_get_2_routines.o \
+   nl_get_3_routines.o \
+   nl_get_4_routines.o \
+   nl_get_5_routines.o \
+   nl_get_6_routines.o \
+   nl_get_7_routines.o \
+   nl_set_0_routines.o \
+   nl_set_1_routines.o \
+   nl_set_2_routines.o \
+   nl_set_3_routines.o \
+   nl_set_4_routines.o \
+   nl_set_5_routines.o \
+   nl_set_6_routines.o \
+   nl_set_7_routines.o 
 
 # Aliases
 var : wrfvar
@@ -458,3 +424,85 @@ input_wrf.o :
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
         fi
+
+nl_set_0_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=0 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx0.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx0.f90
+	$(RM) xx0.f90
+
+nl_set_1_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=1 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx1.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx1.f90
+	$(RM) xx1.f90
+
+nl_set_2_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=2 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx2.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx2.f90
+	$(RM) xx2.f90
+
+nl_set_3_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=3 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx3.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx3.f90
+	$(RM) xx3.f90
+
+nl_set_4_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=4 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx4.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx4.f90
+	$(RM) xx4.f90
+
+nl_set_5_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=5 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx5.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx5.f90
+	$(RM) xx5.f90
+
+nl_set_6_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=6 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx6.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx6.f90
+	$(RM) xx6.f90
+
+nl_set_7_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=7 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx7.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx7.f90
+	$(RM) xx7.f90
+
+nl_get_0_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=0 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy0.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy0.f90
+	$(RM) yy0.f90
+
+nl_get_1_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=1 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy1.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy1.f90
+	$(RM) yy1.f90
+
+nl_get_2_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=2 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy2.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy2.f90
+	$(RM) yy2.f90
+
+nl_get_3_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=3 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy3.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy3.f90
+	$(RM) yy3.f90
+
+nl_get_4_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=4 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy4.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy4.f90
+	$(RM) yy4.f90
+
+nl_get_5_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=5 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy5.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy5.f90
+	$(RM) yy5.f90
+
+nl_get_6_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=6 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy6.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy6.f90
+	$(RM) yy6.f90
+
+nl_get_7_routines.o : nl_access_routines.F module_configure.o
+	$(CPP) -DNNN=7 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy7.f90
+	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy7.f90
+	$(RM) yy7.f90
+
+# DO NOT DELETE

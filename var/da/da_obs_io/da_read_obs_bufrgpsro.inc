@@ -13,8 +13,9 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    !  HISTORY: 2009/12/17  - F90 sequantial structure  Peng Xiu
    ! 
    !----------------------------------------------------------------------------
-   use da_define_structures, only: da_allocate_observations
    
+   use da_control
+
    implicit none
 
    type (iv_type),             intent(inout) :: iv
@@ -28,7 +29,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    integer              :: iyear,imonth,iday,ihour,imin
    integer              :: ntotal, nlocal, nlev, ref_qc
    real                 :: obs_time
-   real                 :: hdr(10),ntotal_ifgat(num_fgat_time)
+   real                 :: hdr(10),ntotal_ifgat(0:num_fgat_time)
    real                 :: rdata1(25,maxlevs), rdata2(25,maxlevs)
    real                 :: height, ref_data, ref_error
    character(len=8)     :: subset
@@ -101,7 +102,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    num_outside_all  = 0
    num_outside_time = 0
    num_p=0
-   ntotal_ifgat(:)=0
+   ntotal_ifgat(0:num_fgat_time)=0
    
    allocate(head)
    nullify(head%next)
@@ -289,7 +290,41 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          iv%info(gpsref)%nlocal=nlocal
          iv%info(gpsref)%max_lev=1
          
-         call da_allocate_observations (iv) 
+!allocate iv 
+          
+       if (iv%info(gpsref)%nlocal > 0) allocate(iv%gpsref(1:iv%info(gpsref)%nlocal))
+       
+       if (iv%info(gpsref)%nlocal > 0) then
+         allocate (iv%info(gpsref)%name(iv%info(gpsref)%nlocal))     
+         allocate (iv%info(gpsref)%platform(iv%info(gpsref)%nlocal)) 
+         allocate (iv%info(gpsref)%id(iv%info(gpsref)%nlocal))       
+         allocate (iv%info(gpsref)%date_char(iv%info(gpsref)%nlocal))
+         allocate (iv%info(gpsref)%levels(iv%info(gpsref)%nlocal))   
+         allocate (iv%info(gpsref)%lat(iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal))    
+         allocate (iv%info(gpsref)%lon(iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal))    
+         allocate (iv%info(gpsref)%elv(iv%info(gpsref)%nlocal))      
+         allocate (iv%info(gpsref)%pstar(iv%info(gpsref)%nlocal))    
+         allocate (iv%info(gpsref)%slp(iv%info(gpsref)%nlocal))   
+         allocate (iv%info(gpsref)%pw(iv%info(gpsref)%nlocal))    
+         allocate (iv%info(gpsref)%x  (kms:kme,iv%info(gpsref)%nlocal))   
+         allocate (iv%info(gpsref)%y  (kms:kme,iv%info(gpsref)%nlocal))   
+         allocate (iv%info(gpsref)%i  (kms:kme,iv%info(gpsref)%nlocal))   
+         allocate (iv%info(gpsref)%j  (kms:kme,iv%info(gpsref)%nlocal))      
+         allocate (iv%info(gpsref)%dx (kms:kme,iv%info(gpsref)%nlocal))  
+         allocate (iv%info(gpsref)%dxm(kms:kme,iv%info(gpsref)%nlocal)) 
+         allocate (iv%info(gpsref)%dy (kms:kme,iv%info(gpsref)%nlocal))  
+         allocate (iv%info(gpsref)%dym(kms:kme,iv%info(gpsref)%nlocal)) 
+         allocate (iv%info(gpsref)%k  (iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal))
+         allocate (iv%info(gpsref)%dz (iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal))  
+         allocate (iv%info(gpsref)%dzm(iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal)) 
+         allocate (iv%info(gpsref)%zk (iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal)) 
+         allocate (iv%info(gpsref)%proc_domain(iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal)) 
+         allocate (iv%info(gpsref)%thinned(iv%info(gpsref)%max_lev,iv%info(gpsref)%nlocal)) 
+         allocate (iv%info(gpsref)%obs_global_index(iv%info(gpsref)%nlocal)) 
+         iv%info(gpsref)%proc_domain(:,:)  = .false.
+         iv%info(gpsref)%thinned(:,:)      = .false.
+         iv%info(gpsref)%zk(:,:)           = missing_r
+        end if
 !
 !sort for 4d var
          nlocal=0
@@ -354,7 +389,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
             iv%gpsref(nlocal)%q(i)%qc      = plink%gpsref%q(i)%qc
             iv%gpsref(nlocal)%q(i)%error   = plink%gpsref%q(i)%error
          end do
-        end if
+       end if
        plink => plink%next
       end do reports2
       ntotal_ifgat(kk)=ntotal_ifgat(kk)+ntotal_ifgat(kk-1)

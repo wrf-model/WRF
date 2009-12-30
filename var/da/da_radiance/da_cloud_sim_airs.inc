@@ -92,6 +92,6 @@ double precision        :: zx(KDIM), zgx(KDIM, KDIM), zx_eof(KDIM)
  WHERE (ZX<0.0) PG = PG + alpha*ZX
 
 !write(*,'(a,2f10.2,50f6.1)') 'ACD_PX',PF,sqrt(sum(pg**2)),sum(px(1:kdim-1))*100.,PX*100.
-write(*,'(a,2f10.5,f10.2,50f7.2)') '888888 ',PF,sqrt(sum(pg**2)),sum(zx(1:kdim-1))*100.,ZX*100.
+!write(*,'(a,2f10.5,f10.2,50f7.2)') '888888 ',PF,sqrt(sum(pg**2)),sum(zx(1:kdim-1))*100.,ZX*100.
 
 end subroutine da_cloud_sim_airs

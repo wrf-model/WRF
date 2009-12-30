@@ -330,13 +330,14 @@
       if (write_oa_rad_ascii) then
          write(unit=stdout,fmt='(A)')  'Writing radiance OMB and OMA ascii file'
          write(unit=stdout,fmt=*)  " "
-         call da_write_oa_rad_ascii (ob,iv,re)
+         call da_write_oa_rad_ascii (it, ob,iv,re)
       end if
 #endif
 
       ! [8.9] Update VarBC parameters and write output file
 #if defined(CRTM) || defined(RTTOV)      
-      if ( (use_varbc).or.(freeze_varbc) ) call da_varbc_update(cv_size, xhat, iv)
+      if ( (use_varbc).or.(freeze_varbc) ) &
+            call da_varbc_update(cv_size, xhat, iv)
 #endif
       !------------------------------------------------------------------------
       ! [8.10] Output WRFVAR analysis and analysis increments:

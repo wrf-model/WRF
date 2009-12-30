@@ -26,7 +26,7 @@ subroutine da_med_initialdata_output (grid , config_flags, out_filename)
 
    call da_trace ("da_med_initialdata_ouput",Message="Writing wrfvar output")
    call open_w_dataset (fid, trim(file_name), grid , config_flags , &
-                         output_model_input , "DATASET=INPUT,REAL_OUTPUT_SIZE=4", ierr)
+                         output_input , "DATASET=INPUT,REAL_OUTPUT_SIZE=4", ierr)
 
    if (ierr /= 0) then
       write(unit=message(1),fmt=*) 'Error opening ', &
@@ -41,7 +41,7 @@ subroutine da_med_initialdata_output (grid , config_flags, out_filename)
    config_flags%julyr = julyr
    config_flags%julday = julday
 
-   call output_model_input (fid, grid , config_flags , ierr)
+   call output_input (fid, grid , config_flags , ierr)
 
    call close_dataset (fid , config_flags, "DATASET=INPUT,REAL_OUTPUT_SIZE=4")
 

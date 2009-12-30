@@ -33,7 +33,7 @@ program da_rad_diags
    integer                                :: nproc, nlev, ilev, ich
    integer                                :: cycle_period, nlev_rtm, nlev_mdl
    character(len=20), dimension(maxnum)   :: instid
-   character(len=3)                       :: file_prefix
+   character(len=6)                       :: file_prefix
    character(len=10)                      :: start_date, end_date
 !
 ! netcdf variables

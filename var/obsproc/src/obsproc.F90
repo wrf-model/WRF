@@ -505,9 +505,12 @@ PROGRAM main_obsproc
 ! 8.9 Time duplicate check within a slot for 4DVAR
 !     --------------------------------------------
 
-      if (use_for == '4DVAR' )  &
-      CALL check_duplicate_time (obs ,index ,number_of_obs, total_dups_time, &
-                                 time_fg, print_duplicate_time)
+      if (use_for == '4DVAR' )  then
+        CALL sort_obs (obs ,number_of_obs , compare_loc, index )
+
+        CALL check_duplicate_time (obs ,index ,number_of_obs, total_dups_time, &
+                                   time_fg, print_duplicate_time)
+      endif
 
 ! 8.10 Print report per platform type and count the # levels per stations
 !      ------------------------------------------------------------------

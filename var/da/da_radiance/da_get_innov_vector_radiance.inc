@@ -63,13 +63,13 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    ! [3.0] Perform QC check
    !------------------------------------------------------------------------
    if (qc_rad) then
-      call da_qc_rad(ob, iv)
+      call da_qc_rad(it, ob, iv)
    end if
 
    !------------------------------------------------------------------------
    ! [4.0] Compute preconditioning for Variational bias correction
    !------------------------------------------------------------------------
-   if (use_varbc) call da_varbc_precond(iv)
+   if (use_varbc .and. it == 1) call da_varbc_precond(iv)
    
    !------------------------------------------------------------------------
    ! [5.0] Prepare (QCed) bias statistics files

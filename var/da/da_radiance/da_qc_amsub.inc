@@ -1,4 +1,4 @@
-subroutine da_qc_amsub (i, nchan, ob, iv)
+subroutine da_qc_amsub (it, i, nchan, ob, iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for amsub data.
@@ -6,6 +6,7 @@ subroutine da_qc_amsub (i, nchan, ob, iv)
 
    implicit none
 
+   integer, intent(in)             :: it         ! outer loop count
    integer, intent(in)             :: i          ! sensor index.
    integer, intent(in)             :: nchan      ! number of channel
    type (y_type),  intent(in)      :: ob         ! Observation structure.
@@ -181,9 +182,9 @@ subroutine da_qc_amsub (i, nchan, ob, iv)
 
    if (rootproc) then
       if (num_fgat_time > 1) then
-         write(filename,'(a,i2.2)') 'qcstat_'//trim(iv%instid(i)%rttovid_string)//'_',iv%time
+         write(filename,'(i2.2,a,i2.2)') it, '_qcstat_'//trim(iv%instid(i)%rttovid_string)//'_',iv%time
       else
-         filename = 'qcstat_'//trim(iv%instid(i)%rttovid_string)
+         write(filename,'(i2.2,a)') it, '_qcstat_'//trim(iv%instid(i)%rttovid_string)
       end if
       call da_get_unit(fgat_rad_unit)
       open(fgat_rad_unit,file=trim(filename),form='formatted',iostat=ios)

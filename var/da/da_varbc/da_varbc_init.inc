@@ -27,9 +27,6 @@
    character(len=120) :: cline
    logical   :: lvarbc_read, limatch, lmatch
    
-   type (varbc_info_type),pointer :: varbc_info(:)
-   type (varbc_type), pointer     :: varbc(:,:)
-
    if (trace_use) call da_trace_entry("da_varbc_init")
 
    !--------------------------------------------------------------

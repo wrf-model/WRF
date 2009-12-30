@@ -1,4 +1,4 @@
-subroutine da_write_iv_rad_ascii (ob, iv )
+subroutine da_write_iv_rad_ascii (it, ob, iv )
 
    !---------------------------------------------------------------------------
    ! Purpose: write out innovation vector structure for radiance data.
@@ -6,6 +6,7 @@ subroutine da_write_iv_rad_ascii (ob, iv )
 
    implicit none
 
+   integer      ,     intent(in)  :: it       ! outer loop count
    type (y_type),     intent(in)  :: ob       ! Observation structure.
    type (iv_type),    intent(in)  :: iv       ! O-B structure.
 
@@ -33,7 +34,7 @@ subroutine da_write_iv_rad_ascii (ob, iv )
       end do
       if (ndomain < 1) cycle
 
-      write(unit=filename, fmt='(a,i4.4)') 'inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
+      write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
       call da_get_unit(innov_rad_unit)
       open(unit=innov_rad_unit,file=trim(filename),form='formatted',iostat=ios)

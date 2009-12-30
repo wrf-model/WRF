@@ -990,7 +990,7 @@ CONTAINS
       INTEGER, PARAMETER :: read_unit = 10
       LOGICAL, EXTERNAL  :: wrf_dm_on_monitor
       CHARACTER*256      :: fname, inln, mess, dname, t1, lookee
-      CHARACTER*256      :: fieldlist
+      CHARACTER*256      :: fieldlst
       CHARACTER*1        :: op, strmtyp
       CHARACTER*3        :: strmid
       INTEGER            :: io_status
@@ -1036,10 +1036,10 @@ CONTAINS
                   WRITE(mess,*)'W A R N I N G : invalid stream id ',istrm,' (should be 0 <= id <= ',last_history,'). Line ',lineno
                   gavewarning = .TRUE.
                 ENDIF
-                CALL get_fieldstr(4,':',inln,fieldlist,1024,noerr) ! get list of fields
+                CALL get_fieldstr(4,':',inln,fieldlst,1024,noerr) ! get list of fields
                 IF ( noerr ) THEN
                   fieldno = 1
-                  CALL get_fieldstr(fieldno,',',fieldlist,t1,256,noerr)
+                  CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
                   CALL change_to_lower_case(t1,lookee)
                   DO WHILE ( noerr )    ! linear search, blargh...
                     p => grid%head_statevars
@@ -1110,7 +1110,7 @@ CONTAINS
                       gavewarning = .TRUE.
                     ENDIF
                     fieldno = fieldno + 1
-                    CALL get_fieldstr(fieldno,',',fieldlist,t1,256,noerr)
+                    CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
                     CALL change_to_lower_case(t1,lookee)
                   ENDDO
                 ELSE

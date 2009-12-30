@@ -40,7 +40,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    real             :: gnorm_jb, gnorm_jo, gnorm_j, gnorm_je, gnorm_js, gnorm_jp
 
    ! Variables for VarBC background constraint
-   real , allocatable, dimension(:)  :: xhat_jp ! Jp control variable.
+   real :: xhat_jp(cv_size_jp) ! Jp control variable.
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
    integer                           :: inst, ichan, npred, ipred, id
    real                              :: bgerr
@@ -101,7 +101,6 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    ! [4.0] calculate grad_v (jp):
    !-------------------------------------------------------------------------
    if (use_varbc) then
-      allocate(xhat_jp(cv_size_jp))
       xhat_jp(1:cv_size_jp) = 0.0
       do inst = 1, iv % num_inst   
          do ichan = 1, iv%instid(inst)%nchan
@@ -116,9 +115,8 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
 	    end do
          end do
       end do
-      grad_jp(jp_start:jp_end) = xhat_jp(1:cv_size_jp) + cv(1:cv_size_jp)
+      grad_jp(jp_start:jp_end) = xhat_jp(1:cv_size_jp) + cv(jp_start:jp_end)
    
-      deallocate(xhat_jp)
    end if
       
    !-------------------------------------------------------------------------
@@ -129,8 +127,8 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
          do n = iv%instid(inst)%info%n1, iv%instid(inst)%info%n2 ! loop for pixel
          ! Skin Temperature
          !-----------------
-!	    if (use_satcv(1)) &
-!            grad_js(iv%instid(inst)%cv_index(n)%ts) = xhat(iv%instid(inst)%cv_index(n)%ts) + cv(iv%instid(inst)%cv_index(n)%ts)
+	    if (use_satcv(1)) &
+            grad_js(iv%instid(inst)%cv_index(n)%ts) = xhat(iv%instid(inst)%cv_index(n)%ts) + cv(iv%instid(inst)%cv_index(n)%ts)
 	    
          ! Cloud cover(s)
          !---------------
@@ -162,7 +160,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    gnorm_j  = sqrt(da_dot_cv(cv_size, cv_size_domain, grad,    grad,    grid, mz, use_varbc))
  
    if (it == -1 .and. iter == 0 .and. rootproc) then
-      write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb        Go          Ge          Gp          Gs'
+      write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge           Gp           Gs'
       write(unit=grad_unit,fmt='(a)')'Iter             Iter                            '
    end if
 

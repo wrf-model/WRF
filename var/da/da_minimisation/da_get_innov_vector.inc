@@ -178,7 +178,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    !-----------------------------------------------
    if (write_iv_rad_ascii) then
       write(unit=stdout,fmt='(A)')  'Writing radiance iv ascii'
-      call da_write_iv_rad_ascii(ob,iv)
+      call da_write_iv_rad_ascii(it,ob,iv)
    end if
 #endif
 

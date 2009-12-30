@@ -323,6 +323,15 @@ else
   echo " "
 
   if ( ! $?WRF_SRC_ROOT_DIR ) setenv WRF_SRC_ROOT_DIR `pwd`
+
+# new dec 2009.  check to see if make supports parallel -j option
+  make -j 6 >& /dev/null
+  if ( $status == 0 ) then
+    if ( ! $?J  ) then
+      setenv J "-j 6"
+    endif
+  endif 
+
   make $arglist A2DCASE="$A2DCASE" WRF_SRC_ROOT_DIR="$WRF_SRC_ROOT_DIR"
 
 endif

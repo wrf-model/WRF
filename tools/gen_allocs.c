@@ -19,12 +19,16 @@ gen_alloc ( char * dirname )
 }
 
 int
+get_count_for_alloc( node_t *node , int *numguys, int *stats)  ;  /* forward */
+
+int
 gen_alloc1 ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
   char * fn = "allocs.inc" ;
-  int startpiece ;
+  int startpiece, fraction, iguy, numguys ;
+  int stats[4] ;
 #define FRAC 8
 
   if ( dirname == NULL ) return(1) ;
@@ -33,16 +37,46 @@ gen_alloc1 ( char * dirname )
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
   startpiece = 0 ;
-  gen_alloc2( fp , "grid%", &Domain, &startpiece , FRAC, 1 ) ;
+  fraction   = 0 ;
+  numguys = 0 ;
+  iguy = -1 ;
+  stats[0] = 0 ; stats[1] = 0 ; stats[2] = 0 ; stats[3] = 0 ;
+  get_count_for_alloc( &Domain, &numguys , stats) ;  /* howmany deez guys? */
+  fprintf(stderr,"Registry INFO variable counts: 0d %d 1d %d 2d %d 3d %d\n",stats[0],stats[1],stats[2],stats[3]) ; 
+  fprintf(fp,"#if 1\n") ;
+  gen_alloc2( fp , "grid%", &Domain, &startpiece , &iguy, &fraction, numguys, FRAC, 1 ) ;
+  fprintf(fp,"#endif\n") ;
   close_the_file( fp ) ;
   return(0) ;
+}
+
+int
+get_count_for_alloc( node_t *node , int *numguys, int * stats ) 
+{
+  node_t * p ;
+  for ( p = node->fields ; p != NULL ; p = p->next ) { 
+    if        ( p->type != NULL && p->type->type_type == DERIVED ) {
+      get_count_for_alloc( p->type , numguys, stats ) ;
+    } else if (p->ndims >= 0) {
+       (*numguys)++ ; 
+       if        ( p->ndims == 0 ) {
+         stats[p->ndims]++ ;
+       } else if ( p->ndims == 1 ) {
+         stats[p->ndims]++ ;
+       } else if ( p->ndims == 2 ) {
+         stats[p->ndims]++ ;
+       } else if ( p->ndims == 3 ) {
+         stats[p->ndims]++ ;
+       }
+    }
+  }
 }
 
 int
 nolistthese( char * ) ;
 
 int
-gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int frac, int sw ) /* 1 = allocate, 2 = just count */
+gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
   int tag ;
@@ -54,24 +88,17 @@ gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int frac, in
   unsigned int *io_mask ;
   int nd ;
   int restart ;
-  int numguys, iguy ;
-  int fraction ;
 
   if ( node == NULL ) return(1) ;
 
-  for ( p = node->fields, numguys = 0 ; p != NULL ; p = p->next ) { if (p->ndims > 1) numguys++ ; }  /* howmany deez guys? */
-
-  for ( fraction = 0 ; fraction < numguys ; fraction += (numguys+1)/frac, (*j)++ ) { /* break the files in pieces
-                                                                                          so we don't kill the
-                                                                                          compilers as much */
-  fprintf(fp,"#if (NNN == %d)\n",*j) ;
-
-  for ( p = node->fields, iguy = -1 ; p != NULL ; p = p->next )
+  for ( p = node->fields ; p != NULL ; p = p->next )
   {
-    if ( p->ndims > 1 ) iguy++ ;
+    (*iguy)++ ;
 
-#if 1
-    if ( (iguy >= fraction) && (iguy < fraction + (numguys+1)/frac) ) {
+    if ( (*iguy % ((numguys+1)/frac+1)) == 0 ) {
+      fprintf(fp,"#endif\n") ;
+      fprintf(fp,"#if (NNN == %d)\n",(*j)++) ;
+    }
 
     nd = p->ndims + ((p->node_kind & FOURD)?1:0) ;
 
@@ -283,7 +310,6 @@ if ( tag == 1 )
              if ( p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,tag) ;
              else                                    strcpy(dname,dname_tmp) ;
 
-/*             fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ; /*{*/
              fprintf(fp,"  IF (.NOT.grid%%is_intermediate) THEN\n") ; /*{*/
              fprintf(fp,"  ALLOCATE( grid%%tail_statevars%%next )\n" ) ;
              fprintf(fp,"  grid%%tail_statevars => grid%%tail_statevars%%next\n") ;
@@ -437,17 +463,9 @@ if ( tag == 1 )
       if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        (*j)++ ;
-        fprintf(fp,"#endif\n") ;
-        gen_alloc2(fp,x, p->type, j, 1, sw) ;
-        (*j)-- ;
-        fprintf(fp,"#if (NNN == %d)\n",*j) ;
+        gen_alloc2(fp,x, p->type, j, iguy, fraction, numguys, 1, sw) ;
       }
     }
-  } /* if this fraction */
-#endif
-  }
-   fprintf(fp,"#endif\n") ;
   } /* fraction loop */
   return(0) ;
 }

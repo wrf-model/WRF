@@ -229,7 +229,7 @@ gen_get_nl_config ( char * dirname )
 
   fprintf(fp,"#ifdef NL_%s_ROUTINES\n",gs) ;
 
-  for ( fraction = 0, j=0 ; fraction < num_rconfigs ; fraction += (num_rconfigs+1)/FRAC, j++ ) { /* break the files in pieces
+  for ( fraction = 0, j=0 ; fraction < num_rconfigs ; fraction += ((num_rconfigs+1)/FRAC+1), j++ ) { /* break the files in pieces
                                                                                                     so we don't kill the 
                                                                                                     compilers as much */
   fprintf(fp,"#if (NNN == %d)\n",j) ;
@@ -238,7 +238,7 @@ gen_get_nl_config ( char * dirname )
   {
     if ( p->node_kind & RCONFIG ) {
        i++ ;
-    if ( (i >= fraction) && (i < fraction + (num_rconfigs+1)/FRAC) )
+    if ( (i >= fraction) && (i < fraction + (num_rconfigs+1)/FRAC+1) )
     {
       strcpy(howset,p->howset) ;
       fprintf(fp,"SUBROUTINE nl_%s_%s ( id_id , %s )\n",gs,p->name, p->name) ;

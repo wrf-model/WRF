@@ -3571,6 +3571,12 @@ banner 29
 				endif
 	
 				BYPASS_OPENMP_SUMMARY2:
+
+##### temporary jm 20091218
+if ( $RIGHT_SIZE_MPI == FALSE ) then
+  echo "--- RIGHT_SIZE_MPI false ---" >>! ${DEF_DIR}/wrftest.output
+endif
+set RIGHT_SIZE_MPI = TRUE
 		
 				#	Serial vs MPI
 		

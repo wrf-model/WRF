@@ -192,7 +192,7 @@ da_advance_time.exe : da_advance_time.o
 
 inc/da_generic_boilerplate.inc: da_generic_boilerplate.m4
 	@ $(RM) inc/da_generic_boilerplate.inc
-	  $(M4) da_generic_boilerplate.m4 > inc/da_generic_boilerplate.inc
+	  $(M4) da_generic_boilerplate.m4 > $(WRF_SRC_ROOT_DIR)/inc/da_generic_boilerplate.inc
 
 da_utils : setup \
            da_tune_obs_hollingsworth1.exe \
@@ -278,11 +278,16 @@ wrf_num_bytes_between.o :
 	$(CC) -c $(CFLAGS) wrf_num_bytes_between.c
 
 module_state_description.F : ../../Registry/$(REGISTRY)
-	../../tools/registry $(ARCHFLAGS) -DNEW_BDYS ../../Registry/$(REGISTRY)
-	$(LN) ./frame/module_state_description.F .
+	(cd $(WRF_SRC_ROOT_DIR); tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ; cd $(WRF_SRC_ROOT_DIR)/var/build )
+	$(LN) $(WRF_SRC_ROOT_DIR)/frame/module_state_description.F .
+	@ $(LN) $(WRF_SRC_ROOT_DIR)/inc/* inc/.
 
 md_calls.inc : md_calls.m4
-	$(M4) md_calls.m4 > md_calls.inc
+	if [ "$(M4)" = NA ] ; then \
+	  /bin/cp $(WRF_SRC_ROOT_DIR)/arch/md_calls.inc . ; \
+	else \
+	  $(M4) md_calls.m4 > md_calls.inc ; \
+	fi
 
 $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o :
 	$(RM) $@

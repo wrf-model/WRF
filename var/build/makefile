@@ -9,7 +9,6 @@ links :
 	@ cp makefile makefile.old
 	@ $(LN) ../../dyn_em/* .
 	@ $(LN) ../gen_be/* .
-	@ $(LN) ../../inc/* .
 	@ $(LN) ../../share/* .
 	@ $(LN) ../../frame/* .
 	@ if test -e module_dm_stubs.F; then rm -rf module_dm_stubs.F; fi
@@ -33,7 +32,6 @@ FPPFLAGS   = -I$(WRF_SRC_ROOT_DIR)/inc
 
 depend : links module_state_description.F md_calls.inc \
                       inc/da_generic_boilerplate.inc
-	$(LN) $(WRF_SRC_ROOT_DIR)/var/build/inc/* $(WRF_SRC_ROOT_DIR)/inc/.
 	(cd $(WRF_SRC_ROOT_DIR)/var/da/makedepf90-2.8.8; ./setup_makedepf90)
 	$(WRF_SRC_ROOT_DIR)/var/da/makedepf90-2.8.8/makedepf90 -free $(ARCHFLAGS) -DNEW_BDYS *.F *.f90 *.F90 2>/dev/null > depend.txt
 	touch depend

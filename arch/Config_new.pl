@@ -465,7 +465,7 @@ while ( <CONFIGURE_DEFAULTS> )
              $response = 1 ;
           } elsif ( $ENV{HWRF} ) {
              printf "HWRF requires moving nests";
-             $response = 2;
+             $response = "2\n";
           } else {
              $response = <STDIN> ;
           } 

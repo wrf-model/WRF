@@ -69,7 +69,7 @@
 !
 !***********************************************************************
 !
-      SUBROUTINE ATM_CMP_START
+      SUBROUTINE ATM_CMP_START(atm_comm)
 
       USE ATM_cc
 
@@ -77,6 +77,7 @@
 
       integer Atmos_id /1/, Atmos_master_rank_local /0/
       character*20 s
+      integer atm_comm
 !
 
                       !<-id of OM as a component of the coupled system
@@ -116,7 +117,7 @@
       else 
         MPI_kind_lonlat=MPI_kind_alt_REAL
       end if
-
+      atm_comm=MPI_COMM_Atmos
       return
       END
 !

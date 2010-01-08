@@ -470,7 +470,7 @@ CONTAINS
        RQVCUTEN(i,k,j)=0.
 #if (NMM_CORE == 1)
        RUCUTEN(i,j,k)=0.   ! gopal's doing for SAS
-       RVCUTEN(i,k,j)=0.    ! gopal's doing for SAS
+       RVCUTEN(i,j,k)=0.    ! gopal's doing for SAS
 #endif
      ENDDO
      ENDDO

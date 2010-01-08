@@ -602,8 +602,8 @@ CONTAINS
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,P_QC=p_qc                                       &
 #if (NMM_CORE==1)
-               ,MOMMIX=MOMMIX  &
                ,store_rand=store_rand  &
+               ,MOMMIX=MOMMIX  &
 #endif
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &

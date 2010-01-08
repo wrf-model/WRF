@@ -111,7 +111,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 # include <dummy_new_args.inc>
 !
                            )
-        USE module_domain, ONLY : domain
+        USE module_domain
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
@@ -967,16 +967,16 @@ USE module_timing
    kid = 1
 
 !  Check if it is time to move the nest
-     xtime = grid%xtime
-     CALL nl_get_time_to_move ( grid%id , time_to_move )
-     if ( xtime .lt. time_to_move ) then
-        time_for_move = .FALSE.
-        move_cd_x = 0
-        move_cd_y = 0
-!       write(0,*) 'it is not the time to move ', xtime, time_to_move
-        return
-     endif
-!
+!     xtime = grid%xtime
+!     CALL nl_get_time_to_move ( grid%id , time_to_move )
+!     if ( xtime .lt. time_to_move ) then
+!        time_for_move = .FALSE.
+!        move_cd_x = 0
+!        move_cd_y = 0
+!!       write(0,*) 'it is not the time to move ', xtime, time_to_move
+!        return
+!     endif
+!!
 ! find out if this is the innermost nest (will not have kids)
    IF   ( grid%num_nests .EQ. 0 ) THEN
      ! code that executes on innermost nest

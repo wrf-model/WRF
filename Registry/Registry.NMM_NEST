@@ -202,8 +202,8 @@ state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #
 state  real   HLON        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
 state  real   HLAT        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
-state  real   VLON        ij     dyn_nmm     1      -      ir
-state  real   VLAT        ij     dyn_nmm     1      -      ir
+state  real   VLON        ij     dyn_nmm     1      -      irh
+state  real   VLAT        ij     dyn_nmm     1      -      irh
 
 #
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain"
@@ -263,11 +263,11 @@ state  real   aeta      k      dyn_nmm     1      -      i01r
 state  real   f4q2      k      dyn_nmm     1      -      ir
 state  real   etax      k      dyn_nmm     1      -      i01r
 state  real   dfl       k      dyn_nmm     1      Z      i01r    "DFL"     "Standard atmosphere geopotential"              "m2 s-2"
-state  real   deta1     k      dyn_nmm     1      -      i01r    "DETA1"   "Delta sigma in pressure domain"                ""
-state  real   aeta1     k      dyn_nmm     1      -      i01r    "AETA1"   "Midlayer sigma value in pressure domain"       ""
+state  real   deta1     k      dyn_nmm     1      -      i01rh    "DETA1"   "Delta sigma in pressure domain"                ""
+state  real   aeta1     k      dyn_nmm     1      -      i01rh    "AETA1"   "Midlayer sigma value in pressure domain"       ""
 state  real   eta1      k      dyn_nmm     1      Z      i01rh   "ETA1"    "Interface sigma value in pressure domain"      ""
-state  real   deta2     k      dyn_nmm     1      -      i01r    "DETA2"   "Delta sigma in sigma domain"                   ""
-state  real   aeta2     k      dyn_nmm     1      -      i01r    "AETA2"   "Midlayer sigma value in sigma domain"          ""
+state  real   deta2     k      dyn_nmm     1      -      i01rh    "DETA2"   "Delta sigma in sigma domain"                   ""
+state  real   aeta2     k      dyn_nmm     1      -      i01rh    "AETA2"   "Midlayer sigma value in sigma domain"          ""
 state  real   eta2      k      dyn_nmm     1      Z      i01rh   "ETA2"    "Interface sigma value in sigma domain"         ""
 state  real   em        q      dyn_nmm     1      -      ir
 state  real   emt       q      dyn_nmm     1      -      ir
@@ -288,8 +288,8 @@ state  real   ef4t      -      dyn_nmm     -      -      ir
 #for HWRF: add to restart
 state  logical upstrm   -      dyn_nmm     -      -      -       "UPSTRM"  ".TRUE. => In upstream advec region of grid"    ""
 #end HWRF:
-state  real   dlmd      -      dyn_nmm     -      -      ir      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
-state  real   dphd      -      dyn_nmm     -      -      ir      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
+state  real   dlmd      -      dyn_nmm     -      -      irh      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
+state  real   dphd      -      dyn_nmm     -      -      irh      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
 state  real   pdtop     -      dyn_nmm     -      -      i01rh   "PDTOP"   "Mass at I,J in pressure domain"                "Pa"
 state  real   pt        -      dyn_nmm     -      -      i01rh   "PT"      "Pressure at top of domain"                     "Pa"
 #
@@ -732,7 +732,7 @@ state    real   SNOW             ij     misc        1         -     i01rh       
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
 state    real   SST              ij     misc        1         -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
-state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
+state    real  ZNT              ij      misc        1         -     irh        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 

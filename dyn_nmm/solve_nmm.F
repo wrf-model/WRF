@@ -460,8 +460,8 @@
 #ifdef MOVE_NESTS
 
         IF(GRID%ID/=1.AND.MOD(grid%ntsd,1)==0.AND.GRID%NUM_MOVES==-99)THEN
-          XLOC_1=(IDE-1)/2     ! This maneuvers the storm to the center of the nest quickly
-          YLOC_1=(JDE-1)/2     ! This maneuvers the storm to the center of the nest quickly
+          grid%XLOC_1=(IDE-1)/2     ! This maneuvers the storm to the center of the nest quickly
+          grid%YLOC_1=(JDE-1)/2     ! This maneuvers the storm to the center of the nest quickly
         ENDIF
 #endif
 
@@ -2217,13 +2217,15 @@
 #endif
 !-----------------
 
-   CALL STATS_FOR_MOVE (XLOC_2,YLOC_2,PDYN,MSLP,SQWS                   &
+   CALL STATS_FOR_MOVE (grid%XLOC_2,grid%YLOC_2,grid%PDYN,grid%MSLP,grid%SQWS                   &
                       ,grid%pint,grid%t,grid%q,grid%u,grid%v                                   &
                       ,grid%fis,grid%pd,grid%sm,grid%pdtop,grid%pt                             &
                       ,grid%deta1,grid%deta2                                    &
-                      ,GRID%MOVED,MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
 #ifdef HWRF
-                      ,GRID%RESTART,NTIME0                            & ! zhang's doing
+                      ,GRID%RESTART,grid%NTIME0                            & ! zhang's doing
+                      ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
+#else
+                      ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS
 #endif
                       ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
                       ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry

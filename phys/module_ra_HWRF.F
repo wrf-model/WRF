@@ -9841,9 +9841,10 @@ CONTAINS
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(nunit_co2,FILE='co2_trans',                  &
                FORM='UNFORMATTED',STATUS='OLD',ERR=9014,IOSTAT=IERROR)
+          REWIND NUNIT_CO2
         ENDIF
 
-      REWIND NUNIT_CO2
+
 !----------------------------------------------------------------------
 !
 !***  READ IN PRE-COMPUTED CO2 TRANSMISSION DATA.

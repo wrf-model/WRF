@@ -1964,6 +1964,8 @@ integer myproc
    USE module_mp_thompson
    USE module_mp_thompson07
    USE module_mp_morr_two_moment
+   USE module_mp_milbrandt2mom
+!  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
 !------------------------------------------------------------------
@@ -2041,6 +2043,10 @@ integer myproc
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init
+     CASE (MILBRANDT2MOM)
+         CALL milbrandt2mom_init
+!      CASE (MILBRANDT3MOM)
+!          CALL milbrandt3mom_init
      CASE (WDM5SCHEME)
           CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
      CASE (WDM6SCHEME)

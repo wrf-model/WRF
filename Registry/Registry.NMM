@@ -538,6 +538,8 @@ state   real    qr             ijkft   moist       1         -     rh      "QRAI
 state   real    qi             ijkft   moist       1         -     rh      "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qs             ijkft   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ijkft   moist       1         -     rh      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qh             ijkft   moist       1         -     rh      "QHAIL"            "Hail mixing ratio"             "kg kg-1" 
+
 #                                               
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -    -
@@ -545,6 +547,8 @@ state   real    qni            ijkftb  scalar      1         -     i01rusdf=(bdy
 state   real    qns            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNS"              "Snow Number concentration" "# kg(-1)"
 state   real    qnr            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNR"              "Rain Number concentration" "# kg(-1)"
 state   real    qng            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNG"              "Graupel Number concentration" "# kg(-1)"
+state   real    qnh            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNHAIL"            "Hail Number concentration" "# kg(-1)" 
+
 state   real    qnn            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
 
@@ -1022,6 +1026,7 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
+package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr

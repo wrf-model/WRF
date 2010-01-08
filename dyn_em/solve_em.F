@@ -2379,7 +2379,13 @@ BENCH_END(tracer_adv_tim)
                                   .OR. is .EQ. P_QNS          &
                                   .OR. is .EQ. P_QNR          &
                                   .OR. is .EQ. P_QNG          &
+                                  .OR. is .EQ. P_QNH          &
                                   .OR. is .EQ. P_QNN          &
+!                                 .OR. is .EQ. P_QZR          &
+!                                 .OR. is .EQ. P_QZI          &
+!                                 .OR. is .EQ. P_QZS          &
+!                                 .OR. is .EQ. P_QZG          &
+!                                 .OR. is .EQ. P_QZH          &
                                   .OR. is .EQ. P_QNC) THEN
 
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
@@ -3074,6 +3080,7 @@ BENCH_START(micro_driver_tim)
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
       &        ,RHO=rho            ,SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy                        &
+      &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
       &        ,WARM_RAIN=grid%warm_rain                                  &
       &        ,T8W=t8w                                                   &
       &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
@@ -3102,7 +3109,8 @@ BENCH_START(micro_driver_tim)
                  ! Optional
       &        , RAINNC=grid%rainnc, RAINNCV=grid%rainncv                 &
       &        , SNOWNC=grid%snownc, SNOWNCV=grid%snowncv                 &
-      &        , GRAUPELNC=grid%graupelnc, GRAUPELNCV=grid%graupelncv     &
+      &        , GRAUPELNC=grid%graupelnc, GRAUPELNCV=grid%graupelncv     & ! for milbrandt2mom
+      &        , HAILNC=grid%hailnc, HAILNCV=grid%hailncv                 &
       &        , W=grid%w_2, Z=grid%z, HT=grid%ht                         &
       &        , MP_RESTART_STATE=grid%mp_restart_state                   &
       &        , TBPVS_STATE=grid%tbpvs_state                             & ! etampnew
@@ -3113,18 +3121,26 @@ BENCH_START(micro_driver_tim)
       &        , QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI               &
       &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS               &
       &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
+      &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
-      &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI          &
       &        , QT_CURR=scalar(ims,kms,jms,P_QT), F_QT=F_QT              &
-      &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS          &  
-      &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR          &  
-      &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG          &  
       &        , QNN_CURR=scalar(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
+      &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI          &
       &        , QNC_CURR=scalar(ims,kms,jms,P_QNC), F_QNC=F_QNC          &
-      &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &  
-      &        , qicuten=grid%rqicuten,mu=grid%mut                        &  
+      &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR          &
+      &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS          &
+      &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG          &
+      &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom
+!       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
+!       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
+!       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
+!       &        , QZG_CURR=scalar(ims,kms,jms,P_QZG), F_QZG=F_QZG          & ! "
+!       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
+      &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
+      &        , qicuten=grid%rqicuten,mu=grid%mut                        &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
+!     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)
                                                                           )
 BENCH_END(micro_driver_tim)
 

@@ -2903,7 +2903,13 @@
              t2 = 0.0D0
              tpi_ide(i,j) = 1.0D0
             else
-             tpi_ide(i,j) = GAMMP(mu_i+2.0, SNGL(lami)*D0s) * 1.0D0
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+             tpi_ide(i,j) = GAMMP(mu_i+2.0, REAL(lami,KIND=8)*D0s) * 1.0D0
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
+             tpi_ide(i,j) = GAMMP(mu_i+2.0, REAL(lami,KIND=4)*D0s) * 1.0D0
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
              do n2 = 1, nbi
                N_i(n2) = N0_i*Di(n2)**mu_i * DEXP(-lami*Di(n2))*dti(n2)
                if (Di(n2).ge.D0s) then

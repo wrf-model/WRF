@@ -37,10 +37,11 @@ setenv WRF_NMM_NEST 1
 
 if ( `uname` == AIX ) then
 
-#	xlf -qversion
-#	source ~gill/sourceme_modules
-#       module load xlf12
 	xlf -qversion
+	#source ~gill/sourceme_modules
+	#module load xlf12.01.0000.0005.091127
+	#module load xlf12
+	#xlf -qversion
 
 	set VERSION = `xlf -qversion | grep AIX | cut -f2 -d, | cut -f2 -dV | cut -f1 -d.`
 	if ( $VERSION != 12 ) then
@@ -1056,7 +1057,7 @@ cat >! damp_real_8  << EOF
 EOF
 
 cat >! phys_real_9 << EOF
- mp_physics                          = 10,    10,    10,
+ mp_physics                          = 9,     9,     9,
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
  radt                                = 30,    30,    30,
@@ -1096,7 +1097,7 @@ cat >! damp_real_9  << EOF
 EOF
 
 cat >! phys_real_10 << EOF
- mp_physics                          = 14,    14,    14,
+ mp_physics                          = 10,    10,    10,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 2,     2,     2,
  radt                                = 30,    30,    30,
@@ -1136,7 +1137,7 @@ cat >! damp_real_10  << EOF
 EOF
 
 cat >! phys_real_11 << EOF
- mp_physics                          = 16,    16,    16,
+ mp_physics                          = 14,    14,    14,
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
  radt                                = 30,    30,    30,
@@ -1184,7 +1185,7 @@ cat >! damp_real_11  << EOF
 EOF
 
 cat >! phys_real_12 << EOF
- mp_physics                          = 98,    98,    98,
+ mp_physics                          = 16,    16,    16,
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
  radt                                = 30,    30,    30,
@@ -1225,7 +1226,7 @@ cat >! damp_real_12  << EOF
 EOF
 
 cat >! phys_real_13 << EOF
- mp_physics                          = 3,     3,     3, 
+ mp_physics                          = 98,    98,    98, 
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
  radt                                = 30,    30,    30,
@@ -1266,13 +1267,14 @@ cat >! nest_real_13  << EOF
 EOF
 
 cat >! damp_real_13  << EOF
+ gwd_opt                             = 1,
  damp_opt                            = 3,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.05,   0.05,   0.05
 EOF
 
 cat >! phys_real_14 << EOF
- mp_physics                          = 4,     4,     4, 
+ mp_physics                          = 3,     3,     3, 
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
  radt                                = 30,    30,    30,
@@ -1317,7 +1319,7 @@ cat >! damp_real_14  << EOF
 EOF
 
 cat >! phys_real_15 << EOF
- mp_physics                          = 6,     6,     6, 
+ mp_physics                          = 4,     4,     4, 
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
  radt                                = 30,    30,    30,
@@ -3544,7 +3546,22 @@ banner 29
 				else
 					set RIGHT_SIZE_MPI = FALSE
 				endif
-	
+
+				!	For some reason, Chemistry files are the wrong size, but the headers are identical, and the 
+				!	bit-wise comparisons are OK.  So, we just check to see if the files have two times worth of
+				!	data in them.  If this is a chem run, and we have the right number of time periods of data, 
+				!	and the files do nto have the same size, we just say, welp, they ARE the same size.  Might be
+				!	able to get rid of this test later.  Dec 2009.
+
+				if ( ( $KPP == TRUE ) || ( $CHEM == TRUE ) ) then
+					set times1 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[1] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
+					set times3 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
+					if ( ( $RIGHT_SIZE_MPI != TRUE ) && ( $times1 == 2 ) && ( $times3 == 2 ) ) then
+						echo "--- RIGHT_SIZE_MPI false ---" >>! ${DEF_DIR}/wrftest.output
+						set RIGHT_SIZE_MPI = TRUE
+					endif
+                                endif
+
 				#	Are we skipping the OpenMP runs?
 	
 				if ( $ZAP_OPENMP == TRUE ) then
@@ -3571,12 +3588,6 @@ banner 29
 				endif
 	
 				BYPASS_OPENMP_SUMMARY2:
-
-##### temporary jm 20091218
-if ( $RIGHT_SIZE_MPI == FALSE ) then
-  echo "--- RIGHT_SIZE_MPI false ---" >>! ${DEF_DIR}/wrftest.output
-endif
-set RIGHT_SIZE_MPI = TRUE
 		
 				#	Serial vs MPI
 		

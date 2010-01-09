@@ -219,7 +219,7 @@ CONTAINS
                                                      EMISS, SNOALB,            &
                                                      ALBBCK, SHDMIN, SHDMAX,   &
                                                      PBLH, RMOL, SNOWNCV,      &
-                                                     UST, MAVAIL, XICE, SST
+                                                     UST, MAVAIL, SST
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(IN) ::                            T2_NDG_OLD, T2_NDG_NEW,   &                
                                                      Q2_NDG_OLD, Q2_NDG_NEW,   & 
@@ -230,7 +230,7 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(INOUT) ::           CAPG,CANWAT, QFX, HFX, LH,              &
                                        PSIH,VEGFRA, VEGF_PX, SNOW,             &
-                                       SNOWH, SNOWC, ALBEDO, XLAND
+                                       SNOWH, SNOWC, ALBEDO, XLAND, XICE 
 
 
    LOGICAL :: radiation
@@ -373,8 +373,9 @@ CONTAINS
               XLAND(I,J) = 1.0
               IFLAND = 1.0
               ZNT(I,J) = 0.001  !  Ice
-              SMOIS(I,1,J) = FWSAT
-              SMOIS(I,2,J) = FWSAT
+              SMOIS(I,1,J) = 1.0     ! FWSAT
+              SMOIS(I,2,J) = 1.0     ! FWSAT
+              XICE(I,J) = 1.0
               ALBEDO(I,J) = 0.7
               SNOWC(I,J) = 1.0
               SNOW_FRA = 1.0
@@ -441,7 +442,7 @@ CONTAINS
             BETAP = 0.25 * (1.0 - COS(SMOIS(I,1,J) / FWFC * PI)) ** 2
           ENDIF
           
-          CALL SURFPX (DTPBL, IFLAND, SNOWC(I,J),  NUDGE,                       & !in
+          CALL SURFPX (DTPBL, IFLAND, SNOWC(I,J),  NUDGE, XICE(I,J),            & !in
                       SOLDN,  GSW(I,J), LWDN,   EMISSI, ZLVL,                   & !in
                       MOLX,    Z0,    USTAR,                                    & !in
                       SFCPRS, DENS1,  QV1,    QSS,   TA1,                       & !in
@@ -717,7 +718,7 @@ CONTAINS
   END SUBROUTINE vegeland
 !------------------------------------------------------------------------------
 !**********************************************************************
-      SUBROUTINE SURFPX(DTPBL,  IFLAND, ISNOW,  NUDGEX,                      & !in
+      SUBROUTINE SURFPX(DTPBL,  IFLAND, ISNOW,  NUDGEX, XICE1,               & !in
                         SOLDN,  GSW, LWDN,   EMISSI, Z1,                     & !in
                         MOL,    ZNT,    UST,                                 & !in 
                         PSURF,  DENS1,  QV1,    QSS,   TA1,                  & !in
@@ -810,7 +811,7 @@ CONTAINS
 
 !... Real
       REAL ,    INTENT(IN)  :: DTPBL, DS1, DS2
-      REAL ,    INTENT(IN)  :: IFLAND, ISNOW
+      REAL ,    INTENT(IN)  :: IFLAND, ISNOW, XICE1
       REAL ,    INTENT(IN)  :: SOLDN, GSW, LWDN, EMISSI, Z1
       REAL ,    INTENT(IN)  :: ZNT
       REAL ,    INTENT(IN)  :: PSURF, DENS1, QV1, QSS, TA1,  THETA1, PRECIP
@@ -954,7 +955,7 @@ CONTAINS
         !--------------------------------------------------------------------
         !-- ASSIMILATION --- COMPUTE SOIL MOISTURE NUDGING FROM TA2 and RH2               
         !-------COMPUTE ASSIMILATION COEFFICIENTS FOR ALL I                            
-        IF (IFLAND .LT. 1.5 ) THEN
+        IF (IFLAND .LT. 1.5) THEN
         IF (NUDGEX .EQ. 0) THEN                                          !-- NO NUDGING CASE                
           WGNUDG = 0.0                                                        
           W2NUDG = 0.0    
@@ -977,7 +978,7 @@ CONTAINS
 
         !-----------------------------------------------------------------------------------------
         !-- Compute new values for TS,T2,WG,W2 and WR. No change over ice or water (XLAND > 1)
-        IF (IFLAND .LT. 1.5 ) THEN
+        IF (IFLAND .LT. 1.5) THEN
 
           !-- SOLVE BY CRANK-NIC --   TENDTS=CT*(RADNET-HFX-QFX)-SOILFLX 
           !-- Calculate the coefficients for implicit calculation of TG
@@ -1008,7 +1009,7 @@ CONTAINS
 
         !-----------------------------------------------------------------------------------------
 	! Compute new subsurface soil and canopy moisture values DENS1. No change required over ocean.
-        IF (IFLAND .LT. 1.5) THEN  
+        IF (IFLAND .LT. 1.5.AND. XICE1.LT.0.5) THEN  
           !-- Compute WR
           ROFF  = 0.0
           WRMAX = 0.2E-3 * VEGFRC * LAI                     ! max. WRMAX IN m
@@ -1052,7 +1053,7 @@ CONTAINS
 
         !-----------------------------------------------------------------------------------------
 	! Compute new surface soil moisture values (WR).
-        IF (IFLAND .LT. 1.5) THEN  ! over ocean no change to wg w2,wr
+        IF (IFLAND .LT. 1.5.AND. XICE1.LT.0.5) THEN  ! over ocean no change to wg w2,wr
         !--    FOR SNOW COVERED SURFACE, ASSUME SURFACE IS SATURATED AND
         !      WG AND W2 ARE NOT CHANGED
           IF (ISNOW .GT.0.5) THEN

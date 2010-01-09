@@ -376,7 +376,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TDLY
    REAL, DIMENSION( ims:ime , 1:lagday , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TLAG
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   VEGFRA
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XICE
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   XICE
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL

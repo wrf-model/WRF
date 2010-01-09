@@ -22,7 +22,7 @@ MODULE module_dm
    LOGICAL :: dm_debug_flag = .FALSE.
 
    INTERFACE wrf_dm_maxval
-#ifdef PROMOTE_FLOAT
+#if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer
 #else
      MODULE PROCEDURE wrf_dm_maxval_real , wrf_dm_maxval_integer, wrf_dm_maxval_doubleprecision
@@ -30,7 +30,7 @@ MODULE module_dm
    END INTERFACE
 
    INTERFACE wrf_dm_minval                       ! gopal's doing
-#ifdef PROMOTE_FLOAT
+#if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
      MODULE PROCEDURE wrf_dm_minval_real , wrf_dm_minval_integer
 #else
      MODULE PROCEDURE wrf_dm_minval_real , wrf_dm_minval_integer, wrf_dm_minval_doubleprecision

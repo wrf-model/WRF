@@ -302,7 +302,12 @@
       subroutine vsacos(y,x,n)
       real*4 x(*),y(*)
       do 10 j=1,n
+#if defined (G95)
+! no reason why g95 should fail - oh well, we don't use this routine anyways
+      y(j)=asin( sqrt(1-x(j)*x(j)) )
+#else
       y(j)=acos(x(j))
+#endif
    10 continue
       return
       end

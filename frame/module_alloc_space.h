@@ -120,7 +120,6 @@
       CALL set_scalar_indices_from_config( id , idum1 , idum2 )
 
       num_bytes_allocated = 0 
-#endif
 
 #if (EM_CORE == 1)
       IF ( grid%id .EQ. 1 ) CALL wrf_message ( &
@@ -133,6 +132,7 @@
 #if (COAMPS_CORE == 1)
         IF ( grid%id .EQ. 1 ) &
           CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
+#endif
 #endif
 
 # include <allocs.inc>

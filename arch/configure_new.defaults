@@ -27,7 +27,8 @@ FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       
 BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -65,7 +66,8 @@ FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-huge
 FCSUFFIX        =
 BYTESWAPIO      =       -fendian=big
-FCBASEOPTS      =       -Wno=101,139,155,158 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -103,7 +105,8 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -141,7 +144,8 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =       
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -206,7 +210,8 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -279,8 +284,9 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-#FCBASEOPTS      =       -w -ftz -align all -fno-alias -IPF-fp-relaxed $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+#FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -IPF-fp-relaxed $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 LIB_LOCAL       =       -L/usr/lib -lmpi 
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
@@ -356,8 +362,9 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-#FCBASEOPTS      =       -w -ftz -align all -fno-alias -IPF-fp-relaxed $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+#FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -IPF-fp-relaxed $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 LIB_LOCAL       =       -L/usr/lib -lmpi 
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
@@ -396,7 +403,8 @@ FORMAT_FIXED    =       -fixedform
 FORMAT_FREE     =       -freeform
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w -fno-second-underscore $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w -fno-second-underscore $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -434,7 +442,8 @@ FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       
 BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -472,7 +481,8 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =       
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp
@@ -512,7 +522,8 @@ FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
 # added -fno-common at suggestion of R. Dubtsov as workaround for failing to link program_name
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise -fno-common $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -fp-model precise -fno-common $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp
@@ -552,7 +563,8 @@ FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
 # added -fno-common at suggestion of R. Dubtsov as workaround for failing to link program_name
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise -fno-common $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -fp-model precise -fno-common $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp
@@ -577,7 +589,7 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DG95 -DMACOS -DF2CSTYLE -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM_SUBR
+ARCH_LOCAL      =       -DG95 -DMACOS -DF2CSTYLE -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM_SUBR -DRCONFIG_CHARLEN=64
 CFLAGS_LOCAL    =       -DMACOS -DF2CSTYLE
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
@@ -590,7 +602,8 @@ FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-huge
 FCSUFFIX        =
 BYTESWAPIO      =       -fendian=big
-FCBASEOPTS      =       -Wno=101,139,155,158 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 LIB_LOCAL       =    -L/usr/lib -lSystemStubs
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
@@ -631,7 +644,8 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS      =       -qsave $(FCDEBUG) -qmaxmem=32767 -qspillsize=32767 -w
+FCBASEOPTS_NO_G =       -qsave -qmaxmem=32767 -qspillsize=32767 -w
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      
 CPP             =      cpp -C -P 
@@ -671,7 +685,8 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=32767 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
 CPP             =       /lib/cpp -C -P
@@ -714,7 +729,8 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =   
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P $(TRADFLAG)
@@ -764,7 +780,8 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =    
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P $(TRADFLAG)
@@ -811,7 +828,8 @@ FORMAT_FIXED    =       -fixedform
 FORMAT_FREE     =       -freeform
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE)
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =    
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P $(TRADFLAG)
@@ -853,7 +871,8 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=64000 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
 # this might be different on different systems but we want the xlf version of cpp, not Linux's
@@ -897,7 +916,8 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=64000 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
 # this might be different on different systems but we want the xlf version of cpp, not Linux's
@@ -937,7 +957,8 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=32767 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
 # this might be different on different systems but we want the xlf version of cpp, not Linux

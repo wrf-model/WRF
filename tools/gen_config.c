@@ -247,7 +247,7 @@ gen_get_nl_config ( char * dirname )
       }
       fprintf(fp,"  %s , INTENT(%s) :: %s\n",p->type->name,intnt,p->name) ;
       fprintf(fp,"  INTEGER id_id\n") ;
-      fprintf(fp,"  CHARACTER*80 emess\n") ;
+      if ( ! sw_fort_kludge ) fprintf(fp,"  CHARACTER*80 emess\n") ;
       if ( sw == 0 ) /* get */
       {
         if ( !strcmp( p->nentries, "1" )) {

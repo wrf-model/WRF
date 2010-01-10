@@ -321,11 +321,19 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                      int bdy ;
                      for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
                        if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+#if 0
                          fprintf(fp,",%s%s,ngrid%%%s%s  &\n", nd->name, bdy_indicator(bdy), nd->name, bdy_indicator(bdy) ) ;
+#else
+                         fprintf(fp,",dummy_%s,ngrid%%%s%s  &\n", 
+                                     bdy_indicator(bdy),
+                                     nd->name, bdy_indicator(bdy) ) ;
+#endif
                        } else {
                          char c ;
                          c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
-                         fprintf(fp,",%s%s(c%cms,1,1,itrace),ngrid%%%s%s(n%cms,1,1,itrace)  &\n", nd->name, bdy_indicator(bdy), c, nd->name, bdy_indicator(bdy), c  ) ;
+                         fprintf(fp,",%s%s(c%cms,1,1,itrace),ngrid%%%s%s(n%cms,1,1,itrace)  &\n", 
+                                           nd->name, bdy_indicator(bdy), c, 
+                                           nd->name, bdy_indicator(bdy), c  ) ;
                        }
                      }
                    } else {

@@ -321,7 +321,11 @@ else
     if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" -o "$os" = "HP-UX"  -o "$os" = "Darwin" -o "$os" = "Interix" ] ; then
       mach="ARCH"
     else
-      if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o "$os" = "CYGWIN_NT-5.1" ] ; then
+      xxx=`expr "$os" : '\(.........\).*'`
+      if [ "$xxx"  = "CYGWIN_NT" ] ; then
+        os=$xxx
+      fi
+      if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o  "$os" = "CYGWIN_NT" ] ; then
         mach=`uname -m`
         if [ "$mach" = "ia64" -a -f /etc/sgi-release ] ; then
           mach="Altix"

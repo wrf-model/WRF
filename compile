@@ -327,10 +327,13 @@ else
 # new dec 2009.  check to see if make supports parallel -j option
   make -j 6 >& /dev/null
   if ( $status == 0 ) then
-    if ( ! $?J  ) then
+    if ( ! $?J ) then
+      echo setting parallel make -j 6
       setenv J "-j 6"
     endif
-  endif 
+  else
+    echo not setting parallel make
+  endif
 
   make $arglist A2DCASE="$A2DCASE" WRF_SRC_ROOT_DIR="$WRF_SRC_ROOT_DIR"
 

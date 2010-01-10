@@ -190,12 +190,9 @@ dst_on_comm ( int * Fcomm, int * typesize ,
   return(0) ;
 }
 
-#ifndef MS_SUA
+#ifndef _WIN32
 #ifndef MACOS
 #  include <malloc.h>
-#  ifndef _WIN32
-#     include <sys/resource.h>
-#  endif
 #  include <sys/resource.h>
 #endif
 
@@ -229,12 +226,12 @@ rlim_ ()
 
    getrusage ( RUSAGE_SELF, &r_usage ) ;
    if ( tock != 0 ) {
-#ifndef MS_SUA
+#ifndef _WIN32
      fprintf(stderr,"sm %ld d %ld s %ld maxrss %ld %d %d %ld\n",r_usage.ru_ixrss/tock,r_usage.ru_idrss/tock,r_usage.ru_isrss/tock, r_usage.ru_maxrss,tick,tock,r_usage.ru_ixrss) ;
 #endif
    }
    minf = mallinfo() ;
-#ifndef MS_SUAL
+#ifndef _WIN32
    fprintf(stderr,"a %ld usm %ld fsm %ld uord %ld ford %ld hblkhd %d\n",minf.arena,minf.usmblks,minf.fsmblks,minf.uordblks,minf.fordblks,minf.hblkhd) ;
 #endif
 # if 0

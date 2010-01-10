@@ -23,6 +23,6 @@ library: $(OBJ)
 	$(FC) -c $(FFLAGS) $< 
 
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(OBJ) $(TARGET) *.obj
 
 superclean: clean

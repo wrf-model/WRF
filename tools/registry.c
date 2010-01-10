@@ -1,9 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#include <string.h>
 #ifdef _WIN32
 # include <io.h>
 # define rindex(X,Y) strrchr(X,Y)
@@ -12,6 +8,7 @@
 # include <sys/time.h>
 # include <sys/resource.h>
 # include <unistd.h>
+# include <string.h>
 # include <strings.h>
 #endif
 
@@ -55,9 +52,8 @@ main( int argc, char *argv[], char *env[] )
 #ifndef _WIN32
   rlim.rlim_cur = RLIM_INFINITY ;
   rlim.rlim_max = RLIM_INFINITY ;
-#endif
-
   setrlimit ( RLIMIT_STACK , &rlim ) ;
+#endif
 
   sym_forget() ;
   thisprog = *argv ;

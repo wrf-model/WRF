@@ -1,4 +1,5 @@
 ######################
+# POSTAMBLE
 
 FGREP = fgrep -iq
 
@@ -25,7 +26,7 @@ CFLAGS          =    $(CFLAGS_LOCAL) CONFIGURE_DMPARALLEL CONFIGURE_STUBMPI \
                       -DMAX_HISTORY=$(MAX_HISTORY)
 FCFLAGS         =    $(FCOPTIM) $(FCBASEOPTS)
 ESMF_LIB_FLAGS  =    ESMFLIBFLAG
-ESMF_IO_LIB     =    ESMFIOLIB
+#NOWIN ESMF_IO_LIB     =    ESMFIOLIB
 ESMF_IO_LIB_EXT =    ESMFIOEXTLIB
 INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                      $(ESMF_MOD_INC) $(ESMF_LIB_FLAGS) \
@@ -40,19 +41,18 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       CONFIGURE_RTTOV_INC
 REGISTRY        =    Registry
 
-LIB_BUNDLED     = \
-                     -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
-                     -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
-                     -L$(WRF_SRC_ROOT_DIR)/external/io_grib_share -lio_grib_share \
-                     -L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
-                     $(ESMF_IO_LIB) \
-                     $(ESMF_IO_LIB) \
-                     CONFIGURE_COMMS_LIB \
-                     $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
-                     $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
+#NOWIN LIB_BUNDLED     = \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
+#NOWIN                      $(ESMF_IO_LIB) \
+#NOWIN                      CONFIGURE_COMMS_LIB \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
 
-LIB_EXTERNAL    = \
-                     CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMPOM_LIB
+#NOWIN LIB_EXTERNAL    = \
+#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMPOM_LIB
 
 LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL)
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS

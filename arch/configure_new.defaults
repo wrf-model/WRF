@@ -969,5 +969,58 @@ M4 		=       m4 -B 14000
 RANLIB 		=       ranlib
 CC_TOOLS        =       xlc -q64
 ###########################################################
+#ARCH    CYGWIN_NT i686, PGI compiler on Windows # serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp -Minfo=mp
+SFC             =       pgf90
+SCC             =       pgcc
+DM_FC           =       pgf90 -Mmpi=msmpi
+DM_CC           =       pgcc -Mmpi=msmpi
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
+CFLAGS_LOCAL    =       -w -O3 -DMEMCPY_FOR_BCOPY -DLANDREAD_STUB
+LDFLAGS_LOCAL   =       Ws2_32.lib # -lnetcdff
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -fastsse -Mvect=noaltcode -Mprefetch=distance:8 -Mfprelaxed -tp core2-64 # -Minfo=all 
+FCREDUCEDOPT    =       $(FCOPTIM)
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio 
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG=       -module $(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =
+CPP             =       pgprepro
+AR              =       ar
+ARFLAGS         =       cr
+M4              =       NA
+RANLIB          =       ranlib
+CC_TOOLS        =       $(SCC)
+
+LIB_EXTERNAL    = \
+                     ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib
+ESMF_IO_LIB     =    ../external/esmf_time_f90/libesmf_time.a
+LIB_BUNDLED     = \
+                     ../external/fftpack/fftpack5/libfftpack.a \
+                     ../external/io_grib1/libio_grib1.a \
+                     ../external/io_grib_share/libio_grib_share.a \
+                     ../external/io_int/libwrfio_int.a \
+                     $(ESMF_IO_LIB) \
+                     CONFIGURE_COMMS_LIB \
+                     ../frame/module_internal_header_util.o \
+                     ../frame/pack_utils.o
+
+
+###########################################################
 #ARCH  NULL
 

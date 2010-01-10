@@ -73,11 +73,11 @@ SUB_DIRS = $(LIB_DIRS) $(EXE_DIRS)
 #  Clean up old build files
 #
 superclean:
-	/bin/rm -f *.o > /dev/null 2>&1
+	/bin/rm -f *.o *.obj > /dev/null 2>&1
 	/bin/rm -f *.f90 > /dev/null 2>&1
 	/bin/rm -f *.mod > /dev/null 2>&1
 	/bin/rm -f *.a > /dev/null 2>&1
-	/bin/rm -f wgrid > /dev/null 2>&1
+	/bin/rm -f wgrid.exe > /dev/null 2>&1
 	( cd grib1_util ; make clean )
 	( cd MEL_grib1 ; make clean )
 	( cd WGRIB ; make clean )

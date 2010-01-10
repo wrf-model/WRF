@@ -21,9 +21,9 @@ all: wgrib
 archive: wgrib
 
 wgrib: $(obj)
-	$(CC) -o wgrib $(obj) -lm
-	( cd .. ; \rm -f wgrib ; \ln -sf WGRIB/wgrib wgrib ; cd WGRIB )
+	$(CC) -o wgrib $(obj) #-lm
+	( cd .. ; \rm -f wgrib.exe ; \ln -sf WGRIB/wgrib wgrib.exe ; cd WGRIB )
 
 clean:	
-	\rm -f $(obj) wgrib
-	( cd .. ; \rm -f wgrib ; cd WGRIB )
+	\rm -f $(obj) *.obj wgrib
+	( cd .. ; \rm -f wgrib.exe ; cd WGRIB )

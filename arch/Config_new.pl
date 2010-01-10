@@ -59,6 +59,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 3 ) eq "os=" )
   {
     $sw_os = substr( $ARGV[0], 4 ) ;
+printf "sw_os $sw_os\n" ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "mach=" )
   {
@@ -316,6 +317,9 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
     $_ =~ s/CONFIGURE_COMMS_INCLUDE/$sw_comms_include/g ;
     $_ =~ s/CONFIGURE_COMMS_EXTERNAL/$sw_comms_external/g ;
+    if ( $sw_os ne "CYGWIN_NT" ) {
+      $_ =~ s/#NOWIN// ;
+    }
     $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;

@@ -238,7 +238,7 @@ CONTAINS
 
       REAL, DIMENSION(its:ite, kms:kme, jts:jte):: PFLIP,QIFLIP,QFLIP,  &
      &                                             QWFLIP,TFLIP
-      REAL, DIMENSION(its:ite, kms:kme, jts:jte)::P8WFLIP,PHYD
+      REAL, DIMENSION(its:ite, kms:kme, jts:jte)::P8WFLIP
       REAL, DIMENSION(its:ite, kts:kte, jts:jte)::TENDS,TENDL
       REAL, DIMENSION(ims:ime, jms:jme):: CUTOP,CUBOT
       INTEGER :: IDAT(3),IHOUR,Jmonth,Jday
@@ -260,26 +260,12 @@ CONTAINS
           ENDDO
         ENDDO
       ENDDO
-! NEED HYDROSTATIC PRESSURE HERE (MONOTONIC CHANGE WITH HEIGHT)
-      DO J=JTS,JTE
-      DO I=ITS,ITE
-        PHYD(I,KTS,J)=P8W(I,KTS,J) 
-      ENDDO
-      ENDDO
-!
-      DO J=JTS,JTE
-        DO K=KTS,KTE
-        DO I=ITS,ITE
-          PHYD(I,K+1,J)=PHYD(I,K,J)-G*RHO_PHY(I,K,J)*DZ8W(I,K,J)
-        ENDDO
-        ENDDO
-      ENDDO
 !
       DO K=KMS,KME
          KFLIP=KME+1-K
          DO J=JTS,JTE
          DO I=ITS,ITE
-           P8WFLIP(I,K,J)=PHYD(I,KFLIP,J)
+           P8WFLIP(I,K,J)=P8W(I,KFLIP,J)
          ENDDO
          ENDDO
       ENDDO
@@ -297,11 +283,10 @@ CONTAINS
 !     Eta MP now outputs QS instead of QI (JD 2006-05-12)
           QIFLIP(I,K,J)=MAX(QS(I,KFLIP,J),0.)      !Added QS
           IF(PRESENT(QI))QIFLIP(I,K,J)=QIFLIP(I,K,J)+QI(I,KFLIP,J)      !Added QI
-!         PFLIP (I,K,J)=P_PHY(I,KFLIP,J)
+          PFLIP (I,K,J)=P_PHY(I,KFLIP,J)
 !
 !***  USE MONOTONIC HYDROSTATIC PRESSURE INTERPOLATED TO MID-LEVEL
 !
-          PFLIP(I,K,J)=0.5*(P8WFLIP(I,K,J)+P8WFLIP(I,K+1,J))
         ENDDO
         ENDDO
       ENDDO

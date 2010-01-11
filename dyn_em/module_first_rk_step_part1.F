@@ -254,7 +254,7 @@ BENCH_START(rad_driver_tim)
      &        ,ITIMESTEP=grid%itimestep,JULDAY=grid%julday      , JULIAN=grid%julian &
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics        &
      &        ,NCFRCV=grid%ncfrcv      ,NCFRST=grid%ncfrst      ,NPHS=1              &
-     &        ,P8W=p8w                 ,P=p_phy                 ,PI=pi_phy           &
+     &        ,P8W=grid%p_hyd_w        ,P=grid%p_hyd            ,PI=pi_phy           &
      &        ,RADT=grid%radt          ,RA_CALL_OFFSET=grid%ra_call_offset           &
      &        ,RHO=rho                 ,RLWTOA=grid%rlwtoa                           &
      &        ,RSWTOA=grid%rswtoa      ,RTHRATEN=grid%rthraten                       &
@@ -365,10 +365,10 @@ BENCH_START(surf_driver_tim)
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
      &        ,MAVAIL=grid%mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
-     &        ,P8W=p8w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
+     &        ,P8W=grid%p_hyd_w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
      &        ,PSFC=grid%psfc          ,PSHLTR=grid%pshltr      ,PSIH=psih          &
      &        ,BLDT=grid%bldt     ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag  &
-     &        ,PSIM=psim          ,P_PHY=p_phy        ,Q10=grid%q10            &
+     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,Q10=grid%q10            &
      &        ,Q2=grid%q2              ,QFX=grid%qfx            ,QSFC=grid%qsfc          &
      &        ,QSHLTR=grid%qshltr      ,QZ0=grid%qz0            ,RAINCV=grid%raincv      &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics            ,RHO=rho            &
@@ -518,9 +518,9 @@ BENCH_START(pbl_driver_tim)
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
      &        ,ITIMESTEP=grid%itimestep                    ,KPBL=grid%kpbl          &
-     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=p8w            &
+     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
      &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
-     &        ,PSIM=psim          ,P_PHY=p_phy        ,QFX=grid%qfx            &
+     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
      &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
      &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
@@ -618,14 +618,14 @@ BENCH_START(cu_driver_tim)
       CALL cumulus_driver(grid                                             &
                  ! Prognostic variables
      &             ,U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy             &
-     &             ,W=grid%w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho             &
+     &             ,W=grid%w_2     ,P=grid%p_hyd   ,PI=pi_phy  ,RHO=rho             &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx                &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec         &
      &             , NCA=grid%nca                                         &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl             &
-     &             ,DZ8W=dz8w     ,P8W=p8w                                &
+     &             ,DZ8W=dz8w     ,P8W=grid%p_hyd_w                                &
      &             ,W0AVG=grid%w0avg   ,STEPCU=grid%stepcu                          &
      &             ,CLDEFI=grid%cldefi ,LOWLYR=grid%lowlyr ,XLAND=grid%xland             &
      &             ,APR_GR=grid%apr_gr ,APR_W=grid%apr_w   ,APR_MC=grid%apr_mc           &

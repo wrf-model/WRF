@@ -138,8 +138,6 @@ CONTAINS
                                                              P2D, &
                                                              T2D, &
                                                           fcld2D
-   real, DIMENSION( its:ite , kts:kte+1 ) :: phyd
-   real, DIMENSION( its:ite , kts:kte   ) :: phydmid
 
    REAL, DIMENSION( np, 5 ) ::                              pres, &
                                                            ozone
@@ -460,31 +458,12 @@ CONTAINS
          p(k)=pres(k,iprof)
       ENDDO
 
-      do k = kts,kte+1
-      do i = its,ite
-      if(k.eq.kts)then
-        phyd(i,k)=p8w3d(i,kts,j)
-      else
-        phyd(i,k)=phyd(i,k-1) - g*rho_phy(i,k-1,j)*dz8w(i,k-1,j)
-        phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
-      endif
-      enddo
-      enddo
-! normalize full pressure range
-      do k = kts+1,kte+1
-      do i = its,ite
-        if(k.eq.kts+1)fp(i) = (p8w3d(i,kts,j)-p8w3d(i,kte+1,j))/(phyd(i,kts)-phyd(i,kte+1))
-        phyd(i,k)=phyd(i,k-1) - g*rho_phy(i,k-1,j)*dz8w(i,k-1,j)*fp(i)
-        phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
-      enddo
-      enddo
-
 ! reverse vars 
 !
       DO K=kts,kte+1
       DO I=its,ite
          NK=kme-K+kms
-         P8W2D(I,K)=phyd(I,NK)*0.01   ! P8w2D is in mb
+         P8W2D(I,K)=p8w3d(i,nk,j)*0.01   ! P8w2D is in mb
       ENDDO
       ENDDO
 
@@ -504,7 +483,7 @@ CONTAINS
          cwc(I,K,2)=QC3D(I,NK,J)
          cwc(I,K,2)=max(0.,cwc(I,K,2))
 
-         P2D(I,K)=phydmid(I,NK)*0.01      ! P2D is in mb
+         P2D(I,K)=p3d(i,nk,j)*0.01      ! P2D is in mb
          fcld2D(I,K)=CLDFRA3D(I,NK,J)
       ENDDO
       ENDDO

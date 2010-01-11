@@ -1789,14 +1789,12 @@ CONTAINS
 !  LOCAL VARS
  
    REAL, DIMENSION( kts:kte+1 ) ::                          Pw1D, &
-                                                            Tw1D, &
-                                                            PHYD
+                                                            Tw1D
 
    REAL, DIMENSION( kts:kte ) ::                          TTEN1D, &
                                                         CLDFRA1D, &
                                                             DZ1D, &
                                                              P1D, &
-                                                         PHYDMID, &
                                                              T1D, &
                                                             QV1D, &
                                                             QC1D, &
@@ -1805,7 +1803,7 @@ CONTAINS
                                                             QS1D, &
                                                             QG1D
 !
-    REAL   ::                              TSFC,GLW0,OLR0,EMISS0,FP
+    REAL   ::                              TSFC,GLW0,OLR0,EMISS0
 !
     INTEGER:: i,j,K,NK
     LOGICAL :: predicate
@@ -1820,25 +1818,9 @@ CONTAINS
 ! reverse vars 
 ! p1D pw1D are in mb
 
-! NEED HYDROSTATIC PRESSURE HERE (MONOTONIC CHANGE WITH HEIGHT)
-! PHYD REPLACES P8W, PHYDMID REPLACES P3D
-         PHYD(kts) = p8w(I,kts,J)
-! first guess
-         DO K = KTS,KTE
-            PHYD(K+1) = PHYD(K) - G*RHO3D(I,K,J)*DZ8W(I,K,J)
-         ENDDO
-! correction factor FP to match p8w(I,kts,J)-p8w(I,kte,J)
-         FP = (p8w(I,kts,J)-p8w(I,kte,J))/(PHYD(KTS)-PHYD(KTE))
-! final pass
-         DO K = KTS,KTE
-            PHYD(K+1) = PHYD(K) - G*RHO3D(I,K,J)*DZ8W(I,K,J)*FP
-            PHYDMID(K)= 0.5*(PHYD(K)+PHYD(K+1))
-         ENDDO
-
          do k=kts,kte+1
             NK=kme-k+kms
-!           Pw1D(K) = p8w(I,NK,J)/100.
-            Pw1D(K) = PHYD(NK)/100.
+            Pw1D(K) = p8w(I,NK,J)/100.
             Tw1D(K) = t8w(I,NK,J)
          enddo
 
@@ -1861,8 +1843,7 @@ CONTAINS
             NK=kme-1-K+kms
             TTEN1D(K)=0.
             T1D(K)=T3D(I,NK,J)
-!           P1D(K)=P3D(I,NK,J)/100.
-            P1D(K)=PHYDMID(NK)/100.
+            P1D(K)=P3D(I,NK,J)/100.
             DZ1D(K)=dz8w(I,NK,J)
          ENDDO
 

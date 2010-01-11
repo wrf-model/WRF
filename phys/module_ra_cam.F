@@ -345,9 +345,6 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), DIMENSION( 1:ite-its+1 ) :: asdir, asdif, aldir, aldif, ps
    real(r8), DIMENSION( 1:ite-its+1, 1:kte-kts+1 ) :: cld, pmid, lnpmid, pdel, zm, t
    real(r8), DIMENSION( 1:ite-its+1, 1:kte-kts+2 ) ::  pint, lnpint
-   real(r8), DIMENSION( its:ite , kts:kte+1 ) :: phyd
-   real(r8), DIMENSION( its:ite , kts:kte   ) :: phydmid
-   real(r8), DIMENSION( its:ite ) :: fp
    real(r8), DIMENSION( 1:ite-its+1, 1:kte-kts+1, n_cldadv) :: q
 !   real(r8), DIMENSION( 1:kte-kts+1 ) :: hypm       ! reference pressures at midpoints
 !   real(r8), DIMENSION( 1:kte-kts+2 ) :: hypi       ! reference pressures at interfaces
@@ -551,35 +548,11 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       lwups(ii) = stebol*EMISS(I,J)*TSK(I,J)**4
       enddo
 
-! first guess
-      do k = kts,kte+1
-      do i = its,ite
-      if(k.eq.kts)then
-        phyd(i,k)=p8w(i,kts,j)
-      else
-        phyd(i,k)=phyd(i,k-1) - gravmks*rho_phy(i,k-1,j)*dz8w(i,k-1,j)
-      endif
-      enddo
-      enddo
-
-! correction factor FP to match p8w(I,kts,J)-p8w(I,kte+1,J)
-      do i = its,ite
-        fp(i)=(p8w(I,kts,J)-p8w(I,kte+1,J))/(PHYD(i,KTS)-PHYD(i,KTE+1))
-      enddo
-
-! final pass
-      do k = kts+1,kte+1
-      do i = its,ite
-        phyd(i,k)=phyd(i,k-1) - gravmks*rho_phy(i,k-1,j)*dz8w(i,k-1,j)*fp(i)
-        phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
-      enddo
-      enddo
-
       do k = kts,kte+1
       kk = kte - k + kts + 1
       do i = its,ite
       ii = i - its + 1
-      pint(ii,kk) = phyd(i,k)
+      pint(ii,kk) = p8w(i,k,j)
       if(k.eq.kts)ps(ii)=pint(ii,kk)
       lnpint(ii,kk) = log(pint(ii,kk))
       enddo
@@ -613,7 +586,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
-      pmid(ii,kk) = phydmid(i,k)
+      pmid(ii,kk) = p_phy(i,k,j)
       lnpmid(ii,kk) = log(pmid(ii,kk))
       lnpint(ii,kk) = log(pint(ii,kk))
       pdel(ii,kk) = pint(ii,kk+1) - pint(ii,kk)

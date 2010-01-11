@@ -135,7 +135,6 @@ CONTAINS
      real,    dimension (its:ite,kts:kte+1) ::                    &
         OUTT,OUTQ,OUTQC,phh,cupclw,     &
         outCFU1,outCFD1,outDFU1,outEFU1,outDFD1,outEFD1
-     real,    dimension (its:ite,kts:kte+1) ::  phf
      logical :: l_flux
      real,    dimension (its:ite)         ::                    &
         pret, ter11, aa0, fp
@@ -218,40 +217,15 @@ CONTAINS
         RQVFTEN(i,k,j)=RQVFTEN(i,k,j)+RQVBLTEN(i,k,j)
      ENDDO
      ENDDO
-     !  hydrostatic pressure, first on full levels
-     DO I=ITS,ITF
-         phf(i,1) = p8w(i,1,j)
-     ENDDO
-     !  integrate up, dp = -rho * g * dz
-     DO K=kts+1,ktf+1
-     DO I=ITS,ITF
-         phf(i,k) = phf(i,k-1) - rho(i,k-1,j) * g * dz8w(i,k-1,j)
-     ENDDO
-     ENDDO
-     !  scale factor so that pressure is not zero after integration
-     DO I=ITS,ITF
-         fp(i) = (p8w(i,kts,j)-p8w(i,kte,j))/(phf(i,kts)-phf(i,kte))
-     ENDDO
-     !  re-integrate up, dp = -rho * g * dz * scale_factor
-     DO K=kts+1,ktf+1
-     DO I=ITS,ITF
-         phf(i,k) = phf(i,k-1) - rho(i,k-1,j) * g * dz8w(i,k-1,j) * fp(i)
-     ENDDO
-     ENDDO
+#endif
      !  put hydrostatic pressure on half levels
      DO K=kts,ktf
      DO I=ITS,ITF
-         phh(i,k) = (phf(i,k) + phf(i,k+1))*0.5
+         phh(i,k) = p(i,k,j)
      ENDDO
      ENDDO
-#endif
      DO I=ITS,ITF
-#if ( EM_CORE == 1 )
          PSUR(I)=p8w(I,1,J)*.01
-#endif
-#if ( NMM_CORE == 1 )
-         PSUR(I)=p(I,1,J)*.01
-#endif
          TER11(I)=HT(i,j)
          mconv(i)=0.
          aaeq(i)=0.
@@ -265,13 +239,7 @@ CONTAINS
      DO I=ITS,ITF
          omeg(i,k)=0.
 !        cupclw(i,k)=0.
-#if ( EM_CORE == 1 )
          po(i,k)=phh(i,k)*.01
-#endif
-
-#if ( NMM_CORE == 1 )
-         po(i,k)=p(i,k,j)*.01
-#endif
          P2d(I,K)=PO(i,k)
          US(I,K) =u(i,k,j)
          VS(I,K) =v(i,k,j)

@@ -9664,14 +9664,12 @@ CONTAINS
 !  LOCAL VARS
  
    REAL, DIMENSION( kts:kte+1 ) ::                          Pw1D, &
-                                                            Tw1D, &
-                                                            PHYD
+                                                            Tw1D
 
    REAL, DIMENSION( kts:kte ) ::                          TTEN1D, &
                                                         CLDFRA1D, &
                                                             DZ1D, &
                                                              P1D, &
-                                                         PHYDMID, &
                                                              T1D, &
                                                             QV1D, &
                                                             QC1D, &
@@ -9848,28 +9846,11 @@ CONTAINS
 
 ! Set flag to prevent shortwave calculation when sun below horizon
          if (coszrs.le.0.0) dorrsw = .false.
-
 ! Perform shortwave calculation if sun above horizon
          if (dorrsw) then
 
-! NEED HYDROSTATIC PRESSURE HERE (MONOTONIC CHANGE WITH HEIGHT)
-! PHYD REPLACES P8W, PHYDMID REPLACES P3D
-         PHYD(kts) = p8w(I,kts,J)
-! first guess
-         DO K = KTS,KTE
-            PHYD(K+1) = PHYD(K) - G*RHO3D(I,K,J)*DZ8W(I,K,J)
-         ENDDO
-! correction factor FP to match p8w(I,kts,J)-p8w(I,kte,J)
-         FP = (p8w(I,kts,J)-p8w(I,kte,J))/(PHYD(KTS)-PHYD(KTE))
-! final pass
-         DO K = KTS,KTE
-            PHYD(K+1) = PHYD(K) - G*RHO3D(I,K,J)*DZ8W(I,K,J)*FP
-            PHYDMID(K)= 0.5*(PHYD(K)+PHYD(K+1))
-         ENDDO
-
          do k=kts,kte+1
-!           Pw1D(K) = p8w(I,K,J)/100.
-            Pw1D(K) = PHYD(K)/100.
+            Pw1D(K) = p8w(I,K,J)/100.
             Tw1D(K) = t8w(I,K,J)
          enddo
 
@@ -9890,8 +9871,7 @@ CONTAINS
          DO K=kts,kte
             TTEN1D(K)=0.
             T1D(K)=t3d(I,K,J)
-!            P1D(K)=p3d(I,K,J)/100.
-            P1D(K)=PHYDMID(K)/100.
+            P1D(K)=p3d(I,K,J)/100.
             DZ1D(K)=dz8w(I,K,J)
          ENDDO
 

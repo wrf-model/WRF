@@ -212,7 +212,7 @@ subroutine da_write_obs(it,ob, iv, re)
                num_obs, 1, iv%info(gpspw)%id(n), &  ! Station
                iv%info(gpspw)%lat(1,n), &       ! Latitude
                iv%info(gpspw)%lon(1,n), &       ! Longitude
-               missing_r,               &
+               iv%info(gpspw)%elv(n)  , &
                ob%gpspw(n)%tpw,         &
                iv%gpspw(n)%tpw%inv, iv%gpspw(n)%tpw%qc, iv%gpspw(n)%tpw%error, &
                re%gpspw(n)%tpw
@@ -659,7 +659,7 @@ subroutine da_write_obs(it,ob, iv, re)
    end do
    if (num_obs > 0) then
       write(ounit,'(a20,i8)')'gpsref', num_obs
-      num_obs = 0
+       num_obs = 0
       do n = 1, iv%info(gpsref)%nlocal
          if (iv%info(gpsref)%proc_domain(1,n)) then
             num_obs = num_obs + 1
@@ -676,8 +676,8 @@ subroutine da_write_obs(it,ob, iv, re)
             end do
          end if
       end do
-   end if
-
+  end if
+   
    close (ounit)
    call da_free_unit(ounit)
 

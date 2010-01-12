@@ -11,6 +11,17 @@ subroutine da_wrfvar_init2
 
    if (trace_use) call da_trace_entry("da_wrfvar_init2")
 
+! Override the start time with the "analysis_date":
+      read(analysis_date, fmt='(i4,5(1x,i2))') &
+           start_year(1), start_month(1), start_day(1), start_hour(1), &
+           start_minute(1), start_second(1)
+      model_config_rec% start_year   = start_year
+      model_config_rec% start_month  = start_month
+      model_config_rec% start_day    = start_day
+      model_config_rec% start_hour   = start_hour
+      model_config_rec% start_minute = start_minute
+      model_config_rec% start_second = start_second
+
    if (analysis_type(1:6) == "VERIFY" .or. analysis_type(1:6) == "verify") then
       anal_type_verify=.true.
    else
@@ -136,13 +147,15 @@ subroutine da_wrfvar_init2
    if (rootproc) then
       call da_get_unit (cost_unit)
       call da_get_unit (grad_unit)
-      call da_get_unit (stats_unit)
       call da_get_unit (jo_unit)
       call da_get_unit (check_max_iv_unit)
       call da_get_unit (check_buddy_unit)
       open(unit=cost_unit,file="cost_fn",status="replace")
       open(unit=grad_unit,file="grad_fn",status="replace")
-      open(unit=stats_unit,file="statistics",status="replace")
+      if (.not. print_detail_outerloop) then
+         call da_get_unit (stats_unit)
+         open(unit=stats_unit,file="statistics",status="replace")
+      end if
       open(unit=jo_unit,file="jo",status="replace")
       open(unit=check_max_iv_unit,file="check_max_iv",status="replace")
       open(unit=check_buddy_unit ,file="buddy_check" ,status="replace")

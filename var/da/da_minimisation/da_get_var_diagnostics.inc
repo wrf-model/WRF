@@ -211,14 +211,17 @@ subroutine da_get_var_diagnostics( iv, j)
       if (num_stats_tot > 0) &
          write(unit=stdout,fmt='(a,f15.5)') '   Final J / total num_obs     = ', j % total / &
                                                           real(num_stats_tot)
-      write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used(1)           = ', var_scaling1
-      write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used(2)           = ', var_scaling2
-      write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used(3)           = ', var_scaling3
-      write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used(4)           = ', var_scaling4
-      write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used(5)           = ', var_scaling5
-      write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used              = ', jb_factor
-      write(unit=stdout,fmt='(a,f15.5)') '   Je factor used              = ', je_factor
-      write(unit=stdout,fmt='(a,f15.5)') '   VarBC factor used           = ', varbc_factor
+      if (cv_options /= 3) then
+        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(1)           = ', var_scaling1
+        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(2)           = ', var_scaling2
+        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(3)           = ', var_scaling3
+        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(4)           = ', var_scaling4
+        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(5)           = ', var_scaling5
+      endif
+
+      write(unit=stdout,fmt='(a, f15.5)') '   Jb factor used              = ', jb_factor
+      write(unit=stdout,fmt='(a, f15.5)') '   Je factor used              = ', je_factor
+      write(unit=stdout,fmt='(a, f15.5)') '   VarBC factor used           = ', varbc_factor
       write(unit=stdout,fmt=*) ' '
 
       if (use_rad) then

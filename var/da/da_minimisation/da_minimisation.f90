@@ -34,7 +34,7 @@ module da_minimisation
       write_filtered_rad,omb_set_rand,use_rad,var_scaling2,var_scaling1, &
       var_scaling4,var_scaling5,var_scaling3, jo_unit, &
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, &
-      cv_size_domain_je,cv_size_domain_jb, num_pseudo, &
+      cv_size_domain_je,cv_size_domain_jb, num_pseudo, cv_options, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_crtm_kmatrix, &
@@ -42,7 +42,7 @@ module da_minimisation
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, &
       orthonorm_gradient, its, ite, jts, jte, kte, ids, ide, jds, jde, &
-      use_satcv, sensitivity_option
+      use_satcv, sensitivity_option, print_detail_outerloop
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type
@@ -95,7 +95,7 @@ module da_minimisation
 
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_calculate_grady_rad, da_write_filtered_rad, &
-      da_get_innov_vector_radiance
+      da_get_innov_vector_radiance, satinfo
    use da_radiance1, only : da_ao_stats_rad,da_oi_stats_rad, &
       da_write_iv_rad_ascii,da_residual_rad,da_jo_and_grady_rad
 #endif

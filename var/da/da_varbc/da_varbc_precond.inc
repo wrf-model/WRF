@@ -40,7 +40,8 @@
 	                    .AND.(iv%instid(inst)%tb_qc(k,1:num_rad) > qc_varbc_bad) )
          iv%instid(inst)%varbc(k)%nobs  = wrf_dm_sum_integer(num_rad_active)
 	    
-         write(unit=stdout,fmt='(A,I6,3A,I5)') &
+         if ( satinfo(inst)%iuse(k) == 1 ) &
+            write(unit=stdout,fmt='(A,I6,3A,I5)') &
 	    'VARBC:',iv%instid(inst)%varbc(k)%nobs,' active observations for ', &
             trim(adjustl(iv%instid(inst)%rttovid_string)),' channel',           &
 	    iv%instid(inst)%ichan(k)
@@ -93,7 +94,8 @@
                if (.not. iv%instid(inst)%info%proc_domain(1,n))  cycle  ! do not sum up HALO data
 
    	       bgerr_local = bgerr_local + iv%instid(inst)%tb_error(k,n)**2  / &
-	                                   iv%instid(inst)%varbc_info%nbgerr(ii)
+                                             varbc_nbgerr
+	                                   ! iv%instid(inst)%varbc_info%nbgerr(ii)
 	    end do
 
             iv%instid(inst)%varbc(k)%bgerr(i) = wrf_dm_sum_real(bgerr_local) / &

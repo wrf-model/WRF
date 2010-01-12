@@ -58,6 +58,15 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    model_rf(:,:)   = 0
    model_ps(:)     = 0
 
+   if ( it > 1 ) then
+     do n=iv%info(radar)%n1,iv%info(radar)%n2
+        do k=1,iv%info(radar)%levels(n)
+           if (iv%radar(n)%rv(k)%qc == fails_error_max) iv%radar(n)%rv(k)%qc = 0
+           if (iv%radar(n)%rf(k)%qc == fails_error_max) iv%radar(n)%rf(k)%qc = 0
+        end do
+     end do
+   end if
+
    do n=iv%info(radar)%n1,iv%info(radar)%n2
       if (iv%info(radar)%levels(n) < 1) cycle
 

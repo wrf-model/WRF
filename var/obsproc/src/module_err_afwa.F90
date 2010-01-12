@@ -434,8 +434,8 @@ record_valid: IF (obs(loop_index)%info%discard) THEN
 !     -----------------------------
 
       obs (loop_index) % ground  % slp % error = 200. ! 2hPa
-! For TC bogus, slp error is obtained from psfc%data:
-      IF (fm == 135 .and. bogus_type == 'TCBOG') &
+! For TC bogus, slp error is obtained from psfc%data, name:"BOGUS" is not TC bogus:
+      IF (fm == 135 .and. bogus_type /= 'BOGUS') &
         obs (loop_index) % ground  % slp % error = obs (loop_index) % ground  % psfc % data
 
 !     Some PW or ZTD data are read with their errors, don't modify them
@@ -810,14 +810,25 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           current % meas % direction % error = 5. ! 5 degree
 
-          IF (bogus_type == 'TCBOG') then
+          IF (bogus_type /= 'BOGUS') then
 
             current % meas % speed     % error = current % meas % u % data
 
             current % meas % u % error = current % meas % u % data
 
             current % meas % v % error = current % meas % v % data
+            
+            current % meas % temperature % error = current % meas % dew_point % data
+            
+            current % meas % dew_point % error = current % meas % temperature % error
 
+            current % meas % rh % error = current % meas % thickness % data
+
+!            current % meas % pressure % error = intplin (pres, err % level, &
+!                                                       err % sound % pres)
+!
+!            current % meas % height % error = intplog (pres, err % level, &
+!                                                     err % sound % height)
           else
 
             current % meas % speed     % error = intplin (pres, err_wind % level,&
@@ -826,7 +837,6 @@ upper_level: DO WHILE (ASSOCIATED (current))
                                                 err_wind % sound % wind)
             current % meas % v % error = intplin (pres, err_wind % level, &
                                                 err_wind % sound % wind)
-          endif
 
           !  Pressure
 
@@ -851,6 +861,7 @@ upper_level: DO WHILE (ASSOCIATED (current))
           current % meas % rh % error = intplog (pres, err % level, &
                                                  err % sound % rh)
 
+          endif
 
 ! 4.6 Satem obs
 !     ---------

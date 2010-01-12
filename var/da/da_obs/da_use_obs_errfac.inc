@@ -109,6 +109,19 @@ subroutine da_use_obs_errfac(iv)
       end do
    end if
 
+! [2.5.1] Transfer gpsref obs:
+
+   call da_read_errfac('gpsre', iv % gpsref_ef_ref, d1, d2, d3, d4)
+
+   if (iv%info(gpsref)%nlocal > 0) then
+      do n = 1, iv%info(gpsref)%nlocal
+         do k = 1, iv%info(gpsref)%levels(n)
+            iv % gpsref(n) % ref(k) % error = iv % gpsref(n) % ref(k) % error * &
+                                              iv % gpsref_ef_ref
+         enddo
+      end do
+   end if
+
    ! [2.6] Transfer sonde obs:
 
 

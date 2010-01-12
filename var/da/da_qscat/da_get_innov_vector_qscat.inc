@@ -29,6 +29,13 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
    allocate (model_u(iv%info(qscat)%max_lev,iv%info(qscat)%n1:iv%info(qscat)%n2))
    allocate (model_v(iv%info(qscat)%max_lev,iv%info(qscat)%n1:iv%info(qscat)%n2))
 
+   if ( it > 1 ) then
+      do n=iv%info(qscat)%n1,iv%info(qscat)%n2
+         if (iv%qscat(n)%u%qc == fails_error_max) iv%qscat(n)%u%qc = 0
+         if (iv%qscat(n)%v%qc == fails_error_max) iv%qscat(n)%v%qc = 0
+      end do
+   end if
+
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
 
       ! [1.1] Get horizontal interpolation weights:
@@ -96,10 +103,11 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-    call da_check_max_iv_qscat(iv, it, num_qcstat_conv)       
+   if ( check_max_iv ) &
+      call da_check_max_iv_qscat(iv, it, num_qcstat_conv)       
 
-    deallocate (model_u)
-    deallocate (model_v)
+   deallocate (model_u)
+   deallocate (model_v)
 
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_qscat")
 

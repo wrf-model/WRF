@@ -175,7 +175,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
                              be % cv % size_jp, xbx, be, iv, xhat, cv, &
                              re, y, j_cost, grid, config_flags)
          call da_calculate_gradj(-it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                                 xbx, be, iv, xhat, cv, re, y, fhat, grid, config_flags  )				 
+                                 xbx, be, iv, xhat, cv, re, y, fhat, grid, config_flags  )                      
          write(unit=stdout,fmt=12)iter, j_cost%total, rrmnew_norm, step
       elseif (calculate_cg_cost_fn) then      		 
          j_total = j_cost%total + 0.5 * da_dot_cv(cv_size,cv_size_domain,ghat0,xhat,grid,mz,use_varbc)

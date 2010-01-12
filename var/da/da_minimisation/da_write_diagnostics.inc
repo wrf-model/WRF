@@ -15,7 +15,15 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
    type (y_type),  intent(in)    :: y       ! y = H(x_inc) structure.
    type (j_type),  intent(inout) :: j       ! Cost function.
 
+   character(len=13) filename
+
    if (trace_use) call da_trace_entry("da_write_diagnostics")
+
+   if (rootproc .and. print_detail_outerloop) then
+      write(filename,'(a,i2.2)') "statistics_",it
+      call da_get_unit (stats_unit)
+      open(unit=stats_unit,file=filename,status="replace")
+   endif
 
    iv%nstats(:) = 0
 
@@ -129,6 +137,11 @@ if (.not. anal_type_verify) then
    call da_final_write_y(iv)
    call da_print_qcstat(it, iv, num_qcstat_conv)
 end if
+
+   if (rootproc .and. print_detail_outerloop) then
+       close(stats_unit)
+       call da_free_unit (stats_unit)
+   end if
 
    if (trace_use) call da_trace_exit("da_write_diagnostics")
 

@@ -88,36 +88,54 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    ! [2.0] calculate grad_v (jb):
    !-------------------------------------------------------------------------
-   if (cv_size_jb > 0) &
-      grad_jb(1:cv_size_jb) = jb_factor * (xhat(1:cv_size_jb)+cv(1:cv_size_jb))
+   if (cv_size_jb > 0) then
+      if (it < 0) then
+         grad_jb(1:cv_size_jb) = jb_factor * (xhat(1:cv_size_jb)+cv(1:cv_size_jb))
+      else
+         grad_jb(1:cv_size_jb) = jb_factor * (xhat(1:cv_size_jb))
+      end if
+   endif
 
    !-------------------------------------------------------------------------
    ! [3.0] calculate grad_v (je):
    !-------------------------------------------------------------------------
-   if (cv_size_je > 0) &
-      grad_je(je_start:je_end) = je_factor * (xhat(je_start:je_end)+cv(je_start:je_end))
+   if (cv_size_je > 0) then
+      if (it < 0) then
+         grad_je(je_start:je_end) = je_factor * (xhat(je_start:je_end)+cv(je_start:je_end))
+      else
+         grad_je(je_start:je_end) = je_factor * (xhat(je_start:je_end))
+      end if
+   end if
    
    !-------------------------------------------------------------------------
    ! [4.0] calculate grad_v (jp):
    !-------------------------------------------------------------------------
+#if defined(RTTOV) || defined(CRTM)
    if (use_varbc) then
       xhat_jp(1:cv_size_jp) = 0.0
       do inst = 1, iv % num_inst   
          do ichan = 1, iv%instid(inst)%nchan
+            if (satinfo(inst)%iuse(ichan) <= 0) cycle
             npred    = iv%instid(inst)%varbc(ichan)%npred
             if (npred <= 0) cycle               !! VarBC channels only	 
             do ipred = 1, npred
                id     = iv%instid(inst)%varbc(ichan)%index(ipred)
 	       bgerr  = iv%instid(inst)%varbc(ichan)%bgerr(ipred)
 	       if (bgerr > 0.0) &
-    	          xhat_jp(id-jp_start+1) = (1/sqrt(bgerr)) * &
-	          SUM(xhat(id) * iv%instid(inst)%varbc(ichan)%vtox(ipred,1:npred))            
+    	          xhat_jp(id-jp_start+1) = (1/bgerr) * &
+                     SUM( (cv(id)+xhat(id)) * &
+                     iv%instid(inst)%varbc(ichan)%vtox(ipred,1:npred))
 	    end do
          end do
       end do
-      grad_jp(jp_start:jp_end) = xhat_jp(1:cv_size_jp) + cv(jp_start:jp_end)
+      if (it < 0) then
+         grad_jp(jp_start:jp_end) = xhat_jp(1:cv_size_jp) + cv(jp_start:jp_end)
+      else
+         grad_jp(jp_start:jp_end) = xhat_jp(1:cv_size_jp)
+      end if
    
    end if
+#endif
       
    !-------------------------------------------------------------------------
    ! [5.0] calculate grad_v (js):

@@ -42,6 +42,17 @@ subroutine da_get_innov_vector_sound (it,num_qcstat_conv, grid, ob, iv)
    model_t(:,:) = 0.0
    model_q(:,:) = 0.0
 
+   if ( it > 1 ) then
+     do n=iv%info(sound)%n1,iv%info(sound)%n2
+        do k=1, iv%info(sound)%levels(n)
+           if (iv%sound(n)%u(k)%qc == fails_error_max) iv%sound(n)%u(k)%qc = 0
+           if (iv%sound(n)%v(k)%qc == fails_error_max) iv%sound(n)%v(k)%qc = 0
+           if (iv%sound(n)%t(k)%qc == fails_error_max) iv%sound(n)%t(k)%qc = 0
+           if (iv%sound(n)%q(k)%qc == fails_error_max) iv%sound(n)%q(k)%qc = 0
+        end do
+     end do
+   end if
+
    do n=iv%info(sound)%n1, iv%info(sound)%n2
       if (iv%info(sound)%levels(n) < 1) cycle
 
@@ -148,7 +159,8 @@ subroutine da_get_innov_vector_sound (it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !----------------------------------------------------------------------
 
-   call da_check_max_iv_sound (iv, it, num_qcstat_conv)
+   if ( check_max_iv ) &
+      call da_check_max_iv_sound (iv, it, num_qcstat_conv)
 
    if (check_buddy) call da_check_buddy_sound(iv, grid%dx, it)
 !

@@ -62,7 +62,7 @@ subroutine da_setup_be_regional(xb, be)
    real, allocatable           :: regcoeff2(:,:)
    real, allocatable           :: regcoeff3(:,:,:)
    real                        :: avg,avg2,avg3
-   integer                     :: be_unit, ier
+   integer                     :: be_unit, ier, be_rf_unit, be_print_unit, it
 
    if (trace_use) call da_trace_entry("da_setup_be_regional")
 
@@ -90,6 +90,9 @@ subroutine da_setup_be_regional(xb, be)
    ix = xb % mix
    jy = xb % mjy
    kz = xb % mkz
+
+   be_rf_unit    = unit_end + 1
+   be_print_unit = unit_end + 2
 
    call da_get_unit(be_unit)
    open(unit=be_unit,file="be.dat", status="old",form="unformatted")
@@ -465,19 +468,84 @@ subroutine da_setup_be_regional(xb, be)
    close(be_unit)
    call da_free_unit(be_unit)
 
+   ! 6.3 Keep the original be % v1, be % v2,...., and lengthscale in the first loop
+   !     for the rescaling in the later loops:
+
+   it = 1
+
+   if (max_ext_its > 1) then
+
+       print '(/5x,">>> Save the variances and scale-lengths in outer-loop",i2/)', it
+       write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
+                                     be % v4 % mz, be % v5 % mz, xb % ds
+       write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
+                                     be % v4 % val, be % v5 % val, &
+             be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
+             be4_rf_lengthscale, be5_rf_lengthscale
+     
+       if (print_detail_be ) then
+       write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
+                                               it, kz, jy, ix, xb % ds
+       write(be_print_unit,'("Original val and rf, and mz:",5i5)') &
+                      be % v1 % mz, be % v2 % mz, be% v3 % mz, be % v4 % mz, be % v5 % mz
+       write(be_print_unit,'("mz=",i3,2x,"be%v1%val:"/(10e12.5))') be%v1%mz, be%v1%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v2%val:"/(10e12.5))') be%v2%mz, be%v2%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v3%val:"/(10e12.5))') be%v3%mz, be%v3%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v4%val:"/(10e12.5))') be%v4%mz, be%v4%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v5%val:"/(10e12.5))') be%v5%mz, be%v5%val(1,:)
+       write(be_print_unit,'(/"scale-length: kz=",i3)') kz
+       do i = 1,kz 
+         if (i == 1) then
+           write(be_print_unit,'(i3,2x,5e15.5)') i,be1_rf_lengthscale(i), &
+                be2_rf_lengthscale(i), be3_rf_lengthscale(i), be4_rf_lengthscale(i), &
+                be5_rf_lengthscale(i)
+         else
+           write(be_print_unit,'(i3,2x,5e15.5)') i,be1_rf_lengthscale(i), &
+                be2_rf_lengthscale(i), be3_rf_lengthscale(i), be4_rf_lengthscale(i)
+       endif
+       enddo
+    
+       endif
+
+   endif
+
    ! 7.0 Apply empirical and recursive filter rescaling factor:
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   call da_rescale_background_errors(var_scaling1, len_scaling1, &
+   call da_rescale_background_errors(var_scaling1(1), len_scaling1(1), &
                                       xb % ds, be1_rf_lengthscale, be % v1)
-   call da_rescale_background_errors(var_scaling2, len_scaling2, &
+   call da_rescale_background_errors(var_scaling2(1), len_scaling2(1), &
                                       xb % ds, be2_rf_lengthscale, be % v2)
-   call da_rescale_background_errors(var_scaling3, len_scaling3, &
+   call da_rescale_background_errors(var_scaling3(1), len_scaling3(1), &
                                       xb % ds, be3_rf_lengthscale, be % v3)
-   call da_rescale_background_errors(var_scaling4, len_scaling4, &
+   call da_rescale_background_errors(var_scaling4(1), len_scaling4(1), &
                                       xb % ds, be4_rf_lengthscale, be % v4)
-   call da_rescale_background_errors(var_scaling5, len_scaling5, &
+   call da_rescale_background_errors(var_scaling5(1), len_scaling5(1), &
                                       xb % ds, be5_rf_lengthscale, be % v5)
+   if (print_detail_be ) then
+
+       write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
+                                                      it, kz, jy, ix, xb % ds
+       write(be_print_unit,'("Loop it=",i2," val and rf, and mz:",5i5)') &
+                  it, be % v1 % mz, be % v2 % mz, be% v3 % mz, be % v4 % mz, be % v5 % mz
+       write(be_print_unit,'("mz=",i3,2x,"be%v1%val:"/(10e12.5))') be%v1%mz, be%v1%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v2%val:"/(10e12.5))') be%v2%mz, be%v2%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v3%val:"/(10e12.5))') be%v3%mz, be%v3%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v4%val:"/(10e12.5))') be%v4%mz, be%v4%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v5%val:"/(10e12.5))') be%v5%mz, be%v5%val(1,:)
+       write(be_print_unit,'(/"scale-length: kz=",i3)') kz
+       do i = 1,kz 
+         if (i == 1) then
+           write(be_print_unit,'(i3,2x,5e15.5)') i, be % v1 % rf_alpha(i), &
+                be % v2 % rf_alpha(i), be % v3 % rf_alpha(i), be % v4 % rf_alpha(i), &
+                be % v5 % rf_alpha(i)
+         else
+           write(be_print_unit,'(i3,2x,5e15.5)') i, be % v1 % rf_alpha(i), &
+                be % v2 % rf_alpha(i), be % v3 % rf_alpha(i), be % v4 % rf_alpha(i)
+       endif
+       enddo
+
+   endif
 
    ! 8.0 deallocate input model state:
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

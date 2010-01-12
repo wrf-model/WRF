@@ -131,22 +131,22 @@ subroutine da_setup_be_global (be)
       if (nrec == 1) then
          be % v1 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var1, var_scaling1, be%v1)
+            evec_loc, eval_loc, max_vert_var1, var_scaling1(1), be%v1)
 
       else if (nrec == 2) then
          be % v2 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var2, var_scaling2, be%v2)
+            evec_loc, eval_loc, max_vert_var2, var_scaling2(1), be%v2)
 
       else if (nrec == 3) then
          be % v3 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var3, var_scaling3, be%v3)
+            evec_loc, eval_loc, max_vert_var3, var_scaling3(1), be%v3)
 
       else if (nrec == 4) then
          be % v4 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var4, var_scaling4, be%v4)
+            evec_loc, eval_loc, max_vert_var4, var_scaling4(1), be%v4)
       end if 
 
       deallocate (evec_g)     
@@ -186,7 +186,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v1 % name, ' = ', be % v1 % max_wave
    allocate (be % v1 % power(0:be % v1 % max_wave,1:nk))
    be % v1 % power(0:be % v1 % max_wave,1:nk) = power2d(0:be % v1 % max_wave,1:nk)
-   be % v1 % power(0,1:nk) = len_scaling1 * be % v1 % power(0,1:nk) 
+   be % v1 % power(0,1:nk) = len_scaling1(1) * be % v1 % power(0,1:nk) 
 
    do k = 1, nk
       read (be_unit) variable
@@ -205,7 +205,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v2 % name, ' = ', be % v2 % max_wave
    allocate (be % v2 % power(0:be % v2 % max_wave,1:nk))
    be % v2 % power(0:be % v2 % max_wave,1:nk) = power2d(0:be % v2 % max_wave,1:nk)
-   be % v2 % power(0,1:nk) = len_scaling2 * be % v2 % power(0,1:nk) 
+   be % v2 % power(0,1:nk) = len_scaling2(1) * be % v2 % power(0,1:nk) 
 
    do k = 1, nk
       read (be_unit) variable
@@ -224,7 +224,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v3 % name, ' = ', be % v3 % max_wave
    allocate (be % v3 % power(0:be % v3 % max_wave,1:nk))
    be % v3 % power(0:be % v3 % max_wave,1:nk) = power2d(0:be % v3 % max_wave,1:nk)
-   be % v3 % power(0,1:nk) = len_scaling3 * be % v3 % power(0,1:nk) 
+   be % v3 % power(0,1:nk) = len_scaling3(1) * be % v3 % power(0,1:nk) 
 
    do k = 1, nk
       read (be_unit) variable
@@ -243,7 +243,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v4 % name, ' = ', be % v4 % max_wave
    allocate (be % v4 % power(0:be % v4 % max_wave,1:nk))
    be % v4 % power(0:be % v4 % max_wave,1:nk) = power2d(0:be % v4 % max_wave,1:nk)
-   be % v4 % power(0,1:nk) = len_scaling4 * be % v4 % power(0,1:nk) 
+   be % v4 % power(0,1:nk) = len_scaling4(1) * be % v4 % power(0,1:nk) 
 
    ! ps_u:
    read (be_unit) variable
@@ -262,7 +262,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v5 % name, ' = ', be % v5 % max_wave
    allocate (be % v5 % power(0:be % v5 % max_wave,1))
    be % v5 % power(0:be % v5 % max_wave,1) = power(0:be % v5 % max_wave)
-   be % v5 % power(0,1) = len_scaling5 * be%v5%power(0,1) 
+   be % v5 % power(0,1) = len_scaling5(1) * be%v5%power(0,1) 
 
    deallocate(power)
 

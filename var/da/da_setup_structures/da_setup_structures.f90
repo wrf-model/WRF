@@ -49,7 +49,7 @@ module da_setup_structures
       cv_options, cv_size, as1, as2, as3, as4, as5, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr, &
-      fmt_info, fmt_srfc, fmt_each   
+      fmt_info, fmt_srfc, fmt_each, unit_end, max_ext_its  
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
@@ -93,6 +93,7 @@ contains
 #include "da_get_vertical_truncation.inc"
 #include "da_interpolate_regcoeff.inc"
 #include "da_rescale_background_errors.inc"
+#include "da_scale_background_errors.inc"
 #include "da_setup_background_errors.inc"
 #include "da_setup_be_global.inc"
 #include "da_setup_be_ncep_gfs.inc"

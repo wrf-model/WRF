@@ -2,6 +2,9 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -22,10 +25,8 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
    do n = iv%info(sound)%n1,iv%info(sound)%n2
       do k = 1, iv%info(sound)%levels(n)
          call da_get_print_lvl(iv%sound(n)%p(k),ipr) 
-         if( iv%sound(n)%u(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%u(k)%qc =0
-         if( iv%sound(n)%u(k)%qc >= obs_qc_pointer ) then 
          failed=.false.
-         if( check_max_iv) &
+         if( iv%sound(n)%u(k)%qc >= obs_qc_pointer )  &   
          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%u(k), max_error_uv,failed)
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,1,ipr) = num_qcstat_conv(1,sound,1,ipr) + 1
@@ -35,12 +36,9 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
            'sound',ob_vars(1),iv%info(sound)%lat(k,n),iv%info(sound)%lon(k,n),0.01*iv%sound(n)%p(k)
          end if
          end if
-         end if
 
-         if( iv%sound(n)%v(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%v(k)%qc =0
-         if( iv%sound(n)%v(k)%qc >= obs_qc_pointer ) then 
          failed=.false.
-         if( check_max_iv) &
+         if( iv%sound(n)%v(k)%qc >= obs_qc_pointer )  &   
          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%v(k), max_error_uv,failed)
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,2,ipr) = num_qcstat_conv(1,sound,2,ipr) + 1
@@ -50,12 +48,9 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
            'sound',ob_vars(2),iv%info(sound)%lat(k,n),iv%info(sound)%lon(k,n),0.01*iv%sound(n)%p(k)
          end if
          end if
-         end if
 
-         if( iv%sound(n)%t(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%t(k)%qc =0
-         if( iv%sound(n)%t(k)%qc >= obs_qc_pointer ) then 
          failed=.false.
-         if( check_max_iv) &
+         if( iv%sound(n)%t(k)%qc >= obs_qc_pointer )  &   
          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%t(k), max_error_t ,failed)
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,3,ipr) = num_qcstat_conv(1,sound,3,ipr) + 1
@@ -65,19 +60,16 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
            'sound',ob_vars(3),iv%info(sound)%lat(k,n),iv%info(sound)%lon(k,n),0.01*iv%sound(n)%p(k)
          end if
          end if
-         end if
 
-         if( iv%sound(n)%q(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%q(k)%qc =0
-         if( iv%sound(n)%q(k)%qc >= obs_qc_pointer ) then 
          failed=.false.
-         if( iv%sound(n)%t(k)%qc == fails_error_max ) then
-         failed=.true.
-         iv%sound(n)%q(k)%qc  = fails_error_max
-         iv%sound(n)%q(k)%inv = 0.0
-         else
-         if( check_max_iv) &
-         call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%q(k), max_error_q ,failed)
-         endif
+         if( iv%sound(n)%q(k)%qc >= obs_qc_pointer ) then 
+          if( iv%sound(n)%t(k)%qc == fails_error_max ) then
+          failed=.true.
+          iv%sound(n)%q(k)%qc  = fails_error_max
+          iv%sound(n)%q(k)%inv = 0.0
+          else
+          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%q(k), max_error_q ,failed)
+          endif
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,4,ipr) = num_qcstat_conv(1,sound,4,ipr) + 1
          if(failed) then

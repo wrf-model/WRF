@@ -8,10 +8,10 @@ superclean :
           /bin/rm -rf *.o *.mod *.b *.a *.f frame/*.F diffwrf \
           Registry_tmp* module_state_description.f90 \
           inc/dm_comm_cpp_flags testall.csh *.exe *.f90 *.F90 *.F inc/*.inc *.int *.c *.h *.m4 *.code \
-          *.sed qual_threshold.nl rsl_cpp_flags version_decl module_dm_warning \
+          *.sed qual_threshold.nl inc/rsl_cpp_flags inc/version_decl module_dm_warning \
           decode_l2_airs.README time_window.nl Test1.out.correct \
           links README* landread.c.dist Makefile \
-          depend depend.txt ./inc/namelist_script.inc )
+          depend inc/*.inc inc/*.h )
 	( cd da; /bin/rm -f *.exe )
 	( cd da/makedepf90-2.8.8; /bin/rm -f makedepf90 config.log Makefile config.status )
 	( cd gen_be; /bin/rm -f *.exe )

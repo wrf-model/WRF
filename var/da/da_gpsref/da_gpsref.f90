@@ -4,17 +4,17 @@ module da_gpsref
    use module_dm, only : wrf_dm_sum_real
 
    use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, &
-      v_interp_p, v_interp_h, check_max_iv_print, &
+      v_interp_p, v_interp_h, check_max_iv_print, radian, &
       missing, max_error_uv, max_error_t, rootproc,fails_error_max, &
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv, qcstat_conv_unit, &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, ob_vars, &
       max_error_bt, max_error_buv, gpsref,max_error_thickness, &
       pseudo_var, num_pseudo, kms,kme,kts,kte, trace_use_dull, &
       anal_type_verify,fails_error_max,pseudo_err,pseudo_x, pseudo_y, stdout, &
-      use_gpsrefobs,pseudo_z,pseudo_val,max_error_ref, pseudo, jts, jte,its,ite
+      use_gpsrefobs, gpsref_thinning, pseudo_z,pseudo_val,max_error_ref, pseudo, jts, jte,its,ite
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
-      maxmin_type
+      maxmin_type, da_allocate_observations
    use da_interpolation, only : da_interp_lin_3d,da_interp_lin_3d_adj, &
       da_to_zk
    use da_par_util, only : da_proc_stats_combine

@@ -2,6 +2,9 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -23,10 +26,8 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
    do n=iv%info(sonde_sfc)%n1,iv%info(sonde_sfc)%n2
-      if( iv%sonde_sfc(n)%u%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%u%qc =0
-      if( iv%sonde_sfc(n)%u%qc >= obs_qc_pointer ) then
       failed=.false.
-      if( check_max_iv) &
+      if( iv%sonde_sfc(n)%u%qc >= obs_qc_pointer )  &   
       call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%u, max_error_uv, failed)
       if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
       num_qcstat_conv(1,sonde_sfc,1,1)= num_qcstat_conv(1,sonde_sfc,1,1) + 1
@@ -36,12 +37,9 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
            'sonde_sfc',ob_vars(1),iv%info(sonde_sfc)%lat(1,n),iv%info(sonde_sfc)%lon(1,n),0.01*ob%sonde_sfc(n)%p
       end if
       end if
-      end if 
 
-      if( iv%sonde_sfc(n)%v%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%v%qc =0
-      if( iv%sonde_sfc(n)%v%qc >= obs_qc_pointer ) then
       failed=.false.
-      if( check_max_iv) &
+      if( iv%sonde_sfc(n)%v%qc >= obs_qc_pointer ) &    
       call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%v, max_error_uv, failed)             
       if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
       num_qcstat_conv(1,sonde_sfc,2,1)= num_qcstat_conv(1,sonde_sfc,2,1) + 1
@@ -51,12 +49,9 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
            'sonde_sfc',ob_vars(2),iv%info(sonde_sfc)%lat(1,n),iv%info(sonde_sfc)%lon(1,n),0.01*ob%sonde_sfc(n)%p
       end if
       end if
-      end if 
 
-      if( iv%sonde_sfc(n)%t%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%t%qc =0
-      if( iv%sonde_sfc(n)%t%qc >= obs_qc_pointer ) then
       failed=.false.
-      if( check_max_iv) &
+      if( iv%sonde_sfc(n)%t%qc >= obs_qc_pointer )  &   
       call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%t, max_error_t , failed)
       if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
       num_qcstat_conv(1,sonde_sfc,3,1)= num_qcstat_conv(1,sonde_sfc,3,1) + 1
@@ -66,12 +61,9 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
            'sonde_sfc',ob_vars(3),iv%info(sonde_sfc)%lat(1,n),iv%info(sonde_sfc)%lon(1,n),0.01*ob%sonde_sfc(n)%p
       end if
       end if
-      end if 
 
-      if( iv%sonde_sfc(n)%p%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%p%qc =0
-      if( iv%sonde_sfc(n)%p%qc >= obs_qc_pointer ) then
       failed=.false.
-      if( check_max_iv) &
+      if( iv%sonde_sfc(n)%p%qc >= obs_qc_pointer )  &   
       call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%p, max_error_p , failed)         
       if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
       num_qcstat_conv(1,sonde_sfc,5,1)= num_qcstat_conv(1,sonde_sfc,5,1) + 1
@@ -81,19 +73,16 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
            'sonde_sfc',ob_vars(5),iv%info(sonde_sfc)%lat(1,n),iv%info(sonde_sfc)%lon(1,n),0.01*ob%sonde_sfc(n)%p
       end if
       end if
-      end if 
 
-      if( iv%sonde_sfc(n)%q%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%q%qc =0
-      if( iv%sonde_sfc(n)%q%qc >= obs_qc_pointer ) then
       failed=.false.
-      if( iv%sonde_sfc(n)%t%qc == fails_error_max .or. iv%sonde_sfc(n)%p%qc == fails_error_max) then
-      failed=.true.
-      iv%sonde_sfc(n)%q%qc  = fails_error_max
-      iv%sonde_sfc(n)%q%inv = 0.0
-      else
-      if( check_max_iv) &
-      call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%q, max_error_q , failed)
-      endif
+      if( iv%sonde_sfc(n)%q%qc >= obs_qc_pointer ) then
+       if( iv%sonde_sfc(n)%t%qc == fails_error_max .or. iv%sonde_sfc(n)%p%qc == fails_error_max) then
+       failed=.true.
+       iv%sonde_sfc(n)%q%qc  = fails_error_max
+       iv%sonde_sfc(n)%q%inv = 0.0
+       else
+       call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%q, max_error_q , failed)
+       endif
       if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
       num_qcstat_conv(1,sonde_sfc,4,1)= num_qcstat_conv(1,sonde_sfc,4,1) + 1
       if(failed) then

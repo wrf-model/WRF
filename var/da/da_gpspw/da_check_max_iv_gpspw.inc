@@ -20,7 +20,7 @@ subroutine da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
 
    do n=iv%info(gpspw)%n1,iv%info(gpspw)%n2
 
-      if( iv%gpspw(n)%tpw%qc == fails_error_max .and. it > 1)iv%gpspw(n)%tpw%qc =0                         
+!      if( iv%gpspw(n)%tpw%qc == fails_error_max .and. it > 1)iv%gpspw(n)%tpw%qc =0                         
       if( iv%gpspw(n)%tpw%qc >= obs_qc_pointer ) then
       failed=.false.
       if( check_max_iv) &

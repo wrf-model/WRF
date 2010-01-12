@@ -29,6 +29,7 @@
    real                         :: j_grad_norm_target ! Target j norm.
 
    character (len=3)            :: ci
+   character (len=2)            :: outerloop
    
 #ifdef DM_PARALLEL
    integer                      :: wrf_done_unit
@@ -198,6 +199,12 @@
    j_grad_norm_target = 1.0
    do it = 1, max_ext_its
 
+! Re-scale the variances and the scale-length for outer-loop > 1:
+      if (it > 1 .and. cv_options == 5) then
+         print '(/10X,"===> Re-set BE SCALINGS for outer-loop=",i2)', it
+         call  da_scale_background_errors ( be, it )
+      endif
+
       call da_initialize_cv (cv_size, xhat)
 
       ! [8.1] Calculate nonlinear model trajectory 
@@ -303,15 +310,15 @@
 
       ! Write "clean" QCed observations if requested:
       if (anal_type_qcobs) then
-         if (it == 1) then
+         ! if (it == 1) then
           if (write_mod_filtered_obs) then    !cys_change
             call da_write_modified_filtered_obs (grid, ob, iv, &
                coarse_ix, coarse_jy, start_x, start_y)
           else
-            call da_write_filtered_obs (grid, ob, iv, &
+            call da_write_filtered_obs (it, grid, ob, iv, &
                coarse_ix, coarse_jy, start_x, start_y)
           end if     
-         end if     
+         ! end if     
       end if
 
       ! [8.7.1] Write Ascii radar OMB and OMA file
@@ -330,20 +337,27 @@
       if (write_oa_rad_ascii) then
          write(unit=stdout,fmt='(A)')  'Writing radiance OMB and OMA ascii file'
          write(unit=stdout,fmt=*)  " "
-         call da_write_oa_rad_ascii (it, ob,iv,re)
+         call da_write_oa_rad_ascii (it,ob,iv,re)
       end if
 #endif
 
       ! [8.9] Update VarBC parameters and write output file
 #if defined(CRTM) || defined(RTTOV)      
       if ( (use_varbc).or.(freeze_varbc) ) &
-            call da_varbc_update(cv_size, xhat, iv)
+                call da_varbc_update(it, cv_size, xhat, iv)
 #endif
       !------------------------------------------------------------------------
       ! [8.10] Output WRFVAR analysis and analysis increments:
       !------------------------------------------------------------------------
 
       call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
+
+      
+     if ( it < max_ext_its .and. print_detail_outerloop ) then
+        write(outerloop,'(i2.2)') it
+        call da_med_initialdata_output (grid , config_flags, 'wrfvar_output_'//outerloop)
+     end if
+
    end do
 
    !---------------------------------------------------------------------------

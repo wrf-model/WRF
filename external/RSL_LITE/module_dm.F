@@ -3029,7 +3029,7 @@ END
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
       INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7,itrace
-      REAL  dummy_xs, dummy_xe, dummy_ys, dummy_ye, dummy_xs, dummy_xe, dummy_ys, dummy_ye
+      REAL  dummy_xs, dummy_xe, dummy_ys, dummy_ye
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -3711,7 +3711,7 @@ END
                                 ips, ipe, jps, jpe, kps, kpe
 
       INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
-      REAL  dummy_xs, dummy_xe, dummy_ys, dummy_ye, dummy_xs, dummy_xe, dummy_ys, dummy_ye
+      REAL  dummy_xs, dummy_xe, dummy_ys, dummy_ye
 
 integer myproc
 

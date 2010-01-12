@@ -450,15 +450,15 @@ subroutine da_setup_be_nmm_regional(xb, be)
    ! 7.0 Apply empirical and recursive filter rescaling factor:
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   call da_rescale_background_errors(var_scaling1, len_scaling1, &
+   call da_rescale_background_errors(var_scaling1(1), len_scaling1(1), &
                                       xb % ds, be1_rf_lengthscale, be % v1)
-   call da_rescale_background_errors(var_scaling2, len_scaling2, &
+   call da_rescale_background_errors(var_scaling2(1), len_scaling2(1), &
                                       xb % ds, be2_rf_lengthscale, be % v2)
-   call da_rescale_background_errors(var_scaling3, len_scaling3, &
+   call da_rescale_background_errors(var_scaling3(1), len_scaling3(1), &
                                       xb % ds, be3_rf_lengthscale, be % v3)
-   call da_rescale_background_errors(var_scaling4, len_scaling4, &
+   call da_rescale_background_errors(var_scaling4(1), len_scaling4(1), &
                                       xb % ds, be4_rf_lengthscale, be % v4)
-   call da_rescale_background_errors(var_scaling5, len_scaling5, &
+   call da_rescale_background_errors(var_scaling5(1), len_scaling5(1), &
                                       xb % ds, be5_rf_lengthscale, be % v5)
 
    ! 8.0 deallocate input model state:

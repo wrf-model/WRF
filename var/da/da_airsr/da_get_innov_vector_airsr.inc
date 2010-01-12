@@ -40,6 +40,15 @@ subroutine da_get_innov_vector_airsr( it,num_qcstat_conv, grid, ob, iv)
    model_t(:,:) = 0.0
    model_q(:,:) = 0.0
 
+   if ( it > 1 ) then
+      do n = iv%info(airsr)%n1, iv%info(airsr)%n2
+         do k = 1, iv%info(airsr)%levels(n)
+            if (iv%airsr(n)%t(k)%qc == fails_error_max) iv%airsr(n)%t(k)%qc = 0
+            if (iv%airsr(n)%q(k)%qc == fails_error_max) iv%airsr(n)%q(k)%qc = 0
+         end do
+      end do
+   end if
+
    do n=iv%info(airsr)%n1, iv%info(airsr)%n2
       num_levs = iv%info(airsr)%levels(n)
 
@@ -106,7 +115,8 @@ subroutine da_get_innov_vector_airsr( it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   call da_check_max_iv_airsr(iv, it, num_qcstat_conv)     
+   if ( check_max_iv ) &
+      call da_check_max_iv_airsr(iv, it, num_qcstat_conv)     
  
    deallocate (model_t)
    deallocate (model_q)

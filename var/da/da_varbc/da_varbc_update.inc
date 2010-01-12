@@ -1,4 +1,4 @@
-  subroutine da_varbc_update (cv_size, cv, iv)
+  subroutine da_varbc_update (it, cv_size, cv, iv)
 
    !---------------------------------------------------------------------------
    !  PURPOSE: Update VarBC parameters and write into file
@@ -14,6 +14,7 @@
 
    implicit none
 
+   integer,        intent(in)    :: it          !outer loop counting
    integer,        intent(in)    :: cv_size
    real,           intent(in)    :: cv(cv_size) ! Control variable structure.
    type (iv_type), intent(inout) :: iv          ! Obs. increment structure.
@@ -36,7 +37,11 @@
       'VARBC: Updating parameters and writing information in VARBC.out file'
       
    call da_get_unit(iunit)
-   filename = 'VARBC.out'
+   if ( it == max_ext_its ) then
+      filename = 'VARBC.out'
+   else
+      write(unit=filename, fmt='(a,i2.2)') 'VARBC.out_',it
+   end if
    open(unit=iunit,file=filename,form='formatted',iostat = iost,status='replace')
 	
    if (iost /= 0) then
@@ -81,11 +86,13 @@
 	    where (iv%instid(inst)%varbc(ichan)%pred_use == 0) &
 	           iv%instid(inst)%varbc(ichan)%pred_use = 1
 	 else
-	    if (count(iv%instid(inst)%varbc(ichan)%pred_use == 0) > 0) &
-	       write(unit=stdout,fmt='(A,A,I5)') &	   
+            if ( satinfo(inst)%iuse(ichan) == 1) then
+	       if (count(iv%instid(inst)%varbc(ichan)%pred_use == 0) > 0) &
+	          write(unit=stdout,fmt='(A,A,I5)') &	   
 	          'VARBC: Not enough data to keep statistics for ', &
 	          trim(iv%instid(inst)%rttovid_string),             &
 		  iv%instid(inst)%ichan(ichan)
+	    end if
 	 end if
  	 if (use_varbc) then
            !---------------------------------------------------------------

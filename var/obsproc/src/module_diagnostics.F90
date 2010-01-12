@@ -29,7 +29,7 @@ CONTAINS
    TYPE (measurement), POINTER                  :: current
    INTEGER                                      :: i, fm
    REAL                                         :: xj, yi
-
+   CHARACTER (LEN= 5)  :: bogus_type
    INCLUDE 'missing.inc'
 !-------------------------------------------------------------------
 
@@ -44,6 +44,7 @@ loop_all_obs: &
       DO i = 1, number_of_obs
 
         READ (obs(i) % info % platform (4:6), '(I3)') fm
+        if (fm == 135) bogus_type = obs (i) % info % platform (8:12)
  
 valid_obs1:&
          IF (.NOT. obs(i)%info%discard) THEN
@@ -66,13 +67,15 @@ all_levels:&
                   else
 !  With fm = 116 (gpsref) and fm = 118 (gpseph), the field "dew_point" was 
 ! used to store gpsref, no "diagnostics_moist" is allowed.
-                    if ( fm /= 116 .and. (fm /= 118))&
-                    CALL diagnostics_moist (current%meas)
-! Typhoon bogus with FM = 135, no wind diagnostics need to be done:
-                    if ( fm /= 135 .and.fm /= 116 .and. fm /= 118 .and. &
-                                                        fm /=125) &
-                    CALL diagnostics_wind (current%meas, &
+                    if (fm /= 116 .and. fm /= 118) then
+                      if (fm ==135.and.bogus_type /='BOGUS') then
+!                        nothing to do if TCBOG...
+                      else  
+                         CALL diagnostics_moist (current%meas)
+                         CALL diagnostics_wind  (current%meas, &
                                            obs(i)%location%longitude)
+                      endif
+                    endif
                   endif
                   current => current%next
 

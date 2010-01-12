@@ -2,6 +2,9 @@ subroutine da_check_max_iv_satem(iv, it, num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -22,12 +25,9 @@ subroutine da_check_max_iv_satem(iv, it, num_qcstat_conv)
    do n = iv%info(satem)%n1,iv%info(satem)%n2
       do k = 1, iv%info(satem)%levels(n)
          call da_get_print_lvl(iv%satem(n)%p(k),ipr)
-
-         if ( iv%satem(n)%thickness(k)%qc == fails_error_max .and. it > 1 ) iv%satem(n)%thickness(k)%qc =0
-         if ( iv%satem(n)%thickness(k)%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if ( iv%satem(n)%thickness(k)%qc >= obs_qc_pointer )  &   
          ! Thickness
-            failed=.false.
-            if( check_max_iv) &
             call da_max_error_qc(it, iv%info(satem), n, iv%satem(n)%thickness(k),& 
                                  max_error_thickness, failed)
             if( iv%info(satem)%proc_domain(k,n) ) then
@@ -38,7 +38,6 @@ subroutine da_check_max_iv_satem(iv, it, num_qcstat_conv)
                      'satem',ob_vars(9),iv%info(satem)%lat(k,n),iv%info(satem)%lon(k,n),0.01*iv%satem(n)%p(k)
             end if
             end if
-         end if
       end do
    end do
 

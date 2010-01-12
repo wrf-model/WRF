@@ -22,7 +22,7 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv)
    do n = iv%info(gpsref)%n1,iv%info(gpsref)%n2
       do k = 1, iv%info(gpsref)%levels(n)
         call da_get_print_lvl(iv%gpsref(n)%p(k)%inv,ipr)
-        if( iv%gpsref(n)%ref(k)%qc == fails_error_max .and. it > 1 )iv%gpsref(n)%ref(k)%qc =0
+!        if( iv%gpsref(n)%ref(k)%qc == fails_error_max .and. it > 1 )iv%gpsref(n)%ref(k)%qc =0
         if( iv%gpsref(n)%ref(k)%qc >= obs_qc_pointer ) then
         failed=.false.
         if( check_max_iv) &

@@ -61,7 +61,7 @@ subroutine da_read_obs_bufr (iv)
    integer              :: tpc, wpc,iret2
    integer              :: iunit, fm , obs_index
 
-   integer, parameter   :: qflag=4         ! Flag for retaining data
+   integer              :: qflag           ! Flag for retaining data
 
    real, allocatable  :: in(:), out(:)
    integer :: num_bufr(7)
@@ -101,6 +101,19 @@ subroutine da_read_obs_bufr (iv)
    err_p  = 200  ! Pa
    err_q  = 10   ! RH percent
    err_pw = 0.2  ! cm
+
+   ! quality marker 0: Keep (always assimilate)
+   !                1: Good
+   !                2: Neutral or not checked
+   !                3: Suspect
+   if ( anal_type_verify ) then
+      qflag = min(qmarker_retain,2)
+   else
+      qflag = qmarker_retain
+   end if
+   write(unit=message(1),fmt='(a,i1,a)') &
+         "PREPBUFR ob with quality marker <= ", qflag, " will be retained."
+   call da_message(message(1:1))
    
    num_report       = 0
    num_outside_all  = 0
@@ -501,14 +514,14 @@ bufrfile:  do ibufr=1,numbufr
       platform % loc % pw %qc     = missing_data
       platform % loc % pw %error  = err_pw
       pmq=nint(pmo(2,1))
-      if (pmq < qflag .and. pmq >= 0) then
+      if (pmq <= qflag .and. pmq >= 0) then
          platform % loc % slp % inv =pmo(1,1)*100.0
          platform % loc % slp % qc  =pmq
          platform % loc % slp % error = err_p          ! hardwired
       end if
       pwq=nint(qms(7,1))
       pwe = min(err_pw, oes(7,1))
-      if (pwq < qflag .and. pwq >= 0) then
+      if (pwq <= qflag .and. pwq >= 0) then
          platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
          platform % loc % pw % qc  =  pwq
          platform % loc % pw % error = pwe          ! hardwired
@@ -576,13 +589,13 @@ bufrfile:  do ibufr=1,numbufr
          qoe = min(err_q, oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
          poe = min(err_p, oes(1,k)*100.0) ! convert to Pa
 
-         if (tqm < qflag .and. tqm >= 0) then
+         if (tqm <= qflag .and. tqm >= 0) then
             platform % each (k) % t % inv =obs(3,k)
             platform % each (k) % t % qc  =tqm
             platform % each (k) % t % error =toe
          end if
 
-         if (wqm < qflag .and. wqm >= 0) then
+         if (wqm <= qflag .and. wqm >= 0) then
             platform % each (k) % u % inv =obs(5,k)
             platform % each (k) % v % inv =obs(6,k)
             platform % each (k) % u % qc  =wqm
@@ -608,18 +621,20 @@ bufrfile:  do ibufr=1,numbufr
             end if
          end if
 
-         if (qqm<qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
+         if (qqm<=qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
             platform % each (k) % q % inv =obs(2,k)
-            platform % each (k) % q % qc  =qqm
+            if ( obs(1,k) >= 300.0 ) then   ! do not use mositure above 300 hPa
+               platform % each (k) % q % qc  =qqm
+            end if
             platform % each (k) % q % error = qoe
          end if
 
-         if (zqm < qflag .and. zqm >= 0)then
+         if (zqm <= qflag .and. zqm >= 0)then
             platform % each (k) % height  = obs(4,k)
             platform % each (k) % height_qc =zqm
          end if
 
-         if (pqm < qflag .and. pqm >= 0)then
+         if (pqm <= qflag .and. pqm >= 0)then
             platform % each (k) % p % inv =obs(1,k)*100.0  ! convert to Pa
             platform % each (k) % p % qc  =pqm
             platform % each (k) % p % error =poe

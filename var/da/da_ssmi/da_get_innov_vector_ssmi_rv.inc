@@ -24,6 +24,13 @@ subroutine da_get_innov_vector_ssmi_rv (it,num_qcstat_conv, grid, ob, iv)
    
    if (trace_use) call da_trace_entry("da_get_innov_vector_ssmi_rv")
 
+   if ( it > 1 ) then
+      do n=iv%info(ssmi_rv)%n1,iv%info(ssmi_rv)%n2
+         if ( iv % ssmi_rv(n) % speed % qc == fails_error_max) iv % ssmi_rv(n) % speed % qc = 0
+         if ( iv % ssmi_rv(n) % tpw % qc == fails_error_max) iv % ssmi_rv(n) % tpw % qc = 0
+      end do
+   end if
+   
    do n=iv%info(ssmi_rv)%n1,iv%info(ssmi_rv)%n2
 
       ! compute innovation vector
@@ -62,7 +69,8 @@ subroutine da_get_innov_vector_ssmi_rv (it,num_qcstat_conv, grid, ob, iv)
    ! Perform optional maximum error check:
    !------------------------------------------------------------------
 
-   call da_check_max_iv_ssmi_rv(iv, it, num_qcstat_conv)           
+   if ( check_max_iv ) &
+      call da_check_max_iv_ssmi_rv(iv, it, num_qcstat_conv)           
 
    if (trace_use) call da_trace_exit("da_get_innov_vector_ssmi_rv")
 

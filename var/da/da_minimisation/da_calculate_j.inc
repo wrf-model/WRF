@@ -146,9 +146,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    ! [4.0] calculate jp:
    !-------------------------------------------------------------------------
    j % jp = 0.0
+#if defined(RTTOV) || defined(CRTM)
    if (use_varbc) then
       do inst = 1, iv % num_inst   
          do ichan = 1, iv%instid(inst)%nchan
+            if (satinfo(inst)%iuse(ichan) <= 0) cycle
             npred    = iv%instid(inst)%varbc(ichan)%npred
             if (npred <= 0) cycle               !! VarBC channels only	 
             do ipred = 1, npred
@@ -163,6 +165,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       end do
       j % jp = 0.5 * da_dot(cv_size_jp, cv_xhat_jp, cv_xhat_jp)
    end if
+#endif
 
    !-------------------------------------------------------------------------
    ! [5.0] calculate js:

@@ -39,6 +39,15 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
    model_u(:,:) = 0.0
    model_v(:,:) = 0.0
    
+   if ( it > 1 ) then
+      do n = iv%info(geoamv)%n1, iv%info(geoamv)%n2
+         do k = 1, iv%info(geoamv)%levels(n)
+            if (iv%geoamv(n)%u(k)%qc == fails_error_max) iv%geoamv(n)%u(k)%qc = 0
+            if (iv%geoamv(n)%v(k)%qc == fails_error_max) iv%geoamv(n)%v(k)%qc = 0
+         end do
+      end do
+   end if
+
    do n = iv%info(geoamv)%n1, iv%info(geoamv)%n2
       ! [1.3] Get horizontal interpolation weights:
 
@@ -117,7 +126,8 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
    !------------------------------------------------------------------------
    ! Perform optional maximum error check:
    !------------------------------------------------------------------------
-   call da_check_max_iv_geoamv(iv,it,num_qcstat_conv)     
+   if ( check_max_iv ) &
+      call da_check_max_iv_geoamv(iv,it,num_qcstat_conv)     
 
    deallocate (model_u)
    deallocate (model_v)

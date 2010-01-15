@@ -329,10 +329,12 @@ endif
 if ( $KPP == TRUE ) then
 	setenv WRF_KPP 1
 	setenv FLEX_LIB_DIR /usr/local/lib
+	setenv YACC "/usr/bin/yacc -d"
 	set CHEM_OPT = 104
 else if ( $KPP == FALSE ) then
 	setenv WRF_KPP 0 
 	setenv FLEX_LIB_DIR
+	setenv YACC "/usr/bin/yacc -d"
 	set CHEM_OPT =
 endif
 
@@ -513,9 +515,9 @@ endif
 #	With no nesting, run all three ideal physics options.
 
 if      ( $NESTED == TRUE ) then
-	set Max_Ideal_Physics_Options = 2
+	set Max_Ideal_Physics_Options = 5
 else if ( $NESTED != TRUE ) then
-	set Max_Ideal_Physics_Options = 3
+	set Max_Ideal_Physics_Options = 5
 endif
 
 set CUR_DIR = `pwd`
@@ -750,6 +752,9 @@ cat >! phys_real_2 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 2,     2,     0,
  cudt                                = 5,     5,     5,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -800,9 +805,6 @@ cat >! phys_real_3 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 3,     3,     0,
  cudt                                = 5,     5,     5,
- omlcall                             = 1,
- oml_hml0                            = 50,
- oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -934,6 +936,9 @@ cat >! phys_real_6 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 1,     1,     0,
  cudt                                = 0,     0,     0,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -974,6 +979,9 @@ cat >! phys_real_7 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 2,     2,     0,
  cudt                                = 5,     5,     5,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  slope_rad                           = 0,     0,     0, 
  topo_shading                        = 0,     0,     0, 
  isfflx                              = 1,
@@ -981,7 +989,7 @@ cat >! phys_real_7 << EOF
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
- sf_urban_physics                    = 1,     1,     1,
+ sf_urban_physics                    = 2,     2,     2,
  mp_zero_out                         = 0,
 EOF
 
@@ -1147,9 +1155,6 @@ cat >! phys_real_11 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 1,     1,     0,
  cudt                                = 0,     0,     0,
- omlcall                             = 1,
- oml_hml0                            = 50,
- oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -1198,7 +1203,8 @@ cat >! phys_real_12 << EOF
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
- sf_urban_physics                    = 2,     2,     2,
+ sf_urban_physics                    = 3,     3,     3,
+ num_urban_layers                    = 1040
  surface_input_source                = 1,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0,
@@ -1634,6 +1640,36 @@ cat >! phys_b_wave_3d  << EOF
  input_from_file                     = .true.,.false.,.false.
 EOF
 
+cat >! phys_b_wave_4a << EOF
+ diff_opt                            = 1,
+ km_opt                              = 1,
+ damp_opt                            = 0,
+EOF
+cat >! phys_b_wave_4b << EOF
+ mp_physics                          = 2,     2,     2,
+EOF
+cat >! phys_b_wave_4c << EOF
+ non_hydrostatic                     = .true., .true., .true.,
+EOF
+cat >! phys_b_wave_4d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
+cat >! phys_b_wave_5a << EOF
+ diff_opt                            = 1,
+ km_opt                              = 1,
+ damp_opt                            = 0,
+EOF
+cat >! phys_b_wave_5b << EOF
+ mp_physics                          = 0,     0,     0,
+EOF
+cat >! phys_b_wave_5c << EOF
+ non_hydrostatic                     = .false., .false., .false.,
+EOF
+cat >! phys_b_wave_5d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
 #	Tested options for ideal case em_quarter_ss.  Modifying these
 #	parameters is acceptable.  Adding to these requires changes
 #	to the ideal namelist build below.
@@ -1681,6 +1717,7 @@ cat >! phys_quarter_ss_2c << EOF
  scalar_adv_opt                      = 2,      2,      2,
  chem_adv_opt                        = 2,      2,      2,
  tke_adv_opt                         = 2,      2,      2,
+ sfs_opt                             = 0,      0,      0,
  non_hydrostatic                     = .true., .true., .true.,
 EOF
 cat >! phys_quarter_ss_2d  << EOF
@@ -1700,23 +1737,55 @@ EOF
 
 cat >! phys_quarter_ss_3a << EOF
  diff_opt                            = 2,
- km_opt                              = 3,
- damp_opt                            = 2,
+ km_opt                              = 2,
+ damp_opt                            = 1,
 EOF
 cat >! phys_quarter_ss_3b << EOF
- mp_physics                          = 2,     2,     2,
+ mp_physics                          = 1,     1,     1,
 EOF
 cat >! phys_quarter_ss_3c << EOF
- moist_adv_opt                       = 1,      1,      1,
- scalar_adv_opt                      = 1,      1,      1,
- chem_adv_opt                        = 1,      1,      1,
- tke_adv_opt                         = 1,      1,      1,
- non_hydrostatic                     = .false., .false., .false.,
+ moist_adv_opt                       = 2,      2,      2,
+ scalar_adv_opt                      = 2,      2,      2,
+ chem_adv_opt                        = 2,      2,      2,
+ tke_adv_opt                         = 2,      2,      2,
+ sfs_opt                             = 1,      1,      1,
+ non_hydrostatic                     = .true., .true., .true.,
 EOF
 cat >! phys_quarter_ss_3d  << EOF
  input_from_file                     = .true.,.false.,.false.
 EOF
 cat >! phys_quarter_ss_3e << EOF
+ periodic_x                          = .false.,.false.,.false.,
+ open_xs                             = .true., .false.,.false.,
+ open_xe                             = .true., .false.,.false.,
+ periodic_y                          = .false.,.false.,.false.,
+ open_ys                             = .true., .false.,.false.,
+ open_ye                             = .true., .false.,.false.,
+EOF
+cat >! phys_quarter_ss_3f << EOF
+ sf_sfclay_physics                   = 1,     1,     1,
+EOF
+
+cat >! phys_quarter_ss_4a << EOF
+ diff_opt                            = 2,
+ km_opt                              = 3,
+ damp_opt                            = 2,
+EOF
+cat >! phys_quarter_ss_4b << EOF
+ mp_physics                          = 2,     2,     2,
+EOF
+cat >! phys_quarter_ss_4c << EOF
+ moist_adv_opt                       = 1,      1,      1,
+ scalar_adv_opt                      = 1,      1,      1,
+ chem_adv_opt                        = 1,      1,      1,
+ tke_adv_opt                         = 1,      1,      1,
+ sfs_opt                             = 1,      1,      1,
+ non_hydrostatic                     = .false., .false., .false.,
+EOF
+cat >! phys_quarter_ss_4d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+cat >! phys_quarter_ss_4e << EOF
  periodic_x                          = .true., .false.,.false.,
  open_xs                             = .false.,.false.,.false.,
  open_xe                             = .false.,.false.,.false.,
@@ -1724,7 +1793,38 @@ cat >! phys_quarter_ss_3e << EOF
  open_ys                             = .false.,.false.,.false.,
  open_ye                             = .false.,.false.,.false.,
 EOF
-cat >! phys_quarter_ss_3f << EOF
+cat >! phys_quarter_ss_4f << EOF
+ sf_sfclay_physics                   = 1,     1,     1,
+EOF
+
+cat >! phys_quarter_ss_5a << EOF
+ diff_opt                            = 2,
+ km_opt                              = 2,
+ damp_opt                            = 2,
+EOF
+cat >! phys_quarter_ss_5b << EOF
+ mp_physics                          = 2,     2,     2,
+EOF
+cat >! phys_quarter_ss_5c << EOF
+ moist_adv_opt                       = 2,      2,      2,
+ scalar_adv_opt                      = 2,      2,      2,
+ chem_adv_opt                        = 2,      2,      2,
+ tke_adv_opt                         = 2,      2,      2,
+ sfs_opt                             = 2,      2,      2,
+ non_hydrostatic                     = .false., .false., .false.,
+EOF
+cat >! phys_quarter_ss_5d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+cat >! phys_quarter_ss_5e << EOF
+ periodic_x                          = .true., .false.,.false.,
+ open_xs                             = .false.,.false.,.false.,
+ open_xe                             = .false.,.false.,.false.,
+ periodic_y                          = .true., .false.,.false.,
+ open_ys                             = .false.,.false.,.false.,
+ open_ye                             = .false.,.false.,.false.,
+EOF
+cat >! phys_quarter_ss_5f << EOF
  sf_sfclay_physics                   = 1,     1,     1,
 EOF
 
@@ -2919,9 +3019,9 @@ banner 17
 						endif
 
 					else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-#						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
+#						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
 #						if ( $joe_times >= 100 ) then
-						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
+						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
 						if ( $joe_times == 2 ) then
 							set ok = 0
 						else
@@ -3136,7 +3236,7 @@ banner 22
 							endif
 
 						else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-							../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m above gnd:3600 sec fcst"
+							../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m above gnd:3600 sec fcst"
 							set ok = $status
 						endif
 						if ( $ok == 0 ) then
@@ -3393,9 +3493,9 @@ banner 28
 						endif
 
 					else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-#						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
+#						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
 #						if ( $joe_times >= 100 ) then
-						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
+						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
 						if ( $joe_times == 2 ) then
 							set ok = 0
 						else

@@ -19,8 +19,8 @@ if ( ( ! -e $file1 ) || ( ! -e $file2 ) ) then
 	exit ( 0 ) 
 endif
 
-../../external/io_grib1/wgrib -s $file1 | ../../external/io_grib1/wgrib -s -i -o outfile1 $file1 >& /dev/null
-../../external/io_grib1/wgrib -s $file2 | ../../external/io_grib1/wgrib -s -i -o outfile2 $file2 >& /dev/null
+../../external/io_grib1/wgrib.exe -s $file1 | ../../external/io_grib1/wgrib.exe -s -i -o outfile1 $file1 >& /dev/null
+../../external/io_grib1/wgrib.exe -s $file2 | ../../external/io_grib1/wgrib.exe -s -i -o outfile2 $file2 >& /dev/null
 
 cmp outfile1 outfile2
 

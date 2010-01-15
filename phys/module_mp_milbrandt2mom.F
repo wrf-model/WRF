@@ -190,7 +190,13 @@ module my_fncs_mod
   gammadp=tmp+log(stp*ser/x)
   gammadp= exp(gammadp)
 
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+  gamma  =      gammadp 
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
   gamma  = sngl(gammadp)
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
 
  END FUNCTION gamma
 !======================================================================!
@@ -302,7 +308,13 @@ END SUBROUTINE gser
      y=y+1.d0
      ser=ser+cof(j)/y
   enddo
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+  gammln=       tmp+log(stp*ser/x)
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
   gammln= sngl( tmp+log(stp*ser/x)  )
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
 
  END FUNCTION gammln
 !======================================================================!
@@ -1866,7 +1878,13 @@ module my_dmom_mod
 !
 !      FONCTION CALCULANT HUM REL DE HUM SP (QQQ), TEMP (TTT) ET PRES (PRS)
 !      HR = E/ESAT
-       FOHR(QQQ,TTT,PRS) = DMIN1(DBLE(PRS),FOEFQ(QQQ,PRS)) / FOEW(TTT)
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+       FOHR(QQQ,TTT,PRS) = MIN(     PRS ,FOEFQ(QQQ,PRS)) / FOEW(TTT)
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
+       FOHR(QQQ,TTT,PRS) = MIN(DBLE(PRS),FOEFQ(QQQ,PRS)) / FOEW(TTT)
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
 !
 !     FONCTION CALCULANT LA CHALEUR LATENTE DE CONDENSATION
       FOLV(TTT) =DBLE(CHLC) - 2317.D0*(DBLE(TTT)-DBLE(TRPL))
@@ -1898,7 +1916,14 @@ module my_dmom_mod
 !   FONCTION CALCULANT LA DERIVEE DE QSAT SELON T
       FODQA(QST,TTT)=DBLE(QST)*(1.D0+DBLE(DELTA)*DBLE(QST))*FODLA(TTT)
 !   FONCTION CALCULANT L'HUMIDITE RELATIVE
-      FOHRA(QQQ,TTT,PRS)=DMIN1(DBLE(PRS),FOEFQ(QQQ,PRS))/FOEWA(TTT)
+
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+      FOHRA(QQQ,TTT,PRS)=MIN(     PRS ,FOEFQ(QQQ,PRS))/FOEWA(TTT)
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
+      FOHRA(QQQ,TTT,PRS)=MIN(DBLE(PRS),FOEFQ(QQQ,PRS))/FOEWA(TTT)
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
 !
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !
@@ -2392,9 +2417,17 @@ module my_dmom_mod
   do k=1,nk
      do i=1,ni
     ! Saturation mixing ratios:  [used in both Parts I and II]
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+        QSW(i,k)=      FOQSA(TM(i,k),HPS(i)*S(i,k))       !wrt. liquid water at (t)
+        QSS(i,k)=      FOQST( T(i,k), PS(i)*S(i,k))       !wrt. ice surface  at (*)
+        QSI(i,k)=      FOQST(TM(i,k),HPS(i)*S(i,k))       !wrt. ice surface  at (t)
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
         QSW(i,k)= sngl(FOQSA(TM(i,k),HPS(i)*S(i,k)))      !wrt. liquid water at (t)
         QSS(i,k)= sngl(FOQST( T(i,k), PS(i)*S(i,k)))      !wrt. ice surface  at (*)
         QSI(i,k)= sngl(FOQST(TM(i,k),HPS(i)*S(i,k)))      !wrt. ice surface  at (t)
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
     ! Air density at time (t)
         DE(i,k) = S(i,k)*HPS(i)/(RGASD*TM(i,k))           !air density at time  (t)
         iDE(i,k)= 1./DE(i,k)
@@ -2470,7 +2503,13 @@ module my_dmom_mod
        !       - Ecs is computed in CLcs section
        !       - Ech is computed in CLch section
 
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+       qvs0  =      FOQSA(TRPL,HPS(i)*S(i,k))       !sat.mix.ratio at 0C
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
        qvs0  = sngl(FOQSA(TRPL,HPS(i)*S(i,k)))      !sat.mix.ratio at 0C
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
        DELqvs= qvs0-(QM(i,k))
 
     ! Cloud:
@@ -3804,7 +3843,13 @@ module my_dmom_mod
 
         DEo     = DE(i,nk)
         gam     = sqrt(DEo*iDE(i,k))
+#if (DWORDSIZE == 8 && RWORDSIZE == 8)
+        QSS(i,k)=      FOQSA(T(i,k), PS(i)*S(i,k))   ! Re-calculates QS with new T (w.r.t. liquid)
+#elif (DWORDSIZE == 8 && RWORDSIZE == 4)
         QSS(i,k)= sngl(FOQSA(T(i,k), PS(i)*S(i,k)))  ! Re-calculates QS with new T (w.r.t. liquid)
+#else
+     This is a temporary hack assuming double precision is 8 bytes.
+#endif
        !----
        !The following removes a fraction of the supersaturation water vapor.  The purpose of this
        ! is to reduce the amount of condensed water, ultimately to reduct the total precipitation.

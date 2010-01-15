@@ -105,8 +105,17 @@ CONTAINS
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
 
-  INTEGER :: xs , xe , ys , ye
-  REAL :: mtn_ht
+   INTEGER :: xs , xe , ys , ye
+   INTEGER :: mtn_type
+   INTEGER :: &  ! fire mesh sizes
+             ifds,ifde, kfds,kfde, jfds,jfde,                              &
+             ifms,ifme, kfms,kfme, jfms,jfme,                              &
+             ifts,ifte, kfts,kfte, jfts,jfte
+
+   REAL :: mtn_ht, mtn_max, mtn_fdx, mtn_fdy, mtn_x, mtn_y, mtn_z
+   REAL :: mtn_axs, mtn_ays, mtn_axe, mtn_aye
+   REAL :: mtn_fxs, mtn_fys, mtn_fxe, mtn_fye
+   REAL :: mtn_xs, mtn_ys, mtn_xe, mtn_ye
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
    SELECT CASE ( model_data_order )
@@ -279,43 +288,121 @@ CONTAINS
 
   grid%p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
+! get fire mesh dimensions
+    CALL get_ijk_from_subgrid (  grid ,                   &
+       ifds,ifde, jfds,jfde,kfds,kfde, & 
+       ifms,ifme, jfms,jfme,kfms,kfme,  & 
+       ifts,ifte, jfts,jfte,kfts,kfte)
+
+  write (6,*)' ******** SFIRE ideal initialization ********'
+
+  ! fire grid step size
+  mtn_fdx = grid%dx/grid%sr_x
+  mtn_fdy = grid%dy/grid%sr_y
+
+  write (6,*)' atm  mesh step ',grid%dx,grid%dy
+  write (6,*)' fire mesh step ',mtn_fdx,mtn_fdy
+  write (6,*)' refinement ratio ',grid%sr_x,grid%sr_y
+  write (6,*)' atm  domain bounds ',ids,ide, jds,jde,kds,kde
+  write (6,*)' atm  memory bounds ',ims,ime, jms,jme,kms,kme
+  write (6,*)' atm  tile   bounds ',its,ite, jts,jte,kts,kte
+  write (6,*)' fire domain bounds ',ifds,ifde, jfds,jfde,kfds,kfde
+  write (6,*)' fire memory bounds ',ifms,ifme, jfms,jfme,kfms,kfme
+  write (6,*)' fire tile   bounds ',ifts,ifte, jfts,jfte,kfts,kfte
+  write (6,*)' Note that atm mesh and fire mesh are cell-centered'
+
   DO j=jts,jte
   DO i=its,ite
     grid%ht(i,j) = 0.
   ENDDO
   ENDDO
 
-  xs=ide/2 -3
-  xs=ids   -3
-  xe=xs + 6
-  ys=jde/2 -3
-  ye=ys + 6
-  mtn_ht = 500
-#ifdef MTN
-  DO j=max(ys,jds),min(ye,jde-1)
-  DO i=max(xs,ids),min(xe,ide-1)
-     grid%ht(i,j) = mtn_ht * 0.25 * &
-               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) ) * &
-               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
-  ENDDO
-  ENDDO
-#endif
-#ifdef EW_RIDGE
-  DO j=max(ys,jds),min(ye,jde-1)
-  DO i=ids,ide
-     grid%ht(i,j) = mtn_ht * 0.50 * &
-               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
-  ENDDO
-  ENDDO
-#endif
-#ifdef NS_RIDGE
-  DO j=jds,jde
-  DO i=max(xs,ids),min(xe,ide-1)
-     grid%ht(i,j) = mtn_ht * 0.50 * &
-               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) )
-  ENDDO
-  ENDDO
-#endif
+  !******* set terrain height
+
+  ! copy params from the namelist
+  mtn_type = config_flags%fire_mountain_type
+  mtn_xs   = config_flags%fire_mountain_start_x
+  mtn_ys   = config_flags%fire_mountain_start_y
+  mtn_xe   = config_flags%fire_mountain_end_x
+  mtn_ye   = config_flags%fire_mountain_end_y
+  mtn_ht   = config_flags%fire_mountain_height
+
+  IF(mtn_type .ne. 0)THEN
+
+    ! atmospheric grid coordinates of the mountain
+    mtn_axs = mtn_xs/grid%dx + ids - 0.5 
+    mtn_axe = mtn_xe/grid%dx + ids - 0.5
+    mtn_ays = mtn_ys/grid%dy + jds - 0.5
+    mtn_aye = mtn_ye/grid%dy + jds - 0.5
+
+    ! fire grid coordinates of the mountain
+    mtn_fxs = mtn_xs/mtn_fdx + ifds - 0.5 
+    mtn_fxe = mtn_xe/mtn_fdx + ifds - 0.5
+    mtn_fys = mtn_ys/mtn_fdy + jfds - 0.5
+    mtn_fye = mtn_ye/mtn_fdy + jfds - 0.5
+
+    write(6,*)' Mountain height ',mtn_ht,' type',mtn_type
+    write(6,*)' Mountain (m) LL=(0,0) ',mtn_xs,':',mtn_xe,' ',mtn_ys,':',mtn_ye
+    write(6,*)' Mountain on atm grid  ',mtn_axs,':',mtn_axe,' ',mtn_ays,':',mtn_aye
+    write(6,*)' Mountain on fire grid ',mtn_fxs,':',mtn_fxe,' ',mtn_fys,':',mtn_fye
+
+    mtn_max = 0.
+    DO j=jts,jte
+    DO i=its,ite
+      mtn_x = pi + 2*pi* max(0. , min( (i - mtn_axs)/(mtn_axe - mtn_axs), 1. ))
+      mtn_y = pi + 2*pi* max(0. , min( (j - mtn_ays)/(mtn_aye - mtn_ays), 1. ))
+      SELECT CASE(mtn_type)
+        CASE (1) ! circ/elliptic mountain
+          mtn_z = mtn_ht * 0.25 * (1. + COS(mtn_x))*(1. + COS(mtn_y))
+        CASE (2)  ! EW ridge
+          mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_y))
+        CASE (3)  ! NS ridge
+          mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_x))
+        CASE DEFAULT
+          call wrf_error_fatal ( ' bad fire_mountain_type ' )
+      END SELECT
+      mtn_max = max(mtn_max, mtn_z)
+      grid%ht(i,j) = mtn_z
+    ENDDO
+    ENDDO
+
+    write(6, *)' Atm  tile ',its,':',ite,' ',jts,':',jte,' max terrain height ',mtn_max
+
+    IF (config_flags%fire_topo_from_atm == 0) THEN
+
+    mtn_max = 0.
+    DO j=jfts,jfte
+    DO i=ifts,ifte
+      mtn_x = pi + 2*pi* max(0. , min( (i - mtn_fxs)/(mtn_fxe - mtn_fxs), 1. ))
+      mtn_y = pi + 2*pi* max(0. , min( (j - mtn_fys)/(mtn_fye - mtn_fys), 1. ))
+      SELECT CASE(mtn_type)
+        CASE (1) ! circ/elliptic mountain
+          mtn_z = mtn_ht * 0.25 * (1. + COS(mtn_x))*(1. + COS(mtn_y))
+        CASE (2)  ! EW ridge
+          mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_y))
+        CASE (3)  ! NS ridge
+          mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_x))
+        CASE DEFAULT
+          call wrf_error_fatal ( ' bad fire_mountain_type ' )
+      END SELECT
+      mtn_max = max(mtn_max, mtn_z)
+      grid%zsf(i,j) = mtn_z
+    ENDDO
+    ENDDO
+
+    write(6, *)' Fire tile ',ifts,':',ifte,' ',jfts,':',jfte,' max terrain height ',mtn_max
+    write(6, *)' Fine-resolution terrain will be used.'
+ 
+    ELSE
+
+      write(6, *)' ******** WARNING ********'
+      write(6, *)' Terrain height on the fire grid will be interpolated from the atmosphere grid.'
+      write(6, *)' Set fire_topo_from_atm=0 in the namelist to use fine-resolution terrain.'
+      write(6, *)' ******** WARNING ********'
+
+    ENDIF
+  ENDIF
+
   DO j=jts,jte
   DO i=its,ite
     grid%phb(i,1,j) = g * grid%ht(i,j)

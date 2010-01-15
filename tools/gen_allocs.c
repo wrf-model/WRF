@@ -369,7 +369,7 @@ if ( tag == 1 )
                char mdim[3][2][NAMELEN] ;
                char pdim[3][2][NAMELEN] ;
 
-               set_dim_strs( p, ddim, mdim, pdim , "", 0 ) ;           /* dimensions with staggering */
+               set_dim_strs3( p, ddim, mdim, pdim , "", 0 ) ;           /* dimensions with staggering */
 
                fprintf(fp,"  grid%%tail_statevars%%sd1 = %s\n", ddim[0][0] ) ;
                fprintf(fp,"  grid%%tail_statevars%%ed1 = %s\n", ddim[0][1] ) ;

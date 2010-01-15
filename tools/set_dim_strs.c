@@ -14,7 +14,7 @@
 #include "sym.h"
 
 static int
-set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag, int sw_reorder )
+set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag, int sw_reorder, int sw_no_prepend_r1 )
 {
   int i, j, ii ;
   node_t *p ;
@@ -22,7 +22,11 @@ set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELE
   char * stag ;
   char r1[NAMELEN] ;
 
-  strcpy(r1,"grid%") ;
+  if ( sw_no_prepend_r1 ) {
+    strcpy(r1,"") ;
+  } else {
+    strcpy(r1,"grid%") ;
+  }
   if ( node == NULL ) return(1) ;
   for ( i = 0 ; i < 3 ; i++ )
     for ( j = 0 ; j < 2 ; j++ )
@@ -130,7 +134,7 @@ set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELE
 int
 set_dim_strs ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag )
 {
-  set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 1 ) ; /* 1 = reorder according to strg order */
+  set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 1, 0 ) ; /* 1 = reorder according to strg order */
 }
 
 /* version that doesn't permute according to index order -- always i, k, then j
@@ -138,6 +142,11 @@ set_dim_strs ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN]
 int
 set_dim_strs2 ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag )
 {
-  set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 0 ) ; /* 0 = reorder according to strg order */
+  set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 0, 0 ) ; /* 0 = reorder according to strg order */
 }
 
+int
+set_dim_strs3 ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag )
+{
+  set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 1, 1 ) ; /* 1 = reorder according to strg order */
+}

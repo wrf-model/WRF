@@ -59,6 +59,7 @@ BENCH_DECL(time_filt_tim)
 BENCH_DECL(bc_2d_tim)
 BENCH_DECL(microswap_1)
 BENCH_DECL(microswap_2)
+BENCH_DECL(fire_driver_tim)
 #else
 #define SOLVE_START
 #define SOLVE_END

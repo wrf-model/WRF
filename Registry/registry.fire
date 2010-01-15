@@ -14,7 +14,7 @@ package   fire_sfire    ifire==2                    -             state:nfuel_ca
 #
 #<Table> <Type> <Sym>       <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 state    real  nfuel_cat *i*j     fire        1         z     i012hr        "NFUEL_CAT"        "fuel data"   
-state    real     zsf       *i*j     fire        1         z     hr   "ZSF"      "height of surface above sea level" "m"
+state    real     zsf       *i*j     fire        1         z   i012hr   "ZSF"      "height of surface above sea level" "m"
 state    real     tign_g    *i*j     fire        1         z     hr   "TIGN_G"   "ignition time on ground" "s"
 
 # fire variables on atm grid
@@ -28,6 +28,7 @@ state    real     canqfx    ij       fire        1         z     hr   "CANQFX"  
 
 # sfire variables on fire grid
 # (also using tign_g,zs,z_at_w,dz8w,nfuel_cat,fluxes,zsf)
+#
 state    real     lfn       *i*j      fire        1         z    hr    "LFN" "level function" "1"
 state    real     fuel_frac *i*j      fire        1         z    hr    "FUEL_FRAC" "fuel remaining" "1"
 state    real     fire_area *i*j      fire        1         z    hr    "FIRE_AREA" "fraction of cell area on fire" "1"
@@ -37,6 +38,7 @@ state    real     fgrnhfx   *i*j      fire        1         z    hr    "FGRNHFX"
 state    real     fgrnqfx   *i*j      fire        1         z    hr    "FGRNQFX"   "moisture flux from ground fire" "W/m^2"
 state    real     fcanhfx   *i*j      fire        1         z    hr    "FCANHFX"   "heat flux from crown fire" "W/m^2"
 state    real     fcanqfx   *i*j      fire        1         z    hr    "FCANQFX"   "moisture flux from crown fire" "W/m^2"
+state    real     ros       *i*j      fire        1         z    hr    "ROS" "rate of spread" "m/s"
 
 # constant data arrays
 state    real     fxlong    *i*j      fire        1         z    hr    "FXLONG"    "longitude of midpoints of fire cells" "degrees"
@@ -57,33 +59,33 @@ rconfig   integer ifire                  namelist,fire         max_domains      
 rconfig   integer fire_boundary_guard    namelist,fire         max_domains           2       -      "fire_boundary_guard" "cells to stop when fire close to domain boundary"
 # ignition for sfire
 rconfig   integer fire_num_ignitions     namelist,fire         max_domains           0.      -      "fire_num_ignitions" "number of ignition lines" 
-rconfig   real    fire_ignition_start_long1  namelist,fire        max_domains           0.      -      "fire_ignition_start_long1" "long coord of start of ignition line" "m"
+rconfig   real    fire_ignition_start_lon1  namelist,fire        max_domains           0.      -      "fire_ignition_start_long1" "long coord of start of ignition line" "m"
 rconfig   real    fire_ignition_start_lat1  namelist,fire        max_domains           0.      -      "fire_ignition_start_lat1" "lat coord of start of ignition line" "m"
-rconfig   real    fire_ignition_end_long1    namelist,fire        max_domains           0.      -      "fire_ignition_end_long1"   "long coord of end of ignition line" "m"
+rconfig   real    fire_ignition_end_lon1    namelist,fire        max_domains           0.      -      "fire_ignition_end_long1"   "long coord of end of ignition line" "m"
 rconfig   real    fire_ignition_end_lat1    namelist,fire        max_domains           0.      -      "fire_ignition_end_lat1"   "lat coord of end of ignition line" "m"
 rconfig   real    fire_ignition_radius1   namelist,fire        max_domains           0.      -      "fire_ignition_radius1"   "ignite all within the radius" "m"
 rconfig   real    fire_ignition_time1     namelist,fire        max_domains           0.      -      "fire_ignition_time1"    "ignition time" "s"
-rconfig   real    fire_ignition_start_long2  namelist,fire        max_domains           0.      -      "fire_ignition_start_long2" "long coord of start of ignition line" "m"
+rconfig   real    fire_ignition_start_lon2  namelist,fire        max_domains           0.      -      "fire_ignition_start_long2" "long coord of start of ignition line" "m"
 rconfig   real    fire_ignition_start_lat2  namelist,fire        max_domains           0.      -      "fire_ignition_start_lat2" "lat coord of start of ignition line" "m"
-rconfig   real    fire_ignition_end_long2    namelist,fire        max_domains           0.      -      "fire_ignition_end_long2"   "long coord of end of ignition line" "m"
+rconfig   real    fire_ignition_end_lon2    namelist,fire        max_domains           0.      -      "fire_ignition_end_long2"   "long coord of end of ignition line" "m"
 rconfig   real    fire_ignition_end_lat2    namelist,fire        max_domains           0.      -      "fire_ignition_end_lat2"   "lat coord of end of ignition line" "m"
 rconfig   real    fire_ignition_radius2   namelist,fire        max_domains           0.      -      "fire_ignition_radius2"   "ignite all within the radius" "m"
 rconfig   real    fire_ignition_time2     namelist,fire        max_domains           0.      -      "fire_ignition_time2"    "ignition time" "s"
-rconfig   real    fire_ignition_start_long3  namelist,fire        max_domains           0.      -      "fire_ignition_start_long3" "long coord of start of ignition line" "m"
+rconfig   real    fire_ignition_start_lon3  namelist,fire        max_domains           0.      -      "fire_ignition_start_long3" "long coord of start of ignition line" "m"
 rconfig   real    fire_ignition_start_lat3  namelist,fire        max_domains           0.      -      "fire_ignition_start_lat3" "lat coord of start of ignition line" "m"
-rconfig   real    fire_ignition_end_long3    namelist,fire        max_domains           0.      -      "fire_ignition_end_long3"   "long coord of end of ignition line" "m"
+rconfig   real    fire_ignition_end_lon3    namelist,fire        max_domains           0.      -      "fire_ignition_end_long3"   "long coord of end of ignition line" "m"
 rconfig   real    fire_ignition_end_lat3    namelist,fire        max_domains           0.      -      "fire_ignition_end_lat3"   "lat coord of end of ignition line" "m"
 rconfig   real    fire_ignition_radius3   namelist,fire        max_domains           0.      -      "fire_ignition_radius3"   "ignite all within the radius" "m"
 rconfig   real    fire_ignition_time3     namelist,fire        max_domains           0.      -      "fire_ignition_time3"    "ignition time" "s"
-rconfig   real    fire_ignition_start_long4  namelist,fire        max_domains           0.      -      "fire_ignition_start_long4" "long coord of start of ignition line" "m"
+rconfig   real    fire_ignition_start_lon4  namelist,fire        max_domains           0.      -      "fire_ignition_start_long4" "long coord of start of ignition line" "m"
 rconfig   real    fire_ignition_start_lat4  namelist,fire        max_domains           0.      -      "fire_ignition_start_lat4" "lat coord of start of ignition line" "m"
-rconfig   real    fire_ignition_end_long4    namelist,fire        max_domains           0.      -      "fire_ignition_end_long4"   "long coord of end of ignition line" "m"
+rconfig   real    fire_ignition_end_lon4    namelist,fire        max_domains           0.      -      "fire_ignition_end_long4"   "long coord of end of ignition line" "m"
 rconfig   real    fire_ignition_end_lat4    namelist,fire        max_domains           0.      -      "fire_ignition_end_lat4"   "lat coord of end of ignition line" "m"
 rconfig   real    fire_ignition_radius4   namelist,fire        max_domains           0.      -      "fire_ignition_radius4"   "ignite all within the radius" "m"
 rconfig   real    fire_ignition_time4     namelist,fire        max_domains           0.      -      "fire_ignition_time4"    "ignition time" "s"
-rconfig   real    fire_ignition_start_long5  namelist,fire        max_domains           0.      -      "fire_ignition_start_long5" "long coord of start of ignition line" "m"
+rconfig   real    fire_ignition_start_lon5  namelist,fire        max_domains           0.      -      "fire_ignition_start_long5" "long coord of start of ignition line" "m"
 rconfig   real    fire_ignition_start_lat5  namelist,fire        max_domains           0.      -      "fire_ignition_start_lat5" "lat coord of start of ignition line" "m"
-rconfig   real    fire_ignition_end_long5    namelist,fire        max_domains           0.      -      "fire_ignition_end_long5"   "long coord of end of ignition line" "m"
+rconfig   real    fire_ignition_end_lon5    namelist,fire        max_domains           0.      -      "fire_ignition_end_long5"   "long coord of end of ignition line" "m"
 rconfig   real    fire_ignition_end_lat5    namelist,fire        max_domains           0.      -      "fire_ignition_end_lat5"   "lat coord of end of ignition line" "m"
 rconfig   real    fire_ignition_radius5   namelist,fire        max_domains           0.      -      "fire_ignition_radius5"   "ignite all within the radius" "m"
 rconfig   real    fire_ignition_time5     namelist,fire        max_domains           0.      -      "fire_ignition_time5"    "ignition time" "s"
@@ -121,18 +123,30 @@ rconfig   integer fire_fuel_cat          namelist,fire         max_domains      
 # sfire switches
 rconfig   integer fire_print_msg         namelist,fire         max_domains           0       -      "fire_write_msg"    "write fire statistics, 0 no writes, 1+ for more"  ""
 rconfig   integer fire_print_file        namelist,fire         max_domains           0       -      "fire_write_file"   "write fire output text files, 0 no writes, 1+ for more" ""
+# method selection`
 rconfig   integer fire_fuel_left_method  namelist,fire         max_domains           1       -      "fire_fuel_left_method"   "1 or 2, compute fuel_left" ""
 rconfig   integer fire_fuel_left_irl     namelist,fire         max_domains           2       -      "fire_fuel_left_irl"   "submesh to compute fuel lwft, even, at least 2" ""
 rconfig   integer fire_fuel_left_jrl     namelist,fire         max_domains           2       -      "fire_fuel_left_jrl"   "submesh to compute fuel lwft, even, at least 2" ""
-rconfig   real    fire_atm_feedback      namelist,fire         max_domains           1.      -      "fire_atm_feedback"   "the heat fluxes to the atmosphere are multiplied by this" "1"
 rconfig   real    fire_back_weight       namelist,fire         max_domains           0.5     -      "fire_back_weight"   "RK timestepping coefficient, 0=forward, 0.5=Heun" "1"
 rconfig   integer fire_grows_only        namelist,fire         max_domains            1       -     "fire_grows_only" "if >0 level set function cannot increase = fire can only grow" "1"
 rconfig   integer fire_upwinding         namelist,fire         max_domains            3       -     "fire_upwinding" "upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian" "1"
 rconfig   integer fire_upwind_split      namelist,fire         max_domains            0       -     "fire_upwind_split" "1=upwind advection separately from normal direction spread" "1"
 rconfig   real    fire_viscosity         namelist,fire         max_domains           0.4     -      "fire_viscosity"   "artificial viscosity in level set method" "1"
 rconfig   real    fire_lfn_ext_up        namelist,fire         max_domains           1.0     -      "fire_lfn_ext_up"   "0.=extend level set function at boundary by reflection, 1.=always up" "1"
-rconfig   integer fire_test_steps        namelist,fire         max_domains            0       -     "fire_test_steps" ">0 = on first call, do specified number of steps and terminate (testing only)" "1"
-rconfig   integer fire_topo_from_atm     namelist,fire         max_domains            1       -     "fire_topo_from_atm" "0 = do nothing, 1 = populate ZSF by interpolating from atmosphere" "1"
+rconfig   integer fire_topo_from_atm     namelist,fire         max_domains            1      -      "fire_topo_from_atm" "0 = do nothing, 1 = populate ZSF by interpolating from atmosphere" "1"
+rconfig   integer fire_advection         namelist,fire         max_domains            1      -      "fire_advection" "0 = fire spread computed from normal wind speed/slope, 1 = fireline particle speed projected on normal" "0"
+# experiments
+rconfig   integer fire_test_steps        namelist,fire         max_domains            0      -      "fire_test_steps" ">0 = on first call, do specified number of steps and terminate (testing only)" "1"
+rconfig   real    fire_const_time        namelist,fire         max_domains          -1.      -      "fire_const_time"   "time from ignition to freeze fire, <0 never" "s"
+rconfig   real    fire_const_grnhfx      namelist,fire         max_domains           0.      -      "fire_const_grnhfx"   "if both >=0, the amount of constant heat flux" "1"
+rconfig   real    fire_const_grnqfx      namelist,fire         max_domains           0.      -      "fire_const_grnqfx"   "if both >=0, the amount of constant heat flux" "1"
+rconfig   real    fire_atm_feedback      namelist,fire         max_domains           1.      -      "fire_atm_feedback"   "the heat fluxes to the atmosphere are multiplied by this" "1"
+rconfig   integer fire_mountain_type     namelist,fire         max_domains            0      -      "fire_mountain_type" "in ideal: 0=none, 1=COS hill, 2=EW ridge, 3=NS ridge" "1"
+rconfig   real    fire_mountain_height   namelist,fire         max_domains         500.      -      "fire_mountain_height" "ideal mountain height" "m"
+rconfig   real    fire_mountain_start_x  namelist,fire         max_domains         100.      -      "fire_mountain_start_x" "x coord of start of the mountain" "m"
+rconfig   real    fire_mountain_start_y  namelist,fire         max_domains         100.      -      "fire_mountain_start_y" "y coord of start of the mountain" "m"
+rconfig   real    fire_mountain_end_x    namelist,fire         max_domains         100.      -      "fire_mountain_end_x" "x coord of end of the mountain" "m"
+rconfig   real    fire_mountain_end_y    namelist,fire         max_domains         100.      -      "fire_mountain_end_y" "y coord of end of the mountain" "m"
 
 
 #

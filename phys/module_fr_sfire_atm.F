@@ -66,7 +66,7 @@ SUBROUTINE fire_tendency( &
    REAL :: z_w
    REAL :: fact_g, fact_c
 
-   REAL, DIMENSION( ims:ime,kms:kme,jms:jme ) :: hfx,qfx
+   REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: hfx,qfx
    
 !!   character(len=128)::msg
 

@@ -12,11 +12,13 @@ module module_fr_sfire_util
 
 ! various method selection parameters
 ! 1. add the parameter and its static default here
+! optional:
 ! 2. add copy from config_flags in module_fr_sfire_driver%%set_flags
-! 3. (optional) add a line in Registry.EM to define the variable and set default value
+! 3. add a line in Registry.EM to define the variable and set default value
+! 4. add the variable and value in namelist.input
 
 
-integer ::              &
+integer,save::          &
  fire_print_msg=1,      &  ! print SFIRE progress 
  fire_print_file=1,     &  ! write many files by write_array_m; compile with DEBUG_OUT, do not run in parallel
  fuel_left_method=1,    &  ! 1=simple, 2=exact in linear case
@@ -27,12 +29,14 @@ integer ::              &
  fire_upwinding=3,      &  ! upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian 
  fire_upwind_split=0,   &  ! 1=upwind advection separately from normal direction spread
  fire_test_steps=0,     &  ! 0=no fire, 1=normal, >1 = do specified number of steps and terminate (testing only)
- fire_topo_from_atm=1      ! 0 = expect ZSF set correctly on entry, 1 = populate by interploating from atmosphere
- 
+ fire_topo_from_atm=1,  &  ! 0 = expect ZSF set correctly on entry, 1 = populate by interploating from atmosphere
+ fire_advection=0          ! 0 = fire spread from normal wind/slope (CAWFE), 1 = full speed projected
  
 
-
-real ::                 &
+real, save::            &
+ fire_const_time=-1,    &  ! time from ignition to start constant heat output  <0=never
+ fire_const_grnhfx=-1., &  ! if both >=0, the constant heat flux to output then
+ fire_const_grnqfx=-1., &  ! if both >=0, the constant heat flux to output then
  fire_atm_feedback=1. , &  ! 1 = normal, 0. = one way coupling atmosphere -> fire only
  fire_back_weight=0.5,  &  ! RK parameter, 0 = Euler method, 0.5 = Heun, 1 = fake backward Euler
  fire_viscosity=0.4,    &  ! artificial viscosity
@@ -44,10 +48,12 @@ contains
 !****************
 !
 subroutine crash(s)
+use module_wrf_error
 implicit none
 character(len=*), intent(in)::s
 character(len=128)msg
-msg='SFIRE:'//s
+msg='crash:'//s
+call message(msg)
 call wrf_error_fatal(msg)
 end subroutine crash
 
@@ -56,28 +62,63 @@ end subroutine crash
 !
 
 subroutine message(s)
-!$ use OMP_LIB 
+use module_wrf_error
+#ifdef _OPENMP
+use OMP_LIB 
+#endif
 implicit none
 character(len=*), intent(in)::s
+! local
 character(len=128)msg
-character(len=1)thread
+character(len=2)t
 integer m
-m=-1
-!$     m=omp_get_thread_num()
-if (m<0) then
-    msg='SFIRE:'//s
-else
-    write(thread,'(i1,a)')m
-    msg='SFIRE'//thread//s
-endif
 if(fire_print_msg.gt.0)then
-call wrf_message(msg)
+#ifdef _OPENMP
+    m=omp_get_thread_num()
+    write(t,'(i2)')m
+    msg='SFIRE:'//t//':'//s
+#else
+    msg='SFIRE:'//s
+#endif
+    call wrf_message(msg)
 endif
 end subroutine message
 
 !
 !****************
 !
+
+
+integer function open_input_text_file(filename)
+implicit none
+character(len=*),intent(in):: filename
+!$ integer, external:: OMP_GET_THREAD_NUM
+character(len=128):: msg
+integer::iounit,ierr
+logical::op
+
+!$  if (OMP_GET_THREAD_NUM() .ne. 0)then
+!$     call crash('open_input_text_file: called from parallel loop')
+!$  endif
+
+    do iounit=19,99
+       inquire(iounit,opened=op)
+       if(.not.op)goto 1
+    enddo
+    call crash('open_input_text_file: Cannot find any available I/O unit')
+1   continue
+    OPEN(iounit, FILE=filename,FORM='FORMATTED',STATUS='OLD',IOSTAT=ierr)
+    if(ierr.ne.0)then 
+	write(msg,*)'open_input_text_file: Cannot open file ',filename
+        call crash(msg)
+    endif
+    open_input_text_file=iounit
+end function open_input_text_file
+
+!
+!****************
+!
+
 
 subroutine set_ideal_coord( dxf,dyf, &
                 ifds,ifde,jfds,jfde,  &
@@ -125,7 +166,7 @@ real,intent(in)::bias                   ! 0=none, 1.=max
 integer, intent(in)::ims,ime,jms,jme, &                ! memory dims
     ids,ide,jds,jde, &                ! domain dims
     ips,ipe,jps,jpe, &                ! patch dims
-    its,ite,jts,jte                 ! tile dims
+    its,ite,jts,jte                   ! tile dims
 real,intent(inout),dimension(ims:ime,jms:jme)::lfn
 !*** local
 integer i,j,itso,jtso,iteo,jteo
@@ -921,17 +962,11 @@ do j=jps,jpe
   do k=kps,kpe
     do i=ips,ipe
         aa=a(i,k,j)
-        if(aa.ne.aa)then
-            write(msg,1)name,i,k,j,'NaN'
-            call crash(msg)
-        endif
-        if(.not.aa.le.t)then
-            write(msg,1)name,i,k,j,'Inf'
-            call crash(msg)
-        endif
-        if(.not.aa.ge.-t)then
-            write(msg,1)name,i,k,j,'-Inf'
-            call crash(msg)
+        if(aa.ne.aa.or..not.aa.le.t.or..not.aa.ge.-t)then
+            write(msg,1)name,i,k,j,aa
+            call message(msg)
+            call print_stat_line(name,ips,ipe,jps,jpe,aa,aa,aa)
+            call crash('invalid number')
         endif
         max_a=max(max_a,aa)
         min_a=min(min_a,aa)
@@ -1033,6 +1068,7 @@ end subroutine write_array_m
 subroutine write_array_m3(its,ite,kts,kte,jts,jte,           &
                          ims,ime,kms,kme,jms,jme,               &
                          a,name,id)
+use module_dm
 
 implicit none
 ! debug

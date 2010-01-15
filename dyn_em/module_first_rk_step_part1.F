@@ -40,7 +40,7 @@ CONTAINS
     USE module_surface_driver, ONLY : surface_driver
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_pbl_driver, ONLY : pbl_driver
-    USE module_fr_sfire_driver, ONLY : sfire_driver_em
+    USE module_fr_sfire_driver, ONLY : sfire_driver_em_step
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
@@ -50,8 +50,6 @@ CONTAINS
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub
 #endif
     USE module_utility
-! jm debug
-    USE module_fr_sfire_util
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
@@ -588,13 +586,17 @@ BENCH_END(pbl_driver_tim)
 
 BENCH_START(fire_driver_tim)
         if(config_flags%ifire.eq.2)then 
-            call sfire_driver_em ( grid , config_flags    &
+            ! initialization moved to start_em:start_domain_em
+!            if(grid%initestep.eq.1) &
+!            call sfire_driver_em_init (  grid , config_flags    &
+!            ,ids,ide, kds,kde, jds,jde                              &
+!            ,ims,ime, kms,kme, jms,jme                              &
+!            ,ips,ipe, kps,kpe, jps,jpe  )
+            ! one timestep of the fire model
+            call sfire_driver_em_step (  grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe                              &
-            ,sids,side, sjds,sjde                        &
-            ,sims,sime, sjms,sjme                        &
-            ,sips,sipe, sjps,sjpe                        &
             ,rho,grid%z_at_w,dz8w)
         endif
 

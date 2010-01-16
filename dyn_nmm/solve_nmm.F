@@ -294,7 +294,8 @@
      &   CONFIG_FLAGS%SF_SFCLAY_PHYSICS==MYJSFCSCHEME.AND.              &
      &   CONFIG_FLAGS%BL_PBL_PHYSICS   ==MYJPBLSCHEME.AND.              &
      &   CONFIG_FLAGS%CU_PHYSICS       ==BMJSCHEME.AND.                 &
-     &   CONFIG_FLAGS%MP_PHYSICS       ==ETAMPNEW)THEN
+     &   (CONFIG_FLAGS%MP_PHYSICS       ==ETAMPNEW.or.                  &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF))THEN
 !
         OPERATIONAL_PHYSICS=.TRUE.
 !
@@ -593,7 +594,7 @@
 !
 !-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
 #    include "HALO_NMM_A_3.inc"
       ENDIF
 #endif
@@ -773,7 +774,7 @@
 !
 !-----------------------------------------------------------------------
 !
-        IF(config_flags%MP_PHYSICS/=ETAMPNEW) THEN
+        IF(config_flags%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF) THEN
           WRITE( wrf_err_message , * ) 'EULER advection works only with ETAMPNEW microphysics.'
           CALL wrf_error_fatal ( wrf_err_message )
         ENDIF
@@ -1155,7 +1156,7 @@
       IF(MOD(grid%ntsd,GRID%IDTAD)==0)THEN
         btimx=timef()
 !
-        vad2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+        vad2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF)THEN
           CALL VAD2(grid%ntsd,GRID%DT,GRID%IDTAD,grid%dx_nmm,grid%dy_nmm               &
      &             ,grid%aeta1,grid%aeta2,grid%deta1,grid%deta2,grid%pdsl,grid%pdtop,grid%hbm2             &
      &             ,grid%q,grid%q2,grid%cwm,grid%petdt                                      &
@@ -1234,7 +1235,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
 #    include "HALO_NMM_I_3.inc"
         ENDIF
 #endif
@@ -1249,7 +1250,7 @@
         btimx=timef()
 !
 !-----------------------------------------------------------------------
-        had2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+        had2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF)THEN
 !-----------------------------------------------------------------------
 !
           CALL HAD2(                                                   &
@@ -1308,7 +1309,8 @@
 !
               MOIST(I,J,K,P_QC)=QW
               MOIST(I,J,K,P_QR)=QR
-              if (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)then
+
+              if (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF)then
 #ifdef HWRF
                  MOIST(I,J,K,P_QI)=QI
                  MOIST(I,J,K,P_QS)=0.
@@ -1642,7 +1644,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
 #    include "HALO_NMM_J_3.inc"
         ENDIF
 #endif
@@ -1765,7 +1767,9 @@
 !-------------------------------------------------------------------------------------
 !       This is gopal's doing for HWRFSAS
 
-        IF(MOD(grid%ntsd,GRID%NCNVC).eq.0.and.(CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN
+!        IF(MOD(grid%ntsd,GRID%NCNVC).eq.0.and.(CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN
+! update to match HWRFV2 behaviour - review later (1/15/10)
+        IF(CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME)THEN
 !
         btimx=timef()
 !-----------------
@@ -1989,7 +1993,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
 #    include "HALO_NMM_A_3.inc"
       ENDIF
 #endif
@@ -2225,7 +2229,7 @@
                       ,GRID%RESTART,grid%NTIME0                            & ! zhang's doing
                       ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
 #else
-                      ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS
+                      ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS     &
 #endif
                       ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
                       ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry

@@ -288,14 +288,17 @@ CONTAINS
               'XY'                , &  ! MemoryOrder
               ''                  , &  ! Stagger
               TRIM(debugmsg)      , &  ! Debug message
-!              ids , (ide-1) , jds , (jde-1) , 1 , 1 , &
-!              ims , ime , jms , jme , 1 , 1         , &
-!              ips , MIN( (ide-1), ipe ) , jps , MIN( (jde-1), jpe ) , 1 , 1 , &
+#if 1
+              ids , (ide-1) , jds , (jde-1) , 1 , 1 , &
+              ims , ime , jms , jme , 1 , 1         , &
+              ips , MIN( (ide-1), ipe ) , jps , MIN( (jde-1), jpe ) , 1 , 1 , &
+#else
 !jm the dimensions have already been reduced to the non-staggered WRF grid when
 !   they were stored in this module..  Just use as is.
               ids , ide , jds , jde , 1 , 1 , &
               ims , ime , jms , jme , 1 , 1         , &
               ips , ipe , jps , jpe , 1 , 1 , &
+#endif
               ierr )
        IF (ierr /= 0) THEN
          CALL wrf_error_fatal ( TRIM(errormsg) )
@@ -1210,7 +1213,8 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
       WRITE(str,*) 'WRFSSTCpl_run: calling ESMF_StateGet(importState,name,...)'
       CALL wrf_debug ( 100 , TRIM(str) )
       CALL ESMF_StateGet( importState, name=importStatename, rc=rc )
-!write(0,*)__FILE__,__LINE__, 'importStatename ', trim(importStatename), 'rc = ', rc
+      WRITE(str,*) 'WRFSSTCpl_run: importStatename ', trim(importStatename), 'rc = ', rc
+      CALL wrf_debug ( 100, TRIM(str) )
       IF ( rc /= ESMF_SUCCESS ) THEN
         CALL wrf_error_fatal ( 'WRFSSTCpl_run:  ESMF_StateGet(importState,name,...) failed' )
       ENDIF
@@ -1249,7 +1253,7 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
                      '> from import state'
         CALL wrf_debug ( 100 , TRIM(str) )
 
-CALL ESMF_StateGet( importState, name=mename, itemCount=mecount, itemNameList=melist, stateitemtypelist=metypelist, rc=rc )
+!CALL ESMF_StateGet( importState, name=mename, itemCount=mecount, itemNameList=melist, stateitemtypelist=metypelist, rc=rc )
 !write(0,*)'importState mename ',trim(mename)
 !write(0,*)'importState mecount ',mecount
 !do i = 1,mecount
@@ -1261,13 +1265,11 @@ CALL ESMF_StateGet( importState, name=mename, itemCount=mecount, itemNameList=me
 
         CALL ESMF_StateGet( importState, TRIM(datanames(1)), src_field, &
                                  rc=rc )
-!write(0,*)__FILE__,__LINE__, 'from importState: datanames(1) ', TRIM(datanames(1)), ' rc = ', rc
         IF ( rc /= ESMF_SUCCESS ) THEN
           CALL wrf_error_fatal ( 'WRFSSTCpl_run:  ESMF_StateGet(importState) failed' )
         ENDIF
 
         CALL ESMF_FieldGet( src_field, array=src_array, rc=rc )
-!write(0,*)__FILE__,__LINE__, 'from fieldget:  rc = ', rc
         IF ( rc /= ESMF_SUCCESS ) THEN
           CALL wrf_error_fatal ( 'WRFSSTCpl_run:  ESMF_FieldGet src_array failed' )
         ENDIF
@@ -1275,7 +1277,7 @@ CALL ESMF_StateGet( importState, name=mename, itemCount=mecount, itemNameList=me
                      '> from export state'
         CALL wrf_debug ( 100 , TRIM(str) )
 
-CALL ESMF_StateGet( exportState, name=mename, itemCount=mecount, itemNameList=melist, stateitemtypelist=metypelist, rc=rc )
+!CALL ESMF_StateGet( exportState, name=mename, itemCount=mecount, itemNameList=melist, stateitemtypelist=metypelist, rc=rc )
 !write(0,*)'Exportstate mename ',trim(mename)
 !write(0,*)'Exportstate mecount ',mecount
 !do i = 1,mecount
@@ -1288,6 +1290,8 @@ CALL ESMF_StateGet( exportState, name=mename, itemCount=mecount, itemNameList=me
         CALL ESMF_StateGet( exportState, TRIM(datanames(1)), dst_field, &
                                  rc=rc )
         IF ( rc /= ESMF_SUCCESS ) THEN
+          WRITE(str,*)'WRFSSTCpl_run: datanames(1) ',TRIM(datanames(1)),' rc ',rc
+          CALL wrf_message(TRIM(str))
           CALL wrf_error_fatal ( 'WRFSSTCpl_run:  ESMF_StateGet(exportState) failed' )
         ENDIF
         CALL ESMF_FieldGet( dst_field, array=dst_array, &
@@ -1295,7 +1299,6 @@ CALL ESMF_StateGet( exportState, name=mename, itemCount=mecount, itemNameList=me
         IF ( rc /= ESMF_SUCCESS ) THEN
           CALL wrf_error_fatal ( 'WRFSSTCpl_run:  ESMF_FieldGet dst_array failed' )
         ENDIF
-
 
 
         IF ( build_fromWRF_rh ) THEN

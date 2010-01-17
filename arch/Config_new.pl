@@ -59,7 +59,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 3 ) eq "os=" )
   {
     $sw_os = substr( $ARGV[0], 4 ) ;
-printf "sw_os $sw_os\n" ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "mach=" )
   {

@@ -37,8 +37,8 @@ CONTAINS
 
    SUBROUTINE init_module_optional_input ( grid , config_flags ) 
 
-      USE module_domain
-      USE module_configure
+      USE module_domain	, ONLY : domain
+      USE module_configure , ONLY : grid_config_rec_type
 
       IMPLICIT NONE 
 
@@ -102,8 +102,8 @@ CONTAINS
    SUBROUTINE optional_input ( grid , fid, config_flags )
 
       USE module_io_domain
-      USE module_configure      
-      USE module_domain
+      USE module_configure       , ONLY : grid_config_rec_type
+      USE module_domain	, ONLY : domain
 
       IMPLICIT NONE 
 
@@ -241,9 +241,9 @@ CONTAINS
                                its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
+      USE module_domain	, ONLY : domain
 
-USE module_configure
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -311,8 +311,8 @@ USE module_io_domain
                                  its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -354,8 +354,8 @@ USE module_io_domain
                              its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -387,8 +387,8 @@ USE module_io_domain
                                  its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -420,8 +420,8 @@ USE module_io_domain
                                  its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -453,8 +453,8 @@ USE module_io_domain
                                its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -495,8 +495,8 @@ USE module_io_domain
                              its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-USE module_configure
+      USE module_domain	, ONLY : domain
+USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
       IMPLICIT NONE 
@@ -552,8 +552,8 @@ USE module_io_domain
                                     its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
-      USE module_domain
-      USE module_configure
+      USE module_domain	, ONLY : domain
+      !USE module_configure , ONLY : grid_config_rec_type
       USE module_io_domain
 
       IMPLICIT NONE 

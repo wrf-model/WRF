@@ -984,7 +984,7 @@ CONTAINS
       IMPLICIT NONE
 #include "streams.h"
       INTEGER              , INTENT(IN  )  :: id
-      TYPE(domain), POINTER, INTENT(INOUT) :: grid
+      TYPE(domain), POINTER                :: grid
       ! Local
       TYPE(fieldlist), POINTER :: p, q
       INTEGER, PARAMETER :: read_unit = 10

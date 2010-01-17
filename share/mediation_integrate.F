@@ -5,8 +5,8 @@
 
 SUBROUTINE med_calc_model_time ( grid , config_flags )
   ! Driver layer
-   USE module_domain
-   USE module_configure
+   USE module_domain	, ONLY : domain
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_date_time
 
@@ -28,8 +28,10 @@ END SUBROUTINE med_calc_model_time
 
 SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Driver layer
-   USE module_domain
-   USE module_configure
+   USE module_state_description
+   USE module_domain	, ONLY : domain, domain_clock_get
+   USE module_configure	, ONLY : grid_config_rec_type
+   USE module_streams
   ! Model layer
    USE module_utility
 
@@ -137,9 +139,9 @@ END SUBROUTINE med_before_solve_io
 
 SUBROUTINE med_after_solve_io ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
 
    IMPLICIT NONE
@@ -156,10 +158,11 @@ END SUBROUTINE med_after_solve_io
 
 SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
+   USE module_utility   , ONLY : WRFU_Time
    USE module_timing
    USE module_io_domain
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
 
    IMPLICIT NONE
@@ -214,10 +217,10 @@ END SUBROUTINE med_pre_nest_initial
 
 SUBROUTINE med_nest_initial ( parent , nest , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain , domain_clock_get , get_ijk_from_grid
    USE module_timing
    USE module_io_domain
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_utility
   ! Model layer
 
@@ -260,26 +263,26 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
 
      SUBROUTINE med_initialdata_input_ptr( nest , config_flags )
-        USE module_domain
-        USE module_configure
+        USE module_domain	, ONLY : domain
+        USE module_configure	, ONLY : grid_config_rec_type
         TYPE (grid_config_rec_type), INTENT(IN) :: config_flags
         TYPE(domain) , POINTER :: nest
      END SUBROUTINE med_initialdata_input_ptr
 
      SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
-       USE module_domain
-       USE module_configure
+       USE module_domain	, ONLY : domain
+       USE module_configure	, ONLY : grid_config_rec_type
        TYPE (domain), POINTER ::  nest , parent
        TYPE (grid_config_rec_type), INTENT(IN) :: config_flags
      END SUBROUTINE med_nest_feedback
 
      SUBROUTINE start_domain ( grid , allowed_to_move )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) :: grid
         LOGICAL, INTENT(IN) :: allowed_to_move
      END SUBROUTINE start_domain
@@ -310,7 +313,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
-       USE module_domain
+       USE module_domain	, ONLY : domain
        TYPE ( domain ) :: grid
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
@@ -588,12 +591,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    INTERFACE
 
      SUBROUTINE med_nest_egrid_configure ( parent , nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_nest_egrid_configure 
 
      SUBROUTINE med_construct_egrid_weights ( parent , nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_construct_egrid_weights
 
@@ -622,23 +625,24 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      END SUBROUTINE BASE_STATE_PARENT
 
      SUBROUTINE NEST_TERRAIN ( nest, config_flags )
-       USE module_domain
+       USE module_domain	, ONLY : domain
+       USE module_configure	, ONLY : grid_config_rec_type
        TYPE(domain) , POINTER                        :: nest
        TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
      END SUBROUTINE NEST_TERRAIN
 
     SUBROUTINE med_interp_domain ( parent , nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
     END SUBROUTINE med_interp_domain
 
     SUBROUTINE med_init_domain_constants_nmm ( parent, nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                    :: parent , nest
     END SUBROUTINE med_init_domain_constants_nmm
 
     SUBROUTINE start_domain ( grid , allowed_to_move )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) :: grid
         LOGICAL, INTENT(IN) :: allowed_to_move
     END SUBROUTINE start_domain
@@ -874,7 +878,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 END SUBROUTINE med_nest_initial
 
 SUBROUTINE init_domain_constants ( parent , nest )
-   USE module_domain
+   USE module_domain	, ONLY : domain
    IMPLICIT NONE
    TYPE(domain) :: parent , nest
 #if (EM_CORE == 1)
@@ -885,9 +889,9 @@ END SUBROUTINE init_domain_constants
 
 SUBROUTINE med_nest_force ( parent , nest )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
   ! External
    USE module_utility
@@ -907,11 +911,11 @@ SUBROUTINE med_nest_force ( parent , nest )
 
    INTERFACE
      SUBROUTINE med_force_domain ( parent , nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_force_domain
      SUBROUTINE med_interp_domain ( parent , nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
 #if (NMM_CORE == 1 && NMM_NEST == 1)
@@ -999,9 +1003,9 @@ END SUBROUTINE med_nest_force
 
 SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain , get_ijk_from_grid
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
   ! External
    USE module_utility
@@ -1020,7 +1024,7 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
 
    INTERFACE
      SUBROUTINE med_feedback_domain ( parent , nest )
-        USE module_domain
+        USE module_domain	, ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_feedback_domain
    END INTERFACE
@@ -1056,8 +1060,11 @@ END SUBROUTINE med_nest_feedback
 
 SUBROUTINE med_last_solve_io ( grid , config_flags )
   ! Driver layer
-   USE module_domain
-   USE module_configure
+   USE module_state_description
+   USE module_domain	, ONLY : domain
+   USE module_configure	, ONLY : grid_config_rec_type
+   USE module_utility
+   USE module_streams
   ! Model layer
 
    IMPLICIT NONE
@@ -1128,11 +1135,11 @@ END SUBROUTINE med_last_solve_io
 !
 SUBROUTINE med_analysis_in ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
   ! Model layer
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
 !zhang   USE WRF_ESMF_MOD
 
@@ -1186,11 +1193,11 @@ END SUBROUTINE med_analysis_in
 !=========================================================================================================
 SUBROUTINE med_analysis_out ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
   ! Model layer
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
 !zhang   USE WRF_ESMF_MOD
 
@@ -1243,10 +1250,10 @@ END SUBROUTINE med_analysis_out
 
 RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
    USE module_utility
@@ -1312,11 +1319,11 @@ END SUBROUTINE med_restart_out
 !zhang's doing
 SUBROUTINE med_restart_in ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
   ! Model layer
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
 
    IMPLICIT NONE
@@ -1370,10 +1377,10 @@ END SUBROUTINE med_restart_in
 
 SUBROUTINE med_hist_out ( grid , stream, config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_timing
    USE module_io_domain
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
    USE module_utility
 
@@ -1435,8 +1442,8 @@ END SUBROUTINE med_hist_out
 
 #if (DA_CORE != 1)
 SUBROUTINE med_fddaobs_in ( grid , config_flags )
-   USE module_domain
-   USE module_configure
+   USE module_domain	, ONLY : domain
+   USE module_configure	, ONLY : grid_config_rec_type
    IMPLICIT NONE
    TYPE(domain)                               :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
@@ -1447,10 +1454,10 @@ END SUBROUTINE med_fddaobs_in
 
 SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
   ! Model layer
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
    USE module_utility
 
@@ -1477,15 +1484,21 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
 !       CALL input_auxinput1 ( grid%auxinput1_oid, grid , config_flags , ierr )
 #include "med_auxinput_in.inc"
    END SELECT
+
+   SELECT CASE( stream )
+! registry-generated selections and calls top close_dataset for aux streams
+#include "med_auxinput_in_closes.inc"
+   END SELECT
+
    RETURN
 END SUBROUTINE med_auxinput_in
 
 SUBROUTINE med_filter_out ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 
@@ -1539,10 +1552,10 @@ END SUBROUTINE med_filter_out
 
 SUBROUTINE med_latbound_in ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
    USE module_utility
@@ -1552,7 +1565,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
 #include <wrf_status_codes.h>
 
   ! Arguments
-   TYPE(domain)                               :: grid
+   TYPE(domain)                               :: grid, head_grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
   ! Local data
@@ -1605,6 +1618,8 @@ integer myproc,i,j,k
        CALL wrf_dm_bcast_bytes ( lbc_opened , LWORDSIZE )
        IF ( .NOT. lbc_opened ) THEN
          CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
+         WRITE(message,*)'Opening: ',TRIM(bdyname)
+         CALL wrf_debug(100,TRIM(message))
          CALL open_r_dataset ( head_grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
           IF ( ierr .NE. 0 ) THEN
             WRITE( message, * ) 'med_latbound_in: error opening ',TRIM(bdyname), ' for reading. IERR = ',ierr
@@ -1614,10 +1629,11 @@ integer myproc,i,j,k
          CALL wrf_debug( 100 , bdyname // 'already opened' )
        ENDIF
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
-       CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
+       CALL input_boundary ( head_grid%lbc_fid, grid , config_flags , ierr )
 
 #if (EM_CORE == 1)
        IF ( (config_flags%dfi_opt .NE. DFI_NODFI) .AND. (head_grid%dfi_stage .NE. DFI_FST) ) THEN
+          CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
           CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
        END IF
 #endif
@@ -1646,8 +1662,8 @@ END SUBROUTINE med_latbound_in
 
 SUBROUTINE med_setup_step ( grid , config_flags )
   ! Driver layer
-   USE module_domain
-   USE module_configure
+   USE module_domain	, ONLY : domain
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
 
    IMPLICIT NONE
@@ -1676,8 +1692,8 @@ END SUBROUTINE med_setup_step
 
 SUBROUTINE med_endup_step ( grid , config_flags )
   ! Driver layer
-   USE module_domain
-   USE module_configure
+   USE module_domain	, ONLY : domain
+   USE module_configure	, ONLY : grid_config_rec_type, model_config_rec
   ! Model layer
 
    IMPLICIT NONE
@@ -1713,10 +1729,10 @@ END SUBROUTINE med_endup_step
 SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
                         auxinput_inname, oid, insub, ierr )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
   ! Model layer
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
    USE module_utility
 
@@ -1784,10 +1800,10 @@ END SUBROUTINE open_aux_u
 SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
                          hist_outname, oid, outsub, fname, n2, ierr )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
   ! Model layer
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
    USE module_utility
 
@@ -1881,10 +1897,10 @@ END SUBROUTINE open_hist_w
 !------------------------------------------------------------------------
 SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2080,10 +2096,10 @@ END SUBROUTINE med_read_wrf_chem_emiss
 
 SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2144,10 +2160,10 @@ END SUBROUTINE med_read_wrf_chem_bioemiss
 
 SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2207,10 +2223,10 @@ SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
 END SUBROUTINE med_read_wrf_chem_gocartbg
 SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2288,10 +2304,10 @@ END SUBROUTINE med_read_wrf_chem_emissopt3
 !------------------------------------------------------------------------
 SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2461,10 +2477,10 @@ END SUBROUTINE med_read_wrf_chem_fireemiss
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2528,10 +2544,10 @@ END SUBROUTINE med_read_wrf_chem_emissopt4
 
 SUBROUTINE med_read_wrf_chem_dust_emiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2595,10 +2611,10 @@ END SUBROUTINE  med_read_wrf_chem_dust_emiss
 
 SUBROUTINE med_read_wrf_chem_dms_emiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2662,10 +2678,10 @@ END SUBROUTINE  med_read_wrf_chem_dms_emiss
 
 SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_bc_time_utilities
 #ifdef DM_PARALLEL
@@ -2738,11 +2754,11 @@ END SUBROUTINE  med_read_wrf_chem_gocart_bg
 !zhang's doing for outputing restart namelist parameters
 RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
   ! Driver layer
-   USE module_domain
+   USE module_domain	, ONLY : domain
    USE module_io_domain
    USE module_timing
   ! Model layer
-   USE module_configure
+   USE module_configure	, ONLY : grid_config_rec_type
    USE module_bc_time_utilities
 !zhang new   USE WRF_ESMF_MOD
    USE module_utility

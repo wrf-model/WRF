@@ -2935,7 +2935,7 @@ BENCH_END(bc_end_tim)
 
    IF (config_flags%do_avgflx_em .EQ. 1) THEN
 ! Reinitialize time-averaged fluxes if history output was written after the previous time step:
-      CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),temp_time)
+      CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),prevringtime=temp_time)
       CALL domain_clock_get ( grid, current_time=CurrTime, &
            current_timestr=message2 )
 ! use overloaded -, .LT. operator to check whether to initialize avgflx:

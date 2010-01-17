@@ -487,6 +487,7 @@ MODULE module_wrf_component_top
    USE ESMF_Mod
    USE module_wrf_top, ONLY : wrf_init, wrf_run, wrf_finalize
    USE module_domain, ONLY : head_grid, get_ijk_from_grid
+   USE module_state_description
    USE module_streams
 
    USE module_esmf_extensions
@@ -910,252 +911,7 @@ CONTAINS
 !TODO:  Get rid of duplication once I/O refactoring is finished (and 
 !TODO:  auxio streams can be addressed via index).  
 
-!TODO:  NOTE THAT THIS ONLY USES THE FIRST 12 STREAMS... EXPAND LATER, AS ABOVE
-
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput1( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT1_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT1_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput2( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT2_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT2_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput3( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT3_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT3_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput4( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT4_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT4_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput5( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT5_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT5_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput6( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT6_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT6_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput7( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT7_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT7_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput8( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT8_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT8_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-!     IF ( .NOT. foundcoupling ) THEN
-!       CALL nl_get_io_form_auxinput9( 1, io_form )
-!       IF ( use_package( io_form ) == IO_ESMF ) THEN
-!         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT9_ALARM ), &
-!                             RingInterval=couplingInterval, rc=rc )
-!         IF ( rc /= ESMF_SUCCESS ) THEN
-!           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT9_ALARM) failed' )
-!         ENDIF
-!         foundcoupling = .TRUE.
-!       ENDIF
-!     ENDIF
-!     IF ( .NOT. foundcoupling ) THEN
-!       CALL nl_get_io_form_gfdda( 1, io_form )
-!       IF ( use_package( io_form ) == IO_ESMF ) THEN
-!         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT10_ALARM ), &
-!                             RingInterval=couplingInterval, rc=rc )
-!         IF ( rc /= ESMF_SUCCESS ) THEN
-!           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT10_ALARM) failed' )
-!         ENDIF
-!         foundcoupling = .TRUE.
-!       ENDIF
-!     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxinput11( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXINPUT11_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXINPUT11_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-
-
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist1( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST1_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST1_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist2( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST2_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST2_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist3( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST3_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST3_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist4( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST4_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST4_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist5( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST5_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST5_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist6( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST6_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST6_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist7( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST7_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST7_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist8( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST8_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST8_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-!     IF ( .NOT. foundcoupling ) THEN
-!       CALL nl_get_io_form_sgfdda( 1, io_form )
-!       IF ( use_package( io_form ) == IO_ESMF ) THEN
-!         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST9_ALARM ), &
-!                             RingInterval=couplingInterval, rc=rc )
-!         IF ( rc /= ESMF_SUCCESS ) THEN
-!           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST9_ALARM) failed' )
-!         ENDIF
-!         foundcoupling = .TRUE.
-!       ENDIF
-!     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist10( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST10_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST10_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
-     IF ( .NOT. foundcoupling ) THEN
-       CALL nl_get_io_form_auxhist11( 1, io_form )
-       IF ( use_package( io_form ) == IO_ESMF ) THEN
-         CALL ESMF_AlarmGet( head_grid%alarms( AUXHIST11_ALARM ), &
-                             RingInterval=couplingInterval, rc=rc )
-         IF ( rc /= ESMF_SUCCESS ) THEN
-           CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ESMF_AlarmGet(AUXHIST11_ALARM) failed' )
-         ENDIF
-         foundcoupling = .TRUE.
-       ENDIF
-     ENDIF
+#include "med_find_esmf_coupling.inc"
 
      ! look for erroneous use of io_form...  
      CALL nl_get_io_form_restart( 1, io_form )
@@ -1219,6 +975,7 @@ CONTAINS
                              ids, ide, jds, jde, kds, kde, &
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, kpe  )
+#if 0
 ! JM
 ! with version 3 of ESMF's staggering concepts, WRF's non-staggered grid is equivalent to 
 ! esmf's 'exclusive' region -- that is the set of points that are owned by the 'DE' (eyeroll)
@@ -1226,9 +983,15 @@ CONTAINS
 ! unstaggered dims before returning.
 ! Don't bother with vertical dimension for the time being, since we're only doing 2D coupling.
 !
-
      ide = ide-1 ; ipe = MIN(ide,ipe)
      jde = jde-1 ; jpe = MIN(jde,jpe)
+#else
+! JM
+! with version 4 I have no damned clue at this writing... just random shots for now
+! see if this works.
+     ipe = MIN(ide-1,ipe)
+     jpe = MIN(jde-1,jpe)
+#endif
 
      domdesc = head_grid%domdesc
      bdy_mask = head_grid%bdy_mask
@@ -1278,191 +1041,8 @@ CONTAINS
      stream = 0
      ierr = 0
 
-     ! "Loop" over auxin streams mucking with io_esmf streams only...  Ick.  
-     ! Would need to store function pointers in an array in order to put this 
-     ! in a loop...  
-     CALL nl_get_io_form_auxinput1( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 1
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT1_ALARM,       &
-                        config_flags%auxinput1_inname, grid%auxinput1_oid, &
-                        input_aux_model_input1, ierr ) 
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxinput2( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 2
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT2_ALARM,       &
-                        config_flags%auxinput2_inname, grid%auxinput2_oid, &
-                        input_aux_model_input2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxinput3( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 3
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT3_ALARM,       &
-                        config_flags%auxinput3_inname, grid%auxinput3_oid, &
-                        input_aux_model_input3, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxinput4( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 4
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT4_ALARM,       &
-                        config_flags%auxinput4_inname, grid%auxinput4_oid, &
-                        input_aux_model_input4, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxinput5( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 5
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT5_ALARM,       &
-                        config_flags%auxinput5_inname, grid%auxinput5_oid, &
-                        input_aux_model_input5, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxinput6( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 6
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT6_ALARM,       &
-                        config_flags%auxinput6_inname, grid%auxinput6_oid, &
-                        input_aux_model_input6, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxinput7( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 7
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT7_ALARM,       &
-                        config_flags%auxinput7_inname, grid%auxinput7_oid, &
-                        input_aux_model_input7, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxinput8( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 8
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT8_ALARM,       &
-                        config_flags%auxinput8_inname, grid%auxinput8_oid, &
-                        input_aux_model_input8, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-!     CALL nl_get_io_form_sgfdda( 1, io_form )
-!     IF ( use_package( io_form ) == IO_ESMF ) THEN
-!       stream = 9
-!       CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
-!                        config_flags%sgfdda_inname, grid%auxinput9_oid, &
-!                        input_aux_model_input9, ierr )
-!       IF ( ierr /= 0 ) RETURN
-!     ENDIF
-!     CALL nl_get_io_form_gfdda( 1, io_form )
-!     IF ( use_package( io_form ) == IO_ESMF ) THEN
-!       stream = 10
-!       CALL open_aux_u( grid, config_flags, stream, AUXINPUT10_ALARM,   &
-!                        config_flags%gfdda_inname, grid%auxinput10_oid, &
-!                        input_aux_model_input10, ierr )
-!       IF ( ierr /= 0 ) RETURN
-!     ENDIF
-     CALL nl_get_io_form_auxinput11( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 11
-       CALL open_aux_u( grid, config_flags, stream, AUXINPUT11_ALARM,        &
-                        config_flags%auxinput11_inname, grid%auxinput11_oid, &
-                        input_aux_model_input11, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
+#include "med_open_esmf_calls.inc"
 
-     ! "Loop" over history streams mucking with io_esmf streams only...  Ick.  
-     ! Would need to store function pointers in an array in order to put this 
-     ! in a loop...  
-     CALL nl_get_io_form_auxhist1( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 1
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST1_ALARM,       &
-                         config_flags%auxhist1_outname, grid%auxhist1_oid, &
-                         output_aux_hist1, fname, n2, ierr ) 
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist2( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 2
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST2_ALARM,       &
-                         config_flags%auxhist2_outname, grid%auxhist2_oid, &
-                         output_aux_hist2, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist3( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 3
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST3_ALARM,       &
-                         config_flags%auxhist3_outname, grid%auxhist3_oid, &
-                         output_aux_hist3, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist4( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 4
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST4_ALARM,       &
-                         config_flags%auxhist4_outname, grid%auxhist4_oid, &
-                         output_aux_hist4, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist5( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 5
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST5_ALARM,       &
-                         config_flags%auxhist5_outname, grid%auxhist5_oid, &
-                         output_aux_hist5, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist6( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 6
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST6_ALARM,       &
-                         config_flags%auxhist6_outname, grid%auxhist6_oid, &
-                         output_aux_hist6, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist7( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 7
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST7_ALARM,       &
-                         config_flags%auxhist7_outname, grid%auxhist7_oid, &
-                         output_aux_hist7, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist8( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 8
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST8_ALARM,       &
-                         config_flags%auxhist8_outname, grid%auxhist8_oid, &
-                         output_aux_hist8, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-#if 0
-     CALL nl_get_io_form_auxhist9( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 9
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST9_ALARM,       &
-                         config_flags%auxhist9_outname, grid%auxhist9_oid, &
-                         output_aux_hist9, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist10( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 10
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST10_ALARM,        &
-                         config_flags%auxhist10_outname, grid%auxhist10_oid, &
-                         output_aux_hist10, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-     CALL nl_get_io_form_auxhist11( 1, io_form )
-     IF ( use_package( io_form ) == IO_ESMF ) THEN
-       stream = 11
-       CALL open_hist_w( grid, config_flags, stream, AUXHIST11_ALARM,        &
-                         config_flags%auxhist11_outname, grid%auxhist11_oid, &
-                         output_aux_hist11, fname, n2, ierr )
-       IF ( ierr /= 0 ) RETURN
-     ENDIF
-#endif
    END SUBROUTINE wrf_state_populate
 
 END MODULE module_wrf_component_top

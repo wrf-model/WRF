@@ -3691,7 +3691,7 @@ BENCH_END(bc_2d_tim)
       &             ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc       &
       &             ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
       &             ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
-      &             ,XTIME=grid%xtime                                      &
+      &             ,XTIME=grid%xtime   ,T2=grid%t2                        &
       &        ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc            &
       &        ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc            &
       &        ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc            &
@@ -3712,6 +3712,11 @@ BENCH_END(bc_2d_tim)
       &             ,DIAG_PRINT=config_flags%diag_print                    &
       &             ,BUCKET_MM=config_flags%bucket_mm                      &
       &             ,BUCKET_J =config_flags%bucket_J                       &
+      &             ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc    &
+      &             ,PREC_ACC_C=grid%prec_acc_c                            &
+      &             ,PREC_ACC_NC=grid%prec_acc_nc                          &
+      &             ,PREC_ACC_DT=config_flags%prec_acc_dt                  &
+      &             ,CURR_SECS=curr_secs                                   &
                   ! Dimension arguments
       &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

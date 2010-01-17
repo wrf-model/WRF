@@ -736,6 +736,8 @@ CONTAINS
                   tso(i,k,j) = tso1d(k)
         enddo
 
+        tso(i,nzs,j) = tbot(i,j)
+
         do k=1,nzs
              smfr3d(i,k,j) = smfrkeep(k)
            keepfr3dflag(i,k,j) = keepfr (k)
@@ -786,6 +788,10 @@ CONTAINS
        print *,' QFX after change, LH ', i,j, QFX(i,j),LH(I,J)
     ENDIF
 !--- SNOWC snow cover flag
+       if(snowfrac > 0. .and. (xice(i,j).ge.xice_threshold .and. xice(i,j) < 1.)) then
+           SNOWFRAC = SNOWFRAC*XICE(I,J)
+       endif
+
        SNOWC(I,J)=SNOWFRAC
 
 
@@ -2047,7 +2053,7 @@ CONTAINS
 !---- Final solution for soil temperature - TSO
           DO K=2,NZS
             KK=NZS-K+1
-            TSO(K)=rhtso(KK)+cotso(KK)*TSO(K-1)
+            TSO(K)=min(271.4,rhtso(KK)+cotso(KK)*TSO(K-1))
           END DO
 !--- CALCULATION OF DEW USING NEW VALUE OF QSG OR TRANSP IF NO DEW
         DEW=0.
@@ -2347,7 +2353,7 @@ CONTAINS
 
 !tgs when the snow depth is marginlly higher than DELTSN,
 ! reset DELTSN to half of snow depth.
-        IF(SNHEI.GT.DELTSN+SNTH) THEN
+        IF(SNHEI.GE.DELTSN+SNTH) THEN
 ! 2-layer model
           if(snhei-deltsn-snth.lt.snth) deltsn=0.5*(snhei-snth)
         ENDIF 
@@ -2919,7 +2925,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 
 !tgs when the snow depth is marginlly higher than DELTSN,
 ! reset DELTSN to half of snow depth.
-        IF(SNHEI.GT.DELTSN+SNTH) THEN
+        IF(SNHEI.GE.DELTSN+SNTH) THEN
 ! 2-layer model
           if(snhei-deltsn-snth.lt.snth) deltsn=0.5*(snhei-snth)
         ENDIF
@@ -3002,7 +3008,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
    33  CONTINUE
 !--- THE NZS element in COTSO and RHTSO will be for snow
 !--- There will be 2 layers in snow if it is deeper than DELTSN+SNTH
-       IF(SNHEI.GT.SNTH) then
+       IF(SNHEI.GE.SNTH) then
         if(snhei.le.DELTSN+SNTH) then
 !-- 1-layer snow model
          ilnb=1
@@ -3053,7 +3059,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
         endif
        ENDIF
 
-       IF(SNHEI.LE.SNTH.AND.SNHEI.GT.0.) then
+       IF(SNHEI.LT.SNTH.AND.SNHEI.GT.0.) then
 !--- snow is too thin to be treated separately, therefore it
 !--- is combined with the first sea ice layer.
          fsn=SNHEI/(SNHEI+zsmain(2))
@@ -3096,14 +3102,21 @@ print *, 'TSO before calling SNOWTEMP: ', tso
         R7=R6/TN
         D11=RNET+R6
 
-      IF(SNHEI.GT.SNTH) THEN 
+      IF(SNHEI.GE.SNTH) THEN 
+        if(snhei.le.DELTSN+SNTH) then
+!--- 1-layer snow
+          D1SN = cotso(NZS)
+          D2SN = rhtso(NZS)
+        else
+!--- 2-layer snow
           D1SN = cotsn
           D2SN = rhtsn
+        endif
         D9SN= THDIFSN*RHOCSN / SNPRIM
         R22SN = SNPRIM*SNPRIM*0.5/(THDIFSN*DELT)
       ENDIF
 
-       IF(SNHEI.LE.SNTH.AND.SNHEI.GT.0.) then
+       IF(SNHEI.LT.SNTH.AND.SNHEI.GT.0.) then
 !--- thin snow is combined with sea ice
          D1SN = D1
          D2SN = D2
@@ -3165,7 +3178,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
         print *,' TS1,QS1: ', ts1,qs1
     ENDIF
 ! Solution for temperature at 7.5 cm depth and snow-seaice interface
-       IF(SNHEI.GT.SNTH) THEN
+       IF(SNHEI.GE.SNTH) THEN
         if(snhei.gt.DELTSN+SNTH) then
 !-- 2-layer snow model
           SOILT1=rhtsn+cotsn*SOILT
@@ -3178,13 +3191,6 @@ print *, 'TSO before calling SNOWTEMP: ', tso
           tsob=tso(1)
         endif
        ELSE
-          tso(1)=min(271.4,(tso(2)+(soilt-tso(2))*fso))
-          SOILT1=TSO(1)
-          tsob=tso(2)
-       ENDIF 
-       IF(SNHEI.EQ.0.) THEN
-!-- all snow is evaporated
-         SOILT=min(271.4,SOILT)
          TSO(1)=SOILT
          SOILT1=SOILT
          tsob=SOILT
@@ -3192,7 +3198,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !---- Final solution for TSO in sea ice
           DO K=2,NZS
             KK=NZS-K+1
-            TSO(K)=rhtso(KK)+cotso(KK)*TSO(K-1)
+            TSO(K)=min(271.4,(rhtso(KK)+cotso(KK)*TSO(K-1)))
           END DO
 !--- For thin snow layer combined with the top sea ice layer
 !--- TSO is computed by linear inmterpolation between SOILT
@@ -3228,7 +3234,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 
          HFX=D10*(TABS-soiltfrac)
 
-       IF(SNHEI.GT.SNTH)then
+       IF(SNHEI.GE.SNTH)then
          SOH=thdifsn*RHOCSN*(soiltfrac-TSOB)/SNPRIM
          SNFLX=SOH
        ELSE
@@ -3247,27 +3253,28 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !-- SMELT is speed of melting in M/S
         SMELT= SNOH /XLMELT*1.E-3
         SMELT=AMIN1(SMELT,SNWEPR/DELT-BETA*EPOT*RAS)
+        SMELT=AMAX1(0.,SMELT)
+
 !18apr08 - Egglston limit
+        SMELT= amin1 (smelt, 5.6E-7*meltfactor*max(1.,(soilt-273.15)))
 !        SMELT= amin1 (smelt, 5.6E-8*meltfactor*max(1.,(soilt-273.15)))
-!-- pre 17 nov09        SMELT= amin1 (smelt, 5.6E-7*meltfactor*max(1.,(soilt-273.15)))
-        SMELT= amin1 (smelt, 9.6E-8*meltfactor*max(1.,(soilt-273.15)))
 !*** From Koren et al. (1999) 13% of snow melt stays in the snow pack
 !!!        rsm=0.13*smelt*delt
        if(snwepr.gt.0.) then
-         rsmfrac=min(0.18,(max(0.08,0.10/snwe*0.13)))
+         rsmfrac=min(0.18,(max(0.08,0.10/snwepr*0.13)))
 !       else
 !         rsmfrac=0.13
        endif
 
          rsm=rsmfrac*smelt*delt
+!18apr08 rsm is part of melted water that stays in snow as liquid
+        SMELT=AMAX1(0.,SMELT-rsm/delt)
 
         SNOHGNEW=SMELT*XLMELT*1.E3
         SNODIF=AMAX1(0.,(SNOH-SNOHGNEW))
 
         SNOH=SNOHGNEW
 
-!18apr08 rsm is part of melted water that stays in snow as liquid
-        SMELT=AMAX1(0.,SMELT-rsm/delt)
 
 !18apr08 - if snow melt occurred then go into iteration for energy budget
 !          solution
@@ -3371,7 +3378,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         HFT=-TKMS*CP*RHO*(TABS-SOILT)                        &
                *(P1000mb*0.00001/Patm)**ROVCP
         Q1 = - FQ*RAS* (QVATM - QSG)
-        IF (Q1.LE.0.) THEN
+        IF (Q1.LT.0.) THEN
 ! ---  condensation
 !-- moisture flux for coupling with PBL
           EETA=-QKMS*RAS*(QVATM/(1.+QVATM) - QSG/(1.+QSG))*1.E3
@@ -3933,7 +3940,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
    33  CONTINUE
 !--- THE NZS element in COTSO and RHTSO will be for snow
 !--- There will be 2 layers in snow if it is deeper than DELTSN+SNTH
-       IF(SNHEI.GT.SNTH) then
+       IF(SNHEI.GE.SNTH) then
         if(snhei.le.DELTSN+SNTH) then
 !-- 1-layer snow model
          ilnb=1
@@ -3983,11 +3990,12 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         endif
        ENDIF
 
-       IF(SNHEI.LE.SNTH.AND.SNHEI.GT.0.) then
+       IF(SNHEI.LT.SNTH.AND.SNHEI.GT.0.) then
 !--- snow is too thin to be treated separately, therefore it
 !--- is combined with the first soil layer.
          fsn=SNHEI/(SNHEI+zsmain(2))
          fso=1.-fsn
+         soilt1=tso(1)
          tsob=tso(2)
          snprim=SNHEI+zsmain(2)
          XSN = DELT/2./((zshalf(3)-zsmain(2))+0.5*snprim)
@@ -4034,14 +4042,21 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         R7=R6/TN
         D11=RNET+R6
 
-      IF(SNHEI.GT.SNTH) THEN
+      IF(SNHEI.GE.SNTH) THEN
+        if(snhei.le.DELTSN+SNTH) then
+!--- 1-layer snow
+          D1SN = cotso(NZS)
+          D2SN = rhtso(NZS)
+        else
+!--- 2-layer snow
           D1SN = cotsn
           D2SN = rhtsn
+        endif
         D9SN= THDIFSN*RHOCSN / SNPRIM
         R22SN = SNPRIM*SNPRIM*0.5/(THDIFSN*DELT)
       ENDIF
 
-       IF(SNHEI.LE.SNTH.AND.SNHEI.GT.0.) then
+       IF(SNHEI.LT.SNTH.AND.SNHEI.GT.0.) then
 !--- thin snow is combined with soil
          D1SN = D1
          D2SN = D2
@@ -4105,7 +4120,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
     ENDIF
 
 ! Solution for temperature at 7.5 cm depth and snow-soil interface
-       IF(SNHEI.GT.SNTH) THEN
+       IF(SNHEI.GE.SNTH) THEN
         if(snhei.gt.DELTSN+SNTH) then
 !-- 2-layer snow model
           SOILT1=rhtsn+cotsn*SOILT
@@ -4118,13 +4133,6 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
           tsob=tso(1)
         endif
        ELSE
-          tso(1)=tso(2)+(soilt-tso(2))*fso
-          SOILT1=TSO(1)
-          tsob=tso(2)
-       ENDIF
-
-      IF(snhei.eq.0.) THEN
-!-- all snow is evaporated
          TSO(1)=SOILT
          SOILT1=SOILT
          tsob=SOILT
@@ -4138,6 +4146,14 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
 !--- For thin snow layer combined with the top soil layer
 !--- TSO is computed by linear inmterpolation between SOILT
 !--- and TSO(2)
+
+       if(SNHEI.LT.SNTH.AND.SNHEI.GT.0.)then
+          tso(1)=tso(2)+(soilt-tso(2))*fso
+          SOILT1=TSO(1)
+          tsob=tso(2)
+!!!          tsob=tso(1)
+       endif
+
      if(nmelt.eq.1) go to 220
 
 !--- IF SOILT > 273.15 F then melting of snow can happen
@@ -4185,7 +4201,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
 
          HFX=D10*(TABS-soiltfrac)
 
-       IF(SNHEI.GT.SNTH)then
+       IF(SNHEI.GE.SNTH)then
          SOH=thdifsn*RHOCSN*(soiltfrac-TSOB)/SNPRIM
          SNFLX=SOH
        ELSE
@@ -4208,6 +4224,10 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         SMELT=AMIN1(SMELT,SNWEPR/DELT-BETA*EPOT*RAS)
         SMELT=AMAX1(0.,SMELT)
 
+!18apr08 - Egglston limit
+        SMELT= amin1 (smelt, 5.6E-7*meltfactor*max(1.,(soilt-273.15)))
+!        SMELT= amin1 (smelt, 5.6E-8*meltfactor*max(1.,(soilt-273.15)))
+
 !*** From Koren et al. (1999) 13% of snow melt stays in the snow pack
 !!!        rsm=0.13*smelt*delt
        if(snwepr.gt.0.) then
@@ -4217,17 +4237,13 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
        endif
 
          rsm=rsmfrac*smelt*delt
-!18apr08 - Egglston limit
-        SMELT= amin1 (smelt, 5.6E-7*meltfactor*max(1.,(soilt-273.15)))
-!        SMELT= amin1 (smelt, 5.6E-8*meltfactor*max(1.,(soilt-273.15)))
+!18apr08 rsm is part of melted water that stays in snow as liquid
+        SMELT=AMAX1(0.,SMELT-rsm/delt)
 
         SNOHGNEW=SMELT*XLMELT*1.E3
         SNODIF=AMAX1(0.,(SNOH-SNOHGNEW))
 
         SNOH=SNOHGNEW
-
-!18apr08 rsm is part of melted water that stays in snow as liquid
-        SMELT=AMAX1(0.,SMELT-rsm/delt)
 
 !-- correction of liquid equivalent of snow depth
 !-- due to evaporation and snow melt

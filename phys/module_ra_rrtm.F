@@ -28,11 +28,12 @@ MODULE module_ra_rrtm
 
       INTEGER, PARAMETER :: NMOL = 6
       REAL, PARAMETER :: ONEMINUS = 1. - 1.E-6
+      REAL, PARAMETER :: deltap = 4.  ! Pressure interval for buffer layer in mb
 
 ! var
 
       REAL    , SAVE    :: FLUXFAC
-      INTEGER , SAVE    :: NLAYERS
+      INTEGER , SAVE    :: NLAYERS      
 !
 ! data 1
 !
@@ -2033,18 +2034,18 @@ CONTAINS
 
 ! LOCAL VAR
 
-      INTEGER, DIMENSION( NGPT,kts:kte+1 ) ::                   ITR
+      INTEGER, DIMENSION( NGPT,kts:NLAYERS ) ::                ITR
 
-      REAL,    DIMENSION( NGPT,kts:kte+1 ) ::                  PFRAC, &
+      REAL,    DIMENSION( NGPT,kts:NLAYERS ) ::                PFRAC, &
                                                                TAUG
 
-      REAL,    DIMENSION( 35,kts:kte+1 )       ::               WKL
+      REAL,    DIMENSION( 35,kts:NLAYERS )       ::              WKL
 
-      REAL,    DIMENSION( MAXXSEC,kts:kte+1 )  ::                WX
+      REAL,    DIMENSION( MAXXSEC,kts:NLAYERS )  ::              WX
 
       REAL, DIMENSION( kts:kte )  ::                         O3PROF
 
-      REAL, DIMENSION( kts:kte+1 )  ::                        PAVEL, &
+      REAL, DIMENSION( kts:NLAYERS )  ::                      PAVEL, &
                                                               TAVEL, &
                                                             CLDFRAC, &
                                                            TAUCLOUD, &   
@@ -2065,13 +2066,13 @@ CONTAINS
                                                            SELFFRAC
                                                 
 !                       
-      INTEGER, DIMENSION( kts:kte+1 ) ::                    ICLDLYR, &
+      INTEGER, DIMENSION( kts:NLAYERS ) ::                  ICLDLYR, &
                                                                  JP, &
                                                                  JT, &
                                                                 JT1, &
                                                             INDSELF
 
-      REAL, DIMENSION(   0:kte+1 )  ::                           PZ, &
+      REAL, DIMENSION(   0:NLAYERS )  ::                         PZ, &
                                                                  TZ, &
                                                            TOTDFLUX, &
                                                            TOTUFLUX, &
@@ -2124,7 +2125,8 @@ CONTAINS
 ! carry constants.                                                               
 !---------------------------------------------------------------------------
 
-     ktep1=kte+1
+!     ktep1=kte+1
+      ktep1=NLAYERS
 !
 !    CLOUD EMISSIVITIES (M^2/G)                                                  
 !    THESE ARE CONSISTENT WITH LWRAD (ABCW=0.5*(ABUP+ABDOWN))                    
@@ -2199,13 +2201,16 @@ CONTAINS
 !              ful(k+1) = TOTUFLUX(NLAYERS-1-k)*1.e3                             
 !              fdl(k+1) = TOTDFLUX(NLAYERS-1-k)*1.e3                             
 ! 2400      continue                                                             
-           do 2450 k = 1, NLAYERS-1                                              
+!           do 2450 k = 1, NLAYERS-1                                              
+           do 2450 k = 1, kte         
 !              qrlc(k) = HTRC(NLAYERS-1-k)/86400.                                
 !              qrl(k) = HTR(NLAYERS-1-k)/86400.                                  
-              TTEN(K)=HTR(NLAYERS-1-k)/86400. 
+!              TTEN(K)=HTR(NLAYERS-1-k)/86400. 
+              TTEN(K)=HTR(kte-k)/86400. 
  2450      continue                                                              
            GLW = TOTDFLUX(0)
-           OLR = TOTUFLUX(NLAYERS)
+!           OLR = TOTUFLUX(NLAYERS)
+           OLR = TOTUFLUX(kte)
 
    END SUBROUTINE RRTM
 
@@ -3645,10 +3650,10 @@ CONTAINS
                                                                                  
       INTEGER, INTENT(IN ) ::  kts, kte
 !
-      REAL, DIMENSION( 35,kts:kte+1 ),                    &
+      REAL, DIMENSION( 35,kts:NLAYERS ),                    &
             INTENT(INOUT)        ::                  WKL
 
-      REAL, DIMENSION( MAXXSEC,kts:kte+1 ),               &
+      REAL, DIMENSION( MAXXSEC,kts:NLAYERS ),               &
             INTENT(INOUT)        ::                   WX
 
       REAL, INTENT(INOUT)        ::               TBOUND
@@ -3674,14 +3679,14 @@ CONTAINS
                                                       QS, &
                                                       QG
 
-      REAL, DIMENSION( kts:kte+1 ), INTENT(INOUT) ::      &
+      REAL, DIMENSION( kts:NLAYERS ), INTENT(INOUT) ::    &
                                                    PAVEL, &
                                                    TAVEL, &
                                                  CLDFRAC, &    
                                                 TAUCLOUD, &
                                                   COLDRY 
 
-      REAL, DIMENSION(   0:kte+1 ), INTENT(INOUT) ::      &
+      REAL, DIMENSION(   0:NLAYERS ), INTENT(INOUT) ::    &
                                                       PZ, &
                                                       TZ
 
@@ -3702,6 +3707,40 @@ CONTAINS
                                                       CIWP, &
                                                       PLWP, &
                                                       PIWP
+! New declarations for RRTM buffer patch.
+! Steven Cavallo, NCAR/MMM 01/2010
+      
+      INTEGER, PARAMETER :: nproflevs = 60 ! Constant, from the table
+      INTEGER :: L, LL, klev               ! Loop indices      
+      REAL, DIMENSION( kts:NLAYERS ) :: O3PROF2, PZR, varint
+      REAL :: wght,vark,vark1       
+      REAL :: PPROF(nproflevs), TPROF(nproflevs)            
+      ! Mean pressure and temperature profiles from midlatitude 
+      ! summer (MLS),midlatitude winter (MLW), sub-Arctic 
+      ! winter (SAW),and tropical (TROP) standard atmospheres.
+      DATA PPROF   /1000.00,855.47,731.82,626.05,535.57,458.16,     &
+                    391.94,335.29,286.83,245.38,209.91,179.57,      &
+                    153.62,131.41,112.42,96.17,82.27,70.38,         &
+                    60.21,51.51,44.06,37.69,32.25,27.59,            &
+                    23.60,20.19,17.27,14.77,12.64,10.81,            &
+                    9.25,7.91,6.77,5.79,4.95,4.24,                  &
+                    3.63,3.10,2.65,2.27,1.94,1.66,                  &
+                    1.42,1.22,1.04,0.89,0.76,0.65,                  &
+                    0.56,0.48,0.41,0.35,0.30,0.26,                  &
+                    0.22,0.19,0.16,0.14,0.12,0.10/
+      DATA TPROF   /279.94,276.16,270.73,264.14,256.71,249.28,      &
+                    241.97,234.91,228.78,224.02,220.52,217.31,      &
+                    215.21,213.48,211.63,211.45,211.73,212.71,      &
+                    213.81,214.95,215.96,216.73,217.42,218.11,      &
+                    218.89,219.92,221.31,222.84,224.39,226.04,      &
+                    227.78,229.73,231.88,234.22,236.82,239.50,      &
+                    242.30,245.21,248.13,251.08,254.04,257.02,      &
+                    259.84,261.88,263.38,264.67,265.42,265.34,      &
+                    264.45,262.76,260.85,258.78,256.49,254.02,      &
+                    251.07,248.23,245.46,242.77,239.87,237.53/
+
+! End new declarations for buffer layer edit
+
       CHARACTER*80 errmess
                            
       real :: amd       ! Effective molecular weight of dry air (g/mol)  
@@ -3782,7 +3821,8 @@ CONTAINS
 !  Initialize all molecular amounts to zero here, then pass MM5 amounts          
 !  into RRTM arrays WKL and WX below.                                            
                                                                                  
-      DO 1000 ILAY = kts,kte+1
+!      DO 1000 ILAY = kts,kte+1
+      DO 1000 ILAY = kts,NLAYERS
          DO 1100 ISP = 1,35                                                      
  1100       WKL(ISP,ILAY) = 0.0                                                  
          DO 1200 ISP = 1,MAXXSEC                                                 
@@ -3819,13 +3859,15 @@ CONTAINS
 !  and includes a correction to account for H2O in the layer.  The               
 !  molecular weight of moist air (amm) is calculated for each layer.             
                                                                                  
-!  RRTM is executed for an additional layer (L=kte+1), which extends              
-!  from the model top (ptop) to 0 mb, to calculate the downward                  
-!  flux at the model top interface.  H2O, CO2, and O3 vmrs for this              
-!  extra layer are set to the values in the model's top layer, though            
-!  the O3 value is reduced by a fraction (0.6) based on the US Std Atm.          
-!  For GCMs with a model top near 0 mb, this extra layer is not needed, and      
-!  NLAYERS should be set to the number of model layers (kte in this case).       
+!  RRTM is executed for additional levels (L = kte + int(p_top/4) + 1)
+!  from the model top (p_top) to 0 mb, to estimate the downward                  
+!  fluxes between the model top interface and the top of the atmosphere
+!  where kte is the top WRF model level index and p_top is the pressure at 
+!  the top model level. H2O, CO2, N2O, and CH4 vmrs for these extra layers are 
+!  set to the values in the model's top layer, though the O3 value is 
+!  interpolated based on the US Std Atm. For GCMs with a model top near 0 mb, 
+!  these extra layers are not needed, and NLAYERS should be set to the number 
+!  of model layers (kte in this case).       
 !  Note: RRTM levels count from bottom to top, while MM5 levels count            
 !  from the top down and must be reversed here.                                  
                                                                                  
@@ -3835,7 +3877,8 @@ CONTAINS
 
       PZ(0) = Pw(kte+1)                                                         
       TZ(0) = Tw(kte+1)                                                         
-      DO 2000 L = 1, NLAYERS-1                                                   
+!      DO 2000 L = 1, NLAYERS-1                                                   
+      DO 2000 L = 1, kte 
          PAVEL(L) = p(kte+1-L)                                                   
          TAVEL(L) = t(kte+1-L)                                                   
 !        PZ(L) = pint(kte+1-L)                                                    
@@ -3855,13 +3898,16 @@ CONTAINS
  2000    CONTINUE                                                                
                                                                                  
 !  Set cross section molecule amounts from CCM; convert to vmr                   
-      DO 2100 L=1, NLAYERS-1                                                     
+!      DO 2100 L=1, NLAYERS-1                                                     
+      DO 2100 L=1, kte      
 !        WX(2,L) = c11mmr(kte+1-L)*amdc1                                         
 !        WX(3,L) = c12mmr(kte+1-L)*amdc2                                         
          WX(2,L) = 0.                                                            
          WX(3,L) = 0.                                                            
  2100 CONTINUE                                                                   
-                                                                                 
+  
+!  old section
+   IF ( 1 .EQ. 0 ) THEN                                                                                 
 !  *****                                                                         
 !  Set up values for extra layer at top of the atmosphere.                       
 !  The top layer temperature for all gridpoints is set to the top layer-1        
@@ -3888,8 +3934,96 @@ CONTAINS
                                (gravit*amm*(1+WKL(1,NLAYERS-1)))                 
       WX(2,NLAYERS) = WX(2,NLAYERS-1)                                            
       WX(3,NLAYERS) = WX(3,NLAYERS-1)                                            
+!  *****               
+
+   ENDIF
+   
 !  *****                                                                         
-                                                                                 
+!  Set up values for extra layers to the top of the atmosphere.                       
+!  Temperature is calculated based on an average temperature profile given
+!  here in a table.  The input table data is linearly interpolated to the
+!  column pressure.  Mixing ratios are held constant except for ozone.  
+!  Caution should be used if model top pressure is less than 5 hPa.
+!  Steven Cavallo, NCAR/MMM, January 2010
+       ! Calculate the column pressure buffer levels above the 
+       ! model top       
+       DO 3000 L=kte+1,NLAYERS-1,1
+          PZ(L) = PZ(L-1) - deltap
+          PAVEL(L) = 0.5*(PZ(L) + PZ(L-1))
+ 3000  CONTINUE          
+       ! Add zero as top level.  This gets the temperature max at the
+       ! stratopause, reducing the downward flux errors in the top 
+       ! levels.  If zero happened to be the top level already,
+       ! this will add another level with zero, but will not affect
+       ! the radiative transfer calculation.
+       PZ(NLAYERS) = 0.00
+       PAVEL(NLAYERS) =  0.5*(PZ(NLAYERS) + PZ(NLAYERS-1))
+
+       ! Interpolate the table temperatures to column pressure levels    
+       DO 3100 L=1,NLAYERS,1
+          IF ( PPROF(nproflevs) .LT. PZ(L) ) THEN
+             DO 3150 LL=2,nproflevs,1       
+                IF ( PPROF(LL) .LT. PZ(L) ) THEN           
+                   klev = LL - 1
+                   exit
+                ENDIF
+ 3150        CONTINUE
+          
+          ELSE
+             klev = nproflevs
+          ENDIF  
+  
+          IF (klev .NE. nproflevs ) THEN
+             vark  = TPROF(klev) 
+             vark1 = TPROF(klev+1)
+             wght=( PZ(L)-PPROF(klev) ) / ( PPROF(klev+1)-PPROF(klev))
+          ELSE
+             vark  = TPROF(klev) 
+             vark1 = TPROF(klev)
+             wght = 0.0
+          ENDIF
+          varint(L) = wght*(vark1-vark)+vark
+
+ 3100 CONTINUE                   
+        
+       ! Match the interpolated table temperature profile to WRF column                    
+       DO 3200 L=kte+1,NLAYERS,1
+          TZ(L) = varint(L) + (TZ(kte) - varint(kte))
+          TAVEL(L) = 0.5*(TZ(L) + TZ(L-1))  
+ 3200  CONTINUE                 
+       
+       ! Get the new ozone profile.  First need to reverse pressure
+       ! array for the ozone interpolator subroutines.     
+       DO 3225 L=kts,NLAYERS,1
+         klev=NLAYERS-L+1
+         PZR(L)=PZ(klev)
+ 3225  CONTINUE     
+       CALL INIRAD (O3PROF2(kts:NLAYERS-1),PZR,kts,NLAYERS-1)       
+       ! Pick the top level to be the closest to zero from the 
+       ! table
+       O3PROF2(NLAYERS) = 6.135E-6      
+       
+       ! Keep all molecular mixing ratios constant in the buffer zone,
+       ! except for ozone
+       IF ( kte .NE. NLAYERS ) THEN 
+          DO 3250 L=1,NLAYERS,1
+             WKL(3,L) = O3PROF2(L)     ! O3
+             IF ( L .GT. kte ) THEN
+                WKL(1,L) = WKL(1,kte)  ! H2O
+                WKL(2,L) = co2vmr      ! CO2
+                WKL(4,L) = WKL(4,kte)  ! N2O
+                WKL(6,L) = WKL(6,kte)  ! CH4
+                amm = (1-WKL(1,L))*amd + WKL(1,L)*amw
+                COLDRY(L) = (PZ(L-1)-PZ(L))*1.E3*avgdro/    & 
+                         (gravit*amm*(1+WKL(1,L)))    
+                WX(2,L) = WX(2,kte)
+                WX(3,L) = WX(3,kte)
+             ENDIF
+ 3250     CONTINUE                
+       ENDIF
+!
+!  End of buffer layer edit.
+!                                                             
 !  Here, all molecules in WKL and WX are in volume mixing ratio; convert to      
 !  molec/cm2 based on COLDRY for use in RRTM                                     
                                                                                  
@@ -3916,18 +4050,23 @@ CONTAINS
 !  as the product of clwp and cloud mass absorption coefficient in MM5, which is 
 !  a  combination of liquid and ice absorption coefficients.                     
 !  Note: RRTM levels count from bottom to top, while CCM levels count from the   
-!  top down and must be reversed here.  Values for the extra RRTM level (above   
+!  top down and must be reversed here.  Values for the extra RRTM levels (above   
 !  the model top) are set to zero.                                               
                                                                                  
-      DO 7000 L = 1, NLAYERS-1                                                   
+!      DO 7000 L = 1, NLAYERS-1                                                   
+      DO 7000 L = 1, kte   
          TAUCLOUD(L) = ABCW*CLWP(kte+1-L)+ABICE*CIWP(kte+1-L) & 
                       +ABRN*PLWP(kte+1-L)+ABSN*PIWP(kte+1-L)                       
          IF(TAUCLOUD(L).GT.0.01)CLDFRC(kte+1-L)=1.                                
          CLDFRAC(L) = cldfrc(kte+1-L)                                             
  7000 CONTINUE                                                                   
-      CLDFRAC(NLAYERS) = 0.0                                                     
-      TAUCLOUD(NLAYERS) = 0.0                                                    
-
+!      CLDFRAC(NLAYERS) = 0.0                                                     
+!      TAUCLOUD(NLAYERS) = 0.0                                                    
+      DO 7500 L = kte+1,NLAYERS,1
+         CLDFRAC(L) = 0.0   
+         TAUCLOUD(L) = 0.0  
+ 7500 CONTINUE
+        
    END SUBROUTINE MM5ATM
 
 !---------------------------------------------------------------------------
@@ -6513,7 +6652,7 @@ CONTAINS
 
 !====================================================================
    SUBROUTINE rrtminit(                                             &
-                       allowed_to_read ,                            &
+                       p_top, allowed_to_read ,                     &
                        ids, ide, jds, jde, kds, kde,                &
                        ims, ime, jms, jme, kms, kme,                &
                        its, ite, jts, jte, kts, kte                 )
@@ -6525,12 +6664,15 @@ CONTAINS
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte
+   REAL, INTENT(IN)               :: p_top 
+!  REAL, PARAMETER                :: deltap = 4  ! Pressure interval for buffer layer (hPa)
 
    REAL :: pi
 
    PI = 2.*ASIN(1.) 
    FLUXFAC  = PI   * 2.D4                     
-   NLAYERS = kme
+  !NLAYERS = kme
+   NLAYERS = kme + nint(p_top*0.01/deltap)- 1 ! Model levels plus new levels
 
    IF ( allowed_to_read ) THEN
      CALL rrtm_lookuptable

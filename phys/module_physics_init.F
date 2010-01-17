@@ -520,7 +520,7 @@ integer myproc
                 ozmixm=ozmixm,pin=pin,                                     & ! Optional
                 m_ps_1=m_ps_1,m_ps_2=m_ps_2,m_hybi=m_hybi,aerosolc_1=aerosolc_1,aerosolc_2=aerosolc_2,     & ! Optional
                 paerlev=paerlev,n_aerosolc=n_aerosolc,                             &
-                sfull=sfull,shalf=shalf,pptop=pptop,swrad_scat=swrad_scat,                   &
+                sfull=sfull,shalf=shalf,pptop=pptop,swrad_scat=swrad_scat,p_top=p_top,       &
                 config_flags=config_flags,restart=restart,                           &
                 allowed_to_read=allowed_to_read, start_of_simulation=start_of_simulation,           &
                 ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,                   &
@@ -942,7 +942,7 @@ integer myproc
                       ozmixm,pin,                                     & ! Optional
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                       paerlev,n_aerosolc,                             &
-                      sfull,shalf,pptop,swrad_scat,                  &
+                      sfull,shalf,pptop,swrad_scat,p_top,            &
                       config_flags,restart,                          &
                       allowed_to_read, start_of_simulation,          &
                       ids, ide, jds, jde, kds, kde,                  &
@@ -975,7 +975,7 @@ integer myproc
 
    INTEGER , INTENT(IN)           :: JULDAY,JULYR
    REAL ,    INTENT(IN)           :: DT, RADT, cen_lat, GMT, pptop,  &
-                                     swrad_scat
+                                     swrad_scat, p_top
    LOGICAL,  INTENT(IN)           :: start_of_simulation
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
@@ -1066,7 +1066,7 @@ integer myproc
 
         CASE (RRTMSCHEME)
              CALL rrtminit(                                 &
-                           allowed_to_read ,                &
+                           p_top, allowed_to_read ,         &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )

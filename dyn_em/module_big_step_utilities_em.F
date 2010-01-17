@@ -5250,9 +5250,9 @@ END SUBROUTINE phy_prep
      DO j = j_start, j_end
      DO k = k_start, k_end
      DO i = i_start, i_end
-#if ( WRF_DFI_RADAR == 1 )
         mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
 
+#if ( WRF_DFI_RADAR == 1 )
         mpten=min(config_flags%mp_tend_lim*dt, mpten)
         mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
@@ -5273,7 +5273,7 @@ END SUBROUTINE phy_prep
          t_new(i,k,j) = t_new(i,k,j) + mpten
         endif
 #else
-         t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
+         t_new(i,k,j) = t_new(i,k,j) + mpten
 #endif
          h_diabatic(i,k,j) =  (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
      ENDDO

@@ -773,7 +773,7 @@ CONTAINS
           ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
 ! AHW: change roughness length, and hence the drag coefficients Ck and Cd
           IF ( PRESENT(ISFTCFLX) ) THEN
-             IF ( ISFTCFLX.EQ.1 ) THEN
+             IF ( ISFTCFLX.NE.0 ) THEN
                 ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
                 ZNT(I)=MIN(ZNT(I),2.85e-3)
                 ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
@@ -814,6 +814,12 @@ CONTAINS
       DO 400 I=its,ite
         IF(XLAND(I)-1.5.GT.0.)THEN                                           
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
+          IF ( PRESENT(ISFTCFLX) ) THEN
+             IF ( ISFTCFLX.NE.0 ) THEN
+! AHW: add dissipasive heating term
+                HFX(I)=HFX(I)+RHOX(I)*USTM(I)*USTM(I)*WSPDI(I)
+             ENDIF
+          ENDIF
         ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
           HFX(I)=AMAX1(HFX(I),-250.)                                       

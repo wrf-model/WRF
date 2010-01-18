@@ -103,4 +103,8 @@ void ParserErrorMessage() ;
 char * AppendString( char * s1, char * s2, int * len, int addlen );
 void AddInlineCode( char * context, char * code );
 
+#ifdef YYBISON
+int yyerrflag ;
+#endif
+
 #endif

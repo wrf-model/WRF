@@ -19,7 +19,8 @@ CONTAINS
                xland,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,                &
                anh3,cvaro1,cvaro2,   &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
-               e_co,kemit,sf_urban_physics,numgas,current_month,          &
+               e_co,kemit,sf_urban_physics,numgas,current_month,dvel,     &
+               snowh,                                                     &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -27,6 +28,7 @@ CONTAINS
   USE module_model_constants
   USE module_configure
   USE module_state_description
+  USE module_domain_type, only : domain
   USE module_dep_simple
   USE module_vertmx_wrf
   USE module_data_sorgam
@@ -37,6 +39,8 @@ CONTAINS
   USE module_mixactivate_wrappers, only: mosaic_mixactivate, sorgam_mixactivate
   USE module_aer_drydep, only:  aer_drydep_driver
   IMPLICIT NONE
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    INTEGER,      INTENT(IN   ) :: id,julday,                    &
                                   sf_urban_physics,             &
@@ -61,7 +65,8 @@ CONTAINS
          INTENT(IN ) ::                                                    &
           e_co
 
-
+   REAL, DIMENSION( ims:ime, config_flags%kdvel, jms:jme, num_dvel ), &
+         INTENT(INOUT ) ::                                   dvel
 
 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
@@ -91,6 +96,7 @@ CONTAINS
                                                      hfx,       &
                                                      xlat,      &
                                                      xlong,     &
+                                                     snowh,     &
                                           xland,znt,raincv
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
@@ -133,7 +139,8 @@ CONTAINS
 !
    REAL, DIMENSION( its:ite, jts:jte ) ::   aer_res, aer_res_def, aer_res_zcen
 
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   real, parameter :: m2cm = 100.
 
 
 ! ..
@@ -167,21 +174,77 @@ CONTAINS
            config_flags%chem_opt /= GOCART_SIMPLE  .and.                 &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                              &
-               config_flags,                                              &
+               config_flags,current_month,                                &
                gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res_def,aer_res_zcen,    &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               numgas,                                                    &
+               snowh,numgas,                                              &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
+!-----------------------------------------------------------------
+! this does aerosol species (dust,seas, bc,oc) for gocart only
+!-----------------------------------------------------------------
+          IF ( config_flags%chem_opt == MOZCART_KPP ) then
+            call gocart_drydep_driver( dtstep,                            &
+                  config_flags, numgas,                                   &
+                  t_phy, moist, p8w, t8w,                                 &
+                  p_phy, chem, rho_phy, dz8w, ddvel, xland, hfx,          &
+                  ivgtyp, tsk, vegfra, pbl, ust, znt, xlat, xlong,        &
+                  ids,ide, jds,jde, kds,kde,                              &
+                  ims,ime, jms,jme, kms,kme,                              &
+                  its,ite, jts,jte, kts,kte )
+            if(config_flags%diagnostic_chem == DEPVEL1) then
+               do j = jts,jte
+                  dvel(its:ite,1,j,p_dvel_o3) = m2cm*ddvel(its:ite,j,p_o3)
+                  dvel(its:ite,1,j,p_dvel_no) = m2cm*ddvel(its:ite,j,p_no)
+                  dvel(its:ite,1,j,p_dvel_no2) = m2cm*ddvel(its:ite,j,p_no2)
+                  dvel(its:ite,1,j,p_dvel_nh3) = m2cm*ddvel(its:ite,j,p_nh3)
+                  dvel(its:ite,1,j,p_dvel_hno3) = m2cm*ddvel(its:ite,j,p_hno3)
+                  dvel(its:ite,1,j,p_dvel_hno4) = m2cm*ddvel(its:ite,j,p_hno4)
+                  dvel(its:ite,1,j,p_dvel_h2o2) = m2cm*ddvel(its:ite,j,p_h2o2)
+                  dvel(its:ite,1,j,p_dvel_co) = m2cm*ddvel(its:ite,j,p_co)
+                  dvel(its:ite,1,j,p_dvel_ch3ooh) = m2cm*ddvel(its:ite,j,p_ch3ooh)
+                  dvel(its:ite,1,j,p_dvel_hcho) = m2cm*ddvel(its:ite,j,p_hcho)
+                  dvel(its:ite,1,j,p_dvel_ch3oh) = m2cm*ddvel(its:ite,j,p_ch3oh)
+                  dvel(its:ite,1,j,p_dvel_eo2) = m2cm*ddvel(its:ite,j,p_eo2)
+                  dvel(its:ite,1,j,p_dvel_ald) = m2cm*ddvel(its:ite,j,p_ald)
+                  dvel(its:ite,1,j,p_dvel_ch3cooh) = m2cm*ddvel(its:ite,j,p_ch3cooh)
+                  dvel(its:ite,1,j,p_dvel_acet) = m2cm*ddvel(its:ite,j,p_acet)
+                  dvel(its:ite,1,j,p_dvel_mgly) = m2cm*ddvel(its:ite,j,p_mgly)
+                  dvel(its:ite,1,j,p_dvel_paa) = m2cm*ddvel(its:ite,j,p_paa)
+                  dvel(its:ite,1,j,p_dvel_pooh) = m2cm*ddvel(its:ite,j,p_c3h6ooh)
+                  dvel(its:ite,1,j,p_dvel_mpan) = m2cm*ddvel(its:ite,j,p_mpan)
+                  dvel(its:ite,1,j,p_dvel_mco3) = m2cm*ddvel(its:ite,j,p_mco3)
+                  dvel(its:ite,1,j,p_dvel_mvkooh) = m2cm*ddvel(its:ite,j,p_mvkooh)
+                  dvel(its:ite,1,j,p_dvel_c2h5oh) = m2cm*ddvel(its:ite,j,p_c2h5oh)
+                  dvel(its:ite,1,j,p_dvel_etooh) = m2cm*ddvel(its:ite,j,p_etooh)
+                  dvel(its:ite,1,j,p_dvel_prooh) = m2cm*ddvel(its:ite,j,p_prooh)
+                  dvel(its:ite,1,j,p_dvel_acetp) = m2cm*ddvel(its:ite,j,p_acetp)
+                  dvel(its:ite,1,j,p_dvel_onit) = m2cm*ddvel(its:ite,j,p_onit)
+                  dvel(its:ite,1,j,p_dvel_onitr) = m2cm*ddvel(its:ite,j,p_onitr)
+                  dvel(its:ite,1,j,p_dvel_isooh) = m2cm*ddvel(its:ite,j,p_isooh)
+                  dvel(its:ite,1,j,p_dvel_acetol) = m2cm*ddvel(its:ite,j,p_acetol)
+                  dvel(its:ite,1,j,p_dvel_glyald) = m2cm*ddvel(its:ite,j,p_glyald)
+                  dvel(its:ite,1,j,p_dvel_hydrald) = m2cm*ddvel(its:ite,j,p_hydrald)
+                  dvel(its:ite,1,j,p_dvel_alkooh) = m2cm*ddvel(its:ite,j,p_alkooh)
+                  dvel(its:ite,1,j,p_dvel_mekooh) = m2cm*ddvel(its:ite,j,p_mekooh)
+                  dvel(its:ite,1,j,p_dvel_tolooh) = m2cm*ddvel(its:ite,j,p_tolooh)
+                  dvel(its:ite,1,j,p_dvel_xooh) = m2cm*ddvel(its:ite,j,p_xooh)
+                  dvel(its:ite,1,j,p_dvel_so2) = m2cm*ddvel(its:ite,j,p_so2)
+                  dvel(its:ite,1,j,p_dvel_so4) = m2cm*ddvel(its:ite,j,p_so4)
+                  dvel(its:ite,1,j,p_dvel_pan) = m2cm*ddvel(its:ite,j,p_pan)
+                  dvel(its:ite,1,j,p_dvel_terpooh) = m2cm*ddvel(its:ite,j,p_terpooh)
+               enddo
+            endif
+          ENDIF
        ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
           call wesely_driver(id,ktau,dtstep,                              &
-               config_flags,                                              &
+               config_flags,current_month,                                &
                gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res_def,aer_res_zcen,    & 
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               numgas,                                                    &
+               snowh, numgas,                                             &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -202,11 +265,11 @@ CONTAINS
 ! this does aerosol species (dust,seas, bc,oc) for gocart only
 !
           call wesely_driver(id,ktau,dtstep,                              &
-               config_flags,                                              &
+               config_flags,current_month,                                &
                gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res_def,aer_res_zcen,    &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               numgas,                                                    &
+               snowh, numgas,                                             &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -236,7 +299,7 @@ CONTAINS
 
        idrydep_onoff = 1
        aer_mech_id_select: SELECT CASE(config_flags%chem_opt)
-          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP)
+          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP)
              aer_mech_id = 1
           CASE (RACMSORG_AQ,RACMSORG_KPP)
              aer_mech_id = 2
@@ -260,7 +323,7 @@ CONTAINS
        else if (config_flags%aer_drydep_opt <= 99) then
 
    adrydep_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP)
+     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RADM')
        call sorgam_depdriver (id,config_flags,ktau,dtstep,              &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
@@ -403,7 +466,7 @@ CONTAINS
 !
 ! only mixing one fire(smoke) scalar array
 !
-       CASE (TRACER_SMOKE)
+       CASE (TRACER_SMOKE,TRACER_TEST1,TRACER_TEST2)
         CALL wrf_debug(15,'DOING TRACER MIXING, 1 SPECIE ONLY')
         do nv=2,num_tracer
          do k=kts,kte
@@ -459,7 +522,7 @@ CONTAINS
    CASE DEFAULT
    END SELECT mixactivate_select
    settling_select: SELECT CASE(config_flags%chem_opt)
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP)
        CALL wrf_debug(15,'call gocart settling routine')
          call gocart_settling_driver(dtstep,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,p_phy,         &

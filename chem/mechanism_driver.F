@@ -133,7 +133,7 @@
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
 
-     CASE (RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ)
+     CASE (RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP)
        vcsulf_old(its:ite,kts:kte,jts:jte) = &
           max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
 

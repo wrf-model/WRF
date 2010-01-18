@@ -1572,6 +1572,7 @@ rconfig   logical rotated_pole            namelist,dynamics     1            .fa
 rconfig   logical do_coriolis             namelist,dynamics	max_domains  .true.   irh  "do_coriolis"    ""   ""
 rconfig   logical do_curvature            namelist,dynamics	max_domains  .true.   irh  "do_curvature"   ""   ""
 rconfig   logical do_gradp                namelist,dynamics	max_domains  .true.   irh  "do_gradp"    ""   ""
+rconfig   integer tracer_opt              namelist,dynamics     max_domains    0       rh    "tracer_opt"          ""      ""
 
 
 # Bdy_control

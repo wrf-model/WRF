@@ -38,7 +38,7 @@
   USE module_dep_simple
   USE module_bioemi_simple
   USE module_phot_mad
-!  USE module_ftuv_driver, only : ftuv_timestep_init
+  USE module_ftuv_driver, only : ftuv_timestep_init
   USE module_aerosols_sorgam
   USE module_chem_utilities
   USE module_gocart_so2so4
@@ -47,6 +47,7 @@
   USE module_convtrans_prep
   USE module_dry_dep_driver
   USE module_emissions_driver
+  USE module_input_tracer, only: set_tracer
   USE module_wetscav_driver, only: wetscav_driver
   USE module_input_chem_data, only: last_chem_time, &
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
@@ -372,6 +373,9 @@
      CASE (RACM_MIM_KPP)
        CALL wrf_debug(15,'calling racm_mim_kpp from chem_driver')
        haveaer = .false.
+     CASE (RACM_ESRLSORG_KPP)
+       CALL wrf_debug(15,'calling racmsorgesrl_kpp aerosols driver from chem_driver')
+       haveaer = .false.
      CASE (RACMSORG_KPP)
        CALL wrf_debug(15,'calling racmsorg_kpp aerosols driver from chem_driver')
        haveaer = .false.
@@ -424,10 +428,10 @@
    tracer_select: SELECT CASE(config_flags%tracer_opt)
     CASE (TRACER_SMOKE)
        CALL wrf_debug(15,'tracer mode: 1 tracer for fires')
-    CASE (TRACER_ME)
+    CASE (TRACER_TEST1)
        CALL wrf_debug(15,'tracer mode: 8 tracers')
-    CASE (TRACER_SUS)
-       CALL wrf_debug(15,'tracer mode: ensemble of tracers')
+    CASE (TRACER_TEST2)
+       CALL wrf_debug(15,'tracer mode: 8 tracers')
      CASE DEFAULT
        CALL wrf_debug(15,'calling chem_opt=? from chem_driver')
    END SELECT tracer_select
@@ -555,7 +559,7 @@
       enddo
       select case (config_flags%chem_opt)
       case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-                        RACMSORG_AQ,  RACMSORG_KPP)
+            RACM_ESRLSORG_KPP,RACMSORG_AQ,  RACMSORG_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe
@@ -590,6 +594,13 @@
             pbl_h(i,j)=grid%pblh(i,j)
          enddo
       enddo
+
+!------------------------------------------------------------------------
+! setup ftuv column density timing
+!------------------------------------------------------------------------
+      if( config_flags%phot_opt == FTUV ) then
+         CALL ftuv_timestep_init( grid%julday )
+      end if
 
 !------------------------------------------------------------------------
 ! Main chemistry tile loop
@@ -714,6 +725,8 @@
               grid%lflash_data, grid%ic_flshrate, grid%cg_flshrate,                        &
               grid%flashrate_factor, grid%flashrate_method, grid%iccg_method,              &
               grid%cellcount_method,                                                       &
+         ! stuff for aircraft emissions
+              emis_aircraft,                                                               &   
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
@@ -835,7 +848,7 @@
 #endif
                  rri,p_phy,chem,tracer,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,         &
                  grid%cldfra, grid%cldfra_old,grid%raincv_b,                          &
-	             grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
+	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
                  zmid,z_at_w,grid%xland,                                              &
@@ -843,7 +856,7 @@
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
                  emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,                     &
-                 config_flags%sf_urban_physics,numgas,current_month,                  &
+                 config_flags%sf_urban_physics,numgas,current_month,dvel,grid%snowh,  &
                  ids,ide, jds,jde, kds,kde,                                           &
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
@@ -893,7 +906,8 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
-             num_moist,numgas,num_chem,config_flags%chem_opt,0,                       &
+             grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
+             config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
@@ -916,7 +930,8 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
-             num_moist,0,num_tracer,0,config_flags%tracer_opt,                        &
+             grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
+             config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
@@ -1191,6 +1206,16 @@ end if !Chemistry time step check
 
 
    endif
+   tracer2: SELECT CASE(config_flags%tracer_opt)
+    CASE (TRACER_TEST1, TRACER_TEST2)
+       CALL wrf_debug(15,'tracer mode: reset some tracers')
+       call set_tracer(grid%dt,ktau,pbl_h,tracer,t_phy,         &
+                        config_flags%tracer_opt,num_tracer,     &
+                       zmid,grid%ht,ids,ide, jds,jde, kds,kde,  & ! domain dims
+                               ims,ime, jms,jme, kms,kme,       & ! memory dims
+                               its,ite, jts,jte, kts,kte )
+   END SELECT tracer2
+
 
 # if ( EM_CORE == 1 ) 
    END DO chem_tile_loop_1
@@ -1217,4 +1242,5 @@ end if !Chemistry time step check
     deallocate(moist_trans)
     deallocate(scalar_trans)
 #endif
+
     END subroutine chem_driver

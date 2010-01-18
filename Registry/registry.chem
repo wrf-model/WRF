@@ -77,13 +77,13 @@ state    real  e_oc          i+jf     emis_ant     1         Z      i5     "E_OC
 state    real  e_sulf          i+jf     emis_ant     1         Z      i5     "E_sulf"                "EMISSIONS NO2"                 "mol km^-2 hr^-1"
 
 # dust and seas emission arrays
-state   real     -            i{dust}jf    emis_dust      -        -        -         -                    "Dust Emissions"         ""
+state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
 state    real  edust1       i{dust}jf      emis_dust      1         Z      rh     "EDUST1"         "DUST emissions bin1"  ""
 state    real  edust2       i{dust}jf      emis_dust      1         Z      rh     "EDUST2"         "DUST emissions bin2"  ""
 state    real  edust3       i{dust}jf      emis_dust      1         Z      rh     "EDUST3"         "DUST emissions bin3"  ""
 state    real  edust4       i{dust}jf      emis_dust      1         Z      rh     "EDUST4"         "DUST emissions bin4"  ""
 state    real  edust5       i{dust}jf      emis_dust      1         Z      rh     "EDUST5"         "DUST emissions bin5"  ""
-state   real     -            i{dust}jf    emis_seas      -        -        -         -                    "Sea-Salt Emissions"         ""
+state   real     -          i{dust}jf      emis_seas      -        -        -         -                    "Sea-Salt Emissions"         ""
 state    real  eseas1       i{dust}jf      emis_seas      1         Z      rh     "ESEAS1"         "Sea-Salt emissions bin1 "  ""
 state    real  eseas2       i{dust}jf      emis_seas      1         Z      rh     "ESEAS2"         "Sea-Salt emissions bin2 "  ""
 state    real  eseas3       i{dust}jf      emis_seas      1         Z      rh     "ESEAS3"         "Sea-Salt emissions bin3 "  ""
@@ -197,6 +197,14 @@ state    real  firesize_aggr      ij      misc      1         -        i07h     
 state    real  ic_flshrate    ij      misc        1         -      rh      "IC_FR"                 "Cuml. IC Flash rate"                 "number"
 state    real  cg_flshrate    ij      misc        1         -      rh      "CG_FR"                 "Cuml. CG Flash rate"                 "number"
 #
+# aircraft emissions
+state   integer aircraftemissframes -        -           -         -      -     "aircraftemissframes"   ""                   ""
+state    real     -             i{airc}jf    emis_aircraft    -         -      -     -                       "Aircraft Emissions" ""
+state    real  eac_so2          i{airc}jf    emis_aircraft    1         Z      i11    "EAC_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  eac_no           i{airc}jf    emis_aircraft    1         Z      i11    "EAC_NO"                "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  eac_co           i{airc}jf    emis_aircraft    1         Z      i11    "EAC_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  eac_ch4          i{airc}jf    emis_aircraft    1         Z      i11    "EAC_CH4"               "EMISSIONS"          "mol km^-2 hr^-1"
+
 #
 state   real     -            ikjf     ext_coef     -         -      -       -                       "Extinction coefficients"         ""
 state   real  extcof3         ikjf     ext_coef     1         Z      h     "EXTCOF3"                 "Extinction coefficients for .3um"  "km^-1"
@@ -296,47 +304,48 @@ state    real  backg_no3      ikj     misc        1         -      i08rh    "BAC
 # following used for output to look at all kinds of stuff
 state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
 state    real  cu_co_ten      ikj     misc        1         -      -        "CU_CO_TEN"             "CONV. TRANSPORT FOR CO"              "?"
-# deposition velocities
-state   real    -            ijf   dvel         1         -     -    -                                       
-state    real  dvel_o3       ijf      dvel           1         -      h      "dvel_o3"        "O3 deposition velocity  "  "cm/s"
-state    real  dvel_no       ijf      dvel           1         -      h      "dvel_no"        "NO deposition velocity  "  "cm/s"
-state    real  dvel_no2      ijf      dvel           1         -      h      "dvel_no2"       "NO2 deposition velocity "  "cm/s"
-state    real  dvel_nh3      ijf      dvel           1         -      h      "dvel_nh3"       "NH3 deposition velocity "  "cm/s"
-state    real  dvel_hno3     ijf      dvel           1         -      h      "dvel_hno3"      "HNO3 deposition velocity "  "cm/s"
-state    real  dvel_hno4     ijf      dvel           1         -      h      "dvel_hno4"      "HNO4 deposition velocity "  "cm/s"
-state    real  dvel_h2o2     ijf      dvel           1         -      h      "dvel_h2o2"      "H2O2 deposition velocity "  "cm/s"
-state    real  dvel_co       ijf      dvel           1         -      h      "dvel_co"        "CO deposition velocity  "  "cm/s"
-state    real  dvel_ch3ooh   ijf      dvel           1         -      h      "dvel_ch3ooh"    "CH3OOH deposition velocity  "  "cm/s"
-state    real  dvel_hcho     ijf      dvel           1         -      h      "dvel_hcho"      "HCHO deposition velocity "  "cm/s"
-state    real  dvel_ch3oh    ijf      dvel           1         -      h      "dvel_ch3oh"     "CH3OH deposition velocity  "  "cm/s"
-state    real  dvel_eo2      ijf      dvel           1         -      h      "dvel_eo2"       "EO2 deposition velocity "  "cm/s"
-state    real  dvel_ald      ijf      dvel           1         -      h      "dvel_ald"       "ALD deposition velocity "  "cm/s"
-state    real  dvel_ch3cooh  ijf      dvel           1         -      h      "dvel_ch3cooh"   "CH3COOH deposition velocity  "  "cm/s"
-state    real  dvel_acet     ijf      dvel           1         -      h      "dvel_acet"      "ACET deposition velocity "  "cm/s"
-state    real  dvel_mgly     ijf      dvel           1         -      h      "dvel_mgly"      "MGLY deposition velocity "  "cm/s"
-state    real  dvel_paa      ijf      dvel           1         -      h      "dvel_paa"       "PAA deposition velocity "  "cm/s"
-state    real  dvel_pooh     ijf      depv           1         -      h      "dvel_pooh"      "POOH deposition velocity "  "cm/s"
-state    real  dvel_pan      ijf      depv           1         -      h      "dvel_pan"       "PAN deposition velocity "  "cm/s"
-state    real  dvel_mpan     ijf      depv           1         -      h      "dvel_mpan"      "MPAN deposition velocity "  "cm/s"
-state    real  dvel_mco3     ijf      depv           1         -      h      "dvel_mco3"      "MCO3 deposition velocity "  "cm/s"
-state    real  dvel_mvkooh   ijf      depv           1         -      h      "dvel_mvkooh"    "MVKOOH deposition velocity  "  "cm/s"
-state    real  dvel_c2h5oh   ijf      depv           1         -      h      "dvel_c2h5oh"    "C2H5OH deposition velocity  "  "cm/s"
-state    real  dvel_etooh    ijf      depv           1         -      h      "dvel_etooh"     "ETOOH deposition velocity  "  "cm/s"
-state    real  dvel_prooh    ijf      depv           1         -      h      "dvel_prooh"     "PROOH deposition velocity  "  "cm/s"
-state    real  dvel_acetp    ijf      depv           1         -      h      "dvel_acetp"     "ACETP deposition velocity  "  "cm/s"
-state    real  dvel_onit     ijf      depv           1         -      h      "dvel_onit"      "ONIT deposition velocity "  "cm/s"
-state    real  dvel_onitr    ijf      depv           1         -      h      "dvel_onitr"     "ONITR deposition velocity  "  "cm/s"
-state    real  dvel_isooh    ijf      depv           1         -      h      "dvel_isooh"     "ISOOH deposition velocity  "  "cm/s"
-state    real  dvel_acetol   ijf      depv           1         -      h      "dvel_acetol"    "ACETOL deposition velocity  "  "cm/s"
-state    real  dvel_glyald   ijf      depv           1         -      h      "dvel_glyald"    "GLYALD deposition velocity  "  "cm/s"
-state    real  dvel_hydrald  ijf      depv           1         -      h      "dvel_hydrald"   "HYDRALD deposition velocity  "  "cm/s"
-state    real  dvel_alkooh   ijf      depv           1         -      h      "dvel_alkooh"    "ALKOOH deposition velocity  "  "cm/s"
-state    real  dvel_mekooh    ijf     depv           1         -      h      "dvel_mekooh"    "MEKOOH deposition velocity  "  "cm/s"
-state    real  dvel_tolooh   ijf      depv           1         -      h      "dvel_tolooh"    "TOLOOH deposition velocity  "  "cm/s"
-state    real  dvel_xooh     ijf      depv           1         -      h      "dvel_xooh"      "XOOH deposition velocity "  "cm/s"
-state    real  dvel_so2      ijf      depv           1         -      h      "dvel_so2"       "SO2 deposition velocity "  "cm/s"
-state    real  dvel_so4      ijf      depv           1         -      h      "dvel_so4"       "SO4 deposition velocity "  "cm/s"
-state    real  dvel_terpooh  ijf      depv           1         -      h      "dvel_terpooh"    "TERPOOH deposition velocity "  "cm/s"
+# deposition velocities for diagnostic package, feel free to add if you like!
+#
+state    real    -           i%jf      dvel           -         -     -    -      "deposition velocities"           ""                                       
+state    real  dvel_o3       i%jf      dvel           1         -      h      "dvel_o3"        "O3 deposition velocity  "  "cm/s"
+state    real  dvel_no       i%jf      dvel           1         -      h      "dvel_no"        "NO deposition velocity  "  "cm/s"
+state    real  dvel_no2      i%jf      dvel           1         -      h      "dvel_no2"       "NO2 deposition velocity "  "cm/s"
+state    real  dvel_nh3      i%jf      dvel           1         -      h      "dvel_nh3"       "NH3 deposition velocity "  "cm/s"
+state    real  dvel_hno3     i%jf      dvel           1         -      h      "dvel_hno3"      "HNO3 deposition velocity "  "cm/s"
+state    real  dvel_hno4     i%jf      dvel           1         -      h      "dvel_hno4"      "HNO4 deposition velocity "  "cm/s"
+state    real  dvel_h2o2     i%jf      dvel           1         -      h      "dvel_h2o2"      "H2O2 deposition velocity "  "cm/s"
+state    real  dvel_co       i%jf      dvel           1         -      h      "dvel_co"        "CO deposition velocity  "  "cm/s"
+state    real  dvel_ch3ooh   i%jf      dvel           1         -      h      "dvel_ch3ooh"    "CH3OOH deposition velocity  "  "cm/s"
+state    real  dvel_hcho     i%jf      dvel           1         -      h      "dvel_hcho"      "HCHO deposition velocity "  "cm/s"
+state    real  dvel_ch3oh    i%jf      dvel           1         -      h      "dvel_ch3oh"     "CH3OH deposition velocity  "  "cm/s"
+state    real  dvel_eo2      i%jf      dvel           1         -      h      "dvel_eo2"       "EO2 deposition velocity "  "cm/s"
+state    real  dvel_ald      i%jf      dvel           1         -      h      "dvel_ald"       "ALD deposition velocity "  "cm/s"
+state    real  dvel_ch3cooh  i%jf      dvel           1         -      h      "dvel_ch3cooh"   "CH3COOH deposition velocity  "  "cm/s"
+state    real  dvel_acet     i%jf      dvel           1         -      h      "dvel_acet"      "ACET deposition velocity "  "cm/s"
+state    real  dvel_mgly     i%jf      dvel           1         -      h      "dvel_mgly"      "MGLY deposition velocity "  "cm/s"
+state    real  dvel_paa      i%jf      dvel           1         -      h      "dvel_paa"       "PAA deposition velocity "  "cm/s"
+state    real  dvel_pooh     i%jf      dvel           1         -      h      "dvel_pooh"      "POOH deposition velocity "  "cm/s"
+state    real  dvel_pan      i%jf      dvel           1         -      h      "dvel_pan"       "PAN deposition velocity "  "cm/s"
+state    real  dvel_mpan     i%jf      dvel           1         -      h      "dvel_mpan"      "MPAN deposition velocity "  "cm/s"
+state    real  dvel_mco3     i%jf      dvel           1         -      h      "dvel_mco3"      "MCO3 deposition velocity "  "cm/s"
+state    real  dvel_mvkooh   i%jf      dvel           1         -      h      "dvel_mvkooh"    "MVKOOH deposition velocity  "  "cm/s"
+state    real  dvel_c2h5oh   i%jf      dvel           1         -      h      "dvel_c2h5oh"    "C2H5OH deposition velocity  "  "cm/s"
+state    real  dvel_etooh    i%jf      dvel           1         -      h      "dvel_etooh"     "ETOOH deposition velocity  "  "cm/s"
+state    real  dvel_prooh    i%jf      dvel           1         -      h      "dvel_prooh"     "PROOH deposition velocity  "  "cm/s"
+state    real  dvel_acetp    i%jf      dvel           1         -      h      "dvel_acetp"     "ACETP deposition velocity  "  "cm/s"
+state    real  dvel_onit     i%jf      dvel           1         -      h      "dvel_onit"      "ONIT deposition velocity "  "cm/s"
+state    real  dvel_onitr    i%jf      dvel           1         -      h      "dvel_onitr"     "ONITR deposition velocity  "  "cm/s"
+state    real  dvel_isooh    i%jf      dvel           1         -      h      "dvel_isooh"     "ISOOH deposition velocity  "  "cm/s"
+state    real  dvel_acetol   i%jf      dvel           1         -      h      "dvel_acetol"    "ACETOL deposition velocity  "  "cm/s"
+state    real  dvel_glyald   i%jf      dvel           1         -      h      "dvel_glyald"    "GLYALD deposition velocity  "  "cm/s"
+state    real  dvel_hydrald  i%jf      dvel           1         -      h      "dvel_hydrald"   "HYDRALD deposition velocity  "  "cm/s"
+state    real  dvel_alkooh   i%jf      dvel           1         -      h      "dvel_alkooh"    "ALKOOH deposition velocity  "  "cm/s"
+state    real  dvel_mekooh   i%jf      dvel           1         -      h      "dvel_mekooh"    "MEKOOH deposition velocity  "  "cm/s"
+state    real  dvel_tolooh   i%jf      dvel           1         -      h      "dvel_tolooh"    "TOLOOH deposition velocity  "  "cm/s"
+state    real  dvel_xooh     i%jf      dvel           1         -      h      "dvel_xooh"      "XOOH deposition velocity "  "cm/s"
+state    real  dvel_so2      i%jf      dvel           1         -      h      "dvel_so2"       "SO2 deposition velocity "  "cm/s"
+state    real  dvel_so4      i%jf      dvel           1         -      h      "dvel_so4"       "SO4 deposition velocity "  "cm/s"
+state    real  dvel_terpooh  i%jf      dvel           1         -      h      "dvel_terpooh"    "TERPOOH deposition velocity "  "cm/s"
 
 # aerosol stuff
 state    real  aerwrf         ikj     misc        1         -      r        "AERWRF"                "STANDARD AEROSOL PROFILE"            "?"
@@ -353,7 +362,7 @@ state    real  dms_0          ij      misc        1         -      i08rh    "DMS
 # photolysis rates
 state    real  ph_o31d         ikj     misc        1         -      r        "PHOTR2"                "O31D Photolysis Rate" "min{-1}"
 state    real  ph_o33p         ikj     misc        1         -      r        "PHOTR3"                "O33P Photolysis Rate" "min{-1}"
-state    real  ph_no2          ikj     misc        1         -      rh       "PHOTR4"                "NO2 Photolysis Rate" "min{-1}"
+state    real  ph_no2          ikj     misc        1         -      r        "PHOTR4"                "NO2 Photolysis Rate" "min{-1}"
 state    real  ph_no3o2        ikj     misc        1         -      r        "PHOTR5"                "NO3O2 Photolysis Rate" "min{-1}"
 state    real  ph_no3o         ikj     misc        1         -      r        "PHOTR6"                "NO3O Photolysis Rate" "min{-1}"
 state    real  ph_hno2         ikj     misc        1         -      r        "PHOTR7"                "HNO2 Photolysis Rate" "min{-1}"
@@ -1051,6 +1060,8 @@ rconfig   integer kemit                    namelist,chem        1              9
 rconfig   integer nmegan                   namelist,chem        1              138     irh     "nmegan"                ""      ""
 rconfig   integer kfuture                  namelist,chem        1              1       -       "kfuture"                ""      ""
 rconfig   integer kfire                    namelist,chem        1              1       -       "kfire"                ""      ""
+rconfig   integer kemit_aircraft           namelist,chem        1              1       -       "kemit_aircraft"                ""      ""
+rconfig   integer kdvel                    namelist,chem        1              1       -       "kdvel"                ""      ""
 rconfig   integer errosion_dim             namelist,chem        1              3       -       "errosion_dim"            ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
 # Lightning
@@ -1084,6 +1095,7 @@ rconfig   integer     chem_in_opt         namelist,chem          max_domains    
 rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh    "phot_opt"            ""      ""
 rconfig   integer     gas_drydep_opt      namelist,chem          max_domains    1       rh    "gas_drydep_opt"      ""      ""
 rconfig   integer     aer_drydep_opt      namelist,chem          max_domains    1       rh    "aer_drydep_opt"      ""      ""
+rconfig   integer     diagnostic_chem     namelist,chem          max_domains    1       rh    "diagnostic_chem"      ""      ""
 rconfig   integer   aer_aerodynres_opt    namelist,chem          max_domains    1       rh    "aer_aerodynres_opt"      ""      ""
 rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"       ""      ""
@@ -1102,7 +1114,10 @@ rconfig   logical     have_bcs_tracer     namelist,chem          max_domains    
 rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
 rconfig   integer     aer_op_opt          namelist,chem          max_domains    1       rh    "aer_op_opt"          ""      ""
 rconfig   integer     opt_pars_out        namelist,chem          1    0       h    "opt_pars_out"          ""      ""
-rconfig   integer     tracer_opt          namelist,chem          max_domains    0       rh    "tracer_opt"          ""      ""
+# aircraft emissions
+rconfig   integer    aircraft_emiss_opt           namelist,chem    max_domains  0                                     rh    "aircraft_emiss_opt"                      ""    ""
+rconfig   integer    kemit_aircraft               namelist,chem       1         1                                     irh   "kemit_aircraft"                          ""    ""
+
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
@@ -1139,12 +1154,14 @@ package   racmsorg_kpp      chem_opt==105                  -            chem:so2
 
 package   radm2sorg_kpp     chem_opt==106                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 
+package   racm_esrlsorg_kpp      chem_opt==107                  -            chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
+
 package   cbm4_kpp          chem_opt==110                  -          chem:no,no2,no3,n2o5,hono,hno3,pna,nh3,so2,sulf,o1d_cb4,o,ho,o3,h2o2,hcho,ald2,c2o3,pan,par,ror,ole,eth,tol,cres,to2,cro,open,xyl,mgly,iso,xo2,xo2n,co,ho2
 # KPP mechanism from mozart
 package   mozart_kpp        chem_opt==111                  -          chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,so4,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,meko2
 
 # KPP mechanism from mozart + gocart
-package   mozcart_kpp       chem_opt==112                  -          chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,so4,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,meko2,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4
+package   mozcart_kpp       chem_opt==112                  -          chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,so4,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,meko2,p10,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4
 
 # KPP mechanism from CBMZ
 package   cbmz_bb_kpp       chem_opt==120                -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,ch4,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
@@ -1167,6 +1184,8 @@ package   eradmsorg       emiss_opt==3                   -             emis_ant:
 package   ecbmz_mosaic    emiss_opt==4                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_no2,e_ch3oh,e_c2h5oh,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc
 package   ecptec          emiss_opt==5                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm_25,e_pm_10,e_oc,e_sulf,e_bc
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10
+package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16
+package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
 
 #
 #package   seasalt_pnnl    emiss_ssalt_opt==1                   -             -
@@ -1178,6 +1197,11 @@ package   photmad       phot_opt==1                  -             -
 package   photfastj     phot_opt==2                  -             -
 package   ftuv          phot_opt==3                  -             -
 package   wesely        gas_drydep_opt==1            -             -
+#
+# diagmostiv pakages, first for deposition velocities (original package for Mozart)
+#
+package   depvel1  diagnostic_chem==1                -             dvel:dvel_o3,dvel_no,dvel_no2,dvel_nh3,dvel_hno3,dvel_hno4,dvel_h2o2,dvel_co,dvel_ch3ooh,dvel_hcho,dvel_ch3oh,dvel_eo2,dvel_ald,dvel_ch3cooh,dvel_acet,dvel_mgly,dvel_paa,dvel_pooh,dvel_pan,dvel_mpan,dvel_mco3,dvel_mvkooh,dvel_c2h5oh,dvel_etooh,dvel_prooh,dvel_acetp,dvel_onit,dvel_onitr,dvel_isooh,dvel_acetol,dvel_glyald,dvel_hydrald,dvel_alkooh,dvel_mekooh,dvel_tolooh,dvel_xooh,dvel_so2,dvel_so4,dvel_terpooh
+#
 package   gunther1      bio_emiss_opt==1             -             -
 package   beis313       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
@@ -1204,6 +1228,7 @@ package   emiss_inpt_cptec            emiss_inpt_opt==3            -            
 package   emiss_inpt_pnnl_cm          emiss_inpt_opt==101          -             -
 package   emiss_inpt_pnnl_rs          emiss_inpt_opt==102          -             -
 package   emiss_inpt_cb4              emiss_inpt_opt==103          -             -
+package   emiss_inpt_mozcem           emiss_inpt_opt==111          -             -
 
 # gas/aer_bc/ic_default     = bc/ic in "standard(=grell)" wrf-chem for radm2-sorgam species,
 #                                   and first-cut implementation for cbmz-mosaic species
@@ -1218,11 +1243,18 @@ package   aer_bc_default              aer_bc_opt==1                -            
 package   aer_bc_pnnl                 aer_bc_opt==101              -             -
 package   aer_ic_default              aer_ic_opt==1                -             -
 package   aer_ic_pnnl                 aer_ic_opt==101              -             -
-
+#
+# tracer options. (smoke) only has one tracer for smoke (has to run with biomassburning).
+#                 (test1) has lateral boundary tracer(1,2), stratospheric tracer(5,6), 
+#                     boundary layer tracer(7,8), surface tracer (3,4)
+#                 (test2) has surface tracer replaced by smoke tracer
 package   tracer_smoke  tracer_opt==1       -             tracer:smoke
-package   tracer_me     tracer_opt==2       -             tracer:tr17_0,tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8,tr17_9,tr18_0,tr18_1,tr18_2,tr18_3,tr18_4,tr18_5,tr18_6,tr18_7,tr18_8,tr18_9
-package   tracer_sUS    tracer_opt==3       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
+package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
+package   tracer_test2  tracer_opt==3       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 
 # Lightning
 package   crmpickering  lightning_opt==1   -   state:ic_flshrate,cg_flshrate
+
+# the following arrays only needed for aircraft emissions options
+package   aircraft1      aircraft_emiss_opt==1             -       emis_aircraft:eac_no,eac_co,eac_so2,eac_ch4
 

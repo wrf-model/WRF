@@ -178,7 +178,7 @@
    chem_select: SELECT CASE(config_flags%chem_opt)
 !
    CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-                     RACMSORG_AQ,  RACMSORG_KPP)
+         RACM_ESRLSORG_KPP, RACMSORG_AQ,  RACMSORG_KPP)
      call optical_prep_modal(nbin_o, chem, alt,                        &
           h2oai, h2oaj, refindx, radius_wet, number_bin,               &
           radius_core, refindx_core, refindx_shell,                    &
@@ -1238,6 +1238,7 @@
    USE module_model_constants
    USE module_data_sorgam
    USE module_data_gocart_seas
+   USE module_data_gocartchem, only: oc_mfac,nh4_mfac
    USE module_data_mosaic_asect, only: hygro_msa_aer
 ! real*8, DIMENSION (4), PARAMETER :: ra(4)=(/1.d-1,5.d-1,1.5d0,5.0d0/)
 ! real*8, DIMENSION (4), PARAMETER :: rb(4)=(/5.d-1,1.5d0,5.d0,1.d1/)
@@ -1583,8 +1584,9 @@
 ! SAM 7/18/09 - Put fraction of GOCART sulfate, organic, black carbon masses into modal accumulation mode
         mass_oinj = (1.-FRAC2Aitken)*chem(i,k,j,p_p25)*conv1a
         mass_so4j= (1.-FRAC2Aitken)*chem(i,k,j,p_sulf)*conv1sulf
-        mass_aro1j= (1.-FRAC2Aitken)*chem(i,k,j,p_oc1)*conv1a
-        mass_aro2j= (1.-FRAC2Aitken)*chem(i,k,j,p_oc2)*conv1a
+        mass_nh4j= (1.-FRAC2Aitken)*chem(i,k,j,p_sulf)*conv1sulf*(nh4_mfac-1.)
+        mass_aro1j= (1.-FRAC2Aitken)*chem(i,k,j,p_oc1)*conv1a*oc_mfac
+        mass_aro2j= (1.-FRAC2Aitken)*chem(i,k,j,p_oc2)*conv1a*oc_mfac
         mass_bc1j= (1.-FRAC2Aitken)*chem(i,k,j,p_bc1)*conv1a
         mass_bc2j= (1.-FRAC2Aitken)*chem(i,k,j,p_bc2)*conv1a
         mass_bcj= mass_bc1j + mass_bc2j
@@ -1594,8 +1596,9 @@
 ! SAM 7/18/09 - Put fraction of GOCART sulfate, organic, black carbon masses into modal Aitken mode
         mass_oini = FRAC2Aitken*chem(i,k,j,p_p25)*conv1a
         mass_so4i= FRAC2Aitken*chem(i,k,j,p_sulf)*conv1sulf
-        mass_aro1i= FRAC2Aitken*chem(i,k,j,p_oc1)*conv1a
-        mass_aro2i= FRAC2Aitken*chem(i,k,j,p_oc2)*conv1a
+        mass_nh4i= FRAC2Aitken*chem(i,k,j,p_sulf)*conv1sulf*(nh4_mfac-1.)
+        mass_aro1i= FRAC2Aitken*chem(i,k,j,p_oc1)*conv1a*oc_mfac
+        mass_aro2i= FRAC2Aitken*chem(i,k,j,p_oc2)*conv1a*oc_mfac
         mass_bc1i= FRAC2Aitken*chem(i,k,j,p_bc1)*conv1a
         mass_bc2i= FRAC2Aitken*chem(i,k,j,p_bc2)*conv1a
         mass_bci= mass_bc1i + mass_bc2i
@@ -1700,6 +1703,7 @@
 ! Also, for hygroscopic BC part, assume kappa of OC (how can BC be hydrophylic?)
                relh_frc=amin1(.9,relhum(i,k,j)) !0.8   ! Put in fractional relative humidity, max of .9, here
                   vol_h2o = vol_so4*hygro_so4_aer + vol_aro2*hygro_oc_aer + &
+                            vol_nh4*hygro_nh4_aer                         + &
                   vol_cl*hygro_cl_aer + vol_na*hygro_na_aer + vol_msa*hygro_msa_aer + &
                   vol_oin*hygro_oin_aer + vol_bc2*hygro_oc_aer  + vol_soil*hygro_dust_aer
                   vol_h2o = relh_frc*vol_h2o/(1.-relh_frc)

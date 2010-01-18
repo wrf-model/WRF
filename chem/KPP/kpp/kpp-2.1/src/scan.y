@@ -44,6 +44,7 @@
   #define YYDEBUG 1
   extern char yytext[];
   extern FILE * yyin;
+  /* extern int yyerrstatus; */
   
   int nError   = 0;
   int nWarning = 0;
@@ -391,7 +392,9 @@ void yyerror( char * str )
 
 void ParserErrorMessage()
 {
+#ifndef YYBISON
   yyerrok;
+#endif
 /*
   Message("[%d,%s] -> [%d,%s]", crtTokType, crtToken, nextTokType, nextToken );  
 */

@@ -17,13 +17,15 @@ PROGRAM convert_emissions
    USE module_machine
    USE module_wrf_error
    USE module_integrate
-   USE module_domain, ONLY : domain
-   USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver
+   USE module_domain
+!   USE module_domain, ONLY : domain, alloc_and_configure_domain, &
+!        domain_clock_set, domain_clock_get, head_grid, program_name, domain_clockprint
+   USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver, find_my_parent
    USE module_driver_constants
-   USE module_configure, ONLY : grid_config_rec_type, model_config_rec
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &
+        initial_config, get_config_as_buffer, set_config_as_buffer
    USE module_io_domain
-   USE module_timing
-   USE module_utility
+
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -134,6 +136,8 @@ PROGRAM convert_emissions
    CHARACTER (LEN=80) :: inpname , eminame, dum_str, wrfinname
    CHARACTER (LEN=80)       :: bdyname, bdyname2
    CHARACTER (LEN=20)       :: dname
+   CHARACTER (LEN=256)      :: timestr
+
 
 ! Number of reference emission and LAI files to open
    INTEGER, PARAMETER :: numfil=19
@@ -266,8 +270,8 @@ PROGRAM convert_emissions
    CALL Setup_Timekeeping ( grid )
    CALL domain_clock_set( grid, &
                           time_step_seconds=model_config_rec%interval_seconds )
-   CALL domain_clock_get ( grid, current_timestr=message )
-   write(message,FMT='(A,A)') ' current_time ',Trim(message)
+   CALL domain_clock_get( grid, current_timestr=timestr )
+   write(message,FMT='(A,A)') ' current_time ',Trim(timestr)
    CALL  wrf_debug ( 100, message )
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -440,7 +444,7 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 00, message )
 
    CALL construct_filename1( inpname , 'wrfchemi_gocart_bg' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input8 , "DATASET=AUXINPUT8", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput8 , "DATASET=AUXINPUT8", ierr )
    write(message,FMT='(A,A)') '  GOCART BACKGROUND DATA file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    
@@ -571,7 +575,7 @@ PROGRAM convert_emissions
 
    ENDIF ! chem_opt gocart_simple or gocartracm
 
-   CALL output_aux_model_input8 ( id1 , grid , config_flags , ierr )
+   CALL output_auxinput8 ( id1 , grid , config_flags , ierr )
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT8" )
 
@@ -886,9 +890,9 @@ PROGRAM convert_emissions
 ! emissions from retro/edgar/gocart
 !
          CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
-         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
 
-         CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
+         CALL output_auxinput5 ( id1 , grid , config_flags , ierr )
 
          CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
 
@@ -1267,7 +1271,7 @@ PROGRAM convert_emissions
          write(message, FMT='(A,A)') ' NOW OPEN FILE FOR WRITE: ',TRIM(inpname)
          call wrf_message( TRIM( message ) )
 
-         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input7 , "DATASET=AUXINPUT7", ierr )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput7 , "DATASET=AUXINPUT7", ierr )
          write(message,FMT='(A,A)') ' FIRE EMISSIONS OUTPUT file name: ',TRIM(inpname)
          CALL  wrf_message ( message )
          IF ( ierr .NE. 0 ) THEN
@@ -1275,7 +1279,7 @@ PROGRAM convert_emissions
             CALL wrf_error_fatal( TRIM( message ) )
          ENDIF
 
-         CALL output_aux_model_input7 ( id1 , grid , config_flags , ierr )
+         CALL output_auxinput7 ( id1 , grid , config_flags , ierr )
  
          CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT7" )
 
@@ -1289,6 +1293,7 @@ PROGRAM convert_emissions
        CALL wrf_error_fatal( TRIM( message ) )
     endif
     if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG .or.  &
+       CONFIG_FLAGS%EMISS_OPT == MOZEM .or. CONFIG_FLAGS%EMISS_OPT == MOZCEM    .or.  &
        CONFIG_FLAGS%EMISS_OPT == ECBMZ_MOSAIC ) then
    !  Figure out our loop count for the processing times.
 #ifdef DM_PARALLEL
@@ -1685,7 +1690,7 @@ PROGRAM convert_emissions
 
    write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
    CALL  wrf_debug ( 100, message )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
    write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    IF ( ierr .NE. 0 ) THEN
@@ -1705,7 +1710,7 @@ PROGRAM convert_emissions
 
    write(message,FMT='(A)') ' WRITE EMISSIONS 1'
    CALL  wrf_message ( message )
-    CALL output_aux_model_input5 ( id1 , grid , config_flags, ierr )
+    CALL output_auxinput5 ( id1 , grid , config_flags, ierr )
 
    CALL wrf_dm_bcast_bytes ( time_loop , rnum8 )
    nemi_frames = time_loop
@@ -1724,8 +1729,8 @@ PROGRAM convert_emissions
      IF (wrf_dm_on_monitor()) THEN
      write(message,FMT='(A,I4)') 'emi_frame: ',emi_frame
      CALL  wrf_debug ( 100, message )
-     CALL domain_clock_get ( grid, current_timestr=message )
-     write(message,FMT='(A,A)') ' Current time ',Trim(message)
+     CALL domain_clock_get ( grid, current_timestr=timestr )
+     write(message,FMT='(A,A)') ' Current time ',Trim(timestr)
      CALL  wrf_debug ( 100, message )
 
      current_date_char = current_date(1:19)
@@ -1759,7 +1764,7 @@ PROGRAM convert_emissions
            CALL construct_filename1 ( inpname ,TRIM(eminame), grid%id , 2 )
            write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
            CALL  wrf_debug ( 0, message )
-           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
            write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
            CALL  wrf_message ( message )
            IF ( ierr .NE. 0 ) THEN
@@ -1774,8 +1779,8 @@ PROGRAM convert_emissions
 #else
      write(message,FMT='(A,I4)') 'emi_frame: ',emi_frame
      CALL  wrf_debug ( 100, message )
-     CALL domain_clock_get ( grid, current_timestr=message )
-     write(message,FMT='(A,A)') ' Current time ',Trim(message)
+     CALL domain_clock_get ( grid, current_timestr=timestr )
+     write(message,FMT='(A,A)') ' Current time ',Trim(timestr)
      CALL  wrf_debug ( 100, message )
 
      current_date_char = current_date(1:19)
@@ -1817,7 +1822,7 @@ PROGRAM convert_emissions
            CALL construct_filename1 ( inpname , TRIM(eminame) , grid%id , 2 )
            write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
            CALL  wrf_debug ( 0, message )
-           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
            write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
            CALL  wrf_message ( message )
            IF ( ierr .NE. 0 ) THEN
@@ -2138,7 +2143,7 @@ PROGRAM convert_emissions
 
      write(message,FMT='(A)') ' Output emissions '
      CALL  wrf_debug ( 100, message ) 
-     CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
+     CALL output_auxinput5 ( id1 , grid , config_flags , ierr )
 
 !   idum1 = 1
    END DO   ! NEMI_FRAMES loop
@@ -2410,7 +2415,7 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 100, message )
 
    CALL construct_filename1( inpname , 'wrfbiochemi' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input6 , "DATASET=AUXINPUT6", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput6 , "DATASET=AUXINPUT6", ierr )
    write(message,FMT='(A,A)') ' BIOGENIC EMISSIONS file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
 
@@ -2421,7 +2426,7 @@ PROGRAM convert_emissions
    write(message,FMT='(A)') ' WRITE BIOGENIC EMISSIONS WRF file '
    CALL  wrf_debug ( 100, message )
 
-   CALL output_aux_model_input6 ( id1 , grid , config_flags , ierr )
+   CALL output_auxinput6 ( id1 , grid , config_flags , ierr )
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT6" )
 

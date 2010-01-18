@@ -65,5 +65,7 @@ dimspec    +       2     namelist=kemit                    z     emissions_zdim
 dimspec    nm      2     namelist=nmegan                   z     megan_species
 dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
 dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
+dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
+dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
 dimspec    .       3     namelist=errosion_dim             z     dust_errosion_dimension
 endif

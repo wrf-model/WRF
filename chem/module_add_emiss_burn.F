@@ -96,6 +96,16 @@ CONTAINS
           enddo
           enddo
           enddo
+         CASE (TRACER_TEST1)
+          do j=jts,jte
+          do i=its,ite
+          do k=kts,kte
+             conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+             chem(i,k,j,p_tr17_3)  =  chem(i,k,j,p_tr17_3)+ebu(i,k,j,p_ebu_co)*conv_rho
+             chem(i,k,j,p_tr17_4)  =  chem(i,k,j,p_tr17_4)+ebu(i,k,j,p_ebu_co)*conv_rho
+          enddo
+          enddo
+          enddo
          CASE DEFAULT
              call wrf_debug(15,'nothing done with burn emissions for tracers here')
       END SELECT temiss_select
@@ -148,7 +158,7 @@ CONTAINS
         enddo
  ;       enddo
         enddo
-      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RACMSORG_AQ)
+      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RACM_ESRLSORG_KPP, RADM2SORG_AQ, RACMSORG_AQ)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte
@@ -326,9 +336,10 @@ CONTAINS
         enddo
         enddo
       CASE (MOZCART_KPP)
+        if( biomass_burn_opt == BIOMASSB_MOZC ) then
           do j=jts,jte
-          do i=its,ite
           do k=kts,kte
+          do i=its,ite
             conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60./dz8w(i,k,j)
         chem(i,k,j,p_co)  = chem(i,k,j,p_co)   +ebu(i,k,j,p_ebu_co)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)  +ebu(i,k,j,p_ebu_no)*conv_rho
@@ -339,24 +350,29 @@ CONTAINS
         chem(i,k,j,p_c2h6) = chem(i,k,j,p_c2h6) + ebu(i,k,j,p_ebu_c2h6)*conv_rho
         chem(i,k,j,p_c3h6) = chem(i,k,j,p_c3h6) + ebu(i,k,j,p_ebu_c3h6)*conv_rho
         chem(i,k,j,p_c3h8)  = chem(i,k,j,p_c3h8) + ebu(i,k,j,p_ebu_c3h8)*conv_rho
-        chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho) +ebu(i,k,j,p_ebu_hcho)*conv_rho
-        chem(i,k,j,p_ald)  = chem(i,k,j,p_ald) +ebu(i,k,j,p_ebu_ald)*conv_rho
-
+        chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho) +ebu(i,k,j,p_ebu_ch2o)*conv_rho
+        chem(i,k,j,p_ald)  = chem(i,k,j,p_ald) +ebu(i,k,j,p_ebu_ch3cho)*conv_rho
         chem(i,k,j,p_acet)  = chem(i,k,j,p_acet) + ebu(i,k,j,p_ebu_ch3coch3)*conv_rho
         chem(i,k,j,p_ch3oh)  = chem(i,k,j,p_ch3oh) + ebu(i,k,j,p_ebu_ch3oh)*conv_rho
         chem(i,k,j,p_mek)  = chem(i,k,j,p_mek) + ebu(i,k,j,p_ebu_mek)*conv_rho
         chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2) +ebu(i,k,j,p_ebu_so2)*conv_rho
-        chem(i,k,j,p_tol)  = chem(i,k,j,p_tol) +ebu(i,k,j,p_ebu_tol)*conv_rho
+        chem(i,k,j,p_so4)  =  chem(i,k,j,p_so4) +ebu(i,k,j,p_ebu_sulf)*conv_rho
+        chem(i,k,j,p_tol)  = chem(i,k,j,p_tol) +ebu(i,k,j,p_ebu_toluene)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3) + ebu(i,k,j,p_ebu_nh3)*conv_rho
         chem(i,k,j,p_oc1)  =  chem(i,k,j,p_oc1)                        &   
                          +r_q*ebu(i,k,j,p_ebu_oc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)                                                   
         chem(i,k,j,p_bc1)  =  chem(i,k,j,p_bc1)                        &   
                          +r_q*ebu(i,k,j,p_ebu_bc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_p10)  =  chem(i,k,j,p_p10)                        &   
+                         +r_q*ebu(i,k,j,p_ebu_pm10)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_p25)  =  chem(i,k,j,p_p25)                        &   
                          +r_q*ebu(i,k,j,p_ebu_pm25)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_dms)  =  chem(i,k,j,p_dms)                        &
+                         +r_q*ebu(i,k,j,p_ebu_dms)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
         enddo
         enddo
+        endif
       CASE (CHEM_TRACE2)
           do j=jts,jte
           do i=its,ite

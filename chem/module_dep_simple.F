@@ -1,191 +1,253 @@
     MODULE module_dep_simple
+
       IMPLICIT NONE
-!
+
+!--------------------------------------------------
 ! many of these parameters will depend on the RADM mechanism!
 ! if you change it, lets talk about it and get it done!!!
-!
+!--------------------------------------------------
 
-      INTEGER, PARAMETER :: dep_seasons = 5 ,   nlu = 25,                   &
-        nseason = 1, nseasons = 2
-!
+      INTEGER, PARAMETER :: dep_seasons = 5
+      INTEGER, PARAMETER :: nlu = 25
+      REAL, parameter    :: small_value = 1.e-36
+      REAL, parameter    :: large_value = 1.e36
+
+!--------------------------------------------------
 ! following currently hardwired to USGS
-!
-      INTEGER, PARAMETER :: isice_temp=24,iswater_temp=16
-      character, parameter :: mminlu='USGS'
-!
+!--------------------------------------------------
+      integer, parameter :: isice_temp   = 24
+      integer, parameter :: iswater_temp = 16
+      integer, parameter :: wrf2mz_lt_map(nlu) = (/ 1, 2, 2, 2, 2, &
+                                                    4, 3, 3, 3, 3, &
+                                                    4, 5, 4, 5, 6, &
+                                                    7, 9, 6, 8, 9, &
+                                                    6, 6, 8, 0, 0 /)
+      real, parameter    :: wh2o = 18.0153
+      real, parameter    :: wpan = 121.04793
+      character(len=4), parameter :: mminlu = 'USGS'
+
+      INTEGER, allocatable :: seasonal_wes(:,:,:,:)
+      INTEGER :: month = 0
       INTEGER :: ixxxlu(nlu)
-      REAL :: kpart(nlu),                                                   &
-        rac(nlu,dep_seasons), rclo(nlu,dep_seasons), rcls(nlu,dep_seasons), &
-        rgso(nlu,dep_seasons), rgss(nlu,dep_seasons),                       &
-        ri(nlu,dep_seasons), rlu(nlu,dep_seasons)
-!
+      REAL    :: kpart(nlu)
+      REAL    :: rac(nlu,dep_seasons), rclo(nlu,dep_seasons), rcls(nlu,dep_seasons)
+      REAL    :: rgso(nlu,dep_seasons), rgss(nlu,dep_seasons)
+      REAL    :: ri(nlu,dep_seasons), rlu(nlu,dep_seasons)
+      REAL    :: ri_pan(5,11)
+      real    :: c0_pan(11) = (/ 0.000, 0.006, 0.002, 0.009, 0.015, &
+                                 0.006, 0.000, 0.000, 0.000, 0.002, 0.002 /)
+      real    :: k_pan (11) = (/ 0.000, 0.010, 0.005, 0.004, 0.003, &
+                                 0.005, 0.000, 0.000, 0.000, 0.075, 0.002 /)
+
+!--------------------------------------------------
 ! NO MORE THAN 1000 SPECIES FOR DEPOSITION
-!
-      REAL, DIMENSION (1:1000) :: dratio,hstar,hstar4,f0,dhr,scpr23
+!--------------------------------------------------
+      REAL    :: dratio(1000), hstar(1000), hstar4(1000)
+      REAL    :: f0(1000), dhr(1000), scpr23(1000)
+
+!--------------------------------------------------
 ! .. Default Accessibility ..
+!--------------------------------------------------
     PUBLIC
-            logical, allocatable :: is_aerosol(:) ! true if field is aerosol (any phase)
-! ..
+
+    logical, allocatable :: is_aerosol(:) ! true if field is aerosol (any phase)
+
     CONTAINS
-       subroutine wesely_driver(id,ktau,dtstep,                           &
-               config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
-               p_phy,chem,rho_phy,dz8w,ddvel,aer_res_def,aer_res_zcen,    &
-               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               numgas,                                                    &
-               ids,ide, jds,jde, kds,kde,                                 &
-               ims,ime, jms,jme, kms,kme,                                 &
-               its,ite, jts,jte, kts,kte                                  )
-!----------------------------------------------------------------------
+
+SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
+                          gmt, julday, t_phy,moist, p8w, t8w, raincv,     &
+                          p_phy, chem, rho_phy, dz8w, ddvel, aer_res_def, &
+                          aer_res_zcen, ivgtyp, tsk, gsw, vegfra, pbl,    &
+                          rmol, ust, znt, xlat, xlong,                    &
+                          z, z_at_w, snowh, numgas,                       &
+                          ids,ide, jds,jde, kds,kde,                      &
+                          ims,ime, jms,jme, kms,kme,                      &
+                          its,ite, jts,jte, kts,kte                       )
+!--------------------------------------------------
+!  Wesely dry dposition driver
+!--------------------------------------------------
+
   USE module_model_constants 
   USE module_configure
   USE module_state_description                       
   USE module_data_sorgam
           
    INTEGER,      INTENT(IN   ) :: id,julday,                              &
-                                  numgas,                                 &
+                                  numgas, current_month,                  &
                                   ids,ide, jds,jde, kds,kde,              &
                                   ims,ime, jms,jme, kms,kme,              &
                                   its,ite, jts,jte, kts,kte     
-   INTEGER,      INTENT(IN   ) ::                                         &
-                                  ktau            
-      REAL,      INTENT(IN   ) ::                                         &
-                             dtstep,gmt
-!
-! advected moisture variables
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),               &
-         INTENT(IN ) ::                                   moist  
-!
-! advected chemical species
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                &
-         INTENT(INOUT ) ::                                   chem
-!
-! deposition velocities
-!
-   REAL, DIMENSION( its:ite, jts:jte, num_chem ),                         &
-         INTENT(INOUT ) ::   ddvel                     
-!
-! input from met model
-!
+   INTEGER,      INTENT(IN   ) :: ktau            
+      REAL,      INTENT(IN   ) :: dtstep,gmt
 
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,              &
-          INTENT(IN   ) ::                                                &
+!--------------------------------------------------
+! advected moisture variables
+!--------------------------------------------------
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ), INTENT(IN ) :: &
+                                                      moist  
+!--------------------------------------------------
+! advected chemical species
+!--------------------------------------------------
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ), INTENT(INOUT ) :: &
+                                                      chem
+!--------------------------------------------------
+! deposition velocities
+!--------------------------------------------------
+   REAL, DIMENSION( its:ite, jts:jte, num_chem ), INTENT(INOUT ) ::      &
+                                                      ddvel                     
+!--------------------------------------------------
+! input from met model
+!--------------------------------------------------
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) ::      &
                                                       t_phy,              &
                                                       p_phy,              &
                                                       dz8w,               &
-                                                      z    ,              &
-                                              t8w,p8w,z_at_w ,            &
-                                                    rho_phy
-   INTEGER,DIMENSION( ims:ime , jms:jme )                  ,              &
-          INTENT(IN   ) ::                                                &
+                                                      z,                  &
+                                                      t8w,                &
+                                                      p8w,                &
+                                                      z_at_w,             &
+                                                      rho_phy
+   INTEGER,DIMENSION( ims:ime , jms:jme ), INTENT(IN   ) ::               &
                                                      ivgtyp
-   REAL,  DIMENSION( ims:ime , jms:jme )                   ,              &
-          INTENT(INOUT   ) ::                                                &
+   REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(INOUT   ) ::             &
                                                      tsk,                 &
                                                      gsw,                 &
-                                                  vegfra,                 &
+                                                     vegfra,              &
                                                      pbl,                 &
                                                      rmol,                &
                                                      ust,                 &
                                                      xlat,                &
                                                      xlong,               &
-                                                     znt,raincv
+                                                     raincv,              &
+                                                     znt
+   REAL, intent(inout) ::                            aer_res_def(its:ite,jts:jte)
+   REAL, intent(inout) ::                            aer_res_zcen(its:ite,jts:jte)
+   REAL,  optional, INTENT(IN)  ::                   snowh(ims:ime,jms:jme)
+   TYPE(grid_config_rec_type),  INTENT(IN) ::        config_flags
 
-!--- deposition and emissions stuff
-! ..
-! .. Local Scalars ..
-      REAL ::  clwchem,dvfog,dvpart,pa,rad,rhchem,ta,ustar,vegfrac,z1,zntt
+!--------------------------------------------------
+! .. Local Scalars
+!--------------------------------------------------
+      REAL    ::  clwchem, dvfog, dvpart, pa, rad
+      REAL    ::  rhchem, ta, ustar, vegfrac, z1, zntt
       INTEGER :: i, iland, iprt, iseason, j, jce, jcs, n, nr, ipr,jpr,nvr
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
-! ..
-! .. Local Arrays ..  
-      REAL :: p(kts:kte), srfres(numgas),ddvel0d(numgas)
-!
+!--------------------------------------------------
+! .. Local Arrays
+!--------------------------------------------------
+      REAL :: p(kts:kte)
+      REAL :: srfres(numgas)
+      REAL :: ddvel0d(numgas)
+
+!-----------------------------------------------------------
 ! necessary for aerosols (module dependent)         
-!  
-      real :: aer_res_def(its:ite,jts:jte), aer_res_zcen(its:ite,jts:jte)
+!-----------------------------------------------------------
       real :: rcx(numgas)
                                                      
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-          
-                                                     
-! ..                                                 
-! .. Intrinsic Functions ..                       
+!-----------------------------------------------------------
+! .. Intrinsic Functions
+!-----------------------------------------------------------
       INTRINSIC max, min                             
-! ..                                                 
+
       CALL wrf_debug(15,'in dry_dep_wesely')
-      iseason = 1
-      if(julday.lt.90.or.julday.gt.270)then
-        iseason=2
-        CALL wrf_debug(15,'setting iseason to 2')
-      endif
-      do 100 j=jts,jte 
-      do 100 i=its,ite 
-      iprt=0
-      iland = ivgtyp(i,j)
-      ta = tsk(i,j)
-      rad = gsw(i,j)
-      vegfrac = vegfra(i,j)
-      pa = .01*p_phy(i,kts,j)
-      clwchem = moist(i,kts,j,p_qc)
-      ustar = ust(i,j)
-      zntt = znt(i,j)
+      write(*,*) 'in dry_dep_wesely'
 
-      z1 = z_at_w(i,kts+1,j)-z_at_w(i,kts,j)
-
-!     Set logical default values
-      rainflag = .FALSE.
-      wetflag = .FALSE.
-      highnh3 = .FALSE.
-      if(p_qr.gt.1)then
-         if(moist(i,kts,j,p_qr).gt.1.e-18 .or. raincv(i,j).gt.0.)rainflag = .true.
-      endif
-      rhchem = MIN( 100.,100. * moist(i,kts,j,p_qv) / &
-               (3.80*exp(17.27*(t_phy(i,kts,j)-273.)/(t_phy(i,kts,j)-36.))/pa))
-      rhchem = MAX(5.,RHCHEM)
-      if (rhchem >= 95.) wetflag = .true.
-
-      if(p_nh3.gt.1)then
-         if(chem(i,kts,j,p_nh3).gt.2.*chem(i,kts,j,p_so2))highnh3 = .true.
-      endif
-
-!--- deposition
-      
-!     if(snowc(i,j).gt.0.)iseason=4
-      CALL rc(rcx,ta,rad,rhchem,iland,iseason,numgas,      &
-        wetflag,rainflag,highnh3,iprt,p_o3,p_so2,p_nh3)
-      srfres=0.
-      DO n = 1, numgas-2
-        srfres(n) = rcx(n)
-      END DO
-      CALL deppart(rmol(i,j),ustar,rhchem,clwchem,iland,dvpart,dvfog)
-      ddvel0d=0.
-      aer_res_def(i,j)=0.
-      aer_res_zcen(i,j)=0.
-      CALL landusevg(ddvel0d,ustar,rmol(i,j),zntt,z1,dvpart,iland,        &
-           numgas,srfres,aer_res_def(i,j),aer_res_zcen(i,j),p_sulf)
-
-!wig: CMBZ does not have HO and HO2 last so need to copy all species
-!      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
-      ddvel(i,j,1:numgas)=ddvel0d(1:numgas)
-      if ( (config_flags%chem_opt == RADM2         ) .or.   &
-           (config_flags%chem_opt == RADM2SORG     ) .or.   &
-           (config_flags%chem_opt == RADM2SORG_AQ) ) then
-               ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
+      if( config_flags%chem_opt /= MOZART_KPP .and. &
+          config_flags%chem_opt /= MOZCART_KPP ) then
+         if( julday < 90 .or. julday > 270 ) then
+            iseason = 2
+            CALL wrf_debug(15,'setting iseason to 2')
+         else
+            iseason = 1
+         endif
       end if
 
 
-100   continue
-!
+tile_lat_loop : &
+      do j = jts,jte 
+tile_lon_loop : &
+         do i = its,ite 
+            iprt  = 0
+            iland = ivgtyp(i,j)
+            if( config_flags%chem_opt == MOZART_KPP .or. &
+                config_flags%chem_opt == MOZCART_KPP ) then
+               if( snowh(i,j) < .01 ) then 
+                  iseason = seasonal_wes(i,j,iland,current_month)
+               else
+                  iseason = 4
+               endif
+            end if
+            ta    = tsk(i,j)
+            rad   = gsw(i,j)
+            vegfrac = vegfra(i,j)
+            pa      = .01*p_phy(i,kts,j)
+            clwchem = moist(i,kts,j,p_qc)
+            ustar = ust(i,j)
+            zntt  = znt(i,j)
+            z1    = z_at_w(i,kts+1,j) - z_at_w(i,kts,j)
+!-----------------------------------------------------------
+!     Set logical default values
+!-----------------------------------------------------------
+            rainflag = .FALSE.
+            wetflag  = .FALSE.
+            highnh3  = .FALSE.
+            if(p_qr > 1) then
+               if(moist(i,kts,j,p_qr) > 1.e-18 .or. raincv(i,j) > 0.) then
+                  rainflag = .true.
+               endif
+            endif
+            rhchem = MIN( 100.,100. * moist(i,kts,j,p_qv) / &
+                     (3.80*exp(17.27*(t_phy(i,kts,j)-273.)/(t_phy(i,kts,j)-36.))/pa))
+            rhchem = MAX(5.,RHCHEM)
+            if (rhchem >= 95.) wetflag = .true.
+
+            if( p_nh3 > 1 .and. p_so2 > 1 ) then
+               if( chem(i,kts,j,p_nh3) > 2.*chem(i,kts,j,p_so2) ) then
+                  highnh3 = .true.
+               endif
+            endif
+
+!-----------------------------------------------------------
+!--- deposition
+!-----------------------------------------------------------
+!     if(snowc(i,j).gt.0.)iseason=4
+            CALL rc( rcx, ta, rad, rhchem, iland, &
+                     iseason, numgas, wetflag, rainflag, highnh3, &
+                     iprt, moist(i,kts,j,p_qv), p8w(i,kts,j), config_flags%chem_opt )
+            if( config_flags%chem_opt /= MOZART_KPP .and. &
+                config_flags%chem_opt /= MOZCART_KPP ) then
+               srfres(1:numgas-2) = rcx(1:numgas-2)
+               srfres(numgas-1:numgas) = 0.
+            else
+               srfres(1:numgas) = rcx(1:numgas)
+            end if
+            CALL deppart( rmol(i,j), ustar, rhchem, clwchem, iland, dvpart, dvfog )
+            ddvel0d(1:numgas) = 0.
+            aer_res_def(i,j)  = 0.
+            aer_res_zcen(i,j) = 0.
+            CALL landusevg( ddvel0d, ustar, rmol(i,j), zntt, z1, dvpart, iland,        &
+                            numgas, srfres, aer_res_def(i,j), aer_res_zcen(i,j), p_sulf )
+
+!-----------------------------------------------------------
+!wig: CMBZ does not have HO and HO2 last so need to copy all species
+!      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
+!-----------------------------------------------------------
+            ddvel(i,j,1:numgas) = ddvel0d(1:numgas)
+            if ( (config_flags%chem_opt == RADM2         ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG     ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG_AQ) ) then
+                     ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
+            end if
+         end do tile_lon_loop
+      end do tile_lat_loop
+
+!-----------------------------------------------------------
 ! For the additional CBMZ species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
 ! unimportant.  **ALSO**, treat p_sulf as h2so4 vapor, not aerosol sulfate
-!
+!-----------------------------------------------------------
       if ( (config_flags%chem_opt == CBMZ          ) .or.   &
            (config_flags%chem_opt == CBMZ_BB       ) .or.   &
-           (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.   &
@@ -230,10 +292,11 @@
          end do
       end if
 
+!-----------------------------------------------------------
 ! For the additional CBM4 species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
 ! unimportant.
-!     
+!-----------------------------------------------------------
       if  (config_flags%chem_opt == CBM4_KPP          )   then
          do j=jts,jte
             do i=its,ite
@@ -246,8 +309,9 @@
          end do
       end if
 
+!-----------------------------------------------------------
 ! For gocartracm,radm
-!     
+!-----------------------------------------------------------
       if  ((config_flags%chem_opt == GOCARTRACM_KPP)  .OR.     &
            (config_flags%chem_opt == GOCARTRADM2_KPP) .OR.     &
            (config_flags%chem_opt == GOCARTRADM2))   then
@@ -262,8 +326,9 @@
             end do
          end do
       end if
+!-----------------------------------------------------------
 ! For gocartsimple : need msa. On the other hand sulf comes from aerosol routine
-!     
+!-----------------------------------------------------------
       if  (config_flags%chem_opt == GOCART_SIMPLE          )   then
          do j=jts,jte
             do i=its,ite
@@ -273,14 +338,68 @@
             end do
          end do
       end if
+!-----------------------------------------------------------
+! For mozart
+!-----------------------------------------------------------
+      if( config_flags%chem_opt == MOZART_KPP .or. &
+          config_flags%chem_opt == MOZCART_KPP )   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_mpan)    = ddvel(i,j,p_mpan)/3.
+               ddvel(i,j,p_mvkooh)  = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_isooh)   = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_xooh)    = ddvel(i,j,p_hno3)
+               ddvel(i,j,p_o)       = 0.
+               ddvel(i,j,p_o1d_cb4) = 0.
+               ddvel(i,j,p_no3)     = 0.
+               ddvel(i,j,p_n2o5)    = 0.
+               ddvel(i,j,p_ho)      = 0.
+               ddvel(i,j,p_ho2)     = 0.
+               ddvel(i,j,p_ch3o2)   = 0.
+               ddvel(i,j,p_n2o)     = 0.
+               ddvel(i,j,p_ch4)     = 0.
+               ddvel(i,j,p_h2)      = 0.
+               ddvel(i,j,p_co2)     = 0.
+               ddvel(i,j,p_c2h4)    = 0.
+               ddvel(i,j,p_c2h6)    = 0.
+               ddvel(i,j,p_c3h6)    = 0.
+               ddvel(i,j,p_c3h8)    = 0.
+               ddvel(i,j,p_aco3)    = 0.
+               ddvel(i,j,p_gly)     = 0.
+               ddvel(i,j,p_macr)    = 0.
+               ddvel(i,j,p_mek)     = 0.
+               ddvel(i,j,p_eto2)    = 0.
+               ddvel(i,j,p_open)    = 0.
+               ddvel(i,j,p_eo)      = 0.
+               ddvel(i,j,p_pro2)    = 0.
+               ddvel(i,j,p_po2)     = 0.
+               ddvel(i,j,p_aceto2)  = 0.
+               ddvel(i,j,p_bigene)  = 0.
+               ddvel(i,j,p_bigalk)  = 0.
+               ddvel(i,j,p_eneo2)   = 0.
+               ddvel(i,j,p_alko2)   = 0.
+               ddvel(i,j,p_isopr)   = 0.
+               ddvel(i,j,p_iso2)    = 0.
+               ddvel(i,j,p_mvko2)   = 0.
+               ddvel(i,j,p_xo2)     = 0.
+               ddvel(i,j,p_c10h16)  = 0.
+               ddvel(i,j,p_terpo2)  = 0.
+               ddvel(i,j,p_tol)     = 0.
+               ddvel(i,j,p_to2)     = 0.
+               ddvel(i,j,p_xoh)     = 0.
+               ddvel(i,j,p_isopn)   = 0.
+               ddvel(i,j,p_meko2)   = 0.
+               ddvel(i,j,p_dms)     = 0.
+            end do
+         end do
+      end if
 
 END SUBROUTINE wesely_driver
 
-! **********************************************************************
-! **************************  SUBROUTINE RC  ***************************
-! **********************************************************************
-      SUBROUTINE rc(rcx,t,rad,rh,iland,iseason,numgas,             &
-          wetflag,rainflag,highnh3,iprt,p_o3,p_so2,p_nh3)
+      SUBROUTINE rc( rcx, t, rad, rh, iland, &
+                     iseason, numgas, wetflag, rainflag, highnh3, &
+                     iprt, spec_hum, p_srf, chem_opt )
+!----------------------------------------------------------------------
 !     THIS SUBROUTINE CALCULATES SURFACE RESISTENCES ACCORDING
 !     TO THE MODEL OF
 !     M. L. WESELY,
@@ -292,28 +411,45 @@ END SUBROUTINE wesely_driver
 !     MODYFIED BY WINFRIED SEIDL, MARCH 2000
 !                    FOR MM5 VERSION 3
 !----------------------------------------------------------------------
-! .. Scalar Arguments ..
-        REAL :: rad, rh, t
-        INTEGER :: iland, iseason, numgas
-        LOGICAL :: highnh3, rainflag, wetflag
-        real :: rcx(numgas)
-! ..
-        INTEGER :: iprt,p_o3,p_so2,p_nh3
-! ..
+
+  USE module_state_description                       
+
+!----------------------------------------------------------------------
+!	... dummy arguments
+!----------------------------------------------------------------------
+        INTEGER, intent(in) :: iland, iseason, numgas
+        INTEGER, intent(in) :: iprt
+        INTEGER, intent(in) :: chem_opt
+        REAL, intent(in)    :: rad, rh
+        REAL, intent(in)    :: t                            ! surface temp (K)
+        REAL, intent(in)    :: p_srf                        ! surface pressure (Pa)
+        REAL, intent(in)    :: spec_hum                     ! surface specific humidity (kg/kg)
+        real, intent(out)   :: rcx(numgas)
+        LOGICAL, intent(in) :: highnh3, rainflag, wetflag
+
+!----------------------------------------------------------------------
 ! .. Local Scalars ..
-        REAL :: rclx, rdc, resice, rgsx, rluo1, rluo2, rlux, rmx, rs, rsmx, &
-          tc, rdtheta, z
-        INTEGER :: n
-! ..
+!----------------------------------------------------------------------
+        REAL, parameter :: t0    = 298.
+        REAL, parameter :: tmelt = 273.16
+        INTEGER :: lt, n
+        REAL    :: rclx, rdc, resice, rgsx, rluo1, rluo2
+        REAL    :: rlux, rmx, rs, rsmx, rdtheta, z, wrk
+        REAL    :: qs, es, ws, dewm, dv_pan, drat
+        REAL    :: crs, tc
+        REAL    :: rs_pan, tc_pan
+        LOGICAL :: has_dew
+!----------------------------------------------------------------------
 ! .. Local Arrays ..
+!----------------------------------------------------------------------
         REAL :: hstary(numgas)
-! ..
+
+!----------------------------------------------------------------------
 ! .. Intrinsic Functions ..
+!----------------------------------------------------------------------
         INTRINSIC exp
-! ..
-        DO n = 1, numgas
-          rcx(n) = 1.
-        END DO
+
+        rcx(1:numgas) = 1.
 
         tc = t - 273.15
         rdtheta = 0.
@@ -328,50 +464,106 @@ END SUBROUTINE wesely_driver
 !       rainflag=.false.
 !       wetflag=.false.
 
-        IF ((tc<=0.) .OR. (tc>=40.)) THEN
+        IF ( tc<=0. .OR. tc>=40. ) THEN
           rs = 9999.
         ELSE
           rs = ri(iland,iseason)*(1+z*z)*(400./(tc*(40.-tc)))
         END IF
-        rdc = 100*(1.+1000./(rad+10))/(1+1000.*rdtheta)
-        rluo1 = 1./(1./3000.+1./3./rlu(iland,iseason))
-        rluo2 = 1./(1./1000.+1./3./rlu(iland,iseason))
-        resice = 1000.*exp(-tc-4.)
+        rdc   = 100.*(1. + 1000./(rad + 10.))/(1. + 1000.*rdtheta)
+        rluo1 = 1./(1./3000. + 3./rlu(iland,iseason))
+        rluo2 = 1./(1./1000. + 3./rlu(iland,iseason))
+        resice = 1000.*exp( -(tc + 4.) )
+        wrk    = (t0 - t)/(t0*t)
+
 
         DO n = 1, numgas
-          IF (hstar(n)==0.) GO TO 10
-          hstary(n) = hstar(n)*exp(dhr(n)*(1./t-1./298.))
-          rmx = 1./(hstary(n)/3000.+100.*f0(n))
-          rsmx = rs*dratio(n) + rmx
-          rclx = 1./(hstary(n)/1.E+5/rcls(iland,iseason)+f0(n)/rclo(iland, &
-            iseason)) + resice
-          rgsx = 1./(hstary(n)/1.E+5/rgss(iland,iseason)+f0(n)/rgso(iland, &
-            iseason)) + resice
-          rlux = rlu(iland,iseason)/(1.E-5*hstary(n)+f0(n)) + resice
-          IF (wetflag) THEN
-            rlux = 1./(1./3./rlu(iland,iseason)+1.E-7*hstary(n)+f0(n)/rluo1)
-          END IF
-          IF (rainflag) THEN
-            rlux = 1./(1./3./rlu(iland,iseason)+1.E-7*hstary(n)+f0(n)/rluo2)
-          END IF
-          rcx(n) = 1./(1./rsmx+1./rlux+1./(rdc+rclx)+1./(rac(iland, &
-            iseason)+rgsx))
-          IF (rcx(n)<1.) rcx(n) = 1.
-10      END DO
+          IF( hstar(n) /= 0. ) then
+             hstary(n) = hstar(n)*exp( dhr(n)*wrk )
+!----------------------------------------------------------------------
+!     SPECIAL TREATMENT FOR HNO3, HNO4, H2O2, PAA
+!----------------------------------------------------------------------
+is_mozart :  if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+                 if( n == p_hno3 ) then
+                    hstary(n) = 2.6e6*exp( 8700.*wrk )*1.e5
+                 else if( n == p_hno4 ) then
+                    hstary(n) = 32.e5
+                 else if( n == p_h2o2 ) then
+                    hstary(n) = hstary(n)*(1. + 2.2e-12*exp( -3730.*wrk )*1.e5)
+                 else if( n == p_paa ) then
+                    hstary(n) = hstary(n)*(1. + 1.8e-4*exp( -1510.*wrk )*1.e5)
+                 end if
+             endif is_mozart
+             rmx = 1./(hstary(n)/3000. + 100.*f0(n))
+             rsmx = rs*dratio(n) + rmx
+             if( (chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP) .and. &
+                 iseason /= 4 .and. p_pan > 1 ) then
+                if( iland /= iswater_temp .and. n == p_pan ) then
+!-------------------------------------------------------------------------------------
+! 	saturation vapor pressure (Pascals)
+! 	saturation mixing ratio
+! 	saturation specific humidity
+!-------------------------------------------------------------------------------------
+                    es = 611.*exp( 5414.77*(t - tmelt)/(tmelt*t) )
+                    ws = .622*es/(p_srf - es)
+                    qs = ws/(1. + ws)
+                    has_dew = .false.
+                    if( qs <= spec_hum ) then
+                      has_dew = .true.
+                    end if
+                    if( t < tmelt ) then
+                       has_dew = .false.
+                    end if
+                    if( has_dew .or. rainflag ) then
+                       dewm = 3.
+                    else
+                       dewm = 1.
+                    endif
+                    drat   = wpan/wh2o
+                    tc_pan = t - tmelt
+                    if( t > tmelt .and. t < 313.15 ) then
+                       crs = (1. + (200./(rad + .1))**2) * (400./(tc_pan*(40. - tc_pan)))
+                    else
+                       crs = large_value
+                    end if
+                    lt     = wrf2mz_lt_map(iland)
+                    rs_pan = ri_pan(iseason,lt)*crs
+                    dv_pan = c0_pan(lt) * (1. - exp( -k_pan(lt)*(dewm*rs_pan*drat)*1.e-2 ))
+                    if( dv_pan > 0. ) then
+                       rsmx = 1./dv_pan
+                    end if
+                endif
+             endif
+             rclx = 1./(1.e-5*hstary(n)/rcls(iland,iseason) &
+                        + f0(n)/rclo(iland,iseason)) + resice
+             rgsx = 1./(1.e-5*hstary(n)/rgss(iland,iseason) &
+                        + f0(n)/rgso(iland,iseason)) + resice
+             rlux = rlu(iland,iseason)/(1.e-5*hstary(n) + f0(n)) + resice
+             IF( wetflag ) THEN
+               rlux = 1./(1./(3.*rlu(iland,iseason)) + 1.e-7*hstary(n) + f0(n)/rluo1)
+             END IF
+             IF( rainflag ) THEN
+               rlux = 1./(1./(3.*rlu(iland,iseason)) + 1.e-7*hstary(n) + f0(n)/rluo2)
+             END IF
+             rcx(n) = 1./(1./rsmx + 1./rlux + 1./(rdc + rclx) + 1./(rac(iland,iseason) + rgsx))
+             rcx(n) = max( 1.,rcx(n) )
+          end IF
+        END DO
 
+!--------------------------------------------------
 !     SPECIAL TREATMENT FOR OZONE
-        if(p_o3.gt.1)then
-        hstary(p_o3) = hstar(p_o3)*exp(dhr(p_o3)*(1./t-1./298.))
-        rmx = 1./(hstary(p_o3)/3000.+100.*f0(p_o3))
-        rsmx = rs*dratio(p_o3) + rmx
-        rlux = rlu(iland,iseason)/(1.E-5*hstary(p_o3)+f0(p_o3)) + resice
-        rclx = rclo(iland,iseason) + resice
-        rgsx = rgso(iland,iseason) + resice
-        IF (wetflag) rlux = rluo1
-        IF (rainflag) rlux = rluo2
-        rcx(p_o3) = 1./(1./rsmx+1./rlux+1./(rdc+rclx)+1./(min(100.,rac(iland, &
-          iseason))+rgsx))
-        IF (rcx(p_o3)<1.) rcx(p_o3) = 1.
+!--------------------------------------------------
+        if(p_o3 > 1)then
+           hstary(p_o3) = hstar(p_o3)*exp( dhr(p_o3)*(298. - t)/(298.*t) )
+           rmx = 1./(hstary(p_o3)/3000.+100.*f0(p_o3))
+           rsmx = rs*dratio(p_o3) + rmx
+           rlux = rlu(iland,iseason)/(1.E-5*hstary(p_o3)+f0(p_o3)) + resice
+           rclx = rclo(iland,iseason) + resice
+           rgsx = rgso(iland,iseason) + resice
+           IF (wetflag) rlux = rluo1
+           IF (rainflag) rlux = rluo2
+           rcx(p_o3) = 1. &
+                       /(1./rsmx+1./rlux+1./(rdc+rclx)+1./(min(100.,rac(iland,iseason))+rgsx))
+           rcx(p_o3) = max( 1.,rcx(p_o3) )
         endif
 
 !     SPECIAL TREATMENT FOR SO2 (Wesely)
@@ -393,31 +585,43 @@ END SUBROUTINE wesely_driver
 !    &                +1./(RAC(ILAND,ISEASON)+RGSX))
 !       IF (RCX(P_SO2).LT.1.) RCX(P_SO2)=1.
 
+!--------------------------------------------------
 !     SO2 according to Erisman et al. 1994
 !       R_STOM
+!--------------------------------------------------
+is_so2 : &
+     if( p_so2 > 1 ) then
         rsmx = rs*dratio(p_so2)
+!--------------------------------------------------
 !       R_EXT
-        IF (tc>(-1.)) THEN
+!--------------------------------------------------
+        IF (tc> -1. ) THEN
           IF (rh<81.3) THEN
             rlux = 25000.*exp(-0.0693*rh)
           ELSE
             rlux = 0.58E12*exp(-0.278*rh)
           END IF
         END IF
-        IF (((wetflag) .OR. (rainflag)) .AND. (tc>(-1.))) THEN
+        IF (((wetflag) .OR. (rainflag)) .AND. (tc> -1. )) THEN
           rlux = 1.
         END IF
-        IF ((tc>=(-5.)) .AND. (tc<=(-1.))) THEN
+        IF ((tc>= -5. ) .AND. (tc<= -1. )) THEN
           rlux = 200.
         END IF
-        IF (tc<(-5.)) THEN
+        IF (tc< -5. ) THEN
           rlux = 500.
         END IF
+!--------------------------------------------------
 !       INSTEAD OF R_INC R_CL and R_DC of Wesely are used
+!--------------------------------------------------
         rclx = rcls(iland,iseason)
+!--------------------------------------------------
 !       DRY SURFACE
+!--------------------------------------------------
         rgsx = 1000.
+!--------------------------------------------------
 !       WET SURFACE
+!--------------------------------------------------
         IF ((wetflag) .OR. (rainflag)) THEN
           IF (highnh3) THEN
             rgsx = 0.
@@ -425,46 +629,55 @@ END SUBROUTINE wesely_driver
             rgsx = 500.
           END IF
         END IF
+!--------------------------------------------------
 !       WATER
+!--------------------------------------------------
         IF (iland==iswater_temp) THEN
           rgsx = 0.
         END IF
+!--------------------------------------------------
 !       SNOW
-        IF ((iseason==4) .OR. (iland==isice_temp)) THEN
-          IF (tc>2.) THEN
+!--------------------------------------------------
+        IF( iseason==4 .OR. iland==isice_temp ) THEN
+          IF( tc > 2. ) THEN
             rgsx = 0.
-          END IF
-          IF ((tc>=(-1.)) .AND. (tc<=2.)) THEN
-            rgsx = 70.*(2.-tc)
-          END IF
-          IF (tc<(-1.)) THEN
+          else IF ( tc >= -1. .AND. tc <= 2. ) THEN
+            rgsx = 70.*(2. - tc)
+          else IF ( tc < -1. ) THEN
             rgsx = 500.
           END IF
         END IF
+!--------------------------------------------------
 !       TOTAL SURFACE RESISTENCE
+!--------------------------------------------------
         IF ((iseason/=4) .AND. (ixxxlu(iland)/=1) .AND. (iland/=iswater_temp) .AND. &
             (iland/=isice_temp)) THEN
           rcx(p_so2) = 1./(1./rsmx+1./rlux+1./(rclx+rdc+rgsx))
         ELSE
           rcx(p_so2) = rgsx
         END IF
-        IF (rcx(p_so2)<1.) rcx(p_so2) = 1.
+        rcx(p_so2) = max( 1.,rcx(p_so2) )
+     end if is_so2
+!--------------------------------------------------
 !     NH3 according to Erisman et al. 1994
 !       R_STOM
-!
-!
-        if(p_nh3.gt.1)then
-!
-!
+!--------------------------------------------------
+is_nh3: if( p_nh3 > 1 ) then
         rsmx = rs*dratio(p_nh3)
+!--------------------------------------------------
 !       GRASSLAND (PASTURE DURING GRAZING)
+!--------------------------------------------------
         IF (ixxxlu(iland)==3) THEN
           IF (iseason==1) THEN
+!--------------------------------------------------
 !           SUMMER
+!--------------------------------------------------
             rcx(p_nh3) = 1000.
           END IF
           IF ((iseason==2) .OR. (iseason==3) .OR. (iseason==5)) THEN
+!--------------------------------------------------
 !           WINTER, NO SNOW
+!--------------------------------------------------
             IF (tc>-1.) THEN
               IF (rad/=0.) THEN
                 rcx(p_nh3) = 50.
@@ -483,10 +696,14 @@ END SUBROUTINE wesely_driver
             END IF
           END IF
         END IF
+!--------------------------------------------------
 !       AGRICULTURAL LAND (CROPS AND UNGRAZED PASTURE)
+!--------------------------------------------------
         IF (ixxxlu(iland)==2) THEN
           IF (iseason==1) THEN
+!--------------------------------------------------
 !           SUMMER
+!--------------------------------------------------
             IF (rad/=0.) THEN
               rcx(p_nh3) = rsmx
             ELSE
@@ -497,7 +714,9 @@ END SUBROUTINE wesely_driver
             END IF
           END IF
           IF ((iseason==2) .OR. (iseason==3) .OR. (iseason==5)) THEN
+!--------------------------------------------------
 !           WINTER, NO SNOW
+!--------------------------------------------------
             IF (tc>-1.) THEN
               IF (rad/=0.) THEN
                 rcx(p_nh3) = rsmx
@@ -516,7 +735,9 @@ END SUBROUTINE wesely_driver
             END IF
           END IF
         END IF
+!--------------------------------------------------
 !       SEMI-NATURAL ECOSYSTEMS AND FORESTS
+!--------------------------------------------------
         IF ((ixxxlu(iland)==4) .OR. (ixxxlu(iland)==5) .OR. (ixxxlu( &
             iland)==6)) THEN
           IF (rad/=0.) THEN
@@ -532,7 +753,9 @@ END SUBROUTINE wesely_driver
             END IF
           END IF
           IF ((iseason==2) .OR. (iseason==3) .OR. (iseason==5)) THEN
+!--------------------------------------------------
 !           WINTER, NO SNOW
+!--------------------------------------------------
             IF ((tc>=(-5.)) .AND. (tc<=-1.)) THEN
               rcx(p_nh3) = 200.
             END IF
@@ -541,11 +764,15 @@ END SUBROUTINE wesely_driver
             END IF
           END IF
         END IF
+!--------------------------------------------------
 !       WATER
+!--------------------------------------------------
         IF (iland==iswater_temp) THEN
           rcx(p_nh3) = 0.
         END IF
+!--------------------------------------------------
 !       URBAN AND DESERT (SOIL SURFACES)
+!--------------------------------------------------
         IF (ixxxlu(iland)==1) THEN
           IF ( .NOT. wetflag) THEN
             rcx(p_nh3) = 50.
@@ -553,7 +780,9 @@ END SUBROUTINE wesely_driver
             rcx(p_nh3) = 0.
           END IF
         END IF
+!--------------------------------------------------
 !       SNOW COVERED SURFACES OR PERMANENT ICE
+!--------------------------------------------------
         IF ((iseason==4) .OR. (iland==isice_temp)) THEN
           IF (tc>2.) THEN
             rcx(p_nh3) = 0.
@@ -565,13 +794,13 @@ END SUBROUTINE wesely_driver
             rcx(p_nh3) = 500.
           END IF
         END IF
-        IF (rcx(p_nh3)<1.) rcx(p_nh3) = 1.
-        endif
+        rcx(p_nh3) = max( 1.,rcx(p_nh3) )
+        endif is_nh3
       END SUBROUTINE rc
-! **********************************************************************
-! ************************ SUBROUTINE DEPPART **************************
-! **********************************************************************
-      SUBROUTINE deppart(rmol,ustar,rh,clw,iland,dvpart,dvfog)
+
+      SUBROUTINE deppart( rmol, ustar, rh, clw, iland, &
+                          dvpart, dvfog )
+!--------------------------------------------------
 !     THIS SUBROUTINE CALCULATES SURFACE DEPOSITION VELOCITIES
 !     FOR FINE AEROSOL PARTICLES ACCORDING TO THE MODEL OF
 !     J. W. ERISMAN, A. VAN PUL, AND P. WYERS,
@@ -579,40 +808,57 @@ END SUBROUTINE wesely_driver
 !     WRITTEN BY WINFRIED SEIDL, APRIL 1997
 !     MODIFIED BY WINFRIED SEIDL, MARCH 2000
 !            FOR MM5 VERSION 3
-! ----------------------------------------------------------------------
+!--------------------------------------------------
+
+!--------------------------------------------------
 ! .. Scalar Arguments ..
-        REAL :: clw, dvfog, dvpart, rh, rmol, ustar
-        INTEGER :: iland
-! ..
+!--------------------------------------------------
+        INTEGER, intent(in) :: iland
+        REAL, intent(in)    :: clw, rh, rmol, ustar
+        REAL, intent(out)   :: dvfog, dvpart
+
+!--------------------------------------------------
 ! .. Intrinsic Functions ..
+!--------------------------------------------------
         INTRINSIC exp
-! ..
+
         dvpart = ustar/kpart(iland)
         IF (rmol<0.) THEN
-!         INSTABLE LAYERING CORRECTION
+!--------------------------------------------------
+!         UNSTABLE LAYERING CORRECTION
+!--------------------------------------------------
           dvpart = dvpart*(1.+(-300.*rmol)**0.66667)
         END IF
         IF (rh>80.) THEN
+!--------------------------------------------------
 !         HIGH RELATIVE HUMIDITY CORRECTION
 !         ACCORDING TO J. W. ERISMAN ET AL.
 !         ATMOSPHERIC ENVIRONMENT 31 (1997), 321-332
+!--------------------------------------------------
           dvpart = dvpart*(1.+0.37*exp((rh-80.)/20.))
         END IF
 
+!--------------------------------------------------
 !       SEDIMENTATION VELOCITY OF FOG WATER ACCORDING TO
 !       R. FORKEL, W. SEIDL, R. DLUGI AND E. DEIGELE
 !       J. GEOPHYS. RES. 95D (1990), 18501-18515
+!--------------------------------------------------
         dvfog = 0.06*clw
         IF (ixxxlu(iland)==5) THEN
+!--------------------------------------------------
 !         TURBULENT DEPOSITION OF FOG WATER IN CONIFEROUS FOREST ACCORDI
 !         A. T. VERMEULEN ET AL.
 !         ATMOSPHERIC ENVIRONMENT 31 (1997), 375-386
+!--------------------------------------------------
           dvfog = dvfog + 0.195*ustar*ustar
         END IF
 
       END SUBROUTINE deppart
-      SUBROUTINE landusevg(vgs,ustar,rmol,z0,zz,dvparx,iland,numgas, &
-          srfres,aer_res_def,aer_res_zcen,p_sulf)
+
+      SUBROUTINE landusevg( vgs, ustar, rmol, z0, zz, &
+                            dvparx, iland, numgas, srfres, aer_res_def, &
+                            aer_res_zcen, p_sulf )
+!--------------------------------------------------
 !     This subroutine calculates the species specific deposition velocit
 !     as a function of the local meteorology and land use.  The depositi
 !     Velocity is also landuse specific.
@@ -644,57 +890,79 @@ END SUBROUTINE wesely_driver
 !        Iatmo   : Parameter specifying the stabilty class (Function of
 !        Z0      : Surface roughness height (m)
 !        karman  : Von Karman constant (from module_model_constants)
+!--------------------------------------------------
+
         USE module_model_constants, only: karman
-!     Local Variables
+
+!--------------------------------------------------
 ! .. Scalar Arguments ..
-        REAL :: dvparx, rmol, ustar, z0, zz
-        real :: aer_res_def, aer_res_zcen, polint
-        INTEGER :: iland, numgas, p_sulf
-! ..
+!--------------------------------------------------
+        INTEGER, intent(in) :: iland, numgas, p_sulf
+        REAL, intent(in)    :: dvparx, ustar, z0, zz
+        REAL, intent(inout) :: rmol
+        REAL, intent(inout) :: aer_res_def
+        REAL, intent(inout) :: aer_res_zcen
+!--------------------------------------------------
 ! .. Array Arguments ..
-        REAL :: srfres(numgas), vgs(numgas)
-! ..
+!--------------------------------------------------
+        REAL, intent(in)  :: srfres(numgas)
+        REAL, intent(out) :: vgs(numgas)
+
+!--------------------------------------------------
 ! .. Local Scalars ..
-        REAL :: rmol_tmp, vgp, vgpart, zr
+!--------------------------------------------------
         INTEGER :: jspec
-! ..
+        REAL    :: vgp, vgpart, zr
+        REAL    :: rmol_tmp
+!--------------------------------------------------
 ! .. Local Arrays ..
+!--------------------------------------------------
         REAL :: vgspec(numgas)
-! ..
-!   Calculate aerodynamic resistance for reference height = layer center
-        zr = zz*0.5
+
+!--------------------------------------------------
+!   Calculate aerodynamic resistance for reference
+!   height = layer center
+!--------------------------------------------------
+        zr = zz*.5
         rmol_tmp = rmol
-        CALL depvel(numgas,rmol_tmp,zr,z0,ustar,vgspec,vgpart,aer_res_zcen)
-!   Set the reference height (10.0 m)
+        CALL depvel( numgas, rmol_tmp, zr, z0, ustar, &
+                     vgspec, vgpart, aer_res_zcen )
+!--------------------------------------------------
+!   Set the reference height (2.0 m)
+!--------------------------------------------------
 !       zr = 10.0
         zr = 2.0
 
+!--------------------------------------------------
 !   CALCULATE THE DEPOSITION VELOCITY without any surface
 !   resistance term, i.e. 1 / (ra + rb)
-        CALL depvel(numgas,rmol,zr,z0,ustar,vgspec,vgpart,aer_res_def)
+!--------------------------------------------------
+        CALL depvel( numgas, rmol, zr, z0, ustar, &
+                     vgspec, vgpart, aer_res_def )
 
+!--------------------------------------------------
 !   Calculate the deposition velocity for each species
 !   and grid cell by looping through all the possibile combinations
 !   of the two
-
+!--------------------------------------------------
         vgp = 1.0/((1.0/vgpart)+(1.0/dvparx))
-
+!--------------------------------------------------
 !   Loop through the various species
-
+!--------------------------------------------------
         DO jspec = 1, numgas
-
+!--------------------------------------------------
 !   Add in the surface resistance term, rc (SrfRes)
-
-          vgs(jspec) = 1.0/(1.0/vgspec(jspec)+srfres(jspec))
+!--------------------------------------------------
+          vgs(jspec) = 1.0/(1.0/vgspec(jspec) + srfres(jspec))
         END DO
         vgs(p_sulf) = vgp
 
-        CALL cellvg(vgs,ustar,zz,zr,rmol,numgas)
+        CALL cellvg( vgs, ustar, zz, zr, rmol, numgas )
 
-        RETURN
       END SUBROUTINE landusevg
 
-      SUBROUTINE cellvg(vgtemp,ustar,dz,zr,rmol,nspec)
+      SUBROUTINE cellvg( vgtemp, ustar, dz, zr, rmol, nspec )
+!--------------------------------------------------
 !     THIS PROGRAM HAS BEEN DESIGNED TO CALCULATE THE CELL AVERAGE
 !     DEPOSITION VELOCITY GIVEN THE VALUE OF VG AT SOME REFERENCE
 !     HEIGHT ZR WHICH IS MUCH SMALLER THAN THE CELL HEIGHT DZ.
@@ -708,51 +976,62 @@ END SUBROUTINE wesely_driver
 !     DZ       - CELL HEIGHT
 !     CELLVG   - CELL AVERAGE DEPOSITION VELOCITY
 !     VK       - VON KARMAN CONSTANT
+!--------------------------------------------------
+
         USE module_model_constants, only: karman
-!     Local Variables
+
+!--------------------------------------------------
 ! .. Scalar Arguments ..
-        REAL :: dz, rmol, ustar, zr
-        INTEGER :: nspec
-! ..
+!--------------------------------------------------
+        INTEGER, intent(in) :: nspec
+        REAL, intent(in)    :: dz, rmol, ustar, zr
+!--------------------------------------------------
 ! .. Array Arguments ..
-        REAL :: vgtemp(nspec)
-! ..
+!--------------------------------------------------
+        REAL, intent(out) :: vgtemp(nspec)
+!--------------------------------------------------
 ! .. Local Scalars ..
-        REAL :: a, fac, pdz, pzr, vk
+!--------------------------------------------------
         INTEGER :: nss
-! ..
+        REAL    :: a, fac, pdz, pzr, vk
+!--------------------------------------------------
 ! .. Intrinsic Functions ..
+!--------------------------------------------------
         INTRINSIC alog, sqrt
-! ..
+
+!--------------------------------------------------
 !     Set the von Karman constant
+!--------------------------------------------------
         vk = karman
 
+!--------------------------------------------------
 !     DETERMINE THE STABILITY BASED ON THE CONDITIONS
 !             1/L < 0 UNSTABLE
 !             1/L = 0 NEUTRAL
 !             1/L > 0 STABLE
-
-
+!--------------------------------------------------
         DO nss = 1, nspec
-          IF (rmol<0) THEN
-            pdz = sqrt(1.0-9.0*dz*rmol)
-            pzr = sqrt(1.0-9.0*zr*rmol)
-            fac = ((pdz-1.0)/(pzr-1.0))*((pzr+1.0)/(pdz+1.0))
-            a = 0.74*dz*alog(fac) + (0.164/rmol)*(pdz-pzr)
-          ELSE IF (rmol==0) THEN
-            a = 0.74*(dz*alog(dz/zr)-dz+zr)
+          IF (rmol < 0.) THEN
+            pdz = sqrt(1.0 - 9.0*dz*rmol)
+            pzr = sqrt(1.0 - 9.0*zr*rmol)
+            fac = ((pdz - 1.0)/(pzr - 1.0))*((pzr + 1.0)/(pdz + 1.0))
+            a   = 0.74*dz*alog(fac) + (0.164/rmol)*(pdz-pzr)
+          ELSE IF (rmol == 0.) THEN
+            a = 0.74*(dz*alog(dz/zr) - dz + zr)
           ELSE
-            a = 0.74*(dz*alog(dz/zr)-dz+zr) + (2.35*rmol)*(dz-zr)**2
+            a = 0.74*(dz*alog(dz/zr) - dz + zr) + (2.35*rmol)*(dz - zr)**2
           END IF
-
+!--------------------------------------------------
 !     CALCULATE THE DEPOSITION VELOCITIY
-
-          vgtemp(nss) = vgtemp(nss)/(1.0+vgtemp(nss)*a/(vk*ustar*(dz-zr)))
+!--------------------------------------------------
+          vgtemp(nss) = vgtemp(nss)/(1.0 + vgtemp(nss)*a/(vk*ustar*(dz - zr)))
         END DO
 
-        RETURN
       END SUBROUTINE cellvg
-      SUBROUTINE depvel(numgas,rmol,zr,z0,ustar,depv,vgpart,aer_res)
+
+      SUBROUTINE depvel( numgas, rmol, zr, z0, ustar, &
+                         depv, vgpart, aer_res )
+!--------------------------------------------------
 !     THIS FUNCTION HAS BEEN DESIGNED TO EVALUATE AN UPPER LIMIT
 !     FOR THE POLLUTANT DEPOSITION VELOCITY AS A FUNCTION OF THE
 !     SURFACE ROUGHNESS AND METEOROLOGICAL CONDITIONS.
@@ -784,33 +1063,45 @@ END SUBROUTINE wesely_driver
 !        ON THE WORK OF BUSINGER ET AL.(1971).
 !     4. THE MOMENTUM AND POLLUTANT DIFFUSIVITIES ARE NOT
 !        THE SAME FOR THE CASES L<0 AND L>0.
+!--------------------------------------------------
+
         USE module_model_constants, only: karman
-!     Local Variables
+
+!--------------------------------------------------
 ! .. Scalar Arguments ..
-        REAL :: rmol, ustar, vgpart, z0, zr, aer_res
-        INTEGER :: numgas
-! ..
+!--------------------------------------------------
+        INTEGER, intent(in) :: numgas
+        REAL, intent(in)    :: ustar, z0, zr
+        REAL, intent(out)   :: vgpart, aer_res
+        REAL, intent(inout) :: rmol
+!--------------------------------------------------
 ! .. Array Arguments ..
-        REAL :: depv(numgas)
-! ..
+!--------------------------------------------------
+        REAL, intent(out) :: depv(numgas)
+!--------------------------------------------------
 ! .. Local Scalars ..
-        REAL :: ao, ar, polint, vk
+!--------------------------------------------------
         INTEGER :: l
-! ..
+        REAL    :: ao, ar, polint, vk
+!--------------------------------------------------
 ! .. Intrinsic Functions ..
+!--------------------------------------------------
         INTRINSIC alog
-! ..
+!--------------------------------------------------
 !     Set the von Karman constant
+!--------------------------------------------------
         vk = karman
 
+!--------------------------------------------------
 !     Calculate the diffusion correction factor
 !     SCPR23 is calculated as (Sc/Pr)**(2/3) using Sc= 1.15 and Pr= 1.0
 !     SCPR23 = 1.10
-
+!--------------------------------------------------
 !     DETERMINE THE STABILITY BASED ON THE CONDITIONS
 !             1/L < 0 UNSTABLE
 !             1/L = 0 NEUTRAL
 !             1/L > 0 STABLE
+!--------------------------------------------------
 
         if(abs(rmol) < 1.E-6 ) rmol = 0.
 
@@ -824,41 +1115,76 @@ END SUBROUTINE wesely_driver
           polint = 0.74*alog(zr/z0) + 4.7*rmol*(zr-z0)
         END IF
 
+!--------------------------------------------------
 !     CALCULATE THE Maximum DEPOSITION VELOCITY
-
+!--------------------------------------------------
         DO l = 1, numgas
           depv(l) = ustar*vk/(2.0*scpr23(l)+polint)
         END DO
         vgpart = ustar*vk/polint
         aer_res = polint/(karman*max(ustar,1.0e-4))
 
-        RETURN
       END SUBROUTINE depvel
 
-      SUBROUTINE dep_init(id,config_flags,numgas)
+      SUBROUTINE dep_init( id, config_flags, numgas, &
+                           ips, ipe, jps, jpe, ide, jde )
+!--------------------------------------------------
+! .. Initialize simple deposition velocity routine
+!--------------------------------------------------
+
   USE module_model_constants
   USE module_configure
   USE module_state_description                       
-   TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
-! ..
-! .. Scalar Arguments ..
-        integer, intent(in) :: id, numgas
 
-! ..
-! .. Local Scalars ..
-        REAL :: sc
+   TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
+
+!--------------------------------------------------
+! .. Scalar Arguments ..
+!--------------------------------------------------
+        integer, intent(in) :: id, numgas
+        integer, intent(in) :: ips, ipe, jps, jpe
+        integer, intent(in) :: ide, jde
+
+!--------------------------------------------------
+! .. Local Scalars
+!--------------------------------------------------
         INTEGER :: iland, iseason, l
         integer :: iprt
-! ..
-! .. Local Arrays ..
+        integer :: astat
+        integer :: ncid
+        integer :: dimid
+        integer :: varid
+        integer :: lon_e, lat_e
+        integer :: npft, months
+        integer :: iend, jend
+        integer, allocatable :: input_wes_seasonal(:,:,:,:)
+        REAL    :: sc
+        character(len=128) :: err_msg
+!--------------------------------------------------
+! .. Local Arrays
+!--------------------------------------------------
         REAL :: dat1(nlu,dep_seasons), dat2(nlu,dep_seasons),         &
                 dat3(nlu,dep_seasons), dat4(nlu,dep_seasons),         &
                 dat5(nlu,dep_seasons), dat6(nlu,dep_seasons),         &
                 dat7(nlu,dep_seasons), dvj(numgas)
-! ..
+
+#ifdef NETCDF
+      LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
+#define DM_BCAST_MACRO(A) CALL wrf_dm_bcast_bytes ( A , size ( A ) * IWORDSIZE )
+include 'netcdf.inc'
+
+#else
+      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+         call wrf_message( 'dep_init: mozart,mozcart chem option requires netcdf' )
+         call wrf_abort
+      end if
+#endif
+
+!--------------------------------------------------
 ! .. Make sure that the model is being run with a soil model. Otherwise,
 !    iland will be zero in deppart, which will try to pull non-exisant
 !    array locations.
+!--------------------------------------------------
         call nl_get_sf_surface_physics(id,l)
         if( l == 0 ) &
              call wrf_error_fatal("ERROR: Cannot use dry deposition without using a soil model.")
@@ -946,9 +1272,7 @@ END SUBROUTINE wesely_driver
 !     1       2       3       4       5       6       7       8       9
 !     RLU for outer surfaces in the upper canopy
         DO iseason = 1, dep_seasons
-          DO iland = 1, nlu
-            ri(iland,iseason) = dat1(iland,iseason)
-          END DO
+           ri(1:nlu,iseason) = dat1(1:nlu,iseason)
         END DO
 !      data ((rlu(ILAND,ISEASON),ILAND=1,25),ISEASON=1,5)/0.10E+11, &
         DATA ((dat2(iland,iseason),iland=1,nlu),iseason=1,dep_seasons)/0.10E+11, &
@@ -974,9 +1298,7 @@ END SUBROUTINE wesely_driver
           0.10E+11, 0.40E+04, 0.30E+04, 0.10E+11, 0.40E+04, 0.30E+04, &
           0.30E+04, 0.10E+11, 0.10E+11, 0.10E+11/
         DO iseason = 1, dep_seasons
-          DO iland = 1, nlu
-            rlu(iland,iseason) = dat2(iland,iseason)
-          END DO
+           rlu(1:nlu,iseason) = dat2(1:nlu,iseason)
         END DO
 !     RAC for transfer that depends on canopy height and density
 !      data ((rac(ILAND,ISEASON),ILAND=1,25),ISEASON=1,5)/0.10E+03, &
@@ -1003,9 +1325,7 @@ END SUBROUTINE wesely_driver
           0.00E+00, 0.20E+03, 0.15E+04, 0.00E+00, 0.20E+03, 0.15E+04, &
           0.15E+04, 0.00E+00, 0.00E+00, 0.00E+00/
         DO iseason = 1, dep_seasons
-          DO iland = 1, nlu
-            rac(iland,iseason) = dat3(iland,iseason)
-          END DO
+           rac(1:nlu,iseason) = dat3(1:nlu,iseason)
         END DO
 !     RGSS for ground surface  SO2
 !      data ((rgss(ILAND,ISEASON),ILAND=1,25),ISEASON=1,5)/0.40E+03, &
@@ -1032,9 +1352,7 @@ END SUBROUTINE wesely_driver
           0.10E+01, 0.10E+01, 0.20E+03, 0.10E+04, 0.10E+01, 0.20E+03, &
           0.20E+03, 0.10E+04, 0.10E+03, 0.10E+04/
         DO iseason = 1, dep_seasons
-          DO iland = 1, nlu
-            rgss(iland,iseason) = dat4(iland,iseason)
-          END DO
+           rgss(1:nlu,iseason) = dat4(1:nlu,iseason)
         END DO
 !     RGSO for ground surface  O3
 !      data ((rgso(ILAND,ISEASON),ILAND=1,25),ISEASON=1,5)/0.30E+03, &
@@ -1061,9 +1379,7 @@ END SUBROUTINE wesely_driver
           0.20E+04, 0.10E+04, 0.30E+03, 0.40E+03, 0.10E+04, 0.30E+03, &
           0.30E+03, 0.40E+03, 0.35E+04, 0.40E+03/
         DO iseason = 1, dep_seasons
-          DO iland = 1, nlu
-            rgso(iland,iseason) = dat5(iland,iseason)
-          END DO
+           rgso(1:nlu,iseason) = dat5(1:nlu,iseason)
         END DO
 !     RCLS for exposed surfaces in the lower canopy  SO2
 !      data ((rcls(ILAND,ISEASON),ILAND=1,25),ISEASON=1,5)/0.10E+11, &
@@ -1090,9 +1406,7 @@ END SUBROUTINE wesely_driver
           0.10E+11, 0.40E+04, 0.30E+04, 0.10E+11, 0.40E+04, 0.30E+04, &
           0.30E+04, 0.10E+11, 0.10E+11, 0.10E+11/
         DO iseason = 1, dep_seasons
-          DO iland = 1, nlu
-            rcls(iland,iseason) = dat6(iland,iseason)
-          END DO
+           rcls(1:nlu,iseason) = dat6(1:nlu,iseason)
         END DO
 !     RCLO for exposed surfaces in the lower canopy  O3
 !      data ((rclo(ILAND,ISEASON),ILAND=1,25),ISEASON=1,5)/0.10E+11, &
@@ -1118,46 +1432,85 @@ END SUBROUTINE wesely_driver
           0.10E+04, 0.50E+03, 0.15E+04, 0.10E+04, 0.15E+04, 0.70E+03, &
           0.10E+11, 0.60E+03, 0.70E+03, 0.10E+11, 0.60E+03, 0.70E+03, &
           0.70E+03, 0.10E+11, 0.10E+11, 0.10E+11/
+
         DO iseason = 1, dep_seasons
-          DO iland = 1, nlu
-            rclo(iland,iseason) = dat7(iland,iseason)
-          END DO
-        END DO
-        DO l = 1, numgas
-          hstar(l) = 0.
-          hstar4(l) = 0.
-          dhr(l) = 0.
-          f0(l) = 0.
-          dvj(l) = 99.
+           rclo(1:nlu,iseason) = dat7(1:nlu,iseason)
         END DO
 
+!     data ((dat8(iseason,iland),iseason=1,5),iland=1,11) / &
+!                          1.e36,  60., 120.,  70., 130., 100.,1.e36,1.e36,  80., 100., 150., &
+!                          1.e36,1.e36,1.e36,1.e36, 250., 500.,1.e36,1.e36,1.e36,1.e36,1.e36, &
+!                          1.e36,1.e36,1.e36,1.e36, 250., 500.,1.e36,1.e36,1.e36,1.e36,1.e36, &
+!                          1.e36,1.e36,1.e36,1.e36, 400., 800.,1.e36,1.e36,1.e36,1.e36,1.e36, &
+!                          1.e36, 120., 240., 140., 250., 190.,1.e36,1.e36, 160., 200., 300. /
+!       ri_pan(:,:) = dat8(:,:)
+
+!--------------------------------------------------
+!	Initialize parameters
+!--------------------------------------------------
+        hstar(1:numgas)  = 0.
+        hstar4(1:numgas) = 0.
+        dhr(1:numgas)    = 0.
+        f0(1:numgas)     = 0.
+        dvj(1:numgas)    = 99.
+
+!--------------------------------------------------
 !     HENRY''S LAW COEFFICIENTS
 !     Effective Henry''s law coefficient at pH 7
 !     [KH298]=mole/(l atm)
-
+!--------------------------------------------------
+is_cbm4_kpp : &
         if (config_flags%chem_opt /= CBM4_KPP) then
-
-        hstar(p_no2) = 6.40E-3
-        hstar(p_no) = 1.90E-3
-        hstar(p_pan) = 2.97E+0
-        hstar(p_o3) = 1.13E-2
-        hstar(p_hcho) = 2.97E+3
+           if( config_flags%chem_opt == MOZART_KPP .or. &
+               config_flags%chem_opt == MOZCART_KPP ) then
+              hstar(p_o3)      = 1.15E-2
+              hstar(p_co)      = 1.e-3
+              hstar(p_h2o2)    = 8.33E+4
+              hstar(p_hcho)    = 6.3e3
+              hstar(p_ch3ooh)  = 311.
+              hstar(p_ch3oh)   = 220.
+              hstar(p_ch3cooh) = 6.3e3
+              hstar(p_acet)    = 27.
+              hstar(p_paa)     = 837.
+              hstar(p_c3h6ooh) = 220.
+              hstar(p_pan)     = 5.
+              hstar(p_mpan)    = 1.15e-2
+              hstar(p_c2h5oh)  = 200.
+              hstar(p_etooh)   = 336.
+              hstar(p_prooh)   = 336.
+              hstar(p_acetp)   = 336.
+              hstar(p_onit)    = 1.e3
+              hstar(p_onitr)   = 7.51e3
+              hstar(p_acetol)  = 6.3e3
+              hstar(p_glyald)  = 4.14e4
+              hstar(p_hydrald) = 70.
+              hstar(p_alkooh)  = 311.
+              hstar(p_mekooh)  = 311.
+              hstar(p_tolooh)  = 311.
+              hstar(p_terpooh) = 311.
+           else
+              hstar(p_o3)   = 1.13E-2
+              hstar(p_co)   = 8.20E-3
+              hstar(p_h2o2) = 7.45E+4
+              hstar(p_hcho) = 2.97E+3
+              hstar(p_pan)  = 2.97
+              hstar(p_paa)  = 473.
+              hstar(p_onit) = 1.13
+           end if
+        hstar(p_no2)  = 6.40E-3
+        hstar(p_no)   = 1.90E-3
         hstar(p_aco3) = 1.14E+1
         hstar(p_tpan) = 2.97E+0
         hstar(p_hono) = 3.47E+5
-        hstar(p_no3) = 1.50E+1
+        hstar(p_no3)  = 1.50E+1
         hstar(p_hno4) = 2.00E+13
-        hstar(p_h2o2) = 7.45E+4
-        hstar(p_co) = 8.20E-3
         hstar(p_ald) = 1.14E+1
         hstar(p_op1) = 2.21E+2
         hstar(p_op2) = 1.68E+6
-        hstar(p_paa) = 4.73E+2
         hstar(p_ket) = 3.30E+1
         hstar(p_gly) = 1.40E+6
         hstar(p_mgly) = 3.71E+3
-        hstar(p_dcb) = 1.40E+6
-        hstar(p_onit) = 1.13E+0
+        hstar(p_dcb)  = 1.40E+6
         hstar(p_so2) = 2.53E+5
         hstar(p_eth) = 2.00E-3
         hstar(p_hc3) = 1.42E-3
@@ -1172,26 +1525,26 @@ END SUBROUTINE wesely_driver
         hstar(p_hno3) = 2.69E+13
         hstar(p_ora1) = 9.85E+6
         hstar(p_ora2) = 9.63E+5
-        hstar(p_nh3) = 1.04E+4
+        hstar(p_nh3)  = 1.04E+4
         hstar(p_n2o5) = 1.00E+10
-        if(p_ol2.gt.1) hstar(p_ol2) = 4.67E-3
-        if(p_par.gt.1) hstar(p_par) = 1.13E-3  !wig, 1-May-2007: for CBMZ
-        if(p_ch4.gt.1) then 
+        if(p_ol2 > 1) hstar(p_ol2) = 4.67E-3
+        if(p_par > 1) hstar(p_par) = 1.13E-3  !wig, 1-May-2007: for CBMZ
+        if(p_ch4 > 1) then 
            hstar(p_ch4) = 1.50E-3
-           dhr(p_ch4)=    0.
-           f0(p_ch4)=0.
-           dvj(p_ch4)=0.250
+           dhr(p_ch4)   = 0.
+           f0(p_ch4)    = 0.
+           dvj(p_ch4)   = 0.250
         end if
-        if(p_co2.gt.1) then
+        if(p_co2 > 1) then 
            hstar(p_co2) = 1.86E-1
-           dhr(p_co2)= 1636.
-           f0(p_co2)=0.
-           dvj(p_co2)=0.151
+           dhr(p_co2)   = 1636.
+           f0(p_co2)    = 0.
+           dvj(p_co2)   = 0.151
         end if
-!
+!--------------------------------------------------
 !  FOLLOWING FOR RACM
-!
-        if(p_ete.gt.1)then
+!--------------------------------------------------
+        if( p_ete > 1 ) then
            HSTAR(p_ETE )=4.67E-3
            HSTAR(p_API )=4.76E-3
            HSTAR(p_LIM )=4.76E-3
@@ -1221,30 +1574,59 @@ END SUBROUTINE wesely_driver
            DVJ(p_UDD )=0.092
            DVJ(p_HKET)=0.116
         endif
+!--------------------------------------------------
 !     -DH/R (for temperature correction)
 !     [-DH/R]=K
-
-        dhr(p_no2) = 2500.
-        dhr(p_no) = 1480.
-        dhr(p_pan) = 5760.
-        dhr(p_o3) = 2300.
-        dhr(p_hcho) = 7190.
+!--------------------------------------------------
+        if( config_flags%chem_opt == MOZART_KPP .or. &
+            config_flags%chem_opt == MOZCART_KPP ) then
+           dhr(p_o3)      = 2560.
+           dhr(p_h2o2)    = 7379.
+           dhr(p_hcho)    = 6425.
+           dhr(p_ch3ooh)  = 5241.
+           dhr(p_ch3oh)   = 4934.
+           dhr(p_ch3cooh) = 6425.
+           dhr(p_acet)    = 5300.
+           dhr(p_paa)     = 5308.
+           dhr(p_c3h6ooh) = 5653.
+           dhr(p_pan)     = 0.
+           dhr(p_mpan)    = 2560.
+           dhr(p_c2h5oh)  = 6500.
+           dhr(p_etooh)   = 5995.
+           dhr(p_prooh)   = 5995.
+           dhr(p_acetp)   = 5995.
+           dhr(p_onit)    = 6000.
+           dhr(p_onitr)   = 6485.
+           dhr(p_acetol)  = 6425.
+           dhr(p_glyald)  = 4630.
+           dhr(p_hydrald) = 6000.
+           dhr(p_alkooh)  = 5241.
+           dhr(p_mekooh)  = 5241.
+           dhr(p_tolooh)  = 5241.
+           dhr(p_terpooh) = 5241.
+        else
+           dhr(p_o3)   = 2300.
+           dhr(p_h2o2) = 6615.
+           dhr(p_hcho) = 7190.
+           dhr(p_pan)  = 5760.
+           dhr(p_onit) = 5487.
+           dhr(p_paa)  = 6170.
+        end if
+        dhr(p_no2)  = 2500.
+        dhr(p_no)   = 1480.
         dhr(p_aco3) = 6266.
         dhr(p_tpan) = 5760.
         dhr(p_hono) = 3775.
         dhr(p_no3) = 0.
         dhr(p_hno4) = 0.
-        dhr(p_h2o2) = 6615.
-        dhr(p_co) = 0.
+        dhr(p_co)  = 0.
         dhr(p_ald) = 6266.
         dhr(p_op1) = 5607.
         dhr(p_op2) = 10240.
-        dhr(p_paa) = 6170.
         dhr(p_ket) = 5773.
         dhr(p_gly) = 0.
         dhr(p_mgly) = 7541.
         dhr(p_dcb) = 0.
-        dhr(p_onit) = 5487.
         dhr(p_so2) = 5816.
         dhr(p_eth) = 0.
         dhr(p_hc3) = 0.
@@ -1259,25 +1641,51 @@ END SUBROUTINE wesely_driver
         dhr(p_hno3) = 8684.
         dhr(p_ora1) = 5716.
         dhr(p_ora2) = 8374.
-        dhr(p_nh3) = 3660.
+        dhr(p_nh3)  = 3660.
         dhr(p_n2o5) = 0.
-        if(p_ol2.gt.1)dhr(p_ol2) = 0.
-        if(p_par.gt.1)dhr(p_par) = 0.   !wig, 1-May-2007: for CBMZ
+        if(p_ol2 > 1) dhr(p_ol2) = 0.
+        if(p_par > 1) dhr(p_par) = 0.   !wig, 1-May-2007: for CBMZ
+!--------------------------------------------------
 !     REACTIVITY FACTORS
 !     [f0]=1
-
-        f0(p_no2) = 0.1
-        f0(p_no) = 0.
-        f0(p_pan) = 0.1
-        f0(p_o3) = 1.
-        f0(p_hcho) = 0.
+!--------------------------------------------------
+        if( config_flags%chem_opt == MOZART_KPP .or. &
+            config_flags%chem_opt == MOZCART_KPP ) then
+           f0(p_hcho)    = small_value
+           f0(p_ch3ooh)  = .1
+           f0(p_ch3oh)   = small_value
+           f0(p_ch3cooh) = small_value
+           f0(p_acet)    = small_value
+           f0(p_c3h6ooh) = .1
+           f0(p_mpan)    = 1.
+           f0(p_c2h5oh)  = small_value
+           f0(p_etooh)   = .1
+           f0(p_prooh)   = .1
+           f0(p_acetp)   = .1
+           f0(p_onit)    = .1
+           f0(p_onitr)   = .1
+           f0(p_acetol)  = small_value
+           f0(p_glyald)  = small_value
+           f0(p_hydrald) = small_value
+           f0(p_alkooh)  = .1
+           f0(p_mekooh)  = .1
+           f0(p_tolooh)  = .1
+           f0(p_terpooh) = .1
+        else
+           f0(p_hcho) = 0.
+           f0(p_onit) = 0.
+        end if
+        f0(p_no2)  = 0.1
+        f0(p_no)   = 0.
+        f0(p_pan)  = 0.1
+        f0(p_o3)   = 1.
         f0(p_aco3) = 1.
         f0(p_tpan) = 0.1
         f0(p_hono) = 0.1
-        f0(p_no3) = 1.
+        f0(p_no3)  = 1.
         f0(p_hno4) = 0.1
         f0(p_h2o2) = 1.
-        f0(p_co) = 0.
+        f0(p_co)   = 0.
         f0(p_ald) = 0.
         f0(p_op1) = 0.1
         f0(p_op2) = 0.1
@@ -1285,8 +1693,7 @@ END SUBROUTINE wesely_driver
         f0(p_ket) = 0.
         f0(p_gly) = 0.
         f0(p_mgly) = 0.
-        f0(p_dcb) = 0.
-        f0(p_onit) = 0.
+        f0(p_dcb)  = 0.
         f0(p_so2) = 0.
         f0(p_eth) = 0.
         f0(p_hc3) = 0.
@@ -1303,32 +1710,60 @@ END SUBROUTINE wesely_driver
         f0(p_ora2) = 0.
         f0(p_nh3) = 0.
         f0(p_n2o5) = 1.
-        if(p_ol2.gt.1)f0(p_ol2) = 0.
-        if(p_par.gt.1)f0(p_par) = 0.   !wig, 1-May-2007: for CBMZ
+        if(p_ol2 > 1) f0(p_ol2) = 0.
+        if(p_par > 1) f0(p_par) = 0.   !wig, 1-May-2007: for CBMZ
+!--------------------------------------------------
 !     DIFFUSION COEFFICIENTS
 !     [DV]=cm2/s (assumed: 1/SQRT(molar mass) when not known)
-
-        dvj(p_no2) = 0.147
-        dvj(p_no) = 0.183
-        dvj(p_pan) = 0.091
-        dvj(p_o3)   = 0.175
-        dvj(p_hcho) = 0.183
+!--------------------------------------------------
+        if( config_flags%chem_opt == MOZART_KPP .or. &
+            config_flags%chem_opt == MOZCART_KPP ) then
+           dvj(p_o3)      = 0.144
+           dvj(p_h2o2)    = 0.1715
+           dvj(p_hcho)    = 0.1825
+           dvj(p_ch3ooh)  = 0.144
+           dvj(p_ch3oh)   = 0.1767
+           dvj(p_ch3cooh) = 0.129
+           dvj(p_acet)    = 0.1312
+           dvj(p_paa)     = 0.1147
+           dvj(p_c3h6ooh) = 0.1042
+           dvj(p_mpan)    = 0.0825
+           dvj(p_c2h5oh)  = 0.1473
+           dvj(p_etooh)   = 0.127
+           dvj(p_prooh)   = 0.1146
+           dvj(p_acetp)   = 0.1054
+           dvj(p_onit)    = 0.0916
+           dvj(p_onitr)   = 0.0824
+           dvj(p_acetol)  = 0.116
+           dvj(p_glyald)  = 0.129
+           dvj(p_hydrald) = 0.0999
+           dvj(p_alkooh)  = 0.098
+           dvj(p_mekooh)  = 0.098
+           dvj(p_tolooh)  = 0.084
+           dvj(p_terpooh) = 0.073
+        else
+           dvj(p_o3)   = 0.175
+           dvj(p_h2o2) = 0.171
+           dvj(p_hcho) = 0.183
+           dvj(p_paa)  = 0.115
+           dvj(p_onit) = 0.092
+        end if
+        dvj(p_no2)  = 0.147
+        dvj(p_no)   = 0.183
+        dvj(p_pan)  = 0.091
         dvj(p_aco3) = 0.115
         dvj(p_tpan) = 0.082
         dvj(p_hono) = 0.153
-        dvj(p_no3) = 0.127
+        dvj(p_no3)  = 0.127
         dvj(p_hno4) = 0.113
-        dvj(p_h2o2) = 0.171
         dvj(p_co) = 0.189
         dvj(p_ald) = 0.151
         dvj(p_op1) = 0.144
         dvj(p_op2) = 0.127
-        dvj(p_paa) = 0.115
         dvj(p_ket) = 0.118
         dvj(p_gly) = 0.131
         dvj(p_mgly) = 0.118
         dvj(p_dcb)  = 0.107
-        dvj(p_onit) = 0.092
         dvj(p_so2) = 0.126
         dvj(p_eth) = 0.183
         dvj(p_hc3) = 0.151
@@ -1347,19 +1782,24 @@ END SUBROUTINE wesely_driver
         dvj(p_n2o5) = 0.110
         dvj(p_ho) = 0.243
         dvj(p_ho2) = 0.174
-        if(p_ol2.gt.1)dvj(p_ol2) = 0.189
-        if(p_par.gt.1)dvj(p_par) = 0.118   !wig, 1-May-2007: for CBMZ
+        if(p_ol2 > 1) dvj(p_ol2) = 0.189
+        if(p_par > 1) dvj(p_par) = 0.118   !wig, 1-May-2007: for CBMZ
         DO l = 1, numgas
           hstar4(l) = hstar(l) ! preliminary              
-! Correction of diff. coeff
+!--------------------------------------------------
+! Correction of diff. coefficient
+!--------------------------------------------------
           dvj(l) = dvj(l)*(293.15/298.15)**1.75
-          sc = 0.15/dvj(l) ! Schmidt Number at 20°C   
-          dratio(l) = 0.242/dvj(l) !                                            ! of water vapor and gas at
-! Ratio of diffusion coeffi
-          scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
+          sc = 0.15/dvj(l)                             ! Schmidt Number at 20°C   
+          dratio(l) = 0.242/dvj(l)                     ! of water vapor and gas at
+!--------------------------------------------------
+! Ratio of diffusion coefficient
+!--------------------------------------------------
+          scpr23(l) = (sc/0.72)**(2./3.)               ! (Schmidt # / Prandtl #)**
         END DO
 
-        else ! CB4
+        else is_cbm4_kpp
+
         hstar(p_no2)   = 6.40E-3
         hstar(p_no)    = 1.90E-3
         hstar(p_pan)   = 2.97E+0
@@ -1468,7 +1908,7 @@ END SUBROUTINE wesely_driver
           scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
 
        end DO
-    end if
+    end if is_cbm4_kpp
 
 
 
@@ -1650,6 +2090,109 @@ END SUBROUTINE wesely_driver
           ixxxlu(16) = 0
           ixxxlu(17) = 1
         END IF
-        RETURN
+
+#ifdef NETCDF
+!--------------------------------------------------
+!	... check for mozart chemistry
+!--------------------------------------------------
+!---------------------------------------------------------------------
+!	... open column density netcdf file
+!---------------------------------------------------------------------
+is_mozart : &
+      if( config_flags%chem_opt == MOZART_KPP .or. &
+          config_flags%chem_opt == MOZCART_KPP ) then
+        IF( wrf_dm_on_monitor() ) THEN
+         err_msg = 'dep_init: failed to open file wrf_season_wes_usgs.nc'
+         call handle_ncerr( nf_open( 'wrf_season_wes_usgs.nc', nf_noclobber, ncid ), trim(err_msg) )
+!---------------------------------------------------------------------
+!	... get dimensions
+!---------------------------------------------------------------------
+         err_msg = 'dep_init: failed to get npft id'
+         call handle_ncerr( nf_inq_dimid( ncid, 'npft', dimid ), trim(err_msg) ) 
+         err_msg = 'dep_init: failed to npft'
+         call handle_ncerr( nf_inq_dimlen( ncid, dimid, npft ), trim(err_msg) )
+         err_msg = 'dep_init: failed to get months year id'
+         call handle_ncerr( nf_inq_dimid( ncid, 'months', dimid ), trim(err_msg) )
+         err_msg = 'dep_init: failed to get months'
+         call handle_ncerr( nf_inq_dimlen( ncid, dimid, months ), trim(err_msg) )
+         err_msg = 'ftuv_init: failed to get west_east id'
+         call handle_ncerr( nf_inq_dimid( ncid, 'west_east', dimid ), trim(err_msg) ) 
+         err_msg = 'ftuv_init: failed to get west_east'
+         call handle_ncerr( nf_inq_dimlen( ncid, dimid, lon_e ), trim(err_msg) )
+         err_msg = 'ftuv_init: failed to get south_north id'
+         call handle_ncerr( nf_inq_dimid( ncid, 'south_north', dimid ), trim(err_msg) ) 
+         err_msg = 'ftuv_init: failed to get south_north'
+         call handle_ncerr( nf_inq_dimlen( ncid, dimid, lat_e ), trim(err_msg) )
+        end IF
+!---------------------------------------------------------------------
+!	... bcast the dimensions
+!---------------------------------------------------------------------
+         CALL wrf_dm_bcast_bytes ( npft , IWORDSIZE )
+         CALL wrf_dm_bcast_bytes ( months , IWORDSIZE )
+         CALL wrf_dm_bcast_bytes ( lon_e , IWORDSIZE )
+         CALL wrf_dm_bcast_bytes ( lat_e , IWORDSIZE )
+!---------------------------------------------------------------------
+!	... allocate arrays
+!---------------------------------------------------------------------
+         iend = min( ipe,ide-1 )
+         jend = min( jpe,jde-1 )
+         allocate( input_wes_seasonal(lon_e,lat_e,npft,months), stat=astat )
+         if( astat /= 0 ) then
+            call wrf_message( 'dep_init: failed to allocate input_wes_seasonal' )
+            call wrf_abort
+         end if
+         allocate( seasonal_wes(ips:iend,jps:jend,npft,months), stat=astat )
+         if( astat /= 0 ) then
+            call wrf_message( 'dep_init: failed to allocate seasonal_wes' )
+            call wrf_abort
+         end if
+!---------------------------------------------------------------------
+!	... read array
+!---------------------------------------------------------------------
+        IF ( wrf_dm_on_monitor() ) THEN
+         err_msg = 'dep_init: failed to get seasonal_wes variable id'
+         call handle_ncerr( nf_inq_varid( ncid, 'seasonal_wes', varid ), trim(err_msg) )
+         err_msg = 'dep_init: failed to read seasonal_wes variable'
+         call handle_ncerr( nf_get_var_int( ncid, varid, input_wes_seasonal ), trim(err_msg) )
+!---------------------------------------------------------------------
+!	... close netcdf file
+!---------------------------------------------------------------------
+         err_msg = 'dep_init: failed to close file wrf_season_wes_usgs.nc'
+         call handle_ncerr( nf_close( ncid ), trim(err_msg) )
+        end if
+
+        DM_BCAST_MACRO(input_wes_seasonal)
+
+        seasonal_wes(ips:iend,jps:jend,:npft,:months) = input_wes_seasonal(ips:iend,jps:jend,:npft,:months)
+        deallocate( input_wes_seasonal )
+      end if is_mozart
+#endif
       END SUBROUTINE dep_init
+
+#ifdef NETCDF
+
+      subroutine handle_ncerr( ret, mes )
+!---------------------------------------------------------------------
+!	... netcdf error handling routine
+!---------------------------------------------------------------------
+
+      implicit none
+
+!---------------------------------------------------------------------
+!	... dummy arguments
+!---------------------------------------------------------------------
+      integer, intent(in) :: ret
+      character(len=*), intent(in) :: mes
+
+include 'netcdf.inc'
+
+      if( ret /= nf_noerr ) then
+         call wrf_message( trim(mes) )
+         call wrf_message( trim(nf_strerror(ret)) )
+         call wrf_abort
+      end if
+
+      end subroutine handle_ncerr
+#endif
+
     END MODULE module_dep_simple

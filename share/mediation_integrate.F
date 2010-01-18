@@ -5,7 +5,7 @@
 
 SUBROUTINE med_calc_model_time ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain, domain_clock_get
    USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
    USE module_date_time
@@ -106,7 +106,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
        CALL med_auxinput_in ( grid, ialarm, config_flags )
        WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
-          ialarm , ' for domain ',grid%id
+          ialarm - first_auxinput + 1, ' for domain ',grid%id
        CALL wrf_debug ( 0 , message )
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
@@ -1475,6 +1475,8 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
      CALL wrf_error_fatal( message )
    ENDIF
 
+   grid%nframes(stream) = grid%nframes(stream) + 1
+
    SELECT CASE( stream )
 ! registry-generated file of calls to open filename
 !     CASE ( AUXINPUT1_ALARM )
@@ -2754,7 +2756,7 @@ END SUBROUTINE  med_read_wrf_chem_gocart_bg
 !zhang's doing for outputing restart namelist parameters
 RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain, domain_clock_get
    USE module_io_domain
    USE module_timing
   ! Model layer

@@ -72,6 +72,7 @@ end subroutine gocart_aerosols_driver
             its,ite, jts,jte, kts,kte                                  )
    USE module_configure
    USE module_state_description
+   USE module_data_gocartchem, only: nh4_mfac,oc_mfac
    IMPLICIT NONE
    REAL, PARAMETER :: mwso4 = 96.0576
    INTEGER,      INTENT(IN   ) :: ids,ide, jds,jde, kds,kde,               &
@@ -107,7 +108,8 @@ end subroutine gocart_aerosols_driver
             pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,p_dust_2)*d_2_5     &
                                             +chem(ii,k,jj,p_seas_1)           &        
                                             +chem(ii,k,jj,p_seas_2)*s_2_5     &        
-                                            +sulfate
+                                            +sulfate*nh4_mfac                 &
+                                            +(chem(ii,k,jj,p_oc1)+chem(ii,k,jj,p_oc2))*(oc_mfac-1.)
    
             !Convert the units from mixing ratio to concentration (ug m^-3)
             pm2_5_dry(i,k,j)    = pm2_5_dry(i,k,j) / alt(ii,k,jj)
@@ -126,9 +128,10 @@ end subroutine gocart_aerosols_driver
                do n=p_seas_1,p_seas_3
                   pm10(i,k,j) = pm10(i,k,j)+chem(ii,k,jj,n)        
                enddo
-               pm10(i,k,j) = pm10(i,k,j) + sulfate                 &
+               pm10(i,k,j) = pm10(i,k,j) + sulfate*nh4_mfac        &
                             +chem(ii,k,jj,p_dust_4)*d_10           &
-                            +chem(ii,k,jj,p_p10)
+                            +chem(ii,k,jj,p_p10)                &
+                            +(chem(ii,k,jj,p_oc1)+chem(ii,k,jj,p_oc2))*(oc_mfac-1.)
                pm10(i,k,j) = pm10(i,k,j)/ alt(ii,k,jj)
             enddo
          enddo

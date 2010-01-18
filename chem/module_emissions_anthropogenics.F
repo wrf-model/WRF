@@ -8,7 +8,7 @@ CONTAINS
 ! in the future. aerosols are already added somewhere else....
 !
    subroutine add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem, &
-               emis_ant,                                                   &
+               emis_ant, emis_aircraft,                                    &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -48,6 +48,12 @@ CONTAINS
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
           INTENT(IN   ) ::                                                 &
                                                       dz8w
+
+! stuff for aircraft emissions
+
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit_aircraft, jms:jme, num_emis_aircraft),      &
+         OPTIONAL,INTENT(IN ) ::  emis_aircraft
+
     integer i,j,k
     real :: conv_rho
 !--- deposition and emissions stuff
@@ -120,6 +126,13 @@ CONTAINS
            chem(i,k,j,p_isopr)  = chem(i,k,j,p_isopr) + emis_ant(i,k,j,p_e_isop)*conv_rho
            chem(i,k,j,p_c10h16) = chem(i,k,j,p_c10h16) + emis_ant(i,k,j,p_e_c10h16)*conv_rho
            chem(i,k,j,p_no2)    = chem(i,k,j,p_no2) + emis_ant(i,k,j,p_e_no2)*conv_rho
+           if( config_flags%chem_opt == MOZCART_KPP ) then
+             chem(i,k,j,p_p10)    = chem(i,k,j,p_p10) + emis_ant(i,k,j,p_e_pm_10)*conv_rho
+             chem(i,k,j,p_p25)    = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv_rho
+             chem(i,k,j,p_bc1)    = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv_rho
+             chem(i,k,j,p_oc1)    = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv_rho
+             chem(i,k,j,p_so4)    = chem(i,k,j,p_so4) + emis_ant(i,k,j,p_e_sulf)*conv_rho
+           endif
           else
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &
                          +emis_ant(i,k,j,p_e_csl)*conv_rho
@@ -156,6 +169,21 @@ CONTAINS
        endif
       END DO                                                          
  100  continue
+
+! add aircraft emissions
+   if (config_flags%aircraft_emiss_opt == 1 ) then
+      do j=jts,jte  
+      do k=kts,min(config_flags%kemit_aircraft,kte)
+      do i=its,ite  
+         conv_rho=4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+         chem(i,k,j,p_no)  = chem(i,k,j,p_no)  + emis_aircraft(i,k,j,p_eac_no) *conv_rho
+         chem(i,k,j,p_co)  = chem(i,k,j,p_co)  + emis_aircraft(i,k,j,p_eac_co) *conv_rho
+         chem(i,k,j,p_so2) = chem(i,k,j,p_so2) + emis_aircraft(i,k,j,p_eac_so2)*conv_rho
+         chem(i,k,j,p_ch4) = chem(i,k,j,p_ch4) + emis_aircraft(i,k,j,p_eac_ch4)*conv_rho
+      enddo
+      enddo
+      enddo
+   endif 
 
     END subroutine add_anthropogenics
 !

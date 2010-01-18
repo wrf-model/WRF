@@ -1,48 +1,37 @@
-! FTUV has been updated to conform with the v3 vertical indexing
-! method with kte=kde-1. "Saves" were also added to the module level
-! variables that are needed between calls since they could in theory be
-! lost between calls to FTUV without them. In reality, I do not think
-! this was happening due to the "use" statements, but better safe then
-! sorry. Finally, a critical bug was fixed where the aerosol arrays were
-! not set to 0 with non-SORGAM aerosol settings leading to junk J rates.
-!
-!!!! NOTE TO FTUV DEVELOPERS:
-!         The initialization routine needs to be changed to work using
-!         variable terrain height since the model top is not constant
-!         in time. It also is not constant in space, which is a bigger
-!         issue for most cases. At the very least, one needs to consider
-!         if the model top has been set at 50 vs. 100 mb, or something
-!         else entirely.
-!
-! William.Gustafson@pnl.gov; 18-Sep-2008
-!
       module module_ftuv_driver
 
       use module_wave_data, only : nw
 
       implicit none
 
+      save
+
+      integer, parameter :: dp = selected_real_kind(14,300)
+!----------------------------------------------------
 !     private variables
-      integer, private, parameter :: nref = 51
-      integer, private, save :: nz, kcon
-      integer, private, save :: curjulday = 0
-      real(8), private, save :: esfact = 1.0
+!----------------------------------------------------
+      integer, private, parameter  :: nref = 51
+      real(dp), private, parameter :: m2s    = 60._dp
+      real(dp), private, parameter :: Pa2hPa = .01_dp
 
-      real(8), private, save :: o3top = 2.97450e+16
-      real(8), private, save :: o2top = 3.60906e+21
+      integer, private  :: nz, kcon
+      integer, private  :: ncoldens_levs
+      integer, private  :: ndays_of_year
+      integer, private  :: next, last
+      integer, private  :: curjulday = 0
 
-      real(8), private, save :: zref(nref), tref(nref), airref(nref), o3ref(nref)
-      real(8), private, save :: albedo(nw-1,2)
+      real(dp), private :: esfact = 1.0_dp
+      real(dp), private :: dobson
 
-      real(8), private, allocatable, save :: z_ph(:), tlev_ph(:), tlay_ph(:), airlev_ph(:)
-      real(8), private, allocatable, save :: rh_ph(:), xlwc_ph(:)
-      real(8), private, allocatable, save :: o3_ph(:)
-      real(8), private, allocatable, save :: acb1_ph(:), acb2_ph(:)
-      real(8), private, allocatable, save :: aoc1_ph(:), aoc2_ph(:)
-      real(8), private, allocatable, save :: aant_ph(:), aso4_ph(:), asal_ph(:)
+      real(dp), private :: dels
 
-      real(8), private, allocatable, save :: ftuv(:,:)
+      real(dp), private :: zref(nref), tref(nref), airref(nref), o3ref(nref)
+      real(dp), private :: albedo(nw-1,2)
 
+      real(dp), private, allocatable :: col_levs(:)
+      real(dp), private, allocatable :: day_of_year(:)
+      real(dp), private, allocatable :: o3_col_dens(:,:,:,:)
+      real(dp), private, allocatable :: o2_col_dens(:,:,:,:)
 
       data zref/ 00.0, 01.0, 02.0, 03.0, 04.0, 05.0, 06.0, 07.0, 08.0, 09.0,   &
                  10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,   &
@@ -81,8 +70,12 @@
                   1.04E+11, 8.27E+10, 6.61E+10/
 
 
+!----------------------------------------------------
 !     private parameters
+!----------------------------------------------------
       integer, private, parameter :: pid_no2   = 4
+      integer, private, parameter :: pid_n2o   = 9
+      integer, private, parameter :: pid_n2o5  = 8
       integer, private, parameter :: pid_o31d  = 2
       integer, private, parameter :: pid_o33p  = 3
       integer, private, parameter :: pid_hono  = 12
@@ -94,6 +87,9 @@
       integer, private, parameter :: pid_ch2om = 16
       integer, private, parameter :: pid_ch2or = 15
       integer, private, parameter :: pid_ald   = 17
+      integer, private, parameter :: pid_ch3choa = 17
+      integer, private, parameter :: pid_ch3chob = 18
+      integer, private, parameter :: pid_ch3choc = 19
       integer, private, parameter :: pid_op1   = 24
       integer, private, parameter :: pid_op2   = 1    ! unknown
       integer, private, parameter :: pid_paa   = 16
@@ -103,11 +99,16 @@
       integer, private, parameter :: pid_mgly  = 22
       integer, private, parameter :: pid_dcb   = 1     ! unknown
       integer, private, parameter :: pid_onit  = 25
+      integer, private, parameter :: pid_pan   = 26
+      integer, private, parameter :: pid_mvk   = 27
+      integer, private, parameter :: pid_macr  = 28
+      integer, private, parameter :: pid_hyac  = 29
+      integer, private, parameter :: pid_glyald= 30
 
 
       contains
-      subroutine ftuv_radm2_driver(                                    &
-                              id, curr_secs, dtstep, config_flags,     &
+
+      subroutine ftuv_driver( id, curr_secs, dtstep, config_flags,     &
                               gmt, julday,                             &
                               p_phy, t_phy, rho_phy, p8w, t8w,         &
                               xlat, xlong,    z_at_w,                  &
@@ -117,7 +118,13 @@
                               ph_h2o2,ph_ch2om,ph_ch2or,ph_ald,        &
                               ph_op1,ph_op2,ph_paa,ph_ket,ph_glya,     &
                               ph_glyb,ph_mgly,ph_dcb,ph_onit,          &
-                              ph_macr,ph_ch3coc2h5,                    &
+                              ph_macr,ph_ch3coc2h5,ph_n2o,             &
+                              ph_pan,ph_mpan,ph_acetol,ph_gly,         &
+                              ph_bigald,ph_mek,ph_c2h5ooh,ph_c3h7ooh,  &
+                              ph_pooh,ph_rooh,ph_xooh,ph_isopooh,      &
+                              ph_alkooh,ph_mekooh,ph_tolooh,           &
+                              ph_terpooh,ph_n2o5,ph_mvk,ph_glyald,     &
+                              ph_hyac, ivgtyp,                         &
                               ids,ide, jds,jde, kds,kde,               &
                               ims,ime, jms,jme, kms,kme,               &
                               its,ite, jts,jte, kts,kte                )
@@ -127,116 +134,170 @@
       use module_model_constants
 
       use module_wave_data, only : tuv_jmax
+      use module_ftuv_subs, only : calc_zenith
 
       implicit none
 
+!----------------------------------------------------
 !     input arguments
-      integer, intent(in   ) :: id, julday,                            &
-                                ids,ide, jds,jde, kds,kde,             &
-                                ims,ime, jms,jme, kms,kme,             &
+!----------------------------------------------------
+      integer, intent(in   ) :: id, julday,                      &
+                                ids,ide, jds,jde, kds,kde,       &
+                                ims,ime, jms,jme, kms,kme,       &
                                 its,ite, jts,jte, kts,kte
-                               
-      real(kind=8), intent(in) :: curr_secs
+      integer, intent(in)    :: ivgtyp(ims:ime,jms:jme)                         
 
-      real,    intent(in   ) :: dtstep, gmt
+      real,     intent(in  ) :: dtstep, gmt
+      real(dp), intent(in  ) :: curr_secs
 
       type(grid_config_rec_type),  intent(in   ) :: config_flags
 
-      real, dimension( ims:ime, kms:kme, jms:jme ),                    &
-            intent(in   ) :: p_phy, t_phy, rho_phy, p8w, t8w, z_at_w
-!
-! these arrays are for cloudwater/ice coming from grell convection, optional
-      real, dimension( ims:ime, kms:kme, jms:jme ),                    &
-            intent(in   ) :: gd_cloud,gd_cloud2
+      real, intent(in   ) :: p_phy(ims:ime,kms:kme,jms:jme),     &
+                             t_phy(ims:ime,kms:kme,jms:jme),     &
+                             rho_phy(ims:ime,kms:kme,jms:jme),   &
+                             p8w(ims:ime,kms:kme,jms:jme),       &
+                             t8w(ims:ime,kms:kme,jms:jme),       &
+                             z_at_w(ims:ime,kms:kme,jms:jme)
 
-      real, dimension( ims:ime, jms:jme ),                             &
-            intent(in   ) :: xlat, xlong
+!----------------------------------------------------
+! these arrays are for cloudwater/ice coming from 
+! grell convection, optional
+!----------------------------------------------------
+      real, intent(in   ) :: gd_cloud(ims:ime,kms:kme,jms:jme), &
+                             gd_cloud2(ims:ime,kms:kme,jms:jme)
+      real, intent(in   ) :: xlat(ims:ime,jms:jme),             &
+                             xlong(ims:ime,jms:jme)
+      real, intent(in   ) :: moist(ims:ime,kms:kme,jms:jme,num_moist)
+      real, intent(in   ) :: chem(ims:ime,kms:kme,jms:jme,num_chem)
 
-      real, dimension( ims:ime, kms:kme, jms:jme, num_moist ),         &
-            intent(in   ) :: moist
-
-      real, dimension( ims:ime, kms:kme, jms:jme, num_chem ),          &
-            intent(in   ) :: chem
-
+!----------------------------------------------------
 !     output arguments
+!----------------------------------------------------
       real, dimension( ims:ime, kms:kme, jms:jme ),                    &
             intent(out  ) :: ph_no2, ph_o31d, ph_o33p, ph_hono,        &
                              ph_hno3, ph_hno4, ph_no3o2, ph_no3o,      &
                              ph_h2o2, ph_ch2om, ph_ch2or, ph_ald,      &
                              ph_op1, ph_op2, ph_paa, ph_ket, ph_glya,  &
                              ph_glyb, ph_mgly, ph_dcb,                 &
-                             ph_onit, ph_macr, ph_ch3coc2h5
+                             ph_onit, ph_macr, ph_ch3coc2h5, ph_n2o,   &
+                             ph_pan, ph_mpan, ph_acetol, ph_gly,       &
+                             ph_bigald, ph_mek, ph_c2h5ooh, ph_c3h7ooh,&
+                             ph_pooh,ph_rooh,ph_xooh,ph_isopooh,       &
+                             ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh, &
+                             ph_n2o5,ph_mvk,ph_glyald,ph_hyac
 
+!----------------------------------------------------
 !     local parameters
-      real(8), parameter :: xair_kg = 1.0e3/28.97*6.023e23*1.0e-6
+!----------------------------------------------------
+      real(dp), parameter :: xair_kg = 1.0e3_dp/28.97_dp*6.023e23_dp*1.0e-6_dp
+      real(dp), parameter :: ph_no3o_factor = 1.1236_dp
 
+!----------------------------------------------------
 !     local scalars
-      integer :: i, j, k
-      integer :: isorg
-      real(8)    :: xtime, xhour, xmin, gmtp
-      real(8)    :: dobson
-      integer :: lu
+!----------------------------------------------------
+      integer     :: i, j, k, kp1
+      integer     :: astat, istat
+      integer     :: isorg
+      integer     :: lu
+      real(dp)    :: xtime, xhour, xmin, gmtp
+      real(dp)    :: wrk, qs, es
+      real(dp)    :: alat, along, azim, zen
+      real(dp)    :: o3top
+      real(dp)    :: o2top
 
-      real(8)    :: wrk, qs, es
 
-      logical, save :: first = .true.
-
+!----------------------------------------------------
 !     local arrays
-      real(8) :: temp(kts:kte), o3(kts:kte), air(kts:kte)
-      real(8) :: zh(kts:kte), rh(kts:kte), xlwc(kts:kte)
+!----------------------------------------------------
+      real(dp) :: zen_angle(its:ite,jts:jte)
+      real(dp) :: temp(kts:kte+1), o3(kts:kte+1), air(kts:kte+1)
+      real(dp) :: zh(kts:kte+1), rh(kts:kte+1), xlwc(kts:kte+1)
 
-      real(8) :: acb1(kts:kte), acb2(kts:kte), aoc1(kts:kte), aoc2(kts:kte)
-      real(8) :: aant(kts:kte), aso4(kts:kte), asal(kts:kte)
+      real(dp) :: acb1(kts:kte+1), acb2(kts:kte+1), aoc1(kts:kte+1), aoc2(kts:kte+1)
+      real(dp) :: aant(kts:kte+1), aso4(kts:kte+1), asal(kts:kte+1)
 
-      real(8) :: prate(kts:kte,tuv_jmax)
+      real(dp) :: p_jtop(its:ite,jts:jte)
+      real(dp) :: o2_exo_col(its:ite,jts:jte)
+      real(dp) :: o3_exo_col(its:ite,jts:jte)
+      real(dp) :: prate(kts:kte+1,tuv_jmax)
 
-!     if the procedure is called first time, the initial subroutine is called
-      if( first ) then
-        call photo_inti( kte, 20.d0 )
-        first = .false.
+!----------------------------------------------------
+!     set o3,o2 column densities at model top
+!----------------------------------------------------
+      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+         p_jtop(its:ite,jts:jte) = Pa2hPa * p_phy(its:ite,kte,jts:jte)
+         call p_interp( o2_exo_col, o3_exo_col, p_jtop, &
+                        its, ite, jts, jte )
+      else
+         o2top  = 3.60906e+21_dp
+         o3top  = 2.97450e+16_dp
       endif
 
-!     calculate the GMT
       isorg=0
       aer_select: SELECT CASE(config_flags%chem_opt)
-         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ)
+         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,RACMSORG_AQ)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
          CASE DEFAULT
              CALL wrf_debug(15,'no aerosols initialization yet')
+             CALL wrf_message('no aerosols initialization yet')
    END SELECT aer_select
 
-      xtime = curr_secs/60._8
-      xhour = real( int(gmt+0.01,8) + int(xtime/60._8,8),8 )
-      xmin  = 60.0*gmt + ( xtime - xhour*60._8 )
-      gmtp  = mod( xhour, 24.0d0 )
-      gmtp  = gmtp + xmin/60.0
+!----------------------------------------------------
+!     calculate the GMT
+!----------------------------------------------------
+      xtime = curr_secs/60._dp
+      xhour = real( int(gmt + .01_dp) + int(xtime/m2s),kind=dp )
+      xmin  = m2s*gmt + ( xtime - xhour*m2s )
+      gmtp  = mod( xhour, 24.0_dp )
+      gmtp  = gmtp + xmin/m2s
 
-!     set total ozone and land use type
-      dobson = 265.0; lu = 1
+      xlwc(:) = 0
 
-      xlwc(:) = 0.  !initialize in case no cloud water is present
-
-!     get photolysis rates
+!----------------------------------------------------
+!     set photolysis rates
+!----------------------------------------------------
       J_TILE_LOOP : do j = jts, jte
       I_TILE_LOOP : do i = its, ite
 
-        do k = kts, kte-1
+!----------------------------------------------------
+!     set land use type
+!----------------------------------------------------
+        if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+           if( ivgtyp(i,j) /= 16 ) then
+              lu = 1
+           else
+              lu = 2
+           endif
+        else
+           lu = 1
+        endif
+
+level_loop : &
+        do k = kts, kte
+          if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+             o3top = o3_exo_col(i,j)
+             o2top = o2_exo_col(i,j)
+          endif
+          kp1       = k + 1
+          temp(kp1) = t_phy(i,k,j)                            ! temperature(K)
+          air(kp1)  = xair_kg*rho_phy(i,k,j)                  ! air num.(molecules/cm^3)
+          o3(kp1)   = chem(i,k,j,p_o3)*1.0e-6_dp              ! ozone(VMR)
        
-          temp(k+1) = t_phy(i,k,j)                            ! temperature(K)
-          air(k+1)  = xair_kg*rho_phy(i,k,j)                  ! air num.(molecules/cm^3)
-          o3(k+1)   = chem(i,k,j,p_o3)*1.0e-6                 ! ozone(VMR)
-       
-          wrk       = t_phy(i,k,j) - 273.0
-          es        = 6.11*10.0**(7.63*wrk/(241.9 + wrk))     ! Magnus EQ
-          qs        = 0.622*es/(p_phy(i,k,j)*0.01)            ! sat mass mix (H2O)
+          wrk       = t_phy(i,k,j) - 273._dp
+          es        = 6.11_dp*10.0_dp**(7.63_dp*wrk/(241.9_dp + wrk))     ! Magnus EQ
+          qs        = 0.622_dp*es/(p_phy(i,k,j)*0.01_dp)            ! sat mass mix (H2O)
           wrk       = moist(i,k,j,p_qv)/qs
-          rh(k+1)   = max( 0.0d0, min( 1.0d0, wrk) )              ! relative huminity
+          rh(kp1)   = max( 0.0_dp, min( 1.0_dp, wrk) )              ! relative huminity
        
-          if(p_qc.gt.1)xlwc(k+1) = 1.0e3*moist(i,k,j,p_qc)*rho_phy(i,k,j)  ! cloud water(g/m^3)
-          if( xlwc(k+1) < 1.0e-6 ) xlwc(k+1) = 0.0
+          if( p_qc > 1 ) then
+             xlwc(kp1) = 1.0e3_dp*moist(i,k,j,p_qc)*rho_phy(i,k,j)  ! cloud water(g/m^3)
+          end if
+          if( xlwc(kp1) < 1.0e-6_dp ) then
+             xlwc(kp1) = 0.0_dp
+          end if
        
-          zh(k+1) = .5*(z_at_w(i,k+1,j)+z_at_w(i,k,j))*0.001 - z_at_w(i,kts,j)*0.001      ! height(km)
+          zh(kp1) = .5_dp*(z_at_w(i,kp1,j)+z_at_w(i,k,j))*0.001_dp - z_at_w(i,kts,j)*0.001_dp      ! height(km)
 !         zh(k+1) = z(i,k,j)*0.001 - z_at_w(i,1,j)*0.001      ! height(km)
 
 !===============================================================================
@@ -253,40 +314,32 @@
 !      sa1 = p_seas        ( Coarse soil-derived aero sols )
 !
 !=======================================================
-          if(isorg == 1 ) then
-       
-          acb1(k+1) = chem(i,k,j,p_ecj)
-          acb2(k+1) = 0.0
-!         aoc1(k+1) = chem(i,k,j,p_orgpaj) + chem(i,k,j,p_orgbaj) + chem(i,k,j,p_orgaj)
-          aoc1(k+1) = chem(i,k,j,p_orgpaj)
-          aoc2(k+1) = 0.0
-          aant(k+1) = chem(i,k,j,p_no3aj) + chem(i,k,j,p_nh4aj)
-          aso4(k+1) = chem(i,k,j,p_so4aj)
-          asal(k+1) = chem(i,k,j,p_seas)
-
-          else !Cannot do aerosol effect for non-SORGAM aerosol modules
-               !This is a temporary hack; William.Gustafson@pnl.gov, 17-Sep-2008
-
-          acb1(k+1) = 0.0
-          acb2(k+1) = 0.0
-          aoc1(k+1) = 0.0
-          aoc2(k+1) = 0.0
-          aant(k+1) = 0.0
-          aso4(k+1) = 0.0
-          asal(k+1) = 0.0
-
+          if( isorg == 1 ) then
+             acb1(kp1) = chem(i,k,j,p_ecj)
+             acb2(kp1) = 0.0_dp
+!            aoc1(kp1) = chem(i,k,j,p_orgpaj) + chem(i,k,j,p_orgbaj) + chem(i,k,j,p_orgaj)
+             aoc1(kp1) = chem(i,k,j,p_orgpaj)
+             aoc2(kp1) = 0.0_dp
+             aant(kp1) = chem(i,k,j,p_no3aj) + chem(i,k,j,p_nh4aj)
+             aso4(kp1) = chem(i,k,j,p_so4aj)
+             asal(kp1) = chem(i,k,j,p_seas)
+          else
+             acb1(kp1) = 0._dp
+             acb2(kp1) = 0._dp
+             aoc1(kp1) = 0._dp
+             aoc2(kp1) = 0._dp
+             aant(kp1) = 0._dp
+             aso4(kp1) = 0._dp
+             asal(kp1) = 0._dp
           endif
-
-!==================================================================================
-       
-        enddo
+        enddo level_loop
 
         temp(1) = t8w(i,kts,j)
         air(1)  = xair_kg*( p8w(i,kts,j)/t8w(i,kts,j)/r_d )
         o3(1)   = o3(2)
         rh(1)   = rh(2)
-        xlwc(1) = 0.
-        zh(1)   = 0. 
+        xlwc(1) = 0._dp
+        zh(1)   = 0._dp 
         acb1(1) = acb1(2)
         acb2(1) = acb2(2)
         aoc1(1) = aoc1(2)
@@ -295,195 +348,457 @@
         aso4(1) = aso4(2)
         asal(1) = asal(2)
 
+!----------------------------------------------------
 !     smooth air density ...
+!----------------------------------------------------
         do k = kts+1, kte-1
-          air(k) = .5*air(k) + .25*( air(k-1) + air(k+1) )
+          air(k) = .5_dp*air(k) + .25_dp*( air(k-1) + air(k+1) )
         enddo
 
-        call photo( kte,                  &
-                    tuv_jmax,             &
-                    julday,               &
-                    gmtp,                 &
-                    dble(xlat(i,j)),      &
-                   -dble(xlong(i,j)),     &
-                    dobson,               &
-                    lu,                   &
-                    zh,                   &
-                    temp,                 &
-                    air,                  &
-                    rh,                   &
-                    xlwc,                 &
-                    o3,                   &
-                    acb1,                 &
-                    acb2,                 &
-                    aoc1,                 &
-                    aoc2,                 &
-                    aant,                 &
-                    aso4,                 &
-                    asal,                 &
-                    prate )
+       alat  = real(xlat(i,j),kind=dp)
+       along = -real(xlong(i,j),kind=dp)
+       call calc_zenith( alat, along, julday, gmtp, azim, zen )
+       zen_angle(i,j) = zen
 
-        do k = kts, kte-1 
-          ph_no2(i,k,j)   = prate(k,pid_no2)*60.
-          ph_o31d(i,k,j)  = prate(k,pid_o31d)*60.
-          ph_o33p(i,k,j)  = prate(k,pid_o33p)*60.
-          ph_hono(i,k,j)  = prate(k,pid_hono)*60.
-          ph_hno3(i,k,j)  = prate(k,pid_hno3)*60.
-          ph_hno4(i,k,j)  = prate(k,pid_hno4)*60.
-          ph_no3o2(i,k,j) = prate(k,pid_no3o2)*60.
-          ph_no3o(i,k,j)  = prate(k,pid_no3o)*60.
-          ph_h2o2(i,k,j)  = prate(k,pid_h2o2)*60.
-          ph_ch2om(i,k,j) = prate(k,pid_ch2om)*60.
-          ph_ch2or(i,k,j) = prate(k,pid_ch2or)*60.
-          ph_ald(i,k,j)   = prate(k,pid_ald)*60.
-          ph_op1(i,k,j)   = prate(k,pid_op1)*60.
-          ph_op2(i,k,j)   = prate(k,pid_op2)*60.
-          ph_paa(i,k,j)   = prate(k,pid_paa)*60.
-          ph_ket(i,k,j)   = prate(k,pid_ket)*60.
-          ph_glya(i,k,j)  = prate(k,pid_glya)*60.
-          ph_glyb(i,k,j)  = prate(k,pid_glyb)*60.
-          ph_mgly(i,k,j)  = prate(k,pid_mgly)*60.
-          ph_dcb(i,k,j)   = prate(k,pid_dcb)*60.
-          ph_onit(i,k,j)  = prate(k,pid_onit)*60.
-          ph_macr(i,k,j)  = prate(k,28) *60.  !
-          ph_ch3coc2h5(i,k,j)=prate(k,23)*60. !
+       call photo( config_flags%chem_opt,&
+                   kte+1,                &
+                   tuv_jmax,             &
+                   julday,               &
+                   gmtp,                 &
+                   alat, along,          &
+                   o3top, o2top, dobson, &
+                   lu,                   &
+                   zh,                   &
+                   temp,                 &
+                   air,                  &
+                   rh,                   &
+                   xlwc,                 &
+                   o3,                   &
+                   acb1,                 &
+                   acb2,                 &
+                   aoc1,                 &
+                   aoc2,                 &
+                   aant,                 &
+                   aso4,                 &
+                   asal,                 &
+                   prate )
+
+        do k = kts, kte
+          ph_no2(i,k,j)   = max( 0._dp,prate(k,pid_no2)*m2s )
+          ph_o31d(i,k,j)  = max( 0._dp,prate(k,pid_o31d)*m2s )
+          ph_o33p(i,k,j)  = max( 0._dp,prate(k,pid_o33p)*m2s )
+          ph_hono(i,k,j)  = max( 0._dp,prate(k,pid_hono)*m2s )
+          ph_hno3(i,k,j)  = max( 0._dp,prate(k,pid_hno3)*m2s )
+          ph_hno4(i,k,j)  = max( 0._dp,prate(k,pid_hno4)*m2s )
+          ph_no3o2(i,k,j) = max( 0._dp,prate(k,pid_no3o2)*m2s )
+          ph_no3o(i,k,j)  = max( 0._dp,prate(k,pid_no3o)*m2s*ph_no3o_factor )
+          ph_h2o2(i,k,j)  = max( 0._dp,prate(k,pid_h2o2)*m2s )
+          ph_ch2om(i,k,j) = max( 0._dp,prate(k,pid_ch2om)*m2s )
+          ph_ch2or(i,k,j) = max( 0._dp,prate(k,pid_ch2or)*m2s )
+          ph_ald(i,k,j)   = max( 0._dp,prate(k,pid_ald)*m2s )
+          ph_op1(i,k,j)   = max( 0._dp,prate(k,pid_op1)*m2s )
+          ph_op2(i,k,j)   = max( 0._dp,prate(k,pid_op2)*m2s )
+          ph_paa(i,k,j)   = max( 0._dp,prate(k,pid_paa)*m2s )
+          ph_ket(i,k,j)   = max( 0._dp,prate(k,pid_ket)*m2s )
+          ph_glya(i,k,j)  = max( 0._dp,prate(k,pid_glya)*m2s )
+          ph_glyb(i,k,j)  = max( 0._dp,prate(k,pid_glyb)*m2s )
+          ph_mgly(i,k,j)  = max( 0._dp,prate(k,pid_mgly)*m2s )
+          ph_dcb(i,k,j)   = max( 0._dp,prate(k,pid_dcb)*m2s )
+          ph_onit(i,k,j)  = max( 0._dp,prate(k,pid_onit)*m2s )
+          ph_macr(i,k,j)  = max( 0._dp,prate(k,pid_macr) *m2s )
+          ph_ch3coc2h5(i,k,j) = max( 0._dp,prate(k,23)*m2s )
         enddo
+
+        if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+          do k = kts, kte
+            ph_n2o(i,k,j)  = max( 0._dp,prate(k,pid_n2o)*m2s )
+            ph_n2o5(i,k,j) = max( 0._dp,prate(k,pid_n2o5)*m2s )
+            ph_mvk(i,k,j)  = max( 0._dp,prate(k,pid_mvk)*m2s )
+            ph_pan(i,k,j)  = max( 0._dp,prate(k,pid_pan)*m2s )
+            ph_ald(i,k,j)  = max( 0._dp,(prate(k,pid_ch3choa)+prate(k,pid_ch3chob)+prate(k,pid_ch3choc))*m2s )
+            ph_gly(i,k,j)  = ph_mgly(i,k,j)
+            ph_mek(i,k,j)  = ph_ket(i,k,j)
+            ph_acetol(i,k,j) = ph_op1(i,k,j)
+            ph_pooh(i,k,j)   = ph_op1(i,k,j)
+            ph_glyald(i,k,j) = max( 0._dp,prate(k,pid_glyald) *m2s )
+            ph_hyac(i,k,j)   = max( 0._dp,2._dp*prate(k,pid_hyac) *m2s )
+            ph_hno4(i,k,j)   = ph_hno4(i,k,j) + 1.e-5_dp*m2s
+          enddo
+        end if
 
       enddo I_TILE_LOOP
       enddo J_TILE_LOOP
 
-      end subroutine ftuv_radm2_driver
+      end subroutine ftuv_driver
 
-      subroutine photo_inti( nlev, ztopin ) 
+      subroutine ftuv_init( ips, ipe, jps, jpe, kte, &
+                            ide, jde, chem_opt )
+!---------------------------------------------------------------------
+!	... new initialization routine for ftuv
+!---------------------------------------------------------------------
 
-      use module_wave_data, only : nw, wl, tuv_jmax, wave_data_inti
-      use module_ftuv_subs, only : nwint, wlint, schu_inti, inter_inti
+      use module_state_description, only : mozart_kpp, mozcart_kpp
+      use module_ftuv_subs, only         : aer_init
 
       implicit none
 
+!---------------------------------------------------------------------
+!	... dummy arguments
+!---------------------------------------------------------------------
+      integer, intent(in) :: ips, ipe, jps, jpe, kte
+      integer, intent(in) :: ide, jde
+      integer, intent(in) :: chem_opt
+
+!---------------------------------------------------------------------
+!	... local variables
+!---------------------------------------------------------------------
+      integer :: astat
+      integer :: ncid
+      integer :: dimid
+      integer :: varid
+      integer :: iend, jend
+      integer :: lon_e, lat_e
+      real, allocatable :: col_dens(:,:,:,:)
+      character(len=128) :: err_msg
+
+      LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
+
+#ifdef NETCDF
+include 'netcdf.inc'
+#define DM_BCAST_MACRO(A) CALL wrf_dm_bcast_bytes ( A , size ( A ) * DWORDSIZE )
+#else
+      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+         call wrf_message( 'ftuv_init: mozart,mozcart chem option requires netcdf' )
+         call wrf_abort
+      end if
+#endif
+
+!---------------------------------------------------------------------
+!	... general initializer
+!---------------------------------------------------------------------
+      call photo_inti( chem_opt, kte, 20._dp )
+#ifdef NETCDF
+!---------------------------------------------------------------------
+!	... open column density netcdf file
+!---------------------------------------------------------------------
+is_mozart : &
+      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+        if( wrf_dm_on_monitor() ) then
+          err_msg = 'ftuv_init: failed to open file exo_coldens_d01'
+          call handle_ncerr( nf_open( 'exo_coldens_d01', nf_noclobber, ncid ), trim(err_msg) )
+!---------------------------------------------------------------------
+!	... get dimensions
+!---------------------------------------------------------------------
+           err_msg = 'ftuv_init: failed to get col_dens levels id'
+           call handle_ncerr( nf_inq_dimid( ncid, 'coldens_levs', dimid ), trim(err_msg) ) 
+           err_msg = 'ftuv_init: failed to get col_dens levels'
+           call handle_ncerr( nf_inq_dimlen( ncid, dimid, ncoldens_levs ), trim(err_msg) )
+           err_msg = 'ftuv_init: failed to get number of days in year id'
+           call handle_ncerr( nf_inq_dimid( ncid, 'ndays_of_year', dimid ), trim(err_msg) )
+           err_msg = 'ftuv_init: failed to get number of days in year'
+           call handle_ncerr( nf_inq_dimlen( ncid, dimid, ndays_of_year ), trim(err_msg) )
+           err_msg = 'ftuv_init: failed to get west_east id'
+           call handle_ncerr( nf_inq_dimid( ncid, 'west_east', dimid ), trim(err_msg) ) 
+           err_msg = 'ftuv_init: failed to get west_east'
+           call handle_ncerr( nf_inq_dimlen( ncid, dimid, lon_e ), trim(err_msg) )
+           err_msg = 'ftuv_init: failed to get south_north id'
+           call handle_ncerr( nf_inq_dimid( ncid, 'south_north', dimid ), trim(err_msg) ) 
+           err_msg = 'ftuv_init: failed to get south_north'
+           call handle_ncerr( nf_inq_dimlen( ncid, dimid, lat_e ), trim(err_msg) )
+        end IF
+!---------------------------------------------------------------------
+!	... bcast the dimensions
+!---------------------------------------------------------------------
+        CALL wrf_dm_bcast_bytes ( ncoldens_levs , IWORDSIZE )
+        CALL wrf_dm_bcast_bytes ( ndays_of_year , IWORDSIZE )
+        CALL wrf_dm_bcast_bytes ( lon_e , IWORDSIZE )
+        CALL wrf_dm_bcast_bytes ( lat_e , IWORDSIZE )
+!---------------------------------------------------------------------
+!	... allocate arrays
+!---------------------------------------------------------------------
+        iend = min( ipe,ide-1 )
+        jend = min( jpe,jde-1 )
+        allocate( col_levs(ncoldens_levs), day_of_year(ndays_of_year), stat=astat )
+        if( astat /= 0 ) then
+           call wrf_message( 'ftuv_init: failed to allocate col_levs,day_of_year' )
+           call wrf_abort
+        end if
+        allocate( col_dens(lon_e,lat_e,ncoldens_levs,ndays_of_year), stat=astat )
+        if( astat /= 0 ) then
+           call wrf_message( 'ftuv_init: failed to allocate col_dens' )
+           call wrf_abort
+        end if
+        allocate( o3_col_dens(ips:iend,jps:jend,ncoldens_levs,ndays_of_year), &
+                  o2_col_dens(ips:iend,jps:jend,ncoldens_levs,ndays_of_year), stat=astat )
+        if( astat /= 0 ) then
+           call wrf_message( 'ftuv_init: failed to allocate o3_col_dens,o2_col_dens' )
+           call wrf_abort
+        end if
+!---------------------------------------------------------------------
+!	... read arrays
+!---------------------------------------------------------------------
+        IF ( wrf_dm_on_monitor() ) THEN
+          err_msg = 'ftuv_init: failed to get col_levs variable id'
+          call handle_ncerr( nf_inq_varid( ncid, 'coldens_levs', varid ), trim(err_msg) )
+          err_msg = 'ftuv_init: failed to read col_levs variable'
+          call handle_ncerr( nf_get_var_double( ncid, varid, col_levs ), trim(err_msg) )
+          err_msg = 'ftuv_init: failed to get days_of_year variable id'
+          call handle_ncerr( nf_inq_varid( ncid, 'days_of_year', varid ), trim(err_msg) )
+          err_msg = 'ftuv_init: failed to read days_of_year variable'
+          call handle_ncerr( nf_get_var_double( ncid, varid, day_of_year ), trim(err_msg) )
+          err_msg = 'ftuv_init: failed to col_dens variable id'
+          call handle_ncerr( nf_inq_varid( ncid, 'o3_column_density', varid ), trim(err_msg) )
+          err_msg = 'ftuv_init: failed to read col_dens variable'
+          call handle_ncerr( nf_get_var_real( ncid, varid, col_dens ), trim(err_msg) )
+        end if
+
+        DM_BCAST_MACRO(col_levs)
+        write(*,*) 'ftuv_init: bcast col_levs'
+        DM_BCAST_MACRO(day_of_year)
+        write(*,*) 'ftuv_init: bcast day_of_year'
+        CALL wrf_dm_bcast_bytes ( col_dens, size(col_dens)*RWORDSIZE )
+        write(*,*) 'ftuv_init: bcast o3_col_dens'
+
+        o3_col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year) = &
+                      col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year)
+
+        IF ( wrf_dm_on_monitor() ) THEN
+          err_msg = 'ftuv_init: failed to col_dens variable id'
+          call handle_ncerr( nf_inq_varid( ncid, 'o2_column_density', varid ), trim(err_msg) )
+          err_msg = 'ftuv_init: failed to read col_dens variable'
+          call handle_ncerr( nf_get_var_real( ncid, varid, col_dens ), trim(err_msg) )
+!---------------------------------------------------------------------
+!	... close column density netcdf file
+!---------------------------------------------------------------------
+          err_msg = 'ftuv_init: failed to close file exo_coldens_d01'
+          call handle_ncerr( nf_close( ncid ), trim(err_msg) )
+        end if
+
+        CALL wrf_dm_bcast_bytes ( col_dens, size(col_dens)*RWORDSIZE )
+        write(*,*) 'ftuv_init: bcast o2_col_dens'
+
+        o2_col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year) = &
+                      col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year)
+
+!       err_msg = 'ftuv_init: failed to get o3_col_dens variable id'
+!       call handle_ncerr( nf_inq_varid( ncid, 'o3_column_density', varid ), trim(err_msg) )
+!       err_msg = 'ftuv_init: failed to read o3_col_dens variable'
+!       call handle_ncerr( nf_get_vara_double( ncid, varid, &
+!                                              (/ ips, jps, 1, 1 /), &
+!                                              (/iend-ips+1, jend-jps+1, ncoldens_levs, ndays_of_year /), &
+!                                              o3_col_dens ), trim(err_msg) )
+!       err_msg = 'ftuv_init: failed to get o2_col_dens variable id'
+!       call handle_ncerr( nf_inq_varid( ncid, 'o2_column_density', varid ), trim(err_msg) )
+!       err_msg = 'ftuv_init: failed to read o2_col_dens variable'
+!       call handle_ncerr( nf_get_vara_double( ncid, varid, &
+!                                              (/ ips, jps, 1, 1 /), &
+!                                              (/iend-ips+1, jend-jps+1, ncoldens_levs, ndays_of_year /), &
+!                                              o2_col_dens ), trim(err_msg) )
+        deallocate( col_dens )
+        write(*,*) ' '
+        write(*,*) 'ftuv_init: coldens variables'
+        write(*,*) 'ftuv_init: days_of_year'
+        write(*,'(1p,5g15.7)') day_of_year(:)
+        write(*,*) 'ftuv_init: coldens levels'
+        write(*,'(1p,5g15.7)') col_levs(:)
+        write(*,*) ' '
+      end if is_mozart
+#endif
+!---------------------------------------------------------------------
+!	... initialize aerosol routine
+!---------------------------------------------------------------------
+      write(*,*) 'ftuv_init: initializing aerosol routine'
+      call aer_init
+      write(*,*) 'ftuv_init: finished'
+
+      end subroutine ftuv_init
+
+#ifdef NETCDF
+      subroutine handle_ncerr( ret, mes )
+!---------------------------------------------------------------------
+!	... netcdf error handling routine
+!---------------------------------------------------------------------
+
+      implicit none
+
+!---------------------------------------------------------------------
+!	... dummy arguments
+!---------------------------------------------------------------------
+      integer, intent(in) :: ret
+      character(len=*), intent(in) :: mes
+
+include 'netcdf.inc'
+
+      if( ret /= nf_noerr ) then
+         call wrf_message( trim(mes) )
+         call wrf_message( trim(nf_strerror(ret)) )
+         call wrf_abort
+      end if
+
+      end subroutine handle_ncerr
+#endif
+
+      subroutine photo_inti( chem_opt, nlev, ztopin ) 
+
+      use module_wave_data, only : nw, wl, wave_data_inti
+      use module_ftuv_subs, only : nwint, wlint, schu_inti, inter_inti
+      use module_state_description, only : mozart_kpp, mozcart_kpp
+
+      implicit none
+
+!---------------------------------------------------------------------
 !     input arguments
-      integer, intent(in) :: nlev
-      real(8), intent(in) :: ztopin
+!---------------------------------------------------------------------
+      integer, intent(in)  :: chem_opt
+      integer, intent(in)  :: nlev
+      real(dp), intent(in) :: ztopin
 
+!---------------------------------------------------------------------
 !     local arguments
-      integer :: k, kdis, nabv, iw
-      real(8) :: ztop
+!---------------------------------------------------------------------
+      integer  :: k, kdis, nabv, iw
+      real(dp) :: ztop
 
+      if( chem_opt /= MOZART_KPP .and. chem_opt /= MOZCART_KPP ) then
+!---------------------------------------------------------------------
 !     change unit from m to km
-      ztop = ztopin
+!---------------------------------------------------------------------
+         ztop = ztopin
+!---------------------------------------------------------------------
+!     set the top exo model level
+!---------------------------------------------------------------------
+         do k = 1,nref
+           if( ztop < zref(k) ) then
+              exit
+           end if
+         enddo
+         if( k == 1 .or. k > nref ) then
+           call wrf_message( 'photo_inti: ztop is not in zref range' )
+           call wrf_abort
+         endif
 
-!     first, set the top levels height, temperature and o3 profile 
-      do k = 1, nref
-        if( ztop < zref(k) ) exit
-      enddo
-      if( k==1 .or. k>nref ) then
-        print*, 'Cannot process these two conditions ...', ztop
-        stop 'in photo_inti'
+         kcon = k + 1
+         kdis = nref - kcon
+         nabv = kdis/2 + 1
+         if( mod(kdis,2) /= 0 ) then
+           nabv = nabv + 1
+         endif
+         nz = nlev + nabv
+         write(*,*) '******************************************'
+         write(*,*) 'photo_inti: kcon,kdis,nabv,nlev,nz = ',kcon,kdis,nabv,nlev,nz
+         write(*,*) '******************************************'
+         dobson = 265.0_dp
+      else
+         nz = nlev
+         dobson = 0._dp
       endif
 
-      kcon = k + 1
-      kdis = nref - kcon
-      nabv = kdis/2 + 1
-      if( mod(kdis,2) /= 0 ) then
-        nabv = nabv + 1
-      endif
-      nz = nlev + nabv
-
-!     allocate memory space
-      allocate( z_ph(nz), tlev_ph(nz), tlay_ph(nz-1), airlev_ph(nz) )
-      allocate( rh_ph(nz), xlwc_ph(nz) )
-      allocate( o3_ph(nz) )
-      allocate( acb1_ph(nz), acb2_ph(nz), aoc1_ph(nz), aoc2_ph(nz) )
-      allocate( aant_ph(nz), aso4_ph(nz), asal_ph(nz) )
-      allocate( ftuv(nz,tuv_jmax) )
-
-      z_ph(nlev+1:nz-1) = zref(kcon:nref:2)
-      tlev_ph(nlev+1:nz-1) = tref(kcon:nref:2)
-      airlev_ph(nlev+1:nz-1) = airref(kcon:nref:2)
-      o3_ph(nlev+1:nz-1) = o3ref(kcon:nref:2)/airref(kcon:nref:2)  ! Changed to vmr
-
-      z_ph(nz) = zref(nref)
-      tlev_ph(nz) = tref(nref)
-      airlev_ph(nz) = airref(nref)
-      o3_ph(nz) = o3ref(nref)/airref(nref)
-
-      tlay_ph(nlev+1:) = 0.5*( tlev_ph(nlev+1:nz-1) + tlev_ph(nlev+2:) )
-
-      rh_ph(:)   = 0.0
-      xlwc_ph(:) = 0.0
-      acb1_ph(:) = 0.0
-      acb2_ph(:) = 0.0
-      aoc1_ph(:) = 0.0
-      aoc2_ph(:) = 0.0
-      aant_ph(:) = 0.0
-      aso4_ph(:) = 0.0
-      asal_ph(:) = 0.0
-
-!     second, set albedo for land
+!---------------------------------------------------------------------
+!     set albedo for land
+!---------------------------------------------------------------------
       do iw = 1, nw-1
-        if( wl(iw)<400.0 ) albedo(iw,1) = 0.05
-        if( (wl(iw)>=400.0 ) .and. (wl(iw)<450.0) ) albedo(iw,1) = 0.06
-        if( (wl(iw)>=450.0 ) .and. (wl(iw)<500.0) ) albedo(iw,1) = 0.08
-        if( (wl(iw)>=500.0 ) .and. (wl(iw)<550.0) ) albedo(iw,1) = 0.10
-        if( (wl(iw)>=550.0 ) .and. (wl(iw)<600.0) ) albedo(iw,1) = 0.11
-        if( (wl(iw)>=600.0 ) .and. (wl(iw)<640.0) ) albedo(iw,1) = 0.12
-        if( (wl(iw)>=640.0 ) .and. (wl(iw)<660.0) ) albedo(iw,1) = 0.135
-        if( wl(iw)>=660.0 ) albedo(iw,1) = 0.15
+        if( wl(iw)<400.0_dp ) then
+           albedo(iw,1) = 0.05_dp
+        else if( (wl(iw)>=400.0_dp ) .and. (wl(iw)<450.0_dp) ) then
+           albedo(iw,1) = 0.06_dp
+        else if( (wl(iw)>=450.0_dp ) .and. (wl(iw)<500.0_dp) ) then
+           albedo(iw,1) = 0.08_dp
+        else if( (wl(iw)>=500.0_dp ) .and. (wl(iw)<550.0_dp) ) then
+           albedo(iw,1) = 0.10_dp
+        else if( (wl(iw)>=550.0_dp ) .and. (wl(iw)<600.0_dp) ) then
+           albedo(iw,1) = 0.11_dp
+        else if( (wl(iw)>=600.0_dp ) .and. (wl(iw)<640.0_dp) ) then
+           albedo(iw,1) = 0.12_dp
+        else if( (wl(iw)>=640.0_dp ) .and. (wl(iw)<660.0_dp) ) then
+           albedo(iw,1) = 0.135_dp
+        else if( wl(iw)>=660.0_dp ) then
+           albedo(iw,1) = 0.15_dp
+        end if
       end do
 
+!---------------------------------------------------------------------
 !     set albedo for sea water
-      albedo(1:17,2) = (/ 0.8228, 0.8140, 0.8000, 0.7820, 0.7600,   &
-                          0.7340, 0.7040, 0.6700, 0.6340, 0.4782,   &
-                          0.3492, 0.3000, 0.2700, 0.2400, 0.1700,   &
-                          0.0800, 0.0600 /)
+!
+!     For mozart_kpp these are interpolated from reflectance values
+!     for IGBP type 17 (ocean water). Source: NASA LARC
+!     (http://www-surf.larc.nasa.gov/surf/pages/explan.html)
+!---------------------------------------------------------------------
+      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+         albedo(1:17,2) = (/ 0.0747_dp, 0.0755_dp, 0.0767_dp, 0.0783_dp, 0.0802_dp,   &
+                             0.0825_dp, 0.0852_dp, 0.0882_dp, 0.0914_dp, 0.0908_dp,   &
+                             0.0763_dp, 0.0725_dp, 0.0689_dp, 0.0632_dp, 0.0570_dp,   &
+                             0.0585_dp, 0.0535_dp /)
+      else
+         albedo(1:17,2) = (/ 0.8228_dp, 0.8140_dp, 0.8000_dp, 0.7820_dp, 0.7600_dp,   &
+                             0.7340_dp, 0.7040_dp, 0.6700_dp, 0.6340_dp, 0.4782_dp,   &
+                             0.3492_dp, 0.3000_dp, 0.2700_dp, 0.2400_dp, 0.1700_dp,   &
+                             0.0800_dp, 0.0600_dp /)
+      endif
 
-!     third, intialize other modules
+!---------------------------------------------------------------------
+!     intialize other modules
+!---------------------------------------------------------------------
       call schu_inti
       call wave_data_inti( nz )
       call inter_inti( nw, wl, nwint, wlint )
 
-      print*, 'finish initialization ...'
-
       end subroutine photo_inti
 
-      subroutine photo( nlev, njout, julday, gmtp, alat, along, o3toms, lu,     &
-                        zin, tlevin, airlevin, rhin, xlwcin, o3in,              &
-                        acb1in, acb2in, aoc1in, aoc2in,                         &
-                        aantin, aso4in, asalin,                                 &
-                        prate )
+      subroutine photo( chem_opt, nlev, njout, julday, gmtp, alat, &
+                        along, o3top, o2top, o3toms, lu, zin, tlevin, &
+                        airlevin, rhin, xlwcin, o3in, acb1in, &
+                        acb2in, aoc1in, aoc2in, aantin, aso4in, &
+                        asalin, prate )
 
-      use module_ftuv_subs, only : sundis, calc_zenith, photoin
+      use module_ftuv_subs, only : calc_zenith, photoin
 
       implicit none
 
+!----------------------------------------------------
 !     input arguments
-      integer, intent(in) :: nlev, njout
-      integer, intent(in) :: julday
-      real(8), intent(in) :: gmtp
-      real(8), intent(in) :: alat, along
-      real(8), intent(in) :: o3toms
-      integer, intent(in) :: lu 
+!----------------------------------------------------
+      integer, intent(in)  :: chem_opt 
+      integer, intent(in)  :: lu 
+      integer, intent(in)  :: nlev, njout
+      integer, intent(in)  :: julday
+      real(dp), intent(in) :: gmtp
+      real(dp), intent(in) :: alat, along
+      real(dp), intent(in) :: o3toms
+      real(dp), intent(in) :: o3top
+      real(dp), intent(in) :: o2top
 
-      real(8), intent(in) :: zin(nlev)
-      real(8), intent(in) :: tlevin(nlev)
-      real(8), intent(in) :: airlevin(nlev)
-      real(8), intent(in) :: rhin(nlev)
-      real(8), intent(in) :: xlwcin(nlev)
-      real(8), intent(in) :: o3in(nlev)
-      real(8), intent(in) :: acb1in(nlev)
-      real(8), intent(in) :: acb2in(nlev)
-      real(8), intent(in) :: aoc1in(nlev)
-      real(8), intent(in) :: aoc2in(nlev)
-      real(8), intent(in) :: aantin(nlev)
-      real(8), intent(in) :: aso4in(nlev)
-      real(8), intent(in) :: asalin(nlev)
+      real(dp), intent(in) :: zin(nlev)
+      real(dp), intent(in) :: tlevin(nlev)
+      real(dp), intent(in) :: airlevin(nlev)
+      real(dp), intent(in) :: rhin(nlev)
+      real(dp), intent(in) :: xlwcin(nlev)
+      real(dp), intent(in) :: o3in(nlev)
+      real(dp), intent(in) :: acb1in(nlev)
+      real(dp), intent(in) :: acb2in(nlev)
+      real(dp), intent(in) :: aoc1in(nlev)
+      real(dp), intent(in) :: aoc2in(nlev)
+      real(dp), intent(in) :: aantin(nlev)
+      real(dp), intent(in) :: aso4in(nlev)
+      real(dp), intent(in) :: asalin(nlev)
 
+!----------------------------------------------------
 !     output arguments
-      real(8), intent(out) :: prate(nlev,njout)
+!----------------------------------------------------
+      real(dp), intent(out) :: prate(nlev,njout)
 
+!----------------------------------------------------
 !     local arugments
-      integer :: k, n
-      real(8) :: azim, zen
+!----------------------------------------------------
+      integer  :: astat, istat
+      integer  :: k, n
+      real(dp) :: azim, zen
+      real(dp), allocatable :: z_ph(:), tlev_ph(:), tlay_ph(:), airlev_ph(:)
+      real(dp), allocatable :: rh_ph(:), xlwc_ph(:)
+      real(dp), allocatable :: o3_ph(:)
+      real(dp), allocatable :: acb1_ph(:), acb2_ph(:)
+      real(dp), allocatable :: aoc1_ph(:), aoc2_ph(:)
+      real(dp), allocatable :: aant_ph(:), aso4_ph(:), asal_ph(:)
+      real(dp), allocatable :: ftuv(:,:)
 
 !-----------------------------------------------------------------------------
 ! Now xx-ftuv only considers the following 28 photolysis reactions ...
@@ -516,66 +831,215 @@
 ! 26 pan + hv -> products
 ! 27 mvk + hv -> products
 ! 28 macr + hv -> products
+! 29 hyac + hv -> products
+! 30 glyald + hv -> products
 !-----------------------------------------------------------------------------
-      if( curjulday /= julday ) then
-        curjulday = julday
-        call sundis( curjulday, esfact )
+
+!---------------------------------------------------------------------
+!     allocate memory space
+!---------------------------------------------------------------------
+      astat = 0
+      allocate( ftuv(nz,njout), stat=istat )
+      astat = astat + istat
+      allocate( z_ph(nz), tlev_ph(nz), tlay_ph(nz-1), airlev_ph(nz), stat=istat )
+      astat = astat + istat
+      allocate( rh_ph(nz), xlwc_ph(nz), stat=istat )
+      astat = astat + istat
+      allocate( o3_ph(nz), stat=istat )
+      astat = astat + istat
+      allocate( acb1_ph(nz), acb2_ph(nz), aoc1_ph(nz), aoc2_ph(nz), stat=istat )
+      astat = astat + istat
+      allocate( aant_ph(nz), aso4_ph(nz), asal_ph(nz), stat=istat )
+      astat = astat + istat
+      if( astat /= 0 ) then
+         call wrf_message( 'ftuv_driver: failed to allocate _ph arrays' )
+         call wrf_abort
       endif
 
-!     solar zenith angle calculation:
+      rh_ph(:)   = 0.0_dp
+      xlwc_ph(:) = 0.0_dp
+      acb1_ph(:) = 0.0_dp
+      acb2_ph(:) = 0.0_dp
+      aoc1_ph(:) = 0.0_dp
+      aoc2_ph(:) = 0.0_dp
+      aant_ph(:) = 0.0_dp
+      aso4_ph(:) = 0.0_dp
+      asal_ph(:) = 0.0_dp
+
+!-----------------------------------------------------------------------------
+!     solar zenith angle calculation
+!-----------------------------------------------------------------------------
       call calc_zenith( alat, along, julday, gmtp, azim, zen )
-      if( zen == 90.0 ) then
-        zen = 89.0
-      elseif( zen >= 95.0 ) then
-        prate(:,:) = 0.0
+      if( zen == 90.0_dp ) then
+        zen = 89.0_dp
+      elseif( zen >= 95.0_dp ) then
+        prate(:,:) = 0.0_dp
         return
       endif
-
+ 
+!----------------------------------------------------
 !     assgin vertical profiles
-      z_ph(1:nlev) = zin(1:nlev)
-      tlev_ph(1:nlev) = tlevin(1:nlev)
+!     model levels first
+!----------------------------------------------------
+      z_ph(1:nlev)      = zin(1:nlev)
+      tlev_ph(1:nlev)   = tlevin(1:nlev)
       airlev_ph(1:nlev) = airlevin(1:nlev)
-      rh_ph(1:nlev) = rhin(1:nlev)
-      xlwc_ph(1:nlev) = xlwcin(1:nlev)
-      o3_ph(1:nlev) = o3in(1:nlev)
-      acb1_ph(1:nlev) = acb1in(1:nlev)
-      acb2_ph(1:nlev) = acb2in(1:nlev)
-      aoc1_ph(1:nlev) = aoc1in(1:nlev)
-      aoc2_ph(1:nlev) = aoc2in(1:nlev)
-      aant_ph(1:nlev) = aantin(1:nlev)
-      aso4_ph(1:nlev) = aso4in(1:nlev)
-      asal_ph(1:nlev) = asalin(1:nlev)
+      rh_ph(1:nlev)     = rhin(1:nlev)
+      xlwc_ph(1:nlev)   = xlwcin(1:nlev)
+      o3_ph(1:nlev)     = o3in(1:nlev)
+      acb1_ph(1:nlev)   = acb1in(1:nlev)
+      acb2_ph(1:nlev)   = acb2in(1:nlev)
+      aoc1_ph(1:nlev)   = aoc1in(1:nlev)
+      aoc2_ph(1:nlev)   = aoc2in(1:nlev)
+      aant_ph(1:nlev)   = aantin(1:nlev)
+      aso4_ph(1:nlev)   = aso4in(1:nlev)
+      asal_ph(1:nlev)   = asalin(1:nlev)
 
-      tlay_ph(1:nlev-1) = 0.5*( tlev_ph(1:nlev-1) + tlev_ph(2:nlev) )
-      tlay_ph(nlev) = 0.5*( tlev_ph(nlev) + tref(kcon) )
+      tlay_ph(1:nlev-1) = 0.5_dp*(tlev_ph(1:nlev-1) + tlev_ph(2:nlev))
 
-      call photoin( nz,             & 
-                    zen,            & 
-                    o3toms,         & 
-                    esfact,         & 
-                    o3top,          & 
-                    o2top,          & 
-                    albedo(:,lu),   &
-                    z_ph,           &  
-                    tlev_ph,        & 
-                    tlay_ph,        & 
-                    airlev_ph,      &
-                    rh_ph,          & 
-                    xlwc_ph,        & 
-                    o3_ph,          &
-                    acb1_ph,        & 
-                    acb2_ph,        & 
-                    aoc1_ph,        & 
-                    aoc2_ph,        & 
-                    aant_ph,        & 
-                    aso4_ph,        & 
-                    asal_ph,        & 
-                    ftuv )
+!----------------------------------------------------
+!     exo model levels
+!----------------------------------------------------
+      if( nz > nlev ) then
+         z_ph(nlev+1:nz-1) = zref(kcon:nref:2)
+         tlev_ph(nlev+1:nz-1) = tref(kcon:nref:2)
+         airlev_ph(nlev+1:nz-1) = airref(kcon:nref:2)
+         o3_ph(nlev+1:nz-1) = o3ref(kcon:nref:2)/airref(kcon:nref:2)  ! Changed to vmr
 
-      do k = 1, nlev-1
-        prate(k,1:njout) = ftuv(nz-k,1:njout)
+         z_ph(nz) = zref(nref)
+         tlev_ph(nz) = tref(nref)
+         airlev_ph(nz) = airref(nref)
+         o3_ph(nz) = o3ref(nref)/airref(nref)
+         tlay_ph(nlev)    = 0.5_dp*(tlev_ph(nlev) + tref(kcon))
+         tlay_ph(nlev+1:) = 0.5_dp*( tlev_ph(nlev+1:nz-1) + tlev_ph(nlev+2:) )
+      end if
+
+
+      call photoin( chem_opt, nz, zen, o3toms, esfact,           & 
+                    o3top, o2top, albedo(:,lu), z_ph, tlev_ph,   & 
+                    tlay_ph, airlev_ph, rh_ph, xlwc_ph, o3_ph,   &
+                    acb1_ph, acb2_ph, aoc1_ph, aoc2_ph, aant_ph, & 
+                    aso4_ph, asal_ph, ftuv )
+
+      do n = 1,njout
+        prate(1:nlev-1,n) = ftuv(2:nlev,n)
       enddo
+
+      deallocate( ftuv, z_ph, tlev_ph, tlay_ph, airlev_ph, rh_ph, xlwc_ph, &
+                  o3_ph, acb1_ph, acb2_ph, aoc1_ph, aoc2_ph, aant_ph, aso4_ph, &
+                  asal_ph )
        
       end subroutine photo
+
+      subroutine ftuv_timestep_init( julday )
+!-----------------------------------------------------------------------------
+!	... setup the time interpolation
+!-----------------------------------------------------------------------------
+
+      use module_ftuv_subs, only : sundis
+
+      implicit none
+
+!-----------------------------------------------------------------------------
+!	... dummy arguments
+!-----------------------------------------------------------------------------
+      integer, intent(in)  ::  julday         ! day of year at present time step
+
+!-----------------------------------------------------------------------------
+!	... local variables
+!-----------------------------------------------------------------------------
+      integer  :: m
+      real(dp) :: calday
+
+      calday = real( julday,kind=dp)
+      if( calday < day_of_year(1) ) then
+         next = 1
+	 last = 12
+	 dels = (365._dp + calday - day_of_year(12)) / (365._dp + day_of_year(1) - day_of_year(12))
+      else if( calday >= day_of_year(12) ) then
+	 next = 1
+	 last = 12
+	 dels = (calday - day_of_year(12)) / (365. + day_of_year(1) - day_of_year(12))
+      else
+         do m = 11,1,-1
+	    if( calday >= day_of_year(m) ) then
+	       exit
+	    end if
+         end do
+	 last = m
+	 next = m + 1
+	 dels = (calday - day_of_year(m)) / (day_of_year(m+1) - day_of_year(m))
+      end if
+!-----------------------------------------------------------------------------
+!     set solar distance factor
+!-----------------------------------------------------------------------------
+         if( curjulday /= julday ) then
+            curjulday = julday
+            call sundis( curjulday, esfact )
+         endif
+
+      end subroutine ftuv_timestep_init
+
+      subroutine p_interp( o2_exo_col, o3_exo_col, ptop, &
+                           its, ite, jts, jte )
+!---------------------------------------------------------------
+!     	... pressure interpolation for exo col density
+!---------------------------------------------------------------
+
+      implicit none
+
+!---------------------------------------------------------------
+!     	... dummy arguments
+!---------------------------------------------------------------
+      integer, intent(in)   :: its, ite
+      integer, intent(in)   :: jts, jte
+      real(dp), intent(in)  :: ptop(its:ite,jts:jte)             ! pressure at photolysis top (hPa)
+      real(dp), intent(out) :: o2_exo_col(its:ite,jts:jte)       ! exo model o2 column density (molecules/cm^2)
+      real(dp), intent(out) :: o3_exo_col(its:ite,jts:jte)       ! exo model o3 column density (molecules/cm^2)
+
+!---------------------------------------------------------------
+!     	... local variables
+!---------------------------------------------------------------
+      integer  :: i, j, k, ku, kl
+      real(dp) :: pinterp
+      real(dp) :: delp
+      real(dp) :: tint_vals(2)
+
+lat_loop : &
+      do j = jts,jte
+long_loop : &
+         do i = its,ite
+            pinterp = ptop(i,j)
+            if( pinterp < col_levs(1) ) then
+               ku = 1
+               kl = 1
+               delp = 0._dp
+            else
+	       do ku = 2,ncoldens_levs
+                  if( pinterp <= col_levs(ku) ) then
+                     kl = ku - 1
+		     delp = log( pinterp/col_levs(kl) )/log( col_levs(ku)/col_levs(kl) )
+		     exit
+	          end if
+	       end do
+            end if
+	    tint_vals(1) = o2_col_dens(i,j,kl,last) &
+                           + delp * (o2_col_dens(i,j,ku,last) &
+                                     - o2_col_dens(i,j,kl,last))
+	    tint_vals(2) = o2_col_dens(i,j,kl,next) &
+                           + delp * (o2_col_dens(i,j,ku,next) &
+                                     - o2_col_dens(i,j,kl,next))
+	    o2_exo_col(i,j) = tint_vals(1) + dels * (tint_vals(2) - tint_vals(1))
+	    tint_vals(1) = o3_col_dens(i,j,kl,last) &
+                           + delp * (o3_col_dens(i,j,ku,last) &
+                                     - o3_col_dens(i,j,kl,last))
+	    tint_vals(2) = o3_col_dens(i,j,kl,next) &
+                           + delp * (o3_col_dens(i,j,ku,next) &
+                                     - o3_col_dens(i,j,kl,next))
+	    o3_exo_col(i,j) = tint_vals(1) + dels * (tint_vals(2) - tint_vals(1))
+         end do long_loop
+      end do lat_loop
+
+      end subroutine p_interp
  
       end module module_ftuv_driver

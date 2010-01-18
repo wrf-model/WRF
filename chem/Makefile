@@ -259,7 +259,7 @@ module_convtrans_prep.o:
 
 module_aer_drydep.o: module_aerosols_sorgam.o module_mosaic_drydep.o
 
-chem_driver.o: module_radm.o module_convtrans_prep.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o module_wetscav_driver.o dry_dep_driver.o emissions_driver.o
+chem_driver.o: module_radm.o module_convtrans_prep.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o module_wetscav_driver.o dry_dep_driver.o emissions_driver.o module_input_tracer.o module_input_tracer_data.o
 
 chemics_init.o: module_phot_mad.o module_gocart_chem.o module_aerosols_sorgam.o module_mixactivate_wrappers.o
 

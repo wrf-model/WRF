@@ -131,7 +131,7 @@ MODULE module_domain_type
       INTEGER      , DIMENSION( max_parents )             :: child_of_parent
       INTEGER      , DIMENSION( max_nests )               :: active
 
-      INTEGER      , DIMENSION(MAX_HISTORY)               :: nframes          ! frames per outfile for history 
+      INTEGER      , DIMENSION(MAX_STREAMS)               :: nframes          ! frames per outfile for history 
                                                                               ! 1 is main history
 
       TYPE(domain) , POINTER                              :: next

@@ -158,8 +158,12 @@ END SUBROUTINE med_after_solve_io
 
 SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
   ! Driver layer
+#ifdef MOVE_NESTS
+   USE module_domain	, ONLY : domain, domain_clock_get
+#else
    USE module_domain	, ONLY : domain
-   USE module_utility   , ONLY : WRFU_Time
+#endif
+   USE module_utility   , ONLY : WRFU_Time, WRFU_TimeEQ
    USE module_timing
    USE module_io_domain
    USE module_configure	, ONLY : grid_config_rec_type
@@ -184,7 +188,7 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
    CALL domain_clock_get( parent, current_timestr=timestr, start_time=strt_time, current_time=cur_time )
    CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
 
-   IF ( config_flags%restart .AND. cur_time .EQ. strt_time ) THEN
+    IF ( config_flags%restart .AND. WRFU_TimeEQ(cur_time,strt_time) ) THEN
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
      CALL wrf_message ( message )
   ! note that the parent pointer is not strictly correct, but nest is not allocated yet and
@@ -1899,7 +1903,7 @@ END SUBROUTINE open_hist_w
 !------------------------------------------------------------------------
 SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2098,7 +2102,7 @@ END SUBROUTINE med_read_wrf_chem_emiss
 
 SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2162,7 +2166,7 @@ END SUBROUTINE med_read_wrf_chem_bioemiss
 
 SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2225,7 +2229,7 @@ SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
 END SUBROUTINE med_read_wrf_chem_gocartbg
 SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2306,7 +2310,7 @@ END SUBROUTINE med_read_wrf_chem_emissopt3
 !------------------------------------------------------------------------
 SUBROUTINE med_read_wrf_chem_fireemiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2479,7 +2483,7 @@ END SUBROUTINE med_read_wrf_chem_fireemiss
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2546,7 +2550,7 @@ END SUBROUTINE med_read_wrf_chem_emissopt4
 
 SUBROUTINE med_read_wrf_chem_dust_emiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2613,7 +2617,7 @@ END SUBROUTINE  med_read_wrf_chem_dust_emiss
 
 SUBROUTINE med_read_wrf_chem_dms_emiss ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -2680,7 +2684,7 @@ END SUBROUTINE  med_read_wrf_chem_dms_emiss
 
 SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain , domain_clock_get
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type

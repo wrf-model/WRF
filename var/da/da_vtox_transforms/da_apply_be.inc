@@ -14,7 +14,7 @@ SUBROUTINE da_apply_be( be, cv, vp, grid )
 !-------------------------------------------------------------------------
 
    call da_cv_to_vv( cv_size, cv,&
-           (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%ne /), vp )
+           (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be%ne /), vp )
 
 !  [2.0] Transform control variable:
 

@@ -65,7 +65,7 @@ subroutine da_interpolate_regcoeff( kzs, kz, meanp_stats, meanp_xb, &
    end do
 
    do k = 1, ktrap_min - 1
-      k_above(k) = 1
+      k_above(k) = 2
       weight(k) = 1.0
    enddo
    do k = ktrap_max + 1, kz

@@ -218,6 +218,12 @@ module da_define_structures
       type (each_level_type)                  :: each(max_ob_levels)
    end type multi_level_type
 
+   type multi_level_type_BUFR
+      type (info_type)                        :: info
+      type (model_loc_type)                   :: loc
+      type (each_level_type), pointer         :: each(:)
+   end type multi_level_type_BUFR
+
    type radar_stn_type
       character (len = 5)    :: platform      ! Data type
       character (len = 12)   :: name          ! Station name

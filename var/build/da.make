@@ -132,6 +132,7 @@ WRFVAR_OBJS = \
    wrf_ext_write_field.o \
    collect_on_comm.o \
    start_domain.o \
+   module_streams.o \
    module_comm_dm.o \
    module_comm_dm_0.o \
    module_comm_dm_1.o \

@@ -22,7 +22,7 @@ module da_wrfvar_top
 
    use module_state_description, only : num_moist, num_a_moist, num_g_moist, &
       num_dfi_moist, num_scalar, num_a_scalar, num_g_scalar, num_dfi_scalar, &
-      num_fdda3d, num_fdda2d, num_ozmixm, num_aerosolc, num_chem
+      num_fdda3d, num_fdda2d, num_ozmixm, num_aerosolc
    use module_tiles, only : set_tiles
 
 #ifdef DM_PARALLEL

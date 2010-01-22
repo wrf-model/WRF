@@ -52,7 +52,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    end type datalink_gpsro
    
    
-   type(datalink_gpsro),pointer  :: head,plink
+   type(datalink_gpsro),pointer  :: head, plink, current
 
 #ifdef BUFR
 
@@ -335,7 +335,9 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          reports2: do ii=1,num_p
          
          if (plink%ifgat /= kk) then  !sort iv
+            current => plink
             plink => plink%next
+            deallocate (current)
             cycle reports2
          else
          nlocal=nlocal+1
@@ -390,7 +392,9 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
             iv%gpsref(nlocal)%q(i)%error   = plink%gpsref%q(i)%error
          end do
        end if
+       current => plink
        plink => plink%next
+       deallocate (current)
       end do reports2
       ntotal_ifgat(kk)=ntotal_ifgat(kk)+ntotal_ifgat(kk-1)
       iv%info(gpsref)%ptotal(kk)=ntotal_ifgat(kk)
@@ -407,7 +411,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    end if
 
    deallocate(plink)
-   deallocate(head)
+   ! deallocate(head)
    call closbf(iunit)
    close(iunit)
    call da_free_unit(iunit)

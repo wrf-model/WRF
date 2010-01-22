@@ -199,14 +199,15 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 ! qc_step2: abs(d^2N/dz^2) > 100 km^-2
 !                                  Shu-Ya Chen (2009-07-29)
    do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
-       do k=1,iv%info(gpsref)%levels(n)
-       if (model_ref(k,n) > 0.0) top_level=k
-       end do
-!       print*,'top_level=',top_level
-       allocate(dndz_obs(top_level))
-       allocate(dndz_mod(top_level))
-       allocate(dndz2_obs(top_level))
-       allocate(dndz2_mod(top_level))
+      if (iv%info(gpsref)%levels(n) <= 2) cycle 
+      do k=1,iv%info(gpsref)%levels(n)
+         if (model_ref(k,n) > 0.0) top_level=k
+      end do
+!     print*,'top_level=',top_level
+      allocate(dndz_obs(top_level))
+      allocate(dndz_mod(top_level))
+      allocate(dndz2_obs(top_level))
+      allocate(dndz2_mod(top_level))
 
       ! QC_STEP1
 

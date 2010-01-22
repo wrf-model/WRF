@@ -25,7 +25,7 @@ module da_obs_io
       radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc, &
       qmarker_retain, anal_type_verify
 
-   use da_define_structures, only : iv_type, multi_level_type, &
+   use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
       radar_each_level_type, info_type, model_loc_type,gpsref_type
    use da_grid_definitions, only : da_ffdduv

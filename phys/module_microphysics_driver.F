@@ -698,6 +698,8 @@ SUBROUTINE microphysics_driver(                                          &
                  ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
                  ,SVP3=svp3,SVPT0=svpt0                             &
                  ,RAINNC=rainnc, RAINNCV=rainncv                    &
+                 ,SNOWNC=snownc, SNOWNCV=snowncv                    &
+                 ,GRAUPELNC=graupelnc, GRAUPELNCV=graupelncv, SR=sr &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &

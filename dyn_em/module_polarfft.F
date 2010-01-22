@@ -389,7 +389,7 @@ call wrf_get_myproc(myproc)
                            imsx, imex, jmsx, jmex, kmsx, kmex, &
                            ipsx, ipex, jpsx, jpex, kpsx, MIN(kpex,kde-1), &
                            positive_definite = positive_definite )
-# include "XPOSE_POLAR_FILTER_MOIST_x2z.inc"
+# include "XPOSE_POLAR_FILTER_CHEM_x2z.inc"
 #else
      CALL polar_filter_3d( chem(ims,kms,jms,itrace), grid%clat, .false. ,     &
                            fft_filter_lat, 0.,                &

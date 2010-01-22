@@ -2,7 +2,7 @@
 
 !==============================================================================
 !
-! © 2008. Lawrence Livermore National Security, LLC. All rights reserved.
+! © 2009. Lawrence Livermore National Security, LLC. All rights reserved.
 ! This work was produced at the Lawrence Livermore National Laboratory (LLNL) under
 ! contract no. DE-AC52-07NA27344 (Contract 44) between the U.S. Department of Energy (DOE)
 ! and Lawrence Livermore National Security, LLC (LLNS) for the operation of LLNL. Copyright
@@ -35,7 +35,7 @@
 !
 ! Modification History: 
 !
-! Implemented 07/2009 by Jeff Mirocha, jmirocha@llnl.gov
+! Implemented 12/2009 by Jeff Mirocha, jmirocha@llnl.gov
 !
 !=============================================================================
 
@@ -43,11 +43,19 @@ MODULE module_sfs_driver
 
 CONTAINS
 
-!------------------------------------------------------------------
-SUBROUTINE sfs_driver( grid, config_flags,     &
-                       nba_mij, n_nba_mij,     & 
-                       nba_rij, n_nba_rij      )
-!------------------------------------------------------------------
+!=============================================================================
+
+SUBROUTINE sfs_driver( grid, config_flags, &
+                       nba_mij, n_nba_mij, & 
+                       nba_rij, n_nba_rij  )
+
+!-----------------------------------------------------------------------------
+!
+! PURPOSE: Calls turbulence subfilter stress model subroutines and handles
+!          all MPI and OMP operations
+!
+!-----------------------------------------------------------------------------
+
 
 ! Driver layer modules
   USE module_domain
@@ -67,7 +75,7 @@ SUBROUTINE sfs_driver( grid, config_flags,     &
                            HALO_EM_NBA_RIJ_sub   &
                           ,PERIOD_EM_NBA_RIJ_sub   &
                           ,HALO_EM_NBA_MIJ_sub   &
-                          ,PERIOD_EM_NBA_MIJ_sub  
+                          ,PERIOD_EM_NBA_MIJ_sub
 #endif
 
   IMPLICIT NONE
@@ -163,6 +171,7 @@ SUBROUTINE sfs_driver( grid, config_flags,     &
                           grid%defor11, grid%defor22,       &
                           grid%defor33, grid%defor12,       &
                           grid%defor13, grid%defor23,       &
+                          config_flags,                     &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           ips, ipe, jps, jpe, kps, kpe,     &
@@ -248,7 +257,7 @@ SUBROUTINE sfs_driver( grid, config_flags,     &
                      nba_rij(ims,kms,jms,P_smnsmn),    &
                      grid%tke_2,                       & 
                      grid%rdzw, grid%dx, grid%dy,      &
-                     config_flags%sfs_opt,             &
+                     config_flags,                     &
                      ids, ide, jds, jde, kds, kde,     &
                      ims, ime, jms, jme, kms, kme,     &
                      ips, ipe, jps, jpe, kps, kpe,     &
@@ -278,7 +287,7 @@ SUBROUTINE sfs_driver( grid, config_flags,     &
                      nba_rij(ims,kms,jms,P_smnsmn),    &
                      grid%tke_2,                       & 
                      grid%rdzw, grid%dx, grid%dy,      &
-                     config_flags%sfs_opt,             &
+                     config_flags,                     &
                      ids, ide, jds, jde, kds, kde,     &
                      ims, ime, jms, jme, kms, kme,     &
                      ips, ipe, jps, jpe, kps, kpe,     &
@@ -309,7 +318,7 @@ SUBROUTINE sfs_driver( grid, config_flags,     &
                      grid%tke_2,                       & 
                      grid%rdzw, grid%dx, grid%dy,      &
                      grid%fnm, grid%fnp,               &
-                     config_flags%sfs_opt,             &
+                     config_flags,                     &
                      ids, ide, jds, jde, kds, kde,     &
                      ims, ime, jms, jme, kms, kme,     &
                      ips, ipe, jps, jpe, kps, kpe,     &
@@ -339,7 +348,7 @@ SUBROUTINE sfs_driver( grid, config_flags,     &
                      grid%tke_2,                       & 
                      grid%rdzw, grid%dx, grid%dy,      &
                      grid%fnm, grid%fnp,               &
-                     config_flags%sfs_opt,             &
+                     config_flags,                     &
                      ids, ide, jds, jde, kds, kde,     &
                      ims, ime, jms, jme, kms, kme,     &
                      ips, ipe, jps, jpe, kps, kpe,     &

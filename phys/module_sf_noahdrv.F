@@ -32,6 +32,7 @@ CONTAINS
                   ACSNOM,ACSNOW,                                & !O
                   SNOPCX,                                       & !O
                   POTEVP,                                       & !O
+                  SMCREL,                                       & !O
                   XICE_THRESHOLD,                               &
                   RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
@@ -257,6 +258,9 @@ CONTAINS
                                                          SH2O,  & ! new soil liquid
                                                          TSLB     ! TSLB     STEMP
 
+   REAL,     DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &
+             INTENT(OUT)     ::                         SMCREL
+
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                            TSK, & !was TGB (temperature)
                                                            HFX, &
@@ -299,6 +303,8 @@ CONTAINS
 ! Local variables (moved here from driver to make routine thread safe, 20031007 jm)
 
       REAL, DIMENSION(1:num_soil_layers) ::  ET
+
+      REAL, DIMENSION(1:num_soil_layers) ::  SMAV
 
       REAL  ::  BETA, ETP, SSOIL,EC, EDIR, ESNOW, ETT,        &
                 FLX1,FLX2,FLX3, DRIP,DEW,FDOWN,RC,PC,RSMIN,XLAI,  &
@@ -585,6 +591,7 @@ CONTAINS
             DO NS=1,NSOIL
               SMOIS(I,NS,J)=1.0
               TSLB(I,NS,J)=273.16                                          !STEMP
+              SMCREL(I,NS,J)=1.0
             ENDDO
           ELSE
             IF ( XICE(I,J) .GE. XICE_THRESHOLD ) THEN
@@ -593,6 +600,7 @@ CONTAINS
               SMSTOT(I,J)=1.0
               DO NS=1,NSOIL
                 SMOIS(I,NS,J)=1.0
+                SMCREL(I,NS,J)=1.0
               ENDDO
             ENDIF
           ENDIF
@@ -835,7 +843,7 @@ CONTAINS
                  SNOMLT,SNCOVR,                                   &    !O
                  RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                  RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
-                 SOILW,SOILM,Q1,                                  &    !D
+                 SOILW,SOILM,Q1,SMAV,                             &    !D
                  RDLAI2D,USEMONALB,                               &
                  SNOTIME1,                                        &
                  RIBB,                                            &
@@ -1134,6 +1142,9 @@ CONTAINS
 !***  DIAGNOSTICS
           SMSTAV(I,J)=SOILW
           SMSTOT(I,J)=SOILM*1000.
+          DO NS=1,NSOIL
+          SMCREL(I,NS,J)=SMAV(NS)
+          ENDDO
 !         Convert the water unit into mm
           SFCRUNOFF(I,J)=SFCRUNOFF(I,J)+RUNOFF1*DT*1000.0
           UDRUNOFF(I,J)=UDRUNOFF(I,J)+(RUNOFF2+RUNOFF3)*DT*1000.0

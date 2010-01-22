@@ -64,7 +64,7 @@ CONTAINS
                        SNOMLT,SNCOVR,                                   &    !O
                        RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                        RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
-                       SOILW,SOILM,Q1,                                  &    !D
+                       SOILW,SOILM,Q1,SMAV,                             &    !D
                        RDLAI2D,USEMONALB,                               &
                        SNOTIME1,                                        &
                        RIBB,                                            &
@@ -297,6 +297,7 @@ CONTAINS
       REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SLDPTH
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: ET
+      REAL, DIMENSION(1:NSOIL), INTENT(OUT):: SMAV
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) ::  SH2O, SMC, STC
       REAL,DIMENSION(1:NSOIL)::   RTDIS, ZSOIL
 
@@ -853,6 +854,10 @@ CONTAINS
             END DO
             SOILWM = -1.0* (SMCMAX - SMCWLT)* ZSOIL (1)
             SOILWW = -1.0* (SMC (1) - SMCWLT)* ZSOIL (1)
+!
+            DO K = 1,NSOIL
+            SMAV(K)=(SMC(K) - SMCWLT)/(SMCMAX - SMCWLT)
+            END DO
 
             IF (NROOT >= 2) THEN
               DO K = 2,NROOT

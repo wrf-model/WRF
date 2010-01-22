@@ -579,6 +579,7 @@ state   real    -              ikjft   chem        1         -     -    -
 # lsm State Variables
 
 state    real   SMOIS            ilj     -          1         Z     rh       "SMOIS"                "SOIL MOISTURE" ""
+state    real   SMCREL           ilj     -          1         Z     r        "SMCREL"               "RELATIVE SOIL MOISTURE" ""
 state    real   TSLB             ilj     -          1         Z     r       "TSLB" "SOIL TEMPERATURE" ""
 
 

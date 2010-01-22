@@ -802,6 +802,8 @@
      &                                                      ,SH2O,SMC     &
      &                                                      ,SMFR3D,STC
 !
+      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(OUT)   :: SMCREL
+!
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
 !
@@ -1197,6 +1199,7 @@
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
      &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &
+     &          ,SMCREL=SMCREL                                          &
      &          ,SST=SST,SST_UPDATE=SST_UPDATE                          &
      &          ,TH10=TH10,TH2=TH2X,T2=T2,THZ0=THZ0,TH_PHY=TH_PHY       &
      &          ,TMN=TG,TSHLTR=TSHLTR,TSK=TSFC,TSLB=STC,T_PHY=T_PHY     &

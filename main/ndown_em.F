@@ -192,6 +192,13 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    CALL initial_config
 #endif
 
+   !  If we are running ndown, and that is WHERE we are now, make sure that we account
+   !  for folks forgetting to say that the aux_input2 stream is in place.
+
+   IF ( model_config_rec%io_form_auxinput2 .EQ. 0 ) THEN
+      CALL wrf_error_fatal( 'ndown: Please set io_form_auxinput2 in the time_control namelist record (probably to 2).')
+   END IF
+
 !!!!!!!!!!!!!!! mousta
    n_ref_m = model_config_rec % vert_refine_fact
    k_dim_c = model_config_rec % e_vert(1)

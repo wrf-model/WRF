@@ -377,6 +377,7 @@ BENCH_START(surf_driver_tim)
      &        ,SHDMAX=grid%shdmax      ,SHDMIN=grid%shdmin      ,SMOIS=grid%smois        &
      &        ,SMSTAV=grid%smstav      ,SMSTOT=grid%smstot      ,SNOALB=grid%snoalb      &
      &        ,SNOW=grid%snow          ,SNOWC=grid%snowc        ,SNOWH=grid%snowh        &
+     &        ,SMCREL=grid%smcrel                                                        &
      &        ,SST=grid%sst            ,SST_UPDATE=grid%sst_update                  &
      &        ,SSTSK=grid%sstsk        ,DTW=grid%dtw            ,SST_SKIN=grid%sst_skin  &
      &        ,STEPBL=grid%stepbl      ,TH10=grid%th10          ,TH2=grid%th2            &

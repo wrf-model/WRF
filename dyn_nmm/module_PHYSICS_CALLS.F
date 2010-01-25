@@ -802,7 +802,7 @@
      &                                                      ,SH2O,SMC     &
      &                                                      ,SMFR3D,STC
 !
-      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(OUT)   :: SMCREL
+      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME)               :: SMCREL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST

@@ -18,6 +18,10 @@ MODULE module_domain_type
    !  "next" domain that is to be stored, the other is the next domain which 
    !  happens to also be on the "same_level".
 
+   TYPE streamrec
+     INTEGER  ::  stream(IO_MASK_SIZE)
+   END TYPE streamrec
+
    TYPE domain_ptr
       TYPE(domain), POINTER :: ptr
    END TYPE domain_ptr
@@ -52,6 +56,7 @@ MODULE module_domain_type
       CHARACTER*256, POINTER :: dname_table(:,:)
       CHARACTER*256, POINTER :: desc_table(:,:)
       CHARACTER*256, POINTER :: units_table(:,:)
+      TYPE(streamrec), POINTER :: streams_table(:,:)
 
       TYPE ( fieldlist ) , POINTER :: next
 

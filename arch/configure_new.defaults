@@ -906,7 +906,7 @@ PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE
 CFLAGS_LOCAL    =       -DNOUNDERSCORE -DLANDREAD_STUB
 LIB_LOCAL       =
-LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition -qstatic
+LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition,--relax -qstatic
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM		=       -O3 -qnoipa -qarch=auto -qcache=auto -qtune=auto

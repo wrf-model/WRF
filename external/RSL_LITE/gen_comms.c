@@ -970,8 +970,8 @@ gen_periods ( char * dirname , node_t * periods )
     print_call_or_def(fpcall, p, "CALL", commname, "local_communicator_periodic", 1 );
     close_the_file(fpcall) ;
     /* Generate definition of custom routine that encapsulates inlined comm calls */
-    if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/REGISTRY_COMM_DM_subs.inc",dirname) ; }
-    else                       { sprintf(fnamesub,"REGISTRY_COMM_DM_subs.inc") ; }
+    if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/REGISTRY_COMM_DM_PERIOD_subs.inc",dirname) ; }
+    else                       { sprintf(fnamesub,"REGISTRY_COMM_DM_PERIOD_subs.inc") ; }
     if ((fpsub = fopen( fnamesub , "a" )) == NULL ) 
     {
       fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fnamesub ) ;

@@ -2605,3 +2605,89 @@ END SUBROUTINE get_current_grid_name
    RETURN
    END SUBROUTINE get_ijk_from_subgrid_ext
 
+! find the grid based on the id reference and return that
+   SUBROUTINE get_dims_from_grid_id (  id   &
+                          ,ds, de           &
+                          ,ms, me           &
+                          ,ps, pe           &
+                          ,mxs, mxe         &
+                          ,pxs, pxe         &
+                          ,mys, mye         &
+                          ,pys, pye )
+    USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+    IMPLICIT NONE
+    TYPE( domain ), POINTER  :: grid
+    INTEGER, INTENT(IN ) :: id
+    INTEGER, DIMENSION(3), INTENT(INOUT) ::                   &
+                           ds, de           &
+                          ,ms, me           &
+                          ,ps, pe           &
+                          ,mxs, mxe         &
+                          ,pxs, pxe         &
+                          ,mys, mye         &
+                          ,pys, pye
+
+     !local
+     CHARACTER*256 mess
+
+     NULLIFY( grid )
+     CALL find_grid_by_id ( id, head_grid, grid )
+
+     IF ( ASSOCIATED(grid) ) THEN
+           ds(1) = grid%sd31 ; de(1) = grid%ed31 ; ds(2) = grid%sd32 ; de(2) = grid%ed32 ; ds(3) = grid%sd33 ; de(3) = grid%ed33 ;
+           ms(1) = grid%sm31 ; me(1) = grid%em31 ; ms(2) = grid%sm32 ; me(2) = grid%em32 ; ms(3) = grid%sm33 ; me(3) = grid%em33 ;
+           ps(1) = grid%sp31 ; pe(1) = grid%ep31 ; ps(2) = grid%sp32 ; pe(2) = grid%ep32 ; ps(3) = grid%sp33 ; pe(3) = grid%ep33 ;
+           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x ; mxs(2) = grid%sm32x ; mxe(2) = grid%em32x ; mxs(3) = grid%sm33x ; mxe(3) = grid%em33x ;
+           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x ; pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x ; pxs(3) = grid%sp33x ; pxe(3) = grid%ep33x ;
+           mys(1) = grid%sm31y ; mye(1) = grid%em31y ; mys(2) = grid%sm32y ; mye(2) = grid%em32y ; mys(3) = grid%sm33y ; mye(3) = grid%em33y ;
+           pys(1) = grid%sp31y ; pye(1) = grid%ep31y ; pys(2) = grid%sp32y ; pye(2) = grid%ep32y ; pys(3) = grid%sp33y ; pye(3) = grid%ep33y ;
+     ELSE
+        WRITE(mess,*)'internal error: get_ijk_from_grid_id: no such grid id:',id
+        CALL wrf_error_fatal(TRIM(mess))
+     ENDIF
+
+   END SUBROUTINE get_dims_from_grid_id
+
+! find the grid based on the id reference and return that
+   SUBROUTINE get_ijk_from_grid_id (  id ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
+    USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+    IMPLICIT NONE
+    TYPE( domain ), POINTER  :: grid
+    INTEGER, INTENT(IN ) :: id
+    INTEGER, INTENT(OUT) ::                                 &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey
+     !local
+     CHARACTER*256 mess
+
+     NULLIFY( grid )
+     CALL find_grid_by_id ( id, head_grid, grid )
+
+     IF ( ASSOCIATED(grid) ) THEN
+     CALL get_ijk_from_grid1 (  grid ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
+     ELSE
+        WRITE(mess,*)'internal error: get_ijk_from_grid_id: no such grid id:',id
+        CALL wrf_error_fatal(TRIM(mess))
+     ENDIF
+
+   END SUBROUTINE get_ijk_from_grid_id
+

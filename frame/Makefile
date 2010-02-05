@@ -25,6 +25,7 @@ MODULES =       module_driver_constants.o  \
                 module_comm_dm_1.o         \
                 module_comm_dm_2.o         \
                 module_comm_dm_3.o         \
+                module_comm_dm_4.o         \
                 module_comm_nesting_dm.o   \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
@@ -186,6 +187,7 @@ md_calls.inc : md_calls.m4
 
 module_configure.o: \
 		../dyn_em/namelist_remappings_em.h \
+		module_domain_type.o \
 		module_state_description.o \
                 module_wrf_error.o \
 		module_driver_constants.o 
@@ -196,12 +198,13 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_timing.o \
 		module_configure.o module_comm_dm.o
 
-module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o
+module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o
 
 module_comm_dm_0.o: module_domain.o module_configure.o
 module_comm_dm_1.o: module_domain.o module_configure.o
 module_comm_dm_2.o: module_domain.o module_configure.o
 module_comm_dm_3.o: module_domain.o module_configure.o
+module_comm_dm_4.o: module_domain.o module_configure.o
 
 module_comm_nesting_dm.o: \
 		module_domain.o \
@@ -255,8 +258,10 @@ module_integrate.o: module_domain.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_io.o : md_calls.inc \
+                module_dm.o \
 		module_state_description.o \
 		module_configure.o  \
+                module_streams.o \
 		module_driver_constants.o 
 
 module_io_quilt.o: module_state_description.o \

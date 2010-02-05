@@ -16,7 +16,7 @@ CONTAINS
    INTEGER      , INTENT(INOUT) :: id , ierr
    LOGICAL , EXTERNAL :: wrf_dm_on_monitor
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-   CHARACTER*128             :: DataSet
+   CHARACTER*128             :: DataSet, tmp
    LOGICAL                   :: anyway
    CALL wrf_open_for_read ( fname ,                     &
                             grid%communicator ,         &
@@ -35,9 +35,15 @@ CONTAINS
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
    LOGICAL , EXTERNAL :: wrf_dm_on_monitor
    EXTERNAL outsub
-   CHARACTER*128             :: DataSet
+   CHARACTER*128             :: DataSet, tmp
    LOGICAL                   :: anyway
    CALL wrf_debug ( 100 , 'calling wrf_open_for_write_begin in open_w_dataset' )
+   tmp = sysdepinfo
+   IF ( grid%id < 10 ) THEN
+     write(sysdepinfo,'(a,i1)')TRIM(tmp)//',GRIDID=',grid%id
+   ELSE
+     write(sysdepinfo,'(a,i2)')TRIM(tmp)//',GRIDID=',grid%id
+   ENDIF
    CALL wrf_open_for_write_begin ( fname ,     &
                                    grid%communicator ,         &
                                    grid%iocommunicator ,       &

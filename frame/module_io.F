@@ -60,6 +60,16 @@ MODULE module_io
     RETURN
   END FUNCTION io_form_for_dataset
 
+  INTEGER FUNCTION io_form_for_stream ( stream )
+    USE module_streams
+    IMPLICIT NONE
+    INTEGER,       INTENT(IN)  :: stream
+    INTEGER                    :: io_form 
+#include "io_form_for_stream.inc"
+    io_form_for_stream = io_form
+    RETURN
+  END FUNCTION io_form_for_stream
+
 !--- ioinit
 
 SUBROUTINE wrf_ioinit( Status )
@@ -197,6 +207,9 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
+#ifdef DM_PARALLEL
+  USE module_dm, ONLY :  ntasks_x, mytask_x, local_communicator_x
+#endif
   IMPLICIT NONE
 #include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
@@ -213,7 +226,8 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
   CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
   INTEGER           :: myproc
   CHARACTER*128     :: mess
-  CHARACTER*1028    :: tstr
+  CHARACTER*1028    :: tstr, t1
+  INTEGER i,j
 
   WRITE(mess,*) 'module_io.F: in wrf_open_for_write_begin, FileName = ',TRIM(FileName)
   CALL wrf_debug( DEBUG_LVL, mess )
@@ -250,7 +264,17 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 #endif
 #ifdef PNETCDF
       CASE (IO_PNETCDF  )
-        CALL ext_pnc_open_for_write_begin( FileName, Comm_compute, Comm_io, SysDepInfo, &
+        WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i10)") TRIM(SysDepInfo),ntasks_x,mytask_x,local_communicator_x
+        j=1
+        t1 = " "
+        DO i=1,len(TRIM(tstr))
+          IF ( tstr(i:i) .NE. ' ' ) THEN
+            t1(j:j) = tstr(i:i)
+            j = j + 1
+          ENDIF
+        ENDDO
+        tstr = t1
+        CALL ext_pnc_open_for_write_begin( FileName, Comm_compute, Comm_io, tstr, &
                                             Hndl, Status)
 #endif
 #ifdef XXX

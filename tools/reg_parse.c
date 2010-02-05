@@ -482,7 +482,7 @@ reg_parse( FILE * infile )
             set_mask( mask , stream ) ;
             strcpy(tmp1, &(tmp[++i])) ;
             for ( p = tmp1  ; *p ; i++, p++ ) { 
-              c = tolower(*p) ; if ( c >= 'a' && c <= 'z' ) { *p = '\0' ; break ; }
+              c = tolower(*p) ; if ( c >= 'a' && c <= 'z' ) { *p = '\0' ; i-- ; break ; }
               reset_mask( mask , stream ) ;
             }
             for ( p = tmp1  ; *p ; p++ ) { 

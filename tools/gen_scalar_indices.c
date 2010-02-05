@@ -83,6 +83,7 @@ gen_scalar_tables ( FILE * fp )
   {
     fprintf(fp,"  INTEGER, TARGET :: %s_index_table( param_num_%s, max_domains )\n",p->name,p->name )  ;
     fprintf(fp,"  INTEGER, TARGET :: %s_num_table( max_domains )\n", p->name,p->name ) ;
+    fprintf(fp,"  TYPE(streamrec), TARGET :: %s_streams_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
     fprintf(fp,"  LOGICAL, TARGET :: %s_boundary_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
     fprintf(fp,"  CHARACTER*256, TARGET :: %s_dname_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
     fprintf(fp,"  CHARACTER*256, TARGET :: %s_desc_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
@@ -121,6 +122,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
   char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG], fname[NAMELEN_LONG] ;
   char scalars_str[NAMELEN_LONG] ;
   char * scalars ;
+  int i ;
 
   for ( p = FourD ; p != NULL ; p = p->next )
    { for ( memb = p->members ; memb != NULL ; memb = memb->next )
@@ -172,10 +174,16 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                   }
                 }
                 fprintf(fp,"   %s_boundary_table( idomain, P_%s ) = %s\n",assoc_4d,c, (x->boundary==1)?".TRUE.":".FALSE." ) ;
-                /* fprintf(fp,"   %s_stream_table( idomain, P_%s ) = %d\n",assoc_4d,c, x->io_mask ) ; */
                 fprintf(fp,"   %s_dname_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->dname) ;
                 fprintf(fp,"   %s_desc_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->descrip) ;
                 fprintf(fp,"   %s_units_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->units) ;
+
+
+                for ( i = 0 ; i < IO_MASK_SIZE ; i++ ) {
+                  fprintf(fp,"   %s_streams_table( idomain, P_%s )%%stream(%d) = %d ! %08x \n",assoc_4d,c,
+                                                                          i+1,x->io_mask[i],x->io_mask[i] ) ;
+                }
+
                 fprintf(fp,"   F_%s = .TRUE.\n",c) ;
               } else if ((p = get_entry( c , Domain.fields )) != NULL ) {
                 int tag, fo  ;

@@ -95,63 +95,7 @@
 
     ! io_form is used to determine if multi-file I/O is enabled and to
     ! control writing of format-specific time-independent metadata
-    IF ( switch .EQ. input_only ) THEN
-      CALL nl_get_io_form_input( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput1_only ) THEN
-      CALL nl_get_io_form_auxinput1( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput2_only ) THEN
-      CALL nl_get_io_form_auxinput2( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput3_only ) THEN
-      CALL nl_get_io_form_auxinput3( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput4_only ) THEN
-      CALL nl_get_io_form_auxinput4( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput5_only ) THEN
-      CALL nl_get_io_form_auxinput5( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput6_only ) THEN
-      CALL nl_get_io_form_auxinput6( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput7_only ) THEN
-      CALL nl_get_io_form_auxinput7( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput8_only ) THEN
-      CALL nl_get_io_form_auxinput8( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput9_only ) THEN
-      CALL nl_get_io_form_auxinput9( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput10_only ) THEN
-      CALL nl_get_io_form_auxinput10( 1, io_form )
-    ELSE IF ( switch .EQ. auxinput11_only ) THEN
-      CALL nl_get_io_form_auxinput11( 1, io_form )
-
-    ELSE IF ( switch .EQ. history_only ) THEN
-      CALL nl_get_io_form_history( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist1_only ) THEN
-      CALL nl_get_io_form_auxhist1( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist2_only ) THEN
-      CALL nl_get_io_form_auxhist2( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist3_only ) THEN
-      CALL nl_get_io_form_auxhist3( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist4_only ) THEN
-      CALL nl_get_io_form_auxhist4( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist5_only ) THEN
-      CALL nl_get_io_form_auxhist5( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist6_only ) THEN
-      CALL nl_get_io_form_auxhist6( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist7_only ) THEN
-      CALL nl_get_io_form_auxhist7( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist8_only ) THEN
-      CALL nl_get_io_form_auxhist8( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist9_only ) THEN
-      CALL nl_get_io_form_auxhist9( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist10_only ) THEN
-      CALL nl_get_io_form_auxhist10( 1, io_form )
-    ELSE IF ( switch .EQ. auxhist11_only ) THEN
-      CALL nl_get_io_form_auxhist11( 1, io_form )
-
-    ELSE IF ( switch .EQ. restart_only ) THEN
-      CALL nl_get_io_form_restart( 1, io_form )
-    ELSE IF ( switch .EQ. boundary_only ) THEN
-      CALL nl_get_io_form_boundary( 1, io_form )
-    ELSE  ! default:  use history
-      CALL nl_get_io_form_history( 1, io_form )
-    ENDIF
+    io_form = io_form_for_stream( switch ) 
 
     dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
 
@@ -686,8 +630,8 @@
       newswitch = switch 
       p => grid%head_statevars%next
       DO WHILE ( ASSOCIATED( p ) ) 
-        IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
-          IF ( p%Ndim .EQ. 0 ) THEN
+        IF ( p%Ndim .EQ. 0 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               dname = p%DataName
               IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
@@ -790,7 +734,9 @@
                   ierr )
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 1 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 1 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                 dname = p%DataName
@@ -895,7 +841,9 @@
                 ENDIF
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 2 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 2 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                 dname = p%DataName
@@ -1000,7 +948,9 @@
                 ENDIF
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 3 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 3 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                 dname = p%DataName
@@ -1082,13 +1032,15 @@
                 ENDIF
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 4 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 4 ) THEN
             IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
 ! Use a different write routine, wrf_ext_write_field_arr, and pass in the 
 ! tracer indeces so that p%rfield_4d can be passsed in without arguments,
 ! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
 ! Fortran is still a four letter word.  JM 20091208
-              DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+            DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+              IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams_table(grid%id,itrace)%stream,newswitch)) THEN
                 dname = p%dname_table( grid%id, itrace )
                 IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
                 memord = p%MemoryOrder
@@ -1174,8 +1126,8 @@
                    p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
                    ierr )
                 ENDIF
-              ENDDO  ! loop over tracers
-            ENDIF
+              ENDIF
+            ENDDO  ! loop over tracers
           ENDIF  ! if-then-else over dim
         ENDIF
         p => p%next

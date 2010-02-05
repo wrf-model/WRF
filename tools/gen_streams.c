@@ -49,6 +49,14 @@ int gen_streams(  char * dirname )
   gen_io_form_for_dataset( fp ) ;
   close_the_file( fp ) ;
 
+  fn = "io_form_for_stream.inc" ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  else                       { sprintf(fname,"%s",fn) ; }
+  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+  print_warning(fp,fname) ;
+  gen_io_form_for_stream( fp ) ;
+  close_the_file( fp ) ;
+
   fn = "switches_and_alarms.inc" ;
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   else                       { sprintf(fname,"%s",fn) ; }
@@ -127,6 +135,14 @@ int gen_streams(  char * dirname )
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
   gen_med_find_esmf_coupling( fp ) ;
+  close_the_file( fp ) ;
+
+  fn = "shutdown_closes.inc" ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  else                       { sprintf(fname,"%s",fn) ; }
+  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+  print_warning(fp,fname) ;
+  gen_shutdown_closes( fp ) ;
   close_the_file( fp ) ;
 
   return(0) ;
@@ -285,10 +301,9 @@ gen_io_form_for_dataset ( FILE *fp )
   fprintf(fp,"      CALL nl_get_io_form_history( 1, io_form )\n") ;
   fprintf(fp,"    ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN\n") ;
   fprintf(fp,"      CALL nl_get_io_form_boundary( 1, io_form )\n") ;
-  for ( i = 0 ; i < 2*MAX_HISTORY ; i++ )
+  for ( i = 1 ; i < MAX_HISTORY ; i++ )
   {
-    if ( i % MAX_HISTORY == 0 ) continue ;
-    sprintf(streamno,"%d",i%MAX_HISTORY) ;
+    sprintf(streamno,"%d",i) ;
     fprintf(fp,"    ELSE IF ( DataSet .eq. 'AUXINPUT%s' ) THEN\n",     streamno) ;
     fprintf(fp,"      CALL nl_get_io_form_auxinput%s( 1, io_form )\n", streamno) ;
     fprintf(fp,"    ELSE IF ( DataSet .eq. 'AUXHIST%s' ) THEN\n",      streamno) ;
@@ -296,6 +311,33 @@ gen_io_form_for_dataset ( FILE *fp )
   }
   fprintf(fp,"    ELSE  ! default if nothing is set in SysDepInfo; use history\n") ;
   fprintf(fp,"      CALL nl_get_io_form_history( 1, io_form )\n") ;
+  fprintf(fp,"    ENDIF\n") ;
+}
+
+int
+gen_io_form_for_stream ( FILE *fp )
+{
+  char * aux , *streamtype , streamno[5]  ;
+  int i ;
+
+  fprintf(fp,"    IF      ( stream .eq. restart_only ) THEN\n") ;
+  fprintf(fp,"      CALL nl_get_io_form_restart( 1, io_form )\n") ;
+  fprintf(fp,"    ELSE IF ( stream .eq. input_only ) THEN\n") ;
+  fprintf(fp,"      CALL nl_get_io_form_input( 1, io_form )\n") ;
+  fprintf(fp,"    ELSE IF ( stream .eq. history_only ) THEN\n") ;
+  fprintf(fp,"      CALL nl_get_io_form_history( 1, io_form )\n") ;
+  fprintf(fp,"    ELSE IF ( stream .eq. boundary_only ) THEN\n") ;
+  fprintf(fp,"      CALL nl_get_io_form_boundary( 1, io_form )\n") ;
+  for ( i = 1 ; i < MAX_HISTORY ; i++ )
+  {
+    sprintf(streamno,"%d",i) ;
+    fprintf(fp,"    ELSE IF ( stream .eq. auxinput%s_only ) THEN\n",     streamno) ;
+    fprintf(fp,"      CALL nl_get_io_form_auxinput%s( 1, io_form )\n", streamno) ;
+    fprintf(fp,"    ELSE IF ( stream .eq. auxhist%s_only ) THEN\n",      streamno) ;
+    fprintf(fp,"      CALL nl_get_io_form_auxhist%s( 1, io_form )\n", streamno) ;
+  }
+  fprintf(fp,"    ELSE  ! if no match then do the old service representative schtick\n") ;
+  fprintf(fp,"      CALL wrf_error_fatal('internal error: please contact wrfhelp@ucar.edu: io_form_for_stream.inc -- invalid stream number')\n") ;
   fprintf(fp,"    ENDIF\n") ;
 }
 
@@ -443,6 +485,17 @@ gen_med_last_solve_io ( FILE *fp )
     fprintf(fp," IF( WRFU_AlarmIsRinging( grid%%alarms( AUXHIST%d_ALARM ), rc=rc ) ) THEN\n",i) ;
     fprintf(fp,"   CALL med_hist_out ( grid , AUXHIST%d_ALARM , config_flags )\n",i) ;
     fprintf(fp," ENDIF\n") ;
+  }
+}
+
+int
+gen_shutdown_closes ( FILE *fp )
+{
+  char * aux , *streamtype , streamno[5]  ;
+  int i ;
+  for ( i = 1 ; i < MAX_HISTORY ; i++ )
+  {
+    fprintf(fp,"IF( grid%%auxhist%d_oid > 0 ) CALL close_dataset ( grid%%auxhist%d_oid, config_flags, 'DATASET=AUXHIST%d' )\n",i,i,i)  ;
   }
 }
 

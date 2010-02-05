@@ -144,7 +144,6 @@ if ( tag == 1 )
           if ( p->ntl > 1 ) sprintf(dname,"%s_%d",dname_tmp,tag) ;
           else              strcpy(dname,dname_tmp) ;
 
-/*          fprintf(fp,"  IF (.NOT.inter_domain) THEN\n") ;  */
           fprintf(fp,"  IF (.NOT.grid%%is_intermediate) THEN\n") ;
           fprintf(fp,"   ALLOCATE( grid%%tail_statevars%%next )\n") ;
           fprintf(fp,"   grid%%tail_statevars => grid%%tail_statevars%%next\n") ;
@@ -152,7 +151,7 @@ if ( tag == 1 )
           fprintf(fp,"   grid%%tail_statevars%%VarName = '%s'\n",fname ) ;
           fprintf(fp,"   grid%%tail_statevars%%DataName = '%s'\n",dname ) ;
           fprintf(fp,"   grid%%tail_statevars%%Type    = '%c'\n",p->type->name[0]) ;
-          fprintf(fp,"   grid%%tail_statevars%%Ntl     = %d\n",p->ntl<2?0:tag+p->ntl*100 ) ; /* if single tl, then 0, else tl itself */
+          fprintf(fp,"   grid%%tail_statevars%%Ntl = %d\n",p->ntl<2?0:tag+p->ntl*100 ) ; /* if single tl, then 0, else tl itself */
           fprintf(fp,"   grid%%tail_statevars%%Restart  = %s\n", (p->restart)?".TRUE.":".FALSE." ) ;
           fprintf(fp,"   grid%%tail_statevars%%Ndim    = %d\n",p->ndims ) ;
           fprintf(fp,"   grid%%tail_statevars%%scalar_array  = .FALSE. \n" ) ;
@@ -223,7 +222,6 @@ if ( tag == 1 )
        if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
             ! ( p->nest_mask & INTERP_DOWN || p->nest_mask & FORCE_DOWN || p->nest_mask & INTERP_UP || p->nest_mask & SMOOTH_UP ) )
        {
-/*	 fprintf(fp,".AND.(.NOT.inter_domain)",tag) ; */
 	 fprintf(fp,".AND.(.NOT.grid%%is_intermediate)",tag) ;
        }
        if ( p->ntl > 1 && sw == 1 ) {
@@ -343,6 +341,7 @@ if ( tag == 1 )
                fprintf(fp,"  grid%%tail_statevars%%dname_table => %s_dname_table\n",   p->name ) ;
                fprintf(fp,"  grid%%tail_statevars%%desc_table => %s_desc_table\n",   p->name ) ;
                fprintf(fp,"  grid%%tail_statevars%%units_table => %s_units_table\n",   p->name ) ;
+               fprintf(fp,"  grid%%tail_statevars%%streams_table => %s_streams_table\n",   p->name ) ;
              } 
 
              if ( p->node_kind & FOURD ) {

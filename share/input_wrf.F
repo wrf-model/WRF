@@ -582,8 +582,8 @@
       newswitch = switch
       p => grid%head_statevars%next
       DO WHILE ( ASSOCIATED( p ) ) 
-        IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
-          IF ( p%Ndim .EQ. 0 ) THEN
+        IF ( p%Ndim .EQ. 0 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
               dname = p%DataName
@@ -663,7 +663,9 @@
                 ENDIF
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 1 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 1 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                 dname = p%DataName
@@ -744,7 +746,9 @@
                 ENDIF
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 2 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 2 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                 dname = p%DataName
@@ -825,7 +829,9 @@
                 ENDIF
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 3 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 3 ) THEN
+          IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
             IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                 dname = p%DataName
@@ -889,12 +895,14 @@
                 ENDIF
               ENDIF
             ENDIF
-          ELSE IF ( p%Ndim .EQ. 4 ) THEN
+          ENDIF
+        ELSE IF ( p%Ndim .EQ. 4 ) THEN
 ! Use a different write routine, wrf_ext_read_field_arr, and pass in the
 ! tracer indeces so that p%rfield_4d can be passsed in without arguments,
 ! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
 ! Fortran is still a four letter word.  JM 20091208
-            DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+          DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+            IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams_table(grid%id,itrace)%stream,newswitch)) THEN
               dname = p%dname_table( grid%id, itrace )
               IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
               memord = p%MemoryOrder
@@ -962,8 +970,8 @@
                  p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
                  ierr )
               ENDIF
-            ENDDO  ! loop over tracers
-          ENDIF  ! if-then-else over ndim
+            ENDIF
+          ENDDO  ! loop over tracers
         ENDIF
         p => p%next
       ENDDO

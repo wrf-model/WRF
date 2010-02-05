@@ -86,15 +86,17 @@ set_state_dims ( char * dims , node_t * node )
       inbrace = 1 ;
       continue ;
     }
-/*    else if ( *c == '}' && inbrace )
+#if 0
+    else if ( *c == '}' && inbrace )
     {
       inbrace = 0 ;
       continue ;
-    } */
+    }
+#endif
     else if ( modifiers == 0 )
     {
       if ( *c == '}' && inbrace )  { inbrace = 0 ; }
-      else { int n = strlen(dspec) ; dspec[n] = *c ; dspec[n+1]='\0' ; }
+      else                         { int n = strlen(dspec) ; dspec[n] = *c ; dspec[n+1]='\0' ; }
       if ( inbrace ) {
         continue ;
       }

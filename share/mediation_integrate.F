@@ -1558,7 +1558,7 @@ END SUBROUTINE med_filter_out
 
 SUBROUTINE med_latbound_in ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain , domain_clock_get
+   USE module_domain	, ONLY : domain , domain_clock_get, head_grid
    USE module_io_domain
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
@@ -1571,7 +1571,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
 #include <wrf_status_codes.h>
 
   ! Arguments
-   TYPE(domain)                               :: grid, head_grid
+   TYPE(domain)                               :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
   ! Local data
@@ -1615,7 +1615,7 @@ integer myproc,i,j,k
 ! typically a <date> wouldn't be part of the bdy_inname, so just pass a dummy
        CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , 'dummydate' )
 
-       CALL wrf_inquire_opened(head_grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
+       CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
        IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
          lbc_opened = .TRUE.
        ELSE
@@ -1626,7 +1626,7 @@ integer myproc,i,j,k
          CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
          WRITE(message,*)'Opening: ',TRIM(bdyname)
          CALL wrf_debug(100,TRIM(message))
-         CALL open_r_dataset ( head_grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
+         CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )
           IF ( ierr .NE. 0 ) THEN
             WRITE( message, * ) 'med_latbound_in: error opening ',TRIM(bdyname), ' for reading. IERR = ',ierr
             CALL WRF_ERROR_FATAL( message )
@@ -1635,12 +1635,12 @@ integer myproc,i,j,k
          CALL wrf_debug( 100 , bdyname // 'already opened' )
        ENDIF
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
-       CALL input_boundary ( head_grid%lbc_fid, grid , config_flags , ierr )
+       CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
 
 #if (EM_CORE == 1)
        IF ( (config_flags%dfi_opt .NE. DFI_NODFI) .AND. (head_grid%dfi_stage .NE. DFI_FST) ) THEN
           CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
-          CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+          CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
        END IF
 #endif
 
@@ -1779,8 +1779,10 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
        WRITE(n2,'("DATASET=AUXINPUT10")')
      ELSE IF ( stream .EQ. 11 ) THEN
        WRITE(n2,'("DATASET=AUXINPUT11")')
+     ELSE IF ( stream .GE. 10 ) THEN
+       WRITE(n2,'("DATASET=AUXINPUT",I2)')stream-first_input
      ELSE
-       WRITE(n2,'("DATASET=AUXINPUT",I1)')stream
+       WRITE(n2,'("DATASET=AUXINPUT",I1)')stream-first_input
      ENDIF
      WRITE ( message , '("open_aux_u : opening ",A," for reading. ")') TRIM ( fname )
      CALL wrf_debug( 1, message )
@@ -1850,8 +1852,10 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
                                grid%id , 2 , timestr )
    IF ( stream .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
+   ELSE IF ( stream .GE. 10 ) THEN
+     WRITE(n2,'("DATASET=AUXHIST",I2)')stream-first_history
    ELSE
-     WRITE(n2,'("DATASET=AUXHIST",I1)')stream
+     WRITE(n2,'("DATASET=AUXHIST",I1)')stream-first_history
    ENDIF
 #if (DA_CORE == 1)
    len_n2 = LEN_TRIM(n2)

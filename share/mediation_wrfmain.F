@@ -128,21 +128,10 @@ SUBROUTINE med_shutdown_io ( grid , config_flags )
    INTEGER                 :: ierr
 
    IF ( grid%oid > 0 ) CALL close_dataset ( grid%oid , config_flags , "DATASET=HISTORY" )
-   IF ( grid%auxhist1_oid > 0 ) CALL close_dataset ( grid%auxhist1_oid , config_flags , "DATASET=AUXHIST1" )
-   IF ( grid%auxhist2_oid > 0 ) CALL close_dataset ( grid%auxhist2_oid , config_flags , "DATASET=AUXHIST2" )
-   IF ( grid%auxhist3_oid > 0 ) CALL close_dataset ( grid%auxhist3_oid , config_flags , "DATASET=AUXHIST3" )
-   IF ( grid%auxhist4_oid > 0 ) CALL close_dataset ( grid%auxhist4_oid , config_flags , "DATASET=AUXHIST4" )
-   IF ( grid%auxhist5_oid > 0 ) CALL close_dataset ( grid%auxhist5_oid , config_flags , "DATASET=AUXHIST5" )
-#if 0
-   IF ( grid%auxhist6_oid > 0 ) CALL close_dataset ( grid%auxhist6_oid , config_flags , "DATASET=AUXHIST6" )
-   IF ( grid%auxhist7_oid > 0 ) CALL close_dataset ( grid%auxhist7_oid , config_flags , "DATASET=AUXHIST7" )
-   IF ( grid%auxhist8_oid > 0 ) CALL close_dataset ( grid%auxhist8_oid , config_flags , "DATASET=AUXHIST8" )
-   IF ( grid%auxhist9_oid > 0 ) CALL close_dataset ( grid%auxhist9_oid , config_flags , "DATASET=AUXHIST9" )
-   IF ( grid%auxhist10_oid > 0 ) CALL close_dataset ( grid%auxhist10_oid , config_flags , "DATASET=AUXHIST10" )
-   IF ( grid%auxhist11_oid > 0 ) CALL close_dataset ( grid%auxhist11_oid , config_flags , "DATASET=AUXHIST11" )
-#endif
-
    IF ( grid%lbc_fid > 0 ) CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+
+! registry generated closes for auxhist streams
+#include "shutdown_closes.inc"
 
    CALL wrf_ioexit( ierr )    ! shut down the quilt I/O
 

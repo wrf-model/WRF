@@ -512,7 +512,8 @@ SUBROUTINE input_ext_chem_file (si_grid)
 
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: si_zsigf, si_zsig
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: ch_zsigf, ch_zsig, ozone
-   REAL    :: ext_time, dat_time
+   REAL    :: ext_time
+   REAL    :: dat_time = 0.
    REAL    :: wgt0,wgt_time1,wgt_time2
 
    CHARACTER (LEN=80) :: inpname, message
@@ -859,15 +860,15 @@ SUBROUTINE input_ext_chem_file (si_grid)
 
 !  Check for errors in chemin data set
 
-   do l=2,num_chem
-   do j=jds,jde
-   do k=kds,kde
-   do i=ids,ide
-     si_grid%chem(i,k,j,l) = MAX(si_grid%chem(i,k,j,l),epsilc)
-   enddo
-   enddo
-   enddo
-   enddo
+!  do l=2,num_chem
+!  do j=jds,jde
+!  do k=kds,kde
+!  do i=ids,ide
+!    si_grid%chem(i,k,j,l) = MAX(si_grid%chem(i,k,j,l),epsilc)
+!  enddo
+!  enddo
+!  enddo
+!  enddo
    
 
 !  Close chemin data set

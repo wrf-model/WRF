@@ -150,7 +150,6 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
       INTRINSIC max, min                             
 
       CALL wrf_debug(15,'in dry_dep_wesely')
-      write(*,*) 'in dry_dep_wesely'
 
       if( config_flags%chem_opt /= MOZART_KPP .and. &
           config_flags%chem_opt /= MOZCART_KPP ) then

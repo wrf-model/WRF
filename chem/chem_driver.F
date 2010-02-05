@@ -1192,7 +1192,7 @@ end if !Chemistry time step check
       enddo
       call wrf_debug(15,'done tileloop in chem_driver')
    if( grid%OPT_PARS_OUT == 1) then
-     write(0,*)'calculate optical output stuff'
+      call wrf_debug(15,'calculate optical output stuff')
     call aer_opt_out(TAUAER300=grid%tauaer1, TAUAER400=grid%tauaer2 & 
      &        ,TAUAER600=grid%tauaer3, TAUAER999=grid%tauaer4 &
      &        ,GAER300=grid%gaer1, GAER400=grid%gaer2, GAER600=grid%gaer3, GAER999=grid%gaer4 & 

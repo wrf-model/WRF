@@ -42,10 +42,10 @@ by both C++ and F90 compilers.
 
 ! TBH:  TODO:  Hook this into the WRF build so WRF can use either "no-leap" or 
 ! TBH:         Gregorian calendar.  Now WRF is hard-wired to use Gregorian.  
-#undef NO_LEAP_CALENDAR
-#ifdef COUP_CSM
-#define NO_LEAP_CALENDAR
-#endif
+!#undef NO_LEAP_CALENDAR
+!#ifdef COUP_CSM
+!#define NO_LEAP_CALENDAR
+!#endif
 
 ! TBH:  When NO_DT_COMPONENT_INIT is set, code that uses F95 compile-time 
 ! TBH:  initialization of components of derived types is not included.  

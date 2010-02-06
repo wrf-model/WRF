@@ -196,6 +196,7 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_domain.o \
 		module_driver_constants.o \
 		module_timing.o \
+		module_comm_nesting_dm.o \
 		module_configure.o module_comm_dm.o
 
 module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o

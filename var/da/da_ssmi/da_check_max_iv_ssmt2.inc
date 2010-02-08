@@ -29,15 +29,16 @@ subroutine da_check_max_iv_ssmt2(iv, it, num_qcstat_conv)
         call da_get_print_lvl(iv%ssmt2(n)%p(k),ipr)
 
         failed = .false.
-        if ( iv%ssmt2(n)%rh(k)%qc >= obs_qc_pointer )  &  
-           call da_max_error_qc (it, iv%info(ssmt2), n, iv%ssmt2(n)%rh(k), max_error_q, failed)
-        if ( iv%info(ssmt2)%proc_domain(k,n) ) then
-           num_qcstat_conv(1,ssmt2,4,ipr) = num_qcstat_conv(1,ssmt2,4,ipr) + 1
-           if (failed) then
-              num_qcstat_conv(2,ssmt2,4,ipr) = num_qcstat_conv(2,ssmt2,4,ipr) + 1
-              write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-                   'ssmt2',ob_vars(4),iv%info(ssmt2)%lat(k,n),iv%info(ssmt2)%lon(k,n),0.01*iv%ssmt2(n)%p(k)
-           endif
+        if( iv%ssmt2(n)%rh(k)%qc >= obs_qc_pointer ) then
+        call da_max_error_qc (it, iv%info(ssmt2), n, iv%ssmt2(n)%rh(k), max_error_q, failed)
+        if( iv%info(ssmt2)%proc_domain(k,n) ) then
+        num_qcstat_conv(1,ssmt2,4,ipr) = num_qcstat_conv(1,ssmt2,4,ipr) + 1
+        if(failed)then
+         num_qcstat_conv(2,ssmt2,4,ipr) = num_qcstat_conv(2,ssmt2,4,ipr) + 1
+        write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+        'ssmt2',ob_vars(4),iv%info(ssmt2)%lat(k,n),iv%info(ssmt2)%lon(k,n),0.01*iv%ssmt2(n)%p(k)
+        endif
+        endif
         endif
       end do
    end do

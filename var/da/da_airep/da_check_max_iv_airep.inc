@@ -26,7 +26,7 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
          call da_get_print_lvl(iv%airep(n)%p(k),ipr)
 
         failed=.false.
-        if( iv%airep(n)%u(k)%qc >= obs_qc_pointer ) &    
+        if( iv%airep(n)%u(k)%qc >= obs_qc_pointer ) then 
          call da_max_error_qc (it,iv%info(airep), n, iv%airep(n)%u(k), max_error_uv,failed)
         if( iv%info(airep)%proc_domain(k,n) ) then
           num_qcstat_conv(1,airep,1,ipr) = num_qcstat_conv(1,airep,1,ipr) + 1
@@ -36,9 +36,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
            'airep',ob_vars(1),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
          end if
         end if
+        end if
 
         failed=.false.
-        if( iv%airep(n)%v(k)%qc >= obs_qc_pointer ) &   
+        if( iv%airep(n)%v(k)%qc >= obs_qc_pointer ) then
          call da_max_error_qc (it,iv%info(airep), n, iv%airep(n)%v(k), max_error_uv,failed)
         if( iv%info(airep)%proc_domain(k,n) ) then
            num_qcstat_conv(1,airep,2,ipr) = num_qcstat_conv(1,airep,2,ipr) + 1
@@ -48,9 +49,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
            'airep',ob_vars(2),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
          end if
         end if
+        end if
 
         failed=.false.
-        if( iv%airep(n)%t(k)%qc >= obs_qc_pointer ) &    
+        if( iv%airep(n)%t(k)%qc >= obs_qc_pointer ) then 
          call da_max_error_qc (it,iv%info(airep), n, iv%airep(n)%t(k), max_error_t,failed)
         if( iv%info(airep)%proc_domain(k,n) ) then
          num_qcstat_conv(1,airep,3,ipr) = num_qcstat_conv(1,airep,3,ipr) + 1
@@ -59,6 +61,7 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'airep',ob_vars(3),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
          end if
+        end if
         end if
 
       end do

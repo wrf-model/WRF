@@ -725,6 +725,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    tmpvar = 1.0/real(ide-ids+1)
 
+   loc_latc_mean = 0.0
+
    if (test_dm_exact) then
       allocate(arrayglobal(ids:ide, jds:jde))
       call da_patch_to_global(grid,grid%xb%lat, arrayglobal)

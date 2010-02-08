@@ -5,7 +5,7 @@ module da_minimisation
    !---------------------------------------------------------------------------
 
    use module_configure, only : grid_config_rec_type
-   use module_dm, only : wrf_dm_sum_real
+   use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use module_domain, only : domain, ep_type, vp_type
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_g_qv
 
@@ -33,16 +33,16 @@ module da_minimisation
       rtm_option,rtm_option_rttov, rtm_option_crtm, anal_type_verify, &
       write_filtered_rad,omb_set_rand,use_rad,var_scaling2,var_scaling1, &
       var_scaling4,var_scaling5,var_scaling3, jo_unit, &
-      print_detail_grad,omb_set_rand,grad_unit,cost_unit, &
-      cv_size_domain_je,cv_size_domain_jb, num_pseudo, cv_options, &
+      print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
+      cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_crtm_kmatrix, &
-      precondition_cg, precondition_factor, cv_size_domain_jp, use_varbc, varbc_factor, &
+      precondition_cg, precondition_factor, use_varbc, varbc_factor, &
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, &
       orthonorm_gradient, its, ite, jts, jte, kte, ids, ide, jds, jde, &
-      use_satcv, sensitivity_option, print_detail_outerloop
+      use_satcv, sensitivity_option, print_detail_outerloop, adj_sens
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type

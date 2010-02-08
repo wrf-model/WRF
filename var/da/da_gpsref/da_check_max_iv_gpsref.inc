@@ -2,6 +2,9 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -22,10 +25,8 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv)
    do n = iv%info(gpsref)%n1,iv%info(gpsref)%n2
       do k = 1, iv%info(gpsref)%levels(n)
         call da_get_print_lvl(iv%gpsref(n)%p(k)%inv,ipr)
-!        if( iv%gpsref(n)%ref(k)%qc == fails_error_max .and. it > 1 )iv%gpsref(n)%ref(k)%qc =0
-        if( iv%gpsref(n)%ref(k)%qc >= obs_qc_pointer ) then
         failed=.false.
-        if( check_max_iv) &
+        if( iv%gpsref(n)%ref(k)%qc >= obs_qc_pointer )  then
         call da_max_error_qc(it, iv%info(gpsref), n, iv%gpsref(n)%ref(k), max_error_ref, failed)  
         if( iv%info(gpsref)%proc_domain(k,n) ) then
                    num_qcstat_conv(1,gpsref,8,ipr) = num_qcstat_conv(1,gpsref,8,ipr) + 1
@@ -34,8 +35,8 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv)
             write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
              'gpsref',ob_vars(8),iv%info(gpsref)%lat(k,n),iv%info(gpsref)%lon(k,n),0.01*iv%gpsref(n)%p(k)%inv
         end if
-       end if
-       end if
+        end if
+        end if
 
       end do
    end do

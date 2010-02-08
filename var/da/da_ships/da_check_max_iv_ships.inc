@@ -27,7 +27,7 @@ subroutine da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
    do n=iv%info(ships)%n1,iv%info(ships)%n2
 
       failed=.false.
-      if( iv%ships(n)%u%qc >= obs_qc_pointer ) &    
+      if( iv%ships(n)%u%qc >= obs_qc_pointer ) then 
       call da_max_error_qc (it, iv%info(ships), n, iv%ships(n)%u, max_error_uv, failed)
       if( iv%info(ships)%proc_domain(1,n) ) then
       num_qcstat_conv(1,ships,1,1)= num_qcstat_conv(1,ships,1,1) + 1
@@ -37,9 +37,10 @@ subroutine da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
            'ships',ob_vars(1),iv%info(ships)%lat(1,n),iv%info(ships)%lon(1,n),0.01*ob%ships(n)%p
       end if
       end if
+      end if
              
       failed=.false.
-      if( iv%ships(n)%v%qc >= obs_qc_pointer )  &    
+      if( iv%ships(n)%v%qc >= obs_qc_pointer )  then 
       call da_max_error_qc (it, iv%info(ships), n, iv%ships(n)%v, max_error_uv, failed)             
       if( iv%info(ships)%proc_domain(1,n) ) then
       num_qcstat_conv(1,ships,2,1)= num_qcstat_conv(1,ships,2,1) + 1
@@ -49,9 +50,10 @@ subroutine da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
            'ships',ob_vars(2),iv%info(ships)%lat(1,n),iv%info(ships)%lon(1,n),0.01*ob%ships(n)%p
       end if
       end if
+      end if
 
       failed=.false.
-      if( iv%ships(n)%t%qc >= obs_qc_pointer )  &   
+      if( iv%ships(n)%t%qc >= obs_qc_pointer )  then
       call da_max_error_qc (it, iv%info(ships), n, iv%ships(n)%t, max_error_t , failed)
       if( iv%info(ships)%proc_domain(1,n) ) then
       num_qcstat_conv(1,ships,3,1)= num_qcstat_conv(1,ships,3,1) + 1
@@ -61,9 +63,10 @@ subroutine da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
            'ships',ob_vars(3),iv%info(ships)%lat(1,n),iv%info(ships)%lon(1,n),0.01*ob%ships(n)%p
       end if
       end if
+      end if
 
       failed=.false.
-      if( iv%ships(n)%p%qc >= obs_qc_pointer ) &    
+      if( iv%ships(n)%p%qc >= obs_qc_pointer ) then 
       call da_max_error_qc (it, iv%info(ships), n, iv%ships(n)%p, max_error_p , failed)         
       if( iv%info(ships)%proc_domain(1,n) ) then
       num_qcstat_conv(1,ships,5,1)= num_qcstat_conv(1,ships,5,1) + 1
@@ -71,6 +74,7 @@ subroutine da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(2,ships,5,1)= num_qcstat_conv(2,ships,5,1) + 1
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'ships',ob_vars(5),iv%info(ships)%lat(1,n),iv%info(ships)%lon(1,n),0.01*ob%ships(n)%p
+      end if
       end if
       end if
 

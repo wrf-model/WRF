@@ -1,4 +1,4 @@
-subroutine da_setup_obs_structures( grid, ob, iv)
+subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    !---------------------------------------------------------------------------
    ! Purpose: Allocate and read in components of observation structure.
@@ -6,9 +6,10 @@ subroutine da_setup_obs_structures( grid, ob, iv)
 
    implicit none
    
-   type (domain),     intent(inout) :: grid ! Model data
-   type (y_type),     intent(out)   :: ob  ! Observation structure.
-   type (iv_type),    intent(out)   :: iv  ! O-B structure.
+   type (domain),     intent(inout) :: grid   ! Model data
+   type (y_type),     intent(out)   :: ob     ! Observation structure.
+   type (iv_type),    intent(out)   :: iv     ! O-B structure.
+   type (j_type),     intent(inout) :: j_cost ! Cost function.
 
    integer :: i,j
    character (len=14)   :: ob_name

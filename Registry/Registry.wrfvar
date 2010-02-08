@@ -1214,6 +1214,7 @@ state   real    HVML           ij      misc         1         -     rhd=(interp_
 
 # wrfvar namelists all documented at http://wiki.ucar.edu/display/mmm/Namelists
 
+rconfig   logical   use_background_errors   namelist,wrfvar1  1  .true.   -  "use_background_errors"   ""  ""
 rconfig   logical   write_increments        namelist,wrfvar1  1  .false.  -  "write_increments"        ""  ""
 rconfig   integer   wrfvar_mem_model        namelist,wrfvar1  1  0        -  "wrfvar_mem_model"        ""  "0=WRFVAR, 1=WRF, 2=4DVAR"
 rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "var4d"                   ""  ""
@@ -1487,8 +1488,9 @@ rconfig   real      alpha_std_dev           namelist,wrfvar16  1  1.0      - "al
 rconfig   logical   alpha_vertloc           namelist,wrfvar16  1  .false.  - "alpha_vertloc"           ""  ""
 rconfig   logical   alpha_hydrometeors      namelist,wrfvar16  1  .false.  - "alpha_hydrometeors"      ""  ""
 
-rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR"                   -  "analysis_type"      ""  ""
+rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR" - "analysis_type"           ""  ""
 rconfig   integer   sensitivity_option      namelist,wrfvar17  1  -1       - "sensitivity_option"      ""  ""
+rconfig   logical   adj_sens                namelist,wrfvar17  1  .false.  - "adj_sens"                ""  ""
 
 rconfig   character analysis_date           namelist,wrfvar18  1  "2002-08-03_00:00:00.0000" -  "analysis_date"      ""  "" 
 
@@ -2136,7 +2138,7 @@ halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat,clong
-halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar
+halo      HALO_EM_INIT_5 dyn_em 48:moist,scalar #,chem
 halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
@@ -2162,10 +2164,10 @@ halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
 halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
 halo      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut,muts
-halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
-halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
-halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,scalar;4:mu_1,mu_2
-halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,scalar;4:mu_1,mu_2
+halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,scalar;4:mu_2,al #,chem
+halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,scalar;4:mu_2,al #,chem
+halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,scalar;4:mu_1,mu_2 #,chem
+halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,scalar;4:mu_1,mu_2 #,chem
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
@@ -2173,9 +2175,9 @@ halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
 halo      HALO_EM_MOIST_E_7 dyn_em 80:moist
 halo      HALO_CUP_G3_IN dyn_em 24:RTHFTEN,RQVFTEN,w_2
 halo      HALO_CUP_G3_OUT dyn_em 48:cugd_tten,cugd_qvten,cugd_ttens,cugd_qvtens,raincv
-halo      HALO_EM_CHEM_E_3 dyn_em 24:chem
-halo      HALO_EM_CHEM_E_5 dyn_em 48:chem
-halo      HALO_EM_CHEM_E_7 dyn_em 80:chem
+#halo      HALO_EM_CHEM_E_3 dyn_em 24:chem
+#halo      HALO_EM_CHEM_E_5 dyn_em 48:chem
+#halo      HALO_EM_CHEM_E_7 dyn_em 80:chem
 halo      HALO_EM_SCALAR_E_3 dyn_em 24:scalar
 halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar
 halo      HALO_EM_SCALAR_E_7 dyn_em 80:scalar
@@ -2184,9 +2186,9 @@ halo      HALO_TOPOSHAD phys 24:ht_shad
 halo      HALO_EM_MOIST_OLD_E_3 dyn_em 24:moist_old
 halo      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old
 halo      HALO_EM_MOIST_OLD_E_7 dyn_em 80:moist_old
-halo      HALO_EM_CHEM_OLD_E_3 dyn_em 24:chem_old
-halo      HALO_EM_CHEM_OLD_E_5 dyn_em 48:chem_old
-halo      HALO_EM_CHEM_OLD_E_7 dyn_em 80:chem_old
+#halo      HALO_EM_CHEM_OLD_E_3 dyn_em 24:chem_old
+#halo      HALO_EM_CHEM_OLD_E_5 dyn_em 48:chem_old
+#halo      HALO_EM_CHEM_OLD_E_7 dyn_em 80:chem_old
 halo      HALO_EM_SCALAR_OLD_E_3 dyn_em 24:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_5 dyn_em 48:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_7 dyn_em 80:scalar_old
@@ -2197,9 +2199,9 @@ halo      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
 period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
 halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist,chem,scalar
+                                       moist,scalar #,chem
 period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist,chem,scalar
+                                       moist,scalar #,chem
 
 # For moving nests
 #halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
@@ -2215,14 +2217,14 @@ period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,
 # Monotonic, positive definite advection requires 4 values for moist, chem, tke, and scalar for periodic lateral boundaries
 
 period    PERIOD_BDY_EM_MOIST dyn_em 4:moist
-period    PERIOD_BDY_EM_CHEM dyn_em 4:chem
+#period    PERIOD_BDY_EM_CHEM dyn_em 4:chem
 period    PERIOD_BDY_EM_SCALAR dyn_em 4:scalar
 period    PERIOD_BDY_EM_TKE dyn_em 4:tke_2
 period    PERIOD_BDY_EM_MOIST2 dyn_em 4:moist
-period    PERIOD_BDY_EM_CHEM2 dyn_em 4:chem
+#period    PERIOD_BDY_EM_CHEM2 dyn_em 4:chem
 period    PERIOD_BDY_EM_SCALAR2 dyn_em 4:scalar
 period    PERIOD_BDY_EM_MOIST_OLD dyn_em 4:moist_old
-period    PERIOD_BDY_EM_CHEM_OLD dyn_em 4:chem_old
+#period    PERIOD_BDY_EM_CHEM_OLD dyn_em 4:chem_old
 period    PERIOD_BDY_EM_SCALAR_OLD dyn_em 4:scalar_old
 period    PERIOD_BDY_EM_TKE_OLD dyn_em 4:tke_1
 
@@ -2642,7 +2644,7 @@ xpose XPOSE_POLAR_FILTER_W  dyn_em w_2,w_xxx,dum_yyy
 xpose XPOSE_POLAR_FILTER_WW dyn_em ww_m,ww_xxx,dum_yyy
 xpose XPOSE_POLAR_FILTER_PH dyn_em ph_2,ph_xxx,dum_yyy
 xpose XPOSE_POLAR_FILTER_MOIST dyn_em moist,fourd_xxx,dum_yyy
-xpose XPOSE_POLAR_FILTER_CHEM dyn_em chem,fourd_xxx,dum_yyy
+#xpose XPOSE_POLAR_FILTER_CHEM dyn_em chem,fourd_xxx,dum_yyy
 xpose XPOSE_POLAR_FILTER_SCALAR dyn_em scalar,fourd_xxx,dum_yyy
 
 # xpose variables for spectral nudging

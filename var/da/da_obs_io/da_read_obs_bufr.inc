@@ -2164,7 +2164,7 @@ end if
          iv%info(obs_index)%id(ilocal(obs_index))        = plink%platform_BUFR%info%id
          iv%info(obs_index)%date_char(ilocal(obs_index)) = plink%platform_BUFR%info%date_char
          ! nlevels adjusted for some obs types so use that
-         iv%info(obs_index)%levels(ilocal(obs_index))    =  plink%nlevels_BUFR
+         iv%info(obs_index)%levels(ilocal(obs_index))    = min(iv%info(obs_index)%max_lev, plink%nlevels_BUFR)
          iv%info(obs_index)%lat(:,ilocal(obs_index))     = plink%platform_BUFR%info%lat
          iv%info(obs_index)%lon(:,ilocal(obs_index))     = plink%platform_BUFR%info%lon
          iv%info(obs_index)%elv(ilocal(obs_index))       = plink%platform_BUFR%info%elv

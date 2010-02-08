@@ -47,8 +47,6 @@ subroutine da_setup_cv(be)
    ! [2] Define flow-dependent control variable size:
    !--------------------------------------------------------------
 
-   be % cv % size_je = 0
-
    if ( be % ne > 0) then
       if (global) then
          be % cv % size_alphac = (be % alpha % max_wave + 1) * &
@@ -60,11 +58,6 @@ subroutine da_setup_cv(be)
       end if
    end if
    
-   be % cv % size_jp = 0.0   ! Set up VarBC later
-   be % cv % size_js = 0.0   ! Set up SatCV later
-
-   be % cv % size = be % cv % size_jb +  be % cv % size_je
-
    !--------------------------------------------------------------
    ! [3] Define domain-wide cv sizes for bit-repro option:
    !--------------------------------------------------------------
@@ -77,8 +70,6 @@ subroutine da_setup_cv(be)
                                  be % v4 % mz + be % v5 % mz)
       cv_size_domain_je = ij * be % alpha % mz * be % ne
    end if
-
-   cv_size_domain = cv_size_domain_jb + cv_size_domain_je
 
    if (trace_use) call da_trace_exit("da_setup_cv")
 

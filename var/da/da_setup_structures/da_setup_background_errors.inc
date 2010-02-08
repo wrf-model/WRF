@@ -42,7 +42,6 @@ subroutine da_setup_background_errors(grid, be)
             call da_setup_be_ncep_gfs (grid, be)
       endif
    else if(fg_format == fg_format_wrf_nmm_regional ) then
-!rizvi TBD            call da_setup_be_regional (grid%xb, be)
             call da_setup_be_nmm_regional (grid%xb, be)
    end if
 

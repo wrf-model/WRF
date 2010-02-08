@@ -26,7 +26,7 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
       do k = 1, iv%info(polaramv)%levels(n)
         call da_get_print_lvl(iv%polaramv(n)%p(k),ipr)
         failed=.false.
-        if( iv%polaramv(n)%u(k)%qc >= obs_qc_pointer )  &   
+        if( iv%polaramv(n)%u(k)%qc >= obs_qc_pointer )  then
          call da_max_error_qc(it, iv%info(polaramv), n, iv%polaramv(n)%u(k), max_error_uv,failed)
          if( iv%info(polaramv)%proc_domain(k,n) ) then
          num_qcstat_conv(1,polaramv,1,ipr) = num_qcstat_conv(1,polaramv,1,ipr) + 1
@@ -36,9 +36,10 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
            'polaramv',ob_vars(1),iv%info(polaramv)%lat(k,n),iv%info(polaramv)%lon(k,n),0.01*iv%polaramv(n)%p(k)
          end if
          end if
+         end if
 
         failed=.false.
-        if( iv%polaramv(n)%v(k)%qc >= obs_qc_pointer )  &   
+        if( iv%polaramv(n)%v(k)%qc >= obs_qc_pointer )  then
          call da_max_error_qc(it, iv%info(polaramv), n, iv%polaramv(n)%v(k), max_error_uv,failed)
          if( iv%info(polaramv)%proc_domain(k,n) ) then
          num_qcstat_conv(1,polaramv,2,ipr) = num_qcstat_conv(1,polaramv,2,ipr) + 1
@@ -46,6 +47,7 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
            num_qcstat_conv(2,polaramv,2,ipr) = num_qcstat_conv(2,polaramv,2,ipr) + 1
            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'polaramv',ob_vars(2),iv%info(polaramv)%lat(k,n),iv%info(polaramv)%lon(k,n),0.01*iv%polaramv(n)%p(k)
+         end if
          end if
          end if
       end do

@@ -24,6 +24,7 @@
    integer                      :: it          ! External loop counter.
    integer                      :: neign       
    type (j_type)                :: j           ! Cost function.
+   type (y_type)                :: jo_grad_y   ! Grad_y(jo)
 
    integer                      :: cv_size, i, ichan, k, n
    real                         :: j_grad_norm_target ! Target j norm.
@@ -111,8 +112,8 @@
    !---------------------------------------------------------------------------
    ! [4.0] Set up observations (ob):
    !---------------------------------------------------------------------------
-   call da_setup_obs_structures (grid, ob, iv)
-   
+
+   call da_setup_obs_structures (grid, ob, iv, j)
    if (use_rad) then
       allocate (j % jo % rad(1:iv%num_inst))
       do i=1,iv%num_inst
@@ -120,6 +121,10 @@
          allocate (j % jo % rad(i) % num_ichan(iv%instid(i)%nchan))
       end do
    end if
+
+   !---------------------------------------------------------------------------
+   ! [4.1] Observer (ANAL_TYPE="VERIFY")
+   !---------------------------------------------------------------------------
 
    if (anal_type_verify) then
       check_max_iv = .false.
@@ -135,41 +140,69 @@
  
       ! write out O-B statistics
       call da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
+
+      ! write out Gradient of Jo for adjoint sensitivity
+      if (adj_sens) then
+         cv_size = 1
+         allocate (xhat(cv_size))
+         call da_allocate_y (iv, y)
+         call da_allocate_y (iv, jo_grad_y)
+
+         call da_calculate_residual(iv, y, re)
+         call da_calculate_grady(iv, re, jo_grad_y)
+         call da_zero_x(grid%xa)      
+         call da_transform_xtoy_adj(cv_size, xhat, grid, iv, jo_grad_y, grid%xa)
+         call da_transform_xtoxa_adj(grid)
+         call da_transfer_wrftltoxa_adj(grid, config_flags, 'fcst')
+
+         call da_deallocate_y (y)
+         call da_deallocate_y (jo_grad_y)
+      end if
+
       call da_deallocate_y(re)
       call da_deallocate_observations (iv)
       return   
    end if
    
    !---------------------------------------------------------------------------
-   ! [5.0] Set up background errors (be):
+   ! [5.0] Set up control variable:
    !---------------------------------------------------------------------------
-
-      call da_setup_background_errors (grid, be)
+   be % cv % size_jb = 0
+   be % cv % size_je = 0
+   be % cv % size_jp = 0
+   be % cv % size_js = 0
+   
+   !---------------------------------------------------------------------------
+   ! [5.1] Set up background errors (be):
+   !---------------------------------------------------------------------------
+   if (use_background_errors) call da_setup_background_errors (grid, be)
 
    !---------------------------------------------------------------------------
-   ! [5.1] Set up observation bias correction (Varbc):
+   ! [5.2] Set up observation bias correction (VarBC):
    !---------------------------------------------------------------------------
-
 #if defined(RTTOV) || defined(CRTM)
-      if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
+   if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
 #endif
 
    !---------------------------------------------------------------------------
-   ! [5.2] Set up satellite control variable:
+   ! [5.3] Set up satellite control variable:
    !---------------------------------------------------------------------------
-
 #if defined(RTTOV) || defined(CRTM)
    if (ANY(use_satcv)) call da_setup_satcv(iv, be)
 #endif
    
+   !---------------------------------------------------------------------------
+   ! [5.4] Total control variable:
+   !---------------------------------------------------------------------------   
+   be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js
    cv_size = be % cv % size
 
    !---------------------------------------------------------------------------
    ! [6.0] Set up ensemble perturbation input:
    !---------------------------------------------------------------------------
 
-      grid%ep % ne = be % ne
-      if (be % ne > 0) then
+      grid % ep % ne = be % ne
+      if (use_background_errors .and. be % ne > 0) then
          call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
                                          its, ite, jts, jte, kts, kte )
       end if
@@ -560,7 +593,7 @@
    call da_deallocate_y (re)
    call da_deallocate_y (y)
    call da_deallocate_y (ob)
-   call da_deallocate_background_errors (be)
+   if (use_background_errors) call da_deallocate_background_errors (be)
 
    if (xbx%pad_num > 0) then
       deallocate (xbx%pad_loc)

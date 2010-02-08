@@ -2,6 +2,9 @@ subroutine da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
 
    !-------------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-------------------------------------------------------------------------
 
    implicit none
@@ -20,10 +23,8 @@ subroutine da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
 
    do n=iv%info(gpspw)%n1,iv%info(gpspw)%n2
 
-!      if( iv%gpspw(n)%tpw%qc == fails_error_max .and. it > 1)iv%gpspw(n)%tpw%qc =0                         
-      if( iv%gpspw(n)%tpw%qc >= obs_qc_pointer ) then
       failed=.false.
-      if( check_max_iv) &
+      if( iv%gpspw(n)%tpw%qc >= obs_qc_pointer ) then 
       call da_max_error_qc(it, iv%info(gpspw), n, iv%gpspw(n)%tpw, max_error_pw,failed)
       if( iv%info(gpspw)%proc_domain(1,n) ) then
        num_qcstat_conv(1,gpspw,7,1) = num_qcstat_conv(1,gpspw,7,1) + 1

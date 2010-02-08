@@ -39,18 +39,19 @@ subroutine da_minimise_lz(grid, config_flags,            &
    integer, intent(out)              :: neign
    
    integer                           :: i, j, k, n, inst, iter
-   integer                           :: mz(6), info, nsstwrk
+   integer                           :: mz(7), info, nsstwrk
    integer                           :: npred, ipred
-   real                              :: fhat(1:cv_size)           ! cv copy.
-   real                              :: ghat(1:cv_size)           ! cv copy.
-   real                              :: ghat0(1:cv_size)          ! cv copy.
-   real                              :: shat(1:cv_size)           ! cv copy.
+   integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
+   real                              :: fhat(1:cv_size)        ! cv copy.
+   real                              :: ghat(1:cv_size)        ! cv copy.
+   real                              :: ghat0(1:cv_size)       ! cv copy.
+   real                              :: shat(1:cv_size)        ! cv copy.
    real                              :: gdot, rho, mu, bndlm
    real                              :: alpha(ntmax), beta(0:ntmax), subdiag(ntmax)
    real                              :: c(cv_size), d(ntmax), sstwrk(2*ntmax-2)
    real                              :: bnds(ntmax)
    real                              :: adj_rhs, adj_sum_rhs ! < cv, cv >
-   real                              :: j_total, rrmnew_norm
+   real                              :: j_total, j0_total, rrmnew_norm
    
    if (trace_use) call da_trace_entry("da_minimise_lz")
 
@@ -60,34 +61,28 @@ subroutine da_minimise_lz(grid, config_flags,            &
    !-------------------------------------------------------------------------
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /)
-   call da_calculate_j(it, 0, cv_size, be % cv % size_jb, be % cv % size_je, &
-                        be % cv % size_jp, xbx, be, iv, xhat, cv, &
-                        re, y, j_cost, grid, config_flags)
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
+   
+   jp_start   = be % cv % size_jb + be % cv % size_je + 1
+   jp_end     = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
+   
+   call da_calculate_j(it, 0, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+                       xbx, be, iv, xhat, cv, re, y, j_cost, ghat0, grid, config_flags)
  
-   call da_calculate_gradj(-it, 0, cv_size, be % cv % size_jb, be % cv % size_je, &
-                        be % cv % size_jp, xbx, be, iv,  xhat, cv, re, y, ghat0, grid, config_flags)
-
+   j0_total = j_cost%total
+   if (j0_total == 0.0) return
    ghat      = - ghat0
-   beta(0)   = SQRT(da_dot_cv(cv_size, cv_size_domain, ghat, ghat, grid, mz, use_varbc))
+   beta(0)   = SQRT(da_dot_cv(cv_size, ghat, ghat, grid, mz, jp_start, jp_end))
    qhat(:,0) = 0.0
-
-   if (j_cost%total == 0.0) return
-
-   if (it == 1) j_grad_norm_target = beta(0)
+   j_grad_norm_target = beta(0)
 
    write(unit=stdout,fmt='("Starting outer iteration : ",i3)') it
-   write(unit=stdout,fmt=11) j_cost%total, beta(0),eps(it)*beta(0)
+   write(unit=stdout,fmt=11) j0_total, beta(0),eps(it)*beta(0)
 11 format('Starting cost function: ' ,1PD15.8,', Gradient: ',1PD15.8,/,&
           'For this outer iteration gradient target is:       ',1PD15.8)
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
-   if (calculate_cg_cost_fn) then
-      write(unit=stdout,fmt='(A)') &
-         'Iter    Cost Function         Gradient'
-   else
-      write(unit=stdout,fmt='(A)')'Iter      Gradient'
-   end if
+   write(unit=stdout,fmt='(A)') 'Iter    Cost Function         Gradient'
 
    !-------------------------------------------------------------------------
    ! [2.0] Iteratively solve for minimum of cost function:
@@ -95,20 +90,20 @@ subroutine da_minimise_lz(grid, config_flags,            &
    do iter=1, ntmax      
       qhat(:,iter) = ghat / beta(iter-1)
       
-      call da_calculate_gradj(it,iter,cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                              xbx,be,iv,qhat(:,iter),cv,re,y,fhat,grid,config_flags)
+      call da_calculate_gradj(it,iter,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
+                              xbx,be,iv,qhat(:,iter),y,fhat,grid,config_flags)
        
     ! Apply Lanczos recurrence and orthonormalize new gradient (using modified Gramm-Schmidt)
     !----------------------------------------------------------------------------------------
-      alpha(iter) = da_dot_cv(cv_size, cv_size_domain, qhat(:,iter), fhat, grid, mz, use_varbc)
+      alpha(iter) = da_dot_cv(cv_size, qhat(:,iter), fhat, grid, mz, jp_start, jp_end)
 
       ghat        = fhat - alpha(iter)*qhat(:,iter) - beta(iter-1)*qhat(:,iter-1)
       do i = iter, 1, -1
-         gdot = da_dot_cv(cv_size, cv_size_domain, ghat, qhat(:,i), grid, mz, use_varbc)
+         gdot = da_dot_cv(cv_size, ghat, qhat(:,i), grid, mz, jp_start, jp_end)
          ghat = ghat - gdot * qhat(:,i)
       end do
 
-      beta(iter)  = SQRT(da_dot_cv (cv_size, cv_size_domain, ghat, ghat, grid, mz, use_varbc))
+      beta(iter)  = SQRT(da_dot_cv (cv_size, ghat, ghat, grid, mz, jp_start, jp_end))
       
     ! Lanczos iteration  
     !------------------
@@ -141,26 +136,19 @@ subroutine da_minimise_lz(grid, config_flags,            &
       bnds(1:iter) = abs(beta(iter) * eignvec(iter,1:iter))
       neign        = COUNT(bnds(1:iter) <= bndlm)
                
+      rrmnew_norm = SQRT(da_dot_cv(cv_size, ghat, ghat, grid, mz, jp_start, jp_end))
+
     ! Print Gradient (and Cost Function)
     !-----------------------------------
-      if (print_detail_grad) then
-         call da_calculate_j(it, iter, cv_size, be % cv % size_jb, be % cv % size_je, &
-                             be % cv % size_jp, xbx, be, iv, xhat, cv, &
-                             re, y, j_cost, grid, config_flags)
-         call da_calculate_gradj(-it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                                 xbx, be, iv, xhat, cv, re, y, fhat, grid, config_flags  )				 			     
-         write(unit=stdout,fmt=14)iter, j_cost%total, SQRT(da_dot_cv(cv_size, cv_size_domain, fhat, fhat, grid, mz, use_varbc))
-		                                 !rrmnew_norm
-      elseif (calculate_cg_cost_fn) then      		 
-         j_total = j_cost%total + 0.5 * da_dot_cv(cv_size,cv_size_domain,ghat0,xhat,grid,mz,use_varbc)
-         write(unit=stdout,fmt=14)iter, j_total, rrmnew_norm      	 
-      else
-         write(unit=stdout,fmt=14)iter, rrmnew_norm
-      end if
-14    format(i3,5x,1PD15.8,5x,1PD15.8)
+      j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,mz,jp_start,jp_end)
+      write(unit=stdout,fmt=12)iter, j_total, rrmnew_norm      	 
+12    format(i3,5x,1PD15.8,5x,1PD15.8)
 
-      rrmnew_norm = SQRT(da_dot_cv(cv_size, cv_size_domain, fhat, fhat, grid, mz, use_varbc))
       if (rrmnew_norm < eps(it) * j_grad_norm_target) exit      
+
+      if (calculate_cg_cost_fn) &
+         call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+	                     xbx, be, iv, xhat, cv, re, y, j_cost, fhat, grid, config_flags)
    end do
 
    !-------------------------------------------------------------------------
@@ -171,20 +159,14 @@ subroutine da_minimise_lz(grid, config_flags,            &
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
    write(unit=stdout,fmt='(A)') " "
-   write(unit=stdout, &
-      fmt='("Inner iteration stopped after ",i4," iterations")') iter
+   write(unit=stdout, fmt='("Inner iteration stopped after ",i4," iterations")') iter
    write(unit=stdout,fmt='(A)') " "
 
-   call da_calculate_j(it, iter, cv_size, be % cv % size_jb, &
-         be % cv % size_je, be % cv % size_jp, xbx, be, iv, xhat, cv, &
-	 re, y, j_cost,grid, config_flags)
+   call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+                       xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
 
-   call da_calculate_gradj(-it, iter, cv_size, be % cv % size_jb, be % cv % size_je, &
-                        be % cv % size_jp, xbx, be, iv,  xhat, cv, &
-			re, y, ghat, grid, config_flags)
-	
    write(unit=stdout,fmt=15) iter, j_cost%total , &
-         SQRT(da_dot_cv(cv_size, cv_size_domain, ghat, ghat, grid, mz, use_varbc))
+                             SQRT(da_dot_cv(cv_size, ghat, ghat, grid, mz, jp_start, jp_end))
 15  format('Final: ',I3,' iter, J=',1PD15.8,', g=',1PD15.8)
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
@@ -192,10 +174,11 @@ subroutine da_minimise_lz(grid, config_flags,            &
    write(stdout,*) 'Ritz eigenvalues: ',eignval(iter:1:-1)     
    write(stdout,*) 'Number of converged eigenpairs: ', neign
 
+   if (adj_sens) &
+      call da_sensitivity(iter,grid,config_flags,cv_size,xbx,be,iv,xhat,qhat,cv,y,eignvec,eignval,shat)
+   
    cv = cv + xhat
 
-   call da_sensitivity(iter,grid,config_flags,cv_size,xbx,be,iv,xhat,qhat,cv,y,eignvec,eignval,shat)
-   
    if (trace_use) call da_trace_exit("da_minimise_lz")
 
 end subroutine da_minimise_lz

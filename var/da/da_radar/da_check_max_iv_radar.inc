@@ -2,6 +2,9 @@ subroutine da_check_max_iv_radar(iv, it, irv, irf, irvf, irff)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -57,6 +60,3 @@ subroutine da_check_max_iv_radar(iv, it, irv, irf, irvf, irff)
    if (trace_use) call da_trace_exit("da_check_max_iv_radar")
 
 end subroutine da_check_max_iv_radar
-
-
-

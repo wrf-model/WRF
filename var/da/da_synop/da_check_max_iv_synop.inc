@@ -27,7 +27,7 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
    do n=iv%info(synop)%n1,iv%info(synop)%n2
 
       failed=.false.
-      if( iv%synop(n)%u%qc >= obs_qc_pointer )  &   
+      if( iv%synop(n)%u%qc >= obs_qc_pointer ) then 
       call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%u, max_error_uv, failed)
       if( iv%info(synop)%proc_domain(1,n) ) then
       num_qcstat_conv(1,synop,1,1)= num_qcstat_conv(1,synop,1,1) + 1
@@ -37,9 +37,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
            'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
       end if
       end if
+      end if
 
       failed=.false.
-      if( iv%synop(n)%v%qc >= obs_qc_pointer )  &   
+      if( iv%synop(n)%v%qc >= obs_qc_pointer )  then
       call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%v, max_error_uv, failed)             
       if( iv%info(synop)%proc_domain(1,n) ) then
       num_qcstat_conv(1,synop,2,1)= num_qcstat_conv(1,synop,2,1) + 1
@@ -49,9 +50,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
            'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
       end if
       end if
+      end if
 
       failed=.false.
-      if( iv%synop(n)%t%qc >= obs_qc_pointer )  &   
+      if( iv%synop(n)%t%qc >= obs_qc_pointer )  then
       call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%t, max_error_t , failed)
       if( iv%info(synop)%proc_domain(1,n) ) then
       num_qcstat_conv(1,synop,3,1)= num_qcstat_conv(1,synop,3,1) + 1
@@ -61,9 +63,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
            'synop',ob_vars(3),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
       end if
       end if
+      end if
 
       failed=.false.
-      if( iv%synop(n)%p%qc >= obs_qc_pointer )  &   
+      if( iv%synop(n)%p%qc >= obs_qc_pointer )  then
       call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%p, max_error_p , failed)         
       if( iv%info(synop)%proc_domain(1,n) ) then
       num_qcstat_conv(1,synop,5,1)= num_qcstat_conv(1,synop,5,1) + 1
@@ -71,6 +74,7 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(2,synop,5,1)= num_qcstat_conv(2,synop,5,1) + 1
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'synop',ob_vars(5),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+      end if
       end if
       end if
 

@@ -9,7 +9,8 @@
    !
    !  Called from da_solve
    !
-   !  HISTORY: 10/29/2007 - Creation                     Tom Auligne
+   !  HISTORY: 10/29/2007 - Creation                          Tom Auligne
+   !           01/20/2010 - Update for multiple outer-loops   Tom Auligne
    !---------------------------------------------------------------------------
 
    implicit none
@@ -29,12 +30,63 @@
    real, allocatable    :: varbc_param_tl(:)
    logical, allocatable :: lvarbc_inst(:)
 
-   if (.not. rootproc) return
-
    if (trace_use) call da_trace_entry("da_varbc_update")
 
-   write(unit=stdout,fmt='(A)') &
-      'VARBC: Updating parameters and writing information in VARBC.out file'
+   write(unit=stdout,fmt='(A)') 'VARBC: Updating bias parameters'
+      
+   allocate( lvarbc_inst(iv%num_inst) )
+   do inst = 1, iv % num_inst   
+      lvarbc_inst(inst) = ANY(iv%instid(inst)%varbc(1:iv%instid(inst)%nchan)%npred>0)	
+   end do   
+   
+   do inst = 1, iv % num_inst   
+      if (.not. lvarbc_inst(inst)) cycle             !! VarBC instruments only   
+      allocate(varbc_param_tl(iv%instid(inst)%varbc_info%npredmax))
+      
+      do ichan = 1, iv%instid(inst)%nchan
+         npred    = iv%instid(inst)%varbc(ichan)%npred
+         if (npred <= 0) cycle               !! VarBC channels only	 
+	 if (iv%instid(inst)%varbc(ichan)%nobs >= varbc_nobsmin) then
+	    where (iv%instid(inst)%varbc(ichan)%pred_use == 0) &
+	           iv%instid(inst)%varbc(ichan)%pred_use = 1
+	 else
+            if ( satinfo(inst)%iuse(ichan) == 1) then
+	       if (count(iv%instid(inst)%varbc(ichan)%pred_use == 0) > 0) &
+	          write(unit=stdout,fmt='(A,A,I5)') &	   
+	          'VARBC: Not enough data to keep statistics for ', &
+	          trim(iv%instid(inst)%rttovid_string),             &
+		  iv%instid(inst)%ichan(ichan)
+	    end if
+	 end if
+	 
+ 	 if (.not. use_varbc) cycle
+         
+	!---------------------------------------------------------------
+        ! Change of variable (preconditioning) for parameters increments
+        !---------------------------------------------------------------
+            
+	 do i = 1, npred
+            id = iv%instid(inst)%varbc(ichan)%index(i)
+    	    varbc_param_tl(i) = &
+	       SUM(cv(id) * iv%instid(inst)%varbc(ichan)%vtox(i,1:npred))
+         end do	
+	    
+        !---------------------------------------------------------------
+        ! Update VarBC parameters
+        !---------------------------------------------------------------
+	 iv%instid(inst)%varbc(ichan)%param = &
+	 iv%instid(inst)%varbc(ichan)%param + varbc_param_tl(1:npred)
+      end do
+      
+      deallocate(varbc_param_tl)
+   end do
+   
+   if (.not. rootproc) return
+   !---------------------------------------------------------------
+   ! Write VARBC.out file
+   !---------------------------------------------------------------
+   
+   write(unit=stdout,fmt='(A)') 'VARBC: Writing information in VARBC.out file'
       
    call da_get_unit(iunit)
    if ( it == max_ext_its ) then
@@ -49,11 +101,6 @@
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
-   allocate( lvarbc_inst(iv%num_inst) )
-   do inst = 1, iv % num_inst   
-      lvarbc_inst(inst) = ANY(iv%instid(inst)%varbc(1:iv%instid(inst)%nchan)%npred>0)	
-   end do   
-   
    write(iunit, *) ' VARBC version 1.0 - Number of instruments: '
    write(iunit, *) COUNT(lvarbc_inst)
    
@@ -77,48 +124,15 @@
             
       write(iunit, *) ' -----> Chanl_id Chanl_nb  Pred_use(-1/0/1)  Param'
       
-      allocate(varbc_param_tl(npredmax))
-      
       do ichan = 1, iv%instid(inst)%nchan
          npred    = iv%instid(inst)%varbc(ichan)%npred
          if (npred <= 0) cycle               !! VarBC channels only	 
-	 if (iv%instid(inst)%varbc(ichan)%nobs >= varbc_nobsmin) then
-	    where (iv%instid(inst)%varbc(ichan)%pred_use == 0) &
-	           iv%instid(inst)%varbc(ichan)%pred_use = 1
-	 else
-            if ( satinfo(inst)%iuse(ichan) == 1) then
-	       if (count(iv%instid(inst)%varbc(ichan)%pred_use == 0) > 0) &
-	          write(unit=stdout,fmt='(A,A,I5)') &	   
-	          'VARBC: Not enough data to keep statistics for ', &
-	          trim(iv%instid(inst)%rttovid_string),             &
-		  iv%instid(inst)%ichan(ichan)
-	    end if
-	 end if
- 	 if (use_varbc) then
-           !---------------------------------------------------------------
-           ! Change of variable (preconditioning) for parameters increments
-           !---------------------------------------------------------------
-            
-	    do i = 1, npred
-               id = iv%instid(inst)%varbc(ichan)%index(i)
-    	       varbc_param_tl(i) = &
-	          SUM(cv(id) * iv%instid(inst)%varbc(ichan)%vtox(i,1:npred))
-            end do	
-	    
-           !---------------------------------------------------------------
-           ! Update VarBC parameters
-           !---------------------------------------------------------------
-	    iv%instid(inst)%varbc(ichan)%param = &
-	    iv%instid(inst)%varbc(ichan)%param + varbc_param_tl(1:npred)
-         end if
-	   
 	 write(fparam,*) '(I4,I6,',npredmax,'I3,',npred,'F8.3)'
          write(iunit, fmt=trim(adjustl(fparam))) &
 	     ichan, iv%instid(inst)%varbc(ichan)%ichanl,   &
 	            iv%instid(inst)%varbc(ichan)%pred_use, &
   	            iv%instid(inst)%varbc(ichan)%param
       end do
-      deallocate(varbc_param_tl)
    end do
 
    deallocate(lvarbc_inst)

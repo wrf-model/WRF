@@ -24,7 +24,8 @@ module da_vtox_transforms
       stdout, use_rad, crtm_cloud, vert_corr_2, fg_format_wrf_arw_global, &
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull,&
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, cv_options_hum, &
-      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, &
+      use_background_errors
 #else
    use da_control, only : trace_use, ims,ime,jms,jme,kms,kme,jds,jde,kds,kde, &
       its,ite,jts,jte,kts,kte, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
@@ -34,7 +35,8 @@ module da_vtox_transforms
       fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       ids, ide, stdout, use_rad, crtm_cloud, vert_corr_2, fg_format_wrf_arw_global, &
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull, &
-      ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum
+      ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum, &
+      use_background_errors
 #endif
 
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x

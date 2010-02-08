@@ -123,8 +123,18 @@ subroutine da_transform_vptox(grid, vp, be, ep)
 
    if ((use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud)) then
       ! Pseudo RH --> Total water mixing ratio:
-      grid%xa % qt(its:ite,jts:jte,kts:kte) = vp%v4(its:ite,jts:jte,kts:kte) * &
-         grid%xb%qs(its:ite,jts:jte,kts:kte)
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij, i, j, k )
+      do ij = 1 , grid%num_tiles
+         do k = kts, kte
+            do j = grid%j_start(ij), grid%j_end(ij)
+               do i = its, ite
+                  grid%xa % qt(i,j,k) = vp%v4(i,j,k) * grid%xb%qs(i,j,k)
+               enddo
+            enddo
+         enddo
+      enddo
+      !$OMP END PARALLEL DO
    else
       ! Pseudo RH --> Water vapor mixing ratio:
       !$OMP PARALLEL DO &

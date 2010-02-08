@@ -28,19 +28,19 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
    real,           intent(out)       :: shat(1:cv_size)        ! control variable (local).
    
    type (y_type)                     :: ktr         
+   integer                           :: i, j, mz(7)
+   integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
    real                              :: amat(1:cv_size)           ! cv copy.
-   integer                           :: i, j, mz(6)
    real                              :: ritz(ntmax, ntmax)
 
-!    stdout = 777
-!    open(unit=stdout, file='obs_sensitivity')
- 
-    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /)
+    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
+    jp_start = be % cv % size_jb + be % cv % size_je + 1
+    jp_end   = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
 
     ! Define Shat = dF/dx (e.g. F=1/2<x',B-1.x'> --> dF/dx=xhat)
     !-----------------------------------------------------------
     call da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat, cv, y, shat)
-    
+
     ! Apply Analysis Error Covariance Matrix estimation (A) to dF/dx 
     !---------------------------------------------------------------
       amat = 0.0
@@ -48,7 +48,7 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
          do j = 1, iter
             ritz(i,j) = SUM( eignvec(i,1:iter) * (1.0/eignval(1:iter)) * eignvec(j,1:iter) )
 	    amat      = amat + qhat(:,i) * ritz(i,j) * &
-	                       da_dot_cv(cv_size, cv_size_domain, qhat(:,j), shat, grid, mz, use_varbc)
+	                       da_dot_cv(cv_size, qhat(:,j), shat, grid, mz, jp_start, jp_end)
 	 end do
       end do
 
@@ -65,7 +65,6 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
       call da_deallocate_y(ktr)
 
     ! Adjoint test    
-!      adj_sum_rhs = da_dot_cv(cv_size, cv_size_domain, xhat, xhat, grid, mz, use_varbc)        
-!      write(stdout,*) 'ADJOINT_TEST2:', adj_sum_rhs
+      write(stdout,*) 'ADJOINT_TEST2:', da_dot_cv(cv_size, xhat, xhat, grid, mz, jp_start, jp_end)
 
 end subroutine da_sensitivity

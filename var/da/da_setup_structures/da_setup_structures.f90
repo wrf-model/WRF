@@ -6,7 +6,7 @@ module da_setup_structures
 
    use module_domain, only : xb_type, ep_type, domain
 
-   use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, &
+   use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, j_type, &
       iv_type,da_allocate_background_errors,da_allocate_observations, &
       multi_level_type,each_level_type
    use da_wrf_interfaces, only : wrf_debug

@@ -17,6 +17,8 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    if (trace_use) call da_trace_entry("da_transform_vtox_adj")
 
+   if (.not. use_background_errors) return
+
    if (  cv_options == 3 ) then
 
       call da_transform_bal_adj( vp, be, grid)

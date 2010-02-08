@@ -26,7 +26,7 @@ subroutine da_check_max_iv_airsr(iv, it,num_qcstat_conv)
       do k = 1, iv%info(airsr)%levels(n)
         call da_get_print_lvl(iv%airsr(n)%p(k),ipr)
         failed = .false.
-        if( iv%airsr(n)%t(k)%qc >= obs_qc_pointer ) &    
+        if( iv%airsr(n)%t(k)%qc >= obs_qc_pointer ) then 
          call da_max_error_qc (it,iv%info(airsr), n, iv%airsr(n)%t(k), max_error_t ,failed)
         if( iv%info(airsr)%proc_domain(k,n) ) then
           num_qcstat_conv(1,airsr,3,ipr) = num_qcstat_conv(1,airsr,3,ipr) + 1
@@ -36,9 +36,10 @@ subroutine da_check_max_iv_airsr(iv, it,num_qcstat_conv)
         'airsr',ob_vars(3),iv%info(airsr)%lat(k,n),iv%info(airsr)%lon(k,n),0.01*iv%airsr(n)%p(k)
          endif
         endif
+        endif
 
         failed = .false.
-        if( iv%airsr(n)%q(k)%qc >= obs_qc_pointer ) &    
+        if( iv%airsr(n)%q(k)%qc >= obs_qc_pointer ) then 
          call da_max_error_qc (it,iv%info(airsr), n, iv%airsr(n)%q(k), max_error_q ,failed)
          if( iv%info(airsr)%proc_domain(k,n) ) then
            num_qcstat_conv(1,airsr,4,ipr) = num_qcstat_conv(1,airsr,4,ipr) + 1
@@ -47,6 +48,7 @@ subroutine da_check_max_iv_airsr(iv, it,num_qcstat_conv)
         write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
         'airsr',ob_vars(4),iv%info(airsr)%lat(k,n),iv%info(airsr)%lon(k,n),0.01*iv%airsr(n)%p(k)
          endif
+        endif
         endif
       end do
    end do

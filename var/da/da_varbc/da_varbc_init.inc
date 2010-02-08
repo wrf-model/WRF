@@ -169,10 +169,7 @@
    use_varbc = use_varbc.and.(.not.freeze_varbc)   
    if (use_varbc) then
       be % cv % size_jp = size_jp
-      be % cv % size    = be % cv % size + be % cv % size_jp
-
-      cv_size_domain_jp = be % cv % size_jp
-      cv_size_domain    = cv_size_domain + cv_size_domain_jp
+      cv_size_domain_jp = size_jp
    end if
    
    if (trace_use) call da_trace_exit("da_varbc_init")

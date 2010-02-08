@@ -1,4 +1,4 @@
-subroutine da_transform_vtoy_adj(iter,cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
+subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
    grid, config_flags, jcdf_flag)
 
    !-------------------------------------------------------------------------
@@ -7,7 +7,6 @@ subroutine da_transform_vtoy_adj(iter,cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
 
    implicit none
 
-   integer,                    intent(in)    :: iter
    integer,                    intent(in)    :: cv_size ! Size of cv array.
    type(be_type),              intent(in)    :: be     ! background error structure.
    type(ep_type),              intent(in)    :: ep     ! ensemble perturbation structure.

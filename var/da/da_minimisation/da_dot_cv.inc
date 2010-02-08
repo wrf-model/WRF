@@ -1,4 +1,4 @@
-real function da_dot_cv(cv_size, cv_size_domain, x, y, grid, mzs, lvarbc)
+real function da_dot_cv(cv_size, x, y, grid, mzs, jp_start, jp_end)
 
    !-----------------------------------------------------------------------
    ! Purpose: Forms the dot product of two vectors that are organized in the 
@@ -12,26 +12,34 @@ real function da_dot_cv(cv_size, cv_size_domain, x, y, grid, mzs, lvarbc)
    implicit none
 
    integer,          intent(in) :: cv_size           ! Size of array (tile).
-   integer,          intent(in) :: cv_size_domain    ! Size of array (domain).
    real,             intent(in) :: x(cv_size)        ! 1st vector.
    real,             intent(in) :: y(cv_size)        ! 1st vector.
    type(domain),     intent(in) :: grid              ! decomposed dimensions
-   integer,          intent(in) :: mzs(:)            ! mz for each variable
+   integer,          intent(in) :: mzs(7)            ! mz for each variable
                                                      ! (to identify 2D arrays)
-   logical, optional,intent(in) :: lvarbc
+   integer, optional,intent(in) :: jp_start, jp_end
 
-   logical       :: llvarbc
-   real, pointer :: xg(:), yg(:)      ! Serial data arrays.
-   real          :: dtemp1(1), dtemp1x   ! Temporary.
-   integer                      :: cv_size_reduce
+   logical       :: lvarbc
+   real, pointer :: xx(:), yy(:)                     ! Temporary vectors.
+   real, pointer :: xg(:), yg(:)                     ! Serial data arrays.
+   real          :: dtemp1(1), dtmp                  ! Temporary.
 
    if (trace_use) call da_trace_entry("da_dot_cv")
 
-   dtemp1(1) = 0.0
-   
-   llvarbc = .false.
-   if (present(lvarbc)) llvarbc = lvarbc
-   
+   allocate(xx(1:cv_size))
+   allocate(yy(1:cv_size))
+   xx = x
+   yy = y
+
+ ! VarBC parameters are global (no summation across processors)
+ !-------------------------------------------------------------
+   lvarbc = present(jp_start) .and. present(jp_end)
+   if (lvarbc) lvarbc = lvarbc .and. (jp_end >= jp_start)   
+   if (lvarbc .and. .not. rootproc) then
+      xx(jp_start:jp_end) = 0.
+      yy(jp_start:jp_end) = 0.
+   end if
+      
    ! Bitwise-exact reduction preserves operation order of serial code for
    ! testing, at the cost of much-increased run-time.  Turn it off when not
    ! testing.  This will always be .false. for a serial run or 
@@ -44,12 +52,14 @@ real function da_dot_cv(cv_size, cv_size_domain, x, y, grid, mzs, lvarbc)
       ! monitor task.  
 
       if (rootproc) then
+!         cv_size_domain = cv_size_domain_jb+cv_size_domain_je+cv_size_domain_jp+cv_size_domain_js   
+         cv_size_domain = wrf_dm_sum_integer(cv_size)
          allocate(xg(1:cv_size_domain))
          allocate(yg(1:cv_size_domain))
       end if
 
-      call da_cv_to_global(cv_size, cv_size_domain, x, grid, mzs, xg)
-      call da_cv_to_global(cv_size, cv_size_domain, y, grid, mzs, yg)
+      call da_cv_to_global(cv_size, cv_size_domain, xx, grid, mzs, xg)
+      call da_cv_to_global(cv_size, cv_size_domain, yy, grid, mzs, yg)
 
       if (rootproc) then
          dtemp1(1) = da_dot(cv_size_domain, xg, yg)
@@ -61,31 +71,19 @@ real function da_dot_cv(cv_size, cv_size_domain, x, y, grid, mzs, lvarbc)
 
    else
 
-      if (llvarbc) then
-         cv_size_reduce = cv_size - cv_size_domain_jp
-         dtemp1(1) = da_dot(cv_size_reduce, &
-                            x(1:cv_size_reduce), &
-                            y(1:cv_size_reduce))
-      else
-         dtemp1(1) = da_dot(cv_size, x, y)
-      end if	
-
+      dtemp1(1) = da_dot(cv_size, xx, yy)
+      
       if (.not. global) then
-         dtemp1x = dtemp1(1)
+         dtmp = dtemp1(1)
          ! summation across processors:
-         dtemp1(1) = wrf_dm_sum_real(dtemp1x)
+         dtemp1(1) = wrf_dm_sum_real(dtmp)
       end if
 
    end if
+  
+   deallocate(xx,yy)
 
-   if (llvarbc) then
-      da_dot_cv = dtemp1(1) + &
-                  da_dot(cv_size_domain_jp, &
-                       x(cv_size_reduce+1:cv_size), &
-                       y(cv_size_reduce+1:cv_size))
-   else
-      da_dot_cv = dtemp1(1)
-   end if
+   da_dot_cv = dtemp1(1)
 
    if (trace_use) call da_trace_exit("da_dot_cv")
 

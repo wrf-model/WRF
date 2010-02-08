@@ -39,9 +39,11 @@ module da_wrfvar_top
    use da_define_structures, only : y_type, j_type, iv_type, be_type, &
       xbx_type,da_deallocate_background_errors,da_initialize_cv, &
       da_zero_vp_type,da_allocate_y,da_deallocate_observations, &
-      da_deallocate_y
+      da_deallocate_y, da_zero_x
    use da_minimisation, only : da_get_innov_vector,da_minimise_cg, &
-      da_minimise_lz, da_write_diagnostics
+      da_minimise_lz, da_write_diagnostics, da_calculate_residual, &
+      da_calculate_grady
+   use da_obs, only : da_transform_xtoy_adj 
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
                          da_write_obs_etkf, da_write_modified_filtered_obs  !cys_change
    use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims
@@ -59,8 +61,10 @@ module da_wrfvar_top
    use da_test, only : da_check
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
-   use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess
-   use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa
+   use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
+       da_transfer_wrftltoxa_adj
+   use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
+      da_transform_xtoxa_adj
    use da_wrfvar_io, only : da_med_initialdata_input, da_med_initialdata_output
    use da_tools, only : da_set_randomcv
 

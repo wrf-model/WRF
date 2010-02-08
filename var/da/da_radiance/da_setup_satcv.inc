@@ -49,10 +49,7 @@ subroutine da_setup_satcv(iv, be)
       end do
       
       be % cv % size_js = size_js
-      be % cv % size    = be % cv % size + be % cv % size_js               
-      cv_size_domain_js = be % cv % size_js
-      cv_size_domain    = cv_size_domain + cv_size_domain_js
-   
+      cv_size_domain_js = size_js   
    
    if (trace_use) call da_trace_exit ("da_setup_satcv")
 

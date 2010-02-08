@@ -27,7 +27,7 @@ subroutine da_check_max_iv_tamdar(iv, it,num_qcstat_conv)
          call da_get_print_lvl(iv%tamdar(n)%p(k),ipr) 
 
          failed=.false.
-         if( iv%tamdar(n)%u(k)%qc >= obs_qc_pointer )  &   
+         if( iv%tamdar(n)%u(k)%qc >= obs_qc_pointer ) then 
          call da_max_error_qc (it,iv%info(tamdar), n, iv%tamdar(n)%u(k), max_error_uv,failed)
          if( iv%info(tamdar)%proc_domain(k,n) ) then
              num_qcstat_conv(1,tamdar,1,ipr) = num_qcstat_conv(1,tamdar,1,ipr) + 1
@@ -37,9 +37,10 @@ subroutine da_check_max_iv_tamdar(iv, it,num_qcstat_conv)
            'tamdar',ob_vars(1),iv%info(tamdar)%lat(k,n),iv%info(tamdar)%lon(k,n),0.01*iv%tamdar(n)%p(k)
          end if
          end if
+         end if
 
          failed=.false.
-         if( iv%tamdar(n)%v(k)%qc >= obs_qc_pointer )  &   
+         if( iv%tamdar(n)%v(k)%qc >= obs_qc_pointer )  then
          call da_max_error_qc (it,iv%info(tamdar), n, iv%tamdar(n)%v(k), max_error_uv,failed)
          if( iv%info(tamdar)%proc_domain(k,n) ) then
              num_qcstat_conv(1,tamdar,2,ipr) = num_qcstat_conv(1,tamdar,2,ipr) + 1
@@ -49,9 +50,10 @@ subroutine da_check_max_iv_tamdar(iv, it,num_qcstat_conv)
            'tamdar',ob_vars(2),iv%info(tamdar)%lat(k,n),iv%info(tamdar)%lon(k,n),0.01*iv%tamdar(n)%p(k)
          end if
          end if
+         end if
 
          failed=.false.
-         if( iv%tamdar(n)%t(k)%qc >= obs_qc_pointer )  &   
+         if( iv%tamdar(n)%t(k)%qc >= obs_qc_pointer )  then
          call da_max_error_qc (it,iv%info(tamdar), n, iv%tamdar(n)%t(k), max_error_t ,failed)
          if( iv%info(tamdar)%proc_domain(k,n) ) then
              num_qcstat_conv(1,tamdar,3,ipr) = num_qcstat_conv(1,tamdar,3,ipr) + 1
@@ -61,9 +63,10 @@ subroutine da_check_max_iv_tamdar(iv, it,num_qcstat_conv)
            'tamdar',ob_vars(3),iv%info(tamdar)%lat(k,n),iv%info(tamdar)%lon(k,n),0.01*iv%tamdar(n)%p(k)
          end if
          end if
+         end if
 
          failed=.false.
-         if( iv%tamdar(n)%q(k)%qc >= obs_qc_pointer )  &   
+         if( iv%tamdar(n)%q(k)%qc >= obs_qc_pointer )  then
          call da_max_error_qc (it,iv%info(tamdar), n, iv%tamdar(n)%q(k), max_error_q ,failed)
          if( iv%info(tamdar)%proc_domain(k,n) ) then
              num_qcstat_conv(1,tamdar,4,ipr) = num_qcstat_conv(1,tamdar,4,ipr) + 1
@@ -71,6 +74,7 @@ subroutine da_check_max_iv_tamdar(iv, it,num_qcstat_conv)
          num_qcstat_conv(2,tamdar,4,ipr) = num_qcstat_conv(2,tamdar,4,ipr) + 1
            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'tamdar',ob_vars(4),iv%info(tamdar)%lat(k,n),iv%info(tamdar)%lon(k,n),0.01*iv%tamdar(n)%p(k)
+         end if
          end if
          end if
 

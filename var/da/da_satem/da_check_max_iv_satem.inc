@@ -26,7 +26,7 @@ subroutine da_check_max_iv_satem(iv, it, num_qcstat_conv)
       do k = 1, iv%info(satem)%levels(n)
          call da_get_print_lvl(iv%satem(n)%p(k),ipr)
          failed=.false.
-         if ( iv%satem(n)%thickness(k)%qc >= obs_qc_pointer )  &   
+         if ( iv%satem(n)%thickness(k)%qc >= obs_qc_pointer ) then 
          ! Thickness
             call da_max_error_qc(it, iv%info(satem), n, iv%satem(n)%thickness(k),& 
                                  max_error_thickness, failed)
@@ -36,6 +36,7 @@ subroutine da_check_max_iv_satem(iv, it, num_qcstat_conv)
                num_qcstat_conv(2,satem,9,ipr-1) = num_qcstat_conv(2,satem,9,ipr-1) + 1
                write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                      'satem',ob_vars(9),iv%info(satem)%lat(k,n),iv%info(satem)%lon(k,n),0.01*iv%satem(n)%p(k)
+            end if
             end if
             end if
       end do

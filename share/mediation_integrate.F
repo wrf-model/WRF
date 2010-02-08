@@ -1065,7 +1065,7 @@ END SUBROUTINE med_nest_feedback
 SUBROUTINE med_last_solve_io ( grid , config_flags )
   ! Driver layer
    USE module_state_description
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain, domain_clock_get
    USE module_configure	, ONLY : grid_config_rec_type
    USE module_utility
    USE module_streams
@@ -1139,7 +1139,7 @@ END SUBROUTINE med_last_solve_io
 !
 SUBROUTINE med_analysis_in ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain, domain_clock_get
    USE module_io_domain
    USE module_timing
   ! Model layer
@@ -1197,7 +1197,7 @@ END SUBROUTINE med_analysis_in
 !=========================================================================================================
 SUBROUTINE med_analysis_out ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain, domain_clock_get
    USE module_io_domain
    USE module_timing
   ! Model layer
@@ -1323,7 +1323,7 @@ END SUBROUTINE med_restart_out
 !zhang's doing
 SUBROUTINE med_restart_in ( grid , config_flags )
   ! Driver layer
-   USE module_domain	, ONLY : domain
+   USE module_domain	, ONLY : domain, domain_clock_get
    USE module_io_domain
    USE module_timing
   ! Model layer

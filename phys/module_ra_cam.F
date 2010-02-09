@@ -485,20 +485,21 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
-      q(ii,kk,1) = max(1.e-10,qv3d(i,k,j))
+!    convert to specific humidity
+      q(ii,kk,1) = max(1.e-10,qv3d(i,k,j)/(1.+qv3d(i,k,j)))
      IF ( F_QI .and. F_QC .and. F_QS ) THEN
-      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j))
-      q(ii,kk,ixcldice) = max(0.,qi3d(i,k,j)+qs3d(i,k,j))
+      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
+      q(ii,kk,ixcldice) = max(0.,(qi3d(i,k,j)+qs3d(i,k,j))/(1.+qv3d(i,k,j)))
      ELSE IF ( F_QC .and. F_QR ) THEN
 ! Warm rain or simple ice
       q(ii,kk,ixcldliq) = 0.
       q(ii,kk,ixcldice) = 0.
-      if(t_phy(i,k,j).gt.273.15)q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j))
-      if(t_phy(i,k,j).le.273.15)q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j))
+      if(t_phy(i,k,j).gt.273.15)q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
+      if(t_phy(i,k,j).le.273.15)q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
      ELSE IF ( F_QC .and. F_QS ) THEN
 ! For Ferrier (note that currently Ferrier has QI, so this section will not be used)
-      q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)*f_ice_phy(i,k,j))
-      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)*(1.-f_ice_phy(i,k,j))*(1.-f_rain_phy(i,k,j)))
+      q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j))*f_ice_phy(i,k,j))
+      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j))*(1.-f_ice_phy(i,k,j))*(1.-f_rain_phy(i,k,j)))
      ELSE
       q(ii,kk,ixcldliq) = 0.
       q(ii,kk,ixcldice) = 0.

@@ -2375,19 +2375,6 @@ BENCH_END(tracer_adv_tim)
 
            IF( config_flags%nested .and. (rk_step == 1) ) THEN
 
-             IF (is .EQ. P_QNDROP .OR. is .EQ. P_QNI          & 
-                                  .OR. is .EQ. P_QNS          &
-                                  .OR. is .EQ. P_QNR          &
-                                  .OR. is .EQ. P_QNG          &
-                                  .OR. is .EQ. P_QNH          &
-                                  .OR. is .EQ. P_QNN          &
-!                                 .OR. is .EQ. P_QZR          &
-!                                 .OR. is .EQ. P_QZI          &
-!                                 .OR. is .EQ. P_QZS          &
-!                                 .OR. is .EQ. P_QZG          &
-!                                 .OR. is .EQ. P_QZH          &
-                                  .OR. is .EQ. P_QNC) THEN
-
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
                                        scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is),      &
@@ -2417,8 +2404,6 @@ BENCH_END(tracer_adv_tim)
                                        grid%i_start(ij), grid%i_end(ij),                       &
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
-
-             ENDIF
 
            ENDIF ! b.c test for chem nested boundary condition
 

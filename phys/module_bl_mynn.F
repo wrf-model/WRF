@@ -62,7 +62,7 @@ MODULE module_bl_mynn
 !  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
   REAL, PARAMETER :: gno=4.64158883361278196
   REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8,qkemin=1.e-12
-
+  REAL, PARAMETER :: pblh_ref=1500.
 
   REAL, PARAMETER :: rr2=0.7071068, rrp=0.3989423
 
@@ -1608,7 +1608,8 @@ CONTAINS
        &Du,Dv,Dth,&
        &Dqv,Dqc,&
 !       &K_m,K_h,K_q&
-       &K_h,k_m&
+       &K_h,k_m,&
+       &Pblh&
        &,IDS,IDE,JDS,JDE,KDS,KDE                    &
        &,IMS,IME,JMS,JME,KMS,KME                    &
        &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1643,8 +1644,9 @@ CONTAINS
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(out) :: &
          &K_h,K_m
 
-
-
+    REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(inout) :: &
+         &Pblh
+    
 !local vars
     INTEGER :: ITF,JTF,KTF
     INTEGER :: i,j,k
@@ -1686,7 +1688,7 @@ CONTAINS
              ENDDO
              
              zw(ktf+1)=zw(ktf)+dz(i,ktf,j)
-
+             
              CALL mym_initialize ( kts,kte,&
                   &dz(i,kts:kte,j), zw,  &
                   &u(i,kts:kte,j), v(i,kts:kte,j), &
@@ -1694,8 +1696,11 @@ CONTAINS
                   &ust(i,j), rmol(i,j),&
                   &Qke(i,kts:kte,j), Tsq(i,kts:kte,j), &
                   &Qsq(i,kts:kte,j), Cov(i,kts:kte,j))
-
+             
+             pblh(i,j)=pblh_ref
+          
           ENDDO
+
        ENDDO
        
     ENDIF
@@ -1785,6 +1790,7 @@ CONTAINS
                &dfm,dfh,dfq,dz(i,kts:kte,j),&
                &K_m(i,kts:kte,j),K_h(i,kts:kte,j),K_q(i,kts:kte,j))
 
+          pblh(i,j)=pblh_ref
 
        ENDDO
     ENDDO

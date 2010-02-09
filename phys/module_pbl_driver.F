@@ -1024,7 +1024,8 @@ CONTAINS
                    &Qke=qke,Tsq=tsq,Qsq=qsq,Cov=cov,&
                    &Du=rublten,Dv=rvblten,Dth=rthblten,&
                    &Dqv=rqvblten,Dqc=rqcblten,&
-                   &k_h=exch_h,k_m=exch_m&
+                   &k_h=exch_h,k_m=exch_m,&
+                   &pblh=pblh&
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

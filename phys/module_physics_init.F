@@ -92,7 +92,7 @@ CONTAINS
                          A_E_BEP,B_U_BEP,B_V_BEP,                & !Optional multi-layer urban
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
                          DL_U_BEP,SF_BEP,VL_BEP,                 & !Optional multi-layer urban
-                         TML,T0ML,HML,H0ML,HUML,HVML,            & !Optional oml
+                         TML,T0ML,HML,H0ML,HUML,HVML,TMOML,      & !Optional oml
                          itimestep,                              & !Optional obs fdda
 #if ( EM_CORE == 1 )
                          fdob,                                   & !Optional obs fdda
@@ -254,7 +254,7 @@ CONTAINS
 
 ! ocean mixed layer
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
-             TML,T0ML,HML,H0ML,HUML,HVML
+             TML,T0ML,HML,H0ML,HUML,HVML,TMOML
 
 !fdda
    REAL,     OPTIONAL, INTENT(IN) :: FGDT
@@ -575,7 +575,7 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
 
@@ -1252,7 +1252,7 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
    USE module_sf_slab
@@ -1430,7 +1430,7 @@ integer myproc
                                         ACHFX,ACLHF,ACGRDFLX
 ! Optional OML variables
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
-                                        TML,T0ML,HML,H0ML,HUML,HVML
+                                        TML,T0ML,HML,H0ML,HUML,HVML,TMOML
    INTEGER,  OPTIONAL,  INTENT(IN) :: omlcall
    REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
    LOGICAL,  INTENT(IN) :: start_of_simulation
@@ -1649,7 +1649,7 @@ integer myproc
    IF(PRESENT(OMLCALL))THEN
      IF (omlcall .EQ. 1) THEN
         CALL omlinit(oml_hml0, tsk,                           &
-                     tml,t0ml,hml,h0ml,huml,hvml,             &
+                     tml,t0ml,hml,h0ml,huml,hvml,tmoml,       &
                      allowed_to_read, start_of_simulation,    &
                      ids,ide, jds,jde, kds,kde,               &
                      ims,ime, jms,jme, kms,kme,               &

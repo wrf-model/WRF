@@ -6,7 +6,7 @@ CONTAINS
 
 !----------------------------------------------------------------
    SUBROUTINE OCEANML(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
-                      f,g,oml_gamma,                               &
+                      tmoml,f,g,oml_gamma,                         &
                       XLAND,HFX,LH,TSK,GSW,GLW,EMISS,              &
                       DELTSM,STBOLT,                               &
                       ids,ide, jds,jde, kds,kde,                   &
@@ -23,6 +23,7 @@ CONTAINS
 !
 !-- TML         ocean mixed layer temperature (K)
 !-- T0ML        ocean mixed layer temperature (K) at initial time
+!-- TMOML       top 200 m ocean mean temperature (K) at initial time
 !-- HML         ocean mixed layer depth (m)
 !-- H0ML        ocean mixed layer depth (m) at initial time
 !-- HUML        ocean mixed layer u component of wind
@@ -59,17 +60,17 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                            TSK
 
-   REAL,    DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::     &
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::     &
                                     TML,T0ML,HML,H0ML,HUML,HVML
 
-   REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL, INTENT(IN   ) ::     &
+   REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::     &
                                              U_PHY,V_PHY
 
-   REAL,    DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN   ) ::     &
-                                             UST, F
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) ::     &
+                                             UST, F, TMOML
 
-   REAL,     OPTIONAL, INTENT(IN   )   ::     G
-   REAL,     OPTIONAL, INTENT(IN   )   ::     OML_GAMMA
+   REAL,    INTENT(IN   )   ::     G
+   REAL,    INTENT(IN   )   ::     OML_GAMMA
 
 ! LOCAL VARS
 
@@ -82,7 +83,7 @@ CONTAINS
             IF (XLAND(I,J).GT.1.5) THEN
                CALL OML1D(I,J,TML(i,j),T0ML(i,j),HML(i,j),H0ML(i,j),           &
                           HUML(i,j),HVML(i,j),TSK(i,j),HFX(i,j),               &
-                          LH(i,j),GSW(i,j),GLW(i,j),                           &
+                          LH(i,j),GSW(i,j),GLW(i,j),TMOML(i,j),                &
                           U_PHY(i,kts,j),V_PHY(i,kts,j),UST(i,j),F(i,j),       &
                           EMISS(i,j),STBOLT,G,DELTSM,OML_GAMMA,                &
                           ids,ide, jds,jde, kds,kde,                           &
@@ -98,7 +99,7 @@ CONTAINS
 !----------------------------------------------------------------
    SUBROUTINE OML1D(I,J,TML,T0ML,H,H0,HUML,                              &
                     HVML,TSK,HFX,                                        &
-                    LH,GSW,GLW,                                          &
+                    LH,GSW,GLW,TMOML,                                    &
                     UAIR,VAIR,UST,F,EMISS,STBOLT,G,DT,OML_GAMMA,         &
                     ids,ide, jds,jde, kds,kde,                           &
                     ims,ime, jms,jme, kms,kme,                           &
@@ -114,6 +115,7 @@ CONTAINS
 !
 !-- TML         ocean mixed layer temperature (K)
 !-- T0ML        ocean mixed layer temperature (K) at initial time
+!-- TMOML       top 200 m ocean mean temperature (K) at initial time
 !-- H           ocean mixed layer depth (m)
 !-- H0          ocean mixed layer depth (m) at initial time
 !-- HUML        ocean mixed layer u component of wind
@@ -142,7 +144,7 @@ CONTAINS
    REAL,    INTENT(INOUT)    :: TML, H, H0, HUML, HVML, TSK
 
    REAL,    INTENT(IN   )    :: T0ML, HFX, LH, GSW, GLW,        &
-                                UAIR, VAIR, UST, F, EMISS
+                                UAIR, VAIR, UST, F, EMISS, TMOML
 
    REAL,    INTENT(IN) :: STBOLT, G, DT, OML_GAMMA
 
@@ -210,7 +212,7 @@ CONTAINS
 ! limit to positive h change
         if(h.lt.hold)h=hold
 
-        if(h.ne.0.)then
+        if(tml.ge.tmoml .and. h.ne.0.)then
           tml=max(t0ml - Gam*(h-h0) + 0.5*Gam*h + A2/h, 273.15)
           u=hu2/h
           v=hv2/h
@@ -235,7 +237,7 @@ CONTAINS
 
 !================================================================
    SUBROUTINE omlinit(oml_hml0, tsk,                           &
-                      tml,t0ml,hml,h0ml,huml,hvml,             &
+                      tml,t0ml,hml,h0ml,huml,hvml,tmoml,       &
                       allowed_to_read, start_of_simulation,    &
                       ids,ide, jds,jde, kds,kde,               &
                       ims,ime, jms,jme, kms,kme,               &
@@ -252,9 +254,9 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN)    ::                               TSK
 
-   REAL,    DIMENSION( ims:ime, jms:jme ) , OPTIONAL          , &
-            INTENT(INOUT)    ::     TML, T0ML, HML, H0ML, HUML, HVML
-   REAL   , OPTIONAL, INTENT(IN   )    ::     oml_hml0
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT)    ::     TML, T0ML, HML, H0ML, HUML, HVML, TMOML
+   REAL   , INTENT(IN   )    ::     oml_hml0
 
 !  LOCAR VAR
 
@@ -266,20 +268,26 @@ CONTAINS
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
-   WRITE(message,*)'Initializing OML with HML0 = ', oml_hml0
-   CALL wrf_debug (100, TRIM(message))
-
-   IF(start_of_simulation .AND. &
-      PRESENT(tml) .AND. PRESENT(t0ml) ) THEN
+   IF(start_of_simulation) THEN
      DO J=jts,jtf
      DO I=its,itf
        TML(I,J)=TSK(I,J)
        T0ML(I,J)=TSK(I,J)
 ! MAY HAVE INPUT OF HML BUT FOR NOW SET HERE
-       HML(I,J)=oml_hml0
-       H0ML(I,J)=HML(I,J)
-       HUML(I,J)=0.
-       HVML(I,J)=0.
+       IF (oml_hml0 .gt. 0.) THEN
+          WRITE(message,*)'Initializing OML with HML0 = ', oml_hml0
+          CALL wrf_debug (100, TRIM(message))
+          HML(I,J)=oml_hml0
+          H0ML(I,J)=HML(I,J)
+          HUML(I,J)=0.
+          HVML(I,J)=0.
+       ELSE
+          WRITE(message,*)'Initializing OML with real HML0, h(1,1) = ', h0ml(1,1)
+          CALL wrf_debug (1, TRIM(message))
+          HML(I,J)=H0ML(I,J)
+! fill in near coast area with SST: 200 K was set as missing value in ocean pre-processing code
+          IF(TMOML(I,J).GT.200. .and. TMOML(I,J).LE.201.) TMOML(I,J)=TSK(I,J)
+       ENDIF
      ENDDO
      ENDDO
    ENDIF

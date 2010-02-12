@@ -74,7 +74,7 @@ CONTAINS
      &          ,uratx,vratx,tratx                                    &
              !  Optional simple oml model
      &          ,omlcall,oml_hml0,oml_gamma                           &
-     &          ,tml,t0ml,hml,h0ml,huml,hvml,f                        &
+     &          ,tml,t0ml,hml,h0ml,huml,hvml,f,tmoml                  &
      &          ,ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                  &
      &         ,isurban, mminlu                                       &
      &          ,snotime                                              &
@@ -514,7 +514,7 @@ CONTAINS
 !
 !  arguments for Ocean Mixed Layer Model
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F, TMOML
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA, USTM
 
 #if ( EM_CORE==1)
@@ -1779,7 +1779,7 @@ CONTAINS
      !$OMP PRIVATE ( ij )
      DO ij = 1 , num_tiles
         CALL oceanml(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
-                     f,g,oml_gamma,                               &
+                     tmoml,f,g,oml_gamma,                         &
                      xland,hfx,lh,tsk,gsw,glw,emiss,              &
                      dtbl,STBOLT,                                 &
                      ids,ide, jds,jde, kds,kde,                   &

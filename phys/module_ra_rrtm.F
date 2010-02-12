@@ -1938,8 +1938,8 @@ CONTAINS
                    kts,kte                                         )
  
          GLW(I,J)=GLW0
-         OLR(I,J)=OLR0
-
+         OLR(I,J)=OLR0 
+ 
          DO K=kts,kte
             nk=kme-1-k+kms
             rthraten(i,k,j)=rthraten(i,k,j)+tten1d(nk)/pi3d(i,k,j)
@@ -2175,13 +2175,13 @@ CONTAINS
                                                                                  
         do 1500 k = 1, nlayers                                                   
            if (cldfrac(k).gt.0.) then                                            
-              icldlyr(k) = 1                                                     
+              icldlyr(k) = 1
            else                                                                  
               icldlyr(k) = 0                                                     
            endif                                                                 
  1500   continue                                                                 
                                                                                  
-!  Call the radiative transfer routine.                                          
+!  Call the radiative transfer routine.                                      
                                                                                  
            CALL RTRN(kts,ktep1,                                  &
                      TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX, &
@@ -3780,9 +3780,12 @@ CONTAINS
       data amdc2/  0.239546 /                                                    
 
 !     Put in CO2 volume mixing ratio here (330 ppmv)                                
+!     Added H2O volume mixing ratio from standard atmosphere 
+!        above 150 mb (Steven Cavallo, 01/2010).
 
-      real :: co2vmr
+      real :: co2vmr, h2ovmr
       data co2vmr / 330.e-6 /                                                    
+      data h2ovmr / 5.00e-6 /
                                                                                  
       REAL :: ABCW,ABICE,ABRN,ABSN
 
@@ -3885,18 +3888,24 @@ CONTAINS
 !        TZ(L) = tint(kte+1-L)                                                    
          PZ(L) = Pw(kte+1-L)                                                    
          TZ(L) = Tw(kte+1-L)                                                    
-         WKL(1,L) = qv(kte+1-L)*amdw                                             
-         WKL(2,L) = co2vmr                                                       
-!         WKL(3,L) = o3(kte+1-L)                                                  
+         WKL(1,L) = qv(kte+1-L)*amdw
+         ! Set the water vapor mixing ratio constant above 
+         ! the typical level where global and reanalysis data
+         ! does not provide it.  Steven Cavallo 01/2010.
+         !IF (PAVEL(L).LE.100) THEN
+         !   WKL(1,L) = h2ovmr
+         !ENDIF                                            
+         WKL(2,L) = co2vmr
+         WKL(3,L) = o3(kte+1-L)                                                        
 ! ozone is already bottom to top array but convert mmr to vmr
          WKL(3,L) = o3(L)*amdo                                                  
          WKL(4,L) = n2o(kte+1-L)*amdn                                            
          WKL(6,L) = ch4(kte+1-L)*amdc                                            
          amm = (1-WKL(1,L))*amd + WKL(1,L)*amw                                   
          COLDRY(L) = (PZ(L-1)-PZ(L))*1.E3*avgdro/    & 
-                               (gravit*amm*(1+WKL(1,L)))                         
+                               (gravit*amm*(1+WKL(1,L)))
  2000    CONTINUE                                                                
-                                                                                 
+
 !  Set cross section molecule amounts from CCM; convert to vmr                   
 !      DO 2100 L=1, NLAYERS-1                                                     
       DO 2100 L=1, kte      
@@ -3999,17 +4008,17 @@ CONTAINS
          PZR(L)=PZ(klev)
  3225  CONTINUE     
        CALL INIRAD (O3PROF2(kts:NLAYERS-1),PZR,kts,NLAYERS-1)       
-       ! Pick the top level to be the closest to zero from the 
-       ! table
+       ! Pick the top level to be the closest to zero from the table
        O3PROF2(NLAYERS) = 6.135E-6      
        
        ! Keep all molecular mixing ratios constant in the buffer zone,
        ! except for ozone
        IF ( kte .NE. NLAYERS ) THEN 
           DO 3250 L=1,NLAYERS,1
-             WKL(3,L) = O3PROF2(L)     ! O3
+             WKL(3,L) = O3PROF2(L)*amdo! O3
              IF ( L .GT. kte ) THEN
-                WKL(1,L) = WKL(1,kte)  ! H2O
+!               WKL(1,L) = WKL(1,kte)  ! H2O
+                WKL(1,L) = h2ovmr      ! H2O above model top set to constant value
                 WKL(2,L) = co2vmr      ! CO2
                 WKL(4,L) = WKL(4,kte)  ! N2O
                 WKL(6,L) = WKL(6,kte)  ! CH4
@@ -4037,7 +4046,8 @@ CONTAINS
             ENDIF                                                                
  4400    CONTINUE                                                                
  5000 CONTINUE                                                                   
-                                                                                 
+                                                                            
+ 
 !  Set spectral surface emissivity for each longwave band.  The default value    
 !  is set here to emiss(i,j) based on land-use (taken to be constant across band 
 !  Comment: if land-surface uses skin temperature, emissivity must match that    
@@ -6490,8 +6500,7 @@ CONTAINS
          HTRC(L) = HEATFAC * (FNETC(L) - FNETC(LEV)) / (PZ(L) - PZ(LEV))         
  7000 CONTINUE                                                                   
       HTR(NLAYERS) = 0.0                                                         
-      HTRC(NLAYERS) = 0.0                                                        
-                                                                                 
+      HTRC(NLAYERS) = 0.0                                                                                                                                  
 
       END  SUBROUTINE RTRN
 

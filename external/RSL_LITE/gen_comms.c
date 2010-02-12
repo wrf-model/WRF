@@ -1640,7 +1640,11 @@ int said_it2 = 0 ;
   for ( direction = directions ; *direction != NULL ; direction++ )
   {
     if ( dirname == NULL ) return(1) ;
-    sprintf(fname,"shift_halo_%s_halo",*direction) ;
+    if ( sw_unidir_shift_halo ) {
+       sprintf(fname,"shift_halo",*direction) ;
+    } else {
+       sprintf(fname,"shift_halo_%s_halo",*direction) ;
+    }
 
     Shift.next = NULL ;
     sprintf( Shift.use, "" ) ;
@@ -1688,7 +1692,10 @@ if ( p->subgrid != 0 ) {  /* moving nests not implemented for subgrid variables 
     if ( strlen(Shift.comm_define) > 0 )Shift.comm_define[strlen(Shift.comm_define)-1] = '\0' ;
     }
 
-    gen_halos( dirname , NULL, &Shift, 0 ) ;
+/* if unidir halo, then only generate on x pass */
+    if ( ! ( sw_unidir_shift_halo && !strcmp(*direction,"y" ) ) ) {
+      gen_halos( dirname , NULL, &Shift, 0 ) ;
+    }
 
     sprintf(fname,"%s/shift_halo_%s.inc",dirname,*direction) ;
     if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;

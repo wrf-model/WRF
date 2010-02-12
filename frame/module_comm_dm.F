@@ -5,7 +5,7 @@ MODULE module_comm_dm
    USE module_comm_dm_1
    USE module_comm_dm_2
    USE module_comm_dm_3
-   USE module_comm_dm_4
+   USE module_comm_dm_4_
 
    IMPLICIT NONE
 

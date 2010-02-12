@@ -29,6 +29,7 @@ MODULE module_domain_type
    TYPE fieldlist
       CHARACTER*80    :: VarName
       CHARACTER*1     :: Type
+      CHARACTER*1     :: ProcOrient  ! 'X' 'Y' or ' ' (X, Y, or non-transposed)
       CHARACTER*80    :: DataName
       CHARACTER*80    :: Description
       CHARACTER*80    :: Units

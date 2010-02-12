@@ -1,5 +1,5 @@
 
-MODULE module_comm_dm_4
+MODULE module_comm_dm_4_
 
    IMPLICIT NONE
 
@@ -30,5 +30,5 @@ CONTAINS
 #include "REGISTRY_COMM_DM_PERIOD_subs.inc"
 #endif
 
-END MODULE module_comm_dm_4
+END MODULE module_comm_dm_4_
 

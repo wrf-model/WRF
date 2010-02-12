@@ -52,7 +52,14 @@ set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELE
     }
     if      ( p->len_defined_how == DOMAIN_STANDARD )
     {
+      char *ornt ;
+      if      ( node->proc_orient == ALL_X_ON_PROC ) ornt = "x" ;
+      else if ( node->proc_orient == ALL_Y_ON_PROC ) ornt = "y" ;
+      else                                        ornt = "" ;
+
       if ( p->subgrid ) {
+
+
           switch( p->coord_axis )
           {
           case(COORD_X) : d = 'i' ;  d1 = 'x' ; break ;
@@ -91,13 +98,13 @@ set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELE
          
         sprintf(ddim[i][0],"%s%cds",prepend,d) ;
         sprintf(ddim[i][1],stag,prepend,d) ;  /* note that stag has printf format info in it */
-        sprintf(mdim[i][0],"%s%cms",prepend,d) ;
-        sprintf(mdim[i][1],"%s%cme",prepend,d) ;
-        sprintf(pdim[i][0],"%s%cps",prepend,d) ;
+        sprintf(mdim[i][0],"%s%cms%s",prepend,d,ornt) ;
+        sprintf(mdim[i][1],"%s%cme%s",prepend,d,ornt) ;
+        sprintf(pdim[i][0],"%s%cps%s",prepend,d,ornt) ;
         if ( ! sw_disregard_stag )
-          sprintf(pdim[i][1],"MIN( %s, %s%cpe )",ddim[i][1],prepend,d) ;
+          sprintf(pdim[i][1],"MIN( %s, %s%cpe%s )",ddim[i][1],prepend,d,ornt) ;
         else
-          sprintf(pdim[i][1],"%s%cpe",prepend,d) ;
+          sprintf(pdim[i][1],"%s%cpe%s",prepend,d,ornt) ;
       }
     }
     else if ( p->len_defined_how == NAMELIST )

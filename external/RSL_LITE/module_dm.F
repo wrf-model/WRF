@@ -628,6 +628,8 @@ CONTAINS
          CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
+                               c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &
+                               c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y, &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
                                c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y  )   ! y-xpose
 #endif

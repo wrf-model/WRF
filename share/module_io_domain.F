@@ -35,19 +35,19 @@ CONTAINS
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
    LOGICAL , EXTERNAL :: wrf_dm_on_monitor
    EXTERNAL outsub
-   CHARACTER*128             :: DataSet, tmp
+   CHARACTER*128             :: DataSet, sysdepinfo_tmp
    LOGICAL                   :: anyway
    CALL wrf_debug ( 100 , 'calling wrf_open_for_write_begin in open_w_dataset' )
-   tmp = sysdepinfo
+   sysdepinfo_tmp = ' '
    IF ( grid%id < 10 ) THEN
-     write(sysdepinfo,'(a,i1)')TRIM(tmp)//',GRIDID=',grid%id
+     write(sysdepinfo_tmp,'(a,i1)')TRIM(sysdepinfo)//',GRIDID=',grid%id
    ELSE
-     write(sysdepinfo,'(a,i2)')TRIM(tmp)//',GRIDID=',grid%id
+     write(sysdepinfo_tmp,'(a,i2)')TRIM(sysdepinfo)//',GRIDID=',grid%id
    ENDIF
    CALL wrf_open_for_write_begin ( fname ,     &
                                    grid%communicator ,         &
                                    grid%iocommunicator ,       &
-                                   sysdepinfo ,                &
+                                   sysdepinfo_tmp ,            &
                                    id ,                        &
                                    ierr )
    IF ( ierr .LE. 0 ) THEN

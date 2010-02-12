@@ -68,7 +68,6 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
-
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -171,6 +170,8 @@ CONTAINS
                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                              grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                              grid%sp31,  grid%ep31,  grid%sp32,  grid%ep32,  grid%sp33,  grid%ep33, &
+                             grid%sp31x, grid%ep31x, grid%sp32x, grid%ep32x, grid%sp33x, grid%ep33x, &
+                             grid%sp31y, grid%ep31y, grid%sp32y, grid%ep32y, grid%sp33y, grid%ep33y, &
                              grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                              grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
       )
@@ -756,6 +757,8 @@ CONTAINS
                                sd1, ed1, sd2, ed2, sd3, ed3,       &
                                sm1,  em1,  sm2,  em2,  sm3,  em3,  &
                                sp1,  ep1,  sp2,  ep2,  sp3,  ep3,  &
+                               sp1x, ep1x, sp2x, ep2x, sp3x, ep3x, &
+                               sp1y, ep1y, sp2y, ep2y, sp3y, ep3y, &
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
                                sm1y, em1y, sm2y, em2y, sm3y, em3y  &   ! y-xpose
       )
@@ -1162,6 +1165,8 @@ CONTAINS
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                   sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                   sm31y, em31y, sm32y, em32y, sm33y, em33y )
 
@@ -1186,6 +1191,8 @@ CONTAINS
       INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
       INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
       INTEGER , INTENT(IN)            :: sp31, ep31, sp32, ep32, sp33, ep33
+      INTEGER , INTENT(IN)            :: sp31x, ep31x, sp32x, ep32x, sp33x, ep33x
+      INTEGER , INTENT(IN)            :: sp31y, ep31y, sp32y, ep32y, sp33y, ep33y
       INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
       INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 
@@ -1204,60 +1211,80 @@ CONTAINS
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_1 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_2 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_3 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_4 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_5 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_6 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_7 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_8 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
       CALL alloc_space_field_core_9 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                     sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
 
@@ -2657,7 +2684,7 @@ END SUBROUTINE get_current_grid_name
                            ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
                            imsy, imey, jmsy, jmey, kmsy, kmey,    &
                            ipsy, ipey, jpsy, jpey, kpsy, kpey )
-    USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+    USE module_domain, ONLY : domain, head_grid, find_grid_by_id, get_ijk_from_grid
     IMPLICIT NONE
     TYPE( domain ), POINTER  :: grid
     INTEGER, INTENT(IN ) :: id
@@ -2676,7 +2703,7 @@ END SUBROUTINE get_current_grid_name
      CALL find_grid_by_id ( id, head_grid, grid )
 
      IF ( ASSOCIATED(grid) ) THEN
-     CALL get_ijk_from_grid1 (  grid ,                   &
+     CALL get_ijk_from_grid (  grid ,                   &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            ips, ipe, jps, jpe, kps, kpe,    &

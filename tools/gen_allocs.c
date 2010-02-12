@@ -289,7 +289,11 @@ if ( tag == 1 )
                 ! ( p->type->name[0] == 'l' && p->ndims >= 3 ) )  /* dont list logical arrays larger than 2d  */
            { 
              char memord[NAMELEN], stagstr[NAMELEN] ;
+             char *ornt ;
 
+             if      ( p->proc_orient == ALL_X_ON_PROC ) ornt = "X" ;
+             else if ( p->proc_orient == ALL_Y_ON_PROC ) ornt = "Y" ;
+             else                                        ornt = " " ;
 
              strcpy(stagstr, "") ;
              if ( p->node_kind & FOURD ) {
@@ -315,6 +319,7 @@ if ( tag == 1 )
              fprintf(fp,"  grid%%tail_statevars%%VarName = '%s'\n", fname) ;
              fprintf(fp,"  grid%%tail_statevars%%DataName = '%s'\n", dname) ;
              fprintf(fp,"  grid%%tail_statevars%%Type    = '%c'\n", p->type->name[0]) ;
+             fprintf(fp,"  grid%%tail_statevars%%ProcOrient    = '%s'\n", ornt) ;
              fprintf(fp,"  grid%%tail_statevars%%MemoryOrder  = '%s'\n", memord) ;
              fprintf(fp,"  grid%%tail_statevars%%Stagger      = '%s'\n", stagstr) ;
                            /* in next line for Ntl, if single tl, then zero, otherwise tl itself */

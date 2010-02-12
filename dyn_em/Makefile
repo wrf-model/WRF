@@ -70,6 +70,10 @@ couple_or_uncouple_em.o: ../frame/module_domain.o \
 		../frame/module_dm.o \
 		../frame/module_state_description.o
 
+shift_domain_em.o : \
+		../frame/loop_based_x_shift_code.h \
+		../frame/loop_based_y_shift_code.h
+
 init_modules_em.o: module_big_step_utilities_em.o
 
 interp_domain_em.o: ../frame/module_domain.o \

@@ -54,7 +54,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
    ! pixel information
    integer   ::  year,month,day,hour,minute,second  ! observation time
-   real      ::  obs_time
+   real*8    ::  obs_time
    ! real      ::  rlat, rlon                         !  lat/lon in degrees   for Anfovs
    real      ::  satzen, satazi, solzen     !  scan angles for Anfovs
    integer   ::  landsea_mask

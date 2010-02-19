@@ -52,8 +52,8 @@ program gen_be_stage2
    real, allocatable   :: var2_inv(:,:,:)            ! Inverse Autocovariance of field.
 
    real, allocatable   :: work(:,:)                  ! EOF work array.
-   real, allocatable   :: evec(:,:)                  ! Gridpoint eigenvectors.
-   real, allocatable   :: eval(:)                    ! Gridpoint sqrt(eigenvalues).
+   real*8, allocatable :: evec(:,:)                  ! Gridpoint eigenvectors.
+   real*8, allocatable :: eval(:)                    ! Gridpoint sqrt(eigenvalues).
    real, allocatable   :: LamInvET(:,:)              ! ET/sqrt(Eigenvalue).
    real, allocatable   :: regcoeff1(:)               ! psi/chi regression cooefficient.
    real, allocatable   :: regcoeff2(:,:)             ! psi/ps regression cooefficient.

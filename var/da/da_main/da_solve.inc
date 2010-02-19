@@ -14,8 +14,8 @@
    real, allocatable            :: cvt(:)      ! Control variable structure.
    real, allocatable            :: xhat(:)     ! Control variable structure.
    real, allocatable            :: qhat(:,:)   ! Control variable structure.
-   real, allocatable            :: eignvec(:,:)
-   real, allocatable            :: eignval(:)   
+   real*8, allocatable          :: eignvec(:,:)
+   real*8, allocatable          :: eignval(:)   
 !   real, allocatable            :: full_eignvec(:)   
    type (y_type)                :: ob          ! Observation structure.
    type (iv_type)               :: iv          ! Obs. increment structure.

@@ -24,7 +24,7 @@ subroutine da_get_innov_vector_rttov (it, grid, ob, iv)
    integer  :: k  ! Index dimension.
    integer  :: nlevels ! Number of obs levels.
 
-   real                             :: seap, icep, lndp, snop
+   real*8                           :: seap, icep, lndp, snop
    real, allocatable :: v_p(:,:)
 
    integer :: inst, nchan

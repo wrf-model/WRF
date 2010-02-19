@@ -46,10 +46,10 @@ program gen_be_stage3
    real, allocatable   :: work(:,:)                  ! EOF work array.
    real, allocatable   :: e_vec_loc(:,:,:)           ! Latitudinally varying eigenvectors.
    real, allocatable   :: e_val_loc(:,:)             ! Latitudinally varying eigenvalues.
-   real, allocatable   :: e_vec(:,:)                 ! Domain-averaged eigenvectors.
-   real, allocatable   :: e_val(:)                   ! Domain-averaged eigenvalues.
-   real, allocatable   :: evec(:,:,:)                ! Gridpoint eigenvectors.
-   real, allocatable   :: eval(:,:)                  ! Gridpoint sqrt(eigenvalues).
+   real*8, allocatable :: e_vec(:,:)                 ! Domain-averaged eigenvectors.
+   real*8, allocatable :: e_val(:)                   ! Domain-averaged eigenvalues.
+   real*8, allocatable :: evec(:,:,:)                ! Gridpoint eigenvectors.
+   real*8, allocatable :: eval(:,:)                  ! Gridpoint sqrt(eigenvalues).
 
    namelist / gen_be_stage3_nl / start_date, end_date, interval, variable, &
                                  ne, bin_type, &

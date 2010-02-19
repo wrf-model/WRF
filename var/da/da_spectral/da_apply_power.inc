@@ -8,7 +8,7 @@ subroutine da_apply_power (power, max_wavenumber, ccv, c_cvsize)
 
    integer, intent(in)   :: max_wavenumber ! Smallest scale required (ni/2 - 1).
    integer, intent(in)   :: c_cvsize                ! Size of complex cv-array
-   real,    intent(in)   :: power(0:max_wavenumber) ! Power Spectrum
+   real*8,  intent(in)   :: power(0:max_wavenumber) ! Power Spectrum
    complex, intent(inout):: ccv(1:c_cvsize)         ! complex control  array   
   
    integer             :: m, n, index

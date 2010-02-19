@@ -73,7 +73,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    
    ! Initializations for AIRS (MMR) Cloud Detection
    integer           :: ilev, jlev, nclouds
-   real, allocatable :: hessian(:,:), eignvec(:,:), eignval(:)
+   real, allocatable :: hessian(:,:)
+   real*8, allocatable :: eignvec(:,:), eignval(:)
    real              :: rad_clr, rad_ovc_ilev, rad_ovc_jlev
    
    integer           :: Band_Size(5), Bands(AIRS_Max_Channels,5) 

@@ -9,10 +9,10 @@ subroutine da_allocate_background_errors  (jy, kz, l, e, be_eval_loc, &
 
    integer, intent(in)              :: jy                 ! i/y dimension.
    integer, intent(in)              :: kz                 ! k/z dimension.
-   real, intent(in)                 :: l(:)               ! Global eigenvalue.
-   real, intent(in)                 :: e(:,:)             ! Global eigenvectors.
-   real, intent(in)                 :: be_eval_loc(:,:)   ! Std dev/local evalue.
-   real, intent(in)                 :: be_evec_loc(:,:,:) ! Local eigenvectors.
+   real*8, intent(in)               :: l(:)               ! Global eigenvalue.
+   real*8, intent(in)               :: e(:,:)             ! Global eigenvectors.
+   real*8, intent(in)               :: be_eval_loc(:,:)   ! Std dev/local evalue.
+   real*8, intent(in)               :: be_evec_loc(:,:,:) ! Local eigenvectors.
    type (be_subtype), intent(inout) :: be_sub             ! Backgrd error struct.
     
    integer                          :: mz                 ! Vertical truncation.

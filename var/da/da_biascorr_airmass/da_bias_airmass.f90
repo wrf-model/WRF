@@ -219,10 +219,10 @@ loop1:&
   where (nobs(:) /= 0)
     vmean_dep(:) = vmean_dep(:)/nobs(:)
     vstd_dep(:)  = vstd_dep(:)/nobs(:) - vmean_dep(:)**2
-    vstd_dep(:)  = SQRT(MAX(0.0,vstd_dep(:)))
+    vstd_dep(:)  = SQRT(MAX(0.0_8,vstd_dep(:)))
     vmean_abs(:) = vmean_abs(:)/nobs(:)
     vstd_abs(:)  = vstd_abs(:)/nobs(:) - vmean_abs(:)**2
-    vstd_abs(:)  = SQRT(MAX(0.0,vstd_abs(:)))
+    vstd_abs(:)  = SQRT(MAX(0.0_8,vstd_abs(:)))
   end where
 
   write (6,270) icount,nobs(1:tovs%nchan)
@@ -373,10 +373,10 @@ loop2:&
   where (nobs(:) /= 0)
     vmean_dep(:) = vmean_dep(:)/nobs(:)
     vstd_dep(:)  = vstd_dep(:)/nobs(:) - vmean_dep(:)**2
-    vstd_dep(:)  = SQRT(MAX(0.0,vstd_dep(:)))
+    vstd_dep(:)  = SQRT(MAX(0.0_8,vstd_dep(:)))
     vmean_abs(:) = vmean_abs(:)/nobs(:)
     vstd_abs(:)  = vstd_abs(:)/nobs(:) - vmean_abs(:)**2
-    vstd_abs(:)  = SQRT(MAX(0.0,vstd_abs(:)))
+    vstd_abs(:)  = SQRT(MAX(0.0_8,vstd_abs(:)))
   end where
 
   do j=1, tovs%nchan

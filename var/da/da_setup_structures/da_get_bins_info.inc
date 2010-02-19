@@ -10,16 +10,16 @@ subroutine da_get_bins_info(nj, nk, bin2d, evec_g, eval_g,&
 
    integer, intent(in)    :: nj, nk       ! W-E, S-N and Vert. Dims 
    integer, intent(in)    :: bin2d(:,:)       ! Bin assigned to each 2D
-   real,    intent(in)    :: evec_g(:,:)      ! Global Eig. vectors 
-   real,    intent(in)    :: eval_g(:)        ! Global Eig. values  
-   real,    intent(in)    :: evec_loc(:,:,:)  ! Local Eig. vectors   
-   real,    intent(in)    :: eval_loc(:,:)    ! Local Eig. values  
+   real*8,  intent(in)    :: evec_g(:,:)      ! Global Eig. vectors 
+   real*8,  intent(in)    :: eval_g(:)        ! Global Eig. values  
+   real*8,  intent(in)    :: evec_loc(:,:,:)  ! Local Eig. vectors   
+   real*8,  intent(in)    :: eval_loc(:,:)    ! Local Eig. values  
    real,    intent(in)    :: max_vert_var     ! Vertical variance
    real,    intent(in)    :: var_scaling      ! Variance re-scaling factor
    type(be_subtype), intent(inout) :: be_sub ! Background error structure
   
-   real, allocatable    :: e_vec_loc(:,:,:)
-   real, allocatable    :: e_val_loc(:,:)
+   real*8, allocatable    :: e_vec_loc(:,:,:)
+   real*8, allocatable    :: e_val_loc(:,:)
   
    integer               :: i, j, k, b
 

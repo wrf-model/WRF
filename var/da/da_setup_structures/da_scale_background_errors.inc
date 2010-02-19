@@ -5,7 +5,7 @@ subroutine da_scale_background_errors ( be, it )
 !
    real, allocatable, dimension(:,:) :: v1_val , v2_val , v3_val , &
                                         v4_val , v5_val
-   real, allocatable, dimension(:)   :: rf_len1, rf_len2, rf_len3, &
+   real*8, allocatable, dimension(:) :: rf_len1, rf_len2, rf_len3, &
                                         rf_len4, rf_len5
 !
    integer                     :: be_rf_unit, be_print_unit

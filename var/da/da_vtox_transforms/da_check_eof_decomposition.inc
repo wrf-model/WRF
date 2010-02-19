@@ -11,8 +11,8 @@ subroutine da_check_eof_decomposition(be_eigenval, be_eigenvec, name)
 
    implicit none
       
-   real, intent(in)              :: be_eigenval(:)   ! Back. error eigenvalues.
-   real, intent(in)              :: be_eigenvec(:,:) ! Back. error eigenvector
+   real*8, intent(in)            :: be_eigenval(:)   ! Back. error eigenvalues.
+   real*8, intent(in)            :: be_eigenvec(:,:) ! Back. error eigenvector
    character(len=*), intent(in)  :: name             ! Variable name.
 
    integer                       :: kz               ! Size of 3rd dimension.

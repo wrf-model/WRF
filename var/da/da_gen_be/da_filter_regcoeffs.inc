@@ -19,7 +19,7 @@ subroutine da_filter_regcoeffs(ni, nj, nk, num_bins, num_bins2d, num_passes, &
 
    integer :: i, j, k              ! Loop counters.
    integer :: b                    ! Bin index.
-   real    :: field(1:ni,1:nj)     ! Field for recursive filter.
+   real*8  :: field(1:ni,1:nj)     ! Field for recursive filter.
 
    if (trace_use) call da_trace_entry("da_filter_regcoeffs")
 

@@ -28,9 +28,10 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    integer              :: num_report, num_outside_all, num_outside_time
    integer              :: iyear,imonth,iday,ihour,imin
    integer              :: ntotal, nlocal, nlev, ref_qc
-   real                 :: obs_time
-   real                 :: hdr(10),ntotal_ifgat(0:num_fgat_time)
-   real                 :: rdata1(25,maxlevs), rdata2(25,maxlevs)
+   real*8               :: obs_time
+   real*8               :: hdr(10)
+   real                 :: ntotal_ifgat(0:num_fgat_time)
+   real*8               :: rdata1(25,maxlevs), rdata2(25,maxlevs)
    real                 :: height, ref_data, ref_error
    character(len=8)     :: subset
    character(len=80)    :: hdstr

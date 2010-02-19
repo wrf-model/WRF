@@ -17,8 +17,8 @@ subroutine da_interpolate_regcoeff (iy, iys, kz, kzs, meanl_stats, meanl_xb, mea
    real,    intent(in)  :: meanl_xb(:)              ! Mean latitude on xb rows.
    real,    intent(in)  :: meanp_stats(:)           ! Mean pressure on stats levs.
    real,    intent(in)  :: meanp_xb(:)              ! Mean pressure on xb levs.
-   real,    intent(in)  :: pb_vert_reg_stats(:,:,:) ! Coefficient on stats grid.
-   real,    intent(out) :: pb_vert_reg(:,:,:)       ! Coefficient on xb grid.
+   real*8,  intent(in)  :: pb_vert_reg_stats(:,:,:) ! Coefficient on stats grid.
+   real*8,  intent(out) :: pb_vert_reg(:,:,:)       ! Coefficient on xb grid.
      
    integer :: i, is, i_south           ! Loop counters.
    integer :: k1, k2, k, ks            ! Loop counters.

@@ -12,8 +12,8 @@ subroutine da_eof_decomposition_test (kz, bx, e, l)
 
    integer, intent(in) :: kz               ! Dimension of BE matrix   
    real,    intent(in) :: bx(1:kz,1:kz)    ! Global vert. background error.
-   real,    intent(in) :: e(1:kz,1:kz)     ! Eigenvectors of Bx.
-   real,    intent(in) :: l(1:kz)          ! Eigenvalues of Bx.
+   real*8,  intent(in) :: e(1:kz,1:kz)     ! Eigenvectors of Bx.
+   real*8,  intent(in) :: l(1:kz)          ! Eigenvalues of Bx.
    
    integer                  :: k, k1, k2, m     ! Loop counters
    real                     :: tot_variance     ! Total variance.

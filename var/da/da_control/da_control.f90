@@ -611,7 +611,7 @@ module da_control
    real, parameter :: ppbot(npres_print) = (/ 1200.0, 999.9, 899.9, 799.0, 599.9, 399.9,  &
                       299.9,  249.9, 199.9, 149.9, 99.9, 2000./)
 
-   real, allocatable :: time_slots(:)
+   real*8, allocatable :: time_slots(:)
 
    logical :: global
 

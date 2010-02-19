@@ -16,20 +16,20 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
    !---------------------------------------------------------------------------
 
    integer, intent(in)  :: method
-   real,    intent(in)  :: t         ! temperature
+   real*8,  intent(in)  :: t         ! temperature
    real,    intent(in)  :: rho       ! air density  kg/m3
-   real,    intent(in)  :: qci       ! cloud ice mixing ratio kg/kg
-   real,    intent(in)  :: qrn       ! cloud rain mixing ratio
-   real,    intent(in)  :: qsn       ! cloud snow mixing ratio
-   real,    intent(in)  :: qgr       ! cloud graupel mixing ratio
+   real*8,  intent(in)  :: qci       ! cloud ice mixing ratio kg/kg
+   real*8,  intent(in)  :: qrn       ! cloud rain mixing ratio
+   real*8,  intent(in)  :: qsn       ! cloud snow mixing ratio
+   real*8,  intent(in)  :: qgr       ! cloud graupel mixing ratio
    real,    intent(in)  :: snow         ! snow water equivalent
-   real,    intent(in)  :: xice         ! ice percentage
-   real,    intent(in)  :: xland        ! landsea percentage
-   real,    intent(out) :: reff_water   ! effective radius liquid water
-   real,    intent(out) :: reff_ice     ! effective radius ice
-   real,    intent(out) :: reff_rain    ! effective radius rain
-   real,    intent(out) :: reff_snow    ! effective radius snow
-   real,    intent(out) :: reff_grau    ! effective radius graupel
+   real*8,  intent(in)  :: xice         ! ice percentage
+   real*8,  intent(in)  :: xland        ! landsea percentage
+   real*8,  intent(out) :: reff_water   ! effective radius liquid water
+   real*8,  intent(out) :: reff_ice     ! effective radius ice
+   real*8,  intent(out) :: reff_rain    ! effective radius rain
+   real*8,  intent(out) :: reff_snow    ! effective radius snow
+   real*8,  intent(out) :: reff_grau    ! effective radius graupel
 
    !  local variables
    integer                      :: index, nk
@@ -111,13 +111,13 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
                          ! which is different from the actually snow depth defined in the wrf output file
    
    ! Start with temperature-dependent value appropriate for continental air
-   reff_water = rliqland + (rliqocean-rliqland) * min(1.0,max(0.0,(t_triple-t)*0.05))
+   reff_water = rliqland + (rliqocean-rliqland) * min(1.0_8,max(0.0_8,(t_triple-t)*0.05_8))
    ! Modify for snow depth over land
    reff_water = reff_water + (rliqocean-reff_water) * min(1.0,max(0.0,snowh*10.))
    ! Ramp between polluted value over land to clean value over ocean.
-   reff_water = reff_water + (rliqocean-reff_water) * min(1.0,max(0.0,1.0-xland))
+   reff_water = reff_water + (rliqocean-reff_water) * min(1.0_8,max(0.0_8,1.0_8-xland))
    ! Ramp between the resultant value and a sea ice value in the presence of ice.
-   reff_water = reff_water + (rliqice-reff_water) * min(1.0,max(0.0,xice))
+   reff_water = reff_water + (rliqice-reff_water) * min(1.0_8,max(0.0_8,xice))
 
 ! cloud ice effective radius
 

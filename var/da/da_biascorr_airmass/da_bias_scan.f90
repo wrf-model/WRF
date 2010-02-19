@@ -159,10 +159,10 @@ loop1:&
   where (nobs(:) /= 0)
     vmean_dep(:) = vmean_dep(:)/nobs(:)
      vstd_dep(:) = vstd_dep(:)/nobs(:) - vmean_dep(:)**2
-     vstd_dep(:) = SQRT(MAX(0.0,vstd_dep(:)))
+     vstd_dep(:) = SQRT(MAX(0.0_8,vstd_dep(:)))
     vmean_abs(:) = vmean_abs(:)/nobs(:)
      vstd_abs(:) = vstd_abs(:)/nobs(:) - vmean_abs(:)**2
-     vstd_abs(:) = SQRT(MAX(0.0,vstd_abs(:)))
+     vstd_abs(:) = SQRT(MAX(0.0_8,vstd_abs(:)))
   end where
 
   vmn(:) = vmean_dep(:)   ! used by outlier check later
@@ -289,22 +289,22 @@ loop2:&
   where (nobs(:) /= 0)     ! for channels
     vmean_dep(:) = vmean_dep(:)/nobs(:)
     vstd_dep(:) = vstd_dep(:)/nobs(:) - vmean_dep(:)**2
-    vstd_dep(:) = SQRT(MAX(0.0,vstd_dep(:)))
+    vstd_dep(:) = SQRT(MAX(0.0_8,vstd_dep(:)))
     vmean_abs(:) = vmean_abs(:)/nobs(:)
     vstd_abs(:) = vstd_abs(:)/nobs(:) - vmean_abs(:)**2
-    vstd_abs(:) = SQRT(MAX(0.0,vstd_abs(:)))
+    vstd_abs(:) = SQRT(MAX(0.0_8,vstd_abs(:)))
   end where
 
   do j=1, tovs%nchan
     where (nscanch(j,:) /= 0)  ! for channels + scan
       vmnsc(j,:) = vmnsc(j,:)/nscanch(j,:)
       vstdsc(j,:) = vstdsc(j,:)/nscanch(j,:) - vmnsc(j,:)**2
-      vstdsc(j,:) = SQRT(MAX(0.0,vstdsc(j,:)))
+      vstdsc(j,:) = SQRT(MAX(0.0_8,vstdsc(j,:)))
     end where
     where (nscanchb(j,:,:) /= 0) ! for channels + scan + band
       vmnscb(j,:,:) = vmnscb(j,:,:)/nscanchb(j,:,:)
       vstdscb(j,:,:) = vstdscb(j,:,:)/nscanchb(j,:,:) - vmnscb(j,:,:)**2
-      vstdscb(j,:,:) = SQRT(MAX(0.0,vstdscb(j,:,:)))
+      vstdscb(j,:,:) = SQRT(MAX(0.0_8,vstdscb(j,:,:)))
     end where
 
 !  4.1 compute central scan position mean
@@ -455,7 +455,7 @@ loop2:&
       where (nscanchbt(j,1:KSCAN,:) /= 0)
        vmnscbt(j,1:KSCAN,:) = vmnscbt(j,1:KSCAN,:)/nscanchbt(j,1:KSCAN,:)
        vstdscbt(j,1:KSCAN,:) = vstdscbt(j,1:KSCAN,:)/nscanchbt(j,1:KSCAN,:) - vmnscbt(j,1:KSCAN,:)**2
-       vstdscbt(j,1:KSCAN,:) = SQRT(MAX(0.0,vstdscbt(j,1:KSCAN,:)))
+       vstdscbt(j,1:KSCAN,:) = SQRT(MAX(0.0_8,vstdscbt(j,1:KSCAN,:)))
       end where
 
 ! get bias at nadir

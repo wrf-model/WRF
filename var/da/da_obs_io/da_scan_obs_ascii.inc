@@ -25,7 +25,7 @@ subroutine da_scan_obs_ascii (iv, filename)
    real                    :: height_error
    integer                 :: ndup, n, obs_index
 
-   real                  :: obs_time
+   real*8                :: obs_time
    integer               :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_scan_obs_ascii")

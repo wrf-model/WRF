@@ -7,8 +7,8 @@ subroutine da_recursive_filter_1d_adj(pass, alpha, field, n)
    implicit none
 
    integer, intent(in)    :: pass           ! Current pass of filter.
-   real, intent(in)       :: alpha          ! Alpha coefficient for RF.
-   real, intent(inout)    :: field(:)       ! Array to be filtered.
+   real*8, intent(in)     :: alpha          ! Alpha coefficient for RF.
+   real*8, intent(inout)  :: field(:)       ! Array to be filtered.
    integer, intent(in)    :: n              ! Size of field array.
    
    integer                :: j              ! Loop counter.

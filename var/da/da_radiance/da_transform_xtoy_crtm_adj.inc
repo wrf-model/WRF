@@ -60,9 +60,9 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    integer                        :: ts_index
    integer                        :: nclouds, ncv
    real, allocatable              :: cc_ad(:)
-   real                           :: rad_clr            ! RT clear/cloudy radiances
+   real*8                         :: rad_clr            ! RT clear/cloudy radiances
    real, allocatable              :: rad_ovc(:)         ! RT overcast radiances
-   real                           :: rad_ad, tb_ad
+   real*8                         :: rad_ad, tb_ad
 
    ! Initializations for AIRS (MMR) Cloud Detection
    integer                        :: Band_Size(5), Bands(AIRS_Max_Channels,5) 

@@ -28,7 +28,7 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
    type(rttov_coef)    :: coef
    type(profile_type)  :: profiles(nprofiles), profiles_tl(nprofiles) 
    logical             :: addcloud
-   real , allocatable  :: surfem(:)
+   real*8 , allocatable  :: surfem(:)
    integer , pointer   :: channels (:), polarisations(:,:)
    logical, allocatable :: calcemis (:)
 
@@ -36,7 +36,7 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
    integer             :: errorstatus(nprofiles)
 
    ! RTTOV inout parameters
-   real    , pointer        :: emissivity (:), emissivity_tl (:)
+   real*8  , pointer        :: emissivity (:), emissivity_tl (:)
    type (radiance_type)     :: radiance, radiance_tl
    type (transmission_type) :: transmission, transmission_tl
 

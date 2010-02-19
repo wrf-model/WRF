@@ -27,12 +27,15 @@ subroutine da_read_obs_bufr (iv)
    logical                      :: match, end_of_file
    character(len=8)             :: subst2, csid, csid2
    integer              :: idate2, nlevels2, lv1, lv2
-   real               :: hdr2(7), hdr_save(7), r8sid, r8sid2
+   real               :: hdr_save(7)
+   real*8             :: hdr2(7), r8sid, r8sid2
    real               :: pob1, pob2
    real               :: temp(8,255)
-   real               :: obs2(8,255), qms2(8,255),obs_save(8,255)
-   real               :: oes2(8,255), pco2(8,255)
-   real               :: pmo2(2,1), pmo_save(2,1)
+   real               :: obs_save(8,255)
+   real*8             :: obs2(8,255), qms2(8,255)
+   real*8             :: oes2(8,255), pco2(8,255)
+   real               :: pmo_save(2,1)
+   real*8             :: pmo2(2,1)
    equivalence                     (r8sid, csid), (r8sid2, csid2)
    ! for thinning
    real               :: tdiff                       ! DHR
@@ -49,10 +52,11 @@ subroutine da_read_obs_bufr (iv)
    character(len=40)            :: obstr,hdstr,qmstr,oestr, pcstr
    character(len=8)             :: subset
    character(len=14)            :: cdate, dmn, obs_date,platform_name
-   real               :: hdr(7)
-   real               :: pmo(2,1)
-   real               :: obs(8,255),qms(8,255),oes(8,255),pco(8,255)
-   real               :: obs_time,woe,toe,qoe,poe,pob,pwe
+   real*8             :: hdr(7)
+   real*8             :: pmo(2,1)
+   real*8             :: obs(8,255),qms(8,255),oes(8,255),pco(8,255)
+   real               :: woe,toe,qoe,poe,pob,pwe
+   real*8             :: obs_time
    integer              :: iyear, imonth, iday, ihour, imin
 
    integer              :: iost, ndup, n, i, j, k, kk,surface_level, num_report, i1, i2
@@ -520,7 +524,11 @@ bufrfile:  do ibufr=1,numbufr
          platform % loc % slp % error = err_p          ! hardwired
       end if
       pwq=nint(qms(7,1))
+#if ( RWORDSIZE == 4 )
+      pwe = min(DBLE(err_pw), oes(7,1))
+#else
       pwe = min(err_pw, oes(7,1))
+#endif
       if (pwq <= qflag .and. pwq >= 0) then
          platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
          platform % loc % pw % qc  =  pwq
@@ -584,10 +592,17 @@ bufrfile:  do ibufr=1,numbufr
          wqm=nint(qms(5,k))
          cat=nint(obs(8,k))
 
+#if ( RWORDSIZE == 4 )
+         toe = min(DBLE(err_t), oes(3,k))
+         woe = min(DBLE(err_uv), oes(5,k))
+         qoe = min(DBLE(err_q), oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+         poe = min(DBLE(err_p), oes(1,k)*100.0) ! convert to Pa
+#else
          toe = min(err_t, oes(3,k))
          woe = min(err_uv, oes(5,k))
          qoe = min(err_q, oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
          poe = min(err_p, oes(1,k)*100.0) ! convert to Pa
+#endif
 
          if (tqm <= qflag .and. tqm >= 0) then
             platform % each (k) % t % inv =obs(3,k)
@@ -647,9 +662,15 @@ bufrfile:  do ibufr=1,numbufr
          qqm=nint(qms(2,1))
          tqm=nint(qms(3,1))
          wqm=nint(qms(5,1))
+#if ( RWORDSIZE == 4 )
+         toe = min(DBLE(err_t), oes(3,1))
+         woe = min(DBLE(err_uv), oes(5,1))
+         qoe = min(DBLE(err_q), oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+#else
          toe = min(err_t, oes(3,1))
          woe = min(err_uv, oes(5,1))
          qoe = min(err_q, oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+#endif
          if ( wqm == 8 .or. wqm  == 9 .or. wqm  == 15) then
             platform%each(1)%u%qc  = 88
             platform%each(1)%v%qc  = 88

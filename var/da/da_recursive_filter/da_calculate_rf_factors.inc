@@ -10,9 +10,9 @@ subroutine da_calculate_rf_factors (rf_lengthscale, rf_alpha, rf_scale_factor)
 
    implicit none
    
-   real, intent(in)   :: rf_lengthscale(:)      ! Non-dim. R.F. lengthscale.
-   real, intent(out)  :: rf_alpha(:)            ! RF alpha factor.
-   real, intent(out)  :: rf_scale_factor(:)     ! Variance scaling factor.
+   real*8, intent(in) :: rf_lengthscale(:)      ! Non-dim. R.F. lengthscale.
+   real*8,intent(out) :: rf_alpha(:)            ! RF alpha factor.
+   real*8,intent(out) :: rf_scale_factor(:)     ! Variance scaling factor.
       
    integer, parameter :: n = 500                ! 2n +1 = # pts in delta func.
    integer            :: kz                     ! 3rd array dimension.
@@ -22,7 +22,7 @@ subroutine da_calculate_rf_factors (rf_lengthscale, rf_alpha, rf_scale_factor)
       
    real               :: rf_e                   ! RF E factor.      
 
-   real, dimension(-n:n) :: field_in, field_out  ! Working field.
+   real*8, dimension(-n:n) :: field_in, field_out  ! Working field.
    ! real, dimension(-n:n) :: field_out1  ! Working field.
 
    if (trace_use_dull) call da_trace_entry("da_calculate_rf_factors")

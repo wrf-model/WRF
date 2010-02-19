@@ -9,7 +9,7 @@ subroutine da_get_vertical_truncation( max_vert_var, eigenval, be_sub)
    implicit none
 
    real, intent(in)                 :: max_vert_var    ! Vertical variance limit.
-   real, intent(in)                 :: eigenval(:)     ! Global eigenvaluess.
+   real*8, intent(in)               :: eigenval(:)     ! Global eigenvaluess.
    type(be_subtype), intent(inout) :: be_sub          ! Back. error sub type.
     
    integer                          :: kz              ! # vertical levels.

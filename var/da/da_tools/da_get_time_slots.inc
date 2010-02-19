@@ -10,7 +10,7 @@ subroutine da_get_time_slots(nt,tmin,tana,tmax,time_slots)
    character(len=19), intent (in)      :: tmin  ! begin of time window
    character(len=19), intent (in)      :: tana  ! center of time window
    character(len=19), intent (in)      :: tmax  ! end of time window
-   real,             intent (out)      :: time_slots(0:nt) !
+   real*8,           intent (out)      :: time_slots(0:nt) !
 
    integer   :: min_yyyy,min_mm,min_dd,min_hh,min_mn,min_ss
    integer   :: max_yyyy,max_mm,max_dd,max_hh,max_mn,max_ss

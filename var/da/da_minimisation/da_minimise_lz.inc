@@ -34,8 +34,8 @@ subroutine da_minimise_lz(grid, config_flags,            &
    type (y_type), intent(inout)      :: re                     ! residual (o-a) structure.
    type (y_type), intent(inout)      :: y                      ! y = H(x_inc) structure.
    type (j_type), intent(out)        :: j_cost                 ! cost function
-   real, intent(out)                 :: eignvec(ntmax, ntmax)
-   real, intent(out)                 :: eignval(ntmax)
+   real*8, intent(out)               :: eignvec(ntmax, ntmax)
+   real*8, intent(out)               :: eignval(ntmax)
    integer, intent(out)              :: neign
    
    integer                           :: i, j, k, n, inst, iter
@@ -47,8 +47,10 @@ subroutine da_minimise_lz(grid, config_flags,            &
    real                              :: ghat0(1:cv_size)       ! cv copy.
    real                              :: shat(1:cv_size)        ! cv copy.
    real                              :: gdot, rho, mu, bndlm
-   real                              :: alpha(ntmax), beta(0:ntmax), subdiag(ntmax)
-   real                              :: c(cv_size), d(ntmax), sstwrk(2*ntmax-2)
+   real                              :: alpha(ntmax), beta(0:ntmax)
+   real*8                            :: subdiag(ntmax)
+   real                              :: c(cv_size), d(ntmax)
+   real*8                            :: sstwrk(2*ntmax-2)
    real                              :: bnds(ntmax)
    real                              :: adj_rhs, adj_sum_rhs ! < cv, cv >
    real                              :: j_total, j0_total, rrmnew_norm

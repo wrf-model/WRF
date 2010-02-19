@@ -57,7 +57,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
    integer                      :: ndup, n, report, obs_index
 
-   real                  :: obs_time
+   real*8                :: obs_time
    integer               :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_read_obs_ascii")
@@ -797,7 +797,16 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
             if (outside) cycle reports
             nlocal(gpsref) = nlocal(gpsref) + 1
             if (nlocal(gpsref) > iv%info(gpsref)%nlocal) cycle reports
-
+!
+! discarded the GPSRO data above 30-km (refere to GSI, Lidia Cucurull, Nov. 2009). 
+! YRG, 02/01/2010.
+            do i = 1, nlevels
+               if ( platform%each(i)%height> 30000.0 ) then
+                  nlevels = i-1
+                  exit
+               endif
+            enddo
+!           
             allocate (iv%gpsref(nlocal(gpsref))%h (1:nlevels))
             allocate (iv%gpsref(nlocal(gpsref))%ref(1:nlevels))
             allocate (iv%gpsref(nlocal(gpsref))%  p(1:nlevels))

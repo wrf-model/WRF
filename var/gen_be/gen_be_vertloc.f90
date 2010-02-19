@@ -23,8 +23,8 @@ program gen_be_vertloc
    real                  :: rho(1:nk,1:nk)
    real                  :: e(1:ni,1:nk)
    real                  :: cov(1:nk,1:nk)
-   real                  :: eval(1:nk)
-   real                  :: evec(1:nk,1:nk)
+   real*8                :: eval(1:nk)
+   real*8                :: evec(1:nk,1:nk)
    real                  :: v(1:nk)
    real                  :: x(1:nk)
 

@@ -43,7 +43,7 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    !----------------
    integer             :: nprofiles, nfrequencies, nchannels, nbtout
    integer , allocatable :: lprofiles(:)
-   real    , allocatable :: surfem(:), emissivity(:)
+   real*8  , allocatable :: surfem(:), emissivity(:)
    integer , allocatable :: channels (:), polarisations(:,:)
    integer             :: mxchn
    integer , allocatable :: coefs_channels (:,:)

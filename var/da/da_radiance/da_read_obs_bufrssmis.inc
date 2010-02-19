@@ -47,7 +47,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    ! pixel information
    integer(i_kind)   ::  year,month,day,hour,minute,second  ! observation time
-   real(r_double)    ::  obs_time
+   real(kind=8)    ::  obs_time
    real(r_double), allocatable ::  tb_inv(:)          !  bright temperatures
 
    type (datalink_type), pointer  :: head, p, current, prev

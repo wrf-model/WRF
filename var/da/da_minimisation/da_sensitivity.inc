@@ -23,8 +23,8 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
    real,           intent(in)        :: qhat(1:cv_size, 0:ntmax)  
    real,           intent(in)        :: cv(1:cv_size)          ! control variable (local).
    type (y_type),  intent(inout)     :: y                      ! y = H(x_inc) structure.
-   real,           intent(in)        :: eignvec(ntmax, ntmax)
-   real,           intent(in)        :: eignval(ntmax)
+   real*8,         intent(in)        :: eignvec(ntmax, ntmax)
+   real*8,         intent(in)        :: eignval(ntmax)
    real,           intent(out)       :: shat(1:cv_size)        ! control variable (local).
    
    type (y_type)                     :: ktr         

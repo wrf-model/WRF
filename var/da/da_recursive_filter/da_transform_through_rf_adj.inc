@@ -14,15 +14,15 @@ subroutine da_transform_through_rf_adj(grid, mz,rf_alpha, val, field)
 
    type(domain),     intent(inout) :: grid
    integer,          intent(in)    :: mz                             ! Vertical truncation.
-   real,             intent(in)    :: rf_alpha(mz)                   ! RF scale parameter. 
-   real,             intent(in)    :: val(jds:jde,mz)                ! Error standard deviation.
+   real*8,           intent(in)    :: rf_alpha(mz)                   ! RF scale parameter. 
+   real*8,           intent(in)    :: val(jds:jde,mz)                ! Error standard deviation.
    real,             intent(inout) :: field(ims:ime,jms:jme,kms:kme) ! Field to be transformed. 
       
    integer :: rf_passes_over_two    ! rf_passes / 2
    integer :: i, j, m, n, pass, ij  ! Loop counters.
    real    :: p_x(ims:ime,jms:jme)  ! sqrt(Grid box area).
-   real    :: val_j(grid%xp%jtsy:grid%xp%jtey)
-   real    :: val_i(grid%xp%itsx:grid%xp%itex)
+   real*8  :: val_j(grid%xp%jtsy:grid%xp%jtey)
+   real*8  :: val_i(grid%xp%itsx:grid%xp%itex)
 
    !-------------------------------------------------------------------------
    ! [1.0]: Initialise:

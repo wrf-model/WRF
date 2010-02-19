@@ -15,7 +15,8 @@
 
    integer                          :: inst, n, i, j, k, ii, jj
    integer                          :: npred, npredmax, num_rad, num_rad_active
-   real, allocatable 		    :: hessian(:,:), eignvec(:,:), eignval(:)
+   real, allocatable 		    :: hessian(:,:)
+   real*8, allocatable 		    :: eignvec(:,:), eignval(:)
    real                             :: hessian_local, bgerr_local, pred_i, pred_j
    
    if (trace_use) call da_trace_entry("da_varbc_precond")

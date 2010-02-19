@@ -48,10 +48,12 @@ subroutine da_solve_etkf( ndim,nanals,nobs,ens,ens_ob,oberrvar,obs,nout,&
  real, dimension(nobs) :: obsinc
  integer :: ij, nanal, i, j               ! Loop counters.
  integer :: info, lwork
- real, allocatable, dimension(:) :: work
- real, dimension(1) :: workt
- real, dimension(nanals) :: eignv, eignv1
- real, dimension(nanals, nanals) :: hzthz, C, TR
+ real*8, allocatable, dimension(:) :: work
+ real*8, dimension(1) :: workt
+ real*8, dimension(nanals) :: eignv1
+ real, dimension(nanals) :: eignv
+ real*8, dimension(nanals, nanals) :: hzthz
+ real, dimension(nanals, nanals) :: C, TR
  real, dimension(nanals-1, nanals) :: CT
  real, dimension(nanals, nanals-1) :: T
  ! real, dimension(nanals, nanals-1) :: cgamma

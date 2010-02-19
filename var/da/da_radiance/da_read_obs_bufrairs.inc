@@ -109,7 +109,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   character(len=10) :: date
   integer(i_kind)   :: nmind
   integer(i_kind)   :: iy, im, idd, ihh
-  real              :: obs_time
+  real*8            :: obs_time
 
 
 ! Other work variables
@@ -125,7 +125,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer(i_kind)  :: i, l, n, error, airs_table_unit
   integer          :: iost, lnbufr
   real(r_kind),allocatable,dimension(:,:):: airdata_all
-  real(r_kind)  :: tocc(1,1)
+  real(kind=8)  :: tocc(1,1)
 
 ! Set standard parameters
   real(r_kind)     :: POinT001 =   0.001_r_kind

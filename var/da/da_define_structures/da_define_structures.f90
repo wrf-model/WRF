@@ -866,12 +866,12 @@ module da_define_structures
       integer           :: mz          ! Vertical truncation of errors.
       integer           :: max_wave    ! Global only - horizontal spectral truncation.
       character*5       :: name        ! Variable name.
-      real, pointer     :: rf_alpha(:) ! RF scale length.
-      real, pointer     :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
-      real, pointer     :: evec(:,:,:) ! Local Vertical eigenvectors.
-      real, pointer     :: val_g(:)    ! Global Standard dev./sqrt(eigenvalue).
-      real, pointer     :: evec_g(:,:) ! Global Vertical eigenvectors.
-      real, pointer     :: power(:,:)  ! Power spectrum
+      real*8, pointer     :: rf_alpha(:) ! RF scale length.
+      real*8, pointer     :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
+      real*8, pointer     :: evec(:,:,:) ! Local Vertical eigenvectors.
+      real*8, pointer     :: val_g(:)    ! Global Standard dev./sqrt(eigenvalue).
+      real*8, pointer     :: evec_g(:,:) ! Global Vertical eigenvectors.
+      real*8, pointer     :: power(:,:)  ! Power spectrum
    end type be_subtype
 
    type be_type
@@ -885,7 +885,7 @@ module da_define_structures
       type (be_subtype) :: v4
       type (be_subtype) :: v5
       type (be_subtype) :: alpha
-      real, pointer     :: pb_vert_reg(:,:,:)
+      real*8, pointer     :: pb_vert_reg(:,:,:)
 
       ! Control variable space errors:
       type (cv_type)    :: cv

@@ -16,7 +16,7 @@ subroutine da_vtovv_spectral(max_wave, sizec, lenr, lenwrk, lensav, inc, &
    integer, intent(in) :: alp_size                 ! Size of alp array.
    real, intent(in)    :: alp(1:alp_size)          ! Associated Legendre Polynomials.
    real, intent(in)    :: wsave(1:lensav)          ! Primes for FFT.
-   real, intent(in)    :: power(0:max_wave)        ! Power spectrum 
+   real*8, intent(in)  :: power(0:max_wave)        ! Power spectrum 
    real, intent(in)    :: rcv(1:2*sizec)           ! Spectral modes.
    real, intent(out)   :: field(its:ite,jts:jte)   ! Gridpoint field.
 

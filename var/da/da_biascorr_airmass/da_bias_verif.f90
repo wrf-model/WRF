@@ -189,10 +189,10 @@ loop2:&
   where (nobs1(:) /= 0)
     vmean_dep1(:) = vmean_dep1(:)/nobs1(:)
     vstd_dep1(:)  = vstd_dep1(:)/nobs1(:) - vmean_dep1(:)**2
-    vstd_dep1(:)  = SQRT(MAX(0.0,vstd_dep1(:)))
+    vstd_dep1(:)  = SQRT(MAX(0.0_8,vstd_dep1(:)))
     vmean_abs1(:) = vmean_abs1(:)/nobs1(:)
     vstd_abs1(:)  = vstd_abs1(:)/nobs1(:) - vmean_abs1(:)**2
-    vstd_abs1(:)  = SQRT(MAX(0.0,vstd_abs1(:)))
+    vstd_abs1(:)  = SQRT(MAX(0.0_8,vstd_abs1(:)))
   end where
 
 !----------------------------------------------------------------------------

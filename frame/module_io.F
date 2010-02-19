@@ -551,6 +551,11 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
           CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
         ENDIF
 #endif
+#ifdef PNETCDF
+      CASE ( IO_PNETCDF   )
+        CALL ext_pnc_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
+#endif
 #ifdef XXX
       CASE ( IO_XXX   )
         CALL ext_xxx_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
@@ -685,6 +690,10 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
         CASE ( IO_ESMF )
           CALL ext_esmf_open_for_read_commit ( Hndl , Status )
 #endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF )
+          CALL ext_pnc_open_for_read_commit ( Hndl , Status )
+#endif
 #ifdef XXX
       CASE ( IO_XXX   )
         CALL ext_xxx_open_for_read_commit ( Hndl , Status )
@@ -770,14 +779,14 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
         CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
       ENDIF
 #endif
-#ifdef PHDF5
-    CASE ( IO_PHDF5  )
-      CALL ext_phdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                               Hndl , Status )
-#endif
 #ifdef PNETCDF
     CASE ( IO_PNETCDF  )
       CALL ext_pnc_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                               Hndl , Status )
+#endif
+#ifdef PHDF5
+    CASE ( IO_PHDF5  )
+      CALL ext_phdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                Hndl , Status )
 #endif
 #ifdef XXX

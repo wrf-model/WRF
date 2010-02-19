@@ -2138,6 +2138,22 @@ END
       RETURN
    END SUBROUTINE wrf_get_dm_communicator
 
+   SUBROUTINE wrf_get_dm_communicator_x ( communicator )
+      USE module_dm , ONLY : local_communicator_x
+      IMPLICIT NONE
+      INTEGER , INTENT(OUT) :: communicator
+      communicator = local_communicator_x
+      RETURN
+   END SUBROUTINE wrf_get_dm_communicator_x
+
+   SUBROUTINE wrf_get_dm_communicator_y ( communicator )
+      USE module_dm , ONLY : local_communicator_y
+      IMPLICIT NONE
+      INTEGER , INTENT(OUT) :: communicator
+      communicator = local_communicator_y
+      RETURN
+   END SUBROUTINE wrf_get_dm_communicator_y
+
    SUBROUTINE wrf_get_dm_iocommunicator ( iocommunicator )
       USE module_dm , ONLY : local_iocommunicator
       IMPLICIT NONE
@@ -2161,6 +2177,22 @@ END
       local_iocommunicator = iocommunicator
       RETURN
    END SUBROUTINE wrf_set_dm_iocommunicator
+
+   SUBROUTINE wrf_get_dm_ntasks_x ( retval )
+      USE module_dm , ONLY : ntasks_x
+      IMPLICIT NONE
+      INTEGER , INTENT(OUT) :: retval
+      retval = ntasks_x
+      RETURN
+   END SUBROUTINE wrf_get_dm_ntasks_x
+
+   SUBROUTINE wrf_get_dm_ntasks_y ( retval )
+      USE module_dm , ONLY : ntasks_y
+      IMPLICIT NONE
+      INTEGER , INTENT(OUT) :: retval
+      retval = ntasks_y
+      RETURN
+   END SUBROUTINE wrf_get_dm_ntasks_y
 
 
 !!!!!!!!!!!!!!!!!!!!!!! PATCH TO GLOBAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

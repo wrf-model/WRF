@@ -22,12 +22,15 @@ MODULE module_ra_cam
    data ebarl/ 0.829    , 0.794    ,0.754    ,0.826    /
    data fbarl/ 2.482e-03, 4.226e-03,6.560e-03,4.353e-03/
 
+#if 0
+! moved and changed to local variables into radcswmx for thread-safety, JM 20100217
    real(r8) abarli           ! A coefficient for current spectral band
    real(r8) bbarli           ! B coefficient for current spectral band
    real(r8) cbarli           ! C coefficient for current spectral band
    real(r8) dbarli           ! D coefficient for current spectral band
    real(r8) ebarli           ! E coefficient for current spectral band
    real(r8) fbarli           ! F coefficient for current spectral band
+#endif
 ! 
 ! Caution... A. Slingo recommends no less than 4.0 micro-meters nor
 ! greater than 20 micro-meters
@@ -50,12 +53,15 @@ MODULE module_ra_cam
    data ebari/ 0.7661   , 0.7730   ,0.794    ,0.9595   /
    data fbari/ 5.851e-04, 5.665e-04,7.267e-04,1.076e-04/
 
+#if 0
+! moved and changed to local variables into radcswmx for thread-safety, JM 20100217
    real(r8) abarii           ! A coefficient for current spectral band
    real(r8) bbarii           ! B coefficient for current spectral band
    real(r8) cbarii           ! C coefficient for current spectral band
    real(r8) dbarii           ! D coefficient for current spectral band
    real(r8) ebarii           ! E coefficient for current spectral band
    real(r8) fbarii           ! F coefficient for current spectral band
+#endif
 ! 
    real(r8) delta            ! Pressure (in atm) for stratos. h2o limit
    real(r8) o2mmr            ! O2 mass mixing ratio:
@@ -6020,6 +6026,22 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) fluxup(0:pverp)  ! Up   flux at model interface
    real(r8) fluxdn(0:pverp)  ! Down flux at model interface
    real(r8) wexptdn          ! Direct solar beam trans. to surface
+
+! moved to here from the module storage above, because these have to be thread-private.  JM 20100217
+   real(r8) abarli           ! A coefficient for current spectral band
+   real(r8) bbarli           ! B coefficient for current spectral band
+   real(r8) cbarli           ! C coefficient for current spectral band
+   real(r8) dbarli           ! D coefficient for current spectral band
+   real(r8) ebarli           ! E coefficient for current spectral band
+   real(r8) fbarli           ! F coefficient for current spectral band
+
+   real(r8) abarii           ! A coefficient for current spectral band
+   real(r8) bbarii           ! B coefficient for current spectral band
+   real(r8) cbarii           ! C coefficient for current spectral band
+   real(r8) dbarii           ! D coefficient for current spectral band
+   real(r8) ebarii           ! E coefficient for current spectral band
+   real(r8) fbarii           ! F coefficient for current spectral band
+! JM 20100217
 
 ! 
 !-----------------------------------------------------------------------

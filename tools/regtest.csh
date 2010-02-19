@@ -9,7 +9,7 @@
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
 #BSUB -J regtest1                       # job name
-#BSUB -q economy                          # queue
+#BSUB -q share                          # queue
 #BSUB -W 6:00                          # wallclock time
 #BSUB -P 64000400
 
@@ -38,10 +38,10 @@ setenv WRF_NMM_NEST 1
 if ( `uname` == AIX ) then
 
 	xlf -qversion
-	source ~michalak/sourceme_modules
+	#source ~gill/sourceme_modules
 	#module load xlf12.01.0000.0005.091127
 	#module load xlf12
-	xlf -qversion
+	#xlf -qversion
 
 	set VERSION = `xlf -qversion | grep AIX | cut -f2 -d, | cut -f2 -dV | cut -f1 -d.`
 	if ( $VERSION != 12 ) then

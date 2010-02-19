@@ -823,21 +823,21 @@ CONTAINS
   IF(PRESENT(SST_SKIN))THEN
     IF (sst_skin .EQ. 1) THEN
 ! Calculate skin sst based on Zeng and Beljaars (2005)
-        CALL wrf_debug( 100, 'in SST_SKIN_UPDATE' )
+      CALL wrf_debug( 100, 'in SST_SKIN_UPDATE' )
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij, i, j, k )
+      DO ij = 1 , num_tiles
         CALL sst_skin_update(xland,glw,gsw,hfx,qfx,tsk,ust,         &
                 emiss,dtw,sstsk,dt,stbolt,                          &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
-    !$OMP PARALLEL DO   &
-    !$OMP PRIVATE ( ij, i, j, k )
-    DO ij = 1 , num_tiles
         DO j=j_start(ij),j_end(ij)
           DO i=i_start(ij),i_end(ij)
             IF(XLAND(i,j) .GT. 1.5)TSK(i,j)=SSTSK(i,j)
           ENDDO
         ENDDO
-    ENDDO
+      ENDDO
     !$OMP END PARALLEL DO
     ENDIF
   ENDIF

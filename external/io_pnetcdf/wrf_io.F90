@@ -473,6 +473,42 @@ subroutine GetIndices(NDim,Start,End,i1,i2,j1,j2,k1,k2)
   return
 end subroutine GetIndices
 
+logical function ZeroLengthHorzDim(MemoryOrder,Vector,Status)
+  use wrf_data_pnc
+  include 'wrf_status_codes.h'
+  character*(*)              ,intent(in)    :: MemoryOrder
+  integer,dimension(*)       ,intent(in)    :: Vector
+  integer                    ,intent(out)   :: Status
+  integer                                   :: NDim
+  integer,dimension(NVarDims)               :: temp
+  character*3                               :: MemOrd
+  logical zero_length
+
+  call GetDim(MemoryOrder,NDim,Status)
+  temp(1:NDim) = Vector(1:NDim)
+  call LowerCase(MemoryOrder,MemOrd)
+  zero_length = .false.
+  select case (MemOrd)
+    case ('xsz','xez','ysz','yez','xs','xe','ys','ye','z','c')
+      continue
+    case ('0')
+      continue  ! NDim=0 for scalars.  TBH:  20060502
+    case ('xzy','yzx')
+      zero_length = temp(1) .lt. 1 .or. temp(3) .lt. 1
+    case ('xy','yx','xyz','yxz')
+      zero_length = temp(1) .lt. 1 .or. temp(2) .lt. 1
+    case ('zxy','zyx')
+      zero_length = temp(2) .lt. 1 .or. temp(3) .lt. 1
+    case default
+      Status = WRF_WARN_BAD_MEMORYORDER
+      ZeroLengthHorzDim = .true.
+      return
+  end select
+  Status = WRF_NO_ERR
+  ZeroLengthHorzDim = zero_length
+  return
+end function ZeroLengthHorzDim
+
 subroutine ExtOrder(MemoryOrder,Vector,Status)
   use wrf_data_pnc
   include 'wrf_status_codes.h'
@@ -1202,11 +1238,13 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   DH%Times     = ZeroDate
   CALL get_value_pnetcdf( 'GRIDID', SysDepInfo ,idstr )
   CALL get_value_pnetcdf( 'NTASKS_X', SysDepInfo ,ntasks_x_str )
-  CALL get_value_pnetcdf( 'LOCAL_COMMUNICATOR_X', SysDepInfo ,loccomm_str )
+!  CALL get_value_pnetcdf( 'LOCAL_COMMUNICATOR_X', SysDepInfo ,loccomm_str )
   IF ( LEN(idstr) > 0 ) THEN
     READ(idstr,'i3') gridid
-    READ(ntasks_x_str,*)ntasks_x
-    READ(loccomm_str,*)local_communicator_x
+!    READ(ntasks_x_str,*)ntasks_x
+!    READ(loccomm_str,*)local_communicator_x
+    CALL wrf_get_dm_communicator_x(local_communicator_x) 
+    CALL wrf_get_dm_ntasks_x(ntasks_x) 
     DH%GridID    = gridid
     DH%ntasks_x  = ntasks_x
     DH%local_communicator_x = local_communicator_x
@@ -1323,7 +1361,7 @@ SUBROUTINE ext_pnc_open_for_write_commit(DataHandle, Status)
   stat = NFMPI_ENDDEF(DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
-    write(msg,*) 'NetCDF error in ext_pnc_open_for_write_commit ',__FILE__,', line', __LINE__
+    write(msg,*) 'NetCDF error (',stat,') from NFMPI_ENDDEF in ext_pnc_open_for_write_commit ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
@@ -2371,6 +2409,12 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   ENDIF
   Length_global(1:NDim) = DomainEnd(1:NDim)-DomainStart(1:NDim)+1
 
+  IF ( ZeroLengthHorzDim(MemoryOrder,Length_global,Status) ) THEN
+     write(msg,*)'ext_pnc_write_field: zero length global dimension in ',TRIM(Var),'. Ignoring'
+     call wrf_debug ( WARN , TRIM(msg))
+     return
+  ENDIF
+
   call ExtOrder(MemoryOrder,Length,Status)
   call ExtOrder(MemoryOrder,Length_global,Status)
 
@@ -2386,7 +2430,7 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
     do NVar=1,MaxVars
       if(DH%VarNames(NVar) == VarName ) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE
-        write(msg,*) 'Warning 2 DRYRUNS 1 VARIABLE in ',__FILE__,', line', __LINE__ 
+        write(msg,*) 'Warning 2 DRYRUNS 1 VARIABLE (',TRIM(VarName),') in ',__FILE__,', line', __LINE__ 
         call wrf_debug ( WARN , TRIM(msg))
         return
       elseif(DH%VarNames(NVar) == NO_NAME) then
@@ -2418,7 +2462,7 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
             exit
           elseif(i == MaxDims) then
             Status = WRF_WARN_TOO_MANY_DIMS
-            write(msg,*) 'Warning TOO MANY DIMENSIONS in ',__FILE__,', line', __LINE__ 
+            write(msg,*) 'Warning TOO MANY DIMENSIONS (',i,') in (',TRIM(VarName),') ',__FILE__,', line', __LINE__ 
             call wrf_debug ( WARN , TRIM(msg))
             return
           endif

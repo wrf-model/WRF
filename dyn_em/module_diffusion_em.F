@@ -3738,7 +3738,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     IF ( im == P_QV ) THEN
        DO j = j_start, j_end
        DO i = i_start, i_end
-          moist_flux = qfx(i,j)/rho(i,1,j)
+          moist_flux = qfx(i,j)/rho(i,1,j)/(1.+moist(i,kts,j,P_QV))
           moist_tendf(i,kts,j,im)=moist_tendf(i,kts,j,im)  &
                +mu(i,j)*moist_flux*rdzw(i,kts,j)
        ENDDO

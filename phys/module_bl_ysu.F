@@ -303,15 +303,19 @@ contains
 !
 !     further modifications :
 !              an enhanced stable layer mixing, april 2008
-!               ==> increase pbl height when sfc is stable (hong 2007)
+!               ==> increase pbl height when sfc is stable (hong 2010)
 !              pressure-level diffusion, april 2009
 !               ==> negligible differences
 !              implicit forcing for momentum with clean up, july 2009
 !               ==> prevents model blownup when sfc layer is too low
+!              increase of lamda, 30 < 0.1 x del z < 300, feb 2010
+!               ==> prevents model blowup when delz is extremely large
+!              revised prandtl number at surface, peggy lemone, feb 2010
+!               ==> increase kh, decrease mixing due to counter-gradient term
 !
 !     references:
 !
-!        hong (2007, korea meteorological society annual conference)
+!        hong (2010) quart. j. roy. met. soc
 !        hong, noh, and dudhia (2006), mon. wea. rev. 
 !        hong and pan (1996), mon. wea. rev.
 !        noh, chun, hong, and raasch (2003), boundary layer met.
@@ -448,9 +452,9 @@ contains
    integer ::  klpbl, ktrace1, ktrace2, ktrace3
 !
 !
-   real    ::  dt2,rdt,spdk2,fm,fh,hol1,gamfac,vpert,prnum
+   real    ::  dt2,rdt,spdk2,fm,fh,hol1,gamfac,vpert,prnum,prnum0
    real    ::  xkzo,ss,ri,qmean,tmean,alph,chi,zk,rl2,dk,sri
-   real    ::  brint,dtodsd,dtodsu,rdz,dsdzt,dsdzq,dsdz2
+   real    ::  brint,dtodsd,dtodsu,rdz,dsdzt,dsdzq,dsdz2,rlamdz
    real    ::  utend,vtend,ttend,qtend
    real    ::  dtstep,govrthv
    real    ::  cont, conq, conw, conwrc 
@@ -467,7 +471,7 @@ contains
                                                                 ufxpbl,vfxpbl, &
                                                                   delta,dthvx
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
-               dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon
+               dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,prfac
 !
 !----------------------------------------------------------------------
 !
@@ -477,6 +481,7 @@ contains
    conq=xlv/g
    conw=1./g
    conwrc = conw*sqrt(rcl)
+   conpr = bfac*karman*sfcfrac
 !
 !  k-start index for tracer diffusion
 !
@@ -841,18 +846,29 @@ contains
          zfac(i,k) = min(max((1.-(zq(i,k+1)-zl1(i))/(hpbl(i)-zl1(i))),zfmin),1.)
          xkzo = ckz*dza(i,k+1)
          zfacent(i,k) = (1.-zfac(i,k))**3.
-         prnumfac = -3.*(max(zq(i,k+1)-sfcfrac*hpbl(i),0.))**2./hpbl(i)**2.
-         prnum = (phih(i)/phim(i)+bfac*karman*sfcfrac)
-         prnum =  1. + (prnum-1.)*exp(prnumfac)
-         prnum = min(prnum,prmax)
-         prnum = max(prnum,prmin)
+         if(sfcflg(i)) then 
+           prfac = conpr/phim(i)/(1.+4.*karman*wstar3(i)/ust3(i))
+           prnumfac = -3.*(max(zq(i,k+1)-sfcfrac*hpbl(i),0.))**2./hpbl(i)**2.
+         else
+           prfac = 0.
+           prnumfac = 0.
+         endif
+         prnum0 = (phih(i)/phim(i)+prfac)
+         prnum0 = min(prnum0,prmax)
+         prnum0 = max(prnum0,prmin)
          wscalek(i,k) = (ust3(i)+phifac*karman*wstar3(i)*(1.-zfac(i,k)))**h1
          xkzm(i,k) = xkzo+wscalek(i,k)*karman*zq(i,k+1)*zfac(i,k)**pfac
+         prnum =  1. + (prnum0-1.)*exp(prnumfac)
+         xkzq(i,k) = xkzm(i,k)/prnum*zfac(i,k)**(pfac_q-pfac)
+         prnum0 = prnum0/(1.+prfac)
+         prnum =  1. + (prnum0-1.)*exp(prnumfac)
          xkzh(i,k) = xkzm(i,k)/prnum
          xkzm(i,k) = min(xkzm(i,k),xkzmax)
          xkzm(i,k) = max(xkzm(i,k),xkzmin)
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
          xkzh(i,k) = max(xkzh(i,k),xkzmin)
+         xkzq(i,k) = min(xkzq(i,k),xkzmax)
+         xkzq(i,k) = max(xkzq(i,k),xkzmin)
        endif
      enddo
    enddo
@@ -880,7 +896,8 @@ contains
            endif
          endif
          zk = karman*zq(i,k+1)
-         rl2 = (zk*rlam/(rlam+zk))**2
+         rlamdz = min(max(0.1*dza(i,k+1),rlam),300.)
+         rl2 = (zk*rlamdz/(rlamdz+zk))**2
          dk = rl2*sqrt(ss)
          if(ri.lt.0.)then
 ! unstable regime
@@ -1006,9 +1023,7 @@ contains
 !
    do k = kts,kte
      do i = its,ite
-       if(k.lt.kpbl(i)) then
-         xkzq(i,k) = xkzh(i,k)*zfac(i,k)**(pfac_q-pfac)
-       else
+       if(k.ge.kpbl(i)) then
          xkzq(i,k) = xkzh(i,k)
        endif
      enddo

@@ -342,7 +342,6 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
          LAMMINI = 1./(2.*DCS+100.E-6)
          LAMMAXR = 1./20.E-6
 !         LAMMINR = 1./500.E-6
-! sensitivity
          LAMMINR = 1./2800.E-6
 
          LAMMAXS = 1./10.E-6

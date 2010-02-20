@@ -200,7 +200,6 @@ CONTAINS
         hv2=hv1+dt*(-f*hu2 + tauy)
 ! consider the flux effect
         A2=A1+q*dt
-!       A2=A1
 
         huml=hu2
         hvml=hv2
@@ -273,23 +272,30 @@ CONTAINS
      DO I=its,itf
        TML(I,J)=TSK(I,J)
        T0ML(I,J)=TSK(I,J)
-! MAY HAVE INPUT OF HML BUT FOR NOW SET HERE
-       IF (oml_hml0 .gt. 0.) THEN
-          WRITE(message,*)'Initializing OML with HML0 = ', oml_hml0
-          CALL wrf_debug (100, TRIM(message))
+     ENDDO
+     ENDDO
+     IF (oml_hml0 .gt. 0.) THEN
+        WRITE(message,*)'Initializing OML with HML0 = ', oml_hml0
+        CALL wrf_debug (0, TRIM(message))
+        DO J=jts,jtf
+        DO I=its,itf
           HML(I,J)=oml_hml0
           H0ML(I,J)=HML(I,J)
           HUML(I,J)=0.
           HVML(I,J)=0.
-       ELSE
-          WRITE(message,*)'Initializing OML with real HML0, h(1,1) = ', h0ml(1,1)
-          CALL wrf_debug (1, TRIM(message))
+        ENDDO
+        ENDDO
+     ELSE
+        WRITE(message,*)'Initializing OML with real HML0, h(1,1) = ', h0ml(1,1)
+        CALL wrf_debug (0, TRIM(message))
+        DO J=jts,jtf
+        DO I=its,itf
           HML(I,J)=H0ML(I,J)
 ! fill in near coast area with SST: 200 K was set as missing value in ocean pre-processing code
           IF(TMOML(I,J).GT.200. .and. TMOML(I,J).LE.201.) TMOML(I,J)=TSK(I,J)
-       ENDIF
-     ENDDO
-     ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
    ENDIF
 
    END SUBROUTINE omlinit

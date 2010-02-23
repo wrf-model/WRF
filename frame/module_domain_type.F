@@ -191,9 +191,6 @@ MODULE module_domain_type
       REAL :: max_vert_cfl
       REAL :: max_horiz_cfl
       Type(WRFU_TimeInterval) :: last_dtInterval
-      LOGICAL :: stepping_to_time
-      LOGICAL :: adapt_this_step_using_child
-      INTEGER :: last_step_updated
 
       ! Time series location information
       INTEGER :: ntsloc, ntsloc_domain

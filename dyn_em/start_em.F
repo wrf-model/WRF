@@ -551,8 +551,12 @@
 #endif
 
 !     This first call just initializes variables.
+!     If a restart, get initialized variables from restart file
 
-      CALL adapt_timestep(grid, config_flags)
+      IF ( .NOT. ( config_flags%restart ) ) then
+         CALL adapt_timestep(grid, config_flags)
+      END IF
+
 
    END IF
 

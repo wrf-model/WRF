@@ -9,7 +9,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_state_description
    USE module_domain, ONLY : &
                   domain, get_ijk_from_grid, get_ijk_from_subgrid                          &
-                 ,domain_get_current_time, domain_get_start_time, domain_clock_get
+                 ,domain_get_current_time, domain_get_start_time                           &
+                 ,domain_get_sim_start_time, domain_clock_get
    USE module_domain_type, ONLY : history_alarm
    USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
@@ -239,7 +240,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
   !   floating point seconds based on a TimeInterval.  So, we will
   !   calculate it here--but, this is not clean!!
   !
-   tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
+   tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
    curr_secs = real_time(tmpTimeInterval)
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop

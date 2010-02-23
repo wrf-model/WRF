@@ -292,6 +292,16 @@ state    integer step_number    -       misc      -         -     ir        "ste
 state    real    a_z            ijk     misc        1         Z     -         " " " " " "
 state    real    g_z            ijk     misc        1         Z     -         " " " " " "
 
+# For the adaptive timestep restart
+state    logical stepping_to_time       - misc    -         -      r     "stepping_to_time"         ""
+state    integer last_step_updated      - misc    -         -      r     "last_step_updated"        ""
+state    logical adapt_step_using_child - misc    -         -      r     "adapt_step_using_child"   ""
+state    integer last_dt_sec            - misc    -         -      r     "last_dt_sec"              "Whole seconds for last timestep"  "sec"
+state    integer last_dt_sec_num        - misc    -         -      r     "last_dt_sec_num"          "Fractional secs, numerator"       "sec"
+state    integer last_dt_sec_den        - misc    -         -      r     "last_dt_sec_den"          "Fractional secs, denominator"     "sec"
+state    integer last_dt_yr             - misc    -         -      r     "last_dt_yr"               "Relative year"                    "years"
+state    integer last_dt_mm             - misc    -         -      r     "last_dt_mm"               "Relative month"                   "months"
+
 # hydrostatic pressure vars
 state    real   p_hyd           ijk     dyn_em      1         -      irh       "p_hyd"       "hydrostatic pressure"         "Pa"
 state    real   p_hyd_w         ijk     dyn_em      1         Z      irh       "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"

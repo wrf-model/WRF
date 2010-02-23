@@ -42,7 +42,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   INTEGER, PARAMETER                         :: precision = 100
   INTEGER                                    :: dt_num, dt_den, dt_whole
   REAL                                       :: factor
-  INTEGER                                    :: num, den
+  INTEGER                                    :: num, den, history_interval_sec
   TYPE(WRFU_TimeInterval)                    :: last_dtInterval
   REAL                                       :: real_time
 
@@ -52,6 +52,15 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   !   is used along with step_to_output and step_to_bc
 
   use_last2 = .FALSE.
+
+  !
+  ! Assign last_dtInterval type values from restart file
+  !
+  grid%last_dtInterval%basetime%s = grid%last_dt_sec
+  grid%last_dtInterval%basetime%sn = grid%last_dt_sec_num
+  grid%last_dtInterval%basetime%sd = grid%last_dt_sec_den
+  grid%last_dtInterval%YR = grid%last_dt_yr
+  grid%last_dtInterval%MM = grid%last_dt_mm
 
   !
   ! If this step has already been adapted, no need to do it again.
@@ -66,10 +75,10 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   endif
 
   !
-  ! For nests, set adapt_this_step_using_child to parent's value
+  ! For nests, set adapt_step_using_child to parent's value
   !
   if (grid%id .ne. 1) then
-     grid%adapt_this_step_using_child = grid%parents(1)%ptr%adapt_this_step_using_child;
+     grid%adapt_step_using_child = grid%parents(1)%ptr%adapt_step_using_child;
   endif
 
   !
@@ -79,7 +88,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   !    place.
   !
 
-!  if ((grid%id .ne. 1) .and. (.not. grid%adapt_this_step_using_child)) then
+!  if ((grid%id .ne. 1) .and. (.not. grid%adapt_step_using_child)) then
 !     if (abs(grid%dtbc) > 0.0001) then
 !        return
 !     endif
@@ -88,11 +97,11 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   last_dtInterval = grid%last_dtInterval
 
   !
-  ! Get current time
+  ! Get time since beginning of simulation start
   !
 
   tmpTimeInterval = domain_get_current_time ( grid ) - &
-       domain_get_start_time ( grid )
+                    domain_get_sim_start_time ( grid )
 
   !
   ! Calculate current time in seconds since beginning of model run.
@@ -114,12 +123,14 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   !
   ! Else, calculate the time step based on cfl.
   !
-  if (domain_get_current_time ( grid ) .eq. domain_get_start_time ( grid )) then
+  if ( (domain_get_current_time ( grid ) .eq. domain_get_start_time ( grid )) .AND. &
+       .NOT. config_flags%restart ) then
      CALL WRFU_TimeIntervalSet(dtInterval, Sn=grid%starting_time_step, Sd=1)
      curr_secs = 0
      CALL WRFU_TimeIntervalSet(last_dtInterval, Sn=0, Sd=1)
 
   else
+
      if (grid%max_cfl_val < 0.001) then 
         !
         ! If the max_cfl_val is small, then we increase dtInterval the maximum
@@ -209,7 +220,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
      dt = real_time(dtInterval)
         
-     if (.not. grid%adapt_this_step_using_child) then 
+     if (.not. grid%adapt_step_using_child) then 
 
         ! We'll calculate real numbers to get the number of small steps:
      
@@ -254,7 +265,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   call wrf_dm_maxtile_real(grid%max_horiz_cfl, tile)
 #endif
 
-  if ((grid%nested) .and. (grid%adapt_this_step_using_child)) then 
+  if ((grid%nested) .and. (grid%adapt_step_using_child)) then 
 
      grid%dt = real_time(dtInterval)
 
@@ -298,7 +309,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
           * ( grid%interval_seconds )
      CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
      dtInterval = tmpTimeInterval - &
-          (domain_get_current_time(grid) - domain_get_start_time(grid))
+          (domain_get_current_time(grid) - domain_get_sim_start_time(grid))
      
      use_last2 = .TRUE.
      stepping_to_bc = .true.
@@ -317,8 +328,12 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   if ((grid%step_to_output_time) .and. (.not. stepping_to_bc) .and. &
        (.not. grid%nested)) then
 
-     time_to_output = grid%history_interval*60 - &
-          mod(curr_secs, grid%history_interval*60.0)
+     IF ( grid%history_interval_m .EQ. 0 ) grid%history_interval_m = grid%history_interval
+     history_interval_sec = grid%history_interval_s + grid%history_interval_m*60 + &
+                            grid%history_interval_h*3600 + grid%history_interval_d*86400
+
+     time_to_output = history_interval_sec - &
+          mod( curr_secs, REAL(history_interval_sec) )
      num = INT(time_to_output * precision + 0.5)
      den = precision
      call WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
@@ -340,10 +355,10 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
         !    we don't have any rounding error.
         !
         output_time = NINT ( (curr_secs + time_to_output) /  &
-             ( grid%history_interval * 60 ) ) * (grid%history_interval * 60)
+             (history_interval_sec) ) * (history_interval_sec)
         CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=output_time)
         dtInterval = tmpTimeInterval - &
-             (domain_get_current_time(grid) - domain_get_start_time(grid))
+             (domain_get_current_time(grid) - domain_get_sim_start_time(grid))
 
         use_last2 = .TRUE.
         grid%stepping_to_time = .TRUE.
@@ -351,9 +366,9 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   endif
 
   !
-  ! Now, set adapt_this_step_using_child only if we are not stepping to an
+  ! Now, set adapt_step_using_child only if we are not stepping to an
   !   output time, or, it's not the start of the model run.
-  ! Note:  adapt_this_step_using_child is updated just before recursive call to
+  ! Note:  adapt_step_using_child is updated just before recursive call to
   !    adapt_timestep--see end of this function.
   !
 
@@ -365,9 +380,9 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
           domain_get_start_time(grid)) &
           ) then
         
-        grid%adapt_this_step_using_child = .TRUE.
+        grid%adapt_step_using_child = .TRUE.
      else
-        grid%adapt_this_step_using_child = .FALSE.
+        grid%adapt_step_using_child = .FALSE.
      endif
   endif
 
@@ -396,7 +411,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   ! Note: This is not necessary when we are adapting based
   !    upon parent.
   !
-  if ((grid%id == 1) .and. (grid%adapt_this_step_using_child)) then
+  if ((grid%id == 1) .and. (grid%adapt_step_using_child)) then
      !
      ! Finally, check if we can adapt using child.  If we are
      !   stepping to an output time, we cannot adapt based upon
@@ -405,7 +420,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
      !   we just calculated, we are stepping to an output time.
      !
      if (grid%stepping_to_time) then
-        grid%adapt_this_step_using_child = .FALSE.
+        grid%adapt_step_using_child = .FALSE.
      endif
      call adapt_timestep(grid%nests(1)%ptr, config_flags)
   endif
@@ -418,6 +433,13 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
           grid%spec_zone , grid%relax_zone , grid%dt , config_flags%spec_exp , &
           config_flags%specified , config_flags%nested )
   endif
+
+! Update last timestep info for restart file
+  grid%last_dt_sec     = grid%last_dtInterval%basetime%s 
+  grid%last_dt_sec_num = grid%last_dtInterval%basetime%sn 
+  grid%last_dt_sec_den = grid%last_dtInterval%basetime%sd
+  grid%last_dt_yr      = grid%last_dtInterval%YR
+  grid%last_dt_mm      = grid%last_dtInterval%MM
 
 END SUBROUTINE adapt_timestep
 

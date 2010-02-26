@@ -62,7 +62,7 @@ MODULE module_bl_mynn
 !  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
   REAL, PARAMETER :: gno=4.64158883361278196
   REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8,qkemin=1.e-12
-  REAL, PARAMETER :: pblh_ref=1500.
+!  REAL, PARAMETER :: pblh_ref=1500.
 
   REAL, PARAMETER :: rr2=0.7071068, rrp=0.3989423
 
@@ -1659,6 +1659,10 @@ CONTAINS
     
     REAL :: cpm,sqcg,flt,flq,pmz,phh,exnerg,zet
     
+    REAL, DIMENSION(KMS:KME) :: thetav
+    REAL :: thsfc
+
+
     INTEGER, SAVE :: levflag
     
     JTF=MIN0(JTE,JDE-1)
@@ -1674,7 +1678,9 @@ CONTAINS
              DO k=KTS,KTF
                 sqv(k)=qv(i,k,j)/(1.+qv(i,k,j))
                 thl(k)=th(i,k,j)
-
+!JOE-PBLH test
+                thetav(k)=th(i,k,j)*(1.+0.61*qv(i,k,j))
+!JOE-end
                 IF (k==kts) THEN
                    zw(k)=0.
                 ELSE
@@ -1697,12 +1703,22 @@ CONTAINS
                   &Qke(i,kts:kte,j), Tsq(i,kts:kte,j), &
                   &Qsq(i,kts:kte,j), Cov(i,kts:kte,j))
              
-             pblh(i,j)=pblh_ref
+!             pblh(i,j)=pblh_ref
           
+!JOE-PBLH test begin
+             PBLH(i,j)=0.
+             thsfc = thetav(1)
+             DO k = kts+1,kte
+                IF (PBLH(i,j)==0.  .AND.  thetav(k)>(thsfc+0.5))THEN
+                   PBLH(i,j)=zw(k) - ((thetav(k)-(thsfc+0.5)) * &
+                        &(dz(i,k-1,j)/(MAX(thetav(k)-thetav(k-1),0.01))))
+                ENDIF
+             ENDDO
+!JOE--PBLH test end
+             
           ENDDO
-
        ENDDO
-       
+
     ENDIF
 
     DO j=JTS,JTF
@@ -1712,6 +1728,10 @@ CONTAINS
              sqc(k)=qc(i,k,j)/(1.+qc(i,k,j))
              sqw(k)=sqv(k)+sqc(k)
              thl(k)=th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
+!JOE-PBLH test
+             thetav(k)=th(i,k,j)*(1.+0.61*qv(i,k,j))
+!JOE-end
+
              IF (k==kts) THEN
                 zw(k)=0.
              ELSE
@@ -1790,7 +1810,19 @@ CONTAINS
                &dfm,dfh,dfq,dz(i,kts:kte,j),&
                &K_m(i,kts:kte,j),K_h(i,kts:kte,j),K_q(i,kts:kte,j))
 
-          pblh(i,j)=pblh_ref
+       
+!JOE-PBLH test begin
+          PBLH(i,j)=0.
+          thsfc = thetav(1)
+          DO k = kts+1,kte
+             IF (PBLH(i,j)==0.  .AND.  thetav(k)>(thsfc+0.5))THEN
+                PBLH(i,j)=zw(k) - ((thetav(k)-(thsfc+0.5)) * &
+                     &(dz(i,k-1,j)/(MAX(thetav(k)-thetav(k-1),0.01))))
+             ENDIF
+          ENDDO
+!JOE--PBLH test end
+          
+!          pblh(i,j)=pblh_ref
 
        ENDDO
     ENDDO

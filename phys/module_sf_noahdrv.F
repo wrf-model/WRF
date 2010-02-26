@@ -146,6 +146,8 @@ CONTAINS
 !-- DRIP        through-fall of precip and/or dew in excess of canopy
 !                 water-holding capacity (m)
 !-- DEW         dewfall (or frostfall for t<273.15) (M)
+!-- SMAV        Soil Moisture Availability for each layer, as a fraction
+!                 between SMCWLT and SMCMAX (dimensionless fraction)
 ! ----------------------------------------------------------------------
 !-- BETA        ratio of actual/potential evap (dimensionless)
 !-- ETP         potential evaporation (W m-2)

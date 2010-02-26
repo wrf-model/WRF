@@ -242,6 +242,8 @@ CONTAINS
 !   SOILM      TOTAL SOIL COLUMN MOISTURE CONTENT (FROZEN+UNFROZEN) (M)
 !   Q1         Effective mixing ratio at surface (kg kg-1), used for
 !              diagnosing the mixing ratio at 2 meter for coupled model
+!   SMAV       Soil Moisture Availability for each layer, as a fraction 
+!              between SMCWLT and SMCMAX.
 !  Documentation for SNOTIME1 and SNOABL2 ?????
 !  What categories of arguments do these variables fall into ????
 !  Documentation for RIBB ?????
@@ -761,6 +763,8 @@ CONTAINS
                           SMCWLT,SMCREF,RSMIN,RC,PC,NROOT,Q2SAT,DQSDT2,  &
                           TOPT,RSMAX,RGL,HS,XLAI,                        &
                           RCS,RCT,RCQ,RCSOIL,EMISSI)
+         ELSE
+            RC = 0.0
          END IF
 ! ----------------------------------------------------------------------
 ! NOW DECIDE MAJOR PATHWAY BRANCH TO TAKE DEPENDING ON WHETHER SNOWPACK
@@ -856,7 +860,7 @@ CONTAINS
             SOILWW = -1.0* (SMC (1) - SMCWLT)* ZSOIL (1)
 !
             DO K = 1,NSOIL
-            SMAV(K)=(SMC(K) - SMCWLT)/(SMCMAX - SMCWLT)
+               SMAV(K)=(SMC(K) - SMCWLT)/(SMCMAX - SMCWLT)
             END DO
 
             IF (NROOT >= 2) THEN
@@ -2119,7 +2123,7 @@ CONTAINS
 ! THEY ARE NOT USED HERE IN SNOPAC.  FLX2 (FREEZING RAIN HEAT FLUX) WAS
 ! SIMILARLY INITIALIZED IN THE PENMAN ROUTINE.
 ! ----------------------------------------------------------------------
-      FLX1 = 0.0
+      FLX1 = CPH2O * PRCP * (T1- SFCTMP)
       FLX3 = 0.0
 
 ! ----------------------------------------------------------------------
@@ -3072,11 +3076,13 @@ CONTAINS
 ! BETA<1
 ! SNOWPACK HAS SUBLIMATED AWAY, SET DEPTH TO ZERO.
 ! ----------------------------------------------------------------------
-!  kmh  12/15/2005 modify SSOIL
-!  kmh  09/03/2006 modify DTOT
-         if ( DTOT .GT. 2.0*DSOIL ) then
-           DTOT = 2.0*DSOIL
-         endif
+         IF ( ICE /= 0 ) then
+            ! kmh  12/15/2005 modify SSOIL
+            ! kmh  09/03/2006 modify DTOT
+            IF ( DTOT .GT. 2.0*DSOIL ) THEN
+               DTOT = 2.0*DSOIL
+            ENDIF
+         ENDIF
          SSOIL = DF1 * (T1- STC (1)) / DTOT
          IF (ESD-ESNOW2 <= ESDMIN) THEN
             ESD = 0.0
@@ -3366,7 +3372,8 @@ CONTAINS
       REAL, INTENT(OUT)       :: Z0
       REAL, PARAMETER         :: Z0S=0.001
       REAL, INTENT(IN)        :: SNOWH
-      REAL BURIAL, Z0EFF
+      REAL                    :: BURIAL
+      REAL                    :: Z0EFF
 
 !m      Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0S
       BURIAL = 7.0*Z0BRD - SNOWH

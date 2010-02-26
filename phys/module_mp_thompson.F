@@ -2771,7 +2771,7 @@
       INTEGER:: km, km_s, km_e
       DOUBLE PRECISION, DIMENSION(nbg):: vg, N_g
       DOUBLE PRECISION, DIMENSION(nbr):: vr, N_r
-      DOUBLE PRECISION:: N0_exp, N0_r, N0_g, lam_exp, lamg, lamr
+      DOUBLE PRECISION:: N0_r, N0_g, lam_exp, lamg, lamr
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2, y1, y2
 
 !+---+
@@ -2811,7 +2811,7 @@
          do i = 1, ntb_g1
             lam_exp = (N0g_exp(i)*am_g*cgg(1)/r_g(j))**oge1
             lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
-            N0_g = N0_exp/(cgg(2)*lam_exp) * lamg**cge(2)
+            N0_g = N0g_exp(i)/(cgg(2)*lam_exp) * lamg**cge(2)
             do n = 1, nbg
                N_g(n) = N0_g*Dg(n)**mu_g * DEXP(-lamg*Dg(n))*dtg(n)
             enddo

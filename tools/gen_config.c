@@ -468,7 +468,7 @@ gen_config_reads ( char * dirname )
     }
   }
   fprintf(fp,"    END SELECT\n") ;
-  fprintf(fp,"9201 CALL wrf_message(\"Error while reading namelist \"//TRIM(nml_name))\n") ;
+  fprintf(fp,"9201 CALL wrf_message(\"  ------ ERROR while reading namelist \"//TRIM(nml_name)//\" ------\")\n") ;
   fprintf(fp,"    nml_read_error = .TRUE.\n") ;
 
   fprintf(fp,"    CALL wrf_alt_nml_obsolete(nml_read_unit, TRIM(nml_name))\n") ;
@@ -477,7 +477,7 @@ gen_config_reads ( char * dirname )
   fprintf(fp,"                      \" Using registry defaults for variables in \"//TRIM(nml_name))\n") ;
   fprintf(fp," END DO NML_LOOP\n") ;
   fprintf(fp," \n") ;
-  fprintf(fp," IF ( nml_read_error ) CALL wrf_error_fatal(\"Errors while reading one or more namelists from namelist.input.\")\n") ;
+  fprintf(fp," IF ( nml_read_error ) CALL wrf_error_fatal(\"ERRORS while reading one or more namelists from namelist.input.\")\n") ;
 
   close_the_file( fp ) ;
   return(0) ;

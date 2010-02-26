@@ -405,10 +405,10 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = dynamics , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0, "Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
-                                 TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Replace them with moist_adv_opt, chem_adv_opt, tke_adv_opt"// &
-                                " and scalar_adv_opt, respectively.")
+           CALL wrf_debug(0, "-- Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
+                               TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Replace them with moist_adv_opt, chem_adv_opt, tke_adv_opt "// &
+                             " and scalar_adv_opt, respectively.")
         ENDIF
 
 !---------------------------------- physics -----------------------------
@@ -417,8 +417,8 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = physics , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Is ucmcall still in your "// TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Replace it with sf_urban_physics")
+           CALL wrf_debug(0, "-- Is ucmcall still in your "// TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Replace it with sf_urban_physics")
         ENDIF
 
 !---------------------------------- fdda --------------------------------
@@ -427,8 +427,8 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = fdda , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Is obs_nobs_prt still in your "// TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Replace it with obs_prt_max")
+           CALL wrf_debug(0, "-- Is obs_nobs_prt still in your "// TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Replace it with obs_prt_max")
         ENDIF
 
 !---------------------------------- wrfvar1 -----------------------------
@@ -437,10 +437,10 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = wrfvar1 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Are global, print_detail_airep, print_detail_timing still in your "// &
-                            TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Remove global, print_detail_airep, print_detail_timing "// &
-                                "from wrfvar1 namelist as they are obsolete.")
+           CALL wrf_debug(0, "-- Are global, print_detail_airep, print_detail_timing still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove global, print_detail_airep, print_detail_timing "// &
+                             "from wrfvar1 namelist as they are obsolete.")
         ENDIF
 
 !---------------------------------- wrfvar2 -----------------------------
@@ -449,23 +449,23 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = wrfvar2 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Are write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
-                            "write_filtered_obs still in your "// &
-                            TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Remove write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
-                                "write_filtered_obs as they are obsolete.")
+           CALL wrf_debug(0, "-- Are write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
+                             "write_filtered_obs still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
+                             "write_filtered_obs as they are obsolete.")
         ENDIF
 
 !---------------------------------- wrfvar4 -----------------------------
      else if ( TRIM(nml_name) .eq. "wrfvar4" ) then
 
-     READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
+        READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
 
-     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-        CALL wrf_debug(0,"Is use_eos_radobs still in your "// &
-                         TRIM(nml_name)//" namelist?")
-        CALL wrf_error_fatal("Remove use_eos_radobs as it is obsolete.")
-     ENDIF
+        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+           CALL wrf_debug(0, "-- Is use_eos_radobs still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove use_eos_radobs as it is obsolete.")
+        ENDIF
 
 !---------------------------------- wrfvar14 -----------------------------
      else if ( TRIM(nml_name) .eq. "wrfvar14" ) then
@@ -473,15 +473,15 @@ CONTAINS
      READ   ( UNIT = nml_read_unit , NML = wrfvar14 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Are use_crtm_kmatrix_fast, spccoeff_file, taucoeff_file, "// &
-                            "aerosolcoeff_file, cloudcoeff_file, emiscoeff_file still in your "// &
-                            TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Remove them as they are obsolete.")
+           CALL wrf_debug(0, "-- Are use_crtm_kmatrix_fast, spccoeff_file, taucoeff_file, "// &
+                             "aerosolcoeff_file, cloudcoeff_file, emiscoeff_file still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove them as they are obsolete.")
         ENDIF
 
 !---------------------------------- error -------------------------------
      else
-        CALL wrf_error_fatal(TRIM(nml_name)//" is not a valid namelist name")
+        CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
      end if
 
      IF ( nml_error .NE. 0 ) then    ! Still failed

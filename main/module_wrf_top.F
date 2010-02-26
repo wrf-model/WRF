@@ -14,6 +14,7 @@ MODULE module_wrf_top
    USE module_integrate
    USE module_driver_constants
    USE module_configure
+   USE module_state_description
 
    USE module_timing
    USE module_wrf_error
@@ -142,6 +143,7 @@ CONTAINS
 #endif
 
    CALL set_derived_rconfigs
+   CALL set_physics_rconfigs
 
 #ifdef RUN_ON_GPU
    CALL wrf_get_myproc( myproc )
@@ -487,5 +489,37 @@ CONTAINS
 #endif
 
    END SUBROUTINE set_derived_rconfigs
+
+   SUBROUTINE set_physics_rconfigs
+!<DESCRIPTION>
+! Some derived rconfig entries need to be set based on the value of other,
+! non-derived entries before package-dependent memory allocation takes place.
+! This suborutine sets the namelist parameters for the CAM radiation scheme
+! internally if either ra_lw_physics = CAMLWSCHEME or ra_sw_physics = CAMSWSCHEME.  
+! This works around depending on the user to set these specific settings in the
+! namelist.
+!</DESCRIPTION>
+
+      IMPLICIT NONE
+
+      INTEGER :: i
+
+
+#if (EM_CORE == 1)
+      IF (( model_config_rec % ra_lw_physics(1) .EQ. CAMLWSCHEME ) .OR. & 
+          ( model_config_rec % ra_sw_physics(1) .EQ. CAMSWSCHEME )) THEN
+         model_config_rec % paerlev = 29
+         model_config_rec % levsiz = 59
+         model_config_rec % cam_abs_dim1 = 4 
+         model_config_rec % cam_abs_dim2 = model_config_rec % e_vert(1)
+
+         wrf_err_message = 'CAM radiation is in use, setting:  ' // &
+                           'paerlev=29, levsiz=59, cam_abs_dim1=4, cam_abs_dim2=e_vert'
+         CALL wrf_message ( wrf_err_message )
+
+      END IF
+#endif
+
+   END SUBROUTINE set_physics_rconfigs
 
 END MODULE module_wrf_top

@@ -345,7 +345,11 @@
              call wrf_message("----------------- ERROR -------------------")
              WRITE(wrf_err_message,'("namelist    : num_metgrid_soil_levels = ",I10)') config_flags%num_metgrid_soil_levels
              call wrf_message(wrf_err_message)
+#if (EM_CORE == 1)
              WRITE(wrf_err_message,'("input files : NUM_METGRID_SOIL_LEVELS = ",I10, " (from met_em files).")') itmp
+#else
+             WRITE(wrf_err_message,'("input files : NUM_METGRID_SOIL_LEVELS = ",I10, " (from met_nmm files).")') itmp
+#endif
              call wrf_message(wrf_err_message)
              call wrf_error_fatal("Mismatch between namelist and global attribute NUM_METGRID_SOIL_LEVELS")
           END IF

@@ -1324,10 +1324,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
 
       IMPLICIT NONE
 
-#if defined(DM_PARALLEL) && !defined(STUBMPI)
-      INCLUDE "mpif.h"
-#endif
-
       TYPE(domain) , INTENT(INOUT)  :: grid
       CHARACTER (LEN=19) , INTENT(IN) :: file_date_string
       CHARACTER (LEN=19)              :: VarName
@@ -1364,6 +1360,9 @@ print *,'------------------> skipping ', var_info%name(1:8)
       INTEGER :: ok , map_proj , ok_open, igarb
       REAL :: pt
       INTEGER :: num_veg_cat , num_soil_top_cat , num_soil_bot_cat
+
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
+      INCLUDE "mpif.h"
 
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -2356,6 +2355,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
         DEALLOCATE(soilm200_input)
         DEALLOCATE(dumdata)
 
+#endif
      end subroutine read_wps
 
 ! -------------------------------------------------------------------------

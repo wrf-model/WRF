@@ -14,12 +14,13 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
    TYPE(domain) , POINTER                     :: grid
 
   ! Local
-   INTEGER  :: i, j, ii
+   INTEGER  :: i, j, ii, ipf, jpf
    INTEGER  :: px, py       ! number and direction of nd points to move
    INTEGER  :: ids , ide , jds , jde , kds , kde , &
                ims , ime , jms , jme , kms , kme , &
                ips , ipe , jps , jpe , kps , kpe
    TYPE (grid_config_rec_type)  :: config_flags
+   TYPE( fieldlist ), POINTER :: p
 
    LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY
 
@@ -129,14 +130,14 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
 ! shift the nest domain in x
    do ii = 1,abs(disp_x)
 !#include <../nmm_shift_inc/shiftx.inc>
-#include <shift_halo_x.inc>
+#include <../frame/loop_based_x_shift_code.h>
    enddo
 
 
 ! shift the nest domain in y
    do ii = 1,abs(disp_y)
 !#include <../nmm_shift_inc/shifty.inc>
-#include <shift_halo_y.inc>
+#include <../frame/loop_based_y_shift_code.h>
    enddo
 
    if (grid%id==2.and.ims<30.and.30<ime.and.jms<44.and.44<jme) then

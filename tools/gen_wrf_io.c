@@ -582,10 +582,10 @@ fprintf(fp, "ENDDO\n") ;
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
 	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
                 fprintf(fp,"                       %s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , 
-                                       structname , fourdname, tend_tag, ms1, bdy_indicator(ibdy), p->name ) ;
+                                       structname , fourdname, tend_tag, ms1, bdy_indicator(ibdy) ) ;
               } else {
                 fprintf(fp,"                       %s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , 
-                                       structname , fourdname, tend_tag, ibdy, bdy_indicator(ibdy), p->name ) ;
+                                       structname , fourdname, tend_tag, ibdy, bdy_indicator(ibdy) ) ;
 	      }
             }
             if (!strncmp(p->type->name,"real",4)) {

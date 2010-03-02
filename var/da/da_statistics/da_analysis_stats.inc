@@ -101,6 +101,7 @@ subroutine da_analysis_stats  (grid, stats_unit)
             write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),3(e12.4,2i5))') k, &
               min_u(k), min_v(k), min_t(k), min_p(k), min_q(k),min_qcw(k),min_qrn(k)
          else
+             if ( abs(min_q(k)%value) < 1.e-30 ) min_q(k)%value = 0.0
              write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),e12.4,2i5)') k, &
               min_u(k), min_v(k), min_t(k), min_p(k), min_q(k)
          end if
@@ -160,6 +161,7 @@ subroutine da_analysis_stats  (grid, stats_unit)
            write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),3(e12.4,2i5))') k, &
              max_u(k), max_v(k), max_t(k), max_p(k), max_q(k),max_qcw(k),max_qrn(k) 
         else
+           if ( abs(max_q(k)%value) < 1.e-30 ) max_q(k)%value = 0.0
            write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),e12.4,2i5)') k, &
              max_u(k), max_v(k), max_t(k), max_p(k), max_q(k)
         end if

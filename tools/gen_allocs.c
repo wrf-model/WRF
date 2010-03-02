@@ -222,7 +222,7 @@ if ( tag == 1 )
        if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
             ! ( p->nest_mask & INTERP_DOWN || p->nest_mask & FORCE_DOWN || p->nest_mask & INTERP_UP || p->nest_mask & SMOOTH_UP ) )
        {
-	 fprintf(fp,".AND.(.NOT.grid%%is_intermediate)",tag) ;
+	 fprintf(fp,".AND.(.NOT.grid%%is_intermediate)") ;
        }
        if ( p->ntl > 1 && sw == 1 ) {
 	 fprintf(fp,".AND.(IAND(%d,tl).NE.0)",tag) ;
@@ -605,25 +605,39 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
         if ( p->boundary && sw_new_bdys ) {
           { int bdy ; 
             for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
+#ifdef USE_ALLOCATABLES
+                  fprintf(fp,
+"IF ( ALLOCATED( %s%s%s ) ) THEN \n", structname, fname, bdy_indicator(bdy) ) ;
+#else
                   fprintf(fp,
 "IF ( ASSOCIATED( %s%s%s ) ) THEN \n", structname, fname, bdy_indicator(bdy) ) ;
+#endif
                   fprintf(fp,
 "  DEALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to deallocate %s%s%s. ')\n endif\n",
           structname, fname, bdy_indicator(bdy), structname, fname, bdy_indicator(bdy) ) ;
+#ifndef USE_ALLOCATABLES
                   fprintf(fp,
 "  NULLIFY(%s%s%s)\n",structname, fname, bdy_indicator(bdy) ) ;
+#endif
                   fprintf(fp, 
 "ENDIF\n" ) ;
             }
           }
         } else {
+#ifdef USE_ALLOCATABLES
+        fprintf(fp,
+"IF ( ALLOCATED( %s%s ) ) THEN \n", structname, fname ) ;
+#else
         fprintf(fp,
 "IF ( ASSOCIATED( %s%s ) ) THEN \n", structname, fname ) ;
+#endif
         fprintf(fp, 
 "  DEALLOCATE(%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to deallocate %s%s. ')\n endif\n",
 structname, fname, structname, fname ) ;
+#ifdef USE_ALLOCATABLES
         fprintf(fp,
 "  NULLIFY(%s%s)\n",structname, fname ) ;
+#endif
         fprintf(fp,
 "ENDIF\n" ) ;
         }

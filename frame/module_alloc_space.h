@@ -1,4 +1,4 @@
-   SUBROUTINE ROUTINENAME ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+   SUBROUTINE ROUTINENAME ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated , &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
                                   sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
@@ -37,9 +37,11 @@
       ! false otherwise (all allocated, modulo tl above)
       LOGICAL , INTENT(IN)            :: inter_domain_in
 
+      INTEGER , INTENT(INOUT)         :: num_bytes_allocated
+
+
       !  Local data.
       INTEGER idum1, idum2, spec_bdy_width
-      INTEGER num_bytes_allocated
       REAL    initial_data_value
       CHARACTER (LEN=256) message
       INTEGER tl
@@ -144,36 +146,6 @@
 
       CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
 
-#if ( NNN == 0 )
-      CALL set_scalar_indices_from_config( id , idum1 , idum2 )
-
-      num_bytes_allocated = 0 
-
-#if (EM_CORE == 1)
-      IF ( grid%id .EQ. 1 ) CALL wrf_message ( &
-          'DYNAMICS OPTION: Eulerian Mass Coordinate ')
-#endif
-#if (NMM_CORE == 1)
-      IF ( grid%id .EQ. 1 ) &
-          CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
-#endif
-#if (COAMPS_CORE == 1)
-        IF ( grid%id .EQ. 1 ) &
-          CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
-#endif
-#endif
-
 # include <allocs.inc>
-
-#if ( NNN == MAXNNN )
-      IF ( .NOT. grid%have_displayed_alloc_stats ) THEN
-        ! we do not want to see this message more than once, as can happen with the allocation and
-        ! deallocation of intermediate domains used in nesting.
-        WRITE(message,*)&
-            'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
-        CALL  wrf_debug( 0, message )
-        grid%have_displayed_alloc_stats = .TRUE.   
-      ENDIF
-#endif
 
    END SUBROUTINE ROUTINENAME

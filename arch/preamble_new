@@ -89,6 +89,3 @@ LIBWRFLIB = libwrflib.a
 
 #### Architecture specific settings ####
 
-# To enable over-decompostion with dmpar and dm+sm compiles, 
-# add -DALLOW_OVERDECOMP to ARCH_LOCAL, below. (not recommended)
-

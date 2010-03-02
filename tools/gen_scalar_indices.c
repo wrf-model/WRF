@@ -82,7 +82,7 @@ gen_scalar_tables ( FILE * fp )
   for ( p = FourD ; p != NULL ; p=p->next4d )
   {
     fprintf(fp,"  INTEGER, TARGET :: %s_index_table( param_num_%s, max_domains )\n",p->name,p->name )  ;
-    fprintf(fp,"  INTEGER, TARGET :: %s_num_table( max_domains )\n", p->name,p->name ) ;
+    fprintf(fp,"  INTEGER, TARGET :: %s_num_table( max_domains )\n", p->name ) ;
     fprintf(fp,"  TYPE(streamrec), TARGET :: %s_streams_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
     fprintf(fp,"  LOGICAL, TARGET :: %s_boundary_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
     fprintf(fp,"  CHARACTER*256, TARGET :: %s_dname_table( max_domains, param_num_%s )\n", p->name,p->name ) ;

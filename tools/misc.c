@@ -325,8 +325,11 @@ declare_array_as_pointer( char * tmp , node_t * p )
 {
   strcpy( tmp , "" ) ;
   if ( p != NULL ) {
+#ifdef USE_ALLOCATABLES
+    if ( p->ndims > 0 || p->boundary_array ) strcpy ( tmp, ",ALLOCATABLE" ) ;
+#else
     if ( p->ndims > 0 || p->boundary_array ) strcpy ( tmp, ",POINTER" ) ;
-    /*if ( p->ndims == 0 ) strcpy ( tmp, ",TARGET" ) ; */
+#endif
   }
   return(tmp);
 }

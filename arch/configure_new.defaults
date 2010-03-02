@@ -697,59 +697,15 @@ RANLIB 		=       ranlib
 CC_TOOLS        =       cc
 
 ###########################################################
-#ARCH    Cray XT Catamount/Linux x86_64, PGI compiler with gcc # serial dmpar 
+#ARCH    Cray XT CLE/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
 #
-DMPARALLEL      =       # 1
-OMPCPP          =       # not supported
-OMP             =       # not supported
-SFC             =       ftn
-SCC             =       gcc
-DM_FC           =       ftn
-DM_CC           =       gcc -I$(MPICH_DIR)/include
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD              =       $(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DLANDREAD_STUB -DXT3_Catamount
-CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB -DXT3_Catamount
-LDFLAGS_LOCAL   =       
-CPLUSPLUSLIB    =       
-ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-# Use this to add XT iobuf library after loading iobuf module, also requires
-# properly built netCDF library that includes iobuf (Catamount OS only)
-#LDFLAGS_LOCAL  =        $(IOBUF_POST_LINK_OPTS)
-# PGI recommended
-#FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed 
-FCOPTIM         =       -O3 -fastsse
-FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -Mfixed
-FORMAT_FREE     =       -Mfree
-FCSUFFIX        =
-BYTESWAPIO      =       -byteswapio
-FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
-FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
-MODULE_SRCH_FLAG =   
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -C -P $(TRADFLAG)
-AR              =      ar
-ARFLAGS         =      ru
-M4              =      m4 -B 14000
-RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
-
-###########################################################
-#ARCH    Cray XT CNL/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
-#
-# Recommended CNL/Linux memory allocation settings at run time:
+# Recommended CLE/Linux memory allocation settings at run time:
 # export MALLOC_MMAP_MAX_=0
 # export MALLOC_TRIM_THRESHOLD_=536870912
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
-OMP             =       # -mp=nonuma
+OMP             =       # -mp
 SFC             =       ftn
 SCC             =       gcc
 DM_FC           =       ftn
@@ -759,22 +715,23 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DLANDREAD_STUB
-CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB 
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
+CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =
-# module load libfast 
+# module load libfast to use Cray XT fast math library
 LIB_LOCAL       =       -lfast_mv
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 # PGI recommended
-#FCOPTIM         =       -O3 -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed 
-FCOPTIM         =       -O3 -fast
+FCOPTIM         =       -O3 -fast -Mvect=noaltcode -Mprefetch=distance:8 -Mfprelaxed 
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
 OPTERON_TYPE    =
 # Use this for AMD Opteron quad-core
 #OPTERON_TYPE    =      -tp barcelona-64
 #OPTERON_TYPE    =      -tp shanghai-64
+# Use this for AMD Opteron six-way Istanbul
+#OPTERON_TYPE    =      -tp istanbul
 FCDEBUG         =       # -g $(FCNOOPT)
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
@@ -810,8 +767,8 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DLANDREAD_STUB
-CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB 
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
+CFLAGS_LOCAL    =       -w -O3 
 LDFLAGS_LOCAL   =
 # module load libfast
 LIB_LOCAL       =       -lfast_mv
@@ -819,10 +776,10 @@ CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 -OPT:Ofast
 FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT         =       -O1
+FCNOOPT         =       -O0
 OPTERON_TYPE    =
 # Use this for AMD Opteron quad-core
-#OPTERON_TYPE    =       -march=barcelona -mcpu=barcelona -mtune=barcelona -msse4a
+#OPTERON_TYPE    =       -march=barcelona -msse4a
 FCDEBUG         =       # -g $(FCNOOPT)
 FORMAT_FIXED    =       -fixedform
 FORMAT_FREE     =       -freeform
@@ -838,6 +795,16 @@ ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
+
+# lower opt
+solve_em.o : solve_em.F
+
+solve_em.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(FCNOOPT) $(MODULE_DIRS) $*.f90
 
 ###########################################################
 #ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar
@@ -983,7 +950,7 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -D_WIN32
 CFLAGS_LOCAL    =       -w -O3 -DMEMCPY_FOR_BCOPY -DLANDREAD_STUB
 LDFLAGS_LOCAL   =       Ws2_32.lib # -lnetcdff
 CPLUSPLUSLIB    =

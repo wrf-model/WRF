@@ -340,3 +340,22 @@ GET_MASK ( unsigned int * mask , int *e , int * retval )
    }
 }
 
+#ifdef WRAP_MALLOC
+# ifndef WRAP_MALLOC_ALIGNMENT
+#  define WRAP_MALLOC_ALIGNMENT 128
+# endif
+# define _XOPEN_SOURCE 600
+# include <stdlib.h>
+void *malloc(size_t size)
+{
+       void *tmp;
+       if (posix_memalign(&tmp, WRAP_MALLOC_ALIGNMENT, size) == 0)
+               return tmp;
+       else {
+               errno = ENOMEM;
+               return NULL;
+       }
+}
+#endif
+
+

@@ -1,4 +1,4 @@
-!_EAL:MODEL_LAYER:INITIALIZATION
+!REAL:MODEL_LAYER:INITIALIZATION
 
 #ifndef VERT_UNIT
 !  This MODULE holds the routines which are used to perform various initializations
@@ -437,16 +437,6 @@ integer::oops1,oops2
            END DO
          END IF
 
-         !  Some data sets do not provide a surface RH field.
-
-         IF ( ABS(grid%rh_gc(its,kts,jts)) .LT. 1.e-5 ) THEN
-            DO j = jts, MIN(jte,jde-1)
-               DO i = its, MIN(ite,ide-1)
-                  grid%rh_gc(i,1,j) = grid%rh_gc(i,2,j)
-               END DO
-            END DO
-         END IF
-
          !  The number of vertical levels in the input data.  There is no staggering for
          !  different variables.
 
@@ -454,12 +444,42 @@ integer::oops1,oops2
 
          !  Compute the mixing ratio from the input relative humidity.
 
-         IF ( flag_qv .NE. 1 ) THEN
+         IF ( ( flag_qv .NE. 1 ) .AND. ( flag_sh .NE. 1 ) ) THEN
+            IF ( grid%p_gc(i,num_metgrid_levels,j) .LT. grid%p_gc(i,2,j) ) THEN
+               k = 2
+            ELSE
+               k = num_metgrid_levels
+            END IF
+
             CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc , &
                               config_flags%rh2qv_wrt_liquid , &
                               ids , ide , jds , jde , 1   , num_metgrid_levels , &
                               ims , ime , jms , jme , 1   , num_metgrid_levels , &
                               its , ite , jts , jte , 1   , num_metgrid_levels )
+
+            !  Some data sets do not provide a surface RH field.
+   
+            IF ( ABS(grid%rh_gc(its,kts,jts)) .LT. 1.e-5 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%rh_gc(i,1,j) = grid%rh_gc(i,k,j)
+                  END DO
+               END DO
+            END IF
+         ELSE IF ( flag_sh .EQ. 1 ) THEN
+            IF ( grid%p_gc(i,num_metgrid_levels,j) .LT. grid%p_gc(i,2,j) ) THEN
+               k = 2
+            ELSE
+               k = num_metgrid_levels
+            END IF
+            IF ( grid%sh_gc(its,kts,jts) .LT. 1.e-6 ) THEN
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%sh_gc(i,1,j) = grid%sh_gc(i,k,j)
+                  END DO
+               END DO
+            END IF
+
          END IF
 
          !  Some data sets do not provide a 3d geopotential height field.  
@@ -608,6 +628,13 @@ integer::oops1,oops2
               END IF
            END DO
          END DO
+
+         !  If the pressure levels in the middle of the atmosphere are upside down, then
+         !  this is hybrid data.  Computing the new surface pressure should use sfcprs2.
+
+         IF ( grid%p_gc(its,num_metgrid_levels/2,jts) .LT. grid%p_gc(its,num_metgrid_levels/2+1,jts) ) THEN
+            config_flags%sfcp_to_sfcp = .TRUE.
+         END IF
 
          !  Two ways to get the surface pressure.  1) If we have the low-res input surface
          !  pressure and the low-res topography, then we can do a simple hydrostatic

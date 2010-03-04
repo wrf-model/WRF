@@ -54,7 +54,13 @@
     INTEGER itmp
     INTEGER filestate, ierr3
     INTEGER :: ide_compare , jde_compare , kde_compare
-    CHARACTER (len=19) simulation_start_date
+    CHARACTER (len=19) simulation_start_date , first_date_input , first_date_nml
+    INTEGER first_date_start_year   , &
+            first_date_start_month  , &
+            first_date_start_day    , &
+            first_date_start_hour   , &
+            first_date_start_minute , &
+            first_date_start_second
     INTEGER simulation_start_year   , &
             simulation_start_month  , &
             simulation_start_day    , &
@@ -164,6 +170,21 @@
       ! Note that it is NOT necessary to reset grid%julian here.
       WRITE(wrf_err_message,*) 'input_wrf:  set xtime to ',grid%xtime
       CALL wrf_debug ( 100, TRIM(wrf_err_message) )
+    ELSE IF ( switch .EQ. auxinput1_only ) then
+      CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , first_date_input , ierr )
+      print *,'metgrid input_wrf.F first_date_input = ',first_date_input
+      CALL nl_get_start_year   ( 1 , first_date_start_year   )
+      CALL nl_get_start_month  ( 1 , first_date_start_month  )
+      CALL nl_get_start_day    ( 1 , first_date_start_day    )
+      CALL nl_get_start_hour   ( 1 , first_date_start_hour   )
+      CALL nl_get_start_minute ( 1 , first_date_start_minute )
+      CALL nl_get_start_second ( 1 , first_date_start_second )
+      WRITE ( first_date_nml, fmt = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+             first_date_start_year,   first_date_start_month,                     &
+             first_date_start_day,    first_date_start_hour,                      &
+             first_date_start_minute, first_date_start_second
+      WRITE (wrf_err_message,*) 'metgrid input_wrf.F first_date_nml = ',first_date_nml
+      CALL wrf_message( TRIM(wrf_err_message ) )
     ENDIF
 
     !  Test to make sure that the input data is the right size.  Do this for input from real/ideal into
@@ -333,9 +354,11 @@
     endif
 
     ! Test here to check that config_flags%num_metgrid_soil_levels in namelist
-    ! is equal to what is in the global attributes of the met_em files
+    ! is equal to what is in the global attributes of the met_em files.  Note that
+    ! if this is not the first time period, we don't really care about soil data.
 
-    IF ( switch .EQ. auxinput1_only ) THEN
+    IF ( ( switch .EQ. auxinput1_only ) .AND. &
+         ( first_date_nml .EQ. first_date_input ) )  THEN
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
    
        IF ( ierr .EQ. 0 ) THEN

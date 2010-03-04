@@ -4,7 +4,7 @@ MODULE module_optional_input
               flag_snow     , flag_snowh    , flag_tsk
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
-              flag_qg       , flag_qni
+              flag_qg       , flag_qni      , flag_sh
 
    INTEGER :: flag_soil_levels, flag_soil_layers
 
@@ -264,6 +264,7 @@ USE module_io_domain
       flag_qs       = 0
       flag_qg       = 0
       flag_qni      = 0
+      flag_sh       = 0
 
       flag_name(1:8) = 'QV      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -299,6 +300,11 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qni       = itmp
+      END IF
+      flag_name(1:8) = 'SH      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_sh       = itmp
       END IF
     
    END SUBROUTINE optional_moist

@@ -56,11 +56,9 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   !
   ! Assign last_dtInterval type values from restart file
   !
-  grid%last_dtInterval%basetime%s = grid%last_dt_sec
-  grid%last_dtInterval%basetime%sn = grid%last_dt_sec_num
-  grid%last_dtInterval%basetime%sd = grid%last_dt_sec_den
-  grid%last_dtInterval%YR = grid%last_dt_yr
-  grid%last_dtInterval%MM = grid%last_dt_mm
+
+  CALL WRFU_TimeIntervalSet(grid%last_dtInterval,  S=grid%last_dt_sec, &
+                         Sn=grid%last_dt_sec_num, Sd=grid%last_dt_sec_den)
 
   !
   ! If this step has already been adapted, no need to do it again.
@@ -435,11 +433,9 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   endif
 
 ! Update last timestep info for restart file
-  grid%last_dt_sec     = grid%last_dtInterval%basetime%s 
-  grid%last_dt_sec_num = grid%last_dtInterval%basetime%sn 
-  grid%last_dt_sec_den = grid%last_dtInterval%basetime%sd
-  grid%last_dt_yr      = grid%last_dtInterval%YR
-  grid%last_dt_mm      = grid%last_dtInterval%MM
+
+  CALL WRFU_TimeIntervalGet(grid%last_dtInterval,  S=grid%last_dt_sec, &
+                         Sn=grid%last_dt_sec_num, Sd=grid%last_dt_sec_den)
 
 END SUBROUTINE adapt_timestep
 

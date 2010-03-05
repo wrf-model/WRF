@@ -1596,7 +1596,7 @@
 
 ! Coupling insertion:->
       call ATM_DOFLUXES(grid%twbs,grid%qwbs,grid%rlwin,grid%rswin,grid%radot,grid%rswout, &
-                        grid%taux,grid%tauy,grid%pint(:,1,:),grid%prec)
+                        grid%taux,grid%tauy,grid%pint(:,:,1),grid%prec)
 !<-:Coupling insertion
 !
 

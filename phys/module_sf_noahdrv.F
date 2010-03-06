@@ -1409,6 +1409,15 @@ CONTAINS
      CALL  SOIL_VEG_GEN_PARM( MMINLU, MMINSL )
    ENDIF
 
+#ifdef WRF_CHEM
+!
+! need this parameter for dust parameterization in wrf/chem
+!
+   do I=1,NSLTYPE
+      porosity(i)=maxsmc(i)
+   enddo
+#endif
+
    IF(.not.restart)THEN
 
    itf=min0(ite,ide-1)
@@ -1431,14 +1440,6 @@ CONTAINS
       CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
                             "of ISLTYP. Is this field in the input?" )
    ENDIF
-#ifdef WRF_CHEM
-!
-! need this parameter for dust parameterization in wrf/chem
-!
-   do I=1,NSLTYPE
-      porosity(i)=maxsmc(i)
-   enddo
-#endif
 
 ! initialize soil liquid water content SH2O
 

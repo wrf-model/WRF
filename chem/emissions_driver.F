@@ -310,7 +310,7 @@ CONTAINS
 ! Only Scalar?
 !
       tracer_select:  SELECT CASE(config_flags%tracer_opt)
-      CASE (TRACER_SMOKE,TRACER_TEST1)
+      CASE (TRACER_SMOKE,TRACER_TEST2)
           CALL wrf_debug(15,'tracer fire emissions: calling biomassb, only CO')
 !
 ! here for tracers only, set chem_opt to zero. Chem species are handled later!

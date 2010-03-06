@@ -193,9 +193,11 @@ call wrf_message("**************************************************************
 !       call wrf_error_fatal(" ERROR: USE dust_opt = 2 when using MADE/SORGAM aerosol option ")
 !   ENDIF
 
-    CALL nl_get_mminlu( 1, mminlu_loc )
-    IF (mminlu_loc .NE. 'USGS') THEN
-      call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
+    IF ( config_flags%chem_opt /= 0 ) THEN
+     CALL nl_get_mminlu( 1, mminlu_loc )
+     IF (mminlu_loc .NE. 'USGS') THEN
+       call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
+     ENDIF
     ENDIF
 
     if( .NOT. config_flags%restart ) then

@@ -96,7 +96,7 @@ CONTAINS
           enddo
           enddo
           enddo
-         CASE (TRACER_TEST1)
+         CASE (TRACER_TEST2)
           do j=jts,jte
           do i=its,ite
           do k=kts,kte

@@ -12,11 +12,11 @@ k2n : kma2netcdf
 
 n2k : netcdf2kma
 
-kma2netcdf :  setup $(WRFVAR_LIBS) $(CONVERTOR_OBJS) kma2netcdf.o
+kma2netcdf :  $(WRFVAR_LIBS) $(CONVERTOR_OBJS) kma2netcdf.o
 	$(FC) -o kma2netcdf.exe $(LDFLAGS) kma2netcdf.o \
          $(CONVERTOR_OBJS) $(WRFVAR_LIB) $(LIB_BUNDLED) $(LIB_EXTERNAL)
 
-netcdf2kma : setup $(WRFVAR_LIBS) $(CONVERTOR_OBJS) netcdf2kma.o
+netcdf2kma : $(WRFVAR_LIBS) $(CONVERTOR_OBJS) netcdf2kma.o
 	$(FC) -o netcdf2kma.exe $(LDFLAGS) netcdf2kma.o \
          $(CONVERTOR_OBJS) $(WRFVAR_LIB) $(LIB_BUNDLED) $(LIB_EXTERNAL)
 

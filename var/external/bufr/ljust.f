@@ -1,0 +1,83 @@
+      FUNCTION LJUST(STR)
+
+C$$$  SUBPROGRAM DOCUMENTATION BLOCK
+C
+C SUBPROGRAM:    LJUST
+C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1998-07-08
+C
+C ABSTRACT: THIS FUNCTION REMOVES ALL LEADING BLANKS FROM A CHARACTER
+C   STRING (LEFT JUSTIFIES).  IT IS CONSIDERED OBSOLETE AND MAY BE
+C   REMOVED FROM THE BUFR ARCHIVE LIBRARY IN A FUTURE VERSION.  USERS
+C   SHOULD INSTEAD MIGRATE TO THE USE OF SUBROUTINE JSTCHR. 
+C
+C PROGRAM HISTORY LOG:
+C 1998-07-08  J. WOOLLEN -- ORIGINAL AUTHOR
+C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+C                           INTERDEPENDENCIES
+C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
+C                           DOCUMENTATION (INCLUDING HISTORY)
+C 2007-01-19  J. ATOR    -- MARKED AS OBSOLETE AND ADDED PRINT
+C                           NOTIFICATION
+C
+C USAGE:    LJUST (STR)
+C   INPUT ARGUMENT LIST:
+C     STR      - CHARACTER*(*): STRING TO BE LEFT-JUSTIFED
+C
+C   OUTPUT ARGUMENT LIST:
+C     STR      - CHARACTER*(*): LEFT-JUSTIFED STRING (UNLESS INPUT
+C                VALUE CONTAINED ALL BLANKS - THEN INPUT VALUE IS
+C                RETURNED WITH NO CHANGES)
+C     LJUST    - INTEGER: ALWAYS RETURNED AS 0 (DUMMY)
+C
+C REMARKS:
+C    THIS ROUTINE CALLS:        None
+C    THIS ROUTINE IS CALLED BY: None at this time
+C                               Normally not called by any application
+C                               Programs but it could be.
+C
+C ATTRIBUTES:
+C   LANGUAGE: FORTRAN 77
+C   MACHINE:  PORTABLE TO ALL PLATFORMS
+C
+C$$$
+
+      CHARACTER*(*) STR
+
+      COMMON /QUIET / IPRT
+
+      DATA IFIRST/0/
+
+      SAVE IFIRST
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
+      IF(IFIRST.EQ.0) THEN
+         IF(IPRT.GE.0) THEN
+      PRINT*
+      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
+      PRINT 101
+101   FORMAT(' BUFRLIB: LJUST - THIS FUNCTION IS NOW OBSOLETE; ',
+     . 'USE SUBROUTINE JSTCHR INSTEAD')
+      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
+      PRINT*
+         ENDIF
+         IFIRST = 1
+      ENDIF
+
+      LJUST = 0
+
+      IF(STR.EQ.' ') GOTO 100
+
+      LSTR = LEN(STR)
+      DO I=1,LSTR
+      DO WHILE(STR(I:I).EQ.' ' .AND. STR(I+1:LSTR).NE.' ')
+         STR(I:LSTR) = STR(I+1:LSTR)
+      ENDDO
+      ENDDO
+
+C  EXIT
+C  ----
+
+100   RETURN
+      END

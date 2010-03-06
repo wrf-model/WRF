@@ -263,8 +263,10 @@ else
     endif
     if ( $?BUFR ) then
        setenv BUFR_CPP "-DBUFR"
+       setenv BUFR_LIB "-L../external/bufr -lbufr"
     else
        setenv BUFR_CPP " "
+       setenv BUFR_LIB " "
     endif
     if ( $?MADIS ) then
        setenv MADIS_CPP "-DMADIS"

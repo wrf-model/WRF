@@ -11,7 +11,8 @@ superclean :
           *.sed qual_threshold.nl inc/rsl_cpp_flags inc/version_decl module_dm_warning \
           decode_l2_airs.README time_window.nl Test1.out.correct \
           links README* landread.c.dist Makefile \
-          depend inc/*.inc inc/*.h )
+          depend inc/*.inc inc/*.h preproc.sh )
 	( cd da; /bin/rm -f *.exe )
+	( cd external/bufr; make clean )
 	( cd da/makedepf90-2.8.8; /bin/rm -f makedepf90 config.log Makefile config.status )
 	( cd gen_be; /bin/rm -f *.exe )

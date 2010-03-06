@@ -1,30 +1,8 @@
 # da
 
 WRFVAR_OBJS = \
-   bort2.o \
-   bort.o \
-   irev.o \
-   rjust.o \
-   iupm.o \
-   valx.o \
-   adn30.o \
-   cadn30.o \
-   ifxy.o \
-   istdesc.o \
-   nemtbb.o \
-   numtbd.o \
-   uptdd.o \
    da_blas.o \
    da_lapack.o \
-   bort_exit.o \
-   wrdesc.o \
-   restd.o \
-   ccbfl.o \
-   cobfl.o \
-   crbmg.o \
-   cwbmg.o \
-   rbytes.o \
-   da_bufr.o \
    da_par_util.o \
    da_par_util1.o \
    da_setup_structures.o \
@@ -179,7 +157,7 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
 	$(RM) $@
 	$(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) \
         da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) \
-        ${MADIS_LIB} $(LIB)
+        ${MADIS_LIB} ${BUFR_LIB} $(LIB)
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_wrfvar_esmf.exe : $(WRFVAR_LIBS) da_wrfvar_esmf.o da_wrfvar_esmf_super.o
@@ -193,9 +171,9 @@ da_advance_time.exe : da_advance_time.o
 
 inc/da_generic_boilerplate.inc: da_generic_boilerplate.m4
 	@ $(RM) inc/da_generic_boilerplate.inc
-	  $(M4) da_generic_boilerplate.m4 > $(WRF_SRC_ROOT_DIR)/inc/da_generic_boilerplate.inc
+	$(M4) da_generic_boilerplate.m4 > $(WRF_SRC_ROOT_DIR)/inc/da_generic_boilerplate.inc
 
-da_utils : setup \
+da_utils : \
            da_tune_obs_hollingsworth1.exe \
            da_tune_obs_hollingsworth2.exe \
            da_tune_obs_desroziers.exe \
@@ -371,32 +349,6 @@ da_lapack.o :
 	$(CPP) $*.b  > $*.f
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $*.f
-
-bort2.o \
-bort.o \
-irev.o \
-rjust.o \
-iupm.o \
-valx.o \
-adn30.o \
-cadn30.o \
-ifxy.o \
-istdesc.o \
-nemtbb.o \
-numtbd.o \
-uptdd.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $*.b  > $*.f
-	$(RM) $*.b
-	$(SFC) -c $(FCDEBUG) $(FORMAT_FREE) $(FCOPTIM) $*.f
-
-da_bufr.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(SFC) -c $(FCDEBUG) $(FORMAT_FREE) $(FCOPTIM) $*.f
 
 da_spectral.o da_be_spectral.o :
 	$(RM) $@

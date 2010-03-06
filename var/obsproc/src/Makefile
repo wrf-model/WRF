@@ -42,23 +42,7 @@ OBJS    	=	error_handler.o \
 			check_obs.o \
 			setup.o
 
-BUFR_OBJS    	=	../../build/da_bufr.o \
-			../../build/bort.o \
-			../../build/irev.o \
-			../../build/iupm.o \
-			../../build/adn30.o \
-			../../build/istdesc.o \
-			../../build/restd.o \
-			../../build/ifxy.o \
-			../../build/nemtbb.o \
-			../../build/numtbd.o \
-			../../build/uptdd.o \
-			../../build/cadn30.o \
-			../../build/valx.o \
-			../../build/bort_exit.o \
-			../../build/wrdesc.o \
-			../../build/rjust.o \
-			../../build/bort2.o
+BUFR_LIB    	=	../../external/bufr/libbufr.a
 
 #	Source code dependencies
 
@@ -77,8 +61,8 @@ obsproc.exe:		$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(SFC) -o $@ \
 			$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(MODULES_GTS) \
-			$(OBJS) $(BUFR_OBJS) \
-			obsproc.o $(LDFLAGS) $(LOCAL_LIBRARIES) ; \
+			$(OBJS) \
+			obsproc.o $(LDFLAGS) $(LOCAL_LIBRARIES) $(BUFR_LIB); \
 			else \
 			$(SFC) -o $@ \
 			$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \

@@ -13,7 +13,8 @@ links :
 	@ $(LN) ../../frame/* .
 	@ if test -e module_dm_stubs.F; then rm -rf module_dm_stubs.F; fi
 	@ $(LN) ../da/da*/* .
-	@ $(LN) ../external/*/* .
+	@ $(LN) ../external/blas/* .
+	@ $(LN) ../external/lapack/* .
 	@ $(LN) ../../arch/*.sed .
 	@ $(LN) ../../external/esmf_time_f90/* .
 	@ $(LN) ../convertor/da_module_convert_tool/* .

@@ -11,11 +11,11 @@ GEN_BE_OBJS = da_etkf.o \
 	da_memory.o \
 	da_reporting.o \
 	da_tools_serial.o \
-	module_ffts.o
+	module_ffts.o 
 
 GEN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a 
 
-be : setup \
+be : \
 	gen_be_stage0_wrf.exe \
 	gen_be_ep1.exe \
 	gen_be_ep2.exe \

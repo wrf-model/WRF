@@ -33,7 +33,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    character(10) date
    character(8) subset,subfgn
    character(80) hdr1b
-   integer(i_kind) ihh,i,j,k,ifov,idd
+   integer(i_kind) ihh,i,j,k,ifov,idd,ireadmg,ireadsb
    integer(i_kind) iret,idate,im,iy,nchan
 
    ! thinning variables

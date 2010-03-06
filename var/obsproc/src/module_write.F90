@@ -26,9 +26,6 @@ MODULE module_write
   USE module_date
   USE module_decoded
   USE module_map
-#ifdef BUFR
-  USE da_bufr, only: openbf, openmb, ufbseq, ufbint, writsb, closbf
-#endif
 
   INCLUDE 'constants.inc'
 
@@ -1794,6 +1791,8 @@ REF: &
 
       CALL CLOSBF (bfout)
 
+#else
+      PRINT *, 'No Prepbufr data output, BUFR compilation is needed to turn it on !!!'
 #endif
 
    RETURN

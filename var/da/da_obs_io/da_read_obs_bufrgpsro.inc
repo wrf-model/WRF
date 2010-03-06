@@ -57,6 +57,8 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
 
 #ifdef BUFR
 
+   integer(i_kind) ireadns
+
    if (trace_use) call da_trace_entry("da_read_obs_bufrgosro")
 
    ! open file

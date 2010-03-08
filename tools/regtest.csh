@@ -38,10 +38,11 @@ setenv WRF_NMM_NEST 1
 if ( `uname` == AIX ) then
 
 	xlf -qversion
-	#source ~gill/sourceme_modules
-	#module load xlf12.01.0000.0005.091127
-	#module load xlf12
-	#xlf -qversion
+	source ~gill/sourceme_modules
+#module load xlf/12.01.0000.0005.091127
+#module load xlf/12.01.0000.0005
+	module load xlf/84213
+	xlf -qversion
 
 	set VERSION = `xlf -qversion | grep AIX | cut -f2 -d, | cut -f2 -dV | cut -f1 -d.`
 	if ( $VERSION != 12 ) then
@@ -375,12 +376,17 @@ if ( $ESMF_LIB == TRUE ) then
 		setenv OBJECT_MODE 64
 #	set ESMFLIBSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
 #	set ESMFINCSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
+set NEVER = FALSE
+if ( $NEVER == TRUE ) then
 		setenv ESMF_DIR /mmm/users/michalak/esmf
 		setenv ESMF_BOPT g
 		setenv ESMF_ABI 64
 		setenv ESMF_INSTALL_PREFIX $ESMF_DIR/../esmf_install
 		setenv ESMFLIB $ESMF_INSTALL_PREFIX/lib/libg/AIX.default.64.mpi.default
 		setenv ESMFINC $ESMF_INSTALL_PREFIX/mod/modg/AIX.default.64.mpi.default
+else
+source ~michalak/sourceme_esmf
+endif
 		set ESMFLIBSAVE = $ESMFLIB
 		set ESMFINCSAVE = $ESMFINC
 		echo "Using ESMFLIB = ${ESMFLIBSAVE}"
@@ -857,6 +863,7 @@ cat >! phys_real_4 << EOF
  num_soil_layers                     = 4,
  sf_urban_physics                    = 1,     1,     1,
  mp_zero_out                         = 0,
+ ishallow                            = 1,
 EOF
 
 cat >! dyn_real_4  << EOF
@@ -3647,20 +3654,15 @@ banner 29
 					set RIGHT_SIZE_MPI = FALSE
 				endif
 
-				!	For some reason, Chemistry files are the wrong size, but the headers are identical, and the 
-				!	bit-wise comparisons are OK.  So, we just check to see if the files have two times worth of
-				!	data in them.  If this is a chem run, and we have the right number of time periods of data, 
-				!	and the files do nto have the same size, we just say, welp, they ARE the same size.  Might be
-				!	able to get rid of this test later.  Dec 2009.
+				!	We just check to see if the files have two times worth of data in them.  
+				!	We might be able to get rid of this test later.  Dec 2009.
 
-				if ( ( $KPP == TRUE ) || ( $CHEM == TRUE ) ) then
-					set times1 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[1] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
-					set times3 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
-					if ( ( $RIGHT_SIZE_MPI != TRUE ) && ( $times1 == 2 ) && ( $times3 == 2 ) ) then
-						echo "--- RIGHT_SIZE_MPI false ---" >>! ${DEF_DIR}/wrftest.output
-						set RIGHT_SIZE_MPI = TRUE
-					endif
-                                endif
+				set times1 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[1] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
+				set times3 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
+				if ( ( $RIGHT_SIZE_MPI != TRUE ) && ( $times1 == 2 ) && ( $times3 == 2 ) ) then
+					echo "--- RIGHT_SIZE_MPI false ---" >>! ${DEF_DIR}/wrftest.output
+					set RIGHT_SIZE_MPI = TRUE
+				endif
 
 				#	Are we skipping the OpenMP runs?
 	

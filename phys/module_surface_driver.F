@@ -779,6 +779,17 @@ CONTAINS
     DO ij = 1 , num_tiles
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
+
+         IF ( FRACTIONAL_SEAICE == 1 ) then
+            IF ( ( XICE(I,J) .NE. XICEM(I,J) ) .AND. ( XICEM(I,J) .GT. XICE_THRESHOLD ) ) THEN
+               ! Fractional values of ALBEDO and EMISSIVITY are valid according to the 
+               ! earlier fractional seaice value, XICEM.  Recompute them for the new 
+               ! seaice value XICE.
+               ALBEDO(I,J) = 0.08 + XICE(I,J)/XICEM(I,J) * ( ALBEDO(I,J) - 0.08 )
+               EMISS (I,J) = 0.98 + XICE(I,J)/XICEM(I,J) * ( EMISS (I,J) - 0.98 )
+            ENDIF
+         ENDIF
+
         IF ( XLAND(i,j) .GT. 1.5 .AND. XICE(I,J) .GE. XICE_THRESHOLD .AND. XICEM(I,J) .LT. XICE_THRESHOLD ) THEN
 ! water point turns to sea-ice point
           XICEM(I,J) = XICE(I,J)
@@ -787,6 +798,14 @@ CONTAINS
           ISLTYP(I,J) = 16
           VEGFRA(I,J) = 0.
           TMN(I,J) = 271.4
+          ! Over new ice, initial guesses of ALBEDO and EMISS are
+          ! based on default water and ice values for albedo and
+          ! emissivity.  The land-surface schemes can update these
+          ! values
+          ALBEDO(I,J) = 0.80 * XICE(I,J) + 0.08 * ( 1.0-XICE(I,J) )
+          ALBBCK(I,J) = 0.80
+          EMISS(I,J)  = 0.98 * XICE(I,J) + 0.98 * ( 1.0-XICE(I,J) )
+          EMBCK(I,J)  = 0.98
           DO nk = 1, num_soil_layers
             TSLB(I,NK,J) = TSK(I,J)
             SMOIS(I,NK,J) = 1.0
@@ -808,12 +827,19 @@ CONTAINS
           SNOWC(I,J) = 0.
           SNOWH(I,J) = 0.
           TMN(I,J) = SST(I,J)
+          ALBEDO(I,J) = 0.08
+          ALBBCK(I,J) = 0.08
+          EMISS(I,J)  = 0.98
+          EMBCK(I,J)  = 0.98
           DO nk = 1, num_soil_layers
             TSLB(I,NK,J) = SST(I,J)
             SMOIS(I,NK,J) = 1.0
             SH2O(I,NK,J) = 1.0
           ENDDO
         ENDIF
+
+        XICEM(i,j) = XICE(i,j)
+
       ENDDO
       ENDDO
     ENDDO
@@ -1344,6 +1370,19 @@ CONTAINS
            frpcpn=.true.
          ENDIF
          IF ( FRACTIONAL_SEAICE == 1) THEN
+            ! The fields passed to LSM need to represent the full ice values, not
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
+            ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+            DO j = j_start(ij) , j_end(ij)
+               DO i = i_start(ij) , i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                     ALBEDO(I,J) = (ALBEDO(I,J)-(1.-XICE(I,J))*0.08)/XICE(I,J)
+                     EMISS(I,J) = (EMISS(I,J)-(1.-XICE(I,J))*0.98)/XICE(I,J)
+                  ENDIF
+               ENDDO
+            ENDDO
+
             IF ( isisfc ) THEN
                ! Use surface layer routine values from the ice portion of grid point
             ELSE
@@ -1434,6 +1473,19 @@ CONTAINS
                 )
          
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
+            ! LSM Returns full land/ice values, no fractional values.
+            ! We return to a fractional component here.  SFLX currently hard-wires
+            ! emissivity over sea ice to 0.98, the same value as over open water, so
+            ! the fractional consideration doesn't have any effect for emissivity.
+            DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                     albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                     emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                  ENDIF
+               ENDDO
+            ENDDO
+
             IF ( isisfc ) THEN
                DO j=j_start(ij),j_end(ij)
                   DO i=i_start(ij),i_end(ij)
@@ -1546,6 +1598,19 @@ CONTAINS
            ENDIF
            CALL wrf_debug(100,'in RUC LSM')
            IF ( FRACTIONAL_SEAICE == 1 ) THEN
+              ! The fields passed to LSMRUC need to represent the full ice values, not
+              ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+              ! to a value representing only the sea-ice portion.   Albedo over open 
+              ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+              DO j = j_start(ij) , j_end(ij)
+                 DO i = i_start(ij) , i_end(ij)
+                    IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                       ALBEDO(I,J) = (ALBEDO(I,J) - (1.-XICE(I,J))*0.08) / XICE(I,J)
+                       EMISS(I,J)  = (EMISS(I,J)  - (1.-XICE(I,J))*0.98) / XICE(I,J)
+                    ENDIF
+                 ENDDO
+              ENDDO
+
               IF ( isisfc ) THEN
                  !
                  ! use surface layer routine values from the ice portion of grid point
@@ -1598,6 +1663,16 @@ CONTAINS
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
            IF ( FRACTIONAL_SEAICE == 1 ) THEN
+              ! LSMRUC Returns full land/ice values, no fractional values.
+              ! We return to a fractional component here.
+              DO j=j_start(ij),j_end(ij)
+                 DO i=i_start(ij),i_end(ij)
+                    IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                       albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                       emiss(i,j)  = ( emiss(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                    ENDIF
+                 ENDDO
+              ENDDO
               if ( isisfc ) then
                  !
                  !  back to ice and ocean average

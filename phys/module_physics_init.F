@@ -901,12 +901,19 @@ integer myproc
           IF(XICE(I,J).GE.xice_threshold)THEN
             XLAND(I,J)=1.0
             ALBBCK(I,J)=ALBD(ISICE,ISN)/100.
-            ALBEDO(I,J)=ALBBCK(I,J)
+            EMBCK(I,J)=SFEM(ISICE,ISN)
+            IF (FRACTIONAL_SEAICE == 1) THEN
+               ! The 0.08 value is the albedo over open water.
+               ! The 0.98 value is the emissivity over open water.
+               ALBEDO(I,J) = ( XICE(I,J) * ALBBCK(I,J) ) + ( (1.0-XICE(I,J)) * 0.08 )
+               EMISS(I,J)  = ( XICE(I,J) * EMBCK(I,J)  ) + ( (1.0-XICE(I,J)) * 0.98 )
+            ELSE
+               ALBEDO(I,J)=ALBBCK(I,J)
+               EMISS(I,J)=EMBCK(I,J)
+            ENDIF
             THC(I,J)=THERIN(ISICE,ISN)/100.
             Z0(I,J)=SFZ0(ISICE,ISN)/100.
             ZNT(I,J)=Z0(I,J)
-            EMBCK(I,J)=SFEM(ISICE,ISN)
-            EMISS(I,J)=EMBCK(I,J)
             MAVAIL(I,J)=SLMO(ISICE,ISN)
           ENDIF
         ENDDO
@@ -1587,8 +1594,8 @@ integer myproc
 
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
                 
-                CALL urban_param_init(DZR,DZB,DZG,num_soil_layers                    & !urban
-                                )
+                CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
+                                sf_urban_physics)
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
                                
                 

@@ -1447,8 +1447,8 @@ MODULE module_sf_urban
 ! subroutine urban_param_init: Read parameters from URBPARM.TBL
 !
 !===============================================================================
-   SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers &
-                               )
+   SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers, &
+                               sf_urban_physics)
 !                              num_roof_layers,num_wall_layers,num_road_layers)
 
    IMPLICIT NONE
@@ -1461,6 +1461,7 @@ MODULE module_sf_urban
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZR
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZB
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZG
+   INTEGER,                            INTENT(IN)    :: SF_URBAN_PHYSICS
 
    INTEGER :: LC, K
    INTEGER :: IOSTATUS, ALLOCATE_STATUS
@@ -1772,6 +1773,8 @@ MODULE module_sf_urban
             write (*,'("Currently, they sum to ", F6.2,/)') pctsum
             CALL wrf_error_fatal('pctsum is not equal to 100.') 
          endif
+      else if ( name == "Z0R") then
+         read(string(indx+1:),*) Z0R_tbl(1:icate)
       else if ( name == "COP") then
          read(string(indx+1:),*) cop_tbl(1:icate)
       else if ( name == "PWIN") then
@@ -1844,12 +1847,14 @@ MODULE module_sf_urban
       Z0C_TBL(LC) = ZR_TBL(LC) * ( 1.0 - ZDC_TBL(LC)/ZR_TBL(LC) ) * &
            exp (-(0.5 * beta_macd * Cd / (VonK**2) * ( 1.0-ZDC_TBL(LC)/ZR_TBL(LC) ) * Lambda_F )**(-0.5))
 
-      ! Include roof height variability in Macdonald
-      ! to parameterize Z0R as a function of ZR_SD (Standard Deviation)
-      Lambda_FR  = SIGMA_ZED_TBL(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )
-      Z0R_TBL(LC) = ZR_TBL(LC) * ( 1.0 - ZDC_TBL(LC)/ZR_TBL(LC) ) &
-           * exp ( -(0.5 * beta_macd * Cd / (VonK**2) &
-           * ( 1.0-ZDC_TBL(LC)/ZR_TBL(LC) ) * Lambda_FR )**(-0.5))
+      IF (SF_URBAN_PHYSICS == 1) THEN
+         ! Include roof height variability in Macdonald
+         ! to parameterize Z0R as a function of ZR_SD (Standard Deviation)
+         Lambda_FR  = SIGMA_ZED_TBL(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )
+         Z0R_TBL(LC) = ZR_TBL(LC) * ( 1.0 - ZDC_TBL(LC)/ZR_TBL(LC) ) &
+              * exp ( -(0.5 * beta_macd * Cd / (VonK**2) &
+              * ( 1.0-ZDC_TBL(LC)/ZR_TBL(LC) ) * Lambda_FR )**(-0.5))
+      ENDIF
 
       !
       ! Z0HC still one-tenth of Z0C, as before ?

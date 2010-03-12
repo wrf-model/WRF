@@ -222,8 +222,7 @@ CONTAINS
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 2 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 3 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 7 ) .OR. &
-            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 88 ).OR. &
-            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 99 ) ) THEN
+            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 88 ) ) THEN
    
          CALL optional_lsm_levels ( grid , fid , &
                                     ids, ide, jds, jde, kds, kde, &

@@ -14,6 +14,7 @@ PROGRAM real_data
    USE module_timing
    USE module_state_description, ONLY : realonly
    USE module_symbols_util, ONLY: wrfu_cal_gregorian
+   USE module_check_a_mundo
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
@@ -116,6 +117,8 @@ real::t1,t2
 #else
    CALL initial_config
 #endif
+   CALL check_nml_consistency
+   CALL set_physics_rconfigs
 
    CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )

@@ -177,7 +177,7 @@ module_wrf_top.o: ../frame/module_machine.o \
                   ../frame/module_configure.o \
                   ../frame/module_timing.o \
                   ../frame/module_wrf_error.o \
-                  ../frame/module_state_description.o \
+                  ../share/module_check_a_mundo.o \
                   $(ESMF_MOD_DEPENDENCE)
 
 # DO NOT DELETE

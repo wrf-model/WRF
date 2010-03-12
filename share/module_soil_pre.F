@@ -2354,7 +2354,7 @@ endif
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
 
-      ELSE IF ( ( sf_surface_physics .EQ. 2 .or. sf_surface_physics .EQ. 99 .or. sf_surface_physics .eq. 88 ) .AND. &
+      ELSE IF ( ( sf_surface_physics .EQ. 2 .or. sf_surface_physics .eq. 88 ) .AND. &
                 ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
          CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &

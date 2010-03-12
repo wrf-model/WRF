@@ -13,6 +13,7 @@ PROGRAM ndown_em
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec
    USE module_io_domain
    USE module_utility
+   USE module_check_a_mundo
 
    USE module_timing
    USE module_wrf_error
@@ -191,6 +192,9 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
 #else
    CALL initial_config
 #endif
+
+   CALL check_nml_consistency
+   CALL set_physics_rconfigs
 
    !  If we are running ndown, and that is WHERE we are now, make sure that we account
    !  for folks forgetting to say that the aux_input2 stream is in place.

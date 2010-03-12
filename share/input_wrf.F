@@ -379,6 +379,25 @@
        END IF
     END IF
 
+    ! Test here to check that config_flags%sf_surface_physics in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( switch .EQ. input_only  ) THEN
+       CALL wrf_get_dom_ti_integer ( fid, 'SF_SURFACE_PHYSICS', itmp, 1, icnt, ierr )
+       IF ( ierr .EQ. 0 ) THEN
+          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_SURFACE_PHYSICS returns ', itmp
+          CALL wrf_debug ( 300 , wrf_err_message )
+          IF ( config_flags%sf_surface_physics /= itmp ) THEN
+             call wrf_message("----------------- ERROR -------------------")
+             WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
+             call wrf_message(wrf_err_message)
+             call wrf_error_fatal("Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
+          END IF
+       END IF
+    END IF
+
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISWATER returns ',config_flags%iswater

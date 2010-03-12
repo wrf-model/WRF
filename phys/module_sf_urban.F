@@ -2002,7 +2002,7 @@ MODULE module_sf_urban
       
 !m
       FRC_URB2D(I,J)=0.
-      UTYPE_URB2D(I,J)=0.
+      UTYPE_URB2D(I,J)=0
 
             IF( IVGTYP(I,J) == ISURBAN)  THEN
                UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
@@ -2083,9 +2083,18 @@ MODULE module_sf_urban
 !        TW1_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW2_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TGB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
-        TRB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
-        TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
-        TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+!MT        TRB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+!MT        TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+!MT        TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        IF (UTYPE_URB2D(I,J) > 0) THEN
+           TRB_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+           TW1_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+           TW2_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+        ELSE
+           TRB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+           TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+           TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        ENDIF
         TGB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
         SFW1_URB3D(I,K,J)=0.
         SFW2_URB3D(I,K,J)=0.

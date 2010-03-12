@@ -139,6 +139,12 @@ Z0B: 0.0001, 0.0001, 0.0001
 Z0G: 0.01, 0.01, 0.01 
 
 #
+# Z0R:  Roughness length for momentum over roof [ m ]
+#
+
+Z0R: 0.01, 0.01, 0.01
+
+#
 # COP:  Coefficient of performance of the A/C systems [ - ]
 #
 

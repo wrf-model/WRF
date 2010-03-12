@@ -2095,9 +2095,9 @@ MODULE module_sf_bem
 !
          if (hsneed.gt.0) then         ! air conditioning is cooling 
                                        ! and the heat is pumped out into the atmosphere  
-	  hsout=((cop+1)/cop)*(hsneed+hlneed)
+	  hsout=(1/cop)*(abs(hsneed)+abs(hlneed))+hsneed
           hlout=hlneed
-          consump=(1./cop)*(hsneed+hlneed)
+          consump=(1./cop)*(abs(hsneed)+abs(hlneed))
 !!        hsout=0.             
 !!        hlout=0.
 
@@ -2110,11 +2110,11 @@ MODULE module_sf_bem
               else  !! hsneed < 0. !air conditioning is heating 
                hlneed=0.           !no humidity regulation is considered
                hlout=0.            !no output into the atmosphere (latent heat) 
-               consump=(-1./cop)*(hsneed+hlneed)
+               consump=(1./cop)*(abs(hsneed)+abs(hlneed))
 !
 !!We have two possibilities 
 ! 
-!!             hsout=((cop-1)/cop)*(hsneed+hlneed) !output into the atmosphere 
+!!             hsout=(1./cop)*(abs(hsneed)+abs(hlneed)) !output into the atmosphere 
                hsout=0.                            !no output into the atmosphere                        
          end if
 

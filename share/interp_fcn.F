@@ -92,14 +92,18 @@
 !                 if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
 !                   icmask( i, j ) = .TRUE.
 !                 endif
+                 if ( ni.ge.nims.and.ni.le.nime.and.nj.ge.njms.and.nj.le.njme) then
                   if ( imask(ni,nj) .eq. 1 ) then
                     icmask( i, j ) = .TRUE.
                   endif
+                 endif
+                 if ( ni-nioff.ge.nims.and.ni.le.nime.and.nj-njoff.ge.njms.and.nj.le.njme) then
                   if (ni .ge. nits-nioff .and. nj .ge. njts-njoff ) then
                     if ( imask(ni-nioff,nj-njoff) .eq. 1) then
                         icmask( i, j ) = .TRUE.
                     endif
                   endif
+                 endif
                 endif
                 psca(i,j,nf) = cfld(i,k,j)
               ENDDO

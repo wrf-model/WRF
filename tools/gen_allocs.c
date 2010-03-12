@@ -150,6 +150,8 @@ if ( tag == 1 )
           fprintf(fp,"   NULLIFY( grid%%tail_statevars%%next )\n" ) ;
           fprintf(fp,"   grid%%tail_statevars%%VarName = '%s'\n",fname ) ;
           fprintf(fp,"   grid%%tail_statevars%%DataName = '%s'\n",dname ) ;
+          fprintf(fp,"   grid%%tail_statevars%%Description = '%s'\n",p->descrip ) ;
+          fprintf(fp,"   grid%%tail_statevars%%Units = '%s'\n",p->units ) ;
           fprintf(fp,"   grid%%tail_statevars%%Type    = '%c'\n",p->type->name[0]) ;
           fprintf(fp,"   grid%%tail_statevars%%Ntl = %d\n",p->ntl<2?0:tag+p->ntl*100 ) ; /* if single tl, then 0, else tl itself */
           fprintf(fp,"   grid%%tail_statevars%%Restart  = %s\n", (p->restart)?".TRUE.":".FALSE." ) ;
@@ -318,6 +320,8 @@ if ( tag == 1 )
              fprintf(fp,"  NULLIFY( grid%%tail_statevars%%next )\n") ;
              fprintf(fp,"  grid%%tail_statevars%%VarName = '%s'\n", fname) ;
              fprintf(fp,"  grid%%tail_statevars%%DataName = '%s'\n", dname) ;
+             fprintf(fp,"  grid%%tail_statevars%%Description = '%s'\n",p->descrip ) ;
+             fprintf(fp,"  grid%%tail_statevars%%Units = '%s'\n",p->units ) ;
              fprintf(fp,"  grid%%tail_statevars%%Type    = '%c'\n", p->type->name[0]) ;
              fprintf(fp,"  grid%%tail_statevars%%ProcOrient    = '%s'\n", ornt) ;
              fprintf(fp,"  grid%%tail_statevars%%MemoryOrder  = '%s'\n", memord) ;

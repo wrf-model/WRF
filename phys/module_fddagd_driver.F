@@ -375,8 +375,8 @@ CONTAINS
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
      config_flags%grid_sfdda, &
-     config_flags%auxinput10_interval_m, &
-     config_flags%auxinput10_end_h, &
+     config_flags%auxinput9_interval_m, &
+     config_flags%auxinput9_end_h, &
      config_flags%guv_sfc, &
      config_flags%gt_sfc, config_flags%gq_sfc, config_flags%rinblw, &
                u3d,v3d,th_phy,t_phy,                 &

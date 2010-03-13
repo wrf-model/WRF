@@ -821,7 +821,7 @@ CONTAINS
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
           IF ( PRESENT(ISFTCFLX) ) THEN
              IF ( ISFTCFLX.NE.0 ) THEN
-! AHW: add dissipasive heating term
+! AHW: add dissipative heating term
                 HFX(I)=HFX(I)+RHOX(I)*USTM(I)*USTM(I)*WSPDI(I)
              ENDIF
           ENDIF

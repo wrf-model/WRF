@@ -580,16 +580,16 @@
    DO ij = 1, grid%num_tiles
 
 !tgs do not need physics initialization for backward DFI integration
-       IF ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FST) THEN     !tgs
-     grid%stepra=nint(grid%RADT*60./grid%DT)
-     grid%stepra=max(grid%stepra,1)
-     grid%stepbl=nint(grid%BLDT*60./grid%DT)
-     grid%stepbl=max(grid%stepbl,1)
-     grid%stepcu=nint(grid%CUDT*60./grid%DT)
-     grid%stepcu=max(grid%stepcu,1)
-     grid%stepfg=nint(grid%FGDT*60./grid%DT)
-     grid%stepfg=max(grid%stepfg,1)
-       ENDIF
+     IF ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FST) THEN     !tgs
+        grid%stepra=nint(grid%RADT*60./grid%DT)
+        grid%stepra=max(grid%stepra,1)
+        grid%stepbl=nint(grid%BLDT*60./grid%DT)
+        grid%stepbl=max(grid%stepbl,1)
+        grid%stepcu=nint(grid%CUDT*60./grid%DT)
+        grid%stepcu=max(grid%stepcu,1)
+        grid%stepfg=nint(grid%FGDT*60./grid%DT)
+        grid%stepfg=max(grid%stepfg,1)
+     ENDIF
      
      IF ( ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FWD) .or.            &
           ( grid%dfi_opt .EQ. DFI_NODFI)) THEN
@@ -834,6 +834,9 @@
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         its, ite, jts, jte, kts, kte                     ) 
+
+! finished setting kinematic condition for w at the surface
+
 ! set up slope-radiation constant arrays based on topography
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
@@ -863,8 +866,6 @@
        ENDDO
        ENDDO
    END IF
-
-! finished setting kinematic condition for w at the surface
 
    CALL set_physical_bc3d( grid%w_1 , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &

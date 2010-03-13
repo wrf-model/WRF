@@ -43,7 +43,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    real, allocatable :: dndz_obs(:),dndz_mod(:)
    real, allocatable :: dndz2_obs(:),dndz2_mod(:)
 
-   integer :: nn, na, ntotal, nqc0, nqc1, nqc2, nqc3
+   integer :: nn, na, nb, ntotal, nqc0, nqc1, nqc2, nqc3
    real    :: percnt
    real    :: height_below(5000)
    character(len=40) :: name_qc(5000)
@@ -309,6 +309,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
       if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) then
          ! Search for the GPS RO's name with the 'qc_below':
 
+       if ( maxval(iv%info(gpsref)%levels(:)) > 1 ) then ! gpsref in profiles
          nn = 0
          height_below = 0.0
          name_qc      = '                                       '
@@ -352,6 +353,19 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
                if (iv%gpsref(n)%ref(k)%qc == qc_above) nqc3 = nqc3 + 1
             end do
          end do
+       else    ! gpsref not in profiles
+          do na = iv%info(gpsref)%n1, iv%info(gpsref)%n2
+             if ( iv%gpsref(na)%ref(1)%qc == qc_below) then
+                do nb = iv%info(gpsref)%n1, iv%info(gpsref)%n2
+                   if ( iv%info(gpsref)%id(nb) == iv%info(gpsref)%id(na) .and. &
+                        iv%gpsref(nb)%ref(1)%qc >= obs_qc_pointer .and.        &
+                        iv%gpsref(nb)%h(1) <= iv%gpsref(na)%h(1)   ) then
+                      iv%gpsref(nb)%ref(1)%qc = qc_below
+                   end if
+                end do
+             end if
+          end do
+       end if  ! end of if gpsref profiles
       end if
    end if  ! end of if verify check
 

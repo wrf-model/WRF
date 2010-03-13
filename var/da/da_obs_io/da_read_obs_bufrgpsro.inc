@@ -40,7 +40,10 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    type(model_loc_type) :: loc
    character(len=5)     :: id
    character(len=19)    :: date_char
-   integer :: ifgat,kk,num_p
+   integer              :: ifgat, kk, num_p
+   integer              :: err_opt   ! 1: WRF-Var/obsproc, 2: GSI
+   real                 :: erh90, erh0, err90, err0
+   integer(i_kind)      :: ireadns
    type datalink_gpsro              !for gpsro data reading
        type (info_type)         :: info
        type(model_loc_type)     :: loc
@@ -51,13 +54,9 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
        integer                  :: obs_global_index
        type(datalink_gpsro), pointer :: next
    end type datalink_gpsro
-   
-   
    type(datalink_gpsro),pointer  :: head, plink, current
 
 #ifdef BUFR
-
-   integer(i_kind) ireadns
 
    if (trace_use) call da_trace_entry("da_read_obs_bufrgosro")
 
@@ -172,7 +171,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
 
          ref_qc    = 0                ! initialized to be good
          ref_error = ref_data * 0.01
-         
+
          ! check loc
          info%lat = max(info%lat, -89.95)
          info%lat = min(info%lat,  89.95)
@@ -192,8 +191,33 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          end if
          nlocal = nlocal + 1
 
-         ! observation errors  GSI,  Kuo et al. 2003
-         if ( ref_qc >= obs_qc_pointer ) then
+         ! check height, only keep data below 30km
+         if ( height > 30000.0 ) then
+            ref_qc = -77
+         end if
+         
+         err_opt = 1
+         ! observation errors  WRF-Var/obsproc
+         if ( err_opt == 1 ) then
+            if ( height >= 12000.0 ) then
+               ref_error = ref_error * 0.3
+            else
+               erh90 = (0.3-1.5)*(height-12000.0)/(12000.0-0.0) + 0.3
+               if ( height >= 5500.0 ) then
+                  erh0 = (0.3-1.3)*(height-12000.0)/(12000.0-5500.0) + 0.3
+               else if ( height >= 2500.0) then
+                  erh0 = (1.3-2.5)*(height-5500.0)/(5500.0-2500.0) + 1.3
+               else
+                  erh0 = 2.5
+               end if
+               err90 = ref_error * erh90
+               err0  = ref_error * erh0
+               ref_error = err90 - (1.0-abs(info%lat)/90.0)*(err90-err0)
+            end if
+         end if
+
+         ! observation errors  GSI_Q1FY09,  Kuo et al. 2003
+         if ( err_opt == 2 ) then
             if ( (info%lat >= -30.0) .and. (info%lat <= 30.0) ) then   ! tropics
                if ( (height >= 7000.0) .and. (height <= 31000.0) ) then
                   ref_error = ref_error*(0.1125+(1.25e-5*height))

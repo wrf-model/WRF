@@ -905,7 +905,7 @@ end subroutine write_diag_multi_level
       xnum(k) = num(k)
      endif
      enddo
-     write(ounit1,'(1x,a10,1x,125(6(1x,f9.2)))')date, (xnum(k), bias(k), abias(k), &
+     write(ounit1,'(1x,a10,1x,150(6(1x,f9.2)))')date, (xnum(k), bias(k), abias(k), &
            rmse(k),bar(k),sigt(k), k=1,nstdh)
 
      do k = 1, nstdh
@@ -934,7 +934,7 @@ end subroutine write_diag_multi_level
       xnum(k) = num(k)
      endif
      enddo
-     write(ounit2,'(1x,a10,1x,125(6(1x,f9.2)))')date, (xnum(k), bias(k), abias(k), &                  
+     write(ounit2,'(1x,a10,1x,150(6(1x,f9.2)))')date, (xnum(k), bias(k), abias(k), &                  
            rmse(k),bar(k),sigt(k), k=1,nstdh)
 
 !

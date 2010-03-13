@@ -124,6 +124,8 @@
       CALL nl_set_fractional_seaice( 1, 0 )
       CALL nl_set_gwd_opt( 1, 0 )
       CALL nl_set_use_adaptive_time_step( 1, .false. )
+      ! set bc
+      CALL nl_set_constant_bc(1, head_grid%constant_bc)
 
 #ifdef WRF_CHEM
       ! set chemistry option to zero
@@ -221,6 +223,8 @@
       CALL nl_set_fractional_seaice( 1, head_grid%fractional_seaice)
       CALL nl_set_gwd_opt( 1, head_grid%gwd_opt)
       CALL nl_set_use_adaptive_time_step( 1, .false. )
+      ! set bc
+      CALL nl_set_constant_bc(1, head_grid%constant_bc)
 
 #ifdef WRF_CHEM
       ! reset chem option to normal
@@ -297,6 +301,8 @@
 ! only use adaptive time stepping for forecast
       CALL nl_set_use_adaptive_time_step( 1, head_grid%use_adaptive_time_step )
 !     CALL nl_set_sst_update( 1, head_grid%sst_update )
+      ! reset to normal bc
+      CALL nl_set_constant_bc(1, .false.)
 
       CALL Setup_Timekeeping (head_grid)
       head_grid%start_subtime = domain_get_start_time ( head_grid )

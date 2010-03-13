@@ -264,34 +264,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
 
-!**********************************************************************
-!
-!  LET US BEGIN.......
-!
-!<DESCRIPTION>
-!<pre>
-! (1) RK integration loop is named the "Runge_Kutta_loop:"
-!
-!   Predictor-corrector type time integration.
-!   Advection terms are evaluated at time t for the predictor step,
-!   and advection is re-evaluated with the latest predicted value for
-!   each succeeding time corrector step
-!
-!   2nd order Runge Kutta (rk_order = 2):
-!   Step 1 is taken to the midpoint predictor, step 2 is the full step.
-!
-!   3rd order Runge Kutta (rk_order = 3):
-!   Step 1 is taken to from t to dt/3, step 2 is from t to dt/2,
-!   and step 3 is from t to dt.
-!
-!   non-timesplit physics are evaluated during first RK step and
-!   these physics tendencies are stored for use in each RK pass.
-!</pre>
-!</DESCRIPTION>
-!**********************************************************************
-
 #ifdef WRF_CHEM
-!
 
    kte=min(k_end,kde-1)
 # ifdef DM_PARALLEL
@@ -335,7 +308,6 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    rk_order = config_flags%rk_ord
 
-
    IF ( grid%time_step_sound == 0 ) THEN
 ! This function will give 4 for 6*dx and 6 for 10*dx and returns even numbers only
      spacing = min(grid%dx, grid%dy)
@@ -355,6 +327,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
      num_sound_steps = grid%time_step_sound
    ENDIF
 
+   dts = grid%dt/float(num_sound_steps)
+
    IF (config_flags%use_adaptive_time_step) THEN
   
      CALL get_wrf_debug_level( debug_level )
@@ -372,7 +346,61 @@ SUBROUTINE solve_em ( grid , config_flags  &
      grid%max_vert_cfl = 0
    ENDIF
 
-   dts = grid%dt/float(num_sound_steps)
+! setting bdy tendencies to zero for DFI if constant_bc = true
+
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
+
+!      IF( config_flags%specified .AND. grid%dfi_opt .NE. DFI_NODFI   &
+!          .AND. config_flags%constant_bc .AND. (grid%dfi_stage .EQ. DFI_BCK .OR. grid%dfi_stage .EQ. DFI_FWD) ) THEN
+       IF( config_flags%specified .AND. config_flags%constant_bc ) THEN
+
+       CALL zero_bdytend (grid%u_btxs,grid%u_btxe,grid%u_btys,grid%u_btye,     &
+                          grid%v_btxs,grid%v_btxe,grid%v_btys,grid%v_btye,     &
+                          grid%ph_btxs,grid%ph_btxe,grid%ph_btys,grid%ph_btye, &
+                          grid%t_btxs,grid%t_btxe,grid%t_btys,grid%t_btye,     &
+                          grid%w_btxs,grid%w_btxe,grid%w_btys,grid%w_btye,     &
+                          grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye, &
+                          moist_btxs,moist_btxe,                               &
+                          moist_btys,moist_btye,                               &
+                          grid%spec_bdy_width,num_3d_m,                &
+                          ids,ide, jds,jde, kds,kde,                   &
+                          ims,ime, jms,jme, kms,kme,                   &
+                          ips,ipe, jps,jpe, kps,kpe,                   &
+                          grid%i_start(ij), grid%i_end(ij),            &
+                          grid%j_start(ij), grid%j_end(ij),            &
+                          k_start, k_end                               )
+
+       ENDIF
+     ENDDO
+     !$OMP END PARALLEL DO
+
+!**********************************************************************
+!
+!  LET US BEGIN.......
+!
+!<DESCRIPTION>
+!<pre>
+! (1) RK integration loop is named the "Runge_Kutta_loop:"
+!
+!   Predictor-corrector type time integration.
+!   Advection terms are evaluated at time t for the predictor step,
+!   and advection is re-evaluated with the latest predicted value for
+!   each succeeding time corrector step
+!
+!   2nd order Runge Kutta (rk_order = 2):
+!   Step 1 is taken to the midpoint predictor, step 2 is the full step.
+!
+!   3rd order Runge Kutta (rk_order = 3):
+!   Step 1 is taken to from t to dt/3, step 2 is from t to dt/2,
+!   and step 3 is from t to dt.
+!
+!   non-timesplit physics are evaluated during first RK step and
+!   these physics tendencies are stored for use in each RK pass.
+!</pre>
+!</DESCRIPTION>
+!**********************************************************************
 
    Runge_Kutta_loop:  DO rk_step = 1, rk_order
 

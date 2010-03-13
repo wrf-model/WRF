@@ -606,7 +606,7 @@ state    real   ACSNOW           ij     misc        1         -      rd=(interp_
 state    real   ACSNOM           ij     misc        1         -      rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "ACSNOM"           "ACCUMULATED MELTED SNOW"  "kg m-2"
 state    real   SNOW             ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
 state    real   SNOWH            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
-state    real   RHOSN            ij     misc        1         -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
+#state    real   RHOSN            ij     misc        1         -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state    real   SST              ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
@@ -724,7 +724,7 @@ state    real   EXCH_H          ikj     misc        1         -     r          "
 state    real   EXCH_M          ikj     misc        1         -     r          "EXCH_M"               "EXCHANGE COEFFICIENTS "
 state    real  CT              ij      misc        1         -      r        "CT"                    "COUNTERGRADIENT TERM"    "K"
 state   real   THZ0             ij     misc        1         -      r        "THZ0"                  "POTENTIAL TEMPERATURE AT ZNT"                 "K"
-state    real  Z0               ij     misc        1         -     rh        "Z0"                    "Background ROUGHNESS LENGTH"                  "m"
+state    real  Z0               ij     misc        1         -      r        "Z0"                    "Background ROUGHNESS LENGTH"                  "m"
 state   real   QZ0              ij     misc        1         -      r        "QZ0"                   "SPECIFIC HUMIDITY AT ZNT"                     "kg kg-1"
 state   real   UZ0              ij     misc        1         -      r        "UZ0"                   "U WIND COMPONENT AT ZNT"                      "m s-1"
 state   real   VZ0              ij     misc        1         -      r        "VZ0"                   "V WIND COMPONENT AT ZNT"                      "m s-1"
@@ -865,7 +865,7 @@ state   real    ht             ij      misc         1         -     i012rhdus  "
 state   real    ht_fine        ij      misc         1         -     -          "HGT_FINE"         "Fine Terrain Height"   "m"
 state   real    ht_int         ij      misc         1         -     -          "HGT_INT"          "Terrain Height Horizontally Interpolated"   "m"
 state   real    ht_input       ij      misc         1         -     -          "HGT_INPUT"        "Terrain Height from FG Input File"   "m"
-state   real    ht_shad        ijb     misc         1         -     hdf=(bdy_interp:dt)         "HGT_SHAD"        "Height of orographic shadow"   "m"
+state   real    ht_shad        ijb     misc         1         -     df=(bdy_interp:dt)         "HGT_SHAD"        "Height of orographic shadow"   "m"
 i1      real    ht_loc         ij      misc         1         -     - 
 state   integer  shadowmask    ij      misc         1         -     - 
 state   integer min_ptchsz     -       misc         1         -     r
@@ -1619,6 +1619,7 @@ rconfig   integer spec_bdy_width          namelist,bdy_control		1             5 
 rconfig   integer spec_zone               namelist,bdy_control		1             1       irh    "spec_zone"                     ""      ""
 rconfig   integer relax_zone              namelist,bdy_control		1             4       irh    "relax_zone"                    ""      ""
 rconfig   logical specified               namelist,bdy_control	max_domains    .false. rh    "specified"             ""      ""
+rconfig   logical constant_bc             namelist,bdy_control          1      .false. rh    "constant_bc"           ""      ""
 rconfig   logical periodic_x              namelist,bdy_control	max_domains    .false. rh    "periodic_x"            ""      ""
 rconfig   logical symmetric_xs            namelist,bdy_control	max_domains    .false. rh    "symmetric_xs"          ""      ""
 rconfig   logical symmetric_xe            namelist,bdy_control	max_domains    .false. rh    "symmetric_xe"          ""      ""
@@ -1698,7 +1699,7 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
-package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
+package   milbrandt2mom mp_physics==9                -             state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
@@ -1749,7 +1750,7 @@ package   bepscheme      sf_urban_physics==2         -             state:a_u_bep
 package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
 
 package   slabscheme     sf_surface_physics==1       -             -
-package   lsmscheme      sf_surface_physics==2       -             -
+package   lsmscheme      sf_surface_physics==2       -             state:noahres,acgrdflx
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 
@@ -1767,7 +1768,7 @@ package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
-package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten
+package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   kfscheme       cu_physics==99              -             -
 
 package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
@@ -1775,6 +1776,7 @@ package   psusfddagd     grid_sfdda==1               -             state:u10_ndg
 
 package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
 
+package   slopeopt       slope_rad==1               -              state:swnorm
 package   gwdopt         gwd_opt==1                 -              state:var2d,oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4
 package   omlopt         omlcall==1                 -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
 package   scmopt         scm_force==1               -              state:z_force,z_force_tend,u_g,u_g_tend,v_g,v_g_tend,w_subs,w_subs_tend,th_upstream_x,th_upstream_x_tend,th_upstream_y,th_upstream_y_tend,qv_upstream_x,qv_upstream_x_tend,qv_upstream_y,qv_upstream_y_tend,u_upstream_x,u_upstream_x_tend,u_upstream_y,u_upstream_y_tend,v_upstream_x,v_upstream_x_tend,v_upstream_y,v_upstream_y_tend,tau_x,tau_x_tend,tau_y,tau_y_tend

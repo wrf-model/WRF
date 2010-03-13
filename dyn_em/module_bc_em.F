@@ -972,6 +972,83 @@ CONTAINS
 
 !---------------------------------------------------------------------
 
+   SUBROUTINE zero_bdytend  (                                                  &
+                              u_btxs,u_btxe,u_btys,u_btye,                     &
+                              v_btxs,v_btxe,v_btys,v_btye,                     &
+                              ph_btxs,ph_btxe,ph_btys,ph_btye,                 &
+                              t_btxs,t_btxe,t_btys,t_btye,                     &
+                              w_btxs,w_btxe,w_btys,w_btye,                     &
+                              mu_btxs,mu_btxe,mu_btys,mu_btye,                 &
+                              moist_btxs,moist_btxe,   &
+                              moist_btys,moist_btye,   &
+                              spec_bdy_width,n_moist,                          &
+                              ids,ide, jds,jde, kds,kde,  & ! domain dims
+                              ims,ime, jms,jme, kms,kme,  & ! memory dims
+                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                              its,ite, jts,jte, kts,kte   )
+   IMPLICIT NONE
+
+   !  Input data.
+
+   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, n_moist
+
+   INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            ips, ipe, jps, jpe, kps, kpe, &
+                                            its, ite, jts, jte, kts, kte
+
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width    ), INTENT(INOUT) :: u_btxs,u_btxe, &
+                                                                               v_btxs,v_btxe, &
+                                                                               ph_btxs,ph_btxe, &
+                                                                               w_btxs,w_btxe, &
+                                                                               t_btxs,t_btxe
+
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width    ), INTENT(INOUT) :: u_btys,u_btye, &
+                                                                               v_btys,v_btye, &
+                                                                               ph_btys,ph_btye, &
+                                                                               w_btys,w_btye, &
+                                                                               t_btys,t_btye
+
+   REAL,  DIMENSION( jms:jme , 1:1     , spec_bdy_width    ), INTENT(INOUT) :: mu_btxs,mu_btxe
+   REAL,  DIMENSION( ims:ime , 1:1     , spec_bdy_width    ), INTENT(INOUT) :: mu_btys,mu_btye
+
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width , n_moist ), INTENT(INOUT) :: moist_btxs,moist_btxe
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width , n_moist ), INTENT(INOUT) :: moist_btys,moist_btye
+
+! setting bdy tendencies to zero during DFI
+
+       CALL wrf_debug( 10, 'In zero_bdytend, setting bdy tendencies to 0 during DFI' )
+       u_btxs = 0.
+       u_btxe = 0.
+       u_btys = 0.
+       u_btye = 0.
+       v_btxs = 0.
+       v_btxe = 0.
+       v_btys = 0.
+       v_btye = 0.
+       t_btxs = 0.
+       t_btxe = 0.
+       t_btys = 0.
+       t_btye = 0.
+       ph_btxs = 0.
+       ph_btxe = 0.
+       ph_btys = 0.
+       ph_btye = 0.
+       mu_btxs = 0.
+       mu_btxe = 0.
+       mu_btys = 0.
+       mu_btye = 0.
+       moist_btxs = 0.
+       moist_btxe = 0.
+       moist_btys = 0.
+       moist_btye = 0.
+
+!  ENDIF
+
+   END SUBROUTINE zero_bdytend
+
+!---------------------------------------------------------------------
+
   SUBROUTINE set_w_surface( config_flags, znw, fill_w_flag,              &
                             w, ht, u, v, cf1, cf2, cf3, rdx, rdy,        &
                             msftx, msfty,                                &

@@ -378,7 +378,7 @@ subroutine da_write_obs(it,ob, iv, re)
       write(ounit,'(a20,i8)')'ssmiT', num_obs     
       num_obs = 0
       do n = 1, iv%info(ssmi_tb)%nlocal
-         write(ounit,*)' SSMI radiance output not yet coded.'
+         ! write(ounit,*)' SSMI radiance output not yet coded.'
          if (iv%info(ssmi_tb)%proc_domain(1,n)) then
             num_obs = num_obs + 1
             write(ounit,'(i8)') 1

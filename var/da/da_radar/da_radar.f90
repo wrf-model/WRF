@@ -12,7 +12,7 @@ module da_radar
       fg_format,fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional,fg_format_wrf_arw_global,&
       fg_format_kma_global,max_error_rv,max_error_rf, &
       far_below_model_surface,kms,kme,kts,kte, trace_use_dull,filename_len,&
-      myproc
+      myproc, analysis_date
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       infa_type, field_type

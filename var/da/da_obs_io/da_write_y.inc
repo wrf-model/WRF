@@ -327,7 +327,7 @@ subroutine da_write_y (iv, y)
          if (iv%info(ssmi_tb)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
       if (num_obs > 0) then
-         write(ounit,'(a20,i8)')'ssmit', num_obs
+         write(ounit,'(a20,i8)')'ssmiT', num_obs
          num_obs = 0
          do n = 1, iv%info(ssmi_tb)%nlocal
             if (iv%info(ssmi_tb)%proc_domain(1,n)) then

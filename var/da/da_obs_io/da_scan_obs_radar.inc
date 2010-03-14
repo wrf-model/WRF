@@ -21,6 +21,9 @@ subroutine da_scan_obs_radar (iv, filename)
    logical                       :: outside
    integer                       :: n_dup, ndup
 
+   real                          :: obs_time
+   integer                       :: iyear, imonth, iday, ihour, imin
+
    if (trace_use) call da_trace_entry("da_scan_obs_radar")
 
    ! 1. open file
@@ -119,6 +122,16 @@ subroutine da_scan_obs_radar (iv, filename)
                              platform % each (i) % rf % qc,          &
                              platform % each (i) % rf % error
          end do
+
+        ! Check if outside of the time range:
+
+         read (platform%info%date_char,'(i4,4(1x,i2))') &
+               iyear, imonth, iday, ihour, imin
+         call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+         if ( obs_time < time_slots(0) .or. &
+              obs_time >= time_slots(num_fgat_time) ) then
+            cycle
+         endif
 
          call da_llxy (platform%info, platform%loc, outside)
 

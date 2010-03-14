@@ -152,7 +152,7 @@ subroutine da_transform_xtoy_ssmi_tb(grid, iv, y)
    allocate(tb37v(iv%info(ssmi_tb)%n1:iv%info(ssmi_tb)%n2))
    allocate(tb37h(iv%info(ssmi_tb)%n1:iv%info(ssmi_tb)%n2))
    allocate(tb85v(iv%info(ssmi_tb)%n1:iv%info(ssmi_tb)%n2))
-   allocate(tb85v(iv%info(ssmi_tb)%n1:iv%info(ssmi_tb)%n2))
+   allocate(tb85h(iv%info(ssmi_tb)%n1:iv%info(ssmi_tb)%n2))
 
    call da_interp_lin_2d (grid%xa%tb19v, iv%info(ssmi_tb), 1, tb19v)
    call da_interp_lin_2d (grid%xa%tb19h, iv%info(ssmi_tb), 1, tb19h)
@@ -178,7 +178,7 @@ subroutine da_transform_xtoy_ssmi_tb(grid, iv, y)
    deallocate(tb37v)
    deallocate(tb37h)
    deallocate(tb85v)
-   deallocate(tb85v)
+   deallocate(tb85h)
     
    ! WHY?
    !          y%ssmi_tb(n)%tb19v = hor_interp(dxm,dx,dym,dy, &

@@ -3593,7 +3593,7 @@ double precision, save :: gsmp_first
 !***  GLOBAL REDUCTION
 !-----------------------------------------------------------------------
 !
-# ifdef DM_PARALLEL
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       lngth=(2*kse-2*kss+2)*(KTE-KTS+1)
       CALL MPI_ALLREDUCE(XSMS,GSMS,lngth                              &
@@ -3715,7 +3715,7 @@ double precision, save :: gsmp_first
 !***  GLOBAL REDUCTION
 !-----------------------------------------------------------------------
 !
-# ifdef DM_PARALLEL
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       lngth=1
       CALL MPI_ALLREDUCE(xsmp,gsmp,lngth                                &
@@ -3734,7 +3734,7 @@ double precision, save :: gsmp_first
 !***  GLOBAL REDUCTION
 !-----------------------------------------------------------------------
 !
-# ifdef DM_PARALLEL
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       lngth=(2*kse-2*kss+2)*(KTE-KTS+1)
       CALL MPI_ALLREDUCE(XSMS,GSMS,lngth                                &

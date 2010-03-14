@@ -653,6 +653,7 @@
      &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
      &                ,HLENS,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX      & ! GWD
      &                ,CROT,SROT                                        & ! GWD
+     &                ,DEW                                              & ! RUC LSM
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT                                          &
@@ -764,6 +765,7 @@
      &                                                ,TSFC,TSNAV       &
      &                                                ,USTAR,UZ0,UZ0H   &
      &                                                ,VZ0,VZ0H         &
+     &                                                ,DEW              & !RUC LSM
      &                                                ,Z0,Z0BASE
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: AKHS_OUT,AKMS_OUT  &
@@ -1237,6 +1239,7 @@
      &          ,QSG=QSG,QVG=QVG,QCG=QCG,SOILT1=SOILT1                  &
      &          ,TSNAV=TSNAV,SMFR3D=SMFR3D,KEEPFR3DFLAG=KEEPFR3DFLAG    &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
+     &          ,DEW=DEW                                                &
 ! for URBAN
      &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
      &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban

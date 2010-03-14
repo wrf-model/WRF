@@ -952,6 +952,18 @@ gen_periods ( char * dirname , node_t * periods )
 
   if ( dirname == NULL ) return(1) ;
 
+  /* Open and truncate REGISTRY_COMM_DM_PERIOD_subs.inc so file exists even if there are no periods. */
+  if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/REGISTRY_COMM_DM_PERIOD_subs.inc",dirname) ; }
+  else                       { sprintf(fnamesub,"REGISTRY_COMM_DM_PERIOD_subs.inc") ; }
+  if ((fpsub = fopen( fnamesub , "w" )) == NULL ) 
+  {
+    fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fnamesub ) ;
+  }
+  if ( fpsub != NULL ) {
+    print_warning(fpsub,fnamesub) ;
+    fclose(fpsub) ;
+  }
+
   for ( p = periods ; p != NULL ; p = p->next )
   {
     strcpy( commname, p->name ) ;
@@ -969,6 +981,7 @@ gen_periods ( char * dirname , node_t * periods )
     print_warning(fpcall,fnamecall) ;
     print_call_or_def(fpcall, p, "CALL", commname, "local_communicator_periodic", 1 );
     close_the_file(fpcall) ;
+
     /* Generate definition of custom routine that encapsulates inlined comm calls */
     if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/REGISTRY_COMM_DM_PERIOD_subs.inc",dirname) ; }
     else                       { sprintf(fnamesub,"REGISTRY_COMM_DM_PERIOD_subs.inc") ; }
@@ -977,11 +990,11 @@ gen_periods ( char * dirname , node_t * periods )
       fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fnamesub ) ;
       continue ; 
     }
-    print_warning(fpsub,fnamesub) ;
     print_call_or_def(fpsub, p, "SUBROUTINE", commname, "local_communicator_periodic", 1 );
     print_decl(fpsub, p, "local_communicator_periodic", 1 );
     print_body(fpsub, commname);
     close_the_file(fpsub) ;
+
     /* Generate inlined comm calls */
     if ((fp = fopen( fname , "w" )) == NULL ) 
     {

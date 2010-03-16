@@ -263,17 +263,19 @@ CONTAINS
 ! (methodology is adapated from module_radiation_driver.F)
 !
       do_plumerisefire = .false.
-      IF ( ktau==1 ) then
-         do_plumerisefire = .true.
-      ELSE IF ( adapt_step_flag ) THEN
-         IF ( (plumerisefire_frq<=0) .or. &
-              ( curr_secs+real(dtstep,8)+0.01 >= &
-              ( INT( curr_secs/real(plumerisefire_frq*60.,8)+1,8 )*real(plumerisefire_frq*60.,8) ) ) &
-              ) then
-            do_plumerisefire = .true.
-         ENDIF
-      ELSE IF ( (MOD(ktau,stepfirepl)==0) .or. (stepfirepl==1) ) THEN
-         do_plumerisefire = .true.
+      IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. config_flags%biomass_burn_opt == BIOMASSB ) then
+        IF ( ktau==1 ) then
+           do_plumerisefire = .true.
+        ELSE IF ( adapt_step_flag ) THEN
+           IF ( (plumerisefire_frq<=0) .or. &
+                ( curr_secs+real(dtstep,8)+0.01 >= &
+                ( INT( curr_secs/real(plumerisefire_frq*60.,8)+1,8 )*real(plumerisefire_frq*60.,8) ) ) &
+                ) then
+              do_plumerisefire = .true.
+           ENDIF
+        ELSE IF ( (MOD(ktau,stepfirepl)==0) .or. (stepfirepl==1) ) THEN
+           do_plumerisefire = .true.
+        ENDIF
       ENDIF
 
       do_bioemiss = .false.
@@ -718,8 +720,8 @@ CONTAINS
 !    production of NO from lightning
 !    code from Mary Barth with contributions from:
 !    Lesley Ott, Ken Pickering (crm_decaria scheme)
-!    Christelle Barthe (crm_barthe scheme)
-!    Regional-scale LNOx schemes from MOZART provided by Louisa Emmons
+!    Christelle Barthe (crm_barthe scheme)    -- not included yet
+!    Regional-scale LNOx schemes from MOZART provided by Louisa Emmons    -- not included yet
 !
   IF (config_flags%lightning_opt  /= 0)  then
     
@@ -731,6 +733,9 @@ CONTAINS
                   ims,ime, jms,jme, kms,kme,               &
                   its,ite, jts,jte, kts,kte,               &
                   chem(ims,kms,jms,p_no),                  &
+                  tracer(ims,kms,jms,p_tr18_1),            &
+                  tracer(ims,kms,jms,p_tr18_2),            &
+                  config_flags%tracer_opt,                 &
                   config_flags%lightning_opt, ktau,        &
                   dtstep, ltng_timestep, ltng_startsec,    &
                   passive_ltng,temp_upper,temp_lower,      &

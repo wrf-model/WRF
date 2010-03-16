@@ -432,6 +432,8 @@
        CALL wrf_debug(15,'tracer mode: 8 tracers')
     CASE (TRACER_TEST2)
        CALL wrf_debug(15,'tracer mode: 8 tracers')
+    CASE (TRACER_TEST3)
+       CALL wrf_debug(15,'tracer mode: 10 tracers')
      CASE DEFAULT
        CALL wrf_debug(15,'calling chem_opt=? from chem_driver')
    END SELECT tracer_select
@@ -1207,7 +1209,7 @@ end if !Chemistry time step check
 
    endif
    tracer2: SELECT CASE(config_flags%tracer_opt)
-    CASE (TRACER_TEST1, TRACER_TEST2)
+    CASE (TRACER_TEST1, TRACER_TEST2, TRACER_TEST3)
        CALL wrf_debug(15,'tracer mode: reset some tracers')
        call set_tracer(grid%dt,ktau,pbl_h,tracer,t_phy,         &
                         config_flags%tracer_opt,num_tracer,     &

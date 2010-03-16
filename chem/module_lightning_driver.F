@@ -11,7 +11,8 @@ SUBROUTINE lightning_driver(                                            &
                       ,ids,ide, jds,jde, kds,kde                        &
                       ,ims,ime, jms,jme, kms,kme                        &
                       ,its,ite, jts,jte, kts,kte                        &
-                      ,c_no                                             &
+                      ,c_no, s_ic, s_cg                                 &
+                      ,tracer_opt                                       &
                       ,lightning,itimestep                              &
                       ,time_step,lightning_time_step                    &
                       ,lightning_start_seconds, passive_ltng            &
@@ -137,13 +138,13 @@ SUBROUTINE lightning_driver(                                            &
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
    INTEGER,      INTENT(IN   )    ::       its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   )    ::       itimestep
+   INTEGER,      INTENT(IN   )    ::       tracer_opt, itimestep
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),             &
          INTENT(INOUT) ::                                      &
-                                                     c_no !,     &
-!                                                    s_ic,     &
-!                                                    s_cg       
+                                                     c_no,     &
+                                                     s_ic,     &
+                                                     s_cg       
    REAL, DIMENSION( ims:ime , jms:jme ) ,                      &
          INTENT(INOUT)   ::                          ic_fr,    &     ! cumulative number of intracloud flashes (diagnostic)
                                                      cg_fr           ! cumulative number of cloud-to-ground flashes (diagnostic)
@@ -222,7 +223,8 @@ SUBROUTINE lightning_driver(                                            &
                       moist(ims,kms,jms,P_QR),                      &
                       moist(ims,kms,jms,P_QS),                      &
                       moist(ims,kms,jms,P_QG),                      &
-                      c_no,                                         &
+                      c_no,s_ic,s_cg,                               &
+                      tracer_opt,                                   &
                       ids,ide, jds,jde, kds,kde,                    &
                       ims,ime, jms,jme, kms,kme,                    &
                       its,ite, jts,jte, kts,kte,                    &
@@ -237,6 +239,9 @@ SUBROUTINE lightning_driver(                                            &
                       ic_fr, cg_fr)
              END IF
 
+!
+!        CASE (CRMBARTHE)
+!             CALL wrf_debug ( 100 , 'lightning_driver: calling barthe scheme' )
 !
 !        CASE (REGPRICE)
 !             CALL wrf_debug ( 100 , 'lightning_driver: calling Price and Rind scheme' )

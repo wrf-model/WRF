@@ -11,7 +11,8 @@ MODULE module_ltng_crm
 CONTAINS
 
  SUBROUTINE ltng_decaria(itimestep,dt,w,t,p,                       &
-                     rho,qr,qs,qg,c_no,                            &
+                     rho,qr,qs,qg,c_no,s_ic,s_cg,                  &
+                      tracer_opt,                                  &
                       ids,ide, jds,jde, kds,kde,                   &
                       ims,ime, jms,jme, kms,kme,                   &
                       ips,ipe, jps,jpe, kps,kpe,                   &
@@ -25,13 +26,14 @@ CONTAINS
                       cellcount_method,                            &
                       ic_fr,cg_fr)
 
+  USE module_state_description
 ! Driver layer modules
   USE module_dm , only : wrf_dm_max_real, wrf_dm_min_real, wrf_dm_sum_real
 
  INTEGER, INTENT (IN) ::   ids,ide, jds,jde, kds,kde,              &
                       ims,ime, jms,jme, kms,kme,                   &
                       ips,ipe, jps,jpe, kps,kpe,                   &
-                      itimestep,                                   &
+                      tracer_opt, itimestep,                       &
                       lightning_time_step,                         &  
                       lightning_start_seconds, passive_ltng
 
@@ -51,9 +53,9 @@ CONTAINS
  REAL, DIMENSION (ims:ime, kms:kme, jms:jme ),                    &
         INTENT(INOUT) ::                               c_no    
 
-!REAL, DIMENSION (ims:ime, kms:kme, jms:jme ),                    &
-!       INTENT(INOUT) ::                               s_ic,      &
-!                                                      s_cg        
+ REAL, DIMENSION (ims:ime, kms:kme, jms:jme ),                    &
+        INTENT(INOUT) ::                               s_ic,      &
+                                                       s_cg        
 
  REAL , DIMENSION( ims:ime , jms:jme ) ,                          &
         INTENT(INOUT)   ::                             ic_fr,     &
@@ -120,19 +122,24 @@ CONTAINS
 !***    length (not added yet)                                                 ***
 !*********************************************************************************
 
-! If first call of lightning       
-! IF (dt*itimestep .eq. float(lightning_start_seconds)) THEN 
-!    s_ic(ips:ipe,kps:kpe,jps:jpe) = 0.
-!    s_cg(ips:ipe,kps:kpe,jps:jpe) = 0.
-! ELSE
-!    WHERE (s_ic(ips:ipe,kps:kpe,jps:jpe) .lt. 0.)
-!           s_ic(ips:ipe,kps:kpe,jps:jpe) = 0.
-!    END WHERE
-!
-!    WHERE (s_cg(ips:ipe,kps:kpe,jps:jpe) .lt. 0.)
-!           s_cg(ips:ipe,kps:kpe,jps:jpe) = 0.
-!    END WHERE
-! END IF 
+  tracltng_select:  SELECT CASE(tracer_opt)
+   CASE (TRACER_TEST3)
+! Do only for first call of lightning       
+     IF (dt*itimestep .eq. float(lightning_start_seconds)) THEN 
+        s_ic(ips:ipe,kps:kpe,jps:jpe) = 0.
+        s_cg(ips:ipe,kps:kpe,jps:jpe) = 0.
+     ELSE
+        WHERE (s_ic(ips:ipe,kps:kpe,jps:jpe) .lt. 0.)
+               s_ic(ips:ipe,kps:kpe,jps:jpe) = 0.
+        END WHERE
+    
+        WHERE (s_cg(ips:ipe,kps:kpe,jps:jpe) .lt. 0.)
+               s_cg(ips:ipe,kps:kpe,jps:jpe) = 0.
+        END WHERE
+     END IF 
+   CASE DEFAULT
+     call wrf_debug(15,'nothing done with lightning tracers here')
+  END SELECT tracltng_select
 
 ! ******************************
 ! choice of cellcount_method
@@ -448,33 +455,43 @@ end do
 
     B = N_IC/sum(f_dist(nint(kbot):nint(ktop))*pressure(nint(kbot):nint(ktop))) ! *** used in calculating NO
 
-    k = nint(ktop)
+    k = nint(ktop)                !-- for loop for IC NO placement
 
-!-- loop for IC NO placement
+    trltng_select:  SELECT CASE(tracer_opt)
+     CASE (TRACER_TEST3)
+       DO WHILE (k .ge. nint(kbot))
+          IF (cellcount(k) .ne. 0.) THEN
+             delta_mix_IC(k) = term2*B*f_dist(k)*temp_avg(k)*flashrates_ic/cellcount(k)/dz(k)        
+             WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
+                    s_ic(ips:ipe,k,jps:jpe) =  s_ic(ips:ipe,k,jps:jpe) + delta_mix_IC(k)
+             END WHERE
+          END IF
+          k = k - 1
+       END DO   ! do while
+     CASE DEFAULT
+       call wrf_debug(15,'nothing done with lightning tracers here')
+    END SELECT trltng_select
 
-    DO WHILE (k .ge. nint(kbot))
+    k = nint(ktop)                !-- for loop for IC NO placement
+    IF (passive_ltng .ne. 1) THEN
+       DO WHILE (k .ge. nint(kbot))
 
-       IF (cellcount(k) .ne. 0.) THEN
+          IF (cellcount(k) .ne. 0.) THEN
   
-          delta_mix_IC(k) = term2*B*f_dist(k)*temp_avg(k)*flashrates_ic/cellcount(k)/dz(k)        
+             delta_mix_IC(k) = term2*B*f_dist(k)*temp_avg(k)*flashrates_ic/cellcount(k)/dz(k)        
 
-!         if (k.eq.22) then
-!            print*, 'IC ',k,avgz(k),term2, B, f_dist(k), temp_avg(k), flashrates_ic, cellcount(k), dz(k), delta_mix_IC(k)
-!         end if
+! save this print statement in case of needed diagnosis
+!            if (k.eq.22) then
+!               print*, 'IC ',k,avgz(k),term2, B, f_dist(k), temp_avg(k), flashrates_ic, cellcount(k), dz(k), delta_mix_IC(k)
+!            end if
 
-!         IF (passive_ltng .eq. 1) THEN
-!            WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
-!                   s_ic(ips:ipe,k,jps:jpe) =  s_ic(ips:ipe,k,jps:jpe) + delta_mix_IC(k)
-!            END WHERE
-!         ELSE
-!            WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
-!                   c_no(ips:ipe,k,jps:jpe) =  c_no(ips:ipe,k,jps:jpe) + delta_mix_IC(k)
-!                   s_ic(ips:ipe,k,jps:jpe) =  s_ic(ips:ipe,k,jps:jpe) + delta_mix_IC(k)
-!            END WHERE
-!         END IF
-       END IF
-       k = k - 1
-    END DO   ! do while
+             WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
+                    c_no(ips:ipe,k,jps:jpe) =  c_no(ips:ipe,k,jps:jpe) + delta_mix_IC(k)
+             END WHERE
+          END IF
+          k = k - 1
+       END DO   ! do while
+    END IF   ! not passive_ltng 
 
  END IF   ! IC lightning
 
@@ -491,29 +508,42 @@ end do
 
     k = nint(ktop)
  
+  tltng_select:  SELECT CASE(tracer_opt)
+   CASE (TRACER_TEST3)
     DO WHILE (k .ge. ksfc)
-
        IF (cellcount(k) .ne. 0.) THEN
-
           delta_mix_CG(k) = term2*B*f_dist(k)*temp_avg(k)*flashrates_cg/cellcount(k)/dz(k)
-
-!         if (k.eq.22) then
-!            print*, 'CG ',k,z(ips,k,jps),term2, B, f_dist(k), temp_avg(k), flashrates_cg, cellcount(k), dz(k), delta_mix_CG(k)
-!         end if
-
-!         IF (passive_ltng .eq. 1) THEN
-!            WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
-!                   s_cg(ips:ipe,k,jps:jpe) =  s_cg(ips:ipe,k,jps:jpe) + delta_mix_CG(k)
-!            END WHERE
-!         ELSE
-!            WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
-!                   c_no(ips:ipe,k,jps:jpe) =  c_no(ips:ipe,k,jps:jpe) + delta_mix_CG(k)
-!                   s_cg(ips:ipe,k,jps:jpe) =  s_cg(ips:ipe,k,jps:jpe) + delta_mix_CG(k)
-!            END WHERE
-!         END IF
+            WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
+                   s_cg(ips:ipe,k,jps:jpe) =  s_cg(ips:ipe,k,jps:jpe) + delta_mix_CG(k)
+            END WHERE
        END IF
        k = k-1
     END DO   ! do while
+   CASE DEFAULT
+     call wrf_debug(15,'nothing done with lightning tracers here')
+  END SELECT tltng_select
+
+
+    k = nint(ktop)
+    IF (passive_ltng .ne. 1) THEN
+       DO WHILE (k .ge. ksfc)
+
+          IF (cellcount(k) .ne. 0.) THEN
+
+             delta_mix_CG(k) = term2*B*f_dist(k)*temp_avg(k)*flashrates_cg/cellcount(k)/dz(k)
+
+! save this print statement in case of needed diagnosis
+!            if (k.eq.22) then
+!               print*, 'CG ',k,z(ips,k,jps),term2, B, f_dist(k), temp_avg(k), flashrates_cg, cellcount(k), dz(k), delta_mix_CG(k)
+!            end if
+
+             WHERE (dbz(ips:ipe,k,jps:jpe) .ge. 20.)
+                    c_no(ips:ipe,k,jps:jpe) =  c_no(ips:ipe,k,jps:jpe) + delta_mix_CG(k)
+             END WHERE
+          END IF
+          k = k-1
+       END DO   ! do while
+    END IF   ! passive_ltng
 
  END IF   ! CG lightning
 

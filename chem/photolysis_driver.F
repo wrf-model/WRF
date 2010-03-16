@@ -104,8 +104,9 @@
                                                      xlong
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
-   LOGICAL, INTENT(IN) :: haveaer
-   integer, INTENT(IN )        :: ivgtyp(ims:ime,jms:jme)
+   LOGICAL, INTENT(IN)  :: haveaer
+   integer, INTENT(IN ) :: ivgtyp(ims:ime,jms:jme)
+   character(len=132)   :: dbg_msg
 !         
 !                                                    
 ! LOCAL  VAR
@@ -114,6 +115,9 @@
 !-----------------------------------------------------------------
 
    IF (config_flags%phot_opt .eq. 0) return
+
+   write(dbg_msg,*) 'photolysis_driver: called for domain ',id
+   CALL wrf_message( trim(dbg_msg) )
 !
 ! select photolysis option
 !

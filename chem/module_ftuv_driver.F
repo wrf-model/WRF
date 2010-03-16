@@ -15,8 +15,6 @@
       real(dp), private, parameter :: Pa2hPa = .01_dp
 
       integer, private  :: nz, kcon
-      integer, private  :: ncoldens_levs
-      integer, private  :: ndays_of_year
       integer, private  :: next, last
       integer, private  :: curjulday = 0
 
@@ -28,10 +26,19 @@
       real(dp), private :: zref(nref), tref(nref), airref(nref), o3ref(nref)
       real(dp), private :: albedo(nw-1,2)
 
-      real(dp), private, allocatable :: col_levs(:)
-      real(dp), private, allocatable :: day_of_year(:)
-      real(dp), private, allocatable :: o3_col_dens(:,:,:,:)
-      real(dp), private, allocatable :: o2_col_dens(:,:,:,:)
+      type column_density
+        integer           :: ncoldens_levs
+        integer           :: ndays_of_year
+        real(dp), pointer :: col_levs(:)
+        real(dp), pointer :: day_of_year(:)
+        real(dp), pointer :: o3_col_dens(:,:,:,:)
+        real(dp), pointer :: o2_col_dens(:,:,:,:)
+        logical           :: allocated
+      end type column_density
+
+      type(column_density), private, allocatable :: col_dens(:)
+      logical, private :: photo_inti_initialized = .false.
+
 
       data zref/ 00.0, 01.0, 02.0, 03.0, 04.0, 05.0, 06.0, 07.0, 08.0, 09.0,   &
                  10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,   &
@@ -132,6 +139,7 @@
       use module_configure
       use module_state_description
       use module_model_constants
+      use module_data_sorgam, only : mw_so4_aer
 
       use module_wave_data, only : tuv_jmax
       use module_ftuv_subs, only : calc_zenith
@@ -191,6 +199,7 @@
 !----------------------------------------------------
       real(dp), parameter :: xair_kg = 1.0e3_dp/28.97_dp*6.023e23_dp*1.0e-6_dp
       real(dp), parameter :: ph_no3o_factor = 1.1236_dp
+      real(dp), parameter :: kg_per_amu     = 1.65979e-27_dp
 
 !----------------------------------------------------
 !     local scalars
@@ -204,6 +213,7 @@
       real(dp)    :: alat, along, azim, zen
       real(dp)    :: o3top
       real(dp)    :: o2top
+      real(dp)    :: atm_mass_den
 
 
 !----------------------------------------------------
@@ -227,7 +237,7 @@
       if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
          p_jtop(its:ite,jts:jte) = Pa2hPa * p_phy(its:ite,kte,jts:jte)
          call p_interp( o2_exo_col, o3_exo_col, p_jtop, &
-                        its, ite, jts, jte )
+                        id, its, ite, jts, jte )
       else
          o2top  = 3.60906e+21_dp
          o3top  = 2.97450e+16_dp
@@ -314,6 +324,7 @@ level_loop : &
 !      sa1 = p_seas        ( Coarse soil-derived aero sols )
 !
 !=======================================================
+          
           if( isorg == 1 ) then
              acb1(kp1) = chem(i,k,j,p_ecj)
              acb2(kp1) = 0.0_dp
@@ -323,6 +334,16 @@ level_loop : &
              aant(kp1) = chem(i,k,j,p_no3aj) + chem(i,k,j,p_nh4aj)
              aso4(kp1) = chem(i,k,j,p_so4aj)
              asal(kp1) = chem(i,k,j,p_seas)
+          elseif( config_flags%chem_opt == MOZCART_KPP ) then
+             atm_mass_den = rho_phy(i,k,j)
+             acb1(kp1) = chem(i,k,j,p_bc1)*atm_mass_den
+             acb2(kp1) = chem(i,k,j,p_bc2)*atm_mass_den
+             aoc1(kp1) = chem(i,k,j,p_oc1)*atm_mass_den
+             aoc2(kp1) = chem(i,k,j,p_oc2)*atm_mass_den
+             aant(kp1) = 0._dp
+             aso4(kp1) = chem(i,j,k,p_so4)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
+             asal(kp1) = (chem(i,k,j,p_seas_1) + chem(i,k,j,p_seas_2) &
+                          + chem(i,k,j,p_seas_3) + chem(i,k,j,p_seas_4))*atm_mass_den
           else
              acb1(kp1) = 0._dp
              acb2(kp1) = 0._dp
@@ -431,7 +452,7 @@ level_loop : &
 
       end subroutine ftuv_driver
 
-      subroutine ftuv_init( ips, ipe, jps, jpe, kte, &
+      subroutine ftuv_init( id,ips, ipe, jps, jpe, kte, &
                             ide, jde, chem_opt )
 !---------------------------------------------------------------------
 !	... new initialization routine for ftuv
@@ -445,6 +466,7 @@ level_loop : &
 !---------------------------------------------------------------------
 !	... dummy arguments
 !---------------------------------------------------------------------
+      integer, intent(in) :: id
       integer, intent(in) :: ips, ipe, jps, jpe, kte
       integer, intent(in) :: ide, jde
       integer, intent(in) :: chem_opt
@@ -456,10 +478,15 @@ level_loop : &
       integer :: ncid
       integer :: dimid
       integer :: varid
+      integer :: max_dom
       integer :: iend, jend
       integer :: lon_e, lat_e
-      real, allocatable :: col_dens(:,:,:,:)
+      integer :: ncoldens_levs
+      integer :: ndays_of_year
+      real, allocatable :: coldens(:,:,:,:)
       character(len=128) :: err_msg
+      character(len=32)  :: filename
+      character(len=3)   :: id_num
 
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 
@@ -476,140 +503,162 @@ include 'netcdf.inc'
 !---------------------------------------------------------------------
 !	... general initializer
 !---------------------------------------------------------------------
-      call photo_inti( chem_opt, kte, 20._dp )
+      if( id == 1 .and. .not. photo_inti_initialized ) then
+        write(err_msg,*) 'ftuv_init: calling photo_inti for id = ',id
+        call wrf_message( trim(err_msg) )
+        call photo_inti( chem_opt, kte, 20._dp )
+      endif
 #ifdef NETCDF
+is_mozart : &
+      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+!---------------------------------------------------------------------
+!	... allocate column_density type
+!---------------------------------------------------------------------
+        if( id == 1 .and. .not. allocated(col_dens) ) then
+          CALL nl_get_max_dom( 1,max_dom )
+          allocate( col_dens(max_dom),stat=astat )
+          if( astat /= 0 ) then
+            CALL wrf_message( 'ftuv_init: failed to allocate column_density type col_dens' )
+            CALL wrf_abort
+          end if
+          write(err_msg,*) 'ftuv_init: intializing ',max_dom,' domains'
+          call wrf_message( trim(err_msg) )
+          col_dens(:)%allocated = .false.
+        endif
 !---------------------------------------------------------------------
 !	... open column density netcdf file
 !---------------------------------------------------------------------
-is_mozart : &
-      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
-        if( wrf_dm_on_monitor() ) then
-          err_msg = 'ftuv_init: failed to open file exo_coldens_d01'
-          call handle_ncerr( nf_open( 'exo_coldens_d01', nf_noclobber, ncid ), trim(err_msg) )
+col_dens_allocated : &
+        if( .not. col_dens(id)%allocated ) then
+          if( wrf_dm_on_monitor() ) then
+            write(id_num,'(i3)') 100+id
+            filename = 'exo_coldens_d' // id_num(2:3)
+            err_msg = 'ftuv_init: intializing domain ' // id_num(2:3)
+            call wrf_message( trim(err_msg) )
+            err_msg = 'ftuv_init: failed to open file ' // trim(filename)
+            call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )
 !---------------------------------------------------------------------
 !	... get dimensions
 !---------------------------------------------------------------------
-           err_msg = 'ftuv_init: failed to get col_dens levels id'
-           call handle_ncerr( nf_inq_dimid( ncid, 'coldens_levs', dimid ), trim(err_msg) ) 
-           err_msg = 'ftuv_init: failed to get col_dens levels'
-           call handle_ncerr( nf_inq_dimlen( ncid, dimid, ncoldens_levs ), trim(err_msg) )
-           err_msg = 'ftuv_init: failed to get number of days in year id'
-           call handle_ncerr( nf_inq_dimid( ncid, 'ndays_of_year', dimid ), trim(err_msg) )
-           err_msg = 'ftuv_init: failed to get number of days in year'
-           call handle_ncerr( nf_inq_dimlen( ncid, dimid, ndays_of_year ), trim(err_msg) )
-           err_msg = 'ftuv_init: failed to get west_east id'
-           call handle_ncerr( nf_inq_dimid( ncid, 'west_east', dimid ), trim(err_msg) ) 
-           err_msg = 'ftuv_init: failed to get west_east'
-           call handle_ncerr( nf_inq_dimlen( ncid, dimid, lon_e ), trim(err_msg) )
-           err_msg = 'ftuv_init: failed to get south_north id'
-           call handle_ncerr( nf_inq_dimid( ncid, 'south_north', dimid ), trim(err_msg) ) 
-           err_msg = 'ftuv_init: failed to get south_north'
-           call handle_ncerr( nf_inq_dimlen( ncid, dimid, lat_e ), trim(err_msg) )
-        end IF
+             err_msg = 'ftuv_init: failed to get col_dens levels id'
+             call handle_ncerr( nf_inq_dimid( ncid, 'coldens_levs', dimid ), trim(err_msg) ) 
+             err_msg = 'ftuv_init: failed to get col_dens levels'
+             call handle_ncerr( nf_inq_dimlen( ncid, dimid, ncoldens_levs ), trim(err_msg) )
+             err_msg = 'ftuv_init: failed to get number of days in year id'
+             call handle_ncerr( nf_inq_dimid( ncid, 'ndays_of_year', dimid ), trim(err_msg) )
+             err_msg = 'ftuv_init: failed to get number of days in year'
+             call handle_ncerr( nf_inq_dimlen( ncid, dimid, ndays_of_year ), trim(err_msg) )
+             err_msg = 'ftuv_init: failed to get west_east id'
+             call handle_ncerr( nf_inq_dimid( ncid, 'west_east', dimid ), trim(err_msg) ) 
+             err_msg = 'ftuv_init: failed to get west_east'
+             call handle_ncerr( nf_inq_dimlen( ncid, dimid, lon_e ), trim(err_msg) )
+             err_msg = 'ftuv_init: failed to get south_north id'
+             call handle_ncerr( nf_inq_dimid( ncid, 'south_north', dimid ), trim(err_msg) ) 
+             err_msg = 'ftuv_init: failed to get south_north'
+             call handle_ncerr( nf_inq_dimlen( ncid, dimid, lat_e ), trim(err_msg) )
+          end IF
 !---------------------------------------------------------------------
 !	... bcast the dimensions
 !---------------------------------------------------------------------
-        CALL wrf_dm_bcast_bytes ( ncoldens_levs , IWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( ndays_of_year , IWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( lon_e , IWORDSIZE )
-        CALL wrf_dm_bcast_bytes ( lat_e , IWORDSIZE )
+          CALL wrf_dm_bcast_bytes ( ncoldens_levs , IWORDSIZE )
+          CALL wrf_dm_bcast_bytes ( ndays_of_year , IWORDSIZE )
+          CALL wrf_dm_bcast_bytes ( lon_e , IWORDSIZE )
+          CALL wrf_dm_bcast_bytes ( lat_e , IWORDSIZE )
 !---------------------------------------------------------------------
-!	... allocate arrays
+!	... allocate local arrays
 !---------------------------------------------------------------------
-        iend = min( ipe,ide-1 )
-        jend = min( jpe,jde-1 )
-        allocate( col_levs(ncoldens_levs), day_of_year(ndays_of_year), stat=astat )
-        if( astat /= 0 ) then
-           call wrf_message( 'ftuv_init: failed to allocate col_levs,day_of_year' )
-           call wrf_abort
-        end if
-        allocate( col_dens(lon_e,lat_e,ncoldens_levs,ndays_of_year), stat=astat )
-        if( astat /= 0 ) then
-           call wrf_message( 'ftuv_init: failed to allocate col_dens' )
-           call wrf_abort
-        end if
-        allocate( o3_col_dens(ips:iend,jps:jend,ncoldens_levs,ndays_of_year), &
-                  o2_col_dens(ips:iend,jps:jend,ncoldens_levs,ndays_of_year), stat=astat )
-        if( astat /= 0 ) then
-           call wrf_message( 'ftuv_init: failed to allocate o3_col_dens,o2_col_dens' )
-           call wrf_abort
-        end if
+          iend = min( ipe,ide-1 )
+          jend = min( jpe,jde-1 )
+          allocate( coldens(lon_e,lat_e,ncoldens_levs,ndays_of_year), stat=astat )
+          if( astat /= 0 ) then
+            call wrf_message( 'ftuv_init: failed to allocate coldens' )
+            call wrf_abort
+          end if
+!---------------------------------------------------------------------
+!	... allocate column_density type component arrays
+!---------------------------------------------------------------------
+          col_dens(id)%ncoldens_levs = ncoldens_levs
+          col_dens(id)%ndays_of_year = ndays_of_year
+          allocate( col_dens(id)%col_levs(ncoldens_levs), &
+                    col_dens(id)%day_of_year(ndays_of_year), stat=astat )
+          if( astat /= 0 ) then
+            call wrf_message( 'ftuv_init: failed to allocate col_levs,day_of_year' )
+            call wrf_abort
+          end if
+          allocate( col_dens(id)%o3_col_dens(ips:iend,jps:jend,ncoldens_levs,ndays_of_year), &
+                    col_dens(id)%o2_col_dens(ips:iend,jps:jend,ncoldens_levs,ndays_of_year), stat=astat )
+          if( astat /= 0 ) then
+            call wrf_message( 'ftuv_init: failed to allocate o3_col_dens,o2_col_dens' )
+            call wrf_abort
+          end if
+          col_dens(id)%allocated = .true.
 !---------------------------------------------------------------------
 !	... read arrays
 !---------------------------------------------------------------------
-        IF ( wrf_dm_on_monitor() ) THEN
-          err_msg = 'ftuv_init: failed to get col_levs variable id'
-          call handle_ncerr( nf_inq_varid( ncid, 'coldens_levs', varid ), trim(err_msg) )
-          err_msg = 'ftuv_init: failed to read col_levs variable'
-          call handle_ncerr( nf_get_var_double( ncid, varid, col_levs ), trim(err_msg) )
-          err_msg = 'ftuv_init: failed to get days_of_year variable id'
-          call handle_ncerr( nf_inq_varid( ncid, 'days_of_year', varid ), trim(err_msg) )
-          err_msg = 'ftuv_init: failed to read days_of_year variable'
-          call handle_ncerr( nf_get_var_double( ncid, varid, day_of_year ), trim(err_msg) )
-          err_msg = 'ftuv_init: failed to col_dens variable id'
-          call handle_ncerr( nf_inq_varid( ncid, 'o3_column_density', varid ), trim(err_msg) )
-          err_msg = 'ftuv_init: failed to read col_dens variable'
-          call handle_ncerr( nf_get_var_real( ncid, varid, col_dens ), trim(err_msg) )
-        end if
+            IF ( wrf_dm_on_monitor() ) THEN
+            err_msg = 'ftuv_init: failed to get col_levs variable id'
+            call handle_ncerr( nf_inq_varid( ncid, 'coldens_levs', varid ), trim(err_msg) )
+            err_msg = 'ftuv_init: failed to read col_levs variable'
+            call handle_ncerr( nf_get_var_double( ncid, varid, col_dens(id)%col_levs ), trim(err_msg) )
+            err_msg = 'ftuv_init: failed to get days_of_year variable id'
+            call handle_ncerr( nf_inq_varid( ncid, 'days_of_year', varid ), trim(err_msg) )
+            err_msg = 'ftuv_init: failed to read days_of_year variable'
+            call handle_ncerr( nf_get_var_double( ncid, varid, col_dens(id)%day_of_year ), trim(err_msg) )
+            err_msg = 'ftuv_init: failed to col_dens variable id'
+            call handle_ncerr( nf_inq_varid( ncid, 'o3_column_density', varid ), trim(err_msg) )
+            err_msg = 'ftuv_init: failed to read col_dens variable'
+            call handle_ncerr( nf_get_var_real( ncid, varid, coldens ), trim(err_msg) )
+          end if
 
-        DM_BCAST_MACRO(col_levs)
-        write(*,*) 'ftuv_init: bcast col_levs'
-        DM_BCAST_MACRO(day_of_year)
-        write(*,*) 'ftuv_init: bcast day_of_year'
-        CALL wrf_dm_bcast_bytes ( col_dens, size(col_dens)*RWORDSIZE )
-        write(*,*) 'ftuv_init: bcast o3_col_dens'
+          DM_BCAST_MACRO(col_dens(id)%col_levs)
+          write(*,*) 'ftuv_init: bcast col_levs'
+          DM_BCAST_MACRO(col_dens(id)%day_of_year)
+          write(*,*) 'ftuv_init: bcast day_of_year'
+          CALL wrf_dm_bcast_bytes ( coldens, size(coldens)*RWORDSIZE )
+          write(*,*) 'ftuv_init: bcast o3_col_dens'
 
-        o3_col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year) = &
-                      col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year)
+          col_dens(id)%o3_col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year) = &
+                        coldens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year)
 
-        IF ( wrf_dm_on_monitor() ) THEN
-          err_msg = 'ftuv_init: failed to col_dens variable id'
-          call handle_ncerr( nf_inq_varid( ncid, 'o2_column_density', varid ), trim(err_msg) )
-          err_msg = 'ftuv_init: failed to read col_dens variable'
-          call handle_ncerr( nf_get_var_real( ncid, varid, col_dens ), trim(err_msg) )
+          IF ( wrf_dm_on_monitor() ) THEN
+            err_msg = 'ftuv_init: failed to col_dens variable id'
+            call handle_ncerr( nf_inq_varid( ncid, 'o2_column_density', varid ), trim(err_msg) )
+            err_msg = 'ftuv_init: failed to read col_dens variable'
+            call handle_ncerr( nf_get_var_real( ncid, varid, coldens ), trim(err_msg) )
 !---------------------------------------------------------------------
 !	... close column density netcdf file
 !---------------------------------------------------------------------
-          err_msg = 'ftuv_init: failed to close file exo_coldens_d01'
-          call handle_ncerr( nf_close( ncid ), trim(err_msg) )
-        end if
+            err_msg = 'ftuv_init: failed to close file ' // trim(filename)
+            call handle_ncerr( nf_close( ncid ), trim(err_msg) )
+          end if
 
-        CALL wrf_dm_bcast_bytes ( col_dens, size(col_dens)*RWORDSIZE )
-        write(*,*) 'ftuv_init: bcast o2_col_dens'
+          CALL wrf_dm_bcast_bytes ( coldens, size(coldens)*RWORDSIZE )
+          write(*,*) 'ftuv_init: bcast o2_col_dens'
 
-        o2_col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year) = &
-                      col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year)
+          col_dens(id)%o2_col_dens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year) = &
+                        coldens(ips:iend,jps:jend,:ncoldens_levs,:ndays_of_year)
 
-!       err_msg = 'ftuv_init: failed to get o3_col_dens variable id'
-!       call handle_ncerr( nf_inq_varid( ncid, 'o3_column_density', varid ), trim(err_msg) )
-!       err_msg = 'ftuv_init: failed to read o3_col_dens variable'
-!       call handle_ncerr( nf_get_vara_double( ncid, varid, &
-!                                              (/ ips, jps, 1, 1 /), &
-!                                              (/iend-ips+1, jend-jps+1, ncoldens_levs, ndays_of_year /), &
-!                                              o3_col_dens ), trim(err_msg) )
-!       err_msg = 'ftuv_init: failed to get o2_col_dens variable id'
-!       call handle_ncerr( nf_inq_varid( ncid, 'o2_column_density', varid ), trim(err_msg) )
-!       err_msg = 'ftuv_init: failed to read o2_col_dens variable'
-!       call handle_ncerr( nf_get_vara_double( ncid, varid, &
-!                                              (/ ips, jps, 1, 1 /), &
-!                                              (/iend-ips+1, jend-jps+1, ncoldens_levs, ndays_of_year /), &
-!                                              o2_col_dens ), trim(err_msg) )
-        deallocate( col_dens )
-        write(*,*) ' '
-        write(*,*) 'ftuv_init: coldens variables'
-        write(*,*) 'ftuv_init: days_of_year'
-        write(*,'(1p,5g15.7)') day_of_year(:)
-        write(*,*) 'ftuv_init: coldens levels'
-        write(*,'(1p,5g15.7)') col_levs(:)
-        write(*,*) ' '
-      end if is_mozart
+          deallocate( coldens )
+
+          write(*,*) ' '
+          write(*,*) 'ftuv_init: coldens variables for domain ',id
+          write(*,*) 'ftuv_init: days_of_year'
+          write(*,'(1p,5g15.7)') col_dens(id)%day_of_year(:)
+          write(*,*) 'ftuv_init: coldens levels'
+          write(*,'(1p,5g15.7)') col_dens(id)%col_levs(:)
+          write(*,*) ' '
+        endif col_dens_allocated
+      endif is_mozart
 #endif
 !---------------------------------------------------------------------
 !	... initialize aerosol routine
 !---------------------------------------------------------------------
-      write(*,*) 'ftuv_init: initializing aerosol routine'
-      call aer_init
-      write(*,*) 'ftuv_init: finished'
+      if( id == 1 .and. .not. photo_inti_initialized ) then
+        write(*,*) 'ftuv_init: initializing aerosol routine'
+        call aer_init
+        write(*,*) 'ftuv_init: finished'
+        photo_inti_initialized = .true.
+      endif
 
       end subroutine ftuv_init
 
@@ -931,7 +980,7 @@ include 'netcdf.inc'
        
       end subroutine photo
 
-      subroutine ftuv_timestep_init( julday )
+      subroutine ftuv_timestep_init( id, julday )
 !-----------------------------------------------------------------------------
 !	... setup the time interpolation
 !-----------------------------------------------------------------------------
@@ -943,6 +992,7 @@ include 'netcdf.inc'
 !-----------------------------------------------------------------------------
 !	... dummy arguments
 !-----------------------------------------------------------------------------
+      integer, intent(in)  ::  id             ! domain id
       integer, intent(in)  ::  julday         ! day of year at present time step
 
 !-----------------------------------------------------------------------------
@@ -952,23 +1002,25 @@ include 'netcdf.inc'
       real(dp) :: calday
 
       calday = real( julday,kind=dp)
-      if( calday < day_of_year(1) ) then
+      if( calday < col_dens(id)%day_of_year(1) ) then
          next = 1
 	 last = 12
-	 dels = (365._dp + calday - day_of_year(12)) / (365._dp + day_of_year(1) - day_of_year(12))
-      else if( calday >= day_of_year(12) ) then
+	 dels = (365._dp + calday - col_dens(id)%day_of_year(12)) &
+                / (365._dp + col_dens(id)%day_of_year(1) - col_dens(id)%day_of_year(12))
+      else if( calday >= col_dens(id)%day_of_year(12) ) then
 	 next = 1
 	 last = 12
-	 dels = (calday - day_of_year(12)) / (365. + day_of_year(1) - day_of_year(12))
+	 dels = (calday - col_dens(id)%day_of_year(12)) &
+                / (365. + col_dens(id)%day_of_year(1) - col_dens(id)%day_of_year(12))
       else
          do m = 11,1,-1
-	    if( calday >= day_of_year(m) ) then
+	    if( calday >= col_dens(id)%day_of_year(m) ) then
 	       exit
 	    end if
          end do
 	 last = m
 	 next = m + 1
-	 dels = (calday - day_of_year(m)) / (day_of_year(m+1) - day_of_year(m))
+	 dels = (calday - col_dens(id)%day_of_year(m)) / (col_dens(id)%day_of_year(m+1) - col_dens(id)%day_of_year(m))
       end if
 !-----------------------------------------------------------------------------
 !     set solar distance factor
@@ -981,7 +1033,7 @@ include 'netcdf.inc'
       end subroutine ftuv_timestep_init
 
       subroutine p_interp( o2_exo_col, o3_exo_col, ptop, &
-                           its, ite, jts, jte )
+                           id, its, ite, jts, jte )
 !---------------------------------------------------------------
 !     	... pressure interpolation for exo col density
 !---------------------------------------------------------------
@@ -991,6 +1043,7 @@ include 'netcdf.inc'
 !---------------------------------------------------------------
 !     	... dummy arguments
 !---------------------------------------------------------------
+      integer, intent(in)   :: id
       integer, intent(in)   :: its, ite
       integer, intent(in)   :: jts, jte
       real(dp), intent(in)  :: ptop(its:ite,jts:jte)             ! pressure at photolysis top (hPa)
@@ -1010,32 +1063,32 @@ lat_loop : &
 long_loop : &
          do i = its,ite
             pinterp = ptop(i,j)
-            if( pinterp < col_levs(1) ) then
+            if( pinterp < col_dens(id)%col_levs(1) ) then
                ku = 1
                kl = 1
                delp = 0._dp
             else
-	       do ku = 2,ncoldens_levs
-                  if( pinterp <= col_levs(ku) ) then
+	       do ku = 2,col_dens(id)%ncoldens_levs
+                  if( pinterp <= col_dens(id)%col_levs(ku) ) then
                      kl = ku - 1
-		     delp = log( pinterp/col_levs(kl) )/log( col_levs(ku)/col_levs(kl) )
+		     delp = log( pinterp/col_dens(id)%col_levs(kl) )/log( col_dens(id)%col_levs(ku)/col_dens(id)%col_levs(kl) )
 		     exit
 	          end if
 	       end do
             end if
-	    tint_vals(1) = o2_col_dens(i,j,kl,last) &
-                           + delp * (o2_col_dens(i,j,ku,last) &
-                                     - o2_col_dens(i,j,kl,last))
-	    tint_vals(2) = o2_col_dens(i,j,kl,next) &
-                           + delp * (o2_col_dens(i,j,ku,next) &
-                                     - o2_col_dens(i,j,kl,next))
+	    tint_vals(1) = col_dens(id)%o2_col_dens(i,j,kl,last) &
+                           + delp * (col_dens(id)%o2_col_dens(i,j,ku,last) &
+                                     - col_dens(id)%o2_col_dens(i,j,kl,last))
+	    tint_vals(2) = col_dens(id)%o2_col_dens(i,j,kl,next) &
+                           + delp * (col_dens(id)%o2_col_dens(i,j,ku,next) &
+                                     - col_dens(id)%o2_col_dens(i,j,kl,next))
 	    o2_exo_col(i,j) = tint_vals(1) + dels * (tint_vals(2) - tint_vals(1))
-	    tint_vals(1) = o3_col_dens(i,j,kl,last) &
-                           + delp * (o3_col_dens(i,j,ku,last) &
-                                     - o3_col_dens(i,j,kl,last))
-	    tint_vals(2) = o3_col_dens(i,j,kl,next) &
-                           + delp * (o3_col_dens(i,j,ku,next) &
-                                     - o3_col_dens(i,j,kl,next))
+	    tint_vals(1) = col_dens(id)%o3_col_dens(i,j,kl,last) &
+                           + delp * (col_dens(id)%o3_col_dens(i,j,ku,last) &
+                                     - col_dens(id)%o3_col_dens(i,j,kl,last))
+	    tint_vals(2) = col_dens(id)%o3_col_dens(i,j,kl,next) &
+                           + delp * (col_dens(id)%o3_col_dens(i,j,ku,next) &
+                                     - col_dens(id)%o3_col_dens(i,j,kl,next))
 	    o3_exo_col(i,j) = tint_vals(1) + dels * (tint_vals(2) - tint_vals(1))
          end do long_loop
       end do lat_loop

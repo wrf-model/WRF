@@ -152,6 +152,18 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                ebu(i,kts,j,p_ebu_oc) = ebu_in(i,1,j,p_ebu_in_oc)
                ebu(i,kts,j,p_ebu_bc) = ebu_in(i,1,j,p_ebu_in_bc)
                ebu(i,kts,j,p_ebu_dms)=ebu_in(i,1,j,p_ebu_in_dms)
+               ebu(i,kts,j,p_ebu_no2)=ebu_in(i,1,j,p_ebu_in_no2)
+               ebu(i,kts,j,p_ebu_open) = ebu_in(i,1,j,p_ebu_in_open)
+               ebu(i,kts,j,p_ebu_c10h16) = ebu_in(i,1,j,p_ebu_in_c10h16)
+               ebu(i,kts,j,p_ebu_mgly) = ebu_in(i,1,j,p_ebu_in_mgly)
+               ebu(i,kts,j,p_ebu_ch3cooh) = ebu_in(i,1,j,p_ebu_ch3cooh)
+               ebu(i,kts,j,p_ebu_cres) = ebu_in(i,1,j,p_ebu_in_cres)
+               ebu(i,kts,j,p_ebu_glyald) = ebu_in(i,1,j,p_ebu_in_glyald)
+               ebu(i,kts,j,p_ebu_gly)=ebu_in(i,1,j,p_ebu_in_gly)
+               ebu(i,kts,j,p_ebu_acetol) = ebu_in(i,1,j,p_ebu_in_acetol)
+               ebu(i,kts,j,p_ebu_isop) = ebu_in(i,1,j,p_ebu_in_isop)
+               ebu(i,kts,j,p_ebu_macr) = ebu_in(i,1,j,p_ebu_in_macr)
+               ebu(i,kts,j,p_ebu_mvk)=ebu_in(i,1,j,p_ebu_in_mvk)
             enddo
          enddo
        endif
@@ -278,6 +290,18 @@ is_mozcart : &
                ebu(i,k,j,p_ebu_oc)  = ebu(i,k,j,p_ebu_oc)*ratio
                ebu(i,k,j,p_ebu_bc)  = ebu(i,k,j,p_ebu_bc)*ratio
                ebu(i,k,j,p_ebu_dms)  = ebu(i,k,j,p_ebu_dms)*ratio
+               ebu(i,k,j,p_ebu_no2)  = ebu(i,k,j,p_ebu_no2)*ratio
+               ebu(i,k,j,p_ebu_open) = ebu(i,k,j,p_ebu_open)*ratio
+               ebu(i,k,j,p_ebu_c10h16) = ebu(i,k,j,p_ebu_c10h16)*ratio
+               ebu(i,k,j,p_ebu_mgly) = ebu(i,k,j,p_ebu_mgly)*ratio
+               ebu(i,k,j,p_ebu_ch3cooh) = ebu(i,k,j,p_ebu_ch3cooh)*ratio
+               ebu(i,k,j,p_ebu_cres) = ebu(i,k,j,p_ebu_cres)*ratio
+               ebu(i,k,j,p_ebu_glyald) = ebu(i,k,j,p_ebu_glyald)*ratio
+               ebu(i,k,j,p_ebu_gly) = ebu(i,k,j,p_ebu_gly)*ratio
+               ebu(i,k,j,p_ebu_acetol) = ebu(i,k,j,p_ebu_acetol)*ratio
+               ebu(i,k,j,p_ebu_isop) = ebu(i,k,j,p_ebu_isop)*ratio
+               ebu(i,k,j,p_ebu_macr) = ebu(i,k,j,p_ebu_macr)*ratio
+               ebu(i,k,j,p_ebu_mvk)  = ebu(i,k,j,p_ebu_mvk)*ratio
               end do
             end if is_mozcart
 

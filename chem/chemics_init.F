@@ -94,6 +94,7 @@
 ! local stuff
 !
    CHARACTER*256 :: mminlu_loc
+   CHARACTER*256 :: message_txt
    TYPE(WRFU_TimeInterval) :: tmpTimeInterval
    integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
    real, DIMENSION (1,1) :: sza,cosszax
@@ -160,8 +161,9 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling biomass burning')
    endif
    if( config_flags%chem_opt == MOZCART_KPP ) then
-       call wrf_message("chem_init: calling mozcart_lbc_init")
-       call mozcart_lbc_init( chem, num_chem, &
+       write(message_txt,*) 'chem_init: calling mozcart_lbc_init for domain ',id
+       call wrf_message( trim(message_txt) )
+       call mozcart_lbc_init( chem, num_chem, id, &
                               ims, ime, jms, jme, kms, kme,    &
                               its, ite, jts, jte, kts )
    endif
@@ -193,11 +195,9 @@ call wrf_message("**************************************************************
 !       call wrf_error_fatal(" ERROR: USE dust_opt = 2 when using MADE/SORGAM aerosol option ")
 !   ENDIF
 
-    IF ( config_flags%chem_opt /= 0 ) THEN
-     CALL nl_get_mminlu( 1, mminlu_loc )
-     IF (mminlu_loc .NE. 'USGS') THEN
-       call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
-     ENDIF
+    CALL nl_get_mminlu( 1, mminlu_loc )
+    IF (mminlu_loc .NE. 'USGS') THEN
+      call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
     ENDIF
 
     if( .NOT. config_flags%restart ) then
@@ -309,8 +309,8 @@ call wrf_message("**************************************************************
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
       CASE (FTUV)
-      CALL wrf_debug(00,'call ftuv phot initialization')
-        call ftuv_init( its, ite, jts, jte, kte, &
+        CALL wrf_debug(00,'call ftuv phot initialization')
+        call ftuv_init( id, its, ite, jts, jte, kte, &
                         ide, jde, config_flags%chem_opt )
 
   END SELECT phot_select

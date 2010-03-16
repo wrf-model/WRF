@@ -960,29 +960,31 @@
 !-------------------------------------------------------
       integer :: astat, ij, iw
 
+      if( .not. allocated(sq) ) then
 !-------------------------------------------------------
 !     allocate memory space
 !-------------------------------------------------------
-      allocate( sq(nw-1,nz,nj), stat=astat )
-      if( astat /= 0 ) then
-         write(*,*) 'wave_data_inti: sq allocate failed; error = ',astat
-         stop
-      end if
+        allocate( sq(nw-1,nz,nj), stat=astat )
+        if( astat /= 0 ) then
+          write(*,*) 'wave_data_inti: sq allocate failed; error = ',astat
+          stop
+        end if
 
 !-------------------------------------------------------
 !     intialize sq
 !-------------------------------------------------------
-      do ij = 1, nj
-        do iw = 1, nw-1
-          sq(iw,:,ij) = sjref(iw,ij)
+        do ij = 1, nj
+          do iw = 1, nw-1
+            sq(iw,:,ij) = sjref(iw,ij)
+          enddo
         enddo
-      enddo
 
 !-------------------------------------------------------
 !	... initialize cross section functions
 !-------------------------------------------------------
-      call r44_inti
-      call r08_inti
+        call r44_inti
+        call r08_inti
+      endif
 
       end subroutine wave_data_inti
 

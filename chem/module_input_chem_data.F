@@ -77,9 +77,6 @@ MODULE module_input_chem_data
    
     INTEGER, DIMENSION(logg)                     :: iref
 
-    real, allocatable :: ch4_lbc(:,:)
-    real, allocatable :: n2o_lbc(:,:)
-    real, allocatable :: h2_lbc(:,:)
     REAL, DIMENSION(logg)                        :: fracref
     REAL, DIMENSION(kx)                          :: dens
     REAL, DIMENSION(kx+1)                        :: zfa
@@ -318,6 +315,15 @@ MODULE module_input_chem_data
        / 1.94E+09, 1.94E+09, 1.53E+09, 1.24E+09, 1.04E+09, &
        8.96E+08, 7.94E+08, 7.11E+08, 6.44E+08, 6.00E+08, 5.70E+08, &
        5.49E+08, 5.35E+08, 5.28E+08, 5.24E+08, 5.23E+08/
+
+      type lbc_concentration
+        real, pointer :: ch4_lbc(:,:)
+        real, pointer :: n2o_lbc(:,:)
+        real, pointer :: h2_lbc(:,:)
+        logical       :: allocated
+      end type lbc_concentration
+
+      type(lbc_concentration), allocatable :: fixed_lbc(:)
 
 CONTAINS
 
@@ -3766,62 +3772,82 @@ SUBROUTINE med_read_bin_chem_fireemiss ( grid , config_flags ,intime, itime_max)
    RETURN
 END SUBROUTINE med_read_bin_chem_fireemiss
 
-SUBROUTINE mozcart_lbc_init( chem, num_chem,  &
+SUBROUTINE mozcart_lbc_init( chem, num_chem,  id, &
                              ims, ime, jms, jme, kms, kme,    &
                              its, ite, jts, jte, kts )
 
     USE module_state_description, only : p_ch4, p_n2o, p_h2
 
+integer, intent(in) :: id
 integer, intent(in) :: num_chem
 integer, intent(in) :: ims, ime, jms, jme, kms, kme,    &
                        its, ite, jts, jte, kts
 real, intent(in)    :: chem(ims:ime,kms:kme,jms:jme,num_chem)
 
    integer           :: astat
+   integer           :: max_dom
+   character(len=128) :: err_msg
 
-   if( p_ch4 > 1 ) then
-      allocate( ch4_lbc(its:ite,jts:jte),stat=astat )
-      if( astat /= 0 ) then
+   if( id == 1 .and. .not. allocated(fixed_lbc) ) then
+     CALL nl_get_max_dom( 1,max_dom )
+     allocate( fixed_lbc(max_dom),stat=astat )
+     if( astat /= 0 ) then
+       CALL wrf_message( 'lbc_init: failed to allocate lbc_concentration type fix_lbc' )
+       CALL wrf_abort
+     end if
+     write(err_msg,*) 'lbc_init: initializing ',max_dom,' domains'
+     call wrf_message( trim(err_msg) )
+     fixed_lbc(:)%allocated = .false.
+   endif
+
+   if( .not. fixed_lbc(id)%allocated ) then
+     if( p_ch4 > 1 ) then
+       allocate( fixed_lbc(id)%ch4_lbc(its:ite,jts:jte),stat=astat )
+       if( astat /= 0 ) then
+         write(*,*) 'mozcart_lbc_init: its,ite,jts,jte = ',its,ite,jts,jte
          call wrf_error_fatal("mozcart_lbc_init: failed to allocate ch4 lbc")
-      end if
-      ch4_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_ch4)
-   end if
-   if( p_n2o > 1 ) then
-      allocate( n2o_lbc(its:ite,jts:jte),stat=astat )
-      if( astat /= 0 ) then
+       end if
+       fixed_lbc(id)%ch4_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_ch4)
+     end if
+     if( p_n2o > 1 ) then
+       allocate( fixed_lbc(id)%n2o_lbc(its:ite,jts:jte),stat=astat )
+       if( astat /= 0 ) then
          call wrf_error_fatal("mozcart_lbc_init: failed to allocate n2o lbc")
-      end if
-      n2o_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_n2o)
-   end if
-   if( p_h2 > 1 ) then
-      allocate( h2_lbc(its:ite,jts:jte),stat=astat )
-      if( astat /= 0 ) then
+       end if
+       fixed_lbc(id)%n2o_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_n2o)
+     end if
+     if( p_h2 > 1 ) then
+       allocate( fixed_lbc(id)%h2_lbc(its:ite,jts:jte),stat=astat )
+       if( astat /= 0 ) then
          call wrf_error_fatal("mozcart_lbc_init: failed to allocate h2 lbc")
-      end if
+       end if
+       fixed_lbc(id)%h2_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_h2)
+     end if
+     fixed_lbc(id)%allocated = .true.
    end if
-   h2_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_h2)
 
 END SUBROUTINE mozcart_lbc_init
 
-SUBROUTINE mozcart_lbc_set( chem, num_chem,  &
+SUBROUTINE mozcart_lbc_set( chem, num_chem, id, &
                             ims, ime, jms, jme, kms, kme,    &
                             its, ite, jts, jte, kts )
 
     USE module_state_description, only : p_ch4, p_n2o, p_h2
 
+integer, intent(in) :: id
 integer, intent(in) :: num_chem
 integer, intent(in) :: ims, ime, jms, jme, kms, kme,    &
                        its, ite, jts, jte, kts
 real, intent(inout) :: chem(ims:ime,kms:kme,jms:jme,num_chem)
 
    if( p_ch4 > 1 ) then
-      chem(its:ite,kts,jts:jte,p_ch4) = ch4_lbc(its:ite,jts:jte)
+      chem(its:ite,kts,jts:jte,p_ch4) = fixed_lbc(id)%ch4_lbc(its:ite,jts:jte)
    end if
    if( p_n2o > 1 ) then
-      chem(its:ite,kts,jts:jte,p_n2o) = n2o_lbc(its:ite,jts:jte)
+      chem(its:ite,kts,jts:jte,p_n2o) = fixed_lbc(id)%n2o_lbc(its:ite,jts:jte)
    end if
    if( p_h2 > 1 ) then
-      chem(its:ite,kts,jts:jte,p_h2) = h2_lbc(its:ite,jts:jte)
+      chem(its:ite,kts,jts:jte,p_h2) = fixed_lbc(id)%h2_lbc(its:ite,jts:jte)
    end if
 
 END SUBROUTINE mozcart_lbc_set

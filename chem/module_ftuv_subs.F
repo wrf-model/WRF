@@ -798,12 +798,14 @@ WAVE_LENGTH_LOOP : &
 !-----------------------------------------------------------------------------
 !	... Local variables
 !-----------------------------------------------------------------------------
+      REAL(dp), PARAMETER :: PI = 3.14159265358979324
+      REAL(dp), PARAMETER :: vol_fac = 4._dp * PI / 3._dp
       integer  :: k
       real(dp) :: rm_cubic, factor
       real(dp) :: mas(nzlev-1), masw(nzlev-1)
 
       rm_cubic = rm**3
-      factor   = 1._dp/(4._dp/3._dp * 3.14_dp * cden * 1.e-12_dp * rm_cubic)
+      factor   = 1._dp/(vol_fac * cden * 1.e-12_dp * rm_cubic)
 !-----------------------------------------------------------------------------
 !     Convert volumn mix ratio to mass
 !-----------------------------------------------------------------------------
@@ -823,7 +825,7 @@ WAVE_LENGTH_LOOP : &
 
       do k = 1,nzlev-1
          if( abs(rw(k) - rm) >= 1.e-6_dp ) then
-           masw(k) = 4._dp/3._dp*3.14_dp*(rw(k)**3 - rm_cubic)*1.e-12_dp * num(k)   ! water mass gram/cm3
+           masw(k) = vol_fac*(rw(k)**3 - rm_cubic)*1.e-12_dp * num(k)   ! water mass gram/cm3
          else
            masw(k) = 0._dp
          end if

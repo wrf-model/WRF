@@ -26,7 +26,6 @@
       real, parameter    :: wpan = 121.04793
       character(len=4), parameter :: mminlu = 'USGS'
 
-      INTEGER, allocatable :: seasonal_wes(:,:,:,:)
       INTEGER :: month = 0
       INTEGER :: ixxxlu(nlu)
       REAL    :: kpart(nlu)
@@ -44,6 +43,15 @@
 !--------------------------------------------------
       REAL    :: dratio(1000), hstar(1000), hstar4(1000)
       REAL    :: f0(1000), dhr(1000), scpr23(1000)
+
+      type wesely_pft
+        integer          :: npft
+        integer          :: months
+        INTEGER, pointer :: seasonal_wes(:,:,:,:)
+        logical          :: allocated
+      end type wesely_pft
+
+      type(wesely_pft), allocatable :: seasonal_pft(:)
 
 !--------------------------------------------------
 ! .. Default Accessibility ..
@@ -171,7 +179,7 @@ tile_lon_loop : &
             if( config_flags%chem_opt == MOZART_KPP .or. &
                 config_flags%chem_opt == MOZCART_KPP ) then
                if( snowh(i,j) < .01 ) then 
-                  iseason = seasonal_wes(i,j,iland,current_month)
+                  iseason = seasonal_pft(id)%seasonal_wes(i,j,iland,current_month)
                else
                   iseason = 4
                endif
@@ -1153,12 +1161,14 @@ is_nh3: if( p_nh3 > 1 ) then
         integer :: ncid
         integer :: dimid
         integer :: varid
+        integer :: max_dom
         integer :: lon_e, lat_e
-        integer :: npft, months
         integer :: iend, jend
         integer, allocatable :: input_wes_seasonal(:,:,:,:)
         REAL    :: sc
         character(len=128) :: err_msg
+        character(len=128) :: filename
+        character(len=3)   :: id_num
 !--------------------------------------------------
 ! .. Local Arrays
 !--------------------------------------------------
@@ -2095,25 +2105,45 @@ is_cbm4_kpp : &
 !	... check for mozart chemistry
 !--------------------------------------------------
 !---------------------------------------------------------------------
-!	... open column density netcdf file
+!	... open wesely pft netcdf file
 !---------------------------------------------------------------------
 is_mozart : &
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP ) then
+!---------------------------------------------------------------------
+!	... allocate column_density type
+!---------------------------------------------------------------------
+        if( id == 1 .and. .not. allocated(seasonal_pft) ) then
+          CALL nl_get_max_dom( 1,max_dom )
+          allocate( seasonal_pft(max_dom),stat=astat )
+          if( astat /= 0 ) then
+            CALL wrf_message( 'dep_init: failed to allocate wesely_pft type seasonal_pft' )
+            CALL wrf_abort
+          endif
+          write(err_msg,*) 'dep_init: initializing for ',max_dom,' domains'
+          CALL wrf_message( trim(err_msg) )
+          seasonal_pft(:)%allocated = .false.
+        endif
+seasonal_pft_allocated : &
+        IF( .not. seasonal_pft(id)%allocated ) then
         IF( wrf_dm_on_monitor() ) THEN
-         err_msg = 'dep_init: failed to open file wrf_season_wes_usgs.nc'
-         call handle_ncerr( nf_open( 'wrf_season_wes_usgs.nc', nf_noclobber, ncid ), trim(err_msg) )
+         write(id_num,'(i3)') 100+id
+         err_msg = 'dep_init: initializing domain ' // id_num(2:3)
+         CALL wrf_message( trim(err_msg) )
+         filename = 'wrf_season_wes_usgs_d' // id_num(2:3) // '.nc'
+         err_msg = 'dep_init: failed to open file ' // trim(filename)
+         call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )
 !---------------------------------------------------------------------
 !	... get dimensions
 !---------------------------------------------------------------------
          err_msg = 'dep_init: failed to get npft id'
          call handle_ncerr( nf_inq_dimid( ncid, 'npft', dimid ), trim(err_msg) ) 
          err_msg = 'dep_init: failed to npft'
-         call handle_ncerr( nf_inq_dimlen( ncid, dimid, npft ), trim(err_msg) )
+         call handle_ncerr( nf_inq_dimlen( ncid, dimid, seasonal_pft(id)%npft ), trim(err_msg) )
          err_msg = 'dep_init: failed to get months year id'
          call handle_ncerr( nf_inq_dimid( ncid, 'months', dimid ), trim(err_msg) )
          err_msg = 'dep_init: failed to get months'
-         call handle_ncerr( nf_inq_dimlen( ncid, dimid, months ), trim(err_msg) )
+         call handle_ncerr( nf_inq_dimlen( ncid, dimid, seasonal_pft(id)%months ), trim(err_msg) )
          err_msg = 'ftuv_init: failed to get west_east id'
          call handle_ncerr( nf_inq_dimid( ncid, 'west_east', dimid ), trim(err_msg) ) 
          err_msg = 'ftuv_init: failed to get west_east'
@@ -2126,8 +2156,8 @@ is_mozart : &
 !---------------------------------------------------------------------
 !	... bcast the dimensions
 !---------------------------------------------------------------------
-         CALL wrf_dm_bcast_bytes ( npft , IWORDSIZE )
-         CALL wrf_dm_bcast_bytes ( months , IWORDSIZE )
+         CALL wrf_dm_bcast_bytes ( seasonal_pft(id)%npft , IWORDSIZE )
+         CALL wrf_dm_bcast_bytes ( seasonal_pft(id)%months , IWORDSIZE )
          CALL wrf_dm_bcast_bytes ( lon_e , IWORDSIZE )
          CALL wrf_dm_bcast_bytes ( lat_e , IWORDSIZE )
 !---------------------------------------------------------------------
@@ -2135,16 +2165,17 @@ is_mozart : &
 !---------------------------------------------------------------------
          iend = min( ipe,ide-1 )
          jend = min( jpe,jde-1 )
-         allocate( input_wes_seasonal(lon_e,lat_e,npft,months), stat=astat )
+         allocate( input_wes_seasonal(lon_e,lat_e,seasonal_pft(id)%npft,seasonal_pft(id)%months), stat=astat )
          if( astat /= 0 ) then
             call wrf_message( 'dep_init: failed to allocate input_wes_seasonal' )
             call wrf_abort
          end if
-         allocate( seasonal_wes(ips:iend,jps:jend,npft,months), stat=astat )
+         allocate( seasonal_pft(id)%seasonal_wes(ips:iend,jps:jend,seasonal_pft(id)%npft,seasonal_pft(id)%months), stat=astat )
          if( astat /= 0 ) then
             call wrf_message( 'dep_init: failed to allocate seasonal_wes' )
             call wrf_abort
          end if
+         seasonal_pft(id)%allocated = .true.
 !---------------------------------------------------------------------
 !	... read array
 !---------------------------------------------------------------------
@@ -2162,9 +2193,11 @@ is_mozart : &
 
         DM_BCAST_MACRO(input_wes_seasonal)
 
-        seasonal_wes(ips:iend,jps:jend,:npft,:months) = input_wes_seasonal(ips:iend,jps:jend,:npft,:months)
+        seasonal_pft(id)%seasonal_wes(ips:iend,jps:jend,:seasonal_pft(id)%npft,:seasonal_pft(id)%months) = &
+                input_wes_seasonal(ips:iend,jps:jend,:seasonal_pft(id)%npft,:seasonal_pft(id)%months)
         deallocate( input_wes_seasonal )
-      end if is_mozart
+        endif seasonal_pft_allocated
+      endif is_mozart
 #endif
       END SUBROUTINE dep_init
 

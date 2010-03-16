@@ -600,9 +600,12 @@
 !------------------------------------------------------------------------
 ! setup ftuv column density timing
 !------------------------------------------------------------------------
-      if( config_flags%phot_opt == FTUV ) then
-         CALL ftuv_timestep_init( grid%julday )
-      end if
+      if( config_flags%chem_opt == MOZART_KPP .or. &                               
+          config_flags%chem_opt == MOZCART_KPP ) then                              
+        if( config_flags%phot_opt == FTUV ) then
+          CALL ftuv_timestep_init( grid%id, grid%julday )
+        endif
+      endif
 
 !------------------------------------------------------------------------
 ! Main chemistry tile loop
@@ -734,7 +737,7 @@
               its,ite,jts,jte,kts,kte)
               if( config_flags%chem_opt == MOZART_KPP .or. &                               
                   config_flags%chem_opt == MOZCART_KPP ) then                              
-                 call mozcart_lbc_set( chem, num_chem, &
+                 call mozcart_lbc_set( chem, num_chem, grid%id, &
                                        ims, ime, jms, jme, kms, kme,    &                  
                                        its, ite, jts, jte, kts )                           
               end if
@@ -865,7 +868,7 @@
                  
             if( config_flags%chem_opt == MOZART_KPP .or. &
                config_flags%chem_opt == MOZCART_KPP ) then
-               call mozcart_lbc_set( chem, num_chem, &
+               call mozcart_lbc_set( chem, num_chem, grid%id, &
                                      ims, ime, jms, jme, kms, kme,    & 
                                      its, ite, jts, jte, kts )
             end if
@@ -915,7 +918,7 @@
              its,ite,jts,jte,kts,k_end)
              if( config_flags%chem_opt == MOZART_KPP .or. &
                  config_flags%chem_opt == MOZCART_KPP ) then
-                     call mozcart_lbc_set( chem, num_chem, &
+                     call mozcart_lbc_set( chem, num_chem, grid%id, &
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
              end if
@@ -1010,7 +1013,7 @@ CALL kpp_mechanism_driver (chem,                                                
    its,ite,jts,jte,kts,kte)
           if( config_flags%chem_opt == MOZART_KPP .or. &
               config_flags%chem_opt == MOZCART_KPP ) then
-             call mozcart_lbc_set( chem, num_chem, &
+             call mozcart_lbc_set( chem, num_chem, grid%id, &
                                    ims, ime, jms, jme, kms, kme,    &
                                     its, ite, jts, jte, kts )
           end if

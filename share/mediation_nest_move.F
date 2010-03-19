@@ -356,13 +356,13 @@ SUBROUTINE med_nest_move ( parent, nest )
     nest%KZMAX=KME
     parent%KZMAX=KME  ! just for safety
 
-    write(0,*) " nest%imask_nostag "
-    write(0,"(3X,1X,1000(I3))") (I, I = IPS, MIN(IPE,IDE-1) )
+!    write(0,*) " nest%imask_nostag "
+!    write(0,"(3X,1X,1000(I3))") (I, I = IPS, MIN(IPE,IDE-1) )
     DO J = MIN(JPE,JDE-1), JPS, -1
        IF ( MOD(J,2) /= 0 ) THEN
-    write(0,"(I3,1X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
+!    write(0,"(I3,1X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
        ELSE
-    write(0,"(I3,3X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
+!    write(0,"(I3,3X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
        END IF
     ENDDO
 
@@ -1253,7 +1253,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
    ENDIF
    kid = 1
 
-   write(0,*) 'grid%ed31  grid%ed32  grid%ed33   ', grid%ed31, grid%ed32,grid%ed33
+!   write(0,*) 'grid%ed31  grid%ed32  grid%ed33   ', grid%ed31, grid%ed32,grid%ed33
 
 !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
 

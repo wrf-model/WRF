@@ -9828,7 +9828,6 @@ CONTAINS
 !----------------------------------------------------------------------
       IF ( wrf_dm_on_monitor() ) THEN
         DO i = 14,99
-      write(0,*)' in CONRAD i=',i,' opened=',opened
           INQUIRE ( i , OPENED = opened )
           IF ( .NOT. opened ) THEN
             nunit_co2 = i

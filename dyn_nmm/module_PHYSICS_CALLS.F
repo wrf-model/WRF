@@ -265,7 +265,9 @@
         DO K=KTS+1,KTE
           T8W(I,K,J)=0.5*(TL(K-1)+TL(K))
         ENDDO
-        T8W(I,KTE+1,J)=-1.E20
+!        T8W(I,KTE+1,J)=-1.E20 
+! For RRTM 
+        T8W(I,KTE+1,J)=T8W(I,KTE,J) + 0.5*(T8W(I,KTE,J)-T8W(I,KTE-1,J))
 !
       ENDDO
       ENDDO

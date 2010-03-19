@@ -1391,8 +1391,8 @@ MODULE module_mp_HWRF
           PRLOSS=0.
           RQR=0.
           N0r=0.
-          INDEXR1=INDEXR    ! For debugging only
           INDEXR=MDRmin
+          INDEXR1=INDEXR    ! For debugging only
           IF (RAIN_logical) THEN
             IF (ARAIN .LE. 0.) THEN
               INDEXR=MDRmin

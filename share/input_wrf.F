@@ -72,6 +72,12 @@
     INTEGER :: num_land_cat_compare
     CHARACTER (LEN=256) :: MMINLU
 
+INTEGER max_wrf_alarms_compare, seconds
+CHARACTER*80 alarmname, timestr
+TYPE(WRFU_Time) :: curtime, ringTime
+TYPE(WRFU_TimeInterval) :: interval, interval2
+integer s, iring
+
 !<DESCRIPTION>
 !
 ! Core wrf input routine for all input data streams. Part of mediation layer.
@@ -111,6 +117,53 @@
 ! simulation start time is a Singleton maintained by head_grid
     IF ( ( switch .EQ.     input_only  ) .OR. &
          ( switch .EQ.          restart_only ) ) THEN
+
+      IF ( switch .EQ. restart_only ) THEN
+        ! recover the restart alarms from input if avialable
+ 
+        CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
+        IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
+          WRITE(wrf_err_message,*)'MAX_WRF_ALARMS different in restart file (',max_wrf_alarms_compare,&
+                                  ') from in code (',MAX_WRF_ALARMS,').  Disregarding info in restart file.'
+        ELSE
+          curtime = domain_get_current_time( grid )
+          DO i = 1, MAX_WRF_ALARMS
+            IF ( grid%alarms_created(i)  ) THEN
+              IF ( i .LT. 10 ) THEN
+                write(alarmname,'("WRF_ALARM_ISRINGING_0",i1)')i
+              ELSE
+                write(alarmname,'("WRF_ALARM_ISRINGING_",i2)')i
+              ENDIF
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
+              IF ( iring .EQ. 1 ) THEN
+                CALL WRFU_AlarmRingerOn( grid%alarms( i ) )
+              ELSE
+                CALL WRFU_AlarmRingerOff( grid%alarms( i ) )
+              ENDIF
+  
+              IF ( i .LT. 10 ) THEN
+                write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_0",i1)')i
+              ELSE
+                write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2)')i
+              ENDIF
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
+              IF ( ierr .EQ. 0 &
+                   .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
+                                                ! which keep time differently
+  
+                ! Get and set interval so that we are sure to have both the
+                ! interval and first ring time set correctly
+                CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
+                CALL WRFU_TimeIntervalSet(interval,S=seconds)
+                ringTime = curtime + interval
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDIF
+
+      ENDIF
+
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
       CALL nl_get_reset_simulation_start ( 1, reset_simulation_start )
       IF ( ( ierr .EQ. 0 ) .AND. ( .NOT. reset_simulation_start ) ) THEN

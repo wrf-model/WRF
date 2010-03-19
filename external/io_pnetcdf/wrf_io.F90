@@ -2371,7 +2371,8 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   call GetDH(DataHandle,DH,Status)
   call ExtOrderStr(MemoryOrder,DimNames,RODimNames,Status)
   sw_xpose = .FALSE.
-  IF ( DH%GridID > 0 ) THEN
+!  IF ( DH%GridID > 0 ) THEN
+  IF ( .FALSE. ) THEN
     t1 = RODimNames(1)
     t2 = RODimNames(2)
     t3 = RODimNames(3)

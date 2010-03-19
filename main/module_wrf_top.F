@@ -146,6 +146,56 @@ CONTAINS
    CALL check_nml_consistency
    CALL set_physics_rconfigs
 
+#ifdef _ACCEL
+   buddcounter = 1
+   mydevice = 0
+# ifdef DM_PARALLEL
+   CALL wrf_get_myproc( myproc )
+   CALL wrf_get_nproc( nproc )
+   CALL wrf_get_hostid ( hostid )
+   CALL wrf_get_dm_communicator ( loccomm )
+
+   ALLOCATE( hostids(nproc) )
+   ALLOCATE( budds(nproc) )
+   CALL mpi_allgather( hostid, 1, MPI_INTEGER, hostids, 1, MPI_INTEGER, loccomm, ierr )
+   if ( ierr .NE. 0 ) print * ,'error in mpi_allgather ',ierr
+   budds = -1
+   buddcounter = 0
+   ! mark the ones i am on the same node with
+   DO i = 1, nproc
+      IF ( hostid .EQ. hostids(i) ) THEN
+         budds(i) = buddcounter
+         buddcounter = buddcounter + 1
+      ENDIF
+   ENDDO
+   mydevice = budds(myproc+1)
+   DEALLOCATE( hostids )
+   DEALLOCATE( budds )
+# endif
+   in = acc_get_num_devices(acc_device_nvidia)
+   if (in .le. 0) print *, 'error:  No GPUS present: ',in
+# ifdef _OPENMP
+   !$OMP PARALLEL SHARED(mydevice,in) PRIVATE(it,nt,devnum)
+   it = omp_get_thread_num()
+   nt = omp_get_num_threads()
+   devnum = mod(mod(mydevice*nt,in) + it, in)
+# ifdef _ACCEL_PROF
+   print *, "Process, Thread, Device: ",mydevice, it, devnum
+# endif
+   call acc_set_device_num(devnum, acc_device_nvidia)
+
+   !$OMP END PARALLEL
+# else
+   it = 0
+   nt = 1
+   devnum = mod(mod(mydevice*nt,in) + it, in)
+#  ifdef _ACCEL_PROF
+   print *, "Process, Thread, Device: ",mydevice, it, devnum
+#  endif
+   call acc_set_device_num(devnum, acc_device_nvidia)
+# endif
+#endif
+
 #ifdef RUN_ON_GPU
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )

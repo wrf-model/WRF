@@ -63,7 +63,8 @@
         ! intervals.  Many operations are undefined when these fields are 
         ! non-zero!  
         INTEGER :: YR                    ! relative year
-        INTEGER :: MM                    ! relative month
+   !jm Month has no meaning for an interval; get rid of it, 20100319
+   !     INTEGER :: MM                    ! relative month
       end type
 
 !------------------------------------------------------------------------------
@@ -525,15 +526,15 @@
       IF ( PRESENT( YY ) ) THEN
         timeinterval%YR = YY
       ENDIF
-      timeinterval%MM = 0
-      IF ( PRESENT( MM ) ) THEN
-        timeinterval%MM = MM
-      ENDIF
-      ! Rollover months to years
-      IF      ( abs(timeinterval%MM) .GE. MONTHS_PER_YEAR ) THEN
-        timeinterval%YR = timeinterval%YR + timeinterval%MM/MONTHS_PER_YEAR
-        timeinterval%MM = mod(timeinterval%MM,MONTHS_PER_YEAR)
-      ENDIF
+!jm      timeinterval%MM = 0
+!jm      IF ( PRESENT( MM ) ) THEN
+!jm        timeinterval%MM = MM
+!jm      ENDIF
+!jm      ! Rollover months to years
+!jm      IF      ( abs(timeinterval%MM) .GE. MONTHS_PER_YEAR ) THEN
+!jm        timeinterval%YR = timeinterval%YR + timeinterval%MM/MONTHS_PER_YEAR
+!jm        timeinterval%MM = mod(timeinterval%MM,MONTHS_PER_YEAR)
+!jm      ENDIF
 
       timeinterval%basetime%S = 0
       ! For 365-day calendar, immediately convert years to days since we know 

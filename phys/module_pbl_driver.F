@@ -432,19 +432,28 @@ CONTAINS
                                                           ZNTOLD, &
                                                              ZOL, &
                                                             PSFC
-!
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_u        ! Implicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_v        ! Implicit component for the momemtum in Y-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_t        ! Implicit component for the Pot. Temp.
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::a_q        ! Implicit component for the water vapor
+! make these allocatable depending on the setting of idiff
+! Typically, we try to avoide allocating and deallocating local storage like this
+! so as not to fragment the stack. But at this point, the idiff = 1 case is disabled
+! (set to 0 for all cases) and has to be set manually by users who want to work with
+! it.  When it becomes a more standard option, this should be redone, either defining
+! these as state with package clauses to turn them on and off and passing them in,
+! or pass in an integer flag that can be used to dimension the arrays to 1:1:1 as
+! local variables.  JM 20100316
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_u        ! Explicit component for the momemtum in X-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_v        ! Explicit component for the momemtum in Y-direction
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_t        ! Explicit component for the Pot. Temp.
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::b_q        ! Explicit component for the water vapor
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_u        ! Implicit component for the momemtum in X-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_v        ! Implicit component for the momemtum in Y-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_t        ! Implicit component for the Pot. Temp.
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::a_q        ! Implicit component for the water vapor
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )::sf           ! surfaces
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  ::vl            ! volumes
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_u        ! Explicit component for the momemtum in X-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_v        ! Explicit component for the momemtum in Y-direction
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_t        ! Explicit component for the Pot. Temp.
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::b_q        ! Explicit component for the water vapor
+
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::sf         ! surfaces
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::vl         ! volumes
+
    REAL    :: DTMIN,DTBL
 !
 
@@ -471,18 +480,19 @@ CONTAINS
     SELECT CASE(sf_urban_physics)
 #if (NMM_CORE != 1)
       CASE (BEPSCHEME)
-      flag_bep=.true.
+        flag_bep=.true.
       CASE (BEP_BEMSCHEME)
-      flag_bep=.true.
+        flag_bep=.true.
 #endif
       CASE DEFAULT
-      flag_bep=.false.
-    End Select
+        flag_bep=.false.
+    END SELECT
+
     SELECT CASE(sf_sfclay_physics)
-    CASE (MYJSFCSCHEME)
-       flag_myjsfc=.true.
-    CASE DEFAULT
-       flag_myjsfc=.false.
+      CASE (MYJSFCSCHEME)
+         flag_myjsfc=.true.
+      CASE DEFAULT
+         flag_myjsfc=.false.
     END SELECT
 !
   flag_qv = .FALSE. ; IF ( PRESENT( F_QV ) ) flag_qv = F_QV
@@ -565,6 +575,21 @@ CONTAINS
 ! Added this else clause so that idiff is always initialized regardless of which core we are using
        idiff=0
 #endif
+
+   IF ( idiff .EQ. 1 ) THEN
+     ALLOCATE (a_u(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momemtum in X-direction
+     ALLOCATE (a_v(ims:ime,kms:kme,jms:jme))       ! Implicit component for the momemtum in Y-direction
+     ALLOCATE (a_t(ims:ime,kms:kme,jms:jme))       ! Implicit component for the Pot. Temp.
+     ALLOCATE (a_q(ims:ime,kms:kme,jms:jme))       ! Implicit component for the water vapor
+     ALLOCATE (b_u(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momemtum in X-direction
+     ALLOCATE (b_v(ims:ime,kms:kme,jms:jme))       ! Explicit component for the momemtum in Y-direction
+     ALLOCATE (b_t(ims:ime,kms:kme,jms:jme))       ! Explicit component for the Pot. Temp.
+     ALLOCATE (b_q(ims:ime,kms:kme,jms:jme))       ! Explicit component for the water vapor
+     ALLOCATE (sf(ims:ime,kms:kme,jms:jme) )       ! surfaces
+     ALLOCATE (vl(ims:ime,kms:kme,jms:jme) )       ! volumes
+   ENDIF
+
+
 ! SAVE OLD VALUES
 
    !$OMP PARALLEL DO   &
@@ -607,7 +632,7 @@ CONTAINS
       ENDDO
 
 #if (NMM_CORE != 1)
-      if(idiff.eq.1)then
+      IF ( idiff.eq.1 ) THEN
 !Alberto
 ! Here we should put a switch: 
 ! if we do not use BEP, just initialize the values of the a, and b to zero, except for the lowest model level, 
@@ -621,7 +646,6 @@ CONTAINS
 ! This stuff is becoming large, probably better to put in a subroutine
 !!!!!!!!!!!!!!!!!!!
 ! preparing the a, b, sf, and vl terms
-         
          
          IF (flag_bep) THEN    
            do j=j_start(ij),j_end(ij)
@@ -641,7 +665,7 @@ CONTAINS
            sf(i,kte+1,j)=1.
            enddo
            enddo
-         else
+         ELSE
            do j=j_start(ij),j_end(ij)
            do i=i_start(ij),i_end(ij)
            do k=kts,kte
@@ -674,7 +698,7 @@ CONTAINS
            enddo
            enddo
            
-         endif
+         ENDIF
 
         endif      
                                            
@@ -1123,7 +1147,8 @@ CONTAINS
 
 #if (NMM_CORE != 1)
 
-          if(idiff.eq.1)then
+     IF (idiff.eq.1) THEN
+
 !Alberto: here we call the general routine to solve the diffusion
 ! + all the source/sink terms.
 ! the only thing that should be passed from the PBL schemes is the value of the exch_h, and exch_m 
@@ -1148,8 +1173,18 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
 
+          DEALLOCATE (a_u)       ! Implicit component for the momemtum in X-direction
+          DEALLOCATE (a_v)       ! Implicit component for the momemtum in Y-direction
+          DEALLOCATE (a_t)       ! Implicit component for the Pot. Temp.
+          DEALLOCATE (a_q)       ! Implicit component for the water vapor
+          DEALLOCATE (b_u)       ! Explicit component for the momemtum in X-direction
+          DEALLOCATE (b_v)       ! Explicit component for the momemtum in Y-direction
+          DEALLOCATE (b_t)       ! Explicit component for the Pot. Temp.
+          DEALLOCATE (b_q)       ! Explicit component for the water vapor
+          DEALLOCATE (sf )       ! surfaces
+          DEALLOCATE (vl )       ! volumes
       
-      endif       !idiff
+     ENDIF       !idiff
 #endif
 
    ENDDO

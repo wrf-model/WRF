@@ -19,9 +19,6 @@ if ( $WRF_KPP == 1 ) then
 chem/KPP/compile_wkc
 endif
 
-
-
-
 #---------------------------------
 
 if ( ! $?dontask && $?prompt ) then
@@ -63,6 +60,10 @@ foreach a ( $argv )
          # If configuration file has NMM_CORE=1 hardwired, ok to set WRF_NMM_CORE to 1
          if ( ! $?WRF_NMM_CORE ) setenv WRF_NMM_CORE 1
       endif
+    endif
+    if ( "$a" == "-j" ) then
+      shift argv
+      setenv J "-j $argv[1]"
     endif
   endif
 end
@@ -332,6 +333,8 @@ else
     if ( ! $?J ) then
       echo setting parallel make -j 6
       setenv J "-j 6"
+    else
+      echo setting parallel make $J
     endif
   else
     echo not setting parallel make
@@ -348,7 +351,7 @@ hlp:
 echo ' '
 echo 'Usage:'
 echo ' '
-echo '   compile wrf           compile wrf in run dir (NOTE: no real.exe, ndown.exe, or ideal.exe generated)'
+echo '   compile [-d] [-j n] wrf   compile wrf in run dir (NOTE: no real.exe, ndown.exe, or ideal.exe generated)'
 echo ' '
 echo '   or choose a test case (see README_test_cases for details) :'
 foreach d ( `/bin/ls test` )
@@ -357,6 +360,8 @@ foreach d ( `/bin/ls test` )
   endif
 end
 echo ' '
+echo '  compile -d                 compile without optimization and with debugging'
+echo '  compile -j n               parallel make using n tasks if supported (default 6)'
 echo '  compile -h                 help message'
 
 

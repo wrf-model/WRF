@@ -783,6 +783,7 @@
         Alarm%alarmint%Ringing = .FALSE.
 
         ! finally, load the alarm into the list
+! write(0,*)'ESMF_ClockAddAlarm ',clock%clockint%NumAlarms
         clock%clockint%AlarmList(clock%clockint%NumAlarms) = Alarm
       ENDIF
     
@@ -1018,6 +1019,8 @@ use esmf_timemod
               IF ( ( .NOT. ( pred1 ) ) .AND. &
                    ( ( pred2 ) .OR. ( pred3 ) ) ) THEN
                  alarm%alarmint%Ringing = .TRUE.
+                 alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
+                 alarm%alarmint%RingTimeSet = .FALSE.  !it is a one time alarm, it rang, now let it resort to interval
                  IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
 !                   IF ( PRED3) alarm%alarmint%PrevRingTime = alarm%alarmint%PrevRingTime + &
@@ -1054,7 +1057,9 @@ use esmf_timemod
 !                IF ( alarm%alarmint%RingTime <= clock%clockint%CurrTime ) THEN
                 IF ( ESMF_TimeLE( alarm%alarmint%RingTime, &
                                   clock%clockint%CurrTime ) ) THEN
+                   alarm%alarmint%RingTimeSet = .FALSE.  !it is a one time alarm, it rang, now let it resort to interval
                    alarm%alarmint%Ringing = .TRUE.
+                   alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
                    IF ( PRESENT( RingingAlarmList ) .AND. &
                         PRESENT ( NumRingingAlarms ) ) THEN
                      NumRingingAlarms = NumRingingAlarms + 1
@@ -1068,7 +1073,9 @@ use esmf_timemod
 !                IF ( alarm%alarmint%RingTime >= clock%clockint%CurrTime ) THEN
                 IF ( ESMF_TimeGE( alarm%alarmint%RingTime, &
                                   clock%clockint%CurrTime ) ) THEN
+                   alarm%alarmint%RingTimeSet = .FALSE.  !it is a one time alarm, it rang, now let it resort to interval
                    alarm%alarmint%Ringing = .TRUE.
+                   alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
                    IF ( PRESENT( RingingAlarmList ) .AND. &
                         PRESENT ( NumRingingAlarms ) ) THEN
                      NumRingingAlarms = NumRingingAlarms + 1

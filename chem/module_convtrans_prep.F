@@ -139,9 +139,9 @@ subroutine convtrans_prep(gd_cloud,gd_cloud2,gd_cloud_a,         &
         do j=jts,jte
            do k=kts,kte
               do i=its,ite
-                 gd_cloud_b(i,k,j)=gd_cloud_a(i,k,j)/real(stepave_count)
+                 gd_cloud_b(i,k,j)=.1*gd_cloud_a(i,k,j)/real(stepave_count)
                  gd_cloud_a(i,k,j)=0.
-                 gd_cloud2_b(i,k,j)=gd_cloud2_a(i,k,j)/real(stepave_count)
+                 gd_cloud2_b(i,k,j)=.1*gd_cloud2_a(i,k,j)/real(stepave_count)
                  gd_cloud2_a(i,k,j)=0.
               enddo
            enddo

@@ -444,6 +444,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Grell 3D ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 
+ ishallow                            = 1,   Shallow convection used with Grell 3D ensemble scheme (cu_physics = 5)
+
  cudt                                = 0,       ; minutes between cumulus physics calls
 
  cugd_avedx                          ; number of grid boxes over which subsidence is spread.

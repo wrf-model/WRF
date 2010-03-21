@@ -681,12 +681,12 @@ CONTAINS
         PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-PSIH10(I)
         IF ( PRESENT(ISFTCFLX) ) THEN
            IF ( ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
-! def
-!             Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.5))**2
+! v3.1
+!             Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.))**2
 ! hfip1
-!!            Z0Q = 0.62*2.0E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.5))**2
-! hfip2 formula
-              Z0Q = 0.62*2.0E-5/UST(I) + 0.5E-3*(MAX(0.,UST(I)-1.5))**2
+!             Z0Q = 0.62*2.0E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.5))**2
+! v3.2
+              Z0Q = 1.e-4
               PSIQ=ALOG(ZA(I)/Z0Q)-PSIH(I)
               PSIT=PSIQ
               PSIQ2=ALOG(2./Z0Q)-PSIH2(I)

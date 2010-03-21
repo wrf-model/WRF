@@ -1130,8 +1130,8 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
               IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
 
               ! set tendency to zero
-                 PRATEC(I,J)=0.
-                 RAINCV(I,J)=0.
+!                PRATEC(I,J)=0.
+!                RAINCV(I,J)=0.
                  DO k = k_start,k_end
                     RTHCUTEN(i,k,j)=0.
                     RQVCUTEN(i,k,j)=0.
@@ -1188,8 +1188,8 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
               IF ( NINT(NCA(I,J) / DT) .LE. 1 ) THEN
 
               ! set tendency to zero
-                 PRATEC(I,J)=0.
-                 RAINCV(I,J)=0.
+!                PRATEC(I,J)=0.
+!                RAINCV(I,J)=0.
                  DO k = k_start,k_end
                     RTHCUTEN(i,k,j)=0.
                     RQVCUTEN(i,k,j)=0.

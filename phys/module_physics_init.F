@@ -415,7 +415,8 @@ integer myproc
       XLAND(i,j)=1.
       GSW(i,j)=0.
       GLW(i,j)=0.
-      UST(i,j)=0.
+!-- initialize ust to a small value
+      UST(i,j)=0.0001
       MOL(i,j)=0.0
       PBLH(i,j)=0.0
       HFX(i,j)=0.

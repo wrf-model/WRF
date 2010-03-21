@@ -230,7 +230,7 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(INOUT) ::           CAPG,CANWAT, QFX, HFX, LH,              &
                                        PSIH,VEGFRA, VEGF_PX, SNOW,             &
-                                       SNOWH, SNOWC, ALBEDO, XLAND, XICE 
+                                       SNOWH, SNOWC, ALBEDO, XLAND, XICE
 
 
    LOGICAL :: radiation
@@ -289,7 +289,7 @@ CONTAINS
       !-----------------------------------------------------------------------------------
       !--- Compute time relatve to old and new analysis time for timestep interpolation
       CURTIME = (ITIMESTEP-1) * DT
-      TIME_BETWEEN_ANALYSIS = MOD(CURTIME,DT_FDDA)
+      TIME_BETWEEN_ANALYSIS = AMOD(CURTIME,DT_FDDA)
       IF (TIME_BETWEEN_ANALYSIS .EQ. 0.0) THEN   
           CORB = 1.0       
           CORE = 0.0    
@@ -604,7 +604,8 @@ CONTAINS
       DO J = jts,jte
       DO I = its,ite
       
-      !-- Initialize 2 and 3-D veg parameters to be cacluated
+
+      !-- Initialize 2 and 3-D veg parameters to be caculated
       DO K=1,NLCAT                                                               
         LAIMX(K) = LAI0(K)                                                       
         LAIMN(K) = LAIMN0(K)                                                   
@@ -843,6 +844,7 @@ CONTAINS
       REAL        :: QST1,PHIH,PSIOB
       REAL        :: T2NUD, T2NUDF
       REAL        :: VAPPRS, QSBT, RH2MOD
+      REAL        :: A,BB,C,D
 
 !... Parameters
       REAL        :: ZOBS, GAMAH, BETAH, SIGF, BH, CT_SNOW
@@ -934,6 +936,7 @@ CONTAINS
         QST1 = 0.5*(QST+QST12/PHIH)
         TA2= (THETAG + TST * (PR0 / KARMAN * (ALOG(ZOBS / ZNT) - PSIOB)+5.))/CPOT
         QA2= QV1 - QST1 * PR0/ KARMAN *  (ALOG(Z1 / ZOBS) - PSIH15)
+        IF (QA2.LE.0.0) QA2 = QV1
         !--  Relative humidity
         VAPPRS = SVP1 * EXP(SVP2 * (TA2 - SVPT0) / (TA2 - SVP3))
         QSBT   = EP_2 * VAPPRS / (PSURF - VAPPRS)
@@ -995,15 +998,14 @@ CONTAINS
                      - 2.0 * PI * TAUINV * ((1.0 - CRANKP) * TG - T2)              !SOIL FLUX
           TSNEW    = (TG + DTPBL * COEFFN) / COEFFNP1
           !-- FOR SNOW COVERED SURFACE TEMPERATURE IS NOT MORE THAN ZERO
-!          IF (ISNOW .GT. 0.5) TSNEW = AMIN1(TSNEW,273.15)
+          IF (XICE1 .GT. 0.5) TSNEW = AMIN1(TSNEW,273.15)                         ! Re-added Jan 2010 to keep ice surface at or below freezing (J. Pleim)
           TSHLF = 0.5 * ( TSNEW + TG)
           T2NEW = (T2 + DTPBL * TAUINV * T2TFAC * (TSHLF - (1 - CRANKP) * T2)     &
                 + DTPBL*T2NUD)  &              ! Added deep temperature nudging 
                   / (1.0 + DTPBL * TAUINV * T2TFAC * CRANKP)
           !-- REPLACE OLD with NEW Value
           TG = TSNEW
-          T2 = T2NEW
-
+          T2 = T2NEW             
         ENDIF
         !-----------------------------------------------------------------------------------------
 

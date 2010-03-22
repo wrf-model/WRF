@@ -15,6 +15,7 @@ contains
 subroutine sfire_model (                    &
     id,                                     & ! unique number for prints and debug
     ifun,                                   & ! what to do see below
+    restart,                                &
     need_lfn_update,                          & ! if lfn needs to be synced between tiles
     num_ignitions,                          & ! number of ignitions before advancing
     ifuelread,nfuel_cat0,                   & ! initialize fuel categories
@@ -88,6 +89,7 @@ integer, intent(in) :: ifun                 ! 1 = initialize run pass 1
                                             ! 4 = do one timestep 
                                             ! 5 = copy timestep output to input
                                             ! 6 = compute output fluxes
+logical, intent(in):: restart               ! if true, use existing state
 logical, intent(out)::need_lfn_update       ! if true, halo update on lfn afterwards
 ! scalar data
 integer, intent(in) :: num_ignitions        ! number of ignition locations/times 
@@ -173,7 +175,7 @@ elseif(ifun.eq.2)then
             ifts,ifte,jfts,jfte, &                ! tile dims
             zsf)                               ! array
 
-        call set_nfuel_cat( &
+        if(.not.restart)call set_nfuel_cat( &
             ifms,ifme,jfms,jfme, &
             ifts,ifte,jfts,jfte, &
             ifuelread,nfuel_cat0,&
@@ -181,7 +183,7 @@ elseif(ifun.eq.2)then
 
         ! uses nfuel_cat to set the other fuel data arrays
         ! needs zsf on halo width 1 to compute the terrain gradient
-        call set_fire_params(   & 
+        if(.not.restart)call set_fire_params(   & 
             ifds,ifde,jfds,jfde, &
             ifms,ifme,jfms,jfme, &
             ifts,ifte,jfts,jfte, &
@@ -193,14 +195,17 @@ elseif(ifun.eq.2)then
         call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,zsf,'model: terrain height')        
                                         
         ! initialize model state to no fire
-        call init_no_fire   ( &
+        if(.not.restart)then
+            call init_no_fire  ( &
             ifds,ifde,jfds,jfde, &
             ifms,ifme,jfms,jfme, &
             ifts,ifte,jfts,jfte, &
             fdx,fdy,time_start,  &
             fuel_frac,fire_area,lfn,tign)
             
-        need_lfn_update=.true. ! because we have set lfn 
+            need_lfn_update=.true. ! because we have set lfn 
+
+        endif
 
 elseif(ifun.eq.3)then   ! ignition if so specified
 

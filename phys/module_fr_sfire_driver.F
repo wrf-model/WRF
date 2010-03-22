@@ -5,8 +5,7 @@
 
 ! For support please subscribe to the wrf-fire mailing list at NCAR at
 ! http://mailman.ucar.edu/mailman/listinfo/wrf-fire
-!
-! ALL RESPONSES TO INQUIRIES ABOUT THIS CODE WILL BE COPIED TO THE wrf-fire LIST
+! or go to http://www.openwfm.org/wiki/index.php5/Talk:WRF-Fire
 
 ! This module is the only entry point from WRF-ARW to the wildland 
 ! fire model. The call to sfire_driver advances the fire model by 
@@ -24,6 +23,9 @@
 ! It is a reimplementation of an earlier model, which used fireline 
 ! propagation by tracers and was coupled with the Clark-Hall 
 ! atmospheric code, described in [2]. For WRF documentation see [3].
+
+! If you use this code, please acknowledge our work by citing [1].
+! Thank you.
 
 ! Acknowledgements
 !
@@ -228,7 +230,7 @@ subroutine sfire_driver_em ( grid , config_flags                    &
         fire_ignition_time, &
         fire_ignition_radius
     integer::fire_ifun,ir,jr,fire_ignition_longlat,istep,itimestep
-    logical::need_lfn_update
+    logical::need_lfn_update,restart
     !real, dimension(ifms:ifme, jfms:jfme)::uf,vf,lfn_out  
     ! uf vf only do not need to be in the state but we need halo on them
     real, dimension(ifms:ifme, jfms:jfme)::lfn_out  
@@ -269,6 +271,7 @@ subroutine sfire_driver_em ( grid , config_flags                    &
     ir=grid%sr_x ! refinement ratio
     jr=grid%sr_y
     itimestep=grid%itimestep
+    restart=config_flags%restart
 
     
 
@@ -333,7 +336,7 @@ subroutine sfire_driver_em ( grid , config_flags                    &
             grid%num_tiles,                             & ! atm grid tiling
             grid%i_start,min(grid%i_end,ide-1),                    &
             grid%j_start,min(grid%j_end,jde-1),                    &                 
-            itimestep,config_flags%fire_fuel_read,config_flags%fire_fuel_cat, &  ! in scalars
+            itimestep,restart,config_flags%fire_fuel_read,config_flags%fire_fuel_cat, &  ! in scalars
             grid%dt,grid%dx,grid%dy,                    &
             grid%u_frame,grid%v_frame,                  &
             unit_fxlong,unit_fxlat,                           & ! coordinates of grid center
@@ -389,7 +392,7 @@ subroutine sfire_driver_phys (ifun,need_lfn_update,    &
     ifps, ifpe, jfps, jfpe,                       & ! fire patch in - will use smaller
     ir,jr,                                        & ! atm/fire grid ratio
     num_tiles,i_start,i_end,j_start,j_end,        & ! atm grid tiling
-    itimestep,ifuelread,nfuel_cat0,dt,dx,dy,      & ! in scalars
+    itimestep,restart,ifuelread,nfuel_cat0,dt,dx,dy,      & ! in scalars
     u_frame,v_frame,                              &
     unit_fxlong,unit_fxlat,                       & ! fxlong, fxlat units in m  
     fire_ext_grnd,fire_ext_crwn,fire_crwn_hgt,    &
@@ -436,6 +439,8 @@ integer, intent(in)::ifun,                        &
                                                        ! 2=from file
     nfuel_cat0,                                   & ! fuel category to initialize everything to
     num_tiles                                       ! number of tiles
+
+logical, intent(in)::restart
     
 
 logical, intent(out)::need_lfn_update
@@ -608,6 +613,12 @@ do ij=1,num_tiles
 
     if(ifun.eq.1)then   ! set terrain
 
+      if(restart)then
+          
+          call message('restart - topo initialization skipped')
+
+      else
+
         call print_2d_stats(ips,ipe,jps,jpe,ims,ime,jms,jme,zs,'driver:zs')
     
         ! interpolate terrain height
@@ -670,10 +681,13 @@ do ij=1,num_tiles
 
         endif
 
+     endif
+
     elseif(ifun.eq.2)then  
                
         ! after the loop where zsf created exited and all synced
         call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,zsf,'driver_phys:zsf')        
+
     elseif(ifun.eq.3)then  ! interpolate winds to the fire grid
     
         call interpolate_atm2fire(id,                     & ! flag for debug output
@@ -691,7 +705,9 @@ do ij=1,num_tiles
     
     endif
 
-    call sfire_model (id,ifun,need_lfn_update,  &
+!   the following executes in any case
+
+    call sfire_model (id,ifun,restart,need_lfn_update,  &
         num_ignitions,                          & ! switches
         ifuelread,nfuel_cat0,                   & ! initialize fuel categories
         ifds,ifde,jfds,jfde,                    & ! fire domain dims
@@ -1217,7 +1233,7 @@ end subroutine set_flags
 
 subroutine print_id
 character(len=128)::id,msg
-id='1cd1cafa379642cfc5772470ef62206a53076271'
+id='b6fe89aeb71d941e91530aafcf2f5b183a44fc37'
 msg=id
 call message(msg)
 end subroutine print_id

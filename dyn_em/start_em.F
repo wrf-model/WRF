@@ -458,6 +458,7 @@
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
            grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
+           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf*(((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
            grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
@@ -471,6 +472,7 @@
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
            grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
+           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
            grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                         (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)

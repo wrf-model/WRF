@@ -112,6 +112,7 @@
                      grid%fdob%obsprt,                                              &
                      grid%fdob%latprt, grid%fdob%lonprt,                            &
                      grid%fdob%mlatprt, grid%fdob%mlonprt,                          &
+                     grid%fdob%stnidprt,                                            &
                      ide, jde,                                                      &
                      ims, ime, jms, jme,                                            &
                      its, ite, jts, jte,                                            &
@@ -119,7 +120,7 @@
                      model_config_rec%parent_grid_ratio,                            &
                      model_config_rec%i_parent_start(inest),                        &
                      model_config_rec%j_parent_start(inest),                        &
-                     model_config_rec%max_dom, grid%fdob%refprt,                    &
+                     model_config_rec%max_dom,                                      &
                      model_config_rec%nobs_ndg_vars, grid%max_obs, iprt_in4dob)
        ENDDO
       !$OMP END PARALLEL DO
@@ -154,6 +155,7 @@
                     obs_prt,                                             &
                     lat_prt, lon_prt,                                    &
                     mlat_prt, mlon_prt,                                  &
+                    stnid_prt,                                           &
                     e_we, e_sn,                                          &
                     ims, ime, jms, jme,                                  &
                     its, ite, jts, jte,                                  &
@@ -161,7 +163,7 @@
                     parent_grid_ratio,                                   &
                     i_parent_start,                                      &
                     j_parent_start,                                      &
-                    maxdom, refprt,                                      &
+                    maxdom,                                              &
                     nndgv, niobf, iprt)
 
   USE module_domain
@@ -249,6 +251,7 @@
   REAL, intent(inout) :: lon_prt(prt_max)     ! For printout of obs longitude
   REAL, intent(inout) :: mlat_prt(prt_max)    ! For printout of model lat at obs (ri,rj)
   REAL, intent(inout) :: mlon_prt(prt_max)    ! For printout of model lon at obs (ri,rj)
+  INTEGER, intent(inout) :: stnid_prt(40,prt_max) ! For printout of model lon at obs (ri,rj)
   INTEGER, intent(in) :: e_we                 ! max grid index in south-north coordinate
   INTEGER, intent(in) :: e_sn                 ! max grid index in west-east   coordinate
   INTEGER, intent(in) :: ims                  ! grid memory start index (west-east dim)
@@ -264,15 +267,14 @@
   INTEGER, intent(in) :: i_parent_start       ! starting i coordinate in parent domain
   INTEGER, intent(in) :: j_parent_start       ! starting j coordinate in parent domain
   INTEGER, intent(in) :: maxdom               ! maximum number of domains
-  INTEGER, intent(inout) :: refprt(maxdom)    ! reference obs index for printout
   LOGICAL, intent(in) :: iprt                 ! print flag
       
 !***  DECLARATIONS FOR IMPLICIT NONE                                    
   integer :: n, ndum, nopen, nvol, idate, imm, iss
-  integer :: nlast                      ! the (very) last obs in the list
+  integer :: nlast                      ! last obs in list of valid obs from prev window
   integer :: nsta                       ! number of stations held in timeobs array 
   integer :: nstaw                      ! # stations within the actual time window
-  integer :: nprev=0                    ! previous n in obs read loop (for printout only)
+  integer :: nprev                      ! previous n in obs read loop (for printout only)
   integer :: meas_count, imc, njend, njc, njcc, julob, kn
   real    :: hourob, rjulob
   real    :: xhour, tback, tforwd, rjdate1, timanl1, rtimob
@@ -294,8 +296,6 @@
   character*2 fonc
   character(len=200) :: msg       ! Argument to wrf_message
   real latitude,longitude
-  real :: plat_prt=0.0        ! Previous obs latitude in read loop (used for printout)
-  real :: plon_prt=0.0        ! Previous obs longitude in read loop (used for printout)
   logical :: newpass          ! New pass flag (used for printout)
   logical is_sound,bogus
   LOGICAL OPENED,exist
@@ -304,8 +304,7 @@
   data ifon/0,0,0,0,0/
   integer :: nmove, nvola
   integer :: iyear, itimob                                                     !obsnypatch
-! external :: fcst_hours                                                       !obsnypatch
-! real :: fcst_hours                                                           !obsnypatch
+  integer :: errcnt
   DATA NMOVE/0/,NVOLA/61/
 
 ! if(ieof(inest).eq.2.and.fdob%nstat.eq.0)then
@@ -318,6 +317,7 @@
 ! Initialize obs for printout
   obs_prt = -999
   newpass = .true.
+  errcnt  = 0 
 
 ! if start time, or restart time, set obs array to missing value
   IF(KTAU.EQ.0.OR.KTAU.EQ.KTAUR) THEN
@@ -332,8 +332,6 @@
 
   XHOUR=XTIME/60.
   XHOUR=AMAX1(XHOUR,0.0)
-
-10 CONTINUE
 
 ! DEFINE THE MAX LIMITS OF THE WINDOW
   TBACK=XHOUR-TWINDO
@@ -360,7 +358,7 @@
     ENDDO t_window
 
     IF (iprt .and. ndum>0) THEN
-      write(msg,'(a,i5,2a)') 'OBS NUDGING: ',ndum,' previously read obs ',  &
+      write(msg,fmt='(a,i5,2a)') 'OBS NUDGING: ',ndum,' previously read obs ',  &
            'are now too old for the current window and have been removed.'
       call wrf_message(msg)
     ENDIF
@@ -463,7 +461,6 @@
  1001 continue
 
 ! ieof=2 means no more files
-! print *,'after 1001,n,timeob(n)=',n,timeob(n)
 
     IF(IEOF(inest).GT.1) then
       GOTO 130
@@ -478,6 +475,7 @@
     ENDIF
  
 ! OBSFILE: no more data in the obsfile 
+! AJB note: This is where we would implement multi-file reading.
     if(ieof(inest).eq.1 )then
       ieof(inest)=2
       goto 130
@@ -486,9 +484,9 @@
 !**********************************************************************
 !       --------------   110 SUBLOOP OVER N  --------------
 !**********************************************************************
+  110 continue
 ! THE TIME OF THE MOST RECENTLY ACQUIRED OBS IS .LE. TFORWD,
 ! SO CONTINUE READING
-  110 continue
 
       IF(N.GT.NIOBF-1)GOTO 120
 ! REPLACE NVOLA WITH LUN 70, AND USE NVOLA AS A FILE COUNTER
@@ -530,13 +528,6 @@
       ENDIF
       read(nvol,102)latitude,longitude
  102  FORMAT(2x,2(f9.4,1x))
-
-! save obs and model latitude and longitude for printout
-      CALL collect_obs_info(newpass,inest,n,latitude,longitude,nprev,niobf,  &
-                         refprt(inest),rio,rjo,prt_max,prt_freq,xlat,xlong,  &
-                         obs_prt,lat_prt,lon_prt,mlat_prt,mlon_prt,          &
-                         plat_prt,plon_prt, e_we,e_sn,                       &
-                         ims,ime,jms,jme,its,ite,jts,jte)
 
 !     if(ifon.eq.4)print *,'ifon=4',latitude,longitude
 ! this works only for lc projection
@@ -593,6 +584,7 @@
       if(platform(7:10).eq.'TEMP')plfo(n)=5.
       if(platform(7:11).eq.'PILOT')plfo(n)=6.
       if(platform(1:7).eq.'SATWNDS')plfo(n)=7.
+      if(platform(7:11).eq.'SATWI')plfo(n)=7.
       if(platform(1:4).eq.'SAMS')plfo(n)=8.
       if(platform(7:14).eq.'PROFILER')plfo(n)=9.
 ! yliu: ACARS->SATWINDS
@@ -744,9 +736,12 @@
             varobs(5,n)=-888888.
             IF (iprt) THEN
               if(varobs(6,n).eq.-888888.000) then
-                call wrf_message("********** PROBLEM *************")
-                write(msg,*) 'sounding, p and ht undefined',latitude,longitude
-                call wrf_message(msg)
+                if (errcnt.le.10) then
+                  write(msg,*) '*** PROBLEM: sounding, p and ht undefined',latitude,longitude
+                  call wrf_message(msg)
+                  errcnt = errcnt + 1
+                  if (errcnt.gt.10) call wrf_message("MAX of 10 warnings issued.")
+                endif
               endif
             ENDIF
           endif 
@@ -1066,12 +1061,12 @@
               n=n-1
               goto 100
             else
-              IF (iprt) THEN
-                write(msg,*) 'duplicate location, but no match otherwise',n,njc,  &
-                             plfo(n),varobs(5,n),nlevs_ob(n),lev_in_ob(n),        &
-                             plfo(njc),varobs(5,njc),nlevs_ob(njc),lev_in_ob(njc)
-                call wrf_message(msg)
-              ENDIF
+!             IF (iprt) THEN
+!               write(msg,*) 'duplicate location, but no match otherwise',n,njc,  &
+!                            plfo(n),varobs(5,n),nlevs_ob(n),lev_in_ob(n),        &
+!                            plfo(njc),varobs(5,njc),nlevs_ob(njc),lev_in_ob(njc)
+!               call wrf_message(msg)
+!             ENDIF
             endif
           endif
         endif
@@ -1086,40 +1081,18 @@
         goto 100
       endif
 
-! ajb bugfix begin:
-!! check if ob is in coarse mesh domain  (061404 switched sn/we)
-!      if( (ri.lt.2.).or.(ri.gt.real(we_maxcg-1)).or.(rj.lt.2.).or.         &
-!          (rj.gt.real(sn_maxcg-1)) ) then
-
 ! check if ob is in the domain
-    if( (ri.lt.2.).or.(ri.gt.real(e_we-1)).or.(rj.lt.2.).or.         &
-        (rj.gt.real(e_sn-1)) ) then
+      if( (ri.lt.2.).or.(ri.gt.real(e_we-1)).or.(rj.lt.2.).or.         &
+          (rj.gt.real(e_sn-1)) ) then
 
-        n=n-meas_count
+          n=n-meas_count
 !ajb  Reset timeob for discarded indices.
-        do imc = n+1, n+meas_count
-          timeob(imc) = 99999.
-        enddo
-        goto 100
-    endif
+          do imc = n+1, n+meas_count
+            timeob(imc) = 99999.
+          enddo
+          goto 100
+      endif
 
-! check if an upper air ob is too high
-! the ptop here is hardwired
-! this check has to come after other checks - usually the last few
-!   upper air obs are too high
-!      if(is_sound)then
-!        njc=meas_count
-!        do jcj=meas_count,1,-1
-! 6. is 60 mb - hardwired
-!          if((varobs(5,n).lt.6.).and.(varobs(5,n).gt.0.))then
-!            print *,'obs too high - eliminate,n,p=',n,varobs(5,n)
-!            n=n-1
-!          else
-!            if(varobs(5,n).gt.0.)goto 100
-!          endif
-!        enddo
-!      endif
-!
       IF(TIMEOB(N).LT.fdob%RTLAST) THEN
         IF (iprt) THEN
           call wrf_message("2 OBS ARE NOT IN CHRONOLOGICAL ORDER")
@@ -1131,6 +1104,12 @@
       ELSE
         fdob%RTLAST=TIMEOB(N)
       ENDIF
+! Save obs and model latitude and longitude for printout
+      CALL collect_obs_info(newpass,inest,n,latitude,longitude,              &
+                         nlast,nprev,niobf,id,stnid_prt,                     &
+                         rio,rjo,prt_max,prt_freq,xlat,xlong,                &
+                         obs_prt,lat_prt,lon_prt,mlat_prt,mlon_prt,          &
+                         e_we,e_sn,ims,ime,jms,jme,its,ite,jts,jte)
       GOTO 100
   111 CONTINUE
 !**********************************************************************
@@ -1149,34 +1128,27 @@
          call wrf_message(msg)
       ENDIF
 
-!     if(nsta.eq.1.and.timeob(1).gt.9.e4)nsta=0
+! AJB note: Go back and check for more files. (Multi-file implementation)
   goto 1001
 
+120 CONTINUE
 ! THE OBSERVATION ARRAYS ARE FULL AND THE MOST RECENTLY
 ! ACQUIRED OBS STILL HAS TIMEOB .LE. TFORWD.  SO START
 ! DECREASING THE SIZE OF THE WINDOW
 ! get here if too many obs
-120 CONTINUE
   IF (iprt) THEN
     write(msg,121) N,NIOBF
     call wrf_message(msg)
-    write(msg,122)
-    call wrf_message(msg)
   ENDIF
   call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 122' )
-  TWINDO=TWINDO-0.1*TWINDO
-  IF(TWINDO.LT.0) call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 120' )
-! IF THE WINDOW BECOMES NEGATIVE, THE INCOMING DATA IS
-! PROBABLY GARBLED. STOP.
-  GOTO 10
-!
+
+130 CONTINUE
 ! READ CYCLE IS COMPLETED. DETERMINE THE NUMBER OF OBS IN
 ! THE CURRENT WINDOW
 !
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! BUT FIRST, WHEN KTAU.EQ.0 (OR IN GENERAL, KTAUR), DISCARD THE
 ! "OLD" OBS FIRST...
-130 CONTINUE
 
 ! Get here if at end of file, or if obs time is beyond what we need right now.
 ! On startup, we report the index of the last obs read.
@@ -1266,12 +1238,6 @@
 ! Find the number of stations that are actually within the time window.
   nstaw = nvals_le_limit(nsta, timeob, tforwd)
 
-  CALL finish_obs_info(iprt,nstaw,niobf,rio,rjo,prt_max,prt_freq,          &
-                       xlat,xlong,e_we,e_sn,refprt(inest),obs_prt,         &
-                       lat_prt,lon_prt,mlat_prt,mlon_prt,                  &
-                       plat_prt,plon_prt,xtime,                            &
-                       ims,ime,jms,jme,its,ite,jts,jte)
-
   IF (iprt) then
       write(msg,160) KTAU,XTIME,NSTAW
       call wrf_message(msg)
@@ -1286,22 +1252,28 @@
           write(msg,1450) GIV
           call wrf_message(msg)
         ELSE
-          write(msg,1455)
+          write(msg,1455) INEST
+          call wrf_message("")
           call wrf_message(msg)
+          call wrf_message("")
         ENDIF
         IF(ISTEMP.EQ.1) then
           write(msg,1451) GIT
           call wrf_message(msg)
         ELSE
-          write(msg,1456)
+          write(msg,1456) INEST
+          call wrf_message("")
           call wrf_message(msg)
         ENDIF
         IF(ISMOIS.EQ.1) then
+          call wrf_message("")
           write(msg,1452) GIQ
           call wrf_message(msg)
         ELSE
-          write(msg,1457)
+          write(msg,1457) INEST
+          call wrf_message("")
           call wrf_message(msg)
+          call wrf_message("")
         ENDIF
       ENDIF
     ENDIF
@@ -1352,7 +1324,6 @@
       I4,': INCREASE PARAMETER NIOBF')
 5403  FORMAT(1H0,'-------------EOF REACHED FOR NVOL = ',I3,              &
        ' AND XTIME = ',F10.2,'-------------------')
-122   FORMAT(1X,'     ...OR THE CODE WILL REDUCE THE TIME WINDOW')
 160   FORMAT('****** CALL IN4DOB AT KTAU = ',I5,' AND XTIME = ',         &
       F10.2,':  NSTA = ',I7,' ******')
 1449  FORMAT('*****NUDGING INDIVIDUAL OBS ON MESH #',I2,                 &
@@ -1362,9 +1333,9 @@
 1450  FORMAT(1X,'NUDGING IND. OBS WINDS WITH GIV = ',E11.3)
 1451  FORMAT(1X,'NUDGING IND. OBS TEMPERATURE WITH GIT = ',E11.3)
 1452  FORMAT(1X,'NUDGING IND. OBS MOISTURE WITH GIQ = ',E11.3)
-1455  FORMAT(1X,'*** OBS WIND NUDGING TURNED OFF FOR THIS MESH!!')
-1456  FORMAT(1X,'*** OBS TEMPERATURE NUDGING IS TURNED OFF FOR THIS MESH!!')
-1457  FORMAT(1X,'*** OBS MOISTURE NUDGING IS TURNED OFF FOR THIS MESH!!')
+1455  FORMAT(1X,'*** OBS WIND NUDGING FOR MESH ',I2,' IS TURNED OFF!!')
+1456  FORMAT(1X,'*** OBS TEMPERATURE NUDGING FOR MESH ',I2,' IS TURNED OFF!!')
+1457  FORMAT(1X,'*** OBS MOISTURE NUDGING FOR MESH ',I2,' IS TURNED OFF!!')
 
   RETURN
   END SUBROUTINE in4dob
@@ -1639,17 +1610,6 @@ END SUBROUTINE rh2rb
 
       END IF
 
-!       write(6,*) 'ajb init: map_proj = ',map_proj
-!       write(6,*) 'ajb: after setting map:'
-!       write(6,*) 'truelat1 = ',obs_proj%truelat1
-!       write(6,*) 'truelat2 = ',obs_proj%truelat2
-!       write(6,*) 'stdlon   = ',obs_proj%stdlon
-!       write(6,*) 'lat1     = ',obs_proj%lat1
-!       write(6,*) 'lon1     = ',obs_proj%lon1
-!       write(6,*) 'knowni   = ',obs_proj%knowni
-!       write(6,*) 'knownj   = ',obs_proj%knownj
-!       write(6,*) 'dx       = ',obs_proj%dx
-
   END SUBROUTINE set_projection
 
   SUBROUTINE fmt_date(idate,odate)                                             !obsnypatch
@@ -1704,21 +1664,35 @@ END SUBROUTINE rh2rb
   RETURN
   END FUNCTION nvals_le_limit
 
-  SUBROUTINE collect_obs_info(newpass,inest,n,latitude,longitude,nprev,niobf, &
-                              iref,rio,rjo,prt_max,prt_freq,xlat,xlong,obs,   &
-                              lat,lon, mlat,mlon,plat,plon,e_we,e_sn,         &
-                              ims,ime,jms,jme,its,ite,jts,jte)
+  SUBROUTINE collect_obs_info(newpass,inest,n,latitude,longitude,             &
+                              nlast,nprev,niobf,station_id,stnid,             &
+                              rio,rjo,prt_max,prt_freq,xlat,xlong,            &
+                              obs, lat,lon, mlat,mlon,                        &
+                              e_we,e_sn,ims,ime,jms,jme,its,ite,jts,jte)
 !*************************************************************************
-! Purpose: Collect obs and model latitude and longitude values for print
-!          diagnostics. This is tricky because (1) THIS SUBROUTINE CALL IS
-!          WITHIN THE LOOP FOR READING THE OBServations, (2) observations
-!          can be rejected, and (3) soundings may contain multiple obs
-!          levels (i.e., n jumps by the number of levels in the sounding.
-!          Here, "prev" means the previous iteration of the read obs loop.
-!          NOTE: The lat/lon info for an obs is not actually stored until 
-!                the read of the subsequent obs, because the number of
-!                levels in the obs, or even whether or not the obs has
-!                been accepted, is not known until the subsequent read.
+! Purpose: Collect the obs index, obs latitude, obs longitude, obs station
+!          id, and model latitude and longitude values for print
+!          diagnostics. Note that THIS SUBROUTINE IS CALLED INTERATIVELY
+!          FROM IN4DOB, WITHIN THE OBS READ LOOP that reads new obser-
+!          vations needed for the new time window. Flag newpass is true
+!          the first time collect_obs_info is called from the read-loop
+!          for a new time window. So for each pass of IN4DOB, newpass is
+!          true the first time IN4DOB calls collec_obs_info.
+
+!          OBS (soundings) contain multiple obs levels. So on each sub-
+!          sequent call of collect_obs_info for a specific pass of IN4DOB,
+!          n will jump by the number of levels in the sounding.
+!
+!          Here, nlast refers to the index of the last valid-time obs
+!          that was read in during the last pass of IN4DOB (after the old
+!          obs were removed). This way we can properly start storing
+!          obs information for the new obs that are being read on this
+!          pass of IN4DOB, beginning with the first newly read obs for
+!          this pass of IN4DOB.
+!
+!          Note that nprev is needed to properly handle soundings. On
+!          each pass, n is stored into nprev, and on each subsequent
+!          pass of collect_obs_info, a loop is performed from nprev+1 to n.
 !*************************************************************************
 
   IMPLICIT NONE
@@ -1728,9 +1702,11 @@ END SUBROUTINE rh2rb
   INTEGER, intent(in)    :: n              ! Observation index
   REAL,    intent(in)    :: latitude       ! Latitude of obs
   REAL,    intent(in)    :: longitude      ! Latitude of obs
-  INTEGER, intent(inout) :: nprev          ! Previous observation index
+  INTEGER, intent(in)    :: nlast          ! Last obs of valid obs, prev window
+  INTEGER, intent(inout) :: nprev          ! Previous obs in new window read seq
   INTEGER, intent(in)    :: niobf          ! Maximum number of observations
-  INTEGER, intent(inout) :: iref           ! Reference obs index
+  CHARACTER*15, intent(in) :: station_id   ! First 15 chars of station id for obs n
+  INTEGER, intent(inout) :: stnid(40,prt_max) ! Station ids for diagnostic printout
   REAL,    intent(in)    :: rio(niobf)     ! West-east coord (non-stagger)
   REAL,    intent(in)    :: rjo(niobf)     ! South-north coord (non-stagger)
   INTEGER, intent(in)    :: prt_max        ! Max no. of obs for diagnostic printout
@@ -1742,8 +1718,6 @@ END SUBROUTINE rh2rb
   REAL,    intent(inout) :: lon(prt_max)   ! Obs longitude for printout
   REAL,    intent(inout) :: mlat(prt_max)  ! Model latitude at (rio,rjo) for printout
   REAL,    intent(inout) :: mlon(prt_max)  ! Model longitude at (rio,rjo) for printout
-  REAL,    intent(inout) :: plat           ! Previous latitude read
-  REAL,    intent(inout) :: plon           ! Previous longitude read
   INTEGER, intent(in)    :: e_we           ! Max grid index in south-north
   INTEGER, intent(in)    :: e_sn           ! Max grid index in west-east
   INTEGER, intent(in)    :: ims            ! Grid mem start (west-east)
@@ -1754,26 +1728,30 @@ END SUBROUTINE rh2rb
   INTEGER, intent(in)    :: ite            ! Grid tile end   (west-east)
   INTEGER, intent(in)    :: jts            ! Grid tile start (south-north)
   INTEGER, intent(in)    :: jte            ! Grid tile end   (south-north)
+
 ! Local variables
-  integer nn                      ! Loop counter over obs index 
-  integer ndx                     ! Index into printout arrays
-  real    :: ri, rj               ! Mass-pt coord of obs 
-  integer :: ril, rjl             ! Mass-pt integer coord immed sw of obs 
+  integer i                       ! Loop counter over station id character
+  integer nn                      ! Loop counter over obs index
+  integer ndx,ndxp                ! Index into printout arrays (ndx and prev ndx)
+  real    :: ri, rj               ! Mass-pt coord of obs
+  integer :: ril, rjl             ! Mass-pt integer coord immed sw of obs
   integer :: iend, jend           ! Upper i, j index for interpolation
   real    :: dxob, dyob           ! Grid fractions for interp
   logical :: llsave               ! Save lat/lon values if true
   character(len=200) :: msg       ! Argument to wrf_message
 
-  if(newpass) then          ! No action on first pass 
-    iref = n-1
+  if(newpass) then
     newpass = .false.
-  else
-! Start iteration only if we have not yet stored the 100th obs for printing.
+    nprev = nlast       ! Reset in case old obs have been discarded from prev window
+  endif
+
+! Start iteration only if we have not yet stored prt_max number of obs for printing.
 ! Note: The loop below could represent multiple levels in a sounding, so we
-!       go ahead and start the loop if the beginning index (ndx) is 100 or
-!       less, and then exit the loop if ndx exceeds 100.
+!       go ahead and start the loop if the beginning index (ndx) is prt_max or
+!       less, and then exit the loop if ndx exceeds prt_max.
     if(prt_freq.gt.0) then
-       ndx = (nprev-1-iref)/prt_freq + 1
+       ndx  = (n-nlast-1)/prt_freq + 1
+       ndxp = (nprev-nlast-1)/prt_freq + 1
     else
        write(msg,*) 'STOP! OBS NAMELIST INPUT obs_prt_freq MUST BE GREATER THAN ZERO.'
        call wrf_message(msg)
@@ -1782,12 +1760,18 @@ END SUBROUTINE rh2rb
        call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP' )
     endif
 
-    if(ndx .le. prt_max) then
+!   write(6,'5(a,i5),a,a15') 'n = ',n,'  nlast = ',nlast,'  ndx = ',ndx,  &
+!                            '  nprev = ',nprev,'  ndxp = ',ndxp,         &
+!                            '  station id = ',station_id
 
-   MODCHK : do nn = nprev, n-1
+    if(ndxp .lt. prt_max) then
+
+   MODCHK : do nn = nprev+1, n
         llsave = .false.
-        if( mod(nn-1,prt_freq) .eq. 0 ) then
-           ndx = (nn-1-iref)/prt_freq + 1
+
+!       if( mod(nn-1,prt_freq) .eq. 0 ) then
+        if( mod(nn-nlast-1,prt_freq) .eq. 0 ) then
+           ndx = (nn-nlast-1)/prt_freq + 1
            if(ndx.gt.prt_max) EXIT MODCHK       ! Limit printout to prt_max entries
            llsave = .true.
         endif
@@ -1795,116 +1779,27 @@ END SUBROUTINE rh2rb
 
 ! Collect obs index and latitude and longitude.
           obs(ndx) = nn
-          lat(ndx) = plat
-          lon(ndx) = plon
+          lat(ndx) = latitude
+          lon(ndx) = longitude
+
+! Collect first 15 chars of obs station id (in integer format).
+          do i = 1,15
+            stnid(i,ndx) = ichar(station_id(i:i))
+          enddo
 
 ! Compute and collect the model latitude and longitude at the obs point.
           CALL get_model_latlon(nn,niobf,rio,rjo,xlat,xlong,e_we,e_sn,    &
                                 ims,ime,jms,jme,its,ite,jts,jte,          &
                                 mlat(ndx),mlon(ndx))
-
         endif  !end if(llsave)
       enddo MODCHK
 
-   endif  !end if(nprev/prt_freq+1) .le. prt_max)
-
-  endif  ! end if(.not. newpass)
+    endif  !end if(ndx .le. prt_max)
 
 ! Save index of previous obs in read loop.
-  nprev = n
-  plat = latitude
-  plon = longitude
+    nprev = n
 
   END SUBROUTINE collect_obs_info
-
-  SUBROUTINE finish_obs_info(iprt,nstaw,niobf,rio,rjo,prt_max,prt_freq, &
-                          xlat,xlong,e_we,e_sn,iref,obs,lat,lon,        &
-                          mlat,mlon,plat,plon,xtime,                    &
-                          ims,ime,jms,jme,its,ite,jts,jte)
-!*************************************************************************
-! Purpose: Finish collecting obs information, according to prt_freq, but
-!          limit to prt_max obs. Because latitude and longitude informa-
-!          tion was collected (with subroutine collect_obs_info) within
-!          the OBS READ LOOP, where lat&lon for obs N is collected on
-!          pass N+1, there could be one more obs whose lat&lon info needs
-!          to be collected (for printing). Note that in subroutine
-!          collect_obs_info, the obs lat&lon values for the currently read
-!          obs was stored into plat&plon for just this purpose.
-!*************************************************************************
-
-  IMPLICIT NONE
-
-  LOGICAL, intent(in)    :: iprt          ! Print flag
-  INTEGER, intent(in)    :: nstaw         ! Number of observations
-  INTEGER, intent(in)    :: niobf         ! Maximum number of observations
-  REAL,    intent(in)    :: rio(niobf)    ! West-east coord (non-stagger)
-  REAL,    intent(in)    :: rjo(niobf)    ! South-north coord (non-stagger)
-  INTEGER, intent(in)    :: prt_max        ! Max no. of obs for diagnostic printout
-  INTEGER, intent(in)    :: prt_freq       ! Frequency for diagnostic printout
-  REAL, DIMENSION( ims:ime, jms:jme ),                                  &
-           intent(in)    :: xlat, xlong   ! Lat/lon on mass-pt grid
-  INTEGER, intent(in)    :: e_we          ! Max grid index in south-north
-  INTEGER, intent(in)    :: e_sn          ! Max grid index in west-east
-  INTEGER, intent(in)    :: iref          ! Reference obs index
-  INTEGER, intent(inout) :: obs(prt_max)  ! Saved obs indices to print
-  REAL,    intent(inout) :: lat(prt_max)  ! Saved latitudes
-  REAL,    intent(inout) :: lon(prt_max)  ! Saved longitudes
-  REAL,    intent(inout) :: mlat(prt_max) ! Saved model latitudes
-  REAL,    intent(inout) :: mlon(prt_max) ! Saved longitudes
-  REAL,    intent(in)    :: plat          ! Previous latitude read
-  REAL,    intent(in)    :: plon          ! Previous longitude read
-  REAL,    intent(in)    :: xtime         ! Model time in minutes
-  INTEGER, intent(in)    :: ims           ! Grid mem start (west-east)
-  INTEGER, intent(in)    :: ime           ! Grid mem end   (west-east)
-  INTEGER, intent(in)    :: jms           ! Grid mem start (south-north)
-  INTEGER, intent(in)    :: jme           ! Grid mem end   (south-north)
-  INTEGER, intent(in)    :: its           ! Grid tile start (west-east)
-  INTEGER, intent(in)    :: ite           ! Grid tile end   (west-east)
-  INTEGER, intent(in)    :: jts           ! Grid tile start (south-north)
-  INTEGER, intent(in)    :: jte           ! Grid tile end   (south-north)
-
-! Local variables
-  integer :: n                    ! Loop counter over obs
-  integer :: lastobs              ! Last obs collected for printout
-  integer :: lastn                ! Value of n for last obs(n) entry
-  integer :: igap                 ! Gap between last obs read and last saved 
-  integer :: ndx                  ! Index into printout arrays
-  integer :: iobs                 ! Obs gap indices between lastobs and nstaw 
-
-! Find the last obs index whose lat&lon info was collected.
-    lastobs = 0
-    lastn   = 0
-    do n=1,prt_max
-       if(obs(n).ne.-999) then
-          lastobs = obs(n)
-          lastn   = n
-       endif
-    enddo
-
-! There could be more obs to collect.
-
-    if(lastn.gt.0) then   ! Do only if at least 1 obs was collected.
-    igap = (nstaw-lastobs)/prt_freq
-
-    do n = 1, igap
-       ndx  = lastn + n
-
-       iobs = lastobs + n*prt_freq
-       if(ndx.le.prt_max) then
-
-! Compute and collect model lat&lon at obs point.
-         CALL get_model_latlon(iobs,niobf,rio,rjo,xlat,xlong,e_we,e_sn,  &
-                               ims,ime,jms,jme,its,ite,jts,jte,          &
-                               mlat(ndx),mlon(ndx))
-
-! Collect obs index and lat&lon.
-         obs(ndx) = iobs
-         lat(ndx) = plat
-         lon(ndx) = plon
-       endif
-    enddo
-    endif
-  END SUBROUTINE finish_obs_info
 
   SUBROUTINE get_model_latlon(n,niobf,rio,rjo,xlat,xlong,e_we,e_sn,   &
                               ims,ime,jms,jme,its,ite,jts,jte,        &

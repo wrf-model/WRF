@@ -638,6 +638,9 @@ integer myproc
                   model_config_rec%obs_sfcfact,                 &
                   model_config_rec%obs_sfcfacr,                 &
                   model_config_rec%obs_dpsmx,                   &
+                  model_config_rec%obs_nudge_wind,              &
+                  model_config_rec%obs_nudge_temp,              &
+                  model_config_rec%obs_nudge_mois,              &
                   model_config_rec%obs_nudgezfullr1_uv,         &
                   model_config_rec%obs_nudgezrampr1_uv,         &
                   model_config_rec%obs_nudgezfullr2_uv,         &
@@ -2178,6 +2181,7 @@ integer myproc
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
                         sfcfact, sfcfacr, dpsmx,                   &
+                        nudge_wind, nudge_temp, nudge_mois,        &
                         nudgezfullr1_uv, nudgezrampr1_uv,          &
                         nudgezfullr2_uv, nudgezrampr2_uv,          &
                         nudgezfullr4_uv, nudgezrampr4_uv,          &
@@ -2225,6 +2229,9 @@ integer myproc
    REAL    , INTENT(IN)    :: sfcfact      ! scale factor applied to time window for surface obs
    REAL    , INTENT(IN)    :: sfcfacr      ! scale fac applied to horiz rad of infl for sfc obs
    REAL    , INTENT(IN)    :: dpsmx        ! max pressure change allowed within horiz. infl. range
+   INTEGER , INTENT(IN)    :: nudge_wind(maxdom)       ! wind-nudging flag
+   INTEGER , INTENT(IN)    :: nudge_temp(maxdom)       ! temperature-nudging flag
+   INTEGER , INTENT(IN)    :: nudge_mois(maxdom)       ! moisture-nudging flag
    REAL    , INTENT(IN)    :: nudgezfullr1_uv  ! vert infl fcn, regime=1 full-wt   hght, winds
    REAL    , INTENT(IN)    :: nudgezrampr1_uv  ! vert infl fcn, regime=1 ramp down hght, winds
    REAL    , INTENT(IN)    :: nudgezfullr2_uv  ! vert infl fcn, regime=2 full-wt   hght, winds
@@ -2277,6 +2284,7 @@ integer myproc
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
                         sfcfact, sfcfacr, dpsmx,                   &
+                        nudge_wind, nudge_temp, nudge_mois,        &
                         nudgezfullr1_uv, nudgezrampr1_uv,          &
                         nudgezfullr2_uv, nudgezrampr2_uv,          &
                         nudgezfullr4_uv, nudgezrampr4_uv,          &

@@ -58,7 +58,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                ub, vb, tb, qvb, pbase, ptop, pp, phb, ph,        &
                uratx, vratx, tratx, ru_tendf, rv_tendf,          &
                moist_tend, savwt,                                &
-               regime, pblh, z_at_w, z,                          &
+               regime, pblh, z_at_w,                             &
+               z,                                                &
                ids,ide, jds,jde, kds,kde,                        & ! domain dims
                ims,ime, jms,jme, kms,kme,                        & ! memory dims
                its,ite, jts,jte, kts,kte                         ) ! tile   dims
@@ -149,8 +150,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, INTENT(INOUT) :: savwt( nobs_ndg_vars, ims:ime, kms:kme, jms:jme )
   REAL, INTENT(INOUT) :: regime( ims:ime, jms:jme )
   REAL, INTENT(IN) :: pblh( ims:ime, jms:jme )
-  REAL, INTENT(IN) :: z_at_w( ims:ime, kms:kme, jms:jme )
-  REAL, INTENT(IN) :: z( ims:ime, kms:kme, jms:jme )  ! Model ht above sea-level
+  REAL, INTENT(IN) :: z_at_w( ims:ime, kms:kme, jms:jme ) ! Model ht(m) asl, f-levs
+  REAL, INTENT(IN) :: z( ims:ime, kms:kme, jms:jme )  ! Model ht(m) asl, h-levs
 
 #if ( EM_CORE == 1 ) 
   TYPE(fdob_type), intent(inout)  :: fdob
@@ -235,7 +236,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   .AND. config_flags%bl_pbl_physics /= 99 ) THEN
       DO j = jts, jte
       DO i = its, ite
-           IF( pblh(i,j) > z_at_w(i,1,j)-ht(i,j) ) THEN
+           IF( pblh(i,j) > z_at_w(i,2,j)-ht(i,j) ) THEN
              regime(i,j) = 4.0
            ELSE
              regime(i,j) = 1.0
@@ -279,7 +280,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
     IF( MOD(ktau,infr).EQ.0 .OR. idarst.EQ.1) THEN
 
         CALL errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rcp,       &
-                   z_at_w,                                           &
+                   z,                                                &
                    uratx, vratx, tratx, kpbl,                        &
                    nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,    &
                    fdob%levidn, parid, fdob%nstat, fdob%nstaw,       &
@@ -288,7 +289,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                    varobs, errf, ktau, xtime,                        &
                    parent_grid_ratio, npfi,                          &
                    obs_prt_max, obs_prt_freq, iprt_errob,            &
-                   fdob%obsprt, fdob%latprt, fdob%lonprt,            &
+                   fdob%obsprt, fdob%stnidprt,                       &
+                   fdob%latprt, fdob%lonprt,                         &
                    fdob%mlatprt, fdob%mlonprt,                       &
                    ids,ide, jds,jde, kds,kde,                        &
                    ims,ime, jms,jme, kms,kme,                        &

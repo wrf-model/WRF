@@ -95,6 +95,8 @@ state    real   tsk_gc         ij       dyn_em      1        -     i1  "SKINTEMP
 state    real   tavgsfc        ij       dyn_em      1        -     i1  "TAVGSFC"  "daily mean of surface air temperature"  "K"
 state    real   tmn_gc         ij       dyn_em      1        -     i1  "SOILTEMP"  "annual mean deep soil temperature"  "K"
 state    real   pslv_gc        ij       dyn_em      1        -     i1  "PMSL"  "sea level pressure"  "Pa"
+state    real   sct_dom_gc     ij       dyn_em      1        -     i1  "SCT_DOM"  "Dominant soil (top) category from GEOGRID"  "cat"
+state    real   scb_dom_gc     ij       dyn_em      1        -     i1  "SCB_DOM"  "Dominant soil (bottom) category from GEOGRID"  "cat"
 state    real   greenfrac      imj      dyn_em      1        Z     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        Z     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
 state    real   pd_gc          igj      dyn_em      1        Z     -   "PD"    "dry pressure"        "Pa"
@@ -1507,20 +1509,20 @@ rconfig   real        obs_nudgezfullr1_uv namelist,fdda            1            
 rconfig   real        obs_nudgezrampr1_uv namelist,fdda            1              50      rh       "obs_nudgezrampr1_uv" "Vert infl ramp-to-zero height for LML obs, regime 1, winds"        ""
 rconfig   real        obs_nudgezfullr2_uv namelist,fdda            1              50      rh       "obs_nudgezfullr2_uv" "Vert infl full weight  height for LML obs, regime 2, winds"        ""
 rconfig   real        obs_nudgezrampr2_uv namelist,fdda            1              50      rh       "obs_nudgezrampr2_uv" "Vert infl ramp-to-zero height for LML obs, regime 2, winds"        ""
-rconfig   real        obs_nudgezfullr4_uv namelist,fdda            1              50      rh       "obs_nudgezfullr4_uv" "Vert infl full weight  height for LML obs, regime 4, winds"        ""
-rconfig   real        obs_nudgezrampr4_uv namelist,fdda            1              -5000   rh       "obs_nudgezrampr4_uv" "Vert infl ramp-to-zero height for LML obs, regime 4, winds"        ""
+rconfig   real        obs_nudgezfullr4_uv namelist,fdda            1              -5000   rh       "obs_nudgezfullr4_uv" "Vert infl full weight  height for LML obs, regime 4, winds"        ""
+rconfig   real        obs_nudgezrampr4_uv namelist,fdda            1              50      rh       "obs_nudgezrampr4_uv" "Vert infl ramp-to-zero height for LML obs, regime 4, winds"        ""
 rconfig   real        obs_nudgezfullr1_t  namelist,fdda            1              50      rh       "obs_nudgezfullr1_t" "Vert infl full weight  height for LML obs, regime 1, temperature"  ""
 rconfig   real        obs_nudgezrampr1_t  namelist,fdda            1              50      rh       "obs_nudgezrampr1_t" "Vert infl ramp-to-zero height for LML obs, regime 1, temperature"  ""
 rconfig   real        obs_nudgezfullr2_t  namelist,fdda            1              50      rh       "obs_nudgezfullr2_t" "Vert infl full weight  height for LML obs, regime 2, temperature"  ""
 rconfig   real        obs_nudgezrampr2_t  namelist,fdda            1              50      rh       "obs_nudgezrampr2_t" "Vert infl ramp-to-zero height for LML obs, regime 2, temperature"  ""
-rconfig   real        obs_nudgezfullr4_t  namelist,fdda            1              50      rh       "obs_nudgezfullr4_t" "Vert infl full weight  height for LML obs, regime 4, temperature"  ""
-rconfig   real        obs_nudgezrampr4_t  namelist,fdda            1              -5000   rh       "obs_nudgezrampr4_t" "Vert infl ramp-to-zero height for LML obs, regime 4, temperature"  ""
+rconfig   real        obs_nudgezfullr4_t  namelist,fdda            1              -5000   rh       "obs_nudgezfullr4_t" "Vert infl full weight  height for LML obs, regime 4, temperature"  ""
+rconfig   real        obs_nudgezrampr4_t  namelist,fdda            1              50      rh       "obs_nudgezrampr4_t" "Vert infl ramp-to-zero height for LML obs, regime 4, temperature"  ""
 rconfig   real        obs_nudgezfullr1_q  namelist,fdda            1              50      rh       "obs_nudgezfullr1_q" "Vert infl full weight  height for LML obs, regime 1, moisture"     ""
 rconfig   real        obs_nudgezrampr1_q  namelist,fdda            1              50      rh       "obs_nudgezrampr1_q" "Vert infl ramp-to-zero height for LML obs, regime 1, moisture"     ""
 rconfig   real        obs_nudgezfullr2_q  namelist,fdda            1              50      rh       "obs_nudgezfullr2_q" "Vert infl full weight  height for LML obs, regime 2, moisture"     ""
 rconfig   real        obs_nudgezrampr2_q  namelist,fdda            1              50      rh       "obs_nudgezrampr2_q" "Vert infl ramp-to-zero height for LML obs, regime 2, moisture"     ""
-rconfig   real        obs_nudgezfullr4_q  namelist,fdda            1              50      rh       "obs_nudgezfullr4_q" "Vert infl full weight  height for LML obs, regime 4, moisture"     ""
-rconfig   real        obs_nudgezrampr4_q  namelist,fdda            1              -5000   rh       "obs_nudgezrampr4_q" "Vert infl ramp-to-zero height for LML obs, regime 4, moisture"     ""
+rconfig   real        obs_nudgezfullr4_q  namelist,fdda            1              -5000   rh       "obs_nudgezfullr4_q" "Vert infl full weight  height for LML obs, regime 4, moisture"     ""
+rconfig   real        obs_nudgezrampr4_q  namelist,fdda            1              50      rh       "obs_nudgezrampr4_q" "Vert infl ramp-to-zero height for LML obs, regime 4, moisture"     ""
 rconfig   real        obs_nudgezfullmin   namelist,fdda            1                 50   rh       "obs_nudgezfullmin" "Minimum depth through which vertical influence fcn remains 1.0"     "m"
 rconfig   real        obs_nudgezrampmin   namelist,fdda            1                 50   rh       "obs_nudgezrampmin" "Minimum depth through which vertical influence fcn decreases from 1.0 to 0.0" "m"
 rconfig   real        obs_nudgezmax       namelist,fdda            1               3000   rh       "obs_nudgezmax" "Maximum depth in which vertical influence function is nonzero" "m"
@@ -1800,10 +1802,10 @@ package   dfi_dfl       dfi_opt==1                  -             state:dfi_u,df
 package   dfi_ddfi      dfi_opt==2                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_tdfi      dfi_opt==3                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 ifdef RUC_CLOUD
-package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qni_gc
+package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qni_gc
 endif
 ifndef RUC_CLOUD
-package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc
+package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc
 endif
 
 
@@ -2006,6 +2008,7 @@ typedef fdob_type real    latprt               [        -         1        -    
 typedef fdob_type real    lonprt               [        -         1        -       -       "lonprt"          "obs longitude for diagnostic printout"
 typedef fdob_type real    mlatprt              [        -         1        -       -       "mlatprt"         "model latitude at obs location"
 typedef fdob_type real    mlonprt              [        -         1        -       -       "mlonprt"         "model longitude at obs location"
+typedef fdob_type integer stnidprt       {obsstid}{[}   -         1        -       -       "stnidprt"        "obs station id for diagnostic printout"
 typedef fdob_type real    base_state           k        -         1        -       -       "base_state"      "base-state height on half (mass) levels"   "meters"
 
 state fdob_type fdob - -

@@ -25,6 +25,7 @@ dimspec    obs     -     namelist=max_obs                  c     max_obs
 dimspec    h       -     namelist=nobs_err_flds            c     nobs_err_flds
 dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
 dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
+dimspec    obsstid -     constant=40                       c     obs station id names
 dimspec    &       2     namelist=lagday                   z     lagday
 
 endif

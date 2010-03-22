@@ -37,7 +37,7 @@
  qc_rad=true,
  write_iv_rad_ascii=false,
  write_oa_rad_ascii=true,
- rtm_option=2,            # 1: RTTOV, 2: CRTM
+ rtm_option=2,
  only_sea_rad=false,
  use_varbc=true,
  crtm_atmosphere=6,

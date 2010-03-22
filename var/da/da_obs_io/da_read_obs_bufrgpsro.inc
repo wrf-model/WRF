@@ -21,6 +21,8 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    type (iv_type),             intent(inout) :: iv
    character(len=*), optional, intent(in)    :: filename
 
+#ifdef BUFR
+
    real,    parameter   :: r8bfms = 9.0D08  ! BUFR missing value threshold
    integer, parameter   :: maxlevs = 500
    real,    parameter   :: xmiss = -888.0
@@ -55,8 +57,6 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
        type(datalink_gpsro), pointer :: next
    end type datalink_gpsro
    type(datalink_gpsro),pointer  :: head, plink, current
-
-#ifdef BUFR
 
    if (trace_use) call da_trace_entry("da_read_obs_bufrgosro")
 

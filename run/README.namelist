@@ -187,6 +187,7 @@ Namelist variables specifically for the WPS input for real:
                                                 ;           the terrain following portion of the hybrid vertical
                                                 ;           coordinate (p > ptsgm) and the purely
                                                 ;           isobaric portion of the vertical coordinate (p < ptsgm)
+ vert_refine_fact                    = 0        ; vertical refinement factor for ndown
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -261,6 +262,9 @@ Namelist variables for controlling the adaptive time step option:
  min_time_step(max_dom)              = -1,-1    ; flag = -1 implies max time step is 0.5 * starting_time_step,
                                                   min_time_step = 100 means that the time step will not
                                                   be less than 100 s
+ adaptation_domain                   = 1,       ; 
+ adaptation_domain                   = 1        ; default, all fine grid domains adaptive dt driven by coarse-grid
+                                     = 2        ; Fine grid domain #2 determines the fundamental adaptive dt.
 
  &dfi_control
  dfi_opt                             = 0        ; which DFI option to use (3 is recommended)
@@ -533,6 +537,7 @@ Namelist variables for controlling the adaptive time step option:
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
  iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 - old, 1 - veg dependent Czil)
  mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
+ prec_acc_dt                         = 0.,      ; number of minutes in precipitation bucket (ARW only)
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
@@ -613,6 +618,34 @@ The following are for observation nudging:
  obs_ipf_errob                       = .true.   ; print obs error diagnostics (=.false. off)
  obs_ipf_nudob                       = .true.   ; print obs nudge diagnostics (=.false. off)
  obs_ipf_init                        = .true.   ; Enable obs init warning messages
+
+ obs_no_pbl_nudge_uv (max_dom)       = 0        ; 1=no wind-nudging within pbl
+ obs_no_pbl_nudge_t (max_dom)        = 0        ; 1=no temperature-nudging within pbl
+ obs_no_pbl_nudge_q (max_dom)        = 0        ; 1=no moisture-nudging within pbl
+ obs_nudgezfullr1_uv                 = 50       ; Vert infl full weight  height for LML obs, regime 1, winds
+ obs_nudgezrampr1_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 1, winds
+ obs_nudgezfullr2_uv                 = 50       ; Vert infl full weight  height for LML obs, regime 2, winds
+ obs_nudgezrampr2_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 2, winds
+ obs_nudgezfullr4_uv                 = -5000    ; Vert infl full weight  height for LML obs, regime 4, winds
+ obs_nudgezrampr4_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 4, winds
+ obs_nudgezfullr1_t                  = 50       ; Vert infl full weight  height for LML obs, regime 1, temperature
+ obs_nudgezrampr1_t                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 1, temperature
+ obs_nudgezfullr2_t                  = 50       ; Vert infl full weight  height for LML obs, regime 2, temperature
+ obs_nudgezrampr2_t                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 2, temperature
+ obs_nudgezfullr4_t                  = -5000    ; Vert infl full weight  height for LML obs, regime 4, temperature
+ obs_nudgezrampr4_t                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 4, temperature
+ obs_nudgezfullr1_q                  = 50       ; Vert infl full weight  height for LML obs, regime 1, moisture
+ obs_nudgezrampr1_q                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 1, moisture
+ obs_nudgezfullr2_q                  = 50       ; Vert infl full weight  height for LML obs, regime 2, moisture
+ obs_nudgezrampr2_q                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 2, moisture
+ obs_nudgezfullr4_q                  = -5000    ; Vert infl full weight  height for LML obs, regime 4, moisture
+ obs_nudgezrampr4_q                  = 50       ; Vert infl ramp-to-zero height for LML obs, regime 4, moisture
+ obs_nudgezfullmin                   = 50       ; Min depth through which vertical infl fcn remains 1.0
+ obs_nudgezrampmin                   = 50       ; Min depth (m) through which vert infl fcn decreases from 1 to 0
+ obs_nudgezmax                       = 3000     ; Max depth (m) in which vert infl function is nonzero
+ obs_sfcfact                         = 1.0      ; Scale factor applied to time window for surface obs
+ obs_sfcfacr                         = 1.0      ; Scale factor applied to horiz radius of influence for surface obs
+ obs_dpsmx                           = 7.5      ; Max pressure change (cb) allowed within horiz radius of influence
  /
 
  &scm
@@ -701,6 +734,7 @@ The following are for observation nudging:
  moist_adv_opt (max_dom)             = 1        ; for moisture
  scalar_adv_opt (max_dom)            = 1        ; for scalars
  chem_adv_opt (max_dom)              = 1        ; for chem variables
+ tracer_adv_opt (max_dom)            = 1        ; for tracer variables (WRF-Chem activated)
  tke_adv_opt (max_dom)               = 1        ; for tke
 
  time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
@@ -726,6 +760,7 @@ The following are for observation nudging:
                                      = 2       ; NBA2 using tke-based stress terms (km_opt=2 needed))
  m_opt (max_dom)                     = 0       ; no added output
                                      = 1       ; adds output of Mij stress terms when NBA is not used
+ tracer_opt(mac_dom)                 = 0       ; 
 
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
@@ -735,6 +770,7 @@ The following are for observation nudging:
                                                   the above 4 are used for real-data runs
  spec_exp                            = 0.       ; exponential multiplier for relaxation zone ramp for specified=.t.
                                                   (0.=linear ramp default, e.g. 0.33=~3*dx exp decay factor)
+ constant_bc                         = .false.  ; constant boundary condition used with DFI
 
  periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction
  symmetric_xs (max_dom)              = .false., ; symmetric boundary conditions at x start (west)

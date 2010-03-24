@@ -190,7 +190,9 @@ CONTAINS
            wspd = 1.e-10
         endif
 ! limit ust to 1.6 to give a value of ust for water of 0.05
-        ust2=min(ust, 1.6)
+!       ust2=min(ust, 1.6)
+! new limit for ust: reduce atmospheric ust by half for ocean
+        ust2=0.5*ust
         tauxair=ust2*ust2*uair/wspd
         taux=rhoair/rhowater*tauxair
         tauyair=ust2*ust2*vair/wspd
@@ -211,8 +213,8 @@ CONTAINS
 ! limit to positive h change
         if(h.lt.hold)h=hold
 
-        if(tml.ge.tmoml .and. h.ne.0.)then
-          tml=max(t0ml - Gam*(h-h0) + 0.5*Gam*h + A2/h, 273.15)
+        if(h.ne.0.)then
+          tml=max(t0ml - Gam*(h-h0) + 0.5*Gam*h + A2/h, tmoml)
           u=hu2/h
           v=hv2/h
         else
@@ -283,6 +285,7 @@ CONTAINS
           H0ML(I,J)=HML(I,J)
           HUML(I,J)=0.
           HVML(I,J)=0.
+          TMOML(I,J)=TSK(I,J)-5.
         ENDDO
         ENDDO
      ELSE

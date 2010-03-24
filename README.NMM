@@ -1,5 +1,5 @@
 
-WRF-NMM Model Version 3.1 (April 9, 2009)
+WRF-NMM Model Version 3.2 (March 31, 2010)
 
 ----------------------------
 WRF-NMM PUBLIC DOMAIN NOTICE
@@ -32,20 +32,21 @@ V3 Release Notes:
 
 This is the main directory for the WRF Version 3 source code release.
 
-- For directions on compiling WRF for NMM, see below or the WRF-NMM Users' Web page (http://www.dtcenter.org/wrf-nmm/users/)
-- Read the README.namelist file in the run/ directory (or on the WRF-NMM Users' page), 
-  and make changes carefully.
+- For directions on compiling WRF for NMM, see below or the 
+  WRF-NMM Users' Web page (http://www.dtcenter.org/wrf-nmm/users/)
+- Read the README.namelist file in the run/ directory (or on 
+  the WRF-NMM Users' page), and make changes carefully.
 
 For questions, send mail to wrfhelp@ucar.edu
 
 Release Notes:
 -------------------
 
-Version 3.1 is released on April 9, 2009.
+Version 3.2 is released on March 31, 2010.
 
-- For more information on WRF V3.1 release, visit WRF-NMM Users home page
+- For more information on WRF V3.2 release, visit WRF-NMM Users home page
   http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
-- WRF V3 executable will work with V3.0 wrfinput/wrfbdy.  As 
+- WRF V3 executable will work with V3.1 wrfinput/wrfbdy.  As 
   always, rerunning the new programs is recommended.
 
 The Online User's Guide has also been updated.
@@ -56,15 +57,16 @@ NMM and ARW cores of WRF at compile time.
 
    - Specify your WRF-NMM option by setting the appropriate environment variable:
 
-           setenv WRF_NMM_CORE 1
-	   setenv WRF_NMM_NEST 1 (if nesting capability is desired)
+         setenv WRF_NMM_CORE 1
+           setenv WRF_NMM_NEST 1 (if nesting capability is desired)
+         setenv HWRF 1 (if HWRF coupling/physics are desired)
 
    - The Registry files for NMM and ARW are not integrated
      yet. There are separate versions:
 
-          Registry/Registry.NMM         <-- for NMM
-	  Registry/Registry.NMM_NEST    <-- for NMM with nesting
-          Registry/Registry.EM          <-- for ARW (formerly known as Eulerian Mass)
+         Registry/Registry.NMM         <-- for NMM
+	   Registry/Registry.NMM_NEST    <-- for NMM with nesting
+         Registry/Registry.EM          <-- for ARW (formerly known as Eulerian Mass)
 
 
 How to configure, compile and run?
@@ -109,14 +111,14 @@ How to configure, compile and run?
 
 =============================================================================
 
-What is in WRF-NMM V3.1?
+What is in WRF-NMM V3.2?
 
 * Dynamics:
 
   - The WRF-NMM model is a fully compressible, non-hydrostatic model with a
     hydrostatic option.
 
-  - Supports One-way and two-way static nesting.
+  - Supports One-way and two-way static and moving nests.
 
   - The terrain following hybrid pressure sigma vertical coordinate is used.
 
@@ -138,7 +140,7 @@ What is in WRF-NMM V3.1?
   - Advection (space):
      T,U,V:
       - Horizontal: Energy and enstrophy conserving,
-      quadratic conservative,second order
+        quadratic conservative,second order
 
       - Vertical: Quadratic conservative,second order, implicit
 
@@ -158,32 +160,54 @@ What is in WRF-NMM V3.1?
      See "Free atmosphere turbulence above surface layer" section
      in "Physics" section given in below.
 
+  - Added a new highly-conservative passive advection scheme to v3.2
+
+Added Operational Hurricane WRF (HWRF) components to v3.2. These enhancements include:
+     - Vortex following moving nest for NMM
+     - Ocean coupling (with POM)
+     - Changes in diffusion coefficients
+     - Modifications/additions to physics schemes (tuned for the tropics)
+         - Updated existing SAS cumulus scheme
+         - Updated existing GFS boundary layer scheme
+         - Added new HWRF microphysics scheme         - Added new HWRF radiation scheme
+     Please see the WRF for Hurricanes webpage for more details:
+         http://www.dtcenter.org/HurrWRF/users
+
+
 * Physics:
 
-  - Explicit Microphysics (WRF Single Moment 5 and 6 class /
-    Ferrier (Used operationally at NCEP.)/ Thompson [a new version in 2.2])
+  - Explicit Microphysics: WRF Single Moment 5 and 6 class /
+    Ferrier (Used operationally at NCEP.) / Thompson [a new version in 3.1] 
+    / HWRF microphysics: (Used operationally at NCEP for HWRF)
 
-  - Cumulus parameterization (Kain-Fritsch with shallow convection /
+  - Cumulus parameterization: Kain-Fritsch with shallow convection /
     Betts-Miller-Janjic (Used operationally at NCEP.)/ Grell-Devenyi ensemble
-    / Simplified Arakawa-Schubert)
+    / Simplified Arakawa-Schubert (Used operationally at NCEP for HWRF)
 
   - Free atmosphere turbulence above surface layer: Mellor-Yamada-Janjic (Used operationally at NCEP.)
 
-  - Planetary boundary layer: YSU /  Mellor-Yamada-Janjic (Used operationally at NCEP.)
-    / GFS
+  - Planetary boundary layer: YSU /  Mellor-Yamada-Janjic (Used operationally at NCEP.) 
+    / NCEP Global Forecast System scheme (Used operationally at NCEP for HWRF)
+    / GFS / Quasi-Normal Scale Elimination
 
   - Surface layer: Similarity theory scheme with viscous sublayers
-                   over both solid surfaces and water points (Janjic - Used operatinally at NCEP).
-    / GFS / YSU
+    over both solid surfaces and water points (Janjic - Used operatinally at NCEP).
+    / GFS / YSU / Quasi-Normal Scale Elimination / GFDL surface layer (Used operationally at NCEP for HWRF)
 
   - Soil model: Noah land-surface model (4-level - Used operationally at NCEP) /
-    RUC LSM (6-level)
+    RUC LSM (6-level) / GFDL slab model (Used operationally at NCEP for HWRF)
 
   - Radiation:
-    - Longwave radiation: GFDL Scheme  (Fels-Schwarzkopf) (Used operationally at NCEP.) / RRTM
-    - Shortwave radiation: GFDL-scheme (Lacis-Hansen) (Used operationally at NCEP.) / Dudhia
+    - Longwave radiation: GFDL Scheme  (Fels-Schwarzkopf) (Used 
+      operationally at NCEP.) / Modified GFDL scheme (Used operationally 
+      at NCEP for HWRF) / RRTM
+    - Shortwave radiation: GFDL-scheme (Lacis-Hansen) (Used operationally 
+      at NCEP.) / Modified GFDL shortwave (Used operationally at NCEP 
+      for HWRF)/ Dudhia
 
   - Gravity wave drag with mountain wave blocking (Alpert; Kim and Arakawa)
+  
+  - Sea Surface temperature updates during long simulations
 
 * WRF Software:
 
@@ -266,4 +290,3 @@ What is in WRF-NMM V3.1?
   - Improved documentation, both on-line (web based browsing tools) and in-line
 
 --------------------------------------------------------------------------
-

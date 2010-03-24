@@ -407,6 +407,16 @@ CONTAINS
       enddo
 !
 !----------------------------------------------------------------
+!    initialize the surface rain, snow, graupel
+!
+      do i = its, ite
+        rainncv(i) = 0.
+        if(PRESENT (snowncv) .AND. PRESENT (snow)) snowncv(i,lat) = 0.
+        if(PRESENT (graupelncv) .AND. PRESENT (graupel)) graupelncv(i,lat) = 0.
+        sr(i) = 0.
+      enddo
+!
+!----------------------------------------------------------------
 !     compute the minor time steps.
 !
       loops = max(nint(delt/dtcldcr),1)
@@ -662,28 +672,25 @@ CONTAINS
         fallsum = fall(i,kts,1)+fall(i,kts,2)+fall(i,kts,3)+fallc(i,kts)
         fallsum_qsi = fall(i,kts,2)+fallc(i,kts)
         fallsum_qg = fall(i,kts,3)
-        rainncv(i) = 0.
         if(fallsum.gt.0.) then
-          rainncv(i) = fallsum*delz(i,kts)/denr*dtcld*1000.
+          rainncv(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rain(i)
         endif
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-        snowncv(i,lat) = 0.
         if(fallsum_qsi.gt.0.) then
-          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
+          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            & 
+                           +snowncv(i,lat)
           snow(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i,lat)
         endif
         ENDIF
         IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
-        graupelncv(i,lat) = 0.
         if(fallsum_qg.gt.0.) then
-          graupelncv(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.
+          graupelncv(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.          &   
+                              + graupelncv(i,lat)
           graupel(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i,lat)
         endif
         ENDIF
-        sr(i) = 0.
-        if(fallsum.gt.0.)sr(i)=(fallsum_qsi*delz(i,kts)/denr*dtcld*1000. +     &
-                                fallsum_qg*delz(i,kts)/denr*dtcld*1000.)       &   
+        if(fallsum.gt.0.)sr(i)=(snowncv(i,lat) + graupelncv(i,lat))            &  
                                /(rainncv(i)+1.e-12)
       enddo
 !

@@ -94,7 +94,7 @@ CONTAINS
 !  WRF single-moment 5-class microphysics (WSM5)
 !  in which theoretical background for WSM ice phase microphysics is
 !  based on Hong et al. (2004). 
-!  The WDM scheme is described in Lim and Hong (2009).
+!  The WDM scheme is described in Lim and Hong (2010).
 !  All units are in m.k.s. and source/sink terms in kgkg-1s-1.
 !
 !  WDM5 cloud scheme
@@ -424,6 +424,15 @@ CONTAINS
           delz_tmp(i,k) = delz(i,k)
           den_tmp(i,k) = den(i,k)
         enddo
+      enddo
+!
+!----------------------------------------------------------------
+!    initialize the surface rain, snow
+!
+      do i = its, ite
+        rainncv(i) = 0.
+        if(PRESENT (snowncv) .AND. PRESENT (snow)) snowncv(i) = 0.
+        sr(i) = 0.
       enddo
 !
 !----------------------------------------------------------------
@@ -761,21 +770,17 @@ CONTAINS
       do i = its, ite
         fallsum = fall(i,1,1)+fall(i,1,2)+fallc(i,1)
         fallsum_qsi = fall(i,1,2)+fallc(i,1)
-        rainncv(i) = 0.
         if(fallsum.gt.0.) then
-          rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000.
+          rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000.+rain(i)
         endif
         if (PRESENT (snowncv) .and. PRESENT (snow)) then 
-          snowncv(i) = 0.
           if(fallsum_qsi.gt.0.) then
-            snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
+            snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)
             snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.+snow(i)
           endif
         endif 
-        sr(i) = 0.
-        if(fallsum.gt.0.)sr(i)=fallsum_qsi*delz(i,kts)/denr*dtcld*1000.        &
-        /(rainncv(i)+1.e-12)
+        if(fallsum.gt.0.)sr(i)= snowncv(i)/(rainncv(i)+1.e-12)
       enddo
 !
 !---------------------------------------------------------------

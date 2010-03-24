@@ -330,6 +330,15 @@ CONTAINS
       enddo
 !
 !----------------------------------------------------------------
+!    initialize the surface rain, snow
+!
+      do i = its, ite
+        rainncv(i) = 0.
+        if(PRESENT (snowncv) .AND. PRESENT (snow)) snowncv(i) = 0.
+        sr(i) = 0.
+      enddo
+!
+!----------------------------------------------------------------
 !     compute the minor time steps.
 !
       loops = max(nint(delt/dtcldcr),1)
@@ -531,21 +540,17 @@ CONTAINS
         fallsum = fallsum+fallc(i,1)
         fallsum_qsi = fall(i,1)+fallc(i,1)
         endif
-        rainncv(i) = 0.
         if(fallsum.gt.0.) then
-          rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000.
+          rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rain(i)
         endif
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-        snowncv(i) = 0.
         if(fallsum_qsi.gt.0.) then
-          snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
+          snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)
           snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
         endif
         ENDIF
-        sr(i) = 0.
-        if(fallsum.gt.0.) sr(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.     &
-                                 /(rainncv(i)+1.e-12)
+        if(fallsum.gt.0.) sr(i) = snowncv(i)/(rainncv(i)+1.e-12)
       enddo
 !
 !----------------------------------------------------------------

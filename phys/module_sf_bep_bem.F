@@ -33,11 +33,7 @@ MODULE module_sf_bep_bem
       parameter (ngb_u=10)
 
       real dz_u                ! Urban grid resolution
-      parameter (dz_u=5.)
-
-!MT      real pwin                !Coverage area fraction of windows in the walls of the buildings (BEM)
-!MT      parameter(pwin=0.25)     !0 => No windows
-!MT!!    parameter(pwin=0.)       !1 => All the surfaces are windows!!!! 
+      parameter (dz_u=5.) 
 
       integer nbui_max         !maximum number of types of buildings in an urban class
       parameter (nbui_max=4)   !must be less or equal than nz_um 
@@ -156,13 +152,10 @@ MODULE module_sf_bep_bem
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfg_urb3d
 
-!      integer nx,ny,nz              ! Number of points in the mesocsale grid
-      real z(ims:ime,kms:kme,jms:jme)            ! Vertical coordinates
-      REAL, INTENT(IN )::   DT      ! Time step
-!      real zr(ims:ime,jms:jme)                ! Solar zenith angle
-!      real deltar(ims:ime,jms:jme)            ! Declination of the sun
-!      real ah(ims:ime,jms:jme)                ! Hour angle
-!      real rs(ims:ime,jms:jme)                ! Solar radiation
+   real z(ims:ime,kms:kme,jms:jme)            ! Vertical coordinates
+   REAL, INTENT(IN )::   DT      ! Time step
+
+!      
 !------------------------------------------------------------------------
 !     Output
 !------------------------------------------------------------------------ 
@@ -358,7 +351,7 @@ MODULE module_sf_bep_bem
 ! 261-304
 !
 ! F. Salamanca and A. Martilli, 2009: 'A new Building Energy Model coupled 
-! with an Urban Canopy Parameterization for urban climate simulationsâpart II. 
+! with an Urban Canopy Parameterization for urban climate simulations_part II. 
 ! Validation with one dimension off-line simulations'. Theor Appl Climatol
 ! DOI 10.1007/s00704-009-0143-8 
 !------------------------------------------------------------------------
@@ -584,8 +577,6 @@ MODULE module_sf_bep_bem
          do iz_u=1,nz_um
          do iw=1,nwr_u
          do ibui=1,nbui_max
-!          tw1D(2*id-1,iz_u,iw)=tw1_u(ix,iy,ind_zwd(iz_u,iw,id))
-!          tw1D(2*id,iz_u,iw)=tw2_u(ix,iy,ind_zwd(iz_u,iw,id))
           tw1D(2*id-1,iz_u,iw,ibui)=tw1_urb4d(ix,ind_zwd(ibui,iz_u,iw,id),iy)
           tw1D(2*id,iz_u,iw,ibui)=tw2_urb4d(ix,ind_zwd(ibui,iz_u,iw,id),iy)
          enddo
@@ -595,14 +586,11 @@ MODULE module_sf_bep_bem
 	
          do id=1,ndm
           do ig=1,ng_u
-!           tg1D(id,ig)=tg_u(ix,iy,ind_gd(ig,id))
             tg1D(id,ig)=tgb_urb4d(ix,ind_gd(ig,id),iy)
           enddo
           do iz_u=1,nz_um
           do ir=1,nwr_u
-!           tr1D(id,iz_u,ir)=tr_u(ix,iy,ind_zwd(iz_u,ir,id))
             tr1D(id,iz_u,ir)=trb_urb4d(ix,ind_zrd(iz_u,ir,id),iy)
-!print *, 'tr1D(id,iz_u,ir)=',tr1D(id,iz_u,ir)
           enddo
           enddo
          enddo
@@ -667,8 +655,6 @@ MODULE module_sf_bep_bem
          do id=1,ndm
 	 do iz=1,nz_um
          do ibui=1,nbui_max !type of building
-!	  sfw1D(2*id-1,iz)=sfw1(ix,iy,ind_zd(iz,id))
-!	  sfw1D(2*id,iz)=sfw2(ix,iy,ind_zd(iz,id))
 	  sfw1D(2*id-1,iz,ibui)=sfw1_urb3d(ix,ind_zd(ibui,iz,id),iy)
 	  sfw1D(2*id,iz,ibui)=sfw2_urb3d(ix,ind_zd(ibui,iz,id),iy)
          enddo
@@ -676,13 +662,11 @@ MODULE module_sf_bep_bem
 	 enddo
 	 
 	 do id=1,ndm
-!	  sfg1D(id)=sfg(ix,iy,id)
 	  sfg1D(id)=sfg_urb3d(ix,id,iy)
 	 enddo
 	 
 	 do id=1,ndm
 	 do iz=1,nz_um
-!	  sfr1D(id,iz)=sfr(ix,iy,ind_zd(iz,id))
 	  sfr1D(id,iz)=sfr_urb3d(ix,ind_zdf(iz,id),iy)
 	 enddo
 	 enddo
@@ -692,8 +676,7 @@ MODULE module_sf_bep_bem
 
          zr1D=acos(COSZ_URB2D(ix,iy))
          deltar1D=DECLIN_URB
-         ah1D=OMG_URB2D(ix,iy)
-!	 call angle(xlong(ix,iy),xlat(ix,iy),julday,time_h,zr1D,deltar1D,ah1D)         
+         ah1D=OMG_URB2D(ix,iy)       
 
          call BEP1D(iurb,kms,kme,kts,kte,z1D,dt,ua1D,va1D,pt1D,da1D,pr1D,pt01D,  &
                    zr1D,deltar1D,ah1D,rs1D,rld1D,                   & 
@@ -800,7 +783,6 @@ MODULE module_sf_bep_bem
          meso_urb=(1./4.)*FRC_URB2D(ix,iy)/((bs_u(1,iurb)+ws_u(1,iurb))*bs_u(2,iurb))+ &
                   (1./4.)*FRC_URB2D(ix,iy)/((bs_u(2,iurb)+ws_u(2,iurb))*bs_u(1,iurb))
 
-!!       meso_urb=(1./2.)*FRC_URB2D(ix,iy)/((bs_u(1,iurb)+ws_u(1,iurb))*(bs_u(2,iurb)+ws_u(2,iurb)))
                   
          ibui=0
          nlev=0
@@ -825,10 +807,13 @@ MODULE module_sf_bep_bem
          enddo !iz_u
          enddo !ibui
 !
-!Add the latent heat exchanged throughout the ventilation in the lf_ac_urb3d output variable 
+!Add the latent heat exchanged throughout the ventilation in the lf_ac_urb3d output variable. 
+!it is only a print variable
+!
+!        lf_ac_urb3d(ix,iy)=lf_ac_urb3d(ix,iy)+lfvent_urb3d(ix,iy)
 !
 
-         lf_ac_urb3d(ix,iy)=lf_ac_urb3d(ix,iy)+lfvent_urb3d(ix,iy)        
+         lf_ac_urb3d(ix,iy)=lf_ac_urb3d(ix,iy)-lfvent_urb3d(ix,iy)        
 
 !
 !End outputs of bem
@@ -931,7 +916,6 @@ MODULE module_sf_bep_bem
 
 ! Data relative to the "mesoscale grid"
 
-!      integer nz                 ! Number of vertical levels
       integer kms,kme,kts,kte
       real z(kms:kme)               ! Altitude above the ground of the cell interfaces.
       real ua(kms:kme)                ! Wind speed in the x direction
@@ -1291,7 +1275,6 @@ MODULE module_sf_bep_bem
            ibui=ibui+1		                
            nlev(ibui)=iz-1
            nbui=ibui
-!          write(*,*) 'iz,ss(iz)',iz,ss(iz)
            do id=1,ndm
               sfrb(id,ibui)=sfr(id,iz)
               do ily=1,nwr_u
@@ -1299,14 +1282,12 @@ MODULE module_sf_bep_bem
               enddo
            enddo
 	 endif	  
-       end do  !iz
-!      write(*,*) 'nbui',nbui      
+       end do  !iz    
 !--------------------------------------------------------------------------------
 !Loop over BEM  -----------------------------------------------------------------
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
    
-       ! nhourday=mod(int(ah/PI*180./15.+12.+0.5 ),24)
        nhourday=ah/PI*180./15.+12.
        if (nhourday >= 24) nhourday = nhourday - 24
        if (nhourday < 0)  nhourday = nhourday + 24
@@ -1397,18 +1378,12 @@ MODULE module_sf_bep_bem
               enddo
               enddo
            
-!!            do iz=1,nz_um
-!!               sfwin(2*id-1,iz,ibui)=sfwinb1D(2*id-1,iz)
-!!               sfwin(2*id,iz,ibui)=sfwinb1D(2*id,iz)
-!!            enddo
 
              do iz=1,nz_um
                 do ily=1,nwr_u
                    tw(2*id-1,iz,ily,ibui)=twb1D(2*id-1,ily,iz)
                    tw(2*id,iz,ily,ibui)=twb1D(2*id,ily,iz)
                 enddo
-!!              sfw(2*id-1,iz,ibui)=sfwb1D(2*id-1,iz)
-!!              sfw(2*id,iz,ibui)=sfwb1D(2*id,iz)
                 gfw(2*id-1,iz,ibui)=gfwb1D(2*id-1,iz)
                 gfw(2*id,iz,ibui)=gfwb1D(2*id,iz)
                 twlev(2*id-1,iz,ibui)=twlevb1D(2*id-1,iz)
@@ -1660,12 +1635,10 @@ MODULE module_sf_bep_bem
       real c(kms:kme)            ! Parameter which has to be interpolated
 ! Data relative to the "urban grid"
       integer nz_u          ! Number of levels
-!!    real z_u(nz_u+1)      ! Altitude of the cell interface
       real z_u(nz_um)      ! Altitude of the cell interface
 ! ----------------------------------------------------------------------
 ! OUTPUT:
 ! ----------------------------------------------------------------------
-!!    real c_u(nz_u)        ! Interpolated paramters in the "urban grid"
       real c_u(nz_um)        ! Interpolated paramters in the "urban grid"
        
 ! LOCAL:
@@ -1933,10 +1906,6 @@ MODULE module_sf_bep_bem
        do ig=1,ng_u
         tg(id,ig)=tg_tmp(ig)
        end do
-
-!      Calculation for the roofs surfaces
-
-!      Calculation for the walls surfaces
 	
       end do !id
       
@@ -2720,7 +2689,6 @@ MODULE module_sf_bep_bem
                   fww(j-nz_u,i,id,iurb)*pb(j-nz_u+1)
         enddo
         
-!!      aaa(i,2*nz_u+1)=-(1.-emg)*fgw(i,id,iurb)*pb(i+1)
         aaa(i,2*nz_u+1)=-(1.-emg)*fgw(i,id,iurb)
         
         bbb(i)=fsw(i,id,iurb)*rl+emg*fgw(i,id,iurb)*sigma*tg(id,ng_u)**4
@@ -2746,7 +2714,6 @@ MODULE module_sf_bep_bem
         
         aaa(i,i)=1.
         
-!!      aaa(i,2*nz_u+1)=-(1.-emg)*fgw(i-nz_u,id,iurb)*pb(i-nz_u+1)
         aaa(i,2*nz_u+1)=-(1.-emg)*fgw(i-nz_u,id,iurb)
         
         bbb(i)=fsw(i-nz_u,id,iurb)*rl+  &     
@@ -3084,7 +3051,6 @@ MODULE module_sf_bep_bem
       do iz=2,nz
          cddz(iz)=2.*ala(iz)/(dz(iz)+dz(iz-1))
       enddo
-!        cddz(nz+1)=ala(nz+1)/dz(nz)
        
       a(1,1)=0.
       a(1,2)=1.
@@ -3111,7 +3077,6 @@ MODULE module_sf_bep_bem
 
       rt=(1.-alb)*rs+em*rl-em*sigma*(tsig**4)
                         
-!      gf=-cddz(nz)*(temp(nz)-temp(nz-1))*cs(nz)
        gf=(1.-alb)*rs+em*rl-em*sigma*(tsig**4)+sf                                   
       return
       end subroutine soil_temp
@@ -3202,8 +3167,8 @@ MODULE module_sf_bep_bem
       real uvb                  ! U (wind component)   Vertical surfaces, B (explicit) term
       real vva                  ! V (wind component)   Vertical surfaces, A (implicit) term
       real vvb                  ! V (wind component)   Vertical surfaces, B (explicit) term
-      real tva                  ! Temperature          Vertical surfaces, A (implicit) term
-      real tvb                  ! Temperature          Vertical surfaces, B (explicit) term
+!     real tva                  ! Temperature          Vertical surfaces, A (implicit) term
+!     real tvb                  ! Temperature          Vertical surfaces, B (explicit) term
       real evb                  ! Energy (TKE)         Vertical surfaces, B (explicit) term
       real sfw                  ! Surfaces fluxes from the walls
       real sfwin                ! Surfaces fluxes from the windows
@@ -3298,8 +3263,8 @@ MODULE module_sf_bep_bem
       real uhb                  ! U (wind component) Horizontal surfaces, B (explicit) term
       real vhb                  ! V (wind component) Horizontal surfaces, B (explicit) term
 !     real thb                  ! Temperature        Horizontal surfaces, B (explicit) term
-      real tva                  ! Temperature          Vertical surfaces, A (implicit) term
-      real tvb                  ! Temperature          Vertical surfaces, B (explicit) term
+!     real tva                  ! Temperature          Vertical surfaces, A (implicit) term
+!     real tvb                  ! Temperature          Vertical surfaces, B (explicit) term
       real ehb                  ! Energy (TKE)       Horizontal surfaces, B (explicit) term
       real sf
 
@@ -3341,13 +3306,6 @@ MODULE module_sf_bep_bem
 
       zz=dz/2.
    
-!        if(tstar.lt.0.)then
-!         wstar=(-ustar*tstar*g*hii/pt)**(1./3.)
-!        else
-!         wstar=0.
-!        endif
-!        
-!      if (utot.le.0.7*wstar) utot=max(0.7*wstar,0.00001)
 
       utot=max(utot,0.01)
           
@@ -3907,87 +3865,6 @@ MODULE module_sf_bep_bem
        
        return
        end subroutine init_para
-!==============================================================
-!==============================================================
-      subroutine angle(along,alat,day,realt,zr,deltar,ah)
-!     ----------------     
-!      
-!         Computation of the solar angles
-!         schayes (1982,atm.  env. , p1407)
-! Inputs
-!========================
-! along=longitud
-! alat=latitude
-! day=julian day (from the beginning of the year)
-! realt= time GMT in hours
-! Outputs
-!============================
-! zr=solar zenith angle
-! deltar=declination angle
-! ah=hour angle
-!===============================
-
-      implicit none
-      real along,alat, realt, zr, deltar, ah, arg
-      real rad,om,radh,initt, pii, drad, alongt, cphi, sphi
-      real c1, c2, c3, s1, s2, s3, delta, rmsr2, cd, sid 
-      real et, ahor, chor, coznt 
-      integer day 
-
-
-      data rad,om,radh,initt/0.0174533,0.0172142,0.26179939,0/
- 
-       zr=0.
-       deltar=0.
-       ah=0.
-
-       pii = 3.14159265358979312
-       drad = pii/180.
-      
-       alongt=along/15.
-       cphi=cos(alat*drad)
-       sphi=sin(alat*drad)
-!
-!     declination
-!
-       arg=om*day
-       c1=cos(arg)
-       c2=cos(2.*arg)
-       c3=cos(3.*arg)
-       s1=sin(arg)
-       s2=sin(2.*arg)
-       s3=sin(3.*arg)
-       delta=0.33281-22.984*c1-0.3499*c2-0.1398*c3+3.7872*s1+0.03205*s2+0.07187*s3
-       rmsr2=(1./(1.-0.01673*c1))**2
-       deltar=delta*rad
-       cd=cos(deltar)
-       sid=sin(deltar)
-!
-!     time equation in hours
-!
-       et=0.0072*c1-0.0528*c2-0.0012*c3-0.1229*s1-0.1565*s2-0.0041*s3
-!
-!
-!   hour angle  
-!
-      
-!      ifh=0
-      
- !     ahor=realt-12.+ifh+et+alongt
-      ahor=realt-12.+et+alongt
-      ah=ahor*radh
-      chor=cos(ah)
-!
-!    zenith angle
-!
-      coznt=sphi*sid+cphi*cd*chor
-      
-       zr=acos(coznt)
-
-      return
-
-      END SUBROUTINE angle
-!
 ! ===6================================================================72
 ! ===6================================================================72
       subroutine upward_rad(nd_u,nz_u,ws,bs,sigma,pb,ss,                     &

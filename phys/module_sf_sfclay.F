@@ -84,8 +84,8 @@ CONTAINS
 !-- cd          momentum exchange coeff at 10 meters
 !-- cka         enthalpy exchange coeff at the lowest model level
 !-- cda         momentum exchange coeff at the lowest model level
-!-- isftcflx    =0, (Charnock and Carlson-Boland); =1, AHW Ck, Cd
-!-- iz0tlnd     =0 Carlson-Boland, =1 Czil_new, =2 Garratt
+!-- isftcflx    =0, (Charnock and Carlson-Boland); =1, AHW Ck, Cd, =2 Garratt
+!-- iz0tlnd     =0 Carlson-Boland, =1 Czil_new
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain

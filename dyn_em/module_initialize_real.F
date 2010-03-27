@@ -4140,7 +4140,7 @@ print *,'p sfc = ',psfc(i,j)
             DO i = its , MIN (ide-1 , ite )
                   IF ( p(i,k,j) .LT. 10000 ) THEN
                      IF ( rh(i,k,j) .GT. .1 ) THEN
-                        rh(i,k,j) = 1.E-5
+                        rh(i,k,j) = 3.E-6
                      END IF
                   END IF
                   rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )

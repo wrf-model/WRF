@@ -6,7 +6,8 @@
 #define MISSING -999
 #define PI 3.1415927
 #define RAD_TO_DEG 57.29577951
-#define EARTH_RAD 6371.200
+/* #define EARTH_RAD 6371.200 */
+#define EARTH_RAD 6370.000
 
 int fill_proj_parms(GridNav *gridnav);
 

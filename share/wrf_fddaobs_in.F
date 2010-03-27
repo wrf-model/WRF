@@ -1706,10 +1706,10 @@ END SUBROUTINE rh2rb
   INTEGER, intent(inout) :: nprev          ! Previous obs in new window read seq
   INTEGER, intent(in)    :: niobf          ! Maximum number of observations
   CHARACTER*15, intent(in) :: station_id   ! First 15 chars of station id for obs n
+  INTEGER, intent(in)    :: prt_max        ! Max no. of obs for diagnostic printout
   INTEGER, intent(inout) :: stnid(40,prt_max) ! Station ids for diagnostic printout
   REAL,    intent(in)    :: rio(niobf)     ! West-east coord (non-stagger)
   REAL,    intent(in)    :: rjo(niobf)     ! South-north coord (non-stagger)
-  INTEGER, intent(in)    :: prt_max        ! Max no. of obs for diagnostic printout
   INTEGER, intent(in)    :: prt_freq       ! Frequency for diagnostic printout
   REAL, DIMENSION( ims:ime, jms:jme ),                                   &
            intent(in )   :: xlat, xlong    ! Lat/lon on mass-pt grid

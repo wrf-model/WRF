@@ -83,7 +83,7 @@
 
     TYPE(WRFU_Time) :: ringTime, stopTime, curtime
     TYPE(WRFU_TimeInterval) :: interval, tmpinterval
-    CHARACTER*80 alarmname, timestring
+    CHARACTER*80 alarmname, timestring, debuggal
     INTEGER seconds, seconds2, iring
 
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
@@ -282,9 +282,22 @@
            ENDIF
            CALL wrf_put_dom_ti_integer( fid, TRIM(alarmname), iring, 1, ierr )
 
-           ! compute time to next ring as interval minus time since last ring
            CALL WRFU_AlarmGet( grid%alarms(i),PrevRingTime=ringTime,RingInterval=interval,rc=rc)
+
+#if 0
+!different, perhaps simpler way to do this, JM 20100319
+           IF ( i .LT. 10 ) THEN
+             write(alarmname,'("WRF_ALARM_PREVRINGTIME_0",i1)')i
+           ELSE
+             write(alarmname,'("WRF_ALARM_PREVRINGTIME_",i2)')i
+           ENDIF
+           CALL WRFU_TimeGet( ringTime, timeString=prevringtime )
+           CALL wrf_put_dom_ti_char( fid, TRIM(alarmname), TRIM(prevringtime), 1, ierr )
+#endif
+
+           ! compute time to next ring as interval minus time since last ring
            tmpinterval = curtime - ringTime
+
            IF ( i .LT. 10 ) THEN
              write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_0",i1)')i
            ELSE
@@ -292,20 +305,28 @@
            ENDIF
            CALL WRFU_TimeIntervalGet(interval,S=seconds)
            CALL WRFU_TimeIntervalGet(tmpinterval,S=seconds2)
-           CALL wrf_put_dom_ti_integer( fid, TRIM(alarmname), seconds-seconds2, 1, ierr )
+           IF ( seconds .GE. 1700000000 .OR. seconds .LE. -1700000000 ) THEN   ! it is a forever value, do not change it
+             CALL wrf_put_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, ierr )
+           ELSE
+             CALL wrf_put_dom_ti_integer( fid, TRIM(alarmname), seconds-seconds2, 1, ierr )
+           ENDIF
+#if 0
+if ( i .eq. history_alarm .or. i .eq. restart_alarm .or. i .eq. auxhist24_alarm) then
+if ( i .eq. history_alarm ) write(*,*)'----------------- info for history alarm ',i
+if ( i .eq. restart_alarm ) write(*,*)'----------------- info for restart alarm ',i
+if ( i .eq. auxhist24_alarm ) write(*,*)'----------------- info for auxhist24 alarm ',i
+CALL ESMF_TimeGet(curTime, TimeString=debuggal ) ; write(*,*)'curTime ',TRIM(debuggal)
+CALL ESMF_TimeGet(ringTime, TimeString=debuggal ) ; write(*,*)'ringTime ',TRIM(debuggal)
+CALL ESMF_TimeIntervalGet(tmpinterval, TimeString=debuggal ) ; write(*,*)'tmpinterval ',TRIM(debuggal)
+CALL ESMF_TimeIntervalGet(interval, TimeString=debuggal ) ; write(*,*)'interval ',TRIM(debuggal)
+write(*,*)'interval seconds ',seconds,' tmpinterval seconds ',seconds2,' seconds-seconds2 ',seconds-seconds2
+write(*,*)'----------------- '
+endif
+#endif
+
          ENDIF
        ENDDO
     ENDIF
-
-#if 0
-           IF ( i .LT. 10 ) THEN
-             write(alarmname,'("WRF_ALARM_RINGTIME_0",i1)')i
-           ELSE
-             write(alarmname,'("WRF_ALARM_RINGTIME_",i2)')i
-           ENDIF
-           CALL WRFU_TimeGet(ringTime,timeString=timeString)
-           CALL wrf_put_dom_ti_char( fid, TRIM(alarmname), TRIM(timeString), ierr )
-#endif
 
     ibuf(1) = config_flags%e_we - config_flags%s_we + 1
     CALL wrf_put_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,  ibuf , 1 , ierr )
@@ -496,6 +517,12 @@
         CALL wrf_put_dom_ti_integer ( fid, 'OBS_IDYNIN', obs_idynin , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'OBS_DTRAMP', obs_dtramp , 1 , ierr )
       ENDIF
+
+      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_MM',   config_flags%bucket_mm   , 1 , ierr ) 
+      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_J',    config_flags%bucket_J    , 1 , ierr ) 
+      CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'OMLCALL',     config_flags%omlcall     , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
 #endif
       ENDIF ! history_only
     ENDIF

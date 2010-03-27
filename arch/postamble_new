@@ -191,6 +191,10 @@ wrfio_esmf :
 	$(RM) $@
 	$(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90
 
+setfeenv.o : setfeenv.c
+	$(RM) $@
+	$(CCOMP) -o $@ -c $(CFLAGS) $(OMPCC) $*.c
+
 .c.o:
 	$(RM) $@
 	$(CC) -o $@ -c $(CFLAGS) $*.c

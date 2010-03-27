@@ -41,7 +41,8 @@ OBJS    = 		\
 	wrf_fddaobs_in.o		\
         wrf_bdyin.o             	\
         wrf_tsin.o                      \
-        landread.o
+        landread.o			\
+	setfeenv.o
 
 
 NMM_MODULES = 

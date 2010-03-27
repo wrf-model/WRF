@@ -333,7 +333,8 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_dmparallel ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
        $_ =~ s/#// ;
     }
-    if ( $sw_ompparallel ne "" && ( $_ =~ /^OMPCPP[=\t ]/ || $_ =~ /^OMP[=\t ]/ ) ) {
+    if ( $sw_ompparallel ne "" && ( $_ =~ /^OMPCPP[=\t ]/ || $_ =~ /^OMPCC[=\t ]/ || $_ =~ /^OMP[=\t ]/ ) ) {
+       $_ =~ s/#// ;
        $_ =~ s/#// ;
        $_ =~ s/#// ;
     }

@@ -5,8 +5,10 @@
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
 SFC             =       gfortran
 SCC             =       gcc
+CCOMP           =       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -36,7 +38,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux i486 i586 i686, g95 compiler with gcc #serial dmpar
@@ -44,8 +46,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
+OMPCC           =       # not supported
 SFC             =       g95
 SCC             =       gcc
+CCOMP           =       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -75,7 +79,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux x86_64, PGI compiler with gcc # serial smpar dmpar dm+sm
@@ -83,8 +87,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive
+OMPCC           =       # -mp
 SFC             =       pgf90
 SCC             =       gcc
+CCOMP           =       pgcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -114,7 +120,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux x86_64, PGI accelerator compiler with gcc # serial smpar dmpar dm+sm
@@ -122,8 +128,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp -Mrecursive
+OMPCC           =       # -mp
 SFC             =       pgf90
 SCC             =       gcc
+CCOMP           =       pgcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -152,7 +160,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux i486 i586 i686, PGI compiler with gcc #serial smpar dmpar dm+sm
@@ -160,8 +168,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -mp -Minfo=mp -Mrecursive
+OMPCC		=	# -mp
 SFC		=       pgf90
 SCC		=       gcc
+CCOMP		=       pgcc
 DM_FC		=	mpif90 -f90=$(SFC)
 DM_CC		=       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -191,7 +201,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4 		=      m4 -B 14000
 RANLIB 		=      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686, ifort compiler with icc #serial smpar dmpar dm+sm
@@ -226,8 +236,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
 SFC             =       ifort
 SCC             =       icc
+CCOMP           =       icc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -257,7 +269,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    ia64 Linux ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
@@ -300,8 +312,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
 SFC             =       ifort
 SCC             =       icc
+CCOMP           =       icc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -333,7 +347,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux SGI Altix, ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
@@ -378,8 +392,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
 SFC             =       ifort
 SCC             =       icc
+CCOMP           =       icc
 DM_FC           =       $(SFC)
 DM_CC           =       $(SCC)
 FC              =       CONFIGURE_FC
@@ -411,7 +427,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux i486 i586 i686 x86_64, PathScale compiler with pathcc #serial dmpar
@@ -419,8 +435,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
+OMPCC           =       # not supported
 SFC             =       pathf90
 SCC             =       pathcc
+CCOMP           =       pathcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -450,7 +468,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    x86_64 Linux, gfortran compiler with gcc  #serial smpar dmpar dm+sm
@@ -458,8 +476,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
 SFC             =       gfortran
 SCC             =       gcc
+CCOMP           =       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -489,7 +509,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -G
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Darwin (MACOS) PGI compiler with pgcc #serial smpar dmpar dm+sm
@@ -497,8 +517,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -mp -Minfo=mp -Mrecursive
+OMPCC		=	# -mp
 SFC		=       pgf90
 SCC		=       pgcc
+CCOMP		=       pgcc
 DM_FC		=	mpif90 -f90=$(SFC)
 DM_CC		=       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -536,8 +558,10 @@ CC_TOOLS        =      cc
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
 SFC             =       ifort
 SCC             =       icc
+CCOMP           =       icc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -577,8 +601,10 @@ CC_TOOLS        =      cc
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
 SFC             =       ifort
 SCC             =       cc
+CCOMP           =       cc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -618,8 +644,10 @@ CC_TOOLS        =      cc
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
+OMPCC           =       # not supported
 SFC             =       g95
 SCC             =       gcc
+CCOMP           =       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -650,7 +678,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with gcc #serial smpar dmpar dm+sm
@@ -658,8 +686,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
 SFC             =       gfortran
 SCC             =       gcc
+CCOMP           =       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -689,7 +719,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Darwin (MACOS) xlf  #serial dmpar
@@ -697,8 +727,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
+OMPCC           =       # not supported
 SFC             =       xlf90_r
 SCC             =       cc
+CCOMP           =       cc
 DM_FC           =       mpif90 -f90=$(SFC)
 DM_CC           =       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC
@@ -730,7 +762,7 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    AIX xlf compiler with xlc #serial smpar dmpar dm+sm
@@ -738,8 +770,10 @@ CC_TOOLS        =      $(SCC)
 DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -qsmp=noauto
+OMPCC		=	# -qsmp=noauto
 SFC		=       xlf90_r
 SCC		=       cc_r
+CCOMP		=       cc_r
 DM_FC		=	mpxlf90_r
 DM_CC		=       mpcc_r
 FC              =       CONFIGURE_FC
@@ -783,8 +817,10 @@ CC_TOOLS        =       cc
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Mrecursive
+OMPCC           =       # -mp
 SFC             =       ftn
 SCC             =       gcc
+CCOMP           =       pgcc
 DM_FC           =       ftn
 DM_CC           =       gcc -I$(MPICH_DIR)/include
 FC              =       CONFIGURE_FC
@@ -801,6 +837,8 @@ CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 # PGI recommended
 FCOPTIM         =       -O3 -fast -Mvect=noaltcode -Mprefetch=distance:8 -Mfprelaxed 
+# For Pathscale compiler
+#FCOPTIM        =       -O3 -OPT:Ofast
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
 OPTERON_TYPE    =
@@ -812,6 +850,10 @@ OPTERON_TYPE    =
 FCDEBUG         =       # -g $(FCNOOPT)
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
+# For Pathscale compiler
+#OPTERON_TYPE    =       -march=barcelona -msse4a
+#FORMAT_FIXED    =       -fixedform
+#FORMAT_FREE     =       -freeform
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE) $(OMP)
@@ -823,65 +865,55 @@ AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Cray XT CLE/Linux x86_64, Pathscale compiler with gcc # serial dmpar smpar dm+sm
+#ARCH    Cray XT CLE/Linux x86_64, Cray CCE compiler with gcc # serial dmpar smpar dm+sm
 #
-# Recommended CNL/Linux memory allocation settings at run time:
+# Recommended CLE/Linux memory allocation settings at run time:
 # export MALLOC_MMAP_MAX_=0
 # export MALLOC_TRIM_THRESHOLD_=536870912
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
-OMP             =       # -mp
+OMP             =       # -Oomp
+OMPCC           =       # -fopenmp
 SFC             =       ftn
 SCC             =       gcc
+CCOMP           =       gcc
 DM_FC           =       ftn
 DM_CC           =       gcc -I$(MPICH_DIR)/include
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -r$(RWORDSIZE) -i4
+PROMOTION       =       -s integer32 -s real32
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
 CFLAGS_LOCAL    =       -w -O3 
 LDFLAGS_LOCAL   =
 # module load libfast
-LIB_LOCAL       =       -lfast_mv
+#LIB_LOCAL       =       -lfast_mv
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 -OPT:Ofast
+FCOPTIM         =
 FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT         =       -O0
+FCNOOPT         =       -O1 -Oipa0
 OPTERON_TYPE    =
-# Use this for AMD Opteron quad-core
-#OPTERON_TYPE    =       -march=barcelona -msse4a
 FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -fixedform
-FORMAT_FREE     =       -freeform
+FORMAT_FIXED    =       -f fixed
+FORMAT_FREE     =       -f free
 FCSUFFIX        =
-BYTESWAPIO      =       -byteswapio
-FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE) $(OMP)
+BYTESWAPIO      =       -h byteswapio
+FCBASEOPTS_NO_G =       -N255 -Onomodinline -em -Onoomp $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =    
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -C -P $(TRADFLAG)
-AR              =      ar
-ARFLAGS         =      ru
-M4              =      m4 -B 14000
-RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
-
-# lower opt
-solve_em.o : solve_em.F
-
-solve_em.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(FCNOOPT) $(MODULE_DIRS) $*.f90
+TRADFLAG        =       -traditional
+CPP             =       /lib/cpp -C -P $(TRADFLAG)
+AR              =       ar
+ARFLAGS         =       ru
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
+CC_TOOLS        =       $(SCC) 
 
 ###########################################################
 #ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar
@@ -889,11 +921,13 @@ solve_em.o :
 DMPARALLEL      =       # 1
 OMPCPP		=	# not supported
 OMP		=	# not supported
+OMPCC		=	# not supported
 BGL_SYS         =       /bgl/BlueLight/ppcfloor/bglsys
 MPI_INC         =       -I$(BGL_SYS)/include
 MPI_LIB         =       -L$(BGL_SYS)/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts
 SFC		=       blrts_xlf90
 SCC		=       blrts_xlc
+CCOMP		=       blrts_xlc
 DM_FC		=	$(SFC)
 DM_CC		=       $(SCC)
 FC              =       CONFIGURE_FC
@@ -936,9 +970,11 @@ CC_TOOLS        =       cc
 DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -qsmp=noauto
+OMPCC		=	# -qsmp=noauto
 # these have to be the same as DM_FC on surveyor or it fails with weird errors in time manager
 SFC             =       time mpixlf90_r
 SCC             =       time mpixlc_r
+CCOMP           =       time mpixlc_r
 DM_FC           =       time mpixlf90_r
 DM_CC           =       time mpixlc_r -DMPI2_SUPPORT
 FC              =        $(DM_FC)
@@ -979,8 +1015,10 @@ CC_TOOLS        =       cc
 DMPARALLEL      =       # 1
 OMPCPP		=	# not supported
 OMP		=	# not supported
+OMPCC		=	# not supported
 SFC		=       xlf90_r -q64
 SCC		=       xlc_r -q64
+CCOMP		=       xlc_r -q64
 DM_FC		=	mpif90 -q64
 DM_CC		=       mpicc -q64 -DMPI2_SUPPORT  -DFSEEKO64_OK
 FC              =       CONFIGURE_FC
@@ -1018,8 +1056,10 @@ CC_TOOLS        =       xlc -q64
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp
+OMPCC           =       # -mp
 SFC             =       pgf90
 SCC             =       pgcc
+CCOMP           =       pgcc
 DM_FC           =       pgf90 -Mmpi=msmpi
 DM_CC           =       pgcc -Mmpi=msmpi
 FC              =       CONFIGURE_FC
@@ -1049,7 +1089,7 @@ AR              =       ar
 ARFLAGS         =       cr
 M4              =       NA
 RANLIB          =       ranlib
-CC_TOOLS        =       $(SCC)
+CC_TOOLS        =       $(SCC) 
 
 LIB_EXTERNAL    = \
                      ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib

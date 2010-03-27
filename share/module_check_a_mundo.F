@@ -50,13 +50,28 @@
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec % sf_surface_physics(i)     .NE. &
               model_config_rec % sf_surface_physics(i-1) ) THEN
-            wrf_err_message = 'ERROR: sf_surface_physics must be equal for all domains '
+            wrf_err_message = '--- ERROR: sf_surface_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
-            wrf_err_message = 'Fix sf_surface_physics in namelist.input '
+            wrf_err_message = '--- Fix sf_surface_physics in namelist.input '
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          END IF
       ENDDO
 
+#if ((EM_CORE == 1) && (DA_CORE != 1))
+!-----------------------------------------------------------------------
+! Check that if grid_sfdda is one, grid_fdda is also 1
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%grid_sfdda(i) .EQ. 1 ).AND. &
+              ( model_config_rec%grid_fdda (i) .NE. 1 ) ) THEN
+            wrf_err_message = '--- ERROR: If grid_sfdda = 1, then grid_fdda must also = 1 for that domain '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Change grid_fdda or grid_sfdda in namelist.input '
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+#endif
 
    END SUBROUTINE 
 

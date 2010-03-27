@@ -1022,6 +1022,8 @@ integer myproc
    LOGICAL :: hwrflw= .false.
    LOGICAL :: camlw = .false.
    LOGICAL :: etamp = .false.
+   LOGICAL :: acswalloc = .false.
+   LOGICAL :: aclwalloc = .false.
    integer :: month,iday
    INTEGER :: i, j, k, itf, jtf, ktf
 !---------------------------------------------------------------------
@@ -1103,6 +1105,7 @@ integer myproc
              ENDIF
 
              camlw = .true.
+             aclwalloc = .true.
 
         CASE (RRTMG_LWSCHEME)
              CALL rrtmg_lwinit(                             &
@@ -1110,6 +1113,8 @@ integer myproc
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
+
+             aclwalloc = .true.
 
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(id,month)
@@ -1177,6 +1182,7 @@ integer myproc
                          ims, ime, jms, jme, kms, kme,     &
                          its, ite, jts, jte, kts, kte      )
              ENDIF
+             acswalloc = .true.
 
         CASE (GSFCSWSCHEME)
              CALL gsfc_swinit(cen_lat, allowed_to_read )
@@ -1187,6 +1193,8 @@ integer myproc
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
+
+             acswalloc = .true.
 
         CASE (GFDLSWSCHEME)
              IF(.not.etalw)THEN
@@ -1212,6 +1220,16 @@ integer myproc
         CASE DEFAULT
 
    END SELECT swrad_select
+
+#if ( EM_CORE == 1 ) 
+   ! test for conditionally allocated arrays when using bucket_J
+
+   IF(config_flags%bucket_J .gt. 0.0)THEN
+     IF(.not. (acswalloc .and. aclwalloc))THEN
+           CALL wrf_error_fatal ( 'Need CAM or RRTMG radiation for bucket_J option')
+     ENDIF
+   ENDIF
+#endif
 
    END SUBROUTINE ra_init
 

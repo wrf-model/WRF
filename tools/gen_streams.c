@@ -242,7 +242,11 @@ gen_set_timekeeping_alarms ( FILE * fp )
     fprintf(fp,"                           __FILE__ , &\n") ;
     fprintf(fp,"                           __LINE__  )\n") ;
     fprintf(fp,"   ELSE\n") ;
+#if 0
     fprintf(fp,"     interval = run_length + padding_interval\n") ;
+#else
+    fprintf(fp,"     interval =  padding_interval\n") ;
+#endif
     fprintf(fp,"   ENDIF\n") ;
     fprintf(fp,"   CALL nl_get_%s%s%s_begin_y( grid%%id, %s%s%s_begin_y )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
     fprintf(fp,"   CALL nl_get_%s%s%s_begin_d( grid%%id, %s%s%s_begin_d )\n",aux,streamtype,streamno,aux,streamtype,streamno) ;
@@ -277,7 +281,11 @@ gen_set_timekeeping_alarms ( FILE * fp )
     fprintf(fp,"      end_time = run_length + padding_interval\n") ;
     fprintf(fp,"   ENDIF\n") ;
     fprintf(fp,"   CALL domain_alarm_create( grid, %s%s%s_ALARM, interval, begin_time, end_time )\n",aux,streamtype,streamno) ;
+#if 0
     fprintf(fp,"   IF ( interval .NE. run_length + padding_interval .AND. begin_time .EQ. zero_time ) THEN\n") ;
+#else
+    fprintf(fp,"   IF ( interval .NE. padding_interval .AND. begin_time .EQ. zero_time ) THEN\n") ;
+#endif
     fprintf(fp,"     CALL WRFU_AlarmRingerOn( grid%%alarms( %s%s%s_ALARM ),  rc=rc )\n",aux,streamtype,streamno) ;
     fprintf(fp,"     CALL wrf_check_error( WRFU_SUCCESS, rc, &\n") ;
     fprintf(fp,"                           'WRFU_AlarmRingerOn(%s%s%s_ALARM) FAILED', &\n",aux,streamtype,streamno) ;
@@ -585,6 +593,7 @@ gen_io_boilerplate ()
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
 
+  fprintf(fp,"rconfig logical override_restart_timers namelist,time_control 1 .false.\n") ;
   for ( j = 0 ; j < 2 ; j++ ) {  /* j=0 is hist, j=1 is input */
     streamtype = (j==0)?"hist":"input" ;
     for ( i = 1 ; i < MAX_HISTORY ; i++ )

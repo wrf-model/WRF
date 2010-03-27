@@ -1833,7 +1833,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    TYPE(WRFU_Time)                        :: ST,CT
    LOGICAL                                :: adjust
 
-   IF ( stream .LT. first_history .OR. stream .GE. last_history ) THEN
+   IF ( stream .LT. first_history .OR. stream .GT. last_history ) THEN
      WRITE(message,*)'open_hist_w: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF

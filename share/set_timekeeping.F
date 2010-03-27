@@ -5,7 +5,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    IMPLICIT NONE
    TYPE(domain), POINTER :: grid
 ! Local
-   TYPE(WRFU_TimeInterval) :: begin_time, end_time, zero_time, one_minute, one_hour, padding_interval
+   TYPE(WRFU_TimeInterval) :: begin_time, end_time, zero_time, one_minute, one_hour, forever, padding_interval
    TYPE(WRFU_TimeInterval) :: interval, run_length, dfl_length
    TYPE(WRFU_Time) :: startTime, stopTime, initialTime
    TYPE(WRFU_TimeInterval) :: stepTime
@@ -68,6 +68,11 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL WRFU_TimeIntervalSet ( one_hour, H=1, rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_TimeIntervalSet(one_hour) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+   CALL WRFU_TimeIntervalSet ( forever, S=1700000000, rc=rc )  ! magic number; indicats an interval that is forever
+   CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                         'WRFU_TimeIntervalSet(forever) FAILED', &
                          __FILE__ , &
                          __LINE__  )
 
@@ -309,9 +314,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
 #endif
 
    IF ( run_length .GT. zero_time ) THEN
-     padding_interval = one_hour
+     padding_interval = forever
    ELSE
-     padding_interval = zero_time - one_hour
+     padding_interval = zero_time - forever
    ENDIF
 
    IF ( grid%id .EQ. head_grid%id ) THEN
@@ -385,7 +390,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + padding_interval
+     interval =  padding_interval
    ENDIF
    CALL domain_alarm_create( grid, RESTART_ALARM, interval )
 
@@ -406,7 +411,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + padding_interval
+     interval =  padding_interval
    ENDIF
 
    CALL nl_get_inputout_begin_y( grid%id, inputout_begin_y )
@@ -440,7 +445,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + padding_interval
+      end_time =  padding_interval
    ENDIF
 
    CALL domain_alarm_create( grid, INPUTOUT_ALARM, interval, begin_time, end_time )
@@ -465,7 +470,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __FILE__ , &
                            __LINE__  )
    ELSE
-     interval = run_length + padding_interval
+     interval =  padding_interval
    ENDIF
 
    CALL nl_get_auxinput5_begin_y( grid%id, auxinput5_begin_y )
@@ -498,7 +503,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      end_time = run_length + padding_interval
+      end_time =  padding_interval
    ENDIF
    CALL domain_alarm_create( grid, AUXINPUT5_ALARM, interval, begin_time, end_time )
 !TBH:  Should be OK to remove the "#else" section and the code it contains 

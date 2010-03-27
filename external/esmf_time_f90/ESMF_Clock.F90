@@ -1021,6 +1021,8 @@ use esmf_timemod
                  alarm%alarmint%Ringing = .TRUE.
                  alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
                  alarm%alarmint%RingTimeSet = .FALSE.  !it is a one time alarm, it rang, now let it resort to interval
+#if 0
+! logic above is sufficient to set the PrevRingTime, it is now.
                  IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
 !                   IF ( PRED3) alarm%alarmint%PrevRingTime = alarm%alarmint%PrevRingTime + &
@@ -1041,6 +1043,7 @@ use esmf_timemod
                        ESMF_TimeDec( alarm%alarmint%PrevRingTime, &
                                      alarm%alarmint%RingInterval )
                  ENDIF
+#endif
                  IF ( PRESENT( RingingAlarmList ) .AND. &
                       PRESENT ( NumRingingAlarms ) ) THEN
                    NumRingingAlarms = NumRingingAlarms + 1

@@ -946,9 +946,9 @@ CONTAINS
 
 ! Smoother applies one point outside the tile, but one point in from boundaries
      CALL smther(blw_old, its-2,itf+1, jts-2,jtf+1, 1, &
-                 MAX(its-1,ids+1), MIN(ite  ,ide-2), MAX(jts-1,jds+1), MIN(jte  ,jde-2))
+                 MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
      CALL smther(blw_new, its-2,itf+1, jts-2,jtf+1, 1, &
-                 MAX(its-1,ids+1), MIN(ite  ,ide-2), MAX(jts-1,jds+1), MIN(jte  ,jde-2))
+                 MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
 
      WHERE ( blw_old > 1.0)
         blw_old = 1.0

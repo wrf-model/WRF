@@ -32,7 +32,6 @@ Description of WRF-Var namelist variables
                                     ;         diagnosed based on the increments of other fields.
                                     ;         If use_radarobs=.true., the w increments are always
                                     ;         calculated.
-  dt_cloud_model          = .false. ;
 /
 &wrfvar3
   fg_format               = 1       ; 1: fg_format_wrf_arw_regional (default)
@@ -126,6 +125,7 @@ Description of WRF-Var namelist variables
 &wrfvar7
   cv_options              = 5         ; 3: NCEP Background Error model
                                       ; 5: NCAR Background Error model (default)
+  ; as1 - as5 are for cv_options=3 only
   as1 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 1 = stream function. For cv_options=3 only.
                                       ; the actual default valuse are 0.25, 1.0, 1.5.
@@ -142,21 +142,22 @@ Description of WRF-Var namelist variables
                                       ; control variable 5 - unbalanced surface pressure. For cv_options=3 only.
                                       ; the actual default valuse are 0.25, 1.0, 1.5.
   rf_passes               = 6         ; number of passes of recursive filter.
-  var_scaling1            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 1 - stream function. For cv_options=5 only.
-  var_scaling2            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 2 - unbalanced velocity potential. For cv_options=5 only.
-  var_scaling3            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 3 - unbalanced temperature. For cv_options=5 only.
-  var_scaling4            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 4 - pseudo relative humidity. For cv_options=5 only.
-  var_scaling5            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 5 - unbalanced surface pressure. For cv_options=5 only.
-  len_scaling1            = 1.0       ; tuning factor of scale-length for stream function. For cv_options=5 only.
-  len_scaling2            = 1.0       ; tuning factor of scale-length for unbalanced velocity potential. For cv_options=5 only.
-  len_scaling3            = 1.0       ; tuning factor of scale-length for unbalanced temperature. For cv_options=5 only.
-  len_scaling4            = 1.0       ; tuning factor of scale-length for pseudo relative humidity. For cv_options=5 only.
-  len_scaling5            = 1.0       ; tuning factor of scale-length for unbalanced surface pressure. For cv_options=5 only.
+  ; var_scaling1-5 and len_scaling1-5 are for cv_options=5 only
+  var_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 1 - stream function. For cv_options=5 only.
+  var_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 2 - unbalanced velocity potential. For cv_options=5 only.
+  var_scaling3 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 3 - unbalanced temperature. For cv_options=5 only.
+  var_scaling4 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 4 - pseudo relative humidity. For cv_options=5 only.
+  var_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 5 - unbalanced surface pressure. For cv_options=5 only.
+  len_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for stream function. For cv_options=5 only.
+  len_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for unbalanced velocity potential. For cv_options=5 only.
+  len_scaling3 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for unbalanced temperature. For cv_options=5 only.
+  len_scaling4 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for pseudo relative humidity. For cv_options=5 only.
+  len_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for unbalanced surface pressure. For cv_options=5 only.
   je_factor               = 1.0       ; ensemble covariance weighting factor
 /
 &wrfvar8   ; not used
@@ -195,7 +196,7 @@ Description of WRF-Var namelist variables
 /
 &wrfvar11
   cv_options_hum          = 1       ; do not change
-  check_rh                = 2       ; 0: no supersaturation check after minimization
+  check_rh                = 0       ; 0: no supersaturation check after minimization
                                     ; 1: supersaturation (rh> 100%) and minimum rh (rh<10%) check, 
                                     ;    and make the local adjustment of q.
                                     ; 2: supersaturation (rh> 95%) and minimum rh (rh<11%) check, 
@@ -239,8 +240,9 @@ Description of WRF-Var namelist variables
   max_vert_var4           = 99.0   ; speficy the maximum truncation value (in percentage)
                                    ; to explain the variance of pseudo relative humidity
                                    ; in eigenvector decomposition
-  max_vert_var5           = 99.0   ; for unbalanced surface pressure
-                                   ; no effect except for max_vert_var5=0.0
+  max_vert_var5           = 99.0   ; for unbalanced surface pressure, it should be a non-zero
+                                   ; positive number.
+                                   ; set max_vert_var5=0.0 only for offline VarBC applications.
 /
 &wrfvar14
      ; the following 4 variables (rtminit_nsensor, rtminit_platform,
@@ -303,6 +305,9 @@ Description of WRF-Var namelist variables
                                                  ; 4: Subarctic summer
                                                  ; 5: Subarctic winter
                                                  ; 6: U.S. Standard Atmosphere
+  use_crtm_kmatrix                    = .false.  ; .true. use CRTM K matrix rather than calling CRTM TL
+                                                 ;        and AD routines for gradient calculation, which
+                                                 ;        reduces runtime noticeably. 
 /
 &wrfvar15   ; needs to be set together with &wrfvar19
   num_pseudo              = 0          ; set the number of pseudo ob, either 0 or 1 (single ob)
@@ -328,7 +333,7 @@ Description of WRF-Var namelist variables
 /
 &wrfvar17
   analysis_type           = "3D-VAR"   ; "3D-VAR": 3D-VAR mode (default)
-                                       ; "QC_OBS": 3D-VAR mode plus extra filtered_obs output
+                                       ; "QC-OBS": 3D-VAR mode plus extra filtered_obs output
                                        ; "VERIFY": verification mode. 
                                        ;           WRF-Var resets check_max_iv=.false. and ntmax=0
                                        ; "RANDOMCV": for creating ensemble perturbations

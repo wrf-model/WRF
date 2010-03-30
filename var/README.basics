@@ -46,3 +46,37 @@ vi parame.in
 ln -sf WRFDA/var/build/da_update_bc.exe ./da_update_bc.exe
 ./da_updatebc.exe
 
+
+Extra notes regarding to da_update_bc:
+As of V3.2, some changes are made to da_update_bc and new settings in parame.in are
+introduced as follows. (The above pre-V3.2 parame.in will still work with V3.2 da_update_bc)
+
+&control_param
+ da_file            = '../tutorial/wrfvar_output'
+ wrf_bdy_file       = './wrfbdy_d01'
+ wrf_input          = '$DAT_DIR/rc/2008020512/wrfinput_d01'
+ domain_id          = 1
+ debug              = .true.
+ update_lateral_bdy = .true.
+ update_low_bdy     = .true.
+ update_lsm         = .false.
+ iswater            = 16
+/
+
+update_lateral_bdy is required only for domain 1.
+update_low_bdy is needed for all domains if running in cycling mode.
+iswater (water point index) is 16 for USGS LANDUSE and 17 for MODIS LANDUSE.
+
+It is recommended to run da_update_bc.exe with
+ update_lateral_bdy = .false.
+ update_low_bdy     = .true.
+before running WRF-Var, if in cycling mode (especially if you are doing 
+radiance data assimilation and there is SEA ICE and SNOW in your domain)
+to get low-bdy updated first guess (da_file will be overwritten by da_update_bc).
+
+Then run da_update_bc.exe with
+ update_lateral_bdy = .true.
+ update_low_bdy     = .false.
+after WRF-Var to get updated lateral boubdary conditions (wrf_bdy_file will be
+overwritten by da_update_bc).
+

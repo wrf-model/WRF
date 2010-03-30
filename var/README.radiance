@@ -8,8 +8,12 @@ Please see also Chapter 6 of WRF ARW User's Guide for more details.
 
 RTM (Radiative Transfer Model) that can be used in WRF-Var:
   CRTM REL-1.1 (an additional -DCRTM_1_1 flag needs to be added in configure.wrf to compile)
-  CRTM REL-1.2 (latest version)
+  CRTM REL-1.2
+  CRTM REL-1.2.1
   RTTOV 8.7 (currently there is no plan to upgrade to the current RTTOV 9.3)
+
+Due to the interface changes in the current (as of March 12, 2010) release of 
+CRTM REL-2.0, WRF-Var does not work with CRTM REL-2.0.
 
 DISCLAIMER: No support is to be expected on radiance data assimilation 
             due to a lack of funding allocated to this task.
@@ -54,6 +58,7 @@ See WRFDA/var/README.namelist for namelist descriptions.
  only_sea_rad=false,
  use_varbc=true,
  crtm_atmosphere=6, 
+ use_crtm_kmatrix=true,
 /
 &wrfvar21
 time_window_min="2008-02-05_10:30:00.0000",

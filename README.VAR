@@ -22,6 +22,19 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.2 Release Notes:
+-----------------------
+
+Version 3.2 is released on March 31, 2010.
+
+- Improvements on  multiple outer loop which handling nonlinearity issue
+
+- Adjoint sensitivity tool
+
+- Improved software performance
+
+- Improved WRF adjoint codes.
+
 V3.1.1 Release Notes:
 -----------------------
 
@@ -92,6 +105,8 @@ WRFDA update history:
 - V3.0.1:   Aug  6, 2008
 - V3.0.1.1: Aug 29, 2008
 - V3.1:     Apr  9, 2009
+- V3.1.1:   Jul 31, 2009
+- V3.2:     Mar 31, 2010
 
 ======================================
 
@@ -101,16 +116,13 @@ How to compile and run?
 - In WRFDA directory, type 'configure wrfda - this will create a configure.wrf
   file that has appropriate compile options for the supported computers.
 
-  Note: WRFDA requires netCDF, BLAS, LAPACK libraries.
-        If using PREPBUFR data, NCEP BUFR library is required.
-        If using radiance data, NCEP BUFR and CRTM 1.2/RTTOV 8.7 are required.
+  Note: WRFDA only requires netCDF library starting with V3.1.1.
+        If using prepbufr or/and radiance data, NCEP BUFR and CRTM 1.2/RTTOV 8.7 are required.
         Install required libraries and set environment variables properly 
         before you type 'configure wrfda'. For example, 
 
         setenv NETCDF /usr/local/netcdf-pgi
-        setenv BLAS /usr/local/blas
-        setenv LAPACK /usr/local/lapack
-        setenv BUFR /usr/local/bufr (optional)
+        setenv BUFR 1 (optional)
         setenv CRTM /usr/local/crtm_1_2 (optional)
         setenv RTTOV /usr/local/rttov87 (optional)
 

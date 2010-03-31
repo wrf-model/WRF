@@ -81,11 +81,20 @@ CONTAINS
 !<DESCRIPTION>
 !     WRF initialization routine.
 !</DESCRIPTION>
+#ifdef _OPENMP
+     use omp_lib
+#endif
+#ifdef _ACCEL
+     use accel_lib
+#endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
      INTEGER, ALLOCATABLE :: hostids(:), budds(:)
      CHARACTER*512 hostname
-#if defined(DM_PARALLEL) && defined(RUN_ON_GPU)
+#ifdef _ACCEL
+     integer :: it, nt, in, devnum
+#endif
+#if defined(DM_PARALLEL) && !defined(STUBMPI) && ( defined(RUN_ON_GPU) || defined(_ACCEL))
      include "mpif.h"
 #endif
 #include "version_decl"
@@ -149,7 +158,7 @@ CONTAINS
 #ifdef _ACCEL
    buddcounter = 1
    mydevice = 0
-# ifdef DM_PARALLEL
+# if defined(DM_PARALLEL) && !defined(STUBMPI) 
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )
    CALL wrf_get_hostid ( hostid )

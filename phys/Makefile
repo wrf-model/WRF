@@ -433,5 +433,11 @@ module_fdda_spnudging.o :\
 module_sf_bep.o :\
 		module_sf_urban.o
 
+module_mp_wsm5.o :\
+		module_mp_wsm5_accel.F
+
+module_mp_wsm3.o :\
+		module_mp_wsm3_accel.F
+
 
 # DO NOT DELETE

@@ -1,3 +1,6 @@
+#ifdef _ACCEL
+#  include "module_mp_wsm5_accel.F"
+#else
 #if ( RWORDSIZE == 4 )
 #  define VREC vsrec
 #  define VSQRT vssqrt
@@ -1620,3 +1623,4 @@ CONTAINS
 !
   END SUBROUTINE nislfv_rain_plm
 END MODULE module_mp_wsm5
+#endif

@@ -289,7 +289,7 @@ CONTAINS
       !-----------------------------------------------------------------------------------
       !--- Compute time relatve to old and new analysis time for timestep interpolation
       CURTIME = (ITIMESTEP-1) * DT
-      TIME_BETWEEN_ANALYSIS = AMOD(CURTIME,DT_FDDA)
+      TIME_BETWEEN_ANALYSIS = MOD(CURTIME,DT_FDDA)
       IF (TIME_BETWEEN_ANALYSIS .EQ. 0.0) THEN   
           CORB = 1.0       
           CORE = 0.0    

@@ -301,19 +301,9 @@ CONTAINS
 
    DO ij = 1 , num_tiles
 
-      IF (xtime .eq. 0.0)THEN
-        DO j=j_start(ij),j_end(ij)
-        DO i=i_start(ij),i_end(ij)
-          prec_acc_c(i,j) = 0.
-          prec_acc_nc(i,j) = 0.
-          snow_acc_nc(i,j) = 0.
-        ENDDO     
-        ENDDO
-      ENDIF
-
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
-         IF (mod(curr_secs-dt, 60.* prec_acc_dt) == 0.) THEN
+         IF (mod(curr_secs, 60.* prec_acc_dt) == 0.) THEN
             prec_acc_c(i,j)  = 0.
             prec_acc_nc(i,j) = 0.
             snow_acc_nc(i,j)  = 0.

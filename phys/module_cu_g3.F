@@ -233,6 +233,8 @@ CONTAINS
    END IF
    do j=jts,jte
    do i=its,ite
+     k22_shallow(i,j)=0
+     kbcon_shallow(i,j)=0
      ktop_shallow(i,j)=0
      xmb_shallow(i,j)=0
    enddo

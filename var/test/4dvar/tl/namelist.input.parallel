@@ -1,5 +1,5 @@
 &time_control
-run_hours=06,
+run_hours=6,
 start_year=2008,
 start_month=02,
 start_day=05,
@@ -19,6 +19,7 @@ inputout_interval=60,
 auxinput2_interval=6,
 inputout_begin_h=0,
 inputout_end_h=6,
+io_form_auxhist2=2,
 input_outname="./tl/tl_d<domain>_<date>",
 write_input=true,
 /
@@ -32,6 +33,7 @@ dy=60000,
 i_parent_start=0,
 j_parent_start=0,
 smooth_option=0,
+nproc_x=0,
 /
 &physics
 mp_physics=0,
@@ -39,7 +41,7 @@ ra_lw_physics=0,
 ra_sw_physics=0,
 radt=0,
 sf_sfclay_physics=0,
-sf_surface_physics=0,
+sf_surface_physics=1,
 bl_pbl_physics=0,
 bldt=0,
 cu_physics=0,
@@ -53,17 +55,23 @@ mp_zero_out=2,
 dyn_opt=202,
 w_damping=0,
 diff_opt=1,
-km_opt=1,
+km_opt=4,
 dampcoef=0.2,
 time_step_sound=4,
 base_temp=290.0,
 jcdfi_io=false,
+jcdfi_tauc=6,
+jcdfi_gama=5.0,
+jcdfi_error_wind=3.0,
+jcdfi_error_t=1.0,
+jcdfi_error_mu=1000.,
 /
 &bdy_control
 specified=true,
 real_data_init_type=3,
 /
 &wrfvar
+trace_memory=false,
 /
 &namelist_quilt
 /

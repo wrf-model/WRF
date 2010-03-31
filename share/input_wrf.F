@@ -139,7 +139,7 @@
         ELSE
           curtime = domain_get_current_time( grid )
           DO i = 1, MAX_WRF_ALARMS
-            IF ( grid%alarms_created(i)  ) THEN
+            IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
               IF ( i .LT. 10 ) THEN
                 write(alarmname,'("WRF_ALARM_ISRINGING_0",i1)')i
               ELSE

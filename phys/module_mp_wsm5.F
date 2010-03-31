@@ -315,6 +315,7 @@ CONTAINS
   INTEGER, DIMENSION( its:ite ) ::                                &
                                                            mstep, &
                                                            numdt
+  REAL, DIMENSION(its:ite) ::                             tstepsnow
   REAL, DIMENSION(its:ite) ::                             rmstep
   REAL dtcldden, rdelz, rdtcld
   LOGICAL, DIMENSION( its:ite ) ::                        flgcld
@@ -398,6 +399,8 @@ CONTAINS
         rainncv(i) = 0.
         if(PRESENT (snowncv) .AND. PRESENT (snow)) snowncv(i,lat) = 0.
         sr(i) = 0.
+! new local array to catch step snow
+        tstepsnow(i) = 0.
       enddo
 !
 !----------------------------------------------------------------
@@ -648,14 +651,17 @@ CONTAINS
           rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rain(i)
         endif
-        IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
         if(fallsum_qsi.gt.0.) then
+          tstepsnow(i)   = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            &
+                           +tstepsnow(i) 
+        IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
           snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            & 
                            +snowncv(i,lat)    
           snow(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i,lat)
-        endif
         ENDIF
-        if(fallsum.gt.0.)sr(i)=snowncv(i,lat)/(rainncv(i)+1.e-12)
+        endif
+!       if(fallsum.gt.0.)sr(i)=snowncv(i,lat)/(rainncv(i)+1.e-12)
+        if(fallsum.gt.0.)sr(i)=tstepsnow(i)/(rainncv(i)+1.e-12)
       enddo
 !
 !---------------------------------------------------------------

@@ -337,6 +337,7 @@ CONTAINS
         denqrs1, denqr1, denqrs2, denqrs3, denncr3, denqci  
   REAL, DIMENSION( its:ite ) ::                                   &
         delqrs1, delqrs2, delqrs3, delncr3, delqi
+  REAL, DIMENSION( its:ite ) :: tstepsnow, tstepgraup
   REAL :: gfac, sfac
 ! variables for optimization
   REAL, DIMENSION( its:ite )           :: tvec1
@@ -434,6 +435,9 @@ CONTAINS
         if(PRESENT (snowncv) .AND. PRESENT (snow)) snowncv(i) = 0.
         if(PRESENT (graupelncv) .AND. PRESENT (graupel)) graupelncv(i) = 0.
         sr(i) = 0.
+! new local array to catch step snow and graupel
+        tstepsnow(i) = 0.
+        tstepgraup(i) = 0.
       enddo
 !
 !----------------------------------------------------------------
@@ -785,20 +789,24 @@ CONTAINS
           rainncv(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rain(i)
         endif
+        if(fallsum_qsi.gt.0.) then
+            tstepsnow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + tstepsnow(i)
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-          if(fallsum_qsi.gt.0.) then
             snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)     
             snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
-          endif
         ENDIF
+        endif
+        if(fallsum_qg.gt.0.) then
+            tstepgraup(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &
+                            + tstepgraup(i)
         IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
-          if(fallsum_qg.gt.0.) then
             graupelncv(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &  
                             + graupelncv(i)
             graupel(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i)
-          endif
         ENDIF
-        if(fallsum.gt.0.) sr(i) = (snowncv(i) + graupelncv(i))                 &  
+        endif
+!       if(fallsum.gt.0.) sr(i) = (snowncv(i) + graupelncv(i))                 &  
+        if(fallsum.gt.0.) sr(i) = (tstepsnow(i) + tstepgraup(i))               &  
                                   /(rainncv(i)+1.e-12)
       enddo
 !

@@ -339,6 +339,7 @@ CONTAINS
         nraut, nracw, nrevp, ncevp, nccol, nrcol,                 &
         nsacw, nseml, ncact 
   REAL :: ifac, sfac
+  REAL, DIMENSION(its:ite) :: tstepsnow
 !
 #define WSM_NO_CONDITIONAL_IN_VECTOR
 #ifdef WSM_NO_CONDITIONAL_IN_VECTOR
@@ -433,6 +434,8 @@ CONTAINS
         rainncv(i) = 0.
         if(PRESENT (snowncv) .AND. PRESENT (snow)) snowncv(i) = 0.
         sr(i) = 0.
+! new local array to catch step snow 
+        tstepsnow(i) = 0.
       enddo
 !
 !----------------------------------------------------------------
@@ -774,13 +777,15 @@ CONTAINS
           rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000.+rain(i)
         endif
+        if(fallsum_qsi.gt.0.) then
+            tstepsnow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + tstepsnow(i)
         if (PRESENT (snowncv) .and. PRESENT (snow)) then 
-          if(fallsum_qsi.gt.0.) then
             snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)
             snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.+snow(i)
-          endif
         endif 
-        if(fallsum.gt.0.)sr(i)= snowncv(i)/(rainncv(i)+1.e-12)
+        endif
+!       if(fallsum.gt.0.)sr(i)= snowncv(i)/(rainncv(i)+1.e-12)
+        if(fallsum.gt.0.)sr(i)= tstepsnow(i)/(rainncv(i)+1.e-12)
       enddo
 !
 !---------------------------------------------------------------

@@ -1220,6 +1220,12 @@ integer myproc
         CASE DEFAULT
 
    END SELECT swrad_select
+! test for conditionally allocated arrays when using bucket_J
+   IF(config_flags%bucket_J .gt. 0.0)THEN
+     IF(.not. (acswalloc .and. aclwalloc))THEN
+           CALL wrf_error_fatal ( 'Need CAM or RRTMG radiation for bucket_J option')
+     ENDIF
+   ENDIF
 
 #if ( EM_CORE == 1 ) 
    ! test for conditionally allocated arrays when using bucket_J

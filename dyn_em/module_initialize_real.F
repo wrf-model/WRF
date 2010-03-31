@@ -525,10 +525,14 @@ integer::oops1,oops2
                k = num_metgrid_levels
             END IF
 
-            CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc , &
-                              config_flags%rh2qv_wrt_liquid , &
-                              ids , ide , jds , jde , 1   , num_metgrid_levels , &
-                              ims , ime , jms , jme , 1   , num_metgrid_levels , &
+            CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc ,         &
+                              config_flags%rh2qv_wrt_liquid ,                        &
+                              config_flags%qv_max_p_safe ,                           &
+                              config_flags%qv_max_flag , config_flags%qv_max_value , &
+                              config_flags%qv_min_p_safe ,                           &
+                              config_flags%qv_min_flag , config_flags%qv_min_value , &
+                              ids , ide , jds , jde , 1   , num_metgrid_levels ,     &
+                              ims , ime , jms , jme , 1   , num_metgrid_levels ,     &
                               its , ite , jts , jte , 1   , num_metgrid_levels )
 
          ELSE IF ( flag_sh .EQ. 1 ) THEN
@@ -904,10 +908,14 @@ integer::oops1,oops2
                            ims , ime , jms , jme , kms , kme , &
                            its , ite , jts , jte , kts , kte )
 
-         CALL rh_to_mxrat (grid%u_1, grid%v_1, grid%pb, moist(:,:,:,P_QV) , &
-                           config_flags%rh2qv_wrt_liquid , &
-                           ids , ide , jds , jde , kds , kde , &
-                           ims , ime , jms , jme , kms , kme , &
+         CALL rh_to_mxrat (grid%u_1, grid%v_1, grid%pb, moist(:,:,:,P_QV) ,       &
+                           config_flags%rh2qv_wrt_liquid ,                        &
+                           config_flags%qv_max_p_safe ,                           &
+                           config_flags%qv_max_flag , config_flags%qv_max_value , &
+                           config_flags%qv_min_p_safe ,                           &
+                           config_flags%qv_min_flag , config_flags%qv_min_value , &
+                           ids , ide , jds , jde , kds , kde ,                    &
+                           ims , ime , jms , jme , kms , kme ,                    &
                            its , ite , jts , jte , kts , kte )
 
 #ifdef RUC_CLOUD
@@ -1931,9 +1939,13 @@ endif
                         its , ite , jts , jte , kts , kte )
 
       CALL rh_to_mxrat (grid%u_1, grid%v_1, grid%pb + grid%p, moist(:,:,:,P_QV) , &
-                        config_flags%rh2qv_wrt_liquid , &
-                        ids , ide , jds , jde , kds , kde , &
-                        ims , ime , jms , jme , kms , kme , &
+                        config_flags%rh2qv_wrt_liquid ,                           &
+                        config_flags%qv_max_p_safe ,                              &
+                        config_flags%qv_max_flag , config_flags%qv_max_value ,    &
+                        config_flags%qv_min_p_safe ,                              &
+                        config_flags%qv_min_flag , config_flags%qv_min_value ,    &
+                        ids , ide , jds , jde , kds , kde ,                       &
+                        ims , ime , jms , jme , kms , kme ,                       &
                         its , ite , jts , jte , kts , kte )
 
       !  If this is data from the SI, then we probably do not have the original
@@ -4078,6 +4090,10 @@ print *,'p sfc = ',psfc(i,j)
 !---------------------------------------------------------------------
 
    SUBROUTINE rh_to_mxrat (rh, t, p, q , wrt_liquid , &
+                           qv_max_p_safe , &
+                           qv_max_flag , qv_max_value , &
+                           qv_min_p_safe , &
+                           qv_min_flag , qv_min_value , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            its , ite , jts , jte , kts , kte )
@@ -4089,6 +4105,9 @@ print *,'p sfc = ',psfc(i,j)
                                      its , ite , jts , jte , kts , kte
 
       LOGICAL , INTENT(IN)        :: wrt_liquid
+
+      REAL , INTENT(IN)           :: qv_max_p_safe , qv_max_flag , qv_max_value
+      REAL , INTENT(IN)           :: qv_min_p_safe , qv_min_flag , qv_min_value
 
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: p , t
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT)  :: rh
@@ -4138,11 +4157,6 @@ print *,'p sfc = ',psfc(i,j)
       DO j = jts , MIN ( jde-1 , jte )
          DO k = kts , kte
             DO i = its , MIN (ide-1 , ite )
-                  IF ( p(i,k,j) .LT. 10000 ) THEN
-                     IF ( rh(i,k,j) .GT. .1 ) THEN
-                        rh(i,k,j) = 3.E-6
-                     END IF
-                  END IF
                   rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )
             END DO
          END DO
@@ -4216,8 +4230,30 @@ print *,'p sfc = ',psfc(i,j)
                END DO
             END DO
          END DO
-
       END IF
+
+      !  For pressures above a defined level, reasonable Qv values should be
+      !  a certain value or smaller.  If they are larger than this, the input data
+      !  probably had "missing" RH, and we filled in some values.  This is an
+      !  attempt to catch those.  Also, set the minimum value for the entire
+      !  domain that is above the selected pressure level.
+     
+      DO j = jts , MIN ( jde-1 , jte )
+         DO k = kts , kte
+            DO i = its , MIN (ide-1 , ite )
+               IF ( p(i,k,j) .LT. qv_max_p_safe ) THEN
+                  IF ( q(i,k,j) .GT. qv_max_flag ) THEN
+                     q(i,k,j) = qv_max_value
+                  END IF
+               END IF
+               IF ( p(i,k,j) .LT. qv_min_p_safe ) THEN
+                  IF ( q(i,k,j) .LT. qv_min_flag ) THEN
+                     q(i,k,j) = qv_min_value
+                  END IF
+               END IF
+            END DO
+         END DO
+      END DO
 
    END SUBROUTINE rh_to_mxrat
 

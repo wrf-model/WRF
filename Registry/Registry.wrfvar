@@ -307,7 +307,7 @@ state    integer last_dt_mm             - misc    -         -      r     "last_d
 
 # hydrostatic pressure vars
 state    real   p_hyd           ijk     dyn_em      1         -      irh       "p_hyd"       "hydrostatic pressure"         "Pa"
-state    real   p_hyd_w         ijk     dyn_em      1         Z      ir        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+state    real   p_hyd_w         ijk     dyn_em      1         Z       r        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
 
 # For KMA, pressure coefficient.
 state    real    kma_a          k       misc        1         Z     -         "A"  "KMA Constants A to convert surface presure to full level pressure" "dimensionless"

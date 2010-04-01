@@ -288,7 +288,7 @@ state    integer last_dt_mm             - misc    -         -      r     "last_d
 
 # hydrostatic pressure vars
 state    real   p_hyd           ikj     dyn_em      1         -      irh       "p_hyd"       "hydrostatic pressure"         "Pa"
-state    real   p_hyd_w         ikj     dyn_em      1         Z      ir        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+state    real   p_hyd_w         ikj     dyn_em      1         Z       r        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
 
 # 2m and 10m output diagnostics
 state    real   Q2               ij     misc        1         -     irhd      "Q2"                   "QV at 2 M"         "kg kg-1"

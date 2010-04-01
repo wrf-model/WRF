@@ -916,7 +916,7 @@ integer::oops1,oops2
                            config_flags%qv_min_flag , config_flags%qv_min_value , &
                            ids , ide , jds , jde , kds , kde ,                    &
                            ims , ime , jms , jme , kms , kme ,                    &
-                           its , ite , jts , jte , kts , kte )
+                           its , ite , jts , jte , kts , kte-1 )
 
 #ifdef RUC_CLOUD
          !  Add -DRUC_CLOUD to ARCHFLAGS in configure.wrf file to activate the following code
@@ -1824,6 +1824,7 @@ endif
                grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf&
                                  *(((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
                grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+               grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
 
                !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
                !  inverse density fields (total and perturbation).
@@ -1837,6 +1838,7 @@ endif
                   grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
                               (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
                   grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+                  grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
                END DO
 
 #if 1
@@ -1946,7 +1948,7 @@ endif
                         config_flags%qv_min_flag , config_flags%qv_min_value ,    &
                         ids , ide , jds , jde , kds , kde ,                       &
                         ims , ime , jms , jme , kms , kme ,                       &
-                        its , ite , jts , jte , kts , kte )
+                        its , ite , jts , jte , kts , kte-1 )
 
       !  If this is data from the SI, then we probably do not have the original
       !  surface data laying around.  Note that these are all the lowest levels

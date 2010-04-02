@@ -187,7 +187,7 @@ Namelist variables specifically for the WPS input for real:
                                                 ;           the terrain following portion of the hybrid vertical
                                                 ;           coordinate (p > ptsgm) and the purely
                                                 ;           isobaric portion of the vertical coordinate (p < ptsgm)
- vert_refine_fact                    = 0        ; vertical refinement factor for ndown
+ vert_refine_fact                    = 1        ; vertical refinement factor for ndown
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -262,9 +262,8 @@ Namelist variables for controlling the adaptive time step option:
  min_time_step(max_dom)              = -1,-1    ; flag = -1 implies max time step is 0.5 * starting_time_step,
                                                   min_time_step = 100 means that the time step will not
                                                   be less than 100 s
- adaptation_domain                   = 1,       ; 
  adaptation_domain                   = 1        ; default, all fine grid domains adaptive dt driven by coarse-grid
-                                     = 2        ; Fine grid domain #2 determines the fundamental adaptive dt.
+                                                ; 2 = Fine grid domain #2 determines the fundamental adaptive dt.
 
  &dfi_control
  dfi_opt                             = 0        ; which DFI option to use (3 is recommended)
@@ -487,9 +486,11 @@ Namelist variables for controlling the adaptive time step option:
                                                   0 = without cloud effect
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
  surface_input_source                = 1,	; where landuse and soil category data come from:
-                                                  1 = WPS/geogrid
+                                                  1 = WPS/geogrid but with dominant categories recomputed
                                                   2 = GRIB data from another model (only possible
                                                       (VEGCAT/SOILCAT are in met_em files from WPS)
+                                                  3 = use dominant land and soil categories from WPS/geogrid
+
  num_soil_layers                     = 5,	; number of soil layers in land surface model
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
@@ -526,9 +527,9 @@ Namelist variables for controlling the adaptive time step option:
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
  lagday                              = 150      ; days over which tmn is computed using skin temperature
  sst_skin                            = 0        ; calculate skin SST
- slope_rad                           = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
+ slope_rad (max_dom)                 = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
  topo_shading (max_dom)              = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
- shadlen (max_dom)                   = 25000.   ; max shadow length in meters for topo_shading=1
+ shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
  omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=yes); works with 
                                                   sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
@@ -537,7 +538,8 @@ Namelist variables for controlling the adaptive time step option:
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
  iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 - old, 1 - veg dependent Czil)
  mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
- prec_acc_dt                         = 0.,      ; number of minutes in precipitation bucket (ARW only)
+ prec_acc_dt (max_dom)               = 0.,      ; number of minutes in precipitation bucket (ARW only) - will add three
+                                                  new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
@@ -622,7 +624,7 @@ The following are for observation nudging:
  obs_no_pbl_nudge_uv (max_dom)       = 0        ; 1=no wind-nudging within pbl
  obs_no_pbl_nudge_t (max_dom)        = 0        ; 1=no temperature-nudging within pbl
  obs_no_pbl_nudge_q (max_dom)        = 0        ; 1=no moisture-nudging within pbl
- obs_nudgezfullr1_uv                 = 50       ; Vert infl full weight  height for LML obs, regime 1, winds
+ obs_nudgezfullr1_uv                 = 50       ; Vert infl full weight  height for lowest model level (LML)                                                            ; obs, regime 1, winds
  obs_nudgezrampr1_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 1, winds
  obs_nudgezfullr2_uv                 = 50       ; Vert infl full weight  height for LML obs, regime 2, winds
  obs_nudgezrampr2_uv                 = 50       ; Vert infl ramp-to-zero height for LML obs, regime 2, winds
@@ -757,7 +759,7 @@ The following are for observation nudging:
                                      = 2       ; for running the WRF-NMM with its gravity wave drag
  sfs_opt (max_dom)                   = 0       ; nonlinear backscatter and anisotropy (NBA) off
                                      = 1       ; NBA1 using diagnostic stress terms (km_opt=2,3 for scalars)
-                                     = 2       ; NBA2 using tke-based stress terms (km_opt=2 needed))
+                                     = 2       ; NBA2 using tke-based stress terms (km_opt=2 needed)
  m_opt (max_dom)                     = 0       ; no added output
                                      = 1       ; adds output of Mij stress terms when NBA is not used
  tracer_opt(mac_dom)                 = 0       ; 

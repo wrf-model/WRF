@@ -1,4 +1,4 @@
-WRF Model Version 3.1.1 (July 31, 2009)
+WRF Model Version 3.2 (April 2, 2010)
 http://www.mmm.ucar.edu/wrf/users/
 
 ------------------------
@@ -25,6 +25,18 @@ infringement actions.
 
 ======================================
 This is the main directory for the WRF Version 3 source code release.
+======================================
+
+V3.2 Release Notes:
+-------------------
+
+Version 3.2 is released on March 31, 2010.
+
+- For more information on WRF V3.2 release, visit WRF User's home pages
+  http://www.mmm.ucar.edu/wrf/users/, and 
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
+
 ======================================
 
 V3.1.1 Release Notes:
@@ -100,6 +112,9 @@ WRF update history:
 - V3.0: April 4, 2008
 - V3.0.1: August 5, 2008
 - V3.0.1.1: August 22, 2008
+- V3.1: April 9, 2009
+- V3.1.1: July 31, 2009
+- V3.2: March 31, 2010
 
 ======================================
 
@@ -196,19 +211,20 @@ What is in WRF V3?
   * Automatic move using a mid-level vortex-following algorithm
 
 - Physics options:
-  * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./
-    Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Mement 5 and 6 classes )
+  * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./ Mibrandt 2-moment /
+    Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Moment 5 and 6 classes )
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
-    Betts-Miller-Janjic / Grell-Devenyi ensemble / New Grell )
+    Betts-Miller-Janjic / Grell-Devenyi ensemble / New Grell (with shallow convection option) )
   * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE / MYNN / BouLac )
   * surface layer (similarity theory MM5 / Eta / QNSE / MYNN )
   * slab soil model (5-layer thermal diffusion / Noah land-surface model (4 levels) /
     RUC LSM (6 levels) / Pleim-Xu (2 levels)
-  * Urban canopy model and BEP multi-layer (works with Noah LSM, BEP also requires MYJ or BouLac)
+  * Urban canopy model, BEP multi-layer and BEM  (works with Noah LSM, BEP and 
+    BEM also requires MYJ or BouLac)
   * longwave radiation (RRTM / CAM / RRTMG)
-  * shortwave radiation (simple MM5 scheme / Goddard / CAM / RRTMG )
+  * shortwave radiation (simple MM5 scheme / Goddard / CAM / RRTMG ), terrain slope and shading effect
   * sub-grid turbulence (constant K diffusion/ 2-D Smagorinsky/ predicted TKE /
-    2-D, 6th order diffusion)
+    2-D, 6th order diffusion / Nonlinear Backscatter Anisotropic (NBA) sub-grid turbulence stress for LES )
   * Rayleigh damping for w at the upper boundary layer
   * gravity wave drag
   * land-use categories determine surface properties; support for 24 category USGS and 
@@ -216,6 +232,8 @@ What is in WRF V3?
   * Options for modifying SST, sea ice, vegetation fraction, albedo, and deep soil temp
     for long simulations
   * fractional sea ice option for polar regions; modified snow/ice physics
+  * single-column ocean mixed layer model
+  * drag and enthalpy flux formulation for hurricane applications
 
 - Nudging:
   * three-dimensional and surface analysis nudging 

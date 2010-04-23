@@ -1240,7 +1240,7 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   CALL get_value_pnetcdf( 'NTASKS_X', SysDepInfo ,ntasks_x_str )
 !  CALL get_value_pnetcdf( 'LOCAL_COMMUNICATOR_X', SysDepInfo ,loccomm_str )
   IF ( LEN(idstr) > 0 ) THEN
-    READ(idstr,'i3') gridid
+    READ(idstr,'(i3)') gridid
 !    READ(ntasks_x_str,*)ntasks_x
 !    READ(loccomm_str,*)local_communicator_x
     CALL wrf_get_dm_communicator_x(local_communicator_x) 

@@ -358,4 +358,33 @@ void *malloc(size_t size)
 }
 #endif
 
+#ifndef DM_PARALLEL
+# ifndef CRAY
+#  ifdef NOUNDERSCORE
+#       define RSL_INTERNAL_MICROCLOCK  rsl_internal_microclock
+#  else
+#    ifdef F2CSTYLE
+#       define RSL_INTERNAL_MICROCLOCK  rsl_internal_microclock__
+#    else
+#       define RSL_INTERNAL_MICROCLOCK  rsl_internal_microclock_
+#    endif
+#  endif
+# endif
+# if !defined(MS_SUA) && !defined(_WIN32)
+#  include <sys/time.h>
+RSL_INTERNAL_MICROCLOCK ()
+{
+    struct timeval tb ;
+    struct timezone tzp ;
+    int isec ;  /* seconds */
+    int usec ;  /* microseconds */
+    int msecs ;
+    gettimeofday( &tb, &tzp ) ;
+    isec = tb.tv_sec ;
+    usec = tb.tv_usec ;
+    msecs = 1000000 * isec + usec ;
+    return(msecs) ;
+}
+# endif
+#endif
 

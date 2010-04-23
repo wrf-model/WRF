@@ -494,10 +494,11 @@ reg_parse( FILE * infile )
                 strcpy(tmp2,p+1) ;
                 if (( pp = index(tmp2,'}') ) != NULL ) {
                   *pp = '\0' ;
-                  unitid = atoi(tmp+i+1) ;  /* JM 20091102 */
+                  unitid = atoi(tmp2) ;  /* JM 20100416 */
                   if ( unitid >= 0  || unitid < MAX_STREAMS && stream + unitid < MAX_HISTORY ) {
                     set_mask( mask , stream + unitid   ) ;
                   }
+                  p = p + strlen(tmp2) + 1 ;
                 } else {
                   fprintf(stderr,"registry syntax error: unmatched {} in the io string for definition of %s\n",tokens[FIELD_SYM]) ;
                   exit(9) ;

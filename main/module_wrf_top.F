@@ -208,8 +208,8 @@ CONTAINS
 #ifdef RUN_ON_GPU
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )
-   CALL wrf_get_hostid ( hostid ) 
 # ifdef DM_PARALLEL
+   CALL wrf_get_hostid ( hostid ) 
    CALL wrf_get_dm_communicator ( loccomm )
    ALLOCATE( hostids(nproc) )
    ALLOCATE( budds(nproc) )

@@ -144,7 +144,7 @@ CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -ta=nvidia,host # -Minfo=all =Mneginfo=all
+FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -ta=nvidia:fastmath,host # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT    =       $(FCOPTIM)
 FCNOOPT         =       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
@@ -601,7 +601,7 @@ CC_TOOLS        =      cc
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
-OMPCC           =       # -openmp -fpp -auto
+OMPCC           =       # -openmp
 SFC             =       ifort
 SCC             =       cc
 CCOMP           =       cc

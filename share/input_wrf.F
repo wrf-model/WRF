@@ -44,7 +44,7 @@
     INTEGER       IBDY, NAMELEN
     LOGICAL wrf_dm_on_monitor
     EXTERNAL wrf_dm_on_monitor
-    Type(WRFU_Time) time, currtime
+    Type(WRFU_Time) time, currtime, currentTime
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     CHARACTER*80  fname
@@ -680,10 +680,15 @@
 ! iterate forward to the correct interval in the input LBC file
 !
     IF ( switch .EQ. boundary_only ) THEN
+        CALL domain_clock_get( grid, current_time=currentTime )
         CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
         CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
         CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
         CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+        IF( currentTime .GE. grid%next_bdy_time ) THEN
+          IF ( wrf_dm_on_monitor() ) write(0,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+          RETURN
+        ENDIF
     ENDIF
 
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )

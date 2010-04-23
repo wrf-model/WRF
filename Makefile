@@ -475,7 +475,10 @@ shared :
 
 chemics :
 	@ echo '--------------------------------------'
-	( cd chem ; $(MAKE) )
+	if [ $(WRF_KPP) -eq 1 ] ; then ( cd chem ; $(MAKE) ) ; fi
+	if [ $(WRF_KPP) -eq 0 ] ; then ( cd chem ; $(MAKE) $(J) ) ; fi
+#	( cd chem ; $(MAKE) )
+#	( cd chem ; $(MAKE) $(J) )
 
 physics :
 	@ echo '--------------------------------------'

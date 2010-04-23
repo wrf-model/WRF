@@ -1481,11 +1481,11 @@ END SUBROUTINE sorgam_depdriver
 !     for now, don't call if temp is below -40C (humidity
 !     for this wrf version is already limited to 10 percent)
 
-!       if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.1)then
-!          CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh,igrid,jgrid,kgrid)
-!       else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.0)then
+        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.1)then
+           CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh,igrid,jgrid,kgrid)
+        else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.0)then
            CALL eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
-!       endif
+        endif
 
 ! *** get size distribution information:
 

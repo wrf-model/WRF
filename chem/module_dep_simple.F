@@ -255,6 +255,7 @@ tile_lon_loop : &
 !-----------------------------------------------------------
       if ( (config_flags%chem_opt == CBMZ          ) .or.   &
            (config_flags%chem_opt == CBMZ_BB       ) .or.   &
+           (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.   &

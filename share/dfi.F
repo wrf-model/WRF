@@ -131,6 +131,10 @@
       ! set chemistry option to zero
       CALL nl_set_chem_opt (1, 0)
       CALL nl_set_aer_ra_feedback (1, 0)
+      CALL nl_set_io_form_auxinput5 (1, 0)
+      CALL nl_set_io_form_auxinput6 (1, 0)
+      CALL nl_set_io_form_auxinput7 (1, 0)
+      CALL nl_set_io_form_auxinput8 (1, 0)
 #endif
 
       ! set diffusion to zero for backward integration
@@ -226,11 +230,11 @@
       ! set bc
       CALL nl_set_constant_bc(1, head_grid%constant_bc)
 
-#ifdef WRF_CHEM
-      ! reset chem option to normal
-      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
-      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
-#endif
+!  #ifdef WRF_CHEM
+!      ! reset chem option to normal
+!      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
+!      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
+!  #endif
 
       ! reset km_opt to norlmal
       CALL nl_set_km_opt( 1, head_grid%km_opt)
@@ -301,6 +305,17 @@
 ! only use adaptive time stepping for forecast
       CALL nl_set_use_adaptive_time_step( 1, head_grid%use_adaptive_time_step )
 !     CALL nl_set_sst_update( 1, head_grid%sst_update )
+
+#ifdef WRF_CHEM
+      ! reset chem option to normal
+      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
+      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
+      CALL nl_set_io_form_auxinput5 (1, head_grid%io_form_auxinput5)
+      CALL nl_set_io_form_auxinput6 (1, head_grid%io_form_auxinput6)
+      CALL nl_set_io_form_auxinput7 (1, head_grid%io_form_auxinput7)
+      CALL nl_set_io_form_auxinput8 (1, head_grid%io_form_auxinput8)
+#endif
+
       ! reset to normal bc
       CALL nl_set_constant_bc(1, .false.)
 

@@ -148,6 +148,7 @@ if ( tag == 1 )
           fprintf(fp,"   ALLOCATE( grid%%tail_statevars%%next )\n") ;
           fprintf(fp,"   grid%%tail_statevars => grid%%tail_statevars%%next\n") ;
           fprintf(fp,"   NULLIFY( grid%%tail_statevars%%next )\n" ) ;
+          fprintf(fp,"   grid%%tail_statevars%%ProcOrient    = '  '\n") ;
           fprintf(fp,"   grid%%tail_statevars%%VarName = '%s'\n",fname ) ;
           fprintf(fp,"   grid%%tail_statevars%%DataName = '%s'\n",dname ) ;
           fprintf(fp,"   grid%%tail_statevars%%Description = '%s'\n",p->descrip ) ;

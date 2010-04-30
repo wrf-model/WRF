@@ -116,6 +116,7 @@ WRFVAR_OBJS = \
    module_comm_dm_1.o \
    module_comm_dm_2.o \
    module_comm_dm_3.o \
+   module_comm_dm_4.o \
    module_alloc_space_0.o \
    module_alloc_space_1.o \
    module_alloc_space_2.o \

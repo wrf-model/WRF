@@ -1750,9 +1750,7 @@
 #endif
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
      &             ,GRID,CONFIG_FLAGS                                  &
-#ifdef HWRF
-     &             ,grid%NRND1                                              & ! NRND1 zhang's doing
-#endif
+     &             ,grid%NRND1                                              & ! NRND1 for random num restart
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &

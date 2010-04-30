@@ -1870,9 +1870,7 @@
 #endif
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
-#ifdef HWRF
-     &                 ,NRND1                                              &  ! NRND1 is zhang's doing
-#endif
+     &                 ,NRND1                                              &  ! NRND1 for random no restart
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
@@ -2025,11 +2023,10 @@
 !-----------------------------------------------------------------------
       INTEGER :: DTEMP_CHECK=2.0
       REAL :: TCHANGE
-!zhang's doing  random number restart
-      INTEGER,   DIMENSION(2)       :: NRND1
+!  random number restart
+      INTEGER,DIMENSION(:),INTENT(INOUT) ::   NRND1
       INTEGER, SAVE  :: nfirst
       data nfirst /0/
-!end of zhang's doing
 #if (NMM_CORE==1)
       INTEGER                    :: IDT                
       REAL,   DIMENSION(2)       :: RND1 
@@ -2303,13 +2300,11 @@
 !$omp parallel do                                                       &
 !$omp& private(i,j)
              IF (wrf_dm_on_monitor()) THEN   !!!! For bit reproducibility of random numbers 
-!zhang's doing  For bit reproducibility of random numbers when restarting
              if (restart .and. nfirst .eq. 0 ) then
              call random_seed(put=nrnd1)
              nfirst=1
              endif
              call random_seed(get=nrnd1)
-!end of zhang's doing
               DO J=JDS,JDE       !JTS,JTE
                DO I=IDS,IDE      !ITS,ITE       
                   CALL RANDOM_NUMBER(rnd1)

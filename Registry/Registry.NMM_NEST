@@ -136,7 +136,7 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 # The following arrays were added to avoid using _b and _bt arrays for nesting.
 # This is gopal' doing:
 
-state  integer    nrnd1    z    dyn_nmm     1      -      r    "NRND1"
+state  integer    nrnd1    k    dyn_nmm     1      -      r    "NRND1"
 
 #for HWRF: zhang's doing: added a 'r' at end to store these variables in restart file
 state  real    pdnest_b     ij      dyn_nmm     1      -      r

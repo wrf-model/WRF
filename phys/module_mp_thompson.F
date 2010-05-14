@@ -775,6 +775,9 @@
       j_start = jts
       i_end   = ite
       j_end   = jte
+#ifdef PSEUDO_2D
+!for idealized testing by the package developer. enabling this will cause 
+! problems if tiles become to small. Not recommended. JM
       if ( (ite-its+1).gt.4 .and. (jte-jts+1).lt.4) then
          i_start = its + 2
          i_end   = ite - 1
@@ -786,6 +789,7 @@
          j_start = jts + 2
          j_end   = jte - 1
       endif
+#endif
 
       dt = dt_in
    

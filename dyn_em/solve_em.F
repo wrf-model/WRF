@@ -2251,6 +2251,7 @@ BENCH_START(chem_adv_tim)
        ENDDO chem_variable_loop
      ENDIF chem_scalar_advance
 BENCH_END(chem_adv_tim)
+#endif
 !  next the chemical species
 BENCH_START(tracer_adv_tim)
        tracer_advance: IF (num_tracer >= PARAM_FIRST_SCALAR)  THEN
@@ -2345,6 +2346,7 @@ BENCH_START(tracer_adv_tim)
                                   k_start    , k_end               )
 
            IF( config_flags%specified  ) THEN
+#ifdef WRF_CHEM
              CALL flow_dep_bdy_tracer( tracer(ims,kms,jms,ic),                             &
                                      tracer_bxs(jms,kms,1,ic), tracer_btxs(jms,kms,1,ic),  &
                                      tracer_bxe(jms,kms,1,ic), tracer_btxe(jms,kms,1,ic),  &
@@ -2362,6 +2364,17 @@ BENCH_START(tracer_adv_tim)
                                      grid%i_start(ij), grid%i_end(ij),   &
                                      grid%j_start(ij), grid%j_end(ij),   &
                                      k_start, k_end                      )
+#else
+             CALL flow_dep_bdy  ( tracer(ims,kms,jms,is),     &
+                                  grid%ru_m, grid%rv_m, config_flags,   &
+                                  grid%spec_zone,                  &
+                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                  grid%i_start(ij), grid%i_end(ij),  &
+                                  grid%j_start(ij), grid%j_end(ij),  &
+                                  k_start, k_end                    )
+#endif
            ENDIF
          ENDDO tracer_tile_loop_2
          !$OMP END PARALLEL DO
@@ -2369,7 +2382,6 @@ BENCH_START(tracer_adv_tim)
        ENDDO tracer_variable_loop
      ENDIF tracer_advance
 BENCH_END(tracer_adv_tim)
-#endif
 
 !  next the other scalar species
      other_scalar_advance: IF (num_3d_s >= PARAM_FIRST_SCALAR)  THEN

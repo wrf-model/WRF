@@ -85,7 +85,6 @@ WRFVAR_OBJS = \
    module_comm_dm.o \
    module_bc.o \
    module_model_constants.o \
-   module_integrate.o \
    module_nesting.o \
    module_tiles.o \
    module_quilt_outbuf_ops.o \
@@ -99,9 +98,7 @@ WRFVAR_OBJS = \
    init_modules.o \
    mediation_wrfmain.o \
    mediation_integrate.o \
-   Meat.o \
    wrf_num_bytes_between.o \
-   wrf_tsin.o \
    input_wrf.o \
    wrf_bdyin.o \
    wrf_bdyout.o \

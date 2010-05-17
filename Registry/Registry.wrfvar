@@ -1227,8 +1227,6 @@ state   real    TMOML          ij      misc         1         -     i012rhd=(int
 #                                               
 #<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>                                             
 
-# wrfvar namelists all documented at http://wiki.ucar.edu/display/mmm/Namelists
-
 rconfig   logical   use_background_errors   namelist,wrfvar1  1  .true.   -  "use_background_errors"   ""  ""
 rconfig   logical   write_increments        namelist,wrfvar1  1  .false.  -  "write_increments"        ""  ""
 rconfig   integer   wrfvar_mem_model        namelist,wrfvar1  1  0        -  "wrfvar_mem_model"        ""  "0=WRFVAR, 1=WRF, 2=4DVAR"

@@ -114,9 +114,9 @@ c  .... DK: Can the below ever happen since upper loop bounds is 65?
       CALL BORT(BORT_STR)
       ENDIF
       IF(MOD(I,8).NE.0) THEN
-      WRITE(BORT_STR,'("BUFRLIB: WRDLEN - MACHINE WORD LENGTH (",I4,"'//
-     .') IS NOT A MULTIPLE OF 8 (THIS MACHINE HAS WORDS NOT ON WHOLE'//
-     .' BYTE BOUNDARIES!)")') I
+      WRITE(BORT_STR,'("BUFRLIB: WRDLEN - MACHINE WORD LENGTH (",I4," 
+     & ) IS NOT A MULTIPLE OF 8 (THIS MACHINE HAS WORDS NOT ON WHOLE  
+     &  BYTE BOUNDARIES!)")') I
       CALL BORT(BORT_STR)
       ENDIF
 

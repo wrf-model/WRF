@@ -1244,7 +1244,9 @@
       ENDIF
     ENDIF
 
+#if (DA_CORE != 1)
     CALL wrf_tsin( grid , ierr )
+#endif
 
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )

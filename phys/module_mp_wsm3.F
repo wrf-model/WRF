@@ -391,6 +391,7 @@ CONTAINS
           endif
           qs0(i,k)  =psat*(exp(log(tr)*(xa)))*exp(xb*(1.-tr))
           qs0(i,k) = (qs0(i,k)-qs(i,k))/qs(i,k)
+          qs(i,k) = min(qs(i,k),0.99*p(i,k))
           qs(i,k) = ep2 * qs(i,k) / (p(i,k) - qs(i,k))
           qs(i,k) = max(qs(i,k),qmin)
           rh(i,k) = max(q(i,k) / qs(i,k),qmin)
@@ -777,6 +778,7 @@ CONTAINS
         do i = its, ite
           tr=ttp/t(i,k)
           qs(i,k)=psat*(exp(log(tr)*(xa)))*exp(xb*(1.-tr))
+          qs(i,k) = min(qs(i,k),0.99*p(i,k))
           qs(i,k) = ep2 * qs(i,k) / (p(i,k) - qs(i,k))
           qs(i,k) = max(qs(i,k),qmin)
           denfac(i,k) = sqrt(den0/den(i,k))

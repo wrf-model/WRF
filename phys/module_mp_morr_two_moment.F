@@ -15,6 +15,10 @@
 ! 5) BUG FIX TO CALCULATION OF LIQUID WATER SATURATION VAPOR PRESSURE (CHANGE IS VERY MINOR)
 ! 6) INCLUDE WRF CONSTANTS PER SUGGESTION OF JIMY
 
+! bug fix, 5/12/10
+! 7) bug fix for saturation vapor pressure in low pressure, to avoid division by zero
+! 8) include 'EP2' WRF constant for saturation mixing ratio calculation, instead of hardwire constant
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -27,7 +31,7 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
 !      USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep  ! GT
 
 ! USE WRF PHYSICS CONSTANTS
-  use module_model_constants, ONLY: CP, G, R => r_d, RV => r_v
+  use module_model_constants, ONLY: CP, G, R => r_d, RV => r_v, EP_2
 
 !  USE module_state_description
 
@@ -1070,15 +1074,16 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! SATURATION VAPOR PRESSURE AND MIXING RATIO
 
-            EVS(K) = POLYSVP(T3D(K),0)   ! PA
-            EIS(K) = POLYSVP(T3D(K),1)   ! PA
+! hm, add fix for low pressure, 5/12/10
+            EVS(K) = min(0.99*pres(k),POLYSVP(T3D(K),0))   ! PA
+            EIS(K) = min(0.99*pres(k),POLYSVP(T3D(K),1))   ! PA
 
 ! MAKE SURE ICE SATURATION DOESN'T EXCEED WATER SAT. NEAR FREEZING
 
             IF (EIS(K).GT.EVS(K)) EIS(K) = EVS(K)
 
-            QVS(K) = .622*EVS(K)/(PRES(K)-EVS(K))
-            QVI(K) = .622*EIS(K)/(PRES(K)-EIS(K))
+            QVS(K) = EP_2*EVS(K)/(PRES(K)-EVS(K))
+            QVI(K) = EP_2*EIS(K)/(PRES(K)-EIS(K))
 
             QVQVS(K) = QV3D(K)/QVS(K)
             QVQVSI(K) = QV3D(K)/QVI(K)
@@ -1776,7 +1781,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
       DUMT = T3D(K)+DT*T3DTEN(K)
       DUMQV = QV3D(K)+DT*QV3DTEN(K)
-      DUMQSS = 0.622*POLYSVP(DUMT,0)/ (PRES(K)-POLYSVP(DUMT,0))
+! hm, add fix for low pressure, 5/12/10
+      dum=min(0.99*pres(k),POLYSVP(DUMT,0))
+      DUMQSS = EP_2*dum/(PRES(K)-dum)
       DUMQC = QC3D(K)+DT*QC3DTEN(K)
       DUMQC = MAX(DUMQC,0.)
 
@@ -2943,7 +2950,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
       DUMT = T3D(K)+DT*T3DTEN(K)
       DUMQV = QV3D(K)+DT*QV3DTEN(K)
-      DUMQSS = 0.622*POLYSVP(DUMT,0)/ (PRES(K)-POLYSVP(DUMT,0))
+! hm, add fix for low pressure, 5/12/10
+      dum=min(0.99*pres(k),POLYSVP(DUMT,0))
+      DUMQSS = EP_2*dum/(PRES(K)-dum)
       DUMQC = QC3D(K)+DT*QC3DTEN(K)
       DUMQC = MAX(DUMQC,0.)
 
@@ -3347,15 +3356,16 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! SATURATION VAPOR PRESSURE AND MIXING RATIO
 
-            EVS(K) = POLYSVP(T3D(K),0)   ! PA
-            EIS(K) = POLYSVP(T3D(K),1)   ! PA
+! hm, add fix for low pressure, 5/12/10
+            EVS(K) = min(0.99*pres(k),POLYSVP(T3D(K),0))   ! PA
+            EIS(K) = min(0.99*pres(k),POLYSVP(T3D(K),1))   ! PA
 
 ! MAKE SURE ICE SATURATION DOESN'T EXCEED WATER SAT. NEAR FREEZING
 
             IF (EIS(K).GT.EVS(K)) EIS(K) = EVS(K)
 
-            QVS(K) = .622*EVS(K)/(PRES(K)-EVS(K))
-            QVI(K) = .622*EIS(K)/(PRES(K)-EIS(K))
+            QVS(K) = EP_2*EVS(K)/(PRES(K)-EVS(K))
+            QVI(K) = EP_2*EIS(K)/(PRES(K)-EIS(K))
 
             QVQVS(K) = QV3D(K)/QVS(K)
             QVQVSI(K) = QV3D(K)/QVI(K)

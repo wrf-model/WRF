@@ -483,6 +483,7 @@ CONTAINS
         do i = its, ite
           tr=ttp/t(i,k)
           qs(i,k,1)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
+          qs(i,k,1) = min(qs(i,k,1),0.99*p(i,k))
           qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
           qs(i,k,1) = max(qs(i,k,1),qmin)
           rh(i,k,1) = max(q(i,k) / qs(i,k,1),qmin)
@@ -492,6 +493,7 @@ CONTAINS
           else
             qs(i,k,2)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
           endif
+          qs(i,k,2) = min(qs(i,k,2),0.99*p(i,k))
           qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
           qs(i,k,2) = max(qs(i,k,2),qmin)
           rh(i,k,2) = max(q(i,k) / qs(i,k,2),qmin)
@@ -1680,6 +1682,7 @@ CONTAINS
         do i = its, ite
           tr=ttp/t(i,k)
           qs(i,k,1)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
+          qs(i,k,1) = min(qs(i,k,1),0.99*p(i,k))
           qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
           qs(i,k,1) = max(qs(i,k,1),qmin)
           tr=ttp/t(i,k)
@@ -1688,6 +1691,7 @@ CONTAINS
           else
             qs(i,k,2)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
           endif
+          qs(i,k,2) = min(qs(i,k,2),0.99*p(i,k))
           qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
           qs(i,k,2) = max(qs(i,k,2),qmin)
           rh(i,k,1) = max(q(i,k) / qs(i,k,1),qmin)
@@ -1721,6 +1725,7 @@ CONTAINS
 !---------------------------------------------------------------
           tr=ttp/t(i,k)
           qs(i,k,1)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
+          qs(i,k,1) = min(qs(i,k,1),0.99*p(i,k))
           qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
           qs(i,k,1) = max(qs(i,k,1),qmin)
           work1(i,k,1) = conden(t(i,k),q(i,k),qs(i,k,1),xl(i,k),cpm(i,k))

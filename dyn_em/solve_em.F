@@ -2365,7 +2365,7 @@ BENCH_START(tracer_adv_tim)
                                      grid%j_start(ij), grid%j_end(ij),   &
                                      k_start, k_end                      )
 #else
-             CALL flow_dep_bdy  ( tracer(ims,kms,jms,is),     &
+             CALL flow_dep_bdy  ( tracer(ims,kms,jms,ic),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims

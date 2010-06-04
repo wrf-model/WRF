@@ -66,8 +66,8 @@ all_levels:&
                     current%meas%rh%qc   = missing
                   else
 !  With fm = 116 (gpsref) and fm = 118 (gpseph), the field "dew_point" was 
-! used to store gpsref, no "diagnostics_moist" is allowed.
-                    if (fm /= 116 .and. fm /= 118) then
+! used to store gpsref, and ssmi_retrieval fm=125, no "diagnostics_moist" is allowed.
+                    if (fm /= 116 .and. fm /= 118.and.fm /=125) then
                       if (fm ==135.and.bogus_type /='BOGUS') then
 !                        nothing to do if TCBOG...
                       else  

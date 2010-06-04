@@ -435,7 +435,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
       do i=its,ite
          grid%xb%psac(i,j) = grid%mub(i,j)+grid%mu_2(i,j)
-         grid%xb%psfc(i,j) = grid%mub(i,j)+grid%p(i,j,kts)+grid%p_top
+! To make the Psfc consistent with WRF (YRG, 04/06/2010):
+         grid%xb%psfc(i,j) = grid%psfc(i,j)
 
          if (grid%xb%tgrn(i,j) < 100.0) &    
             grid%xb%tgrn(i,j) = grid%xb%t(i,j,kts)+ &
@@ -446,6 +447,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end do
    !$OMP END PARALLEL DO
 
+!   write (999,'("MABS=",e13.5)') sum(abs(grid%xb%psfc(:,:)-grid%psfc(:,:))) / &
+!                                       float((ite-its+1)*(jte-jts+1))
+      
    grid%xb%ztop = grid%xb%hf(its,jts,kte+1)
 
    if (print_detail_xb) then
@@ -724,8 +728,6 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end if
 
    tmpvar = 1.0/real(ide-ids+1)
-
-   loc_latc_mean = 0.0
 
    if (test_dm_exact) then
       allocate(arrayglobal(ids:ide, jds:jde))

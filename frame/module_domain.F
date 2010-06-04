@@ -983,7 +983,7 @@ CONTAINS
    END SUBROUTINE change_to_lower_case
 
 !
-   SUBROUTINE modify_io_masks ( grid , id )
+   SUBROUTINE modify_io_masks1 ( grid , id )
       IMPLICIT NONE
 #include "streams.h"
       INTEGER              , INTENT(IN  )  :: id
@@ -997,8 +997,10 @@ CONTAINS
       CHARACTER*1        :: op, strmtyp
       CHARACTER*3        :: strmid
       INTEGER            :: io_status
-      INTEGER            :: lineno, fieldno, istrm, retval
+      INTEGER            :: lineno, fieldno, istrm, retval, itrace
       LOGICAL            :: keepgoing, noerr, gavewarning, ignorewarning, found
+
+      gavewarning = .FALSE.
 
       CALL nl_get_iofields_filename( id, fname )
 
@@ -1014,7 +1016,6 @@ CONTAINS
         IF ( io_status .EQ. 0 ) THEN   ! only on success
           keepgoing = .TRUE.
           lineno = 0
-          gavewarning = .FALSE.
           DO WHILE ( keepgoing )
             READ(UNIT=read_unit,FMT='(A)',IOSTAT=io_status) inln
             keepgoing = io_status .EQ. 0
@@ -1047,13 +1048,73 @@ CONTAINS
                   DO WHILE ( noerr )    ! linear search, blargh...
                     p => grid%head_statevars
                     found = .FALSE.
-                    DO WHILE ( ASSOCIATED( p%next ) )
-                       IF ( p%Ntl .GT. 0 ) THEN
-                         CALL change_to_lower_case(p%DataName(1:LEN(TRIM(p%DataName))-2),dname)
-                       ELSE
-                         CALL change_to_lower_case(p%DataName,dname)
-                       ENDIF
-                       IF ( TRIM(dname) .EQ. TRIM(lookee) ) THEN
+                    DO WHILE ( ASSOCIATED( p ) )
+
+                      IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+
+                        DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                          CALL change_to_lower_case( p%dname_table( grid%id, itrace ) , dname ) 
+                          IF ( TRIM(dname) .EQ. TRIM(lookee) ) THEN
+                            found = .TRUE.
+                            IF      ( TRIM(strmtyp) .EQ. 'h' ) THEN
+                              IF      ( TRIM(op) .EQ. '+' ) THEN
+                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1, retval )
+                                IF ( retval .NE. 0 ) THEN
+                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on history stream ',istrm, &
+                                               '.  File: ', TRIM(fname),' at line ',lineno
+                                  gavewarning = .TRUE.
+                                ELSE
+                                  WRITE(mess,*)'Setting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess)
+                                  CALL set_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1 )
+                                ENDIF
+                              ELSE IF ( TRIM(op) .EQ. '-' ) THEN
+                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1, retval )
+                                IF ( retval .EQ. 0 ) THEN
+                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off history stream ',istrm, &
+                                               '. File: ',TRIM(fname),' at line ',lineno
+                                  gavewarning = .TRUE.
+                                ELSE
+                                  WRITE(mess,*)'Resetting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
+                                  CALL reset_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1)
+                                ENDIF
+                              ENDIF
+                            ELSE IF ( TRIM(strmtyp) .EQ. 'i' ) THEN
+                              IF      ( TRIM(op) .EQ. '+' ) THEN
+                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1, retval )
+                                IF ( retval .NE. 0 ) THEN
+                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on input stream ',istrm, &
+                                               '. File: ',TRIM(fname),' at line ',lineno
+                                  gavewarning = .TRUE.
+                                ELSE
+                                  WRITE(mess,*)'Setting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
+                                  CALL set_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1)
+                                ENDIF
+                              ELSE IF ( TRIM(op) .EQ. '-' ) THEN
+                                CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1, retval )
+                                IF ( retval .EQ. 0 ) THEN
+                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off input stream ',istrm, &
+                                               '. File: ',TRIM(fname),' at line ',lineno
+                                  gavewarning = .TRUE.
+                                ELSE
+                                  WRITE(mess,*)'Resetting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess)
+                                  CALL reset_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1)
+                                ENDIF
+                              ENDIF
+                            ELSE
+                              WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
+                              CALL wrf_debug(1,mess)
+                              gavewarning = .TRUE.
+                            ENDIF
+                          ENDIF
+                        ENDDO
+                      ELSE 
+                        IF ( p%Ntl .GT. 0 ) THEN
+                          CALL change_to_lower_case(p%DataName(1:LEN(TRIM(p%DataName))-2),dname)
+                        ELSE
+                          CALL change_to_lower_case(p%DataName,dname)
+                        ENDIF
+
+                        IF ( TRIM(dname) .EQ. TRIM(lookee) ) THEN
                           found = .TRUE.
                           IF      ( TRIM(strmtyp) .EQ. 'h' ) THEN
                             IF      ( TRIM(op) .EQ. '+' ) THEN
@@ -1096,15 +1157,17 @@ CONTAINS
                                 gavewarning = .TRUE.
                               ELSE
                                 WRITE(mess,*)'Resetting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                CALL set_mask( p%streams, first_input + istrm - 1)
+                                CALL reset_mask( p%streams, first_input + istrm - 1)
                               ENDIF
                             ENDIF
                           ELSE
                             WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
+                            CALL wrf_debug(1,mess)
                             gavewarning = .TRUE.
                           ENDIF
-                       ENDIF
-                       p => p%next
+                        ENDIF
+                      ENDIF
+                      p => p%next
                     ENDDO
                     IF ( .NOT. found ) THEN
                       WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
@@ -1153,7 +1216,7 @@ CONTAINS
       ENDDO
 #endif
       
-   END SUBROUTINE
+   END SUBROUTINE modify_io_masks1
 
 !  This routine ALLOCATEs the required space for the meteorological fields
 !  for a specific domain.  The fields are simply ALLOCATEd as an -1.  They
@@ -1317,8 +1380,6 @@ CONTAINS
         CALL  wrf_debug( 0, wrf_err_message )
         grid%have_displayed_alloc_stats = .TRUE.   
       ENDIF
-
-      CALL modify_io_masks( grid , id )
 
    END SUBROUTINE alloc_space_field
 
@@ -1505,23 +1566,24 @@ CONTAINS
       INTEGER                   :: kid
       LOGICAL                   :: found
       found = .FALSE.
+      NULLIFY(result_grid)
       IF ( ASSOCIATED( in_grid ) ) THEN
-      IF ( in_grid%id .EQ. id ) THEN
-         result_grid => in_grid
-      ELSE
-         grid_ptr => in_grid
-         DO WHILE ( ASSOCIATED( grid_ptr ) .AND. .NOT. found )
-            DO kid = 1, max_nests
-               IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) .AND. .NOT. found ) THEN
-                  CALL find_grid_by_id ( id, grid_ptr%nests(kid)%ptr, result_grid )
-                  IF ( ASSOCIATED( result_grid ) ) THEN
-                    IF ( result_grid%id .EQ. id ) found = .TRUE.
-                  ENDIF
-               ENDIF
-            ENDDO
-            IF ( .NOT. found ) grid_ptr => grid_ptr%sibling
-         ENDDO
-      ENDIF
+        IF ( in_grid%id .EQ. id ) THEN
+           result_grid => in_grid
+        ELSE
+           grid_ptr => in_grid
+           DO WHILE ( ASSOCIATED( grid_ptr ) .AND. .NOT. found )
+              DO kid = 1, max_nests
+                 IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) .AND. .NOT. found ) THEN
+                    CALL find_grid_by_id ( id, grid_ptr%nests(kid)%ptr, result_grid )
+                    IF ( ASSOCIATED( result_grid ) ) THEN
+                      IF ( result_grid%id .EQ. id ) found = .TRUE.
+                    ENDIF
+                 ENDIF
+              ENDDO
+              IF ( .NOT. found ) grid_ptr => grid_ptr%sibling
+           ENDDO
+        ENDIF
       ENDIF
       RETURN
    END SUBROUTINE find_grid_by_id
@@ -2747,4 +2809,18 @@ END SUBROUTINE get_current_grid_name
      ENDIF
 
    END SUBROUTINE get_ijk_from_grid_id
+
+! version of this routine that can be called from set_scalar_indices_from_config in
+! module_configure, which can not USE module_domain without creating a circular use assocaition
+   SUBROUTINE modify_io_masks ( id )
+     USE module_domain, ONLY : domain, modify_io_masks1, head_grid, find_grid_by_id
+     IMPLICIT NONE
+     INTEGER, INTENT(IN) :: id
+     TYPE(domain), POINTER :: grid
+write(0,*)'modify_io_masks head_grid ',id,ASSOCIATED(head_grid)
+     CALL find_grid_by_id( id, head_grid, grid )
+write(0,*)'modify_io_masks grid ',id,ASSOCIATED(grid)
+     IF ( ASSOCIATED( grid ) ) CALL modify_io_masks1( grid, id ) 
+     RETURN 
+   END SUBROUTINE modify_io_masks
 

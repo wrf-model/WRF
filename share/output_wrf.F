@@ -89,6 +89,8 @@
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
 
+    CALL modify_io_masks ( grid%id )   ! this adjusts the I/O masks according to the users run-time specs, if any
+
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
     IF ( ierr /= 0 ) THEN
       WRITE(wrf_err_message,*)'module_io_wrf: output_wrf: wrf_inquire_filename Status = ',ierr
@@ -1227,14 +1229,19 @@ endif
     USE module_domain
     IMPLICIT NONE
     character*(*)s
-    integer l
+    integer l, itrace
     TYPE( fieldlist ), POINTER :: p
     p => head_grid%head_statevars%next
 !    write(0,*)'traverse_statevars_debug called ',TRIM(s),' ',l
     DO WHILE ( ASSOCIATED( p ) )
-      if ( TRIM(p%VarName) .EQ. 'store_rand' .OR. TRIM(p%VarName) .EQ. 'STORE_RAND' ) then
+!      IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+!         DO itrace = PARAM_FIRST_SCALAR , p%num_table(1)
+!write(0,*)TRIM(s),l, itrace, p%streams_table(1,itrace)%stream
+!         ENDDO
+!      ENDIF
+!      if ( TRIM(p%VarName) .EQ. 'store_rand' .OR. TRIM(p%VarName) .EQ. 'STORE_RAND' ) then
 !        write(0,*)'traverse_statevars_debug sees ',TRIM(p%VarName),' >',p%Type,'<'
-      endif
+!      endif
       p => p%next
     ENDDO
     RETURN

@@ -101,6 +101,8 @@
     WRITE(wrf_err_message,*)'input_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
 
+    CALL modify_io_masks ( grid%id )   ! this adjusts the I/O masks according to the users run-time specs, if any
+
     ierr = 0
 
     CALL get_ijk_from_grid (  grid ,                        &
@@ -651,7 +653,7 @@
             CALL wrf_atotime( current_date(1:19), time )
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
-#if (DA_CORE != 1)
+#if (DA_CORE != 1) 
 ! Don't perform the check for WRFVAR, as we're not passing the right dates
 ! around
             CALL domain_clockprint(150, grid, &

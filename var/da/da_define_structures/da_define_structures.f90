@@ -2,6 +2,10 @@ module da_define_structures
 
    !---------------------------------------------------------------------------
    ! Purpose: Collection of routines to define and allocate structures.
+   !  Update: Multivariate BE option (cv_options=6)
+   !          Syed RH Rizvi (MMM/NESL/NCAR)   Date: 02/01/2010
+   !
+   !  Note: Please acknowledge author/institute in work that uses this code.
    !---------------------------------------------------------------------------
 
    use module_domain, only: vp_type, x_type
@@ -890,9 +894,15 @@ module da_define_structures
       ! Control variable space errors:
       type (cv_type)    :: cv
 
-      real, pointer     :: reg_chi(:,:)
-      real, pointer     :: reg_t  (:,:,:)
-      real, pointer     :: reg_ps (:,:)
+      real, pointer :: reg_psi_chi  (:,:)
+      real, pointer :: reg_psi_t (:,:,:)
+      real, pointer :: reg_psi_ps   (:,:)
+      real, pointer :: reg_psi_rh   (:,:,:)
+      real, pointer :: reg_chi_u_t   (:,:,:)
+      real, pointer :: reg_chi_u_ps     (:,:)
+      real, pointer :: reg_chi_u_rh     (:,:,:)
+      real, pointer :: reg_t_u_rh    (:,:,:)
+      real, pointer :: reg_ps_u_rh      (:,:)
 
 !-----For cv option 3:
       INTEGER          :: ndeg,nta

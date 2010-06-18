@@ -1,4 +1,12 @@
 program gen_be_diags
+!------------------------------------------------------------------------
+!  Purpose: Gathers background error statistics generated at various 
+!           stages WRFDA "gen_be"
+!
+!  Auothor: Syed RH Rizvi (MMM/NESL/NCAR)   Date: 02/01/2010
+!
+!  Note: Please acknowledge author/institute in work that uses this code.
+!------------------------------------------------------------------------
 
    use da_control, only : stderr, stdout, filename_len
    use da_tools_serial, only : da_get_unit
@@ -10,15 +18,17 @@ program gen_be_diags
    character*10        :: variable                   ! Variable name
    character*8         :: uh_method                  ! Uh_method (power, scale)
    integer             :: n_smth_sl                  ! Number of smoothing for scale-length
+   integer             :: cv_options                 ! WRFDA CV_OPTIONS    
    character(len=filename_len)        :: filename                   ! Input filename.
    integer             :: nk,nk_3d                   ! Dimensions read in.
 
-   namelist / gen_be_diags_nl / uh_method, n_smth_sl
+   namelist / gen_be_diags_nl / cv_options, uh_method, n_smth_sl
 
    integer :: ounit,iunit,namelist_unit
 
    stderr = 0
    stdout = 6
+   cv_options = 5
 
    call da_get_unit(ounit)
    call da_get_unit(iunit)
@@ -51,6 +61,7 @@ program gen_be_diags
    call da_readwrite_be_stage3( ounit, nk, variable )
 
    variable = 'rh'
+   if( cv_options == 6) variable = 'rh_u'
    call da_readwrite_be_stage3( ounit, nk, variable )
 
    ! To keep the dimension nk for 3d fields:
@@ -80,6 +91,7 @@ program gen_be_diags
    call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
 
    variable = 'rh'
+   if( cv_options == 6) variable = 'rh_u'
    call da_readwrite_be_stage4( ounit, nk, uh_method, n_smth_sl, variable )
 
    variable = 'ps_u'

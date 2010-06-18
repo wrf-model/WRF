@@ -3,11 +3,19 @@ module da_gen_be
    !---------------------------------------------------------------------------- 
    ! Purpose: Collection of routines required by gen_be BE stats calculation 
    ! code.
+   ! 
+   !  Update: Multivariate BE option (cv_options=6)
+   !          Syed RH Rizvi (MMM/NESL/NCAR)   Date: 02/01/2010
+   !          
+   !  Note: Please acknowledge author/institute in work that uses this code.
+   !------------------------------------------------------------------------
+
+
    !----------------------------------------------------------------------------
 
    use da_control, only : stdout,vertical_ip, t0,es_beta,es_alpha, &
       es_gamma,kappa,rd_over_rv,rd_over_rv1,t_kelvin, gravity, &
-      filename_len,vertical_ip_0, trace_use, trace_use_dull
+      filename_len,vertical_ip_0, trace_use, trace_use_dull, cv_options
    use da_reporting, only : da_error, message
    use da_tools_serial, only : da_get_unit, da_free_unit, da_array_print
    use da_lapack, only : dsyev

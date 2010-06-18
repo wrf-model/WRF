@@ -220,7 +220,11 @@ decode_airs.o : decode_airs.f90 module_read_airs.o
 f_qv_from_rh.o : f_qv_from_rh.f90 
 gamma1.o : gamma1.f90 da_control.o 
 gen_be_cov2d.o : gen_be_cov2d.f90 da_gen_be.o da_tools_serial.o da_control.o 
+gen_be_cov2d3d_contrib.o : gen_be_cov2d3d_contrib.f90 da_tools_serial.o da_control.o 
 gen_be_cov3d.o : gen_be_cov3d.f90 da_tools_serial.o da_control.o 
+gen_be_cov3d2d_contrib.o : gen_be_cov3d2d_contrib.f90 da_tools_serial.o da_control.o 
+gen_be_cov3d3d_bin3d_contrib.o : gen_be_cov3d3d_bin3d_contrib.f90 da_tools_serial.o da_control.o 
+gen_be_cov3d3d_contrib.o : gen_be_cov3d3d_contrib.f90 da_tools_serial.o da_control.o 
 gen_be_diags.o : gen_be_diags.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_be_diags_read.o : gen_be_diags_read.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_be_ensmean.o : gen_be_ensmean.f90 da_reporting.o da_control.o 
@@ -228,17 +232,22 @@ gen_be_ensrf.o : gen_be_ensrf.f90 da_gen_be.o da_control.o
 gen_be_ep1.o : gen_be_ep1.f90 da_tools_serial.o da_gen_be.o da_control.o 
 gen_be_ep2.o : gen_be_ep2.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_be_etkf.o : gen_be_etkf.f90 da_reporting.o da_etkf.o da_control.o 
+gen_be_hist.o : gen_be_hist.f90 da_tools_serial.o da_control.o 
 gen_be_read_regcoeffs.o : gen_be_read_regcoeffs.f90 
+gen_be_stage0_gsi.o : gen_be_stage0_gsi.f90 module_ffts.o da_tools_serial.o da_gen_be.o da_control.o 
 gen_be_stage0_wrf.o : gen_be_stage0_wrf.f90 module_ffts.o da_tools_serial.o da_gen_be.o da_control.o 
 gen_be_stage1.o : gen_be_stage1.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_be_stage1_1dvar.o : gen_be_stage1_1dvar.f90 da_gen_be.o da_tools_serial.o da_control.o 
+gen_be_stage1_gsi.o : gen_be_stage1_gsi.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_be_stage2.o : gen_be_stage2.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_be_stage2_1dvar.o : gen_be_stage2_1dvar.f90 da_tools_serial.o da_gen_be.o da_control.o 
+gen_be_stage2_gsi.o : gen_be_stage2_gsi.f90 
 gen_be_stage2a.o : gen_be_stage2a.f90 da_tools_serial.o da_gen_be.o da_control.o 
 gen_be_stage3.o : gen_be_stage3.f90 da_tools_serial.o da_gen_be.o da_control.o 
 gen_be_stage4_global.o : gen_be_stage4_global.f90 da_tools_serial.o da_be_spectral.o da_control.o 
 gen_be_stage4_regional.o : gen_be_stage4_regional.f90 da_tools_serial.o da_control.o 
 gen_be_vertloc.o : gen_be_vertloc.f90 da_gen_be.o 
+gen_mbe_stage2.o : gen_mbe_stage2.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_spectra.o : gen_spectra.f90 da_tracing.o da_spectral.o da_control.o 
 gsi_constants.o : gsi_constants.f90 init_constants_derived.inc gsi_kinds.o 
 gsi_kinds.o : gsi_kinds.f90 

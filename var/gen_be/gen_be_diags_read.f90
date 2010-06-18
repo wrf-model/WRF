@@ -1,4 +1,14 @@
 program gen_be_diags_read
+!------------------------------------------------------------------------
+!  Purpose: Process background error statistics for display of various 
+!           diagnostics using WRFDA/graphics/NCL graphics utilities
+!
+!  Auothor: Syed RH Rizvi (MMM/NESL/NCAR)   Date: 02/01/2010
+!           & Monika Krysta, (CTBTO, Vienna, Austria)
+!
+!  Note: Please acknowledge author/institute in work that uses this code.
+!------------------------------------------------------------------------
+
 
    use da_control, only : stderr, stdout, filename_len
    use da_tools_serial, only : da_get_unit
@@ -8,7 +18,11 @@ program gen_be_diags_read
    implicit none
 
    character*10        :: variable          ! Variable name
+   character*80        :: var80c
+
    character*8         :: uh_method         ! Uh_method (power, scale)
+   integer             :: n_smth_sl                  ! Number of smoothing for scale-length
+   integer             :: cv_options                 ! WRFDA CV_OPTIONS
    character(len=filename_len)        :: filename          ! Input filename.
    integer             :: outunit           ! Output unit for diagnostics.
    integer             :: ni, nj, nk, nk_3d ! Dimensions read in.
@@ -27,9 +41,16 @@ program gen_be_diags_read
 
    integer, allocatable:: bin(:,:,:)        ! Bin assigned to each 3D point.
    integer, allocatable:: bin2d(:,:)        ! Bin assigned to each 2D point.
-   real, allocatable   :: regcoeff1(:)      ! psi/chi regression cooefficient.
-   real, allocatable   :: regcoeff2(:,:)    ! psi/ps regression cooefficient.
-   real, allocatable   :: regcoeff3(:,:,:)  ! psi/T regression cooefficient.
+   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)   ! psi/t   regression cooefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)    ! psi/ps     regression cooefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)  ! psi/rh     regression cooefficient.
+   real, allocatable   :: regcoeff_chi_u_t(:,:,:) ! chi_u/t regression coefficient
+   real, allocatable   :: regcoeff_chi_u_ps(:,:)  ! chi_u/ps   regression coefficient
+   real, allocatable   :: regcoeff_chi_u_rh(:,:,:)! chi_u/rh   regression coefficient
+   real, allocatable   :: regcoeff_t_u_rh(:,:,:)  ! t_u/rh  regression coefficient
+   real, allocatable   :: regcoeff_ps_u_rh(:,:)   ! ps_u/rh    regression coefficient
+
    real, allocatable   :: e_vec(:,:)        ! Domain-averaged eigenvectors.
    real, allocatable   :: e_val(:)          ! Domain-averaged eigenvalues.  
    real, allocatable   :: e_vec_loc(:,:,:)  ! Latitudinally varying eigenvectors.
@@ -37,7 +58,8 @@ program gen_be_diags_read
    real, allocatable   :: total_power(:)    ! Total Power spectrum.
    real, allocatable   :: scale_length(:)   ! Scale length for regional application.
 
-   namelist / gen_be_diags_nl / uh_method
+
+   namelist / gen_be_diags_nl / cv_options, uh_method, n_smth_sl
 
    integer :: iunit,namelist_unit
 
@@ -47,6 +69,10 @@ program gen_be_diags_read
 
    stderr = 0
    stdout = 6
+
+   uh_method = 'scale'
+   n_smth_sl = 0
+   cv_options = 5
 
    call da_get_unit(iunit)
    call da_get_unit(namelist_unit)
@@ -80,18 +106,64 @@ program gen_be_diags_read
    read(iunit)bin(1:ni,1:nj,1:nk)
    read(iunit)bin2d(1:ni,1:nj)
 
-   ! Read the regression coefficients:
-   allocate( regcoeff1(1:num_bins) )
-   allocate( regcoeff2(1:nk,1:num_bins2d) )
-   allocate( regcoeff3(1:nk,1:nk,1:num_bins2d) )
 
-   read(iunit)regcoeff1
-   read(iunit)regcoeff2
-   read(iunit)regcoeff3
+   ! 1.1 Read in regression coefficients
+   allocate  (regcoeff_psi_chi(1:num_bins))
+   allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
+   allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
+
+   regcoeff_psi_chi = 0.
+   regcoeff_psi_t   = 0.
+   regcoeff_psi_ps  = 0.
+   regcoeff_psi_rh  = 0.
+   regcoeff_chi_u_t = 0.
+   regcoeff_chi_u_ps= 0.
+   regcoeff_chi_u_rh= 0.
+   regcoeff_t_u_rh  = 0.
+   regcoeff_ps_u_rh = 0.
+
+   if ( cv_options == 5 ) then
+   read (iunit) regcoeff_psi_chi
+   read (iunit) regcoeff_psi_ps
+   read (iunit) regcoeff_psi_t
+   else
+   do k = 1 , 9
+   read (iunit) var80c
+   select case( trim(adjustl(var80c)) )
+   case ('regcoeff_psi_chi')
+   read (iunit) regcoeff_psi_chi
+   case ('regcoeff_psi_t')
+   read (iunit) regcoeff_psi_t
+   case ('regcoeff_psi_ps')
+   read (iunit) regcoeff_psi_ps
+   case ('regcoeff_psi_rh')
+   read (iunit) regcoeff_psi_rh
+   case ('regcoeff_chi_u_t')
+   read (iunit) regcoeff_chi_u_t
+   case ('regcoeff_chi_u_ps')
+   read (iunit) regcoeff_chi_u_ps
+   case ('regcoeff_chi_u_rh')
+   read (iunit) regcoeff_chi_u_rh
+   case ('regcoeff_t_u_rh')
+   read (iunit) regcoeff_t_u_rh
+   case ('regcoeff_ps_u_rh')
+   read (iunit) regcoeff_ps_u_rh
+   case default;
+      write(6,fmt='(A,A)')'Error in reading regression coefficients for: ',trim(adjustl(var80c))
+      stop
+   end select
+   end do
+   end if
 
    outunit = ounit + 100
    call da_print_be_stats_p( outunit, ni, nj, nk, num_bins, num_bins2d, &
-                             bin, bin2d, regcoeff1, regcoeff2, regcoeff3 )
+                 bin, bin2d, regcoeff_psi_chi,regcoeff_psi_ps,regcoeff_psi_t)     
 
    !----------------------------------------------------------------------------
    ! [2] Gather vertical error eigenvectors, eigenvalues.

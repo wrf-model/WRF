@@ -49,7 +49,9 @@ module da_setup_structures
       cv_options, cv_size, as1, as2, as3, as4, as5, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr, &
-      fmt_info, fmt_srfc, fmt_each, unit_end, max_ext_its  
+      fmt_info, fmt_srfc, fmt_each, unit_end, max_ext_its, &  
+      psi_chi_factor, psi_t_factor, psi_ps_factor, psi_rh_factor, &
+      chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &

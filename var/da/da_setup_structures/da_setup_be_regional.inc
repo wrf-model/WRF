@@ -2,6 +2,11 @@ subroutine da_setup_be_regional(xb, be)
 
    !---------------------------------------------------------------------------
    ! Purpose: Define and allocate components of background errors
+   !
+   ! Updates:
+   !
+   !       Implementation of multi-variate BE
+   !       Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 02/01/2010
    !---------------------------------------------------------------------------
 
    implicit none
@@ -56,36 +61,30 @@ subroutine da_setup_be_regional(xb, be)
    real*8, allocatable           :: eval_loc(:,:)          ! Latitudinally varying eigenvalues.
 
    character*10                :: variable
-   integer                     :: ni, nj, nk, nk_2d, b         
+   character*80                :: var80c
+   integer                     :: ni, nj, nk, nk_2d, b
    integer                     :: ix, jy, kz, mz
-   real*8, allocatable           :: regcoeff1(:)
-   real*8, allocatable           :: regcoeff2(:,:)
-   real*8, allocatable           :: regcoeff3(:,:,:)
-   real                        :: avg,avg2,avg3
+   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t      regression cooefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression cooefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression cooefficient.
+   real, allocatable   :: regcoeff_chi_u_t(:,:,:)    ! chi_u/t    regression coefficient
+   real, allocatable   :: regcoeff_chi_u_ps(:,:)     ! chi_u/ps   regression coefficient
+   real, allocatable   :: regcoeff_chi_u_rh(:,:,:)   ! chi_u/rh   regression coefficient
+   real, allocatable   :: regcoeff_t_u_rh(:,:,:)     ! t_u/rh     regression coefficient
+   real, allocatable   :: regcoeff_ps_u_rh(:,:)      ! ps_u/rh    regression coefficient
    integer                     :: be_unit, ier, be_rf_unit, be_print_unit, it
 
    if (trace_use) call da_trace_entry("da_setup_be_regional")
 
-   write (unit=message(1),fmt='(A)') &
-      'Set up background errors for regional application'
+   if( cv_options == 5 .or. cv_options == 6) then
+   write (unit=message(1),fmt='(A,i3)') &
+      'Set up background errors for regional application for cv_option= ',cv_options
 
-   be % v1 % name = 'psi  '           ! Streamfunction
-   be % v2 % name = 'chi_u'           ! Uncorrelated velocity potential.
-   be % v3 % name = 't_u'             ! Unbalanced temperature.
-   be % v4 % name = 'q/qsg'
-   be % v5 % name = 'psfc'            ! surface pressure
-!
-   if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
-   be % v4 % name = 'qt   '
+   else 
+      call wrf_shutdown
+      stop "Stopped, due to wrong choice of cv_option. Expects 5 or 6"
    end if
-!
-
-   write (unit=message(2),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &
-      trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
-      trim(be % v3 % name), ' and ', trim(be % v5 % name)
-
-   write (unit=message(3),fmt='(3x,A,A)') &
-      'Humidity control variable is ', trim(be % v4 % name)
 
    ix = xb % mix
    jy = xb % mjy
@@ -103,7 +102,7 @@ subroutine da_setup_be_regional(xb, be)
       write(unit=*, fmt='(a, i2, a, i3)') &
            'cv_options:', cv_options,' Reading error in unit=',be_unit
       call wrf_shutdown
-      stop "Stopped, Please check if CV5 BE file provided correctly."
+      stop "Stopped, Please check if proper BE file s provided"
    else
       if ( nk /= kz ) then
          call da_error(__FILE__,__LINE__,  &
@@ -122,31 +121,93 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)bin2d(1:ni,1:nj)
 
    ! 1.1 Read in regression coefficients
+   allocate  (regcoeff_psi_chi(1:num_bins))
+   allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
+   allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
 
-   allocate (regcoeff1(1:num_bins))
-   allocate (regcoeff2(1:nk,1:num_bins2d))
-   allocate (regcoeff3(1:nk,1:nk,1:num_bins2d))
+   regcoeff_psi_chi    = 0.       
+   regcoeff_psi_t      = 0.
+   regcoeff_psi_ps     = 0.
+   regcoeff_psi_rh     = 0.
+   regcoeff_chi_u_t    = 0.
+   regcoeff_chi_u_ps   = 0.
+   regcoeff_chi_u_rh   = 0.
+   regcoeff_t_u_rh     = 0.
+   regcoeff_ps_u_rh    = 0.
 
-   read (be_unit) regcoeff1  
-   read (be_unit) regcoeff2 
-   read (be_unit) regcoeff3  
+   if ( cv_options == 5 ) then
+   read (be_unit) regcoeff_psi_chi
+   read (be_unit) regcoeff_psi_ps  
+   read (be_unit) regcoeff_psi_t
+   else
+   do i = 1 , 9
+   read (be_unit) var80c   
+   select case( trim(adjustl(var80c)) )
+   case ('regcoeff_psi_chi')
+   read (be_unit) regcoeff_psi_chi
+   case ('regcoeff_psi_t')
+   read (be_unit) regcoeff_psi_t
+   case ('regcoeff_psi_ps')
+   read (be_unit) regcoeff_psi_ps
+   case ('regcoeff_psi_rh')
+   read (be_unit) regcoeff_psi_rh
+   case ('regcoeff_chi_u_t')
+   read (be_unit) regcoeff_chi_u_t
+   case ('regcoeff_chi_u_ps')
+   read (be_unit) regcoeff_chi_u_ps
+   case ('regcoeff_chi_u_rh')
+   read (be_unit) regcoeff_chi_u_rh
+   case ('regcoeff_t_u_rh')
+   read (be_unit) regcoeff_t_u_rh
+   case ('regcoeff_ps_u_rh')
+   read (be_unit) regcoeff_ps_u_rh
+   case default;
+      message(1)=' Read problem in regression coefficients in BE file '
+      write (unit=message(2),fmt='(A,A)') ' Trying to read regression coefficients for variable: ',trim(adjustl(var80c))
+      call da_error(__FILE__,__LINE__,message(1:2))
+   end select
+   end do
+   end if
 
    ! 1.2 Fill regression coeff. array
-   allocate (be%reg_chi(1:jy,1:nk))
-   allocate (be%reg_ps (1:jy,1:nk))
-   allocate (be%reg_t  (1:jy,1:nk,1:nk))
+   allocate (be%reg_psi_chi  (1:jy,1:nk))
+   allocate (be%reg_psi_t    (1:jy,1:nk,1:nk))
+   allocate (be%reg_psi_ps   (1:jy,1:nk))
+   allocate (be%reg_psi_rh   (1:jy,1:nk,1:nk))
+   allocate (be%reg_chi_u_t  (1:jy,1:nk,1:nk))
+   allocate (be%reg_chi_u_ps (1:jy,1:nk))
+   allocate (be%reg_chi_u_rh (1:jy,1:nk,1:nk))
+   allocate (be%reg_t_u_rh   (1:jy,1:nk,1:nk))
+   allocate (be%reg_ps_u_rh  (1:jy,1:nk))
+
+   be%reg_psi_chi    = 0.
+   be%reg_psi_t      = 0.
+   be%reg_psi_ps     = 0.
+   be%reg_psi_rh     = 0.
+   be%reg_chi_u_t    = 0.
+   be%reg_chi_u_ps   = 0.
+   be%reg_chi_u_rh   = 0.
+   be%reg_t_u_rh     = 0.
 
    do k=1,nk
       do j =1, jy
          b = bin(1,j,k)
-         be%reg_chi(j,k) = regcoeff1(b)
+         be%reg_psi_chi(j,k) = psi_chi_factor * regcoeff_psi_chi(b)
       end do
    end do
 
    do j=1,jy
       b = bin2d(1,j)
       do k=1,nk
-         be%reg_ps(j,k) = regcoeff2(k,b)
+         be%reg_psi_ps(j,k)   = psi_ps_factor   * regcoeff_psi_ps(k,b)
+         be%reg_ps_u_rh(j,k)  = ps_u_rh_factor  * regcoeff_ps_u_rh(k,b)
+         be%reg_chi_u_ps(j,k) = chi_u_ps_factor * regcoeff_chi_u_ps(k,b)
       end do
    end do
 
@@ -154,46 +215,46 @@ subroutine da_setup_be_regional(xb, be)
       b = bin2d(1,j)
       do i=1,nk
          do k=1,nk
-            be%reg_t(j,i,k) = regcoeff3(i,k,b)
+            be%reg_psi_t(j,i,k)   = psi_t_factor   *  regcoeff_psi_t(i,k,b)
+            be%reg_psi_rh(j,i,k)     = psi_rh_factor     *  regcoeff_psi_rh(i,k,b)
+            be%reg_chi_u_t(j,i,k) = chi_u_t_factor *  regcoeff_chi_u_t(i,k,b)
+            be%reg_chi_u_rh(j,i,k)   = chi_u_rh_factor   *  regcoeff_chi_u_rh(i,k,b)
+            be%reg_t_u_rh(j,i,k)  = t_u_rh_factor  *  regcoeff_t_u_rh(i,k,b)
          end do
       end do
    end do
 
-   deallocate (regcoeff1)
-   deallocate (regcoeff2)
-   deallocate (regcoeff3)
+   deallocate (regcoeff_psi_chi)
+   deallocate (regcoeff_psi_t)
+   deallocate (regcoeff_psi_ps)
+   deallocate (regcoeff_psi_rh)
+   deallocate (regcoeff_chi_u_t)
+   deallocate (regcoeff_chi_u_ps)
+   deallocate (regcoeff_chi_u_rh)
+   deallocate (regcoeff_t_u_rh)
+   deallocate (regcoeff_ps_u_rh)
 
    ! 1.3 Domain_averaged regression coefficients
 
-   if (.not.lat_stats_option) then
+  if (.not.lat_stats_option) then
       write (unit=message(4), fmt='(3x, a)') &
          'Using the averaged regression coefficients for unbalanced part'
 
       do k=1,nk
-         avg= 0.0
-         avg2=0.0
-         do j=1,num_bins2d
-            avg= avg + be%reg_ps (j,k)/float(num_bins2d) 
-            avg2= avg2 + be%reg_chi (j,k)/float(num_bins2d) 
-         end do
-
-         do j=1,num_bins2d
-            be%reg_ps(j,k)=avg
-            be%reg_chi (j,k)=avg2
-         end do
+         be%reg_psi_ps  (1:num_bins2d,k) = sum(be%reg_psi_ps  (1:num_bins2d,k))/float(num_bins2d)
+         be%reg_ps_u_rh (1:num_bins2d,k) = sum(be%reg_ps_u_rh (1:num_bins2d,k))/float(num_bins2d)
+         be%reg_chi_u_ps(1:num_bins2d,k) = sum(be%reg_chi_u_ps(1:num_bins2d,k))/float(num_bins2d)
       end do
 
       do m=1,nk
          do k=1,nk
-            avg3= 0.0
 
-            do j=1,num_bins2d
-               avg3= avg3 + be%reg_t (j,k,m)/float(num_bins2d)
-            end do
+           be%reg_psi_t  (1:num_bins2d,k,m)= sum(be%reg_psi_t(1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_psi_rh    (1:num_bins2d,k,m)= sum(be%reg_psi_rh  (1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_chi_u_t(1:num_bins2d,k,m)= sum(be%reg_chi_u_t(1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_chi_u_rh  (1:num_bins2d,k,m)= sum(be%reg_chi_u_rh  (1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_t_u_rh (1:num_bins2d,k,m)= sum(be%reg_t_u_rh (1:num_bins2d,k,m))/float(num_bins2d)
 
-            do j=1,num_bins2d
-               be%reg_t(j,k,m)=avg3
-            end do
          end do
       end do
    else
@@ -202,7 +263,7 @@ subroutine da_setup_be_regional(xb, be)
    end if
 
    call da_message(message(1:4))
-    
+
    ! 2.0 Load the eigenvector and eigenvalue
 
    allocate (be1_eval_loc (1:jy,1:kz))
@@ -234,92 +295,75 @@ subroutine da_setup_be_regional(xb, be)
 
    ! 2.2 Read in the eigenvector and eigenvalue 
 
-   ! 2.2.1 Control variable 1 (psi)
-
-   read (be_unit) variable
+   do i = 1 , 4
+    read (be_unit) variable
+   select case( trim(adjustl(variable)) )
+   case ('psi')
    read (be_unit) nk, num_bins2d
    read (be_unit)  be1_evec_glo
    read (be_unit)  be1_eval_glo
+   if( i == 1) then
    allocate (evec_loc(1:nk,1:nk,1:num_bins2d))
    allocate (eval_loc(1:nk,     1:num_bins2d))
+   end if
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   if (variable(1:3) /= 'psi') then
-      message(1)=' Variable mismatch while transfering eigen values from BE file '
-      write (unit=message(2),fmt='(A,A)') ' Expected psi but got ',variable
-      call da_error(__FILE__,__LINE__,message(1:2))
-   end if
-   be % v1 % name = variable
    do j=1,jy
       b = bin2d(1,j)
       be1_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be1_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
+   be % v1 % name = trim(adjustl(variable))
 
-   ! 2.2.2 Control variable 2 (chi_u)
-
-   read (be_unit) variable
+   case ('chi_u')
    read (be_unit) nk, num_bins2d
    read (be_unit)  be2_evec_glo
    read (be_unit)  be2_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   if (variable(1:5) /= 'chi_u') then
-      message(1)=' Variable mismatch while transfering eigen values from BE file '
-      write (unit=message(2),fmt='(A,A)') ' Expected chi_u but got ',variable
-      call da_error(__FILE__,__LINE__,message(1:2))
-   end if
-   be % v2 % name = variable
    do j=1,jy
       b = bin2d(1,j)
       be2_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be2_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
+   be % v2 % name = trim(adjustl(variable))
 
-   ! 2.2.3 Control variable 3 (t_u)
-   read (be_unit) variable
+   case ('t_u')
    read (be_unit) nk, num_bins2d
    read (be_unit)  be3_evec_glo
    read (be_unit)  be3_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   if (variable(1:3) /= 't_u') then
-      message(1)=' Variable mismatch while transfering eigen values from BE file '
-      write (unit=message(2),fmt='(A,A)') ' Expected t_u but got ',variable
-      call da_error(__FILE__,__LINE__,message(1:2))
-   end if
-   be % v3 % name = variable
    do j=1,jy
       b = bin2d(1,j)
       be3_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be3_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
+   be % v3 % name = trim(adjustl(variable))
 
-   ! 2.2.4 Control variable 4 (q/qsg)
-
-   read (be_unit) variable
+   case ('rh_u' , 'rh' )
    read (be_unit) nk, num_bins2d
    read (be_unit)  be4_evec_glo
    read (be_unit)  be4_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   if (variable(1:3) /= 'rh') then
-      message(1)=' Variable mismatch while transfering eigen values from BE file '
-      write (unit=message(2),fmt='(A,A)') ' Expected rh but got ',variable
-      call da_error(__FILE__,__LINE__,message(1:2))
-   end if
-   be % v4 % name = variable
    do j=1,jy
       b = bin2d(1,j)
       be4_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be4_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+   end do
+   be % v4 % name = trim(adjustl(variable))
+   case default;
+      message(1)=' Read problem in eigen vaectors/values in BE file '
+      write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
+      call da_error(__FILE__,__LINE__,message(1:2))
+   end select
    end do
 
    deallocate (evec_loc)
    deallocate (eval_loc)
 
    ! 2.2.5 Control variable ps_u
-
    read (be_unit) variable
    read (be_unit) nk_2d, num_bins2d
    allocate (evec_loc(1:nk_2d,1:nk_2d,1:num_bins2d))
@@ -328,12 +372,12 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  be5_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   if (variable(1:4) /= 'ps_u') then
+   if( trim(adjustl(variable)) /= 'ps_u' ) then
       message(1)=' Variable mismatch while transfering eigen values from BE file '
-      write (unit=message(2),fmt='(A,A)') ' Expected ps_u but got ',variable
+      write (unit=message(2),fmt='(A,A)') ' Expected ps_u but got ',trim(adjustl(variable))
       call da_error(__FILE__,__LINE__,message(1:2))
    end if
-   be % v5 % name = variable
+   be % v5 % name = trim(adjustl(variable))
    do j=1,jy
       b = bin2d(1,j)
       be5_evec_loc(j,1:1,1:1) = evec_loc(1:1,1:1,b)
@@ -343,6 +387,18 @@ subroutine da_setup_be_regional(xb, be)
    deallocate (evec_loc)
    deallocate (eval_loc)
 
+!
+   if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
+   be % v4 % name = 'qt   '
+   end if
+
+   write (unit=message(2),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &
+      trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
+      trim(be % v3 % name), ' and ', trim(be % v5 % name)
+
+   write (unit=message(3),fmt='(3x,A,A)') &
+      'Humidity control variable is ', trim(be % v4 % name)
+!
    ! 3.0 Check and get the truncated number of the vertical modes
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -424,22 +480,27 @@ subroutine da_setup_be_regional(xb, be)
    allocate (be5_rf_lengthscale(1:nk))
 
    ! 5.2 read in the scale lengths
+   do i = 1 , 5
+    read (be_unit) variable
+   select case( trim(adjustl(variable)) )
 
-   read (be_unit) variable
-   read (be_unit) be1_rf_lengthscale
+   case ('psi')
+     read(be_unit) be1_rf_lengthscale
+   case ('chi_u')
+     read(be_unit) be2_rf_lengthscale
+   case ('t_u')
+     read(be_unit) be3_rf_lengthscale
+   case ('rh_u' , 'rh')
+     read(be_unit) be4_rf_lengthscale
+   case ('ps_u')
+     read(be_unit) be5_rf_lengthscale(1:1)
+   case default;
+      message(1)=' Read problem in lengthscales in BE file '
+      write (unit=message(2),fmt='(A,A)') ' Trying to read lengthscales for variable: ',trim(adjustl(variable))
+      call da_error(__FILE__,__LINE__,message(1:2))
+   end select
+   end do
 
-   read (be_unit) variable
-   read (be_unit) be2_rf_lengthscale
-
-   read (be_unit) variable
-   read (be_unit) be3_rf_lengthscale
-
-   read (be_unit) variable
-   read (be_unit) be4_rf_lengthscale
-
-   read (be_unit) variable
-   read (be_unit) be5_rf_lengthscale(1:1)
-   be%v5%name = variable
 
    ! 5.3 Convert the scale lengths in the real distance (meter)
 
@@ -450,8 +511,6 @@ subroutine da_setup_be_regional(xb, be)
    be5_rf_lengthscale(1:1)  = be5_rf_lengthscale(1:1)  * xb%ds
 
    ! 6.0 Perform checks on eigenvectors with be data structure:
-   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
    if (test_statistics) then
       call da_check_eof_decomposition(be%v1%val_g(:), be%v1%evec_g(:,:),&
                                      be%v1%name)

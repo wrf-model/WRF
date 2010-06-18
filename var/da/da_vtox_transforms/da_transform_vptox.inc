@@ -4,6 +4,10 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    ! Purpose: Physical transform of analysis increment variables.
    !    Updated for Analysis on Arakawa-C grid
    !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   ! Updates:
+   !
+   !       Implementation of multi-variate BE for cv_options=6
+   !       Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 02/01/2010
    !-----------------------------------------------------------------------
 
    implicit none
@@ -15,6 +19,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    type (ep_type), intent(in), optional :: ep  ! Ensemble perturbations.
 
    integer :: i, k, j, k1, ij            ! Loop counters.
+   real, allocatable          :: chi_u(:,:,:)  ! Unbalanced chi
 
    if (trace_use) call da_trace_entry("da_transform_vptox") 
 
@@ -34,11 +39,14 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    !$OMP PRIVATE ( ij, k1, k, j, i)
    do ij = 1 , grid%num_tiles
 
+   allocate (chi_u(its:ite,grid%j_start(ij):grid%j_end(ij),kts:kte) )
+
    ! Chi:
    do k = kts, kte
       do j = grid%j_start(ij), grid%j_end(ij)
          do i = its, ite
-            vp%v2(i,j,k) = vp%v2(i,j,k) + be%reg_chi(j,k)* vp%v1(i,j,k)
+            chi_u(i,j,k) = vp%v2(i,j,k)
+            vp%v2(i,j,k) = vp%v2(i,j,k) + be%reg_psi_chi(j,k)* vp%v1(i,j,k)
          end do
       end do
    end do
@@ -57,7 +65,8 @@ subroutine da_transform_vptox(grid, vp, be, ep)
       do k = kts, kte
          do j = grid%j_start(ij), grid%j_end(ij)
             do i = its, ite
-               grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + be%reg_t(j,k,k1)*vp%v1(i,j,k1)
+              grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + &
+              be%reg_psi_t(j,k,k1)*vp%v1(i,j,k1) + be%reg_chi_u_t(j,k,k1)*chi_u(i,j,k1)
             end do
          end do
       end do
@@ -73,10 +82,35 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    do k = kts,kte
       do j = grid%j_start(ij), grid%j_end(ij)
          do i = its, ite
-            grid%xa%psfc(i,j) = grid%xa%psfc(i,j) + be%reg_ps(j,k)*vp%v1(i,j,k)
+            grid%xa%psfc(i,j) = grid%xa%psfc(i,j) +  &
+            be%reg_psi_ps(j,k)*vp%v1(i,j,k) + be%reg_chi_u_ps(j,k)*chi_u(i,j,k)
          end do
       end do
    end do
+
+   ! Moisture
+   do k1 = kts, kte
+      do k = kts, kte
+         do j = grid%j_start(ij), grid%j_end(ij)
+            do i = its, ite
+              vp%v4(i,j,k1) = vp%v4(i,j,k1) + be%reg_psi_rh(j,k1,k)*vp%v1(i,j,k) + &
+              be%reg_chi_u_rh(j,k1,k)*chi_u(i,j,k) + be%reg_t_u_rh(j,k1,k)*vp%v3(i,j,k)
+            end do
+         end do
+      end do
+   end do
+
+!
+   do k = kts, kte
+      do j = grid%j_start(ij), grid%j_end(ij)
+         do i = its, ite
+            vp%v4(i,j,k) = vp%v4(i,j,k) + be%reg_ps_u_rh(j,k)*vp%v5(i,j,1)
+         end do
+      end do
+   end do
+
+!
+   deallocate (chi_u )
 
    end do
    !$OMP END PARALLEL DO
@@ -129,7 +163,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          do k = kts, kte
             do j = grid%j_start(ij), grid%j_end(ij)
                do i = its, ite
-                  grid%xa % qt(i,j,k) = vp%v4(i,j,k) * grid%xb%qs(i,j,k)
+                 grid%xa % qt(i,j,k) = vp%v4(i,j,k) * grid%xb%qs(i,j,k)
                enddo
             enddo
          enddo

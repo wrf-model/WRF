@@ -2,6 +2,11 @@ subroutine da_deallocate_background_errors (be)
 
    !---------------------------------------------------------------------------
    ! Purpose: Deallocate components of wrfvar background errors.
+   !
+   !  Update: Multivariate BE option (cv_options=6)
+   !          Syed RH Rizvi (MMM/NESL/NCAR)   Date: 02/01/2010
+   !
+   !  Note: Please acknowledge author/institute in work that uses this code.
    !---------------------------------------------------------------------------
 
    implicit none
@@ -56,10 +61,16 @@ subroutine da_deallocate_background_errors (be)
          if (be % v5 % mz > 0 .and. .not. global) deallocate (be % v5 % val_g)
       end if
 
-      deallocate (be % reg_chi)
-      deallocate (be % reg_ps)
-      deallocate (be % reg_t)
-   
+      deallocate (be % reg_psi_chi)
+      deallocate (be % reg_psi_t)
+      deallocate (be % reg_psi_ps)
+      deallocate (be % reg_psi_rh)
+      deallocate (be % reg_chi_u_t)
+      deallocate (be % reg_chi_u_ps)
+      deallocate (be % reg_chi_u_rh)
+      deallocate (be % reg_t_u_rh)
+      deallocate (be % reg_ps_u_rh)
+
       ! Deallocate control variable errors (in future uncomment use these to allow 
       ! eg NMC error correlations).
 

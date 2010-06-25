@@ -160,14 +160,15 @@ bufrfile:  do ibufr=1,numbufr
 	   end if
      end if
 !
-   call da_get_unit(iunit)
+!   call da_get_unit(iunit)
+      iunit=96
       open(unit   = iunit, FILE   = trim(filename), &
          iostat =  iost, form = 'unformatted', STATUS = 'OLD')
       if (iost /= 0) then
          write(unit=message(1),fmt='(A,I5,A)') &
             "Error",iost," opening PREPBUFR obs file "//trim(filename)
          call da_warning(__FILE__,__LINE__,message(1:1))
-         call da_free_unit(iunit)
+!         call da_free_unit(iunit)
           cycle bufrfile
       end if
    ! open observation error table if provided.
@@ -209,7 +210,7 @@ bufrfile:  do ibufr=1,numbufr
          "Error",iret," reading PREPBUFR obs file "//trim(filename)
       call da_warning(__FILE__,__LINE__,message(1:1))
       call closbf(iunit)
-      call da_free_unit(iunit)
+!      call da_free_unit(iunit)
       if (trace_use) call da_trace_exit("da_read_obs_bufr")
       return
    end if
@@ -1073,7 +1074,7 @@ bufrfile:  do ibufr=1,numbufr
     
 call closbf(iunit)
 close(iunit)
-call da_free_unit(iunit)
+!call da_free_unit(iunit)
 if ( use_errtable ) then
   close(junit)
   call da_free_unit(junit)

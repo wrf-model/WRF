@@ -220,7 +220,8 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   end if
 
 ! Open BUFR file
-  call da_get_unit(lnbufr)
+!  call da_get_unit(lnbufr)
+  lnbufr=97
   open(unit=lnbufr,file=trim(infile),form='unformatted',iostat = iost)
   if (iost /= 0) then
      call da_warning(__FILE__,__LINE__, &
@@ -657,7 +658,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 1000 continue
    call closbf(lnbufr)
    close(lnbufr)
-   call da_free_unit(lnbufr)
+!   call da_free_unit(lnbufr)
    if (airstab) then
       close(airs_table_unit)
       call da_free_unit(airs_table_unit)

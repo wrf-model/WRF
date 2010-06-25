@@ -70,8 +70,12 @@ wrf : framework_only
 all_wrfvar : 
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
+	if [ $(CRTM) ] ; then \
+	  (cd var/external/crtm; \
+	  . configure/$(SFC).setup; make ) ; \
+	fi
 	if [ $(BUFR) ] ; then \
-	  ( cd var/external/bufr;  \
+	  (cd var/external/bufr;  \
 	  $(MAKE) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCDEBUG) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
 	fi
 #	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) $(J) all_wrfvar )

@@ -205,3 +205,7 @@ gen_be_hist.exe : gen_be_hist.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -o gen_be_hist.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_hist.o $(GEN_BE_LIB)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
+gen_be_vertloc.exe : gen_be_vertloc.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
+	$(SFC) -o gen_be_vertloc.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_vertloc.o $(GEN_BE_LIB)
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
+

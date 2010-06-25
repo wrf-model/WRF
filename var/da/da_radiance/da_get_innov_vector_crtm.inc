@@ -55,12 +55,13 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real    :: clwp
 
    ! CRTM local varaibles and types
-   integer :: wmo_sensor_id,Error_Status, Allocate_Status
+   integer :: Allocate_Status
+   integer :: n_layers, n_absorbers, n_clouds, n_aerosols
 
    type (CRTM_RTSolution_type), allocatable :: RTSolution(:,:)
    type (CRTM_Atmosphere_type)   :: Atmosphere(1)
    type (CRTM_Surface_type)      :: Surface(1)
-   type (CRTM_GeometryInfo_type) :: GeometryInfo(1)
+   type (CRTM_Geometry_type)     :: GeometryInfo(1)
    type (CRTM_Options_type)      :: Options(1)
    type (CRTM_RTSolution_type), allocatable :: RTSolution_K(:,:)
    type (CRTM_Atmosphere_type), allocatable :: Atmosphere_K(:,:)
@@ -135,25 +136,27 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
    ! CRTM allocation
 
-   ! Atmosphere structure
-   Atmosphere(1)%n_Layers=(kte-kts)+1   ! number of vertical levels
-   Atmosphere(1)%n_Absorbers=2
-   Atmosphere(1)%n_Clouds=0
-   Atmosphere(1)%n_Aerosols=0
-   if (crtm_cloud) Atmosphere(1)%n_Clouds=6
- 
-   Error_Status = CRTM_Allocate_Atmosphere( Atmosphere(1)%n_Layers, &
-                                            Atmosphere(1)%n_Absorbers, &
-                                            Atmosphere(1)%n_Clouds, &
-                                            Atmosphere(1)%n_Aerosols, &
-                                            Atmosphere)
-   if (Error_Status /= 0) then 
+   ! CRTM Atmosphere
+   n_layers    = (kte-kts)+1   ! number of vertical levels
+   n_absorbers = 2
+   n_aerosols  = 0
+   n_clouds    = 0
+   if ( crtm_cloud ) n_clouds = 6
+
+   call CRTM_Atmosphere_Create ( Atmosphere(1), &
+                                 n_layers,      &
+                                 n_absorbers,   &
+                                 n_clouds,      &
+                                 n_aerosols )
+   IF ( .NOT. CRTM_Atmosphere_Associated( Atmosphere(1) ) ) THEN 
        call da_error(__FILE__,__LINE__, &
          (/"Error in allocating CRTM Atmosphere Structure"/))
-   end if
+   END IF 
 
    Atmosphere(1)%Absorber_ID(1)=H2O_ID
    Atmosphere(1)%Absorber_ID(2)=O3_ID
+   Atmosphere(1)%Absorber_Units(1) = MASS_MIXING_RATIO_UNITS
+   Atmosphere(1)%Absorber_Units(2) = VOLUME_MIXING_RATIO_UNITS
    Atmosphere(1)%Climatology=crtm_atmosphere
    write(stdout,*) 'CRTM Reference profile is: ', &
                     CLIMATOLOGY_MODEL_NAME(Atmosphere(1)%Climatology)
@@ -174,11 +177,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       ! if ( iv%instid(inst)%num_rad < 1 ) cycle
       if (iv%instid(inst)%info%n2 < iv%instid(inst)%info%n1) cycle
       num_levs  = kte-kts+1 
-      ! CRTM channel information structure
-      ! Error_Status = CRTM_Set_ChannelInfo(Sensor_Descriptor(inst),ChannelInfo)
-      ! if (Error_Status /= 0) then
-      !   call da_error(__FILE__,__LINE__, (/"Error in calling CRTM_Set_ChannelInfo"/))
-      ! end if
       nchanl    = ChannelInfo(inst)%n_channels
 
       ! Allocate forward model solution RTSolution array to number of channels
@@ -197,40 +195,21 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end if
       end if
       
-      ! CRTM Surface Structure
-      if (trim(crtm_sensor_name(rtminit_sensor(inst))) =='amsua') then
-         wmo_sensor_id=WMO_AMSUA
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='amsub') then
-         wmo_sensor_id=WMO_AMSUB
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='amsre') then
-         wmo_sensor_id=WMO_AMSRE
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='ssmi') then
-         wmo_sensor_id=WMO_SSMI
-#ifndef CRTM_1_1
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='ssmis') then
-         wmo_sensor_id=WMO_SSMIS   ! available since CRTM_1_2
-#endif
-      else
-         wmo_sensor_id=INVALID_WMO_SENSOR_ID
-      end if
-
-      Error_Status = CRTM_Allocate_Surface( nchanl,     &  ! Input
-                                   Surface)  ! Output
-      if (Error_Status /= 0) then
+      call CRTM_Surface_Create ( Surface(1), & ! Output
+                                 nchanl )      ! Input
+      IF ( .NOT. CRTM_Surface_Associated( Surface(1) ) ) THEN 
          call da_error(__FILE__,__LINE__, &
-            (/"Error in allocating CRTM Surface Structure Structure"/))
+            (/"Error in allocating CRTM Surface Structure"/))
       end if
 
       ! CRTM Options structure
-      Options(1)%n_channels = nchanl
-      if ( use_antcorr(inst) ) Options(1)%Antenna_Correction = 1   ! SET = 1 in CRTM_Parameters.f90
-     
-      Error_Status = CRTM_Allocate_Options( nchanl,    &  ! Input
-                                            Options)      ! InOut
-      if ( Error_Status /= 0 ) then
+      call CRTM_Options_Create( Options(1), &  ! Output
+                                nchanl )       ! Input
+      IF ( .NOT. CRTM_Options_Associated( Options(1) ) ) THEN 
         call da_error(__FILE__,__LINE__, &
           (/"Error in allocatting CRTM Options Structure"/))
       endif
+      if ( use_antcorr(inst) ) Options(1)%Use_Antenna_Correction = .true.
 
       ! do n= 1, iv%instid(inst)%num_rad           ! loop for pixel
 
@@ -468,40 +447,29 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          end if
          if (nchanl > 0) then
-            Surface(1)%SensorData%n_channels = nchanl
-#ifdef CRTM_1_1
-            Surface(1)%SensorData%Sensor_Id  = wmo_sensor_id             ! CRTM_1.1
-#else
-            Surface(1)%SensorData%Select_WMO_Sensor_Id  = wmo_sensor_id  ! CRTM_1.2
-#endif
-            Surface(1)%SensorData%Tb(1:nchanl) = ob%instid(inst)%tb(1:nchanl,n)
+            Surface(1)%SensorData%n_channels        = nchanl
+            Surface(1)%SensorData%Sensor_Channel    = ChannelInfo(inst)%Sensor_Channel
+            Surface(1)%SensorData%Sensor_Id         = ChannelInfo(inst)%Sensor_Id
+            Surface(1)%SensorData%WMO_Satellite_Id  = ChannelInfo(inst)%WMO_Satellite_Id
+            Surface(1)%SensorData%WMO_Sensor_Id     = ChannelInfo(inst)%WMO_Sensor_Id
+            Surface(1)%SensorData%Tb(1:nchanl)      = ob%instid(inst)%tb(1:nchanl,n)
          end if
 	 
          if (use_crtm_kmatrix) then
-   
+
             ! CRTM surface/atmosphere K initialization
             do l = 1, ChannelInfo(inst)%n_Channels
                ! -- Copy the adjoint atmosphere structure
-               Error_Status = CRTM_Assign_Atmosphere( Atmosphere, Atmosphere_K(l,:) )
-
-               if ( Error_Status /= 0 ) then
-                  call da_error(__FILE__,__LINE__,  &
-                     (/"Error copying Atmosphere_K structure"/))
-               end if
+               Atmosphere_K(l,1) = Atmosphere(1)
  
                ! -- Copy the adjoint surface structure
-               Error_Status = CRTM_Assign_Surface( Surface, Surface_K(l,:) )
-       
-               if ( Error_Status /= 0 ) then
-                  call da_error(__FILE__,__LINE__, &
-                     (/"Error copying Surface_K structure"/))
-               end if
+               Surface_K(l,1) = Surface(1)
             end do
 
             ! -- Zero the Adjoint outputs
             ! Important: adjoint variables must be initialized
-            call CRTM_Zero_Atmosphere( Atmosphere_K )
-            call CRTM_Zero_Surface( Surface_K )
+            call CRTM_Atmosphere_Zero( Atmosphere_K )
+            call CRTM_Surface_Zero( Surface_K )
 
             ! Assign tb = R^-1 Re :
             RTSolution_K(:,1)%brightness_temperature = 1.
@@ -728,26 +696,26 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                (/"Error in deallocating RTSolution_K"/))
       end if	 
 
-      Error_Status = CRTM_Destroy_Options(Options)
-      if (Error_Status /= 0) &
+      call CRTM_Options_Destroy(Options)
+      IF ( CRTM_Options_Associated( Options(1) ) ) &
          call da_error(__FILE__,__LINE__, &
             (/"Error in deallocating CRTM Options Structure"/))
 
-      Error_Status = CRTM_Destroy_Surface(Surface)
-      if (Error_Status /= 0) &
+      call CRTM_Surface_Destroy(Surface)
+      IF ( CRTM_Surface_Associated( Surface(1) ) ) &
          call da_error(__FILE__,__LINE__, &
             (/"Error in deallocating CRTM Surface Structure"/))
 
       if (use_crtm_kmatrix) then
-         Error_Status = CRTM_Destroy_Surface(Surface_K)
-         if ( Error_Status /= 0 ) &
+         call CRTM_Surface_Destroy(Surface_K)
+         IF ( ANY( CRTM_Surface_Associated( Surface_K(1,:)) ) ) &
             call da_error(__FILE__,__LINE__, &
                (/"Error in deallocatting CRTM Surface_K Structure"/))
       endif
 
       if (use_crtm_kmatrix) then
-         Error_Status = CRTM_Destroy_Atmosphere( Atmosphere_K )
-         if ( Error_Status /= 0 ) &
+         call CRTM_Atmosphere_Destroy( Atmosphere_K )
+         IF ( ANY( CRTM_Atmosphere_Associated( Atmosphere_K(1,:)) ) ) &
             call da_error(__FILE__,__LINE__, &
                (/"Error in deallocatting CRTM Atmosphere_K Structure"/))
       endif
@@ -761,8 +729,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
    end do        ! end loop for sensor
 
-   Error_Status = CRTM_Destroy_Atmosphere (Atmosphere)
-   if (Error_Status /= 0) &
+   call CRTM_Atmosphere_Destroy (Atmosphere)
+   IF ( CRTM_Atmosphere_Associated( Atmosphere(1) ) ) &
        call da_error(__FILE__,__LINE__, &
          (/"Error in deallocating CRTM Atmosphere Structure"/))
 

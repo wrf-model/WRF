@@ -78,7 +78,8 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    ! 0.0  Open unit to satellite bufr file and read file header
    !--------------------------------------------------------------
 
-   call da_get_unit(lnbufr)
+!   call da_get_unit(lnbufr)
+   lnbufr=98
    open(unit=lnbufr,file=trim(infile),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
@@ -472,7 +473,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    call closbf(lnbufr)
    close(lnbufr)
-   call da_free_unit(lnbufr)
+!   call da_free_unit(lnbufr)
 
    call da_trace_exit("da_read_obs_bufrssmis")
 #else

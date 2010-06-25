@@ -209,7 +209,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      if ( $ENV{CRTM} )
        {
        $sw_crtm_flag = "-DCRTM";
-       $sw_crtm_inc = "-I$ENV{CRTM}/src";
+       $sw_crtm_inc = "-I\$(WRF_SRC_ROOT_DIR)/external/crtm/libsrc";
        }
      if ( $ENV{RTTOV} )
        {

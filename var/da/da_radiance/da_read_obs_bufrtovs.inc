@@ -155,13 +155,14 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    ! 0.0  Open unit to satellite bufr file and read file header
    !--------------------------------------------------------------
 
-   call da_get_unit(lnbufr)
+!   call da_get_unit(lnbufr)
+   lnbufr=99
    open(unit=lnbufr,file=trim(infile),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      call da_free_unit(lnbufr)
+!      call da_free_unit(lnbufr)
       call da_trace_exit("da_read_obs_bufrtovs")
       return
    end if
@@ -510,7 +511,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
    deallocate(tb_inv)  
    call closbf(lnbufr)
-   call da_free_unit(lnbufr)
+!   call da_free_unit(lnbufr)
 
    !  5.0 allocate innovation radiance structure
    !----------------------------------------------------------------  

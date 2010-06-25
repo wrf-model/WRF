@@ -21,22 +21,25 @@ module module_radiance
 
 #ifdef CRTM
   ! -- Modules to define CRTM constants etc.
-   USE CRTM_Parameters, only : INVALID_WMO_SENSOR_ID
    !USE Type_Kinds
    !USE Error_Handler
    !USE CRTM_Utility
 
   ! -- CRTM RT_models modules
    USE CRTM_Module, only : graupel_cloud, rain_cloud, snow_cloud,crtm_adjoint, &
-      crtm_allocate_atmosphere, crtm_allocate_surface, crtm_assign_atmosphere, &
-      crtm_assign_surface,crtm_destroy_atmosphere,crtm_destroy_surface, &
+      crtm_atmosphere_create, crtm_surface_create, &
+      crtm_atmosphere_destroy, crtm_surface_destroy, &
       crtm_forward,crtm_init,crtm_k_matrix, &
       crtm_tangent_linear, grass_soil, h2o_id,hail_cloud,ice_cloud,new_snow, &
       o3_id, water_cloud, crtm_rtsolution_type, crtm_channelinfo_type, &
-      crtm_atmosphere_type, crtm_surface_type, crtm_geometryinfo_type, &
-      crtm_zero_surface, crtm_zero_atmosphere, crtm_destroy, &
-      crtm_destroy_channelinfo, climatology_model_name, &
-      crtm_options_type, crtm_allocate_options, crtm_destroy_options
+      crtm_atmosphere_type, crtm_surface_type, crtm_geometry_type, &
+      crtm_surface_zero, crtm_atmosphere_zero, crtm_destroy, &
+      climatology_model_name, &
+      crtm_options_type, crtm_options_create, crtm_options_destroy
+   USE CRTM_Atmosphere_Define, only: crtm_atmosphere_associated, &
+      MASS_MIXING_RATIO_UNITS, VOLUME_MIXING_RATIO_UNITS
+   USE CRTM_Surface_Define, only: crtm_surface_associated
+   USE CRTM_Options_Define, only: crtm_options_associated
 
    USE CRTM_SensorInfo
    USE CRTM_Planck_Functions, only : CRTM_Planck_Temperature, &

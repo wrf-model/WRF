@@ -1210,8 +1210,16 @@ CONTAINS
 #ifdef DM_PARALLEL
 ! broadcast the new masks to the other tasks
       p => grid%head_statevars
-      DO WHILE ( ASSOCIATED( p%next ) )
-        CALL wrf_dm_bcast_integer( p%streams, IO_MASK_SIZE )
+      DO WHILE ( ASSOCIATED( p ) )
+        IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+
+          DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+            CALL wrf_dm_bcast_integer( p%streams_table(grid%id,itrace)%stream, IO_MASK_SIZE )
+          ENDDO
+
+        ELSE
+          CALL wrf_dm_bcast_integer( p%streams, IO_MASK_SIZE )
+        ENDIF
         p => p%next
       ENDDO
 #endif

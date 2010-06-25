@@ -10,22 +10,21 @@ module da_crtm
    use da_define_structures, only : y_type, iv_type
 
    use module_radiance, only : CRTM_RTSolution_type,CRTM_ChannelInfo_type, &
-      CRTM_Atmosphere_type, CRTM_Surface_type,CRTM_GeometryInfo_type, &
+      CRTM_Atmosphere_type, CRTM_Surface_type,CRTM_Geometry_type, &
       CRTM_Adjoint,CRTM_Forward,CRTM_Tangent_Linear, &
       CRTM_K_Matrix, CRTM_Planck_Temperature, CRTM_Planck_Temperature_TL, &
       CRTM_Planck_Temperature_AD, CRTM_Planck_Radiance, &
-      CRTM_Allocate_Atmosphere,H2O_ID,GRAUPEL_CLOUD,ICE_CLOUD,HAIL_CLOUD, &
-      INVALID_WMO_SENSOR_ID,NEW_SNOW,rain_cloud,snow_cloud,O3_ID, GRASS_SOIL, &
-      WMO_AMSRE, WATER_CLOUD, WMO_AMSUB, WMO_AMSUA,WMO_SSMI, Sensor_Descriptor, &
-      crtm_destroy_atmosphere, crtm_sensor_name, &
-      crtm_allocate_surface,crtm_destroy_surface,crtm_assign_atmosphere, &
-      crtm_assign_surface,crtm_zero_surface,CRTM_Zero_Atmosphere, satinfo, &
+      CRTM_Atmosphere_Create,H2O_ID,GRAUPEL_CLOUD,ICE_CLOUD,HAIL_CLOUD, &
+      NEW_SNOW,rain_cloud,snow_cloud,O3_ID, GRASS_SOIL, &
+      WATER_CLOUD, Sensor_Descriptor, MASS_MIXING_RATIO_UNITS, VOLUME_MIXING_RATIO_UNITS, &
+      crtm_atmosphere_destroy, crtm_sensor_name, &
+      crtm_surface_create,crtm_surface_destroy, &
+      crtm_surface_zero, CRTM_Atmosphere_zero, satinfo, &
       crtm_platform_name, crtm_init, &
       rttov_inst_name,rttov_platform_name, climatology_model_name, &
-      crtm_options_type, crtm_allocate_options, crtm_destroy_options
-#ifndef CRTM_1_1
-   use module_radiance, only : WMO_SSMIS    ! available since CRTM_1_2
-#endif
+      crtm_options_type, crtm_options_create, crtm_options_destroy, &
+      crtm_atmosphere_associated, crtm_surface_associated, &
+      crtm_options_associated
 
    use da_control, only : trace_use, crtm_cloud, gravity,stdout, biascorr, &
       biasprep, qc_rad,missing_r,rtminit_sensor,rtminit_nsensor, filename_len, &

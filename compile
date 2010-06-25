@@ -240,8 +240,8 @@ else
           setenv BUFR 1
        endif
        setenv CRTM_CPP "-DCRTM"
-       setenv CRTM_LIB "-L${CRTM} -lcrtm"
-       setenv CRTM_SRC "-I${CRTM}/src"
+       setenv CRTM_LIB "-L../external/crtm/libsrc -lCRTM"
+       setenv CRTM_SRC "-I../external/crtm/libsrc"
     else
        setenv CRTM_CPP " "
        setenv CRTM_LIB " "

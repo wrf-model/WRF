@@ -25,7 +25,14 @@ export RUN_GEN_BE_STAGE3=${RUN_GEN_BE_STAGE3:-false} # Run stage 3 (Vertical Cov
 export RUN_GEN_BE_STAGE4=${RUN_GEN_BE_STAGE4:-false} # Run stage 4 (Horizontal Covariances).
 export RUN_GEN_BE_DIAGS=${RUN_GEN_BE_DIAGS:-false}   # Run gen_be diagnostics.
 export RUN_GEN_BE_DIAGS_READ=${RUN_GEN_BE_DIAGS_READ:-false}   # Run gen_be diagnostics_read.
-export RUN_GEN_BE_MULTICOV=${RUN_GEN_BE_MULTICOV:-false} # Set to calculate chi/T/ps regression diags. 
+export RUN_GEN_BE_MULTICOV=${RUN_GEN_BE_MULTICOV:-false} # Set to calculate multi-corr for MBE         
+export RUN_GEN_BE_HISTOG=${RUN_GEN_BE_HISTOG:-false} # Set to calculate Hitograms for MBE          
+export RUN_GEN_BE_MULTICOV_CONTRIB=${RUN_GEN_BE_MULTICOV_CONTRIB:-false} # Set to calculate contrib for MBE          
+export RUN_GEN_BE_GSI_STAGE0=${RUN_GEN_BE_GSI_STAGE0:-false} # Run stage 0 (create perturbation files).
+export RUN_GEN_BE_GSI_STAGE1=${RUN_GEN_BE_GSI_STAGE1:-false} # Run stage 1 (Remove mean, split variables).
+export RUN_GEN_BE_GSI_STAGE2=${RUN_GEN_BE_GSI_STAGE2:-false} # Run stage 2 (Regression coefficients).
+export BY_LEVELS=${BY_LEVELS:-True} 
+
 
 export DOMAIN=${DOMAIN:-01}                          # domain id.
 export START_DATE=${START_DATE:-2003010200}          # Time of first perturbation.
@@ -69,6 +76,8 @@ export VARIABLE1=${VARIABLE1:-chi_u}              # For cov3d
 export VARIABLE2=${VARIABLE2:-chi}                # For cov3d
 export CLEAN=false
 export FILE_TYPE=${FILE_TYPE:-wrfout}
+export RESOLUTION_KM=${RESOLUTION_KM:-200.}
+export NL_CV_OPTIONS=${NL_CV_OPTIONS:-5}
 
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/trunk}            # Directory containing codes.
@@ -81,6 +90,11 @@ export FC_DIR=${FC_DIR:-$EXP_DIR/fc}              # Forecast directory
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/gen_be$BIN_TYPE} # Run dir.
 export WORK_DIR=${WORK_DIR:-$RUN_DIR/working}     # Working directory
 export STAGE0_DIR=${STAGE0_DIR:-$WORK_DIR/stage0} # Output for stage0.
+export STAGE0_GSI_DIR=${STAGE0_GSI_DIR:-$EXP_DIR/stage0_gsi} # Output for GSI stage0.
+export STAGE1_GSI_DIR=${STAGE1_GSI_DIR:-$EXP_DIR/stage1_gsi} # Output for GSI stage0.
+export LESS_Q_FROM_TOP=${LESS_Q_FROM_TOP:-0}
+export LAT_BINS_IN_DEG=${LAT_BINS_IN_DEG:-1.0}
+
 
 if $GLOBAL; then
    export UH_METHOD=power
@@ -88,6 +102,12 @@ else
    export UH_METHOD=scale
 fi
 
+if [[ $NL_CV_OPTIONS == 6 ]]; then
+export CONTROL_VARIABLES=${CONTROL_VARIABLES:-" psi chi_u t_u rh_u ps_u "}
+export RUN_GEN_BE_STAGE2A=false
+else
 export CONTROL_VARIABLES=${CONTROL_VARIABLES:-" psi chi_u t_u rh ps_u "}
+fi
 export DELETE_DIRS=${DELETE_DIRS:-" "}
 
+export DEBUG=${DEBUG:-0}                          

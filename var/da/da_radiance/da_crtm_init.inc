@@ -68,7 +68,7 @@ subroutine da_crtm_init(iv,ob, nsensor)
   call da_trace_entry("da_crtm_init")
 
 !---------------------------------------------------------------------
-! 1.0 get CRTM sensor descriptor to use in CRTM_Set_ChannelInfo later
+! 1.0 get CRTM sensor descriptor
 !---------------------------------------------------------------------
   allocate(Sensor_Descriptor(nsensor))
   call da_crtm_sensor_descriptor(nsensor,Sensor_Descriptor)
@@ -92,20 +92,18 @@ subroutine da_crtm_init(iv,ob, nsensor)
   ! Sensor_Index - integer
   ! Channel_Index - integer pointer, index of the channels loaded during initialization
   ! Sensor_Channel - integer pointer, the sensor channel #
-  ! SensorID - character pointer, character string containing satellite and sensor descr
+  ! Sensor_ID - character pointer, character string containing satellite and sensor descr
   !                                        example: amsre_aqua (Appendix B in User guide)
   ! WMO_Satellite_ID - integer pointer
   ! WMO_Sensor_ID - integer pointer
   !----------------------------------------------------------------- 
 
-     Error_Status = CRTM_Init( ChannelInfo, &
-                              SensorID = Sensor_Descriptor, &
+     Error_Status = CRTM_Init(Sensor_Descriptor, &
+                              ChannelInfo, &
                               AerosolCoeff_File = AerosolCoeff_File, &
                               EmisCoeff_File = EmisCoeff_File , &
                               CloudCoeff_File = CloudCoeff_File, &
                               File_Path = File_Path) 
-
-!   Error_Status = CRTM_Set_ChannelInfo(Sensor_Descriptor(1),ChannelInfo)
 
      if ( Error_Status /= 0 ) then 
        call da_error(__FILE__,__LINE__, &
@@ -118,7 +116,9 @@ subroutine da_crtm_init(iv,ob, nsensor)
 !       write (6,*) 'n_channels ',ChannelInfo(n)%n_channels
 !       write (6,*) 'Channel_Index ',ChannelInfo(n)%Channel_Index(:)
 !       write (6,*) 'Sensor_Channel ',ChannelInfo(n)%Sensor_Channel(:)
-!       write (6,*) 'SensorID ',ChannelInfo(n)%SensorID
+!       write (6,*) 'Sensor_ID ',ChannelInfo(n)%Sensor_ID
+!       write (6,*) 'WMO_Satellite_ID ',ChannelInfo(n)%WMO_Satellite_ID
+!       write (6,*) 'WMO_Sensor_ID ',ChannelInfo(n)%WMO_Sensor_ID
 !    end do
 
   call da_trace_exit("da_crtm_init")

@@ -528,7 +528,7 @@ Namelist variables for controlling the adaptive time step option:
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
  lagday                              = 150      ; days over which tmn is computed using skin temperature
  sst_skin                            = 0        ; calculate skin SST
- slope_rad                           = 0        ; slope effects for solar radiation (1=on, 0=off)
+ slope_rad (max_dom)                 = 0        ; slope effects for solar radiation (1=on, 0=off)
  topo_shading (max_dom)              = 0        ; neighboring-point shadow effects for solar radiation (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
  omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=yes); works with 

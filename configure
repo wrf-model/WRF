@@ -21,6 +21,7 @@ while [ $# -ge 1 ]; do
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
+      radardfi) WRF_DFI_RADAR=1  ;;
       wrfda) wrf_core=DA_CORE  ;;
       arw) wrf_core=EM_CORE  ;;
       nmm) wrf_core=NMM_CORE  ;;
@@ -381,6 +382,12 @@ if [ -n "$WRF_NMM_CORE" ]; then
         compileflags="${compileflags}!-DHWRF=1"
       fi
     fi
+  fi
+fi
+if [ -n "$WRF_DFI_RADAR" ] ; then
+  if [ $WRF_DFI_RADAR = 1 ] ; then
+    echo building WRF with radar dfi option
+    compileflags="${compileflags}!-DWRF_DFI_RADAR=1"
   fi
 fi
 if [ -n "$WRF_CHEM" ] ; then

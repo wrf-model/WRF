@@ -132,7 +132,6 @@
       CALL nl_set_chem_opt (1, 0)
       CALL nl_set_aer_ra_feedback (1, 0)
       CALL nl_set_io_form_auxinput5 (1, 0)
-      CALL nl_set_io_form_auxinput6 (1, 0)
       CALL nl_set_io_form_auxinput7 (1, 0)
       CALL nl_set_io_form_auxinput8 (1, 0)
 #endif
@@ -311,7 +310,6 @@
       CALL nl_set_chem_opt( 1, head_grid%chem_opt)
       CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
       CALL nl_set_io_form_auxinput5 (1, head_grid%io_form_auxinput5)
-      CALL nl_set_io_form_auxinput6 (1, head_grid%io_form_auxinput6)
       CALL nl_set_io_form_auxinput7 (1, head_grid%io_form_auxinput7)
       CALL nl_set_io_form_auxinput8 (1, head_grid%io_form_auxinput8)
 #endif
@@ -445,7 +443,7 @@ call wrf_message(mess)
 !      USE module_machine
 !      USE module_dm
 !      USE module_model_constants
-!      USE module_state_description
+      USE module_state_description
 
       IMPLICIT NONE
 

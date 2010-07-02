@@ -21,7 +21,6 @@ COREDEFS = CONFIGURE_EM_CORE \
            CONFIGURE_NMM_CORE -DNMM_MAX_DIM=2600 \
 	   CONFIGURE_COAMPS_CORE \
 	   CONFIGURE_DA_CORE \
-	   CONFIGURE_DFI_RADAR \
            CONFIGURE_EXP_CORE
 
 #### Single location for defining total number of domains.  You need

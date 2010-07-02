@@ -189,7 +189,8 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
     DO j=j_start, j_end
       DO i=i_start, i_end
         mu_save(i,j)=mu_2(i,j)
-        mu_2(i,j)=mu_2(i,j)-mu_2(i,j)
+        mu_2(i,j)=0.
+!       mu_2(i,j)=mu_2(i,j)-mu_2(i,j)
       ENDDO
     ENDDO
 

@@ -126,13 +126,6 @@ CONTAINS
            chem(i,k,j,p_isopr)  = chem(i,k,j,p_isopr) + emis_ant(i,k,j,p_e_isop)*conv_rho
            chem(i,k,j,p_c10h16) = chem(i,k,j,p_c10h16) + emis_ant(i,k,j,p_e_c10h16)*conv_rho
            chem(i,k,j,p_no2)    = chem(i,k,j,p_no2) + emis_ant(i,k,j,p_e_no2)*conv_rho
-           if( config_flags%chem_opt == MOZCART_KPP ) then
-             chem(i,k,j,p_p10)    = chem(i,k,j,p_p10) + emis_ant(i,k,j,p_e_pm_10)*conv_rho
-             chem(i,k,j,p_p25)    = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv_rho
-             chem(i,k,j,p_bc1)    = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv_rho
-             chem(i,k,j,p_oc1)    = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv_rho
-             chem(i,k,j,p_so4)    = chem(i,k,j,p_so4) + emis_ant(i,k,j,p_e_sulf)*conv_rho
-           endif
           else
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &
                          +emis_ant(i,k,j,p_e_csl)*conv_rho

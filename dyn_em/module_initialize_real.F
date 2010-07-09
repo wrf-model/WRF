@@ -2128,6 +2128,10 @@ endif
 
       ALLOCATE ( t_init_int(ims:ime,kms:kme,jms:jme) )
 
+      !  Fill config_flags the options for a particular domain
+
+      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
       !  Some of the many weird geopotential initializations that we'll see today: grid%ph0 is total,
       !  and grid%ph_2 is a perturbation from the base state geopotential.  We set the base geopotential
       !  at the lowest level to terrain elevation * gravity.
@@ -2141,9 +2145,27 @@ endif
 
       !  To define the base state, we call a USER MODIFIED routine to set the three
       !  necessary constants:  p00 (sea level pressure, Pa), t00 (sea level temperature, K),
-      !  and A (temperature difference, from 1000 mb to 300 mb, K).
+      !  and A (temperature difference, from 1000 mb to 300 mb, K), and constant stratosphere
+      !  temp (tiso, K) either from input file or from namelist (for backward compatibiliy).
 
-      CALL const_module_initialize ( p00 , t00 , a , tiso ) 
+      IF ( config_flags%use_baseparam_fr_nml ) then
+      ! get these from namelist
+         CALL wrf_message('ndown: using namelist constants')
+         CALL const_module_initialize ( p00 , t00 , a , tiso ) 
+      ELSE
+      ! get these constants from model data
+         CALL wrf_message('ndown: using constants from file')
+         t00  = grid%t00
+         p00  = grid%p00
+         a    = grid%tlp
+         tiso = grid%tiso
+
+         IF (t00 .LT. 100. .or. p00 .LT. 10000.) THEN
+            WRITE(wrf_err_message,*)&
+      'ndown_em: did not find base state parameters in wrfout. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
+            CALL wrf_error_fatal(TRIM(wrf_err_message))
+         ENDIF
+      ENDIF
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho

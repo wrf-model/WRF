@@ -126,15 +126,15 @@ CONTAINS
 !***
       INTEGER :: I,J,K,KFLIP,LMH,LPBL,NTSD
 !
-      REAL :: A,APESFC,B,BTGX,CWMLOW                                   &
+      REAL :: APESFC,BTGX,CWMLOW                                       &
      &       ,DQDT,DTDIF,DTDT,DUDT,DVDT                                &
      &       ,FIS                                                      &
      &       ,P02P,P10P,PLOW,PSFC,PTOP,QLOW,QS02,QS10                  &
      &       ,RAPA,RAPA02,RAPA10,RATIOMX,RDZ,SEAMASK,SM                &
-     &       ,T02P,T10P,TEM,TH02P,TH10P,THLOW,THELOW,THM               &
+     &       ,T02P,T10P,TH02P,TH10P,THLOW,THvLOW                       &
      &       ,TLOW,TZ0,ULOW,VLOW,ZSL
 !
-      REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,THK,TK,UK,VK
+      REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THvK,THK,TK,UK,VK
 !
       REAL,DIMENSION(KTS:KTE-1) :: EL,ELM
 !
@@ -241,7 +241,7 @@ CONTAINS
             QK(K)=RATIOMX/(1.+RATIOMX)
             PK(K)=PMID(I,KFLIP,J)
             CWMK(K)=QC(I,KFLIP,J)
-            THEK(K)=(CWMK(K)*(-ELOCP/TK(K))+1.)*THK(K)
+            THvK(K)=(qk(k)*0.608+(1.-CWMK(K)))*THK(K)
             Q2K(K)=2.*Q2(I,KFLIP,J)
 !
 !***  COMPUTE THE HEIGHTS OF THE LAYER INTERFACES
@@ -283,7 +283,7 @@ CONTAINS
           PLOW=PK(LMH)
           TLOW=TK(LMH)
           THLOW=THK(LMH)
-          THELOW=THEK(LMH)
+          THvLOW=THvK(LMH)
           QLOW=QK(LMH)
           CWMLOW=CWMK(LMH)
           ULOW=UK(LMH)
@@ -311,7 +311,7 @@ CONTAINS
      &               ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
      &               ,HFX(I,J),QFX(I,J),FLX_LH(I,J)                    &
      &               ,FLHC(I,J),FLQC(I,J),QGH(I,J),CPM(I,J)            &
-     &               ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW          &
+     &               ,ULOW,VLOW,TLOW,THLOW,THvLOW,QLOW,CWMLOW          &
      &               ,ZSL,PLOW                                         &
      &               ,U10(I,J),V10(I,J),TSHLTR(I,J),TH10(I,J)          &
      &               ,QSHLTR(I,J),Q10(I,J),PSHLTR(I,J)                 &
@@ -361,7 +361,7 @@ CONTAINS
      &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,RIB,PBLH,WETM &
      &                 ,VEGTYP,ISURBAN,IZ0TLND                         &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
-     &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
+     &                 ,ULOW,VLOW,TLOW,THLOW,THvLOW,QLOW,CWMLOW        &
      &                 ,ZSL,PLOW                                       &
      &                 ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
@@ -384,7 +384,8 @@ CONTAINS
       INTEGER,INTENT(IN) :: NTSD
 !
       REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK,ZSFC       &
-     &                  ,THELOW,THLOW,THS,TSK,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
+     &                  ,THvLOW,THLOW,THS,TSK,TLOW,TZ0                 &
+     &                  ,ULOW,VLOW,WETM,ZSL                            &
      &                  ,Z0BASE
       INTEGER, INTENT(IN) :: VEGTYP, ISURBAN, IZ0TLND
 !
@@ -399,10 +400,10 @@ CONTAINS
 !***
       INTEGER :: ITR,K
 !
-      REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,CZETMAX,DTHV,DU2,ELFC,FCT      &
+      REAL :: BTGH,BTGX,CXCHL,CXCHS,CZETMAX,DTHV,DU2,ELFC,FCT          &
      &       ,HLFLX,HSFLX,HV,PSH02,PSH10,PSHZ,PSHZL,PSM10,PSMZ,PSMZL   &
      &       ,RDZ,RDZT,RLMA,RLMN,RLMP                                  &
-     &       ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM,TEM,THM          &
+     &       ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM                  &
      &       ,UMFLX,USTARK,VMFLX,WGHT,WGHTT,WGHTQ,WSTAR2               &
      &       ,X,XLT,XLT4,XLU,XLU4,XT,XT4,XU,XU4,ZETALT,ZETALU          &
      &       ,ZETAT,ZETAU,ZQ,ZSLT,ZSLU,ZT,ZU,TOPOTERM,ZZIL
@@ -530,14 +531,7 @@ CONTAINS
 !----------------------------------------------------------------------
           ENDIF
 !----------------------------------------------------------------------
-          TEM=(TLOW+TZ0)*0.5
-          THM=(THELOW+THZ0)*0.5
-!
-          A=THM*P608
-          B=(ELOCP/TEM-1.-P608)*THM
-!
-          DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)        &
-     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
+          dthv=thvlow-thz0*(0.608*qz0+1.)
 !
           DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
           RIB=BTGX*DTHV*ZSL/DU2
@@ -656,14 +650,7 @@ CONTAINS
         ZQ=ZT
         QZ0=QS
 !----------------------------------------------------------------------
-        TEM=(TLOW+TZ0)*0.5
-        THM=(THELOW+THZ0)*0.5
-!
-        A=THM*P608
-        B=(ELOCP/TEM-1.-P608)*THM
-!
-        DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)          &
-     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
+        dthv=thvlow-thz0*(0.608*qz0+1.)
 !
         DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
         RIB=BTGX*DTHV*ZSL/DU2

@@ -562,6 +562,64 @@ SUBROUTINE int_gen_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
   RETURN
 END SUBROUTINE int_gen_ti_header_integer
 
+SUBROUTINE int_gen_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typesize, &
+                                      DataHandle, Element, VarName, Data, Count, code )
+!<DESCRIPTION>
+!<PRE>
+! Items and their starting locations within a "time-independent integer"
+! data header.  Assume that the data header is stored in integer vector
+! "hdrbuf":
+!  hdrbuf(1) = hdrbufsize
+!  hdrbuf(2) = headerTag
+!  hdrbuf(3) = DataHandle
+!  hdrbuf(4) = typesize
+!  hdrbuf(5) = Count
+!  hdrbuf(6:6+n1) = Data              ! n1 = (Count * typesize / itypesize) + 1
+!  hdrbuf(7+n1) = LEN(TRIM(Element))
+!  hdrbuf(8+n1:7+n1+n2) = Element     ! n2 = LEN(TRIM(Element)) + 1
+!  hdrbuf(8+n1+n2) = LEN(TRIM(VarName)) = n3
+!  hderbuf(9+n1+n2:8+n1+n2+n3) = TRIM(VarName)
+!
+! Further details for some items:
+!  hdrbufsize:  Size of this data header in bytes.
+!  headerTag:   "Header tag" that tells the I/O quilt servers what kind of
+!               header this is.  For an "time-independent integer" header it must be
+!               set to int_dom_ti_integer.  See file intio_tags.h for a complete
+!               list of these tags.
+!  DataHandle:  Descriptor for an open data set.
+!  typesize:    Size in bytes of each element of Data.
+!  Count:       Number of elements in Data.
+!  Data:        Data to write to file.
+!  Element:     Name of the data.
+!  VarName:     Variable name.  Used for *_<get|put>_var_ti_char but not for
+!               *_<get|put>_dom_ti_char.
+!  Other items are described in detail in the "WRF I/O and Model Coupling API
+!  Specification".
+!
+!</PRE>
+!</DESCRIPTION>
+  IMPLICIT NONE
+#include "intio_tags.h"
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize, typesize
+  CHARACTER*(*), INTENT(IN)    ::  Element, VarName
+  INTEGER, INTENT(IN)          ::  Data(*)
+  INTEGER, INTENT(IN)          ::  DataHandle, Count, code
+!Local
+  INTEGER i, n
+!
+  CALL int_gen_ti_header_c ( hdrbuf, hdrbufsize, itypesize, typesize, &
+                             DataHandle, Data, Count, code )
+  i = hdrbufsize/itypesize + 1 ;
+!write(0,*)'int_gen_ti_header_integer ',TRIM(Element)
+  CALL int_pack_string ( Element, hdrbuf( i ), n ) ; i = i + n
+  CALL int_pack_string ( VarName, hdrbuf( i ), n ) ; i = i + n
+  hdrbufsize = i * itypesize + hdrbufsize ! return the number in bytes
+  hdrbuf(1) = hdrbufsize
+  RETURN
+END SUBROUTINE int_gen_ti_header_integer_varname
+
 SUBROUTINE int_gen_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                                    DataHandle, Element, Data, Count, code )
 !<DESCRIPTION>
@@ -589,6 +647,37 @@ SUBROUTINE int_gen_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
   hdrbuf(1) = hdrbufsize
   RETURN
 END SUBROUTINE int_gen_ti_header_real
+
+SUBROUTINE int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typesize, &
+                              DataHandle, Element, VarName, Data, Count, code)
+!<DESCRIPTION>
+!<PRE>
+! Same as int_gen_ti_header_integer except that Data is read from
+! the file.
+!</PRE>
+!</DESCRIPTION>
+  IMPLICIT NONE
+#include "intio_tags.h"
+  INTEGER, INTENT(INOUT)       ::  hdrbuf(*)
+  INTEGER, INTENT(OUT)         ::  hdrbufsize
+  INTEGER, INTENT(IN)          ::  itypesize, typesize
+  CHARACTER*(*), INTENT(INOUT) ::  Element, VarName
+  INTEGER, INTENT(OUT)         ::  Data(*)
+  INTEGER, INTENT(OUT)         ::  DataHandle, Count, code
+!Local
+  INTEGER i, n
+!
+
+  CALL int_get_ti_header_c ( hdrbuf, hdrbufsize, n, itypesize, typesize, &
+                           DataHandle, Data, Count, code )
+  i = n/itypesize + 1
+  CALL int_unpack_string ( Element, hdrbuf( i ), n ) ; i=i+n;
+  CALL int_unpack_string ( VarName, hdrbuf( i ), n ) ; i = i + n
+  write(0,*)'int_get_ti_header_integer_varname "', &
+       TRIM(Element),'" "', TRIM(VarName),'" data(1)=',Data(1)
+  hdrbufsize = hdrbuf(1)
+  RETURN
+END SUBROUTINE int_get_ti_header_integer_varname
 
 SUBROUTINE int_get_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, Data, Count, code )

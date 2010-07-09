@@ -3,6 +3,81 @@ MODULE module_si_io_nmm
    USE module_optional_input
 
    IMPLICIT NONE
+!! FROM MODULE_KINDS
+
+!   The numerical data types defined in this module are:
+!      i_byte    - specification kind for byte (1-byte) integer variable
+!      i_short   - specification kind for short (2-byte) integer variable
+!      i_long    - specification kind for long (4-byte) integer variable
+!      i_llong   - specification kind for double long (8-byte) integer variable
+!      r_single  - specification kind for single precision (4-byte) real variable
+!      r_double  - specification kind for double precision (8-byte) real variable
+!      r_quad    - specification kind for quad precision (16-byte) real variable
+!
+!      i_kind    - generic specification kind for default integer
+!      r_kind    - generic specification kind for default floating point
+!
+!
+! Integer type definitions below
+
+! Integer types
+  integer, parameter, public  :: i_byte  = selected_int_kind(1)      ! byte  integer
+  integer, parameter, public  :: i_short = selected_int_kind(4)      ! short integer
+  integer, parameter, public  :: i_long  = selected_int_kind(8)      ! long  integer
+  integer, parameter, private :: llong_t = selected_int_kind(16)     ! llong integer
+  integer, parameter, public  :: i_llong = max( llong_t, i_long )
+
+! Expected 8-bit byte sizes of the integer kinds
+  integer, parameter, public :: num_bytes_for_i_byte  = 1
+  integer, parameter, public :: num_bytes_for_i_short = 2
+  integer, parameter, public :: num_bytes_for_i_long  = 4
+  integer, parameter, public :: num_bytes_for_i_llong = 8
+
+! Define arrays for default definition
+  integer, parameter, private :: num_i_kinds = 4
+  integer, parameter, dimension( num_i_kinds ), private :: integer_types = (/ &
+       i_byte, i_short, i_long,  i_llong  /)
+  integer, parameter, dimension( num_i_kinds ), private :: integer_byte_sizes = (/ &
+       num_bytes_for_i_byte, num_bytes_for_i_short, &
+       num_bytes_for_i_long, num_bytes_for_i_llong  /)
+
+! Default values
+! **** CHANGE THE FOLLOWING TO CHANGE THE DEFAULT INTEGER TYPE KIND ***
+  integer, parameter, private :: default_integer = 2  ! 1=byte,
+                                                      ! 2=short,
+                                                      ! 3=long,
+                                                      ! 4=llong
+  integer, parameter, public  :: i_kind = integer_types( default_integer )
+  integer, parameter, public  :: num_bytes_for_i_kind = &
+       integer_byte_sizes( default_integer )
+
+
+! Real definitions below
+
+! Real types
+  integer, parameter, public  :: r_single = selected_real_kind(6)  ! single precision
+  integer, parameter, public  :: r_double = selected_real_kind(15) ! double precision
+  integer, parameter, private :: quad_t   = selected_real_kind(20) ! quad precision
+  integer, parameter, public  :: r_quad   = max( quad_t, r_double )
+
+! Expected 8-bit byte sizes of the real kinds
+  integer, parameter, public :: num_bytes_for_r_single = 4
+  integer, parameter, public :: num_bytes_for_r_double = 8
+  integer, parameter, public :: num_bytes_for_r_quad   = 16
+
+! Define arrays for default definition
+  integer, parameter, private :: num_r_kinds = 3
+  integer, parameter, dimension( num_r_kinds ), private :: real_kinds = (/ &
+       r_single, r_double, r_quad    /)
+  integer, parameter, dimension( num_r_kinds ), private :: real_byte_sizes = (/ &
+       num_bytes_for_r_single, num_bytes_for_r_double, &
+       num_bytes_for_r_quad    /)
+
+! Default values
+! **** CHANGE THE FOLLOWING TO CHANGE THE DEFAULT REAL TYPE KIND ***
+  integer, parameter, private :: default_real = 2  ! 1=single,
+                                                   ! 2=double,
+!! END FROM MODULE_KINDS
 
       !  Input 3D meteorological fields.
 
@@ -273,13 +348,12 @@ CONTAINS
       IF ( first_time_in ) THEN
 
          CLOSE(12)
-         OPEN ( FILE   = 'real_input_nm.global.metadata'   &
-                ,UNIT   = 12                                &
-                ,STATUS = 'OLD'                             &
-                ,ACCESS = 'SEQUENTIAL'                      &
-                ,FORM   = 'UNFORMATTED'                     &
-                                                      )
-!                IOSTAT = ok                           )
+         OPEN ( FILE   = 'real_input_nm.global.metadata' , &
+                UNIT   = 12                              , &
+                STATUS = 'OLD'                           , &
+                ACCESS = 'SEQUENTIAL'                    , &
+                FORM   = 'UNFORMATTED'                   , &
+                IOSTAT = ok_open                           )
 
          IF ( ok_open .NE. 0 ) THEN
             PRINT '(A)','You asked for WRF SI data, but no real_input_nm.global.metadata file exists.'
@@ -1349,7 +1423,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
       integer, allocatable       :: end_block(:)
       integer, allocatable       :: start_byte(:)
       integer, allocatable       :: end_byte(:)
-      integer, allocatable           :: file_offset(:)
+      integer(kind=i_llong), allocatable           :: file_offset(:)
 !!
 
       REAL :: dummy,tmp,garb
@@ -1585,7 +1659,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
        ENDDO
 
-        write(0,*) 'grid%p_gc(25,25,25): ', grid%p_gc(25,25,25)
+!        write(0,*) 'grid%p_gc(25,25,25): ', grid%p_gc(25,25,25)
 
 !    varName='SMC_WPS'
 !        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
@@ -1689,7 +1763,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
            grid%tsk_gc(I,J)=dumdata(I,J,1)
          ENDDO
         ENDDO
-        write(0,*) 'skintemp(25,25): ', grid%tsk_gc(25,25)
+!        write(0,*) 'skintemp(25,25): ', grid%tsk_gc(25,25)
 
     varName='SOILHGT'
 !        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
@@ -1892,7 +1966,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
          ENDDO
         ENDDO
        ENDDO
-        write(0,*) 't_gc(25,25,25): ', grid%t_gc(25,25,25)
+!        write(0,*) 't_gc(25,25,25): ', grid%t_gc(25,25,25)
         endif
 
 !    varName='RWMR'
@@ -2001,7 +2075,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
          num_veg_cat      = SIZE ( grid%landusef_gc , DIM=3 )
-         write(0,*) 'num_veg_cat: ', num_veg_cat
+!         write(0,*) 'num_veg_cat: ', num_veg_cat
          num_soil_top_cat = SIZE ( grid%soilctop_gc , DIM=3 )
          num_soil_bot_cat = SIZE ( grid%soilcbot_gc , DIM=3 )
 
@@ -2063,7 +2137,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
          ENDDO
         ENDDO
 
-        write(0,*) 'veg_cat and soil_cat sizes:::: ', num_veg_cat , num_soil_top_cat
+!        write(0,*) 'veg_cat and soil_cat sizes:::: ', num_veg_cat , num_soil_top_cat
 
     varName='SOILCTOP'
 !        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
@@ -2144,7 +2218,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
            grid%landusef_gc(I,J,K)=dumdata(I,J,K)
 
         if (I .eq. 50 .and. J .eq. 50) then
-        write(0,*) 'I,J,landusef_gc:: ', I,J,grid%landusef_gc(I,J,K)
+!        write(0,*) 'I,J,landusef_gc:: ', I,J,grid%landusef_gc(I,J,K)
         endif
 
          ENDDO
@@ -2162,7 +2236,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
          DO I=ITS,min(ITE,IDE-1)
            grid%landmask(I,J)=dumdata(I,J,1)
         if (I .eq. 50 .and. J .eq. 50) then
-        write(0,*) 'I,J,landmask:: ', I,J,grid%landmask(I,J)
+!        write(0,*) 'I,J,landmask:: ', I,J,grid%landmask(I,J)
         endif
          ENDDO
         ENDDO
@@ -2320,7 +2394,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
 !        write(0,*) 'maxval st_inputx(3): ', maxval(st_inputx(:,:,3))
 !        write(0,*) 'maxval st_inputx(4): ', maxval(st_inputx(:,:,4))
 
-        write(6,*) 'to st_input...sw_input definition'
+!        write(6,*) 'to st_input...sw_input definition'
 !       call summary()
 
         do J=JTS,min(JDE-1,JTE)
@@ -2332,13 +2406,13 @@ print *,'------------------> skipping ', var_info%name(1:8)
           enddo
          enddo
         enddo
-        write(6,*) 'past st_input...sw_input definition'
+!        write(6,*) 'past st_input...sw_input definition'
 !       call summary()
 
-        write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
-        write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
-        write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
-        write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
+!        write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
+!        write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
+!        write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
+!        write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
 
         DEALLOCATE(pmsl)
         DEALLOCATE(psfc_in)
@@ -2451,12 +2525,13 @@ subroutine next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
 !   machine:  ibm RS/6000 SP
 !
 !$$$
+!  use kinds, only: i_byte,i_llong
   implicit none
 
-  integer lrecl
+  integer(i_llong) lrecl
   integer in_unit,nreads
-  integer buf(lrecl)
-  integer nextbyte,locbyte,thisblock
+  integer(i_byte) buf(lrecl)
+  integer(i_llong) nextbyte,locbyte,thisblock
   logical lastbuf
 
   integer ierr
@@ -2468,9 +2543,9 @@ subroutine next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
 
 !  compute thisblock:
 
-  thisblock = 1 + (nextbyte-1)/lrecl
+  thisblock = 1_i_llong + (nextbyte-1_i_llong)/lrecl
 
-  locbyte = 1+mod(locbyte-1,lrecl)
+  locbyte = 1_i_llong+mod(locbyte-1_i_llong,lrecl)
 
   read(in_unit,rec=thisblock,iostat=ierr)buf
   lastbuf = ierr /= 0
@@ -2520,6 +2595,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 !   machine:  ibm RS/6000 SP
 !
 !$$$
+!   use kinds, only: r_single,i_byte,i_long,i_llong
   use module_internal_header_util
   implicit none
 
@@ -2529,22 +2605,22 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
   integer,intent(out)::domainend_all(3,nrecs)
   integer,intent(out)::start_block(nrecs),end_block(nrecs)
   integer,intent(out)::start_byte(nrecs),end_byte(nrecs)
-  integer,intent(out)::file_offset(nrecs)
+  integer(i_llong),intent(out)::file_offset(nrecs)
 
   integer irecs
-  integer nextbyte,locbyte,thisblock
-  integer lenrec4(4)
-  integer lenrec,lensave
+  integer(i_llong) nextbyte,locbyte,thisblock
+  integer(i_byte) lenrec4(4)
+  integer(i_long) lenrec,lensave
   equivalence (lenrec4(1),lenrec)
-  integer missing4(4)
-  integer missing
+  integer(i_byte) missing4(4)
+  integer(i_long) missing
   equivalence (missing,missing4(1))
-  integer,parameter:: lrecl=2**20
-  integer buf(lrecl)
+  integer(i_llong),parameter:: lrecl=2**16-1
+  integer(i_byte) buf(lrecl)
   integer i,loc_count,nreads
   logical lastbuf
-  integer hdrbuf4(2048)
-  integer hdrbuf(512)
+  integer(i_byte) hdrbuf4(2048)
+  integer(i_long) hdrbuf(512)
   equivalence(hdrbuf(1),hdrbuf4(1))
   integer,parameter:: int_field       =       530
   integer,parameter:: int_dom_ti_char =       220
@@ -2564,7 +2640,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
   integer memorystart(3),memoryend(3)
   integer patchstart(3),patchend(3)
   character(132) datestr,varname
-  real dummy_field(1)
+  real(r_single) dummy_field(1)
 !  integer dummy_field
 !  real dummy_field
   integer itypesize
@@ -2579,7 +2655,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
   open(in_unit,file=trim(wrf_ges_filename),access='direct',recl=lrecl)
   irecs=0
   missing=-9999
-  nextbyte=0
+  nextbyte=0_i_llong
   locbyte=lrecl
   nreads=0
   lastbuf=.false.
@@ -2588,23 +2664,23 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 !   get length of next record
 
     do i=1,4
-     nextbyte=nextbyte+1
-     locbyte=locbyte+1
+     nextbyte=nextbyte+1_i_llong
+     locbyte=locbyte+1_i_llong
      if(locbyte > lrecl .and. lastbuf) go to 900
      if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
      lenrec4(i)=buf(locbyte)
     end do
     if(lenrec <= 0 .and. lastbuf) go to 900
     if(lenrec <= 0 .and. .not. lastbuf) go to 885
-    nextbyte=nextbyte+1
-    locbyte=locbyte+1
+    nextbyte=nextbyte+1_i_llong
+    locbyte=locbyte+1_i_llong
     if(locbyte > lrecl .and. lastbuf) go to 900
     if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
 
     irecs=irecs+1
     start_block(irecs)=thisblock
     start_byte(irecs)=locbyte
-    file_offset(irecs)=nextbyte-1
+    file_offset(irecs)=nextbyte-1_i_llong
     hdrbuf4(1)=buf(locbyte)
     hdrbuf4(2:4)=missing4(2:4)
     hdrbuf4(5:8)=missing4(1:4)
@@ -2616,8 +2692,8 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
     do i=2,8
        if(loc_count.ge.lenrec) exit
        loc_count=loc_count+1
-       nextbyte=nextbyte+1
-       locbyte=locbyte+1
+       nextbyte=nextbyte+1_i_llong
+       locbyte=locbyte+1_i_llong
        if(locbyte > lrecl .and. lastbuf) go to 900
        if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
        hdrbuf4(i)=buf(locbyte)
@@ -2631,8 +2707,8 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 !    bring in next full record, so we can unpack datestr, varname, and domainend
        do i=9,lenrec
           loc_count=loc_count+1
-          nextbyte=nextbyte+1
-          locbyte=locbyte+1
+          nextbyte=nextbyte+1_i_llong
+          locbyte=locbyte+1_i_llong
           if(locbyte > lrecl .and. lastbuf) go to 900
           if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
           hdrbuf4(i)=buf(locbyte)
@@ -2652,8 +2728,8 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
                    datahandle,element,rdata,count,loccode)
           varname_all(irecs)=trim(element)
 !          datestr_all(irecs)=trim(strdata)
-	write(6,*) 'count: ', count
-              write(6,*)' irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),rdata(1:count)
+!	write(6,*) 'count: ', count
+!              write(6,*)' irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),rdata(1:count)
          
        else if(hdrbuf(2) == int_dom_ti_integer) then
 
@@ -2661,7 +2737,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
                    datahandle,element,idata,count,loccode)
           varname_all(irecs)=trim(element)
 !          datestr_all(irecs)=trim(strdata)
-              write(6,*)' irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),idata(1:count)
+!              write(6,*)' irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),idata(1:count)
 
        else
 
@@ -2686,8 +2762,8 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
     end_byte(irecs)=locbyte
     lensave=lenrec
     do i=1,4
-     nextbyte=nextbyte+1
-     locbyte=locbyte+1
+     nextbyte=nextbyte+1_i_llong
+     locbyte=locbyte+1_i_llong
      if(locbyte > lrecl .and. lastbuf) go to 900
      if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
      lenrec4(i)=buf(locbyte)
@@ -2780,28 +2856,29 @@ subroutine count_recs_wrf_binary_file(in_unit,wrf_ges_filename,nrecs)
 
 !   do an initial read through of a wrf binary file, and get total number of sequential fil
 
+!   use kinds, only: r_single,i_byte,i_long,i_llong
   implicit none
 
   integer,intent(in)::in_unit
   character(*),intent(in)::wrf_ges_filename
   integer,intent(out)::nrecs
 
-  integer nextbyte,locbyte,thisblock
-  integer lenrec4(4)
-  integer lenrec,lensave
+  integer(i_llong) nextbyte,locbyte,thisblock
+  integer(i_byte) lenrec4(4)
+  integer(i_long) lenrec,lensave
   equivalence (lenrec4(1),lenrec)
-  integer missing4(4)
-  integer missing
+  integer(i_byte) missing4(4)
+  integer(i_long) missing
   equivalence (missing,missing4(1))
-  integer ,parameter:: lrecl=2**20
-  integer buf(lrecl)
+  integer(i_llong),parameter:: lrecl=2**16-1
+  integer(i_byte) buf(lrecl)
   integer i,loc_count,nreads
   logical lastbuf
 
   open(in_unit,file=trim(wrf_ges_filename),access='direct',recl=lrecl)
   nrecs=0
   missing=-9999
-  nextbyte=0
+  nextbyte=0_i_llong
   locbyte=lrecl
   nreads=0
   lastbuf=.false.
@@ -2810,16 +2887,16 @@ subroutine count_recs_wrf_binary_file(in_unit,wrf_ges_filename,nrecs)
 !   get length of next record
 
     do i=1,4
-     nextbyte=nextbyte+1
-     locbyte=locbyte+1
+     nextbyte=nextbyte+1_i_llong
+     locbyte=locbyte+1_i_llong
      if(locbyte > lrecl .and. lastbuf) go to 900
      if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
      lenrec4(i)=buf(locbyte)
     end do
     if(lenrec <= 0 .and. lastbuf) go to 900
     if(lenrec <= 0 .and. .not.lastbuf) go to 885
-    nextbyte=nextbyte+1
-    locbyte=locbyte+1
+    nextbyte=nextbyte+1_i_llong
+    locbyte=locbyte+1_i_llong
     if(locbyte > lrecl .and. lastbuf) go to 900
     if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
 
@@ -2829,16 +2906,16 @@ subroutine count_recs_wrf_binary_file(in_unit,wrf_ges_filename,nrecs)
     do i=2,4
        if(loc_count.ge.lenrec) exit
        loc_count=loc_count+1
-       nextbyte=nextbyte+1
-       locbyte=locbyte+1
+       nextbyte=nextbyte+1_i_llong
+       locbyte=locbyte+1_i_llong
        if(locbyte > lrecl .and. lastbuf) go to 900
        if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
     end do
     do i=1,4
        if(loc_count.ge.lenrec) exit
        loc_count=loc_count+1
-       nextbyte=nextbyte+1
-       locbyte=locbyte+1
+       nextbyte=nextbyte+1_i_llong
+       locbyte=locbyte+1_i_llong
        if(locbyte > lrecl .and. lastbuf) go to 900
        if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
     end do
@@ -2848,8 +2925,8 @@ subroutine count_recs_wrf_binary_file(in_unit,wrf_ges_filename,nrecs)
     if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
     lensave=lenrec
     do i=1,4
-     nextbyte=nextbyte+1
-     locbyte=locbyte+1
+     nextbyte=nextbyte+1_i_llong
+     locbyte=locbyte+1_i_llong
      if(locbyte > lrecl .and. lastbuf) go to 900
      if(locbyte > lrecl) call next_buf(in_unit,buf,nextbyte,locbyte,thisblock,lrecl,nreads,lastbuf)
      lenrec4(i)=buf(locbyte)
@@ -2915,17 +2992,17 @@ subroutine retrieve_field(in_unit,wrfges,out,start_block,end_block,start_byte,en
 !
 !$$$
 
+ ! use kinds, only: i_byte,i_kind
   implicit none
 
-  integer,intent(in)::in_unit
+  integer(i_kind),intent(in)::in_unit
   character(50),intent(in)::wrfges
-  integer,intent(in)::start_block,end_block,start_byte,end_byte
-  integer,intent(out)::out(*)
+  integer(i_kind),intent(in)::start_block,end_block,start_byte,end_byte
+  integer(i_byte),intent(out)::out(*)
 
-  integer,parameter:: lrecl=2**20
-  integer buf(lrecl)
-  integer i,ii,k,ibegin,iend
-  integer ierr
+  integer(i_llong),parameter:: lrecl=2**16-1
+  integer(i_byte) buf(lrecl)
+  integer(i_kind) i,ii,k,ibegin,iend,ierr
 
   open(in_unit,file=trim(wrfges),access='direct',recl=lrecl)
 

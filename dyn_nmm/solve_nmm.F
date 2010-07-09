@@ -532,6 +532,9 @@
         FIRST=.TRUE.
 !       call hpm_init()
         btimx=timef()
+!emc_2010_bugfix_h50
+        grid%mommix=amin1(grid%mommix,1.0)
+!emc_2010_bugfix_h50
 !
 !-----------------------------------------------------------------------
 !***  FIRST STEP INITIALIZATION OF PASSIVE SUBSTANCE VARIABLES
@@ -1420,6 +1423,10 @@
         NTSD_rad=grid%ntsd+1
       ENDIF
 !
+!emc_2010_bugfix_h50
+      call nl_get_start_hour(1,IHRST)
+!emc_2010_bugfix_h50
+
       IF(MOD(NTSD_rad,GRID%NRADS)==0.OR.                               &
      &   MOD(NTSD_rad,GRID%NRADL)==0)THEN
 !
@@ -1768,7 +1775,10 @@
 
 !        IF(MOD(grid%ntsd,GRID%NCNVC).eq.0.and.(CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN
 ! update to match HWRFV2 behaviour - review later (1/15/10)
-        IF(CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME)THEN
+!
+!emc_2010_bugfix_h50
+        IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME)THEN
+!emc_2010_bugfix_h50
 !
         btimx=timef()
 !-----------------
@@ -1787,12 +1797,14 @@
 !
         btimx=timef()
 
-        CALL UV_H_TO_V(grid%NTSD,GRID%DT,GRID%NPHS,grid%UZ0H,grid%VZ0H,grid%UZ0,grid%VZ0         &
+!emc_2010_bugfix_h50
+        CALL UV_H_TO_V(grid%NTSD,GRID%DT,GRID%NCNVC,grid%UZ0H,grid%VZ0H,grid%UZ0,grid%VZ0         &
      &                ,grid%DUCUDT,grid%DVCUDT,grid%U,grid%V,grid%HBM2,grid%IVE,grid%IVW                   &
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
         uv_htov_tim=uv_htov_tim+timef()-btimx
+!emc_2010_bugfix_h50
 
      ENDIF ! for SAS only 
 !#endif

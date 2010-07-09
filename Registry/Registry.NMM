@@ -150,7 +150,8 @@ state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TE
 state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
 # For random number in SAS convection in HWRF
 
-state real store_rand        ij     dyn_nmm     1      -    rh  "RANDOM" "RANDOM NUMBER FOR SAS"
+state  real    store_rand  ij    dyn_nmm   1      -      rh      "RANDOM"  "RANDOM NUMBER FOR SAS"                       ""
+state  integer nrnd1        k    dyn_nmm   1      -      r       "NRND1"   "Receives seed for random number generator"   ""
 
 #
 # module_MASKS

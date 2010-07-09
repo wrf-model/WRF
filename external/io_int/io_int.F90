@@ -1173,7 +1173,9 @@ END SUBROUTINE ext_int_put_var_ti_double
 
 !--- get_var_ti_integer
 SUBROUTINE ext_int_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
+  USE module_ext_internal
   IMPLICIT NONE
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: VarName 
@@ -1181,18 +1183,54 @@ SUBROUTINE ext_int_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
+  INTEGER locDataHandle, code
+  CHARACTER*132 locElement, locVarName
+  IF ( int_valid_handle (DataHandle) ) THEN
+     IF ( int_handle_in_use( DataHandle ) ) THEN
+        READ( unit=DataHandle ) hdrbuf
+        code=hdrbuf(2)
+        IF ( code .NE. int_var_ti_integer ) THEN
+           BACKSPACE ( unit=DataHandle )
+           write(*,*) 'unexpected code=',code,' in ext_int_get_var_ti_integer'
+           Status = 1
+           return
+        ENDIF
+        CALL int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, 4, &
+             locDataHandle, locElement, locVarName, Data, Outcount, code )
+     ELSE
+        Status = 1
+        write(*,*) 'int_handle_in_use(DataHandle)=.False. in ext_int_get_var_ti_integer'
+        return
+     ENDIF
+  ELSE
+     Status = 1
+     write(*,*) 'int_valid_handle(DataHandle)=.False. in ext_int_get_var_ti_integer'
+     return
+  ENDIF
+  Status = 0
 RETURN
 END SUBROUTINE ext_int_get_var_ti_integer 
 
 !--- put_var_ti_integer
 SUBROUTINE ext_int_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
+  USE module_ext_internal
   IMPLICIT NONE
+#include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: VarName 
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
+  IF ( int_valid_handle (DataHandle) ) THEN
+    IF ( int_handle_in_use( DataHandle ) ) THEN
+      CALL int_gen_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize,4,  &
+                              DataHandle, TRIM(Element), TRIM(VarName), Data, Count, &
+                              int_var_ti_integer )
+      WRITE( unit=DataHandle ) hdrbuf
+    ENDIF
+  ENDIF
+  Status = 0
 RETURN
 END SUBROUTINE ext_int_put_var_ti_integer 
 
@@ -1236,28 +1274,22 @@ SUBROUTINE ext_int_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status
   IF ( int_valid_handle (DataHandle) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       READ( unit=DataHandle ) hdrbuf
-      IF ( hdrbuf(2) .EQ. int_var_ti_char ) THEN
-        CALL int_get_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
-                                locDataHandle, locElement, locVarName, Data, code )
-        IF ( .NOT. ( code .EQ. int_var_ti_real    .OR.   code .EQ. int_var_ti_logical .OR. &
-                     code .EQ. int_var_ti_char    .OR.   code .EQ. int_var_ti_double ) ) THEN 
-            BACKSPACE ( unit=DataHandle )
-            Status = 1
-            return
-        ENDIF
-      ELSE
-        BACKSPACE ( unit=DataHandle )
-        Status = 1
-        return
-      ENDIF
+       code=hdrbuf(2)
+       IF ( code .NE. int_var_ti_char ) THEN
+          BACKSPACE ( unit=DataHandle )
+          Status = 1
+          return
+       ENDIF
+       CALL int_get_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
+            locDataHandle, locElement, locVarName, Data, code )
     ELSE
-      Status = 1
-      return
+       Status = 1
+       return
     ENDIF
-  ELSE
+ ELSE
     Status = 1
     return
-  ENDIF
+ ENDIF
   Status = 0
 RETURN
 END SUBROUTINE ext_int_get_var_ti_char 

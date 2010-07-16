@@ -1611,7 +1611,11 @@ integer(ESMF_KIND_I4) :: timevals(6)
 
    ! Initialize ESMF, get the default Global VM, and set
    ! the default calendar to be Gregorian.
+#ifdef NO_LEAP_CALENDAR
+   CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_NOLEAP, defaultlogtype=ESMF_LOG_MULTI,rc=rc )
+#else
    CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_GREGORIAN, defaultlogtype=ESMF_LOG_MULTI,rc=rc )
+#endif
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_Initialize failed'
    ENDIF

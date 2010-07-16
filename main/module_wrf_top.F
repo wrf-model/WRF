@@ -120,7 +120,11 @@ CONTAINS
    CALL init_modules(1)
    IF ( .NOT. PRESENT( no_init1 ) ) THEN
      ! Initialize utilities (time manager, etc.)
+#ifdef NO_LEAP_CALENDAR
+     CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP )
+#else
      CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
+#endif
    ENDIF
    ! Phase 2 resumes after MPI_INIT() (if it is called)
    CALL init_modules(2)

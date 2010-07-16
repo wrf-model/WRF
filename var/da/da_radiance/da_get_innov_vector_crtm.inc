@@ -362,8 +362,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          Atmosphere(1)%Level_Pressure(0)                      = model_ptop    ! to sigma level 51-->sigmaf=0
          Atmosphere(1)%Level_Pressure(Atmosphere(1)%n_Layers) = model_psfc(n) ! to sigma level 1->sigmaf=1
 
-         do k=kts+1,kte
-            Atmosphere(1)%Level_Pressure(kte-k+1)= grid%xb%sigmaf(k)*(model_psfc(n)-model_ptop)+model_ptop
+         ! calculating full-level P from half-level P using
+         ! linear interpolation: (pf-pf1)/(sigmaf-sigmaf1)=(ph2-ph1)/(sigmah2-sigmah1)
+         ! note: sigma is from bottem to top; pressure is from top to bottem
+         do k=kts,kte-1 ! from top to bottem
+            Atmosphere(1)%Level_Pressure(k)= (Atmosphere(1)%Pressure(k+1) - Atmosphere(1)%Pressure(k))/ &
+                                             (grid%xb%sigmah(kte-k) - grid%xb%sigmah(kte-k+1)) * &
+                                             (grid%xb%sigmaf(kte-k+1) - grid%xb%sigmah(kte-k+1)) + &
+                                              Atmosphere(1)%Pressure(k)
          end do
  
          ! convert cloud content unit from kg/kg to kg/m^2        

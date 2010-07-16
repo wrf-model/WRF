@@ -1669,9 +1669,9 @@ CONTAINS
     ITF=MIN0(ITE,IDE-1)
     KTF=MIN0(KTE,KDE-1)
     
-    IF (initflag > 0) THEN
-
        levflag=mynn_level
+
+    IF (initflag > 0) THEN
 
        DO j=JTS,JTF
           DO i=ITS,ITF

@@ -57,6 +57,20 @@
          END IF
       ENDDO
 
+!-----------------------------------------------------------------------
+! Check that if fine_input_stream /= 0, io_form_auxinput2 must also be in use
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%fine_input_stream(i) .NE. 0 ).AND. &
+              ( model_config_rec%io_form_auxinput2 .EQ. 0 ) ) THEN
+            wrf_err_message = '--- ERROR: If fine_input_stream /= 0, io_form_auxinput2 must be /= 0'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Set io_form_auxinput2 in the time_control namelist (probably to 2).'
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
 #if ((EM_CORE == 1) && (DA_CORE != 1))
 !-----------------------------------------------------------------------
 ! Check that if grid_sfdda is one, grid_fdda is also 1

@@ -196,6 +196,16 @@ integer::oops1,oops2
       grid%tlp  = a
       grid%tiso = tiso
 
+      !  Replace traditional seaice field with optional seaice (AFWA source)
+
+      IF ( flag_icefrac .EQ. 1 ) THEN
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+               grid%xice(i,j) = grid%icefrac_gc(i,j)
+            END DO
+         END DO
+      END IF
+
       !  Fix the snow (water equivalent depth, kg/m^2) and the snowh (physical snow
       !  depth, m) fields.
 
@@ -317,6 +327,34 @@ integer::oops1,oops2
       !  vertical locations already.
 
       IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
+
+         !  If this is data from the PINTERP program, it is emulating METGRID output.
+         !  One of the caveats of this data is the way that the vertical structure is
+         !  handled.  We take the k=1 level and toss it (it is disposable), and we
+         !  swap in the surface data.  This is done for all of the 3d fields about
+         !  which we show some interest: u, v, t, rh, ght, and p.  For u, v, and rh,
+         !  we assume no interesting vertical structure, and just assign the 1000 mb
+         !  data.  We directly use the 2-m temp for surface temp.  We use the surface
+         !  pressure field and the topography elevation for the lowest level of
+         !  pressure and height, respectively.
+
+         IF ( flag_pinterp .EQ. 1 ) THEN
+
+            WRITE ( a_message , * ) 'Data from P_INTERP program, filling k=1 level with artificial surface fields.'
+            CALL wrf_message ( a_message )
+            DO j=jts,jte
+               DO i=its,ite
+                  grid%u_gc(i,1,j) = grid%u_gc(i,2,j)
+                  grid%v_gc(i,1,j) = grid%v_gc(i,2,j)
+                  grid%rh_gc(i,1,j) = grid%rh_gc(i,2,j)
+                  grid%t_gc(i,1,j) = grid%t2(i,j)
+                  grid%ght_gc(i,1,j) = grid%ht(i,j)
+                  grid%p_gc(i,1,j) = grid%psfc(i,j)
+               END DO
+            END DO
+            flag_psfc = 0
+
+         END IF
 
          !  Variables that are named differently between SI and WPS.
 
@@ -1174,14 +1212,12 @@ integer::oops1,oops2
       !  surface_input_source=3 => use dominant data from static file (dominant category as input)
 
       IF ( config_flags%surface_input_source .EQ. 1 ) THEN
-         grid%vegcat (its,jts) = 0
-         grid%soilcat(its,jts) = 0
-      END IF
 
       !  Generate the vegetation and soil category information from the fractional input
       !  data, or use the existing dominant category fields if they exist.
 
-      IF ( ( grid%soilcat(its,jts) .LT. 0.5 ) .AND. ( grid%vegcat(its,jts) .LT. 0.5 ) ) THEN
+         grid%vegcat (its,jts) = 0
+         grid%soilcat(its,jts) = 0
 
          num_veg_cat      = SIZE ( grid%landusef , DIM=2 )
          num_soil_top_cat = SIZE ( grid%soilctop , DIM=2 )

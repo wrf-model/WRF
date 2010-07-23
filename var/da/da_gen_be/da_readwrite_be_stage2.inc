@@ -101,7 +101,7 @@ subroutine da_readwrite_be_stage2(outunit, nk)
 
    if( cv_options == 5) then
    read(iunit)regcoeff_psi_chi
-   read(iunit)variable_psi_ps
+   read(iunit)regcoeff_psi_ps
    read(iunit)regcoeff_psi_t
    end if
 
@@ -171,7 +171,7 @@ subroutine da_readwrite_be_stage2(outunit, nk)
 
    if( cv_options == 5) then
    write(outunit)regcoeff_psi_chi
-   write(outunit)variable_psi_ps
+   write(outunit)regcoeff_psi_ps
    write(outunit)regcoeff_psi_t
    end if
 

@@ -529,7 +529,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       grid%start_minute, ':', &
       grid%start_second
 
-   xbx % mminlu = 'USGS'
+   !xbx % mminlu = 'USGS'
+   xbx % mminlu = trim(grid%mminlu)
 
    call da_roughness_from_lanu(19, xbx % mminlu, current_date, &
       grid%xb % lanu, grid%xb % rough)

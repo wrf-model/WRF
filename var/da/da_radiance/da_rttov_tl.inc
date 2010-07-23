@@ -209,7 +209,7 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
 
    nc = nchannels/nprofiles
 
-   if (coef%id_sensor == 1) then        ! infrared sensor 
+   if (coef%id_sensor == 1 .or. coef%id_sensor == 3) then        ! infrared sensor 
       calcemis (1:nchannels)   = .true.
       emissivity (1:nchannels) = 0.0
       emissivity_tl (1:nchannels) = 0.0

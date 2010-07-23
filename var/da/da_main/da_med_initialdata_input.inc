@@ -112,6 +112,8 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
 
    call input_input (fid ,   grid , config_flags , ierr)
 
+   call nl_get_mminlu (grid%id , grid%mminlu)
+
    call close_dataset (fid , config_flags , "DATASET=INPUT")
 
    if (trace_use) call da_trace_exit("da_med_initialdata_input")

@@ -21,6 +21,7 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
    real                              :: adj_sum_lhs ! < Vv, Vv >
    real                              :: adj_sum_rhs ! < cv_adj, cv >
    real                              :: cv2(1:cv_size)! control variable.
+   integer                           :: cv_size_tmp
 
    !-------------------------------------------------------------------------
    ! [1.0] Initialise:
@@ -70,7 +71,8 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
       call da_transform_vtovv_adj(grid, cv_size, be, cv2, vv)
    end if
 
-   adj_par_rhs = sum(cv(1:cv_size) * cv2(1:cv_size))
+   cv_size_tmp = cv_size - be%cv%size_jp - be%cv%size_js
+   adj_par_rhs = sum(cv(1:cv_size_tmp) * cv2(1:cv_size_tmp))
 
    !----------------------------------------------------------------------
    ! [5.0] Print output:

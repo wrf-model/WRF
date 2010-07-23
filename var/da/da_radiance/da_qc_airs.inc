@@ -70,7 +70,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
          if (isflg > 0) then
             ! Check surface emissivity Jacobian 
             !-----------------------------------
-            if (use_crtm_kmatrix) then
+            if (rtm_option == rtm_option_crtm .and. use_crtm_kmatrix) then
                do k = 1, nchan
                   if ( abs(iv%instid(i)%emiss_jacobian(k,n)) > 0.1 ) &
                   iv%instid(i)%tb_qc(k,n)  =  qc_bad
@@ -88,7 +88,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 
          ! a (bis) Check T and Q Jacobians for sensitivity to model top  
          !-----------------------------------------------------------
-         if (use_crtm_kmatrix) then
+         if (rtm_option == rtm_option_crtm .and. use_crtm_kmatrix) then
             do k = 1, nchan
               if ( abs(iv%instid(i)%t_jacobian(k,1,n)) > 0.1 * SUM( &
 	           abs(iv%instid(i)%t_jacobian(k,1:41,n))) ) &

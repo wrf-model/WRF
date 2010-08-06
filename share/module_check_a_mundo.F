@@ -58,6 +58,18 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! If fractional_seaice = 0, and tice2tsk_if2cold = .true, nothing will happen
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec%fractional_seaice .EQ. 0 ).AND. &
+              ( model_config_rec%tice2tsk_if2cold ) ) THEN
+            wrf_err_message = '--- WARNING: You set tice2tsk_if2cold = .true.,  but fractional_seaice = 0'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- WARNING: tice2tsk_if2cold will have no effect on results.'
+            CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 ! Check that if fine_input_stream /= 0, io_form_auxinput2 must also be in use
 !-----------------------------------------------------------------------
 
@@ -83,6 +95,70 @@
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Change grid_fdda or grid_sfdda in namelist.input '
             CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+! If grid_fdda or grid_sfdda is 0 for any domain, all interval and
+! ending time information that domain must be set to zero.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+
+         IF ( model_config_rec%grid_fdda(i) .EQ. 0 ) THEN
+            WRITE (wrf_err_message, FMT='(A,I6,A)') 'NOTE: grid_fdda is 0 for domain ', &
+                         i, ', setting gfdda interval and ending time to 0 for that domain.'
+            CALL wrf_message ( wrf_err_message )
+
+            model_config_rec%gfdda_end_y(i) = 0
+            model_config_rec%gfdda_end_m(i) = 0
+            model_config_rec%gfdda_end_d(i) = 0
+            model_config_rec%gfdda_end_h(i) = 0
+            model_config_rec%gfdda_end_s(i) = 0
+            model_config_rec%gfdda_interval(i)   = 0
+            model_config_rec%gfdda_interval_y(i) = 0
+            model_config_rec%gfdda_interval_m(i) = 0
+            model_config_rec%gfdda_interval_d(i) = 0
+            model_config_rec%gfdda_interval_h(i) = 0
+            model_config_rec%gfdda_interval_s(i) = 0
+         END IF
+
+         IF ( model_config_rec%grid_sfdda(i) .EQ. 0 ) THEN
+            WRITE (wrf_err_message, FMT='(A,I6,A)') 'NOTE: grid_sfdda is 0 for domain ', &
+                         i, ', setting sgfdda interval and ending time to 0 for that domain.'
+            CALL wrf_message ( wrf_err_message )
+
+            model_config_rec%sgfdda_end_y(i) = 0
+            model_config_rec%sgfdda_end_m(i) = 0
+            model_config_rec%sgfdda_end_d(i) = 0
+            model_config_rec%sgfdda_end_h(i) = 0
+            model_config_rec%sgfdda_end_s(i) = 0
+            model_config_rec%sgfdda_interval(i)   = 0
+            model_config_rec%sgfdda_interval_y(i) = 0
+            model_config_rec%sgfdda_interval_m(i) = 0
+            model_config_rec%sgfdda_interval_d(i) = 0
+            model_config_rec%sgfdda_interval_h(i) = 0
+            model_config_rec%sgfdda_interval_s(i) = 0
+         END IF
+
+         IF ( model_config_rec%obs_nudge_opt(i) .EQ. 0 ) THEN
+            WRITE (wrf_err_message, FMT='(A,I6,A)') 'NOTE: obs_nudge_opt is 0 for domain ', &
+                         i, ', setting obs nudging interval and ending time to 0 for that domain.'
+            CALL wrf_message ( wrf_err_message )
+
+            model_config_rec%fdda_end(i) = 0
+            model_config_rec%auxinput11_interval(i)   = 0
+            model_config_rec%auxinput11_interval_y(i) = 0
+            model_config_rec%auxinput11_interval_m(i) = 0
+            model_config_rec%auxinput11_interval_d(i) = 0
+            model_config_rec%auxinput11_interval_h(i) = 0
+            model_config_rec%auxinput11_interval_s(i) = 0
+            model_config_rec%auxinput11_end(i)   = 0
+            model_config_rec%auxinput11_end_y(i) = 0
+            model_config_rec%auxinput11_end_m(i) = 0
+            model_config_rec%auxinput11_end_d(i) = 0
+            model_config_rec%auxinput11_end_h(i) = 0
+            model_config_rec%auxinput11_end_s(i) = 0
          END IF
       ENDDO
 #endif

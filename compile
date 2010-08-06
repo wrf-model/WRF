@@ -347,7 +347,30 @@ else
       echo setting parallel make -j 2   # Set default to 2
       setenv J "-j 2"
     else
-      echo setting parallel make $J
+#     J is defined, check that it is a correctly formed variable
+      set first2chars = `echo $J | cut -c 1-2`         # Are 1st two chars are -j?
+      set second_word = `echo $J | cut -d" " -f2`      # Is second word a number?
+      if    ( "$first2chars" == "-j" ) then
+         if ( ( "$second_word" >= "2"  )  && \
+              ( "$second_word" <= "20" ) ) then
+            echo setting parallel make $J
+         else if ( "$second_word" == "1" ) then
+            echo setting serial make $J
+         else
+            echo "badly formed -j option for parallel make: $J"
+            echo "or you set the number of processors above 20 "
+            echo setting parallel make -j 2            # Set default to 2
+            setenv J "-j 2"
+         endif
+      else
+         if ( "$J" == "" ) then     # J blank is OK
+            echo setting serial make $J
+         else
+            echo "parallel option for make is -j, you entered: $first2chars"
+            echo setting parallel make -j 2               # Set default to 2
+            setenv J "-j 2"
+         endif
+      endif
     endif
   else
     echo not setting parallel make

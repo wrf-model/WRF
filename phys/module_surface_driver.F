@@ -8,7 +8,7 @@ CONTAINS
      &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
-     &          ,fractional_seaice                                    &
+     &          ,fractional_seaice,tice2tsk_if2cold                   &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
 #if (NMM_CORE==1)
@@ -354,6 +354,7 @@ CONTAINS
    INTEGER, INTENT(IN ), OPTIONAL :: ISURBAN
    CHARACTER(LEN=*), INTENT(IN ), OPTIONAL :: MMINLU
    LOGICAL, INTENT(IN )::   WARM_RAIN
+   LOGICAL, INTENT(IN)::   tice2tsk_if2cold
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NYEAR
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NDAY
    INTEGER, INTENT(IN ),OPTIONAL ::   YR
@@ -709,6 +710,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
+     REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
 !
    REAL :: xice_threshold
 !
@@ -1017,7 +1019,7 @@ CONTAINS
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                  HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
-                 ITIMESTEP,XICE_THRESHOLD,                                          &
+                 ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -1063,8 +1065,8 @@ CONTAINS
                  u10,v10,                                            &
                  gz1oz0,wspd,br,isfflx,dx,                           &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
-                 XICE, SST, ITIMESTEP, XICE_THRESHOLD,                              &
-                 CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,FLHC_SEA,FLQC_SEA,            &
+                 XICE, SST, ITIMESTEP, TICE2TSK_IF2COLD,XICE_THRESHOLD, &
+                 CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,FLHC_SEA,FLQC_SEA,&
                  HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
@@ -1101,6 +1103,7 @@ CONTAINS
                 tsk,qsfc,thz0,qz0,uz0,vz0,                           &
                 lowlyr,                                              &
                 xland,ivgtyp,isurban,iz0tlnd,                        &
+                TICE2TSK_IF2COLD,                                    & ! Extra for wrapper.
                 XICE_THRESHOLD,                                      & ! Extra for wrapper.
                 XICE, SST,                                           & ! Extra for wrapper.
                 CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,            &
@@ -1182,6 +1185,7 @@ CONTAINS
                QGH,QSFC,U10,V10,                                   &
                GZ1OZ0,WSPD,BR,ISFFLX,                              &
                EP_1,EP_2,KARMAN,itimestep,                         &
+               TICE2TSK_IF2COLD,                            &
                XICE_THRESHOLD,                              &
                CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,        &
                FLHC_SEA, FLQC_SEA,                          &
@@ -1390,24 +1394,16 @@ CONTAINS
                ! We don't have surface layer routine values at this time, so
                ! just use what we have.  Use ice component of TSK
                !
+               CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                       i_start(ij), i_end(ij),               & 
+                                       j_start(ij), j_end(ij),               &
+                                       itimestep, .false., tice2tsk_if2cold, &
+                                       XICE, XICE_THRESHOLD,                 &
+                                       SST, TSK, TSK_SEA, TSK_LOCAL )
+
                DO j = j_start(ij) , j_end(ij)
                   DO i = i_start(ij) , i_end(ij)
-                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
-                        IF ( SST(i,j) .LT. 271.4 ) THEN
-                           SST(i,j) = 271.4
-                        ENDIF
-                        TSK_SEA(i,j) = SST(i,j)
-                        ! Convert TSK from our ice/water average value to value good for solid-ice surface.
-                        TSK(i,j) = ( TSK(i,j) - (1.-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-                        IF (XICE(i,j).lt.0.2 .and. TSK(i,j).lt.253.15) THEN
-                           TSK(i,j) = 253.15
-                        ENDIF
-                        IF (XICE(i,j).lt.0.1 .and. TSK(i,j).lt.263.15) THEN
-                           TSK(i,j) = 263.15
-                        ENDIF
-                     ELSE
-                        TSK_SEA(i,j) = TSK(i,j)
-                     ENDIF
+                     TSK(i,j) = TSK_LOCAL(i,j)
                   ENDDO
                ENDDO
             ENDIF
@@ -1620,24 +1616,15 @@ CONTAINS
                  ! don't have srfc layer routine values at this time, so just use what you have
                  ! use ice component of TSK
                  !
+                 CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                         i_start(ij), i_end(ij),               &
+                                         j_start(ij), j_end(ij),               &
+                                         itimestep, .false., tice2tsk_if2cold, &
+                                         XICE, XICE_THRESHOLD,                 &
+                                         SST, TSK, TSK_SEA, TSK_LOCAL )
                  DO j = j_start(ij) , j_end(ij)
                     DO i = i_start(ij) , i_end(ij)
-                       IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
-                          TSK_SEA(i,j) = SST(i,j)
-                          IF ( SST(i,j) .LT. 271. ) THEN
-                             SST(i,j) = 271.4
-                             TSK_SEA(i,j) = SST(i,j)
-                          endif
-                          TSK(i,j) = ( TSK(i,j) - (1.-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-                          IF ( ( XICE(i,j) .LT. 0.2 ) .AND. ( TSK(i,j) .LT. 253.15 ) ) THEN
-                             TSK(i,j) = 253.15
-                          ENDIF
-                          IF ( ( XICE(i,j).LT.0.1 ) .AND. ( TSK(i,j).lt.263.15 ) ) THEN
-                             TSK(i,j) = 263.15
-                          ENDIF
-                       ELSE
-                          TSK_SEA(i,j) = TSK(i,j)
-                       ENDIF
+                       TSK(i,j) = TSK_LOCAL(i,j)
                     ENDDO
                  ENDDO
               ENDIF
@@ -1739,24 +1726,15 @@ CONTAINS
                 ! don't have srfc layer routine values at this time, so just use what you have
                 ! use ice component of TSK
                 !
+                CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                        i_start(ij), i_end(ij),               &
+                                        j_start(ij), j_end(ij),               &
+                                        itimestep, .false., tice2tsk_if2cold, &
+                                        XICE, XICE_THRESHOLD,                 &
+                                        SST, TSK, TSK_SEA, TSK_LOCAL )
                 DO j = j_start(ij) , j_end(ij)
                    DO i=i_start(ij) , i_end(ij)
-                      IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
-                         TSK_SEA(i,j) = SST(i,j)
-                         IF ( SST(i,j) .LT. 271. ) THEN
-                            SST(i,j) = 271.4
-                            TSK_SEA(i,j) = SST(i,j)
-                         ENDIF
-                         TSK(i,j) = ( TSK(i,j) - (1.-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-                         IF ( ( XICE(i,j) .LT. 0.2 ) .AND. ( TSK(i,j) .lt. 253.15 ) ) THEN
-                            TSK(i,j) = 253.15
-                         ENDIF
-                         IF ( ( XICE(i,j) .LT. 0.1 ) .AND. ( TSK(i,j) .LT. 263.15 ) ) THEN
-                            TSK(i,j) = 263.15
-                         ENDIF
-                      ELSE
-                         TSK_SEA(i,j) = TSK(i,j)
-                      ENDIF
+                      TSK(i,j) = TSK_LOCAL(i,j)
                    ENDDO
                 ENDDO
              ENDIF
@@ -1916,6 +1894,7 @@ CONTAINS
         &     PMID,PINT,TH,T,QV,QC,U,V,Q2,                &
         &     TSK,QSFC,THZ0,QZ0,UZ0,VZ0,                  &
         &     LOWLYR,XLAND,IVGTYP,ISURBAN,IZ0TLND,        &
+        &     TICE2TSK_IF2COLD,                           &  ! Extra for wrapper
         &     XICE_THRESHOLD,                             &  ! Extra for wrapper
         &     XICE,SST,                                   &  ! Extra for wrapper
         &     CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,       &  ! Extra for wrapper
@@ -2011,6 +1990,7 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: PSHLTR
      REAL,                                   INTENT(IN)    :: P1000
      REAL,                                   INTENT(IN)    :: XICE_THRESHOLD
+     LOGICAL,                                INTENT(IN)    :: TICE2TSK_IF2COLD
      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,       &
           &                IMS,IME,JMS,JME,KMS,KME,       &
           &                ITS,ITE,JTS,JTE,KTS,KTE
@@ -2055,54 +2035,22 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_HOLD
      REAL, DIMENSION( ims:ime, jms:jme ) :: AKHS_HOLD
      REAL, DIMENSION( ims:ime, jms:jme ) :: AKMS_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
      REAL :: PSFC
 
      ! Set things up for the frozen-surface call to myjsfc
      ! Is SST local here, or are the changes to be fed back to the calling routines?
 
      ! We want a TSK valid for the ice-covered regions of the grid cell.
+
+     CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                             itimestep, .true., tice2tsk_if2cold,     &
+                             XICE, XICE_THRESHOLD,                    &
+                             SST, TSK, TSK_SEA, TSK_LOCAL )
      DO j = JTS , JTE
         DO i = ITS , ITE
+           TSK(i,j) = TSK_LOCAL(i,j)
            IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
-
-              TSK_SEA(i,j) = SST(i,j)
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-                 TSK_SEA(i,j) = SST(i,j)
-              ENDIF
-
-              IF ( ( SST(i,j) .GT. 273.0 ) .AND. ( itimestep .LE. 3 ) ) THEN
-                 ! Why the dependence on the time step count, here?
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                    TSK_SEA(i,j) = SST(i,j)
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                    TSK_SEA(i,j) = SST(i,j)
-                 ELSEIF ( ( XICE(i,j) .GE. 0.2 ) .and. ( SST(i,j).GT.275. ) ) THEN
-                    SST(i,j) = 275.
-                    TSK_SEA(i,j) = SST(i,j)
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                    TSK_SEA(i,j) = SST(i,j)
-                 ENDIF
-              ENDIF
-
-              ! Change the TSK value here, to recover the value valid for
-              ! ice-covered portions of the grid cell.
-
-              ! The original TSK is taken to represent the blended result of the
-              ! open-water values (SST) and the ice-covered value (the new TSK we
-              ! derive here).
-              TSK(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-
-              IF (XICE(i,j).lt.0.2 .and. TSK(i,j).lt.253.15) THEN
-                 TSK(i,j) = 253.15
-              ENDIF
-              IF (XICE(i,j).lt.0.1 .and. TSK(i,j).lt.263.15) THEN
-                 TSK(i,j) = 263.15
-              ENDIF
 
               ! Over fractional sea-ice points, back out an ice portion of QSFC as well.
               ! QSFC_SEA calculation as done in myjsfc for open water points
@@ -2113,9 +2061,6 @@ CONTAINS
               HFX_SEA(i,j)  = HFX(i,j)
               QFX_SEA(i,j)  = QFX(i,j)
               FLX_LH_SEA(i,j)   = FLX_LH(i,j)
-!
-           ELSE
-              TSK_SEA(i,j) = TSK(i,j)
            ENDIF
         ENDDO
      ENDDO
@@ -2318,6 +2263,7 @@ CONTAINS
                      QGH,QSFC,U10,V10,                           &
                      GZ1OZ0,WSPD,BR,ISFFLX,                      &
                      EP1,EP2,KARMAN,itimestep,                   &
+                     TICE2TSK_IF2COLD,                           &
                      XICE_THRESHOLD,                             &
                      CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,       &
                      FLHC_SEA, FLQC_SEA,                         &
@@ -2400,6 +2346,7 @@ CONTAINS
 
       REAL,                              INTENT(IN)    ::               &
                                         XICE_THRESHOLD
+      LOGICAL,                          INTENT(IN)     :: TICE2TSK_IF2COLD
 
 !-------------------------------------------------------------------------
 !   Local
@@ -2420,50 +2367,10 @@ CONTAINS
                                         ZNT_HOLD,                       &
                                         TSK_LOCAL
 
-
-     DO j = JTS , JTE
-        DO i = ITS , ITE
-           IF ( ( XICE(i,j) .GE. XICE_THRESHOLD ) .and. ( XICE(I,J) .LE. 1.0 ) ) THEN
-              ! Sea-ice point
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-              ENDIF
-
-              IF ( SST(i,j) .GT. 273. .and. itimestep .le. 3) then
-                 ! Why the dependence on the time step count, here?
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                 ELSEIF (XICE(i,j).GE.0.2 .and. SST(i,j).GT.275.) THEN
-                    SST(i,j) = 275.
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                 ENDIF
-              ENDIF
-              TSK_SEA(i,j) = SST(i,j)
-
-              ! The original TSK is taken to represent the blended
-              ! result of the open-water values (SST) and the
-              ! ice-covered value (the local TSK we derive here).
-
-              TSK_LOCAL(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) * SST(i,j) ) / XICE(i,j)
-
-              IF ( ( XICE(i,j) .LT. 0.2 ) .AND. ( TSK_LOCAL(i,j) .LT. 253.15 ) ) THEN
-                 TSK_LOCAL(i,j) = 253.15
-              ENDIF
-              IF ( ( XICE(i,j) .LT. 0.1 ) .and. ( TSK_LOCAL(i,j) .LT. 263.15 ) ) THEN
-                 TSK_LOCAL(i,j) = 263.15
-              ENDIF
-
-           ELSE
-              ! land/open-water point
-              TSK_LOCAL(i,j) = TSK(i,j)
-           ENDIF
-
-        ENDDO
-     ENDDO
+      CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                              itimestep, .true., tice2tsk_if2cold,     &
+                              XICE, XICE_THRESHOLD,                    &
+                              SST, TSK, TSK_SEA, TSK_LOCAL )
 
 !
 ! Set up for frozen ocean call for sea ice points
@@ -2617,7 +2524,7 @@ CONTAINS
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
-ITIMESTEP,XICE_THRESHOLD,                                          &
+ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -2699,6 +2606,7 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
 !    New for wrapper
 !--------------------------------------------------------------------
      INTEGER,  INTENT(IN)               ::      ITIMESTEP
+     LOGICAL,  INTENT(IN)               ::      TICE2TSK_IF2COLD
      REAL,     INTENT(IN)               ::      XICE_THRESHOLD
      REAL,     DIMENSION( ims:ime, jms:jme ),                     &
                INTENT(IN)               ::      XICE
@@ -2788,39 +2696,10 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
       ! V3D
       ! PSFC
 
-     DO j = JTS , JTE
-        DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-              ENDIF
-              IF ( SST(i,j) .GT. 273. .AND. itimestep .le. 3) THEN
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                 ELSEIF (XICE(i,j).GE.0.2 .and. SST(i,j).GT.275.) THEN
-                    SST(i,j) = 275.
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                 ENDIF
-              ENDIF
-              TSK_SEA(i,j) = SST(i,j)
-
-              TSK_LOCAL(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-              IF (XICE(i,j) .lt. 0.2 .and. TSK(i,j) .lt. 253.15) THEN
-                 TSK_LOCAL(i,j) = 253.15
-              ENDIF
-              IF (XICE(i,j) .lt. 0.1 .and. TSK(i,j) .lt. 263.15) THEN
-                 TSK_LOCAL(i,j) = 263.15
-              ENDIF
-           ELSE
-              TSK_SEA(i,j) = TSK(i,j)
-              TSK_LOCAL(i,j) = TSK(i,j)
-           ENDIF
-        ENDDO
-     ENDDO
+     CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                             itimestep, .true., tice2tsk_if2cold,     &
+                             XICE, XICE_THRESHOLD,                    &
+                             SST, TSK, TSK_SEA, TSK_LOCAL )
 
 
 ! INTENT (INOUT) to SFCLAY:  Save the variables before the first call
@@ -3007,7 +2886,7 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
                      U10,V10,                                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
-XICE, SST, ITIMESTEP, XICE_THRESHOLD,                              &
+XICE, SST, ITIMESTEP, TICE2TSK_IF2COLD,XICE_THRESHOLD,             &
 CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA, FLHC_SEA, FLQC_SEA,          &
 HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -3020,6 +2899,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                        its,ite, jts,jte, kts,kte
 
      INTEGER,  INTENT(IN )   ::        ISFFLX
+     LOGICAL,  INTENT(IN )   ::        TICE2TSK_IF2COLD
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
 
@@ -3144,39 +3024,10 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                                          U10_SEA, &
                                                          V10_SEA
 
-     DO j = JTS , JTE
-        DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
-
-              IF ( SST(i,j) .LT. 271.4 ) THEN
-                 SST(i,j) = 271.4
-              ENDIF
-              IF ( SST(i,j) .GT. 273. .AND. itimestep .le. 3) THEN
-                 IF ( XICE(i,j) .GE. 0.6 ) THEN
-                    SST(i,j) = 271.4
-                 ELSEIF ( XICE(i,j) .GE. 0.4 ) THEN
-                    SST(i,j) = 273.
-                 ELSEIF (XICE(i,j).GE.0.2 .and. SST(i,j).GT.275.) THEN
-                    SST(i,j) = 275.
-                 ELSEIF (SST(i,j).GT.278.) THEN
-                    SST(i,j) = 278.
-                 ENDIF
-              ENDIF
-              TSK_SEA(i,j) = SST(i,j)
-
-              TSK_LOCAL(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
-              IF (XICE(i,j) .lt. 0.2 .and. TSK(i,j) .lt. 253.15) THEN
-                 TSK_LOCAL(i,j) = 253.15
-              ENDIF
-              IF (XICE(i,j) .lt. 0.1 .and. TSK(i,j) .lt. 263.15) THEN
-                 TSK_LOCAL(i,j) = 263.15
-              ENDIF
-           ELSE
-              TSK_SEA(i,j) = TSK(i,j)
-              TSK_LOCAL(i,j) = TSK(i,j)
-           ENDIF
-        ENDDO
-     ENDDO
+     CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                             itimestep, .true., tice2tsk_if2cold,     &
+                             XICE, XICE_THRESHOLD,                    &
+                             SST, TSK, TSK_SEA, TSK_LOCAL )
 !
 ! INTENT (INOUT) to PXSFCLAY:  Save the variables before the first call
 ! (for land/frozen water) to SFCLAY, to keep from double-counting the
@@ -3448,6 +3299,98 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 
    END SUBROUTINE TOPO_RAD_ADJ
 
-!-------------------------------------------------------------------------
+!=======================================================================
+
+   SUBROUTINE get_local_ice_tsk ( ims, ime, jms, jme,     &
+                                  its, ite, jts, jte,     &
+                                  itimestep,              &
+                                  sfc_layer_values,       &
+                                  tice2tsk_if2cold,       &
+                                  XICE, XICE_THRESHOLD,   &
+                                  SST, TSK, TSK_SEA, TSK_ICE )
+!<DESCRIPTION>
+!
+! For grid cells with a fractional ice area, derive the ice surface 
+! temperature from the area-averaged surface temperature (the blended
+! result of the open-water values (SST) and the ice-covered value).
+!
+!</DESCRIPTION>
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ims, ime, jms, jme    !-- start/end index for i/j in memory
+      INTEGER, INTENT(IN) :: its, ite, jts, jte    !-- start/end index for i/j in tile
+      INTEGER, INTENT(IN) :: itimestep             !-- timestep
+      LOGICAL, INTENT(IN) :: sfc_layer_values      !-- True if there are surface layer routine values
+                                                   !-- available from the ice portion of the grid point
+                                                   !-- (i.e. called from a seaice_wrapper subroutine)
+      LOGICAL, INTENT(IN) :: tice2tsk_if2cold      !-- True to set TSK_ICE to TSK.  This may be
+                                                   !-- necessary to avoid unphysically low ice
+                                                   !-- temperatures is there is a mis-match between
+                                                   !-- ice fraction and surface temperature.
+
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: XICE        ! Ice fraction
+      REAL                                , INTENT(IN)    :: XICE_THRESHOLD 
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: TSK         ! Surface temperature (K)
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: SST         ! Sea surface temperature (K)
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_SEA     ! Sfc temp of open water portion of grid cell 
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_ICE     ! Sfc temp of ice oprtion of grid cell
+
+! Local
+      INTEGER :: i,j
+
+      DO j = JTS , JTE
+         DO i = ITS , ITE
+            IF ( ( XICE(i,j) >= XICE_THRESHOLD ) .AND. ( XICE(I,J) <= 1.0 ) ) THEN
+ 
+               IF ( SST(i,j) < 271.4 ) THEN
+                  SST(i,j) = 271.4
+               ENDIF
+ 
+               IF (sfc_layer_values) THEN
+                  IF ( SST(i,j) > 273. .AND. itimestep <= 3) then
+                     ! Why the dependence on the time step count, here?
+                     IF ( XICE(i,j) >= 0.6 ) THEN
+                        SST(i,j) = 271.4
+                     ELSEIF ( XICE(i,j) >= 0.4 ) THEN
+                        SST(i,j) = 273.
+                     ELSEIF (XICE(i,j) >= 0.2 .AND. SST(i,j) > 275.) THEN
+                        SST(i,j) = 275.
+                     ELSEIF (SST(i,j) > 278.) THEN
+                        SST(i,j) = 278.
+                     ENDIF
+                  ENDIF
+               ENDIF
+               TSK_SEA(i,j) = SST(i,j)
+ 
+               IF ( tice2tsk_if2cold ) THEN
+!------------------------------------------------------------------------------------
+! This avoids unphysically low ice temperatures for grid cells with low ice fractions
+! and low area-averaged temperatures.  This can happen when the initial ice fraction 
+! and surface temperature come from different data sets.
+!------------------------------------------------------------------------------------
+                  TSK_ICE(i,j) = MIN( TSK(i,j), 273.15 )
+               ELSE
+                  TSK_ICE(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) * SST(i,j) ) / XICE(i,j)
+               ENDIF
+ 
+               IF ( ( XICE(i,j) < 0.2 ) .AND. ( TSK(i,j) < 253.15 ) ) THEN
+                  TSK_ICE(i,j) = 253.15
+               ENDIF
+               IF ( ( XICE(i,j) < 0.1 ) .AND. ( TSK(i,j) < 263.15 ) ) THEN
+                  TSK_ICE(i,j) = 263.15
+               ENDIF
+            ELSE
+               ! land/open-water point
+               TSK_SEA(i,j) = TSK(i,j)
+               TSK_ICE(i,j) = TSK(i,j)
+            ENDIF
+         ENDDO
+      ENDDO
+
+   END SUBROUTINE get_local_ice_tsk
+
+!=======================================================================
+!=======================================================================
 
 END MODULE module_surface_driver

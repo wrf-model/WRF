@@ -1193,7 +1193,9 @@
      &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,SWDOWN=RSW_DN_SFC        &
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
-     &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE,ISLTYP=ISLTYP      &
+     &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE                    &
+     &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
+     &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
      &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &

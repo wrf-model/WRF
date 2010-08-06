@@ -79,7 +79,8 @@ subroutine da_setup_be_regional(xb, be)
 
    if( cv_options == 5 .or. cv_options == 6) then
    write (unit=message(1),fmt='(A,i3)') &
-      'Set up background errors for regional application for cv_option= ',cv_options
+      'Set up background errors for regional application for cv_options = ',cv_options
+   write (unit=message(2),fmt='(a)') ' '
 
    else 
       call wrf_shutdown
@@ -237,7 +238,7 @@ subroutine da_setup_be_regional(xb, be)
    ! 1.3 Domain_averaged regression coefficients
 
   if (.not.lat_stats_option) then
-      write (unit=message(4), fmt='(3x, a)') &
+      write (unit=message(3), fmt='(3x, a)') &
          'Using the averaged regression coefficients for unbalanced part'
 
       do k=1,nk
@@ -258,11 +259,11 @@ subroutine da_setup_be_regional(xb, be)
          end do
       end do
    else
-      write (unit=message(4), fmt='(3x, a)') &
+      write (unit=message(3), fmt='(3x, a)') &
          'Using the latitude-dependent regression coefficients for unbalanced part'
    end if
 
-   call da_message(message(1:4))
+   call da_message(message(1:3))
 
    ! 2.0 Load the eigenvector and eigenvalue
 
@@ -392,12 +393,14 @@ subroutine da_setup_be_regional(xb, be)
    be % v4 % name = 'qt   '
    end if
 
-   write (unit=message(2),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &
+   write (unit=message(1),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &
       trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
       trim(be % v3 % name), ' and ', trim(be % v5 % name)
 
-   write (unit=message(3),fmt='(3x,A,A)') &
+   write (unit=message(2),fmt='(3x,A,A)') &
       'Humidity control variable is ', trim(be % v4 % name)
+
+   call da_message(message(1:2))
 !
    ! 3.0 Check and get the truncated number of the vertical modes
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -658,6 +661,8 @@ subroutine da_setup_be_regional(xb, be)
          read (be_unit)alpha_val(1:nk)
          read (be_unit)alpha_evec(1:nk,1:nk)
          close(be_unit)
+         call da_free_unit(be_unit)
+         be % alpha % mz = nk
 
          call da_get_vertical_truncation(max_vert_var_alpha, alpha_val, be % alpha)
       else
@@ -690,6 +695,11 @@ subroutine da_setup_be_regional(xb, be)
       do m = 1, mz
          be % alpha % val(:,m) = alpha_rf_scale_factor(m) * be % alpha % val(:,m)
       end do
+
+      deallocate(alpha_val)
+      deallocate(alpha_evec)
+      deallocate(alpha_rf_lengthscale)
+      deallocate(alpha_rf_scale_factor)
 
    else
       be % alpha % mz = 0

@@ -14,8 +14,8 @@ subroutine da_get_vertical_truncation( max_vert_var, eigenval, be_sub)
     
    integer                          :: kz              ! # vertical levels.
    integer                          :: k               ! Loop counter.
-   real                             :: tot_variance    ! Total variance.
-   real                             :: cum_variance    ! Cumulative variance.
+   real*8                           :: tot_variance    ! Total variance.
+   real*8                           :: cum_variance    ! Cumulative variance.
    character(LEN = 6)              :: name            ! Variable name.
 
    if (trace_use_dull) call da_trace_entry("da_get_vertical_truncation")

@@ -41,8 +41,9 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
 ! Read Initial Sensitivity from WRF-Adjoint (NetCDF file)
 !--------------------------------------------------------        
    case(0); 
+         call da_zero_x (grid%xa)
          call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
-         call da_transform_xtoxa_adj(grid)        
+         call da_transform_xtoxa_adj(grid)
          call da_transform_vtox_adj (grid, cv_size, xbx, be, grid%ep, grid%vp, grid%vv, shat)
 
 !---------------------------

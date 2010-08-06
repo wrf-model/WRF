@@ -112,7 +112,7 @@ program gen_be_ensmean
          write(UNIT=ce,FMT='(i3.3)')member
 
 !        Open file:
-         input_file = trim(directory)//'.e'//trim(ce)//'/'//trim(filename)
+         input_file = trim(filename)//'.e'//trim(ce)
          length = len_trim(input_file)
          rcode = nf_open( input_file(1:length), NF_NOWRITE, cdfid )
 

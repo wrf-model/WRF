@@ -84,32 +84,27 @@ program gen_be_ep2
    remove_mean = .true.
 
    numarg = iargc()
-   if ( numarg /= 4 )then
+   if ( numarg /= 2 )then
       write(UNIT=6,FMT='(a)') &
-        "Usage: gen_be_ep2 date ne <directory> <filename> Stop"
+        "Usage: gen_be_ep2 ne <filename> Stop"
       stop
    end if
 
    ! Initialse to stop Cray compiler complaining
-   date=""
    cne=""
-   directory=""
    filename=""
 
-   call getarg( 1, date )
-   call getarg( 2, cne )
+   call getarg( 1, cne )
    read(cne,'(i3)')ne
-   call getarg( 3, directory )
-   call getarg( 4, filename )
+   call getarg( 2, filename )
 
    if ( remove_mean ) then
-      write(6,'(a,a)')' Computing gen_be ensemble perturbation files for date ', date
+      write(6,'(a,a)')' Computing gen_be ensemble perturbation files for date ' !, date
    else
-      write(6,'(a,a)')' Computing gen_be ensemble forecast files for date ', date
+      write(6,'(a,a)')' Computing gen_be ensemble forecast files for date ' !, date
    end if
    write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, qcloud, qrain, ps)'
    write(6,'(a,i4)')' Ensemble Size = ', ne
-   write(6,'(a,a)')' Directory = ', trim(directory)
    write(6,'(a,a)')' Filename = ', trim(filename)
 
 !---------------------------------------------------------------------------------------------
@@ -118,7 +113,7 @@ program gen_be_ep2
 
 !  Get grid dimensions from first T field:
    var = "T"
-   input_file = trim(directory)//'.e001/'//trim(filename)
+   input_file = trim(filename)//'.e001'
    call da_stage0_initialize( input_file, var, dim1, dim2, dim3, ds )
    dim1s = dim1+1 ! u i dimension is 1 larger.
    dim2s = dim2+1 ! v j dimension is 1 larger.
@@ -173,7 +168,7 @@ program gen_be_ep2
    do member = 1, ne
 
       write(UNIT=ce,FMT='(i3.3)')member
-      input_file = trim(directory)//'.e'//trim(ce)//'/'//trim(filename)
+      input_file = trim(filename)//'.e'//trim(ce)
 
       do k = 1, dim3
 

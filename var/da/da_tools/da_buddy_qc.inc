@@ -90,7 +90,7 @@ SUBROUTINE da_buddy_qc ( numobs, m_max, station_id, xob, yob, obs, qc_flag_small
   INTEGER , DIMENSION ( numobs )             :: buddy_num,          &
                                                 buddy_num_final
   REAL                                       :: scale
-  INTEGER, DIMENSION ( numobs )              :: qc_flag
+  INTEGER, DIMENSION ( m_max )               :: qc_flag
 
 
   real :: f_qv_from_rh

@@ -7,6 +7,7 @@ program gen_be_etkf
 !  Owner: Dale Barker (NCAR/MMM) - WRF wrappper, Xuguang Wang (NOAA) - ETKF algorithm.
 !  Please acknowledge author/institute in work that uses this code.
 !
+!  Luke Peffers. August 2010.  Remove instances of nstartaccum1 and nstartaccum2
 !----------------------------------------------------------------------
 
 #ifdef crayx1
@@ -35,8 +36,6 @@ program gen_be_etkf
    integer               :: num_obs                   ! Number of observations.
    integer               :: naccumt1                  ! Number of previous cycles.
    integer               :: naccumt2                  ! Number of previous cycles.
-   integer               :: nstartaccum1              ! Cycle from which naccumt1 cycle starts.
-   integer               :: nstartaccum2              ! Cycle from which naccumt2 cycle starts.
    integer               :: nout                      ! Output record for inn. vec./ob. error var.
    integer               :: length                    ! Filename length.
    integer               :: rcode                     ! NETCDF return code.
@@ -75,7 +74,7 @@ program gen_be_etkf
    real, pointer         :: ens_stdv_pert_poste(:)    ! Variable posterior perturbation std. dev.
 
    namelist / gen_be_etkf_nl / num_members, nv, cv, &
-                               naccumt1, naccumt2, nstartaccum1, nstartaccum2, &
+                               naccumt1, naccumt2, &
                                nout, tainflatinput, rhoinput
 
 !---------------------------------------------------------------------------------------------
@@ -88,8 +87,6 @@ program gen_be_etkf
 
    naccumt1 = 0
    naccumt2 = 0
-   nstartaccum1 = 0
-   nstartaccum2 = 0
    nout = 1 
    tainflatinput = 0.0
    rhoinput = 0.0
@@ -104,8 +101,6 @@ program gen_be_etkf
    write(stdout,'(50a)')'   List of prognostic variables = ', cv(1:nv)
    write(stdout,'(a,i4)')'   naccumt1 = ', naccumt1
    write(stdout,'(a,i4)')'   naccumt2 = ', naccumt2
-   write(stdout,'(a,i4)')'   nstartaccum1 = ', nstartaccum1
-   write(stdout,'(a,i4)')'   nstartaccum2 = ', nstartaccum2
    write(stdout,'(a,i4)')'   nout = ', nout
    write(stdout,'(a,f15.5)')'   tainflatinput = ', tainflatinput
    write(stdout,'(a,f15.5)')'   rhoinput = ', rhoinput
@@ -259,7 +254,7 @@ program gen_be_etkf
 !-----------------------------------------------------------------------------------------
 
    call da_solve_etkf( nijkv, num_members, num_obs, xf, y, sigma_o2, yo, nout, &
-                       naccumt1, naccumt2, nstartaccum1, nstartaccum2, tainflatinput, &
+                       naccumt1, naccumt2, tainflatinput, &
                        rhoinput )
 
 !  Calculate posterior ensemble standard deviation and output:

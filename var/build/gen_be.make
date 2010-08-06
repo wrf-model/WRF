@@ -21,6 +21,7 @@ be : \
 	gen_be_ep1.exe \
 	gen_be_ep2.exe \
 	gen_be_stage1.exe \
+	gen_be_vertloc.exe \
 	gen_be_stage1_gsi.exe \
 	gen_be_stage1_1dvar.exe	\
 	gen_be_stage2.exe \

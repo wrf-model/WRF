@@ -935,18 +935,27 @@ integer::oops1,oops2
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
      
+         CALL vert_interp ( grid%p_gc , grid%pd_gc , grid%p               , grid%pb , &
+                            num_metgrid_levels , 'T' , &
+                            interp_type , lagrange_order , t_extrap_type , &
+                            lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                            zap_close_levels , force_sfc_in_vinterp , &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte )
+
          !  Do not have full pressure on eta levels, get a first guess at Qv by using
          !  dry pressure.  The use of u_1 (rh) and v_1 (temperature) is temporary.
          !  We fix the approximation to Qv after the total pressure is available on
          !  eta surfaces.
 
          grid%v_1 = grid%t_2
-         CALL theta_to_t ( grid%v_1 , grid%pb , p00 , &
+         CALL theta_to_t ( grid%v_1 , grid%p  , p00 , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            its , ite , jts , jte , kts , kte )
 
-         CALL rh_to_mxrat (grid%u_1, grid%v_1, grid%pb, moist(:,:,:,P_QV) ,       &
+         CALL rh_to_mxrat (grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
                            config_flags%rh2qv_wrt_liquid ,                        &
                            config_flags%qv_max_p_safe ,                           &
                            config_flags%qv_max_flag , config_flags%qv_max_value , &
@@ -1964,28 +1973,6 @@ endif
          END DO
       END DO
      
-      !  Recompute Qv with full pressure on eta levels.  We use the temporary
-      !  space of v_1 for total theta, which gets diagnosed into temperature.
-      !  The u_1 array is RH on eta levels from the initial interpolation.  The
-      !  previous value of moist was computed with dry pressure, not total
-      !  pressure.
-
-      grid%v_1 = grid%t_2 + 300
-      CALL theta_to_t ( grid%v_1 , grid%pb + grid%p , p00 , &
-                        ids , ide , jds , jde , kds , kde , &
-                        ims , ime , jms , jme , kms , kme , &
-                        its , ite , jts , jte , kts , kte )
-
-      CALL rh_to_mxrat (grid%u_1, grid%v_1, grid%pb + grid%p, moist(:,:,:,P_QV) , &
-                        config_flags%rh2qv_wrt_liquid ,                           &
-                        config_flags%qv_max_p_safe ,                              &
-                        config_flags%qv_max_flag , config_flags%qv_max_value ,    &
-                        config_flags%qv_min_p_safe ,                              &
-                        config_flags%qv_min_flag , config_flags%qv_min_value ,    &
-                        ids , ide , jds , jde , kds , kde ,                       &
-                        ims , ime , jms , jme , kms , kme ,                       &
-                        its , ite , jts , jte , kts , kte-1 )
-
       !  If this is data from the SI, then we probably do not have the original
       !  surface data laying around.  Note that these are all the lowest levels
       !  of the respective 3d arrays.  For surface pressure, we assume that the

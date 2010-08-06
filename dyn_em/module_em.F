@@ -178,7 +178,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          u_base, v_base, t_base, qv_base, z_base,         &
                          msfux, msfuy, msfvx, msfvx_inv,                  &
                          msfvy, msftx, msfty,                             &
-                         xlat, f, e, sina, cosa,                          &
+                         clat, f, e, sina, cosa,                          &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd, xkhh,         &
                          diff_6th_opt, diff_6th_factor,                   &
@@ -264,7 +264,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                     msfvy,   &
                                                                     msftx,   &
                                                                     msfty,   &
-                                                                    xlat,    & 
+                                                                    clat,    & 
                                                                     f,       &
                                                                     e,       &
                                                                     sina,    &
@@ -512,7 +512,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                        config_flags,                   &
                        msfux, msfuy, msfvx, msfvy,     &
                        msftx, msfty,                   &
-                       xlat, fnm, fnp, rdx, rdy,       &
+                       clat, fnm, fnp, rdx, rdy,       &
                        ids, ide, jds, jde, kds, kde,   &
                        ims, ime, jms, jme, kms, kme,   &
                        its, ite, jts, jte, kts, kte   )

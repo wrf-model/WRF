@@ -418,7 +418,10 @@ Namelist variables for controlling the adaptive time step option:
  sf_urban_physics(max_dom)           = 0, ; activate urban canopy model (in Noah LSM only)
                                      = 0: no
                                      = 1: Single-layer, UCM 
-                                     = 2: Multi-layer, BEP scheme (works only with MYJ and BouLac PBL)
+                                     = 2: Multi-layer, Building Environment Parameterization (BEP) scheme 
+                                          (works only with MYJ and BouLac PBL)
+                                     = 3: Multi-layer, Building Environment Model (BEM) scheme 
+                                          (works only with MYJ and BouLac PBL)
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 
@@ -540,7 +543,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
- isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new)
+ isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new, 2=Garratt)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
  tice2tsk_if2cold                    = .false.  ; set Tice to Tsk to avoid unrealistically low sea ice temperatures
  iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 - old, 1 - veg dependent Czil)
@@ -582,6 +585,8 @@ Namelist variables for controlling the adaptive time step option:
  rinblw                              = 250.0    ; radius of influence used to determine the confidence (or weights) for
                                                   the analysis, which is based on the distance between the grid point to the nearest
                                                   obs. The analysis without nearby observation is used at a reduced weight.
+
+ pxlsm_soil_nudge(max_dom)           = 1        ; PXLSM Soil nudging option (requires wrfsfdda file)
 
 The following are for spectral nudging:
  fgdtzero (max_dom)                  = 0,       ; 1= nudging tendencies are set to zero in between fdda calls

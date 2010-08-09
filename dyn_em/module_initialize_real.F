@@ -2354,6 +2354,61 @@ endif
 
    END SUBROUTINE find_my_parent
 
+!---------------------------------------------------------------------
+
+   RECURSIVE SUBROUTINE find_my_parent2 ( grid_ptr_in , grid_ptr_out , id_wanted , found_the_id )
+
+      USE module_domain
+
+      TYPE(domain) , POINTER , INTENT(IN ) :: grid_ptr_in
+      TYPE(domain) , POINTER , INTENT(OUT) :: grid_ptr_out
+      INTEGER                , INTENT(IN ) :: id_wanted
+      LOGICAL                , INTENT(OUT) :: found_the_id
+
+      !  Local
+
+      TYPE(domain) , POINTER :: grid_ptr_holder
+      INTEGER :: kid
+
+      !  Initializations 
+
+      found_the_id = .FALSE.
+      grid_ptr_holder => grid_ptr_in
+
+
+      !  Have we found the correct location?  If so, we can just pop back up with
+      !  the pointer to the right location (i.e. the parent), thank you very much.
+
+      IF ( id_wanted .EQ. grid_ptr_in%grid_id ) THEN
+
+         found_the_id = .TRUE.
+         grid_ptr_out => grid_ptr_in
+
+
+      !  We gotta keep looking.
+
+      ELSE
+
+      !  We drill down and process each nest from this domain.  We don't have to 
+      !  worry about siblings, as we are running over all of the kids for this parent, 
+      !  so it amounts to the same set of domains being tested.  
+
+         loop_over_all_kids : DO kid = 1 , grid_ptr_in%num_nests
+
+            IF ( ASSOCIATED ( grid_ptr_in%nests(kid)%ptr ) ) THEN
+
+               CALL find_my_parent2 ( grid_ptr_in%nests(kid)%ptr , grid_ptr_out , id_wanted , found_the_id )
+               IF ( found_the_id ) THEN
+                  EXIT loop_over_all_kids
+               END IF
+
+            END IF
+         END DO loop_over_all_kids
+
+      END IF
+
+   END SUBROUTINE find_my_parent2
+
 #endif
 
 !---------------------------------------------------------------------

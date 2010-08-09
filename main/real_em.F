@@ -5,7 +5,7 @@ PROGRAM real_data
    USE module_machine
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
         domain_clock_set, head_grid, program_name, domain_clockprint
-   USE module_initialize_real, ONLY : wrfu_initialize, find_my_parent
+   USE module_initialize_real, ONLY : wrfu_initialize, find_my_parent, find_my_parent2
    USE module_initialize_real
    USE module_io_domain
    USE module_driver_constants
@@ -188,7 +188,8 @@ real::t1,t2
             CALL nl_get_j_parent_start ( domain_id, j_parent_start )
             grid_ptr2 => head_grid
             found_the_id = .FALSE.
-            CALL find_my_parent ( grid_ptr2 , grid_ptr , domain_id , parent_id , found_the_id )
+!           CALL find_my_parent ( grid_ptr2 , grid_ptr , domain_id , parent_id , found_the_id )
+            CALL find_my_parent2( grid_ptr2 , grid_ptr ,             parent_id , found_the_id )
             IF ( found_the_id ) THEN
 
                sibling_count = 0

@@ -1391,6 +1391,7 @@ rconfig   real    lonc_loc             namelist,tc     	max_bogus      -999.   i
 rconfig   real    vmax_meters_per_second   namelist,tc  max_bogus      -999.   irh    "vmax_meters_per_second"  "vmax of bogus storm in meters per second"  ""
 rconfig   real    rmax                 namelist,tc     	max_bogus      -999.   irh    "rmax"  "maximum radius outward from storm center"  ""
 rconfig   real    vmax_ratio           namelist,tc      max_bogus      -999.   irh    "vmax_ratio"  ""  ""
+rconfig   real    rankine_lid          namelist,tc      1              -999.   irh    "top pressure limit for the tc bogus scheme"
 
 
 # Physics

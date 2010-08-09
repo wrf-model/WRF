@@ -100,7 +100,10 @@
 
 !-----------------------------------------------------------------------
 ! If grid_fdda or grid_sfdda is 0 for any domain, all interval and
-! ending time information that domain must be set to zero.
+! ending time information that domain must be set to zero.  For
+! surface fdda, we also need to make sure that the PXLSM soil nudging
+! switch is also zero.  Either surface fdda or soil nudging with the
+! PX scheme are enough to allow the surface fdda file to be read.
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
@@ -111,33 +114,35 @@
             CALL wrf_message ( wrf_err_message )
 
             model_config_rec%gfdda_end_y(i) = 0
-            model_config_rec%gfdda_end_m(i) = 0
             model_config_rec%gfdda_end_d(i) = 0
             model_config_rec%gfdda_end_h(i) = 0
+            model_config_rec%gfdda_end_m(i) = 0
             model_config_rec%gfdda_end_s(i) = 0
             model_config_rec%gfdda_interval(i)   = 0
             model_config_rec%gfdda_interval_y(i) = 0
-            model_config_rec%gfdda_interval_m(i) = 0
             model_config_rec%gfdda_interval_d(i) = 0
             model_config_rec%gfdda_interval_h(i) = 0
+            model_config_rec%gfdda_interval_m(i) = 0
             model_config_rec%gfdda_interval_s(i) = 0
          END IF
 
-         IF ( model_config_rec%grid_sfdda(i) .EQ. 0 ) THEN
-            WRITE (wrf_err_message, FMT='(A,I6,A)') 'NOTE: grid_sfdda is 0 for domain ', &
+         IF ( ( model_config_rec%grid_sfdda(i) .EQ. 0 ) .AND. &
+              ( model_config_rec%pxlsm_soil_nudge(i) .EQ. 0 ) ) THEN
+            WRITE (wrf_err_message, FMT='(A,I6,A)') &
+                         'NOTE: both grid_sfdda and pxlsm_soil_nudge are 0 for domain ', &
                          i, ', setting sgfdda interval and ending time to 0 for that domain.'
             CALL wrf_message ( wrf_err_message )
 
             model_config_rec%sgfdda_end_y(i) = 0
-            model_config_rec%sgfdda_end_m(i) = 0
             model_config_rec%sgfdda_end_d(i) = 0
             model_config_rec%sgfdda_end_h(i) = 0
+            model_config_rec%sgfdda_end_m(i) = 0
             model_config_rec%sgfdda_end_s(i) = 0
             model_config_rec%sgfdda_interval(i)   = 0
             model_config_rec%sgfdda_interval_y(i) = 0
-            model_config_rec%sgfdda_interval_m(i) = 0
             model_config_rec%sgfdda_interval_d(i) = 0
             model_config_rec%sgfdda_interval_h(i) = 0
+            model_config_rec%sgfdda_interval_m(i) = 0
             model_config_rec%sgfdda_interval_s(i) = 0
          END IF
 
@@ -149,15 +154,15 @@
             model_config_rec%fdda_end(i) = 0
             model_config_rec%auxinput11_interval(i)   = 0
             model_config_rec%auxinput11_interval_y(i) = 0
-            model_config_rec%auxinput11_interval_m(i) = 0
             model_config_rec%auxinput11_interval_d(i) = 0
             model_config_rec%auxinput11_interval_h(i) = 0
+            model_config_rec%auxinput11_interval_m(i) = 0
             model_config_rec%auxinput11_interval_s(i) = 0
             model_config_rec%auxinput11_end(i)   = 0
             model_config_rec%auxinput11_end_y(i) = 0
-            model_config_rec%auxinput11_end_m(i) = 0
             model_config_rec%auxinput11_end_d(i) = 0
             model_config_rec%auxinput11_end_h(i) = 0
+            model_config_rec%auxinput11_end_m(i) = 0
             model_config_rec%auxinput11_end_s(i) = 0
          END IF
       ENDDO

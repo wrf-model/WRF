@@ -16,7 +16,7 @@ Number of urban categories: 3
 # ZR:  Roof level (building height)  [ m ]
 #      (sf_urban_physics=1)
 
-ZR: 8.9,  5.1,  5.4
+ZR: 10.0,  7.5,  5.0
 
 #
 # SIGMA_ZED:  Standard Deviation of roof height  [ m ]  
@@ -28,14 +28,14 @@ SIGMA_ZED: 4.0,  3.0,  1.0
 # ROOF_WIDTH:  Roof (i.e., building) width  [ m ]
 #      (sf_urban_physics=1)
 
-ROOF_WIDTH: 31.7, 25.7, 17.6
+ROOF_WIDTH: 10.0, 9.4, 8.3
 
 #
 # ROAD_WIDTH:  road width  [ m ]
 #      (sf_urban_physics=1)
 #
 
-ROAD_WIDTH: 98.9, 39.2, 108.0
+ROAD_WIDTH: 10.0, 9.4, 8.3
 
 #
 # AH:  Anthropogenic heat [ W m{-2} ]
@@ -50,21 +50,21 @@ AH:  90.0, 50.0, 20.0
 #      (sf_urban_physics=1,2,3)
 #
 
-FRC_URB: 0.865, 0.429, 0.429
+FRC_URB: 0.95, 0.9, 0.5
 
 #
 # CAPR:  Heat capacity of roof  [ J m{-3} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-CAPR: 1.32E6, 1.32E6, 1.32E6, 
+CAPR: 1.0E6, 1.0E6, 1.0E6, 
 
 #
 # CAPB:  Heat capacity of building wall [ J m{-3} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-CAPB: 1.32E6, 1.32E6, 1.32E6, 
+CAPB: 1.0E6, 1.0E6, 1.0E6, 
 
 #
 # CAPG:  Heat capacity of ground (road) [ J m{-3} K{-1} ]
@@ -78,14 +78,14 @@ CAPG:  1.4E6, 1.4E6, 1.4E6,
 #      (sf_urban_physics=1,2,3)
 #
 
-AKSR:  0.695, 0.695, 0.695,
+AKSR:  0.67, 0.67, 0.67,
 
 #
 # AKSB:  Thermal conductivity of building wall [ J m{-1} s{-1} K{-1} ]
 #      (sf_urban_physics=1,2,3)
 #
 
-AKSB:  0.695, 0.695, 0.695,
+AKSB:  0.67, 0.67, 0.67,
 
 #
 # AKSG:  Thermal conductivity of ground (road) [ J m{-1} s{-1} K{-1} ]
@@ -113,7 +113,7 @@ ALBB: 0.20, 0.20, 0.20
 #      (sf_urban_physics=1,2,3)
 #
 
-ALBG: 0.15, 0.15, 0.15 
+ALBG: 0.20, 0.20, 0.20 
 
 #
 # EPSR:  Surface emissivity of roof [ - ]
@@ -280,11 +280,11 @@ BUILDING HEIGHTS: 1
 #      [m]       [%]
        5.0       0.0
       10.0       0.0
-      15.0       5.0
+      15.0      10.0
       20.0      25.0
       25.0      40.0
       30.0      25.0
-      35.0       5.0
+      35.0       0.0
 END BUILDING HEIGHTS
 
 BUILDING HEIGHTS: 2

@@ -2825,9 +2825,9 @@ END SUBROUTINE get_current_grid_name
      IMPLICIT NONE
      INTEGER, INTENT(IN) :: id
      TYPE(domain), POINTER :: grid
-write(0,*)'modify_io_masks head_grid ',id,ASSOCIATED(head_grid)
+!write(0,*)'modify_io_masks head_grid ',id,ASSOCIATED(head_grid)
      CALL find_grid_by_id( id, head_grid, grid )
-write(0,*)'modify_io_masks grid ',id,ASSOCIATED(grid)
+!write(0,*)'modify_io_masks grid ',id,ASSOCIATED(grid)
      IF ( ASSOCIATED( grid ) ) CALL modify_io_masks1( grid, id ) 
      RETURN 
    END SUBROUTINE modify_io_masks

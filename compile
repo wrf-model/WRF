@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+setenv START_OF_COMPILE "`date`"
+
 cont1:
 
 if ( !  -e configure.wrf  ) then

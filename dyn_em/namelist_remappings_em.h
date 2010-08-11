@@ -1,39 +1,5 @@
 !WRF:DRIVER_LAYER:CORE_SPECIFIC
 
-!  Special input considerations: if analysis FDDA is turned off, reset the
-!  interval and io_forms to zero so that there is no chance that the WRF
-!  tries to input the data.  Same for the SST update option.
-
-IF ( MAXVAL( model_config_rec%grid_fdda ) .EQ. 0 ) THEN
-   model_config_rec%io_form_gfdda    = 0
-   model_config_rec%gfdda_interval   = 0
-   model_config_rec%gfdda_interval_d = 0
-   model_config_rec%gfdda_interval_h = 0
-   model_config_rec%gfdda_interval_m = 0
-   model_config_rec%gfdda_interval_s = 0
-   model_config_rec%gfdda_interval_y = 0
-END IF
-
-IF ( MAXVAL( model_config_rec%grid_sfdda ) .EQ. 0 ) THEN
-   model_config_rec%io_form_sgfdda    = 0
-   model_config_rec%sgfdda_interval   = 0
-   model_config_rec%sgfdda_interval_d = 0
-   model_config_rec%sgfdda_interval_h = 0
-   model_config_rec%sgfdda_interval_m = 0
-   model_config_rec%sgfdda_interval_s = 0
-   model_config_rec%sgfdda_interval_y = 0
-END IF
-
-IF ( model_config_rec%sst_update .EQ. 0 ) THEN
-   model_config_rec%io_form_auxinput4    = 0
-   model_config_rec%auxinput4_interval   = 0
-   model_config_rec%auxinput4_interval_d = 0
-   model_config_rec%auxinput4_interval_h = 0
-   model_config_rec%auxinput4_interval_m = 0
-   model_config_rec%auxinput4_interval_s = 0
-   model_config_rec%auxinput4_interval_y = 0
-END IF
-
 ! Namelist remappings.  This file is included by the initial_config
 ! routine in frame/module_configure.F and provides em_core specific
 ! remappings of namelist variables

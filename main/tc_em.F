@@ -2156,10 +2156,8 @@ END SUBROUTINE mass2_Vstag
 
 !nz is the number of vertical levels.
 
-
+ INTEGER :: ew, ns, nz, i,k,j
  REAL utcp(ew,nz,ns-1),  vtcp(ew-1,nz,ns)
-
- INTEGER :: ew, ns,i,k,j
 
 !----------------------------------------------------
 !Stagger UTCP
@@ -2202,6 +2200,7 @@ END SUBROUTINE mass2_Vstag
   subroutine final_ew_velocity(u2,u1,chi,psi,utcr,dx,ew,ns,nz)
   
 
+  integer :: ew,ns,nz,i,j,k
   real :: u1(ew,nz,ns-1),utcr(ew,nz,ns-1)
   real :: psi(ew-1,nz,ns-1),chi(ew-1,nz,ns-1)  
 ! input arrays: 
@@ -2229,7 +2228,6 @@ END SUBROUTINE mass2_Vstag
 ! u0 is the background ew velocity
 ! uchi is the array chi on the u staggered grid.
 
-  integer :: ew,ns,nz,i,j,k
   real    :: dx,arg1,arg2
 
 !-------------------------------------------------------------
@@ -2312,6 +2310,7 @@ END SUBROUTINE mass2_Vstag
   subroutine final_ns_velocity(v2,v1,chi,psi,vtcr,dx,ew,ns,nz)
   
 
+  integer :: ew,ns,nz,i,j,k
   real :: v1(ew-1,nz,ns),vtcr(ew-1,nz,ns)
   real :: psi(ew-1,nz,ns-1),chi(ew-1,nz,ns-1)  
 ! input arrays: 
@@ -2337,7 +2336,6 @@ END SUBROUTINE mass2_Vstag
 ! v0 is the background ns velocity
 ! vchi is the relaxation of the divergent wind put on v WRF staggered grid points.
 
-  integer :: ew,ns,nz,i,j,k
   real    :: dx,arg1,arg2
 
 
@@ -2420,6 +2418,7 @@ subroutine final_RH(rh2,rh0,rhmx,strmci,strmcj,rmax_nstrm,ew,ns,nz,k00, &
 
 
 
+     integer :: ew,ns,nz
      real :: rh2(ew-1,nz,ns-1)  !The final output relative humidity.
      real :: rh0(ew-1,nz,ns-1)  !First quess rh read from the metgrid input file.
      real :: rhmx(nz)
@@ -2434,7 +2433,6 @@ subroutine final_RH(rh2,rh0,rhmx,strmci,strmcj,rmax_nstrm,ew,ns,nz,k00, &
      real :: rad
      real :: rhtc(ew-1,nz,ns-1)
 
-     integer :: ew,ns,nz
      integer :: nct,k00,i,j,k,ew_mvc,ns_mvc
      integer :: strmci(nz), strmcj(nz)
 

@@ -1,10 +1,10 @@
-================================================================================
-Please read through this README.basics to get some basic ideas on running WRF-Var.
-================================================================================
+======================================================================================
+Please read through this README.basics to get some basic ideas on running WRFDA-3DVar.
+======================================================================================
 
 Setup and Run - with conventional data
 
-1) To run WRF-Var, first create a working directory, 
+1) To run WRFDA-3DVar, first create a working directory, 
    for example, WRFDA/var/test, then follow the steps below:
 
 cd WRFDA/var/test/tutorial (go to the working directory)
@@ -38,7 +38,7 @@ vi parame.in
  wrf_bdy_file       = './wrfbdy_d01'
  wrf_input          = '$DAT_DIR/rc/2008020512/wrfinput_d01'
  domain_id          = 1
- cycling = .false. (set to .true. if WRF-Var first guess comes from a previous WRF forecast.)
+ cycling = .false. (set to .true. if WRFDA first guess comes from a previous WRF forecast.)
  debug   = .true.
  low_bdy_only = .false.             
  update_lsm = .false. 
@@ -70,13 +70,13 @@ iswater (water point index) is 16 for USGS LANDUSE and 17 for MODIS LANDUSE.
 It is recommended to run da_update_bc.exe with
  update_lateral_bdy = .false.
  update_low_bdy     = .true.
-before running WRF-Var, if in cycling mode (especially if you are doing 
+before running WRFDA, if in cycling mode (especially if you are doing 
 radiance data assimilation and there is SEA ICE and SNOW in your domain)
 to get low-bdy updated first guess (da_file will be overwritten by da_update_bc).
 
 Then run da_update_bc.exe with
  update_lateral_bdy = .true.
  update_low_bdy     = .false.
-after WRF-Var to get updated lateral boubdary conditions (wrf_bdy_file will be
+after WRFDA to get updated lateral boubdary conditions (wrf_bdy_file will be
 overwritten by da_update_bc).
 

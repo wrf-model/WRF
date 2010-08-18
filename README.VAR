@@ -22,6 +22,23 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.2.1 Release Notes:
+-----------------------
+
+Version 3.2.1 is released on August 18, 2010.
+
+- CRTM interface for radiance assimilation has been upgraded to version 2.0.2.
+
+- CRTM V2.0.2 has been included as an internal library in WRFDA codes.
+  Setting environmental variable CRTM to ANYTHING to activate the CRTM installation 
+  during WRFDA compilation.
+
+- Multivariate gen_be method which considers the correlations between moisture and 
+  other variables is included, but the support for the new capability will be very
+  limited.
+
+- Lots of bug fixes.
+
 V3.2 Release Notes:
 -----------------------
 
@@ -107,6 +124,7 @@ WRFDA update history:
 - V3.1:     Apr  9, 2009
 - V3.1.1:   Jul 31, 2009
 - V3.2:     Mar 31, 2010
+- V3.2.1:   Aug 18, 2010
 
 ======================================
 
@@ -117,14 +135,15 @@ How to compile and run?
   file that has appropriate compile options for the supported computers.
 
   Note: WRFDA only requires netCDF library starting with V3.1.1.
-        If using prepbufr or/and radiance data, NCEP BUFR and CRTM 1.2/RTTOV 8.7 are required.
-        Install required libraries and set environment variables properly 
+        Install netCDF library with the same compiler that will be used to compile WRFDA.
+        NCEP BUFR and CRTM 2.0.2 libs are included in the WRFDA tar file. 
+        Set environment variables properly according to your applications
         before you type 'configure wrfda'. For example, 
 
         setenv NETCDF /usr/local/netcdf-pgi
-        setenv BUFR 1 (optional)
-        setenv CRTM /usr/local/crtm_1_2 (optional)
-        setenv RTTOV /usr/local/rttov87 (optional)
+        setenv BUFR 1 (optional, set to compile WRFDA with NCEP BUFR capability)
+        setenv CRTM 1 (optional, set to compile WRFDA with CRTM capability)
+        setenv RTTOV /usr/local/rttov87 (optional, set to compile WRFDA with RTTOV capability)
 
 - Type 'compile all_wrfvar' when your are ready:
 

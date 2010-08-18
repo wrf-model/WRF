@@ -1,4 +1,4 @@
-Description of WRF-Var namelist variables
+Description of WRFDA namelist variables
 -----------------------------------------
 
  Note: variables followed by (...) indicate that this variable can or needs to
@@ -16,16 +16,14 @@ Description of WRF-Var namelist variables
   print_detail_xb         = .false.
   print_detail_obs        = .false.
   print_detail_map        = .false.
-  print_detail_grad       = .false. ; the purpose of print_detail_grad is changed in V3.1
-                                    ; .true.: to print out detailed gradient of each observation type at
-                                    ;         each iteration and write out detailed cost function and 
-                                    ;         gradient into files called cost_fn and grad_fn.
+  print_detail_grad       = .false. ; .true.: to print out detailed gradient of each observation type at
+                                    ;         the first and final iterations.
   check_max_iv_print      = .true.  ; obsolete (only used by Radar)
 /
 &wrfvar2
   analysis_accu           = 900     ; second, if time difference between namelist setting
                                     ; (analysis_date) and date info read in from first guess
-                                    ; is larger than analysis_accu, WRF-Var will issue a
+                                    ; is larger than analysis_accu, WRFr will issue a
                                     ; warning message ("=======> Wrong xb time found???"), 
                                     ; but won't abort.
   calc_w_increment        = .false. ; .true.: the increment of the vertical velocity w will be 
@@ -78,7 +76,7 @@ Description of WRF-Var namelist variables
      ; use_msuobs, use_amsuaobs, use_amsubobs, use_airsobs,
      ; use_eos_amsuaobs, use_hsbobs, use_ssmisobs are 
      ; radiance-related variables that only control if reading
-     ; in corresponding BUFR files into WRF-Var or not, but
+     ; in corresponding BUFR files into WRFDA or not, but
      ; do not control if assimilate the data or not.
      ; Some more variables have to be set in &wrfvar14 in order
      ; to assimilate radiance data.
@@ -121,6 +119,13 @@ Description of WRF-Var namelist variables
                                          ; function gradient is reduced by a factor of eps.
                                          ; inner minimization stops either when the criterion is met or 
                                          ; when inner iterations reach ntmax.
+  orthonorm_gradient         = .false.   ; .true.: the gradient vectors are stored during 
+                                         ;         the Conjugate Gradient for each iteration and 
+                                         ;         used to re-orthogonalize the new gradient. 
+                                         ;         This requires extra storage of large vectors 
+                                         ;         (each one being the size of the control variable)
+                                         ;         but results in a better convergence of the 
+                                         ;         Conjugate Gradient after around 20 iterations.
 /
 &wrfvar7
   cv_options              = 5         ; 3: NCEP Background Error model
@@ -209,14 +214,8 @@ Description of WRF-Var namelist variables
                                     ; 2: surface observations will be assimilated based on surface 
                                     ;    similarity theory in PBL. Innovations are computed based 
                                     ;    on 10-m wind, 2-m temperature and 2-m moisture. 
-  calculate_cg_cost_fn    = .false. ; the purpose of calculate_cg_cost_fn is changed in V3.1.
-                                    ; use print_detail_grad=.true. to dump cost function and gradient
-                                    ; of each iteration to cost_fn and grad_fn.
-                                    ; conjugate gradient algorithm does not require the computation of 
-                                    ; cost function at every iteration during minimization.
-                                    ; .true.: cost function is printed out and is directly derived 
-                                    ;         from the gradient using the fully linear properties 
-                                    ;         inside the inner-loop.
+  calculate_cg_cost_fn    = .false. ; .true.: Compute and write out cost function and gradient of
+                                    ;         each iteration into files called cost_fn and grad_fn.
                                     ; .false.: Only the initial and final cost functions are computed 
                                     ;          and output.
   lat_stats_option        = .false. ; do not change
@@ -274,8 +273,8 @@ Description of WRF-Var namelist variables
                                                  ;         tuning method (Desroziers and Ivanov, 2001)
   use_antcorr (max_instruments)       = .false.  ; .true.: perform Antenna Correction in CRTM
   rtm_option                          = 1        ; what RTM (Radiative Transfer Model) to use
-                                                 ; 1: RTTOV (WRF-Var needs to compile with RTTOV)
-                                                 ; 2: CRTM  (WRF-Var needs to compile with CRTM)
+                                                 ; 1: RTTOV (WRFDA needs to compile with RTTOV)
+                                                 ; 2: CRTM  (WRFDA needs to compile with CRTM)
   only_sea_rad                        = .false.  ; .true.: assimilate radiance over water only
   use_varbc                           = .false.  ; .true.: perform Variational Bias Correction.
                                                  ;         A parameter file in ASCII format called VARBC.in

@@ -43,6 +43,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Local
    INTEGER                                    :: ialarm
    INTEGER                                    :: rc
+   TYPE(WRFU_Time) :: currTime, startTime
 #ifdef HWRF
 !zhang's doing
    TYPE(WRFU_Time) :: CurrTime  !zhang new
@@ -54,12 +55,17 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    CHARACTER*256          :: message
 
 #if (EM_CORE == 1)
+   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
 #else
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
 #endif
-     CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+     IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
+       !  no history output on the first time of the restart
+     ELSE
+       CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+     END IF
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
    ENDIF
 
@@ -113,7 +119,9 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    ENDDO
 
 ! - RESTART OUTPUT
-   IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
+   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+   IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
+        ( currTime .NE. startTime ) ) THEN
 #ifdef HWRF
 !zhang's doing
      CALL domain_clock_get( grid, current_time=CurrTime )
@@ -128,6 +136,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        ! time stamps in the file names.
        CALL med_restart_out ( grid , config_flags )
      ENDIF
+     CALL WRFU_AlarmRingerOff( grid%alarms( RESTART_ALARM ), rc=rc )
+   ELSE
      CALL WRFU_AlarmRingerOff( grid%alarms( RESTART_ALARM ), rc=rc )
    ENDIF
 

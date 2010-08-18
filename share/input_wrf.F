@@ -142,23 +142,10 @@
           curtime = domain_get_current_time( grid )
           DO i = 1, MAX_WRF_ALARMS
             IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
-              IF ( i .LT. 10 ) THEN
-                write(alarmname,'("WRF_ALARM_ISRINGING_0",i1)')i
-              ELSE
-                write(alarmname,'("WRF_ALARM_ISRINGING_",i2)')i
-              ENDIF
+              write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
-              IF ( iring .EQ. 1 ) THEN
-                CALL WRFU_AlarmRingerOn( grid%alarms( i ) )
-              ELSE
-                CALL WRFU_AlarmRingerOff( grid%alarms( i ) )
-              ENDIF
   
-              IF ( i .LT. 10 ) THEN
-                write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_0",i1)')i
-              ELSE
-                write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2)')i
-              ENDIF
+              write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
               IF ( ierr .EQ. 0 &
                    .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
@@ -170,6 +157,13 @@
                 CALL WRFU_TimeIntervalSet(interval,S=seconds)
                 ringTime = curtime + interval
                 CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
+
+              ENDIF
+
+              IF ( iring .EQ. 1 ) THEN
+                CALL WRFU_AlarmRingerOn( grid%alarms( i ) )
+              ELSE
+                CALL WRFU_AlarmRingerOff( grid%alarms( i ) )
               ENDIF
             ENDIF
           ENDDO

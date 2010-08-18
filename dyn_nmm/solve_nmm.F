@@ -1423,9 +1423,11 @@
         NTSD_rad=grid%ntsd+1
       ENDIF
 !
+#ifdef HWRF
 !emc_2010_bugfix_h50
       call nl_get_start_hour(1,IHRST)
 !emc_2010_bugfix_h50
+#endif
 
       IF(MOD(NTSD_rad,GRID%NRADS)==0.OR.                               &
      &   MOD(NTSD_rad,GRID%NRADL)==0)THEN

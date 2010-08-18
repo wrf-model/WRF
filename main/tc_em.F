@@ -1596,6 +1596,7 @@ END SUBROUTINE tc_bogus
       IMPLICIT NONE
 
       INTEGER :: jp1,jm1,ip1,im1,i,j,k
+      INTEGER :: ns, ew, nz, k1
 
       REAL , DIMENSION(ew,nz,ns-1)   :: uin   !u values on unstaggered U grid
       REAL , DIMENSION(ew-1,nz,ns)   :: vin   !v values on unstaggered V grid
@@ -1612,7 +1613,6 @@ END SUBROUTINE tc_bogus
 
       REAL :: dsx,dsy , u1 , u2 , u3 , u4 , v1 , v2 , v3 , v4
       real :: dudy,dvdx,mm
-      INTEGER :: ns, ew, nz, k1
 
       
       vort(:,:,:) = -999.
@@ -1679,6 +1679,7 @@ END SUBROUTINE tc_bogus
       IMPLICIT NONE
 
       INTEGER :: jp1,jm1,ip1,im1,i,j,k
+      INTEGER :: ns, ew, nz, k1
 
       REAL , DIMENSION(ew,nz,ns-1)   :: uin   !u values on unstaggered U grid
       REAL , DIMENSION(ew-1,nz,ns)   :: vin   !v values on unstaggered V grid
@@ -1694,7 +1695,6 @@ END SUBROUTINE tc_bogus
 
       REAL :: dsr,u1,u2,v1,v2
       real :: dudx,dvdy,mm,arg1,arg2
-      INTEGER :: ns, ew, nz, k1
 
       dsr = 1/ds
       do k = 1,nz

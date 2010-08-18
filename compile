@@ -343,7 +343,7 @@ else
   if ( ! $?WRF_SRC_ROOT_DIR ) setenv WRF_SRC_ROOT_DIR `pwd`
 
 # new dec 2009.  check to see if make supports parallel -j option
-  make -j 6 >& /dev/null
+  make -j 2 >& /dev/null
   if ( $status == 0 ) then              # Parallel make ok
     if ( ! $?J ) then                   # J not defined
       echo setting parallel make -j 2   # Set default to 2
@@ -399,7 +399,7 @@ foreach d ( `/bin/ls test` )
 end
 echo ' '
 echo '  compile -d                 compile without optimization and with debugging'
-echo '  compile -j n               parallel make using n tasks if supported (default 6)'
+echo '  compile -j n               parallel make using n tasks if supported (default 2)'
 echo '  compile -h                 help message'
 
 

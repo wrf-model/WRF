@@ -307,8 +307,8 @@ contains
 !              pressure-level diffusion, april 2009
 !               ==> negligible differences
 !              implicit forcing for momentum with clean up, july 2009
-!               ==> prevents model blownup when sfc layer is too low
-!              increase of lamda, 30 < 0.1 x del z < 300, feb 2010
+!               ==> prevents model blowup when sfc layer is too low
+!              incresea of lamda, 30 < 0.1 x del z < 300, feb 2010
 !               ==> prevents model blowup when delz is extremely large
 !              revised prandtl number at surface, peggy lemone, feb 2010
 !               ==> increase kh, decrease mixing due to counter-gradient term
@@ -471,7 +471,8 @@ contains
                                                                 ufxpbl,vfxpbl, &
                                                                   delta,dthvx
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
-               dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,prfac
+               dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
+               prfac,phim8z
 !
 !----------------------------------------------------------------------
 !
@@ -846,17 +847,20 @@ contains
          zfac(i,k) = min(max((1.-(zq(i,k+1)-zl1(i))/(hpbl(i)-zl1(i))),zfmin),1.)
          xkzo = ckz*dza(i,k+1)
          zfacent(i,k) = (1.-zfac(i,k))**3.
+         wscalek(i,k) = (ust3(i)+phifac*karman*wstar3(i)*(1.-zfac(i,k)))**h1
          if(sfcflg(i)) then 
-           prfac = conpr/phim(i)/(1.+4.*karman*wstar3(i)/ust3(i))
+           prfac = conpr/phim(i)/((1.+4.*karman*wstar3(i)/ust3(i)))**h1
            prnumfac = -3.*(max(zq(i,k+1)-sfcfrac*hpbl(i),0.))**2./hpbl(i)**2.
          else
            prfac = 0.
            prnumfac = 0.
+           phim8z = 1.+(phim(i)-1.)*zq(i,k+1)/sfcfrac/hpbl(i)
+           wscalek(i,k) = ust(i)/phim8z
+           wscalek(i,k) = max(wscalek(i,k),ust(i)/aphi5)
          endif
          prnum0 = (phih(i)/phim(i)+prfac)
          prnum0 = min(prnum0,prmax)
          prnum0 = max(prnum0,prmin)
-         wscalek(i,k) = (ust3(i)+phifac*karman*wstar3(i)*(1.-zfac(i,k)))**h1
          xkzm(i,k) = xkzo+wscalek(i,k)*karman*zq(i,k+1)*zfac(i,k)**pfac
          prnum =  1. + (prnum0-1.)*exp(prnumfac)
          xkzq(i,k) = xkzm(i,k)/prnum*zfac(i,k)**(pfac_q-pfac)

@@ -398,7 +398,7 @@
 
       integer(kind=im), parameter :: no3  = 16
 
-      real(kind=rb) :: fracrefao(no3,9) ,fracrefbo(no3,5)
+      real(kind=rb) :: fracrefao(no3,10) ,fracrefbo(no3,5)
       real(kind=rb) :: kao(9,5,13,no3)
       real(kind=rb) :: kbo(5,5,13:59,no3)
       real(kind=rb) :: kao_mn2o(9,19,no3), kbo_mn2o(5,19,no3)
@@ -431,7 +431,7 @@
 
       integer(kind=im), parameter :: ng3  = 16
 
-      real(kind=rb) :: fracrefa(ng3,9) ,fracrefb(ng3,5)
+      real(kind=rb) :: fracrefa(ng3,10) ,fracrefb(ng3,5)
       real(kind=rb) :: ka(9,5,13,ng3)  ,absa(585,ng3)
       real(kind=rb) :: kb(5,5,13:59,ng3),absb(1175,ng3)
       real(kind=rb) :: ka_mn2o(9,19,ng3), kb_mn2o(5,19,ng3)
@@ -470,7 +470,7 @@
 
       integer(kind=im), parameter :: no4  = 16
 
-      real(kind=rb) :: fracrefao(no4,9)  ,fracrefbo(no4,5)
+      real(kind=rb) :: fracrefao(no4,9)  ,fracrefbo(no4,6)
       real(kind=rb) :: kao(9,5,13,no4)
       real(kind=rb) :: kbo(5,5,13:59,no4)
       real(kind=rb) :: selfrefo(10,no4)  ,forrefo(4,no4)
@@ -498,7 +498,7 @@
 
       integer(kind=im), parameter :: ng4  = 14
 
-      real(kind=rb) :: fracrefa(ng4,9)  ,fracrefb(ng4,5)
+      real(kind=rb) :: fracrefa(ng4,9)  ,fracrefb(ng4,6)
       real(kind=rb) :: ka(9,5,13,ng4)   ,absa(585,ng4)
       real(kind=rb) :: kb(5,5,13:59,ng4),absb(1175,ng4)
       real(kind=rb) :: selfref(10,ng4)  ,forref(4,ng4)
@@ -2599,16 +2599,16 @@ contains
 
       end module mcica_subcol_gen_lw
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_cldprmc.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.8 $
-!     created:   $Date: 2009/05/22 21:04:30 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_lw_cldprmc
 
 !  --------------------------------------------------------------------------
 ! |                                                                          |
-! |  Copyright 2002-2009, Atmospheric & Environmental Research, Inc. (AER).  |
+! |  Copyright 2002-2008, Atmospheric & Environmental Research, Inc. (AER).  |
 ! |  This software may be used, copied, or redistributed as long as it is    |
 ! |  not sold and this copyright notice is reproduced on each copy made.     |
 ! |  This model is provided as is without any express or implied warranties. |
@@ -2619,7 +2619,7 @@ contains
 ! --------- Modules ----------
 
       use parkind, only : im => kind_im, rb => kind_rb
-      use parrrtm, only : ngptlw, nbndlw
+      use parrrtm, only : ngptlw
       use rrlw_cld, only: abscld1, absliq0, absliq1, &
                           absice0, absice1, absice2, absice3
       use rrlw_wvn, only: ngb
@@ -2676,7 +2676,6 @@ contains
       integer(kind=im) :: ib                          ! spectral band index
       integer(kind=im) :: ig                          ! g-point interval index
       integer(kind=im) :: index 
-      integer(kind=im) :: icb(nbndlw)
 
       real(kind=rb) :: abscoice(ngptlw)               ! ice absorption coefficients
       real(kind=rb) :: abscoliq(ngptlw)               ! liquid absorption coefficients
@@ -2743,9 +2742,7 @@ contains
 !                     Linear interpolation is used to get the absorption 
 !                     coefficients for the input effective radius.
 
-      data icb /1,2,3,3,3,4,4,4,5, 5, 5, 5, 5, 5, 5, 5/
-
-      hvrclc = '$Revision: 1.8 $'
+      hvrclc = '$Revision: 1.3 $'
 
       ncbands = 1
 
@@ -2790,7 +2787,7 @@ contains
                   if (radice .lt. 13.0_rb .or. radice .gt. 130._rb) stop &
                       'ICE RADIUS OUT OF BOUNDS'
                   ncbands = 5
-                  ib = icb(ngb(ig))
+                  ib = ngb(ig)
                   abscoice(ig) = absice1(1,ib) + absice1(2,ib)/radice
 
 ! For iceflag=2 option, ice particle effective radius is limited to 5.0 to 131.0 microns
@@ -2832,12 +2829,12 @@ contains
 
                elseif (liqflag .eq. 1) then
                   radliq = relqmc(lay)
-                  if (radliq .lt. 2.5_rb .or. radliq .gt. 60._rb) stop &
+                  if (radliq .lt. 1.5_rb .or. radliq .gt. 60._rb) stop &
                        'LIQUID EFFECTIVE RADIUS OUT OF BOUNDS'
-                  index = int(radliq - 1.5_rb)
-                  if (index .eq. 0) index = 1
+                  index = radliq - 1.5_rb
                   if (index .eq. 58) index = 57
-                  fint = radliq - 1.5_rb - float(index)
+                  if (index .eq. 0) index = 1
+                  fint = radliq - 1.5_rb - index
                   ib = ngb(ig)
                   abscoliq(ig) = &
                         absliq1(index,ib) + fint * &
@@ -4620,16 +4617,16 @@ contains
 
       end module rrtmg_lw_setcoef
 
-!     path:      $Source: /storm/rc1/cvsroot/rc/rrtmg_lw/src/rrtmg_lw_taumol.f90,v $
-!     author:    $Author: mike $
-!     revision:  $Revision: 1.7 $
-!     created:   $Date: 2009/10/20 15:08:37 $
+!     path:      $Source: /cvsroot/NWP/WRFV3/phys/module_ra_rrtmg_lw.F,v $
+!     author:    $Author: trn $
+!     revision:  $Revision: 1.3 $
+!     created:   $Date: 2009/04/16 19:54:22 $
 !
       module rrtmg_lw_taumol
 
 !  --------------------------------------------------------------------------
 ! |                                                                          |
-! |  Copyright 2002-2009, Atmospheric & Environmental Research, Inc. (AER).  |
+! |  Copyright 2002-2008, Atmospheric & Environmental Research, Inc. (AER).  |
 ! |  This software may be used, copied, or redistributed as long as it is    |
 ! |  not sold and this copyright notice is reproduced on each copy made.     |
 ! |  This model is provided as is without any express or implied warranties. |
@@ -4875,7 +4872,7 @@ contains
       real(kind=rb), intent(out) :: taug(:,:)         ! gaseous optical depth 
                                                       !    Dimensions: (nlayers,ngptlw)
 
-      hvrtau = '$Revision: 1.7 $'
+      hvrtau = '$Revision: 1.3 $'
 
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
@@ -5096,7 +5093,7 @@ contains
       real(kind=rb) :: fac001, fac101, fac201, fac011, fac111, fac211
       real(kind=rb) :: tauself, taufor, n2om1, n2om2, absn2o
       real(kind=rb) :: refrat_planck_a, refrat_planck_b, refrat_m_a, refrat_m_b
-      real(kind=rb) :: tau_major, tau_major1
+
 
 
 ! Minor gas mapping levels:
@@ -5169,7 +5166,7 @@ contains
          indf = indfor(lay)
          indm = indminor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -5181,25 +5178,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
-         if (specparm1 .lt. 0.125_rb) then
+
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -5211,7 +5190,49 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng3
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
+               n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
+               absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
+               taug(lay,ngs2+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) + &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig))  &
+                    + tauself + taufor &
+                    + adjcoln2o*absn2o
+               fracs(lay,ngs2+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -5223,78 +5244,73 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng3
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-            n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
-                 (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
-            n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
-                 (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
-            absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng3
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
+               n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
+               absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
+               taug(lay,ngs2+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + adjcoln2o*absn2o
+               fracs(lay,ngs2+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+               enddo
+         else
+            fac000 = (1. - fs) * fac00(lay)
+            fac010 = (1. - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1. - fs1) * fac01(lay)
+            fac011 = (1. - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng3
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
+               n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
+               absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
+               taug(lay,ngs2+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) +  &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs2+ig) = tau_major + tau_major1 &
-                 + tauself + taufor &
-                 + adjcoln2o*absn2o
-            fracs(lay,ngs2+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig))  &
+                    + tauself + taufor &
+                    + adjcoln2o*absn2o
+               fracs(lay,ngs2+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+           enddo
+        endif
       enddo
 
 ! Upper atmosphere loop
@@ -5408,7 +5424,6 @@ contains
       real(kind=rb) :: fac001, fac101, fac201, fac011, fac111, fac211
       real(kind=rb) :: tauself, taufor
       real(kind=rb) :: refrat_planck_a, refrat_planck_b
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! P =   142.5940 mb
@@ -5451,7 +5466,7 @@ contains
          inds = indself(lay)
          indf = indfor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125 .and. specparm1 .lt. 0.125) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -5463,26 +5478,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
 
-         if (specparm1 .lt. 0.125_rb) then
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -5494,7 +5490,43 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng4
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs3+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) +  &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig))  &
+                    + tauself + taufor
+               fracs(lay,ngs3+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -5506,72 +5538,60 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
-
-         do ig = 1, ng4
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng4
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs3+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) +  &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs3+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng4
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs3+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) + &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs3+ig) = tau_major + tau_major1 &
-                 + tauself + taufor
-            fracs(lay,ngs3+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs3+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+        endif
       enddo
 
 ! Upper atmosphere loop
@@ -5669,7 +5689,6 @@ contains
       real(kind=rb) :: fac001, fac101, fac201, fac011, fac111, fac211
       real(kind=rb) :: tauself, taufor, o3m1, o3m2, abso3
       real(kind=rb) :: refrat_planck_a, refrat_planck_b, refrat_m_a
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! Minor gas mapping level :
@@ -5730,7 +5749,7 @@ contains
          indf = indfor(lay)
          indm = indminor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -5742,26 +5761,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
 
-         if (specparm1 .lt. 0.125_rb) then
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -5773,7 +5773,50 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng5
+               tauself = selffac(lay) * (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               o3m1 = ka_mo3(jmo3,indm,ig) + fmo3 * &
+                    (ka_mo3(jmo3+1,indm,ig)-ka_mo3(jmo3,indm,ig))
+               o3m2 = ka_mo3(jmo3,indm+1,ig) + fmo3 * &
+                    (ka_mo3(jmo3+1,indm+1,ig)-ka_mo3(jmo3,indm+1,ig))
+               abso3 = o3m1 + minorfrac(lay)*(o3m2-o3m1)
+               taug(lay,ngs4+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) + &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig)) &
+                    + tauself + taufor &
+                    + abso3*colo3(lay) &
+                    + wx(1,lay) * ccl4(ig)
+               fracs(lay,ngs4+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+           enddo
+      else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -5785,79 +5828,75 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng5
-            tauself = selffac(lay) * (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-            o3m1 = ka_mo3(jmo3,indm,ig) + fmo3 * &
-                 (ka_mo3(jmo3+1,indm,ig)-ka_mo3(jmo3,indm,ig))
-            o3m2 = ka_mo3(jmo3,indm+1,ig) + fmo3 * &
-                 (ka_mo3(jmo3+1,indm+1,ig)-ka_mo3(jmo3,indm+1,ig))
-            abso3 = o3m1 + minorfrac(lay)*(o3m2-o3m1)
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng5
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) *  &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               o3m1 = ka_mo3(jmo3,indm,ig) + fmo3 * &
+                    (ka_mo3(jmo3+1,indm,ig)-ka_mo3(jmo3,indm,ig))
+               o3m2 = ka_mo3(jmo3,indm+1,ig) + fmo3 * &
+                    (ka_mo3(jmo3+1,indm+1,ig)-ka_mo3(jmo3,indm+1,ig))
+               abso3 = o3m1 + minorfrac(lay)*(o3m2-o3m1)
+               taug(lay,ngs4+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * & 
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself+ taufor &
+                    + abso3*colo3(lay) &
+                    + wx(1,lay) * ccl4(ig)
+                fracs(lay,ngs4+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+       else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng5
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               o3m1 = ka_mo3(jmo3,indm,ig) + fmo3 * &
+                    (ka_mo3(jmo3+1,indm,ig)-ka_mo3(jmo3,indm,ig))
+               o3m2 = ka_mo3(jmo3,indm+1,ig) + fmo3 * &
+                    (ka_mo3(jmo3+1,indm+1,ig)-ka_mo3(jmo3,indm+1,ig))
+               abso3 = o3m1 + minorfrac(lay)*(o3m2-o3m1)
+               taug(lay,ngs4+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) + &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs4+ig) = tau_major + tau_major1 &
-                 + tauself + taufor &
-                 + abso3*colo3(lay) &
-                 + wx(1,lay) * ccl4(ig)
-            fracs(lay,ngs4+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig))  &
+                    + tauself + taufor &
+                    + abso3*colo3(lay) &
+                    + wx(1,lay) * ccl4(ig)
+               fracs(lay,ngs4+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+      endif
       enddo
 
 ! Upper atmosphere loop
@@ -6031,7 +6070,6 @@ contains
       real(kind=rb) :: tauself, taufor, co2m1, co2m2, absco2
       real(kind=rb) :: chi_co2, ratco2, adjfac, adjcolco2
       real(kind=rb) :: refrat_planck_a, refrat_m_a
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! Minor gas mapping level :
@@ -6102,7 +6140,7 @@ contains
          indf = indfor(lay)
          indm = indminor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -6114,25 +6152,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
-         if (specparm .lt. 0.125_rb) then
+
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -6144,7 +6164,49 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng7
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
+               co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
+               absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
+               taug(lay,ngs6+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) + &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig)) &
+                    + tauself + taufor &
+                    + adjcolco2*absco2
+               fracs(lay,ngs6+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -6156,78 +6218,73 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng7
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-            co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
-                 (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
-            co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
-                 (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
-            absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng7
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
+               co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
+               absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
+               taug(lay,ngs6+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + adjcolco2*absco2
+               fracs(lay,ngs6+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng7
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
+               co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
+               absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
+               taug(lay,ngs6+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) +  &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs6+ig) = tau_major + tau_major1 &
-                 + tauself + taufor &
-                 + adjcolco2*absco2
-            fracs(lay,ngs6+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig))  &
+                    + tauself + taufor &
+                    + adjcolco2*absco2
+               fracs(lay,ngs6+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         endif
       enddo
 
 ! Upper atmosphere loop
@@ -6262,7 +6319,7 @@ contains
          enddo
 
 ! Empirical modification to code to improve stratospheric cooling rates
-! for o3.  Revised to apply weighting for g-point reduction in this band.
+! for o3.  revised to apply weighting for g-point reduction in this band.
 
          taug(lay,ngs6+6)=taug(lay,ngs6+6)*0.92_rb
          taug(lay,ngs6+7)=taug(lay,ngs6+7)*0.88_rb
@@ -6428,7 +6485,6 @@ contains
       real(kind=rb) :: tauself, taufor, n2om1, n2om2, absn2o
       real(kind=rb) :: chi_n2o, ratn2o, adjfac, adjcoln2o
       real(kind=rb) :: refrat_planck_a, refrat_m_a
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! Minor gas mapping level :
@@ -6498,7 +6554,7 @@ contains
          indf = indfor(lay)
          indm = indminor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -6510,26 +6566,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
 
-         if (specparm1 .lt. 0.125_rb) then
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -6541,7 +6578,49 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng9
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
+               n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
+               absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
+               taug(lay,ngs8+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) + & 
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig)) &
+                    + tauself + taufor &
+                    + adjcoln2o*absn2o
+               fracs(lay,ngs8+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -6553,78 +6632,73 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng9
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-            n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
-                 (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
-            n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
-                 (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
-            absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng9
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
+               n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
+               absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
+               taug(lay,ngs8+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + & 
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + adjcoln2o*absn2o
+               fracs(lay,ngs8+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng9
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2om1 = ka_mn2o(jmn2o,indm,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm,ig) - ka_mn2o(jmn2o,indm,ig))
+               n2om2 = ka_mn2o(jmn2o,indm+1,ig) + fmn2o * &
+                    (ka_mn2o(jmn2o+1,indm+1,ig) - ka_mn2o(jmn2o,indm+1,ig))
+               absn2o = n2om1 + minorfrac(lay) * (n2om2 - n2om1)
+               taug(lay,ngs8+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) + &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs8+ig) = tau_major + tau_major1 &
-                 + tauself + taufor &
-                 + adjcoln2o*absn2o
-            fracs(lay,ngs8+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + adjcoln2o*absn2o
+               fracs(lay,ngs8+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         endif
       enddo
 
 ! Upper atmosphere loop
@@ -6835,7 +6909,6 @@ contains
       real(kind=rb) :: fac001, fac101, fac201, fac011, fac111, fac211
       real(kind=rb) :: tauself, taufor
       real(kind=rb) :: refrat_planck_a
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! Calculate reference ratio to be used in calculation of Planck
@@ -6878,7 +6951,7 @@ contains
          inds = indself(lay)
          indf = indfor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -6890,26 +6963,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
 
-         if (specparm1 .lt. 0.125_rb) then
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -6921,7 +6975,43 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng12
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs11+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) + &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs11+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -6933,72 +7023,61 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng12
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng12
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs11+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs11+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng12
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs11+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) + &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs11+ig) = tau_major + tau_major1 &
-                 + tauself + taufor
-            fracs(lay,ngs11+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs11+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         endif
       enddo
 
 ! Upper atmosphere loop
@@ -7042,7 +7121,6 @@ contains
       real(kind=rb) :: com1, com2, absco, abso3
       real(kind=rb) :: chi_co2, ratco2, adjfac, adjcolco2
       real(kind=rb) :: refrat_planck_a, refrat_m_a, refrat_m_a3
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! Minor gas mapping levels :
@@ -7123,7 +7201,7 @@ contains
          indf = indfor(lay)
          indm = indminor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -7135,26 +7213,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
 
-         if (specparm1 .lt. 0.125_rb) then
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -7166,7 +7225,55 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng13
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
+               co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
+               absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
+               com1 = ka_mco(jmco,indm,ig) + fmco * &
+                    (ka_mco(jmco+1,indm,ig) - ka_mco(jmco,indm,ig))
+               com2 = ka_mco(jmco,indm+1,ig) + fmco * &
+                    (ka_mco(jmco+1,indm+1,ig) - ka_mco(jmco,indm+1,ig))
+               absco = com1 + minorfrac(lay) * (com2 - com1)
+               taug(lay,ngs12+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) + &
+                    speccomb1 * &
+                    (fac001 * absa(ind1,ig) + &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig)) &
+                    + tauself + taufor &
+                    + adjcolco2*absco2 &
+                    + colco(lay)*absco
+               fracs(lay,ngs12+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -7178,84 +7285,85 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng13
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-            co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
-                 (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
-            co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
-                 (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
-            absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
-            com1 = ka_mco(jmco,indm,ig) + fmco * &
-                 (ka_mco(jmco+1,indm,ig) - ka_mco(jmco,indm,ig))
-            com2 = ka_mco(jmco,indm+1,ig) + fmco * &
-                 (ka_mco(jmco+1,indm+1,ig) - ka_mco(jmco,indm+1,ig))
-            absco = com1 + minorfrac(lay) * (com2 - com1)
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng13
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
+               co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
+               absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
+               com1 = ka_mco(jmco,indm,ig) + fmco * &
+                    (ka_mco(jmco+1,indm,ig) - ka_mco(jmco,indm,ig))
+               com2 = ka_mco(jmco,indm+1,ig) + fmco * &
+                    (ka_mco(jmco+1,indm+1,ig) - ka_mco(jmco,indm+1,ig))
+               absco = com1 + minorfrac(lay) * (com2 - com1)
+               taug(lay,ngs12+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + adjcolco2*absco2 &
+                    + colco(lay)*absco
+               fracs(lay,ngs12+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+       else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng13
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               co2m1 = ka_mco2(jmco2,indm,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm,ig) - ka_mco2(jmco2,indm,ig))
+               co2m2 = ka_mco2(jmco2,indm+1,ig) + fmco2 * &
+                    (ka_mco2(jmco2+1,indm+1,ig) - ka_mco2(jmco2,indm+1,ig))
+               absco2 = co2m1 + minorfrac(lay) * (co2m2 - co2m1)
+               com1 = ka_mco(jmco,indm,ig) + fmco * &
+                    (ka_mco(jmco+1,indm,ig) - ka_mco(jmco,indm,ig))
+               com2 = ka_mco(jmco,indm+1,ig) + fmco * &
+                    (ka_mco(jmco+1,indm+1,ig) - ka_mco(jmco,indm+1,ig))
+               absco = com1 + minorfrac(lay) * (com2 - com1)
+               taug(lay,ngs12+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) + &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs12+ig) = tau_major + tau_major1 &
-                 + tauself + taufor &
-                 + adjcolco2*absco2 &
-                 + colco(lay)*absco
-            fracs(lay,ngs12+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + adjcolco2*absco2 &
+                    + colco(lay)*absco
+               fracs(lay,ngs12+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         endif
       enddo
 
 ! Upper atmosphere loop
@@ -7361,7 +7469,6 @@ contains
       real(kind=rb) :: fac001, fac101, fac201, fac011, fac111, fac211
       real(kind=rb) :: scalen2, tauself, taufor, n2m1, n2m2, taun2 
       real(kind=rb) :: refrat_planck_a, refrat_m_a
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! Minor gas mapping level : 
@@ -7418,8 +7525,7 @@ contains
          indm = indminor(lay)
          
          scalen2 = colbrd(lay)*scaleminor(lay)
-
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -7431,25 +7537,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
-         if (specparm1 .lt. 0.125_rb) then
+
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -7461,7 +7549,50 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng15
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2m1 = ka_mn2(jmn2,indm,ig) + fmn2 * &
+                    (ka_mn2(jmn2+1,indm,ig) - ka_mn2(jmn2,indm,ig))
+               n2m2 = ka_mn2(jmn2,indm+1,ig) + fmn2 * &
+                    (ka_mn2(jmn2+1,indm+1,ig) - ka_mn2(jmn2,indm+1,ig))
+               taun2 = scalen2 * (n2m1 + minorfrac(lay) * (n2m2 - n2m1))
+               taug(lay,ngs14+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) + &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig)) &
+                    + tauself + taufor &
+                    + taun2
+               fracs(lay,ngs14+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -7473,78 +7604,74 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng15
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-            n2m1 = ka_mn2(jmn2,indm,ig) + fmn2 * &
-                 (ka_mn2(jmn2+1,indm,ig) - ka_mn2(jmn2,indm,ig))
-            n2m2 = ka_mn2(jmn2,indm+1,ig) + fmn2 * &
-                 (ka_mn2(jmn2+1,indm+1,ig) - ka_mn2(jmn2,indm+1,ig))
-            taun2 = scalen2 * (n2m1 + minorfrac(lay) * (n2m2 - n2m1))
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng15
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2m1 = ka_mn2(jmn2,indm,ig) + fmn2 * &
+                    (ka_mn2(jmn2+1,indm,ig) - ka_mn2(jmn2,indm,ig))
+               n2m2 = ka_mn2(jmn2,indm+1,ig) + fmn2 * &
+                    (ka_mn2(jmn2+1,indm+1,ig) - ka_mn2(jmn2,indm+1,ig))
+               taun2 = scalen2 * (n2m1 + minorfrac(lay) * (n2m2 - n2m1))
+               taug(lay,ngs14+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif 
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + taun2
+               fracs(lay,ngs14+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+
+         else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng15
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               n2m1 = ka_mn2(jmn2,indm,ig) + fmn2 * &
+                    (ka_mn2(jmn2+1,indm,ig) - ka_mn2(jmn2,indm,ig))
+               n2m2 = ka_mn2(jmn2,indm+1,ig) + fmn2 * &
+                    (ka_mn2(jmn2+1,indm+1,ig) - ka_mn2(jmn2,indm+1,ig))
+               taun2 = scalen2 * (n2m1 + minorfrac(lay) * (n2m2 - n2m1))
+               taug(lay,ngs14+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) + &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
-
-            taug(lay,ngs14+ig) = tau_major + tau_major1 &
-                 + tauself + taufor &
-                 + taun2
-            fracs(lay,ngs14+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
+                    fac111 * absa(ind1+10,ig)) &
+                    + tauself + taufor &
+                    + taun2
+               fracs(lay,ngs14+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         endif
       enddo
 
 ! Upper atmosphere loop
@@ -7584,7 +7711,6 @@ contains
       real(kind=rb) :: fac001, fac101, fac201, fac011, fac111, fac211
       real(kind=rb) :: tauself, taufor
       real(kind=rb) :: refrat_planck_a
-      real(kind=rb) :: tau_major, tau_major1
 
 
 ! Calculate reference ratio to be used in calculation of Planck
@@ -7627,7 +7753,7 @@ contains
          inds = indself(lay)
          indf = indfor(lay)
 
-         if (specparm .lt. 0.125_rb) then
+         if (specparm .lt. 0.125_rb .and. specparm1 .lt. 0.125_rb) then
             p = fs - 1
             p4 = p**4
             fk0 = p4
@@ -7639,26 +7765,7 @@ contains
             fac010 = fk0*fac10(lay)
             fac110 = fk1*fac10(lay)
             fac210 = fk2*fac10(lay)
-         else if (specparm .gt. 0.875_rb) then
-            p = -fs 
-            p4 = p**4
-            fk0 = p4
-            fk1 = 1 - p - 2.0_rb*p4
-            fk2 = p + p4
-            fac000 = fk0*fac00(lay)
-            fac100 = fk1*fac00(lay)
-            fac200 = fk2*fac00(lay)
-            fac010 = fk0*fac10(lay)
-            fac110 = fk1*fac10(lay)
-            fac210 = fk2*fac10(lay)
-         else
-            fac000 = (1._rb - fs) * fac00(lay)
-            fac010 = (1._rb - fs) * fac10(lay)
-            fac100 = fs * fac00(lay)
-            fac110 = fs * fac10(lay)
-         endif
 
-         if (specparm1 .lt. 0.125_rb) then
             p = fs1 - 1
             p4 = p**4
             fk0 = p4
@@ -7670,7 +7777,43 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else if (specparm1 .gt. 0.875_rb) then
+
+            do ig = 1, ng16
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs15+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac200 * absa(ind0+2,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig) + &
+                    fac210 * absa(ind0+11,ig)) &
+                    + speccomb1 * &
+                    (fac001 * absa(ind1,ig) + &
+                    fac101 * absa(ind1+1,ig) + &
+                    fac201 * absa(ind1+2,ig) + &
+                    fac011 * absa(ind1+9,ig) + &
+                    fac111 * absa(ind1+10,ig) + &
+                    fac211 * absa(ind1+11,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs15+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else if (specparm .gt. 0.875_rb .and. specparm1 .gt. 0.875_rb) then
+            p = -fs 
+            p4 = p**4
+            fk0 = p4
+            fk1 = 1 - p - 2.0_rb*p4
+            fk2 = p + p4
+            fac000 = fk0*fac00(lay)
+            fac100 = fk1*fac00(lay)
+            fac200 = fk2*fac00(lay)
+            fac010 = fk0*fac10(lay)
+            fac110 = fk1*fac10(lay)
+            fac210 = fk2*fac10(lay)
+
             p = -fs1 
             p4 = p**4
             fk0 = p4
@@ -7682,72 +7825,62 @@ contains
             fac011 = fk0*fac11(lay)
             fac111 = fk1*fac11(lay)
             fac211 = fk2*fac11(lay)
-         else
-            fac001 = (1._rb - fs1) * fac01(lay)
-            fac011 = (1._rb - fs1) * fac11(lay)
-            fac101 = fs1 * fac01(lay)
-            fac111 = fs1 * fac11(lay)
-         endif
 
-         do ig = 1, ng16
-            tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig)))
-            taufor =  forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))) 
-
-            if (specparm .lt. 0.125_rb) then
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac200 * absa(ind0+2,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig) + &
-                    fac210 * absa(ind0+11,ig))
-            else if (specparm .gt. 0.875_rb) then
-               tau_major = speccomb * &
+            do ig = 1, ng16
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs15+ig) = speccomb * &
                     (fac200 * absa(ind0-1,ig) + &
                     fac100 * absa(ind0,ig) + &
                     fac000 * absa(ind0+1,ig) + &
                     fac210 * absa(ind0+8,ig) + &
                     fac110 * absa(ind0+9,ig) + &
-                    fac010 * absa(ind0+10,ig))
-            else
-               tau_major = speccomb * &
-                    (fac000 * absa(ind0,ig) + &
-                    fac100 * absa(ind0+1,ig) + &
-                    fac010 * absa(ind0+9,ig) + &
-                    fac110 * absa(ind0+10,ig))
-            endif
-
-            if (specparm1 .lt. 0.125_rb) then
-               tau_major1 = speccomb1 * &
-                    (fac001 * absa(ind1,ig) + &
-                    fac101 * absa(ind1+1,ig) + &
-                    fac201 * absa(ind1+2,ig) + &
-                    fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig) + &
-                    fac211 * absa(ind1+11,ig))
-            else if (specparm1 .gt. 0.875_rb) then
-               tau_major1 = speccomb1 * &
+                    fac010 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac201 * absa(ind1-1,ig) + &
                     fac101 * absa(ind1,ig) + &
                     fac001 * absa(ind1+1,ig) + &
                     fac211 * absa(ind1+8,ig) + &
                     fac111 * absa(ind1+9,ig) + &
-                    fac011 * absa(ind1+10,ig))
-            else
-               tau_major1 = speccomb1 * &
+                    fac011 * absa(ind1+10,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs15+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         else
+            fac000 = (1._rb - fs) * fac00(lay)
+            fac010 = (1._rb - fs) * fac10(lay)
+            fac100 = fs * fac00(lay)
+            fac110 = fs * fac10(lay)
+
+            fac001 = (1._rb - fs1) * fac01(lay)
+            fac011 = (1._rb - fs1) * fac11(lay)
+            fac101 = fs1 * fac01(lay)
+            fac111 = fs1 * fac11(lay)
+
+            do ig = 1, ng16
+               tauself = selffac(lay)* (selfref(inds,ig) + selffrac(lay) * &
+                    (selfref(inds+1,ig) - selfref(inds,ig)))
+               taufor = forfac(lay) * (forref(indf,ig) + forfrac(lay) * &
+                    (forref(indf+1,ig) - forref(indf,ig))) 
+               taug(lay,ngs15+ig) = speccomb * &
+                    (fac000 * absa(ind0,ig) + &
+                    fac100 * absa(ind0+1,ig) + &
+                    fac010 * absa(ind0+9,ig) + &
+                    fac110 * absa(ind0+10,ig)) &
+                    + speccomb1 * &
                     (fac001 * absa(ind1,ig) + &
                     fac101 * absa(ind1+1,ig) + &
                     fac011 * absa(ind1+9,ig) + &
-                    fac111 * absa(ind1+10,ig))
-            endif
+                    fac111 * absa(ind1+10,ig)) &
+                    + tauself + taufor
+               fracs(lay,ngs15+ig) = fracrefa(ig,jpl) + fpl * &
+                    (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
+            enddo
+         endif
 
-            taug(lay,ngs15+ig) = tau_major + tau_major1 &
-                 + tauself + taufor
-            fracs(lay,ngs15+ig) = fracrefa(ig,jpl) + fpl * &
-                 (fracrefa(ig,jpl+1)-fracrefa(ig,jpl))
-         enddo
       enddo
 
 ! Upper atmosphere loop

@@ -545,7 +545,6 @@ CONTAINS
 
   REAL, PARAMETER  :: CAPA=R_D/CP
   REAL :: APELM,APES,SFCTH2,PSFC
-
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
 
@@ -1175,6 +1174,7 @@ CONTAINS
             RL_UP_URB(i,j)=0.
             RS_ABS_URB(i,j)=0.
             GRDFLX_URB(i,j)=0.
+            b_q_bep(i,kts:kte,j)=0.
          end do
          end do
        CALL BEP(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy,   &
@@ -1204,6 +1204,7 @@ CONTAINS
             RL_UP_URB(i,j)=0.
             RS_ABS_URB(i,j)=0.
             GRDFLX_URB(i,j)=0.
+            b_q_bep(i,kts:kte,j)=0.
          end do
          end do
           
@@ -1281,8 +1282,8 @@ CONTAINS
               rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emiss_rural(i,j))*glw(i,j)
               rl_up_tot=(1.-frc_urb2d(i,j))*rl_up_rural+frc_urb2d(i,j)*rl_up_urb(i,j)   
               emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
-              ts_urb2d(i,j)=((-rl_up_urb(i,j)-(1.-emiss_urb(i,j))*glw(i,j))/emiss_urb(i,j)/sigma_sb)**0.25
-           tsk(i,j)=( (-1.*rl_up_tot-(1.-emiss(i,j))*glw(i,j) )/emiss(i,j)/sigma_sb)**.25
+              ts_urb2d(i,j)=(max(0.,(-rl_up_urb(i,j)-(1.-emiss_urb(i,j))*glw(i,j))/emiss_urb(i,j)/sigma_sb))**0.25
+              tsk(i,j)=(max(0., (-1.*rl_up_tot-(1.-emiss(i,j))*glw(i,j) )/emiss(i,j)/sigma_sb))**.25
            rs_abs_tot=(1.-frc_urb2d(i,j))*swdown(i,j)*(1.-albedo(i,j))+frc_urb2d(i,j)*rs_abs_urb(i,j)  
           if(swdown(i,j).gt.0.)then
            albedo(i,j)=1.-rs_abs_tot/swdown(i,j)
@@ -1299,7 +1300,7 @@ CONTAINS
             LH_URB2D(I,J)    = qfx_urb(i,j)*xlv
             G_URB2D(I,J)     = grdflx_urb(i,j)
             RN_URB2D(I,J)    = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)
-         ust(i,j)=(umom**2.+vmom**2.)**.25
+            ust(i,j)=(umom**2.+vmom**2.)**.25
 !          if(tsk(i,j).gt.350)write(*,*)'tsk too big!',i,j,tsk(i,j)
 !          if(tsk(i,j).lt.260)write(*,*)'tsk too small!',i,j,tsk(i,j),rl_up_tot,rl_up_urb(i,j),rl_up_rural
 !                    print*,'ivgtyp,i,j,sigma_sb',ivgtyp(i,j),i,j,sigma_sb

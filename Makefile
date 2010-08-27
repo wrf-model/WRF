@@ -74,15 +74,15 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) ] ; then \
 	  (cd var/external/crtm; \
-	  . configure/$(SFC).setup; make ) ; \
+	  . configure/$(SFC).setup; $(MAKE) $(J) ) ; \
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
-	  $(MAKE) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCDEBUG) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCDEBUG) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
 	fi
 #	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) $(J) all_wrfvar )
 	( cd var/build; make depend; $(MAKE) $(J) all_wrfvar )
-	( cd var/obsproc; $(MAKE) BUFR_CPP="$(BUFR_CPP)" )
+	( cd var/obsproc; $(MAKE) $(J) BUFR_CPP="$(BUFR_CPP)" )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 

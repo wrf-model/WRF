@@ -32,7 +32,7 @@ WRFVAR_LIB = -L. -lwrfvar $(RTTOV_LIB) $(CRTM_LIB)
 FPPFLAGS   = -I$(WRF_SRC_ROOT_DIR)/inc
 
 depend : links module_state_description.F md_calls.inc \
-                      inc/da_generic_boilerplate.inc
+                      da_generic_boilerplate.inc
 #	(cd $(WRF_SRC_ROOT_DIR)/var/da/makedepf90-2.8.8; ./setup_makedepf90)
 #	$(WRF_SRC_ROOT_DIR)/var/da/makedepf90-2.8.8/makedepf90 -free $(ARCHFLAGS) -DNEW_BDYS *.F *.f90 *.F90 2>/dev/null > depend.txt
 	touch depend

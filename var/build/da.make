@@ -167,9 +167,9 @@ da_advance_time.exe : da_advance_time.o
 	$(SFC) $(LDFLAGS) -o $@ da_advance_time.o
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
-inc/da_generic_boilerplate.inc: da_generic_boilerplate.m4
-	@ $(RM) inc/da_generic_boilerplate.inc
-	$(M4) da_generic_boilerplate.m4 > $(WRF_SRC_ROOT_DIR)/inc/da_generic_boilerplate.inc
+da_generic_boilerplate.inc: da_generic_boilerplate.m4
+	@ $(RM) da_generic_boilerplate.inc
+	$(M4) da_generic_boilerplate.m4 > $(WRF_SRC_ROOT_DIR)/var/build/da_generic_boilerplate.inc
 
 da_utils : \
            da_tune_obs_hollingsworth1.exe \

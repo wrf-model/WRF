@@ -66,7 +66,9 @@ subroutine da_transform_xtogpsref_adj(grid)
             grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + dividnd*(0.622+0.378*grid%xb%q(i,j,k))
             grid%xa%q(i,j,k) = grid%xa%q(i,j,k) + grid%xb%t(i,j,k)*0.378*dividnd
 
-            grid%xa%p(i,j,k) = grid%xa%p(i,j,k) + 0.776*partone/grid%xb%t(i,j,k)
+! Zero out the REF impact on xa%p (YRG, 10/08/2009):
+!            grid%xa%p(i,j,k) = grid%xa%p(i,j,k) + 0.776*partone/grid%xb%t(i,j,k)
+            
             grid%xa%t(i,j,k) = grid%xa%t(i,j,k) - &
                0.776*grid%xb%p(i,j,k)*partone/(grid%xb%t(i,j,k)*grid%xb%t(i,j,k))
 

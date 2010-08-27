@@ -70,7 +70,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    if (present(re)) then
       call da_calculate_grady(iv, re, jo_grad_y)   
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .true.)
+              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .false.)
    else
       call da_transform_vtoy(cv_size, be, grid%ep, cv, iv, grid%vp, &
               grid%vv, xbx, y, grid, config_flags)

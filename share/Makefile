@@ -17,6 +17,8 @@ MODULES =                       \
 	module_compute_geop.o           \
 	module_soil_pre.o		\
 	module_check_a_mundo.o		\
+	module_adtl_grid_utilities.o	\
+	mediation_pertmod_io.o	\
 	module_llxy.o
 
 OBJS    = 		\
@@ -42,7 +44,8 @@ OBJS    = 		\
         wrf_bdyin.o             	\
         wrf_tsin.o                      \
         landread.o			\
-	setfeenv.o
+	setfeenv.o                      \
+	jcdfi.o
 
 
 NMM_MODULES = 
@@ -97,6 +100,10 @@ module_io_domain.o: module_io_wrf.o module_date_time.o ../frame/module_io.o  \
 module_io_wrf.o: module_date_time.o \
                 ../frame/module_wrf_error.o ../frame/module_streams.o \
 		$(ESMF_MOD_DEPENDENCE)
+
+module_adtl_grid_utilities.o: ../frame/module_domain.o ../frame/module_configure.o ../frame/module_tiles.o
+
+mediation_pertmod_io.o: ../frame/module_domain.o ../frame/module_state_description.o ../frame/module_domain_type.o
 
 output_wrf.o:   ../frame/module_io.o ../frame/module_wrf_error.o \
                 ../frame/module_domain.o ../frame/module_state_description.o \
@@ -166,7 +173,7 @@ mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \
-			module_io_domain.o
+			module_io_domain.o mediation_pertmod_io.o
 
 
 mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
@@ -293,5 +300,6 @@ wrf_restartin.o                 : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_tsin.o	                : ../frame/module_domain.o
 
+jcdfi.o : 	../frame/module_domain.o ../frame/module_configure.o 
 
 # DO NOT DELETE

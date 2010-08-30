@@ -155,6 +155,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
    LOGICAL , EXTERNAL                     :: wrf_dm_on_monitor
    INTEGER                                :: idum1 , idum2 , ierr , open_status
    LOGICAL                                :: should_do_last_io
+   INTEGER                                :: rc
+   LOGICAL                                :: should_add_forcing
 
    ! interface
    INTERFACE
@@ -179,6 +181,28 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain) grid
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_before_solve_io
+#if ( WRFPLUS == 1 )
+     SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
+       USE module_domain
+       USE module_configure
+       TYPE (domain) grid
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_last_ad_solve_io
+     SUBROUTINE jcdfi_init_coef
+     END SUBROUTINE jcdfi_init_coef
+     SUBROUTINE jcdfi_zero_forcing ( grid )
+       USE module_domain
+       TYPE (domain) grid
+     END SUBROUTINE jcdfi_zero_forcing
+     SUBROUTINE jcdfi_tl ( grid )
+       USE module_domain
+       TYPE (domain) grid
+     END SUBROUTINE jcdfi_tl
+     SUBROUTINE jcdfi_add_forcing (grid)
+       USE module_domain
+       TYPE (domain) grid
+     END SUBROUTINE jcdfi_add_forcing
+#endif
        ! mediation-supplied routine that gives mediation layer opportunity to 
        ! perform I/O after the call to the solve routine
      SUBROUTINE med_after_solve_io ( grid , config_flags )
@@ -275,6 +299,12 @@ RECURSIVE SUBROUTINE integrate ( grid )
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
       IF ( config_flags%grid_allowed ) THEN
          CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
+#if ( WRFPLUS == 1 )
+         IF ( (grid%jcdfi_use .OR. grid%jcdfi_diag .EQ. 1) .AND. config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
+            CALL jcdfi_zero_forcing (grid)
+            CALL jcdfi_tl (grid)
+         ENDIF
+#endif
          DO WHILE ( .NOT. domain_clockisstopsubtime(grid) )
             IF ( wrf_dm_on_monitor() ) THEN
                CALL start_timing
@@ -301,7 +331,24 @@ RECURSIVE SUBROUTINE integrate ( grid )
             ! Accumulation calculation for DFI
             CALL dfi_accumulate ( grid )
 
+#if ( WRFPLUS == 1 )
+            ! Check if the auxinput3 is ringing before read it
+            should_add_forcing = .FALSE.
+            IF ( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) should_add_forcing = .TRUE.  
+#endif
+
             CALL med_before_solve_io ( grid , config_flags )
+
+#if ( WRFPLUS == 1 )
+            IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. should_add_forcing) THEN
+              CALL add_forcing_to_ad ( grid )
+            ENDIF
+            IF ( grid%jcdfi_use .AND. config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+               CALL jcdfi_add_forcing ( grid )
+            ENDIF
+
+#endif
+
             grid_ptr => grid
             DO WHILE ( ASSOCIATED( grid_ptr ) )
                CALL set_current_grid_ptr( grid_ptr )
@@ -359,11 +406,27 @@ RECURSIVE SUBROUTINE integrate ( grid )
 #endif
                CALL end_timing ( TRIM(message) )
             END IF
+#if ( WRFPLUS == 1 )
+            IF ( (grid%jcdfi_use .OR. grid%jcdfi_diag .EQ. 1) .AND. config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
+               CALL jcdfi_tl (grid)
+            ENDIF
+#endif
             CALL med_endup_step ( grid , config_flags )
          END DO
 
          ! Accumulation calculation for DFI
          CALL dfi_accumulate ( grid )
+
+#if ( WRFPLUS == 1 )
+!        Read in first basic states and forcing, add forcing
+         IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) THEN
+           CALL med_last_ad_solve_io ( grid , config_flags )
+           CALL add_forcing_to_ad ( grid )
+         ENDIF
+         IF ( grid%jcdfi_use .AND. config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+            CALL jcdfi_add_forcing ( grid )
+         ENDIF
+#endif
 
          ! Avoid double writes on nests if this is not really the last time;
          ! Do check for write if the parent domain is ending.

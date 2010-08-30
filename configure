@@ -30,6 +30,7 @@ while [ $# -ge 1 ]; do
       titan) WRF_TITAN=1 ; break ;;
       mars) WRF_MARS=1 ; break ;;
       venus) WRF_VENUS=1 ; break ;;
+      wrfplus) wrf_core=WRF_PLUS_CORE ; break ;;
     esac
     shift
 done
@@ -407,6 +408,14 @@ else
   compileflags="${compileflags} "
 fi
 
+if [ -n "$WRFPLUS" ] ; then
+  if [ $WRFPLUS = 1 ] ; then
+    echo building WRF for TL and AD
+    compileflags="!-DWRFPLUS"
+    echo $compileflags
+  fi
+fi
+
 if [ `which timex` ] ; then
   FORTRAN_COMPILER_TIMER=timex
 fi
@@ -528,6 +537,16 @@ if [ "$wrf_core" = "DA_CORE" ]; then
     echo "WRFDA using gfortran needs realsize=8"
     sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
     /bin/mv configure.wrf.edit configure.wrf
+  fi
+fi
+
+if [ -n "$WRFPLUS" ] ; then
+  if [ $WRFPLUS = 1 ] ; then
+    if [ `grep '^SFC' configure.wrf | cut -d= -f2` = "gfortran" ]; then
+      echo "WRFPLUS using gfortran needs realsize=8"
+      sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
+      /bin/mv configure.wrf.edit configure.wrf
+    fi
   fi
 fi
 

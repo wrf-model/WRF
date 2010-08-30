@@ -3,7 +3,7 @@
 
 PROGRAM wrf
 
-   USE module_wrf_top, only : wrf_init, wrf_dfi, wrf_run, wrf_finalize
+   USE module_wrf_top, only : wrf_init, wrf_dfi, wrf_adtl_check, wrf_run, wrf_finalize
 
 !<DESCRIPTION>
 ! Main program of WRF model.  Responsible for starting up the model, reading in (and
@@ -26,6 +26,9 @@ PROGRAM wrf
 
   ! Run digital filter initialization if requested.
   CALL wrf_dfi
+
+  ! Run adjoint check and tangent linear check if requested.
+  CALL wrf_adtl_check
 
   ! WRF model time-stepping.  Calls integrate().  
   CALL wrf_run

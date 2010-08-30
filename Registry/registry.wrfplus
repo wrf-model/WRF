@@ -1,0 +1,412 @@
+#
+# ----------------------------------------
+#  begin wrfplus variables and configuration
+# ----------------------------------------
+######
+#
+# Variables that are set at run-time to control configuration  (namelist-settable)
+#
+#<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>
+#
+# Perturbation model control
+rconfig   logical trajectory_io         namelist,perturbation          1      .true. -    "false: disk IO; true: memory IO"  ""      ""
+rconfig   logical check_u               namelist,perturbation          1      .true. -    "AD/TL check U"             ""      ""
+rconfig   logical check_v               namelist,perturbation          1      .true. -    "AD/TL check V"             ""      ""
+rconfig   logical check_w               namelist,perturbation          1      .true. -    "AD/TL check W"             ""      ""
+rconfig   logical check_ph              namelist,perturbation          1      .true. -    "AD/TL check PH"            ""      ""
+rconfig   logical check_t               namelist,perturbation          1      .true. -    "AD/TL check T"             ""      ""
+rconfig   logical check_mu              namelist,perturbation          1      .true. -    "AD/TL check MU"            ""      ""
+rconfig   logical check_moist           namelist,perturbation          1      .true. -    "AD/TL check MOIST"         ""      ""
+rconfig   logical jcdfi_use             namelist,perturbation          1     .false. -    "jcdfi_use"   "JcDFI on/off"      ""
+rconfig   integer jcdfi_diag            namelist,perturbation          1           0 -    "jcdfi_diag"  "JcDFI diag. on/off"      ""
+rconfig   real    jcdfi_gama            namelist,perturbation          1          1. -    "jcdfi_gama"    "Weighting for JcDFI"      ""
+rconfig   real    jcdfi_error_wind      namelist,perturbation          1          3. -    "jcdfi_error_wind"    "Wind Error for JcDFI"      "m/s"
+rconfig   real    jcdfi_error_t         namelist,perturbation          1          1. -    "jcdfi_error_t"    "Temp. Error for JcDFI"      "K"
+rconfig   real    jcdfi_error_q         namelist,perturbation          1       0.001 -    "jcdfi_error_q"    "Moist Error for JcDFI"      "kg/kg"
+rconfig   real    jcdfi_error_mu        namelist,perturbation          1       1000. -    "jcdfi_error_mu"    "Pert. Pres. Error for JcDFI"      "Pa"
+#
+######
+# Variables for Eulerian mass coordinate dynamics
+#
+# Velocities
+#
+# U Vel
+state    real   a_u              ikjb     dyn_em      2         X     \
+     i0rhusdf=(bdy_interp:dt)       "A_U"                      "x-wind component"   "m s-1"
+state    real   a_ru             ikj     dyn_em      1         X      -        "A_MU_U"        "mu-coupled u"   "Pa m s-1"
+state    real   a_ru_m           ikj     dyn_em      1         X      -        "a_ru_m"        ""   ""
+state    real   a_ru_tend        ikj     dyn_em      1         X      -        "a_ru_tend"        ""   ""
+i1       real   a_ru_tendf       ikj     dyn_em      1         X
+state    real   a_u_save         ikj     dyn_em      1         X      -        "a_u_save"
+ 
+state    real   g_u              ikjb     dyn_em      2         X     \
+     i0rhusdf=(bdy_interp:dt)       "G_U"                      "x-wind component"   "m s-1"
+state    real   g_ru             ikj     dyn_em      1         X      -        "G_MU_U"        "mu-coupled u"   "Pa m s-1"
+state    real   g_ru_m           ikj     dyn_em      1         X      -        "g_ru_m"        ""   ""
+state    real   g_ru_tend        ikj     dyn_em      1         X      -        "g_ru_tend"        ""   ""
+i1       real   g_ru_tendf       ikj     dyn_em      1         X
+state    real   g_u_save         ikj     dyn_em      1         X      -        "g_u_save"
+
+# V Vel
+state    real   a_v              ikjb     dyn_em      2         Y     \
+     i0rhusdf=(bdy_interp:dt)        "A_V"                     "y-wind component"   "m s-1"
+state    real   a_rv             ikj     dyn_em      1         Y      -        "A_MU_V"        "mu-coupled v"   "Pa m s-1"
+state    real   a_rv_m           ikj     dyn_em      1         Y      -        "a_rv_m"
+state    real   a_rv_tend        ikj     dyn_em      1         Y      -        "a_rv_tend"
+i1       real   a_rv_tendf       ikj     dyn_em      1         Y
+state    real   a_v_save         ikj     dyn_em      1         Y      -        "a_v_save"
+ 
+state    real   g_v              ikjb     dyn_em      2         Y     \
+     i0rhusdf=(bdy_interp:dt)        "G_V"                     "y-wind component"   "m s-1"
+state    real   g_rv             ikj     dyn_em      1         Y      -        "G_MU_V"        "mu-coupled v"   "Pa m s-1"
+state    real   g_rv_m           ikj     dyn_em      1         Y      -        "g_rv_m"
+state    real   g_rv_tend        ikj     dyn_em      1         Y      -        "g_rv_tend"
+i1       real   g_rv_tendf       ikj     dyn_em      1         Y
+state    real   g_v_save         ikj     dyn_em      1         Y      -        "g_v_save"
+
+# Vertical Vel
+state    real   a_w              ikjb     dyn_em      2         Z     \
+        irhusdf=(bdy_interp:dt)  "a_w"                          "z-wind component"   "m s-1"
+state    real   a_ww             ikj     dyn_em      1         Z      r         "a_ww"   "mu-coupled eta-dot"    "Pa s-1"
+state    real   a_rw             ikj     dyn_em      1         Z      -         "a_rw"   "mu-coupled w"          "Pa m s-1"
+i1       real   a_ww1            ikj     dyn_em      1         Z
+state    real   a_ww_m           ikj     dyn_em      1         Z      r         "a_ww_m"   "time-avg mu-coupled eta-dot"    "Pa s-1"
+i1       real   a_wwp            ikj     dyn_em      1         Z
+i1       real   a_rw_tend        ikj     dyn_em      1         Z
+i1       real   a_rw_tendf       ikj     dyn_em      1         Z
+i1       real   a_w_save         ikj     dyn_em      1         Z
+
+state    real   g_w              ikjb     dyn_em      2         Z     \
+        i0rhusdf=(bdy_interp:dt)  "g_w"                          "z-wind component"   "m s-1"
+state    real   g_ww             ikj     dyn_em      1         Z      r         "g_ww"   "mu-coupled eta-dot"    "Pa s-1"
+state    real   g_rw             ikj     dyn_em      1         Z      -         "g_rw"   "mu-coupled w"          "Pa m s-1"
+i1       real   g_ww1            ikj     dyn_em      1         Z
+state    real   g_ww_m           ikj     dyn_em      1         Z      r         "g_ww_m"   "time-avg mu-coupled eta-dot"    "Pa s-1"
+i1       real   g_wwp            ikj     dyn_em      1         Z
+i1       real   g_rw_tend        ikj     dyn_em      1         Z
+i1       real   g_rw_tendf       ikj     dyn_em      1         Z
+i1       real   g_w_save         ikj     dyn_em      1         Z
+
+# Geopotential
+state    real   a_ph             ikjb     dyn_em      2         Z     \
+       irhusdf=(bdy_interp:dt)   "a_ph"   "perturbation geopotential"  "m2 s-2"
+state    real   a_phb            ikj     dyn_em      1         Z     irhdus "a_phb"  "base-state geopotential"  "m2 s-2"
+state    real   a_phb_fine       ikj     dyn_em      1         Z      -     "a_phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
+state    real   a_ph0            ikj     dyn_em      1         Z      r     "a_ph0"  "initial geopotential"     "m2 s-2"
+state    real   a_php            ikj     dyn_em      1         -      r     "a_php"  "geopotential"             "m2 s-2"
+i1       real   a_ph_tend        ikj     dyn_em      1         Z
+i1       real   a_ph_tendf       ikj     dyn_em      1         Z
+i1       real   a_ph_save        ikj     dyn_em      1         Z
+
+state    real   g_ph             ikjb     dyn_em      2         Z     \
+       i0rhusdf=(bdy_interp:dt)   "g_ph"   "perturbation geopotential"  "m2 s-2"
+state    real   g_phb            ikj     dyn_em      1         Z     irhdus "g_phb"  "base-state geopotential"  "m2 s-2"
+state    real   g_phb_fine       ikj     dyn_em      1         Z      -     "g_phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
+state    real   g_ph0            ikj     dyn_em      1         Z      r     "g_ph0"  "initial geopotential"     "m2 s-2"
+state    real   g_php            ikj     dyn_em      1         -      r     "g_php"  "geopotential"             "m2 s-2"
+i1       real   g_ph_tend        ikj     dyn_em      1         Z
+i1       real   g_ph_tendf       ikj     dyn_em      1         Z
+i1       real   g_ph_save        ikj     dyn_em      1         Z
+
+# Potential Temperature
+state    real   a_t              ikjb     dyn_em      2         -     \
+       i0rhusdf=(bdy_interp:dt)   "a_t"      "perturbation potential temperature (theta-t0)" "K"
+
+state    real   a_t_init         ikj     dyn_em      1         -      ir       "a_t_init" "initial potential temperature" "K"
+i1       real   a_t_tend         ikj     dyn_em      1         -
+i1       real   a_t_tendf        ikj     dyn_em      1         -
+state    real   a_tp             ikj     dyn_em      2         -
+i1       real   a_t_2save        ikj     dyn_em      1         -
+state    real   a_t_save         ikj     dyn_em      1         -               "a_t_save"
+
+state    real   g_t              ikjb     dyn_em      2         -     \
+       i0rhusdf=(bdy_interp:dt)   "g_t"      "perturbation potential temperature (theta-t0)" "K"
+
+state    real   g_t_init         ikj     dyn_em      1         -      ir       "g_t_init" "initial potential temperature" "K"
+i1       real   g_t_tend         ikj     dyn_em      1         -
+i1       real   g_t_tendf        ikj     dyn_em      1         -
+state    real   g_tp             ikj     dyn_em      2         -
+i1       real   g_t_2save        ikj     dyn_em      1         -
+state    real   g_t_save         ikj     dyn_em      1         -               "g_t_save"
+
+# Mass
+state    real   a_mu              ijb     dyn_em      2         -     \
+     irhusdf=(bdy_interp:dt)   "a_mu"  "perturbation dry air mass in column" "Pa"
+state    real   a_mub             ij     dyn_em      1         -     irhdus       "a_mub" "base state dry air mass in column" "Pa"
+state    real   a_mub_fine        ij     dyn_em      1         -      -           "a_mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
+state    real   a_mub_save        ij     dyn_em      1         -      -           "a_mub_save" "nest temp, holds orig fine grid mub" "Pa"
+state    real   a_mu0             ij     dyn_em      1         -      i1          "a_mu0" "initial dry mass in column" "Pa"
+state    real   a_mudf            ij     dyn_em      1         -      -           "a_mudf" "" ""
+state    real   a_muu             ij     dyn_em      1          -                 "a_muu"
+i1       real   a_muus            ij     dyn_em      1          -
+state    real   a_muv             ij     dyn_em      1          -                 "a_muv"
+i1       real   a_muvs            ij     dyn_em      1          -
+state    real   a_mut             ij     dyn_em      1          -                 "a_mut"
+state    real   a_muts            ij     dyn_em      1          -                 "a_muts"
+i1       real   a_muave           ij     dyn_em      1          -
+i1       real   a_mu_save         ij     dyn_em      1          -
+i1       real   a_mu_tend         ij     dyn_em      1          -
+i1       real   a_mu_tendf        ij     dyn_em      1          -
+
+state    real   g_mu              ijb     dyn_em      2         -     \
+     i0rhusdf=(bdy_interp:dt)   "g_mu"  "perturbation dry air mass in column" "Pa"
+state    real   g_mub             ij     dyn_em      1         -     irhdus       "g_mub" "base state dry air mass in column" "Pa"
+state    real   g_mub_fine        ij     dyn_em      1         -      -           "g_mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
+state    real   g_mub_save        ij     dyn_em      1         -      -           "g_mub_save" "nest temp, holds orig fine grid mub" "Pa"
+state    real   g_mu0             ij     dyn_em      1         -      i1          "g_mu0" "initial dry mass in column" "Pa"
+state    real   g_mudf            ij     dyn_em      1         -      -           "g_mudf" "" ""
+state    real   g_muu             ij     dyn_em      1          -                 "g_muu"
+i1       real   g_muus            ij     dyn_em      1          -
+state    real   g_muv             ij     dyn_em      1          -                 "g_muv"
+i1       real   g_muvs            ij     dyn_em      1          -
+state    real   g_mut             ij     dyn_em      1          -                 "g_mut"
+state    real   g_muts            ij     dyn_em      1          -                 "g_muts"
+i1       real   g_muave           ij     dyn_em      1          -
+i1       real   g_mu_save         ij     dyn_em      1          -
+i1       real   g_mu_tend         ij     dyn_em      1          -
+i1       real   g_mu_tendf        ij     dyn_em      1          -
+
+# Pressure and Density
+state    real   a_p              ikj     dyn_em      1         -      irh       "a_p"           "perturbation pressure"         "Pa"
+state    real   a_al             ikj     dyn_em      1         -      r         "a_al"          "inverse perturbation density"  "m3 kg-1"
+state    real   a_alt            ikj     dyn_em      1         -      r         "a_alt"         "inverse density"               "m3 kg-1"
+state    real   a_alb            ikj     dyn_em      1         -      rdus      "a_alb"         "inverse base density"          "m3 kg-1"
+
+state    real   g_p              ikj     dyn_em      1         -      irh       "g_p"           "perturbation pressure"         "Pa"
+state    real   g_al             ikj     dyn_em      1         -      r         "g_al"          "inverse perturbation density"  "m3 kg-1"
+state    real   g_alt            ikj     dyn_em      1         -      r         "g_alt"         "inverse density"               "m3 kg-1"
+state    real   g_alb            ikj     dyn_em      1         -      rdus      "g_alb"         "inverse base density"          "m3 kg-1"
+
+#
+# Other dyn
+#
+i1       real   a_advect_tend    ikj     dyn_em      1         -
+i1       real   a_alpha          ikj     dyn_em      1         -
+i1       real   a_a              ikj     dyn_em      1         -
+i1       real   a_gamma          ikj     dyn_em      1         -
+i1       real   a_c2a            ikj     dyn_em      1         -     -
+i1       real   a_rho            ikj     dyn_em      1         -     -
+i1       real   a_phm            ikj     dyn_em      1         -     -
+i1       real   a_cqu            ikj     dyn_em      1         -     -
+i1       real   a_cqv            ikj     dyn_em      1         -     -
+i1       real   a_cqw            ikj     dyn_em      1         -     -
+i1       real   a_pm1            ikj     dyn_em      1         -     -
+state    real   a_z              ikj     dyn_em      1         -     -         " " " " " "
+state    real   a_z_at_w         ikj     dyn_em      1         Z
+
+i1       real   g_advect_tend    ikj     dyn_em      1         -
+i1       real   g_alpha          ikj     dyn_em      1         -
+i1       real   g_a              ikj     dyn_em      1         -
+i1       real   g_gamma          ikj     dyn_em      1         -
+i1       real   g_c2a            ikj     dyn_em      1         -     -
+i1       real   g_rho            ikj     dyn_em      1         -     -
+i1       real   g_phm            ikj     dyn_em      1         -     -
+i1       real   g_cqu            ikj     dyn_em      1         -     -
+i1       real   g_cqv            ikj     dyn_em      1         -     -
+i1       real   g_cqw            ikj     dyn_em      1         -     -
+i1       real   g_pm1            ikj     dyn_em      1         -     -
+state    real   g_z              ikj     dyn_em      1         -     -         " " " " " "
+state    real   g_z_at_w         ikj     dyn_em      1         Z
+
+# State variables for landuse_init, Must be declared state because they are read in and needed for restarts. Had been SAVE vars in
+# landuse_init (phys/module_physics_init.F)
+
+i1       real  a_th_phy          ikj      misc        1         -
+i1       real  a_pi_phy          ikj      misc        1         -
+i1       real  a_p_phy           ikj      misc        1         -
+i1       real  a_t_phy           ikj      misc        1         -
+i1       real  a_u_phy           ikj      misc        1         -
+i1       real  a_v_phy           ikj      misc        1         -
+i1       real  a_dz8w            ikj      misc        1         Z
+i1       real  a_p8w             ikj      misc        1         Z
+i1       real  a_t8w             ikj      misc        1         Z
+i1       real  a_rho_phy         ikj      misc        1         -
+
+i1       real  g_th_phy          ikj      misc        1         -
+i1       real  g_pi_phy          ikj      misc        1         -
+i1       real  g_p_phy           ikj      misc        1         -
+i1       real  g_t_phy           ikj      misc        1         -
+i1       real  g_u_phy           ikj      misc        1         -
+i1       real  g_v_phy           ikj      misc        1         -
+i1       real  g_dz8w            ikj      misc        1         Z
+i1       real  g_p8w             ikj      misc        1         Z
+i1       real  g_t8w             ikj      misc        1         Z
+i1       real  g_rho_phy         ikj      misc        1         -
+
+# Arrays for Specified LBCs  (lbc arrays REMOVED; Boundary arrays are now specified with the state array; see above, 20050413 JM )
+
+state    real   a_fcx            w         misc     -         -      ir       "a_fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   a_gcx            w         misc     -         -      ir       "a_gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   a_dtbc            -        misc     -         -      ir       "a_dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+
+state    real   g_fcx            w         misc     -         -      ir       "g_fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   g_gcx            w         misc     -         -      ir       "g_gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   g_dtbc            -        misc     -         -      ir       "g_dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Scalar (4D) arrays
+
+# Moist Scalars
+#  
+# The first line ensures that there will be identifiers named g(a)_moist and
+# g(a)_moist_tend even if there are not any moist scalars (so the essentially
+# dry code will still link properly)
+#
+
+state   real    -              ikjftb   a_moist       1         -     -    -
+state   real    a_qv             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    a_qc             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    a_qr             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    a_qi             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    a_qs             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    a_qg             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    a_qh             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+
+state   real    -              ikjftb   g_moist       1         -     -    -
+state   real    g_qv             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    g_qc             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    g_qr             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    g_qi             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    g_qs             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    g_qg             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    g_qh             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+
+# JC_DFI variables
+state   real   jcdfi_u           ikj   misc        1         -     -    "U_JCDFI"               "u accumulation array"          "   "
+state   real   jcdfi_v           ikj   misc        1         -     -    "V_JCDFI"               "v accumulation array"          "   "
+state   real   jcdfi_t           ikj   misc        1         -     -    "TT_JCDFI"               "t accumulation array"          "   "
+state   real   jcdfi_mu          ij    misc        1         -     -    "MU_JCDFI"  "perturbation dry air mass in column" "Pa"
+
+#
+#---------------------------------------------------------------------------------------------------------------------------------------
+# Package Declarations
+#
+
+#key      package       associated                package          associated 4d scalars
+#         name          namelist choice           state vars
+
+package   dyn_em        dyn_opt==2                   -             -
+package   dyn_em_check  dyn_opt==102                 -             -
+package   dyn_em_tl     dyn_opt==202                 -             -
+package   dyn_em_ad     dyn_opt==302                 -             -
+
+package   jcdfi_off     jcdfi_diag==0                  -             -
+package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi_u,dfi_v,jcdfi_t,jcdfi_mu
+
+##
+# BEGIN XTRAJ_TYPE DEFINITION:
+#      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
+#typedef ad_forcing_type real    a_u_2                  ikj      -         1        X       -
+#typedef ad_forcing_type real    a_v_2                  ikj      -         1        Y       -
+#typedef ad_forcing_type real    a_w_2                  ikj      -         1        Z       -
+#typedef ad_forcing_type real    a_ph_2                 ikj      -         1        Z       -
+#typedef ad_forcing_type real    a_t_2                  ikj      -         1        -       -
+#typedef ad_forcing_type real    a_mu_2                 ij       -         1        -       -
+#typedef ad_forcing_type real    a_qv                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qc                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qr                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qi                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qs                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qg                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qh                   ikj      -         1        -       -
+
+
+#typedef xtraj_type real    lu_index               ij       -         1        -       -
+#typedef xtraj_type real    znu                    k        -         1        -       -
+#typedef xtraj_type real    znw                    k        -         1        Z       -
+#typedef xtraj_type real    zs                     l        -         -        Z       -
+#typedef xtraj_type real    dzs                    l        -         -        Z       -
+#typedef xtraj_type real    u_2                    ikj      -         1        X       -
+#typedef xtraj_type real    v_2                    ikj      -         1        Y       -
+#typedef xtraj_type real    w_2                    ikj      -         1        Z       -
+#typedef xtraj_type real    ph_2                   ikj      -         1        Z       -
+#typedef xtraj_type real    phb                    ikj      -         1        Z       -
+#typedef xtraj_type real    t_2                    ikj      -         1        -       -
+#typedef xtraj_type real    mu_2                   ij       -         1        -       -
+#typedef xtraj_type real    mub                    ij       -         1        -       -
+#typedef xtraj_type real    p                      ikj      -         1        -       -
+#typedef xtraj_type real    al                     ikj      -         1        -       -
+#typedef xtraj_type real    alt                    ikj      -         1        -       -
+#typedef xtraj_type real    alb                    ikj      -         1        -       -
+#typedef xtraj_type real    pb                     ikj      -         1        -       -
+#typedef xtraj_type real    fnm                    k        -         1        -       -
+#typedef xtraj_type real    fnp                    k        -         1        -       -
+#typedef xtraj_type real    rdnw                   k        -         1        -       -
+#typedef xtraj_type real    rdn                    k        -         1        -       -
+#typedef xtraj_type real    dnw                    k        -         1        -       -
+#typedef xtraj_type real    dn                     k        -         1        -       -
+#typedef xtraj_type real    cfn                    -        -         -        -       -
+#typedef xtraj_type real    cfn1                   -        -         -        -       -
+#typedef xtraj_type real    q2                     ij       -         1        -       -
+#typedef xtraj_type real    t2                     ij       -         1        -       -
+#typedef xtraj_type real    psfc                   ij       -         1        -       -
+#typedef xtraj_type real    th2                    ij       -         1        -       -
+#typedef xtraj_type real    u10                    ij       -         1        -       -
+#typedef xtraj_type real    v10                    ij       -         1        -       -
+#typedef xtraj_type real    rdx                    -        -         -        -       -
+#typedef xtraj_type real    rdy                    -        -         -        -       -
+#typedef xtraj_type real    dts                    -        -         -        -       -
+#typedef xtraj_type real    dtseps                 -        -         -        -       -
+#typedef xtraj_type real    resm                   -        -         -        -       -
+#typedef xtraj_type real    zetatop                -        -         -        -       -
+#typedef xtraj_type real    cf1                    -        -         -        -       -
+#typedef xtraj_type real    cf2                    -        -         -        -       -
+#typedef xtraj_type real    cf3                    -        -         -        -       -
+#typedef xtraj_type real    fcx                    w        -         -        -       -
+#typedef xtraj_type real    gcx                    w        -         -        -       -
+#typedef xtraj_type real    dtbc                   -        -         -        -       -
+#typedef xtraj_type real    landmask               ij       -         1        -       -
+#typedef xtraj_type real    tslb                   ilj      -         1        Z       -
+#typedef xtraj_type real    smois                  ilj      -         1        Z       -
+#typedef xtraj_type real    sh2o                   ilj      -         1        Z       -
+#typedef xtraj_type real    smcrel                 ilj      -         1        Z       -
+#typedef xtraj_type real    xice                   ij       -         1        -       -
+#typedef xtraj_type real    ivgtyp                 ij       -         1        -       -
+#typedef xtraj_type real    isltyp                 ij       -         1        -       -
+#typedef xtraj_type real    vegfra                 ij       -         1        -       -
+#typedef xtraj_type real    snow                   ij       -         1        -       -
+#typedef xtraj_type real    snowc                  ij       -         1        -       -
+#typedef xtraj_type real    snowh                  ij       -         1        -       -
+#typedef xtraj_type real    canwat                 ij       -         1        -       -
+#typedef xtraj_type real    sst                    ij       -         1        -       -
+#typedef xtraj_type real    msft                   ij       -         1        -       -
+#typedef xtraj_type real    msfu                   ij       -         1        X       -
+#typedef xtraj_type real    msfv                   ij       -         1        Y       -
+#typedef xtraj_type real    f                      ij       -         1        -       -
+#typedef xtraj_type real    e                      ij       -         1        -       -
+#typedef xtraj_type real    sina                   ij       -         1        -       -
+#typedef xtraj_type real    cosa                   ij       -         1        -       -
+#typedef xtraj_type real    ht                     ij       -         1        -       -
+#typedef xtraj_type real    tsk                    ij       -         1        -       -
+#typedef xtraj_type real    xlat                   ij       -         1        -       -
+#typedef xtraj_type real    xlong                  ij       -         1        -       -
+#typedef xtraj_type real    albbck                 ij       -         1        -       -
+#typedef xtraj_type real    tmn                    ij       -         1        -       -
+#typedef xtraj_type real    xland                  ij       -         1        -       -
+#typedef xtraj_type real    znt                    ij       -         1        -       -
+#typedef xtraj_type real    qv                     ikj      -         1        -       -
+#typedef xtraj_type real    qc                     ikj      -         1        -       -
+#typedef xtraj_type real    qr                     ikj      -         1        -       -
+#typedef xtraj_type real    qi                     ikj      -         1        -       -
+#typedef xtraj_type real    qs                     ikj      -         1        -       -
+#typedef xtraj_type real    qg                     ikj      -         1        -       -
+#typedef xtraj_type real    qh                     ikj      -         1        -       -
+# BEGIN XTRAJ_TYPE DEFINITION:
+
+#Set state
+#state xtraj_type xtraj - -
+#state ad_forcing_type ad_forcing - -
+

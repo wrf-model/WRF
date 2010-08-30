@@ -32,6 +32,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    USE module_domain	, ONLY : domain, domain_clock_get
    USE module_configure	, ONLY : grid_config_rec_type
    USE module_streams
+   USE mediation_pertmod_io , ONLY : save_tl_pert, read_ad_forcing, save_xtraj, read_xtraj, read_xtraj_reverse
   ! Model layer
    USE module_utility
 
@@ -78,7 +79,20 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      IF ( .FALSE.) THEN
        rc = 1  ! dummy statement
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
-       CALL med_hist_out ( grid , ialarm, config_flags )
+       IF ( .NOT. grid%trajectory_io ) THEN
+         CALL med_hist_out ( grid , ialarm, config_flags )
+       ELSE
+         IF ( ialarm .EQ. auxhist8_only ) THEN ! TL perturbation only
+           CALL domain_clock_get ( grid, current_timestr=message )
+           IF ( config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
+             CALL save_tl_pert  ( message )
+           ENDIF
+         ENDIF
+         IF ( ialarm .EQ. auxhist6_only ) THEN ! trajectory only
+         CALL domain_clock_get ( grid, current_timestr=message )
+         CALL save_xtraj  (  message )
+         ENDIF
+       ENDIF
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
@@ -110,7 +124,24 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        ENDIF
 #endif
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
-       CALL med_auxinput_in ( grid, ialarm, config_flags )
+       IF ( .NOT. grid%trajectory_io ) THEN
+         CALL med_auxinput_in ( grid, ialarm, config_flags )
+       ELSE
+         IF ( ialarm .EQ. auxinput6_only ) THEN ! Read Trajectory only
+           CALL domain_clock_get ( grid, current_timestr=message )
+           IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+             CALL read_xtraj  ( message )
+           ELSEIF ( config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
+             CALL read_xtraj_reverse  ( message )
+           ENDIF
+         ENDIF
+         IF ( ialarm .EQ. auxinput7_only ) THEN ! Read Adjoint Forcing only
+           CALL domain_clock_get ( grid, current_timestr=message )
+           IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+             CALL read_ad_forcing  ( message )
+           ENDIF
+         ENDIF
+       ENDIF
        WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
           ialarm - first_auxinput + 1, ' for domain ',grid%id
        CALL wrf_debug ( 0 , message )
@@ -146,6 +177,45 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
    RETURN
 END SUBROUTINE med_before_solve_io
+
+#if (WRFPLUS == 1)
+SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
+  ! Driver layer
+   USE module_state_description
+   USE module_domain	, ONLY : domain, domain_clock_get
+   USE module_configure	, ONLY : grid_config_rec_type
+   USE module_streams
+   USE mediation_pertmod_io , ONLY : read_ad_forcing
+  ! Model layer
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+  ! Local
+   INTEGER                                    :: ialarm
+   INTEGER                                    :: rc
+
+   CHARACTER*256          :: message
+
+   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) THEN
+     IF ( .NOT. grid%trajectory_io ) THEN
+        CALL med_auxinput_in ( grid, AUXINPUT7_ALARM, config_flags )
+     ELSE
+        CALL domain_clock_get ( grid, current_timestr=message )
+        CALL read_ad_forcing  ( message )
+     ENDIF
+     WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
+        AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
+     CALL wrf_debug ( 0 , message )
+     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )
+   ENDIF
+
+   RETURN
+END SUBROUTINE med_last_ad_solve_io
+#endif
 
 SUBROUTINE med_after_solve_io ( grid , config_flags )
   ! Driver layer
@@ -1079,6 +1149,7 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    USE module_configure	, ONLY : grid_config_rec_type
    USE module_utility
    USE module_streams
+   USE mediation_pertmod_io , ONLY : save_xtraj, save_tl_pert
   ! Model layer
 
    IMPLICIT NONE
@@ -1088,6 +1159,7 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: rc
+   CHARACTER (LEN=256)                        :: message
 #ifdef HWRF
 !zhang's doing
    TYPE(WRFU_Time) :: CurrTime  !zhang new
@@ -1603,6 +1675,12 @@ integer myproc,i,j,k
    ! Avoid trying to re-read the boundary conditions if we are doing DFI integration
    !    and do not expect to find boundary conditions for the current time
    IF ( (grid%dfi_opt .EQ. DFI_DDFI .OR. grid%dfi_opt .EQ. DFI_TDFI) .AND. grid%dfi_stage .EQ. DFI_FWD ) RETURN
+#endif
+
+#if (WRFPLUS == 1)
+   ! Avoid trying to re-read the boundary conditions if we are doing adjoint integration
+   ! Boundary condition with perturbation should be read in tangent linear integration in the future.
+   IF ( config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) RETURN
 #endif
 
    IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN

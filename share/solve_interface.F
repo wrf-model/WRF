@@ -35,11 +35,26 @@ SUBROUTINE solve_interface ( grid )
    CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
 
 #if (EM_CORE == 1 && DA_CORE != 1)
-   CALL solve_em  ( grid , config_flags  &
+   
+   IF      ( config_flags%dyn_opt == dyn_em_tl ) THEN
+      CALL solve_em_tl  ( grid , config_flags  &
 !
 # include <actual_new_args.inc>
 !
                )
+   ELSE IF ( config_flags%dyn_opt == dyn_em_ad ) THEN
+      CALL solve_em_ad  ( grid , config_flags  &
+!
+# include <actual_new_args.inc>
+!
+               )
+   ELSE
+      CALL solve_em  ( grid , config_flags  &
+!
+# include <actual_new_args.inc>
+!
+               )
+   END IF
 
 # ifdef WRF_CHEM
    IF ( config_flags%chem_opt > 0  ) THEN

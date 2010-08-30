@@ -1295,17 +1295,27 @@ CONTAINS
         CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
 #endif
         CALL wrf_set_dm_communicator( mpi_comm_here )
+#if (WRFPLUS == 1)
+      ELSE
+        CALL wrf_set_dm_communicator( local_communicator )
+#endif
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_here )
+#if (WRFPLUS == 1)
+      IF ( .NOT. mpi_inited ) THEN
+         CALL wrf_termio_dup( mpi_comm_here )
+      ENDIF
+#else
       CALL wrf_termio_dup( mpi_comm_here )
+#endif
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
       CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
-#if (DA_CORE == 1)
+#if (WRFPLUS_N == 1)
       CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
       CALL wrf_set_dm_communicator( mpi_comm_local )
       CALL wrf_get_dm_communicator( mpi_comm_here )
-      CALL wrf_termio_dup( mpi_comm_here ) 
+      ! CALL wrf_termio_dup( mpi_comm_here ) 
 #endif
 
       IF ( mytask .EQ. 0 ) THEN
@@ -1359,7 +1369,13 @@ CONTAINS
         CALL wrf_set_dm_communicator ( mpi_comm_here )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
-      CALL wrf_termio_dup( mpi_comm_local )
+#if (WRFPLUS == 1)
+      IF ( .NOT. mpi_inited ) THEN
+         CALL wrf_termio_dup( mpi_comm_here )
+      ENDIF
+#else 
+      CALL wrf_termio_dup( mpi_comm_here )
+#endif
 #endif
    END SUBROUTINE init_module_dm
 

@@ -39,6 +39,8 @@ MODULES =                 		\
 OBJS    = 		        \
 	init_modules_em.o       \
 	solve_em.o              \
+	solve_em_tl.o           \
+	solve_em_ad.o           \
         start_em.o              \
         shift_domain_em.o       \
         couple_or_uncouple_em.o \
@@ -280,6 +282,54 @@ start_em.o:     module_bc_em.o \
 		../phys/module_physics_init.o 
 
 solve_em.o:     module_small_step_em.o \
+		module_em.o            \
+		module_solvedebug_em.o \
+                module_bc_em.o         \
+		module_diffusion_em.o  \
+		module_big_step_utilities_em.o \
+                module_first_rk_step_part1.o \
+                module_first_rk_step_part2.o \
+                module_avgflx_em.o              \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_machine.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_llxy.o	\
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		../phys/module_microphysics_driver.o \
+		../phys/module_microphysics_zero_out.o \
+		../phys/module_physics_addtendc.o
+
+solve_em_tl.o:  module_small_step_em.o \
+		module_em.o            \
+		module_solvedebug_em.o \
+                module_bc_em.o         \
+		module_diffusion_em.o  \
+		module_big_step_utilities_em.o \
+                module_first_rk_step_part1.o \
+                module_first_rk_step_part2.o \
+                module_avgflx_em.o              \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_machine.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_llxy.o	\
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		../phys/module_microphysics_driver.o \
+		../phys/module_microphysics_zero_out.o \
+		../phys/module_physics_addtendc.o
+
+solve_em_ad.o:  module_small_step_em.o \
 		module_em.o            \
 		module_solvedebug_em.o \
                 module_bc_em.o         \

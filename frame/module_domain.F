@@ -1170,9 +1170,11 @@ CONTAINS
                       p => p%next
                     ENDDO
                     IF ( .NOT. found ) THEN
+#if ( (DA_CORE !=1) && (WRFPLUS != 1) )
                       WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
                                    '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
                       CALL wrf_message(mess)
+#endif
                       gavewarning = .TRUE.
                     ENDIF
                     fieldno = fieldno + 1
@@ -1200,9 +1202,11 @@ CONTAINS
             CALL wrf_message(mess)
             CALL wrf_error_fatal('Set ignore_iofields_warn to true in namelist to ignore')
           ELSE
+#if ( (DA_CORE !=1) && (WRFPLUS != 1) )
             WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
             CALL wrf_message(mess)
             CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )
+#endif
           ENDIF
         ENDIF
       ENDIF  ! wrf_dm_on_monitor

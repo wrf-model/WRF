@@ -5,7 +5,7 @@
 
 MODULE module_wrf_top
 !<DESCRIPTION>
-! This module defines top-level wrf_init(), wrf_run(), and wrf_finalize() 
+! This module defines top-level wrf_init(), wrf_adtl_check(), wrf_run(), and wrf_finalize() 
 ! routines.  
 !</DESCRIPTION>
 
@@ -18,9 +18,13 @@ MODULE module_wrf_top
 
    USE module_timing
    USE module_wrf_error
+   USE module_adtl_grid_utilities, ONLY : allocate_grid, deallocate_grid, copy_grid_to_s, copy_grid_to_b, &
+                                          copy_s_to_g, inner_dot_g, add_grid, inner_dot, init_domain_size, &
+                                          inner_dot_a_b, copy_g_to_a, copy_g_to_b, restore_grid  
+   USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail
 
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_initialize
+   USE module_dm, ONLY : wrf_dm_initialize, wrf_dm_sum_real
 #endif
 
    IMPLICIT NONE
@@ -361,6 +365,305 @@ CONTAINS
    END SUBROUTINE wrf_init
 
 
+   SUBROUTINE wrf_adtl_check( )
+!<DESCRIPTION>
+!     WRF adjoint and tangent linear code check routine.
+!</DESCRIPTION>
+
+!<DESCRIPTION>
+! Once the top-level domain has been allocated, configured, and
+! initialized, the model time integration is ready to proceed.  
+! 
+!</DESCRIPTION>
+
+   REAL :: alpha_m, factor, val_l, val_a, save_l, val_n, coef
+   INTEGER :: nt, ij
+   CHARACTER*256 :: timestr
+
+   ! Return immediately if not dyn_em_check
+   IF ( config_flags%dyn_opt .NE. dyn_em_check ) RETURN
+
+   ! Force to read the lateral boundary condition here.
+   CALL med_before_solve_io ( head_grid, config_flags )
+
+   CALL init_domain_size ( head_grid, config_flags )
+
+   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST ====='
+   CALL wrf_message(TRIM(wrf_err_message))
+
+   WRITE(wrf_err_message,'(A,7(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
+                               head_grid%check_w, head_grid%check_ph, &
+                               head_grid%check_t, head_grid%check_mu, &
+                               head_grid%check_moist
+   CALL wrf_message(TRIM(wrf_err_message))
+
+   wrf_err_message = '=============== Tangent Linear check ==================='
+   CALL wrf_message(TRIM(wrf_err_message))
+   
+   ! Save the initial condition and boundary condition, x
+   CALL allocate_grid ( )
+   CALL copy_grid_to_s ( head_grid )
+
+   model_config_rec%dyn_opt = dyn_em
+   CALL wrf_run
+
+   ! Save the f(x)
+   CALL copy_grid_to_b ( head_grid )
+
+   ! Restore the x and assign the \delta x
+   CALL restore_grid ( head_grid )
+   CALL copy_s_to_g ( head_grid, 1.0 )
+
+   CALL wrf_run_tl
+
+   save_l = 0.0
+   ! Calculate the inner dot.
+   !$OMP PARALLEL DO    &
+   !$OMP DEFAULT (SHARED) PRIVATE ( ij ) &           
+   !$OMP REDUCTION (+:save_l) 
+   DO ij = 1 , head_grid%num_tiles
+     CALL inner_dot_g ( head_grid , save_l,                                        &
+                        head_grid%i_start(ij), head_grid%i_end(ij),                &
+                        head_grid%j_start(ij), head_grid%j_end(ij)                 )
+   END DO
+   !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
+   save_l = wrf_dm_sum_real ( save_l )
+#endif
+
+   alpha_m = 1.
+   tangentLinearCheck : DO nt = 1 , 11
+
+      alpha_m = 0.1 * alpha_m
+      factor = 1.0 + alpha_m
+
+      CALL add_grid ( head_grid,  factor )
+
+      model_config_rec%dyn_opt = dyn_em
+      CALL domain_clock_get( head_grid, start_timestr=timestr )
+      CALL domain_clock_set( head_grid, current_timestr=timestr )
+      CALL wrf_run
+
+      val_n = 0.0
+      !$OMP PARALLEL DO    &
+      !$OMP PRIVATE ( ij ) &
+      !$OMP REDUCTION (+:val_n)
+      DO ij = 1 , head_grid%num_tiles
+        CALL inner_dot ( head_grid, val_n,                                          &
+                         head_grid%i_start(ij), head_grid%i_end(ij),                &
+                         head_grid%j_start(ij), head_grid%j_end(ij)                 )
+      END DO
+      !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
+      val_n = wrf_dm_sum_real ( val_n )
+#endif
+      val_l=save_l*alpha_m**2
+      coef=val_n/val_l
+      WRITE(wrf_err_message, FMT='(A,E9.4,A,E22.13,A,E13.6,A,E13.6)') &
+           'tl_check: alpha_m=',alpha_m,'  coef=',coef, &
+           '  val_n=',val_n,'  val_l=',val_l
+      CALL wrf_message(TRIM(wrf_err_message))
+
+
+   ENDDO  tangentLinearCheck 
+
+   wrf_err_message = '=============== Adjoint check ==============='
+   CALL wrf_message(TRIM(wrf_err_message))
+
+   CALL restore_grid ( head_grid )
+   CALL copy_s_to_g ( head_grid, 0.1 )
+
+   CALL copy_g_to_b ( head_grid )
+
+   CALL wrf_run_tl
+
+   val_l = 0.0
+   !$OMP PARALLEL DO    &
+   !$OMP PRIVATE ( ij ) &
+   !$OMP REDUCTION (+:val_l)
+   DO ij = 1 , head_grid%num_tiles
+     CALL inner_dot_g ( head_grid , val_l,                                         &
+                        head_grid%i_start(ij), head_grid%i_end(ij),                &
+                        head_grid%j_start(ij), head_grid%j_end(ij)                 )
+   END DO
+   !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
+   val_l =  wrf_dm_sum_real ( val_l )
+#endif
+
+   CALL restore_grid ( head_grid )
+   CALL copy_g_to_a ( head_grid )
+
+   CALL wrf_run_ad
+
+   val_a = 0.0
+   !$OMP PARALLEL DO    &
+   !$OMP PRIVATE ( ij ) &
+   !$OMP REDUCTION (+:val_a)
+   DO ij = 1 , head_grid%num_tiles
+     CALL inner_dot_a_b ( head_grid, val_a,                                          &
+                          head_grid%i_start(ij), head_grid%i_end(ij),                &
+                          head_grid%j_start(ij), head_grid%j_end(ij)                 )
+   END DO
+   !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
+   val_a =  wrf_dm_sum_real ( val_a )
+#endif
+
+   WRITE(wrf_err_message, FMT='(A,E22.13)') 'ad_check: VAL_TL: ', val_l
+   CALL wrf_message(TRIM(wrf_err_message))
+   WRITE(wrf_err_message, FMT='(A,E22.13)') 'ad_check: VAL_AD: ', val_a
+   CALL wrf_message(TRIM(wrf_err_message))
+
+   ! Deallocate all working space
+   CALL deallocate_grid()
+
+   ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.
+   CALL wrf_finalize
+
+   END SUBROUTINE wrf_adtl_check
+
+   SUBROUTINE wrf_run_tl( )
+!<DESCRIPTION>
+!     WRF tangent linear run routine.
+!</DESCRIPTION>
+
+!<DESCRIPTION>
+! Once the top-level domain has been allocated, configured, and
+! initialized, the model time integration is ready to proceed.  The start
+! and stop times for the domain are set to the start and stop time of the
+! model run, and then <a href=integrate.html>integrate</a> is called to
+! advance the domain forward through that specified time interval.  On
+! return, the simulation is completed.  
+! 
+!</DESCRIPTION>
+
+   CHARACTER*256 :: timestr
+
+   !  The forecast integration for the most coarse grid is now started.  The
+   !  integration is from the first step (1) to the last step of the simulation.
+
+   CALL       wrf_message ( "wrf: calling tangent linear integrate" )
+   model_config_rec%dyn_opt = dyn_em_tl
+   CALL Setup_Timekeeping ( head_grid )
+   CALL domain_clock_get( head_grid, start_timestr=timestr )
+   CALL domain_clock_set( head_grid, current_timestr=timestr )
+
+   xtraj_pointer => xtraj_tail
+   CALL integrate ( head_grid )
+
+   CALL       wrf_message ( "wrf: back from tangent linear integrate" )
+
+   END SUBROUTINE wrf_run_tl
+
+   SUBROUTINE wrf_run_ad( )
+!<DESCRIPTION>
+!     WRF adjoint run routine.
+!</DESCRIPTION>
+
+!<DESCRIPTION>
+! Once the top-level domain has been allocated, configured, and
+! initialized, the model time integration is ready to proceed.  The start
+! and stop times for the domain are set to the start and stop time of the
+! model run, and then <a href=integrate.html>integrate</a> is called to
+! advance the domain forward through that specified time interval.  On
+! return, the simulation is completed.  
+! 
+!</DESCRIPTION>
+
+!   INTEGER :: timestep
+!   CHARACTER*256 :: timestr, timestr1
+   INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
+   INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
+
+   !  The forecast integration for the most coarse grid is now started.  The
+   !  integration is from the first step (1) to the last step of the simulation.
+
+   CALL       wrf_message ( "wrf: calling adjoint integrate" )
+
+   ! Seeting for AD model
+   model_config_rec%dyn_opt = dyn_em_ad
+
+   model_config_rec%time_step = -1 * model_config_rec%time_step
+   model_config_rec%run_days = -1 * model_config_rec%run_days
+   model_config_rec%run_hours = -1 * model_config_rec%run_hours
+   model_config_rec%run_minutes = -1 * model_config_rec%run_minutes
+   model_config_rec%run_seconds = -1 * model_config_rec%run_seconds
+
+   start_year = model_config_rec%start_year(head_grid%id)
+   start_month = model_config_rec%start_month(head_grid%id)
+   start_day = model_config_rec%start_day(head_grid%id)
+   start_hour = model_config_rec%start_hour(head_grid%id)
+   start_minute = model_config_rec%start_minute(head_grid%id)
+   start_second = model_config_rec%start_second(head_grid%id)
+
+   end_year = model_config_rec%end_year(head_grid%id)
+   end_month = model_config_rec%end_month(head_grid%id)
+   end_day = model_config_rec%end_day(head_grid%id)
+   end_hour = model_config_rec%end_hour(head_grid%id)
+   end_minute = model_config_rec%end_minute(head_grid%id)
+   end_second = model_config_rec%end_second(head_grid%id)
+
+   model_config_rec%start_year(head_grid%id)  = end_year
+   model_config_rec%start_month(head_grid%id)  = end_month
+   model_config_rec%start_day(head_grid%id)  = end_day
+   model_config_rec%start_hour(head_grid%id)  = end_hour
+   model_config_rec%start_minute(head_grid%id)  = end_minute
+   model_config_rec%start_second(head_grid%id)  = end_second
+
+   model_config_rec%end_year(head_grid%id)    = start_year
+   model_config_rec%end_month(head_grid%id)    = start_month
+   model_config_rec%end_day(head_grid%id)    = start_day
+   model_config_rec%end_hour(head_grid%id)    = start_hour
+   model_config_rec%end_minute(head_grid%id)    = start_minute
+   model_config_rec%end_second(head_grid%id)    = start_second
+
+   CALL Setup_Timekeeping ( head_grid )
+   head_grid%start_subtime = domain_get_start_time ( head_grid )
+   head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+
+!   CALL domain_clock_get( head_grid, stop_timestr=timestr )
+!   CALL domain_clock_get( head_grid, start_timestr=timestr1 )
+!   CALL domain_clock_set( head_grid, current_timestr=timestr )
+!   CALL domain_clock_set( head_grid, stop_timestr=timestr1 )
+!   CALL domain_clock_set( head_grid, time_step_seconds=timestep )
+!   head_grid%start_subtime = domain_get_start_time ( head_grid )
+!   head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+
+   xtraj_pointer => xtraj_head
+
+   CALL integrate ( head_grid )
+
+!  Recover to NL model 
+   model_config_rec%dyn_opt = dyn_em
+
+   model_config_rec%time_step = -1 * model_config_rec%time_step
+   model_config_rec%run_days = -1 * model_config_rec%run_days
+   model_config_rec%run_hours = -1 * model_config_rec%run_hours
+   model_config_rec%run_minutes = -1 * model_config_rec%run_minutes
+   model_config_rec%run_seconds = -1 * model_config_rec%run_seconds
+
+   model_config_rec%start_year(head_grid%id)  = start_year
+   model_config_rec%start_month(head_grid%id)  = start_month
+   model_config_rec%start_day(head_grid%id)  = start_day
+   model_config_rec%start_hour(head_grid%id)  = start_hour
+   model_config_rec%start_minute(head_grid%id)  = start_minute
+   model_config_rec%start_second(head_grid%id)  = start_second
+
+   model_config_rec%end_year(head_grid%id)    = end_year
+   model_config_rec%end_month(head_grid%id)    = end_month
+   model_config_rec%end_day(head_grid%id)    = end_day
+   model_config_rec%end_hour(head_grid%id)    = end_hour
+   model_config_rec%end_minute(head_grid%id)    = end_minute
+   model_config_rec%end_second(head_grid%id)    = end_second
+
+   CALL Setup_Timekeeping ( head_grid )
+   head_grid%start_subtime = domain_get_start_time ( head_grid )
+   head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+
+   CALL       wrf_message ( "wrf: back from adjoint integrate" )
+
+   END SUBROUTINE wrf_run_ad
 
    SUBROUTINE wrf_run( )
 !<DESCRIPTION>

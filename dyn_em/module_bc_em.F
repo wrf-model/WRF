@@ -468,6 +468,7 @@ CONTAINS
 
    REAL,  DIMENSION( ims:ime , 1:1 ,     spec_bdy_width    ), INTENT(IN   ) :: mu_bys,mu_bye, &
                                                                                mu_btys,mu_btye
+
          CALL spec_bdytend (   ru_tend,                &
                                u_bxs,u_bxe,u_bys,u_bye, u_btxs,u_btxe,u_btys,u_btye,    &
                                'u'     , config_flags, &

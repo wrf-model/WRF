@@ -7,21 +7,40 @@ RM      =       rm -f
 
 MODULES =                 		\
         module_advect_em.o   		\
+        module_advect_em_tl.o   	\
+        module_advect_em_ad.o   	\
 	module_diffusion_em.o  		\
+	module_diffusion_em_tl.o  	\
+	module_diffusion_em_ad.o  	\
 	module_small_step_em.o 		\
+	module_small_step_em_tl.o 	\
+	module_small_step_em_ad.o 	\
         module_big_step_utilities_em.o  \
+        module_big_step_utilities_em_tl.o  \
+        module_big_step_utilities_em_ad.o  \
         module_em.o         		\
+        module_em_tl.o         		\
+        module_em_ad.o         		\
         module_solvedebug_em.o    	\
         module_bc_em.o                  \
+        module_bc_em_tl.o               \
+        module_bc_em_ad.o               \
         module_init_utilities.o         \
 	module_damping_em.o		\
 	module_polarfft.o		\
         module_force_scm.o              \
         module_first_rk_step_part1.o    \
         module_first_rk_step_part2.o    \
+        module_first_rk_step_part2_tl.o    \
+        module_first_rk_step_part2_ad.o    \
         module_avgflx_em.o              \
 	module_sfs_nba.o		\
+	module_sfs_nba_tl.o		\
+	module_sfs_nba_ad.o		\
 	module_sfs_driver.o		\
+	module_sfs_driver_tl.o		\
+	module_sfs_driver_ad.o		\
+        module_linked_lisk2.o   	\
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings
@@ -81,11 +100,27 @@ init_modules_em.o: module_big_step_utilities_em.o
 interp_domain_em.o: ../frame/module_domain.o \
 		../frame/module_configure.o 
 
+module_advect_em_tl.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_wrf_error.o
+
+module_advect_em_ad.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_wrf_error.o
+
 module_advect_em.o: ../share/module_bc.o \
 		../share/module_model_constants.o \
 		../frame/module_wrf_error.o
 
 module_bc_em.o: ../share/module_bc.o ../frame/module_configure.o \
+		../frame/module_wrf_error.o
+
+module_bc_em_tl.o: module_bc_em.o ../share/module_bc.o ../frame/module_configure.o \
+		../share/module_bc_tl.o	\
+		../frame/module_wrf_error.o
+
+module_bc_em_ad.o: ../share/module_bc.o ../frame/module_configure.o \
+		../share/module_bc_ad.o	\
 		../frame/module_wrf_error.o
 
 module_big_step_utilities_em.o: \
@@ -95,7 +130,36 @@ module_big_step_utilities_em.o: \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o 
 
+module_big_step_utilities_em_tl.o: \
+		../share/module_llxy.o	\
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o 
+
+module_big_step_utilities_em_ad.o: \
+		../share/module_llxy.o	\
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o 
+
 module_damping_em.o: ../frame/module_wrf_error.o
+
+module_diffusion_em_tl.o:  module_big_step_utilities_em_tl.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o \
+		../share/module_bc_tl.o \
+		../frame/module_wrf_error.o
+
+module_diffusion_em_ad.o:  module_big_step_utilities_em_ad.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		../share/module_bc_ad.o \
+		../frame/module_wrf_error.o
 
 module_diffusion_em.o:  module_big_step_utilities_em.o \
 		../frame/module_configure.o  \
@@ -109,8 +173,33 @@ module_em.o:    module_big_step_utilities_em.o module_advect_em.o \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o 
 
+module_em_tl.o: module_big_step_utilities_em.o module_advect_em.o \
+		module_big_step_utilities_em_tl.o \
+		module_advect_em_tl.o \
+		module_damping_em.o \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o 
+
+module_em_ad.o: module_big_step_utilities_em.o module_advect_em.o \
+		module_big_step_utilities_em_ad.o \
+		module_advect_em_ad.o \
+		module_damping_em.o \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o 
+
 module_polarfft.o: ../share/module_model_constants.o \
 		../frame/module_wrf_error.o
+
+module_sfs_nba.o: \
+		../frame/module_configure.o
+
+module_sfs_nba_tl.o: \
+		module_sfs_nba.o \
+		../frame/module_configure.o
+
+module_sfs_nba_ad.o: \
+		module_sfs_nba.o \
+		../frame/module_configure.o
 
 module_sfs_driver.o:  \
 		module_sfs_nba.o \
@@ -122,7 +211,38 @@ module_sfs_driver.o:  \
 		../frame/module_machine.o \
 		../share/module_bc.o
 
+module_sfs_driver_tl.o:  \
+		module_sfs_nba.o \
+		module_sfs_nba_tl.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_machine.o \
+		../share/module_bc_tl.o
+
+module_sfs_driver_ad.o:  \
+		module_sfs_nba.o \
+		module_sfs_nba_ad.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_machine.o \
+		../share/module_bc.o \
+		../share/module_bc_ad.o
+
 module_small_step_em.o: \
+		../frame/module_configure.o  \
+		../share/module_model_constants.o 
+
+module_small_step_em_tl.o: \
+		../frame/module_configure.o  \
+		../share/module_model_constants.o 
+
+module_small_step_em_ad.o: \
 		../frame/module_configure.o  \
 		../share/module_model_constants.o 
 
@@ -306,13 +426,17 @@ solve_em.o:     module_small_step_em.o \
 		../phys/module_physics_addtendc.o
 
 solve_em_tl.o:  module_small_step_em.o \
+		module_small_step_em_tl.o            \
 		module_em.o            \
+		module_em_tl.o            \
 		module_solvedebug_em.o \
                 module_bc_em.o         \
+                module_bc_em_tl.o         \
 		module_diffusion_em.o  \
 		module_big_step_utilities_em.o \
+		module_big_step_utilities_em_tl.o \
                 module_first_rk_step_part1.o \
-                module_first_rk_step_part2.o \
+                module_first_rk_step_part2_tl.o \
                 module_avgflx_em.o              \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
@@ -325,19 +449,26 @@ solve_em_tl.o:  module_small_step_em.o \
 		../share/module_llxy.o	\
 		../share/module_model_constants.o \
 		../share/module_bc.o \
+		../share/module_bc_tl.o \
 		../phys/module_microphysics_driver.o \
 		../phys/module_microphysics_zero_out.o \
 		../phys/module_physics_addtendc.o
 
-solve_em_ad.o:  module_small_step_em.o \
+solve_em_ad.o:  module_small_step_em.o 		\
+		module_small_step_em_ad.o       \
 		module_em.o            \
+		module_em_ad.o         \
 		module_solvedebug_em.o \
                 module_bc_em.o         \
+                module_bc_em_ad.o      \
 		module_diffusion_em.o  \
-		module_big_step_utilities_em.o \
+		module_big_step_utilities_em.o    \
+		module_big_step_utilities_em_ad.o \
                 module_first_rk_step_part1.o \
                 module_first_rk_step_part2.o \
-                module_avgflx_em.o              \
+                module_first_rk_step_part2_ad.o \
+                module_avgflx_em.o           \
+                module_linked_lisk2.o        \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_driver_constants.o \
@@ -349,6 +480,7 @@ solve_em_ad.o:  module_small_step_em.o \
 		../share/module_llxy.o	\
 		../share/module_model_constants.o \
 		../share/module_bc.o \
+		../share/module_bc_ad.o \
 		../phys/module_microphysics_driver.o \
 		../phys/module_microphysics_zero_out.o \
 		../phys/module_physics_addtendc.o
@@ -379,6 +511,35 @@ module_first_rk_step_part2.o : \
 		../phys/module_fddaobs_driver.o \
 		../phys/module_fddaobs_driver.o
 
+module_first_rk_step_part2_tl.o : \
+                module_em.o \
+		module_diffusion_em_tl.o  \
+		module_sfs_driver_tl.o \
+		../frame/module_domain.o \
+		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o \
+		../share/module_bc_tl.o \
+		../frame/module_comm_dm.o \
+		../phys/module_fddaobs_driver.o
+
+module_first_rk_step_part2_ad.o : \
+                module_em.o \
+		module_diffusion_em.o  \
+		module_diffusion_em_ad.o  \
+		module_sfs_driver.o \
+		module_sfs_driver_ad.o \
+		../frame/module_domain.o \
+		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o \
+		../share/module_bc.o \
+		../share/module_bc_ad.o \
+		../frame/module_comm_dm.o \
+		../phys/module_fddaobs_driver.o
+
 adapt_timestep_em.o: \
                 module_bc_em.o         \
 		../frame/module_domain.o \
@@ -387,5 +548,6 @@ adapt_timestep_em.o: \
 
 #		../chem/module_chem_utilities.o \
 # 		../chem/module_input_chem_data.o
+
 
 # DO NOT DELETE

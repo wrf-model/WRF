@@ -7780,6 +7780,24 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
   horz_order = config_flags%h_sca_adv_order
   vert_order = config_flags%v_sca_adv_order
 
+   degrade_xs = .true.
+   degrade_xe = .true.
+   degrade_ys = .true.
+   degrade_ye = .true.
+
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xs .or. &
+       (its > ids+3)                ) degrade_xs = .false.
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xe .or. &
+       (ite < ide-4)                ) degrade_xe = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ys .or. &
+       (jts > jds+3)                ) degrade_ys = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ye .or. &
+       (jte < jde-4)                ) degrade_ye = .false.
+
   do j=jts-2,jte+2
   do k=kts,kte
   do i=its-2,ite+2
@@ -7810,23 +7828,24 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 !   conditions have boundary zone data fill for correct application
 !   of the higher order flux stencils
 
-   degrade_xs = .true.
-   degrade_xe = .true.
-   degrade_ys = .true.
-   degrade_ye = .true.
+! Remarked by Ning Pan, 2010-07-27
+!   degrade_xs = .true.
+!   degrade_xe = .true.
+!   degrade_ys = .true.
+!   degrade_ye = .true.
 
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+3)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-4)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+3)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-4)                ) degrade_ye = .false.
+!   IF( config_flags%periodic_x   .or. &
+!       config_flags%symmetric_xs .or. &
+!       (its > ids+3)                ) degrade_xs = .false.
+!   IF( config_flags%periodic_x   .or. &
+!       config_flags%symmetric_xe .or. &
+!       (ite < ide-4)                ) degrade_xe = .false.
+!   IF( config_flags%periodic_y   .or. &
+!       config_flags%symmetric_ys .or. &
+!       (jts > jds+3)                ) degrade_ys = .false.
+!   IF( config_flags%periodic_y   .or. &
+!       config_flags%symmetric_ye .or. &
+!       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 

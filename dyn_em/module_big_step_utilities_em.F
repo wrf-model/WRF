@@ -148,7 +148,8 @@ SUBROUTINE calc_mu_uv ( config_flags,                 &
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+! comment out the following statement. NPan 05/26/10 
+!             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
 !  fix for periodic b.c., 13 march 2004, wcs
              muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm)+mub(i,j-1)+mub(i,jm))
          ENDDO
@@ -5198,7 +5199,7 @@ END SUBROUTINE phy_prep
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(IN), OPTIONAL ::               dfi_tten_rad
    INTEGER,      INTENT(IN   ) ,OPTIONAL   :: dfi_stage
-   REAL :: dfi_tten_max, old_max
+!  REAL :: dfi_tten_max, old_max
 #endif
 
    REAL mpten, mptenmax, mptenmin
@@ -5222,7 +5223,6 @@ END SUBROUTINE phy_prep
 
 !  set up loop bounds for this grid's boundary conditions
 
-
     i_start = its    
     i_end   = min( ite,ide-1 )
     j_start = jts    
@@ -5236,7 +5236,7 @@ END SUBROUTINE phy_prep
     k_end = min( kte, kde-1 )
 
 #if ( WRF_DFI_RADAR == 1 )
-         if ( PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD            &
+         if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD  &
              .and. PRESENT(dfi_tten_rad) ) then
              WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
              CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
@@ -5248,46 +5248,35 @@ END SUBROUTINE phy_prep
 !  add microphysics theta diff to perturbation theta, set h_diabatic
 
      IF ( config_flags%no_mp_heating .eq. 0 ) THEN
-       mptenmax = 0.
-       mptenmin = 999.
      DO j = j_start, j_end
      DO k = k_start, k_end
      DO i = i_start, i_end
-          mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
+        mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
+
 #if ( WRF_DFI_RADAR == 1 )
-       if(mpten.gt.mptenmax) then
-          mptenmax=mpten
-          imax=i
-          jmax=j
-       endif
-       if(mpten.lt.mptenmin) then
-          mptenmin=mpten
-          imin=i
-          jmin=j
-       endif
-          mpten=min(config_flags%mp_tend_lim*dt, mpten)
-          mpten=max(-config_flags%mp_tend_lim*dt, mpten)
+        mpten=min(config_flags%mp_tend_lim*dt, mpten)
+        mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
-       if(k < k_end ) then
-         if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
-         if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)
-       endif
-
-       if ( PRESENT(dfi_stage) .and.                                   &
-          dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.       &
-          dfi_tten_rad(i,k,j) >= -0.1 .and. dfi_tten_rad(i,k,j) <= 0.1 &
-          .and. k < k_end ) then
+        if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  &
+           dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.      &
+           dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10. &
+           .and. k < k_end ) then
 ! add radar temp tendency
-! there is radar coverage
-           t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
-       else
-! no radar coverage
-           t_new(i,k,j) = t_new(i,k,j) + mpten
-       endif
+!tgs         if(dfi_tten_rad(i,k,j) > th_phy(i,k,j)-h_diabatic(i,k,j) ) then
+         if(dfi_tten_rad(i,k,j) > mpten ) then
+            t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))
+         else
+!tgs            t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
+            t_new(i,k,j) = t_new(i,k,j) + mpten
+         endif
+        else
+!tgs         t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))  
+         t_new(i,k,j) = t_new(i,k,j) + mpten
+        endif
 #else
          t_new(i,k,j) = t_new(i,k,j) + mpten
 #endif
-         h_diabatic(i,k,j) =  mpten/dt
+         h_diabatic(i,k,j) =  (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
      ENDDO
      ENDDO
      ENDDO

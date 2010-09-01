@@ -650,10 +650,8 @@ ENDIF
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 
-   CALL domain_clock_get( head_grid, stop_timestr=timestr )
-   CALL domain_clock_get( head_grid, start_timestr=timestr1 )
+   CALL domain_clock_get( head_grid, start_timestr=timestr )
    CALL domain_clock_set( head_grid, current_timestr=timestr )
-   CALL domain_clock_set( head_grid, stop_timestr=timestr1 )
 
    xtraj_pointer => xtraj_head
 

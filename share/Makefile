@@ -6,6 +6,8 @@ RM      =       rm -f
 
 MODULES =                       \
 	module_bc.o	        \
+	module_bc_tl.o	        \
+	module_bc_ad.o	        \
 	module_bc_time_utilities.o	\
 	module_io_wrf.o	        \
 	module_date_time.o	\
@@ -87,6 +89,12 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 start_domain.o: start_domain_em.int wrf_timeseries.o ../frame/module_domain.o ../frame/module_configure.o
 
 module_bc.o: ../frame/module_configure.o ../frame/module_state_description.o \
+		../frame/module_wrf_error.o
+
+module_bc_tl.o: ../frame/module_configure.o ../frame/module_state_description.o \
+		../frame/module_wrf_error.o
+
+module_bc_ad.o: ../frame/module_configure.o ../frame/module_state_description.o \
 		../frame/module_wrf_error.o
 
 module_bc_time_utilities.o: $(ESMF_MOD_DEPENDENCE)

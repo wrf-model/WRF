@@ -1641,7 +1641,131 @@ CONTAINS
             ENDDO
           ENDDO
         ENDDO
-      ENDIF
+  ENDIF
+
+  IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+    DO i = max(its,ibe-spec_zone+1), itf
+      b_dist = ibe - i
+      DO k = kts, ktf
+        DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+          field(i,k,j) = field_bdy_xe(j, k, b_dist+1)
+        ENDDO
+      ENDDO
+    ENDDO
+  ENDIF
+ENDIF
+
+   END SUBROUTINE spec_bdyfield
+
+!------------------------------------------------------------------------
+
+   SUBROUTINE couple_bdy ( field,      &
+                           variable_in, config_flags, & 
+                           spec_zone,  &
+                           mu, msf,    &
+                           ids,ide, jds,jde, kds,kde,  & ! domain dims
+                           ims,ime, jms,jme, kms,kme,  & ! memory dims
+                           ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                           its,ite, jts,jte, kts,kte )
+
+!  This subroutine adds the tendencies in the boundary specified region.
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD August 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone
+      CHARACTER,    INTENT(IN   )    :: variable_in
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: mu
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: msf
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      TYPE( grid_config_rec_type ) config_flags
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
+
+      variable = variable_in
+
+      IF (variable == 'U') variable = 'u'
+      IF (variable == 'V') variable = 'v'
+      IF (variable == 'T') variable = 't'
+      IF (variable == 'H') variable = 'h'
+      IF (variable == 'W') variable = 'w'
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      IF (variable == 'u') ibe = ide
+      IF (variable == 'u') itf = min(ite,ide)
+      IF (variable == 'v') jbe = jde
+      IF (variable == 'v') jtf = min(jte,jde)
+      IF (variable == 'h') ktf = kte
+      IF (variable == 'w') ktf = kte
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+      IF (jbe - jtf .lt. spec_zone) THEN 
+! Y-end boundary 
+        DO j = max(jts,jbe-spec_zone+1), jtf 
+          b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf 
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
 
       IF (ibe - itf .lt. spec_zone) THEN
 ! X-end boundary
@@ -1649,14 +1773,147 @@ CONTAINS
           b_dist = ibe - i
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
-              field(i,k,j) = field_bdy_xe(j, k, b_dist+1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
             ENDDO
           ENDDO
         ENDDO
-      ENDIF
+      ENDIF 
     ENDIF
 
-   END SUBROUTINE spec_bdyfield
+   END SUBROUTINE couple_bdy
+
+!------------------------------------------------------------------------
+
+   SUBROUTINE uncouple_bdy ( field,      &
+                             variable_in, config_flags, & 
+                             spec_zone,  &
+                             mu, msf,    &
+                             ids,ide, jds,jde, kds,kde,  & ! domain dims
+                             ims,ime, jms,jme, kms,kme,  & ! memory dims
+                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                             its,ite, jts,jte, kts,kte )
+
+!  This subroutine adds the tendencies in the boundary specified region.
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD August 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone
+      CHARACTER,    INTENT(IN   )    :: variable_in
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: mu
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: msf
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      TYPE( grid_config_rec_type ) config_flags
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
+
+      variable = variable_in
+
+      IF (variable == 'U') variable = 'u'
+      IF (variable == 'V') variable = 'v'
+      IF (variable == 'T') variable = 't'
+      IF (variable == 'H') variable = 'h'
+      IF (variable == 'W') variable = 'w'
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      IF (variable == 'u') ibe = ide
+      IF (variable == 'u') itf = min(ite,ide)
+      IF (variable == 'v') jbe = jde
+      IF (variable == 'v') jtf = min(jte,jde)
+      IF (variable == 'h') ktf = kte
+      IF (variable == 'w') ktf = kte
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+      IF (jbe - jtf .lt. spec_zone) THEN 
+! Y-end boundary 
+        DO j = max(jts,jbe-spec_zone+1), jtf 
+          b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf 
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+    ENDIF
+
+   END SUBROUTINE uncouple_bdy
+
 !------------------------------------------------------------------------
 
    SUBROUTINE spec_bdyupdate(  field,      &

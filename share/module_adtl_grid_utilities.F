@@ -3,12 +3,16 @@
 
 MODULE module_adtl_grid_utilities
 USE module_domain, ONLY : domain, get_ijk_from_grid
-USE module_configure, ONLY : num_moist, grid_config_rec_type
+USE module_configure, ONLY : num_moist,num_scalar, grid_config_rec_type
 USE module_tiles, ONLY : set_tiles
 
 REAL, ALLOCATABLE :: s_u_1(:,:,:), s_u_2(:,:,:), s_v_1(:,:,:), s_v_2(:,:,:), s_w_1(:,:,:), s_w_2(:,:,:)
 REAL, ALLOCATABLE :: s_ph_1(:,:,:), s_ph_2(:,:,:), s_t_1(:,:,:), s_t_2(:,:,:), s_mu_1(:,:), s_mu_2(:,:)
-REAL, ALLOCATABLE :: s_moist(:,:,:,:)
+REAL, ALLOCATABLE :: s_moist(:,:,:,:), s_scalar(:,:,:,:)
+REAL, ALLOCATABLE :: s_tke_1(:,:,:), s_tke_2(:,:,:)
+
+REAL, ALLOCATABLE :: s_p(:,:,:), s_al(:,:,:), s_h_diabatic(:,:,:)
+REAL, ALLOCATABLE :: s_ustm(:,:), s_hfx(:,:), s_qfx(:,:)
 
 REAL, ALLOCATABLE :: s_u_bxs(:,:,:), s_u_bxe(:,:,:), s_u_bys(:,:,:), s_u_bye(:,:,:)
 REAL, ALLOCATABLE :: s_u_btxs(:,:,:), s_u_btxe(:,:,:), s_u_btys(:,:,:), s_u_btye(:,:,:)
@@ -24,10 +28,33 @@ REAL, ALLOCATABLE :: s_mu_bxs(:,:,:), s_mu_bxe(:,:,:), s_mu_bys(:,:,:), s_mu_bye
 REAL, ALLOCATABLE :: s_mu_btxs(:,:,:), s_mu_btxe(:,:,:), s_mu_btys(:,:,:), s_mu_btye(:,:,:)
 REAL, ALLOCATABLE :: s_moist_bxs(:,:,:,:), s_moist_bxe(:,:,:,:), s_moist_bys(:,:,:,:), s_moist_bye(:,:,:,:)
 REAL, ALLOCATABLE :: s_moist_btxs(:,:,:,:), s_moist_btxe(:,:,:,:), s_moist_btys(:,:,:,:), s_moist_btye(:,:,:,:)
+REAL, ALLOCATABLE :: s_scalar_bxs(:,:,:,:), s_scalar_bxe(:,:,:,:), s_scalar_bys(:,:,:,:), s_scalar_bye(:,:,:,:)
+REAL, ALLOCATABLE :: s_scalar_btxs(:,:,:,:), s_scalar_btxe(:,:,:,:), s_scalar_btys(:,:,:,:), s_scalar_btye(:,:,:,:)
 
 REAL, ALLOCATABLE :: b_u_1(:,:,:), b_u_2(:,:,:), b_v_1(:,:,:), b_v_2(:,:,:), b_w_1(:,:,:), b_w_2(:,:,:)
 REAL, ALLOCATABLE :: b_ph_1(:,:,:), b_ph_2(:,:,:), b_t_1(:,:,:), b_t_2(:,:,:), b_mu_1(:,:), b_mu_2(:,:)
-REAL, ALLOCATABLE :: b_moist(:,:,:,:)
+REAL, ALLOCATABLE :: b_moist(:,:,:,:), b_scalar(:,:,:,:)
+REAL, ALLOCATABLE :: b_tke_1(:,:,:), b_tke_2(:,:,:)
+
+REAL, ALLOCATABLE :: b_p(:,:,:), b_al(:,:,:), b_h_diabatic(:,:,:)
+REAL, ALLOCATABLE :: b_ustm(:,:), b_hfx(:,:), b_qfx(:,:)
+
+REAL, ALLOCATABLE :: b_u_bxs(:,:,:), b_u_bxe(:,:,:), b_u_bys(:,:,:), b_u_bye(:,:,:)
+REAL, ALLOCATABLE :: b_u_btxs(:,:,:), b_u_btxe(:,:,:), b_u_btys(:,:,:), b_u_btye(:,:,:)
+REAL, ALLOCATABLE :: b_v_bxs(:,:,:), b_v_bxe(:,:,:), b_v_bys(:,:,:), b_v_bye(:,:,:)
+REAL, ALLOCATABLE :: b_v_btxs(:,:,:), b_v_btxe(:,:,:), b_v_btys(:,:,:), b_v_btye(:,:,:)
+REAL, ALLOCATABLE :: b_w_bxs(:,:,:), b_w_bxe(:,:,:), b_w_bys(:,:,:), b_w_bye(:,:,:)
+REAL, ALLOCATABLE :: b_w_btxs(:,:,:), b_w_btxe(:,:,:), b_w_btys(:,:,:), b_w_btye(:,:,:)
+REAL, ALLOCATABLE :: b_ph_bxs(:,:,:), b_ph_bxe(:,:,:), b_ph_bys(:,:,:), b_ph_bye(:,:,:)
+REAL, ALLOCATABLE :: b_ph_btxs(:,:,:), b_ph_btxe(:,:,:), b_ph_btys(:,:,:), b_ph_btye(:,:,:)
+REAL, ALLOCATABLE :: b_t_bxs(:,:,:), b_t_bxe(:,:,:), b_t_bys(:,:,:), b_t_bye(:,:,:)
+REAL, ALLOCATABLE :: b_t_btxs(:,:,:), b_t_btxe(:,:,:), b_t_btys(:,:,:), b_t_btye(:,:,:)
+REAL, ALLOCATABLE :: b_mu_bxs(:,:,:), b_mu_bxe(:,:,:), b_mu_bys(:,:,:), b_mu_bye(:,:,:)
+REAL, ALLOCATABLE :: b_mu_btxs(:,:,:), b_mu_btxe(:,:,:), b_mu_btys(:,:,:), b_mu_btye(:,:,:)
+REAL, ALLOCATABLE :: b_moist_bxs(:,:,:,:), b_moist_bxe(:,:,:,:), b_moist_bys(:,:,:,:), b_moist_bye(:,:,:,:)
+REAL, ALLOCATABLE :: b_moist_btxs(:,:,:,:), b_moist_btxe(:,:,:,:), b_moist_btys(:,:,:,:), b_moist_btye(:,:,:,:)
+REAL, ALLOCATABLE :: b_scalar_bxs(:,:,:,:), b_scalar_bxe(:,:,:,:), b_scalar_bys(:,:,:,:), b_scalar_bye(:,:,:,:)
+REAL, ALLOCATABLE :: b_scalar_btxs(:,:,:,:), b_scalar_btxe(:,:,:,:), b_scalar_btys(:,:,:,:), b_scalar_btye(:,:,:,:)
 
 INTEGER :: sm31, em31, sm32, em32, sm33, em33, spec_bdy_width, kts, kte
 
@@ -69,6 +96,96 @@ CONTAINS
   END SUBROUTINE init_domain_size
 
   SUBROUTINE allocate_grid ( )
+
+   ALLOCATE ( s_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar). ')
+   ENDIF
+   ALLOCATE ( s_tke_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tke_1(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_tke_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tke_2(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+
+   ALLOCATE ( s_p(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_p(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_al(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_al(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_h_diabatic(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_h_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+
+   ALLOCATE ( s_ustm(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_ustm(sm31:em31, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_hfx(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_hfx(sm31:em31, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_qfx(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_qfx(sm31:em31, sm33:em33). ')
+   ENDIF
+
+   !  Scalar Boundary
+   ALLOCATE(s_scalar_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(s_scalar_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(s_scalar_bys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_bys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(s_scalar_bye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_bye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(s_scalar_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(s_scalar_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(s_scalar_btys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_btys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(s_scalar_btye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_btye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
 
    ALLOCATE ( s_u_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -135,7 +252,6 @@ CONTAINS
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_moist(sm31:em31, sm32:em32, sm33:em33, num_moist). ')
    ENDIF
-
    !  U Boundary
    ALLOCATE(s_u_bxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
    IF (ierr.NE.0) THEN
@@ -430,6 +546,95 @@ CONTAINS
      'share/module_adtl_grid_utilities.f: Failed to allocate s_moist_btye(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
    ENDIF
 
+   ALLOCATE ( b_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar). ')
+   ENDIF
+   ALLOCATE ( b_tke_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tke_1(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_tke_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tke_2(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+
+   ALLOCATE ( b_p(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_p(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_al(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_al(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_h_diabatic(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_h_diabatic(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+
+   ALLOCATE ( b_ustm(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ustm(sm31:em31, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_hfx(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_hfx(sm31:em31, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_qfx(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_qfx(sm31:em31, sm33:em33). ')
+   ENDIF
+
+   !  Scalar Boundary
+   ALLOCATE(b_scalar_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(b_scalar_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(b_scalar_bys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_bys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(b_scalar_bye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_bye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(b_scalar_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(b_scalar_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(b_scalar_btys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_btys(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
+   ALLOCATE(b_scalar_btye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_btye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
+   ENDIF
 
    ALLOCATE ( b_u_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -497,6 +702,300 @@ CONTAINS
      'share/module_adtl_grid_utilities.f: Failed to allocate b_moist(sm31:em31, sm32:em32, sm33:em33, num_moist). ')
    ENDIF
 
+   !  U Boundary
+   ALLOCATE(b_u_bxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_u_bxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_u_bys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_u_bye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_u_btxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_u_btxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_u_btys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_u_btye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+
+   !  V Boundary
+   ALLOCATE(b_v_bxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_v_bxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_v_bys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_v_bye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_bye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_v_btxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_v_btxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_v_btys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_v_btye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_btye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+
+   !  T Boundary
+   ALLOCATE(b_t_bxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_bxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_t_bxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_bxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_t_bys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_bys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_t_bye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_bye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_t_btxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_btxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_t_btxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_btxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_t_btys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_btys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_t_btye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_btye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+
+   !  W Boundary
+   ALLOCATE(b_w_bxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_bxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_w_bxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_bxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_w_bys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_bys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_w_bye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_bye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_w_btxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_btxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_w_btxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_btxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_w_btys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_btys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_w_btye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_btye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+
+   !  PH Boundary
+   ALLOCATE(b_ph_bxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_bxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_ph_bxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_bxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_ph_bys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_bys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_ph_bye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_bye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_ph_btxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_btxs(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_ph_btxe(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_btxe(sm33:em33,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_ph_btys(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_btys(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_ph_btye(sm31:em31,sm32:em32,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_btye(sm31:em31,sm32:em32,spec_bdy_width). ')
+   ENDIF
+
+   !  MU Boundary
+   ALLOCATE(b_mu_bxs(sm33:em33,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_bxs(sm33:em33,1,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_mu_bxe(sm33:em33,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_bxe(sm33:em33,1,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_mu_bys(sm31:em31,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_bys(sm31:em31,1,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_mu_bye(sm31:em31,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_bye(sm31:em31,1,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_mu_btxs(sm33:em33,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_btxs(sm33:em33,1,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_mu_btxe(sm33:em33,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_btxe(sm33:em33,1,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_mu_btys(sm31:em31,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_btys(sm31:em31,1,spec_bdy_width). ')
+   ENDIF
+   ALLOCATE(b_mu_btye(sm31:em31,1,spec_bdy_width),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_btye(sm31:em31,1,spec_bdy_width). ')
+   ENDIF
+
+   !  Moist Boundary
+   ALLOCATE(b_moist_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+   ALLOCATE(b_moist_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+   ALLOCATE(b_moist_bys(sm31:em31,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_bys(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+   ALLOCATE(b_moist_bye(sm31:em31,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_bye(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+   ALLOCATE(b_moist_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+   ALLOCATE(b_moist_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+   ALLOCATE(b_moist_btys(sm31:em31,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_btys(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+   ALLOCATE(b_moist_btye(sm31:em31,sm32:em32,spec_bdy_width,num_moist),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_btye(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
+   ENDIF
+
    RETURN
   END SUBROUTINE allocate_grid
 
@@ -510,6 +1009,15 @@ CONTAINS
    s_t_1 = grid%t_1; s_t_2 = grid%t_2
    s_mu_1 = grid%mu_1; s_mu_2 = grid%mu_2
    s_moist = grid%moist
+   s_scalar = grid%scalar
+   s_tke_1 = grid%tke_1; s_tke_2 = grid%tke_2
+
+   s_p = grid%p
+   s_al = grid%al
+   s_h_diabatic = grid%h_diabatic
+   s_ustm = grid%ustm
+   s_hfx = grid%hfx
+   s_qfx = grid%qfx
    
    s_u_bxs = grid%u_bxs; s_u_bxe = grid%u_bxe; s_u_bys = grid%u_bys; s_u_bye = grid%u_bye
    s_u_btxs = grid%u_btxs; s_u_btxe = grid%u_btxe; s_u_btys = grid%u_btys; s_u_btye = grid%u_btye
@@ -518,13 +1026,15 @@ CONTAINS
    s_w_bxs = grid%w_bxs; s_w_bxe = grid%w_bxe; s_w_bys = grid%w_bys; s_w_bye = grid%w_bye
    s_w_btxs = grid%w_btxs; s_w_btxe = grid%w_btxe; s_w_btys = grid%w_btys; s_w_btye = grid%w_btye
    s_ph_bxs = grid%ph_bxs; s_ph_bxe = grid%ph_bxe; s_ph_bys = grid%ph_bys; s_ph_bye = grid%ph_bye
-   s_ph_btxs = grid%ph_btxs; s_ph_btxe = grid%ph_btxe; s_ph_btys = grid%ph_btys; s_ph_bye = grid%ph_btye
+   s_ph_btxs = grid%ph_btxs; s_ph_btxe = grid%ph_btxe; s_ph_btys = grid%ph_btys; s_ph_btye = grid%ph_btye
    s_t_bxs = grid%t_bxs; s_t_bxe = grid%t_bxe; s_t_bys = grid%t_bys; s_t_bye = grid%t_bye
    s_t_btxs = grid%t_btxs; s_t_btxe = grid%t_btxe; s_t_btys = grid%t_btys; s_t_btye = grid%t_btye
    s_mu_bxs = grid%mu_bxs; s_mu_bxe = grid%mu_bxe; s_mu_bys = grid%mu_bys; s_mu_bye = grid%mu_bye
    s_mu_btxs = grid%mu_btxs; s_mu_btxe = grid%mu_btxe; s_mu_btys = grid%mu_btys; s_mu_btye = grid%mu_btye
    s_moist_bxs = grid%moist_bxs; s_moist_bxe = grid%moist_bxe; s_moist_bys = grid%moist_bys; s_moist_bye = grid%moist_bye
    s_moist_btxs = grid%moist_btxs; s_moist_btxe = grid%moist_btxe; s_moist_btys = grid%moist_btys; s_moist_btye = grid%moist_btye
+   s_scalar_bxs = grid%scalar_bxs; s_scalar_bxe = grid%scalar_bxe; s_scalar_bys = grid%scalar_bys; s_scalar_bye = grid%scalar_bye
+   s_scalar_btxs = grid%scalar_btxs; s_scalar_btxe = grid%scalar_btxe; s_scalar_btys = grid%scalar_btys; s_scalar_btye = grid%scalar_btye
    
    RETURN
   END SUBROUTINE copy_grid_to_s
@@ -539,6 +1049,12 @@ CONTAINS
    b_t_1 = grid%t_1; b_t_2 = grid%t_2
    b_mu_1 = grid%mu_1; b_mu_2 = grid%mu_2
    b_moist = grid%moist
+!   b_scalar = grid%scalar
+!   b_tke_1 = grid%tke_1; b_tke_2 = grid%tke_2
+
+!   b_p = grid%p
+!   b_al = grid%al
+!   b_h_diabatic = grid%h_diabatic
    
    RETURN
   END SUBROUTINE copy_grid_to_b
@@ -553,6 +1069,15 @@ CONTAINS
    grid%t_1 = s_t_1; grid%t_2 = s_t_2
    grid%mu_1 = s_mu_1; grid%mu_2 = s_mu_2
    grid%moist = s_moist
+   grid%scalar = s_scalar
+   grid%tke_1 = s_tke_1; grid%tke_2 = s_tke_2
+
+   grid%p = s_p
+   grid%al = s_al
+   grid%h_diabatic = s_h_diabatic
+   grid%ustm = s_ustm
+   grid%hfx = s_hfx
+   grid%qfx = s_qfx
 
    grid%u_bxs = s_u_bxs; grid%u_bxe = s_u_bxe; grid%u_bys = s_u_bys; grid%u_bye = s_u_bye
    grid%u_btxs = s_u_btxs; grid%u_btxe = s_u_btxe; grid%u_btys = s_u_btys; grid%u_btye = s_u_btye
@@ -568,6 +1093,8 @@ CONTAINS
    grid%mu_btxs = s_mu_btxs; grid%mu_btxe = s_mu_btxe; grid%mu_btys = s_mu_btys; grid%mu_btye = s_mu_btye
    grid%moist_bxs = s_moist_bxs; grid%moist_bxe = s_moist_bxe; grid%moist_bys = s_moist_bys; grid%moist_bye = s_moist_bye
    grid%moist_btxs = s_moist_btxs; grid%moist_btxe = s_moist_btxe; grid%moist_btys = s_moist_btys; grid%moist_btye = s_moist_btye
+   grid%scalar_bxs = s_scalar_bxs; grid%scalar_bxe = s_scalar_bxe; grid%scalar_bys = s_scalar_bys; grid%scalar_bye = s_scalar_bye
+   grid%scalar_btxs = s_scalar_btxs; grid%scalar_btxe = s_scalar_btxe; grid%scalar_btys = s_scalar_btys; grid%scalar_btye = s_scalar_btye
 
   END SUBROUTINE restore_grid
 
@@ -599,7 +1126,134 @@ CONTAINS
    grid%g_t_1 = factor_t*s_t_1; grid%g_t_2 = factor_t*s_t_2
    grid%g_mu_1 = factor_mu*s_mu_1; grid%g_mu_2 = factor_mu*s_mu_2
    grid%g_moist = factor_moist*s_moist
+   grid%g_scalar = factor*s_scalar
+   grid%g_tke_1 = factor*s_tke_1; grid%g_tke_2 = factor*s_tke_2
+
+   grid%g_p = factor*s_p
+   grid%g_al = factor*s_al
+   grid%g_h_diabatic = factor*s_h_diabatic
+   grid%g_ustm = factor*s_ustm
+   grid%g_hfx = factor*s_hfx
+   grid%g_qfx = factor*s_qfx
+
+   grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
+   grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
+   grid%g_v_bxs = factor_v*s_v_bxs; grid%g_v_bxe = factor_v*s_v_bxe; grid%g_v_bys = factor_v*s_v_bys; grid%g_v_bye = factor_v*s_v_bye
+   grid%g_v_btxs = factor_v*s_v_btxs; grid%g_v_btxe = factor_v*s_v_btxe; grid%g_v_btys = factor_v*s_v_btys; grid%g_v_btye = factor_v*s_v_btye
+   grid%g_w_bxs = factor_w*s_w_bxs; grid%g_w_bxe = factor_w*s_w_bxe; grid%g_w_bys = factor_w*s_w_bys; grid%g_w_bye = factor_w*s_w_bye
+   grid%g_w_btxs = factor_w*s_w_btxs; grid%g_w_btxe = factor_w*s_w_btxe; grid%g_w_btys = factor_w*s_w_btys; grid%g_w_btye = factor_w*s_w_btye
+   grid%g_ph_bxs = factor_ph*s_ph_bxs; grid%g_ph_bxe = factor_ph*s_ph_bxe; grid%g_ph_bys = factor_ph*s_ph_bys; grid%g_ph_bye = factor_ph*s_ph_bye
+   grid%g_ph_btxs = factor_ph*s_ph_btxs; grid%g_ph_btxe = factor_ph*s_ph_btxe; grid%g_ph_btys = factor_ph*s_ph_btys; grid%g_ph_btye = factor_ph*s_ph_btye
+   grid%g_t_bxs = factor_t*s_t_bxs; grid%g_t_bxe = factor_t*s_t_bxe; grid%g_t_bys = factor_t*s_t_bys; grid%g_t_bye = factor_t*s_t_bye
+   grid%g_t_btxs = factor_t*s_t_btxs; grid%g_t_btxe = factor_t*s_t_btxe; grid%g_t_btys = factor_t*s_t_btys; grid%g_t_btye = factor_t*s_t_btye
+   grid%g_mu_bxs = factor_mu*s_mu_bxs; grid%g_mu_bxe = factor_mu*s_mu_bxe; grid%g_mu_bys = factor_mu*s_mu_bys; grid%g_mu_bye = factor_mu*s_mu_bye
+   grid%g_mu_btxs = factor_mu*s_mu_btxs; grid%g_mu_btxe = factor_mu*s_mu_btxe; grid%g_mu_btys = factor_mu*s_mu_btys; grid%g_mu_btye = factor_mu*s_mu_btye
+   grid%g_moist_bxs = factor_moist*s_moist_bxs; grid%g_moist_bxe = factor_moist*s_moist_bxe; grid%g_moist_bys = factor_moist*s_moist_bys; grid%g_moist_bye = factor_moist*s_moist_bye
+   grid%g_moist_btxs = factor_moist*s_moist_btxs; grid%g_moist_btxe = factor_moist*s_moist_btxe; grid%g_moist_btys = factor_moist*s_moist_btys; grid%g_moist_btye = factor_moist*s_moist_btye
+   grid%g_scalar_bxs = factor*s_scalar_bxs; grid%g_scalar_bxe = factor*s_scalar_bxe; grid%g_scalar_bys = factor*s_scalar_bys; grid%g_scalar_bye = factor*s_scalar_bye
+   grid%g_scalar_btxs = factor*s_scalar_btxs; grid%g_scalar_btxe = factor*s_scalar_btxe; grid%g_scalar_btys = factor*s_scalar_btys; grid%g_scalar_btye = factor*s_scalar_btye
+
+   RETURN
+  END SUBROUTINE copy_s_to_g
+
+!  SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
+!   TYPE (domain), INTENT(IN) :: grid
+!   REAL, INTENT(IN) :: factor
+!   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
+!   
+!   factor_u =factor
+!   factor_v =factor
+!   factor_w =factor
+!   factor_ph =factor
+!   factor_t =factor
+!   factor_mu =factor
+!   factor_moist =factor
+
+!!   IF ( grid%check_u )     factor_u = factor
+!!   IF ( grid%check_v )     factor_v = factor
+!!   IF ( grid%check_w )     factor_w = factor
+!!   IF ( grid%check_ph )    factor_ph = factor
+!!   IF ( grid%check_t )     factor_t = factor
+!!   IF ( grid%check_mu )    factor_mu = factor
+!!   IF ( grid%check_moist ) factor_moist = factor
+
+!   grid%g_u_1 = 0.0
+!   grid%g_u_2 = factor_u*s_u_2
+!   grid%g_v_1 = 0.0
+!   grid%g_v_2 = factor_v*s_v_2
+!   grid%g_w_1 = 0.0
+!   grid%g_w_2 = factor_w*s_w_2
+!   grid%g_ph_1 = 0.0
+!   grid%g_ph_2 = factor_ph*s_ph_2
+!   grid%g_t_1 = 0.0
+!   grid%g_t_2 = factor_t*s_t_2
+!   grid%g_mu_1 = 0.0
+!   grid%g_mu_2 = factor_mu*s_mu_2
+!   grid%g_moist = factor_moist*s_moist
+
+!   grid%g_p = factor*s_p
+!   grid%g_al = factor*s_al
+!   grid%g_h_diabatic = factor*s_h_diabatic
+
+!   grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
+!   grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
+!   grid%g_v_bxs = factor_v*s_v_bxs; grid%g_v_bxe = factor_v*s_v_bxe; grid%g_v_bys = factor_v*s_v_bys; grid%g_v_bye = factor_v*s_v_bye
+!   grid%g_v_btxs = factor_v*s_v_btxs; grid%g_v_btxe = factor_v*s_v_btxe; grid%g_v_btys = factor_v*s_v_btys; grid%g_v_btye = factor_v*s_v_btye
+!   grid%g_w_bxs = factor_w*s_w_bxs; grid%g_w_bxe = factor_w*s_w_bxe; grid%g_w_bys = factor_w*s_w_bys; grid%g_w_bye = factor_w*s_w_bye
+!   grid%g_w_btxs = factor_w*s_w_btxs; grid%g_w_btxe = factor_w*s_w_btxe; grid%g_w_btys = factor_w*s_w_btys; grid%g_w_btye = factor_w*s_w_btye
+!   grid%g_ph_bxs = factor_ph*s_ph_bxs; grid%g_ph_bxe = factor_ph*s_ph_bxe; grid%g_ph_bys = factor_ph*s_ph_bys; grid%g_ph_bye = factor_ph*s_ph_bye
+!   grid%g_ph_btxs = factor_ph*s_ph_btxs; grid%g_ph_btxe = factor_ph*s_ph_btxe; grid%g_ph_btys = factor_ph*s_ph_btys; grid%g_ph_btye = factor_ph*s_ph_btye
+!   grid%g_t_bxs = factor_t*s_t_bxs; grid%g_t_bxe = factor_t*s_t_bxe; grid%g_t_bys = factor_t*s_t_bys; grid%g_t_bye = factor_t*s_t_bye
+!   grid%g_t_btxs = factor_t*s_t_btxs; grid%g_t_btxe = factor_t*s_t_btxe; grid%g_t_btys = factor_t*s_t_btys; grid%g_t_btye = factor_t*s_t_btye
+!   grid%g_mu_bxs = factor_mu*s_mu_bxs; grid%g_mu_bxe = factor_mu*s_mu_bxe; grid%g_mu_bys = factor_mu*s_mu_bys; grid%g_mu_bye = factor_mu*s_mu_bye
+!   grid%g_mu_btxs = factor_mu*s_mu_btxs; grid%g_mu_btxe = factor_mu*s_mu_btxe; grid%g_mu_btys = factor_mu*s_mu_btys; grid%g_mu_btye = factor_mu*s_mu_btye
+!   grid%g_moist_bxs = factor_moist*s_moist_bxs; grid%g_moist_bxe = factor_moist*s_moist_bxe; grid%g_moist_bys = factor_moist*s_moist_bys; grid%g_moist_bye = factor_moist*s_moist_bye
+!   grid%g_moist_btxs = factor_moist*s_moist_btxs; grid%g_moist_btxe = factor_moist*s_moist_btxe; grid%g_moist_btys = factor_moist*s_moist_btys; grid%g_moist_btye = factor_moist*s_moist_btye
+
+!   RETURN
+!  END SUBROUTINE copy_s_to_g_adjtest
+
+  SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
+   TYPE (domain), INTENT(IN) :: grid
+   REAL, INTENT(IN) :: factor
+   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
    
+   factor_u =factor
+   factor_v =factor
+   factor_w =factor
+   factor_ph =factor
+   factor_t =factor
+   factor_mu =factor
+   factor_moist =factor
+
+!   IF ( grid%check_u )     factor_u = factor
+!   IF ( grid%check_v )     factor_v = factor
+!   IF ( grid%check_w )     factor_w = factor
+!   IF ( grid%check_ph )    factor_ph = factor
+!   IF ( grid%check_t )     factor_t = factor
+!   IF ( grid%check_mu )    factor_mu = factor
+!   IF ( grid%check_moist ) factor_moist = factor
+
+! I&O variables
+   grid%g_u_2 = factor_u*s_u_2
+   grid%g_v_2 = factor_v*s_v_2
+   grid%g_w_2 = factor_w*s_w_2
+   grid%g_ph_2 = factor_ph*s_ph_2
+   grid%g_t_2 = factor_t*s_t_2
+   grid%g_mu_2 = factor_mu*s_mu_2
+   grid%g_moist = factor_moist*s_moist
+
+   grid%g_scalar = factor*s_scalar
+   grid%g_tke_2 = factor*s_tke_2
+   grid%g_p = factor*s_p
+   grid%g_al = factor*s_al
+
+! I variables
+   grid%g_ustm = factor*s_ustm
+   grid%g_hfx = factor*s_hfx
+   grid%g_qfx = factor*s_qfx
+   grid%g_h_diabatic = factor*s_h_diabatic
+
    grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
    grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
    grid%g_v_bxs = factor_v*s_v_bxs; grid%g_v_bxe = factor_v*s_v_bxe; grid%g_v_bys = factor_v*s_v_bys; grid%g_v_bye = factor_v*s_v_bye
@@ -615,8 +1269,63 @@ CONTAINS
    grid%g_moist_bxs = factor_moist*s_moist_bxs; grid%g_moist_bxe = factor_moist*s_moist_bxe; grid%g_moist_bys = factor_moist*s_moist_bys; grid%g_moist_bye = factor_moist*s_moist_bye
    grid%g_moist_btxs = factor_moist*s_moist_btxs; grid%g_moist_btxe = factor_moist*s_moist_btxe; grid%g_moist_btys = factor_moist*s_moist_btys; grid%g_moist_btye = factor_moist*s_moist_btye
 
-   RETURN
-  END SUBROUTINE copy_s_to_g
+   grid%g_scalar_bxs = factor*s_scalar_bxs; grid%g_scalar_bxe = factor*s_scalar_bxe; grid%g_scalar_bys = factor*s_scalar_bys; grid%g_scalar_bye = factor*s_scalar_bye
+   grid%g_scalar_btxs = factor*s_scalar_btxs; grid%g_scalar_btxe = factor*s_scalar_btxe; grid%g_scalar_btys = factor*s_scalar_btys; grid%g_scalar_btye = factor*s_scalar_btye
+
+! O variables
+   grid%g_u_1 = 0.0
+   grid%g_v_1 = 0.0
+   grid%g_w_1 = 0.0
+   grid%g_ph_1 = 0.0
+   grid%g_t_1 = 0.0
+   grid%g_mu_1 = 0.0
+   grid%g_tke_1 = 0.0
+
+   grid%g_ru = 0.0
+   grid%g_rv = 0.0
+   grid%g_rw = 0.0
+   grid%g_ww = 0.0
+   grid%g_alt = 0.0
+   grid%g_php = 0.0
+   grid%g_mut = 0.0
+   grid%g_muu = 0.0
+   grid%g_muv = 0.0
+   grid%g_p_hyd_w = 0.0
+   grid%g_p_hyd = 0.0
+   grid%g_z_at_w = 0.0
+   grid%g_z = 0.0
+   grid%g_zx = 0.0
+   grid%g_zy = 0.0
+   grid%g_rdz = 0.0
+   grid%g_rdzw = 0.0
+   grid%g_div = 0.0
+   grid%g_nba_mij = 0.0
+   grid%g_nba_rij = 0.0
+   grid%g_defor11 = 0.0
+   grid%g_defor22 = 0.0
+   grid%g_defor33 = 0.0
+   grid%g_defor12 = 0.0
+   grid%g_defor13 = 0.0
+   grid%g_defor23 = 0.0
+   grid%g_bn2 = 0.0
+   grid%g_xkmh = 0.0
+   grid%g_xkmv = 0.0
+   grid%g_xkhh = 0.0
+   grid%g_xkhv = 0.0
+   grid%g_ru_tend = 0.0
+   grid%g_rv_tend = 0.0
+   grid%g_u_save = 0.0
+   grid%g_v_save = 0.0
+   grid%g_t_save = 0.0
+   grid%g_rthften = 0.0
+   grid%g_rqvften = 0.0
+   grid%g_muts = 0.0
+   grid%g_mudf = 0.0
+   grid%g_ru_m = 0.0
+   grid%g_rv_m = 0.0
+   grid%g_ww_m = 0.0
+
+  END SUBROUTINE copy_s_to_g_adjtest
 
   SUBROUTINE copy_g_to_b ( grid )
    TYPE (domain), INTENT(IN) :: grid
@@ -629,8 +1338,62 @@ CONTAINS
    b_mu_1 = grid%g_mu_1 ; b_mu_2 = grid%g_mu_2
    b_moist = grid%g_moist
    
+   b_p = grid%g_p
+   b_al = grid%g_al
+   b_h_diabatic = grid%g_h_diabatic
+   
    RETURN
   END SUBROUTINE copy_g_to_b
+
+  SUBROUTINE copy_g_to_b_adjtest ( grid )
+   TYPE (domain), INTENT(IN) :: grid
+
+!   b_u_1 = grid%g_u_1
+!   b_v_1 = grid%g_v_1
+!   b_w_1 = grid%g_w_1
+!   b_ph_1 = grid%g_ph_1
+!   b_t_1 = grid%g_t_1
+!   b_mu_1 = grid%g_mu_1
+!   b_tke_1 = grid%g_tke_1
+   b_u_2 = grid%g_u_2
+   b_v_2 = grid%g_v_2
+   b_w_2 = grid%g_w_2
+   b_ph_2 = grid%g_ph_2
+   b_t_2 = grid%g_t_2
+   b_mu_2 = grid%g_mu_2
+   b_tke_2 = grid%g_tke_2
+   b_moist = grid%g_moist
+   b_scalar = grid%g_scalar
+   b_tke_2 = grid%g_tke_2
+
+   b_p = grid%g_p
+   b_al = grid%g_al
+
+   b_ustm = grid%g_ustm
+   b_hfx = grid%g_hfx
+   b_qfx = grid%g_qfx
+   b_h_diabatic = grid%g_h_diabatic
+   
+   b_u_bxs = grid%g_u_bxs; b_u_bxe = grid%g_u_bxe; b_u_bys = grid%g_u_bys; b_u_bye = grid%g_u_bye
+   b_v_bxs = grid%g_v_bxs; b_v_bxe = grid%g_v_bxe; b_v_bys = grid%g_v_bys; b_v_bye = grid%g_v_bye
+   b_w_bxs = grid%g_w_bxs; b_w_bxe = grid%g_w_bxe; b_w_bys = grid%g_w_bys; b_w_bye = grid%g_w_bye
+   b_ph_bxs = grid%g_ph_bxs; b_ph_bxe = grid%g_ph_bxe; b_ph_bys = grid%g_ph_bys; b_ph_bye = grid%g_ph_bye
+   b_t_bxs = grid%g_t_bxs; b_t_bxe = grid%g_t_bxe; b_t_bys = grid%g_t_bys; b_t_bye = grid%g_t_bye
+   b_mu_bxs = grid%g_mu_bxs; b_mu_bxe = grid%g_mu_bxe; b_mu_bys = grid%g_mu_bys; b_mu_bye = grid%g_mu_bye
+   b_moist_bxs = grid%g_moist_bxs; b_moist_bxe = grid%g_moist_bxe; b_moist_bys = grid%g_moist_bys; b_moist_bye = grid%g_moist_bye
+   b_u_btxs = grid%g_u_btxs; b_u_btxe = grid%g_u_btxe; b_u_btys = grid%g_u_btys; b_u_btye = grid%g_u_btye
+   b_v_btxs = grid%g_v_btxs; b_v_btxe = grid%g_v_btxe; b_v_btys = grid%g_v_btys; b_v_btye = grid%g_v_btye
+   b_w_btxs = grid%g_w_btxs; b_w_btxe = grid%g_w_btxe; b_w_btys = grid%g_w_btys; b_w_btye = grid%g_w_btye
+   b_ph_btxs = grid%g_ph_btxs; b_ph_btxe = grid%g_ph_btxe; b_ph_btys = grid%g_ph_btys; b_ph_btye = grid%g_ph_btye
+   b_t_btxs = grid%g_t_btxs; b_t_btxe = grid%g_t_btxe; b_t_btys = grid%g_t_btys; b_t_btye = grid%g_t_btye
+   b_mu_btxs = grid%g_mu_btxs; b_mu_btxe = grid%g_mu_btxe; b_mu_btys = grid%g_mu_btys; b_mu_btye = grid%g_mu_btye
+   b_moist_btxs = grid%g_moist_btxs; b_moist_btxe = grid%g_moist_btxe; b_moist_btys = grid%g_moist_btys; b_moist_btye = grid%g_moist_btye
+
+   b_scalar_bxs = grid%g_scalar_bxs; b_scalar_bxe = grid%g_scalar_bxe; b_scalar_bys = grid%g_scalar_bys; b_scalar_bye = grid%g_scalar_bye
+   b_scalar_btxs = grid%g_scalar_btxs; b_scalar_btxe = grid%g_scalar_btxe; b_scalar_btys = grid%g_scalar_btys; b_scalar_btye = grid%g_scalar_btye
+
+   RETURN
+  END SUBROUTINE copy_g_to_b_adjtest
 
   SUBROUTINE inner_dot_g ( grid, save, its, ite, jts, jte )
    TYPE (domain), INTENT(IN) :: grid
@@ -638,6 +1401,7 @@ CONTAINS
    INTEGER, INTENT(IN) :: its, ite, jts, jte
    INTEGER :: i, k, j, mm
 
+IF (grid%check_u) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,ite
@@ -646,7 +1410,9 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+END IF
 
+IF (grid%check_v) THEN
    DO j = jts,jte
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -655,18 +1421,31 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+END IF
 
+IF (grid%check_w) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_w_1(i,k,j) * grid%g_w_1(i,k,j)    &
-                  + grid%g_w_2(i,k,j) * grid%g_w_2(i,k,j)    &
-                  + grid%g_ph_1(i,k,j) * grid%g_ph_1(i,k,j)  & 
+                  + grid%g_w_2(i,k,j) * grid%g_w_2(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_ph) THEN
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_ph_1(i,k,j) * grid%g_ph_1(i,k,j)  & 
                   + grid%g_ph_2(i,k,j) * grid%g_ph_2(i,k,j)
    ENDDO
    ENDDO
    ENDDO
+END IF
 
+IF (grid%check_t) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -675,15 +1454,19 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+END IF
 
 
+IF (grid%check_mu) THEN
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_mu_1(i,j) * grid%g_mu_1(i,j)    &
                   + grid%g_mu_2(i,j) * grid%g_mu_2(i,j)
    ENDDO
    ENDDO
+END IF
 
+IF (grid%check_moist) THEN
    DO mm = 1, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -693,10 +1476,95 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
-  
+END IF
 
    RETURN
   END SUBROUTINE inner_dot_g
+
+  SUBROUTINE inner_dot_g_adjtest ( grid, save, its, ite, jts, jte )
+   TYPE (domain), INTENT(IN) :: grid
+   REAL, INTENT(INOUT) :: save
+   INTEGER, INTENT(IN) :: its, ite, jts, jte
+   INTEGER :: i, k, j, mm
+
+IF (grid%check_u) THEN
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,ite
+     save  = save + grid%g_u_2(i,k,j) * grid%g_u_2(i,k,j)
+     save  = save + grid%g_u_1(i,k,j) * grid%g_u_1(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_v) THEN
+   DO j = sm33,em33 !jts,jte
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%g_v_2(i,k,j) * grid%g_v_2(i,k,j)
+     save  = save + grid%g_v_1(i,k,j) * grid%g_v_1(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_w) THEN
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%g_w_2(i,k,j) * grid%g_w_2(i,k,j)
+     save  = save + grid%g_w_1(i,k,j) * grid%g_w_1(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_ph) THEN
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%g_ph_2(i,k,j) * grid%g_ph_2(i,k,j) 
+     save  = save + grid%g_ph_1(i,k,j) * grid%g_ph_1(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_t) THEN
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%g_t_2(i,k,j) * grid%g_t_2(i,k,j)
+     save  = save + grid%g_t_1(i,k,j) * grid%g_t_1(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_mu) THEN
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%g_mu_2(i,j) * grid%g_mu_2(i,j)
+     save  = save + grid%g_mu_1(i,j) * grid%g_mu_1(i,j)
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_moist) THEN
+   DO mm = 1, num_moist
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%g_moist(i,k,j,mm) * grid%g_moist(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+  
+   RETURN
+  END SUBROUTINE inner_dot_g_adjtest
 
   SUBROUTINE add_grid ( grid, factor )
    TYPE (domain), INTENT(INOUT) :: grid
@@ -726,6 +1594,15 @@ CONTAINS
    grid%t_1 = factor_t*s_t_1; grid%t_2 = factor_t*s_t_2
    grid%mu_1 = factor_mu*s_mu_1; grid%mu_2 = factor_mu*s_mu_2
    grid%moist = factor_moist*s_moist
+   grid%scalar = factor*s_scalar
+   grid%tke_1 = factor*s_tke_1; grid%tke_2 = factor*s_tke_2
+
+   grid%p = factor*s_p
+   grid%al = factor*s_al
+   grid%h_diabatic = factor*s_h_diabatic
+   grid%ustm = factor*s_ustm
+   grid%hfx = factor*s_hfx
+   grid%qfx = factor*s_qfx
    
    grid%u_bxs = factor_u*s_u_bxs; grid%u_bxe = factor_u*s_u_bxe; grid%u_bys = factor_u*s_u_bys; grid%u_bye = factor_u*s_u_bye
    grid%u_btxs = factor_u*s_u_btxs; grid%u_btxe = factor_u*s_u_btxe; grid%u_btys = factor_u*s_u_btys; grid%u_btye = factor_u*s_u_btye
@@ -741,6 +1618,8 @@ CONTAINS
    grid%mu_btxs = factor_mu*s_mu_btxs; grid%mu_btxe = factor_mu*s_mu_btxe; grid%mu_btys = factor_mu*s_mu_btys; grid%mu_btye = factor_mu*s_mu_btye
    grid%moist_bxs = factor_moist*s_moist_bxs; grid%moist_bxe = factor_moist*s_moist_bxe; grid%moist_bys = factor_moist*s_moist_bys; grid%moist_bye = factor_moist*s_moist_bye
    grid%moist_btxs = factor_moist*s_moist_btxs; grid%moist_btxe = factor_moist*s_moist_btxe; grid%moist_btys = factor_moist*s_moist_btys; grid%moist_btye = factor_moist*s_moist_btye
+   grid%scalar_bxs = factor*s_scalar_bxs; grid%scalar_bxe = factor*s_scalar_bxe; grid%scalar_bys = factor*s_scalar_bys; grid%scalar_bye = factor*s_scalar_bye
+   grid%scalar_btxs = factor*s_scalar_btxs; grid%scalar_btxe = factor*s_scalar_btxe; grid%scalar_btys = factor*s_scalar_btys; grid%scalar_btye = factor*s_scalar_btye
    
    RETURN
   END SUBROUTINE add_grid
@@ -751,6 +1630,7 @@ CONTAINS
    REAL, INTENT(INOUT) :: save
    INTEGER :: i, k, j, mm
 
+IF (grid%check_u) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,ite
@@ -759,7 +1639,8 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
-
+END IF
+IF (grid%check_v) THEN
    DO j = jts,jte
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -768,18 +1649,31 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+END IF
 
+IF (grid%check_w) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
      save  = save + (grid%w_1(i,k,j)-b_w_1(i,k,j)) * (grid%w_1(i,k,j)-b_w_1(i,k,j))    &
-                  + (grid%w_2(i,k,j)-b_w_2(i,k,j)) * (grid%w_2(i,k,j)-b_w_2(i,k,j))    &
-                  + (grid%ph_1(i,k,j)-b_ph_1(i,k,j)) * (grid%ph_1(i,k,j)-b_ph_1(i,k,j))  & 
+                  + (grid%w_2(i,k,j)-b_w_2(i,k,j)) * (grid%w_2(i,k,j)-b_w_2(i,k,j))
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_ph) THEN
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte
+   DO i = its,MIN(ite,ide-1)
+     save  = save + (grid%ph_1(i,k,j)-b_ph_1(i,k,j)) * (grid%ph_1(i,k,j)-b_ph_1(i,k,j))    &
                   + (grid%ph_2(i,k,j)-b_ph_2(i,k,j)) * (grid%ph_2(i,k,j)-b_ph_2(i,k,j))
    ENDDO
    ENDDO
    ENDDO
+END IF
 
+IF (grid%check_t) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -788,15 +1682,19 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+END IF
 
 
+IF (grid%check_mu) THEN
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save + (grid%mu_1(i,j)-b_mu_1(i,j)) * (grid%mu_1(i,j)-b_mu_1(i,j))    &
                   + (grid%mu_2(i,j)-b_mu_2(i,j)) * (grid%mu_2(i,j)-b_mu_2(i,j))
    ENDDO
    ENDDO
+END IF
 
+IF (grid%check_moist) THEN
    DO mm = 1, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -806,6 +1704,7 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+END IF
 
    RETURN
   END SUBROUTINE inner_dot
@@ -838,6 +1737,143 @@ CONTAINS
 
    RETURN
   END SUBROUTINE copy_g_to_a
+
+  SUBROUTINE copy_g_to_a_adjtest ( grid )
+   TYPE (domain), INTENT(IN) :: grid
+
+IF (grid%check_u) THEN
+   grid%a_u_2 = grid%g_u_2
+   grid%a_u_1 = grid%g_u_1
+ELSE
+   grid%a_u_2 = 0.0
+   grid%a_u_1 = 0.0
+END IF
+
+IF (grid%check_v) THEN
+   grid%a_v_2 = grid%g_v_2
+   grid%a_v_1 = grid%g_v_1
+ELSE
+   grid%a_v_2 = 0.0
+   grid%a_v_1 = 0.0
+END IF
+
+IF (grid%check_w) THEN
+   grid%a_w_2 = grid%g_w_2
+   grid%a_w_1 = grid%g_w_1
+ELSE
+   grid%a_w_2 = 0.0
+   grid%a_w_1 = 0.0
+END IF
+
+IF (grid%check_t) THEN
+   grid%a_t_2 = grid%g_t_2
+   grid%a_t_1 = grid%g_t_1
+ELSE
+   grid%a_t_2 = 0.0
+   grid%a_t_1 = 0.0
+END IF
+
+IF (grid%check_ph) THEN
+   grid%a_ph_2 = grid%g_ph_2
+   grid%a_ph_1 = grid%g_ph_1
+ELSE
+   grid%a_ph_2 = 0.0
+   grid%a_ph_1 = 0.0
+END IF
+
+IF (grid%check_mu) THEN
+   grid%a_mu_2 = grid%g_mu_2
+   grid%a_mu_1 = grid%g_mu_1
+ELSE
+   grid%a_mu_2 = 0.0
+   grid%a_mu_1 = 0.0
+END IF
+
+IF (grid%check_moist) THEN
+   grid%a_moist = grid%g_moist
+ELSE
+   grid%a_moist = 0.0
+END IF
+   
+! I&O variables
+   grid%a_scalar = 0.0
+   grid%a_tke_2 = 0.0
+   grid%a_p=0.0
+   grid%a_al=0.0
+
+! O variables
+   grid%a_tke_1 = 0.0
+
+   grid%a_ru = 0.0
+   grid%a_rv = 0.0
+   grid%a_rw = 0.0
+   grid%a_ww = 0.0
+   grid%a_alt = 0.0
+   grid%a_php = 0.0
+   grid%a_mut = 0.0
+   grid%a_muu = 0.0
+   grid%a_muv = 0.0
+   grid%a_p_hyd_w = 0.0
+   grid%a_p_hyd = 0.0
+   grid%a_z_at_w = 0.0
+   grid%a_z = 0.0
+   grid%a_zx = 0.0
+   grid%a_zy = 0.0
+   grid%a_rdz = 0.0
+   grid%a_rdzw = 0.0
+   grid%a_div = 0.0
+   grid%a_nba_mij = 0.0
+   grid%a_nba_rij = 0.0
+   grid%a_defor11 = 0.0
+   grid%a_defor22 = 0.0
+   grid%a_defor33 = 0.0
+   grid%a_defor12 = 0.0
+   grid%a_defor13 = 0.0
+   grid%a_defor23 = 0.0
+   grid%a_bn2 = 0.0
+   grid%a_xkmh = 0.0
+   grid%a_xkmv = 0.0
+   grid%a_xkhh = 0.0
+   grid%a_xkhv = 0.0
+   grid%a_ru_tend = 0.0
+   grid%a_rv_tend = 0.0
+   grid%a_u_save = 0.0
+   grid%a_v_save = 0.0
+   grid%a_t_save = 0.0
+   grid%a_rthften = 0.0
+   grid%a_rqvften = 0.0
+   grid%a_muts = 0.0
+   grid%a_mudf = 0.0
+   grid%a_ru_m = 0.0
+   grid%a_rv_m = 0.0
+   grid%a_ww_m = 0.0
+
+! I variables
+   grid%a_ustm=0.0
+   grid%a_hfx=0.0
+   grid%a_qfx=0.0
+   grid%a_h_diabatic=0.0
+
+   grid%a_u_bxs = 0.0; grid%a_u_bxe = 0.0; grid%a_u_bys = 0.0; grid%a_u_bye = 0.0
+   grid%a_v_bxs = 0.0; grid%a_v_bxe = 0.0; grid%a_v_bys = 0.0; grid%a_v_bye = 0.0
+   grid%a_w_bxs = 0.0; grid%a_w_bxe = 0.0; grid%a_w_bys = 0.0; grid%a_w_bye = 0.0
+   grid%a_ph_bxs = 0.0; grid%a_ph_bxe = 0.0; grid%a_ph_bys = 0.0; grid%a_ph_bye = 0.0
+   grid%a_t_bxs = 0.0; grid%a_t_bxe = 0.0; grid%a_t_bys = 0.0; grid%a_t_bye = 0.0
+   grid%a_mu_bxs = 0.0; grid%a_mu_bxe = 0.0; grid%a_mu_bys = 0.0; grid%a_mu_bye = 0.0
+   grid%a_moist_bxs = 0.0; grid%a_moist_bxe = 0.0; grid%a_moist_bys = 0.0; grid%a_moist_bye = 0.0
+   grid%a_scalar_bxs = 0.0; grid%a_scalar_bxe = 0.0; grid%a_scalar_bys = 0.0; grid%a_scalar_bye = 0.0
+
+   grid%a_u_btxs = 0.0; grid%a_u_btxe = 0.0; grid%a_u_btys = 0.0; grid%a_u_btye = 0.0
+   grid%a_v_btxs = 0.0; grid%a_v_btxe = 0.0; grid%a_v_btys = 0.0; grid%a_v_btye = 0.0
+   grid%a_w_btxs = 0.0; grid%a_w_btxe = 0.0; grid%a_w_btys = 0.0; grid%a_w_btye = 0.0
+   grid%a_ph_btxs = 0.0; grid%a_ph_btxe = 0.0; grid%a_ph_btys = 0.0; grid%a_ph_btye = 0.0
+   grid%a_t_btxs = 0.0; grid%a_t_btxe = 0.0; grid%a_t_btys = 0.0; grid%a_t_btye = 0.0
+   grid%a_mu_btxs = 0.0; grid%a_mu_btxe = 0.0; grid%a_mu_btys = 0.0; grid%a_mu_btye = 0.0
+   grid%a_moist_btxs = 0.0; grid%a_moist_btxe = 0.0; grid%a_moist_btys = 0.0; grid%a_moist_btye = 0.0
+   grid%a_scalar_btxs = 0.0; grid%a_scalar_btxe = 0.0; grid%a_scalar_btys = 0.0; grid%a_scalar_btye = 0.0
+
+   RETURN
+  END SUBROUTINE copy_g_to_a_adjtest
 
   SUBROUTINE inner_dot_a_b ( grid, save, its, ite, jts, jte )
    TYPE (domain), INTENT(IN) :: grid
@@ -904,8 +1940,345 @@ CONTAINS
    RETURN
   END SUBROUTINE inner_dot_a_b
 	
+  SUBROUTINE inner_dot_a_b_adjtest ( grid, save, its, ite, jts, jte )
+   TYPE (domain), INTENT(IN) :: grid
+   INTEGER, INTENT(IN) :: its, ite, jts, jte
+   REAL, INTENT(INOUT) :: save
+   INTEGER :: i, k, j, mm
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,ite
+     save  = save + grid%a_u_2(i,k,j) * b_u_2(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,jte
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_v_2(i,k,j) * b_v_2(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_w_2(i,k,j) * b_w_2(i,k,j)    &
+                  + grid%a_ph_2(i,k,j) * b_ph_2(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_t_2(i,k,j) * b_t_2(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_tke_2(i,k,j) * b_tke_2(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_p(i,k,j) * b_p(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_al(i,k,j) * b_al(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_h_diabatic(i,k,j) * b_h_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_ustm(i,j) * b_ustm(i,j)
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_hfx(i,j) * b_hfx(i,j)
+   ENDDO
+   ENDDO
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_qfx(i,j) * b_qfx(i,j)
+   ENDDO
+   ENDDO
+
+
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_mu_2(i,j) * b_mu_2(i,j)
+   ENDDO
+   ENDDO
+
+   DO mm = 1, num_moist
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_moist(i,k,j,mm) * b_moist(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+  
+   DO mm = 1, num_scalar
+   DO j = sm33,em33 !jts,MIN(jte,jde-1)
+   DO k = sm32,em32 !kts,kte-1
+   DO i = sm31,em31 !its,MIN(ite,ide-1)
+     save  = save + grid%a_scalar(i,k,j,mm) * b_scalar(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+  
+   DO j=1,spec_bdy_width
+   DO k=kds,kde
+   DO i=jms,jme
+      save=save + grid%a_u_bxs(i,k,j)*b_u_bxs(i,k,j)
+      save=save + grid%a_u_bxe(i,k,j)*b_u_bxe(i,k,j)
+      save=save + grid%a_v_bxs(i,k,j)*b_v_bxs(i,k,j)
+      save=save + grid%a_v_bxe(i,k,j)*b_v_bxe(i,k,j)
+      save=save + grid%a_w_bxs(i,k,j)*b_w_bxs(i,k,j)
+      save=save + grid%a_w_bxe(i,k,j)*b_w_bxe(i,k,j)
+      save=save + grid%a_ph_bxs(i,k,j)*b_ph_bxs(i,k,j)
+      save=save + grid%a_ph_bxe(i,k,j)*b_ph_bxe(i,k,j)
+      save=save + grid%a_t_bxs(i,k,j)*b_t_bxs(i,k,j)
+      save=save + grid%a_t_bxe(i,k,j)*b_t_bxe(i,k,j)
+      save=save + grid%a_u_btxs(i,k,j)*b_u_btxs(i,k,j)
+      save=save + grid%a_u_btxe(i,k,j)*b_u_btxe(i,k,j)
+      save=save + grid%a_v_btxs(i,k,j)*b_v_btxs(i,k,j)
+      save=save + grid%a_v_btxe(i,k,j)*b_v_btxe(i,k,j)
+      save=save + grid%a_w_btxs(i,k,j)*b_w_btxs(i,k,j)
+      save=save + grid%a_w_btxe(i,k,j)*b_w_btxe(i,k,j)
+      save=save + grid%a_ph_btxs(i,k,j)*b_ph_btxs(i,k,j)
+      save=save + grid%a_ph_btxe(i,k,j)*b_ph_btxe(i,k,j)
+      save=save + grid%a_t_btxs(i,k,j)*b_t_btxs(i,k,j)
+      save=save + grid%a_t_btxe(i,k,j)*b_t_btxe(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j=1,spec_bdy_width
+   DO k=kds,kde
+   DO i=ims,ime
+      save=save + grid%a_u_bys(i,k,j)*b_u_bys(i,k,j)
+      save=save + grid%a_u_bye(i,k,j)*b_u_bye(i,k,j)
+      save=save + grid%a_v_bys(i,k,j)*b_v_bys(i,k,j)
+      save=save + grid%a_v_bye(i,k,j)*b_v_bye(i,k,j)
+      save=save + grid%a_w_bys(i,k,j)*b_w_bys(i,k,j)
+      save=save + grid%a_w_bye(i,k,j)*b_w_bye(i,k,j)
+      save=save + grid%a_ph_bys(i,k,j)*b_ph_bys(i,k,j)
+      save=save + grid%a_ph_bye(i,k,j)*b_ph_bye(i,k,j)
+      save=save + grid%a_t_bys(i,k,j)*b_t_bys(i,k,j)
+      save=save + grid%a_t_bye(i,k,j)*b_t_bye(i,k,j)
+      save=save + grid%a_u_btys(i,k,j)*b_u_btys(i,k,j)
+      save=save + grid%a_u_btye(i,k,j)*b_u_btye(i,k,j)
+      save=save + grid%a_v_btys(i,k,j)*b_v_btys(i,k,j)
+      save=save + grid%a_v_btye(i,k,j)*b_v_btye(i,k,j)
+      save=save + grid%a_w_btys(i,k,j)*b_w_btys(i,k,j)
+      save=save + grid%a_w_btye(i,k,j)*b_w_btye(i,k,j)
+      save=save + grid%a_ph_btys(i,k,j)*b_ph_btys(i,k,j)
+      save=save + grid%a_ph_btye(i,k,j)*b_ph_btye(i,k,j)
+      save=save + grid%a_t_btys(i,k,j)*b_t_btys(i,k,j)
+      save=save + grid%a_t_btye(i,k,j)*b_t_btye(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j=1,spec_bdy_width
+   DO k=1,1
+   DO i=jms,jme
+      save=save + grid%a_mu_bxs(i,k,j)*b_mu_bxs(i,k,j)
+      save=save + grid%a_mu_bxe(i,k,j)*b_mu_bxe(i,k,j)
+      save=save + grid%a_mu_btxs(i,k,j)*b_mu_btxs(i,k,j)
+      save=save + grid%a_mu_btxe(i,k,j)*b_mu_btxe(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j=1,spec_bdy_width
+   DO k=1,1
+   DO i=ims,ime
+      save=save + grid%a_mu_bys(i,k,j)*b_mu_bys(i,k,j)
+      save=save + grid%a_mu_bye(i,k,j)*b_mu_bye(i,k,j)
+      save=save + grid%a_mu_btys(i,k,j)*b_mu_btys(i,k,j)
+      save=save + grid%a_mu_btye(i,k,j)*b_mu_btye(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO mm=1,num_moist
+   DO j=1,spec_bdy_width
+   DO k=kds,kde
+   DO i=jms,jme
+      save=save + grid%a_moist_bxs(i,k,j,mm)*b_moist_bxs(i,k,j,mm)
+      save=save + grid%a_moist_bxe(i,k,j,mm)*b_moist_bxe(i,k,j,mm)
+      save=save + grid%a_moist_btxs(i,k,j,mm)*b_moist_btxs(i,k,j,mm)
+      save=save + grid%a_moist_btxe(i,k,j,mm)*b_moist_btxe(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO mm=1,num_moist
+   DO j=1,spec_bdy_width
+   DO k=kds,kde
+   DO i=ims,ime
+      save=save + grid%a_moist_bys(i,k,j,mm)*b_moist_bys(i,k,j,mm)
+      save=save + grid%a_moist_bye(i,k,j,mm)*b_moist_bye(i,k,j,mm)
+      save=save + grid%a_moist_btys(i,k,j,mm)*b_moist_btys(i,k,j,mm)
+      save=save + grid%a_moist_btye(i,k,j,mm)*b_moist_btye(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO mm=1,num_scalar
+   DO j=1,spec_bdy_width
+   DO k=kds,kde
+   DO i=jms,jme
+      save=save + grid%a_scalar_bxs(i,k,j,mm)*b_scalar_bxs(i,k,j,mm)
+      save=save + grid%a_scalar_bxe(i,k,j,mm)*b_scalar_bxe(i,k,j,mm)
+      save=save + grid%a_scalar_btxs(i,k,j,mm)*b_scalar_btxs(i,k,j,mm)
+      save=save + grid%a_scalar_btxe(i,k,j,mm)*b_scalar_btxe(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO mm=1,num_scalar
+   DO j=1,spec_bdy_width
+   DO k=kds,kde
+   DO i=ims,ime
+      save=save + grid%a_scalar_bys(i,k,j,mm)*b_scalar_bys(i,k,j,mm)
+      save=save + grid%a_scalar_bye(i,k,j,mm)*b_scalar_bye(i,k,j,mm)
+      save=save + grid%a_scalar_btys(i,k,j,mm)*b_scalar_btys(i,k,j,mm)
+      save=save + grid%a_scalar_btye(i,k,j,mm)*b_scalar_btye(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+
+   RETURN
+  END SUBROUTINE inner_dot_a_b_adjtest
+	
   SUBROUTINE deallocate_grid ( )
    INTEGER :: ierr
+
+   DEALLOCATE ( s_scalar, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar. ')
+   ENDIF
+   DEALLOCATE ( s_tke_1, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tke_1. ')
+   ENDIF
+   DEALLOCATE ( s_tke_2, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tke_2. ')
+   ENDIF
+
+   DEALLOCATE ( s_p, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_p. ')
+   ENDIF
+   DEALLOCATE ( s_al, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_al. ')
+   ENDIF
+   DEALLOCATE ( s_h_diabatic, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_h_diabatic. ')
+   ENDIF
+
+   DEALLOCATE ( s_ustm, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_ustm. ')
+   ENDIF
+   DEALLOCATE ( s_hfx, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_hfx. ')
+   ENDIF
+   DEALLOCATE ( s_qfx, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_qfx. ')
+   ENDIF
+
+   !  Scalar Boundary
+   DEALLOCATE(s_scalar_bxs,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_bxs. ')
+   ENDIF
+   DEALLOCATE(s_scalar_bxe,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_bxe. ')
+   ENDIF
+   DEALLOCATE(s_scalar_bys,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_bys. ')
+   ENDIF
+   DEALLOCATE(s_scalar_bye,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_bye. ')
+   ENDIF
+   DEALLOCATE(s_scalar_btxs,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_btxs. ')
+   ENDIF
+   DEALLOCATE(s_scalar_btxe,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_btxe. ')
+   ENDIF
+   DEALLOCATE(s_scalar_btys,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_btys. ')
+   ENDIF
+   DEALLOCATE(s_scalar_btye,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_btye. ')
+   ENDIF
 
    DEALLOCATE ( s_u_1, STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -1267,6 +2640,95 @@ CONTAINS
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_moist_btye. ')
    ENDIF
 
+   DEALLOCATE ( b_scalar, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar. ')
+   ENDIF
+   DEALLOCATE ( b_tke_1, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_tke_1. ')
+   ENDIF
+   DEALLOCATE ( b_tke_2, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_tke_2. ')
+   ENDIF
+
+   DEALLOCATE ( b_p, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_p. ')
+   ENDIF
+   DEALLOCATE ( b_al, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_al. ')
+   ENDIF
+   DEALLOCATE ( b_h_diabatic, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_h_diabatic. ')
+   ENDIF
+
+   DEALLOCATE ( b_ustm, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_ustm. ')
+   ENDIF
+   DEALLOCATE ( b_hfx, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_hfx. ')
+   ENDIF
+   DEALLOCATE ( b_qfx, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_qfx. ')
+   ENDIF
+
+   !  Scalar Boundary
+   DEALLOCATE(b_scalar_bxs,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_bxs. ')
+   ENDIF
+   DEALLOCATE(b_scalar_bxe,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_bxe. ')
+   ENDIF
+   DEALLOCATE(b_scalar_bys,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_bys. ')
+   ENDIF
+   DEALLOCATE(b_scalar_bye,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_bye. ')
+   ENDIF
+   DEALLOCATE(b_scalar_btxs,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_btxs. ')
+   ENDIF
+   DEALLOCATE(b_scalar_btxe,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_btxe. ')
+   ENDIF
+   DEALLOCATE(b_scalar_btys,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_btys. ')
+   ENDIF
+   DEALLOCATE(b_scalar_btye,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_btye. ')
+   ENDIF
 
    DEALLOCATE ( b_u_1, STAT=ierr )
    IF (ierr.NE.0) THEN

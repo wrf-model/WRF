@@ -20,7 +20,9 @@ MODULE module_wrf_top
    USE module_wrf_error
    USE module_adtl_grid_utilities, ONLY : allocate_grid, deallocate_grid, copy_grid_to_s, copy_grid_to_b, &
                                           copy_s_to_g, inner_dot_g, add_grid, inner_dot, init_domain_size, &
-                                          inner_dot_a_b, copy_g_to_a, copy_g_to_b, restore_grid  
+                                          inner_dot_a_b, copy_g_to_a, copy_g_to_b, restore_grid, &
+                                          copy_s_to_g_adjtest, copy_g_to_b_adjtest, inner_dot_g_adjtest, &
+                                          copy_g_to_a_adjtest, inner_dot_a_b_adjtest 
    USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail
 
 #ifdef DM_PARALLEL
@@ -34,7 +36,7 @@ MODULE module_wrf_top
    INTEGER :: loop , &
               levels_to_process
 
-   TYPE (domain) , POINTER :: keep_grid, grid_ptr, null_domain
+   TYPE (domain) , POINTER :: keep_grid, grid_ptr, null_domain, grid
    TYPE (grid_config_rec_type), SAVE :: config_flags
    INTEGER                 :: number_at_same_level
    INTEGER                 :: time_step_begin_restart
@@ -388,6 +390,17 @@ CONTAINS
 
    CALL init_domain_size ( head_grid, config_flags )
 
+IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
+
+   ! Save the initial condition and boundary condition, x
+   CALL allocate_grid ( )
+   CALL copy_grid_to_s ( head_grid )
+
+   IF ( config_flags%check_TL ) THEN
+
+   wrf_err_message = '=============== Tangent Linear check ==================='
+   CALL wrf_message(TRIM(wrf_err_message))
+   
    wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST ====='
    CALL wrf_message(TRIM(wrf_err_message))
 
@@ -397,15 +410,10 @@ CONTAINS
                                head_grid%check_moist
    CALL wrf_message(TRIM(wrf_err_message))
 
-   wrf_err_message = '=============== Tangent Linear check ==================='
-   CALL wrf_message(TRIM(wrf_err_message))
-   
-   ! Save the initial condition and boundary condition, x
-   CALL allocate_grid ( )
-   CALL copy_grid_to_s ( head_grid )
-
+   CALL       wrf_message ( "wrf: calling nonlinear integrate" )
    model_config_rec%dyn_opt = dyn_em
    CALL wrf_run
+   CALL       wrf_message ( "wrf: back from nonlinear integrate" )
 
    ! Save the f(x)
    CALL copy_grid_to_b ( head_grid )
@@ -439,10 +447,13 @@ CONTAINS
 
       CALL add_grid ( head_grid,  factor )
 
+      CALL       wrf_message ( "wrf: calling nonlinear integrate" )
       model_config_rec%dyn_opt = dyn_em
       CALL domain_clock_get( head_grid, start_timestr=timestr )
       CALL domain_clock_set( head_grid, current_timestr=timestr )
+      head_grid%dtbc = 0
       CALL wrf_run
+      CALL       wrf_message ( "wrf: back from nonlinear integrate" )
 
       val_n = 0.0
       !$OMP PARALLEL DO    &
@@ -459,21 +470,34 @@ CONTAINS
 #endif
       val_l=save_l*alpha_m**2
       coef=val_n/val_l
-      WRITE(wrf_err_message, FMT='(A,E9.4,A,E22.13,A,E13.6,A,E13.6)') &
+      WRITE(wrf_err_message, FMT='(A,E9.4,A,E23.14,A,E14.7,A,E14.7)') &
            'tl_check: alpha_m=',alpha_m,'  coef=',coef, &
            '  val_n=',val_n,'  val_l=',val_l
       CALL wrf_message(TRIM(wrf_err_message))
 
-
    ENDDO  tangentLinearCheck 
 
-   wrf_err_message = '=============== Adjoint check ==============='
+   END IF !end of Tangent linear check
+
+   IF ( config_flags%check_AD ) THEN
+
+   wrf_err_message = '==================== Adjoint check ====================='
+   CALL wrf_message(TRIM(wrf_err_message))
+
+   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST ====='
+   CALL wrf_message(TRIM(wrf_err_message))
+
+   WRITE(wrf_err_message,'(A,7(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
+                               head_grid%check_w, head_grid%check_ph, &
+                               head_grid%check_t, head_grid%check_mu, &
+                               head_grid%check_moist
+
    CALL wrf_message(TRIM(wrf_err_message))
 
    CALL restore_grid ( head_grid )
-   CALL copy_s_to_g ( head_grid, 0.1 )
+   CALL copy_s_to_g_adjtest ( head_grid, 0.1 )
 
-   CALL copy_g_to_b ( head_grid )
+   CALL copy_g_to_b_adjtest ( head_grid )
 
    CALL wrf_run_tl
 
@@ -482,7 +506,7 @@ CONTAINS
    !$OMP PRIVATE ( ij ) &
    !$OMP REDUCTION (+:val_l)
    DO ij = 1 , head_grid%num_tiles
-     CALL inner_dot_g ( head_grid , val_l,                                         &
+     CALL inner_dot_g_adjtest ( head_grid , val_l,                                         &
                         head_grid%i_start(ij), head_grid%i_end(ij),                &
                         head_grid%j_start(ij), head_grid%j_end(ij)                 )
    END DO
@@ -492,7 +516,7 @@ CONTAINS
 #endif
 
    CALL restore_grid ( head_grid )
-   CALL copy_g_to_a ( head_grid )
+   CALL copy_g_to_a_adjtest ( head_grid )
 
    CALL wrf_run_ad
 
@@ -501,7 +525,7 @@ CONTAINS
    !$OMP PRIVATE ( ij ) &
    !$OMP REDUCTION (+:val_a)
    DO ij = 1 , head_grid%num_tiles
-     CALL inner_dot_a_b ( head_grid, val_a,                                          &
+     CALL inner_dot_a_b_adjtest ( head_grid, val_a,                                          &
                           head_grid%i_start(ij), head_grid%i_end(ij),                &
                           head_grid%j_start(ij), head_grid%j_end(ij)                 )
    END DO
@@ -510,13 +534,17 @@ CONTAINS
    val_a =  wrf_dm_sum_real ( val_a )
 #endif
 
-   WRITE(wrf_err_message, FMT='(A,E22.13)') 'ad_check: VAL_TL: ', val_l
+   WRITE(wrf_err_message, FMT='(A,E23.14)') 'ad_check: VAL_TL: ', val_l
    CALL wrf_message(TRIM(wrf_err_message))
-   WRITE(wrf_err_message, FMT='(A,E22.13)') 'ad_check: VAL_AD: ', val_a
+   WRITE(wrf_err_message, FMT='(A,E23.14)') 'ad_check: VAL_AD: ', val_a
    CALL wrf_message(TRIM(wrf_err_message))
+
+   END IF !ADJ test
 
    ! Deallocate all working space
    CALL deallocate_grid()
+
+ENDIF
 
    ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.
    CALL wrf_finalize
@@ -550,6 +578,7 @@ CONTAINS
    CALL domain_clock_set( head_grid, current_timestr=timestr )
 
    xtraj_pointer => xtraj_tail
+   head_grid%dtbc = 0
    CALL integrate ( head_grid )
 
    CALL       wrf_message ( "wrf: back from tangent linear integrate" )
@@ -571,8 +600,7 @@ CONTAINS
 ! 
 !</DESCRIPTION>
 
-!   INTEGER :: timestep
-!   CHARACTER*256 :: timestr, timestr1
+   CHARACTER*256 :: timestr, timestr1
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
 
@@ -622,16 +650,14 @@ CONTAINS
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 
-!   CALL domain_clock_get( head_grid, stop_timestr=timestr )
-!   CALL domain_clock_get( head_grid, start_timestr=timestr1 )
-!   CALL domain_clock_set( head_grid, current_timestr=timestr )
-!   CALL domain_clock_set( head_grid, stop_timestr=timestr1 )
-!   CALL domain_clock_set( head_grid, time_step_seconds=timestep )
-!   head_grid%start_subtime = domain_get_start_time ( head_grid )
-!   head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+   CALL domain_clock_get( head_grid, stop_timestr=timestr )
+   CALL domain_clock_get( head_grid, start_timestr=timestr1 )
+   CALL domain_clock_set( head_grid, current_timestr=timestr )
+   CALL domain_clock_set( head_grid, stop_timestr=timestr1 )
 
    xtraj_pointer => xtraj_head
 
+   head_grid%dtbc = 0
    CALL integrate ( head_grid )
 
 !  Recover to NL model 

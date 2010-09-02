@@ -13,7 +13,7 @@
  end_month                           = 02,   02,   01,
  end_day                             = 05,   05,   01,
  end_hour                            = 18,   12,   00,
- end_minute                          = 06,   06,   00,
+ end_minute                          = 00,   06,   00,
  end_second                          = 00,   00,   00,
  history_interval                    = 9999,   30,   30,
  interval_seconds                    = 21600

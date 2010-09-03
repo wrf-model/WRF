@@ -31,9 +31,17 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    real   :: qvf1, cvpm, cpovcv, ppb, ttb, albn, aln, height, temp
    real, allocatable :: arrayglobal(:,:)
+
+   logical:: no_ppb
+
 #ifdef A2C
    real   :: uu, vv
 #endif
+
+
+   ! If grid%pb does not existed in FG (YRG, 08/26/2010):
+     ppb = sum(grid%pb*grid%pb)
+     no_ppb = ppb == 0.0
 
    !---------------------------------------------------------------------------
    ! Set xb array range indices for processor subdomain.
@@ -355,33 +363,52 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       cvpm =  - (1.0 - gas_constant/cp)
       cpovcv = cp / (cp - gas_constant)
 
-      do k=kts,kte
-         do i=its,ite
-            ! The base specific volume (from real.init.code)
-            ! ppb  = grid%znu(k) * grid%mub(i,j) + ptop
-            ! grid%pb(i,j,k) = ppb
-            ppb = grid%pb(i,j,k)
-            temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
-            ttb  = temp * (base_pres/ppb)**kappa
-            ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
-            !   (base_pres/ppb)**kappa
-            albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
+      if (no_ppb) then
+         do k=kts,kte
+            do i=its,ite
+               ! The base specific volume (from real.init.code)
+               ppb  = grid%znu(k) * grid%mub(i,j) + ptop
+               grid%pb(i,j,k) = ppb
+               temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+               ttb  = temp * (base_pres/ppb)**kappa
+               ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
+               !   (base_pres/ppb)**kappa
+               albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
 
-            qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
-            aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
-               (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
-               (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
-            ! total pressure:
-            ! grid%xb%p(i,j,k) = base_pres * &
-            !   ((gas_constant*(t0+grid%t_2(i,j,k))*qvf1) / &
-            !   (base_pres*(aln+albn)))**cpovcv
-            grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
-            ! total density
-            grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
-            ! pressure purtubation:
-            ! grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
+               qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
+               aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
+                      (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
+                      (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
+               ! total pressure:
+               grid%xb%p(i,j,k) = base_pres * &
+                                 ((gas_constant*(t0+grid%t_2(i,j,k))*qvf1) / &
+                                 (base_pres*(aln+albn)))**cpovcv
+               ! total density
+               grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
+               ! pressure purtubation:
+               grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
+            end do
          end do
-      end do
+      else
+         do k=kts,kte
+            do i=its,ite
+               ppb = grid%pb(i,j,k)
+               temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+               ttb  = temp * (base_pres/ppb)**kappa
+               ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
+               !   (base_pres/ppb)**kappa
+               albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
+
+               qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
+               aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
+                      (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
+                      (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
+               grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
+               ! total density
+               grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
+            end do
+         end do
+      endif
 
       do k=kts,kte+1
          do i=its,ite

@@ -817,8 +817,8 @@ is_mozcart_species : &
                    END IF is_mozcart_species
                 END IF use_megan_emission
              END DO
-             
-          CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP)
+
+          CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP,GOCARTRADM2, GOCARTRADM2_KPP)
 
              DO icount = 1, n_megan2radm2
 
@@ -891,8 +891,8 @@ is_mozcart_species : &
                 
              END DO
 
-          CASE (RACM_KPP, RACM_MIM_KPP, RACM_ESRLSORG_KPP, RACMSORG_AQ, RACMSORG_KPP, RACMPM_KPP)
-             
+           CASE (RACMSORG_AQ, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP )
+
              DO icount = 1, n_megan2racm
 
                 IF ( p_of_racm(icount) .NE. non_react ) THEN

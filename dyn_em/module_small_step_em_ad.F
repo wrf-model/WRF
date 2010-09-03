@@ -3439,17 +3439,18 @@ END SUBROUTINE a_restore_ph_mu
 
       ENDDO
 
+! Remarked by Ning Pan, 2010-08-31 : LPB[6]
 !LPB[6]
-      DO j=j_start, j_end
+!      DO j=j_start, j_end
 
-        DO k=1,k_end
-        DO i=i_start, i_end
-          t_ave(i,k,j) = t(i,k,j)
-          t   (i,k,j) = t(i,k,j) + msfty(i,j)*dts*ft(i,k,j)
-        END DO
-        END DO
+!        DO k=1,k_end
+!        DO i=i_start, i_end
+!          t_ave(i,k,j) = t(i,k,j)
+!          t   (i,k,j) = t(i,k,j) + msfty(i,j)*dts*ft(i,k,j)
+!        END DO
+!        END DO
 
-      ENDDO   
+!      ENDDO   
 
 !!LPB[7]
 !      DO j=j_start, j_end
@@ -3507,19 +3508,21 @@ END SUBROUTINE a_restore_ph_mu
 !LPB[7]
    DO j =j_end, j_start, -1
 
-   DO i =i_start, i_end
-   wdtn(i,1) =0.
+! Remarked by Ning Pan, 2010-08-31
+!   DO i =i_start, i_end
+!   wdtn(i,1) =0.
 
-   wdtn(i,kde) =0.
+!   wdtn(i,kde) =0.
 
-   ENDDO
+!   ENDDO
 
    DO k =2, k_end
    DO i =i_start, i_end
    Tmpv001 =fnm(k)*t_1(i,k,j) +fnp(k)*t_1(i,k-1,j)
    Tmpv300(i,k) =Tmpv001
-   Tmpv002 =ww(i,k,j)*Tmpv300(i,k)
-!  wdtn(i,k) =Tmpv002
+! Remarked by Ning Pan, 2010-08-31
+!   Tmpv002 =ww(i,k,j)*Tmpv300(i,k)
+!!  wdtn(i,k) =Tmpv002
 
    ENDDO
    ENDDO
@@ -3538,17 +3541,18 @@ END SUBROUTINE a_restore_ph_mu
    Tmpv008 =u(i+1,k,j)*Tmpv303(i,k)
    Tmpv009 =t_1(i,k,j) +t_1(i-1,k,j)
    Tmpv304(i,k) =Tmpv009
-   Tmpv010 =u(i,k,j)*Tmpv304(i,k)
-   Tmpv011 =Tmpv008 -Tmpv010
-   Tmpv012 =.5*rdx*Tmpv011
-   Tmpv013 =Tmpv006 +Tmpv012
-   Tmpv014 =msftx(i,j)*Tmpv013
-   Tmpv015 =wdtn(i,k+1) -wdtn(i,k)
-   Tmpv016 =rdnw(k)*Tmpv015
-   Tmpv017 =Tmpv014 +Tmpv016
-   Tmpv018 =dts*msfty(i,j)*Tmpv017
-   Tmpv019 =t(i,k,j) -Tmpv018
-!  t(i,k,j) =Tmpv019
+! Remarked by Ning Pan, 2010-08-31
+!   Tmpv010 =u(i,k,j)*Tmpv304(i,k)
+!   Tmpv011 =Tmpv008 -Tmpv010
+!   Tmpv012 =.5*rdx*Tmpv011
+!   Tmpv013 =Tmpv006 +Tmpv012
+!   Tmpv014 =msftx(i,j)*Tmpv013
+!   Tmpv015 =wdtn(i,k+1) -wdtn(i,k)
+!   Tmpv016 =rdnw(k)*Tmpv015
+!   Tmpv017 =Tmpv014 +Tmpv016
+!   Tmpv018 =dts*msfty(i,j)*Tmpv017
+!   Tmpv019 =t(i,k,j) -Tmpv018
+!!  t(i,k,j) =Tmpv019
 
    ENDDO
    ENDDO
@@ -3640,76 +3644,77 @@ END SUBROUTINE a_restore_ph_mu
 !LPB[5]
    DO j =j_end, j_start, -1
 
-   DO i =i_start, i_end
-   dmdt(i) =0.
+! Remarked by Ning Pan, 2010-08-31 : not need to recalculate
+!   DO i =i_start, i_end
+!   dmdt(i) =0.
 
-   ENDDO
+!   ENDDO
 
-   DO k =k_start, k_end
-   DO i =i_start, i_end
-   Tmpv001 =muv(i,j+1)*v_1(i,k,j+1)
-   Tmpv002 =Tmpv001*msfvx_inv(i,j+1)
-   Tmpv003 =v(i,k,j+1) +Tmpv002
-   Tmpv004 =muv(i,j)*v_1(i,k,j)
-   Tmpv005 =Tmpv004*msfvx_inv(i,j)
-   Tmpv006 =v(i,k,j) +Tmpv005
-   Tmpv007 =Tmpv003 -Tmpv006
-   Tmpv008 =rdy*Tmpv007
-   Tmpv009 =muu(i+1,j)*u_1(i+1,k,j)
-   Tmpv010 =Tmpv009/msfuy(i+1,j)
-   Tmpv011 =u(i+1,k,j) +Tmpv010
-   Tmpv012 =muu(i,j)*u_1(i,k,j)
-   Tmpv013 =Tmpv012/msfuy(i,j)
-   Tmpv014 =u(i,k,j) +Tmpv013
-   Tmpv015 =Tmpv011 -Tmpv014
-   Tmpv016 =rdx*Tmpv015
-   Tmpv017 =Tmpv008 +Tmpv016
-   Tmpv018 =msftx(i,j)*msfty(i,j)*Tmpv017
-!  dvdxi(i,k) =Tmpv018
+!   DO k =k_start, k_end
+!   DO i =i_start, i_end
+!   Tmpv001 =muv(i,j+1)*v_1(i,k,j+1)
+!   Tmpv002 =Tmpv001*msfvx_inv(i,j+1)
+!   Tmpv003 =v(i,k,j+1) +Tmpv002
+!   Tmpv004 =muv(i,j)*v_1(i,k,j)
+!   Tmpv005 =Tmpv004*msfvx_inv(i,j)
+!   Tmpv006 =v(i,k,j) +Tmpv005
+!   Tmpv007 =Tmpv003 -Tmpv006
+!   Tmpv008 =rdy*Tmpv007
+!   Tmpv009 =muu(i+1,j)*u_1(i+1,k,j)
+!   Tmpv010 =Tmpv009/msfuy(i+1,j)
+!   Tmpv011 =u(i+1,k,j) +Tmpv010
+!   Tmpv012 =muu(i,j)*u_1(i,k,j)
+!   Tmpv013 =Tmpv012/msfuy(i,j)
+!   Tmpv014 =u(i,k,j) +Tmpv013
+!   Tmpv015 =Tmpv011 -Tmpv014
+!   Tmpv016 =rdx*Tmpv015
+!   Tmpv017 =Tmpv008 +Tmpv016
+!   Tmpv018 =msftx(i,j)*msfty(i,j)*Tmpv017
+!!  dvdxi(i,k) =Tmpv018
 
-   Tmpv001 =dmdt(i) +dnw(k)*dvdxi(i,k)
-!  dmdt(i) =Tmpv001
+!   Tmpv001 =dmdt(i) +dnw(k)*dvdxi(i,k)
+!!  dmdt(i) =Tmpv001
 
-   ENDDO
-   ENDDO
-   DO i =i_start, i_end
-!  muave(i,j) =mu(i,j)
+!   ENDDO
+!   ENDDO
+!   DO i =i_start, i_end
+!!  muave(i,j) =mu(i,j)
 
-   Tmpv001 =dmdt(i) +mu_tend(i,j)
-   Tmpv002 =dts*Tmpv001
-   Tmpv003 =mu(i,j) +Tmpv002
-!  mu(i,j) =Tmpv003
+!   Tmpv001 =dmdt(i) +mu_tend(i,j)
+!   Tmpv002 =dts*Tmpv001
+!   Tmpv003 =mu(i,j) +Tmpv002
+!!  mu(i,j) =Tmpv003
 
-   Tmpv001 =dmdt(i) +mu_tend(i,j)
-!  mudf(i,j) =Tmpv001
+!   Tmpv001 =dmdt(i) +mu_tend(i,j)
+!!  mudf(i,j) =Tmpv001
 
-   Tmpv001 =mut(i,j) +mu(i,j)
-!  muts(i,j) =Tmpv001
+!   Tmpv001 =mut(i,j) +mu(i,j)
+!!  muts(i,j) =Tmpv001
 
-   Tmpv001 =(1.+epssm)*mu(i,j) +(1.-epssm)*muave(i,j)
-   Tmpv002 =.5*Tmpv001
-!  muave(i,j) =Tmpv002
+!   Tmpv001 =(1.+epssm)*mu(i,j) +(1.-epssm)*muave(i,j)
+!   Tmpv002 =.5*Tmpv001
+!!  muave(i,j) =Tmpv002
 
-   ENDDO
+!   ENDDO
 
-   DO k =2, k_end
-   DO i =i_start, i_end
-   Tmpv001 =dmdt(i) +dvdxi(i,k-1)
-   Tmpv002 =Tmpv001 +mu_tend(i,j)
-   Tmpv003 =dnw(k-1)*Tmpv002
-   Tmpv004 =Tmpv003/msfty(i,j)
-   Tmpv005 =ww(i,k-1,j) -Tmpv004
-!  ww(i,k,j) =Tmpv005
+!   DO k =2, k_end
+!   DO i =i_start, i_end
+!   Tmpv001 =dmdt(i) +dvdxi(i,k-1)
+!   Tmpv002 =Tmpv001 +mu_tend(i,j)
+!   Tmpv003 =dnw(k-1)*Tmpv002
+!   Tmpv004 =Tmpv003/msfty(i,j)
+!   Tmpv005 =ww(i,k-1,j) -Tmpv004
+!!  ww(i,k,j) =Tmpv005
 
-   ENDDO
-   ENDDO
-   DO k =1, k_end
-   DO i =i_start, i_end
-   Tmpv001 =ww(i,k,j) -ww_1(i,k,j)
-!  ww(i,k,j) =Tmpv001
+!   ENDDO
+!   ENDDO
+!   DO k =1, k_end
+!   DO i =i_start, i_end
+!   Tmpv001 =ww(i,k,j) -ww_1(i,k,j)
+!!  ww(i,k,j) =Tmpv001
 
-   ENDDO
-   ENDDO
+!   ENDDO
+!   ENDDO
 
    DO k =k_end, 1, -1
    DO i =i_end, i_start, -1
@@ -3817,9 +3822,10 @@ END SUBROUTINE a_restore_ph_mu
 !  j_end =min(jte, jde-2)
 !  ENDIF
 
-   IF( config_flags%specified .or. config_flags%nested ) THEN
+! Remarked by Ning Pan, 2010-08-31
+!   IF( config_flags%specified .or. config_flags%nested ) THEN
 
-   ENDIF
+!   ENDIF
 
 !LPB[2]
 
@@ -3832,13 +3838,15 @@ END SUBROUTINE a_restore_ph_mu
 !  ENDIF
 !  ENDIF
 
-   IF( .NOT. config_flags%periodic_x ) THEN
+! Remarked by Ning Pan, 2010-08-31
+!   IF( .NOT. config_flags%periodic_x ) THEN
 
-   IF( config_flags%specified .or. config_flags%nested ) THEN
+!   IF( config_flags%specified .or. config_flags%nested ) THEN
 
-   ENDIF
 
-   ENDIF
+!   ENDIF
+
+!   ENDIF
 
 !LPB[0]
 !  i_start =its

@@ -207,6 +207,12 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 ! Initialize timers if compiled with -DBENCH
 #include <bench_solve_em_init.h>
 
+!==[P8_adj]===============================================================
+!!!!! Need to consider dtbc: whether + or - operation???  Ning Pan
+   IF( config_flags%specified .or. config_flags%nested ) THEN
+     grid%dtbc = grid%dtbc - grid%dt
+   ENDIF
+
 !  Initialize linkedlist
    CALL linkedlist_initialize
  
@@ -919,7 +925,7 @@ if (config_flags % sw_call_rk_tendency) then
                          ,grid%al, grid%alt, grid%p, grid%pb, grid%php, cqu, cqv, cqw                          &
                          ,grid%u_base, grid%v_base, grid%t_base, grid%qv_base, grid%z_base                     &
                          ,grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv                                    &
-                         ,grid%msfvy, grid%msftx,grid%msfty, grid%xlat, grid%f, grid%e, grid%sina, grid%cosa   &
+                         ,grid%msfvy, grid%msftx,grid%msfty, grid%clat, grid%f, grid%e, grid%sina, grid%cosa   &
                          ,grid%fnm, grid%fnp, grid%rdn, grid%rdnw                                              &
                          ,grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, grid%xkmh, grid%xkhh            &
                          ,grid%diff_6th_opt, grid%diff_6th_factor                                              &
@@ -9408,7 +9414,7 @@ if (config_flags % sw_call_rk_tendency) then
                          grid%php, grid%a_php, cqu, a_cqu, cqv, a_cqv, cqw, a_cqw, &
                          grid%u_base, grid%v_base, grid%t_base, grid%qv_base, grid%z_base, &
                          grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv, &
-                         grid%msfvy, grid%msftx,grid%msfty, grid%xlat, grid%f, grid%e, grid%sina, grid%cosa, &
+                         grid%msfvy, grid%msftx,grid%msfty, grid%clat, grid%f, grid%e, grid%sina, grid%cosa, &
                          grid%fnm, grid%fnp, grid%rdn, grid%rdnw,             &
                          grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, &
                          grid%xkmh,grid%a_xkmh, grid%xkhh,grid%a_xkhh,        &
@@ -9895,12 +9901,6 @@ end if
        ENDIF
      ENDDO
      !$OMP END PARALLEL DO
-
-!==[P8_adj]===============================================================
-!!!!! Need to consider dtbc: whether + or - operation???  Ning Pan
-   IF( config_flags%specified .or. config_flags%nested ) THEN
-     grid%dtbc = grid%dtbc + grid%dt
-   ENDIF
 
 !==[P12_adj]==============================================================
 !  Max values of CFL for adaptive time step scheme

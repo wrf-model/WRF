@@ -938,7 +938,7 @@ if (config_flags % sw_call_rk_tendency) then
                          grid%php, grid%g_php, cqu, g_cqu, cqv, g_cqv, cqw, g_cqw, &
                          grid%u_base, grid%v_base, grid%t_base, grid%qv_base, grid%z_base, &
                          grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv, &
-                         grid%msfvy, grid%msftx,grid%msfty, grid%xlat, grid%f, grid%e, grid%sina, grid%cosa, &
+                         grid%msfvy, grid%msftx,grid%msfty, grid%clat, grid%f, grid%e, grid%sina, grid%cosa, &
                          grid%fnm, grid%fnp, grid%rdn, grid%rdnw, &
                          grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, &
                          grid%xkmh,grid%g_xkmh, grid%xkhh,grid%g_xkhh,        &

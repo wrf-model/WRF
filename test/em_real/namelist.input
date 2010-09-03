@@ -1,7 +1,7 @@
  &time_control
  run_days                            = 0,
  run_hours                           = 0,
- run_minutes                         = 360,
+ run_minutes                         = 12,
  run_seconds                         = 0,
  start_year                          = 2008, 2008, 0001,
  start_month                         = 02,   02,   01,
@@ -12,8 +12,8 @@
  end_year                            = 2008, 2008, 0010,
  end_month                           = 02,   02,   01,
  end_day                             = 05,   05,   01,
- end_hour                            = 18,   12,   00,
- end_minute                          = 00,   06,   00,
+ end_hour                            = 12,   12,   00,
+ end_minute                          = 12,   06,   00,
  end_second                          = 00,   00,   00,
  history_interval                    = 9999,   30,   30,
  interval_seconds                    = 21600
@@ -25,7 +25,7 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
+ debug_level                         = -300
  /
 
  &domains
@@ -83,12 +83,12 @@
  !rk_ord=2
  sw_call_advance_all                          = .false.
  sw_call_spec_bdyupdate_all                   = .false.
- sw_call_zero_bdytend                         = .false.
- sw_call_zero_pole                            = .false.
+ sw_call_zero_bdytend                         = .true.
+ sw_call_zero_pole                            = .true.
  sw_call_rk_step_prep                         = .true.
- sw_call_rk_phys_bc_dry_1                     = .false.
- sw_call_set_physical_bc3d                    = .false.
- sw_call_pole_point_bc                        = .false.
+ sw_call_rk_phys_bc_dry_1                     = .true.
+ sw_call_set_physical_bc3d                    = .true.
+ sw_call_pole_point_bc                        = .true.
  sw_call_first_rk_step_part1                  = .false.
  sw_call_first_rk_step_part2                  = .true.
  sw_call_rk_tendency                          = .true.
@@ -98,9 +98,9 @@
  sw_call_small_step_prep                      = .true.
  sw_call_calc_p_rho                           = .true.
  sw_call_calc_coef_w                          = .true.
- sw_call_set_physical_bc2d                    = .false.
+ sw_call_set_physical_bc2d                    = .true.
  sw_call_advance_uv                           = .true.
- sw_call_pxft                                 = .false.
+ sw_call_pxft                                 = .true.
  sw_call_spec_bdyupdate                       = .true.
  sw_call_advance_mu_t                         = .true.
  sw_call_advance_w                            = .true.
@@ -116,25 +116,25 @@
  sw_call_rk_update_scalar                     = .true.
  sw_call_flow_dep_bdy                         = .true.
  sw_call_bound_tke                            = .true.
- sw_call_flow_dep_bdy_chem                    = .false.
- sw_call_flow_dep_bdy_tracer                  = .false.
+ sw_call_flow_dep_bdy_chem                    = .true.
+ sw_call_flow_dep_bdy_tracer                  = .true.
  sw_call_calc_p_rho_phi                       = .true.
- sw_call_couple_scalars_for_filter            = .false.
- sw_call_uncouple_scalars_for_filter          = .false.
- sw_call_rk_phys_bc_dry_2                     = .false.
+ sw_call_couple_scalars_for_filter            = .true.
+ sw_call_uncouple_scalars_for_filter          = .true.
+ sw_call_rk_phys_bc_dry_2                     = .true.
  sw_call_diagnose_w                           = .true.
- sw_call_WRFU_ALARMGET                        = .false.
- sw_call_domain_clock_get                     = .false.
- sw_call_WRFU_TimeIntervalSet                 = .false.
- sw_call_zero_avgflx                          = .false.
- sw_call_upd_avgflx                           = .false.
- sw_call_advance_ppt                          = .false.
- sw_call_moist_physics_prep_em                = .false.
- sw_call_microphysics_driver                  = .false.
- sw_call_microphysics_zero_outb               = .false.
- sw_call_microphysics_zero_outa               = .false.
- sw_call_moist_physics_finish_em              = .false.
- sw_call_set_phys_bc_dry_2                    = .false.
+ sw_call_WRFU_ALARMGET                        = .true.
+ sw_call_domain_clock_get                     = .true.
+ sw_call_WRFU_TimeIntervalSet                 = .true.
+ sw_call_zero_avgflx                          = .true.
+ sw_call_upd_avgflx                           = .true.
+ sw_call_advance_ppt                          = .true.
+ sw_call_moist_physics_prep_em                = .true.
+ sw_call_microphysics_driver                  = .true.
+ sw_call_microphysics_zero_outb               = .true.
+ sw_call_microphysics_zero_outa               = .true.
+ sw_call_moist_physics_finish_em              = .true.
+ sw_call_set_phys_bc_dry_2                    = .true.
  sw_call_set_w_surface                        = .true.
  sw_call_diagnostic_output_calc               = .false.
  sw_call_rk_scalar_tend_moist                 = .true.
@@ -193,7 +193,7 @@
  /
 
  &perturbation
- check_TL = .true.
+ check_TL = .false.
  check_AD = .true.
  check_u = .true.
  check_v = .true.

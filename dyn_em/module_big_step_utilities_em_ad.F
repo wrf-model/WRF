@@ -2523,45 +2523,47 @@ END SUBROUTINE a_couple_momentum
 
 !PART IV: REVERSE/BACKWARD ACCUMULATIONS
 
+
 !LPB[3]
    DO j =jtf, jts, -1
 
-   DO i =its, ite
-   dmdt(i) =0.
+! Remarked by Ning Pan, 2010-08-31 : not need to recalculate
+!   DO i =its, ite
+!   dmdt(i) =0.
 
-   ww(i,1,j) =0.
+!   ww(i,1,j) =0.
 
-   ww(i,kte,j) =0.
+!   ww(i,kte,j) =0.
 
-   ENDDO
+!   ENDDO
 
-   DO k =kts, ktf
-   DO i =its, itf
-   Tmpv001 =muu(i+1,j)*u(i+1,k,j)
-   Tmpv002 =muu(i,j)*u(i,k,j)
-   Tmpv003 =Tmpv001 -Tmpv002
-   Tmpv004 =rdx*Tmpv003
-   Tmpv005 =muv(i,j+1)*v(i,k,j+1)
-   Tmpv006 =muv(i,j)*v(i,k,j)
-   Tmpv007 =Tmpv005 -Tmpv006
-   Tmpv008 =rdy*Tmpv007
-   Tmpv009 =Tmpv004 +Tmpv008
-   Tmpv010 =msftx(i,j)*dnw(k)*Tmpv009
-!  divv(i,k) =Tmpv010
+!   DO k =kts, ktf
+!   DO i =its, itf
+!   Tmpv001 =muu(i+1,j)*u(i+1,k,j)
+!   Tmpv002 =muu(i,j)*u(i,k,j)
+!   Tmpv003 =Tmpv001 -Tmpv002
+!   Tmpv004 =rdx*Tmpv003
+!   Tmpv005 =muv(i,j+1)*v(i,k,j+1)
+!   Tmpv006 =muv(i,j)*v(i,k,j)
+!   Tmpv007 =Tmpv005 -Tmpv006
+!   Tmpv008 =rdy*Tmpv007
+!   Tmpv009 =Tmpv004 +Tmpv008
+!   Tmpv010 =msftx(i,j)*dnw(k)*Tmpv009
+!!  divv(i,k) =Tmpv010
 
-   Tmpv001 =dmdt(i) +divv(i,k)
-!  dmdt(i) =Tmpv001
+!   Tmpv001 =dmdt(i) +divv(i,k)
+!!  dmdt(i) =Tmpv001
 
-   ENDDO
-   ENDDO
-   DO k =2, ktf
-   DO i =its, itf
-   Tmpv001 =ww(i,k-1,j) -dnw(k-1)*dmdt(i)
-   Tmpv002 =Tmpv001 -divv(i,k-1)
-!  ww(i,k,j) =Tmpv002
+!   ENDDO
+!   ENDDO
+!   DO k =2, ktf
+!   DO i =its, itf
+!   Tmpv001 =ww(i,k-1,j) -dnw(k-1)*dmdt(i)
+!   Tmpv002 =Tmpv001 -divv(i,k-1)
+!!  ww(i,k,j) =Tmpv002
 
-   ENDDO
-   ENDDO
+!   ENDDO
+!   ENDDO
 
    DO k =ktf, 2, -1
    DO i =itf, its, -1

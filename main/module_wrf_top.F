@@ -577,7 +577,7 @@ ENDIF
    CALL domain_clock_get( head_grid, start_timestr=timestr )
    CALL domain_clock_set( head_grid, current_timestr=timestr )
 
-   xtraj_pointer => xtraj_tail
+   IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
    head_grid%dtbc = 0
    CALL integrate ( head_grid )
 
@@ -612,7 +612,6 @@ ENDIF
    ! Seeting for AD model
    model_config_rec%dyn_opt = dyn_em_ad
 
-   model_config_rec%time_step = -1 * model_config_rec%time_step
    model_config_rec%run_days = -1 * model_config_rec%run_days
    model_config_rec%run_hours = -1 * model_config_rec%run_hours
    model_config_rec%run_minutes = -1 * model_config_rec%run_minutes
@@ -652,16 +651,15 @@ ENDIF
 
    CALL domain_clock_get( head_grid, start_timestr=timestr )
    CALL domain_clock_set( head_grid, current_timestr=timestr )
+   CALL domain_clock_set( head_grid, time_step_seconds=-1*model_config_rec%time_step )
 
-   xtraj_pointer => xtraj_head
+   IF ( ASSOCIATED(xtraj_head) ) xtraj_pointer => xtraj_head%next
 
-   head_grid%dtbc = 0
    CALL integrate ( head_grid )
 
 !  Recover to NL model 
    model_config_rec%dyn_opt = dyn_em
 
-   model_config_rec%time_step = -1 * model_config_rec%time_step
    model_config_rec%run_days = -1 * model_config_rec%run_days
    model_config_rec%run_hours = -1 * model_config_rec%run_hours
    model_config_rec%run_minutes = -1 * model_config_rec%run_minutes
@@ -684,6 +682,7 @@ ENDIF
    CALL Setup_Timekeeping ( head_grid )
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+   CALL domain_clock_set( head_grid, time_step_seconds=model_config_rec%time_step )
 
    CALL       wrf_message ( "wrf: back from adjoint integrate" )
 

@@ -19,7 +19,7 @@ subroutine da_transform_xtoy_rttov_adj ( iv, jo_grad_y, jo_grad_x )
 
 #ifdef RTTOV
 
-   integer                        :: i, j, k,c  ! Index dimension.
+   integer                        :: i, j, k,c,l  ! Index dimension.
    integer                        :: nlevels ! Number of obs levels.
    integer                        :: num_rad  ! Number of radiance obs
 #ifdef DM_PARALLEL
@@ -99,6 +99,15 @@ subroutine da_transform_xtoy_rttov_adj ( iv, jo_grad_y, jo_grad_x )
 
             aux_vars(n) % satzen  = iv%instid(i)%satzen(n)
             aux_vars(n) % satazi  = iv%instid(i)%satazi(n)
+    
+!RTTOV9_3
+             aux_vars(n) % solzen   = iv%instid(i)%solzen(n)
+             aux_vars(n) % solazi   = iv%instid(i)%solazi(n)
+             aux_vars(n) % elevation   = iv%instid(i)%elevation(n)
+             aux_vars(n) % rlat     = iv%instid(i)%info%lat(1,n)
+ 
+!END OF RTTOV9_3
+
          end do
       end if
 
@@ -147,7 +156,18 @@ subroutine da_transform_xtoy_rttov_adj ( iv, jo_grad_y, jo_grad_x )
             d_aux_vars(1:l_num_rad) % satzen   = aux_vars(1:l_num_rad) % satzen
             d_aux_vars(1:l_num_rad) % satazi   = aux_vars(1:l_num_rad) % satazi
 
+!RTTOV9_3
+            d_aux_vars(1:l_num_rad) % solzen   = aux_vars(1:l_num_rad) % solzen
+            d_aux_vars(1:l_num_rad) % solazi   = aux_vars(1:l_num_rad) % solazi
+            d_aux_vars(1:l_num_rad) % elevation   = aux_vars(1:l_num_rad) % elevation
+            d_aux_vars(1:l_num_rad) % rlat     = aux_vars(1:l_num_rad) % rlat
+ 
+!END OF RTTOV9_3
+
+
             d_tb(:,1:l_num_rad) = jo_grad_y%instid(i)%tb(:,1:l_num_rad)
+
+        
          end if
 
          ! Get data from elsewhere
@@ -264,10 +284,35 @@ subroutine da_transform_xtoy_rttov_adj ( iv, jo_grad_y, jo_grad_x )
             else
                !$OMP PARALLEL DO  &
                !$OMP PRIVATE ( n )
+
+
                 do n=1,d_num_rad
-                   call da_rttov_ad (i, nchan, 1, d_con_vars(n:n), &
-                   d_aux_vars(n:n), d_con_vars_ad(n:n), d_tb(:,n:n))
+
+                  if (.not. use_rttov_kmatrix) then
+                       call da_rttov_ad (i, nchan, 1, d_con_vars(n:n), &
+                          d_aux_vars(n:n), d_con_vars_ad(n:n), d_tb(:,n:n))
+                  else
+                       d_con_vars_ad(n) % ps = 0.0 
+                       do l = 1, nchan
+                          d_con_vars_ad(n) % ps = d_con_vars_ad(n) % ps + &
+                                 iv%instid(i)%ps_jacobian(l,n) * d_tb(l,n)
+                       end do 
+                       do k = 1,nlevels
+                          d_con_vars_ad(n) % t(k) = 0.0
+                          d_con_vars_ad(n) % q(k) = 0.0
+                          do l = 1, nchan
+                             d_con_vars_ad(n) % t(k) = d_con_vars_ad(n) % t(k) + &
+                                            iv%instid(i)%t_jacobian(l,k,n) * d_tb(l,n)
+                             d_con_vars_ad(n) % q(k) = d_con_vars_ad(n) % q(k) + &
+                                            iv%instid(i)%q_jacobian(l,k,n) * d_tb(l,n)
+                          end do
+                       end do
+     
+                  end if
+
                end do
+
+
                !$OMP END PARALLEL DO
             end if
          end if
@@ -417,6 +462,7 @@ subroutine da_transform_xtoy_rttov_adj ( iv, jo_grad_y, jo_grad_x )
          call da_interp_lin_2d_adj (jo_grad_x% psfc, iv%instid(i)%info, 1, temp_ps)
          deallocate(temp_ps)
       end if
+
 
       if (num_rad > 0) then
          do n = 1, num_rad

@@ -29,7 +29,6 @@ subroutine da_check_xtoy_adjoint_rad(iv, y, adjtest_lhs, pertile_lhs)
 
          do k=1, iv%instid(inst)%nchan
             ! if ( iv%instid(inst)%tb_qc(k,n) >= obs_qc_pointer ) &
-
             pertile_lhs = pertile_lhs + &
              ( y%instid(inst)%tb(k,n)/iv%instid(inst)%tb_error(k,n) )**2
 

@@ -10,6 +10,8 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    !               and deallocate sequential data structure
    !---------------------------------------------------------------------------
 
+
+
    use da_control
 
    implicit none
@@ -63,6 +65,10 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    logical           :: found, head_found
 
    integer(i_kind), allocatable :: ptotal(:), nread(:)
+
+!RTTOV9_3
+   integer :: nchanl(1)
+!end for RTTOV9_3
 
    call da_trace_entry("da_read_obs_bufrssmis")
 
@@ -434,13 +440,14 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
         'Allocating space for radiance innov structure', &
          i, iv%instid(i)%rttovid_string, iv%instid(i)%num_rad
 
-#ifdef RTTOV
+!#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(1, nchan, coefs(i),             &   ! in
+         nchanl(1)=nchan
+         call da_rttov_setupchan(1, nchanl, coefs(i),             &   ! in
             iv%instid(i)%nfrequencies,iv%instid(i)%nchannels, &
             iv%instid(i)%nbtout)                                     ! out
       end if
-#endif
+!#endif
 
       call da_allocate_rad_iv (i, nchan, iv)
 
@@ -479,6 +486,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/))
 #endif
+ 
 
 end subroutine da_read_obs_bufrssmis
 

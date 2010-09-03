@@ -40,6 +40,7 @@ subroutine da_qc_amsua (it, i, nchan, ob, iv)
    nrej_limb       = 0
    num_proc_domain = 0
 
+
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
 
          if (iv%instid(i)%info%proc_domain(1,n)) &
@@ -226,7 +227,6 @@ subroutine da_qc_amsua (it, i, nchan, ob, iv)
       close(fgat_rad_unit)
       call da_free_unit(fgat_rad_unit)
    end if
-
    if (trace_use) call da_trace_exit("da_qc_amsua")
 
 end subroutine da_qc_amsua

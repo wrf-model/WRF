@@ -18,7 +18,7 @@ module da_radiance1
       use_error_factor_rad,biasprep_unit,obs_qc_pointer, filename_len, &
       print_detail_rad, rtm_option, trace_use_dull, &
       rtm_option_rttov,rtm_option_crtm, radiance, only_sea_rad, &
-      global, gas_constant, gravity, monitor_on,kts,kte, &
+      global, gas_constant, gravity, monitor_on,kts,kte,use_rttov_kmatrix, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_airs_mmr, use_satcv, cv_size_domain, &
       cv_size_domain_js
@@ -91,6 +91,8 @@ module da_radiance1
       integer            ::  surftype
       real               ::  surft, t2m, q2m, u10, v10
       real               ::  satzen, satazi  !!, fastem(5)
+      real               ::  solzen,solazi  !   solar angles   RTTOV9_3
+      real               ::  elevation ,rlat      !  RTTOV9_3
    end type aux_vars_type
 
    type maxmin_rad_stats_type

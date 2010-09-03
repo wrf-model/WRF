@@ -19,7 +19,10 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
    !
    !------------------------------------------------------------------------------
 
-  implicit none
+
+
+
+ implicit none
 
   character(9)      ,  intent (in)  :: obstype
   character(100)    ,  intent (in)  :: infile
@@ -149,6 +152,11 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   type(info_type)            :: info
   type(model_loc_type)       :: loc
   type (datalink_type), pointer   :: head, p, current, prev
+
+!local varialble RTTOV9_3
+
+  integer ::  nchanl(1)
+!end for RTTOV9_3
 
    if (trace_use_dull) call da_trace_entry("da_read_obs_bufrairs")
 
@@ -626,13 +634,14 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
 !   6.0 assign sequential structure to innovation structure
 !-------------------------------------------------------------
-#ifdef RTTOV
+!#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(1, nchan, coefs(inst), &   ! in
-            iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &
-            iv%instid(inst)%nbtout)      ! out
+         nchanl(1) = nchan
+         call da_rttov_setupchan(1, nchanl, coefs(inst), &   ! in
+            iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &  !RTTOV9_3
+            iv%instid(inst)%nbtout)      ! out    RTTOV9_3
       end if
-#endif
+!#endif
 
   n = 0
   p => head

@@ -120,6 +120,15 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
             end if
          end if
       end if
+      if (rtm_option == rtm_option_rttov) then
+         if (use_rttov_kmatrix) then
+            allocate(iv%instid(i)%ts_jacobian(nchan,iv%instid(i)%num_rad))
+            allocate(iv%instid(i)%ps_jacobian(nchan,iv%instid(i)%num_rad))
+            allocate(iv%instid(i)%emiss_jacobian(nchan,iv%instid(i)%num_rad))
+           allocate(iv%instid(i)%t_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+           allocate(iv%instid(i)%q_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+	 end if
+      end if
 
       call da_trace_exit("da_allocate_rad_iv")
 

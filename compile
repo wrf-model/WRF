@@ -271,7 +271,7 @@ else
        endif
        setenv RTTOV_CPP "-DRTTOV"
        setenv RTTOV_LIB "-L${RTTOV} -lrttov"
-       setenv RTTOV_SRC "-I${RTTOV}/src"
+       setenv RTTOV_SRC "-I${RTTOV}/include -I${RTTOV}/mod"
     else
        setenv RTTOV_CPP " "
        setenv RTTOV_LIB " "

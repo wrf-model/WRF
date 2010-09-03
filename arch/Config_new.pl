@@ -199,7 +199,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      if ( $ENV{RTTOV} )
        {
        $sw_rttov_flag = "-DRTTOV";
-       $sw_rttov_inc = "-I$ENV{RTTOV}/src";
+       $sw_rttov_inc = "-I$ENV{RTTOV}/include -I$ENV{RTTOV}/mod";
        }
    }
 

@@ -9,6 +9,8 @@ subroutine da_read_simulated_rad (iv)
    !  HISTORY: 12/12/2008 - Creation                        Tom Auligne
    !---------------------------------------------------------------------------
 
+
+
    use da_control
 
    implicit none
@@ -24,7 +26,11 @@ subroutine da_read_simulated_rad (iv)
    integer :: i,j,k,nchan,inst, alloc_stat
    type(info_type)       ::  info
    type(model_loc_type)  ::  loc
-   
+ 
+!RTTOV9_3
+   integer :: nchanl(1)
+!RTTOV9_3
+  
    call da_trace_entry("da_read_simulated_rad")
 
    ! Initialize variables
@@ -67,13 +73,14 @@ subroutine da_read_simulated_rad (iv)
          iv%instid(inst)%nchannels=nchan
       end if
 #endif
-#ifdef RTTOV
+!#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(inst, nchan, coefs(inst), &   ! in
+         nchanl(1) = nchan
+         call da_rttov_setupchan(inst, nchanl, coefs(inst), &   ! in
             iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &
             iv%instid(inst)%nbtout)      ! out
       end if
-#endif
+!#endif
 
       call da_allocate_rad_iv(inst,nchan,iv)
 
@@ -123,5 +130,6 @@ subroutine da_read_simulated_rad (iv)
          inst, iv%instid(inst)%rttovid_string, iv%instid(inst)%num_rad
 
    call da_trace_exit("da_read_simulated_rad")
+   
 
 end subroutine da_read_simulated_rad

@@ -10,6 +10,14 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    !  PURPOSE: interface to the forward subroutine of RTTOV
    !---------------------------------------------------------------------------
 
+
+
+
+
+#ifdef RTTOV
+    Use parkind1, Only : jpim    ,jprb
+#endif
+
    implicit none
 
 #include "rttov_direct.interface"
@@ -31,15 +39,20 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    ! local variables
    integer             :: nfrequencies, nchannels, nbtout
    integer             :: n, nc, i, ichannel, pol_id, k
-   Integer             :: alloc_status(40)
-
+ ! Integer             :: alloc_status(40)
+   Integer             :: alloc_status(140)                            !RTTOV9_3
+   Integer(Kind=jpim)  :: nstreams  !RTTOV9_3
+   
+  
    ! RTTOV input parameters
    ! integer             :: nfrequencies, nchannels, nbtout
    integer             :: nchan(nprofiles)
    integer , pointer   :: lprofiles(:)
    type(rttov_coef)    :: coef
+   type(rttov_coef_scatt_ir) :: coef_scatt_ir  !RTTOV9_3
+   type(rttov_optpar_ir) :: optp  !RTTOV9_3
    type(profile_type)  :: profiles(nprofiles) 
-   logical             :: addcloud
+   logical             :: addcloud, addinterp, lsun, laerosl
    real*8, allocatable    :: surfem(:)
    integer , pointer   :: channels (:), polarisations(:,:)
    logical, allocatable :: calcemis (:)
@@ -52,11 +65,18 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    type (radiance_type)     :: radiance
    type (transmission_type) :: transmission
 
+
    call da_trace_entry("da_rttov_direct")
 
    nchan (:) = nchanl 
    coef = coefs(inst)
-   addcloud = .false. 
+   coef_scatt_ir = coefs_scatt_ir(inst)  !RTTOV9_3
+   optp = optps(inst)
+   addcloud = .false.
+   addinterp = .false.
+   lsun = .false.
+   laerosl = .false.
+ 
    alloc_status (:) = 0
 
    do n = 1, nprofiles
@@ -67,6 +87,14 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
       allocate (profiles(n)%o3(profiles(n) % nlevels), stat=alloc_status(4))
       allocate (profiles(n)%co2(profiles(n) % nlevels), stat=alloc_status(5))
       allocate (profiles(n)%clw(profiles(n) % nlevels), stat=alloc_status(6))
+!RTTOV9_3
+      allocate (profiles(n)%n2o(profiles(n) % nlevels), stat=alloc_status(41))
+      allocate (profiles(n)%co(profiles(n) % nlevels), stat=alloc_status(42))
+      allocate (profiles(n)%ch4(profiles(n) % nlevels),stat=alloc_status(43))
+      allocate (profiles(n)%aerosols(11,profiles(n) % nlevels),stat=alloc_status(44))
+      allocate (profiles(n)%cloud(6,profiles(n) % nlevels),stat=alloc_status(45))
+      allocate (profiles(n)%cfrac(6,profiles(n) % nlevels),stat=alloc_status(46))
+!end of RTTOV9_3
 
       if (any(alloc_status /= 0)) then
          WRITE(UNIT=message(1),FMT='(A,I5)') &
@@ -77,15 +105,38 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
       profiles(n) % ozone_data = .false.
       profiles(n) % co2_data   = .false.
       profiles(n) % clw_data   = .false. 
-
+!RTTOV9_3
+      profiles(n) % n2o_data   = .false.
+      profiles(n) % co_data    = .false.
+      profiles(n) % ch4_data   = .false.
+      profiles(n) % aer_data   = .false.
+      profiles(n) % cld_data   = .false.
+!end of RTTOV9_3
       profiles(n) % p(:)       = coef%ref_prfl_p(:)
       profiles(n) % t(:)       = con_vars(n)%t(:)
       profiles(n) % q(:)       = con_vars(n)%q(:)
       profiles(n) % o3(:)      = 0.0 !con_vars(n)%o3(:)
       profiles(n) % co2(:)     = 0.0 !con_vars(n)%co2(:)
       profiles(n) % clw(:)     = 0.0 !con_vars(n)%clw(:)
+!RTTOV9_3
+      profiles(n) % n2o(:)     = 0.0
+      profiles(n) % co(:)      = 0.0
+      profiles(n) % ch4(:)     = 0.0
+      profiles(n) % aerosols(:,:)   = 0.0
+      profiles(n) % cloud(:,:)      = 0.0
+      profiles(n) % cfrac(:,:)      = 0.0
+      profiles(n) % idg             = 1
+      profiles(n) % ish             = 1
+!end of RTTOV9_3    
+      !if seap > 0.99 watertype is ocean water                          RTTOV9_3
+      profiles(n) % skin % watertype = 1
 
       if (isflg == 0 .or. isflg == 4) then  ! sea
+         !if seap > 0.99 watertype is ocean water                          RTTOV9_3
+         if (isflg == 0) profiles(n) % skin % watertype = 1
+         !if seap < 0.99 watertype is freshwater
+         if (isflg == 4) profiles(n) % skin % watertype = 0           !     end of RTTOV9_3
+
          profiles(n) % skin % surftype   = 1 ! aux_vars (n) % surftype
          ! profiles(n) % skin % fastem (:) = 0.0
       else if (isflg == 1 .or. isflg == 5) then  ! sea-ice with snow
@@ -113,18 +164,37 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
       profiles(n) % s2m  % p    = con_vars (n) % ps
       profiles(n) % s2m  % u    = aux_vars (n) % u10
       profiles(n) % s2m  % v    = aux_vars (n) % v10
+      profiles(n) % s2m  % wfetc  =   100000.0              !RTTOV9_3
 
       profiles(n) % zenangle    = aux_vars (n) % satzen
       profiles(n) % azangle     = aux_vars (n) % satazi
+!RTTOV9_3
 
+      profiles(n) % sunzenangle = aux_vars (n) % solzen     !50.0                      !RTTOV9_3
+      profiles(n) % sunazangle  = aux_vars (n) % solazi     !86.0                      !RTTOV9_3
+      profiles(n) % elevation = 0.001* aux_vars (n) % elevation   !800
+      profiles(n) % latitude    = aux_vars (n) % rlat       !35.0
+ 
+
+      profiles(n) % addsolar    = .false.
+      profiles(n) % addrefrac   = .false.
+      profiles(n) % addaerosl   = .false.
+      profiles(n) % addwatrcl   = .false.
+      profiles(n) % Be          = 0.35
+      profiles(n) % cosbk       = 0.0
+!end for RTTOV9_3
       profiles(n) % ctp         = 500.0
       profiles(n) % cfraction   = 0.0
    end do
 
-#ifdef RTTOV
- call rttov_setupchan(nprofiles, nchan, coef, &             ! in
-                    nfrequencies, nchannels, nbtout)       ! out
-#endif
+!#ifdef RTTOV
+
+
+ call da_rttov_setupchan(nprofiles, nchan, coef, &             ! in
+                   nfrequencies, nchannels, nbtout)       ! out
+   nchannels = nfrequencies           !RTTOV9_3
+!#endif
+
 
    allocate (lprofiles(nfrequencies), stat = alloc_status(31))
    allocate (channels (nfrequencies), stat = alloc_status(32))
@@ -134,16 +204,62 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    allocate (surfem(nchannels), stat = alloc_status(36))
 
    emissivity = 0.0
-
+  
+   nstreams = 0_jpim  !RTTOV9_3
    ! allocate transmittance structure
-   allocate (transmission % tau_surf      (nchannels)                 ,stat= alloc_status(8))
-   allocate (transmission % tau_layer     (coef % nlevels, nchannels) ,stat= alloc_status(9))
-   allocate (transmission % od_singlelayer(coef % nlevels, nchannels ),stat= alloc_status(10))
+   allocate (transmission % tau_surf      (0 : nstreams,nchannels)        ,stat= alloc_status(8))
+   allocate (transmission % tau_layer     (coef % nlevels, 0 :  nstreams, nchannels) ,    stat= alloc_status(9))
+   allocate (transmission % od_singlelayer(coef % nlevels, 0 :  nstreams, nchannels ),  stat= alloc_status(10))
+!RTTOV9_3
+   allocate (transmission % tau_total(nchannels),  stat = alloc_status(51))
+   allocate (transmission % tau_layers(coef % nlevels, nchannels), stat = alloc_status(52))
+   allocate (transmission % od_layer (coef % nlevels,0 : nstreams, nchannels), stat = alloc_status(53))
+  ! allocate (transmission % od_layer(coef % nlevels, 0 :  nstreams, nchannels ),  stat= alloc_status(11))
 
+   allocate (transmission % odsun_singlelayer(coef % nlevels, 0 : nstreams, nchannels), stat = alloc_status(54))
+   allocate (transmission % tausun_surf ( 0 : nstreams, nchannels),stat = alloc_status(55)) 
+   allocate (transmission % tausun_layer( coef % nlevels,0 :  nstreams, nchannels), stat = alloc_status(56))
+   allocate (transmission % od_sfrac( 0 : nstreams, nchannels), stat = alloc_status(57))
+   allocate (transmission % odsun_sfrac( 0 : nstreams, nchannels), stat = alloc_status(58))
+   allocate (transmission % od_frac_ac( 0 : nstreams, nchannels), stat = alloc_status(59))
+   allocate (transmission % odsun_frac_ac( 0 : nstreams, nchannels), stat = alloc_status(60))
+   allocate (transmission % tau_surf_ac( 0 : nstreams, nchannels), stat = alloc_status(61))
+   allocate (transmission % tau_surf_acsun( 0 : nstreams, nchannels), stat = alloc_status(62))
+   allocate (transmission % tau_ref_surf_ac( 0 : nstreams, nchannels), stat = alloc_status(63))
+   allocate (transmission % tau_ref_surf_acsun( 0 : nstreams, nchannels), stat = alloc_status(64))
+   allocate (transmission % od_frac_t( 0 : nstreams, nchannels), stat = alloc_status(65))  
+   allocate (transmission % odsun_frac_t( 0 : nstreams, nchannels), stat = alloc_status(66))   
+   allocate (transmission % tau_surf_t( 0 : nstreams, nchannels), stat = alloc_status(67))
+   allocate (transmission % tausun_surf_t( 0 : nstreams, nchannels), stat = alloc_status(68))
+   allocate (transmission % tau_ref_surf_t( 0 : nstreams, nchannels), stat = alloc_status(69))
+   allocate (transmission % tausun_ref_surf_t( 0 : nstreams, nchannels), stat = alloc_status(70))
+
+!end of RTTOV9_3
    transmission % tau_surf       = 0.0
    transmission % tau_layer      = 0.0
    transmission % od_singlelayer = 0.0
-
+!RTTOV9_3
+   transmission % tau_total         = 0.0
+   transmission % tau_layers        = 0.0
+   transmission % od_layer          = 0.0
+   transmission % odsun_singlelayer = 0.0
+   transmission % tausun_surf       = 0.0
+   transmission % tausun_layer      = 0.0
+   transmission % od_sfrac          = 0.0
+   transmission % odsun_sfrac       = 0.0
+   transmission % od_frac_ac        = 0.0
+   transmission % odsun_frac_ac     = 0.0
+   transmission % tau_surf_ac       = 0.0
+   transmission % tau_surf_acsun    = 0.0
+   transmission % tau_ref_surf_ac   = 0.0
+   transmission % tau_ref_surf_acsun = 0.0
+   transmission % od_frac_t         = 0.0
+   transmission % odsun_frac_t      = 0.0
+   transmission % tau_surf_t        = 0.0
+   transmission % tausun_surf_t     = 0.0
+   transmission % tau_ref_surf_t    = 0.0
+   transmission % tausun_ref_surf_t = 0.0
+!end of RTTOV9_3
    ! allocate radiance results arrays with number of channels
    allocate (radiance % clear    (nchannels) ,stat= alloc_status(11))
    allocate (radiance % cloudy   (nchannels) ,stat= alloc_status(12))
@@ -162,7 +278,11 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    allocate (radiance % out_clear(nbtout) ,stat= alloc_status(22))
    allocate (radiance % total_out(nbtout) ,stat= alloc_status(23))
    allocate (radiance % clear_out(nbtout) ,stat= alloc_status(24))
-
+!RTTOV9_3
+  allocate (radiance % up(coef % nlevels, nchannels) ,stat= alloc_status(81))
+  allocate (radiance % down(coef % nlevels, nchannels) ,stat= alloc_status(82))
+  allocate (radiance % surf(coef % nlevels, nchannels) ,stat= alloc_status(83))
+!end of RTTOV9_3
    radiance % clear     = 0.0
    radiance % cloudy    = 0.0
    radiance % total     = 0.0
@@ -177,19 +297,25 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    radiance % out_clear = 0.0
    radiance % total_out = 0.0
    radiance % clear_out = 0.0
-
+!RTTOV9_3
+   radiance % up        = 0.0
+   radiance % down      = 0.0
+   radiance % surf      = 0.0
+   radiance % lcloud    = .false.
+!end of RTTOV9_3
    if (any(alloc_status /= 0)) then
       call da_error(__FILE__,__LINE__, &
          (/"mem allocation error prior to rttov_direct"/))
    end if
 
    surfem (:) = 0.0
-#ifdef RTTOV
-   call rttov_setupindex(nchan, nprofiles, nfrequencies, &    ! in
+!#ifdef RTTOV
+   call da_rttov_setupindex(nchan, nprofiles, nfrequencies, &    ! in
                 nchannels, nbtout, coef, surfem,  &          ! in
                 lprofiles, channels, polarisations,     &    ! out
                 emissivity )                                ! out                       
-#endif
+!#endif
+
 
    !  surface emissivity scheme
    !----------------------------------------------------------
@@ -228,20 +354,23 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
          else                              ! Weng's model
             calcemis  (1:nchannels) = .false.
             do i = 1, nchanl   !  loop for channels
-               ichannel = polarisations(i,1)  ! position of first polar at chanl i
-               pol_id = coef%fastem_polar(i) + 1
-               if (polarisations(i,3) == 2) then ! number of polar at chanl i
-                  emissivity(ichannel) = emisv(i)
-                  emissivity(ichannel+1) = emish(i)
-               else if (polarisations(i,3) == 4) then
-                  emissivity(ichannel)   = emisv(i)
-                  emissivity(ichannel+1) = emish(i)
-                  emissivity(ichannel+2) = 0.0
-                  emissivity(ichannel+3) = 0.0
-               else   ! == 1 V or H polar
-                  if (pol_id == 4) emissivity(ichannel)   = emisv(i)
-                  if (pol_id == 5) emissivity(ichannel)   = emish(i)
-               end if
+ !RTTOV9_3 comment below line and add one line        
+ !      ichannel = polarisations(i,1)  ! position of first polar at chanl i
+ !              pol_id = coef%fastem_polar(i) + 1
+ !              if (polarisations(i,3) == 2) then ! number of polar at chanl i
+ !                 emissivity(ichannel) = emisv(i)
+ !                 emissivity(ichannel+1) = emish(i)
+ !              else if (polarisations(i,3) == 4) then
+ !                 emissivity(ichannel)   = emisv(i)
+ !                 emissivity(ichannel+1) = emish(i)
+ !                 emissivity(ichannel+2) = 0.0
+ !                 emissivity(ichannel+3) = 0.0
+ !              else   ! == 1 V or H polar
+ !                 if (pol_id == 4) emissivity(ichannel)   = emisv(i)
+ !                 if (pol_id == 5) emissivity(ichannel)   = emish(i)
+ !              end if
+            emissivity(i) = emisv(i)                                 !RTTOV9_3
+!END OF RTTOV9_3
             end do
          end if
       
@@ -249,21 +378,24 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
       else 
          calcemis  (1:nchannels) = .false.
          do i = 1, nchanl   !  loop for channels
-            ichannel = polarisations(i,1)  ! position of first polar at chanl i
-            pol_id = coef%fastem_polar(i) + 1
-            if (polarisations(i,3) == 2) then ! number of polar at chanl i
-               emissivity(ichannel) = emisv(i)
-               emissivity(ichannel+1) = emish(i)
-            else if (polarisations(i,3) == 4) then
-               emissivity(ichannel)   = emisv(i)
-               emissivity(ichannel+1) = emish(i)
-               emissivity(ichannel+2) = 0.0
-               emissivity(ichannel+3) = 0.0
-            else   ! == 1 V or H polar
-               if (pol_id == 4) emissivity(ichannel)   = emisv(i)
-               if (pol_id == 5) emissivity(ichannel)   = emish(i)
-            end if
-         end do
+ !RTTOV9_3 comment below lines and add one line      
+ !        ichannel = polarisations(i,1)  ! position of first polar at chanl i
+ !           pol_id = coef%fastem_polar(i) + 1
+ !           if (polarisations(i,3) == 2) then ! number of polar at chanl i
+ !              emissivity(ichannel) = emisv(i)
+ !              emissivity(ichannel+1) = emish(i)
+ !           else if (polarisations(i,3) == 4) then
+ !              emissivity(ichannel)   = emisv(i)
+ !              emissivity(ichannel+1) = emish(i)
+ !              emissivity(ichannel+2) = 0.0
+ !              emissivity(ichannel+3) = 0.0
+ !           else   ! == 1 V or H polar
+ !              if (pol_id == 4) emissivity(ichannel)   = emisv(i)
+ !              if (pol_id == 5) emissivity(ichannel)   = emish(i)
+ !           end if
+            emissivity(i) = emisv(i)                                 !RTTOV9_3                                   
+!END OF RTTOV9_3                                                           
+        end do
       end if
    end if
 
@@ -271,24 +403,49 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    !  calling RTTOV forward model
    !----------------------------------
 
+   !new rttov_direct for RTTOV9_3
 #ifdef RTTOV
+   !call rttov_direct(&
+   !& errorstatus,     &! out
+   !   & nfrequencies,    &! in
+   !   & nchannels,       &! in
+   !   & nbtout,          &! in
+   !   & nprofiles,       &! in
+   !   & channels,        &! in
+   !   & polarisations,   &! in
+   !   & lprofiles,       &! in
+   !   & profiles,        &! in
+   !   & coef,            &! in
+   !   & addcloud,        &! in
+   !   & calcemis,        &! in
+   !   & emissivity,      &! inout
+   !   & transmission,    &! inout
+   !   & radiance)        ! inout
+
+
    call rttov_direct(&
-      & errorstatus,     &! out
-      & nfrequencies,    &! in
-      & nchannels,       &! in
-      & nbtout,          &! in
-      & nprofiles,       &! in
-      & channels,        &! in
-      & polarisations,   &! in
-      & lprofiles,       &! in
-      & profiles,        &! in
-      & coef,            &! in
-      & addcloud,        &! in
-      & calcemis,        &! in
-      & emissivity,      &! inout
-      & transmission,    &! inout
-      & radiance)        ! inout
+        & errorstatus,       &! out
+          & nprofiles,         &! in
+  !       & nchannels,         &! in       if nchannels runtime error
+          & nbtout,           &! in
+          & channels,          &! in
+          & lprofiles,         &! in
+          & addinterp,         &! in
+          & profiles,          &! in
+          & coef,              &! in
+          & coef_scatt_ir,     &! in
+          & optp,              &! in
+          & lsun,              &! in
+          & laerosl,           &! in
+          & addcloud,          &! in
+          & calcemis,          &! in
+          & emissivity,        &! inout
+          & transmission,      &! inout
+          & radiance)           ! inout
+   
+
 #endif
+
 
    ! rttov87 generates warnings we want to ignore
    if (print_detail_rad .and. (any(errorstatus(:) == errorstatus_fatal))) then
@@ -317,6 +474,10 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
       do i=coef%nlevels,1,-1
          write(UNIT=stderr,FMT='(i4,3f12.2)') i, profiles(1)%p(i),profiles(1)%t(i),profiles(1)%q(i)
       end do
+      !variables for RTTOV9_3
+      WRITE (UNIT=stderr,FMT=*) 'addinterp    = ', addinterp  !RTTOV9_3
+      WRITE (UNIT=stderr,FMT=*) 'lsun         = ', lsun       !RTTOV9_3
+      WRITE (UNIT=stderr,FMT=*) 'laerosl      = ', laerosl    !RTTOV9_3
       WRITE (UNIT=stderr,FMT=*) 'addcloud     = ', addcloud
       WRITE (UNIT=stderr,FMT=*) 'calcemis     = ', calcemis
       WRITE (UNIT=stderr,FMT=*) 'emissivity   = ', emissivity
@@ -326,14 +487,19 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
 
    nc = nbtout / nprofiles
    do n = 1, nprofiles
-      tb(1:nc) = radiance % out_clear((n-1)*nc+1:n*nc)
+      !out_clear is 0 in RTTOV9_3,bt_clear is right
+      !tb(1:nc) = radiance % out_clear((n-1)*nc+1:n*nc)
+      tb(1:nc) = radiance % bt_clear((n-1)*nc+1:n*nc)
       rad_xb(1:nc) = radiance % clear((n-1)*nc+1:n*nc)
       do k = kts, kte
          rad_ovc(1:nc,k) = radiance % overcast(k,(n-1)*nc+1:n*nc)
-      end do	 
+      end do	
    end do
+
 !  calcemis_out  (:) = calcemis(:)
    emissivity_out(:) = emissivity(:)
+
+
 
    deallocate (lprofiles)
    deallocate (channels)
@@ -348,12 +514,29 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
       deallocate (profiles(n)%o3)
       deallocate (profiles(n)%co2)
       deallocate (profiles(n)%clw)
+!RTTOV9_3
+      deallocate (profiles(n)%n2o)
+      deallocate (profiles(n)%co)
+      deallocate (profiles(n)%ch4)
+      deallocate (profiles(n)%aerosols)
+      deallocate (profiles(n)%cloud)
+      deallocate (profiles(n)%cfrac)
+!end of RTTOV9_3
+
    end do
 
    ! deallocate transmittance structure
-   deallocate (transmission % tau_surf      ,stat= alloc_status(6))
-   deallocate (transmission % tau_layer     ,stat= alloc_status(7))
-   deallocate (transmission % od_singlelayer,stat= alloc_status(8))
+!**************************************************************************************************
+!********just transmission % tau_total and transmission % tau_layers need to be deallocated********
+!********************because others have been deallocated by the rttov_alloc_transmission.F90******
+!**************************************************************************************************
+
+
+
+   deallocate (transmission % tau_total ,stat= alloc_status(91))
+   deallocate (transmission % tau_layers,stat= alloc_status(92)  )
+
+
 
    ! deallocate radiance results arrays with number of channels
    deallocate (radiance % clear    ,stat=alloc_status(9))
@@ -370,6 +553,12 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    deallocate (radiance % out_clear ,stat= alloc_status(20))
    deallocate (radiance % total_out ,stat= alloc_status(21))
    deallocate (radiance % clear_out ,stat= alloc_status(22))
+!RTTOV9_3
+   deallocate (radiance % up       ,stat= alloc_status(23))
+   deallocate (radiance % down       ,stat= alloc_status(24))
+   deallocate (radiance % surf       ,stat= alloc_status(19))
+!end of RTTOV9_3
+
 
    if (any(alloc_status /= 0)) then
       call da_error(__FILE__,__LINE__, &
@@ -377,6 +566,6 @@ subroutine da_rttov_direct(inst, isflg, nchanl, nprofiles, &
    end if
 
    call da_trace_exit("da_rttov_direct")
-
+   
 end subroutine da_rttov_direct
 #endif

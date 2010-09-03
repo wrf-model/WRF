@@ -177,12 +177,19 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
    if ( use_simulated_rad ) then
       write(unit=stdout,fmt='(a)') 'Reading simulated radiance'
+ 
+
       call da_read_simulated_rad (iv)
+ 
+
    end if
 
    if ( use_pseudo_rad ) then
-      write(unit=stdout,fmt='(a)') 'Reading pseudo radiance from namelist'
+      write(unit=stdout,fmt='(a)') 'Reading pseudo radiance from namelist'    
+  
       call da_read_pseudo_rad (iv)
+   
+
    end if
 
    if (use_kma1dvar) then
@@ -202,7 +209,9 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    end if
 
    ! sorting obs into FGAT time bins
+
    call da_sort_rad(iv)
+
 
    !-----------------------------------------------------------------------------
    ! [3.0] create (smaller) ob structure:

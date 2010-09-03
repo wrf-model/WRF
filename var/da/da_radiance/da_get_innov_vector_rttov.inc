@@ -176,6 +176,12 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       deallocate (tsk)
 
       call da_interp_lin_2d (grid%xb%terr,  iv%instid(inst)%info, 1, iv%instid(inst)%elevation(n1:n2))
+!RTTOV9_3
+     call da_interp_lin_2d (grid%xb%lat,iv%instid(inst)%info,1,iv%instid(inst)%info%lat(1,n1:n2))
+
+!END OF RTTOV9_3
+
+
 
       ! variables for emissivity calculations
       !---------------------------------------- 
@@ -307,7 +313,28 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          aux_vars(n) % surft    = iv%instid(inst)%ts(n)
          aux_vars(n) % satzen   = iv%instid(inst)%satzen(n)
          aux_vars(n) % satazi   = iv%instid(inst)%satazi(n)
+!RTTOV9_3
+         aux_vars(n) % solzen   = iv%instid(inst)%solzen(n)
+         aux_vars(n) % solazi   = iv%instid(inst)%solazi(n)
+         aux_vars(n) % elevation   = iv%instid(inst)%elevation(n) !iv%instid(inst)%info%elv(n)                                               
+         aux_vars(n) % rlat     = iv%instid(inst)%info%lat(1,n) 
+!END OF RTTOV9_3
+!kmatrix
+     if (use_rttov_kmatrix) then
+         allocate(temp(nchan),temp2(nchan),temp3(nchan,kts:kte))   
+         call da_rttov_k (inst, iv%instid(inst)%isflg(n), nchan, 1, &
+                          con_vars(n:n), aux_vars(n:n), &
+                          temp,temp2,temp3,&
+                           pemsv((n-1)*nchan+1:n*nchan), pemsh((n-1)*nchan+1:n*nchan), &
+                          iv%instid(inst)%emiss(:,n),iv,n)
 
+         iv%instid(inst)%tb_xb(:,n)=temp(:)
+         iv%instid(inst)%rad_xb(:,n)=temp2(:)
+         iv%instid(inst)%rad_ovc(:,:,n)=temp3(:,:)
+ 
+         deallocate(temp,temp2,temp3)
+     else
+!end of kmatrix
          ! [1.3] Call RTM forward model
 
          ! da_rttov_direct nominally an array version, but doesn't handle arrays
@@ -317,20 +344,25 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          !----------------------------------------------------------------
          ! Compute Overcast Radiances for AIRS Cloud Detection(MMR)
          !----------------------------------------------------------------
+
 	 call da_rttov_direct (inst, iv%instid(inst)%isflg(n), nchan, 1, &
             con_vars(n:n), aux_vars(n:n), &
             ! iv%instid(inst)%tb_xb(:,n), pemsv, pemsh, &
 !!!            temp, pemsv((n-1)*nchan+1:n*nchan), pemsh((n-1)*nchan+1:n*nchan), &
             temp, temp2, temp3, pemsv((n-1)*nchan+1:n*nchan), pemsh((n-1)*nchan+1:n*nchan), &
             iv%instid(inst)%emiss(:,n))
-         
 	 iv%instid(inst)%tb_xb(:,n)=temp(:)
          iv%instid(inst)%rad_xb(:,n)=temp2(:)
          iv%instid(inst)%rad_ovc(:,:,n)=temp3(:,:)
 
          deallocate(temp,temp2,temp3)
+
+     endif !if (use_rttov_kmatrix) then
+
       end do
       !$OMP END PARALLEL DO
+
+
 
       if (iv%instid(inst)%nchannels > nchan) then
          iv%instid(inst)%emiss(nchan+1:iv%instid(inst)%nchannels,n1:n2) = 0.0
@@ -341,7 +373,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             iv%instid(inst)%emiss(1:nchan,n) = pems5(1+(n-n1)*nchan:(n-n1+1)*nchan)
          end do
       end if
-
+      
       do n=n1,n2
          deallocate (con_vars(n) % t)
          deallocate (con_vars(n) % q)
@@ -360,6 +392,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             end if
          end do
       end do
+
 
       deallocate (v_p)
       deallocate (clw)

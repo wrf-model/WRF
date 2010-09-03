@@ -430,7 +430,7 @@ subroutine da_transfer_xatowrf(grid)
 ! re-calculate T2, Q2, U10, V10, TH2 using updated fields
 
    do j=jts,jte
-      do i=its,ite 
+      do i=its,ite
          uu = 0.5*(grid%u_2(i,j,kts)+grid%u_2(i+1,j,kts) )
          vv = 0.5*(grid%v_2(i,j,kts)+grid%v_2(i,j+1,kts) )
          ps1 = grid%p(i,j,kts)   + grid%pb(i,j,kts)

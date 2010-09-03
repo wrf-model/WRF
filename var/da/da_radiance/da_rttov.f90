@@ -13,8 +13,8 @@ module da_rttov
    use module_radiance, only : satinfo, coefs_scatt_instname, &
        i_kind,r_kind, r_double, &
        one, zero, three,deg2rad, n_scatt_coef,q2ppmv, gsi_emiss
-   use module_radiance, only : coefs,coefs_scatt,profile_type,radiance_type, &
-      rttov_coef,platform_name,rttov_inst_name,transmission_type, &
+   use module_radiance, only : coefs,coefs_scatt_ir,optps,coefs_scatt,profile_type,radiance_type, &    !RTTOV9_3
+      rttov_coef,rttov_coef_scatt_ir,rttov_optpar_ir,platform_name,rttov_inst_name,transmission_type, &   !RTTOV9_3
       errorstatus_success,gas_id_watervapour,errorstatus_fatal
 
 #ifdef DM_PARALLEL
@@ -28,7 +28,7 @@ module da_rttov
       max_error_bt, max_error_buv, rtminit_platform,rtminit_satid, &
       rtminit_nsensor,rtminit_sensor,filename_len,read_biascoef,analysis_date, &
       time_window_max,time_window_min, kts,kte,kms,kme, &
-      rtm_option_rttov,rtm_option_crtm, gravity, &
+      rtm_option_rttov,use_rttov_kmatrix,rtm_option_crtm, gravity, &
       print_detail_rad,stderr, mw_emis_sea, &
       rtminit_print, rttov_scatt,comm,ierr,biasprep, qc_rad, &
       num_fgat_time,stdout,trace_use, use_error_factor_rad, &
@@ -56,10 +56,16 @@ module da_rttov
    include 'mpif.h'
 #endif
 
-#include "rttov_setupchan.interface"
-#include "rttov_setupindex.interface"
+!RTTOV9_3
+#include "rttov_setup.interface"
+#include "rttov_readscattcoeffs.interface"
    
 contains
+
+!this two lines for RTTOV9_3
+#include "da_rttov_setupchan.inc"
+#include "da_rttov_setupindex.inc"
+#include "da_rttov_k.inc"
 
 #include "da_get_innov_vector_rttov.inc"
 #include "da_transform_xtoy_rttov.inc"
@@ -69,6 +75,7 @@ contains
 #include "da_rttov_direct.inc"
 #include "da_rttov_tl.inc"
 #include "da_rttov_ad.inc"
+
 
 #endif
 

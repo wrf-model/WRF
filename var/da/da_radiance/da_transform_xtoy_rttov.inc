@@ -28,7 +28,7 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
    real, allocatable :: model_mr(:,:) ! Model value mr(ppmv) at ob location.
    real, allocatable :: model_psfc(:)
 
-   integer            :: num_rad, nchan, n
+   integer            :: num_rad, nchan, n , l
 
    type(con_vars_type),  allocatable :: con_vars(:), con_vars_tl(:)
    type(aux_vars_type),  allocatable :: aux_vars(:), aux_vars_tl(:)
@@ -43,7 +43,8 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
    real, allocatable :: temp_t_tl(:,:),temp_q_tl(:,:),rtemp(:,:)
    real, allocatable :: temp_tb(:,:)
    integer, allocatable :: itemp(:,:)
-
+  
+  
 #ifdef DM_PARALLEL
    integer :: status(mpi_status_size) ! MPI status.
 #endif
@@ -70,6 +71,8 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
          allocate(model_q(nlevels,num_rad))
          allocate(model_mr(nlevels,num_rad))
          allocate(model_psfc(num_rad))
+
+
          model_t(:,:)=0.0
          model_q(:,:)=0.0
          model_mr(:,:)=0.0
@@ -117,6 +120,8 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             allocate (con_vars_tl(n) % t(nlevels))
             allocate (con_vars_tl(n) % q(nlevels))
 
+
+
             con_vars_tl(n) % t(:) = model_t  (:,n)
             con_vars_tl(n) % q(:) = model_mr (:,n)
             con_vars_tl(n) % ps   = model_psfc(n)
@@ -129,10 +134,24 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             aux_vars(n) % surft    = iv%instid(i)%ts(n)
             aux_vars(n) % satzen  = iv%instid(i)%satzen(n)
             aux_vars(n) % satazi  = iv%instid(i)%satazi(n)
+!RTTOV9_3
+            aux_vars(n) % solzen   = iv%instid(i)%solzen(n)
+            aux_vars(n) % solazi   = iv%instid(i)%solazi(n)
+            aux_vars(n) % elevation   = iv%instid(i)%elevation(n)
+            aux_vars(n) % rlat     = iv%instid(i)%info%lat(1,n)
+!END OF RTTOV9_3
 
             aux_vars_tl(n) % surftype = iv%instid(i)%landsea_mask(n) 
             aux_vars_tl(n) % satzen  = iv%instid(i)%satzen(n)
             aux_vars_tl(n) % satazi  = iv%instid(i)%satazi(n)
+!RTTOV9_3
+            aux_vars_tl(n) % solzen   = iv%instid(i)%solzen(n)
+            aux_vars_tl(n) % solazi   = iv%instid(i)%solazi(n)
+            aux_vars_tl(n) % elevation   = iv%instid(i)%elevation(n)
+            aux_vars_tl(n) % rlat     = iv%instid(i)%info%lat(1,n)
+ 
+!END OF RTTOV9_3
+
          end do
 
          deallocate(model_t)
@@ -151,7 +170,6 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
          allocate (d_aux_vars(d_num_rad))
          allocate (d_aux_vars_tl(d_num_rad))
          allocate (d_tb(nchan,d_num_rad))
-
          d_con_vars(:) % nlevels = nlevels
 
          do n = 1, d_num_rad
@@ -190,6 +208,13 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
          ! d_aux_vars(1:l_num_rad) % fastem(:) = aux_vars(1:l_num_rad) % fastem(:)
          d_aux_vars(1:l_num_rad) % satzen      = aux_vars(1:l_num_rad) % satzen
          d_aux_vars(1:l_num_rad) % satazi      = aux_vars(1:l_num_rad) % satazi
+!RTTOV9_3
+         d_aux_vars(1:l_num_rad) % solzen   = aux_vars(1:l_num_rad) % solzen
+         d_aux_vars(1:l_num_rad) % solazi   = aux_vars(1:l_num_rad) % solazi
+         d_aux_vars(1:l_num_rad) % elevation   = aux_vars(1:l_num_rad) % elevation
+         d_aux_vars(1:l_num_rad) % rlat     =  aux_vars(1:l_num_rad) % rlat
+ 
+!END OF RTTOV9_3
 
          d_aux_vars_tl(1:l_num_rad) % t2m      = aux_vars_tl(1:l_num_rad) % t2m
          d_aux_vars_tl(1:l_num_rad) % q2m      = aux_vars_tl(1:l_num_rad) % q2m
@@ -200,6 +225,15 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
          ! d_aux_vars_tl(1:l_numrad) % fastem(:)    = aux_vars_tl(1:l_num_rad) % fastem(:)
          d_aux_vars_tl(1:l_num_rad) % satzen   = aux_vars_tl(1:l_num_rad) % satzen
          d_aux_vars_tl(1:l_num_rad) % satazi   = aux_vars_tl(1:l_num_rad) % satazi
+!RTTOV9_3
+         d_aux_vars_tl(1:l_num_rad) % solzen   = aux_vars_tl(1:l_num_rad) % solzen
+         d_aux_vars_tl(1:l_num_rad) % solazi   = aux_vars_tl(1:l_num_rad) % solazi
+         d_aux_vars_tl(1:l_num_rad) % elevation   = aux_vars_tl(1:l_num_rad) % elevation
+         d_aux_vars_tl(1:l_num_rad) % rlat     =  aux_vars_tl(1:l_num_rad) % rlat
+ 
+!END OF RTTOV9_3
+
+
       end if
 
       ! Get data from elsewhere
@@ -346,17 +380,36 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
 #endif
       if (d_num_rad > 0) then
          if (tovs_batch) then
-            call da_rttov_tl (i, nchan, d_num_rad, d_con_vars, &
-               d_aux_vars, d_con_vars_tl, d_aux_vars_tl, d_tb)
-         else
-            !$OMP PARALLEL DO &
-            !$OMP PRIVATE ( n )
-            do n=1,d_num_rad
+
+               call da_rttov_tl (i, nchan, d_num_rad, d_con_vars, &
+                  d_aux_vars, d_con_vars_tl, d_aux_vars_tl, d_tb)
+
+        else
+         if (.not. use_rttov_kmatrix) then  
+           !$OMP PARALLEL DO &
+           !$OMP PRIVATE ( n )
+           do n=1,d_num_rad
                call da_rttov_tl (i, nchan, 1, d_con_vars(n:n), &
                   d_aux_vars(n:n), d_con_vars_tl(n:n), d_aux_vars_tl(n:n), &
                   d_tb(:,n:n))
-            end do
-            !$OMP END PARALLEL DO 
+           end do
+           !$OMP END PARALLEL DO 
+         else
+
+           do n = 1, d_num_rad
+               d_tb(:,n) = 0.0
+               do l = 1, nchan
+                  do k = 1, nlevels 
+                     d_tb(l,n) = d_tb(l,n) + & 
+                              iv%instid(i)%t_jacobian(l,k,n) * d_con_vars_tl(n)%t(k) + &
+                              iv%instid(i)%q_jacobian(l,k,n) * d_con_vars_tl(n)%q(k)
+                  end do
+                     d_tb(l,n) = d_tb(l,n) + &
+                             iv%instid(i)%ps_jacobian(l,n) * d_con_vars_tl(n)%ps
+               end do
+           end do 
+          end if
+
          end if
       end if
 

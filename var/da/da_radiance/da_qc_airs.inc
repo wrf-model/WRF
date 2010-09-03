@@ -76,6 +76,14 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
                   iv%instid(i)%tb_qc(k,n)  =  qc_bad
 	       end do  	      
             end if
+        
+            if (use_rttov_kmatrix) then
+               do k = 1, nchan
+                  if ( abs(iv%instid(i)%emiss_jacobian(k,n)) > 0.1 ) &
+                  iv%instid(i)%tb_qc(k,n)  =  qc_bad
+               end do
+            end if
+
 
             ! reject all channels 
             !--------------------
@@ -98,6 +106,17 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
                  iv%instid(i)%tb_qc(k,n)  =  qc_bad
      	    end do
 	 end if     
+         
+         if (use_rttov_kmatrix) then
+            do k = 1, nchan
+              if ( abs(iv%instid(i)%t_jacobian(k,1,n)) > 0.1 * SUM( &
+                   abs(iv%instid(i)%t_jacobian(k,1:41,n))) ) &
+                 iv%instid(i)%tb_qc(k,n)  =  qc_bad
+              if ( abs(iv%instid(i)%q_jacobian(k,1,n)) > 0.1 * SUM( &
+                   abs(iv%instid(i)%q_jacobian(k,1:41,n))) ) &
+                 iv%instid(i)%tb_qc(k,n)  =  qc_bad
+            end do
+         end if  
 
 !         !  a.  reject all channels over mixture surface type
 !         !------------------------------------------------------

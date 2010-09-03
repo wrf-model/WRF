@@ -230,7 +230,7 @@ CONTAINS
         chem(i,k,j,p_sulf)  =  chem(i,k,j,p_sulf)                        &
                          +ebu(i,k,j,p_ebu_sulf)*conv_rho
         chem(i,k,j,p_dms)  =  chem(i,k,j,p_dms)                        &
-                         +r_q*ebu(i,k,j,p_ebu_dms)/rho_phy(i,k,j)*dtstep
+                         +ebu(i,k,j,p_ebu_dms)*conv_rho
         chem(i,k,j,p_oc1)  =  chem(i,k,j,p_oc1)                        &
                          +r_q*ebu(i,k,j,p_ebu_oc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_bc1)  =  chem(i,k,j,p_bc1)                        &

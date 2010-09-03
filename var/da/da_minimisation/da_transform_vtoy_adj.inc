@@ -125,6 +125,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
          iv%instid(:)%info%n2 = iv%instid(:)%num_rad
       end if
       call da_zero_x(grid%xa)
+
       call da_transform_xtoy_adj(cv_size, cv, grid, iv, y,grid%xa)
       call da_transform_xtoxa_adj(grid)
    end if ! var4d

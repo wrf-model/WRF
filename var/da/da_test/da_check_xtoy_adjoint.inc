@@ -77,7 +77,6 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
      jde = jde - 1
   end if
 #endif
-
    xa2_u(ims:ime, jms:jme, kms:kme) = grid%xa%u(ims:ime, jms:jme, kms:kme)
    xa2_v(ims:ime, jms:jme, kms:kme) = grid%xa%v(ims:ime, jms:jme, kms:kme)
    xa2_t(ims:ime, jms:jme, kms:kme) = grid%xa%t(ims:ime, jms:jme, kms:kme)
@@ -123,7 +122,6 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
    end if
 
    do nobwin=1, num_fgat_time
-
       if (var4d) then
          write(filnam,'(a2,i2.2)') 'tl',nobwin
          call da_transfer_wrftltoxa(grid, config_flags, filnam)
@@ -167,11 +165,14 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 #endif
       end if
 
+
       !----------------------------------------------------------------------
       ! [2.0] Perform y = Hx transform:
       !----------------------------------------------------------------------
-   
       call da_transform_xtoy (cv_size, cv, grid, iv, y)
+
+
+            
 
       !----------------------------------------------------------------------
       ! [3.0] Calculate LHS of adjoint test equation and
@@ -209,10 +210,12 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       !----------------------------------------------------------------------
       ! [5.0] Perform adjoint operation:
       !----------------------------------------------------------------------
-
       call da_zero_x (grid%xa)
 
+
       call da_transform_xtoy_adj (cv_size, cv, grid, iv, y, grid%xa)
+
+
 
 #ifdef A2C
     if( ite == ide ) &    
@@ -249,6 +252,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
       ! Now do something for surface variables
       if (sfc_assi_options == 2) then
          call da_transform_xtowtq_adj (grid)
+
       end if
 
       call da_pt_to_rho_adj (grid)
@@ -375,7 +379,8 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
 
    end if
 
-   pertile_rhs = sum (grid%xa%u(ims:ime, jms:jme, kms:kme) * xa2_u(ims:ime, jms:jme, kms:kme)) &
+ 
+ pertile_rhs = sum (grid%xa%u(ims:ime, jms:jme, kms:kme) * xa2_u(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%v(ims:ime, jms:jme, kms:kme) * xa2_v(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%w(ims:ime, jms:jme, kms:kme) * xa2_w(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%t(ims:ime, jms:jme, kms:kme) * xa2_t(ims:ime, jms:jme, kms:kme)) &
@@ -386,6 +391,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
    pertile_rhs = pertile_rhs &
       + sum (grid%xa%qcw(ims:ime, jms:jme, kms:kme) * xa2_qcw(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%qrn(ims:ime, jms:jme, kms:kme) * xa2_qrn(ims:ime, jms:jme, kms:kme))
+
 
    !----------------------------------------------------------------------
    ! [6.0] Calculate RHS of adjoint test equation:
@@ -420,7 +426,6 @@ print*,__FILE__,' contribution from ',jte+1,' row for V : ',sum(grid%xa%v(its:it
    !----------------------------------------------------------------------
    !  [7.0] Print output:
    !----------------------------------------------------------------------
-   
    write (unit=stdout, fmt='(A,1pe22.14)') ' Single Domain < y, y     > = ', pertile_lhs
    write (unit=stdout, fmt='(A,1pe22.14)') ' Single Domain < x, x_adj > = ', pertile_rhs
 

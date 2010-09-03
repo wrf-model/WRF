@@ -37,8 +37,8 @@ module da_minimisation
       cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
-      bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_crtm_kmatrix, &
-      precondition_cg, precondition_factor, use_varbc, varbc_factor, &
+      bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
+      use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, &
       orthonorm_gradient, its, ite, jts, jte, kte, ids, ide, jds, jde, &

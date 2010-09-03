@@ -87,7 +87,8 @@
    !---------------------------------------------------------------
    
    write(unit=stdout,fmt='(A)') 'VARBC: Writing information in VARBC.out file'
-      
+
+     
    call da_get_unit(iunit)
    if ( it == max_ext_its ) then
       filename = 'VARBC.out'
@@ -140,5 +141,6 @@
    call da_free_unit(iunit)
 
    if (trace_use) call da_trace_exit("da_varbc_update")
+
 
  end subroutine da_varbc_update

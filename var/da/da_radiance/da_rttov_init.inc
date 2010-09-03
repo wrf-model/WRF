@@ -8,8 +8,10 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    !  HISTORY: 07/28/2005 - Creation                               Zhiquan Liu
    !           03/22/2006   add error tuning factor read in        Zhiquan Liu
    !           10/24/2007   limit this routine to RTTOV init       Tom Auligne
-   !
    !---------------------------------------------------------------------------
+
+
+
 
    implicit none 
 
@@ -17,9 +19,6 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    type (y_type) , intent (inout) :: ob
    integer ,       intent (in)    :: nsensor
    integer ,       intent (in)    :: nchan(nsensor)
-
-#include "rttov_setup.interface"
-#include "rttov_readscattcoeffs.interface"
 
    !  local arguments
    !------------------- 
@@ -32,6 +31,7 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    integer :: verbosity_level ! (<0 for default)
    integer, allocatable :: sensor(:,:) ! instrument id
    !  integer, allocatable :: channels(:,:)   ! channel list per instrument
+   logical :: laerosl, lcloud ! RTTOV9_3  
 
    !  output parameters of RTTOV_SETUP
    !-------------------------------------
@@ -67,6 +67,8 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
 
    allocate (errorstatus(nsensor))
    allocate (coefs(nsensor))
+   allocate (coefs_scatt_ir(nsensor))
+   allocate (optps(nsensor))
    allocate (sensor(3,nsensor))
    allocate (coefs_channels(mxchn,nsensor))
 
@@ -92,15 +94,32 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    !-----------------------------------------------------------
    ! 2.0 call rttov_setup for reading clear sky coefficients
    !-----------------------------------------------------------
+ 
+   !There are some new arguments for RTTOV9_3
 
-   call rttov_setup (&
-      errorstatus,      &! out
-      err_unit,         &! in
-      verbosity_level,  &! in
-      nsensor,          &! in
-      coefs,            &! out
-      sensor,           &! in
-      coefs_channels )   ! in (Optional)
+   ! call rttov_setup (&
+   !    errorstatus,      &! out
+   !    err_unit,         &! in
+   !    verbosity_level,  &! in
+   !    nsensor,          &! in
+   !    coefs,            &! out
+   !    sensor,           &! in
+   !    coefs_channels )   ! in (Optional)
+     laerosl = .false.
+     lcloud  = .false.
+     call rttov_setup (&! RTTOV9_3
+        errorstatus,      &! out
+        err_unit,         &! in
+        verbosity_level,  &! in
+        nsensor,          &! in
+        laerosl,          &! in
+        lcloud,           &! in
+        coefs,            &! out
+        coefs_scatt_ir,  &! out
+        optps,            &! out
+        sensor,           &! in
+        coefs_channels)    ! in (optional)
+
 
    if (any(errorstatus(:) /= errorstatus_success)) then
       call da_error(__FILE__,__LINE__,(/"rttov_setup fatal error"/))
@@ -181,9 +200,11 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
       nprofiles = 1
       write(unit=message(1),fmt='(2a,2x,a,i5)') "   ", &
          iv%instid(i)%rttovid_string, 'nchan=',nchan(i)
-
-      call rttov_setupchan(nprofiles, nchan(i), coefs(i), &    ! in
+     
+      ! RTTOV9_3
+      call da_rttov_setupchan(nprofiles, nchan(i), coefs(i), &    ! in
                      nfrequencies, nchannels, nbtout )        ! out
+      nchannels =  nfrequencies                                      !RTTOV9_3
 
       allocate (lprofiles(nfrequencies))
       allocate (channels (nfrequencies))
@@ -192,7 +213,8 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
       allocate (surfem ( nchannels))
       surfem(:) = 0.0
 
-      call rttov_setupindex(nchan(i), nprofiles, nfrequencies, &    ! in
+      !RTTOV9_3
+      call da_rttov_setupindex(nchan(i), nprofiles, nfrequencies, &    ! in
                      nchannels, nbtout, coefs(i), surfem,  &    ! in
                      lprofiles, channels, polarisations,     &    ! out
                      emissivity  )
@@ -222,5 +244,6 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    deallocate (coefs_channels)
 
    if (trace_use) call da_trace_exit("da_rttov_init")
+ 
 
 end subroutine da_rttov_init

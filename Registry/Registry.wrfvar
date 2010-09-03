@@ -1471,6 +1471,7 @@ rconfig   integer   tovs_min_transfer       namelist,wrfvar14  1  10       - "to
 rconfig   logical   tovs_batch              namelist,wrfvar14  1  .false.  - "tovs_batch"              ""  "" 
 rconfig   integer   rtm_option              namelist,wrfvar14  1  1        - "rtm_option"              ""  ""
 rconfig   logical   use_crtm_kmatrix        namelist,wrfvar14  1  .false.  - "use_crtm_kmatrix"        ""  ""
+rconfig   logical   use_rttov_kmatrix       namelist,wrfvar14  1  .false.  - "use_rttov_kmatrix"       ""  ""
 rconfig   logical   crtm_cloud              namelist,wrfvar14  1  .false.  - "crtm_cloud"              ""  ""
 rconfig   logical   only_sea_rad            namelist,wrfvar14  1  .false.  - "only_sea_rad"            ""  ""
 rconfig   logical   use_pseudo_rad          namelist,wrfvar14  1  .false.  - "use_pseudo_rad"          ""  ""

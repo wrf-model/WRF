@@ -11,6 +11,9 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    !               and deallocate sequential data structure
    !---------------------------------------------------------------------------
 
+
+
+
    implicit none
 
    character(5)      ,  intent (in)    :: obstype
@@ -22,7 +25,8 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer          :: iost
    integer(i_kind), allocatable :: nread(:)
 
-   integer(i_kind),parameter:: n1bhdr=14
+ !  integer(i_kind),parameter:: n1bhdr=14          !RTTOV9_3 add SOLAZI
+   integer(i_kind),parameter:: n1bhdr=15           !RTTOV9_3
    integer(i_kind),parameter:: maxinfo=12
    integer(i_kind),parameter:: maxchanl=100
 
@@ -56,7 +60,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer   ::  year,month,day,hour,minute,second  ! observation time
    real*8    ::  obs_time
    ! real      ::  rlat, rlon                         !  lat/lon in degrees   for Anfovs
-   real      ::  satzen, satazi, solzen     !  scan angles for Anfovs
+   real      ::  satzen, satazi, solzen ,solazi              !  scan angles for Anfovs  !RTTOV9_3 solazi
    integer   ::  landsea_mask
    real      ::  srf_height
    ! channels' bright temperature
@@ -69,7 +73,11 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    type(info_type)                ::  info
    type(model_loc_type)           ::  loc
 
-   data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL'/
+!RTTOV9_3
+  integer :: nchanl(1)
+!end for RTTOV9_3
+
+   data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SOLAZI'/
    !  data hdr1b /'FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SLNM BEARAZ'/
 
    data tbmin,tbmax,tbbad / 50.0_r_kind, 550.0_r_kind, -9.99e11_r_kind /
@@ -227,6 +235,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          ! if (rlon < 0.0) rlon = rlon+360.0
 
          info%lat  =  bfr1bhdr(bufr_lat)
+
          info%lon  =  bfr1bhdr(bufr_lon)
          call da_llxy (info, loc, outside, outside_all)
 
@@ -255,7 +264,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          hour   = bfr1bhdr(bufr_hour)   
          minute = bfr1bhdr(bufr_minute) 
          second = bfr1bhdr(bufr_second) 
-
+         
          write(unit=info%date_char, fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
             year, '-', month, '-', day, '_', hour, ':', minute, ':', second
 
@@ -304,6 +313,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          else
             satzen = bfr1bhdr(bufr_satzen) !*deg2rad   ! local zenith angle
             satzen = abs(satzen)
+ 
             ! if (amsua .and. ifov .le. 15) satzen=-satzen
             ! if (amsub .and. ifov .le. 45) satzen=-satzen
             ! if (hirs3 .and. ifov .le. 28) satzen=-satzen
@@ -312,6 +322,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          satazi = panglr*rad2deg            ! look angle
          ! if (satazi<0.0) satazi = satazi+360.0
          solzen = bfr1bhdr(bufr_solzen)              ! solar zenith angle
+         solazi = bfr1bhdr(bufr_solazi)              !RTTOV9_3
 
          num_tovs_global = num_tovs_global + 1
          ptotal(ifgat) = ptotal(ifgat) + 1
@@ -364,8 +375,12 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          nread(inst) = nread(inst) + 1
 
          ! 3.5 extract surface information
-   
          srf_height = bfr1bhdr(bufr_station_height)          ! station height
+         if (srf_height < 8888.0 .AND. srf_height > -416.0) then
+         else
+            srf_height = 0.0
+         endif  
+
          landsea_mask = nint(bfr1bhdr(bufr_landsea_mask))  ! 0:land ; 1:sea (same as RTTOV)
          ! rmask=one                          ! land
          ! if (nint(bfr1bhdr(bufr_landsea_mask))==1) rmask=0.0_r_kind   ! reverse the land/sea mask in bufr
@@ -394,7 +409,9 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          p%tb_inv(1:nchan)  = tb_inv(1:nchan)
          p%sensor_index     = inst
          p%ifgat            = ifgat
-
+!RTTOV9_3
+         p%solazi           = solazi
+ !end of RTTOV9_3
          allocate (p%next)   ! add next data
 
          p => p%next
@@ -528,13 +545,15 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
         'Allocating space for radiance innov structure', &
          i, iv%instid(i)%rttovid_string, iv%instid(i)%num_rad
 
-#ifdef RTTOV
+!#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(1, nchan, coefs(i), &   ! in
+         nchanl(1) = nchan
+         call da_rttov_setupchan(1, nchanl, coefs(i), &   ! in
             iv%instid(i)%nfrequencies,iv%instid(i)%nchannels, &
             iv%instid(i)%nbtout)      ! out
+           iv%instid(i)%nchannels= iv%instid(i)%nfrequencies   ! RTTOV9_3
       end if
-#endif
+!#endif
 
       call da_allocate_rad_iv(i,nchan,iv)
 
@@ -577,6 +596,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/)) 
 #endif
+  
 
 end subroutine da_read_obs_bufrtovs
 

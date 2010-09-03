@@ -95,6 +95,8 @@ module module_radiance
    character(len=5), pointer   :: coefs_scatt_instname(:)
 #ifdef RTTOV
    type( rttov_coef ), pointer :: coefs(:)         ! RTTOV8_5 coefficients
+   type( rttov_coef_scatt_ir), pointer :: coefs_scatt_ir(:)    !RTTOV9_3 coefficients for ir
+   type( rttov_optpar_ir), pointer :: optps(:)   !RTTOV9_3  optical parameters
    type( rttov_scatt_coef ), pointer :: coefs_scatt(:)
 #endif
 
@@ -128,6 +130,8 @@ contains
 #include "snwem_amsu.inc"
 #include "seaem.inc"
 #include "ossmem.inc"
+
+
 
 end module module_radiance
 

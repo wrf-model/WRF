@@ -24,7 +24,9 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
    ! Initialize the mother domain.
 
    grid%input_from_file = .true.
-
+   ! Initialize the array grid%pb (YRG, 08/26/2010) for use of wrftoxb:
+   grid%pb = 0.0
+   
    call ext_ncd_open_for_read(trim(filename), 0, 0, "", fid, ierr)
 
    if (ierr /= 0) then

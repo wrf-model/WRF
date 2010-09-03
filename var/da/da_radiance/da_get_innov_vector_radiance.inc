@@ -29,6 +29,7 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
       call da_get_innov_vector_rttov( it, grid, ob, iv )
+
 #else
       call da_error(__FILE__,__LINE__, &
        (/"Must compile with $RTTOV option for radiances"/))

@@ -14,8 +14,8 @@ module da_radiance
       init_constants_derived, gsi_emiss, &
       rttov_platform_name, rttov_inst_name, crtm_sensor_name  ! names used by both RTTOV and CRTM
 #ifdef RTTOV
-   use module_radiance, only : coefs,coefs_scatt,profile_type,radiance_type, &
-      rttov_coef,sensor_descriptor, &
+   use module_radiance, only : coefs,coefs_scatt_ir,optps,coefs_scatt,profile_type,radiance_type, & !RTTOV9_3
+      rttov_coef,rttov_coef_scatt_ir,rttov_optpar_ir,sensor_descriptor, &
       transmission_type,errorstatus_success,gas_id_watervapour
 #endif
 #ifdef CRTM
@@ -44,12 +44,12 @@ module da_radiance
       rad_monitoring, monitor_on, kts, kte, kms,kme,&
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
-      bufr_landsea_mask,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
+      bufr_landsea_mask,bufr_solazi,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
       nchan_msu, nchan_amsua,nchan_hirs2, nchan_hirs3, nchan_hirs4, nchan_airs, &
       bufr_lon, bufr_satellite_id, bufr_ifov,nchan_amsub, tovs_start, bufr_lat, &
       use_pseudo_rad, pseudo_rad_platid,pseudo_rad_satid, pseudo_rad_senid, &
       pseudo_rad_ichan, pseudo_rad_inv, pseudo_rad_lat,pseudo_rad_lon, &
-      pseudo_rad_err, use_simulated_rad, use_crtm_kmatrix , &
+      pseudo_rad_err, use_simulated_rad,use_rttov_kmatrix, use_crtm_kmatrix , &
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
       ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer
@@ -77,7 +77,7 @@ module da_radiance
       da_qc_rad, da_cld_eff_radius, da_read_biascoef
    use da_reporting, only : da_message, da_warning, message, da_error
 #ifdef RTTOV
-   use da_rttov, only : da_rttov_init, da_get_innov_vector_rttov
+   use da_rttov, only : da_rttov_init, da_get_innov_vector_rttov 
 #endif
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, da_obs_sfc_correction, &
@@ -100,6 +100,10 @@ module da_radiance
 #endif
    
 contains
+!RTTOV9_3
+#include "da_rttov_setupchan.inc"   
+#include "da_rttov_setupindex.inc"
+!end for RTTOV9_3
 
 #include "da_calculate_grady_rad.inc"
 #include "da_read_filtered_rad.inc"
@@ -118,6 +122,7 @@ contains
 #include "da_read_pseudo_rad.inc"
 
 #endif
+
 
 end module da_radiance
 

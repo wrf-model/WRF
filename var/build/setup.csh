@@ -83,8 +83,8 @@ endif
 if (-d ${EXT_DIR}/netcdf/netcdf-3.6.1/${COMPILER}_${PROCESSOR}) then
    setenv NETCDF ${EXT_DIR}/netcdf/netcdf-3.6.1/${COMPILER}_${PROCESSOR}
 endif
-if (-d ${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}) then
-   setenv RTTOV ${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}
+if (-d ${EXT_DIR}/rttov/rttov93/${COMPILER}_${PROCESSOR}) then
+   setenv RTTOV ${EXT_DIR}/rttov/rttov93/${COMPILER}_${PROCESSOR}
 endif
 #if (-d ${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}) then
 #   setenv CRTM ${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}

@@ -17,7 +17,7 @@ module da_wrfvar_top
    use module_radiance, only : satinfo
 #endif
 #ifdef RTTOV
-   use module_radiance, only : coefs, sensor_descriptor
+   use module_radiance, only : coefs, coefs_scatt_ir, optps, sensor_descriptor
 #endif
 
    use module_state_description, only : num_moist, num_a_moist, num_g_moist, &

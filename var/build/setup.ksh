@@ -60,8 +60,8 @@ fi
 if test -d ${EXT_DIR}/netcdf/netcdf-3.6.1/${COMPILER}_${PROCESSOR}; then
   export NETCDF=${EXT_DIR}/netcdf/netcdf-3.6.1/${COMPILER}_${PROCESSOR}
 fi
-if test -d ${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}; then
-   export RTTOV=${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}
+if test -d ${EXT_DIR}/rttov/rttov93/${COMPILER}_${PROCESSOR}; then
+   export RTTOV=${EXT_DIR}/rttov/rttov93/${COMPILER}_${PROCESSOR}
 fi
 #if test -d ${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}; then
 #   export CRTM=${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}

@@ -148,6 +148,7 @@ module da_control
    integer, parameter :: bufr_solzen         = 12
    integer, parameter :: bufr_station_height = 13
    integer, parameter :: bufr_landsea_mask   = 14
+   integer, parameter :: bufr_solazi         = 15     !RTTOV9_3
 
    integer, parameter :: nchan_amsua = 15
    integer, parameter :: nchan_amsub = 5

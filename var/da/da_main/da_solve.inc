@@ -112,7 +112,6 @@
    !---------------------------------------------------------------------------
    ! [4.0] Set up observations (ob):
    !---------------------------------------------------------------------------
-
    call da_setup_obs_structures (grid, ob, iv, j)
    if (use_rad) then
       allocate (j % jo % rad(1:iv%num_inst))
@@ -135,6 +134,7 @@
 #if defined(RTTOV) || defined(CRTM)
       if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
 #endif
+
       call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
       call da_allocate_y (iv, re)
  
@@ -150,7 +150,9 @@
 
          call da_calculate_residual(iv, y, re)
          call da_calculate_grady(iv, re, jo_grad_y)
-         call da_zero_x(grid%xa)      
+         call da_zero_x(grid%xa)
+ 
+
          call da_transform_xtoy_adj(cv_size, xhat, grid, iv, jo_grad_y, grid%xa)
          call da_transform_xtoxa_adj(grid)
          call da_transfer_wrftltoxa_adj(grid, config_flags, 'fcst')
@@ -281,6 +283,7 @@
 
       num_qcstat_conv=0
       call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
+      
 
       if (test_transforms) then
          call da_check (grid, config_flags, cv_size, xbx, be, grid%ep, iv, &
@@ -379,13 +382,14 @@
       if ( (use_varbc).or.(freeze_varbc) ) &
                 call da_varbc_update(it, cv_size, xhat, iv)
 #endif
+
+
       !------------------------------------------------------------------------
       ! [8.10] Output WRFVAR analysis and analysis increments:
       !------------------------------------------------------------------------
 
       call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
 
-      
      if ( it < max_ext_its .and. print_detail_outerloop ) then
         write(outerloop,'(i2.2)') it
         call da_med_initialdata_output (grid , config_flags, 'wrfvar_output_'//outerloop)
@@ -520,7 +524,17 @@
 	      end if
               deallocate (iv%instid(i)%cv_index)  
            end if
-
+            
+        
+           if (rtm_option == rtm_option_rttov) then
+               if (use_rttov_kmatrix) then
+                   deallocate(iv%instid(i)%ts_jacobian)
+                   deallocate(iv%instid(i)%ps_jacobian)
+                   deallocate(iv%instid(i)%emiss_jacobian)
+                   deallocate(iv%instid(i)%t_jacobian)
+                   deallocate(iv%instid(i)%q_jacobian)
+               end if
+            end if
             if (rtm_option == rtm_option_crtm) then
                deallocate(iv%instid(i)%water_coverage)
                deallocate(iv%instid(i)%land_coverage)
@@ -573,7 +587,8 @@
 
 #ifdef RTTOV
          if (rtm_option == rtm_option_rttov) then
-            call rttov_dealloc_coef (ierr,coefs(i))
+ !           call rttov_dealloc_coef (ierr,coefs(i))
+             call rttov_dealloc_coef (ierr,coefs(i),coefs_scatt_ir(i), optps(i))    !RTTOV9_3
          end if
 #endif
       end do
@@ -584,6 +599,8 @@
 #ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
          deallocate (coefs)
+         deallocate (coefs_scatt_ir)                                               !RTTOV9_3
+         deallocate (optps)                                                        !RTTOV9_3
       end if
 #endif
    end if
@@ -633,6 +650,7 @@
 #endif
 
    if (trace_use) call da_trace_exit ("da_solve")
+
 
 contains
 

@@ -11,6 +11,9 @@ subroutine da_read_pseudo_rad (iv)
    !               and deallocate sequential data structure
    !---------------------------------------------------------------------------
 
+
+
+
    use da_control
 
    implicit none
@@ -27,6 +30,10 @@ subroutine da_read_pseudo_rad (iv)
    integer :: i,k,n,nchan,inst, alloc_stat
    type(info_type)       ::  info
    type(model_loc_type)  ::  loc
+
+!RTTOV_9_3
+   integer :: nchanl(1)
+!end for RTTOV9_3
 
    call da_trace_entry("da_read_pseudo_rad")
 
@@ -93,13 +100,14 @@ subroutine da_read_pseudo_rad (iv)
         'Allocating space for radiance innov structure', &
          i, iv%instid(inst)%rttovid_string, iv%instid(inst)%num_rad
 
-#ifdef RTTOV
+!#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(1, nchan, coefs(i), &   ! in
+         nchanl(1) = nchan
+         call da_rttov_setupchan(1, nchanl, coefs(i), &   ! in  RTTOV9_3
             iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &
             iv%instid(inst)%nbtout)      ! out
       end if
-#endif
+!#endif
 
       call da_allocate_rad_iv(i,nchan,iv)
 
@@ -134,6 +142,7 @@ subroutine da_read_pseudo_rad (iv)
    deallocate(tb_inv)
 
    call da_trace_exit("da_read_pseudo_rad")
+  
 
 end subroutine da_read_pseudo_rad
 

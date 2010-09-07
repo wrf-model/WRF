@@ -109,7 +109,7 @@ module_io_wrf.o: module_date_time.o \
                 ../frame/module_wrf_error.o ../frame/module_streams.o \
 		$(ESMF_MOD_DEPENDENCE)
 
-module_adtl_grid_utilities.o: ../frame/module_domain.o ../frame/module_configure.o ../frame/module_tiles.o
+module_adtl_grid_utilities.o: ../frame/module_domain.o ../frame/module_configure.o ../frame/module_tiles.o ../frame/module_state_description.o
 
 mediation_pertmod_io.o: ../frame/module_domain.o ../frame/module_state_description.o ../frame/module_domain_type.o
 

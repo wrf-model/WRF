@@ -3,7 +3,8 @@
 
 MODULE module_adtl_grid_utilities
 USE module_domain, ONLY : domain, get_ijk_from_grid
-USE module_configure, ONLY : num_moist,num_scalar, grid_config_rec_type
+USE module_configure, ONLY : grid_config_rec_type
+USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_scalar
 USE module_tiles, ONLY : set_tiles
 
 REAL, ALLOCATABLE :: s_u_2(:,:,:), s_v_2(:,:,:), s_w_2(:,:,:)
@@ -1249,7 +1250,8 @@ IF (grid%check_mu) THEN
 END IF
 
 IF (grid%check_moist) THEN
-   DO mm = 1, num_moist
+   print*,'PARAM_FIRST_SCALAR=',PARAM_FIRST_SCALAR, num_moist
+   DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1328,7 +1330,7 @@ IF (grid%check_mu) THEN
 END IF
 
 IF (grid%check_moist) THEN
-   DO mm = 1, num_moist
+   DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = sm33,em33 !jts,MIN(jte,jde-1)
    DO k = sm32,em32 !kts,kte-1
    DO i = sm31,em31 !its,MIN(ite,ide-1)
@@ -1463,7 +1465,7 @@ IF (grid%check_mu) THEN
 END IF
 
 IF (grid%check_moist) THEN
-   DO mm = 1, num_moist
+   DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1704,7 +1706,7 @@ END IF
    ENDDO
    ENDDO
 
-   DO mm = 1, num_moist
+   DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = sm33,em33 !jts,MIN(jte,jde-1)
    DO k = sm32,em32 !kts,kte-1
    DO i = sm31,em31 !its,MIN(ite,ide-1)
@@ -1800,7 +1802,7 @@ END IF
    ENDDO
    ENDDO
 
-   DO mm=1,num_moist
+   DO mm=PARAM_FIRST_SCALAR, num_moist
    DO j=1,spec_bdy_width
    DO k=kds,kde
    DO i=jms,jme
@@ -1813,7 +1815,7 @@ END IF
    ENDDO
    ENDDO
 
-   DO mm=1,num_moist
+   DO mm=PARAM_FIRST_SCALAR, num_moist
    DO j=1,spec_bdy_width
    DO k=kds,kde
    DO i=ims,ime

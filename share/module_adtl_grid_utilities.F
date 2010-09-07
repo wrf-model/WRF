@@ -1028,64 +1028,6 @@ CONTAINS
 
   END SUBROUTINE restore_grid
 
-  SUBROUTINE copy_s_to_g ( grid, factor )
-   TYPE (domain), INTENT(IN) :: grid
-   REAL, INTENT(IN) :: factor
-   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
-   
-   factor_u =0.0
-   factor_v =0.0
-   factor_w =0.0
-   factor_ph =0.0
-   factor_t =0.0
-   factor_mu =0.0
-   factor_moist =0.0
-
-   IF ( grid%check_u )     factor_u = factor
-   IF ( grid%check_v )     factor_v = factor
-   IF ( grid%check_w )     factor_w = factor
-   IF ( grid%check_ph )    factor_ph = factor
-   IF ( grid%check_t )     factor_t = factor
-   IF ( grid%check_mu )    factor_mu = factor
-   IF ( grid%check_moist ) factor_moist = factor
-
-   grid%g_u_2 = factor_u*s_u_2
-   grid%g_v_2 = factor_v*s_v_2
-   grid%g_w_2 = factor_w*s_w_2
-   grid%g_ph_2 = factor_ph*s_ph_2
-   grid%g_t_2 = factor_t*s_t_2
-   grid%g_mu_2 = factor_mu*s_mu_2
-   grid%g_moist = factor_moist*s_moist
-   grid%g_scalar = factor*s_scalar
-   grid%g_tke_2 = factor*s_tke_2
-
-   grid%g_p = factor*s_p
-   grid%g_al = factor*s_al
-   grid%g_h_diabatic = factor*s_h_diabatic
-   grid%g_ustm = factor*s_ustm
-   grid%g_hfx = factor*s_hfx
-   grid%g_qfx = factor*s_qfx
-
-   grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
-   grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
-   grid%g_v_bxs = factor_v*s_v_bxs; grid%g_v_bxe = factor_v*s_v_bxe; grid%g_v_bys = factor_v*s_v_bys; grid%g_v_bye = factor_v*s_v_bye
-   grid%g_v_btxs = factor_v*s_v_btxs; grid%g_v_btxe = factor_v*s_v_btxe; grid%g_v_btys = factor_v*s_v_btys; grid%g_v_btye = factor_v*s_v_btye
-   grid%g_w_bxs = factor_w*s_w_bxs; grid%g_w_bxe = factor_w*s_w_bxe; grid%g_w_bys = factor_w*s_w_bys; grid%g_w_bye = factor_w*s_w_bye
-   grid%g_w_btxs = factor_w*s_w_btxs; grid%g_w_btxe = factor_w*s_w_btxe; grid%g_w_btys = factor_w*s_w_btys; grid%g_w_btye = factor_w*s_w_btye
-   grid%g_ph_bxs = factor_ph*s_ph_bxs; grid%g_ph_bxe = factor_ph*s_ph_bxe; grid%g_ph_bys = factor_ph*s_ph_bys; grid%g_ph_bye = factor_ph*s_ph_bye
-   grid%g_ph_btxs = factor_ph*s_ph_btxs; grid%g_ph_btxe = factor_ph*s_ph_btxe; grid%g_ph_btys = factor_ph*s_ph_btys; grid%g_ph_btye = factor_ph*s_ph_btye
-   grid%g_t_bxs = factor_t*s_t_bxs; grid%g_t_bxe = factor_t*s_t_bxe; grid%g_t_bys = factor_t*s_t_bys; grid%g_t_bye = factor_t*s_t_bye
-   grid%g_t_btxs = factor_t*s_t_btxs; grid%g_t_btxe = factor_t*s_t_btxe; grid%g_t_btys = factor_t*s_t_btys; grid%g_t_btye = factor_t*s_t_btye
-   grid%g_mu_bxs = factor_mu*s_mu_bxs; grid%g_mu_bxe = factor_mu*s_mu_bxe; grid%g_mu_bys = factor_mu*s_mu_bys; grid%g_mu_bye = factor_mu*s_mu_bye
-   grid%g_mu_btxs = factor_mu*s_mu_btxs; grid%g_mu_btxe = factor_mu*s_mu_btxe; grid%g_mu_btys = factor_mu*s_mu_btys; grid%g_mu_btye = factor_mu*s_mu_btye
-   grid%g_moist_bxs = factor_moist*s_moist_bxs; grid%g_moist_bxe = factor_moist*s_moist_bxe; grid%g_moist_bys = factor_moist*s_moist_bys; grid%g_moist_bye = factor_moist*s_moist_bye
-   grid%g_moist_btxs = factor_moist*s_moist_btxs; grid%g_moist_btxe = factor_moist*s_moist_btxe; grid%g_moist_btys = factor_moist*s_moist_btys; grid%g_moist_btye = factor_moist*s_moist_btye
-   grid%g_scalar_bxs = factor*s_scalar_bxs; grid%g_scalar_bxe = factor*s_scalar_bxe; grid%g_scalar_bys = factor*s_scalar_bys; grid%g_scalar_bye = factor*s_scalar_bye
-   grid%g_scalar_btxs = factor*s_scalar_btxs; grid%g_scalar_btxe = factor*s_scalar_btxe; grid%g_scalar_btys = factor*s_scalar_btys; grid%g_scalar_btye = factor*s_scalar_btye
-
-   RETURN
-  END SUBROUTINE copy_s_to_g
-
   SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
    TYPE (domain), INTENT(IN) :: grid
    REAL, INTENT(IN) :: factor
@@ -1405,21 +1347,13 @@ END IF
    REAL, INTENT(IN) :: factor
    REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
    
-   factor_u =1.0
-   factor_v =1.0
-   factor_w =1.0
-   factor_ph =1.0
-   factor_t =1.0
-   factor_mu =1.0
-   factor_moist =1.0
-
-   IF ( grid%check_u )     factor_u = factor
-   IF ( grid%check_v )     factor_v = factor
-   IF ( grid%check_w )     factor_w = factor
-   IF ( grid%check_ph )    factor_ph = factor
-   IF ( grid%check_t )     factor_t = factor
-   IF ( grid%check_mu )    factor_mu = factor
-   IF ( grid%check_moist ) factor_moist = factor
+   factor_u = factor
+   factor_v = factor
+   factor_w = factor
+   factor_ph = factor
+   factor_t = factor
+   factor_mu = factor
+   factor_moist = factor
 
    grid%u_2 = factor_u*s_u_2
    grid%v_2 = factor_v*s_v_2

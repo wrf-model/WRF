@@ -6,10 +6,10 @@ USE module_domain, ONLY : domain, get_ijk_from_grid
 USE module_configure, ONLY : num_moist,num_scalar, grid_config_rec_type
 USE module_tiles, ONLY : set_tiles
 
-REAL, ALLOCATABLE :: s_u_1(:,:,:), s_u_2(:,:,:), s_v_1(:,:,:), s_v_2(:,:,:), s_w_1(:,:,:), s_w_2(:,:,:)
-REAL, ALLOCATABLE :: s_ph_1(:,:,:), s_ph_2(:,:,:), s_t_1(:,:,:), s_t_2(:,:,:), s_mu_1(:,:), s_mu_2(:,:)
+REAL, ALLOCATABLE :: s_u_2(:,:,:), s_v_2(:,:,:), s_w_2(:,:,:)
+REAL, ALLOCATABLE :: s_ph_2(:,:,:), s_t_2(:,:,:), s_mu_2(:,:)
 REAL, ALLOCATABLE :: s_moist(:,:,:,:), s_scalar(:,:,:,:)
-REAL, ALLOCATABLE :: s_tke_1(:,:,:), s_tke_2(:,:,:)
+REAL, ALLOCATABLE :: s_tke_2(:,:,:)
 
 REAL, ALLOCATABLE :: s_p(:,:,:), s_al(:,:,:), s_h_diabatic(:,:,:)
 REAL, ALLOCATABLE :: s_ustm(:,:), s_hfx(:,:), s_qfx(:,:)
@@ -31,10 +31,10 @@ REAL, ALLOCATABLE :: s_moist_btxs(:,:,:,:), s_moist_btxe(:,:,:,:), s_moist_btys(
 REAL, ALLOCATABLE :: s_scalar_bxs(:,:,:,:), s_scalar_bxe(:,:,:,:), s_scalar_bys(:,:,:,:), s_scalar_bye(:,:,:,:)
 REAL, ALLOCATABLE :: s_scalar_btxs(:,:,:,:), s_scalar_btxe(:,:,:,:), s_scalar_btys(:,:,:,:), s_scalar_btye(:,:,:,:)
 
-REAL, ALLOCATABLE :: b_u_1(:,:,:), b_u_2(:,:,:), b_v_1(:,:,:), b_v_2(:,:,:), b_w_1(:,:,:), b_w_2(:,:,:)
-REAL, ALLOCATABLE :: b_ph_1(:,:,:), b_ph_2(:,:,:), b_t_1(:,:,:), b_t_2(:,:,:), b_mu_1(:,:), b_mu_2(:,:)
+REAL, ALLOCATABLE :: b_u_2(:,:,:), b_v_2(:,:,:), b_w_2(:,:,:)
+REAL, ALLOCATABLE :: b_ph_2(:,:,:), b_t_2(:,:,:), b_mu_2(:,:)
 REAL, ALLOCATABLE :: b_moist(:,:,:,:), b_scalar(:,:,:,:)
-REAL, ALLOCATABLE :: b_tke_1(:,:,:), b_tke_2(:,:,:)
+REAL, ALLOCATABLE :: b_tke_2(:,:,:)
 
 REAL, ALLOCATABLE :: b_p(:,:,:), b_al(:,:,:), b_h_diabatic(:,:,:)
 REAL, ALLOCATABLE :: b_ustm(:,:), b_hfx(:,:), b_qfx(:,:)
@@ -101,11 +101,6 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar). ')
-   ENDIF
-   ALLOCATE ( s_tke_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_tke_1(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
    ALLOCATE ( s_tke_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -187,60 +182,30 @@ CONTAINS
      'share/module_adtl_grid_utilities.f: Failed to allocate s_scalar_btye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
    ENDIF
 
-   ALLOCATE ( s_u_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_u_1(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
    ALLOCATE ( s_u_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_u_2(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
-   ALLOCATE ( s_v_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_v_1(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
    ALLOCATE ( s_v_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_v_2(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
-   ALLOCATE ( s_w_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_w_1(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
    ALLOCATE ( s_w_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_w_2(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
-   ALLOCATE ( s_ph_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_ph_1(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
    ALLOCATE ( s_ph_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_ph_2(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
-   ALLOCATE ( s_t_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_t_1(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
    ALLOCATE ( s_t_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_t_2(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
-   ALLOCATE ( s_mu_1(sm31:em31, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_mu_1(sm31:em31, sm33:em33). ')
    ENDIF
    ALLOCATE ( s_mu_2(sm31:em31, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -551,11 +516,6 @@ CONTAINS
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar). ')
    ENDIF
-   ALLOCATE ( b_tke_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate b_tke_1(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
    ALLOCATE ( b_tke_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
@@ -636,60 +596,30 @@ CONTAINS
      'share/module_adtl_grid_utilities.f: Failed to allocate b_scalar_btye(sm31:em31,sm32:em32,spec_bdy_width,num_scalar). ')
    ENDIF
 
-   ALLOCATE ( b_u_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate b_u_1(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
    ALLOCATE ( b_u_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_u_2(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
-   ALLOCATE ( b_v_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate b_v_1(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
    ALLOCATE ( b_v_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_v_2(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
-   ALLOCATE ( b_w_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate b_w_1(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
    ALLOCATE ( b_w_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_w_2(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
-   ALLOCATE ( b_ph_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_1(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
    ALLOCATE ( b_ph_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_ph_2(sm31:em31, sm32:em32, sm33:em33). ')
    ENDIF
-   ALLOCATE ( b_t_1(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate b_t_1(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
    ALLOCATE ( b_t_2(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_t_2(sm31:em31, sm32:em32, sm33:em33). ')
-   ENDIF
-   ALLOCATE ( b_mu_1(sm31:em31, sm33:em33), STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate b_mu_1(sm31:em31, sm33:em33). ')
    ENDIF
    ALLOCATE ( b_mu_2(sm31:em31, sm33:em33), STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -1002,15 +932,15 @@ CONTAINS
   SUBROUTINE copy_grid_to_s ( grid )
    TYPE (domain), INTENT(IN) :: grid
 
-   s_u_1 = grid%u_1; s_u_2 = grid%u_2
-   s_v_1 = grid%v_1; s_v_2 = grid%v_2
-   s_w_1 = grid%w_1; s_w_2 = grid%w_2
-   s_ph_1 = grid%ph_1; s_ph_2 = grid%ph_2
-   s_t_1 = grid%t_1; s_t_2 = grid%t_2
-   s_mu_1 = grid%mu_1; s_mu_2 = grid%mu_2
+   s_u_2 = grid%u_2
+   s_v_2 = grid%v_2
+   s_w_2 = grid%w_2
+   s_ph_2 = grid%ph_2
+   s_t_2 = grid%t_2
+   s_mu_2 = grid%mu_2
    s_moist = grid%moist
    s_scalar = grid%scalar
-   s_tke_1 = grid%tke_1; s_tke_2 = grid%tke_2
+   s_tke_2 = grid%tke_2
 
    s_p = grid%p
    s_al = grid%al
@@ -1042,15 +972,15 @@ CONTAINS
   SUBROUTINE copy_grid_to_b ( grid )
    TYPE (domain), INTENT(IN) :: grid
 
-   b_u_1 = grid%u_1; b_u_2 = grid%u_2
-   b_v_1 = grid%v_1; b_v_2 = grid%v_2
-   b_w_1 = grid%w_1; b_w_2 = grid%w_2
-   b_ph_1 = grid%ph_1; b_ph_2 = grid%ph_2
-   b_t_1 = grid%t_1; b_t_2 = grid%t_2
-   b_mu_1 = grid%mu_1; b_mu_2 = grid%mu_2
+   b_u_2 = grid%u_2
+   b_v_2 = grid%v_2
+   b_w_2 = grid%w_2
+   b_ph_2 = grid%ph_2
+   b_t_2 = grid%t_2
+   b_mu_2 = grid%mu_2
    b_moist = grid%moist
 !   b_scalar = grid%scalar
-!   b_tke_1 = grid%tke_1; b_tke_2 = grid%tke_2
+!   b_tke_2 = grid%tke_2
 
 !   b_p = grid%p
 !   b_al = grid%al
@@ -1062,15 +992,15 @@ CONTAINS
   SUBROUTINE restore_grid ( grid )
    TYPE (domain), INTENT(IN) :: grid
 
-   grid%u_1 = s_u_1; grid%u_2 = s_u_2
-   grid%v_1 = s_v_1; grid%v_2 = s_v_2
-   grid%w_1 = s_w_1; grid%w_2 = s_w_2
-   grid%ph_1 = s_ph_1; grid%ph_2 = s_ph_2
-   grid%t_1 = s_t_1; grid%t_2 = s_t_2
-   grid%mu_1 = s_mu_1; grid%mu_2 = s_mu_2
+   grid%u_2 = s_u_2
+   grid%v_2 = s_v_2
+   grid%w_2 = s_w_2
+   grid%ph_2 = s_ph_2
+   grid%t_2 = s_t_2
+   grid%mu_2 = s_mu_2
    grid%moist = s_moist
    grid%scalar = s_scalar
-   grid%tke_1 = s_tke_1; grid%tke_2 = s_tke_2
+   grid%tke_2 = s_tke_2
 
    grid%p = s_p
    grid%al = s_al
@@ -1119,15 +1049,15 @@ CONTAINS
    IF ( grid%check_mu )    factor_mu = factor
    IF ( grid%check_moist ) factor_moist = factor
 
-   grid%g_u_1 = factor_u*s_u_1; grid%g_u_2 = factor_u*s_u_2
-   grid%g_v_1 = factor_v*s_v_1; grid%g_v_2 = factor_v*s_v_2
-   grid%g_w_1 = factor_w*s_w_1; grid%g_w_2 = factor_w*s_w_2
-   grid%g_ph_1 = factor_ph*s_ph_1; grid%g_ph_2 = factor_ph*s_ph_2
-   grid%g_t_1 = factor_t*s_t_1; grid%g_t_2 = factor_t*s_t_2
-   grid%g_mu_1 = factor_mu*s_mu_1; grid%g_mu_2 = factor_mu*s_mu_2
+   grid%g_u_2 = factor_u*s_u_2
+   grid%g_v_2 = factor_v*s_v_2
+   grid%g_w_2 = factor_w*s_w_2
+   grid%g_ph_2 = factor_ph*s_ph_2
+   grid%g_t_2 = factor_t*s_t_2
+   grid%g_mu_2 = factor_mu*s_mu_2
    grid%g_moist = factor_moist*s_moist
    grid%g_scalar = factor*s_scalar
-   grid%g_tke_1 = factor*s_tke_1; grid%g_tke_2 = factor*s_tke_2
+   grid%g_tke_2 = factor*s_tke_2
 
    grid%g_p = factor*s_p
    grid%g_al = factor*s_al
@@ -1156,63 +1086,6 @@ CONTAINS
    RETURN
   END SUBROUTINE copy_s_to_g
 
-!  SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
-!   TYPE (domain), INTENT(IN) :: grid
-!   REAL, INTENT(IN) :: factor
-!   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
-!   
-!   factor_u =factor
-!   factor_v =factor
-!   factor_w =factor
-!   factor_ph =factor
-!   factor_t =factor
-!   factor_mu =factor
-!   factor_moist =factor
-
-!!   IF ( grid%check_u )     factor_u = factor
-!!   IF ( grid%check_v )     factor_v = factor
-!!   IF ( grid%check_w )     factor_w = factor
-!!   IF ( grid%check_ph )    factor_ph = factor
-!!   IF ( grid%check_t )     factor_t = factor
-!!   IF ( grid%check_mu )    factor_mu = factor
-!!   IF ( grid%check_moist ) factor_moist = factor
-
-!   grid%g_u_1 = 0.0
-!   grid%g_u_2 = factor_u*s_u_2
-!   grid%g_v_1 = 0.0
-!   grid%g_v_2 = factor_v*s_v_2
-!   grid%g_w_1 = 0.0
-!   grid%g_w_2 = factor_w*s_w_2
-!   grid%g_ph_1 = 0.0
-!   grid%g_ph_2 = factor_ph*s_ph_2
-!   grid%g_t_1 = 0.0
-!   grid%g_t_2 = factor_t*s_t_2
-!   grid%g_mu_1 = 0.0
-!   grid%g_mu_2 = factor_mu*s_mu_2
-!   grid%g_moist = factor_moist*s_moist
-
-!   grid%g_p = factor*s_p
-!   grid%g_al = factor*s_al
-!   grid%g_h_diabatic = factor*s_h_diabatic
-
-!   grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
-!   grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
-!   grid%g_v_bxs = factor_v*s_v_bxs; grid%g_v_bxe = factor_v*s_v_bxe; grid%g_v_bys = factor_v*s_v_bys; grid%g_v_bye = factor_v*s_v_bye
-!   grid%g_v_btxs = factor_v*s_v_btxs; grid%g_v_btxe = factor_v*s_v_btxe; grid%g_v_btys = factor_v*s_v_btys; grid%g_v_btye = factor_v*s_v_btye
-!   grid%g_w_bxs = factor_w*s_w_bxs; grid%g_w_bxe = factor_w*s_w_bxe; grid%g_w_bys = factor_w*s_w_bys; grid%g_w_bye = factor_w*s_w_bye
-!   grid%g_w_btxs = factor_w*s_w_btxs; grid%g_w_btxe = factor_w*s_w_btxe; grid%g_w_btys = factor_w*s_w_btys; grid%g_w_btye = factor_w*s_w_btye
-!   grid%g_ph_bxs = factor_ph*s_ph_bxs; grid%g_ph_bxe = factor_ph*s_ph_bxe; grid%g_ph_bys = factor_ph*s_ph_bys; grid%g_ph_bye = factor_ph*s_ph_bye
-!   grid%g_ph_btxs = factor_ph*s_ph_btxs; grid%g_ph_btxe = factor_ph*s_ph_btxe; grid%g_ph_btys = factor_ph*s_ph_btys; grid%g_ph_btye = factor_ph*s_ph_btye
-!   grid%g_t_bxs = factor_t*s_t_bxs; grid%g_t_bxe = factor_t*s_t_bxe; grid%g_t_bys = factor_t*s_t_bys; grid%g_t_bye = factor_t*s_t_bye
-!   grid%g_t_btxs = factor_t*s_t_btxs; grid%g_t_btxe = factor_t*s_t_btxe; grid%g_t_btys = factor_t*s_t_btys; grid%g_t_btye = factor_t*s_t_btye
-!   grid%g_mu_bxs = factor_mu*s_mu_bxs; grid%g_mu_bxe = factor_mu*s_mu_bxe; grid%g_mu_bys = factor_mu*s_mu_bys; grid%g_mu_bye = factor_mu*s_mu_bye
-!   grid%g_mu_btxs = factor_mu*s_mu_btxs; grid%g_mu_btxe = factor_mu*s_mu_btxe; grid%g_mu_btys = factor_mu*s_mu_btys; grid%g_mu_btye = factor_mu*s_mu_btye
-!   grid%g_moist_bxs = factor_moist*s_moist_bxs; grid%g_moist_bxe = factor_moist*s_moist_bxe; grid%g_moist_bys = factor_moist*s_moist_bys; grid%g_moist_bye = factor_moist*s_moist_bye
-!   grid%g_moist_btxs = factor_moist*s_moist_btxs; grid%g_moist_btxe = factor_moist*s_moist_btxe; grid%g_moist_btys = factor_moist*s_moist_btys; grid%g_moist_btye = factor_moist*s_moist_btye
-
-!   RETURN
-!  END SUBROUTINE copy_s_to_g_adjtest
-
   SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
    TYPE (domain), INTENT(IN) :: grid
    REAL, INTENT(IN) :: factor
@@ -1225,14 +1098,6 @@ CONTAINS
    factor_t =factor
    factor_mu =factor
    factor_moist =factor
-
-!   IF ( grid%check_u )     factor_u = factor
-!   IF ( grid%check_v )     factor_v = factor
-!   IF ( grid%check_w )     factor_w = factor
-!   IF ( grid%check_ph )    factor_ph = factor
-!   IF ( grid%check_t )     factor_t = factor
-!   IF ( grid%check_mu )    factor_mu = factor
-!   IF ( grid%check_moist ) factor_moist = factor
 
 ! I&O variables
    grid%g_u_2 = factor_u*s_u_2
@@ -1327,34 +1192,9 @@ CONTAINS
 
   END SUBROUTINE copy_s_to_g_adjtest
 
-  SUBROUTINE copy_g_to_b ( grid )
-   TYPE (domain), INTENT(IN) :: grid
-
-   b_u_1 = grid%g_u_1 ; b_u_2 = grid%g_u_2
-   b_v_1 = grid%g_v_1 ; b_v_2 = grid%g_v_2 
-   b_w_1 = grid%g_w_1 ; b_w_2 = grid%g_w_2
-   b_ph_1 = grid%g_ph_1 ; b_ph_2 = grid%g_ph_2
-   b_t_1 = grid%g_t_1 ; b_t_2 = grid%g_t_2
-   b_mu_1 = grid%g_mu_1 ; b_mu_2 = grid%g_mu_2
-   b_moist = grid%g_moist
-   
-   b_p = grid%g_p
-   b_al = grid%g_al
-   b_h_diabatic = grid%g_h_diabatic
-   
-   RETURN
-  END SUBROUTINE copy_g_to_b
-
   SUBROUTINE copy_g_to_b_adjtest ( grid )
    TYPE (domain), INTENT(IN) :: grid
 
-!   b_u_1 = grid%g_u_1
-!   b_v_1 = grid%g_v_1
-!   b_w_1 = grid%g_w_1
-!   b_ph_1 = grid%g_ph_1
-!   b_t_1 = grid%g_t_1
-!   b_mu_1 = grid%g_mu_1
-!   b_tke_1 = grid%g_tke_1
    b_u_2 = grid%g_u_2
    b_v_2 = grid%g_v_2
    b_w_2 = grid%g_w_2
@@ -1405,7 +1245,7 @@ IF (grid%check_u) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,ite
-     save  = save + grid%g_u_1(i,k,j) * grid%g_u_1(i,k,j)    &
+     save  = save &
                   + grid%g_u_2(i,k,j) * grid%g_u_2(i,k,j)
    ENDDO
    ENDDO
@@ -1416,7 +1256,7 @@ IF (grid%check_v) THEN
    DO j = jts,jte
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
-     save  = save + grid%g_v_1(i,k,j) * grid%g_v_1(i,k,j)    &
+     save  = save &
                   + grid%g_v_2(i,k,j) * grid%g_v_2(i,k,j)
    ENDDO
    ENDDO
@@ -1427,7 +1267,7 @@ IF (grid%check_w) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
-     save  = save + grid%g_w_1(i,k,j) * grid%g_w_1(i,k,j)    &
+     save  = save &
                   + grid%g_w_2(i,k,j) * grid%g_w_2(i,k,j)
    ENDDO
    ENDDO
@@ -1438,7 +1278,7 @@ IF (grid%check_ph) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
-     save  = save + grid%g_ph_1(i,k,j) * grid%g_ph_1(i,k,j)  & 
+     save  = save &
                   + grid%g_ph_2(i,k,j) * grid%g_ph_2(i,k,j)
    ENDDO
    ENDDO
@@ -1449,7 +1289,7 @@ IF (grid%check_t) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
-     save  = save + grid%g_t_1(i,k,j) * grid%g_t_1(i,k,j)    &
+     save  = save &
                   + grid%g_t_2(i,k,j) * grid%g_t_2(i,k,j)
    ENDDO
    ENDDO
@@ -1460,7 +1300,7 @@ END IF
 IF (grid%check_mu) THEN
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
-     save  = save + grid%g_mu_1(i,j) * grid%g_mu_1(i,j)    &
+     save  = save &
                   + grid%g_mu_2(i,j) * grid%g_mu_2(i,j)
    ENDDO
    ENDDO
@@ -1492,7 +1332,6 @@ IF (grid%check_u) THEN
    DO k = sm32,em32 !kts,kte-1
    DO i = sm31,em31 !its,ite
      save  = save + grid%g_u_2(i,k,j) * grid%g_u_2(i,k,j)
-     save  = save + grid%g_u_1(i,k,j) * grid%g_u_1(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -1503,7 +1342,6 @@ IF (grid%check_v) THEN
    DO k = sm32,em32 !kts,kte-1
    DO i = sm31,em31 !its,MIN(ite,ide-1)
      save  = save + grid%g_v_2(i,k,j) * grid%g_v_2(i,k,j)
-     save  = save + grid%g_v_1(i,k,j) * grid%g_v_1(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -1514,7 +1352,6 @@ IF (grid%check_w) THEN
    DO k = sm32,em32 !kts,kte
    DO i = sm31,em31 !its,MIN(ite,ide-1)
      save  = save + grid%g_w_2(i,k,j) * grid%g_w_2(i,k,j)
-     save  = save + grid%g_w_1(i,k,j) * grid%g_w_1(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -1525,7 +1362,6 @@ IF (grid%check_ph) THEN
    DO k = sm32,em32 !kts,kte
    DO i = sm31,em31 !its,MIN(ite,ide-1)
      save  = save + grid%g_ph_2(i,k,j) * grid%g_ph_2(i,k,j) 
-     save  = save + grid%g_ph_1(i,k,j) * grid%g_ph_1(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -1536,7 +1372,6 @@ IF (grid%check_t) THEN
    DO k = sm32,em32 !kts,kte-1
    DO i = sm31,em31 !its,MIN(ite,ide-1)
      save  = save + grid%g_t_2(i,k,j) * grid%g_t_2(i,k,j)
-     save  = save + grid%g_t_1(i,k,j) * grid%g_t_1(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -1546,7 +1381,6 @@ IF (grid%check_mu) THEN
    DO j = sm33,em33 !jts,MIN(jte,jde-1)
    DO i = sm31,em31 !its,MIN(ite,ide-1)
      save  = save + grid%g_mu_2(i,j) * grid%g_mu_2(i,j)
-     save  = save + grid%g_mu_1(i,j) * grid%g_mu_1(i,j)
    ENDDO
    ENDDO
 END IF
@@ -1587,15 +1421,15 @@ END IF
    IF ( grid%check_mu )    factor_mu = factor
    IF ( grid%check_moist ) factor_moist = factor
 
-   grid%u_1 = factor_u*s_u_1; grid%u_2 = factor_u*s_u_2
-   grid%v_1 = factor_v*s_v_1; grid%v_2 = factor_v*s_v_2
-   grid%w_1 = factor_w*s_w_1; grid%w_2 = factor_w*s_w_2
-   grid%ph_1 = factor_ph*s_ph_1; grid%ph_2 = factor_ph*s_ph_2
-   grid%t_1 = factor_t*s_t_1; grid%t_2 = factor_t*s_t_2
-   grid%mu_1 = factor_mu*s_mu_1; grid%mu_2 = factor_mu*s_mu_2
+   grid%u_2 = factor_u*s_u_2
+   grid%v_2 = factor_v*s_v_2
+   grid%w_2 = factor_w*s_w_2
+   grid%ph_2 = factor_ph*s_ph_2
+   grid%t_2 = factor_t*s_t_2
+   grid%mu_2 = factor_mu*s_mu_2
    grid%moist = factor_moist*s_moist
    grid%scalar = factor*s_scalar
-   grid%tke_1 = factor*s_tke_1; grid%tke_2 = factor*s_tke_2
+   grid%tke_2 = factor*s_tke_2
 
    grid%p = factor*s_p
    grid%al = factor*s_al
@@ -1634,7 +1468,7 @@ IF (grid%check_u) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,ite
-     save  = save + (grid%u_1(i,k,j)-b_u_1(i,k,j)) * (grid%u_1(i,k,j)-b_u_1(i,k,j))    &
+     save  = save &
                   + (grid%u_2(i,k,j)-b_u_2(i,k,j)) * (grid%u_2(i,k,j)-b_u_2(i,k,j))
    ENDDO
    ENDDO
@@ -1644,7 +1478,7 @@ IF (grid%check_v) THEN
    DO j = jts,jte
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
-     save  = save + (grid%v_1(i,k,j)-b_v_1(i,k,j)) * (grid%v_1(i,k,j)-b_v_1(i,k,j))    &
+     save  = save &
                   + (grid%v_2(i,k,j)-b_v_2(i,k,j)) * (grid%v_2(i,k,j)-b_v_2(i,k,j))
    ENDDO
    ENDDO
@@ -1655,7 +1489,7 @@ IF (grid%check_w) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
-     save  = save + (grid%w_1(i,k,j)-b_w_1(i,k,j)) * (grid%w_1(i,k,j)-b_w_1(i,k,j))    &
+     save  = save &
                   + (grid%w_2(i,k,j)-b_w_2(i,k,j)) * (grid%w_2(i,k,j)-b_w_2(i,k,j))
    ENDDO
    ENDDO
@@ -1666,7 +1500,7 @@ IF (grid%check_ph) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
-     save  = save + (grid%ph_1(i,k,j)-b_ph_1(i,k,j)) * (grid%ph_1(i,k,j)-b_ph_1(i,k,j))    &
+     save  = save &
                   + (grid%ph_2(i,k,j)-b_ph_2(i,k,j)) * (grid%ph_2(i,k,j)-b_ph_2(i,k,j))
    ENDDO
    ENDDO
@@ -1677,7 +1511,7 @@ IF (grid%check_t) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
-     save  = save + (grid%t_1(i,k,j)-b_t_1(i,k,j)) * (grid%t_1(i,k,j)-b_t_1(i,k,j))    &
+     save  = save &
                   + (grid%t_2(i,k,j)-b_t_2(i,k,j)) * (grid%t_2(i,k,j)-b_t_2(i,k,j))
    ENDDO
    ENDDO
@@ -1688,7 +1522,7 @@ END IF
 IF (grid%check_mu) THEN
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
-     save  = save + (grid%mu_1(i,j)-b_mu_1(i,j)) * (grid%mu_1(i,j)-b_mu_1(i,j))    &
+     save  = save &
                   + (grid%mu_2(i,j)-b_mu_2(i,j)) * (grid%mu_2(i,j)-b_mu_2(i,j))
    ENDDO
    ENDDO
@@ -1709,91 +1543,56 @@ END IF
    RETURN
   END SUBROUTINE inner_dot
 
-  SUBROUTINE copy_g_to_a ( grid )
-   TYPE (domain), INTENT(IN) :: grid
-
-   grid%a_u_1 = grid%g_u_1 ; grid%a_u_2 = grid%g_u_2
-   grid%a_v_1 = grid%g_v_1 ; grid%a_v_2 = grid%g_v_2 
-   grid%a_w_1 = grid%g_w_1 ; grid%a_w_2 = grid%g_w_2
-   grid%a_ph_1 = grid%g_ph_1 ; grid%a_ph_2 = grid%g_ph_2
-   grid%a_t_1 = grid%g_t_1 ; grid%a_t_2 = grid%g_t_2
-   grid%a_mu_1 = grid%g_mu_1 ; grid%a_mu_2 = grid%g_mu_2
-   grid%a_moist = grid%g_moist
-   
-   grid%a_u_bxs = grid%g_u_bxs; grid%a_u_bxe = grid%g_u_bxe; grid%a_u_bys = grid%g_u_bys; grid%a_u_bye = grid%g_u_bye
-   grid%a_u_btxs = grid%g_u_btxs; grid%a_u_btxe = grid%g_u_btxe; grid%a_u_btys = grid%g_u_btys; grid%a_u_btye = grid%g_u_btye
-   grid%a_v_bxs = grid%g_v_bxs; grid%a_v_bxe = grid%g_v_bxe; grid%a_v_bys =grid%g_v_bys; grid%a_v_bye=grid%g_v_bye
-   grid%a_v_btxs = grid%g_v_btxs; grid%a_v_btxe = grid%g_v_btxe; grid%a_v_btys =grid%g_v_btys; grid%a_v_btye=grid%g_v_btye
-   grid%a_w_bxs = grid%g_w_bxs; grid%a_w_bxe = grid%g_w_bxe; grid%a_w_bys = grid%g_w_bys; grid%a_w_bye = grid%g_w_bye
-   grid%a_w_btxs = grid%g_w_btxs; grid%a_w_btxe = grid%g_w_btxe; grid%a_w_btys = grid%g_w_btys; grid%a_w_btye = grid%g_w_btye
-   grid%a_ph_bxs = grid%g_ph_bxs; grid%a_ph_bxe = grid%g_ph_bxe; grid%a_ph_bys = grid%g_ph_bys; grid%a_ph_bye = grid%g_ph_bye
-   grid%a_ph_btxs = grid%g_ph_btxs; grid%a_ph_btxe = grid%g_ph_btxe; grid%a_ph_btys = grid%g_ph_btys; grid%a_ph_bye = grid%g_ph_btye
-   grid%a_t_bxs = grid%g_t_bxs; grid%a_t_bxe = grid%g_t_bxe; grid%a_t_bys = grid%g_t_bys; grid%a_t_bye = grid%g_t_bye
-   grid%a_t_btxs = grid%g_t_btxs; grid%a_t_btxe = grid%g_t_btxe; grid%a_t_btys = grid%g_t_btys; grid%a_t_btye = grid%g_t_btye
-   grid%a_mu_bxs = grid%g_mu_bxs; grid%a_mu_bxe = grid%g_mu_bxe; grid%a_mu_bys = grid%g_mu_bys; grid%a_mu_bye = grid%g_mu_bye
-   grid%a_mu_btxs = grid%g_mu_btxs; grid%a_mu_btxe = grid%g_mu_btxe; grid%a_mu_btys = grid%g_mu_btys; grid%a_mu_btye = grid%g_mu_btye
-   grid%a_moist_bxs = grid%g_moist_bxs; grid%a_moist_bxe = grid%g_moist_bxe; grid%a_moist_bys = grid%g_moist_bys; grid%a_moist_bye = grid%g_moist_bye
-   grid%a_moist_btxs = grid%g_moist_btxs; grid%a_moist_btxe = grid%g_moist_btxe; grid%a_moist_btys = grid%g_moist_btys; grid%a_moist_btye = grid%g_moist_btye
-
-   RETURN
-  END SUBROUTINE copy_g_to_a
-
   SUBROUTINE copy_g_to_a_adjtest ( grid )
    TYPE (domain), INTENT(IN) :: grid
 
-IF (grid%check_u) THEN
-   grid%a_u_2 = grid%g_u_2
-   grid%a_u_1 = grid%g_u_1
-ELSE
-   grid%a_u_2 = 0.0
    grid%a_u_1 = 0.0
-END IF
+   IF (grid%check_u) THEN
+      grid%a_u_2 = grid%g_u_2
+   ELSE
+      grid%a_u_2 = 0.0
+   END IF
 
-IF (grid%check_v) THEN
-   grid%a_v_2 = grid%g_v_2
-   grid%a_v_1 = grid%g_v_1
-ELSE
-   grid%a_v_2 = 0.0
    grid%a_v_1 = 0.0
-END IF
+   IF (grid%check_v) THEN
+      grid%a_v_2 = grid%g_v_2
+   ELSE
+      grid%a_v_2 = 0.0
+   END IF
 
-IF (grid%check_w) THEN
-   grid%a_w_2 = grid%g_w_2
-   grid%a_w_1 = grid%g_w_1
-ELSE
-   grid%a_w_2 = 0.0
    grid%a_w_1 = 0.0
-END IF
+   IF (grid%check_w) THEN
+      grid%a_w_2 = grid%g_w_2
+   ELSE
+      grid%a_w_2 = 0.0
+   END IF
 
-IF (grid%check_t) THEN
-   grid%a_t_2 = grid%g_t_2
-   grid%a_t_1 = grid%g_t_1
-ELSE
-   grid%a_t_2 = 0.0
    grid%a_t_1 = 0.0
-END IF
+   IF (grid%check_t) THEN
+      grid%a_t_2 = grid%g_t_2
+   ELSE
+      grid%a_t_2 = 0.0
+   END IF
 
-IF (grid%check_ph) THEN
-   grid%a_ph_2 = grid%g_ph_2
-   grid%a_ph_1 = grid%g_ph_1
-ELSE
-   grid%a_ph_2 = 0.0
    grid%a_ph_1 = 0.0
-END IF
+   IF (grid%check_ph) THEN
+      grid%a_ph_2 = grid%g_ph_2
+   ELSE
+      grid%a_ph_2 = 0.0
+   END IF
 
-IF (grid%check_mu) THEN
-   grid%a_mu_2 = grid%g_mu_2
-   grid%a_mu_1 = grid%g_mu_1
-ELSE
-   grid%a_mu_2 = 0.0
    grid%a_mu_1 = 0.0
-END IF
+   IF (grid%check_mu) THEN
+      grid%a_mu_2 = grid%g_mu_2
+   ELSE
+      grid%a_mu_2 = 0.0
+   END IF
 
-IF (grid%check_moist) THEN
-   grid%a_moist = grid%g_moist
-ELSE
-   grid%a_moist = 0.0
-END IF
+   IF (grid%check_moist) THEN
+      grid%a_moist = grid%g_moist
+   ELSE
+      grid%a_moist = 0.0
+   END IF
    
 ! I&O variables
    grid%a_scalar = 0.0
@@ -1875,71 +1674,6 @@ END IF
    RETURN
   END SUBROUTINE copy_g_to_a_adjtest
 
-  SUBROUTINE inner_dot_a_b ( grid, save, its, ite, jts, jte )
-   TYPE (domain), INTENT(IN) :: grid
-   INTEGER, INTENT(IN) :: its, ite, jts, jte
-   REAL, INTENT(INOUT) :: save
-   INTEGER :: i, k, j, mm
-
-   DO j = jts,MIN(jte,jde-1)
-   DO k = kts,kte-1
-   DO i = its,ite
-     save  = save + grid%a_u_1(i,k,j) * b_u_1(i,k,j)    &
-                  + grid%a_u_2(i,k,j) * b_u_2(i,k,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = jts,jte
-   DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
-     save  = save + grid%a_v_1(i,k,j) * b_v_1(i,k,j)    &
-                  + grid%a_v_2(i,k,j) * b_v_2(i,k,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = jts,MIN(jte,jde-1)
-   DO k = kts,kte
-   DO i = its,MIN(ite,ide-1)
-     save  = save + grid%a_w_1(i,k,j) * b_w_1(i,k,j)    &
-                  + grid%a_w_2(i,k,j) * b_w_2(i,k,j)    &
-                  + grid%a_ph_1(i,k,j) * b_ph_1(i,k,j)  & 
-                  + grid%a_ph_2(i,k,j) * b_ph_2(i,k,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = jts,MIN(jte,jde-1)
-   DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
-     save  = save + grid%a_t_1(i,k,j) * b_t_1(i,k,j)    &
-                  + grid%a_t_2(i,k,j) * b_t_2(i,k,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-
-   DO j = jts,MIN(jte,jde-1)
-   DO i = its,MIN(ite,ide-1)
-     save  = save + grid%a_mu_1(i,j) * b_mu_1(i,j)    &
-                  + grid%a_mu_2(i,j) * b_mu_2(i,j)
-   ENDDO
-   ENDDO
-
-   DO mm = 1, num_moist
-   DO j = jts,MIN(jte,jde-1)
-   DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
-     save  = save + grid%a_moist(i,k,j,mm) * b_moist(i,k,j,mm)
-   ENDDO
-   ENDDO
-   ENDDO
-   ENDDO
-
-   RETURN
-  END SUBROUTINE inner_dot_a_b
-	
   SUBROUTINE inner_dot_a_b_adjtest ( grid, save, its, ite, jts, jte )
    TYPE (domain), INTENT(IN) :: grid
    INTEGER, INTENT(IN) :: its, ite, jts, jte
@@ -2195,11 +1929,6 @@ END IF
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar. ')
    ENDIF
-   DEALLOCATE ( s_tke_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tke_1. ')
-   ENDIF
    DEALLOCATE ( s_tke_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
@@ -2280,60 +2009,30 @@ END IF
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_scalar_btye. ')
    ENDIF
 
-   DEALLOCATE ( s_u_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_u_1. ')
-   ENDIF
    DEALLOCATE ( s_u_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_u_2. ')
-   ENDIF
-   DEALLOCATE ( s_v_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_v_1. ')
    ENDIF
    DEALLOCATE ( s_v_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_v_2. ')
    ENDIF
-   DEALLOCATE ( s_w_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_w_1. ')
-   ENDIF
    DEALLOCATE ( s_w_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_w_2. ')
-   ENDIF
-   DEALLOCATE ( s_ph_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_ph_1. ')
    ENDIF
    DEALLOCATE ( s_ph_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_ph_2. ')
    ENDIF
-   DEALLOCATE ( s_t_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_t_1. ')
-   ENDIF
    DEALLOCATE ( s_t_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_t_2. ')
-   ENDIF
-   DEALLOCATE ( s_mu_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_mu_1. ')
    ENDIF
    DEALLOCATE ( s_mu_2, STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -2645,11 +2344,6 @@ END IF
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar. ')
    ENDIF
-   DEALLOCATE ( b_tke_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate b_tke_1. ')
-   ENDIF
    DEALLOCATE ( b_tke_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
@@ -2730,60 +2424,30 @@ END IF
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_scalar_btye. ')
    ENDIF
 
-   DEALLOCATE ( b_u_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate b_u_1. ')
-   ENDIF
    DEALLOCATE ( b_u_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_u_2. ')
-   ENDIF
-   DEALLOCATE ( b_v_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate b_v_1. ')
    ENDIF
    DEALLOCATE ( b_v_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_v_2. ')
    ENDIF
-   DEALLOCATE ( b_w_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate b_w_1. ')
-   ENDIF
    DEALLOCATE ( b_w_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_w_2. ')
-   ENDIF
-   DEALLOCATE ( b_ph_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate b_ph_1. ')
    ENDIF
    DEALLOCATE ( b_ph_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_ph_2. ')
    ENDIF
-   DEALLOCATE ( b_t_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate b_t_1. ')
-   ENDIF
    DEALLOCATE ( b_t_2, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_t_2. ')
-   ENDIF
-   DEALLOCATE ( b_mu_1, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate b_mu_1. ')
    ENDIF
    DEALLOCATE ( b_mu_2, STAT=ierr )
    IF (ierr.NE.0) THEN

@@ -19,10 +19,9 @@ MODULE module_wrf_top
    USE module_timing
    USE module_wrf_error
    USE module_adtl_grid_utilities, ONLY : allocate_grid, deallocate_grid, copy_grid_to_s, copy_grid_to_b, &
-                                          copy_s_to_g, inner_dot_g, add_grid, inner_dot, init_domain_size, &
-                                          inner_dot_a_b, copy_g_to_a, copy_g_to_b, restore_grid, &
+                                          restore_grid, inner_dot_g, add_grid, inner_dot, init_domain_size, &
                                           copy_s_to_g_adjtest, copy_g_to_b_adjtest, inner_dot_g_adjtest, &
-                                          copy_g_to_a_adjtest, inner_dot_a_b_adjtest 
+                                          copy_g_to_a_adjtest, inner_dot_a_b_adjtest, copy_s_to_g 
    USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail
 
 #ifdef DM_PARALLEL

@@ -193,7 +193,7 @@
  /
 
  &perturbation
- check_TL = .false.
+ check_TL = .true.
  check_AD = .true.
  check_u = .true.
  check_v = .true.

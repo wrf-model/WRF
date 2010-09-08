@@ -261,7 +261,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 !-----------------------------------------------------------------------------
 
    grid%itimestep = grid%itimestep + 1
-   !return
+!   return
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
 

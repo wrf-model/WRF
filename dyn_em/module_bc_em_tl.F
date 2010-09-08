@@ -779,54 +779,6 @@ CONTAINS
 
 !------------------------------------------------------------------------
 
-   SUBROUTINE g_set_phys_bc_smallstep_1( config_flags, ru_1, du, rv_1, dv,   &
-                                       ids,ide, jds,jde, kds,kde,      &
-                                       ims,ime, jms,jme, kms,kme,      &
-                                       ips,ipe, jps,jpe, kps,kpe,      &
-                                       its,ite, jts,jte, kts,kte      )
-
-!
-!  this is just a wraper to call the boundary condition routines
-!  for each variable
-!
-
-      IMPLICIT NONE
-
-      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
-      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
-      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
-      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
-
-      TYPE( grid_config_rec_type ) config_flags
-
-      REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: &
-           ru_1,du, rv_1, dv
-
-      CALL set_physical_bc3d( ru_1  , 'u', config_flags,              &
-                              ids, ide, jds, jde, kds, kde,       &
-                              ims, ime, jms, jme, kms, kme,       &
-                              ips, ipe, jps, jpe, kps, kpe,       &
-                              its, ite, jts, jte, kts, kde )
-      CALL set_physical_bc3d( du , 'u', config_flags,                 &
-                              ids, ide, jds, jde, kds, kde,       &
-                              ims, ime, jms, jme, kms, kme,       &
-                              ips, ipe, jps, jpe, kps, kpe,       &
-                              its, ite, jts, jte, kts, kde )
-      CALL set_physical_bc3d( rv_1  , 'v', config_flags,              &
-                              ids, ide, jds, jde, kds, kde,       &
-                              ims, ime, jms, jme, kms, kme,       &
-                              ips, ipe, jps, jpe, kps, kpe,       &
-                              its, ite, jts, jte, kts, kde )
-      CALL set_physical_bc3d( dv  , 'v', config_flags,                &
-                              ids, ide, jds, jde, kds, kde,       &
-                              ims, ime, jms, jme, kms, kme,       &
-                              ips, ipe, jps, jpe, kps, kpe,       &
-                              its, ite, jts, jte, kts, kde )
-
-  END SUBROUTINE g_set_phys_bc_smallstep_1
-
-!------------------------------------------------------------------------
-
  SUBROUTINE g_rk_phys_bc_dry_1(config_flags,u,g_u,v,g_v,rw,g_rw,w,g_w, &
  muu,g_muu,muv,g_muv,mut,g_mut,php,g_php,alt,g_alt,p,g_p,ids,ide, &
  jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,jte,kts,kte)

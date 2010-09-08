@@ -5795,9 +5795,11 @@ end if
    !$OMP END PARALLEL DO
 BENCH_END(g_bc_2d_tim)
 
-   IF( config_flags%specified .or. config_flags%nested ) THEN
-     grid%dtbc = grid%dtbc + grid%dt
-   ENDIF
+!  dtbc will be read from basic state at every time step, so it need not to be updated here.
+!
+!  IF( config_flags%specified .or. config_flags%nested ) THEN
+!    grid%dtbc = grid%dtbc + grid%dt
+!  ENDIF
 
 ! reset surface w for consistency
 

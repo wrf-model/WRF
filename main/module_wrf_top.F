@@ -21,8 +21,8 @@ MODULE module_wrf_top
    USE module_adtl_grid_utilities, ONLY : allocate_grid, deallocate_grid, copy_grid_to_s, copy_grid_to_b, &
                                           restore_grid, inner_dot_g, add_grid, inner_dot, init_domain_size, &
                                           copy_s_to_g_adjtest, copy_g_to_b_adjtest, inner_dot_g_adjtest, &
-                                          copy_g_to_a_adjtest, inner_dot_a_b_adjtest
-   USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail
+                                          copy_g_to_a_adjtest, inner_dot_a_b_adjtest 
+   USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail, xtraj_io_initialize
 
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : wrf_dm_initialize, wrf_dm_sum_real
@@ -378,16 +378,22 @@ CONTAINS
 !</DESCRIPTION>
 
    REAL :: alpha_m, factor, val_l, val_a, save_l, val_n, coef
-   INTEGER :: nt, ij
+   INTEGER :: nt, ij, time_step, rc
    CHARACTER*256 :: timestr
 
    ! Return immediately if not dyn_em_check
    IF ( config_flags%dyn_opt .NE. dyn_em_check ) RETURN
 
+   ! Force to turn off history output in this case
+   CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
+
    ! Force to read the lateral boundary condition here.
    CALL med_before_solve_io ( head_grid, config_flags )
 
    CALL init_domain_size ( head_grid, config_flags )
+
+   ! Release linked list for trajectory
+   call xtraj_io_initialize
 
 IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
@@ -411,7 +417,27 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    CALL       wrf_message ( "wrf: calling nonlinear integrate" )
    model_config_rec%dyn_opt = dyn_em
+
+   ! Set up basic states output
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxhist6_interval_s ( head_grid%id, time_step )
+   CALL nl_set_io_form_auxhist6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxhist6 ( head_grid%id, 1 )
+   CALL Setup_Timekeeping ( head_grid )
+
+   ! Force to turn off history output in this case
+   CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
+   ! Force to turn off boundary input as it was already read.
+   CALL WRFU_AlarmRingerOff( head_grid%alarms( BOUNDARY_ALARM ), rc=rc )
+
    CALL wrf_run
+
+   ! Turn off basic states output
+   CALL nl_set_io_form_auxhist6 ( head_grid%id, 0 )
+   CALL nl_set_auxhist6_interval_s ( head_grid%id, 0 )
+   if ( .not. head_grid%trajectory_io ) CALL nl_set_inputout_interval_s ( head_grid%id, 0 )
+   CALL Setup_Timekeeping ( head_grid )
+
    CALL       wrf_message ( "wrf: back from nonlinear integrate" )
 
    ! Save the f(x)
@@ -421,7 +447,18 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL restore_grid ( head_grid )
    CALL copy_s_to_g_adjtest ( head_grid, 1.0 )
 
+   ! Set up basic states reading
+   model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxinput6_interval_s (head_grid%id, time_step )
+   CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+
    CALL wrf_run_tl
+
+   ! Turn off auxinput6 reading
+   CALL nl_set_auxinput6_interval_s (head_grid%id, 0 )
+   CALL Setup_Timekeeping ( head_grid )
 
    save_l = 0.0
    ! Calculate the inner dot.
@@ -450,6 +487,12 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
       model_config_rec%dyn_opt = dyn_em
       CALL domain_clock_get( head_grid, start_timestr=timestr )
       CALL domain_clock_set( head_grid, current_timestr=timestr )
+
+      ! Force to turn off history output in this case
+      CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
+      ! Force to turn off boundary input as it was perturbated in add_grid.
+      CALL WRFU_AlarmRingerOff( head_grid%alarms( BOUNDARY_ALARM ), rc=rc )
+
       head_grid%dtbc = 0
       CALL wrf_run
       CALL       wrf_message ( "wrf: back from nonlinear integrate" )
@@ -498,7 +541,18 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    CALL copy_g_to_b_adjtest ( head_grid )
 
+   ! Set up basic states reading
+   model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxinput6_interval_s (head_grid%id, time_step )
+   CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+
    CALL wrf_run_tl
+
+   ! Turn off auxinput6 reading
+   CALL nl_set_auxinput6_interval_s (head_grid%id, 0 )
+   CALL Setup_Timekeeping ( head_grid )
 
    val_l = 0.0
    !$OMP PARALLEL DO    &
@@ -517,7 +571,18 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL restore_grid ( head_grid )
    CALL copy_g_to_a_adjtest ( head_grid )
 
+   ! Set the file names and interval for reading basic states.
+   model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxinput6_interval_s (head_grid%id, time_step )
+   CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+
    CALL wrf_run_ad
+
+   ! Turn off auxinput6 reading
+   CALL nl_set_auxinput6_interval_s (head_grid%id, 0 )
+   CALL Setup_Timekeeping ( head_grid )
 
    val_a = 0.0
    !$OMP PARALLEL DO    &
@@ -545,6 +610,9 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
 ENDIF
 
+   ! Release linked list for trajectory
+   call xtraj_io_initialize
+
    ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.
    CALL wrf_finalize
 
@@ -566,6 +634,7 @@ ENDIF
 !</DESCRIPTION>
 
    CHARACTER*256 :: timestr
+   INTEGER       :: rc
 
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
@@ -576,8 +645,10 @@ ENDIF
    CALL domain_clock_get( head_grid, start_timestr=timestr )
    CALL domain_clock_set( head_grid, current_timestr=timestr )
 
+   ! Force to turn off history output in this case
+   CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
+
    IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
-   head_grid%dtbc = 0
    CALL integrate ( head_grid )
 
    CALL       wrf_message ( "wrf: back from tangent linear integrate" )
@@ -602,6 +673,7 @@ ENDIF
    CHARACTER*256 :: timestr, timestr1
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
+   INTEGER       :: rc
 
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
@@ -647,6 +719,9 @@ ENDIF
    CALL Setup_Timekeeping ( head_grid )
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+
+   ! Force to turn off history output in this case
+   CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
 
    CALL domain_clock_get( head_grid, start_timestr=timestr )
    CALL domain_clock_set( head_grid, current_timestr=timestr )

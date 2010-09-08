@@ -208,10 +208,10 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 #include <bench_solve_em_init.h>
 
 !==[P8_adj]===============================================================
-!!!!! Need to consider dtbc: whether + or - operation???  Ning Pan
-   IF( config_flags%specified .or. config_flags%nested ) THEN
-     grid%dtbc = grid%dtbc - grid%dt
-   ENDIF
+! dtbc will be read from basic state at every time step, so it doesn't need to be updated here.
+!  IF( config_flags%specified .or. config_flags%nested ) THEN
+!    grid%dtbc = grid%dtbc - grid%dt
+!  ENDIF
 
 !  Initialize linkedlist
    CALL linkedlist_initialize

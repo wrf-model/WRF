@@ -286,8 +286,8 @@ SUBROUTINE xtraj_io_initialize
    nsd = head_grid%num_soil_layers
    nbd = head_grid%spec_bdy_width
 
-   ! 3D variables: u_2, v_2, w_2, t_2, ph_2, p, al, alt, alb, phb, pb, h_diabatic
-   bytes_xtraj = n3d*12
+   ! 3D variables: u_2, v_2, w_2, t_2, ph_2, p, al, alt, alb, phb, pb, h_diabatic, tke_2
+   bytes_xtraj = n3d*13
 
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwt, sst, msft, msfu, msfv, f, e, sina, cosa,
@@ -325,6 +325,24 @@ SUBROUTINE xtraj_io_initialize
          bytes_xtraj = bytes_xtraj + n3d
       IF ( i .eq. P_A_QH ) &
          bytes_xtraj = bytes_xtraj + n3d
+   ENDDO
+
+   ! Boundary variables: bxs, bxe, btxs, btxe : u,v,w,ph,t
+   bytes_xtraj = bytes_xtraj + (jme-jms+1)*n1d*nbd*4*5
+
+   !                   : bxs, bxe, btxs, btxe : mu
+   bytes_xtraj = bytes_xtraj + (jme-jms+1)*nbd*4
+
+   ! Boundary variables: bys, bye, btys, btye : u,v,w,ph,t
+   bytes_xtraj = bytes_xtraj + (ime-ims+1)*n1d*nbd*4*5
+
+   !                   : bys, bye, btys, btye : mu
+   bytes_xtraj = bytes_xtraj + (ime-ims+1)*nbd*4
+   
+   ! Moist boundary variables
+   DO i = PARAM_FIRST_SCALAR, num_moist
+      bytes_xtraj = bytes_xtraj + (jme-jms+1)*n1d*nbd*4 ! bxs, bxe, btxs, btxe
+      bytes_xtraj = bytes_xtraj + (ime-ims+1)*n1d*nbd*4 ! bys, bye, btys, btye
    ENDDO
 
    current => xtraj_head
@@ -521,7 +539,7 @@ SUBROUTINE packup_xtraj (data)
 
    REAL, DIMENSION(:), INTENT (OUT) :: data
  
-   INTEGER :: ns, ne, n
+   INTEGER :: ns, ne, n, ntmp
 
    ! 3D variables: u_2, v_2, w_2, t_2, ph_2, p, al, alt, alb, phb, pb, h_diabatic
    ns =       1 ; ne =    n3d ; data(ns:ne) = RESHAPE( head_grid%u_2, (/n3d/))
@@ -536,6 +554,7 @@ SUBROUTINE packup_xtraj (data)
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%phb, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%pb, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%h_diabatic, (/n3d/))
+   ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%tke_2, (/n3d/))
 
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
@@ -620,6 +639,80 @@ SUBROUTINE packup_xtraj (data)
       ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%moist(:,:,:,n), (/n3d/))
    ENDDO
 
+   ! Boundary variables: bxs, bxe, btxs, btxe : u,v,w,ph,t
+   ntmp = (jme-jms+1)*n1d*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_bxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_bxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_btxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_btxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_bxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_bxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_btxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_btxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_bxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_bxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_btxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_btxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_bxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_bxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_btxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_btxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_bxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_bxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_btxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_btxe(:,:,:), (/ntmp/))
+
+   !                   : bxs, bxe, btxs, btxe : mu
+   ntmp = (jme-jms+1)*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_bxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_bxe(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_btxs(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_btxe(:,:,:), (/ntmp/))
+
+   ! Boundary variables: bys, bye, btys, btye : u,v,w,ph,t
+   ntmp = (ime-ims+1)*n1d*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_bys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_bye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_btys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_btye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_bys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_bye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_btys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%v_btye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_bys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_bye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_btys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%w_btye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_bys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_bye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_btys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%ph_btye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_bys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_bye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_btys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%t_btye(:,:,:), (/ntmp/))
+
+   !                   : bys, bye, btys, btye : mu
+   ntmp = (ime-ims+1)*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_bys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_bye(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_btys(:,:,:), (/ntmp/))
+   ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%mu_btye(:,:,:), (/ntmp/))
+
+   ! Moist boundary variables
+   DO n = PARAM_FIRST_SCALAR, num_moist
+      ntmp = (jme-jms+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_bxs(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_bxe(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_btxs(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_btxe(:,:,:,n), (/ntmp/))
+      ntmp = (ime-ims+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_bys(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_bye(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_btys(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_btye(:,:,:,n), (/ntmp/))
+   ENDDO
+
    IF ( ne .NE. bytes_xtraj ) &
       CALL wrf_error_fatal ( 'packup_xtraj:  ne is not equal to bytes_xtraj' )
 
@@ -631,7 +724,7 @@ SUBROUTINE restore_xtraj (data)
 
    REAL, DIMENSION(:), INTENT (IN) :: data
 
-   INTEGER :: ns, ne, n
+   INTEGER :: ns, ne, n, ntmp
 
    ! 3D variables: u_2, v_2, w_2, t_2, ph_2, p, al, alt, alb, phb, pb, h_diabatic
    ns =       1 ; ne =    n3d ; head_grid%u_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
@@ -646,6 +739,7 @@ SUBROUTINE restore_xtraj (data)
    ns =    ne+1 ; ne = ne+n3d ; head_grid%phb = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%pb = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%h_diabatic = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n3d ; head_grid%tke_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
 
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
@@ -728,6 +822,80 @@ SUBROUTINE restore_xtraj (data)
 
    DO n = PARAM_FIRST_SCALAR, num_moist
       ns =    ne+1 ; ne = ne+n3d ; head_grid%moist(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ENDDO
+
+   ! Boundary variables: bxs, bxe, btxs, btxe : u,v,w,ph,t
+   ntmp = (jme-jms+1)*n1d*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_bxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_bxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_btxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_btxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_bxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_bxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_btxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_btxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_bxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_bxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_btxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_btxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_bxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_bxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_btxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_btxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_bxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_bxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_btxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_btxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+
+   !                   : bxs, bxe, btxs, btxe : mu
+   ntmp = (jme-jms+1)*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_bxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_bxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_btxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_btxe(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,1,nbd/))
+
+   ! Boundary variables: bys, bye, btys, btye : u,v,w,ph,t
+   ntmp = (ime-ims+1)*n1d*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_bys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_bye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_btys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_btye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_bys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_bye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_btys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%v_btye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_bys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_bye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_btys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%w_btye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_bys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_bye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_btys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%ph_btye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_bys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_bye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_btys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%t_btye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+
+   !                   : bys, bye, btys, btye : mu
+   ntmp = (ime-ims+1)*nbd
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_bys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_bye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_btys(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,1,nbd/))
+   ns =    ne+1 ; ne = ne+ntmp ; head_grid%mu_btye(:,:,:) = RESHAPE( data(ns:ne), (/ime-ims+1,1,nbd/))
+
+   ! Moist boundary variables
+   DO n = PARAM_FIRST_SCALAR, num_moist
+      ntmp = (jme-jms+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_bxs(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_bxe(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_btxs(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_btxe(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ntmp = (ime-ims+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_bys(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_bye(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_btys(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_btye(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
    ENDDO
 
    IF ( ne .NE. bytes_xtraj ) &

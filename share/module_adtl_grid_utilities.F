@@ -1250,7 +1250,6 @@ IF (grid%check_mu) THEN
 END IF
 
 IF (grid%check_moist) THEN
-   print*,'PARAM_FIRST_SCALAR=',PARAM_FIRST_SCALAR, num_moist
    DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1

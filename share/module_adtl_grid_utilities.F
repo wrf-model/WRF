@@ -1715,15 +1715,15 @@ END IF
    ENDDO
    ENDDO
   
-   DO mm = 1, num_scalar
-   DO j = sm33,em33 !jts,MIN(jte,jde-1)
-   DO k = sm32,em32 !kts,kte-1
-   DO i = sm31,em31 !its,MIN(ite,ide-1)
-     save  = save + grid%a_scalar(i,k,j,mm) * b_scalar(i,k,j,mm)
-   ENDDO
-   ENDDO
-   ENDDO
-   ENDDO
+!  DO mm = 1, num_scalar
+!  DO j = sm33,em33 !jts,MIN(jte,jde-1)
+!  DO k = sm32,em32 !kts,kte-1
+!  DO i = sm31,em31 !its,MIN(ite,ide-1)
+!    save  = save + grid%a_scalar(i,k,j,mm) * b_scalar(i,k,j,mm)
+!  ENDDO
+!  ENDDO
+!  ENDDO
+!  ENDDO
   
    DO j=1,spec_bdy_width
    DO k=kds,kde
@@ -1827,31 +1827,31 @@ END IF
    ENDDO
    ENDDO
 
-   DO mm=1,num_scalar
-   DO j=1,spec_bdy_width
-   DO k=kds,kde
-   DO i=jms,jme
-      save=save + grid%a_scalar_bxs(i,k,j,mm)*b_scalar_bxs(i,k,j,mm)
-      save=save + grid%a_scalar_bxe(i,k,j,mm)*b_scalar_bxe(i,k,j,mm)
-      save=save + grid%a_scalar_btxs(i,k,j,mm)*b_scalar_btxs(i,k,j,mm)
-      save=save + grid%a_scalar_btxe(i,k,j,mm)*b_scalar_btxe(i,k,j,mm)
-   ENDDO
-   ENDDO
-   ENDDO
-   ENDDO
+!  DO mm=1,num_scalar
+!  DO j=1,spec_bdy_width
+!  DO k=kds,kde
+!  DO i=jms,jme
+!     save=save + grid%a_scalar_bxs(i,k,j,mm)*b_scalar_bxs(i,k,j,mm)
+!     save=save + grid%a_scalar_bxe(i,k,j,mm)*b_scalar_bxe(i,k,j,mm)
+!     save=save + grid%a_scalar_btxs(i,k,j,mm)*b_scalar_btxs(i,k,j,mm)
+!     save=save + grid%a_scalar_btxe(i,k,j,mm)*b_scalar_btxe(i,k,j,mm)
+!  ENDDO
+!  ENDDO
+!  ENDDO
+!  ENDDO
 
-   DO mm=1,num_scalar
-   DO j=1,spec_bdy_width
-   DO k=kds,kde
-   DO i=ims,ime
-      save=save + grid%a_scalar_bys(i,k,j,mm)*b_scalar_bys(i,k,j,mm)
-      save=save + grid%a_scalar_bye(i,k,j,mm)*b_scalar_bye(i,k,j,mm)
-      save=save + grid%a_scalar_btys(i,k,j,mm)*b_scalar_btys(i,k,j,mm)
-      save=save + grid%a_scalar_btye(i,k,j,mm)*b_scalar_btye(i,k,j,mm)
-   ENDDO
-   ENDDO
-   ENDDO
-   ENDDO
+!  DO mm=1,num_scalar
+!  DO j=1,spec_bdy_width
+!  DO k=kds,kde
+!  DO i=ims,ime
+!     save=save + grid%a_scalar_bys(i,k,j,mm)*b_scalar_bys(i,k,j,mm)
+!     save=save + grid%a_scalar_bye(i,k,j,mm)*b_scalar_bye(i,k,j,mm)
+!     save=save + grid%a_scalar_btys(i,k,j,mm)*b_scalar_btys(i,k,j,mm)
+!     save=save + grid%a_scalar_btye(i,k,j,mm)*b_scalar_btye(i,k,j,mm)
+!  ENDDO
+!  ENDDO
+!  ENDDO
+!  ENDDO
 
    RETURN
   END SUBROUTINE inner_dot_a_b_adjtest

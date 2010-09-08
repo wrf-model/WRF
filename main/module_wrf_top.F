@@ -401,20 +401,6 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL allocate_grid ( )
    CALL copy_grid_to_s ( head_grid )
 
-   IF ( config_flags%check_TL ) THEN
-
-   wrf_err_message = '=============== Tangent Linear check ==================='
-   CALL wrf_message(TRIM(wrf_err_message))
-   
-   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST ====='
-   CALL wrf_message(TRIM(wrf_err_message))
-
-   WRITE(wrf_err_message,'(A,7(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
-                               head_grid%check_w, head_grid%check_ph, &
-                               head_grid%check_t, head_grid%check_mu, &
-                               head_grid%check_moist
-   CALL wrf_message(TRIM(wrf_err_message))
-
    CALL       wrf_message ( "wrf: calling nonlinear integrate" )
    model_config_rec%dyn_opt = dyn_em
 
@@ -428,7 +414,7 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    ! Force to turn off history output in this case
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
    ! Force to turn off boundary input as it was already read.
-   CALL WRFU_AlarmRingerOff( head_grid%alarms( BOUNDARY_ALARM ), rc=rc )
+   CALL nl_set_io_form_boundary( head_grid%id, 0 )
 
    CALL wrf_run
 
@@ -439,6 +425,20 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL Setup_Timekeeping ( head_grid )
 
    CALL       wrf_message ( "wrf: back from nonlinear integrate" )
+
+   IF ( config_flags%check_TL ) THEN
+
+   wrf_err_message = '=============== Tangent Linear check ==================='
+   CALL wrf_message(TRIM(wrf_err_message))
+   
+   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST ====='
+   CALL wrf_message(TRIM(wrf_err_message))
+
+   WRITE(wrf_err_message,'(A,7(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
+                               head_grid%check_w, head_grid%check_ph, &
+                               head_grid%check_t, head_grid%check_mu, &
+                               head_grid%check_moist
+   CALL wrf_message(TRIM(wrf_err_message))
 
    ! Save the f(x)
    CALL copy_grid_to_b ( head_grid )
@@ -491,7 +491,7 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
       ! Force to turn off history output in this case
       CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
       ! Force to turn off boundary input as it was perturbated in add_grid.
-      CALL WRFU_AlarmRingerOff( head_grid%alarms( BOUNDARY_ALARM ), rc=rc )
+      CALL nl_set_io_form_boundary( head_grid%id, 0 )
 
       head_grid%dtbc = 0
       CALL wrf_run

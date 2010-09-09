@@ -413,8 +413,10 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    ! Force to turn off history output in this case
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
-   ! Force to turn off boundary input as it was already read.
-   CALL nl_set_io_form_boundary( head_grid%id, 0 )
+   IF ( config_flags%check_TL ) THEN
+      ! Force to turn off boundary input as we can only perturb the initial boundary condition.
+      CALL nl_set_io_form_boundary( head_grid%id, 0 )
+   ENDIF
 
    CALL wrf_run
 

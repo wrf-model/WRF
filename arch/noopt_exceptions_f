@@ -69,6 +69,7 @@ nl_get_0_routines.o : nl_get_0_routines.F
 nl_get_1_routines.o : nl_get_1_routines.F
 nl_set_0_routines.o : nl_set_0_routines.F
 nl_set_1_routines.o : nl_set_1_routines.F
+module_em_ad.o : module_em_ad.F
 
 convert_nmm.o \
 init_modules_em.o \
@@ -94,7 +95,8 @@ start_domain_nmm.o \
 shift_domain_nmm.o \
 start_em.o \
 wrf_fddaobs_in.o \
-wrf_tsin.o :
+wrf_tsin.o \
+module_em_ad.o : 
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90

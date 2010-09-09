@@ -55,6 +55,35 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
    CHARACTER*256          :: message
 
+#if (WRFPLUS == 1)
+! In WRFPLUS NL run, boundary should be read before save xtraj.
+! - RESTART OUTPUT
+   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+   IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
+        ( currTime .NE. startTime ) ) THEN
+#ifdef HWRF
+!zhang's doing
+     CALL domain_clock_get( grid, current_time=CurrTime )
+     CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
+     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+      if (grid%id .eq. 2) call med_namelist_out ( grid , config_flags )
+!end of zhang's doing
+#endif
+     IF ( grid%id .EQ. 1 ) THEN
+       ! Only the parent initiates the restart writing. Otherwise, different
+       ! domains may be written out at different times and with different 
+       ! time stamps in the file names.
+       CALL med_restart_out ( grid , config_flags )
+     ENDIF
+     CALL WRFU_AlarmRingerOff( grid%alarms( RESTART_ALARM ), rc=rc )
+   ELSE
+     CALL WRFU_AlarmRingerOff( grid%alarms( RESTART_ALARM ), rc=rc )
+   ENDIF
+
+! - Look for boundary data after writing out history and restart files
+   CALL med_latbound_in ( grid , config_flags )
+#endif
+
 #if (EM_CORE == 1)
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
@@ -149,6 +178,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      ENDIF
    ENDDO
 
+#if (WRFPLUS != 1)
 ! - RESTART OUTPUT
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
@@ -174,6 +204,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! - Look for boundary data after writing out history and restart files
    CALL med_latbound_in ( grid , config_flags )
+#endif
 
    RETURN
 END SUBROUTINE med_before_solve_io
@@ -1727,6 +1758,14 @@ integer myproc,i,j,k
 
 #if (EM_CORE == 1)
        IF ( (config_flags%dfi_opt .NE. DFI_NODFI) .AND. (head_grid%dfi_stage .NE. DFI_FST) ) THEN
+          CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
+          CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+       END IF
+#endif
+#if (WRFPLUS == 1)
+       ! In the beginning of the check, boundary will be read in advance to save it in s_xxx
+       ! It will be read again when the first NL model start to run.
+       IF ( (config_flags%dyn_opt .EQ. dyn_em_check) ) THEN
           CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
           CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
        END IF

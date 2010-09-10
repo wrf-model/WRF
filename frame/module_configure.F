@@ -182,9 +182,6 @@ CONTAINS
       ENDIF
 #endif
 
-#if (EM_CORE == 1 && DA_CORE == 0)
-#  include "../dyn_em/namelist_remappings_em.h"
-#endif
 #ifdef _WIN32
       model_config_rec%nocolons = .TRUE.   ! always no colons for Windows
 #endif

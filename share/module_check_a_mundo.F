@@ -221,6 +221,11 @@
          END IF
       END IF
 
+!  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
+!  Relocated here so that the remappings are after checking the namelist for inconsistencies.
+
+#     include "../dyn_em/namelist_remappings_em.h"
+
 #endif
 
    END SUBROUTINE 

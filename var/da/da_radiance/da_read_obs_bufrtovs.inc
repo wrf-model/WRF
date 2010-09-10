@@ -545,7 +545,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
         'Allocating space for radiance innov structure', &
          i, iv%instid(i)%rttovid_string, iv%instid(i)%num_rad
 
-!#ifdef RTTOV
+#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
          nchanl(1) = nchan
          call da_rttov_setupchan(1, nchanl, coefs(i), &   ! in
@@ -553,7 +553,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
             iv%instid(i)%nbtout)      ! out
            iv%instid(i)%nchannels= iv%instid(i)%nfrequencies   ! RTTOV9_3
       end if
-!#endif
+#endif
 
       call da_allocate_rad_iv(i,nchan,iv)
 

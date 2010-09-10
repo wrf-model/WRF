@@ -634,14 +634,14 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
 !   6.0 assign sequential structure to innovation structure
 !-------------------------------------------------------------
-!#ifdef RTTOV
+#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
          nchanl(1) = nchan
          call da_rttov_setupchan(1, nchanl, coefs(inst), &   ! in
             iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &  !RTTOV9_3
             iv%instid(inst)%nbtout)      ! out    RTTOV9_3
       end if
-!#endif
+#endif
 
   n = 0
   p => head

@@ -27,9 +27,9 @@ subroutine da_read_simulated_rad (iv)
    type(info_type)       ::  info
    type(model_loc_type)  ::  loc
  
-!RTTOV9_3
+#ifdef RTTOV
    integer :: nchanl(1)
-!RTTOV9_3
+#endif
   
    call da_trace_entry("da_read_simulated_rad")
 
@@ -73,14 +73,14 @@ subroutine da_read_simulated_rad (iv)
          iv%instid(inst)%nchannels=nchan
       end if
 #endif
-!#ifdef RTTOV
+#ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
          nchanl(1) = nchan
          call da_rttov_setupchan(inst, nchanl, coefs(inst), &   ! in
             iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &
             iv%instid(inst)%nbtout)      ! out
       end if
-!#endif
+#endif
 
       call da_allocate_rad_iv(inst,nchan,iv)
 

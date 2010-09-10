@@ -100,10 +100,11 @@ module da_radiance
 #endif
    
 contains
-!RTTOV9_3
+
+#ifdef RTTOV
 #include "da_rttov_setupchan.inc"   
 #include "da_rttov_setupindex.inc"
-!end for RTTOV9_3
+#endif
 
 #include "da_calculate_grady_rad.inc"
 #include "da_read_filtered_rad.inc"

@@ -37,6 +37,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Model layer
    USE module_utility
    USE module_bc_em, ONLY : rk_phys_bc_dry_2
+   USE module_bc, ONLY : set_physical_bc3d
 
    IMPLICIT NONE
 

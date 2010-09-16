@@ -496,6 +496,7 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
       CALL nl_set_io_form_boundary( head_grid%id, 0 )
 
       head_grid%dtbc = 0
+      head_grid%itimestep = 0
       CALL wrf_run
       CALL       wrf_message ( "wrf: back from nonlinear integrate" )
 
@@ -676,7 +677,9 @@ ENDIF
    CHARACTER*256 :: timestr, timestr1
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
-   INTEGER       :: rc
+   INTEGER :: rc, runad
+   REAL    :: timestep
+   TYPE(WRFU_TimeInterval) :: run_interval
 
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
@@ -731,6 +734,17 @@ ENDIF
    CALL domain_clock_set( head_grid, time_step_seconds=-1*model_config_rec%time_step )
 
    IF ( ASSOCIATED(xtraj_head) ) xtraj_pointer => xtraj_head%next
+
+   ! head_grid%itimestep should be the last
+   IF ( head_grid%itimestep .EQ. 0 ) THEN
+      timestep=abs(head_grid%dt)
+      run_interval = head_grid%stop_subtime - head_grid%start_subtime
+
+      CALL WRFU_TimeIntervalGet( run_interval, S=runad, rc=rc )
+      runad = abs(runad)
+
+      head_grid%itimestep = ceiling(real(runad)/timestep)
+   ENDIF
 
    CALL integrate ( head_grid )
 

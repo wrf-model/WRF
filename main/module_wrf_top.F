@@ -651,6 +651,7 @@ ENDIF
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
 
    IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
+   head_grid%itimestep = 0
    CALL integrate ( head_grid )
 
    CALL       wrf_message ( "wrf: back from tangent linear integrate" )

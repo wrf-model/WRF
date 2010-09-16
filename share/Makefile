@@ -21,6 +21,7 @@ MODULES =                       \
 	module_check_a_mundo.o		\
 	module_adtl_grid_utilities.o	\
 	mediation_pertmod_io.o	\
+	module_linked_lisk2.o	\
 	module_llxy.o
 
 OBJS    = 		\
@@ -177,7 +178,7 @@ mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.
 mediation_force_domain.o: ../frame/module_domain.o ../frame/module_configure.o
 
 mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
-			../frame/module_timing.o \
+			../frame/module_timing.o ../dyn_em/module_bc_em.o \
 			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \

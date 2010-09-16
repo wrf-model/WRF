@@ -40,7 +40,6 @@ MODULES =                 		\
 	module_sfs_driver.o		\
 	module_sfs_driver_tl.o		\
 	module_sfs_driver_ad.o		\
-        module_linked_lisk2.o   	\
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings
@@ -468,7 +467,6 @@ solve_em_ad.o:  module_small_step_em.o 		\
                 module_first_rk_step_part2.o \
                 module_first_rk_step_part2_ad.o \
                 module_avgflx_em.o           \
-                module_linked_lisk2.o        \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_driver_constants.o \
@@ -481,6 +479,7 @@ solve_em_ad.o:  module_small_step_em.o 		\
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		../share/module_bc_ad.o \
+                ../share/module_linked_lisk2.o        \
 		../phys/module_microphysics_driver.o \
 		../phys/module_microphysics_zero_out.o \
 		../phys/module_physics_addtendc.o

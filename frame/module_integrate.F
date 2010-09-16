@@ -15,6 +15,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_configure
    USE module_timing
    USE module_utility
+   USE module_linked_list2, only : linkedlist_initialize
 
    IMPLICIT NONE
 
@@ -425,6 +426,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
          ENDIF
          IF ( grid%jcdfi_use .AND. config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
             CALL jcdfi_add_forcing ( grid )
+         ENDIF
+         IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+            CALL linkedlist_initialize
          ENDIF
 #endif
 

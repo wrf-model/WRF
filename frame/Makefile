@@ -257,6 +257,7 @@ module_integrate.o: module_domain.o \
 		module_state_description.o \
 		module_nesting.o \
 		module_configure.o \
+		../share/module_linked_lisk2.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_io.o : md_calls.inc \

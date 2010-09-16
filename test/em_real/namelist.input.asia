@@ -26,6 +26,8 @@
  io_form_input                       = 2
  io_form_boundary                    = 2
  debug_level                         = -300
+ iofields_filename                   ="plus.io_config",
+ ignore_iofields_warning             =.true.,
  /
 
  &domains

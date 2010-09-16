@@ -29,12 +29,14 @@ END SUBROUTINE med_calc_model_time
 SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Driver layer
    USE module_state_description
-   USE module_domain	, ONLY : domain, domain_clock_get
-   USE module_configure	, ONLY : grid_config_rec_type
+   USE module_domain	, ONLY : domain, domain_clock_get, domain_clockadvance, domain_clock_set, &
+                                 get_ijk_from_grid
+   USE module_configure	, ONLY : grid_config_rec_type, model_config_rec
    USE module_streams
    USE mediation_pertmod_io , ONLY : save_tl_pert, read_ad_forcing, save_xtraj, read_xtraj, read_xtraj_reverse
   ! Model layer
    USE module_utility
+   USE module_bc_em, ONLY : rk_phys_bc_dry_2
 
    IMPLICIT NONE
 
@@ -54,6 +56,10 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
 
    CHARACTER*256          :: message
+   INTEGER                :: ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe, ij, im
+
 
 #if (WRFPLUS == 1)
 ! In WRFPLUS NL run, boundary should be read before save xtraj.
@@ -109,17 +115,26 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        rc = 1  ! dummy statement
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
        IF ( .NOT. grid%trajectory_io ) THEN
+#if (WRFPLUS == 1)
+         ! For wrfplus, only allow tl and nl output histoty files.
+         IF ( config_flags%dyn_opt .EQ. dyn_em_tl .OR. config_flags%dyn_opt .EQ. dyn_em ) THEN
+            CALL med_hist_out ( grid , ialarm, config_flags )
+         ENDIF
+#else
          CALL med_hist_out ( grid , ialarm, config_flags )
+#endif
        ELSE
          IF ( ialarm .EQ. auxhist8_only ) THEN ! TL perturbation only
-           CALL domain_clock_get ( grid, current_timestr=message )
-           IF ( config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
-             CALL save_tl_pert  ( message )
-           ENDIF
+            CALL domain_clock_get ( grid, current_timestr=message )
+            IF ( config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
+               CALL save_tl_pert  ( message )
+            ENDIF
          ENDIF
          IF ( ialarm .EQ. auxhist6_only ) THEN ! trajectory only
-         CALL domain_clock_get ( grid, current_timestr=message )
-         CALL save_xtraj  (  message )
+            CALL domain_clock_get ( grid, current_timestr=message )
+            IF ( config_flags%dyn_opt .EQ. dyn_em ) THEN
+               CALL save_xtraj  (  message )
+            ENDIF
          ENDIF
        ENDIF
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
@@ -154,9 +169,57 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
        IF ( .NOT. grid%trajectory_io ) THEN
-         CALL med_auxinput_in ( grid, ialarm, config_flags )
+          ! For adjoint integration with disk IO, the basic state is one step before the domain time.
+          IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
+             ! Turn off the alarm before the time go forward
+             CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+             CALL domain_clockadvance ( grid )
+          ENDIF
+          CALL med_auxinput_in ( grid, ialarm, config_flags )
+          IF ( (config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) &
+               .AND. ialarm .EQ. auxinput6_only .AND. &
+               grid%itimestep .NE. 0 ) THEN
+             CALL get_ijk_from_grid (  grid ,                   &
+                                       ids, ide, jds, jde, kds, kde,    &
+                                       ims, ime, jms, jme, kms, kme,    &
+                                       ips, ipe, jps, jpe, kps, kpe    )
+
+             DO ij = 1 , grid%num_tiles
+                CALL rk_phys_bc_dry_2( config_flags,                     &
+                                       grid%u_2, grid%v_2, grid%w_2,     &
+                                       grid%t_2, grid%ph_2, grid%mu_2,   &
+                                       ids, ide, jds, jde, kds, kde,     &
+                                       ims, ime, jms, jme, kms, kme,     &
+                                       ips, ipe, jps, jpe, kps, kpe,     &
+                                       grid%i_start(ij), grid%i_end(ij), &
+                                       grid%j_start(ij), grid%j_end(ij), &
+                                       kps    , kpe               )
+                DO im = PARAM_FIRST_SCALAR , num_moist
+                   CALL set_physical_bc3d( grid%moist(:,:,:,im), 'p', config_flags,   &
+                                           ids, ide, jds, jde, kds, kde,             &
+                                           ims, ime, jms, jme, kms, kme,             &
+                                           ips, ipe, jps, jpe, kps, kpe,             &
+                                           grid%i_start(ij), grid%i_end(ij),         &
+                                           grid%j_start(ij), grid%j_end(ij),         &
+                                           kps    , kpe                       )
+                ENDDO
+                CALL set_physical_bc3d( grid%tke_2 , 'p', config_flags,  &
+                                        ids, ide, jds, jde, kds, kde,            &
+                                        ims, ime, jms, jme, kms, kme,            &
+                                        ips, ipe, jps, jpe, kps, kpe,            &
+                                        grid%i_start(ij), grid%i_end(ij),        &
+                                        grid%j_start(ij), grid%j_end(ij),        &
+                                        kps    , kpe                     )
+
+             ENDDO
+          ENDIF
        ELSE
          IF ( ialarm .EQ. auxinput6_only ) THEN ! Read Trajectory only
+           IF ( config_flags%dyn_opt .EQ. dyn_em_ad  ) THEN
+              ! Turn off the alarm before the time go forward
+              CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+              CALL domain_clockadvance ( grid )
+           ENDIF
            CALL domain_clock_get ( grid, current_timestr=message )
            IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
              CALL read_xtraj  ( message )
@@ -171,10 +234,19 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
            ENDIF
          ENDIF
        ENDIF
-       WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
-          ialarm - first_auxinput + 1, ' for domain ',grid%id
-       CALL wrf_debug ( 0 , message )
-       CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+       IF ( .NOT. grid%trajectory_io ) THEN
+          WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
+             ialarm - first_auxinput + 1, ' for domain ',grid%id
+          CALL wrf_debug ( 0 , message )
+       ENDIF
+       ! Reverse the current time and don't turn off the alarm
+       IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
+          CALL domain_clock_set( grid, time_step_seconds=model_config_rec%time_step )
+          CALL domain_clockadvance ( grid )
+          CALL domain_clock_set( grid, time_step_seconds=-1*model_config_rec%time_step )
+       ELSE
+          CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
+       ENDIF
      ENDIF
    ENDDO
 
@@ -238,9 +310,11 @@ SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
         CALL domain_clock_get ( grid, current_timestr=message )
         CALL read_ad_forcing  ( message )
      ENDIF
-     WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
-        AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
-     CALL wrf_debug ( 0 , message )
+     IF ( .NOT. grid%trajectory_io ) THEN
+        WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
+           AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
+        CALL wrf_debug ( 0 , message )
+     ENDIF
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )
    ENDIF
 

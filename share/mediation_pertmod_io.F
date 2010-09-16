@@ -290,7 +290,7 @@ SUBROUTINE xtraj_io_initialize
    bytes_xtraj = n3d*13
 
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
-   !               vegfra, snow, snowh, canwt, sst, msft, msfu, msfv, f, e, sina, cosa,
+   !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, tsk, xlat, xlong, albbck, tmn, xland, znt, mub, psfc, snowc, hfx, qfx, ustm
    bytes_xtraj = bytes_xtraj + n2d*37
 
@@ -408,12 +408,11 @@ SUBROUTINE read_xtraj ( time )
 
    CHARACTER*256 ::  mess
 
-! Note: for adjoint integration, we won't check the time stamp as the basic states being read is always one time step behind.
-!  IF (TRIM(xtraj_pointer%time) .NE. TRIM(time)) THEN
-!     WRITE(mess, FMT='(6a)') "Want time: <", TRIM(time), ">", "But time in list is: <", TRIM(xtraj_pointer%time), ">"
-!     CALL wrf_message ( mess )
-!     RETURN
-!  ENDIF
+   IF (TRIM(xtraj_pointer%time) .NE. TRIM(time)) THEN
+      WRITE(mess, FMT='(6a)') "Want time: <", TRIM(time), ">", "But time in list is: <", TRIM(xtraj_pointer%time), ">"
+      CALL wrf_message ( mess )
+      RETURN
+   ENDIF
 
    WRITE(mess, FMT='(A,A)') &
          'read xtraj time stamp:', TRIM(xtraj_pointer%time)
@@ -921,6 +920,15 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%a_t_2  = grid%a_t_2  + grid%g_t_2
    grid%a_mu_2 = grid%a_mu_2 + grid%g_mu_2
    grid%a_moist = grid%a_moist + grid%g_moist
+
+   ! Reset forcings for ZERO
+   grid%g_u_2  = 0.0
+   grid%g_v_2  = 0.0
+   grid%g_w_2  = 0.0
+   grid%g_ph_2 = 0.0
+   grid%g_t_2  = 0.0
+   grid%g_mu_2 = 0.0
+   grid%g_moist = 0.0
 
 END SUBROUTINE add_forcing_to_ad
 

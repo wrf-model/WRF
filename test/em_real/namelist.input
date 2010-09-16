@@ -1,6 +1,6 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 6,
+ run_hours                           = 24,
  run_minutes                         = 0,
  run_seconds                         = 0,
  start_year                          = 2008, 2008, 0001,
@@ -11,8 +11,8 @@
  start_second                        = 00,   00,   00,
  end_year                            = 2008, 2008, 0010,
  end_month                           = 02,   02,   01,
- end_day                             = 05,   05,   01,
- end_hour                            = 18,   12,   00,
+ end_day                             = 06,   05,   01,
+ end_hour                            = 12,   12,   00,
  end_minute                          = 00,   06,   00,
  end_second                          = 00,   00,   00,
  history_interval                    = 9999,   30,   30,
@@ -26,7 +26,15 @@
  io_form_input                       = 2
  io_form_boundary                    = 2
  debug_level                         = -300
+ iofields_filename                   = "plus.io_config",
+ ignore_iofields_warning             = .true.,
  /
+ io_form_auxhist8                    = 2,
+ auxhist8_interval_h                 = 1,
+ frames_per_auxhist8                 = 1,
+ io_form_auxhist7                    = 2,
+ auxhist7_interval_h                 = 2,
+ frames_per_auxhist7                 = 1,
 
  &domains
  time_step                           = 720
@@ -193,7 +201,8 @@
  /
 
  &perturbation
- check_TL = .true.
+ trajectory_io=.true.,
+ check_TL = .false.
  check_AD = .true.
  check_u = .true.
  check_v = .true.

@@ -65,7 +65,7 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
     ! Jo for all observations
     !------------------------
       call da_allocate_y (iv, re)
-      call da_calculate_j(1,1,cv_size,0,0,0,xbx,be,iv,xhat,cv,re,y,j_cost,shat,grid,config_flags)
+      call da_calculate_j(1,1,cv_size,0,0,0,0,xbx,be,iv,xhat,cv,re,y,j_cost,shat,grid,config_flags)
       call da_deallocate_y(re)
 			    
    case default;

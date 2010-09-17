@@ -229,14 +229,7 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
 
    grid%xa%q(is:ie, js:je, ks:ke) = 0.0
 
-   ndynopt      = grid%dyn_opt
-   grid%dyn_opt = DYN_EM_TL
-   call nl_set_dyn_opt (1 , DYN_EM_TL)
-
-   call da_med_initialdata_output(grid , config_flags, filnam)
-
-   grid%dyn_opt = ndynopt
-   call nl_set_dyn_opt (1 , DYN_EM)
+   call da_med_hist_out4(grid , config_flags, filnam)
 
    if (trace_use) call da_trace_exit("da_transfer_wrftltoxa_adj")
 

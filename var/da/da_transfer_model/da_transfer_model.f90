@@ -14,14 +14,15 @@ module da_transfer_model
       ntasks_x, ntasks_y, data_order_xyz, mytask, &
       ntasks, data_order_xy
    use module_comm_dm, only : halo_xa_sub, halo_init_sub, halo_psichi_uv_adj_sub, &
-                              halo_xb_sub, halo_xb_uv_sub, halo_em_c_sub
+                              halo_xb_sub, halo_xb_uv_sub, halo_em_c_sub, halo_em_c_tl_sub, &
+                              halo_xa_a_sub
 #endif
 
    use da_control, only : cos_xls, sin_xls, cos_xle, sin_xle, trace_use, &
       coarse_jy, coarse_ix, cone_factor, delt_lon, delt_lat, gas_constant, &
       map_projection,earth_omega,mix,pi,phic,mkz,start_lon,start_lat, &
       start_x,xlonc,start_y,mjy, global, rad_to_deg, deg_to_rad, earth_radius, &
-      var4d,analysis_date,coarse_ds,analysis_accu,dsm,pole, fg_format_kma_global, &
+      var4d,var4d_lbc,analysis_date,coarse_ds,analysis_accu,dsm,pole, fg_format_kma_global, &
       fg_format, fg_format_wrf_arw_regional, fg_format_wrf_nmm_regional, &  
       print_detail_map,stdout,truelat1_3dv, base_pres, fg_format_wrf_arw_global, &
       truelat2_3dv, periodic_x,write_increments,max_ext_its, gravity, &
@@ -29,7 +30,7 @@ module da_transfer_model
       print_detail_xb,test_dm_exact,base_lapse,base_temp,vertical_ip,ptop, &
       use_gpsztdobs, use_ssmitbobs, dt_cloud_model, cp, use_ssmiretrievalobs, &
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
-      t_kelvin, num_fgat_time, num_pseudo, iso_temp, &
+      t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe   
    use da_define_structures, only : xbx_type
@@ -47,7 +48,9 @@ module da_transfer_model
       da_set_boundary_xb
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
    use da_vtox_transforms, only : da_get_vpoles
-   use da_wrfvar_io, only : da_med_initialdata_output,da_med_initialdata_input
+   use da_wrfvar_io, only : da_med_initialdata_output,da_med_initialdata_input, &
+      da_med_initialdata_output_lbc, &
+      da_med_hist_out4, da_med_hist_in6, da_med_hist_in4, da_med_boundary_input
    ! Do not use line below, because it shows that we are passing a scalar to 
    ! an array
    ! use da_wrf_interfaces, only : wrf_dm_bcast_real
@@ -66,7 +69,9 @@ module da_transfer_model
 #include "da_transfer_wrftltoxa.inc"
 #include "da_transfer_wrftltoxa_adj.inc"
 #include "da_transfer_xatowrftl.inc"
+#include "da_transfer_xatowrftl_lbc.inc"
 #include "da_transfer_xatowrftl_adj.inc"
+#include "da_transfer_xatowrftl_adj_lbc.inc"
 #include "da_transfer_xatoanalysis.inc"
 #include "da_setup_firstguess.inc"
 #include "da_setup_firstguess_wrf.inc"

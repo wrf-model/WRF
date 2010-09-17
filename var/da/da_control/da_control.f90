@@ -343,6 +343,7 @@ module da_control
    integer       :: cv_size_domain_je    ! Total je cv size.
    integer       :: cv_size_domain_jp    ! Total jp cv size.
    integer       :: cv_size_domain_js    ! Total js cv size.
+   integer       :: cv_size_domain_jl    ! Total jl cv size.
    integer       :: cv_size_domain       ! Total cv size.    
 
    ! Hybrid:

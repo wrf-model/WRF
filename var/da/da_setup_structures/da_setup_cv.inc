@@ -14,7 +14,7 @@ subroutine da_setup_cv(be)
    if (trace_use) call da_trace_entry("da_setup_cv")
 
    !--------------------------------------------------------------
-   ! 1] Define standard control variable size:
+   ! [1] Define standard control variable size:
    !--------------------------------------------------------------
 
    if (global) then
@@ -42,6 +42,22 @@ subroutine da_setup_cv(be)
 
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5
+   
+   !--------------------------------------------------------------
+   ! [1.1] Define 4D-Var lateral boundary condition control variable size:
+   !--------------------------------------------------------------
+
+   be % cv % size_jl = 0
+
+   if ( .not. global .and. var4d ) then
+      be % cv % size1l = be % cv % size1
+      be % cv % size2l = be % cv % size2
+      be % cv % size3l = be % cv % size3
+      be % cv % size4l = be % cv % size4
+      be % cv % size5l = be % cv % size5
+
+      be % cv % size_jl = be % cv % size_jb 
+   endif
 
    !--------------------------------------------------------------
    ! [2] Define flow-dependent control variable size:
@@ -62,6 +78,10 @@ subroutine da_setup_cv(be)
    ! [3] Define domain-wide cv sizes for bit-repro option:
    !--------------------------------------------------------------
 
+   cv_size_domain_jb = 0
+   cv_size_domain_je = 0
+   cv_size_domain_jl = 0
+
    if (.not. global) then
       iy = ide - ids + 1
       jx = jde - jds + 1
@@ -69,6 +89,9 @@ subroutine da_setup_cv(be)
       cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
                                  be % v4 % mz + be % v5 % mz)
       cv_size_domain_je = ij * be % alpha % mz * be % ne
+      if ( var4d ) then
+         cv_size_domain_jl = cv_size_domain_jb 
+      end if
    end if
 
    if (trace_use) call da_trace_exit("da_setup_cv")

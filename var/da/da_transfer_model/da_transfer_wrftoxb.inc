@@ -247,26 +247,10 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
 #else
 
-   do j=jts,jte
-      do k=kts,kte
-         do i=its,ite+1
-            grid%xa%u(i,j,k) = grid%u_2(i,j,k)
-         end do
-      end do
-   end do
-
-   do j=jts,jte+1
-      do k=kts,kte
-         do i=its,ite
-            grid%xa%v(i,j,k) = grid%v_2(i,j,k)
-         end do
-      end do
-   end do
-
    ! Fill the halo region for u and v.
 
 #ifdef DM_PARALLEL
-#include "HALO_PSICHI_UV_ADJ.inc"
+#include "HALO_EM_C.inc"
 #endif
 
 #endif
@@ -413,15 +397,14 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       do k=kts,kte+1
          do i=its,ite
             grid%xb%hf(i,j,k) = (grid%phb(i,j,k)+grid%ph_2(i,j,k))/gravity
-            grid%xa%w (i,j,k) = grid%w_2(i,j,k)
             grid%xb%w (i,j,k) = grid%w_2(i,j,k)
          end do
       end do
 
       do k=kts,kte
          do i=its,ite
-            grid%xb%u(i,j,k) = 0.5*(grid%xa%u(i,j,k)+grid%xa%u(i+1,j,k))
-            grid%xb%v(i,j,k) = 0.5*(grid%xa%v(i,j,k)+grid%xa%v(i,j+1,k))
+            grid%xb%u(i,j,k) = 0.5*(grid%u_2(i,j,k)+grid%u_2(i+1,j,k))
+            grid%xb%v(i,j,k) = 0.5*(grid%v_2(i,j,k)+grid%v_2(i,j+1,k))
             grid%xb%wh(i,j,k)= 0.5*(grid%xb%w(i,j,k)+grid%xb%w(i,j,k+1))
             grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
 

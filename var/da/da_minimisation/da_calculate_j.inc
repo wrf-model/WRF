@@ -1,5 +1,6 @@
 subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp, &
-                           xbx, be, iv, xhat, cv, re, y, j, grad, grid, config_flags)
+                           cv_size_jl, xbx, be, iv, xhat, cv, &
+                           re, y, j, grad, grid, config_flags                     )
 
    !---------------------------------------------------------------------------
    ! Purpose: Initialises the Y-array
@@ -13,6 +14,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    integer, intent(in)                :: cv_size_jb ! Jb cv size.
    integer, intent(in)                :: cv_size_je ! Je cv size.
    integer, intent(in)                :: cv_size_jp ! Jp cv size.
+   integer, intent(in)                :: cv_size_jl ! Jl cv size.
    type (xbx_type),intent(in)         :: xbx    ! For header & non-grid arrays.
    type (be_type), intent(in)         :: be     ! background error structure.
    type (iv_type), intent(inout)      :: iv     ! innovation vector (o-b).
@@ -27,9 +29,10 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    type(grid_config_rec_type), intent(inout) :: config_flags
 
    integer          :: je_start, je_end             ! Start/end indices of Je.
+   integer          :: jl_start, jl_end             ! Start/end indices of Je.
    real             :: jo_partial                   ! jo for this processor
    type (y_type)    :: jo_grad_y ! Grad_y(jo)
-   real             :: cv_xhat_jb(cv_size_jb), cv_xhat_je(cv_size_je)
+   real             :: cv_xhat_jb(cv_size_jb), cv_xhat_je(cv_size_je), cv_xhat_jl(cv_size_jl)
    integer          :: mz(7)
    integer          :: ndynopt, is, ie, js, je, ks, ke
    real             :: dtemp1x
@@ -53,6 +56,8 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    je_start = cv_size_jb + 1
    je_end   = cv_size_jb + cv_size_je
+   jl_start = cv_size_jb + cv_size_je + 1
+   jl_end = cv_size_jb + cv_size_je + cv_size_jl
 
    jp_start = cv_size_jb + cv_size_je + 1
    jp_end   = cv_size_jb + cv_size_je + cv_size_jp
@@ -67,7 +72,8 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    if (iter > 0) &
       call da_transform_vtoy(cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
-                              xbx, y, grid, config_flags                      )
+                              grid%vp6, grid%vv6, xbx, y, &
+                              grid, config_flags                      )
 
    ! [1.2] compute residual (o-a) = (o-b) - h x~
 
@@ -140,7 +146,18 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    end if
 
    !-------------------------------------------------------------------------
-   ! [4.0] calculate jp:
+   ! [4.0] calculate jl:
+   !-------------------------------------------------------------------------
+   j % jl = 0.0
+   if ( var4d ) then
+      cv_xhat_jl(1:cv_size_jl) = cv (jl_start:jl_end) + xhat(jl_start:jl_end)
+
+      j % jl = jl_factor * 0.5 * da_dot_cv(cv_size_jl, cv_xhat_jl, cv_xhat_jl, grid, mz)
+
+   endif
+
+   !-------------------------------------------------------------------------
+   ! [5.0] calculate jp:
    !-------------------------------------------------------------------------
    j % jp = 0.0
 #if defined(RTTOV) || defined(CRTM)
@@ -164,7 +181,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 #endif
 
    !-------------------------------------------------------------------------
-   ! [5.0] calculate js:
+   ! [6.0] calculate js:
    !-------------------------------------------------------------------------
    j % js = 0.0
    if (ANY(use_satcv)) then
@@ -236,32 +253,33 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    end if
 
    !-------------------------------------------------------------------------
-   ! [6.0] calculate total cost function j = jo + jb + jc + je + jp + js:
+   ! [7.0] calculate total cost function j = jo + jb + jc + je + jp + js:
    !-------------------------------------------------------------------------
 
    j % total = j % jb + j % jo % total + j % je + j % jp + j % js
    if (grid%jcdfi_use) j % total = j % total  + j % jc
-   
+   if (var4d) j % total = j % total  + j % jl
+
    !-------------------------------------------------------------------------
-   ! [7.0] write cost function:
+   ! [8.0] write cost function:
    !-------------------------------------------------------------------------
    if (rootproc) then
       if (it == 1 .and. iter == 0) then
-         write(unit=cost_unit,fmt='(a)')'Outer    EPS     Inner      J           Jb       Jo           Jc         Je         Jp         Js'
+         write(unit=cost_unit,fmt='(a)')'Outer    EPS     Inner      J           Jb       Jo           Jc         Je         Jp         Js        jl'
          write(unit=cost_unit,fmt='(a)')'Iter             Iter                            '
-         write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge           Gp           Gs'
+         write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge           Gp           Gs        Gl'
          write(unit=grad_unit,fmt='(a)')'Iter             Iter                            '
       end if
 
-      write(unit=cost_unit,fmt='(2x,i2,1x,e10.3,2x,i4,7(1x,f10.3))') &
-         it, EPS(it), iter, j % total, j % jb, j % jo % total, j % jc, j % je, j % jp, j%js
+      write(unit=cost_unit,fmt='(2x,i2,1x,e10.3,2x,i4,8(1x,f10.3))') &
+         it, EPS(it), iter, j % total, j % jb, j % jo % total, j % jc, j % je, j % jp, j%js, j%jl
    end if
          
    !-------------------------------------------------------------------------
    ! [8.0] Calculate Gradient:
    !-------------------------------------------------------------------------
    call da_calculate_gradj(it,iter,cv_size,cv_size_jb,cv_size_je,cv_size_jp, &
-                           xbx, be, iv, xhat+cv, y, grad, grid, config_flags, re)
+                           cv_size_jl,xbx, be, iv, xhat+cv, y, grad, grid, config_flags, re)
 
 if (trace_use) call da_trace_exit("da_calculate_j")
 

@@ -65,9 +65,9 @@ subroutine da_minimise_cg(grid, config_flags,            &
    
    jp_start   = be % cv % size_jb + be % cv % size_je + 1
    jp_end     = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
-      
+
    call da_calculate_j(it, 0, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                       xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
+                       be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
 
    j0_total = j_cost%total
    if (j0_total == 0.0) return
@@ -122,7 +122,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
       if (rrmold == 0.0) exit
 
       call da_calculate_gradj(it,iter,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
-                              xbx,be,iv,phat,y,fhat,grid,config_flags)				 
+                              be%cv%size_jl,xbx,be,iv,phat,y,fhat,grid,config_flags)				 
       
       apdotp = da_dot_cv(cv_size, fhat, phat, grid, mz, jp_start, jp_end)
 
@@ -161,7 +161,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
       if (calculate_cg_cost_fn) &
          call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-	                     xbx, be, iv, xhat, cv, re, y, j_cost, fhat, grid, config_flags)
+	                     be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, fhat, grid, config_flags)
    end do
 
    !-------------------------------------------------------------------------
@@ -178,7 +178,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    write(unit=stdout,fmt='(A)') " "
 
    call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                       xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
+                       be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
 
    rrmnew_norm = SQRT(da_dot_cv(cv_size,ghat,ghat,grid,mz,jp_start,jp_end))
 

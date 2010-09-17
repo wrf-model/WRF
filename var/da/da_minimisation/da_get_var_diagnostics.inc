@@ -208,6 +208,7 @@ subroutine da_get_var_diagnostics( iv, j)
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jc           = ', j % jc
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Je           = ', j % je
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jp           = ', j % jp
+      write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jl           = ', j % jl
       if (num_stats_tot > 0) &
          write(unit=stdout,fmt='(a,f15.5)') '   Final J / total num_obs     = ', j % total / &
                                                           real(num_stats_tot)

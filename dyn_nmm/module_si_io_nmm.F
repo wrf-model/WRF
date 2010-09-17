@@ -3002,8 +3002,8 @@ subroutine retrieve_field(in_unit,wrfges,out,start_block,end_block,start_byte,en
 
   integer(i_llong),parameter:: lrecl=2**16-1
   integer(i_byte) buf(lrecl)
-  integer(i_kind) i,ii,k,ibegin,iend
-  integer ierr
+  integer(i_kind) i,ii,k
+  integer ierr, ibegin, iend
 
   open(in_unit,file=trim(wrfges),access='direct',recl=lrecl)
 

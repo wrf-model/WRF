@@ -1425,7 +1425,8 @@
 !
 #ifdef HWRF
 !emc_2010_bugfix_h50
-      call nl_get_start_hour(1,IHRST)
+! remove this - not needed for V3.2
+!      call nl_get_start_hour(1,IHRST)
 !emc_2010_bugfix_h50
 #endif
 

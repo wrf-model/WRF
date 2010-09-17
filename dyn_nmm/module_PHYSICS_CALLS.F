@@ -1507,8 +1507,19 @@
 !dbg print *,'TURBL: IGS,IGE,JGS,JGE,kpblmin,kpblmax=',IGS,IGE,JGS,JGE,kpblmin,kpblmax
 !dbg
 
+!      print *,'grid%id  gwd_opt at module_PHYSICS ',grid%id, grid%gwd_opt
+!      WRITE(0,*)'grid%id  gwd_opt at module_PHYSICS ',grid%id, grid%gwd_opt
+!      WRITE(MESSAGE,125)grid%gwd_opt
+!125   FORMAT(1X,'grid%id  module_PHYSICS.F :  gwd_opt  ',I2,2X,I2)
+
+
+#ifdef HWRF
+      IF (grid%gwd_opt .eq. 2 .AND. grid%id.eq.1) THEN                                        !Kwon's doing for parent only now
+#else
       IF (grid%gwd_opt .eq. 2) THEN
-       
+#endif
+!      print *,'==grid%id  gwd_opt at module_PHYSICS inside gwd ',grid%id, grid%gwd_opt        !because there is no data for nest domain
+
         CALL wrf_message("GWD usage currently may be problematic for some cases - use at own risk")
 
       CALL GWD_driver(U=U_PHY,V=V_PHY,T=T_PHY                           &

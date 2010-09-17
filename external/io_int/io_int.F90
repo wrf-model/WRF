@@ -543,6 +543,9 @@ SUBROUTINE ext_int_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , St
         BACKSPACE ( unit=DataHandle )
         Status = 0
         GOTO 7717
+      else
+          WRITE(mess,*)'skipping a code=',code,' in ext_int_get_var_info'
+          CALL wrf_message(mess)
       ENDIF
     ELSE
       Status = 1

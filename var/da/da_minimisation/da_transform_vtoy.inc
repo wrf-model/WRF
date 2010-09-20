@@ -1,6 +1,5 @@
-subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
-                              y, &
-                              grid, config_flags)
+subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
+                              y, grid, config_flags)
 
    !----------------------------------------------------------------------
    ! Purpose:  Does transform of control variable (V) to Obs-space (Y)
@@ -14,14 +13,16 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
    real,                       intent(in)    :: cv(1:cv_size)     ! control variables.
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
+   type(vp_type),              intent(inout) :: vp6     ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
+   type(vp_type),              intent(inout) :: vv6     ! Grdipt/EOF CV for 6h.
    type(xbx_type),             intent(in)    :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    type (xbx_type)                    :: xbx_tmp
 
-   integer :: nobwin
+   integer :: nobwin, jl_start, jl_end
 #ifdef DM_PARALLEL
    integer :: wrf_done_unit
 #endif
@@ -30,10 +31,28 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
 
    if (trace_use) call da_trace_entry("da_transform_vtoy")
 
-   call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+   if (.not. var4d) then
+      call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
+   else
+      grid%xa_tmp = grid%xa
+      call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+      jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
+      jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
+      grid%xa  = grid%x6a
+      call da_transform_vtox(grid, be%cv%size_jl, xbx, be, ep, cv(jl_start:jl_end), vv6, vp6)
+      grid%xa  = grid%xa_tmp
+   end if
 
    if (var4d) then
       call da_transfer_xatowrftl(grid, config_flags, 'tl01')
+      call da_system("ncks -A wrfinput_d01 tl01")
+      if (var4d_lbc) then
+          call da_med_initialdata_input( grid , config_flags, 'fg07')
+          call da_setup_firstguess( xbx_tmp, grid, config_flags)
+          call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
+          call da_med_initialdata_input( grid , config_flags, 'fg01')
+          call da_setup_firstguess( xbx_tmp, grid, config_flags)
+      endif
       if (trace_use) call da_trace("da_transform_vtoy","Starting da_run_wrfplus_tl.ksh")
 #ifdef DM_PARALLEL
       if (var4d_coupling == var4d_coupling_disk_simul) then

@@ -173,6 +173,7 @@
    be % cv % size_je = 0
    be % cv % size_jp = 0
    be % cv % size_js = 0
+   be % cv % size_jl = 0
    
    !---------------------------------------------------------------------------
    ! [5.1] Set up background errors (be):
@@ -196,7 +197,7 @@
    !---------------------------------------------------------------------------
    ! [5.4] Total control variable:
    !---------------------------------------------------------------------------   
-   be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js
+   be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js + be%cv%size_jl
    cv_size = be % cv % size
 
    !---------------------------------------------------------------------------
@@ -226,6 +227,10 @@
       
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
+      if ( var4d ) then
+         call da_zero_vp_type (grid%vv6)
+         call da_zero_vp_type (grid%vp6)
+      end if
 
    !---------------------------------------------------------------------------
    ! [8] Outerloop

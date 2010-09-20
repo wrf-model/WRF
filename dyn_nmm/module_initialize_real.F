@@ -92,6 +92,7 @@ CONTAINS
 #ifdef DM_PARALLEL
 
         LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
+       logical :: test
 
 !              INTEGER :: DOMDESC
               REAL,ALLOCATABLE    :: SICE_G(:,:), SM_G(:,:)
@@ -186,6 +187,7 @@ CONTAINS
         REAL, PARAMETER:: ERAD=6371200.
         REAL, PARAMETER:: TG0=258.16
         REAL, PARAMETER:: TGA=30.0
+    integer :: numzero,numexamined
 #ifdef HWRF
 !============================================================================
 !   gopal's doing for ocean coupling
@@ -415,6 +417,10 @@ CONTAINS
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
 
+#if defined(HWRF)
+          if(.not. grid%use_prep_hybrid) then
+#endif
+
            CALL reverse_vert_coord(grid%p_gc, 2, num_metgrid_levels &
      &,                            IDS,IDE,JDS,JDE,KDS,KDE        &
      &,                            IMS,IME,JMS,JME,KMS,KME        &
@@ -440,6 +446,9 @@ CONTAINS
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
 
+#if defined(HWRF)
+          endif
+#endif
         endif
 
 
@@ -486,7 +495,20 @@ CONTAINS
         if (grid%tsk_gc(I,J) .gt. 0.) then
            grid%nmm_tsk(I,J)=grid%tsk_gc(I,J)
         else
+#if defined(HWRF)
+                if(grid%use_prep_hybrid) then
+                   if(grid%t(I,J,1)<100) then
+                      write(*,*) 'NO VALID SURFACE TEMPERATURE: I,J,TSK_GC(I,J),T(I,J,1) = ', &
+                           I,J,grid%TSK_GC(I,J),grid%T(I,J,1)
+                   else
+                      grid%nmm_tsk(I,J)=grid%t(I,J,1) ! stopgap measure
+                   end if
+                else
+#endif
            grid%nmm_tsk(I,J)=grid%t_gc(I,J,1) ! stopgap measure
+#if defined(HWRF)
+                endif
+#endif
         endif
 !
            grid%glat(I,J)=grid%hlat_gc(I,J)*DEGRAD
@@ -506,6 +528,12 @@ CONTAINS
         if (internal_time_loop .eq. 1) then
 
         if (eta_levels(1) .ne. 1.0) then
+#if defined(HWRF)
+             if(grid%use_prep_hybrid) then
+                call wrf_error_fatal('PREP_HYBRID ERROR: eta_levels is not specified, but use_prep_hybrid=.true.')
+             end if
+#endif
+
           write(message,*) '********************************************************************* '
           CALL wrf_message(message)
           write(message,*) '**  eta_levels appears not to be specified in the namelist'
@@ -550,12 +578,6 @@ CONTAINS
        ENDDO
         endif
 
-        if (.NOT. allocated(PDVP))     allocate(PDVP(IMS:IME,JMS:JME))
-        if (.NOT. allocated(P3D_OUT))  allocate(P3D_OUT(IMS:IME,JMS:JME,KDS:KDE-1))
-        if (.NOT. allocated(PSFC_OUTV)) allocate(PSFC_OUTV(IMS:IME,JMS:JME))
-        if (.NOT. allocated(P3DV_OUT)) allocate(P3DV_OUT(IMS:IME,JMS:JME,KDS:KDE-1))
-        if (.NOT. allocated(P3DV_IN))  allocate(P3DV_IN(IMS:IME,JMS:JME,num_metgrid_levels))
-
         write(message,*) 'num_metgrid_levels: ', num_metgrid_levels
         CALL wrf_message(message)
 
@@ -577,6 +599,27 @@ CONTAINS
 
          ENDDO
        ENDDO
+
+       numzero=0
+       numexamined=0
+       DO j = jts, MIN(jte,jde-1)
+          DO i = its, MIN(ite,ide-1)
+             numexamined=numexamined+1
+             if(grid%fis(i,j)<1e-5 .and. grid%fis(i,j)>-1e5 ) then
+                numzero=numzero+1
+             end if
+          enddo
+       enddo
+       write(message,*) 'TOTAL NEAR-ZERO FIS POINTS: ',numzero,' OF ',numexamined
+       call wrf_debug(10,message)
+#if defined(HWRF)
+       interp_notph: if(.not. grid%use_prep_hybrid) then
+#endif
+      if (.NOT. allocated(PDVP))     allocate(PDVP(IMS:IME,JMS:JME))
+      if (.NOT. allocated(P3D_OUT))  allocate(P3D_OUT(IMS:IME,JMS:JME,KDS:KDE-1))
+      if (.NOT. allocated(PSFC_OUTV)) allocate(PSFC_OUTV(IMS:IME,JMS:JME))
+      if (.NOT. allocated(P3DV_OUT)) allocate(P3DV_OUT(IMS:IME,JMS:JME,KDS:KDE-1))
+      if (.NOT. allocated(P3DV_IN))  allocate(P3DV_IN(IMS:IME,JMS:JME,num_metgrid_levels))
 
       CALL compute_nmm_surfacep (grid%ht_gc, grid%ght_gc, grid%p_gc , grid%t_gc               &
      &,                          grid%psfc_out, num_metgrid_levels  &
@@ -714,7 +757,12 @@ CONTAINS
 
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP)
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP2)
-
+#if defined(HWRF)
+       else ! we are using prep_hybrid
+          ! Compute surface pressure:
+          grid%psfc_out=grid%pdtop+grid%pd
+       end if interp_notph
+#endif
          !  Get the monthly values interpolated to the current date
          !  for the traditional monthly
          !  fields of green-ness fraction and background grid%albedo.
@@ -772,8 +820,15 @@ CONTAINS
 
          endif
 
+
+#if defined(HWRF)
+       if(.not.grid%use_prep_hybrid) then
+#endif
 !  new deallocs
         DEALLOCATE(p3d_out,p3dv_out,p3dv_in)
+#if defined(HWRF)
+       end if
+#endif
 
      END IF     !   <----- END OF VERTICAL INTERPOLATION PART ---->
 

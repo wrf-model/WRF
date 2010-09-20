@@ -2474,6 +2474,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 !  Check land water interface
 
+! Skip this check for HWRF - causes some I/O performance issues at times
+#ifndef HWRF
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS,MIN(ITE,IDE-1)
       IF(grid%sm(I,J).GT.0.9 .AND. grid%vegfra(I,J) .NE. 0) THEN
@@ -2485,6 +2487,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
       ENDIF
      ENDDO
     ENDDO
+#endif
 
 
 !   hardwire root depth for time being

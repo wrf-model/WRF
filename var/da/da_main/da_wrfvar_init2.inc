@@ -137,6 +137,7 @@ subroutine da_wrfvar_init2
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
       call da_med_initialdata_input (head_grid, config_flags, 'fg')
+      if ( var4d ) call med_latbound_in ( head_grid, config_flags )
    end if
 
    ! FIX?

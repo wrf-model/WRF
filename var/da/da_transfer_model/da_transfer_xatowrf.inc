@@ -251,11 +251,6 @@ subroutine da_transfer_xatowrf(grid)
 
 #ifdef A2C
 
-   !TBH:  NOTE that grid%xp%halo_id3 = HALO_PSICHI_UV_ADJ which its currently defined 
-   !TBH:  in the Regitstry as "dyn_em 24:grid%xa%u,grid%xa%v,grid%xa%psfc".  Clearly it its not 
-   !TBH:  necessary to update halos in grid%xa%psfc here!  
-
-!rizvi's update
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
        fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
      ipe = ipe + 1
@@ -270,16 +265,10 @@ subroutine da_transfer_xatowrf(grid)
 #else
    ! CONVERT FROM A-GRID TO C-GRID
 
-
-   !TBH:  NOTE that grid%xp%halo_id3 = HALO_PSICHI_UV_ADJ which its currently defined 
-   !TBH:  in the Regitstry as "dyn_em 24:grid%xa%u,grid%xa%v,grid%xa%psfc".  Clearly it its not 
-   !TBH:  necessary to update halos in grid%xa%psfc here!  Also, 24-point stencil its 
-   !TBH:  too thick, 9-point should suffice.  Apparently, grid%xp%halo_id3 its used 
-   !TBH:  in many places!  Thits needs to be fixed. 
 #endif
 
 #ifdef DM_PARALLEL
-#include "HALO_PSICHI_UV_ADJ.inc"
+#include "HALO_XA_A.inc"
 #endif
 
 #ifdef A2C

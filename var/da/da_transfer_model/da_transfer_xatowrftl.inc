@@ -131,7 +131,7 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
   end if
 
 #ifdef DM_PARALLEL
-#include "HALO_PSICHI_UV_ADJ.inc"
+#include "HALO_XA_A.inc"
 #endif
 
 !rizvi's update
@@ -153,7 +153,7 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
 
 #else
 #ifdef DM_PARALLEL
-#include "HALO_PSICHI_UV_ADJ.inc"
+#include "HALO_XA_A.inc"
 
    allocate ( utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
    allocate ( vtmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
@@ -295,14 +295,7 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
    ! [7.0] output
    !---------------------------------------------------------------------------
 
-   ndynopt      = grid%dyn_opt
-   grid%dyn_opt = DYN_EM_TL
-   call nl_set_dyn_opt (1 , DYN_EM_TL)
-
-   call da_med_initialdata_output(grid , config_flags, filnam)
-
-   grid%dyn_opt = ndynopt
-   call nl_set_dyn_opt (1 , DYN_EM)
+   call da_med_hist_out4(grid , config_flags, filnam)
 
    if (trace_use) call da_trace_exit("da_transfer_xatowrftl")
 

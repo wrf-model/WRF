@@ -1,5 +1,5 @@
 subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp, &
-                              xbx, be, iv, cv, y, grad, grid, config_flags, re)
+                              cv_size_jl, xbx, be, iv, cv, y, grad, grid, config_flags, re )
 
    !---------------------------------------------------------------------------
    ! Purpose: Calculates the gradient of the cost function w/r to cv
@@ -15,7 +15,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    integer, intent(in)                :: it     ! external iteration #.
    integer, intent(in)                :: iter   ! internal iteration #.
    integer, intent(in)                :: cv_size    ! Total cv size.
-   integer, intent(in)                :: cv_size_jb, cv_size_je, cv_size_jp
+   integer, intent(in)                :: cv_size_jb, cv_size_je, cv_size_jp, cv_size_jl
    type (xbx_type),intent(in)         :: xbx    ! For header & non-grid arrays.
    type (be_type), intent(in)         :: be     ! background error structure.
    type (iv_type), intent(inout)      :: iv     ! innovation vector (o-b).
@@ -28,6 +28,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    type(grid_config_rec_type), intent(inout) :: config_flags
 
    integer          :: je_start, je_end             ! Start/end indices of Je.
+   integer          :: jl_start, jl_end             ! Start/end indices of Jl.
    real             :: jo_partial                   ! jo for this processor
    type (y_type)    :: jo_grad_y                    ! Grad_y(jo)
    integer          :: mz(7)
@@ -36,7 +37,8 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    real             :: grad_je(cv_size)
    real             :: grad_jp(cv_size)
    real             :: grad_js(cv_size)
-   real             :: gnorm_j, gnorm_jo, gnorm_jb, gnorm_je, gnorm_jp, gnorm_js
+   real             :: grad_jl(cv_size)
+   real             :: gnorm_j, gnorm_jo, gnorm_jb, gnorm_je, gnorm_jp, gnorm_js, gnorm_jl
 
    ! Variables for VarBC background constraint
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
@@ -55,12 +57,15 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    je_end     = cv_size_jb + cv_size_je
    jp_start   = cv_size_jb + cv_size_je + 1
    jp_end     = cv_size_jb + cv_size_je + cv_size_jp
+   jl_start   = cv_size_jb + cv_size_je + cv_size_jp + 1
+   jl_end     = cv_size_jb + cv_size_je + cv_size_jp + cv_size_jl
    
    grad_jo = 0.0
    grad_jb = 0.0
    grad_je = 0.0
    grad_jp = 0.0
    grad_js = 0.0
+   grad_jl = 0.0
 
    !-------------------------------------------------------------------------
    ! [1.0] calculate grad_v (jo):
@@ -69,15 +74,16 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    
    if (present(re)) then
       call da_calculate_grady(iv, re, jo_grad_y)   
-      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .false.)
+      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, grad_jl, iv, &
+              grid%vp, grid%vv, grid%vp6, grid%vv6, xbx, jo_grad_y, grid, config_flags, .false.)
    else
       call da_transform_vtoy(cv_size, be, grid%ep, cv, iv, grid%vp, &
-              grid%vv, xbx, y, grid, config_flags)
+              grid%vv, grid%vp6, grid%vv6, xbx, y, grid, config_flags)
       call da_calculate_grady(iv, y, jo_grad_y)   
-      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .true.)
+      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, grad_jl, iv, &
+              grid%vp, grid%vv, grid%vp6, grid%vv6, xbx, jo_grad_y, grid, config_flags, .true.)
       grad_jo = - grad_jo    !! Compensate for sign in calculation of grad_v (Jo)
+      grad_jl = - grad_jl    !! Compensate for sign in calculation of grad_l (Jl)
    end if
       
    call da_deallocate_y(jo_grad_y)
@@ -92,6 +98,11 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    if (cv_size_je > 0) grad_je(je_start:je_end) = je_factor * cv(je_start:je_end)
    
+   !-------------------------------------------------------------------------
+   ! [3.5] calculate grad_v (jl):
+   !-------------------------------------------------------------------------
+   if (cv_size_jl > 0) grad_jl(jl_start:jl_end) = jl_factor * grad_jl(jl_start:jl_end)
+
    !-------------------------------------------------------------------------
    ! [4.0] calculate grad_v (jp):
    !-------------------------------------------------------------------------
@@ -139,9 +150,9 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    end if
 
    !--------------------------------------------------------------------------------------------------
-   ! [6.0] calculate grad_v (j) = grad_v (jb) + grad_v (jo) + grad_v (je) + grad_v (jp) + grad_v (js):
+   ! [7.0] calculate grad_v (j) = grad_v (jb) + grad_v (jo) + grad_v (je) + grad_v (jp) + grad_v (js) + grad_l (jl):
    !--------------------------------------------------------------------------------------------------   
-   grad = grad_jo + grad_jb + grad_je + grad_jp + grad_js
+   grad = grad_jo + grad_jb + grad_je + grad_jp + grad_js + grad_jl
 
    !-------------------------------------------------------------------------
    ! [7.0] write Gradient:
@@ -153,10 +164,11 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
       gnorm_je = sqrt(da_dot_cv(cv_size, grad_je, grad_je, grid, mz))
       gnorm_jp = sqrt(da_dot_cv(cv_size, grad_jp, grad_jp, grid, mz, jp_start, jp_end))
       gnorm_js = sqrt(da_dot_cv(cv_size, grad_js, grad_js, grid, mz))
+      gnorm_jl = sqrt(da_dot_cv(cv_size, grad_jl, grad_jl, grid, mz))
  
       if (rootproc) &
          write(grad_unit,fmt='(2x,i2,1x,e10.3,2x,i4,7(1x,f10.3))') & 
-               it, eps(it), iter, gnorm_j, gnorm_jb, gnorm_jo, gnorm_je, gnorm_jp, gnorm_js
+               it, eps(it), iter, gnorm_j, gnorm_jb, gnorm_jo, gnorm_je, gnorm_jp, gnorm_js, gnorm_jl
    end if
 
    if (trace_use) call da_trace_exit("da_calculate_gradj")

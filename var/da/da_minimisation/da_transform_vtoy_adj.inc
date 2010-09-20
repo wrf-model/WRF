@@ -1,4 +1,4 @@
-subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
+subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, cv_l, iv, vp, vv, vp6, vv6, xbx, y, &
    grid, config_flags, jcdf_flag)
 
    !-------------------------------------------------------------------------
@@ -11,9 +11,12 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
    type(be_type),              intent(in)    :: be     ! background error structure.
    type(ep_type),              intent(in)    :: ep     ! ensemble perturbation structure.
    real,                       intent(out)   :: cv(1:cv_size) ! control variables.
+   real,                       intent(out)   :: cv_l(1:cv_size) ! control variables for lbc.
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
+   type(vp_type),              intent(inout) :: vp6    ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
+   type(vp_type),              intent(inout) :: vv6    ! Grdipt/EOF CV for 6h.
    type(xbx_type),             intent(in)    :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
@@ -22,7 +25,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
 
    type (xbx_type)                           :: xbx_tmp
 
-   integer :: nobwin,ndynopt
+   integer :: nobwin, ndynopt, jl_start, jl_end
 #ifdef DM_PARALLEL
    integer :: wrf_done_unit
 #endif
@@ -32,6 +35,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
    call da_trace_entry("da_transform_vtoy_adj")
 
    cv = 0.0
+   cv_l = 0.0
 
    if (var4d) then
       ndynopt      = grid%dyn_opt
@@ -113,10 +117,17 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
       call da_trace("da_transform_vtoy_adj","Finished da_run_wrfplus_ad.ksh")
 
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
-
+      if (var4d_lbc) then
+         call da_med_initialdata_input( grid , config_flags, 'fg07' )
+         call da_setup_firstguess( xbx_tmp, grid, config_flags)
+         call da_zero_x(grid%x6a)
+         call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
+      end if
       if (num_fgat_time > 1) then ! Recover the firstguess fields touched by reading gr01
          call da_med_initialdata_input( grid , config_flags, 'fg')
+         call da_setup_firstguess( xbx_tmp, grid, config_flags)
       end if
+
    else  ! not var4d
       iv%info(:)%n1 = 1
       iv%info(:)%n2 = iv%info(:)%nlocal
@@ -129,7 +140,17 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
       call da_transform_xtoy_adj(cv_size, cv, grid, iv, y,grid%xa)
       call da_transform_xtoxa_adj(grid)
    end if ! var4d
-   call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
+   if ( .not. var4d ) then 
+      call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
+   else
+      grid%xa_tmp = grid%xa
+      call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
+      jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
+      jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
+      grid%xa = grid%x6a
+      call da_transform_vtox_adj(grid, be%cv%size_jl, xbx, be, ep, vp6, vv6, cv_l(jl_start:jl_end))
+      grid%xa = grid%xa_tmp
+   end if
 
    !--------------------------------------------------------------
    ! ADJ of Variational Bias Correction

@@ -50,7 +50,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    TYPE(WRFU_Time) :: currTime, startTime
 #ifdef HWRF
 !zhang's doing
-   TYPE(WRFU_Time) :: CurrTime  !zhang new
+!   TYPE(WRFU_Time) :: CurrTime  !zhang new
    INTEGER :: hr, min, sec, ms,julyr,julday
    REAL :: GMT
 !end of zhang's doing

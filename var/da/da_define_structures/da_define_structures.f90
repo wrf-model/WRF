@@ -844,6 +844,7 @@ module da_define_structures
       real             :: je
       real             :: jp
       real             :: js
+      real             :: jl
       type (jo_type)   :: jo
    end type j_type
 
@@ -853,6 +854,7 @@ module da_define_structures
       integer :: size_je     ! Size of CV array for Je term.
       integer :: size_jp     ! Size of CV array for Jp term.
       integer :: size_js     ! Size of CV array for Js term.
+      integer :: size_jl     ! Size of CV array for Jl term.
       integer :: size1c      ! Complex size of CV array of 1st variable error.
       integer :: size2c      ! Complex size of CV array of 2nd variable error.
       integer :: size3c      ! Complex size of CV array of 3rd variable error.
@@ -864,6 +866,11 @@ module da_define_structures
       integer :: size3       ! Size of CV array of 3rd variable error.
       integer :: size4       ! Size of CV array of 4th variable error.
       integer :: size5       ! Size of CV array of 5th variable error.
+      integer :: size1l      ! Size of CV array of 1st variable lbc error.
+      integer :: size2l      ! Size of CV array of 2nd variable lbc error.
+      integer :: size3l      ! Size of CV array of 3rd variable lbc error.
+      integer :: size4l      ! Size of CV array of 4th variable lbc error.
+      integer :: size5l      ! Size of CV array of 5th variable lbc error.
    end type cv_type
 
    type be_subtype

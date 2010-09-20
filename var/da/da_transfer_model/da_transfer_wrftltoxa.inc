@@ -16,7 +16,7 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    integer :: is, ie, js, je, ks, ke
 
    real :: sdmd, s1md
-   real, allocatable, dimension(:,:,:) :: g_press, utmp, vtmp
+   real, allocatable, dimension(:,:,:) :: g_press
    real, allocatable, dimension(:,:) :: ptmp
 
    integer ndynopt
@@ -36,14 +36,7 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
 
    allocate (g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
 
-   ndynopt      = grid%dyn_opt
-   grid%dyn_opt = DYN_EM_TL
-   call nl_set_dyn_opt (1 , DYN_EM_TL)
-
-   call da_med_initialdata_input(grid , config_flags, filnam)
-
-   grid%dyn_opt = ndynopt
-   call nl_set_dyn_opt (1 , DYN_EM)
+   call da_med_hist_in4(grid , config_flags, filnam)
 
    !---------------------------------------------------------------------------
    ! [1.0] Get the specific humidity increments from mixing ratio increments
@@ -114,26 +107,7 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    !-------------------------------------------------------------------------
 
 #ifdef DM_PARALLEL
-   allocate (utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
-   allocate (vtmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
-   allocate (ptmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme))
-
-   ! fill the halo region for g_u and g_v.
-   utmp=grid%xa%u
-   vtmp=grid%xa%v
-   ptmp=grid%xa%psfc
-   grid%xa%u=grid%g_u_2
-   grid%xa%v=grid%g_v_2
-#include "HALO_PSICHI_UV_ADJ.inc"
-   grid%g_u_2=grid%xa%u
-   grid%g_v_2=grid%xa%v
-   grid%xa%u=utmp
-   grid%xa%v=vtmp
-   grid%xa%psfc=ptmp
-
-   deallocate (utmp)
-   deallocate (vtmp)
-   deallocate (ptmp)
+#include "HALO_EM_C_TL.inc"
 #endif
 
    do k=ks,ke

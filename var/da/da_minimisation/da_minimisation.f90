@@ -6,7 +6,7 @@ module da_minimisation
 
    use module_configure, only : grid_config_rec_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
-   use module_domain, only : domain, ep_type, vp_type
+   use module_domain, only : domain, ep_type, vp_type, x_type
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_g_qv
 
 !#ifdef DM_PARALLEL
@@ -25,16 +25,16 @@ module da_minimisation
    use da_buoy , only : da_calculate_grady_buoy, da_ao_stats_buoy, &
       da_oi_stats_buoy,da_get_innov_vector_buoy, da_residual_buoy, &
       da_jo_and_grady_buoy
-   use da_control, only : trace_use,var4d_coupling_disk_simul, &
+   use da_control, only : trace_use,var4d_coupling_disk_simul, var4d_lbc, &
       var4d, rootproc,jcdfi_use,jcdfi_io,var4d_coupling,ierr,comm,num_fgat_time, &
       stdout, eps, stats_unit, test_dm_exact, global, multi_inc, &
       calculate_cg_cost_fn,anal_type_randomcv,cv_size_domain,je_factor, &
       jb_factor,ntmax,omb_add_noise,write_iv_rad_ascii,use_obs_errfac, &
       rtm_option,rtm_option_rttov, rtm_option_crtm, anal_type_verify, &
       write_filtered_rad,omb_set_rand,use_rad,var_scaling2,var_scaling1, &
-      var_scaling4,var_scaling5,var_scaling3, jo_unit, &
+      var_scaling4,var_scaling5,var_scaling3, jo_unit, jl_factor, &
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
-      cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, &
+      cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
@@ -130,7 +130,8 @@ module da_minimisation
    use da_tools_serial, only : da_get_unit,da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit,da_trace
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
-      da_transfer_xatowrftl_adj,da_setup_firstguess,da_transfer_wrftltoxa_adj
+      da_transfer_xatowrftl_adj,da_setup_firstguess,da_transfer_wrftltoxa_adj, &
+      da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc
 #if defined(RTTOV) || defined(CRTM)
    use da_varbc, only : da_varbc_tl,da_varbc_adj
 #endif

@@ -29,7 +29,7 @@ END SUBROUTINE med_calc_model_time
 SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Driver layer
    USE module_state_description
-   USE module_domain	, ONLY : domain, domain_clock_get, domain_clockadvance, domain_clock_set, &
+   USE module_domain	, ONLY : domain, domain_clock_get, domain_clock_set, &
                                  get_ijk_from_grid
    USE module_configure	, ONLY : grid_config_rec_type, model_config_rec
    USE module_streams
@@ -38,6 +38,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    USE module_utility
    USE module_bc_em, ONLY : rk_phys_bc_dry_2
    USE module_bc, ONLY : set_physical_bc3d
+   USE esmf_timemod, ONLY : ESMF_TimeInc
 
    IMPLICIT NONE
 
@@ -172,9 +173,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        IF ( .NOT. grid%trajectory_io ) THEN
           ! For adjoint integration with disk IO, the basic state is one step before the domain time.
           IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
-             ! Turn off the alarm before the time go forward
-             CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
-             CALL domain_clockadvance ( grid )
+             grid%domain_clock%clockint%CurrTime =  ESMF_TimeInc (grid%domain_clock%clockint%CurrTime, &
+                                grid%domain_clock%clockint%TimeStep )
           ENDIF
           CALL med_auxinput_in ( grid, ialarm, config_flags )
           IF ( (config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) &
@@ -217,9 +217,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        ELSE
          IF ( ialarm .EQ. auxinput6_only ) THEN ! Read Trajectory only
            IF ( config_flags%dyn_opt .EQ. dyn_em_ad  ) THEN
-              ! Turn off the alarm before the time go forward
-              CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
-              CALL domain_clockadvance ( grid )
+              grid%domain_clock%clockint%CurrTime =  ESMF_TimeInc (grid%domain_clock%clockint%CurrTime, &
+                                grid%domain_clock%clockint%TimeStep )
            ENDIF
            CALL domain_clock_get ( grid, current_timestr=message )
            IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
@@ -240,14 +239,14 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
              ialarm - first_auxinput + 1, ' for domain ',grid%id
           CALL wrf_debug ( 0 , message )
        ENDIF
-       ! Reverse the current time and don't turn off the alarm
+       ! Reverse the current time 
        IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
           CALL domain_clock_set( grid, time_step_seconds=model_config_rec%time_step )
-          CALL domain_clockadvance ( grid )
+          grid%domain_clock%clockint%CurrTime = ESMF_TimeInc (grid%domain_clock%clockint%CurrTime, &
+                             grid%domain_clock%clockint%TimeStep )
           CALL domain_clock_set( grid, time_step_seconds=-1*model_config_rec%time_step )
-       ELSE
-          CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
        ENDIF
+       CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
 

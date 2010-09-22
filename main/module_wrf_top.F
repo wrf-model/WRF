@@ -798,6 +798,7 @@ ENDIF
    !  integration is from the first step (1) to the last step of the simulation.
 
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
+   model_config_rec%dyn_opt = dyn_em
    CALL integrate ( head_grid )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 

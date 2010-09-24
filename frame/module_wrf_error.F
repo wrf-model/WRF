@@ -4,6 +4,7 @@
 MODULE module_wrf_error
   INTEGER           :: wrf_debug_level = 0
   CHARACTER*256     :: wrf_err_message
+!$OMP THREADPRIVATE (wrf_err_message)
 CONTAINS
 
   LOGICAL FUNCTION wrf_at_debug_level ( level )

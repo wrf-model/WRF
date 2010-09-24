@@ -2360,8 +2360,8 @@ endif
 
       USE module_domain
 
-      TYPE(domain) , POINTER , INTENT(IN ) :: grid_ptr_in
-      TYPE(domain) , POINTER , INTENT(OUT) :: grid_ptr_out
+      TYPE(domain) , POINTER               :: grid_ptr_in
+      TYPE(domain) , POINTER               :: grid_ptr_out
       INTEGER                , INTENT(IN ) :: id_wanted
       LOGICAL                , INTENT(OUT) :: found_the_id
 

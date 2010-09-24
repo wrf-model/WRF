@@ -1709,10 +1709,12 @@
                   vol_h2o = relh_frc*vol_h2o/(1.-relh_frc)
                   mass_h2o = vol_h2o*dens_h2o
           mass_dry_a = mass_so4 + mass_no3 + mass_nh4 + mass_oin + &
-                       mass_oc  + mass_bc  + mass_na  + mass_cl
+                       mass_oc  + mass_bc  + mass_na  + mass_cl  + &
+                       mass_soil
           mass_wet_a = mass_dry_a + mass_h2o 
           vol_dry_a  = vol_so4  + vol_no3  + vol_nh4  + vol_oin  + &
-                       vol_oc   + vol_bc   + vol_na   + vol_cl
+                       vol_oc   + vol_bc   + vol_na   + vol_cl  + &
+                       vol_soil
           vol_wet_a  = vol_dry_a + vol_h2o
           vol_shell  = vol_wet_a - vol_bc
           num_a      = vol_wet_a / (0.52359877*xdia_cm(isize)*xdia_cm(isize)*xdia_cm(isize))
@@ -1721,6 +1723,7 @@
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
                        (ref_index_oin    * mass_oin / dens_oin) +  &
+                       (ref_index_oin    * mass_soil / dens_oin) + &
                        (ref_index_oc     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
                        (ref_index_nacl   * mass_na  / dens_na) +   &
@@ -1746,6 +1749,7 @@
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
                        (ref_index_oin    * mass_oin / dens_oin) +  &
+                       (ref_index_oin    * mass_soil / dens_oin) + &
                        (ref_index_oc     * mass_oc  / dens_oc) +   &
                        (ref_index_nacl   * mass_na  / dens_na) +   &
                        (ref_index_nacl   * mass_cl  / dens_cl) +   &

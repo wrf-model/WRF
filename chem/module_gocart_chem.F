@@ -88,9 +88,9 @@ CONTAINS
        chlso2_oh=0.
        chlso2_aq=0.
           cldf(1,1,1)=0.
-          if(p_qi.gt.1)then
+          if(p_qc.gt.1 .and. p_qi.gt.1)then
           if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0.)cldf(1,1,1)=1.
-          elseif(p_qc.gt.1)then
+          elseif(p_qc.gt.1 .and. p_qi.le.1)then
           if(moist(i,k,j,p_qc).gt.0.)cldf(1,1,1)=1.
           endif
           tc(1,1,1,1)=chem(i,k,j,p_dms)*1.d-6
@@ -379,7 +379,7 @@ SUBROUTINE chem_dms( imx,jmx,lmx,&
 
            dms_oh = dms0   * EXP( -(rk1 + rk2) * fx * REAL(ndt1) )
            dms    = dms_oh * EXP( -(rk3) * fx * REAL(ndt1) )
-           dms    = MAX(dms, 1.0D-16)
+           dms    = MAX(dms, 1.0D-32)
            
            tc(i,j,l,NDMS) = dms
            
@@ -394,12 +394,12 @@ SUBROUTINE chem_dms( imx,jmx,lmx,&
 ! ****************************************************************************
        
            IF ((rk1 + rk2) == 0.0) THEN
-              pmsa_dms(i,j,l) = 0.0
+              pmsa_dms(i,j,l) = 0.0D0
            ELSE
 !       pmsa_dms(i,j,l) = (dms0 - dms_oh) * b*rk1/((rk1+rk2)*fx)
-              pmsa_dms(i,j,l) = (dms0 - dms_oh) * b*rk1/((rk1+rk2) * fx) * eff
+              pmsa_dms(i,j,l) = max(0.0D0,(dms0 - dms_oh) * b*rk1/((rk1+rk2) * fx) * eff)
            END IF
-           pso2_dms(i,j,l) =  dms0 - dms - pmsa_dms(i,j,l)
+           pso2_dms(i,j,l) =  max(0.0D0,dms0 - dms - pmsa_dms(i,j,l))
 !      pso2_dms(i,j,l) =  (dms0 - dms - pmsa_dms(i,j,l)/eff) * eff
 
            !    ------------------------------------------------------------
@@ -559,14 +559,14 @@ SUBROUTINE chem_so2( imx,jmx,lmx,&
               l2 = 0.0
            END IF
 
-           so2    = MAX(so2, 1.0D-16)
+           so2    = MAX(so2, 1.0D-32)
            tc(i,j,l,NSO2) = so2
 
 ! ****************************************************************************
 ! *  SO2 chemical loss rate  = SO4 production rate (MixingRatio/timestep).   *
 ! ****************************************************************************
 
-           pso4_so2(i,j,l) = l1 + l2
+           pso4_so2(i,j,l) = max(0.0D0,l1 + l2)
 
            !    ---------------------------------------------------------------
            !    DIAGNOSTICS:      SO2 gas-phase loss       (kgS/timestep)  
@@ -646,7 +646,7 @@ SUBROUTINE chem_so4( imx,jmx,lmx,&
               so4 = so40 + pso4_so2(i,j,l)
 !           END IF
 
-           so4    = MAX(so4, 1.0D-16)
+           so4    = MAX(so4, 1.0D-32)
            tc(i,j,l,NSO4) = so4
 
            !  -------------------------------------------------------------- 
@@ -719,7 +719,7 @@ SUBROUTINE chem_msa( imx,jmx,lmx,&
               msa = msa0 + pmsa_dms(i,j,l)
 !           END IF
 
-           msa    = MAX(msa, 1.0D-16)
+           msa    = MAX(msa, 1.0D-32)
            tc(i,j,l,NMSA) = msa
            
            !  -------------------------------------------------------------- 

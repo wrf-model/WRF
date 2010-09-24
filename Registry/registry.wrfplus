@@ -26,6 +26,7 @@ rconfig   real    jcdfi_error_wind      namelist,perturbation          1        
 rconfig   real    jcdfi_error_t         namelist,perturbation          1          1. -    "jcdfi_error_t"    "Temp. Error for JcDFI"      "K"
 rconfig   real    jcdfi_error_q         namelist,perturbation          1       0.001 -    "jcdfi_error_q"    "Moist Error for JcDFI"      "kg/kg"
 rconfig   real    jcdfi_error_mu        namelist,perturbation          1       1000. -    "jcdfi_error_mu"    "Pert. Pres. Error for JcDFI"      "Pa"
+rconfig   logical enable_identity       namelist,perturbation          1      .false. -   "enable identity AD/TL model"                         ""      ""
 
 Debug controls for AD/TL/NL of boundary-related subroutines in solve_em* (Added by Ning Pan, 2010-05-24)
 rconfig   logical sw_call_advance_all                          namelist,dynamics          1      .false. -    "sw_call_advance_all"                         ""      ""

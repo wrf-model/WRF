@@ -280,7 +280,8 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 !-----------------------------------------------------------------------------
 
    grid%itimestep = grid%itimestep - 1
-!   return
+
+   IF (config_flags%enable_identity) RETURN
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
 

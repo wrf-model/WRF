@@ -37,7 +37,7 @@
       ! false otherwise (all allocated, modulo tl above)
       LOGICAL , INTENT(IN)            :: inter_domain_in
 
-      INTEGER , INTENT(INOUT)         :: num_bytes_allocated
+      INTEGER(KIND=8) , INTENT(INOUT)         :: num_bytes_allocated
 
 
       !  Local data.

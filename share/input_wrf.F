@@ -681,10 +681,12 @@
         CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
         CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
         CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+#if (DA_CORE != 1)
         IF( currentTime .GE. grid%next_bdy_time ) THEN
           IF ( wrf_dm_on_monitor() ) write(0,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
           RETURN
         ENDIF
+#endif
     ENDIF
 
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )

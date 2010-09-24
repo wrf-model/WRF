@@ -66,6 +66,6 @@ rm -f endiantest.c endiantest
 
 bn=`basename $1 .F`
 bnf=${bn}.f
-$CPP -D$byte_order $1 $bnf
+$CPP $CPPFLAGS -D$byte_order $1 > $bnf
 
 #-------------------------------------------------------------------------------

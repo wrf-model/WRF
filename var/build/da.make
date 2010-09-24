@@ -344,7 +344,7 @@ da_blas.o \
 da_lapack.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $*.f
 

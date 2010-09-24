@@ -1278,7 +1278,7 @@ CONTAINS
       LOGICAL , INTENT(IN)            :: inter_domain_in
 
       ! Local
-      INTEGER  num_bytes_allocated
+      INTEGER(KIND=8)  num_bytes_allocated
       INTEGER  idum1, idum2
 
 #if (EM_CORE == 1)

@@ -181,9 +181,8 @@ state    real   t              ikjb     dyn_em      2         -     \
 state    real   t_init         ikj     dyn_em      1         -      ir       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
 i1       real   t_tendf        ikj     dyn_em      1         -  
-state    real   tp             ikj     dyn_em      2         -  
 i1       real   t_2save        ikj     dyn_em      1         -   
-state    real   t_save         ikj     dyn_em      1         -               "t_save"
+state    real   t_save         ikj     dyn_em      1         -      -        "t_save"
 
 state    real   th_upstream_x       |     dyn_em      1      -      i3rh     "TH_UPSTREAM_X" "upstream theta x-advection" "K s-1"
 state    real   th_upstream_x_tend  |     dyn_em      1      -      i3rh     "TH_UPSTREAM_X_TEND" "tendency upstream theta x-advection" "K s-2"
@@ -218,12 +217,12 @@ state    real   mub_fine        ij     dyn_em      1         -      -           
 state    real   mub_save        ij     dyn_em      1         -      -           "mub_save" "nest temp, holds orig fine grid mub" "Pa"
 state    real   mu0             ij     dyn_em      1         -      i1          "mu0" "initial dry mass in column" "Pa"
 state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""
-state    real   muu             ij     dyn_em      1          -                 "muu"
+state    real   muu             ij     dyn_em      1          -     -           "muu"
 i1       real   muus            ij     dyn_em      1          -     
-state    real   muv             ij     dyn_em      1          -                 "muv"
+state    real   muv             ij     dyn_em      1          -     -           "muv"
 i1       real   muvs            ij     dyn_em      1          -     
-state    real   mut             ij     dyn_em      1          -                 "mut"
-state    real   muts            ij     dyn_em      1          -                 "muts"
+state    real   mut             ij     dyn_em      1          -     -           "mut"
+state    real   muts            ij     dyn_em      1          -     -           "muts"
 i1       real   muave           ij     dyn_em      1          -     
 i1       real   mu_save         ij     dyn_em      1          -     
 i1       real   mu_tend         ij     dyn_em      1          -     

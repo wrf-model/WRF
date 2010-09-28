@@ -2975,8 +2975,6 @@ END SUBROUTINE a_rk_update_scalar
 !-------------------------------------------------------------------------------
 
    SUBROUTINE a_rk_update_scalar_pd(scs,sce,scalar,a_scalar,sc_tend,a_sc_tend, &
-! Revised by Ning Pan, 2010-08-03
-!   mu_old,a_mu_old,mu_new,a_mu_new,mu_base,a_mu_base,rk_step,dt,spec_zone, &
    mu_old,a_mu_old,mu_new,a_mu_new,mu_base,rk_step,dt,spec_zone, &
    config_flags,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
@@ -2990,22 +2988,18 @@ END SUBROUTINE a_rk_update_scalar
    INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
    REAL :: dt
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme,scs:sce) :: scalar,a_scalar,sc_tend,a_sc_tend
-! Revised by Ning Pan, 2010-08-03
-!   REAL,DIMENSION(ims:ime,jms:jme) :: mu_old,a_mu_old,mu_new,a_mu_new,mu_base,a_mu_base
    REAL,DIMENSION(ims:ime,jms:jme) :: mu_old,a_mu_old,mu_new,a_mu_new,mu_base
    INTEGER :: i,j,k,im
-   REAL :: sc_middle,a_sc_middle,msfsq,a_msfsq
+   REAL :: sc_middle,sfsq
    REAL,DIMENSION(its:ite) :: muold,a_muold,r_munew,a_r_munew
    REAL,DIMENSION(its:ite,kts:kte,jts:jte) :: tendency,a_tendency
    INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
    INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
 
-!  REAL,DIMENSION(ims:ime,kms:kme,jms:jme,scs:sce) :: Keep_Lpb2_scalar   
    REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003
    REAL,DIMENSION(its:min(ite, ide-1),jts:min(jte, jde-1)) :: Tmpv300
    REAL,DIMENSION(its:min(ite, ide-1),jts:min(jte, jde-1)) :: Tmpv301
    REAL,DIMENSION(its:min(ite, ide-1),kts:min(kte, kde-1),jts:min(jte, jde-1)) :: Tmpv400
-   REAL,DIMENSION(its:min(ite, ide-1),kts:min(kte, kde-1),jts:min(jte, jde-1)) :: Tmpv401
 
 !PART II: CALCULATIONS OF B. S. TRAJECTORY
 
@@ -3017,6 +3011,7 @@ END SUBROUTINE a_rk_update_scalar
          j_end   = min(jte,jde-1)
          k_start = kts
          k_end   = kte-1
+
          i_start_spc = i_start
          i_end_spc   = i_end
          j_start_spc = j_start
@@ -3026,253 +3021,70 @@ END SUBROUTINE a_rk_update_scalar
 
 !LPB[1]
     IF( config_flags%nested .or. config_flags%specified ) THEN
-
       IF( .NOT. config_flags%periodic_x)i_start = max( its,ids+spec_zone )
-
       IF( .NOT. config_flags%periodic_x)i_end   = min( ite,ide-spec_zone-1 )
-
          j_start = max( jts,jds+spec_zone )
          j_end   = min( jte,jde-spec_zone-1 )
          k_start = kts
          k_end   = min( kte, kde-1 )
-
    ENDIF
-
-!!LPB[2]
-!         DO  im = scs, sce
-
-!!      DO j=jts, min(jte, jde-1)
-!!      DO k=kts, min(kte, kde-1)
-!!      DO i=its, min(ite, ide-1)
-!    !  Keep_Lpb2_scalar(i,k,j,im) =scalar(i,k,j,im)
-!!      END DO
-!!      END DO
-!!      END DO
-
-!   
-!          DO  j = jts, min(jte,jde-1)
-!          DO  k = kts, min(kte,kde-1)
-!          DO  i = its, min(ite,ide-1)
-!              tendency(i,k,j) = 0.
-!          ENDDO
-!          ENDDO
-!          ENDDO
-
-!          DO  j = j_start_spc,j_end_spc
-!          DO  k = k_start_spc,k_end_spc
-!          DO  i = i_start_spc,i_end_spc
-!              tendency(i,k,j) = tendency(i,k,j) + sc_tend(i,k,j,im)
-!              sc_tend(i,k,j,im) = 0.
-!          ENDDO
-!          ENDDO
-!          ENDDO
-
-!         DO  j = jts, min(jte,jde-1)
-!         DO  i = its, min(ite,ide-1)
-!           muold(i) = mu_old(i,j) + mu_base(i,j)
-!           r_munew(i) = 1./(mu_new(i,j) + mu_base(i,j))
-!         ENDDO
-
-!         DO  k = kts, min(kte,kde-1)
-!         DO  i = its, min(ite,ide-1)
-!           scalar(i,k,j,im) = (muold(i)*scalar(i,k,j,im)     &
-!                                + dt*tendency(i,k,j))*r_munew(i)
-!         ENDDO
-!         ENDDO
-!         ENDDO
-
-!         ENDDO
 
 !PART III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
 
-! Remarked by Ning Pan, 2010-08-03
-!   a_sc_middle =0.0
-!   a_msfsq =0.0
-
-   Do K0_ADJ =its, ite
-   a_muold(K0_ADJ) =0.0
-   End Do
-
-   Do K0_ADJ =its, ite
-   a_r_munew(K0_ADJ) =0.0
-   End Do
-
-   Do K2_ADJ =jts, jte
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its, ite
-   a_tendency(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
+   a_muold =0.
+   a_r_munew =0.
 
 !PART IV: REVERSE/BACKWARD ACCUMULATIONS
 
 !LPB[2]
    DO im =sce, scs, -1
 
-!  DO j=jts, min(jte, jde-1)
-!  DO k=kts, min(kte, kde-1)
-!  DO i=its, min(ite, ide-1)
-!  scalar(i,k,j,im) =Keep_Lpb2_scalar(i,k,j,im)
-!  END DO
-!  END DO
-!  END DO
+   tendency(its:min(ite,ide-1),kts:min(kte,kde-1),jts:min(jte,jde-1)) =0.
+
+   tendency(i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc) =tendency&
+   (i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc) +sc_tend&
+   (i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc,im)
+
+   sc_tend(i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc,im) =0.
 
    DO j =jts, min(jte, jde-1)
-   DO k =kts, min(kte, kde-1)
-   DO i =its, min(ite, ide-1)
-   tendency(i,k,j) =0.
+     DO i =its, min(ite, ide-1)
+     Tmpv300(i,j) =mu_old(i,j) +mu_base(i,j)
+     ENDDO
 
-   ENDDO
-   ENDDO
-   ENDDO
-   DO j =j_start_spc, j_end_spc
-   DO k =k_start_spc, k_end_spc
-   DO i =i_start_spc, i_end_spc
-   Tmpv001 =tendency(i,k,j) +sc_tend(i,k,j,im)
-   tendency(i,k,j) =Tmpv001
-
-   sc_tend(i,k,j,im) =0.
-
-   ENDDO
-   ENDDO
-   ENDDO
-   DO j =jts, min(jte, jde-1)
-   DO i =its, min(ite, ide-1)
-   Tmpv001 =mu_old(i,j) +mu_base(i,j)
-! Revised by Ning Pan, 2010-08-03
-!   Tmpv300(i,j) =muold(i)
-!   muold(i) =Tmpv001
-   muold(i) =Tmpv001
-   Tmpv300(i,j) =muold(i)
-
-   Tmpv001 =mu_new(i,j) +mu_base(i,j)
-   Tmpv002 =1./Tmpv001
-! Revised by Ning Pan, 2010-08-03
-!   Tmpv301(i,j) =r_munew(i)
-!   r_munew(i) =Tmpv002
-   r_munew(i) =Tmpv002
-   Tmpv301(i,j) =r_munew(i)
-
-   ENDDO
-
-   DO k =kts, min(kte, kde-1)
-   DO i =its, min(ite, ide-1)
-   Tmpv001 =muold(i)*scalar(i,k,j,im)
-   Tmpv002 =Tmpv001 +dt*tendency(i,k,j)
-   Tmpv400(i,k,j) =Tmpv002
-! Remarked by Ning Pan, 2010-08-03
-!   Tmpv003 =Tmpv400(i,k,j)*r_munew(i)
-!   Tmpv401(i,k,j) =scalar(i,k,j,im)
-!   scalar(i,k,j,im) =Tmpv003
-
-   ENDDO
-   ENDDO
+     DO k =kts, min(kte, kde-1)
+     DO i =its, min(ite, ide-1)
+     Tmpv400(i,k,j) =Tmpv300(i,j)*scalar(i,k,j,im)+dt*tendency(i,k,j)
+     ENDDO
+     ENDDO
    ENDDO
 
    DO j =min(jte, jde-1), jts, -1
-   DO k =min(kte, kde-1), kts, -1
-   DO i =min(ite, ide-1), its, -1
 
-!   scalar(i,k,j,im) =Tmpv401(i,k,j)  ! Remarked by Ning Pan, 2010-08-03
-! Added by Ning Pan, 2010-08-03
-   r_munew(i) = Tmpv301(i,j)
-   muold(i) = Tmpv300(i,j)
-
-   a_Tmpv3 =a_scalar(i,k,j,im)
-   a_scalar(i,k,j,im) =0.0
-   a_Tmpv2 =r_munew(i)*a_Tmpv3
-   a_r_munew(i) =a_r_munew(i) +Tmpv400(i,k,j)*a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_tendency(i,k,j) =a_tendency(i,k,j) +dt*a_Tmpv2
+   DO k =kts, min(kte, kde-1)
+   DO i =its, min(ite, ide-1)
+   a_r_munew(i) =a_r_munew(i) +Tmpv400(i,k,j)*a_scalar(i,k,j,im)
+   a_Tmpv1 = a_scalar(i,k,j,im)/(mu_new(i,j)+mu_base(i,j))
+   a_tendency(i,k,j) =dt*a_Tmpv1
    a_muold(i) =a_muold(i) +scalar(i,k,j,im)*a_Tmpv1
-   a_scalar(i,k,j,im) =a_scalar(i,k,j,im) +muold(i)*a_Tmpv1
-   ENDDO
-   ENDDO
-   DO i =min(ite, ide-1), its, -1
-
-!   r_munew(i) =Tmpv301(i,j)  ! Remarked by Ning Pan, 2010-08-03
-
-   a_Tmpv2 =a_r_munew(i)
-   a_r_munew(i) =0.0
-! Remarked by Ning Pan, 2010-08-03
-!   a_Tmpv1 =-(1.)*a_Tmpv2/(Tmpv001*Tmpv001)
-   a_Tmpv1 =-(1.)*a_Tmpv2/((mu_new(i,j) +mu_base(i,j))*(mu_new(i,j) +mu_base(i,j)))
-   a_mu_new(i,j) =a_mu_new(i,j) +a_Tmpv1
-!   a_mu_base(i,j) =a_mu_base(i,j) +a_Tmpv1  ! Remarked by Ning Pan, 2010-08-03
-
-!   muold(i) =Tmpv300(i,j)  ! Remarked by Ning Pan, 2010-08-03
-
-   a_Tmpv1 =a_muold(i)
-   a_muold(i) =0.0
-   a_mu_old(i,j) =a_mu_old(i,j) +a_Tmpv1
-!   a_mu_base(i,j) =a_mu_base(i,j) +a_Tmpv1  ! Remarked by Ning Pan, 2010-08-03
+   a_scalar(i,k,j,im) =Tmpv300(i,j)*a_Tmpv1
    ENDDO
    ENDDO
 
-   DO j =j_end_spc, j_start_spc, -1
-   DO k =k_end_spc, k_start_spc, -1
-   DO i =i_end_spc, i_start_spc, -1
-   a_sc_tend(i,k,j,im) =0.0
-   a_Tmpv1 =a_tendency(i,k,j)
-   a_tendency(i,k,j) =0.0
-   a_tendency(i,k,j) =a_tendency(i,k,j) +a_Tmpv1
-   a_sc_tend(i,k,j,im) =a_sc_tend(i,k,j,im) +a_Tmpv1
-   ENDDO
-   ENDDO
+   DO i =its, min(ite, ide-1)
+   a_mu_new(i,j) =a_mu_new(i,j)-a_r_munew(i)/(mu_new(i,j)+mu_base(i,j))/(mu_new(i,j)+mu_base(i,j))
    ENDDO
 
-   DO j =min(jte, jde-1), jts, -1
-   DO k =min(kte, kde-1), kts, -1
-   DO i =min(ite, ide-1), its, -1
-   a_tendency(i,k,j) =0.0
-   ENDDO
-   ENDDO
-   ENDDO
+   a_r_munew(its:min(ite,ide-1)) =0.0
+   a_mu_old(its:min(ite,ide-1),j) =a_mu_old(its:min(ite,ide-1),j) +a_muold(its:min(ite,ide-1))
+   a_muold(its:min(ite,ide-1)) =0.0
 
    ENDDO
 
-!LPB[1]
+   a_sc_tend(i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc,im) =a_tendency(&
+   i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc)
 
-!  IF( config_flags%nested .or. config_flags%specified ) THEN
-!  IF( .NOT. config_flags%periodic_x) THEN
-!  i_start =max(its, ids+spec_zone)
-!  END IF
-!  IF( .NOT. config_flags%periodic_x) THEN
-!  i_end =min(ite, ide-spec_zone-1)
-!  END IF
-!  j_start =max(jts, jds+spec_zone)
-!  j_end =min(jte, jde-spec_zone-1)
-!  k_start =kts
-!  k_end =min(kte, kde-1)
-!  ENDIF
-
-! Remarked by Ning Pan, 2010-08-03
-!   IF( config_flags%nested .or. config_flags%specified ) THEN
-
-!   IF( .NOT. config_flags%periodic_x) THEN
-
-!   END IF
-
-!   IF( .NOT. config_flags%periodic_x) THEN
-
-!   END IF
-
-!   ENDIF
-
-!LPB[0]
-!  i_start =its
-!  i_end =min(ite, ide-1)
-!  j_start =jts
-!  j_end =min(jte, jde-1)
-!  k_start =kts
-!  k_end =kte-1
-!  i_start_spc =i_start
-!  i_end_spc =i_end
-!  j_start_spc =j_start
-!  j_end_spc =j_end
-!  k_start_spc =k_start
-!  k_end_spc =k_end
+   ENDDO
 
    END SUBROUTINE a_rk_update_scalar_pd
 

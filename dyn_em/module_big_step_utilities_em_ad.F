@@ -7941,12 +7941,12 @@ END SUBROUTINE a_couple_momentum
    IF ( some .GT. 0 ) THEN
      CALL get_current_time_string( time_str )
      CALL get_current_grid_name( grid_str )
-     WRITE(wrf_err_message,*)some,                                            &
+     WRITE(temp,*)some,                                            &
             ' points exceeded cfl=2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
-     CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
-     WRITE(wrf_err_message,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
+     CALL wrf_debug ( 0 , TRIM(temp) )
+     WRITE(temp,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
                              maxdub,maxdeta
-     CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
+     CALL wrf_debug ( 0 , TRIM(temp) )
    ENDIF
 
 !DELETED BY WALLS

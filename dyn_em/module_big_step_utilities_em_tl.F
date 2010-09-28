@@ -3075,16 +3075,16 @@ END SUBROUTINE g_couple_momentum
 !This line is fail to be recognized
       CALL get_current_grid_name( grid_str )
 
- WRITE (wrf_err_message,*) some,' points exceeded cfl=2 in domain '//Trim(grid_str) &
+ WRITE (temp,*) some,' points exceeded cfl=2 in domain '//Trim(grid_str) &
 //' at time '//Trim(time_str)//' hours'
 !This line is fail to be recognized
-      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
+      CALL wrf_debug ( 0 , TRIM(temp) )
 
 !REVISED BY WALLS
-! WRITE (wrf_err_message,*) 'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta) &
+! WRITE (temp,*) 'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta) &
 !=',max_vert_cfl,maxdub,maxdeta
 !This line is fail to be recognized
-      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
+      CALL wrf_debug ( 0 , TRIM(temp) )
  ENDIF
 
  END SUBROUTINE g_w_damp

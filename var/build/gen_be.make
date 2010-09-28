@@ -128,7 +128,7 @@ gen_be_stage2.exe : gen_be_stage2.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 
 gen_be_stage2_gsi.exe : gen_be_stage2_gsi.o  
 	if [ -n "$(DMPARALLEL)" ] ;   then \
-	$(DM_FC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o ;\
+	$(DM_FC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o $(LIB_LOCAL) ;\
 	else \
 	$(SFC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o	;\
 	fi	

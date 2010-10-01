@@ -195,7 +195,7 @@
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
-   CASE (GOCART_SIMPLE)
+   CASE (GOCART_SIMPLE, GOCARTRACM_KPP, GOCARTRADM2_KPP, GOCARTRADM2   )
      call optical_prep_gocart(nbin_o, chem, alt,relhum,                &
                         refindx, radius_wet, number_bin,               &
           radius_core, refindx_core, refindx_shell,                    &

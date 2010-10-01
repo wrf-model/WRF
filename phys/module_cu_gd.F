@@ -1541,7 +1541,7 @@ CONTAINS
               (p(i,kk) - p(i,kk+1))
             sdp(i) = sdp(i) + p(i,kk) - p(i,kk+1)
           endif
-          if (kk .eq. ktf)vshear(i) = 1.e3 * vws(i) / sdp(i)
+          if (kk .eq. ktf-1)vshear(i) = 1.e3 * vws(i) / sdp(i)
    62   continue
        end do
       do i=its,itf

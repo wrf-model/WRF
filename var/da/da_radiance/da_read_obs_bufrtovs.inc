@@ -248,6 +248,9 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          if ( nint(bfr1bhdr(bufr_satellite_id)) >= 206 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 209 ) then
             platform_id = 1
             satellite_id = nint(bfr1bhdr(bufr_satellite_id))-191
+         else if ( nint(bfr1bhdr(bufr_satellite_id)) == 223 ) then ! noaa-19
+            platform_id = 1
+            satellite_id = nint(bfr1bhdr(bufr_satellite_id))-204
          else if ( nint(bfr1bhdr(bufr_satellite_id)) >= 3 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 5 ) then
             platform_id = 10
             satellite_id = nint(bfr1bhdr(bufr_satellite_id))-2

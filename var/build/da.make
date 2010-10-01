@@ -368,19 +368,6 @@ da_advance_time.o :
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
 
-input_wrf.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b | sed -e '/Must be old WPS data, assuming 24 levels for NUM_LAND_CAT/d' -e '/wrf_message("mminlu =/d' > $*.f90
-	$(RM) $*.b
-	if $(FGREP) '!$$OMP' $*.f90 ; then \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
-	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
-        else \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
-	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
-        fi
-
 nl_set_0_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=0 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx0.f90
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx0.f90

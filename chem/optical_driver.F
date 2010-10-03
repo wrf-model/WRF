@@ -77,6 +77,7 @@
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  &
+          GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,  &
           RACM_ESRLSORG_KPP, CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
       processingAerosols = .true.
@@ -95,6 +96,7 @@
 !
    select case (config_flags%chem_opt)
    case ( RADM2SORG, RACM_ESRLSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, &
+          GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,  &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ   )
      nbin_o = 8
    case (CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &

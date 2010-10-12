@@ -781,9 +781,6 @@ BENCH_START(init_zero_tend_tim)
 BENCH_END(init_zero_tend_tim)
 
 ! NPAN 08/30/10 + phy_prep (module_big_step_utilities_em), which is called by first_rk_step_part1
-#ifdef DM_PARALLEL
-#     include "HALO_EM_PHYS_A.inc"
-#endif
 
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )

@@ -4,8 +4,7 @@
 MODULE mediation_pertmod_io
 
 USE module_domain, ONLY : domain, head_grid, get_ijk_from_grid
-USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, &
-    P_A_QV, P_A_QC, P_A_QR, P_A_QI, P_A_QS, P_A_QH, P_A_QG
+USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist
 
 TYPE pertmod_io
     CHARACTER*256 :: time                       ! time stamp
@@ -47,20 +46,7 @@ SUBROUTINE adtl_initialize
    bytes_ad_forcing = bytes_ad_forcing + n2d
    ! Moist variables
    DO i = PARAM_FIRST_SCALAR, num_moist
-      IF ( i .eq. P_A_QV ) &
-         bytes_ad_forcing = bytes_ad_forcing + n3d
-      IF ( i .eq. P_A_QC ) &
-         bytes_ad_forcing = bytes_ad_forcing + n3d
-      IF ( i .eq. P_A_QR ) &
-         bytes_ad_forcing = bytes_ad_forcing + n3d
-      IF ( i .eq. P_A_QI ) &
-         bytes_ad_forcing = bytes_ad_forcing + n3d
-      IF ( i .eq. P_A_QS ) &
-         bytes_ad_forcing = bytes_ad_forcing + n3d
-      IF ( i .eq. P_A_QG ) &
-         bytes_ad_forcing = bytes_ad_forcing + n3d
-      IF ( i .eq. P_A_QH ) &
-         bytes_ad_forcing = bytes_ad_forcing + n3d
+      bytes_ad_forcing = bytes_ad_forcing + n3d
    ENDDO
 
    adtl_current => ad_forcing_head
@@ -311,20 +297,7 @@ SUBROUTINE xtraj_io_initialize
    
    ! Moist variables
    DO i = PARAM_FIRST_SCALAR, num_moist
-      IF ( i .eq. P_A_QV ) &
-         bytes_xtraj = bytes_xtraj + n3d
-      IF ( i .eq. P_A_QC ) &
-         bytes_xtraj = bytes_xtraj + n3d
-      IF ( i .eq. P_A_QR ) &
-         bytes_xtraj = bytes_xtraj + n3d
-      IF ( i .eq. P_A_QI ) &
-         bytes_xtraj = bytes_xtraj + n3d
-      IF ( i .eq. P_A_QS ) &
-         bytes_xtraj = bytes_xtraj + n3d
-      IF ( i .eq. P_A_QG ) &
-         bytes_xtraj = bytes_xtraj + n3d
-      IF ( i .eq. P_A_QH ) &
-         bytes_xtraj = bytes_xtraj + n3d
+      bytes_xtraj = bytes_xtraj + n3d
    ENDDO
 
    ! Boundary variables: bxs, bxe, btxs, btxe : u,v,w,ph,t

@@ -153,6 +153,7 @@ module_diffusion_em_tl.o:  module_big_step_utilities_em_tl.o \
 		../frame/module_wrf_error.o
 
 module_diffusion_em_ad.o:  module_big_step_utilities_em_ad.o \
+		module_diffusion_em.o \
 		../frame/module_configure.o  \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o \

@@ -1556,6 +1556,7 @@ CONTAINS
             ENDDO
           ENDDO
         ENDDO
+      ENDIF 
 
       IF (its - ibs .lt. spec_zone) THEN
 ! X-start boundary
@@ -1569,7 +1570,6 @@ CONTAINS
             ENDDO
           ENDDO
         ENDDO
-      ENDIF 
       ENDIF 
 
     ENDIF

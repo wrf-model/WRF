@@ -48,6 +48,17 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
       end do
    end do
 
+   if (size(grid%g_moist,dim=4) >= 4) then
+      do k=ks,ke
+         do j=js,je
+            do i=is,ie
+               grid%g_moist(i,j,k,p_g_qc) =  grid%xa%qcw(i,j,k)
+               grid%g_moist(i,j,k,p_g_qr) =  grid%xa%qrn(i,j,k)
+            end do
+         end do
+      end do
+   end if
+
    !---------------------------------------------------------------------------
    ! [2.0] COMPUTE increments of dry-column air mass per unit area
    !---------------------------------------------------------------------------

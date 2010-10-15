@@ -37,7 +37,6 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    !-------------------------------------------------------------------------
    ! [2.0]: Perform vp = u_v vv transform:
    !-------------------------------------------------------------------------
-
    call da_zero_vp_type (vv)
 
    if (vert_corr == 2) then      
@@ -49,7 +48,11 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
       vv % v3(its:ite,jts:jte,kts:kte) = vp % v3(its:ite,jts:jte,kts:kte)
       vv % v4(its:ite,jts:jte,kts:kte) = vp % v4(its:ite,jts:jte,kts:kte)
       vv % v5(its:ite,jts:jte,kts:kte) = vp % v5(its:ite,jts:jte,kts:kte)
-
+#ifdef CLOUD_CV
+      vv % v6(its:ite,jts:jte,kts:kte) = vp % v6(its:ite,jts:jte,kts:kte)
+      vv % v7(its:ite,jts:jte,kts:kte) = vp % v7(its:ite,jts:jte,kts:kte)
+      vv % v8(its:ite,jts:jte,kts:kte) = vp % v8(its:ite,jts:jte,kts:kte)
+#endif
    !  Uv for alpha is a null transform:
       if (be % ne > 0) then
          vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &

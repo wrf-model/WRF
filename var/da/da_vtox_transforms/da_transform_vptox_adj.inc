@@ -35,7 +35,8 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    ! [3] Transform to model variable space:
    !--------------------------------------------------------------------------
 
-   if ((use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+  if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+   if ( cloud_cv_options == 1 ) then
       ! Pseudo RH --> Total water mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
@@ -62,9 +63,75 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
             end do
          end do
       end do
+#ifdef CLOUD_CV
+!qc
+      do ij = 1 , grid%num_tiles
+         do k = kts,kte
+            do j = grid%j_start(ij),grid%j_end(ij)
+               do i =  its, ite
+                 if(cloud_cv_options == 2)then
+                  vp%v6(i,j,k)  = vp%v6(i,j,k) + grid%xa%qcw(i,j,k) * grid%xb%qs(i,j,k)
+                 elseif(cloud_cv_options == 3)then
+                  vp%v6(i,j,k)  = vp%v6(i,j,k) + grid%xa%qcw(i,j,k)
+!                 elseif(mcv_options.eq.4)then
+!                  vp%v6(i,j,k)  = 0.0
+                 endif
+               end do
+            end do
+         end do
+      end do
+!     vp%v6  = 0.0
+!qr
+      do ij = 1 , grid%num_tiles
+         do k = kts,kte
+            do j = grid%j_start(ij),grid%j_end(ij)
+               do i =  its, ite
+                 if(cloud_cv_options == 2)then
+                  vp%v7(i,j,k)  = vp%v7(i,j,k) + grid%xa%qrn(i,j,k) * grid%xb%qs(i,j,k)
+                 elseif(cloud_cv_options == 3)then
+                  vp%v7(i,j,k)  = vp%v7(i,j,k) + grid%xa%qrn(i,j,k)
+!                 elseif(mcv_options.eq.4)then
+!                  vp%v7(i,j,k)  = 0.0
+                 endif
+               end do
+            end do
+         end do
+      end do
+!ice
+      do ij = 1 , grid%num_tiles
+         do k = kts, kte
+            do j = grid%j_start(ij), grid%j_end(ij)
+               do i = its, ite
+                 if(cloud_cv_options == 2)then
+                  vp%v8(i,j,k)  = vp%v8(i,j,k) + grid%xa%qci(i,j,k) * grid%xb%qs(i,j,k)
+                 elseif(cloud_cv_options == 3)then
+                  vp%v8(i,j,k)  = vp%v8(i,j,k) + grid%xa%qci(i,j,k)
+!                elseif(mcv_options.eq.4)then
+!                  vp%v8(i,j,k)  = 0.0
+                 endif
+               enddo
+            enddo
+         enddo
+      enddo
+!      vp%v8 = 0.0
+#endif
       !$OMP END PARALLEL DO
    end if
-
+  else ! no rf or cloud radiance
+      ! Pseudo RH --> Water vapor mixing ratio:
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij )
+      do ij = 1 , grid%num_tiles
+         do k = kts,kte
+            do j = grid%j_start(ij),grid%j_end(ij)
+               do i =  its, ite
+                  vp%v4(i,j,k)  = vp%v4(i,j,k) + grid%xa%q(i,j,k) * grid%xb%qs(i,j,k)
+               end do
+            end do
+         end do
+      end do
+      !$OMP END PARALLEL DO
+  end if
 #ifdef A2C
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
        fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then

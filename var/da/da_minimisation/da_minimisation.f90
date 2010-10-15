@@ -7,7 +7,7 @@ module da_minimisation
    use module_configure, only : grid_config_rec_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use module_domain, only : domain, ep_type, vp_type, x_type
-   use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_g_qv
+   use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_g_qv,p_g_qc,p_g_qr
 
 !#ifdef DM_PARALLEL
 !   use mpi, only : mpi_barrier

@@ -540,6 +540,17 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
       end do
    end do
 
+   if (size(grid%a_moist,dim=4) >= 4) then
+      do k=kts,kte
+         do j=jts,jte
+            do i=its,ite
+             grid%xa%qcw(i,j,k)=grid%a_moist(i,j,k,P_A_QC)  !/(1.0-grid%xb%q(i,j,k))**2
+             grid%xa%qrn(i,j,k)=grid%a_moist(i,j,k,P_A_QR)  !/(1.0-grid%xb%q(i,j,k))**2
+            end do
+         end do
+      end do
+   end if
+
    grid%a_moist = 0.0
 
    if (trace_use) call da_trace_exit("da_transfer_xatowrftl_adj")

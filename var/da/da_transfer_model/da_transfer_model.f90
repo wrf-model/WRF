@@ -7,7 +7,7 @@ module da_transfer_model
    use module_configure, only : grid_config_rec_type
    use module_domain, only : domain
    use module_state_description, only : dyn_em_ad, dyn_em, p_qv,dyn_em_tl, &
-      p_qr, p_qi,p_qs,p_qg,p_qc,num_moist, p_a_qv, p_g_qv
+      p_qr, p_qi,p_qs,p_qg,p_qc,num_moist, p_a_qv, p_g_qv, p_a_qc, p_g_qc, p_a_qr, p_g_qr
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, &
@@ -28,7 +28,7 @@ module da_transfer_model
       truelat2_3dv, periodic_x,write_increments,max_ext_its, gravity, &
       kappa, print_detail_xa,rd_over_rv,t0, print_detail_xa, check_rh, &
       print_detail_xb,test_dm_exact,base_lapse,base_temp,vertical_ip,ptop, &
-      use_gpsztdobs, use_ssmitbobs, dt_cloud_model, cp, use_ssmiretrievalobs, &
+      use_gpsztdobs, use_ssmitbobs, use_radarobs, use_radar_rf,use_radar_rle, use_radar_rr, dt_cloud_model, cp, use_ssmiretrievalobs, &
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
       t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &

@@ -10,7 +10,7 @@ module da_setup_structures
       iv_type,da_allocate_background_errors,da_allocate_observations, &
       multi_level_type,each_level_type
    use da_wrf_interfaces, only : wrf_debug
-   use da_control, only : trace_use,vert_evalue,stdout,rootproc, &
+   use da_control, only : trace_use,var4d,vert_evalue,stdout,rootproc, &
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
       truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, print_detail_obs, &
@@ -27,11 +27,15 @@ module da_setup_structures
       use_radar_rv,use_profilerobs, use_obsgts, use_geoamvobs, use_buoyobs, &
       jb_factor, je_factor, alphacv_method,its,ite,jts,jte,cv_size_domain_jb, cv_size_domain_jl, &
       cv_size_domain_je, cv_size_domain,ensdim_alpha, alpha_vertloc, alpha_hydrometeors, &
-      lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale,len_scaling1, &
-      len_scaling2,len_scaling3,len_scaling4,len_scaling5,max_vert_var1, &
-      max_vert_var2,max_vert_var3,max_vert_var4,max_vert_var_alpha,print_detail_be, &
-      test_statistics, var_scaling1,var_scaling2,var_scaling3,var_scaling4, &
-      var_scaling5,vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
+      lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale, &
+      len_scaling1, len_scaling2, len_scaling3, len_scaling4, len_scaling5,&
+      len_scaling6, len_scaling7, len_scaling8,&
+      max_vert_var1, max_vert_var2, max_vert_var3, max_vert_var4, max_vert_var5, &
+      max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var_alpha, &
+      print_detail_be, test_statistics, &
+      var_scaling1, var_scaling2, var_scaling3, var_scaling4, &
+      var_scaling5, var_scaling6, var_scaling7, var_scaling8, &
+      vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
       vert_corr_2, alphacv_method_xa, vert_evalue_global, &
@@ -46,7 +50,7 @@ module da_setup_structures
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
       sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, &
-      cv_options, cv_size, as1, as2, as3, as4, as5, &
+      cv_options, cloud_cv_options, cv_size, as1, as2, as3, as4, as5, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr, &
       fmt_info, fmt_srfc, fmt_each, unit_end, max_ext_its, &  

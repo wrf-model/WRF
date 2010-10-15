@@ -131,6 +131,20 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
       end do
    end do
 
+   if(var4d)then
+    if (size(grid%g_moist,dim=4) >= 4) then
+     print*,'wrftltoxa qcw,qrn' 
+      do k=ks,ke
+         do j=js,je
+            do i=is,ie
+               grid%xa%qcw(i,j,k)=grid%g_moist(i,j,k,p_g_qc)
+               grid%xa%qrn(i,j,k)=grid%g_moist(i,j,k,p_g_qr)
+            end do
+         end do
+      end do
+    end if
+   endif
+
 #ifdef VAR4D_MICROPHYSICS
    ! New code needed once we introduce the microphysics to 4dvar in 2008
    if (size(grid%moist,dim=4) >= 4) then

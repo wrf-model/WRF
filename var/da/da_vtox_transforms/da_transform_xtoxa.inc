@@ -159,12 +159,14 @@ subroutine da_transform_xtoxa(grid)
 #include "HALO_RADAR_XA_W.inc"
 #endif
    end if
- 
-   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then 
+
+   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+    if ( cloud_cv_options == 1 )then
+      print*,'Options: set CLOUD_CV and cloud_cv_options to 2 or 3 !'
       ! Partition of hydrometeor increments via warm rain process
       call da_moist_phys_lin(grid)
+    end if
    end if
-
    !---------------------------------------------------------------
    ! Polar treatment for Global 
    !---------------------------------------------------------------

@@ -33,7 +33,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    real             :: jo_partial                   ! jo for this processor
    type (y_type)    :: jo_grad_y ! Grad_y(jo)
    real             :: cv_xhat_jb(cv_size_jb), cv_xhat_je(cv_size_je), cv_xhat_jl(cv_size_jl)
+#ifdef CLOUD_CV
+   integer          :: mz(10)
+#else
    integer          :: mz(7)
+#endif
    integer          :: ndynopt, is, ie, js, je, ks, ke
    real             :: dtemp1x
 
@@ -52,8 +56,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    !-------------------------------------------------------------------------
    ! [0.0] initialization:
    !-------------------------------------------------------------------------
+#ifdef CLOUD_CV
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%alpha%mz, be % ne /)
+#else
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
-
+#endif
    je_start = cv_size_jb + 1
    je_end   = cv_size_jb + cv_size_je
    jl_start = cv_size_jb + cv_size_je + 1

@@ -31,7 +31,11 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    integer          :: jl_start, jl_end             ! Start/end indices of Jl.
    real             :: jo_partial                   ! jo for this processor
    type (y_type)    :: jo_grad_y                    ! Grad_y(jo)
+#ifdef CLOUD_CV
+   integer          :: mz(10)
+#else
    integer          :: mz(7)
+#endif
    real             :: grad_jo(cv_size)
    real             :: grad_jb(cv_size)
    real             :: grad_je(cv_size)
@@ -51,8 +55,11 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    ! [0.0] initialization:
    !-------------------------------------------------------------------------
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
-
+#ifdef CLOUD_CV
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%alpha%mz, be % ne /)
+#else
+  mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,be%alpha%mz, be % ne /)
+#endif
    je_start   = cv_size_jb + 1
    je_end     = cv_size_jb + cv_size_je
    jp_start   = cv_size_jb + cv_size_je + 1
@@ -169,8 +176,8 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
       if (rootproc) &
          write(grad_unit,fmt='(2x,i2,1x,e10.3,2x,i4,7(1x,f10.3))') & 
                it, eps(it), iter, gnorm_j, gnorm_jb, gnorm_jo, gnorm_je, gnorm_jp, gnorm_js, gnorm_jl
+      if (rootproc) print*,'in_gradj ',it, iter, gnorm_j, gnorm_jb, gnorm_jo
    end if
-
    if (trace_use) call da_trace_exit("da_calculate_gradj")
 
 end subroutine da_calculate_gradj

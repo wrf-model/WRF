@@ -123,6 +123,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, cv_l, iv, vp, vv, vp6, vv6
          call da_zero_x(grid%x6a)
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
       end if
+
       if (num_fgat_time > 1) then ! Recover the firstguess fields touched by reading gr01
          call da_med_initialdata_input( grid , config_flags, 'fg')
          call da_setup_firstguess( xbx_tmp, grid, config_flags)

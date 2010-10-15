@@ -292,10 +292,11 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 
    if (iv%info(radar)%nlocal > 0) then
       call da_jo_and_grady_radar(iv, re, jo, jo_grad_y)
-      jo_radar = jo%radar_rv + jo%radar_rf
+      jo_radar = jo%radar_rv + jo%radar_rf + jo%radar_rr
    else
       jo % radar_rv = 0.0
       jo % radar_rf = 0.0
+      jo % radar_rr = 0.0
       jo_radar = 0.0
    end if
 

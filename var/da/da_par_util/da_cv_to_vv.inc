@@ -78,13 +78,42 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
      cv_e = cv_s + ijm - 1
      vv % v5(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy,mz/))
    end if
-
+#ifdef CLOUD_CV
+   ! Fill v6
+   mz = mzs(6)
+   if (mz > 0) then
+     ijm = ix * jy * mz
+     cv_s = cv_e + 1
+     cv_e = cv_s + ijm - 1
+     vv % v6(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+   end if
+   ! Fill v7
+   mz = mzs(7)
+   if (mz > 0) then
+     ijm = ix * jy * mz
+     cv_s = cv_e + 1
+     cv_e = cv_s + ijm - 1
+     vv % v7(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+   end if
+   ! Fill v8
+   mz = mzs(8)
+   if (mz > 0) then
+     ijm = ix * jy * mz
+     cv_s = cv_e + 1
+     cv_e = cv_s + ijm - 1
+     vv % v8(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+   end if
+#endif
    !--------------------------------------------------------------------------
    ! [2] Transfer components of Je control variable:
    !--------------------------------------------------------------------------
-
+#ifdef CLOUD_CV
+   mz = mzs(9)
+   ne = mzs(10)
+#else
    mz = mzs(6)
    ne = mzs(7)
+#endif
    if ( ne > 0 ) then
       ijmn = ix * jy * mz * ne
       cv_s = cv_e + 1

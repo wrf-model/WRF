@@ -214,6 +214,10 @@ module da_define_structures
 
       type (field_type)     , pointer :: rv       (:) ! Radial Velocity
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
+      type (field_type)     , pointer :: rr       (:) ! Reflectivity
+      real                  , pointer :: rro      (:)
+      real                  , pointer :: qso      (:)
+      real                  , pointer :: qco      (:)
    end type radar_type
 
    type multi_level_type
@@ -547,7 +551,7 @@ module da_define_structures
       real    :: qscat_ef_u, qscat_ef_v
       real    :: profiler_ef_u, profiler_ef_v
       real    :: buoy_ef_u, buoy_ef_v, buoy_ef_t, buoy_ef_p, buoy_ef_q
-      real    :: radar_ef_rv, radar_ef_rf
+      real    :: radar_ef_rv, radar_ef_rf, radar_ef_rr
       real    :: bogus_ef_u, bogus_ef_v, bogus_ef_t, bogus_ef_p, bogus_ef_q, bogus_ef_slp
       real    :: airsr_ef_t,  airsr_ef_q
 
@@ -610,6 +614,7 @@ module da_define_structures
       type (bad_info_type)       :: rh
       type (bad_info_type)       :: rv
       type (bad_info_type)       :: rf
+      type (bad_info_type)       :: rr
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
    end type bad_data_type
@@ -742,6 +747,7 @@ module da_define_structures
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
+      real, pointer :: rr(:)                    ! rr
    end type residual_radar_type
 
    type residual_instid_type
@@ -831,7 +837,7 @@ module da_define_structures
       real                :: qscat_u, qscat_v
       real                :: profiler_u, profiler_v
       real                :: buoy_u, buoy_v, buoy_t, buoy_p, buoy_q
-      real                :: radar_rv, radar_rf
+      real                :: radar_rv, radar_rf, radar_rr
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
       type(jo_type_rad), pointer       :: rad(:)
@@ -860,12 +866,22 @@ module da_define_structures
       integer :: size3c      ! Complex size of CV array of 3rd variable error.
       integer :: size4c      ! Complex size of CV array of 4th variable error.
       integer :: size5c      ! Complex size of CV array of 5th variable error.
+#ifdef CLOUD_CV
+      integer :: size6c      ! Complex size of CV array of 6th variable error.
+      integer :: size7c      ! Complex size of CV array of 7th variable error.
+      integer :: size8c      ! Complex size of CV array of 7th variable error.
+#endif
       integer :: size_alphac ! Size of alpha control variable (complex).
       integer :: size1       ! Size of CV array of 1st variable error.
       integer :: size2       ! Size of CV array of 2nd variable error.
       integer :: size3       ! Size of CV array of 3rd variable error.
       integer :: size4       ! Size of CV array of 4th variable error.
       integer :: size5       ! Size of CV array of 5th variable error.
+#ifdef CLOUD_CV
+      integer :: size6       ! Size of CV array of 6th variable error.
+      integer :: size7       ! Size of CV array of 7th variable error.
+      integer :: size8       ! Size of CV array of 7th variable error.
+#endif
       integer :: size1l      ! Size of CV array of 1st variable lbc error.
       integer :: size2l      ! Size of CV array of 2nd variable lbc error.
       integer :: size3l      ! Size of CV array of 3rd variable lbc error.
@@ -895,6 +911,11 @@ module da_define_structures
       type (be_subtype) :: v3
       type (be_subtype) :: v4
       type (be_subtype) :: v5
+#ifdef CLOUD_CV
+      type (be_subtype) :: v6
+      type (be_subtype) :: v7
+      type (be_subtype) :: v8
+#endif
       type (be_subtype) :: alpha
       real*8, pointer     :: pb_vert_reg(:,:,:)
 

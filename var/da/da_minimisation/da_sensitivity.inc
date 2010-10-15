@@ -28,12 +28,19 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
    real,           intent(out)       :: shat(1:cv_size)        ! control variable (local).
    
    type (y_type)                     :: ktr         
+#ifdef CLOUD_CV
+   integer                           :: i, j, mz(10)
+#else
    integer                           :: i, j, mz(7)
+#endif
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
    real                              :: amat(1:cv_size)           ! cv copy.
    real                              :: ritz(ntmax, ntmax)
-
-    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
+#ifdef CLOUD_CV
+    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz, be%alpha%mz, be % ne /)
+#else
+    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,be%alpha%mz, be % ne /)
+#endif 
     jp_start = be % cv % size_jb + be % cv % size_je + 1
     jp_end   = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
 

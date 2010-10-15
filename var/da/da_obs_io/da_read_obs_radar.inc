@@ -264,6 +264,8 @@ subroutine da_read_obs_radar (iv, filename)
                allocate (iv % radar (nlocal(radar)) % height_qc(1:nlevels))
                allocate (iv % radar (nlocal(radar)) % rv       (1:nlevels))
                allocate (iv % radar (nlocal(radar)) % rf       (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rr       (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rro       (1:nlevels))
 
                do i = 1, nlevels
                   iv % radar (nlocal(radar)) % height(i)    = platform % each(i) % height

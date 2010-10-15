@@ -39,7 +39,11 @@ subroutine da_minimise_lz(grid, config_flags,            &
    integer, intent(out)              :: neign
    
    integer                           :: i, j, k, n, inst, iter
+#ifdef CLOUD_CV
+   integer                           :: mz(10), info, nsstwrk
+#else
    integer                           :: mz(7), info, nsstwrk
+#endif
    integer                           :: npred, ipred
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
    real                              :: fhat(1:cv_size)        ! cv copy.
@@ -63,8 +67,11 @@ subroutine da_minimise_lz(grid, config_flags,            &
    !-------------------------------------------------------------------------
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
-   
+#ifdef CLOUD_CV
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz,  be%v8%mz, be%alpha%mz, be % ne /)
+#else
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,be%alpha%mz, be % ne /)
+#endif   
    jp_start   = be % cv % size_jb + be % cv % size_je + 1
    jp_end     = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
    

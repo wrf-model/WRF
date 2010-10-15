@@ -16,7 +16,7 @@ module da_vtox_transforms
    use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain
 
 #ifdef A2C
-   use da_control, only : trace_use, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
+   use da_control, only : trace_use, var4d, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
       vertical_ip,alphacv_method,use_radarobs,use_radar_rf,use_ssmitbobs, &
       use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, use_gpsztdobs, &
       use_gpsrefobs,sfc_assi_options, test_transforms, vert_corr, fg_format, &
@@ -27,7 +27,7 @@ module da_vtox_transforms
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, &
       use_background_errors
 #else
-   use da_control, only : trace_use, ims,ime,jms,jme,kms,kme,jds,jde,kds,kde, &
+   use da_control, only : trace_use, var4d, ims,ime,jms,jme,kms,kme,jds,jde,kds,kde, &
       its,ite,jts,jte,kts,kte, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
       vertical_ip,alphacv_method,use_radarobs,use_radar_rf,use_ssmitbobs, &
       use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, use_gpsztdobs, &
@@ -35,8 +35,9 @@ module da_vtox_transforms
       fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       ids, ide, stdout, use_rad, crtm_cloud, vert_corr_2, fg_format_wrf_arw_global, &
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull, &
-      ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum, &
-      use_background_errors
+      ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum, cloud_cv_options, &
+      use_background_errors, len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
+      len_scaling5, len_scaling6, len_scaling7, len_scaling8
 #endif
 
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x

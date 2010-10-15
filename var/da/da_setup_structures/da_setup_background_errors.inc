@@ -32,7 +32,11 @@ subroutine da_setup_background_errors(grid, be)
    be % v3 % mz = 0
    be % v4 % mz = 0
    be % v5 % mz = 0
-
+#ifdef CLOUD_CV
+   be % v6 % mz = 0
+   be % v7 % mz = 0
+   be % v8 % mz = 0
+#endif
    if (global) then
       call da_setup_be_global(be)
    else if(fg_format == fg_format_wrf_arw_regional) then    

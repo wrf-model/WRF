@@ -24,13 +24,21 @@ subroutine da_deallocate_background_errors (be)
       if (be % v3 % mz > 0) deallocate (be % v3 % val)
       if (be % v4 % mz > 0) deallocate (be % v4 % val)
       if (be % v5 % mz > 0 .and. .not. global) deallocate (be % v5 % val) 
-    
+#ifdef CLOUD_CV
+      if (be % v6 % mz > 0) deallocate (be % v6 % val)
+      if (be % v7 % mz > 0) deallocate (be % v7 % val)
+      if (be % v8 % mz > 0) deallocate (be % v8 % val)
+#endif    
       if (be % v1 % mz > 0) deallocate (be % v1 % rf_alpha)
       if (be % v2 % mz > 0) deallocate (be % v2 % rf_alpha)
       if (be % v3 % mz > 0) deallocate (be % v3 % rf_alpha)
       if (be % v4 % mz > 0) deallocate (be % v4 % rf_alpha)
       if (be % v5 % mz > 0 .and. .not. global) deallocate (be % v5 % rf_alpha)
-
+#ifdef CLOUD_CV
+      if (be % v6 % mz > 0) deallocate (be % v6 % rf_alpha)
+      if (be % v7 % mz > 0) deallocate (be % v7 % rf_alpha)
+      if (be % v8 % mz > 0) deallocate (be % v8 % rf_alpha)
+#endif
       if (global) then
          if (be % v1 % mz > 0) deallocate (be % v1 % power)
          if (be % v2 % mz > 0) deallocate (be % v2 % power)
@@ -47,18 +55,31 @@ subroutine da_deallocate_background_errors (be)
          if (be % v3 % mz > 0) deallocate (be % v3 % evec)
          if (be % v4 % mz > 0) deallocate (be % v4 % evec)
          if (be % v5 % mz > 0 .and. .not. global) deallocate (be % v5 % evec)
-
+#ifdef CLOUD_CV
+         if (be % v6 % mz > 0) deallocate (be % v6 % evec)
+         if (be % v7 % mz > 0) deallocate (be % v7 % evec)
+         if (be % v8 % mz > 0) deallocate (be % v8 % evec)
+#endif
          if (be % v1 % mz > 0) deallocate (be % v1 % evec_g)
          if (be % v2 % mz > 0) deallocate (be % v2 % evec_g)
          if (be % v3 % mz > 0) deallocate (be % v3 % evec_g)
          if (be % v4 % mz > 0) deallocate (be % v4 % evec_g)
          if (be % v5 % mz > 0 .and. .not. global) deallocate (be % v5 % evec_g)
-
+#ifdef CLOUD_CV
+         if (be % v6 % mz > 0) deallocate (be % v6 % evec_g)
+         if (be % v7 % mz > 0) deallocate (be % v7 % evec_g)
+         if (be % v8 % mz > 0) deallocate (be % v8 % evec_g)
+#endif
          if (be % v1 % mz > 0) deallocate (be % v1 % val_g)
          if (be % v2 % mz > 0) deallocate (be % v2 % val_g)
          if (be % v3 % mz > 0) deallocate (be % v3 % val_g)
          if (be % v4 % mz > 0) deallocate (be % v4 % val_g)
          if (be % v5 % mz > 0 .and. .not. global) deallocate (be % v5 % val_g)
+#ifdef CLOUD_CV
+         if (be % v6 % mz > 0) deallocate (be % v6 % val_g)
+         if (be % v7 % mz > 0) deallocate (be % v7 % val_g)
+         if (be % v8 % mz > 0) deallocate (be % v8 % val_g)
+#endif
       end if
 
       deallocate (be % reg_psi_chi)

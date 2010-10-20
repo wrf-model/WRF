@@ -535,8 +535,8 @@ end if
      CALL wrf_debug ( 200 , ' call rk_step_prep ' )
 
 BENCH_START(step_prep_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
 
      DO ij = 1 , grid%num_tiles
 
@@ -570,7 +570,7 @@ end if
 
 
      END DO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 BENCH_END(step_prep_tim)
 
 !====[P1.4]===========================================================
@@ -617,7 +617,7 @@ BENCH_END(step_prep_tim)
 
 BENCH_START(set_phys_bc_tim)
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij, ii, jj, kk )
+     !$OMP PRIVATE ( ij )
 
      DO ij = 1 , grid%num_tiles
 
@@ -787,9 +787,9 @@ else
 
 ! NPAN 05/09/10 + init_zero_tendency (module_em), which is called by first_rk_step_part1
 BENCH_START(init_zero_tend_tim)
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
 
+        !$OMP PARALLEL DO   &
+        !$OMP PRIVATE ( ij )
         DO ij = 1 , grid%num_tiles
 
          CALL wrf_debug ( 200 , ' call init_zero_tendency' )
@@ -894,8 +894,20 @@ end if
 
 !====[P1.6]===========================================================
 BENCH_START(rk_tend_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+
+if (config_flags % sw_call_rk_tendency) then
+     !$DDD MASTER
+     CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
+     CALL push4backup (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
+     CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
+     CALL push4backup (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
+                       "al,alt,p,php,cqu,cqv,cqw") 
+     CALL push4backup (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
+     !$DDD END MASTER
+endif 
+
+     !$DDD PARALLEL DO   &
+     !$DDD PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
        CALL wrf_debug ( 200 , ' call rk_tendency' )
@@ -904,12 +916,6 @@ BENCH_START(rk_tend_tim)
 if (config_flags % sw_call_rk_tendency) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_tendency ' )
 
-       CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
-       CALL push4backup (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
-       CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
-       CALL push4backup (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
-                         "al,alt,p,php,cqu,cqv,cqw") 
-       CALL push4backup (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
        CALL rk_tendency ( config_flags, rk_step                                                                &
                          ,grid%ru_tend, grid%rv_tend, rw_tend, ph_tend, t_tend                                 &
                          ,ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf                                      &
@@ -1030,7 +1036,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_tendency }
 
      END DO
-     !$OMP END PARALLEL DO
+     !$DDD END PARALLEL DO
 BENCH_END(rk_tend_tim)
 
 !====[P1.7]===========================================================
@@ -1054,8 +1060,8 @@ BENCH_END(rk_tend_tim)
 
 !====[P1.8]===========================================================
 BENCH_START(relax_bdy_dry_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
 !======[P1.8.1]=======================================================
@@ -1169,7 +1175,7 @@ end if
        ENDIF
 
      END DO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 BENCH_END(relax_bdy_dry_tim)
 
      ! [recalc_P5_debug_bdy] Only for debugging TL/AD of bdy-related (Added by Ning Pan)
@@ -1441,8 +1447,8 @@ end if
 
 !====[P1.9]===========================================================
 BENCH_START(small_step_prep_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
     ! Calculate coefficients for the vertically implicit acoustic/gravity wave
@@ -1544,7 +1550,7 @@ end if
        ENDIF
 
      ENDDO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 BENCH_END(small_step_prep_tim)
 
 !====[P1.10]==========================================================
@@ -1589,7 +1595,6 @@ BENCH_END(small_step_prep_tim)
 BENCH_START(set_phys_bc2_tim)
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
-
      DO ij = 1 , grid%num_tiles
 
 
@@ -1792,9 +1797,15 @@ BENCH_END(set_phys_bc2_tim)
 #      include "PERIOD_BDY_EM_B.inc"
 #endif
 
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+if (config_flags % sw_call_advance_uv) then
+       !DDD MASTER
+       CALL push4backup (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
+       CALL push4backup (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
+       !DDD END MASTER
+endif
 
+       !DDD PARALLEL DO   &
+       !DDD PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
 BENCH_START(advance_uv_tim)
@@ -1803,8 +1814,6 @@ BENCH_START(advance_uv_tim)
 if (config_flags % sw_call_advance_uv) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_uv ' )
 
-         CALL push4backup (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
-         CALL push4backup (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
          CALL advance_uv ( grid%u_2, grid%ru_tend, grid%v_2, grid%rv_tend,        &
                            grid%p, grid%pb,                                       &
                            grid%ph_2, grid%php, grid%alt,  grid%al,               &
@@ -1831,7 +1840,7 @@ end if
 BENCH_END(advance_uv_tim)
 
        END DO
-       !$OMP END PARALLEL DO
+       !DDD END PARALLEL DO
 
 !======[P1.11.2]: only needed by polar BC for global application
 !-----------------------------------------------------------
@@ -1948,8 +1957,15 @@ BENCH_END(spec_bdy_uv_tim)
 #     include "HALO_EM_C.inc"
 #endif
 
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+if (config_flags % sw_call_advance_mu_t) then
+       !DDD MASTER
+         CALL push4backup (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
+         CALL push4backup (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
+                           "ww,ww_1,u,u_1,v,v_1,t_1") 
+       !DDD END MASTER
+endif
+       !DDD PARALLEL DO   &
+       !DDD PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
         !  advance the mass in the column, theta, and calculate ww
@@ -1960,9 +1976,6 @@ BENCH_START(advance_mu_t_tim)
 if (config_flags % sw_call_advance_mu_t) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_mu_t ' )
 
-         CALL push4backup (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
-         CALL push4backup (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
-                           "ww,ww_1,u,u_1,v,v_1,t_1") 
          CALL advance_mu_t( grid%ww, ww1, grid%u_2, grid%u_save, grid%v_2, grid%v_save, &
                           grid%mu_2, grid%mut, muave, grid%muts, grid%muu, grid%muv,    &
                           grid%mudf, grid%ru_m, grid%rv_m, grid%ww_m,                   &
@@ -1986,7 +1999,7 @@ end if
 
 BENCH_END(advance_mu_t_tim)
        ENDDO
-       !$OMP END PARALLEL DO
+       !DDD END PARALLEL DO
 
 !======[P1.11.5]: only needed by polar BC for global application
 !-----------------------------------------------------------
@@ -2038,8 +2051,8 @@ end if
 !-----------------------------------------------------------
 
 !======[P1.11.6]======================================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
 !========[P1.11.6.1]==================================================
@@ -2153,7 +2166,7 @@ end if
 BENCH_END(advance_w_tim)
 
        ENDDO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[P1.11.7]======================================================
 !-----------------------------------------------------------
@@ -2203,8 +2216,8 @@ end if
 !-----------------------------------------------------------
 
 !======[P1.11.8]======================================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
 !========[P1.11.8.1]==================================================
@@ -2339,7 +2352,7 @@ end if
 BENCH_END(cald_p_rho_tim)
 
        ENDDO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[P1.11.9]======================================================
 #ifdef DM_PARALLEL
@@ -2489,8 +2502,8 @@ BENCH_END(phys_bc_tim)
      END DO small_steps
 
 !====[P1.12]==========================================================
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
        CALL wrf_debug ( 200 , ' call rk_small_finish' )
@@ -2655,7 +2668,7 @@ end if
 BENCH_END(small_step_finish_tim)
 
      END DO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 
 !====[P1.13]==========================================================
 !-----------------------------------------------------------
@@ -2715,8 +2728,8 @@ end if
      IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
 !======[P1.14.1]:moist================================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
          CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
          DO im = PARAM_FIRST_SCALAR, num_3d_m
@@ -2747,7 +2760,7 @@ end if
 
          ENDDO
        END DO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[P1.14.2]:moist================================================
 !---------------------- positive definite bc call
@@ -2805,8 +2818,8 @@ end if
      IF ((config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
 !======[P1.14.1]:scalar===============================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
          CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
          DO im = PARAM_FIRST_SCALAR, num_3d_s
@@ -2837,7 +2850,7 @@ end if
 
          ENDDO
        ENDDO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[P1.14.2]:scalar===============================================
 !---------------------- positive definite bc call
@@ -3069,8 +3082,8 @@ end if
            .and. (config_flags%km_opt .eq. 2)                ) THEN
 
 !========[P1.14.1]:tke================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
            CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
 
@@ -3099,7 +3112,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
 
          ENDDO
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
 !========[P1.14.2]:tke================================================
 !---------------------- positive definite bc call
@@ -3197,8 +3210,8 @@ end if
            IF (grid%adv_moist_cond .or. im==p_qv ) THEN
 
 !======[P1.16.1]======================================================
-             !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
              moist_tile_loop_1: DO ij = 1 , grid%num_tiles
 
 !========[P1.16.1.1]==================================================
@@ -3313,11 +3326,11 @@ end if
 BENCH_END(rlx_bdy_scalar_tim)
 
              ENDDO moist_tile_loop_1
-             !$OMP END PARALLEL DO
+             !ZXOMP END PARALLEL DO
 
 !======[P1.16.2]======================================================
-             !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
              moist_tile_loop_2: DO ij = 1 , grid%num_tiles
 
 !========[P1.16.2.1]==================================================
@@ -3388,7 +3401,7 @@ end if
 BENCH_END(flow_depbdy_tim)
 
              ENDDO moist_tile_loop_2
-             !$OMP END PARALLEL DO
+             !ZXOMP END PARALLEL DO
 
            ENDIF  !-- if (grid%adv_moist_cond .or. im==p_qv ) then
 
@@ -3411,8 +3424,8 @@ BENCH_START(tke_adv_tim)
          ENDIF
 #endif
 !======[P1.17.1]======================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          tke_tile_loop_1: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
@@ -3453,11 +3466,11 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
          ENDDO tke_tile_loop_1
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
 !======[P1.17.2]======================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          tke_tile_loop_2: DO ij = 1 , grid%num_tiles
 
 !========[P1.17.2.1]==================================================
@@ -3539,7 +3552,7 @@ end if
 
            ENDIF
          ENDDO tke_tile_loop_2
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
        ENDIF TKE_advance
 BENCH_END(tke_adv_tim)
@@ -3830,7 +3843,6 @@ end if
 
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
-
          tracer_tile_loop_2: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -3914,8 +3926,8 @@ BENCH_END(tracer_adv_tim)
 
        scalar_variable_loop: do is = PARAM_FIRST_SCALAR, num_3d_s
 !========[P1.20.1]====================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
 
 !==========[P1.20.1.1]================================================
@@ -4018,11 +4030,11 @@ end if
            ENDIF ! b.c test for chem nested boundary condition
 
          ENDDO scalar_tile_loop_1
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
 !========[P1.20.2]====================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
 
 !==========[P1.20.2.1]================================================
@@ -4088,7 +4100,7 @@ end if
            ENDIF
 
          ENDDO scalar_tile_loop_2
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
        ENDDO scalar_variable_loop
 
@@ -4097,8 +4109,8 @@ end if
 !====[P1.21]==========================================================
  !  update the pressure and density at the new time level
 
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
 BENCH_START(calc_p_rho_tim)
@@ -4131,7 +4143,7 @@ end if
 BENCH_END(calc_p_rho_tim)
 
      ENDDO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 
 !====[P1.22]==========================================================
 !  Reset the boundary conditions if there is another corrector step.
@@ -4492,8 +4504,8 @@ end if
 #endif
 
 BENCH_START(bc_end_tim)
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        tile_bc_loop_1: DO ij = 1 , grid%num_tiles
 !========[P1.22.2.1]==================================================
          CALL wrf_debug ( 200 , ' call rk_phys_bc_dry_2' )
@@ -4680,7 +4692,7 @@ end if
          END IF
 
        END DO tile_bc_loop_1
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 BENCH_END(bc_end_tim)
 
 
@@ -4858,9 +4870,8 @@ end if
          CALL wrf_message(trim(message))
          grid%avgflx_count = 0
 !tile-loop for zero_avgflx
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
-
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
             CALL wrf_debug(200,'In solve_em, before zero_avgflx call')
 
@@ -4883,13 +4894,13 @@ end if
 
             CALL wrf_debug(200,'In solve_em, after zero_avgflx call')
          ENDDO
+         !$OMP END PARALLEL DO
       ENDIF
 
 ! Update avgflx quantities
 !tile-loop for upd_avgflx
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
-
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
          CALL wrf_debug(200,'In solve_em, before upd_avgflx call')
 
@@ -4915,6 +4926,7 @@ end if
          CALL wrf_debug(200,'In solve_em, after upd_avgflx call')
 
       ENDDO
+      !$OMP END PARALLEL DO
       grid%avgflx_count = grid%avgflx_count + 1
    ENDIF
 !
@@ -4978,7 +4990,6 @@ BENCH_END(advance_ppt_tim)
 !====[P4.2.1]=========================================================
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, its, ite, jts, jte )
-
      scalar_tile_loop_1a: DO ij = 1 , grid%num_tiles
 
 !======[P4.2.1.0]=========================================================
@@ -5130,7 +5141,6 @@ BENCH_START(moist_phys_end_tim)
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
-
      DO ij = 1 , grid%num_tiles
 
 !======[P4.2.5.1]=========================================================
@@ -5386,8 +5396,8 @@ end if
 !-----------------------------------------------------------
 
 !==[P4.4]=============================================================
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
    scalar_tile_loop_1ba: DO ij = 1 , grid%num_tiles
 
      IF ( config_flags%periodic_x ) THEN
@@ -5425,7 +5435,7 @@ end if
 
 
    END DO scalar_tile_loop_1ba
-   !$OMP END PARALLEL DO
+   !ZXOMP END PARALLEL DO
 !BENCH_END(moist_phys_end_tim)
 
 !==[P5]===============================================================
@@ -5434,8 +5444,8 @@ end if
 #    include "HALO_EM_HYDRO_UV.inc"
 #    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
@@ -5460,7 +5470,7 @@ end if
 
 
      END DO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 
    END IF
 
@@ -5708,8 +5718,8 @@ end if
 !  now set physical b.c on a patch
 
 BENCH_START(bc_2d_tim)
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij )
    tile_bc_loop_2: DO ij = 1 , grid%num_tiles
 
      CALL wrf_debug ( 200 , ' call set_phys_bc_dry_2' )
@@ -5867,7 +5877,7 @@ end if
      END DO scalar_species_bdy_loop_2
 
    END DO tile_bc_loop_2
-   !$OMP END PARALLEL DO
+   !ZXOMP END PARALLEL DO
 BENCH_END(bc_2d_tim)
 
 !==[P8]===============================================================
@@ -5887,8 +5897,8 @@ BENCH_END(bc_2d_tim)
    CALL wrf_debug ( 10 , ' call set_w_surface' )
    fill_w_flag = .false.
 
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_w_surface{
@@ -5913,7 +5923,7 @@ end if
 !                          its, ite, jts, jte, k_start, min(k_end,kde-1),   &
 
    END DO
-   !$OMP END PARALLEL DO
+   !ZXOMP END PARALLEL DO
 
 !==[P10]==============================================================
 ! calculate some model diagnostics.
@@ -6131,8 +6141,8 @@ end if
    CALL wrf_debug ( 10 , ' call a_set_w_surface' )
    fill_w_flag = .false.
 
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1  
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_w_surface{
@@ -6156,7 +6166,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: set_w_surface }
 
    END DO
-   !$OMP END PARALLEL DO
+   !ZXOMP END PARALLEL DO
 
 !==[adj_P7]===============================================================
 !-----------------------------------------------------------
@@ -6213,8 +6223,8 @@ end if
 #endif
 
 BENCH_START(adj_bc_2d_tim)
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij )
    adj_tile_bc_loop_2: DO ij = grid%num_tiles,1,-1
 
      CALL wrf_debug ( 200 , ' call a_set_phys_bc_dry_2' )
@@ -6325,7 +6335,7 @@ end if
      END DO adj_scalar_species_bdy_loop_2
 
    END DO adj_tile_bc_loop_2
-   !$OMP END PARALLEL DO
+   !ZXOMP END PARALLEL DO
 BENCH_END(adj_bc_2d_tim)
 
 !==[adj_P5]===============================================================
@@ -6334,8 +6344,8 @@ BENCH_END(adj_bc_2d_tim)
 #    include "HALO_EM_HYDRO_UV.inc"
 #    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1  
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
@@ -6360,7 +6370,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
 
      END DO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 
    END IF
 
@@ -6368,8 +6378,8 @@ end if
 !  Adjoint of time-split physics
 
 !==[adj_P4.4]=============================================================
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
    adj_scalar_tile_loop_1ba: DO ij = grid%num_tiles,1,-1
 
      IF ( config_flags%periodic_x ) THEN
@@ -6406,7 +6416,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho_phi }
 
    END DO adj_scalar_tile_loop_1ba
-   !$OMP END PARALLEL DO
+   !ZXOMP END PARALLEL DO
 
 !==[adj_P4.2]=============================================================
    IF (config_flags%mp_physics /= 0)  then
@@ -6427,8 +6437,8 @@ BENCH_END(adj_microswap_2)
      CALL wrf_debug ( 200 , ' call a_moist_physics_finish' )
 BENCH_START(adj_moist_phys_end_tim)
 
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
 
      DO ij = grid%num_tiles,1,-1
 
@@ -6545,7 +6555,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outb }
 
      END DO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 BENCH_END(adj_moist_phys_end_tim)
 
 !====[P4.2.2_adj]=========================================================
@@ -6641,8 +6651,8 @@ BENCH_END(adj_micro_driver_tim)
      grid%a_sr = 0.
 
 !====[adj_P4.2.1]=========================================================
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij, its, ite, jts, jte )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij, its, ite, jts, jte )
 
      adj_scalar_tile_loop_1a: DO ij = grid%num_tiles,1,-1
 
@@ -6684,13 +6694,13 @@ end if
 
 BENCH_END(adj_moist_physics_prep_tim)
      END DO adj_scalar_tile_loop_1a
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 
    ENDIF  ! adj microphysics test
 
 !==[adj_P3]===============================================================
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
 
 BENCH_START(adj_advance_ppt_tim)
@@ -6719,7 +6729,7 @@ end if
 BENCH_END(adj_advance_ppt_tim)
 
    ENDDO
-  !$OMP END PARALLEL DO
+  !ZXOMP END PARALLEL DO
 
 ! [2] Adjoint of Runge Kutta loop
 !==[adj_P1]===============================================================
@@ -6902,8 +6912,8 @@ BENCH_END(adj_advance_ppt_tim)
 #endif
 
 BENCH_START(adj_bc_end_tim)
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        adj_tile_bc_loop_1: DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.22.2.7]==================================================
@@ -7032,7 +7042,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_2 }
 
        END DO adj_tile_bc_loop_1
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 BENCH_END(adj_bc_end_tim)
 
      ENDIF adj_rk_step_1_check
@@ -7040,8 +7050,8 @@ BENCH_END(adj_bc_end_tim)
 !====[adj_P1.21]==========================================================
 !    Adjoint of updating the pressure and density at the new time level
 
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1
 
 BENCH_START(adj_calc_p_rho_tim)
@@ -7072,7 +7082,7 @@ end if
 BENCH_END(adj_calc_p_rho_tim)
 
      ENDDO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 
 !====[P1.15_adj]==========================================================
 #ifdef DM_PARALLEL
@@ -7103,8 +7113,8 @@ BENCH_END(adj_calc_p_rho_tim)
 
        adj_scalar_variable_loop: do is = num_3d_s,PARAM_FIRST_SCALAR,-1
 !========[adj_P1.20.2]====================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          adj_scalar_tile_loop_2: DO ij = grid%num_tiles,1,-1
 
 !==========[adj_P1.20.2.2]================================================
@@ -7167,11 +7177,11 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
 
          ENDDO adj_scalar_tile_loop_2
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
 !========[adj_P1.20.1]====================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          adj_scalar_tile_loop_1: DO ij = grid%num_tiles,1,-1
 
 !==========[adj_P1.20.1.2]================================================
@@ -7271,7 +7281,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
          ENDDO adj_scalar_tile_loop_1
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
        ENDDO adj_scalar_variable_loop
 
@@ -7292,8 +7302,8 @@ BENCH_START(adj_tke_adv_tim)
          ENDIF
 #endif
 !======[adj_P1.17.2]======================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          adj_tke_tile_loop_2: DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.17.2.3]==================================================
@@ -7374,11 +7384,11 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
 
          ENDDO adj_tke_tile_loop_2
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
 !======[adj_P1.17.1]======================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          adj_tke_tile_loop_1: DO ij = grid%num_tiles,1,-1
 
            CALL wrf_debug ( 200 , ' call a_rk_scalar_tend for tke' )
@@ -7419,7 +7429,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
          ENDDO adj_tke_tile_loop_1
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
         ENDIF adj_TKE_advance
 BENCH_END(adj_tke_adv_tim)
@@ -7435,8 +7445,8 @@ BENCH_END(adj_tke_adv_tim)
 
 !======[adj_P1.16.2]======================================================
 !      Adjoint of updating moist of grid points
-             !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
              adj_moist_tile_loop_2: DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.16.2.2]==================================================
@@ -7508,12 +7518,12 @@ end if
 
 BENCH_END(adj_update_scal_tim)
              ENDDO adj_moist_tile_loop_2
-             !$OMP END PARALLEL DO
+             !ZXOMP END PARALLEL DO
 
 !======[adj_P1.16.1]======================================================
 !      Adjoint of calculating moist tendency of grid points 
-             !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
              adj_moist_tile_loop_1: DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.16.1.2]==================================================
@@ -7630,7 +7640,7 @@ end if
 BENCH_END(adj_rk_scalar_tend_tim)
 
              ENDDO adj_moist_tile_loop_1
-             !$OMP END PARALLEL DO
+             !ZXOMP END PARALLEL DO
 
            ENDIF  !-- if (grid%adv_moist_cond .or. im==p_qv ) then
 
@@ -7663,8 +7673,8 @@ BENCH_END(adj_rk_scalar_tend_tim)
 #endif
 
 !========[adj_P1.14.3]:tke================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          DO ij = grid%num_tiles,1,-1
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
@@ -7685,11 +7695,11 @@ end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
 
          END DO
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
 !========[adj_P1.14.1]:tke================================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
          DO ij = grid%num_tiles,1,-1
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
 
@@ -7718,7 +7728,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
 
          ENDDO
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
        END IF  ! end if for tke_adv_opt
 
@@ -7751,8 +7761,8 @@ end if
 #  include "PERIOD_BDY_EM_SCALAR_OLD.inc"
 #endif
 !========[adj_P1.14.3]:scalar=============================================
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
 
          DO ij = grid%num_tiles,1,-1
            IF (num_3d_s >= PARAM_FIRST_SCALAR) THEN
@@ -7778,11 +7788,11 @@ end if
              END DO
            ENDIF
          END DO
-         !$OMP END PARALLEL DO
+         !ZXOMP END PARALLEL DO
 
 !======[adj_P1.14.1]:scalar===============================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
          CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
          DO im = num_3d_s,PARAM_FIRST_SCALAR,-1 
@@ -7813,7 +7823,7 @@ end if
 
          ENDDO
        ENDDO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
        END IF  ! end if for scalar_adv_opt
 
@@ -7841,8 +7851,8 @@ end if
 #endif
 
 !======[adj_P1.14.3]:moist================================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
          IF (num_3d_m >= PARAM_FIRST_SCALAR) THEN
            DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
@@ -7867,11 +7877,11 @@ end if
            END DO
          ENDIF
        END DO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[adj_P1.14.1]:moist================================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
          CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
          DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
@@ -7902,13 +7912,13 @@ end if
 
          ENDDO
        END DO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
      END IF  ! end if for moist_adv_opt
 
 !====[adj_P1.12]==========================================================
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1
 
        CALL wrf_debug ( 200 , ' call a_rk_small_finish' )
@@ -8071,7 +8081,7 @@ BENCH_END(adj_calc_mu_uv_tim)
 
 
      END DO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
  
 !====[adj_P1.11]==========================================================
      adj_small_steps : DO iteration = number_of_small_timesteps, 1 , -1
@@ -8223,8 +8233,8 @@ end if
 BENCH_END(adj_phys_bc_tim)
 
 !======[adj_P1.11.8]======================================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
 !========[adj_P1.11.8.3]================================================
  BENCH_START(adj_cald_p_rho_tim)
@@ -8360,11 +8370,11 @@ end if
 BENCH_END(adj_sumflux_tim)
 
        ENDDO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[adj_P1.11.6]======================================================
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
         DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.11.6.2]==================================================
@@ -8473,7 +8483,7 @@ end if
 BENCH_END(adj_spec_bdy_t_tim)
 
        ENDDO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[adj_P1.11.4]======================================================
 !      Adjoint of updating model variables of grid points except for those in spec zone: mu,t
@@ -8491,8 +8501,16 @@ BENCH_END(adj_spec_bdy_t_tim)
 #     include "HALO_EM_C.inc"
 #endif
 
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+if (config_flags % sw_call_advance_mu_t) then
+       !DDD MASTER
+       CALL pop2restore (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
+                           "ww,ww_1,u,u_1,v,v_1,t_1") 
+       CALL pop2restore (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
+       !DDD END MASTER
+endif
+
+       !DDD PARALLEL DO   &
+       !DDD PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
 
 BENCH_START(adj_advance_mu_t_tim)
@@ -8501,9 +8519,6 @@ BENCH_START(adj_advance_mu_t_tim)
 if (config_flags % sw_call_advance_mu_t) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_mu_t ' )
 
-         CALL pop2restore (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
-                           "ww,ww_1,u,u_1,v,v_1,t_1") 
-         CALL pop2restore (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
          CALL a_advance_mu_t( grid%ww,grid%a_ww, ww1,a_ww1, &
                               grid%u_2,grid%a_u_2, grid%u_save,grid%a_u_save, &
                               grid%v_2,grid%a_v_2, grid%v_save,grid%a_v_save, &
@@ -8531,12 +8546,12 @@ end if
 
 BENCH_END(adj_advance_mu_t_tim)
        ENDDO
-       !$OMP END PARALLEL DO
+       !DDD END PARALLEL DO
 
 !======[adj_P1.11.3]======================================================
 !      Adjoint of updating model variables of grid points in spec zone: u,v
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
 
 BENCH_START(adj_spec_bdy_uv_tim)
@@ -8583,7 +8598,7 @@ end if
 BENCH_END(adj_spec_bdy_uv_tim)
 
        END DO
-       !$OMP END PARALLEL DO
+       !ZXOMP END PARALLEL DO
 
 !======[adj_P1.11.1]======================================================
 !      Adjoint of updating model variables of grid points except for those in spec zone: u,v
@@ -8591,8 +8606,14 @@ BENCH_END(adj_spec_bdy_uv_tim)
 #      include "PERIOD_BDY_EM_B.inc"
 #endif
 
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
+if (config_flags % sw_call_advance_uv) then
+       !DDD MASTER
+       CALL pop2restore (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
+       CALL pop2restore (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
+       !DDD END MASTER
+endif
+       !DDD PARALLEL DO   &
+       !DDD PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
 
 BENCH_START(adj_advance_uv_tim)
@@ -8601,8 +8622,6 @@ BENCH_START(adj_advance_uv_tim)
 if (config_flags % sw_call_advance_uv) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_uv ' )
 
-         CALL pop2restore (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
-         CALL pop2restore (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
          CALL a_advance_uv( grid%u_2,grid%a_u_2, grid%ru_tend,grid%a_ru_tend, &
                             grid%v_2,grid%a_v_2, grid%rv_tend,grid%a_rv_tend, &
                             grid%p,grid%a_p, grid%pb,                         &
@@ -8632,7 +8651,7 @@ end if
 BENCH_END(adj_advance_uv_tim)
 
        END DO
-       !$OMP END PARALLEL DO
+       !DDD END PARALLEL DO
 
      END DO adj_small_steps
 
@@ -8678,7 +8697,6 @@ BENCH_END(adj_advance_uv_tim)
 BENCH_START(adj_set_phys_bc2_tim)
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
-
      DO ij = grid%num_tiles,1,-1
 
 
@@ -8874,8 +8892,8 @@ BENCH_END(adj_set_phys_bc2_tim)
 
 !====[adj_P1.9]===========================================================
 BENCH_START(adj_small_step_prep_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1
 
 !======[adj_P1.9.3]=======================================================
@@ -8974,7 +8992,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: small_step_prep }
 
      ENDDO
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 BENCH_END(adj_small_step_prep_tim)
 
 !    [adj_P5_debug_bdy] Adjoint of updating model variables of grid points
@@ -9240,8 +9258,8 @@ end if
 !====[adj_P1.8]===========================================================
 !    Adjoint of calculating tendencies of grid points
 BENCH_START(adj_relax_bdy_dry_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      adj_calc_tendency: &
      DO ij = grid%num_tiles,1,-1
 
@@ -9366,15 +9384,27 @@ end if
      ENDIF
 
      END DO adj_calc_tendency
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 BENCH_END(adj_relax_bdy_dry_tim)
   
 !====[adj_P1.6]===========================================================
 !    Adjoint of calculating tendencies of grid points except for those in spec zone
 !    ---------------------------------------------------------------------------------------
 BENCH_START(adj_rk_tend_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+
+if (config_flags % sw_call_rk_tendency) then
+     !$DDD MASTER
+     CALL pop2restore (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
+     CALL pop2restore (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
+                       "al,alt,p,php,cqu,cqv,cqw") 
+     CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
+     CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
+     CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
+     !$DDD END MASTER
+endif
+
+     !$DDD PARALLEL DO   &
+     !$DDD PRIVATE ( ij )
      adj_zero_tendency: &
      DO ij = grid%num_tiles,1,-1
 
@@ -9384,12 +9414,6 @@ BENCH_START(adj_rk_tend_tim)
 if (config_flags % sw_call_rk_tendency) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_tendency ' )
 
-       CALL pop2restore (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
-       CALL pop2restore (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
-                         "al,alt,p,php,cqu,cqv,cqw") 
-       CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
-       CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
-       CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
        CALL a_rk_tendency ( config_flags, rk_step, &
                          grid%ru_tend, grid%a_ru_tend, grid%rv_tend, grid%a_rv_tend, &
                          rw_tend, a_rw_tend, ph_tend, a_ph_tend, t_tend, a_t_tend, &
@@ -9520,7 +9544,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_tendency }
 
      END DO adj_zero_tendency
-     !$OMP END PARALLEL DO
+     !$DDD END PARALLEL DO
 BENCH_END(adj_rk_tend_tim)
 
 !====[adj_P1.5]===========================================================
@@ -9658,7 +9682,6 @@ else
 BENCH_START(adj_init_zero_tend_tim)
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
-
        adj_init_zero_tendency: &
        DO ij = grid%num_tiles,1,-1
 
@@ -9740,8 +9763,7 @@ end if
 
 BENCH_START(adj_set_phys_bc_tim)
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij, ii, jj, kk )
-
+     !$OMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1
 
        CALL wrf_debug ( 200 , ' call a_rk_phys_bc_dry_1' )
@@ -9808,8 +9830,8 @@ BENCH_END(adj_set_phys_bc_tim)
      CALL wrf_debug ( 200 , ' call a_rk_step_prep ' )
 
 BENCH_START(adj_step_prep_tim)
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij )
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
      adj_rk_step_prep: &
      DO ij = grid%num_tiles,1,-1
 
@@ -9847,7 +9869,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_step_prep }
 
      END DO adj_rk_step_prep
-     !$OMP END PARALLEL DO
+     !ZXOMP END PARALLEL DO
 BENCH_END(adj_step_prep_tim)
 
    END DO adj_Runge_Kutta_loop

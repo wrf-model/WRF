@@ -1269,7 +1269,7 @@ END IF
    REAL, INTENT(INOUT) :: save
    INTEGER, INTENT(IN) :: its, ite, jts, jte
    INTEGER :: i, k, j, mm
-   INTEGER :: is, ite, js, je
+   INTEGER :: is, ie, js, je
    INTEGER                      :: ids , ide , jds , jde , kds , kde , &
                                    ims , ime , jms , jme , kms , kme , &
                                    ips , ipe , jps , jpe , kps , kpe
@@ -1633,7 +1633,7 @@ END IF
    INTEGER, INTENT(IN) :: its, ite, jts, jte
    REAL, INTENT(INOUT) :: save
    INTEGER :: i, k, j, mm
-   INTEGER :: is, ite, js, je
+   INTEGER :: is, ie, js, je
    INTEGER                      :: ids , ide , jds , jde , kds , kde , &
                                    ims , ime , jms , jme , kms , kme , &
                                    ips , ipe , jps , jpe , kps , kpe

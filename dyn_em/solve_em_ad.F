@@ -535,18 +535,21 @@ end if
      CALL wrf_debug ( 200 , ' call rk_step_prep ' )
 
 BENCH_START(step_prep_tim)
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
 
+     if (config_flags % sw_call_rk_step_prep) then
+        CALL push4backup (grid%mu_2, "mu")
+        CALL push4backup (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
+        CALL push4backup (moist, "moist")
+     endif
+
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_step_prep{
 if (config_flags % sw_call_rk_step_prep) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_step_prep ' )
 
-       CALL push4backup (grid%mu_2, "mu")
-       CALL push4backup (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
-       CALL push4backup (moist, "moist")
        CALL rk_step_prep  ( config_flags, rk_step,            &
                             grid%u_2, grid%v_2, grid%w_2, grid%t_2, grid%ph_2, grid%mu_2,   &
                             moist,                            &
@@ -570,7 +573,7 @@ end if
 
 
      END DO
-     !ZXOMP END PARALLEL DO
+     !$OMP END PARALLEL DO
 BENCH_END(step_prep_tim)
 
 !====[P1.4]===========================================================
@@ -895,27 +898,22 @@ end if
 !====[P1.6]===========================================================
 BENCH_START(rk_tend_tim)
 
+       CALL wrf_debug ( 200 , ' call rk_tendency' )
 if (config_flags % sw_call_rk_tendency) then
-     !$DDD MASTER
+
+! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_tendency{
+   call wrf_debug ( -100 , ' SWITCH ON ==> call rk_tendency ' )
+
      CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
      CALL push4backup (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
      CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
      CALL push4backup (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
                        "al,alt,p,php,cqu,cqv,cqw") 
      CALL push4backup (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
-     !$DDD END MASTER
-endif 
 
-     !$DDD PARALLEL DO   &
-     !$DDD PRIVATE ( ij )
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
-
-       CALL wrf_debug ( 200 , ' call rk_tendency' )
-
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_tendency{
-if (config_flags % sw_call_rk_tendency) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call rk_tendency ' )
-
        CALL rk_tendency ( config_flags, rk_step                                                                &
                          ,grid%ru_tend, grid%rv_tend, rw_tend, ph_tend, t_tend                                 &
                          ,ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf                                      &
@@ -943,11 +941,16 @@ if (config_flags % sw_call_rk_tendency) then
                          ,grid%j_start(ij), grid%j_end(ij)                                                     &
                          ,k_start, k_end                                                                       &
                          ,max_vert_cfl_tmp(ij), max_horiz_cfl_tmp(ij)                                         )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_tendency ' )
 
 ! NPAN 05/09/10 + zero_tend (module_big_step_utilities_em), which is called by rk_tendency
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
    CALL zero_tend ( grid%ru_tend,                      &
                     ids, ide, jds, jde, kds, kde, &
                     ims, ime, jms, jme, kms, kme, &
@@ -1031,12 +1034,12 @@ else
                     grid%i_start(ij), grid%i_end(ij), &
                     grid%j_start(ij), grid%j_end(ij), &
                     1, 1 )
+   END DO
+   !$OMP END PARALLEL DO
 
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_tendency }
 
-     END DO
-     !$DDD END PARALLEL DO
 BENCH_END(rk_tend_tim)
 
 !====[P1.7]===========================================================
@@ -1060,20 +1063,19 @@ BENCH_END(rk_tend_tim)
 
 !====[P1.8]===========================================================
 BENCH_START(relax_bdy_dry_tim)
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
+
+     IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
+if (config_flags % sw_call_relax_bdy_dry) then
+     call wrf_debug ( -100 , ' SWITCH ON ==> call relax_bdy_dry ' )
+     CALL push4backup (grid%mut, "mut") 
+     CALL push4backup (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
+
+     !$OMP PARALLEL DO &
+     !$OMP PRIVATE (ij)
      DO ij = 1 , grid%num_tiles
 
 !======[P1.8.1]=======================================================
-       IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
-
-
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: relax_bdy_dry{
-if (config_flags % sw_call_relax_bdy_dry) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call relax_bdy_dry ' )
-
-         CALL push4backup (grid%mut, "mut") 
-         CALL push4backup (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
          CALL relax_bdy_dry ( config_flags,                                &
                               grid%u_save, grid%v_save, ph_save, grid%t_save,  &
                               w_save, mu_tend,                             &
@@ -1099,14 +1101,15 @@ if (config_flags % sw_call_relax_bdy_dry) then
                               grid%i_start(ij), grid%i_end(ij),            &
                               grid%j_start(ij), grid%j_end(ij),            &
                               k_start, k_end                              )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call relax_bdy_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_dry }
 
-
-       ENDIF
+     ENDIF
 
 
 !======[P1.8.2]=======================================================
@@ -1114,8 +1117,12 @@ end if
 if (config_flags % sw_call_rk_addtend_dry) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_addtend_dry ' )
 
-       CALL push4backup (grid%mut, "mut") 
-       CALL push4backup (grid%h_diabatic, "h_diabatic") 
+     CALL push4backup (grid%mut, "mut") 
+     CALL push4backup (grid%h_diabatic, "h_diabatic") 
+
+     !$OMP PARALLEL DO &
+     !$OMP PRIVATE (ij)
+     DO ij = 1 , grid%num_tiles
        CALL rk_addtend_dry( grid%ru_tend,  grid%rv_tend,  rw_tend,  ph_tend,  t_tend,  &
                             ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
                             grid%u_save, grid%v_save, w_save, ph_save, grid%t_save, &
@@ -1129,6 +1136,8 @@ if (config_flags % sw_call_rk_addtend_dry) then
                             grid%i_start(ij), grid%i_end(ij),                &
                             grid%j_start(ij), grid%j_end(ij),                &
                             k_start, k_end                                  )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_addtend_dry ' )
@@ -1137,12 +1146,15 @@ end if
 
 
 !======[P1.8.3]=======================================================
-       IF( config_flags%specified .or. config_flags%nested ) THEN
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_dry{
+     IF( config_flags%specified .or. config_flags%nested ) THEN
 if (config_flags % sw_call_spec_bdy_dry) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdy_dry ' )
 
+     !$OMP PARALLEL DO &
+     !$OMP PRIVATE (ij)
+     DO ij = 1 , grid%num_tiles
          CALL spec_bdy_dry ( config_flags,                                    &
                              grid%ru_tend, grid%rv_tend, ph_tend, t_tend,     &
                              rw_tend, mu_tend,                                &
@@ -1165,17 +1177,16 @@ if (config_flags % sw_call_spec_bdy_dry) then
                              grid%i_start(ij), grid%i_end(ij),                &
                              grid%j_start(ij), grid%j_end(ij),                &
                              k_start, k_end                                  )
-
+     END DO
+     !$OMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdy_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_dry }
 
-
        ENDIF
 
-     END DO
-     !ZXOMP END PARALLEL DO
+
 BENCH_END(relax_bdy_dry_tim)
 
      ! [recalc_P5_debug_bdy] Only for debugging TL/AD of bdy-related (Added by Ning Pan)
@@ -1447,9 +1458,6 @@ end if
 
 !====[P1.9]===========================================================
 BENCH_START(small_step_prep_tim)
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
-     DO ij = 1 , grid%num_tiles
 
     ! Calculate coefficients for the vertically implicit acoustic/gravity wave
     ! integration.  We only need calculate these for the first pass through -
@@ -1475,6 +1483,10 @@ if (config_flags % sw_call_small_step_prep) then
                            grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
                            "u_1,v_1,t_1,w_1,u_2,v_2,t_2,w_2,p,alt") 
        END IF 
+
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , grid%num_tiles
        CALL small_step_prep( grid%u_1,grid%u_2,grid%v_1,grid%v_2,grid%w_1,grid%w_2,   &
                              grid%t_1,grid%t_2,grid%ph_1,grid%ph_2,                   &
                              grid%mub, grid%mu_1, grid%mu_2,                          &
@@ -1492,6 +1504,8 @@ if (config_flags % sw_call_small_step_prep) then
                              grid%i_start(ij), grid%i_end(ij),                        &
                              grid%j_start(ij), grid%j_end(ij),                        &
                              k_start    , k_end                                       )
+    ENDDO
+    !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call small_step_prep ' )
@@ -1506,6 +1520,10 @@ if (config_flags % sw_call_calc_p_rho) then
 
        CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
        CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , grid%num_tiles
        CALL calc_p_rho( grid%al, grid%p, grid%ph_2,                 &
                         grid%alt, grid%t_2, grid%t_save, c2a, pm1,  &
                         grid%mu_2, grid%muts, grid%znu, t0,         &
@@ -1516,6 +1534,8 @@ if (config_flags % sw_call_calc_p_rho) then
                         grid%i_start(ij), grid%i_end(ij),           &
                         grid%j_start(ij), grid%j_end(ij),           &
                         k_start    , k_end                          )
+    ENDDO
+    !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_p_rho ' )
@@ -1531,6 +1551,10 @@ if (config_flags % sw_call_calc_coef_w) then
 
          CALL push4backup (c2a,cqw, "c2a,cqw") 
          CALL push4backup (grid%mut, "mut") 
+
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij )
+      DO ij = 1 , grid%num_tiles
          CALL calc_coef_w( a,alpha,gamma,                    &
                            grid%mut, cqw,                    &
                            grid%rdn, grid%rdnw, c2a,         &
@@ -1541,6 +1565,8 @@ if (config_flags % sw_call_calc_coef_w) then
                            grid%i_start(ij), grid%i_end(ij), &
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
+      ENDDO
+      !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_coef_w ' )
@@ -1549,8 +1575,6 @@ end if
 
        ENDIF
 
-     ENDDO
-     !ZXOMP END PARALLEL DO
 BENCH_END(small_step_prep_tim)
 
 !====[P1.10]==========================================================
@@ -1798,14 +1822,12 @@ BENCH_END(set_phys_bc2_tim)
 #endif
 
 if (config_flags % sw_call_advance_uv) then
-       !DDD MASTER
        CALL push4backup (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
        CALL push4backup (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
-       !DDD END MASTER
 endif
 
-       !DDD PARALLEL DO   &
-       !DDD PRIVATE ( ij )
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
 BENCH_START(advance_uv_tim)
@@ -1840,7 +1862,7 @@ end if
 BENCH_END(advance_uv_tim)
 
        END DO
-       !DDD END PARALLEL DO
+       !$OMP END PARALLEL DO
 
 !======[P1.11.2]: only needed by polar BC for global application
 !-----------------------------------------------------------
@@ -1958,14 +1980,12 @@ BENCH_END(spec_bdy_uv_tim)
 #endif
 
 if (config_flags % sw_call_advance_mu_t) then
-       !DDD MASTER
          CALL push4backup (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
          CALL push4backup (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
                            "ww,ww_1,u,u_1,v,v_1,t_1") 
-       !DDD END MASTER
 endif
-       !DDD PARALLEL DO   &
-       !DDD PRIVATE ( ij )
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
 
         !  advance the mass in the column, theta, and calculate ww
@@ -1999,7 +2019,7 @@ end if
 
 BENCH_END(advance_mu_t_tim)
        ENDDO
-       !DDD END PARALLEL DO
+       !$OMP END PARALLEL DO
 
 !======[P1.11.5]: only needed by polar BC for global application
 !-----------------------------------------------------------
@@ -2051,9 +2071,6 @@ end if
 !-----------------------------------------------------------
 
 !======[P1.11.6]======================================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
 
 !========[P1.11.6.1]==================================================
 BENCH_START(spec_bdy_t_tim)
@@ -2064,6 +2081,9 @@ BENCH_START(spec_bdy_t_tim)
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
            CALL spec_bdyupdate(grid%t_2, t_tend, dts_rk,        &
                                't'         , config_flags,      &
                                grid%spec_zone,                  &
@@ -2073,6 +2093,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                grid%i_start(ij), grid%i_end(ij),&
                                grid%j_start(ij), grid%j_end(ij),&
                                k_start    , k_end              )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
@@ -2084,6 +2106,9 @@ end if
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
            CALL spec_bdyupdate(grid%mu_2, mu_tend, dts_rk,      &
                                'm'         , config_flags,      &
                                grid%spec_zone,                  &
@@ -2093,6 +2118,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                grid%i_start(ij), grid%i_end(ij),&
                                grid%j_start(ij), grid%j_end(ij),&
                                1    , 1             )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
@@ -2104,6 +2131,9 @@ end if
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
            CALL spec_bdyupdate(grid%muts, mu_tend, dts_rk,&
                               'm'         , config_flags, &
                               grid%spec_zone,             &
@@ -2113,6 +2143,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                               grid%i_start(ij), grid%i_end(ij),         &
                               grid%j_start(ij), grid%j_end(ij),         &
                               1    , 1             )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
@@ -2139,6 +2171,9 @@ if (config_flags % sw_call_advance_w) then
                              "u,v,w,rw_tend,ww,w_save,t_2ave,t_2,t_1")
            CALL push4backup (grid%ph_2,ph_save,ph_tend,c2a,cqw,grid%alt,a,alpha,gamma,     &
                              "ph,ph_1,ph_tend,c2a,cqw,alt,a,alpha,gamma")
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
            CALL advance_w( grid%w_2, rw_tend, grid%ww, w_save,         &
                            grid%u_2, grid%v_2,                         &
                            grid%mu_2, grid%mut, muave, grid%muts,      &
@@ -2156,6 +2191,8 @@ if (config_flags % sw_call_advance_w) then
                            grid%i_start(ij), grid%i_end(ij),           &
                            grid%j_start(ij), grid%j_end(ij),           &
                            k_start    , k_end                          )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call advance_w ' )
@@ -2165,8 +2202,6 @@ end if
          ENDIF
 BENCH_END(advance_w_tim)
 
-       ENDDO
-       !ZXOMP END PARALLEL DO
 
 !======[P1.11.7]======================================================
 !-----------------------------------------------------------
@@ -2216,9 +2251,6 @@ end if
 !-----------------------------------------------------------
 
 !======[P1.11.8]======================================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
 
 !========[P1.11.8.1]==================================================
 BENCH_START(sumflux_tim)
@@ -2229,6 +2261,9 @@ if (config_flags % sw_call_sumflux) then
 
          CALL push4backup (grid%muu,grid%muv, "muu,muv") 
          CALL push4backup (grid%u_save,grid%v_save, "u_lin,v_lin") 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
          CALL sumflux ( grid%u_2, grid%v_2, grid%ww,          &
                         grid%u_save, grid%v_save, ww1,        &
                         grid%muu, grid%muv,                   &
@@ -2241,6 +2276,8 @@ if (config_flags % sw_call_sumflux) then
                         grid%i_start(ij), grid%i_end(ij),     &
                         grid%j_start(ij), grid%j_end(ij),     &
                         k_start    , k_end                   )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call sumflux ' )
@@ -2261,6 +2298,9 @@ if (config_flags % sw_call_spec_bdyupdate_ph) then
 
              CALL push4backup (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
              CALL push4backup (mu_tend,grid%muts, "mu_tend,muts") 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
              CALL spec_bdyupdate_ph( ph_save, grid%ph_2, ph_tend,     &
                                      mu_tend, grid%muts, dts_rk,      &
                                      'h'         , config_flags,      &
@@ -2271,6 +2311,8 @@ if (config_flags % sw_call_spec_bdyupdate_ph) then
                                      grid%i_start(ij), grid%i_end(ij),&
                                      grid%j_start(ij), grid%j_end(ij),&
                                      k_start    , k_end               )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate_ph ' )
@@ -2283,6 +2325,9 @@ end if
 if (config_flags % sw_call_zero_grad_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call zero_grad_bdy ' )
 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
                CALL zero_grad_bdy ( grid%w_2,                         &
                                     'w'         , config_flags,       &
                                     grid%spec_zone,                   &
@@ -2292,6 +2337,8 @@ if (config_flags % sw_call_zero_grad_bdy) then
                                     grid%i_start(ij), grid%i_end(ij), &
                                     grid%j_start(ij), grid%j_end(ij), &
                                     k_start    , k_end                )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call zero_grad_bdy ' )
@@ -2304,6 +2351,9 @@ end if
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
                CALL spec_bdyupdate ( grid%w_2, rw_tend, dts_rk,       &
                                      'h'         , config_flags,      &
                                      grid%spec_zone,                  &
@@ -2313,6 +2363,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                      grid%i_start(ij), grid%i_end(ij),&
                                      grid%j_start(ij), grid%j_end(ij),&
                                      k_start    , k_end               )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
@@ -2333,6 +2385,9 @@ if (config_flags % sw_call_calc_p_rho) then
  
           CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
           CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
           CALL calc_p_rho( grid%al, grid%p, grid%ph_2,                &
                           grid%alt, grid%t_2, grid%t_save, c2a, pm1,  &
                           grid%mu_2, grid%muts, grid%znu, t0,         &
@@ -2343,6 +2398,8 @@ if (config_flags % sw_call_calc_p_rho) then
                           grid%i_start(ij), grid%i_end(ij), &
                           grid%j_start(ij), grid%j_end(ij), &
                           k_start    , k_end               )
+       ENDDO
+       !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_p_rho ' )
@@ -2351,8 +2408,6 @@ end if
 
 BENCH_END(cald_p_rho_tim)
 
-       ENDDO
-       !ZXOMP END PARALLEL DO
 
 !======[P1.11.9]======================================================
 #ifdef DM_PARALLEL
@@ -2502,9 +2557,6 @@ BENCH_END(phys_bc_tim)
      END DO small_steps
 
 !====[P1.12]==========================================================
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
-     DO ij = 1 , grid%num_tiles
 
        CALL wrf_debug ( 200 , ' call rk_small_finish' )
 
@@ -2519,6 +2571,9 @@ BENCH_START(calc_mu_uv_tim)
 if (config_flags % sw_call_calc_mu_uv_1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call calc_mu_uv_1 ' )
 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
        CALL calc_mu_uv_1 ( config_flags,                     &
                            grid%muts, muus, muvs,            &
                            ids, ide, jds, jde, kds, kde,     &
@@ -2526,6 +2581,8 @@ if (config_flags % sw_call_calc_mu_uv_1) then
                            grid%i_start(ij), grid%i_end(ij), &
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_mu_uv_1 ' )
@@ -2544,6 +2601,9 @@ if (config_flags % sw_call_small_step_finish) then
        CALL push4backup (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
        CALL push4backup (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
                          grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
        CALL small_step_finish( grid%u_2, grid%u_1, grid%v_2, grid%v_1, grid%w_2, grid%w_1, &
                                grid%t_2, grid%t_1, grid%ph_2, grid%ph_1, grid%ww, ww1,     &
                                grid%mu_2, grid%mu_1,                       &
@@ -2559,6 +2619,8 @@ if (config_flags % sw_call_small_step_finish) then
                                grid%i_start(ij), grid%i_end(ij), &
                                grid%j_start(ij), grid%j_end(ij), &
                                k_start    , k_end               )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call small_step_finish ' )
@@ -2575,6 +2637,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
          CALL set_physical_bc3d( grid%ru_m, 'u', config_flags,      &
                                  ids, ide, jds, jde, kds, kde,      &
                                  ims, ime, jms, jme, kms, kme,      &
@@ -2582,6 +2647,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij),  &
                                  k_start    , k_end                )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -2594,6 +2661,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
          CALL set_physical_bc3d( grid%rv_m, 'v', config_flags,      &
                                  ids, ide, jds, jde, kds, kde,      &
                                  ims, ime, jms, jme, kms, kme,      &
@@ -2601,6 +2671,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij),  &
                                  k_start    , k_end                )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -2613,6 +2685,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
          CALL set_physical_bc3d( grid%ww_m, 'w', config_flags,      &
                                  ids, ide, jds, jde, kds, kde,      &
                                  ims, ime, jms, jme, kms, kme,      &
@@ -2620,6 +2695,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij),  &
                                  k_start    , k_end                )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -2632,12 +2709,17 @@ end if
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
          CALL set_physical_bc2d( grid%mut, 't', config_flags,       &
                                  ids, ide, jds, jde,                &
                                  ims, ime, jms, jme,                &
                                  ips, ipe, jps, jpe,                &
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij) )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
@@ -2650,12 +2732,17 @@ end if
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
          CALL set_physical_bc2d( grid%muts, 't', config_flags,      &
                                  ids, ide, jds, jde,                &
                                  ims, ime, jms, jme,                &
                                  ips, ipe, jps, jpe,                &
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij) )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
@@ -2667,8 +2754,6 @@ end if
 
 BENCH_END(small_step_finish_tim)
 
-     END DO
-     !ZXOMP END PARALLEL DO
 
 !====[P1.13]==========================================================
 !-----------------------------------------------------------
@@ -2728,19 +2813,19 @@ end if
      IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
 !======[P1.14.1]:moist================================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
          CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
-         DO im = PARAM_FIRST_SCALAR, num_3d_m
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar_pd moist' )
 
+       DO im = PARAM_FIRST_SCALAR, num_3d_m
            CALL push4backup (grid%mu_1, "mu_1")
            CALL push4backup (moist_old(:,:,:,im),moist_tend(:,:,:,im), &
                              "moist_old,moist_tend")
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
            CALL rk_update_scalar_pd( im, im,                                   &
                                      moist_old(ims,kms,jms,im),                &
                                      moist_tend(ims,kms,jms,im),               &
@@ -2752,15 +2837,15 @@ if (config_flags % sw_call_rk_update_scalar_pd_moist) then
                                      grid%i_start(ij), grid%i_end(ij),         &
                                      grid%j_start(ij), grid%j_end(ij),         &
                                      k_start    , k_end                       )
+       END DO
+       !$OMP END PARALLEL DO
+       ENDDO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd moist' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
 
-         ENDDO
-       END DO
-       !ZXOMP END PARALLEL DO
 
 !======[P1.14.2]:moist================================================
 !---------------------- positive definite bc call
@@ -2818,19 +2903,19 @@ end if
      IF ((config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
 !======[P1.14.1]:scalar===============================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
          CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
-         DO im = PARAM_FIRST_SCALAR, num_3d_s
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar_pd ' )
 
+       DO im = PARAM_FIRST_SCALAR, num_3d_s
            CALL push4backup (grid%mu_1, "mu_1")
            CALL push4backup (scalar_old(:,:,:,im),scalar_tend(:,:,:,im), &
                              "scalar_old,scalar_tend")
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
            CALL rk_update_scalar_pd( im, im,                                  &
                                      scalar_old(ims,kms,jms,im),              &
                                      scalar_tend(ims,kms,jms,im),             &
@@ -2842,15 +2927,14 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                      grid%i_start(ij), grid%i_end(ij),        &
                                      grid%j_start(ij), grid%j_end(ij),        &
                                      k_start    , k_end                      )
-
+       ENDDO
+       !$OMP END PARALLEL DO
+       ENDDO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
 
-         ENDDO
-       ENDDO
-       !ZXOMP END PARALLEL DO
 
 !======[P1.14.2]:scalar===============================================
 !---------------------- positive definite bc call
@@ -3082,9 +3166,6 @@ end if
            .and. (config_flags%km_opt .eq. 2)                ) THEN
 
 !========[P1.14.1]:tke================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         DO ij = 1 , grid%num_tiles
            CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
@@ -3094,6 +3175,9 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
            CALL push4backup (grid%mu_1, "mu_1")
            CALL push4backup (grid%tke_1,tke_tend, &
                              "tke_1,tke_tend")
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
            CALL rk_update_scalar_pd( 1, 1,                                    &
                                      grid%tke_1,                              &
                                      tke_tend(ims,kms,jms),                   &
@@ -3105,14 +3189,13 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                      grid%i_start(ij), grid%i_end(ij),        &
                                      grid%j_start(ij), grid%j_end(ij),        &
                                      k_start    , k_end                       )
-
+         ENDDO
+         !$OMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
 
-         ENDDO
-         !ZXOMP END PARALLEL DO
 
 !========[P1.14.2]:tke================================================
 !---------------------- positive definite bc call
@@ -7698,9 +7781,6 @@ end if
          !ZXOMP END PARALLEL DO
 
 !========[adj_P1.14.1]:tke================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         DO ij = grid%num_tiles,1,-1
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
@@ -7710,6 +7790,9 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
            CALL pop2restore (grid%tke_1,tke_tend, &
                              "tke_1,tke_tend")
            CALL pop2restore (grid%mu_1, "mu_1")
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = grid%num_tiles,1,-1
            CALL a_rk_update_scalar_pd( 1, 1,                                    &
                                      grid%tke_1,grid%a_tke_1,                   &
                                      tke_tend(ims,kms,jms),a_tke_tend(ims,kms,jms),          &
@@ -7721,14 +7804,12 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                      grid%i_start(ij), grid%i_end(ij),        &
                                      grid%j_start(ij), grid%j_end(ij),        &
                                      k_start    , k_end                       )
-
+         ENDDO
+         !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar_pd tke' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
-
-         ENDDO
-         !ZXOMP END PARALLEL DO
 
        END IF  ! end if for tke_adv_opt
 
@@ -7791,19 +7872,19 @@ end if
          !ZXOMP END PARALLEL DO
 
 !======[adj_P1.14.1]:scalar===============================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-       DO ij = grid%num_tiles,1,-1
-         CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
-         DO im = num_3d_s,PARAM_FIRST_SCALAR,-1 
 
+         CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar_pd ' )
 
+       DO im = num_3d_s,PARAM_FIRST_SCALAR,-1 
            CALL pop2restore (scalar_old(:,:,:,im),scalar_tend(:,:,:,im), &
                              "scalar_old,scalar_tend")
            CALL pop2restore (grid%mu_1, "mu_1")
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+       DO ij = grid%num_tiles,1,-1
            CALL a_rk_update_scalar_pd( im, im,                                  &
                                      scalar_old(ims,kms,jms,im),a_scalar_old(ims,kms,jms,im), &
                                      scalar_tend(ims,kms,jms,im),a_scalar_tend(ims,kms,jms,im), &
@@ -7815,15 +7896,13 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                      grid%i_start(ij), grid%i_end(ij),        &
                                      grid%j_start(ij), grid%j_end(ij),        &
                                      k_start    , k_end                      )
-
+       ENDDO
+       !ZXOMP END PARALLEL DO
+       ENDDO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
-
-         ENDDO
-       ENDDO
-       !ZXOMP END PARALLEL DO
 
        END IF  ! end if for scalar_adv_opt
 
@@ -7880,19 +7959,20 @@ end if
        !ZXOMP END PARALLEL DO
 
 !======[adj_P1.14.1]:moist================================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-       DO ij = grid%num_tiles,1,-1
-         CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
-         DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
 
+         CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar_pd moist' )
 
+       DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
            CALL pop2restore (moist_old(:,:,:,im),moist_tend(:,:,:,im), &
                              "moist_old,moist_tend")
            CALL pop2restore (grid%mu_1, "mu_1")
+
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+       DO ij = grid%num_tiles,1,-1
            CALL a_rk_update_scalar_pd( im, im,                                   &
                                      moist_old(ims,kms,jms,im),a_moist_old(ims,kms,jms,im),   &
                                      moist_tend(ims,kms,jms,im),a_moist_tend(ims,kms,jms,im), &
@@ -7904,22 +7984,19 @@ if (config_flags % sw_call_rk_update_scalar_pd_moist) then
                                      grid%i_start(ij), grid%i_end(ij),         &
                                      grid%j_start(ij), grid%j_end(ij),         &
                                      k_start    , k_end                       )
+       END DO
+       !ZXOMP END PARALLEL DO
+       ENDDO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar_pd moist' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
 
-         ENDDO
-       END DO
-       !ZXOMP END PARALLEL DO
 
      END IF  ! end if for moist_adv_opt
 
 !====[adj_P1.12]==========================================================
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
-     DO ij = grid%num_tiles,1,-1
 
        CALL wrf_debug ( 200 , ' call a_rk_small_finish' )
 
@@ -7933,6 +8010,9 @@ BENCH_START(adj_small_step_finish_tim)
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
 
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
          CALL a_set_physical_bc3d( grid%a_ru_m, 'u', config_flags,   &
                                  ids, ide, jds, jde, kds, kde,      &
                                  ims, ime, jms, jme, kms, kme,      &
@@ -7940,6 +8020,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij),  &
                                  k_start    , k_end                )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
@@ -7952,6 +8034,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
 
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
          CALL a_set_physical_bc3d( grid%a_rv_m, 'v', config_flags,   &
                                  ids, ide, jds, jde, kds, kde,      &
                                  ims, ime, jms, jme, kms, kme,      &
@@ -7959,6 +8044,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij),  &
                                  k_start    , k_end                )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
@@ -7971,6 +8058,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
 
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
          CALL a_set_physical_bc3d( grid%a_ww_m, 'w', config_flags,   &
                                  ids, ide, jds, jde, kds, kde,      &
                                  ims, ime, jms, jme, kms, kme,      &
@@ -7978,6 +8068,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij),  &
                                  k_start    , k_end                )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
@@ -7990,12 +8082,17 @@ end if
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
 
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
          CALL a_set_physical_bc2d( grid%a_mut, 't', config_flags,   &
                                  ids, ide, jds, jde,               &
                                  ims, ime, jms, jme,                &
                                  ips, ipe, jps, jpe,                &
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij) )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
@@ -8008,12 +8105,17 @@ end if
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
 
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
          CALL a_set_physical_bc2d( grid%a_muts, 't', config_flags,   &
                                  ids, ide, jds, jde,               &
                                  ims, ime, jms, jme,                &
                                  ips, ipe, jps, jpe,                &
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij) )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
@@ -8030,6 +8132,9 @@ if (config_flags % sw_call_small_step_finish) then
         CALL pop2restore (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
                           grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
         CALL pop2restore (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
         CALL a_small_step_finish( grid%u_2, grid%a_u_2, grid%u_1, grid%a_u_1, &
                                  grid%v_2, grid%a_v_2, grid%v_1, grid%a_v_1, &
                                  grid%w_2, grid%a_w_2, grid%w_1, grid%a_w_1, &
@@ -8051,6 +8156,8 @@ if (config_flags % sw_call_small_step_finish) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start, k_end )
+     END DO
+     !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_small_step_finish ' )
 end if
@@ -8065,6 +8172,9 @@ BENCH_START(adj_calc_mu_uv_tim)
 if (config_flags % sw_call_calc_mu_uv_1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_calc_mu_uv_1 ' )
 
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
        CALL a_calc_mu_uv_1 ( config_flags,                     &
                              grid%muts, grid%a_muts, muus, a_muus, muvs, a_muvs, &
                              ids, ide, jds, jde, kds, kde,     &
@@ -8072,6 +8182,8 @@ if (config_flags % sw_call_calc_mu_uv_1) then
                              grid%i_start(ij), grid%i_end(ij), &
                              grid%j_start(ij), grid%j_end(ij), &
                              k_start, k_end )
+     END DO
+     !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_mu_uv_1 ' )
 end if
@@ -8080,8 +8192,6 @@ end if
 BENCH_END(adj_calc_mu_uv_tim)
 
 
-     END DO
-     !ZXOMP END PARALLEL DO
  
 !====[adj_P1.11]==========================================================
      adj_small_steps : DO iteration = number_of_small_timesteps, 1 , -1
@@ -8233,9 +8343,6 @@ end if
 BENCH_END(adj_phys_bc_tim)
 
 !======[adj_P1.11.8]======================================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-       DO ij = grid%num_tiles,1,-1
 !========[adj_P1.11.8.3]================================================
  BENCH_START(adj_cald_p_rho_tim)
 
@@ -8245,6 +8352,9 @@ if (config_flags % sw_call_calc_p_rho) then
 
          CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
          CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+       DO ij = grid%num_tiles,1,-1
          CALL a_calc_p_rho( grid%al, grid%a_al, grid%p, grid%a_p, grid%ph_2, grid%a_ph_2,           &
                             grid%alt, grid%a_alt, grid%t_2, grid%a_t_2, grid%t_save, grid%a_t_save, &
                             c2a, a_c2a, pm1, a_pm1, & 
@@ -8256,6 +8366,8 @@ if (config_flags % sw_call_calc_p_rho) then
                             grid%i_start(ij), grid%i_end(ij), &
                             grid%j_start(ij), grid%j_end(ij), &
                             k_start, k_end )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_p_rho ' )
 end if
@@ -8276,6 +8388,9 @@ BENCH_START(adj_spec_bdynhyd_tim)
 if (config_flags % sw_call_zero_grad_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_zero_grad_bdy ' )
 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+       DO ij = grid%num_tiles,1,-1
                 CALL a_zero_grad_bdy ( grid%a_w_2,                       &
                                        'w'         , config_flags,       &
                                        grid%spec_zone,                   &
@@ -8285,6 +8400,8 @@ if (config_flags % sw_call_zero_grad_bdy) then
                                        grid%i_start(ij), grid%i_end(ij), &
                                        grid%j_start(ij), grid%j_end(ij), &
                                        k_start, k_end )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_zero_grad_bdy ' )
 end if
@@ -8296,6 +8413,9 @@ end if
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+       DO ij = grid%num_tiles,1,-1
                 CALL a_spec_bdyupdate ( grid%a_w_2,       &
                                         a_rw_tend, dts_rk, &
                                         'h'         , config_flags, &
@@ -8306,6 +8426,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                         grid%i_start(ij), grid%i_end(ij), &
                                         grid%j_start(ij), grid%j_end(ij), &
                                         k_start, k_end )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
@@ -8319,6 +8441,9 @@ if (config_flags % sw_call_spec_bdyupdate_ph) then
 
              CALL pop2restore (mu_tend,grid%muts, "mu_tend,muts") 
              CALL pop2restore (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+       DO ij = grid%num_tiles,1,-1
              CALL a_spec_bdyupdate_ph( ph_save, a_ph_save, grid%ph_2, grid%a_ph_2,       &
                                        ph_tend, a_ph_tend,              &
                                        mu_tend, a_mu_tend, grid%muts, grid%a_muts, dts_rk, &
@@ -8330,6 +8455,8 @@ if (config_flags % sw_call_spec_bdyupdate_ph) then
                                        grid%i_start(ij), grid%i_end(ij),&
                                        grid%j_start(ij), grid%j_end(ij),&
                                        k_start, k_end )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate_ph ' )
 end if
@@ -8349,6 +8476,9 @@ if (config_flags % sw_call_sumflux) then
 
          CALL pop2restore (grid%u_save,grid%v_save, "u_lin,v_lin") 
          CALL pop2restore (grid%muu,grid%muv, "muu,muv") 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+       DO ij = grid%num_tiles,1,-1
          CALL a_sumflux ( grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2, grid%ww,grid%a_ww,            &
                           grid%u_save, grid%a_u_save, grid%v_save, grid%a_v_save, ww1, a_ww1,     &
                           grid%muu, grid%a_muu, grid%muv, grid%a_muv,                             &
@@ -8362,6 +8492,8 @@ if (config_flags % sw_call_sumflux) then
                           grid%i_start(ij), grid%i_end(ij),     &
                           grid%j_start(ij), grid%j_end(ij),     &
                           k_start, k_end )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_sumflux ' )
 end if
@@ -8369,13 +8501,8 @@ end if
 
 BENCH_END(adj_sumflux_tim)
 
-       ENDDO
-       !ZXOMP END PARALLEL DO
 
 !======[adj_P1.11.6]======================================================
-       !ZXOMP PARALLEL DO   &
-       !ZXOMP PRIVATE ( ij )
-        DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.11.6.2]==================================================
 !        Adjoint of updating model variables of grid points except for those in spec zone: w
@@ -8391,6 +8518,9 @@ if (config_flags % sw_call_advance_w) then
            CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,rw_tend,grid%ww,w_save,t_2save,grid%t_2,grid%t_save, &
                              "u,v,w,rw_tend,ww,w_save,t_2ave,t_2,t_1")
            CALL pop2restore (grid%mut,muave,grid%muts, "mut,muave,muts") 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+        DO ij = grid%num_tiles,1,-1
            CALL a_advance_w( grid%w_2,grid%a_w_2, rw_tend,a_rw_tend, grid%ww,grid%a_ww, w_save,a_w_save, &
                              grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2,                              &
                              grid%mu_2,grid%a_mu_2, grid%mut,grid%a_mut,                            &
@@ -8409,6 +8539,8 @@ if (config_flags % sw_call_advance_w) then
                              grid%i_start(ij), grid%i_end(ij),           &
                              grid%j_start(ij), grid%j_end(ij),           &
                              k_start, k_end )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_advance_w ' )
 end if
@@ -8426,6 +8558,9 @@ BENCH_START(adj_spec_bdy_t_tim)
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+        DO ij = grid%num_tiles,1,-1
            CALL a_spec_bdyupdate ( grid%a_muts,     &
                                    a_mu_tend, dts_rk, &
                                    'm'         , config_flags, &
@@ -8436,6 +8571,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    grid%i_start(ij), grid%i_end(ij), &
                                    grid%j_start(ij), grid%j_end(ij), &
                                    1, 1 )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
@@ -8445,6 +8582,9 @@ end if
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+        DO ij = grid%num_tiles,1,-1
            CALL a_spec_bdyupdate ( grid%a_mu_2,     &
                                    a_mu_tend, dts_rk, &
                                    'm'         , config_flags, &
@@ -8455,6 +8595,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    grid%i_start(ij), grid%i_end(ij), &
                                    grid%j_start(ij), grid%j_end(ij), &
                                    1, 1 )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
@@ -8464,6 +8606,9 @@ end if
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
 
+       !ZXOMP PARALLEL DO   &
+       !ZXOMP PRIVATE ( ij )
+        DO ij = grid%num_tiles,1,-1
            CALL a_spec_bdyupdate ( grid%a_t_2,       &
                                    a_t_tend, dts_rk,   &
                                    't'         , config_flags, &
@@ -8474,6 +8619,8 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    grid%i_start(ij), grid%i_end(ij), &
                                    grid%j_start(ij), grid%j_end(ij), &
                                    k_start, k_end )
+       ENDDO
+       !ZXOMP END PARALLEL DO
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
@@ -8482,8 +8629,6 @@ end if
          ENDIF
 BENCH_END(adj_spec_bdy_t_tim)
 
-       ENDDO
-       !ZXOMP END PARALLEL DO
 
 !======[adj_P1.11.4]======================================================
 !      Adjoint of updating model variables of grid points except for those in spec zone: mu,t
@@ -8502,11 +8647,9 @@ BENCH_END(adj_spec_bdy_t_tim)
 #endif
 
 if (config_flags % sw_call_advance_mu_t) then
-       !DDD MASTER
        CALL pop2restore (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
                            "ww,ww_1,u,u_1,v,v_1,t_1") 
        CALL pop2restore (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
-       !DDD END MASTER
 endif
 
        !DDD PARALLEL DO   &
@@ -8607,10 +8750,8 @@ BENCH_END(adj_spec_bdy_uv_tim)
 #endif
 
 if (config_flags % sw_call_advance_uv) then
-       !DDD MASTER
        CALL pop2restore (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
        CALL pop2restore (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
-       !DDD END MASTER
 endif
        !DDD PARALLEL DO   &
        !DDD PRIVATE ( ij )
@@ -8892,9 +9033,6 @@ BENCH_END(adj_set_phys_bc2_tim)
 
 !====[adj_P1.9]===========================================================
 BENCH_START(adj_small_step_prep_tim)
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
-     DO ij = grid%num_tiles,1,-1
 
 !======[adj_P1.9.3]=======================================================
        IF (config_flags%non_hydrostatic) THEN
@@ -8905,6 +9043,10 @@ if (config_flags % sw_call_calc_coef_w) then
 
          CALL pop2restore (grid%mut, "mut") 
          CALL pop2restore (c2a,cqw, "c2a,cqw") 
+
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
          CALL a_calc_coef_w( a,a_a,alpha,a_alpha,gamma,a_gamma, &
                              grid%mut,grid%a_mut, cqw,a_cqw,    &
                              grid%rdn, grid%rdnw, c2a,a_c2a,    &
@@ -8915,6 +9057,8 @@ if (config_flags % sw_call_calc_coef_w) then
                              grid%i_start(ij), grid%i_end(ij), &
                              grid%j_start(ij), grid%j_end(ij), &
                              k_start, k_end )
+     ENDDO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_coef_w ' )
@@ -8930,6 +9074,10 @@ if (config_flags % sw_call_calc_p_rho) then
 
        CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
        CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
+
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
        CALL a_calc_p_rho( grid%al,grid%a_al, grid%p,grid%a_p, grid%ph_2,grid%a_ph_2, &
                           grid%alt,grid%a_alt, grid%t_2,grid%a_t_2,   &
                           grid%t_save,grid%a_t_save, c2a,a_c2a, pm1,a_pm1,  &
@@ -8941,6 +9089,8 @@ if (config_flags % sw_call_calc_p_rho) then
                           grid%i_start(ij), grid%i_end(ij),           &
                           grid%j_start(ij), grid%j_end(ij),           &
                           k_start, k_end )
+     ENDDO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_p_rho ' )
@@ -8965,6 +9115,9 @@ if (config_flags % sw_call_small_step_prep) then
          CALL pop2restore (grid%mu_1, "mu_1")
        END IF 
        CALL pop2restore (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
        CALL a_small_step_prep( grid%u_1,grid%a_u_1,grid%u_2,grid%a_u_2, &
                                grid%v_1,grid%a_v_1,grid%v_2,grid%a_v_2, &
                                grid%w_1,grid%a_w_1,grid%w_2,grid%a_w_2, &
@@ -8985,14 +9138,14 @@ if (config_flags % sw_call_small_step_prep) then
                                grid%i_start(ij), grid%i_end(ij),                        &
                                grid%j_start(ij), grid%j_end(ij),                        &
                                k_start, k_end )
+     ENDDO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_small_step_prep ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: small_step_prep }
 
-     ENDDO
-     !ZXOMP END PARALLEL DO
 BENCH_END(adj_small_step_prep_tim)
 
 !    [adj_P5_debug_bdy] Adjoint of updating model variables of grid points
@@ -9258,6 +9411,10 @@ end if
 !====[adj_P1.8]===========================================================
 !    Adjoint of calculating tendencies of grid points
 BENCH_START(adj_relax_bdy_dry_tim)
+     IF( config_flags%specified .or. config_flags%nested ) THEN
+if (config_flags % sw_call_spec_bdy_dry) then
+   call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdy_dry ' )
+
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
      adj_calc_tendency: &
@@ -9265,11 +9422,8 @@ BENCH_START(adj_relax_bdy_dry_tim)
 
 !======[adj_P1.8.3]=======================================================
 !      Adjoint of calculating tendencies of grid points in spec zone
-     IF( config_flags%specified .or. config_flags%nested ) THEN
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_dry{
-if (config_flags % sw_call_spec_bdy_dry) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdy_dry ' )
 
        CALL a_spec_bdy_dry ( config_flags,                                     &
                    grid%a_ru_tend, grid%a_rv_tend, &
@@ -9288,6 +9442,8 @@ if (config_flags % sw_call_spec_bdy_dry) then
                    grid%i_start(ij), grid%i_end(ij),  &
                    grid%j_start(ij), grid%j_end(ij),  &
                    k_start, k_end )
+     END DO adj_calc_tendency
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdy_dry ' )
@@ -9303,6 +9459,11 @@ if (config_flags % sw_call_rk_addtend_dry) then
 
      CALL pop2restore (grid%h_diabatic, "h_diabatic") 
      CALL pop2restore (grid%mut, "mut") 
+
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
+
      CALL a_rk_addtend_dry ( grid%a_ru_tend,  &
                              grid%a_rv_tend,  &
                   a_rw_tend, a_ph_tend, a_t_tend,         &
@@ -9320,6 +9481,8 @@ if (config_flags % sw_call_rk_addtend_dry) then
                   grid%i_start(ij), grid%i_end(ij),                &
                   grid%j_start(ij), grid%j_end(ij),                &
                   k_start, k_end )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_addtend_dry ' )
@@ -9336,6 +9499,10 @@ if (config_flags % sw_call_relax_bdy_dry) then
 
        CALL pop2restore (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
        CALL pop2restore (grid%mut, "mut") 
+
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
        CALL a_relax_bdy_dry ( config_flags,                             &
                 grid%a_u_save, grid%a_v_save, &
                 a_ph_save, grid%a_t_save,  &
@@ -9375,6 +9542,8 @@ if (config_flags % sw_call_relax_bdy_dry) then
                 grid%i_start(ij), grid%i_end(ij),   &
                 grid%j_start(ij), grid%j_end(ij),   &
                 k_start, k_end )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_relax_bdy_dry ' )
@@ -9383,8 +9552,6 @@ end if
 
      ENDIF
 
-     END DO adj_calc_tendency
-     !ZXOMP END PARALLEL DO
 BENCH_END(adj_relax_bdy_dry_tim)
   
 !====[adj_P1.6]===========================================================
@@ -9392,28 +9559,20 @@ BENCH_END(adj_relax_bdy_dry_tim)
 !    ---------------------------------------------------------------------------------------
 BENCH_START(adj_rk_tend_tim)
 
+       CALL wrf_debug ( 200 , ' call a_rk_tendency' )
 if (config_flags % sw_call_rk_tendency) then
-     !$DDD MASTER
+! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_tendency{
+   call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_tendency ' )
      CALL pop2restore (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
      CALL pop2restore (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
                        "al,alt,p,php,cqu,cqv,cqw") 
      CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
      CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
      CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
-     !$DDD END MASTER
-endif
 
-     !$DDD PARALLEL DO   &
-     !$DDD PRIVATE ( ij )
-     adj_zero_tendency: &
+     !ZXOMP PARALLEL DO   &
+     !ZXOMP PRIVATE ( ij ) &
      DO ij = grid%num_tiles,1,-1
-
-       CALL wrf_debug ( 200 , ' call a_rk_tendency' )
-
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_tendency{
-if (config_flags % sw_call_rk_tendency) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_tendency ' )
-
        CALL a_rk_tendency ( config_flags, rk_step, &
                          grid%ru_tend, grid%a_ru_tend, grid%rv_tend, grid%a_rv_tend, &
                          rw_tend, a_rw_tend, ph_tend, a_ph_tend, t_tend, a_t_tend, &
@@ -9451,11 +9610,16 @@ if (config_flags % sw_call_rk_tendency) then
                          grid%j_start(ij), grid%j_end(ij),  &
                          k_start, k_end,   &
                          max_vert_cfl_tmp(ij), max_horiz_cfl_tmp(ij) )
+     END DO
+     !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_tendency ' )
 
 ! NPAN 05/09/10 + zero_tend (module_big_step_utilities_em), which is called by rk_tendency
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1
        CALL a_zero_tend ( a_mu_save,       &
                           ids, ide, jds, jde, 1, 1, &
                           ims, ime, jms, jme, 1, 1, &
@@ -9539,12 +9703,12 @@ else
                           grid%i_start(ij), grid%i_end(ij), &
                           grid%j_start(ij), grid%j_end(ij), &
                           k_start, k_end )
+     END DO
+     !$OMP END PARALLEL DO
 
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_tendency }
 
-     END DO adj_zero_tendency
-     !$DDD END PARALLEL DO
 BENCH_END(adj_rk_tend_tim)
 
 !====[adj_P1.5]===========================================================
@@ -9830,6 +9994,12 @@ BENCH_END(adj_set_phys_bc_tim)
      CALL wrf_debug ( 200 , ' call a_rk_step_prep ' )
 
 BENCH_START(adj_step_prep_tim)
+     if (config_flags % sw_call_rk_step_prep) then
+        CALL pop2restore (moist, "moist")
+        CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
+        CALL pop2restore (grid%mu_2, "mu")
+     endif
+
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
      adj_rk_step_prep: &
@@ -9839,9 +10009,6 @@ BENCH_START(adj_step_prep_tim)
 if (config_flags % sw_call_rk_step_prep) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_step_prep ' )
 
-       CALL pop2restore (moist, "moist")
-       CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
-       CALL pop2restore (grid%mu_2, "mu")
        CALL a_rk_step_prep  ( config_flags, rk_step,                        &
                               grid%u_2, grid%a_u_2, grid%v_2, grid%a_v_2,   &
                               grid%w_2, grid%a_w_2, grid%t_2, grid%a_t_2,   &

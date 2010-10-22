@@ -13,7 +13,7 @@ subroutine da_check_vtoy_adjoint(cv_size,grid, config_flags, vp, vv, xbx, be, ep
    type(domain),               intent(inout) :: grid 
    type(vp_type),              intent(inout) :: vv    ! Grdipt/EOF CV.
    type(vp_type),              intent(inout) :: vp    ! Grdipt/level CV.
-   type(xbx_type),             intent(in)    :: xbx   ! Header & non-gridded vars.
+   type(xbx_type),             intent(inout) :: xbx   ! Header & non-gridded vars.
    type(be_type),              intent(in)    :: be    ! background error structure.
    type(ep_type),              intent(in)    :: ep     ! ensemble perturbation structure.
    type(iv_type),              intent(inout) :: iv    ! ob. increment vector.
@@ -57,7 +57,7 @@ subroutine da_check_vtoy_adjoint(cv_size,grid, config_flags, vp, vv, xbx, be, ep
    ! call da_zero_vp_type(vv)
    ! call da_zero_x(grid%xa)      
 
-   call da_transform_vtoy_adj(cv_size, be, ep, cv, cv, iv, vp, vv, vp, vv, xbx, y, grid, &
+   call da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp, vv, xbx, y, grid, &
       config_flags, .true.)
 
    adj_rhs = sum(cv(1:cv_size) * cv_2(1:cv_size))

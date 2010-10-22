@@ -39,6 +39,8 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    character(80) hdr1b
    integer(i_kind) ihh,i,j,k,ifov,idd,ireadmg,ireadsb
    integer(i_kind) iret,idate,im,iy,nchan
+   integer :: num_bufr(7), numbufr, ibufr
+   character(20) :: filename
 
    ! thinning variables
    integer(i_kind) itt,itx,iobs,iout
@@ -160,17 +162,57 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
    allocate (tb_inv(nchan))
 
+   num_tovs_file     = 0    ! number of obs in file
+   num_tovs_global   = 0    ! number of obs within whole domain
+   num_tovs_local    = 0    ! number of obs within tile
+   num_tovs_thinned  = 0    ! number of obs rejected by thinning
+   num_tovs_used     = 0    ! number of obs entered into innovation computation
+   num_tovs_selected = 0    ! number of obs limited for debuging
+   iobs = 0                 ! for thinning, argument is inout
+
    ! 0.0  Open unit to satellite bufr file and read file header
    !--------------------------------------------------------------
 
-!   call da_get_unit(lnbufr)
-   lnbufr=99
-   open(unit=lnbufr,file=trim(infile),form='unformatted', &
+   num_bufr(:)=0
+   numbufr=0
+   if (num_fgat_time>1) then
+
+      do i=1,7
+         call da_get_unit(lnbufr)
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.bufr'
+         open(unit   = lnbufr, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+         if (iost == 0) then
+            numbufr=numbufr+1
+	    num_bufr(numbufr)=i
+         else
+            close (lnbufr)
+         end if
+         call da_free_unit(lnbufr)
+      end do
+   else
+     numbufr=1
+   end if
+  
+   if (numbufr==0) numbufr=1
+
+bufrfile:  do ibufr=1,numbufr   
+   if (num_fgat_time==1) then
+      filename=trim(infile)//'.bufr'
+   else
+      if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+         filename=trim(infile)//'.bufr'
+      else
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.bufr'   
+      end if
+   end if
+
+   call da_get_unit(lnbufr)
+   open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-!      call da_free_unit(lnbufr)
+      call da_free_unit(lnbufr)
       call da_trace_exit("da_read_obs_bufrtovs")
       return
    end if
@@ -197,18 +239,12 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    ! Loop to read bufr file and assign information to a sequential structure
    !-------------------------------------------------------------------------
 
-   allocate (head)
-   !  allocate ( head % tb_inv (1:nchan) )
-   nullify  ( head % next )
-   p => head
-
-   num_tovs_file     = 0    ! number of obs in file
-   num_tovs_global   = 0    ! number of obs within whole domain
-   num_tovs_local    = 0    ! number of obs within tile
-   num_tovs_thinned  = 0    ! number of obs rejected by thinning
-   num_tovs_used     = 0    ! number of obs entered into innovation computation
-   num_tovs_selected = 0    ! number of obs limited for debuging
-   iobs = 0                 ! for thinning, argument is inout
+   if ( ibufr == 1 ) then
+      allocate (head)
+      !  allocate ( head % tb_inv (1:nchan) )
+      nullify  ( head % next )
+      p => head
+   endif
 
    if (tovs_start > 1) then
       write (unit=stdout,fmt='(A,I6)') "   Skipping tovs obs before", tovs_start
@@ -422,6 +458,11 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
       end do
    end do obs
 
+   call closbf(lnbufr)
+   call da_free_unit(lnbufr)
+
+end do bufrfile
+
    if (thinning .and. num_tovs_global > 0 ) then
 
 #ifdef DM_PARALLEL
@@ -530,8 +571,6 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    write(unit=stdout,fmt='(5i10)') num_tovs_file,num_tovs_global, num_tovs_local,num_tovs_used,num_tovs_thinned
 
    deallocate(tb_inv)  
-   call closbf(lnbufr)
-!   call da_free_unit(lnbufr)
 
    !  5.0 allocate innovation radiance structure
    !----------------------------------------------------------------  

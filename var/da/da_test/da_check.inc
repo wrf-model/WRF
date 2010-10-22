@@ -10,7 +10,7 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
    type(grid_config_rec_type), intent(inout) :: config_flags
 
    integer, intent(in)              :: cv_size ! Size of cv array.
-   type (xbx_type),   intent(in)    :: xbx   ! Header & non-gridded vars.
+   type (xbx_type),   intent(inout) :: xbx   ! Header & non-gridded vars.
    type (be_type),    intent(in)    :: be    ! background error structure.
    type (ep_type),    intent(in)    :: ep    ! Ensemble perturbation structure.
    type (iv_type),    intent(inout) :: iv    ! ob. increment vector.
@@ -82,7 +82,7 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
 
    ! call da_transform_vtox(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
 
-   call da_check_xtoy_adjoint(cv_size, cvtest, grid, config_flags, iv, y)
+   call da_check_xtoy_adjoint(cv_size, cvtest, xbx, be, grid, config_flags, iv, y)
 
    call da_deallocate_y(y)
 

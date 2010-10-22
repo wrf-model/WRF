@@ -22,7 +22,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    integer, intent(in)               :: it    ! external iteration.
    integer, intent(in)               :: cv_size          ! Total cv size
-   type (xbx_type),intent(in)        :: xbx   ! Header & non-gridded vars.
+   type (xbx_type),intent(inout)     :: xbx   ! Header & non-gridded vars.
    type (be_type), intent(in)        :: be    ! background error structure.
    type (iv_type), intent(inout)     :: iv    ! ob. increment vector.
    real, intent(inout)               :: j_grad_norm_target ! Target norm.

@@ -1,4 +1,4 @@
-subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
+subroutine da_check_xtoy_adjoint(cv_size, cv, xbx, be, grid, config_flags, iv, y)
    
    !--------------------------------------------------------------------------
    ! Purpose: Test observation operator transform and adjoint for compatibility.
@@ -11,7 +11,9 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    implicit none
    
    integer, intent(in)                       :: cv_size ! Size of cv array.
+   type (be_type),             intent(in)    :: be    ! background error structure.
    real, intent(inout)                       :: cv(1:cv_size)   ! control variables.
+   type (xbx_type),            intent(inout) :: xbx   ! Header & non-gridded vars.
    type (domain),              intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    type (iv_type),             intent(inout) :: iv    ! ob. increment vector.
@@ -31,9 +33,16 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    real, dimension(ims:ime, jms:jme, kms:kme) :: xa2_w
    real, dimension(ims:ime, jms:jme)          :: xa2_psfc
    real, dimension(ims:ime, jms:jme, kms:kme) :: xa2_qcw, xa2_qrn
-   integer :: nobwin, ndynopt
+   real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_u, x6a2_v, x6a2_t, &
+                                                 x6a2_p, x6a2_q, x6a2_rh
+   real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_w
+   real, dimension(ims:ime, jms:jme)          :: x6a2_psfc
+   real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_qcw, x6a2_qrn
+   integer :: nobwin, ndynopt, i, j, k, jl_start, jl_end
    character(len=4) :: filnam
-   integer :: wrf_done_unit
+   character(len=256) :: timestr
+   integer :: wrf_done_unit, time_step_seconds
+   type(x_type) :: shuffle
 
    if (trace_use) call da_trace_entry("da_check_xtoy_adjoint")
 
@@ -89,6 +98,18 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    xa2_qcw(ims:ime, jms:jme, kms:kme) = grid%xa%qcw(ims:ime, jms:jme, kms:kme)
    xa2_qrn(ims:ime, jms:jme, kms:kme) = grid%xa%qrn(ims:ime, jms:jme, kms:kme)
 
+   x6a2_u = 0.0
+   x6a2_v = 0.0
+   x6a2_t = 0.0
+   x6a2_p = 0.0
+   x6a2_q = 0.0
+   x6a2_w = 0.0
+   x6a2_rh = 0.0
+   x6a2_psfc = 0.0
+
+   x6a2_qcw = 0.0
+   x6a2_qrn = 0.0
+
 #ifdef A2C
     if( ite == ide ) &    
 print*,__FILE__,jte,' xa2_u.xa2_u for col= ',ite+1,sum(xa2_u(ite+1, jts:jte, kts:kte) * xa2_u(ite+1, jts:jte, kts:kte))
@@ -96,38 +117,87 @@ print*,__FILE__,jte,' xa2_u.xa2_u for col= ',ite+1,sum(xa2_u(ite+1, jts:jte, kts
 print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts:kte) * xa2_v(its:ite, jte+1, kts:kte))
 #endif
    if (var4d) then
-      call da_transfer_xatowrftl(grid, config_flags, 'tl01')
+#ifdef VAR4D
+      call domain_clock_get( grid, current_timestr=timestr )
+      call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
-#ifdef DM_PARALLEL
-      call da_system("da_run_wrfplus_tl.ksh pre")
-      if (rootproc) then
-         call da_system("rm -rf wrf_done")
-         call da_system("touch wrf_go_ahead")
-         call da_get_unit(wrf_done_unit)
-         do while (.true.)
-            open(wrf_done_unit,file="wrf_done",status="old",err=303)
-            close(wrf_done_unit)
-            exit
-303         continue
-            call da_system("sleep 1")
-         end do
-         call da_free_unit(wrf_done_unit)
-      end if
-      call wrf_get_dm_communicator ( comm )
-      call mpi_barrier(comm, ierr)
-      call da_system("da_run_wrfplus_tl.ksh post")
+      if ( var4d_lbc ) then
+         call da_get_2rd_firstguess ( grid )
+         call da_setup_firstguess( xbx, grid, config_flags)
+
+         shuffle = grid%xa
+         jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
+         jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
+         grid%xa  = grid%x6a
+         call da_transform_vtox(grid, be%cv%size_jl, xbx, be, grid%ep, cv(jl_start:jl_end), grid%vv6, grid%vp6)
+         grid%xa  = shuffle
+
+         x6a2_u(ims:ime, jms:jme, kms:kme) = grid%x6a%u(ims:ime, jms:jme, kms:kme)
+         x6a2_v(ims:ime, jms:jme, kms:kme) = grid%x6a%v(ims:ime, jms:jme, kms:kme)
+         x6a2_t(ims:ime, jms:jme, kms:kme) = grid%x6a%t(ims:ime, jms:jme, kms:kme)
+         x6a2_p(ims:ime, jms:jme, kms:kme) = grid%x6a%p(ims:ime, jms:jme, kms:kme)
+         x6a2_q(ims:ime, jms:jme, kms:kme) = grid%x6a%q(ims:ime, jms:jme, kms:kme)
+         x6a2_w(ims:ime, jms:jme, kms:kme) = grid%x6a%w(ims:ime, jms:jme, kms:kme)
+         x6a2_rh(ims:ime, jms:jme, kms:kme)= grid%x6a%rh(ims:ime, jms:jme, kms:kme)
+         x6a2_psfc(ims:ime, jms:jme)       = grid%x6a%psfc(ims:ime, jms:jme)
+
+         x6a2_qcw(ims:ime, jms:jme, kms:kme) = grid%x6a%qcw(ims:ime, jms:jme, kms:kme)
+         x6a2_qrn(ims:ime, jms:jme, kms:kme) = grid%x6a%qrn(ims:ime, jms:jme, kms:kme)
+
+         call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
+
+         call domain_clock_get( grid, start_timestr=timestr )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr )
+
+      endif
+
+      call da_tl_model
+
+      if (jcdfi_use) then
+
+         pertile_lhs = pertile_lhs &
+                       + (1.0)/grid%jcdfi_error_wind**2 * sum( model_grid%jcdfi_u(ims:ime, kms:kme, jms:jme)*model_grid%jcdfi_u(ims:ime, kms:kme, jms:jme) ) &  
+                       + (1.0)/grid%jcdfi_error_wind**2 * sum( model_grid%jcdfi_v(ims:ime, kms:kme, jms:jme)*model_grid%jcdfi_v(ims:ime, kms:kme, jms:jme) ) &  
+                       + (1.0)/grid%jcdfi_error_t**2 * sum( model_grid%jcdfi_t(ims:ime, kms:kme, jms:jme)*model_grid%jcdfi_t(ims:ime, kms:kme, jms:jme) ) &  
+                       + (1.0)/grid%jcdfi_error_mu**2 * sum( model_grid%jcdfi_mu(ims:ime, jms:jme)*model_grid%jcdfi_mu(ims:ime, jms:jme) ) 
+
+         ! We can not calculate the Y just with tile.
+         partial_lhs = pertile_lhs
+      endif
+
 #else
-      call da_system("da_run_wrfplus_tl.ksh")
+      write(unit=message(1),fmt='(A)')'Please recompile the code with 4dvar option' 
+      call da_error(__FILE__,__LINE__,message(1:1))
 #endif
    end if
 
-   do nobwin=1, num_fgat_time
+   if ( num_fgat_time > 1 ) then
+      call domain_clock_get (grid, stop_timestr=timestr)
+      call domain_clock_set( grid, current_timestr=timestr )
+      call domain_clock_set (grid, time_step_seconds=-1*var4d_bin)
+      call domain_clockprint(150, grid, 'get CurrTime from clock,')
+   endif
+
+   do nobwin= num_fgat_time, 1, -1
+
+      iv%time = nobwin
+      iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
+      iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
+
       if (var4d) then
+#ifdef VAR4D
+         call domain_clock_get( grid, current_timestr=timestr )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr )
+
          write(filnam,'(a2,i2.2)') 'tl',nobwin
-         call da_transfer_wrftltoxa(grid, config_flags, filnam)
-       end if
+         call da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
+#endif
+      end if
 
       call da_pt_to_rho_lin(grid)
+#ifdef DM_PARALLEL
+#include "HALO_XA.inc"
+#endif
 
       if (sfc_assi_options == 2) then
          call da_transform_xtowtq (grid)
@@ -258,7 +328,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
       call da_pt_to_rho_adj (grid)
 
       if (var4d) then
-
+#ifdef VAR4D
          grid%g_u_2 = 0.0
          grid%g_v_2 = 0.0
          grid%g_w_2 = 0.0
@@ -269,128 +339,75 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
 
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
 
-         call da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
-
-!!!!!! exclude TL&AD integration!!!!!!!
-#ifdef MYOK
-         ndynopt      = grid%dyn_opt
-         grid%dyn_opt = DYN_EM_TL
-         call nl_set_dyn_opt (1 , DYN_EM_TL)
-         call da_med_initialdata_input(grid , config_flags, filnam)
-         grid%a_u_2 =   grid%g_u_2
-         grid%a_v_2 =   grid%g_v_2
-         grid%a_w_2 =   grid%g_w_2
-         grid%a_t_2 =   grid%g_t_2
-         grid%a_ph_2 =   grid%g_ph_2
-         grid%a_mu_2 =   grid%g_mu_2
-         grid%a_moist =   grid%g_moist
-
-         grid%dyn_opt = DYN_EM_AD
-         call nl_set_dyn_opt (1 , DYN_EM_AD)
-         call da_med_initialdata_output(grid , config_flags, 'gr01')               
-
-         grid%dyn_opt = ndynopt
-         call nl_set_dyn_opt (1 , DYN_EM)
-         grid%g_u_2 = 0.0
-         grid%g_v_2 = 0.0
-         grid%g_w_2 = 0.0
-         grid%g_t_2 = 0.0
-         grid%g_ph_2 = 0.0
-         grid%g_mu_2 = 0.0
-         grid%g_moist = 0.0
-         grid%a_u_2 = 0.0
-         grid%a_v_2 = 0.0
-         grid%a_w_2 = 0.0
-         grid%a_t_2 = 0.0
-         grid%a_ph_2 = 0.0
-         grid%a_mu_2 = 0.0
-         grid%a_moist = 0.0
+         call domain_clock_get( grid, current_timestr=timestr )
+         call da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
 #endif
-         !!!!!!
       end if
+
+      if ( nobwin > 1 ) call domain_clockadvance (grid)
+      call domain_clockprint(150, grid, 'DEBUG Adjoint Check:  get CurrTime from clock,')
+
    end do
 
+   if ( num_fgat_time > 1 ) then
+      call nl_get_time_step ( grid%id, time_step_seconds)
+      call domain_clock_set (grid, time_step_seconds=time_step_seconds)
+      call domain_clockprint(150, grid, 'get CurrTime from clock,')
+   endif
+
    if (var4d) then
+#ifdef VAR4D
+      if (jcdfi_use) then
+         model_grid%jcdfi_u = (1.0)/grid%jcdfi_error_wind**2 * model_grid%jcdfi_u
+         model_grid%jcdfi_v = (1.0)/grid%jcdfi_error_wind**2 * model_grid%jcdfi_v
+         model_grid%jcdfi_t = (1.0)/grid%jcdfi_error_t**2 * model_grid%jcdfi_t
+         model_grid%jcdfi_mu = (1.0)/grid%jcdfi_error_mu**2 * model_grid%jcdfi_mu
+      endif
 
-#ifndef TLDF
-      ndynopt      = grid%dyn_opt
-      grid%dyn_opt = DYN_EM_TL
-      call nl_set_dyn_opt (1 , DYN_EM_TL)
+      ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.
+      call upsidedown_ad_forcing
 
-      call da_med_initialdata_input(grid , config_flags, 'tldf')
-      grid%g_u_2 = 0.0
-      grid%g_v_2 = 0.0
-      grid%g_w_2 = 0.0
-      grid%g_t_2 = 0.0
-      grid%g_ph_2 = 0.0
-      grid%g_mu_2 = 0.0
-      grid%g_moist = 0.0
-
-      call med_hist_out(grid , 3 , config_flags)
-
-      grid%dyn_opt = ndynopt
-      call nl_set_dyn_opt (1 , DYN_EM)
-#endif
-
-#ifdef DM_PARALLEL
-      call da_system("da_run_wrfplus_ad.ksh pre")
-      if (rootproc) then
-         call da_system("rm -rf wrf_done")
-         call da_system("touch wrf_go_ahead")
-         call da_get_unit(wrf_done_unit)
-         do while (.true.)
-            open(wrf_done_unit,file="wrf_done",status="old",err=304)
-            close(wrf_done_unit)
-            exit
-304         continue
-            call da_system("sleep 1")
-         end do
-         call da_free_unit(wrf_done_unit)
-      end if
-      call wrf_get_dm_communicator ( comm )
-      call mpi_barrier(comm, ierr)
-      call da_system("da_run_wrfplus_ad.ksh post")
-#else 
-      call da_system("da_run_wrfplus_ad.ksh")
-#endif
-
-      grid%xa%u(its:ite,    jts:jte, kts:kte) = 0.0
-      grid%xa%v(its:ite,    jts:jte, kts:kte) = 0.0
-      grid%xa%w(its:ite,    jts:jte, kts:kte+1) = 0.0
-      grid%xa%q(its:ite,    jts:jte, kts:kte) = 0.0
-      grid%xa%t(its:ite,    jts:jte, kts:kte) = 0.0
-      grid%xa%psfc(its:ite, jts:jte) = 0.0
+      call da_ad_model
 
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
-      grid%a_u_2 =   grid%xa%u
-      grid%a_v_2 =   grid%xa%v
-      grid%a_w_2 =   grid%xa%w
-      grid%a_t_2 =   grid%xa%t
-      grid%a_ph_2 =   grid%xa%p
-      grid%a_mu_2 =   grid%xa%psfc
-      grid%a_moist(:,:,:,p_a_qv) =   grid%xa%q(:,:,:)
 
-      grid%dyn_opt = DYN_EM_AD
-      call nl_set_dyn_opt (1 , DYN_EM_AD)
-      call da_med_initialdata_output(grid , config_flags, 'gr01')
+      call da_zero_x(grid%x6a)
+      if (var4d_lbc) then
+         !call domain_clock_get( grid, stop_timestr=timestr )
+         !call da_read_basicstates ( xbx, grid, config_flags, timestr )
+         call da_get_2rd_firstguess ( grid )
+         call da_setup_firstguess( xbx, grid, config_flags)
 
-      grid%dyn_opt = ndynopt
-      call nl_set_dyn_opt (1 , DYN_EM)
+         call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
 
+         call domain_clock_get( grid, start_timestr=timestr )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr )
+      end if
+#endif
    end if
 
- 
- pertile_rhs = sum (grid%xa%u(ims:ime, jms:jme, kms:kme) * xa2_u(ims:ime, jms:jme, kms:kme)) &
-      + sum (grid%xa%v(ims:ime, jms:jme, kms:kme) * xa2_v(ims:ime, jms:jme, kms:kme)) &
-      + sum (grid%xa%w(ims:ime, jms:jme, kms:kme) * xa2_w(ims:ime, jms:jme, kms:kme)) &
+
+   pertile_rhs = sum (grid%xa%u(ims:ime, jms:jme, kms:kme) * xa2_u(ims:ime, jms:jme, kms:kme)) & 
+      + sum (grid%xa%v(ims:ime, jms:jme, kms:kme) * xa2_v(ims:ime, jms:jme, kms:kme)) & 
+      + sum (grid%xa%w(ims:ime, jms:jme, kms:kme) * xa2_w(ims:ime, jms:jme, kms:kme)) &  
       + sum (grid%xa%t(ims:ime, jms:jme, kms:kme) * xa2_t(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%p(ims:ime, jms:jme, kms:kme) * xa2_p(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%q(ims:ime, jms:jme, kms:kme) * xa2_q(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%rh(ims:ime, jms:jme, kms:kme)* xa2_rh(ims:ime, jms:jme, kms:kme)) &
-      + sum (grid%xa%psfc(ims:ime, jms:jme) * xa2_psfc(ims:ime, jms:jme))
+      + sum (grid%xa%psfc(ims:ime, jms:jme) * xa2_psfc(ims:ime, jms:jme)) &
+      + sum (grid%x6a%u(ims:ime, jms:jme, kms:kme) * x6a2_u(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%v(ims:ime, jms:jme, kms:kme) * x6a2_v(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%w(ims:ime, jms:jme, kms:kme) * x6a2_w(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%t(ims:ime, jms:jme, kms:kme) * x6a2_t(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%p(ims:ime, jms:jme, kms:kme) * x6a2_p(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%q(ims:ime, jms:jme, kms:kme) * x6a2_q(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%rh(ims:ime, jms:jme, kms:kme)* x6a2_rh(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%psfc(ims:ime, jms:jme) * x6a2_psfc(ims:ime, jms:jme))
    pertile_rhs = pertile_rhs &
       + sum (grid%xa%qcw(ims:ime, jms:jme, kms:kme) * xa2_qcw(ims:ime, jms:jme, kms:kme)) &
-      + sum (grid%xa%qrn(ims:ime, jms:jme, kms:kme) * xa2_qrn(ims:ime, jms:jme, kms:kme))
+      + sum (grid%xa%qrn(ims:ime, jms:jme, kms:kme) * xa2_qrn(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%qcw(ims:ime, jms:jme, kms:kme) * x6a2_qcw(ims:ime, jms:jme, kms:kme)) &
+      + sum (grid%x6a%qrn(ims:ime, jms:jme, kms:kme) * x6a2_qrn(ims:ime, jms:jme, kms:kme))
 
 
    !----------------------------------------------------------------------
@@ -398,17 +415,27 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
    !----------------------------------------------------------------------
    
    partial_rhs = sum (grid%xa%u(its:ite, jts:jte, kts:kte) * xa2_u(its:ite, jts:jte, kts:kte)) &
-      + sum (grid%xa%v(its:ite, jts:jte, kts:kte) * xa2_v(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%xa%v(its:ite, jts:jte, kts:kte) * xa2_v(its:ite, jts:jte, kts:kte)) & 
       + sum (grid%xa%w(its:ite, jts:jte, kts:kte+1) * xa2_w(its:ite, jts:jte, kts:kte+1)) &
       + sum (grid%xa%t(its:ite, jts:jte, kts:kte) * xa2_t(its:ite, jts:jte, kts:kte)) &
       + sum (grid%xa%p(its:ite, jts:jte, kts:kte) * xa2_p(its:ite, jts:jte, kts:kte)) &
       + sum (grid%xa%q(its:ite, jts:jte, kts:kte) * xa2_q(its:ite, jts:jte, kts:kte)) &
       + sum (grid%xa%rh(its:ite, jts:jte, kts:kte)* xa2_rh(its:ite, jts:jte, kts:kte)) &
-      + sum (grid%xa%psfc(its:ite, jts:jte) * xa2_psfc(its:ite, jts:jte)) 
+      + sum (grid%xa%psfc(its:ite, jts:jte) * xa2_psfc(its:ite, jts:jte)) & 
+      + sum (grid%x6a%u(its:ite, jts:jte, kts:kte) * x6a2_u(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%x6a%v(its:ite, jts:jte, kts:kte) * x6a2_v(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%x6a%w(its:ite, jts:jte, kts:kte+1) * x6a2_w(its:ite, jts:jte, kts:kte+1)) &
+      + sum (grid%x6a%t(its:ite, jts:jte, kts:kte) * x6a2_t(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%x6a%p(its:ite, jts:jte, kts:kte) * x6a2_p(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%x6a%q(its:ite, jts:jte, kts:kte) * x6a2_q(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%x6a%rh(its:ite, jts:jte, kts:kte)* x6a2_rh(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%x6a%psfc(its:ite, jts:jte) * x6a2_psfc(its:ite, jts:jte)) 
 
    partial_rhs = partial_rhs &
       + sum (grid%xa%qcw(its:ite, jts:jte, kts:kte) * xa2_qcw(its:ite, jts:jte, kts:kte)) &
-      + sum (grid%xa%qrn(its:ite, jts:jte, kts:kte) * xa2_qrn(its:ite, jts:jte, kts:kte))
+      + sum (grid%xa%qcw(its:ite, jts:jte, kts:kte) * xa2_qcw(its:ite, jts:jte, kts:kte)) & 
+      + sum (grid%x6a%qrn(its:ite, jts:jte, kts:kte) * x6a2_qrn(its:ite, jts:jte, kts:kte)) &
+      + sum (grid%x6a%qrn(its:ite, jts:jte, kts:kte) * x6a2_qrn(its:ite, jts:jte, kts:kte))
 
 #ifdef A2C
     if( ite == ide ) then

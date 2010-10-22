@@ -1,4 +1,4 @@
-subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, cv_l, iv, vp, vv, vp6, vv6, xbx, y, &
+subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, y, &
    grid, config_flags, jcdf_flag)
 
    !-------------------------------------------------------------------------
@@ -11,21 +11,21 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, cv_l, iv, vp, vv, vp6, vv6
    type(be_type),              intent(in)    :: be     ! background error structure.
    type(ep_type),              intent(in)    :: ep     ! ensemble perturbation structure.
    real,                       intent(out)   :: cv(1:cv_size) ! control variables.
-   real,                       intent(out)   :: cv_l(1:cv_size) ! control variables for lbc.
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
    type(vp_type),              intent(inout) :: vp6    ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
    type(vp_type),              intent(inout) :: vv6    ! Grdipt/EOF CV for 6h.
-   type(xbx_type),             intent(in)    :: xbx    ! For header & non-grid arrays.
+   type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    logical,                    intent(in)    :: jcdf_flag       ! additional flag to switch off JcDF, used to switch off JcDF in calculation of J.
 
-   type (xbx_type)                           :: xbx_tmp
+   type(x_type) :: shuffle
+   integer :: nobwin,ndynopt, jl_start, jl_end, time_step_seconds
+   character*256 :: timestr, timestr1
 
-   integer :: nobwin, ndynopt, jl_start, jl_end
 #ifdef DM_PARALLEL
    integer :: wrf_done_unit
 #endif
@@ -35,42 +35,36 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, cv_l, iv, vp, vv, vp6, vv6
    call da_trace_entry("da_transform_vtoy_adj")
 
    cv = 0.0
-   cv_l = 0.0
 
    if (var4d) then
-      ndynopt      = grid%dyn_opt
-      grid%dyn_opt = DYN_EM_TL
-      call nl_set_dyn_opt (1 , DYN_EM_TL)
 
-      if (jcdfi_use .AND. jcdf_flag .AND. jcdfi_io ) then
-         call da_med_initialdata_input(grid , config_flags, 'tldf')
-         grid%g_u_2 = - grid%g_u_2
-         grid%g_v_2 = - grid%g_v_2
-         grid%g_w_2 = - grid%g_w_2
-         grid%g_t_2 = - grid%g_t_2
-         grid%g_ph_2 = - grid%g_ph_2
-         grid%g_mu_2 = - grid%g_mu_2
-         grid%g_moist = - grid%g_moist
-      else
-         grid%g_u_2 = 0.0
-         grid%g_v_2 = 0.0
-         grid%g_w_2 = 0.0
-         grid%g_t_2 = 0.0
-         grid%g_ph_2 = 0.0
-         grid%g_mu_2 = 0.0
-         grid%g_moist = 0.0
-      end if
+#ifdef VAR4D
+      if (jcdfi_use .and. .not. jcdf_flag ) then
+         model_grid%jcdfi_u = 0.0
+         model_grid%jcdfi_v = 0.0
+         model_grid%jcdfi_t = 0.0
+         model_grid%jcdfi_mu = 0.0
+      endif
 
-      if (jcdfi_io) call med_hist_out(grid , 3 , config_flags)
+      if (jcdfi_use .and. jcdf_flag ) then
+         ! Multipled by -1.0 because the calulated gradient of Jo will be multiplied by -1.0 
+         model_grid%jcdfi_u = -1.0 * 1.0/grid%jcdfi_error_wind**2 * model_grid%jcdfi_u
+         model_grid%jcdfi_v = -1.0 * 1.0/grid%jcdfi_error_wind**2 * model_grid%jcdfi_v
+         model_grid%jcdfi_t = -1.0 * 1.0/grid%jcdfi_error_t**2 * model_grid%jcdfi_t
+         model_grid%jcdfi_mu = -1.0 * 1.0/grid%jcdfi_error_mu**2 * model_grid%jcdfi_mu
+      endif
+   
+      if (num_fgat_time > 1) then
+         call domain_clock_get (grid, stop_timestr=timestr1)
+         call domain_clock_set( grid, current_timestr=timestr1 )
+         call domain_clock_set (grid, time_step_seconds=-1*var4d_bin)
+         call domain_clockprint(150, grid, 'get CurrTime from clock,')
+      endif
 
-      grid%dyn_opt = ndynopt
-      call nl_set_dyn_opt (1 , DYN_EM)
+      do nobwin=num_fgat_time, 1, -1
 
-      do nobwin=num_fgat_time,1,-1
-         write(unit=filnam, fmt='(a, i2.2)') 'fg', nobwin
-         call da_med_initialdata_input( grid , config_flags, &
-            filnam)
-         call da_setup_firstguess( xbx_tmp, grid, config_flags)
+         call domain_clock_get( grid, current_timestr=timestr )
+         call da_read_basicstates (xbx, grid, config_flags, timestr)
 
          iv%time = nobwin
          iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
@@ -84,51 +78,44 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, cv_l, iv, vp, vv, vp6, vv6
          call da_transform_xtoxa_adj(grid)
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
 
-         call da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
+         call da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
+
+         if (nobwin >  1) call domain_clockadvance (grid)
+         call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
+
       end do
 
-      call da_trace("da_transform_vtoy_adj","Starting da_run_wrfplus_ad.ksh")
+      if (num_fgat_time > 1) then
+         call nl_get_time_step ( grid%id, time_step_seconds)
+         call domain_clock_set (grid, time_step_seconds=time_step_seconds)
+         call domain_clockprint(150, grid, 'get CurrTime from clock,')
+      endif
 
-#ifdef DM_PARALLEL
-      if (var4d_coupling == var4d_coupling_disk_simul) then
+      ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.
+      call upsidedown_ad_forcing
 
-         if (rootproc) then
-            call da_system("da_run_wrfplus_ad.ksh pre")
-            call da_system("rm -rf wrf_done")
-            call da_system("touch wrf_go_ahead")
-            call da_get_unit(wrf_done_unit)
-            do while (.true.)
-               open(wrf_done_unit,file="wrf_done",status="old",err=303)
-               close(wrf_done_unit)
-               exit
-303            continue
-               call da_system("sleep 1")
-            end do
-            call da_free_unit(wrf_done_unit)
-            call da_system("da_run_wrfplus_ad.ksh post")
-         end if
-         ! Wait until PE 0 agrees that AD finished
-         call wrf_get_dm_communicator ( comm )
-         call mpi_barrier(comm, ierr)
-      end if
-#else
-      call da_system("da_run_wrfplus_ad.ksh")
-#endif
-      call da_trace("da_transform_vtoy_adj","Finished da_run_wrfplus_ad.ksh")
+      call da_ad_model
 
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
+      call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
+
+      call da_zero_x(grid%x6a)
       if (var4d_lbc) then
-         call da_med_initialdata_input( grid , config_flags, 'fg07' )
-         call da_setup_firstguess( xbx_tmp, grid, config_flags)
-         call da_zero_x(grid%x6a)
+         call da_get_2rd_firstguess ( grid )
+         call da_setup_firstguess( xbx, grid, config_flags)
+
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
+         shuffle = grid%xa
+         jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
+         jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
+         grid%xa = grid%x6a
+         call da_transform_vtox_adj(grid, be%cv%size_jl, xbx, be, ep, vp6, vv6, cv(jl_start:jl_end))
+         grid%xa = shuffle
+
+         call da_read_basicstates ( xbx, grid, config_flags, timestr )
       end if
 
-      if (num_fgat_time > 1) then ! Recover the firstguess fields touched by reading gr01
-         call da_med_initialdata_input( grid , config_flags, 'fg')
-         call da_setup_firstguess( xbx_tmp, grid, config_flags)
-      end if
-
+#endif
    else  ! not var4d
       iv%info(:)%n1 = 1
       iv%info(:)%n2 = iv%info(:)%nlocal
@@ -140,18 +127,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, cv_l, iv, vp, vv, vp6, vv6
 
       call da_transform_xtoy_adj(cv_size, cv, grid, iv, y,grid%xa)
       call da_transform_xtoxa_adj(grid)
-   end if ! var4d
-   if ( .not. var4d ) then 
       call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
-   else
-      grid%xa_tmp = grid%xa
-      call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
-      jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
-      jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
-      grid%xa = grid%x6a
-      call da_transform_vtox_adj(grid, be%cv%size_jl, xbx, be, ep, vp6, vv6, cv_l(jl_start:jl_end))
-      grid%xa = grid%xa_tmp
-   end if
+   end if ! var4d
 
    !--------------------------------------------------------------
    ! ADJ of Variational Bias Correction

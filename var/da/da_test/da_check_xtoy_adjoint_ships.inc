@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_ships(iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_ships")
 
-   do n=1, iv%info(ships)%nlocal
+   do n=iv%info(ships)%n1, iv%info(ships)%n2
       if (iv%info(ships)%zk(1,n) < 1.0) then
          y%ships(n)%u = 0.0
          y%ships(n)%v = 0.0

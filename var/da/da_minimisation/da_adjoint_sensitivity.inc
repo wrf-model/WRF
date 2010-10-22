@@ -16,7 +16,7 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
    type(domain),   intent(inout)     :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    integer,        intent(in)        :: cv_size                ! Total cv size
-   type (xbx_type),intent(in)        :: xbx                    ! Header & non-gridded vars.
+   type (xbx_type),intent(inout)     :: xbx                    ! Header & non-gridded vars.
    type (be_type), intent(in)        :: be                     ! background error structure.
    type (iv_type), intent(inout)     :: iv                     ! ob. increment vector.
    real,           intent(in)        :: xhat(1:cv_size)        ! control variable (local).

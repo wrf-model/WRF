@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_tamdar (iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_tamdar")
 
-   do n=1, iv%info(tamdar)%nlocal
+   do n=iv%info(tamdar)%n1, iv%info(tamdar)%n2
       do k=1, iv%info(tamdar)%levels(n)
          if (iv%info(tamdar)%proc_domain(k,n)) then
             adjtest_lhs = adjtest_lhs + &

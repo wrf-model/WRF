@@ -16,7 +16,7 @@ subroutine da_check_xtoy_adjoint_ssmi_rv(iv, y, adjtest_lhs, pertile_lhs)
    if (trace_use) call da_trace_entry("da_check_xtoy_adjoint_ssmi_rv")
 
    if (iv%info(ssmi_rv)%nlocal > 0) then
-      do n=1, iv%info(ssmi_rv)%nlocal
+      do n=iv%info(ssmi_rv)%n1, iv%info(ssmi_rv)%n2
          y%ssmi_rv(n)%speed = y%ssmi_rv(n)%speed/typical_speed_rms
          y%ssmi_rv(n)%tpw   = y%ssmi_rv(n)%tpw/typical_tpw_rms
 

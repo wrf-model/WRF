@@ -22,7 +22,8 @@ while [ $# -ge 1 ]; do
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
       radardfi) WRF_DFI_RADAR=1  ;;
-      wrfda) wrf_core=DA_CORE  ;;
+      wrfda) wrf_core=DA_CORE ;;
+      4dvar) wrf_core=4D_DA_CORE ;;
       arw) wrf_core=EM_CORE  ;;
       nmm) wrf_core=NMM_CORE  ;;
       coamps) wrf_core=COAMPS_CORE  ;;
@@ -297,6 +298,14 @@ else
   echo "PHDF5 not set in environment. Will configure WRF for use without."
 fi
 
+if [ "$wrf_core" = "4D_DA_CORE" ]; then
+   if [ -n "$WRFPLUS_DIR" ] ; then
+      echo "Will use WRFPLUS in dir: $WRFPLUS_DIR"
+   else
+      echo "WRFPLUS_DIR not set in environment. Please compile WRFPLUS and set WRFPLUS_DIR."
+      exit
+   fi
+fi
 # Users who are cross-compiling can set environment variable 
 # $WRF_OS to override the value normally obtained from `uname`.  
 # If $WRF_OS is set, then $WRF_MACH can also be set to override 
@@ -530,4 +539,3 @@ if [ "$wrf_core" = "DA_CORE" ]; then
     /bin/mv configure.wrf.edit configure.wrf
   fi
 fi
-

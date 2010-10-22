@@ -81,7 +81,7 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
       call da_transform_vtovv_adj(grid, cv_size, be, cv2, vv)
    end if
 
-   cv_size_tmp = cv_size - be%cv%size_jp - be%cv%size_js
+   cv_size_tmp = cv_size - be%cv%size_jp - be%cv%size_js - be%cv%size_jl
    adj_par_rhs = sum(cv(1:cv_size_tmp) * cv2(1:cv_size_tmp))
 
    !----------------------------------------------------------------------

@@ -40,7 +40,7 @@ subroutine da_get_time_slots(nt,tmin,tana,tmax,time_slots)
    end if
 
    if (print_detail_obs) then
-      write(unit=stdout,fmt='(3x,a,12f10.0)') 'Time_slots ', time_slots(0:nt)
+      write(unit=stdout,fmt='(3x,a,240f10.0)') 'Time_slots ', time_slots(0:nt)
       write (unit=stdout,fmt='(A)') " "
    end if
 

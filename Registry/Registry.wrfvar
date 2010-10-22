@@ -136,8 +136,8 @@ state    real   z_force        |       dyn_em      1         -      i3rh     "Z_
 state    real   z_force_tend   |       dyn_em      1         -      i3rh     "Z_FORCE_TEND" "tendency height of forcing input" "m"
 state    real   u_g            |       dyn_em      1         -      i3rh     "U_G" "x-direction geostrophic wind" "m s-1"
 state    real   u_g_tend       |       dyn_em      1         -      i3rh     "U_G_TEND" "tendency x-direction geostrophic wind" "m s-1"
-state    real   a_u            ijkb    misc        2         X      i01rh036usdf=(bdy_interp:dt)     "A_U"                    "x-wind component"   "m s-1"
-state    real   g_u            ijkb    misc        2         X      i01rh034usdf=(bdy_interp:dt)     "G_U"                    "x-wind component"   "m s-1"
+state    real   a_u            ijk     misc        2         X      rh       "A_U"                    "x-wind component"   "m s-1"
+state    real   g_u            ijk     misc        2         X      rh       "G_U"                    "x-wind component"   "m s-1"
 #                                               
 # V Vel
 state    real   v              ijkb     dyn_em      2         Y     \
@@ -149,8 +149,8 @@ i1       real   rv_tendf       ijk     dyn_em      1         Y
 state    real   v_save         ijk     dyn_em      1         Y      -        "v_save"                   
 state    real   v_g            |       dyn_em      1         -      i3rh     "V_G" "y-direction geostrophic wind" "m s-1"
 state    real   v_g_tend       |       dyn_em      1         -      i3rh     "V_G_TEND" "tendency y-direction geostrophic wind" "m s-1"
-state    real   a_v            ijkb    misc        2         Y     i01rh036usdf=(bdy_interp:dt)      "A_V"                     "y-wind component"   "m s-1"
-state    real   g_v            ijkb    misc        2         Y     i01rh034usdf=(bdy_interp:dt)      "G_V"                     "y-wind component"   "m s-1"
+state    real   a_v            ijk     misc        2         Y      rh       "A_V"                     "y-wind component"   "m s-1"
+state    real   g_v            ijk     misc        2         Y      rh       "G_V"                     "y-wind component"   "m s-1"
 #                                               
 # Vertical Vel                                          
 state    real   w              ijkb     dyn_em      2         Z     \
@@ -165,8 +165,8 @@ i1       real   rw_tendf       ijk     dyn_em      1         Z
 i1       real   w_save         ijk     dyn_em      1         Z                                          
 state    real   w_subs         |       dyn_em      1         -      i3rh      "W_SUBS" "large-scale vertical velocity" "m s-1"
 state    real   w_subs_tend    |       dyn_em      1         -      i3rh      "W_SUBS_TEND" "tendency large-scale vertical velocity" "m s-1"
-state    real   a_w            ijkb    misc        2         Z     i01rh036usdf=(bdy_interp:dt)  "a_w"                        "z-wind component"   "m s-1"
-state    real   g_w            ijkb    misc        2         Z     i01rh034usdf=(bdy_interp:dt)  "g_w"                        "z-wind component"   "m s-1"
+state    real   a_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
+state    real   g_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
 
 # Geopotential
 state    real   ph             ijkb     dyn_em      2         Z     \
@@ -178,10 +178,8 @@ state    real   php            ijk     dyn_em      1         -      r     "php" 
 i1       real   ph_tend        ijk     dyn_em      1         Z 
 i1       real   ph_tendf       ijk     dyn_em      1         Z 
 i1       real   ph_save        ijk     dyn_em      1         Z 
-state    real   a_ph           ijkb     misc        2         Z     \
-       irh036usdf=(bdy_interp:dt)   "a_ph"   "perturbation geopotential"  "m2 s-2"
-state    real   g_ph           ijkb     misc        2         Z     \
-       irh034usdf=(bdy_interp:dt)   "g_ph"   "perturbation geopotential"  "m2 s-2"
+state    real   a_ph           ijk     misc        2         Z      rh    "A_PH"   "perturbation geopotential"  "m2 s-2"
+state    real   g_ph           ijk     misc        2         Z      rh    "G_PH"   "perturbation geopotential"  "m2 s-2"
 
 # Potential Temperature
 state    real   t              ijkb     dyn_em      2         -     \
@@ -191,10 +189,8 @@ i1       real   t_tend         ijk     dyn_em      1         -
 i1       real   t_tendf        ijk     dyn_em      1         -  
 i1       real   t_2save        ijk     dyn_em      1         -   
 state    real   t_save         ijk     dyn_em      1         -      -        "t_save"
-state    real   a_t            ijkb     misc        2         -     \
-       i01rh036usdf=(bdy_interp:dt)   "a_t"      "perturbation potential temperature (theta-t0)" "K"
-state    real   g_t            ijkb     misc        2         -     \
-       i01rh034usdf=(bdy_interp:dt)   "g_t"      "perturbation potential temperature (theta-t0)" "K"
+state    real   a_t            ijk     misc        2         -      rh       "A_T"      "perturbation potential temperature (theta-t0)" "K"
+state    real   g_t            ijk     misc        2         -      rh       "G_T"      "perturbation potential temperature (theta-t0)" "K"
 
 state    real   th_upstream_x       |     dyn_em      1      -      i3rh     "TH_UPSTREAM_X" "upstream theta x-advection" "K s-1"
 state    real   th_upstream_x_tend  |     dyn_em      1      -      i3rh     "TH_UPSTREAM_X_TEND" "tendency upstream theta x-advection" "K s-2"
@@ -239,10 +235,8 @@ i1       real   muave           ij     dyn_em      1          -
 i1       real   mu_save         ij     dyn_em      1          -     
 i1       real   mu_tend         ij     dyn_em      1          -     
 i1       real   mu_tendf        ij     dyn_em      1          -     
-state    real   a_mu            ijb     misc        2         -     \
-     irh036usdf=(bdy_interp:dt)   "a_mu"  "perturbation dry air mass in column" "Pa"
-state    real   g_mu            ijb     misc        2         -     \
-     irh034usdf=(bdy_interp:dt)   "g_mu"  "perturbation dry air mass in column" "Pa"
+state    real   a_mu            ij     misc        2          -     rh          "A_MU"  "perturbation dry air mass in column" "Pa"
+state    real   g_mu            ij     misc        2          -     rh          "G_MU"  "perturbation dry air mass in column" "Pa"
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
 state    real   nest_pos        ij     misc        1   -   rhu=(mark_domain)  "NEST_POS"
@@ -385,8 +379,6 @@ state   real    qc             ijkftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
 state   real    qr             ijkftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    a_qr           ijkftb   a_moist     1         -     i01rh3usdf=(bdy_interp:dt)  "A_QRAIN"           "Rain water mixing ratio"      "kg kg-1"
-state   real    g_qr           ijkftb   g_moist     1         -     i01rh3usdf=(bdy_interp:dt)  "G_QRAIN"           "Rain water mixing ratio"      "kg kg-1"
 state   real    qi             ijkftb   moist       1         -     \
    i01rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qs             ijkftb   moist       1         -     \
@@ -410,12 +402,22 @@ state   real    dfi_qg         ijkftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QGRAUP"       "Graupel mixing ratio"          "kg kg-1"
 state   real    dfi_qh         ijkftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
-state   real    -              ijkftb   a_moist     1         -     -    -
-state   real    -              ijkftb   g_moist     1         -     -    -
-state   real    a_qv           ijkftb   a_moist     1         -     i01rh36usdf=(bdy_interp:dt)  "A_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    g_qv           ijkftb   g_moist     1         -     i01rh34usdf=(bdy_interp:dt)  "G_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    a_qc           ijkftb   a_moist     1         -     i01rh36usdf=(bdy_interp:dt)  "A_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    g_qc           ijkftb   g_moist     1         -     i01rh34usdf=(bdy_interp:dt)  "G_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    -              ijkft   a_moist     1         -     -    -
+state   real    -              ijkft   g_moist     1         -     -    -
+state   real    a_qv           ijkft   a_moist     1         -     rh   "A_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    g_qv           ijkft   g_moist     1         -     rh   "G_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    a_qc           ijkft   a_moist     1         -     rh   "A_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    g_qc           ijkft   g_moist     1         -     rh   "G_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    a_qr           ijkft   a_moist     1         -     rh   "A_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    g_qr           ijkft   g_moist     1         -     rh   "G_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    a_qi           ijkft   a_moist     1         -     rh   "A_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    g_qi           ijkft   g_moist     1         -     rh   "G_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    a_qs           ijkft   a_moist     1         -     rh   "A_QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    g_qs           ijkft   g_moist     1         -     rh   "G_QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    a_qg           ijkft   a_moist     1         -     rh   "A_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    g_qg           ijkft   g_moist     1         -     rh   "G_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    a_qh           ijkft   a_moist     1         -     rh   "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
 
 # LES---------------!JDM
 
@@ -1230,9 +1232,9 @@ state   real    TMOML          ij      misc         1         -     i012rhd=(int
 
 rconfig   logical   use_background_errors   namelist,wrfvar1  1  .true.   -  "use_background_errors"   ""  ""
 rconfig   logical   write_increments        namelist,wrfvar1  1  .false.  -  "write_increments"        ""  ""
-rconfig   integer   wrfvar_mem_model        namelist,wrfvar1  1  0        -  "wrfvar_mem_model"        ""  "0=WRFVAR, 1=WRF, 2=4DVAR"
 rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "var4d"                   ""  ""
-rconfig   logical   var4d_lbc               namelist,wrfvar1  1  .false.  -  "var4d_lbc"               ""  ""
+rconfig   integer   var4d_bin               namelist,wrfvar1  1  3600     -  "var4d_bin"               ""  ""
+rconfig   logical   var4d_lbc               namelist,wrfvar1  1  .true.   -  "var4d_lbc"               ""  ""
 rconfig   integer   multi_inc               namelist,wrfvar1  1  0        -  "multi_incremental flag"  ""  ""
 rconfig   integer   var4d_coupling          namelist,wrfvar1  1  2        -  "var4d_coupling"          ""  ""
 rconfig   logical   print_detail_radar      namelist,wrfvar1  1  .false.  -  "print_detail_radar"      ""  ""
@@ -1259,7 +1261,6 @@ rconfig   logical   write_mod_filtered_obs  namelist,wrfvar2  1  .false.  -  "wr
 
 rconfig   integer   fg_format               namelist,wrfvar3  1  1        - "fg_format"                ""  "1=WRF, 3=KMA"
 rconfig   integer   ob_format               namelist,wrfvar3  1  2        - "ob_format"                ""  "1=BUFR,2=ASCII"
-rconfig   integer   num_fgat_time           namelist,wrfvar3  1  1        - "num_fgat_time"            ""  ""
 rconfig   logical   thin_conv               namelist,wrfvar4  1  .true.   - "thin_conv"                ""  ""
 rconfig   real      thin_mesh_conv          namelist,wrfvar4  max_instruments  20.0   - "thin_mesh_conv"            ""  ""
 rconfig   logical   use_synopobs            namelist,wrfvar4  1  .true.   - "use_synopobs"             ""  ""
@@ -1394,7 +1395,6 @@ rconfig   real      len_scaling6            namelist,wrfvar7  max_outer_iteratio
 rconfig   real      len_scaling7            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling7"             ""  ""
 rconfig   real      len_scaling8            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling8"             ""  ""
 rconfig   real      je_factor               namelist,wrfvar7  1  1.0      - "je_factor"                ""  ""
-rconfig   real      jl_factor               namelist,wrfvar7  1  1.0      - "jl_factor"                ""  ""
 rconfig   real      power_truncation        namelist,wrfvar7  1  1.0      - "power_truncation"         ""  ""
 
 rconfig   logical   def_sub_domain          namelist,wrfvar8  1  .false.  - "def_sub_domain"           ""  ""
@@ -1540,14 +1540,13 @@ rconfig   character time_window_min         namelist,wrfvar21  1  "2002-08-02_21
 
 rconfig   character time_window_max         namelist,wrfvar22  1  "2002-08-03_03:00:00.0000" -  "time_window_max"    ""  ""
 
-rconfig   logical jcdfi_use                 namelist,wrfvar23     1              .false. rh   "jcdfi_use"   "JcDFI on/off"      ""
-rconfig   logical jcdfi_io                  namelist,wrfvar23     1              .false. rh   "jcdfi_io"   "JcDFI output on/off"      ""
-rconfig   real    jcdfi_tauc                namelist,wrfvar23     1              10800.  rh   "jcdfi_tauc"   "JcDFI cut-off"      ""
-rconfig   real    jcdfi_gama                namelist,wrfvar23     1              1.      rh   "jcdfi_gama"    "Weighting for JcDFI"      ""
-rconfig   real    jcdfi_error_wind          namelist,wrfvar23     1              3.      rh   "jcdfi_error_wind"    "Wind Error for JcDFI"      "m/s"
-rconfig   real    jcdfi_error_t             namelist,wrfvar23     1              1.      rh   "jcdfi_error_t"    "Temp. Error for JcDFI"      "K"
-rconfig   real    jcdfi_error_q             namelist,wrfvar23     1              0.001   rh   "jcdfi_error_q"    "Moist Error for JcDFI"      "kg/kg"
-rconfig   real    jcdfi_error_mu            namelist,wrfvar23     1              1000.   rh   "jcdfi_error_mu"    "Pert. Pres. Error for JcDFI"      "Pa"
+rconfig   logical jcdfi_use                 namelist,perturbation  1  .true.   -   "jcdfi_use"   "JcDFI on/off"      ""
+rconfig   integer jcdfi_diag                namelist,perturbation  1  1        -   "jcdfi_diag"  "JcDFI diag. on/off"      ""
+rconfig   real    jcdfi_error_wind          namelist,perturbation  1  2.       -   "jcdfi_error_wind"    "Wind Error for JcDFI"      "m/s"
+rconfig   real    jcdfi_error_t             namelist,perturbation  1  1.       -   "jcdfi_error_t"    "Temp. Error for JcDFI"      "K"
+rconfig   real    jcdfi_error_mu            namelist,perturbation  1  1000.    -   "jcdfi_error_mu"    "Pert. Pres. Error for JcDFI"      "Pa"
+rconfig   logical enable_identity           namelist,perturbation  1  .false.  -   "enable identity AD/TL model"        ""      ""
+rconfig   logical   trajectory_io           namelist,perturbation  1  .true.   -  "0:disk IO;1:memory IO"   ""  ""
 
 # Time Control
 rconfig   integer run_days                namelist,time_control		1             0       irh   "run_days"              "NUMBER OF DAYS TO RUN"
@@ -1978,6 +1977,8 @@ rconfig   integer forecast_proc_id        namelist,grib2 	        1     255    r
 rconfig   integer production_status       namelist,grib2 	        1     255    rh    "production_status"     "Background processing id for grib2"  ""
 rconfig   integer compression             namelist,grib2 	        1      40    rh    "compression"           "grib2 compression, 40 for JPEG2000 or 41 for PNG"  ""
 
+rconfig   logical trajectory_io           namelist,perturbation         1     .true.  -    "false: disk IO; true: memory IO"  ""      ""
+
 # NAMELIST DERIVED
 rconfig   integer nobs_ndg_vars           derived                       1         6       -        "num_ndg_vars"         "Number of nudging variables"          ""
 rconfig   integer nobs_err_flds           derived                       1         9       -        "num_err_flds"         "Number of error fields"               ""
@@ -2037,20 +2038,21 @@ package   dyn_em_tst   dyn_opt==402                 -             -
 package   dyn_em_var   dyn_opt==502                 -             -
 
 package   passivec1     chem_opt==0                  -             
-package   passiveqv     mp_physics==0                -             moist:qv
-package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr
-package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
-package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr
-package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
-package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
-package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
-package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
-package   milbrandt2mom mp_physics==9                -             state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
-package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
-package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
-package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
-package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   passiveqv     mp_physics==0                -             moist:qv;g_moist:g_qv;a_moist:a_qv
+package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
+package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni,qnr
+package   milbrandt2mom mp_physics==9                -             state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qnc,qnr,qni,qns,qng,qnh
+package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni,qns,qnr,qng
+#package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
+package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;scalar:qnn,qnc,qnr
+package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qnn,qnc,qnr
+package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
@@ -2069,14 +2071,21 @@ package   wdm6scheme_dfi    mp_physics_dfi==16       -                 dfi_moist
 package   thompson07_dfi    mp_physics_dfi==98           -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
 
 package   no4dvarmoist        mp_physics_4dvar==-1       -             -
-package   passiveqv_4dvar     mp_physics_4dvar==0        -             a_moist:a_qv;g_moist:g_qv
-package   kesslerscheme_4dvar mp_physics_4dvar==1        -             a_moist:a_qv,a_qc,a_qr;g_moist:g_qv,g_qc,g_qr
-package   linscheme_4dvar     mp_physics_4dvar==2        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   wsm3scheme_4dvar    mp_physics_4dvar==3        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   wsm5scheme_4dvar    mp_physics_4dvar==4        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   etampnew_4dvar      mp_physics_4dvar==5        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   wsm6scheme_4dvar    mp_physics_4dvar==6        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   thompson_4dvar       mp_physics_4dvar==8       -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   passiveqv_4dvar     mp_physics_4dvar==0        -             g_moist:g_qv;a_moist:a_qv
+package   kesslerscheme_4dvar mp_physics_4dvar==1        -             g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   linscheme_4dvar     mp_physics_4dvar==2        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   wsm3scheme_4dvar    mp_physics_4dvar==3        -             g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   wsm5scheme_4dvar    mp_physics_4dvar==4        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   etampnew_4dvar      mp_physics_4dvar==5        -             g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
+package   wsm6scheme_4dvar    mp_physics_4dvar==6        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   gsfcgcescheme_4dvar mp_physics_4dvar==7        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompson_4dvar      mp_physics_4dvar==8        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   milbrandt2mom_4dvar mp_physics_4dvar==9        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   morr_two_moment_4dvar  mp_physics_4dvar==10    -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   wdm5scheme_4dvar    mp_physics_4dvar==14       -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm6scheme_4dvar    mp_physics_4dvar==16       -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompson07_4dvar    mp_physics_4dvar==98       -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop
@@ -2160,9 +2169,6 @@ endif
 ifndef RUC_CLOUD
 package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,icefrac_gc
 endif
-
-package   varscheme      wrfvar_mem_model==1         -             state:ru,ru_m,ru_tend,u_save,rv,rv_m,rv_tend,v_save,ww,rw,ww_m,ph0,php,tp,t_save,tke,al,alt,alb,zx,zy,rdz,rdzw,obs_savwt,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300,topostdv,toposlpx,toposlpy,slopecat,toposoil,soilcat,vegcat,tke_myj,EL_MYJ,EXCH_H,RTHCUTEN,RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,W0AVG,xf_ens,pr_ens,cugd_tten,cugd_qvten,cugd_ttens,cugd_qvtens,cugd_qcten,RTHFTEN,RQVFTEN,RTHRATEN,RTHRATENLW,RTHRATENSW,CLDFRA,taucldi,taucldc,defor11,defor22,defor12,defor33,defor13,defor23,xkmv,xkmh,xkhv,xkhh,div,BN2
-package   var4dscheme    wrfvar_mem_model==2         -             state:a_u,g_u,a_v,g_v,a_w,g_w,a_ph,g_ph,a_t,g_t,a_mu,g_mu,a_z,g_z;a_moist:a_qv,a_qc,a_qr;g_moist:g_qv,g_qc,g_qr
 
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
@@ -2621,7 +2627,6 @@ state ep_type ep - -
 state xb_type xb - -
 state x_type xa - -
 state x_type x6a - -
-state x_type xa_tmp - -
 state xpose_type xp - -
 
 

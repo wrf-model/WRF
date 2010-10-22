@@ -7,10 +7,13 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
 
    implicit none
    
+
    type(domain), intent(inout)               :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
 
    character*4, intent(in) :: filnam
+
+#ifdef VAR4D
 
    ! Local variables
 
@@ -22,9 +25,6 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
 #ifndef A2C
    real, dimension(ims:ime,jms:jme,kms:kme) :: utmp
    real, dimension(ims:ime,jms:jme,kms:kme) :: vtmp
-   real, dimension(ims:ime,jms:jme) :: mut
-   real, dimension(ims:ime,jms:jme) :: muu
-   real, dimension(ims:ime,jms:jme) :: muv
 #endif
 
    integer ndynopt
@@ -33,282 +33,125 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
 
    spec_bdy_width = grid%spec_bdy_width
 
-   !---------------------------------------------------------------------------
-   ! [7.0] Adjoint of outPUT (inPUT)
-   !---------------------------------------------------------------------------
+   ALLOCATE ( ubdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+   ALLOCATE ( vbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+   ALLOCATE ( tbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+   ALLOCATE ( pbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+   ALLOCATE ( qbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+   ALLOCATE ( mbdy2dtemp2(ims:ime,1:1,    jms:jme) )
 
-   call da_med_boundary_input(grid , config_flags, "wrfbdy_ad01")
+   ubdy3dtemp2 = 0.0 
+   vbdy3dtemp2 = 0.0 
+   tbdy3dtemp2 = 0.0 
+   pbdy3dtemp2 = 0.0 
+   qbdy3dtemp2 = 0.0 
+   mbdy2dtemp2 = 0.0 
 
    !---------------------------------------------------------------------------
    ! [6.5] Add adjoint from LBC
    !---------------------------------------------------------------------------
 
-   do j=jts,jte
-      do i=its,ite
-         mut(i,j) = grid%mu_2(i,j)+grid%mub(i,j)
-      end do
+   CALL a_stuff_bdytend_new ( ubdy3dtemp2 , REAL(interval_seconds) ,                 &
+                              model_grid%a_u_btxs, model_grid%a_u_btxe,     &
+                              model_grid%a_u_btys, model_grid%a_u_btye,     &
+                              'U' , &
+                              spec_bdy_width      , &
+                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                              grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                              grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-      mut(its-1,j) = mut(its,j)
-      mut(ite+1,j) = mut(ite,j)
-   end do
+   CALL a_stuff_bdytend_new ( vbdy3dtemp2 , REAL(interval_seconds) ,                 &
+                              model_grid%a_v_btxs, model_grid%a_v_btxe,     &
+                              model_grid%a_v_btys, model_grid%a_v_btye,     &
+                              'V' , &
+                              spec_bdy_width      , &
+                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                              grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                              grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   do i=its-1,ite+1
-      mut(i,jts-1)=mut(i,jts)
-      mut(i,jte+1)=mut(i,jte)
-   end do
+   CALL a_stuff_bdytend_new ( tbdy3dtemp2 , REAL(interval_seconds) ,                 &
+                              model_grid%a_t_btxs, model_grid%a_t_btxe,     &
+                              model_grid%a_t_btys, model_grid%a_t_btye,     &
+                              'T' , &
+                              spec_bdy_width      , &
+                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                              grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                              grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   do j=jts,jte
-      do i=its,ite+1
-         muu(i,j) = 0.5*(mut(i,j)+mut(i-1,j))
-      end do
-   end do
+   CALL a_stuff_bdytend_new ( pbdy3dtemp2 , REAL(interval_seconds) ,                 &
+                              model_grid%a_ph_btxs, model_grid%a_ph_btxe,     &
+                              model_grid%a_ph_btys, model_grid%a_ph_btye,     &
+                              'W' , &
+                              spec_bdy_width      , &
+                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                              grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                              grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   do j=jts,jte+1
-      do i=its,ite
-         muv(i,j) = 0.5*(mut(i,j)+mut(i,j-1))
-      end do
-   end do
+   CALL a_stuff_bdytend_new ( qbdy3dtemp2 , REAL(interval_seconds) ,                 &
+                              model_grid%a_moist_btxs(:,:,:,P_A_QV), model_grid%a_moist_btxe(:,:,:,P_A_QV),     &
+                              model_grid%a_moist_btys(:,:,:,P_A_QV), model_grid%a_moist_btye(:,:,:,P_A_QV),     &
+                              'T' , &
+                              spec_bdy_width      , &
+                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                              grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                              grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
+   CALL a_stuff_bdytend_new ( mbdy2dtemp2 , REAL(interval_seconds) ,                 &
+                              model_grid%a_mu_btxs, model_grid%a_mu_btxe,     &
+                              model_grid%a_mu_btys, model_grid%a_mu_btye,     &
+                              'M' , &
+                              spec_bdy_width      , &
+                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, 1, 1, &
+                              grid%sm31, grid%em31, grid%sm32, grid%em32, 1, 1, &
+                              grid%sp31, grid%ep31, grid%sp32, grid%ep32, 1, 1 )
 
-   ! A_U
+   CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , ubdy3dtemp2 , grid%u_2 , grid%a_u_2 , 'u' , grid%msfuy , &
+                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
-            grid%a_u_2(i,j,k) = grid%a_u_btxs(j,k,i)/REAL(interval_seconds)*muu(i,j)/grid%msfuy(i,j)
-         end do
-      end do
-   end do
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MIN(ide,ite) , MAX(ide - spec_bdy_width + 1,its) , -1
-            ii = ide - i + 1
-            grid%a_u_2(i,j,k) = grid%a_u_btxe(j,k,ii)/REAL(interval_seconds)*muu(i,j)/grid%msfuy(i,j)
-         end do
-      end do
-   end do
-   grid%a_u_btxs = 0.0
-   grid%a_u_bxs = 0.0
-   grid%a_u_btxe = 0.0
-   grid%a_u_bxe = 0.0
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
-         do i = MAX(ids,its) , MIN(ide,ite)
-            grid%a_u_2(i,j,k) = grid%a_u_btys(i,k,j)/REAL(interval_seconds)*muu(i,j)/grid%msfuy(i,j)
-         end do
-      end do
-   end do
-   do k = kds , kde - 1
-      do j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
-         jj = jde - j
-         do i = MAX(ids,its) , MIN(ide,ite)
-            grid%a_u_2(i,j,k) = grid%a_u_btye(i,k,jj)/REAL(interval_seconds)*muu(i,j)/grid%msfuy(i,j)
-         end do
-      end do
-   end do
-   grid%a_u_btys = 0.0
-   grid%a_u_bys = 0.0
-   grid%a_u_btye = 0.0
-   grid%a_u_bye = 0.0
+   CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , vbdy3dtemp2 , grid%v_2 , grid%a_v_2 , 'v' , grid%msfvx , &
+                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   ! A_V
+   CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , tbdy3dtemp2 , grid%t_2 , grid%a_t_2 , 't' , grid%msfty , &
+                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde,jte)
-         do i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
-            grid%a_v_2(i,j,k) = grid%a_v_btxs(j,k,i)/REAL(interval_seconds)*muv(i,j)/grid%msfvx(i,j)
-         end do
-      end do
-   end do
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde,jte)
-         do i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
-            ii = ide - i
-            grid%a_v_2(i,j,k) = grid%a_v_btxe(j,k,ii)/REAL(interval_seconds)*muv(i,j)/grid%msfvx(i,j)
-         end do
-      end do
-   end do
-   grid%a_v_btxs = 0.0
-   grid%a_v_bxs = 0.0
-   grid%a_v_btxe = 0.0
-   grid%a_v_bxe = 0.0
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_v_2(i,j,k) = grid%a_v_btys(i,k,j)/REAL(interval_seconds)*muv(i,j)/grid%msfvx(i,j)
-         end do
-      end do
-   end do
-   do k = kds , kde - 1
-      do j = MIN(jde,jte) , MAX(jde - spec_bdy_width + 1,jts) , -1
-         jj = jde - j + 1
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_v_2(i,j,k) = grid%a_v_btye(i,k,jj)/REAL(interval_seconds)*muv(i,j)/grid%msfvx(i,j)
-         end do
-      end do
-   end do
-   grid%a_v_btys = 0.0
-   grid%a_v_bys = 0.0
-   grid%a_v_btye = 0.0
-   grid%a_v_bye = 0.0
+   CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , pbdy3dtemp2 , grid%ph_2, grid%a_ph_2, 'h' , grid%msfty , &
+                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   ! A_T
+   CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , qbdy3dtemp2 , grid%moist(:,:,:,P_A_QV), grid%a_moist(:,:,:,P_A_QV),  't' , grid%msfty , &
+                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
-            grid%a_t_2(i,j,k) = grid%a_t_btxs(j,k,i)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-  do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
-            ii = ide - i
-            grid%a_t_2(i,j,k) = grid%a_t_btxe(j,k,ii)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   grid%a_t_btxs = 0.0
-   grid%a_t_bxs = 0.0
-   grid%a_t_btxe = 0.0
-   grid%a_t_bxe = 0.0
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_t_2(i,j,k) = grid%a_t_btys(i,k,j)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   do k = kds , kde - 1
-      do j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
-         jj = jde - j
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_t_2(i,j,k) = grid%a_t_btye(i,k,jj)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   grid%a_t_btys = 0.0
-   grid%a_t_bys = 0.0
-   grid%a_t_btye = 0.0
-   grid%a_t_bye = 0.0
+   DO j = grid%sp32 , MIN(grid%ed32-1,grid%ep32)
+      DO i = grid%sp31 , MIN(grid%ed31-1,grid%ep31)
+         grid%a_mu_2(i,j) = grid%a_mu_2(i,j) + mbdy2dtemp2(i,1,j)
+         mbdy2dtemp2(i,1,j) = 0.0
+      END DO
+   END DO
 
-   ! A_PH
+   model_grid%a_w_btxs = 0.0
+   model_grid%a_w_btxe = 0.0
+   model_grid%a_w_btys = 0.0
+   model_grid%a_w_btye = 0.0
+   model_grid%a_w_bxs = 0.0
+   model_grid%a_w_bxe = 0.0
+   model_grid%a_w_bys = 0.0
+   model_grid%a_w_bye = 0.0
 
-   do k = kds , kde
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
-            grid%a_ph_2(i,j,k) = grid%a_ph_btxs(j,k,i)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   do k = kds , kde
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
-            ii = ide - i
-            grid%a_ph_2(i,j,k) = grid%a_ph_btxe(j,k,ii)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   grid%a_ph_btxs = 0.0
-   grid%a_ph_bxs = 0.0
-   grid%a_ph_btxe = 0.0
-   grid%a_ph_bxe = 0.0
-   do k = kds , kde
-      do j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_ph_2(i,j,k) = grid%a_ph_btys(i,k,j)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   do k = kds , kde
-      do j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
-         jj = jde - j
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_ph_2(i,j,k) = grid%a_ph_btye(i,k,jj)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   grid%a_ph_btys = 0.0
-   grid%a_ph_bys = 0.0
-   grid%a_ph_btye = 0.0
-   grid%a_ph_bye = 0.0
-
-   ! A_MU
-
-   do j = MAX(jds,jts) , MIN(jde-1,jte)
-      do i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
-         grid%a_mu_2(i,j) = grid%a_mu_btxs(j,1,i)/REAL(interval_seconds)
-      end do
-   end do
-   do j = MAX(jds,jts) , MIN(jde-1,jte)
-      do i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
-         ii = ide - i
-         grid%a_mu_2(i,j) = grid%a_mu_btxe(j,1,ii)/REAL(interval_seconds)
-      end do
-   end do
-   grid%a_mu_btxs = 0.0
-   grid%a_mu_bxs = 0.0
-   grid%a_mu_btxe = 0.0
-   grid%a_mu_bxe = 0.0
-   do j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
-      do i = MAX(ids,its) , MIN(ide-1,ite)
-         grid%a_mu_2(i,j) = grid%a_mu_btys(i,1,j)/REAL(interval_seconds)
-      end do
-   end do
-   do j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
-      jj = jde - j
-      do i = MAX(ids,its) , MIN(ide-1,ite)
-         grid%a_mu_2(i,j) = grid%a_mu_btye(i,1,jj)/REAL(interval_seconds)
-      end do
-   end do
-   grid%a_mu_btys = 0.0
-   grid%a_mu_bys = 0.0
-   grid%a_mu_btye = 0.0
-   grid%a_mu_bye = 0.0
-
-   ! A_MOIST
-
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
-            grid%a_moist(i,j,k,P_A_QV) = grid%a_moist_btxs(j,k,i,P_A_QV)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jde-1,jte)
-         do i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
-            ii = ide -i
-            grid%a_moist(i,j,k,P_A_QV) = grid%a_moist_btxe(j,k,ii,P_A_QV)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   grid%a_moist_btxs = 0.0
-   grid%a_moist_bxs = 0.0
-   grid%a_moist_btxe = 0.0
-   grid%a_moist_bxe = 0.0
-   do k = kds , kde - 1
-      do j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_moist(i,j,k,P_A_QV) = grid%a_moist_btys(i,k,j,P_A_QV)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   do k = kds , kde - 1
-      do j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
-         jj = jde - j
-         do i = MAX(ids,its) , MIN(ide-1,ite)
-            grid%a_moist(i,j,k,P_A_QV) = grid%a_moist_btye(i,k,jj,P_A_QV)/REAL(interval_seconds)*(grid%mu_2(i,j)+grid%mub(i,j))
-         end do
-      end do
-   end do
-   grid%a_moist_btys = 0.0
-   grid%a_moist_bys = 0.0
-   grid%a_moist_btye = 0.0
-   grid%a_moist_bye = 0.0
-
-   grid%a_w_2 = 0.0
+   DEALLOCATE ( ubdy3dtemp2 )
+   DEALLOCATE ( vbdy3dtemp2 )
+   DEALLOCATE ( tbdy3dtemp2 )
+   DEALLOCATE ( pbdy3dtemp2 )
+   DEALLOCATE ( qbdy3dtemp2 )
+   DEALLOCATE ( mbdy2dtemp2 )
 
 #ifndef A2C
    !---------------------------------------------------------------------------
@@ -486,9 +329,11 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
    end do
 
    grid%a_moist = 0.0
+   grid%a_w_2 = 0.0
 
    if (trace_use) call da_trace_exit("da_transfer_xatowrftl_adj_lbc")
 
+#endif
 end subroutine da_transfer_xatowrftl_adj_lbc
 
 

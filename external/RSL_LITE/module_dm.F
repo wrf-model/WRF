@@ -1301,12 +1301,6 @@ CONTAINS
 
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
       CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
-#if (DA_CORE == 1)
-      CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
-      CALL wrf_set_dm_communicator( mpi_comm_local )
-      CALL wrf_get_dm_communicator( mpi_comm_here )
-      CALL wrf_termio_dup( mpi_comm_here ) 
-#endif
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )

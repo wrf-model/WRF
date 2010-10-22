@@ -5,9 +5,11 @@ module da_transfer_model
    !---------------------------------------------------------------------------
 
    use module_configure, only : grid_config_rec_type
-   use module_domain, only : domain
-   use module_state_description, only : dyn_em_ad, dyn_em, p_qv,dyn_em_tl, &
-      p_qr, p_qi,p_qs,p_qg,p_qc,num_moist, p_a_qv, p_g_qv, p_a_qc, p_g_qc, p_a_qr, p_g_qr
+   use module_domain, only : domain, domain_clock_get
+   use module_state_description, only : dyn_em_ad, dyn_em, dyn_em_tl, &
+      p_qv, p_qh, p_qr, p_qi, p_qs, p_qg, p_qc, param_first_scalar, num_moist, &
+      p_g_qv, p_g_qh, p_g_qr, p_g_qi, p_g_qs, p_g_qg, p_g_qc, &
+      p_a_qv, p_a_qh, p_a_qr, p_a_qi, p_a_qs, p_a_qg, p_a_qc
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, &
@@ -48,13 +50,19 @@ module da_transfer_model
       da_set_boundary_xb
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
    use da_vtox_transforms, only : da_get_vpoles
-   use da_wrfvar_io, only : da_med_initialdata_output,da_med_initialdata_input, &
-      da_med_initialdata_output_lbc, &
-      da_med_hist_out4, da_med_hist_in6, da_med_hist_in4, da_med_boundary_input
    ! Do not use line below, because it shows that we are passing a scalar to 
    ! an array
    ! use da_wrf_interfaces, only : wrf_dm_bcast_real
-   use da_wrf_interfaces, only : wrf_debug
+#ifdef VAR4D
+   use da_4dvar, only : model_grid, push_ad_forcing, push_tl_pert, pop_tl_pert, kj_swap, &
+       kj_swap_reverse, model_config_flags, g_couple, g_stuff_bdy, a_couple, a_stuff_bdy, &
+       g_stuff_bdytend, a_stuff_bdytend_old, a_stuff_bdytend_new, decouple, da_calc_2rd_fg, &
+       ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1, mbdy2dtemp1, &
+       ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2, mbdy2dtemp2
+   use module_big_step_utilities_em, only : calc_mu_uv
+   use g_module_big_step_utilities_em, only : g_calc_mu_uv
+   use a_module_big_step_utilities_em, only : a_calc_mu_uv
+#endif
 
    implicit none
 
@@ -70,12 +78,15 @@ module da_transfer_model
 #include "da_transfer_wrftltoxa_adj.inc"
 #include "da_transfer_xatowrftl.inc"
 #include "da_transfer_xatowrftl_lbc.inc"
+#include "da_transfer_wrftl_lbc_t0.inc"
 #include "da_transfer_xatowrftl_adj.inc"
 #include "da_transfer_xatowrftl_adj_lbc.inc"
+#include "da_transfer_wrftl_lbc_t0_adj.inc"
 #include "da_transfer_xatoanalysis.inc"
 #include "da_setup_firstguess.inc"
 #include "da_setup_firstguess_wrf.inc"
 #include "da_setup_firstguess_wrf_nmm_regional.inc"
 #include "da_setup_firstguess_kma.inc"
+#include "da_get_2rd_firstguess.inc"
 
 end module da_transfer_model

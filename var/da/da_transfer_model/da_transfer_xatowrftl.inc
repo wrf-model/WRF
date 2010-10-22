@@ -1,4 +1,4 @@
-subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
+subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
 
    !---------------------------------------------------------------------------
    !  Purpose: Convert analysis increments into WRFTL increments 
@@ -9,8 +9,10 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
    
    type(domain), intent(inout)               :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
-
    character*4, intent(in) :: filnam
+   character(len=256), intent(in) :: timestr
+
+#ifdef VAR4D
 
    integer :: i, j, k
    integer :: is, ie, js, je, ks, ke
@@ -302,14 +304,34 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
 
 #endif
 
+   call da_transfer_wrftl_lbc_t0 ( grid )
+
    !---------------------------------------------------------------------------
    ! [7.0] output
    !---------------------------------------------------------------------------
 
-   call da_med_hist_out4(grid , config_flags, filnam)
+   call kj_swap (grid%g_u_2, model_grid%g_u_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_v_2, model_grid%g_v_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_w_2, model_grid%g_w_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_t_2, model_grid%g_t_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   model_grid%g_mu_2 = grid%g_mu_2
+
+   do i = PARAM_FIRST_SCALAR, num_moist
+      call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   enddo
+
+   call push_tl_pert (timestr)
 
    if (trace_use) call da_trace_exit("da_transfer_xatowrftl")
 
+#endif
 end subroutine da_transfer_xatowrftl
 
 

@@ -1,11 +1,11 @@
-subroutine da_read_obs_bufrgpsro (iv, filename)
+subroutine da_read_obs_bufrgpsro (iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: Read NCEP GPSRO BUFR observation file for input to wrfvar
    !---------------------------------------------------------------------------
    !   METHOD: use F90 sequantial data structure to avoid read file twice
    !            so that da_scan_obs_bufr is not necessary any more.
-   !            1. read file radiance data in sequential data structure
+   !            1. read gpsro data in sequential data structure
    !            2. do gross QC check
    !            3. assign sequential data structure to innovation structure
    !                  and deallocate sequential data structure
@@ -19,7 +19,6 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    implicit none
 
    type (iv_type),             intent(inout) :: iv
-   character(len=*), optional, intent(in)    :: filename
 
 #ifdef BUFR
 
@@ -37,6 +36,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    real                 :: height, ref_data, ref_error
    character(len=8)     :: subset
    character(len=80)    :: hdstr
+   character(len=12)    :: filename
    logical              :: outside, outside_all
    type(info_type)      :: info
    type(model_loc_type) :: loc
@@ -46,6 +46,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
    integer              :: err_opt   ! 1: WRF-Var/obsproc, 2: GSI
    real                 :: erh90, erh0, err90, err0
    integer(i_kind)      :: ireadns
+   integer              :: num_bufr(7), numbufr, ibufr
    type datalink_gpsro              !for gpsro data reading
        type (info_type)         :: info
        type(model_loc_type)     :: loc
@@ -56,25 +57,63 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
        integer                  :: obs_global_index
        type(datalink_gpsro), pointer :: next
    end type datalink_gpsro
-   type(datalink_gpsro),pointer  :: head, plink, current
+   type(datalink_gpsro),pointer  :: head, plink
 
    if (trace_use) call da_trace_entry("da_read_obs_bufrgosro")
 
+   nlocal = 0
+   ntotal = 0
+   num_report       = 0
+   num_outside_all  = 0
+   num_outside_time = 0
+   num_p=0
+   ntotal_ifgat(0:num_fgat_time)=0
+   
    ! open file
    !  ---------
-   call da_get_unit(iunit)
-   if (present(filename)) then
-      call closbf(iunit)
-      open(unit   = iunit, FILE   = trim(filename), &
-         iostat =  iost, form = 'unformatted', STATUS = 'OLD')
-      if (iost /= 0) then
-         write(unit=message(1),fmt='(A,I5,A)') &
-            "Error",iost," opening PREPBUFR obs file "//trim(filename)
-         call da_warning(__FILE__,__LINE__,message(1:1))
-         call da_free_unit(iunit)
-         if (trace_use) call da_trace_exit("da_read_obs_bufrgpsro")
-         return
+   num_bufr(:)=0
+   numbufr=0
+   if (num_fgat_time>1) then
+      do i=1,7
+        call da_get_unit(iunit)
+        write(filename,fmt='(A,I1,A)') 'gpsro0',i,'.bufr'
+        open(unit   = iunit, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+        if (iost == 0) then
+           numbufr=numbufr+1
+           num_bufr(numbufr)=i
+        else
+           close (iunit)
+        end if
+        call da_free_unit(iunit)
+      end do
+   else
+      numbufr=1
+   end if
+
+   if (numbufr==0) numbufr=1
+
+bufrfile:  do ibufr=1,numbufr
+   if (num_fgat_time==1) then
+       filename='gpsro.bufr'
+   else
+       if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+          filename='gpsro.bufr'
+      else
+          write(filename,fmt='(A,I1,A)') 'gpsro0',num_bufr(ibufr),'.bufr'
       end if
+   end if
+
+   call da_get_unit(iunit)
+   call closbf(iunit)
+   open(unit   = iunit, FILE   = trim(filename), &
+      iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+   if (iost /= 0) then
+      write(unit=message(1),fmt='(A,I5,A)') &
+         "Error",iost," opening PREPBUFR obs file "//trim(filename)
+      call da_warning(__FILE__,__LINE__,message(1:1))
+      call da_free_unit(iunit)
+      if (trace_use) call da_trace_exit("da_read_obs_bufrgpsro")
+      return
    end if
 
    !--------------------------------
@@ -98,18 +137,6 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
 
    hdstr = 'YEAR MNTH DAYS HOUR MINU PCCF ELRC SAID PTID GEODU'
 
-   nlocal = 0
-   ntotal = 0
-   num_report       = 0
-   num_outside_all  = 0
-   num_outside_time = 0
-   num_p=0
-   ntotal_ifgat(0:num_fgat_time)=0
-   
-   allocate(head)
-   nullify(head%next)
-   plink => head
-   
    reports: do while ( ireadns(iunit,subset,idate) == 0 )
 
       num_report = num_report + 1
@@ -255,6 +282,16 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
                info%lat,info%lon,height,ref_data,ref_qc,ref_error 
          end if
          
+         if (.not. associated(head)) then
+             nullify ( head )
+             allocate ( head )
+             nullify ( head%next )
+             plink => head
+         else
+             allocate ( plink%next )
+             plink => plink%next
+             nullify ( plink%next )
+         end if
 
          plink%info%name      = info%name
          plink%info%platform  = 'FM-116 GPSRF'
@@ -306,12 +343,15 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          end do
          plink%ifgat=ifgat
          num_p=num_p+1
-         allocate(plink%next)    
-         plink => plink%next
-         nullify(plink%next)
          
          end do lev_loop
         end do reports  
+
+        call closbf(iunit)
+        close(iunit)
+        call da_free_unit(iunit)
+
+end do bufrfile
          
          iv%info(gpsref)%ntotal=ntotal
          iv%info(gpsref)%nlocal=nlocal
@@ -362,9 +402,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          reports2: do ii=1,num_p
          
          if (plink%ifgat /= kk) then  !sort iv
-            current => plink
             plink => plink%next
-            deallocate (current)
             cycle reports2
          else
          nlocal=nlocal+1
@@ -419,10 +457,9 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
             iv%gpsref(nlocal)%q(i)%error   = plink%gpsref%q(i)%error
          end do
        end if
-       current => plink
        plink => plink%next
-       deallocate (current)
       end do reports2
+
       ntotal_ifgat(kk)=ntotal_ifgat(kk)+ntotal_ifgat(kk-1)
       iv%info(gpsref)%ptotal(kk)=ntotal_ifgat(kk)
       iv%info(gpsref)%plocal(kk)=nlocal
@@ -437,11 +474,22 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
       call da_error(__FILE__,__LINE__,(/"numbers mismatch between scanning and reading NCEP GSPRO BUFR file"/))
    end if
 
-   deallocate(plink)
-   ! deallocate(head)
-   call closbf(iunit)
-   close(iunit)
-   call da_free_unit(iunit)
+   ! Release the linked list
+   plink => head
+
+   DO WHILE ( ASSOCIATED (plink) )
+      head => plink%next
+      deallocate (plink%gpsref%h)
+      deallocate (plink%gpsref%ref)
+      deallocate (plink%gpsref%p)
+      deallocate (plink%gpsref%t)
+      deallocate (plink%gpsref%q)
+      deallocate ( plink )
+      plink => head
+   ENDDO
+
+   NULLIFY (head)
+
    if (trace_use) call da_trace_exit("da_read_obs_bufrgpsro")
 #else
    call da_error(__FILE__,__LINE__,(/"must compile with BUFR library"/))

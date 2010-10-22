@@ -16,7 +16,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    integer, intent(in)                :: iter   ! internal iteration #.
    integer, intent(in)                :: cv_size    ! Total cv size.
    integer, intent(in)                :: cv_size_jb, cv_size_je, cv_size_jp, cv_size_jl
-   type (xbx_type),intent(in)         :: xbx    ! For header & non-grid arrays.
+   type (xbx_type),intent(inout)      :: xbx    ! For header & non-grid arrays.
    type (be_type), intent(in)         :: be     ! background error structure.
    type (iv_type), intent(inout)      :: iv     ! innovation vector (o-b).
    real, intent(in)                   :: cv     (1:cv_size)   ! control variables.
@@ -81,16 +81,15 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    
    if (present(re)) then
       call da_calculate_grady(iv, re, jo_grad_y)   
-      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, grad_jl, iv, &
+      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
               grid%vp, grid%vv, grid%vp6, grid%vv6, xbx, jo_grad_y, grid, config_flags, .false.)
    else
       call da_transform_vtoy(cv_size, be, grid%ep, cv, iv, grid%vp, &
               grid%vv, grid%vp6, grid%vv6, xbx, y, grid, config_flags)
       call da_calculate_grady(iv, y, jo_grad_y)   
-      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, grad_jl, iv, &
+      call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
               grid%vp, grid%vv, grid%vp6, grid%vv6, xbx, jo_grad_y, grid, config_flags, .true.)
       grad_jo = - grad_jo    !! Compensate for sign in calculation of grad_v (Jo)
-      grad_jl = - grad_jl    !! Compensate for sign in calculation of grad_l (Jl)
    end if
       
    call da_deallocate_y(jo_grad_y)
@@ -105,11 +104,6 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    if (cv_size_je > 0) grad_je(je_start:je_end) = je_factor * cv(je_start:je_end)
    
-   !-------------------------------------------------------------------------
-   ! [3.5] calculate grad_v (jl):
-   !-------------------------------------------------------------------------
-   if (cv_size_jl > 0) grad_jl(jl_start:jl_end) = jl_factor * grad_jl(jl_start:jl_end)
-
    !-------------------------------------------------------------------------
    ! [4.0] calculate grad_v (jp):
    !-------------------------------------------------------------------------
@@ -156,8 +150,13 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
       end do	      
    end if
 
+   !-------------------------------------------------------------------------
+   ! [6.0] calculate grad_v (jb):
+   !-------------------------------------------------------------------------
+   if (cv_size_jl > 0) grad_jl(jl_start:jl_end) = cv(jl_start:jl_end)
+
    !--------------------------------------------------------------------------------------------------
-   ! [7.0] calculate grad_v (j) = grad_v (jb) + grad_v (jo) + grad_v (je) + grad_v (jp) + grad_v (js) + grad_l (jl):
+   ! [7.0] calculate grad_v (j) = grad_v (jb) + grad_v (jo) + grad_v (je) + grad_v (jp) + grad_v (js) + grad_v (jl)
    !--------------------------------------------------------------------------------------------------   
    grad = grad_jo + grad_jb + grad_je + grad_jp + grad_js + grad_jl
 
@@ -176,7 +175,6 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
       if (rootproc) &
          write(grad_unit,fmt='(2x,i2,1x,e10.3,2x,i4,7(1x,f10.3))') & 
                it, eps(it), iter, gnorm_j, gnorm_jb, gnorm_jo, gnorm_je, gnorm_jp, gnorm_js, gnorm_jl
-      if (rootproc) print*,'in_gradj ',it, iter, gnorm_j, gnorm_jb, gnorm_jo
    end if
    if (trace_use) call da_trace_exit("da_calculate_gradj")
 

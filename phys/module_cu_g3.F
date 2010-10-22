@@ -846,6 +846,9 @@ CONTAINS
         cd3(i,k)=entr_rate3
         cdd(i,k)=0.
         zdo3(i,k)=0.
+        hcdo(i,k)=0.
+        qrcdo(i,k)=0.
+        dellaqc(i,k)=0.
       enddo
       enddo
 !
@@ -873,6 +876,7 @@ CONTAINS
         aa3(i)=0.
         aad(i)=0.
         edt(i)=0.
+        edt3(i)=0.
         kstabm(i)=ktf-1
         IERR(i)=0
         IERR2(i)=0

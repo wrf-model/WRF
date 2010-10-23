@@ -3293,9 +3293,6 @@ end if
            IF (grid%adv_moist_cond .or. im==p_qv ) THEN
 
 !======[P1.16.1]======================================================
-             !ZXOMP PARALLEL DO   &
-             !ZXOMP PRIVATE ( ij )
-             moist_tile_loop_1: DO ij = 1 , grid%num_tiles
 
 !========[P1.16.1.1]==================================================
                CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
@@ -3311,6 +3308,9 @@ if (config_flags % sw_call_rk_scalar_tend_moist) then
                CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
                CALL push4backup (moist(:,:,:,im),moist_old(:,:,:,im), &
                                  "moist,moist_old")
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             moist_tile_loop_1: DO ij = 1 , grid%num_tiles
                CALL rk_scalar_tend (  im, im, config_flags,                  &
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%rv_m, grid%ww_m,                  &
@@ -3332,16 +3332,23 @@ if (config_flags % sw_call_rk_scalar_tend_moist) then
                            grid%i_start(ij), grid%i_end(ij), &
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
+             ENDDO moist_tile_loop_1
+             !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_scalar_tend ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
    CALL zero_tend ( advect_tend(ims,kms,jms),     &
                       ids, ide, jds, jde, kds, kde, &
                       ims, ime, jms, jme, kms, kme, &
                       grid%i_start(ij), grid%i_end(ij), &
                       grid%j_start(ij), grid%j_end(ij), &
                       k_start, k_end )
+   ENDDO
+   !$OMP END PARALLEL DO
  end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
@@ -3358,6 +3365,9 @@ if (config_flags % sw_call_relax_bdy_scalar_moist) then
 
                    CALL push4backup (grid%mut, "mut") 
                    CALL push4backup (moist(:,:,:,im), "moist") 
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             DO ij = 1 , grid%num_tiles
                    CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),         &
                                      moist(ims,kms,jms,im),  grid%mut,         &
                                      moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
@@ -3373,6 +3383,8 @@ if (config_flags % sw_call_relax_bdy_scalar_moist) then
                                      grid%i_start(ij), grid%i_end(ij),      &
                                      grid%j_start(ij), grid%j_end(ij),      &
                                      k_start, k_end                        )
+             ENDDO
+             !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call relax_bdy_scalar ' )
@@ -3385,6 +3397,9 @@ end if
 if (config_flags % sw_call_spec_bdy_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdy_scalar ' )
 
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             DO ij = 1 , grid%num_tiles
                    CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
                                      moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
                                      moist_bys(ims,kms,1,im),moist_bye(ims,kms,1,im), &
@@ -3398,6 +3413,8 @@ if (config_flags % sw_call_spec_bdy_scalar_moist) then
                                      grid%i_start(ij), grid%i_end(ij),          &
                                      grid%j_start(ij), grid%j_end(ij),          &
                                      k_start, k_end                               )
+             ENDDO
+             !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdy_scalar ' )
@@ -3408,13 +3425,8 @@ end if
                ENDIF
 BENCH_END(rlx_bdy_scalar_tim)
 
-             ENDDO moist_tile_loop_1
-             !ZXOMP END PARALLEL DO
 
 !======[P1.16.2]======================================================
-             !ZXOMP PARALLEL DO   &
-             !ZXOMP PRIVATE ( ij )
-             moist_tile_loop_2: DO ij = 1 , grid%num_tiles
 
 !========[P1.16.2.1]==================================================
                CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -3433,6 +3445,9 @@ if (config_flags % sw_call_rk_update_scalar_moist) then
                  CALL push4backup ( moist_old(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
                                     "moist_old,moist_tend,advect_tend" ) 
                END IF 
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             moist_tile_loop_2: DO ij = 1 , grid%num_tiles
                CALL rk_update_scalar( im, im,                     &
                                moist_old(ims,kms,jms,im),         &
                                moist(ims,kms,jms,im),             &
@@ -3446,6 +3461,8 @@ if (config_flags % sw_call_rk_update_scalar_moist) then
                                grid%i_start(ij), grid%i_end(ij), &
                                grid%j_start(ij), grid%j_end(ij), &
                                k_start    , k_end                )
+             ENDDO moist_tile_loop_2
+             !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar ' )
@@ -3464,6 +3481,9 @@ if (config_flags % sw_call_flow_dep_bdy_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call flow_dep_bdy ' )
 
                    CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             DO ij = 1 , grid%num_tiles
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
                                 grid%spec_zone,                                 &
@@ -3473,6 +3493,8 @@ if (config_flags % sw_call_flow_dep_bdy_moist) then
                                 grid%i_start(ij), grid%i_end(ij),               &
                                 grid%j_start(ij), grid%j_end(ij),               &
                                 k_start, k_end                               )
+             ENDDO
+             !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call flow_dep_bdy ' )
@@ -3483,8 +3505,6 @@ end if
                ENDIF
 BENCH_END(flow_depbdy_tim)
 
-             ENDDO moist_tile_loop_2
-             !ZXOMP END PARALLEL DO
 
            ENDIF  !-- if (grid%adv_moist_cond .or. im==p_qv ) then
 
@@ -3507,9 +3527,6 @@ BENCH_START(tke_adv_tim)
          ENDIF
 #endif
 !======[P1.17.1]======================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         tke_tile_loop_1: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
 
@@ -3521,6 +3538,9 @@ if (config_flags % sw_call_rk_scalar_tend) then
            CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
            CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
            CALL push4backup (grid%tke_2,grid%tke_1, "tke_2,tke_1")
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+         tke_tile_loop_1: DO ij = 1 , grid%num_tiles
            CALL rk_scalar_tend ( 1, 1, config_flags,                               &
                             rk_step, dt_rk,                                        &
                             grid%ru_m, grid%rv_m, grid%ww_m,                       &
@@ -3542,19 +3562,16 @@ if (config_flags % sw_call_rk_scalar_tend) then
                             grid%i_start(ij), grid%i_end(ij), &
                             grid%j_start(ij), grid%j_end(ij), &
                             k_start    , k_end               )
+         ENDDO tke_tile_loop_1
+         !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_scalar_tend ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
-         ENDDO tke_tile_loop_1
-         !ZXOMP END PARALLEL DO
 
 !======[P1.17.2]======================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         tke_tile_loop_2: DO ij = 1 , grid%num_tiles
 
 !========[P1.17.2.1]==================================================
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -3571,6 +3588,9 @@ if (config_flags % sw_call_rk_update_scalar) then
              CALL push4backup ( grid%tke_1,tke_tend,advect_tend, &
                                 "tke_1,tke_tend,advect_tend" ) 
            END IF 
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+         tke_tile_loop_2: DO ij = 1 , grid%num_tiles
            CALL rk_update_scalar( 1, 1,                             &
                              grid%tke_1,                            &
                              grid%tke_2,                            &
@@ -3584,6 +3604,8 @@ if (config_flags % sw_call_rk_update_scalar) then
                              grid%i_start(ij), grid%i_end(ij), &
                              grid%j_start(ij), grid%j_end(ij), &
                              k_start    , k_end               )
+         ENDDO tke_tile_loop_2
+         !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar ' )
@@ -3598,12 +3620,17 @@ if (config_flags % sw_call_bound_tke) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call bound_tke ' )
 
            CALL push4backup (grid%tke_2, "tke")
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
            CALL bound_tke( grid%tke_2, grid%tke_upper_bound,    &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
                            grid%i_start(ij), grid%i_end(ij),    &
                            grid%j_start(ij), grid%j_end(ij),    &
                            k_start    , k_end                  )
+         ENDDO
+         !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call bound_tke ' )
@@ -3618,6 +3645,9 @@ if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call flow_dep_bdy ' )
 
               CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
               CALL flow_dep_bdy (  grid%tke_2,                 &
                                    grid%ru_m, grid%rv_m, config_flags,     &
                                    grid%spec_zone,             &
@@ -3627,6 +3657,8 @@ if (config_flags % sw_call_flow_dep_bdy) then
                                    grid%i_start(ij), grid%i_end(ij),       &
                                    grid%j_start(ij), grid%j_end(ij),       &
                                    k_start, k_end                               )
+         ENDDO
+         !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call flow_dep_bdy ' )
@@ -3634,8 +3666,6 @@ end if
 ! CHECK NECESSARY SUBROUTINE: flow_dep_bdy }
 
            ENDIF
-         ENDDO tke_tile_loop_2
-         !ZXOMP END PARALLEL DO
 
        ENDIF TKE_advance
 BENCH_END(tke_adv_tim)
@@ -4009,9 +4039,6 @@ BENCH_END(tracer_adv_tim)
 
        scalar_variable_loop: do is = PARAM_FIRST_SCALAR, num_3d_s
 !========[P1.20.1]====================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
 
 !==========[P1.20.1.1]================================================
            CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
@@ -4025,6 +4052,9 @@ if (config_flags % sw_call_rk_scalar_tend) then
            CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
            CALL push4backup (scalar(:,:,:,is),scalar_old(:,:,:,is), &
                              "scalar,scalar_old")
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
            CALL rk_scalar_tend ( is, is, config_flags,                            &
                                  rk_step, dt_rk,                                  &
                                  grid%ru_m, grid%rv_m, grid%ww_m,                 &
@@ -4046,6 +4076,8 @@ if (config_flags % sw_call_rk_scalar_tend) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
+         ENDDO scalar_tile_loop_1
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_scalar_tend ' )
@@ -4063,6 +4095,9 @@ if (config_flags % sw_call_relax_bdy_scalar) then
 
                CALL push4backup (grid%mut, "mut") 
                CALL push4backup (scalar(:,:,:,is), "scalar") 
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
                                        scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is),      &
@@ -4078,6 +4113,8 @@ if (config_flags % sw_call_relax_bdy_scalar) then
                                        grid%i_start(ij), grid%i_end(ij),                       &
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call relax_bdy_scalar ' )
@@ -4090,6 +4127,9 @@ end if
 if (config_flags % sw_call_spec_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdy_scalar ' )
 
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
                CALL spec_bdy_scalar  ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is),      &
                                        scalar_bys(ims,kms,1,is),scalar_bye(ims,kms,1,is),      &
@@ -4103,22 +4143,18 @@ if (config_flags % sw_call_spec_bdy_scalar) then
                                        grid%i_start(ij), grid%i_end(ij),                       &
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_scalar }
 
-
            ENDIF ! b.c test for chem nested boundary condition
 
-         ENDDO scalar_tile_loop_1
-         !ZXOMP END PARALLEL DO
 
 !========[P1.20.2]====================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
 
 !==========[P1.20.2.1]================================================
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -4135,6 +4171,9 @@ if (config_flags % sw_call_rk_update_scalar) then
              CALL push4backup ( scalar_old(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
                                 "scalar_old,scalar_tend,advect_tend" ) 
            END IF 
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
            CALL rk_update_scalar( is, is,                           &
                                   scalar_old(ims,kms,jms,is),       &  ! was scalar_1
                                   scalar(ims,kms,jms,is),           &
@@ -4148,6 +4187,8 @@ if (config_flags % sw_call_rk_update_scalar) then
                                   grid%i_start(ij), grid%i_end(ij), &
                                   grid%j_start(ij), grid%j_end(ij), &
                                   k_start    , k_end               )
+         ENDDO scalar_tile_loop_2
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar ' )
@@ -4165,6 +4206,9 @@ if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call flow_dep_bdy ' )
 
              CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
              CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
@@ -4174,6 +4218,8 @@ if (config_flags % sw_call_flow_dep_bdy) then
                                   grid%i_start(ij), grid%i_end(ij),  &
                                   grid%j_start(ij), grid%j_end(ij),  &
                                   k_start, k_end                    )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call flow_dep_bdy ' )
@@ -4182,8 +4228,6 @@ end if
 
            ENDIF
 
-         ENDDO scalar_tile_loop_2
-         !ZXOMP END PARALLEL DO
 
        ENDDO scalar_variable_loop
 
@@ -7196,9 +7240,6 @@ BENCH_END(adj_calc_p_rho_tim)
 
        adj_scalar_variable_loop: do is = num_3d_s,PARAM_FIRST_SCALAR,-1
 !========[adj_P1.20.2]====================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         adj_scalar_tile_loop_2: DO ij = grid%num_tiles,1,-1
 
 !==========[adj_P1.20.2.2]================================================
            IF( config_flags%specified ) THEN
@@ -7208,6 +7249,9 @@ if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_flow_dep_bdy ' )
 
              CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = grid%num_tiles,1,-1
              CALL a_flow_dep_bdy  ( a_scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
@@ -7217,6 +7261,8 @@ if (config_flags % sw_call_flow_dep_bdy) then
                                   grid%i_start(ij), grid%i_end(ij),  &
                                   grid%j_start(ij), grid%j_end(ij),  &
                                   k_start, k_end                    )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_flow_dep_bdy ' )
@@ -7240,6 +7286,9 @@ if (config_flags % sw_call_rk_update_scalar) then
                                 "scalar_old,scalar_tend,advect_tend" ) 
            END IF 
            CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         adj_scalar_tile_loop_2: DO ij = grid%num_tiles,1,-1
            CALL a_rk_update_scalar( is, is,                           &
                                   scalar_old(ims,kms,jms,is), a_scalar_old(ims,kms,jms,is),   &
                                   scalar(ims,kms,jms,is), a_scalar(ims,kms,jms,is),           &
@@ -7253,19 +7302,16 @@ if (config_flags % sw_call_rk_update_scalar) then
                                   grid%i_start(ij), grid%i_end(ij), &
                                   grid%j_start(ij), grid%j_end(ij), &
                                   k_start    , k_end               )
+         ENDDO adj_scalar_tile_loop_2
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
 
-         ENDDO adj_scalar_tile_loop_2
-         !ZXOMP END PARALLEL DO
 
 !========[adj_P1.20.1]====================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         adj_scalar_tile_loop_1: DO ij = grid%num_tiles,1,-1
 
 !==========[adj_P1.20.1.2]================================================
            IF( config_flags%nested .and. (rk_step == 1) ) THEN
@@ -7275,6 +7321,9 @@ end if
 if (config_flags % sw_call_spec_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdy_scalar scalar' )
 
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = grid%num_tiles,1,-1
                CALL a_spec_bdy_scalar  ( a_scalar_tend(ims,kms,jms,is),                        &
                                        a_scalar_btxs(jms,kms,1,is),a_scalar_btxe(jms,kms,1,is),&
                                        a_scalar_btys(ims,kms,1,is),a_scalar_btye(ims,kms,1,is),&
@@ -7286,6 +7335,8 @@ if (config_flags % sw_call_spec_bdy_scalar) then
                                        grid%i_start(ij), grid%i_end(ij),                       &
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdy_scalar scalar' )
@@ -7298,6 +7349,9 @@ if (config_flags % sw_call_relax_bdy_scalar) then
 
                CALL pop2restore (scalar(:,:,:,is), "scalar") 
                CALL pop2restore (grid%mut, "mut") 
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = grid%num_tiles,1,-1
                CALL a_relax_bdy_scalar ( a_scalar_tend(ims,kms,jms,is),                        &
                                        scalar(ims,kms,jms,is),a_scalar(ims,kms,jms,is),        &
                                        grid%mut,grid%a_mut,                                    &
@@ -7314,6 +7368,8 @@ if (config_flags % sw_call_relax_bdy_scalar) then
                                        grid%i_start(ij), grid%i_end(ij),                       &
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_relax_bdy_scalar scalar' )
@@ -7334,6 +7390,9 @@ if (config_flags % sw_call_rk_scalar_tend) then
            CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
            CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
            IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         adj_scalar_tile_loop_1: DO ij = grid%num_tiles,1,-1
            CALL a_rk_scalar_tend ( is, is, config_flags, &
                        rk_step, dt_rk,         &
                        grid%ru_m, grid%a_ru_m, &
@@ -7357,14 +7416,14 @@ if (config_flags % sw_call_rk_scalar_tend) then
                        grid%i_start(ij), grid%i_end(ij), &
                        grid%j_start(ij), grid%j_end(ij), &
                        k_start    , k_end               )
+         ENDDO adj_scalar_tile_loop_1
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_scalar_tend scalar' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
-         ENDDO adj_scalar_tile_loop_1
-         !ZXOMP END PARALLEL DO
 
        ENDDO adj_scalar_variable_loop
 
@@ -7385,9 +7444,6 @@ BENCH_START(adj_tke_adv_tim)
          ENDIF
 #endif
 !======[adj_P1.17.2]======================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         adj_tke_tile_loop_2: DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.17.2.3]==================================================
            IF( config_flags%specified .or. config_flags%nested ) THEN
@@ -7397,6 +7453,9 @@ if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_flow_dep_bdy tke' )
 
               CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = grid%num_tiles,1,-1
               CALL a_flow_dep_bdy (  grid%a_tke_2,                   &
                                    grid%ru_m, grid%rv_m, config_flags, &
                                    grid%spec_zone,                              &
@@ -7406,6 +7465,8 @@ if (config_flags % sw_call_flow_dep_bdy) then
                                    grid%i_start(ij), grid%i_end(ij),       &
                                    grid%j_start(ij), grid%j_end(ij),       &
                                    k_start, k_end                               )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_flow_dep_bdy tke' )
@@ -7420,12 +7481,17 @@ if (config_flags % sw_call_bound_tke) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_bound_tke ' )
 
            CALL pop2restore (grid%tke_2, "tke")
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         DO ij = grid%num_tiles,1,-1
            CALL a_bound_tke( grid%tke_2,grid%a_tke_2, grid%tke_upper_bound,    &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
                            grid%i_start(ij), grid%i_end(ij),    &
                            grid%j_start(ij), grid%j_end(ij),    &
                            k_start    , k_end                  )
+         ENDDO
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_bound_tke ' )
@@ -7447,6 +7513,9 @@ if (config_flags % sw_call_rk_update_scalar) then
                                 "tke_1,tke_tend,advect_tend" ) 
            END IF 
            CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         adj_tke_tile_loop_2: DO ij = grid%num_tiles,1,-1
            CALL a_rk_update_scalar( 1, 1,                           &
                              grid%tke_1,grid%a_tke_1,               &
                              grid%tke_2,grid%a_tke_2,               &
@@ -7460,19 +7529,16 @@ if (config_flags % sw_call_rk_update_scalar) then
                              grid%i_start(ij), grid%i_end(ij), &
                              grid%j_start(ij), grid%j_end(ij), &
                              k_start    , k_end               )
+         ENDDO adj_tke_tile_loop_2
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar tke' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
 
-         ENDDO adj_tke_tile_loop_2
-         !ZXOMP END PARALLEL DO
 
 !======[adj_P1.17.1]======================================================
-         !ZXOMP PARALLEL DO   &
-         !ZXOMP PRIVATE ( ij )
-         adj_tke_tile_loop_1: DO ij = grid%num_tiles,1,-1
 
            CALL wrf_debug ( 200 , ' call a_rk_scalar_tend for tke' )
 
@@ -7484,6 +7550,9 @@ if (config_flags % sw_call_rk_scalar_tend) then
            CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
            CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
            IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+         !ZXOMP PARALLEL DO   &
+         !ZXOMP PRIVATE ( ij )
+         adj_tke_tile_loop_1: DO ij = grid%num_tiles,1,-1
            CALL a_rk_scalar_tend ( 1, 1, config_flags,                             &
                             rk_step, dt_rk,                                        &
                             grid%ru_m,grid%a_ru_m, grid%rv_m,grid%a_rv_m, grid%ww_m,grid%a_ww_m, &
@@ -7505,14 +7574,14 @@ if (config_flags % sw_call_rk_scalar_tend) then
                             grid%i_start(ij), grid%i_end(ij), &
                             grid%j_start(ij), grid%j_end(ij), &
                             k_start    , k_end               )
+         ENDDO adj_tke_tile_loop_1
+         !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_scalar_tend tke' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
-         ENDDO adj_tke_tile_loop_1
-         !ZXOMP END PARALLEL DO
 
         ENDIF adj_TKE_advance
 BENCH_END(adj_tke_adv_tim)
@@ -7528,9 +7597,6 @@ BENCH_END(adj_tke_adv_tim)
 
 !======[adj_P1.16.2]======================================================
 !      Adjoint of updating moist of grid points
-             !ZXOMP PARALLEL DO   &
-             !ZXOMP PRIVATE ( ij )
-             adj_moist_tile_loop_2: DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.16.2.2]==================================================
 !        Adjoint of updating moist of grid points in spec zone 
@@ -7543,6 +7609,9 @@ if (config_flags % sw_call_flow_dep_bdy_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_flow_dep_bdy ' )
 
                    CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
+             adj_moist_tile_loop_2: DO ij = grid%num_tiles,1,-1
                    CALL a_flow_dep_bdy ( a_moist(ims,kms,jms,im),             &
                                          grid%ru_m, grid%rv_m, config_flags,  &
                                          grid%spec_zone,                      &
@@ -7552,6 +7621,8 @@ if (config_flags % sw_call_flow_dep_bdy_moist) then
                                          grid%i_start(ij), grid%i_end(ij),    &
                                          grid%j_start(ij), grid%j_end(ij),    &
                                          k_start, k_end )
+             ENDDO adj_moist_tile_loop_2
+             !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_flow_dep_bdy ' )
@@ -7580,6 +7651,9 @@ if (config_flags % sw_call_rk_update_scalar_moist) then
                                     "moist_old,moist_tend,advect_tend" ) 
                END IF 
                CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
+             DO ij = grid%num_tiles,1,-1
                CALL a_rk_update_scalar( im, im,                     &
                                moist_old(ims,kms,jms,im), a_moist_old(ims,kms,jms,im),        &
                                moist(ims,kms,jms,im), a_moist(ims,kms,jms,im),            &
@@ -7593,6 +7667,8 @@ if (config_flags % sw_call_rk_update_scalar_moist) then
                                grid%i_start(ij), grid%i_end(ij), &
                                grid%j_start(ij), grid%j_end(ij), &
                                k_start    , k_end                )
+             ENDDO
+             !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar ' )
@@ -7600,14 +7676,9 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
 
 BENCH_END(adj_update_scal_tim)
-             ENDDO adj_moist_tile_loop_2
-             !ZXOMP END PARALLEL DO
 
 !======[adj_P1.16.1]======================================================
 !      Adjoint of calculating moist tendency of grid points 
-             !ZXOMP PARALLEL DO   &
-             !ZXOMP PRIVATE ( ij )
-             adj_moist_tile_loop_1: DO ij = grid%num_tiles,1,-1
 
 !========[adj_P1.16.1.2]==================================================
 !        Adjoint of calculating moist tendency of grid points in relax zone and spec zone
@@ -7619,6 +7690,9 @@ BENCH_START(adj_rlx_bdy_scalar_tim)
 if (config_flags % sw_call_spec_bdy_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdy_scalar ' )
 
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
+             DO ij = grid%num_tiles,1,-1
                    CALL a_spec_bdy_scalar ( a_moist_tend(ims,kms,jms,im),                   &
                                      a_moist_btxs(jms,kms,1,im),a_moist_btxe(jms,kms,1,im), &
                                      a_moist_btys(ims,kms,1,im),a_moist_btye(ims,kms,1,im), &
@@ -7630,6 +7704,8 @@ if (config_flags % sw_call_spec_bdy_scalar_moist) then
                                      grid%i_start(ij), grid%i_end(ij),  &
                                      grid%j_start(ij), grid%j_end(ij),  &
                                      k_start, k_end )
+             ENDDO
+             !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdy_scalar ' )
@@ -7642,6 +7718,9 @@ if (config_flags % sw_call_relax_bdy_scalar_moist) then
 
                    CALL pop2restore (moist(:,:,:,im), "moist") 
                    CALL pop2restore (grid%mut, "mut") 
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
+             DO ij = grid%num_tiles,1,-1
                    CALL a_relax_bdy_scalar ( a_moist_tend(ims,kms,jms,im),            &
                                      moist(ims,kms,jms,im), a_moist(ims,kms,jms,im),  &
                                      grid%mut, grid%a_mut,                            &
@@ -7658,6 +7737,8 @@ if (config_flags % sw_call_relax_bdy_scalar_moist) then
                                      grid%i_start(ij), grid%i_end(ij),      &
                                      grid%j_start(ij), grid%j_end(ij),      &
                                      k_start, k_end )
+             ENDDO
+             !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_relax_bdy_scalar ' )
@@ -7683,6 +7764,9 @@ if (config_flags % sw_call_rk_scalar_tend_moist) then
                CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
                CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
                IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+             !ZXOMP PARALLEL DO   &
+             !ZXOMP PRIVATE ( ij )
+             adj_moist_tile_loop_1: DO ij = grid%num_tiles,1,-1
                CALL a_rk_scalar_tend (  im, im, config_flags,                &
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%a_ru_m, &
@@ -7706,24 +7790,29 @@ if (config_flags % sw_call_rk_scalar_tend_moist) then
                            grid%i_start(ij), grid%i_end(ij), &
                            grid%j_start(ij), grid%j_end(ij), &
                            k_start    , k_end               )
+             ENDDO adj_moist_tile_loop_1
+             !ZXOMP END PARALLEL DO
 
  else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_scalar_tend moist' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
    CALL a_zero_tend ( a_advect_tend(ims,kms,jms),   &
                       ids, ide, jds, jde, kds, kde, &
                       ims, ime, jms, jme, kms, kme, &
                       grid%i_start(ij), grid%i_end(ij), &
                       grid%j_start(ij), grid%j_end(ij), &
                       k_start, k_end )
+   ENDDO
+   !$OMP END PARALLEL DO
 
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 
 BENCH_END(adj_rk_scalar_tend_tim)
 
-             ENDDO adj_moist_tile_loop_1
-             !ZXOMP END PARALLEL DO
 
            ENDIF  !-- if (grid%adv_moist_cond .or. im==p_qv ) then
 

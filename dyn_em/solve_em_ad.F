@@ -5666,9 +5666,6 @@ end if
 #    include "HALO_EM_HYDRO_UV.inc"
 #    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
-     DO ij = 1 , grid%num_tiles
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
 if (config_flags % sw_call_diagnose_w) then
@@ -5676,6 +5673,9 @@ if (config_flags % sw_call_diagnose_w) then
 
        CALL push4backup (grid%muts, "muts")
        CALL push4backup (ph_tend, "ph_tend")
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
        CALL diagnose_w( ph_tend, grid%ph_2, grid%ph_1, grid%w_2, grid%muts, dt_rk,  &
                        grid%u_2, grid%v_2, grid%ht,                           &
                        grid%cf1, grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
@@ -5684,6 +5684,8 @@ if (config_flags % sw_call_diagnose_w) then
                        grid%i_start(ij), grid%i_end(ij),       &
                        grid%j_start(ij), grid%j_end(ij),       &
                        k_start    , k_end                     )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call diagnose_w ' )
@@ -5691,8 +5693,6 @@ end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
 
 
-     END DO
-     !ZXOMP END PARALLEL DO
 
    END IF
 
@@ -5940,9 +5940,6 @@ end if
 !  now set physical b.c on a patch
 
 BENCH_START(bc_2d_tim)
-   !ZXOMP PARALLEL DO   &
-   !ZXOMP PRIVATE ( ij )
-   tile_bc_loop_2: DO ij = 1 , grid%num_tiles
 
      CALL wrf_debug ( 200 , ' call set_phys_bc_dry_2' )
 
@@ -5951,6 +5948,9 @@ BENCH_START(bc_2d_tim)
 if (config_flags % sw_call_set_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_phys_bc_dry_2 ' )
 
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
      CALL set_phys_bc_dry_2( config_flags,                           &
                              grid%u_1, grid%u_2, grid%v_1, grid%v_2, grid%w_1, grid%w_2,           &
                              grid%t_1, grid%t_2, grid%ph_1, grid%ph_2, grid%mu_1, grid%mu_2,       &
@@ -5960,6 +5960,8 @@ if (config_flags % sw_call_set_phys_bc_dry_2) then
                              grid%i_start(ij), grid%i_end(ij),       &
                              grid%j_start(ij), grid%j_end(ij),       &
                              k_start    , k_end                     )
+   END DO
+   !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_phys_bc_dry_2 ' )
@@ -5972,6 +5974,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
      CALL set_physical_bc3d( grid%tke_1, 'p', config_flags,   &
                              ids, ide, jds, jde, kds, kde,            &
                              ims, ime, jms, jme, kms, kme,            &
@@ -5979,6 +5984,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                              grid%i_start(ij), grid%i_end(ij),        &
                              grid%j_start(ij), grid%j_end(ij),        &
                              k_start    , k_end-1                    )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -5991,6 +5998,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
      CALL set_physical_bc3d( grid%tke_2 , 'p', config_flags,  &
                              ids, ide, jds, jde, kds, kde,            &
                              ims, ime, jms, jme, kms, kme,            &
@@ -5998,6 +6008,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                              grid%i_start(ij), grid%i_end(ij),        &
                              grid%j_start(ij), grid%j_end(ij),        &
                              k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -6012,6 +6024,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
        CALL set_physical_bc3d( moist(ims,kms,jms,im), 'p',           &
                                config_flags,                           &
                                ids, ide, jds, jde, kds, kde,           &
@@ -6020,6 +6035,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                grid%i_start(ij), grid%i_end(ij),       &
                                grid%j_start(ij), grid%j_end(ij),       &
                                k_start    , k_end                     )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -6036,6 +6053,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
        CALL set_physical_bc3d( chem(ims,kms,jms,ic) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
@@ -6043,6 +6063,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                grid%i_start(ij), grid%i_end(ij),                  &
                                grid%j_start(ij), grid%j_end(ij),                  &
                                k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -6059,6 +6081,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
        CALL set_physical_bc3d( tracer(ims,kms,jms,ic) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
@@ -6066,6 +6091,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                grid%i_start(ij), grid%i_end(ij),                  &
                                grid%j_start(ij), grid%j_end(ij),                  &
                                k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -6082,6 +6109,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
        CALL set_physical_bc3d( scalar(ims,kms,jms,is) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
@@ -6089,6 +6119,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                grid%i_start(ij), grid%i_end(ij),                  &
                                grid%j_start(ij), grid%j_end(ij),                  &
                                k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
@@ -6098,8 +6130,6 @@ end if
 
      END DO scalar_species_bdy_loop_2
 
-   END DO tile_bc_loop_2
-   !ZXOMP END PARALLEL DO
 BENCH_END(bc_2d_tim)
 
 !==[P8]===============================================================
@@ -6119,14 +6149,14 @@ BENCH_END(bc_2d_tim)
    CALL wrf_debug ( 10 , ' call set_w_surface' )
    fill_w_flag = .false.
 
-   !ZXOMP PARALLEL DO   &
-   !ZXOMP PRIVATE ( ij )
-   DO ij = 1 , grid%num_tiles
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_w_surface{
 if (config_flags % sw_call_set_w_surface) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_w_surface ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
       CALL set_w_surface( config_flags, grid%znw, fill_w_flag,              &
                            grid%w_2, grid%ht,  grid%u_2, grid%v_2,          &
                            grid%cf1, grid%cf2, grid%cf3, grid%rdx, grid%rdy,&
@@ -6136,6 +6166,8 @@ if (config_flags % sw_call_set_w_surface) then
                            grid%i_start(ij), grid%i_end(ij),                &
                            grid%j_start(ij), grid%j_end(ij),                &
                            k_start, k_end                                   )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_w_surface ' )
@@ -6144,8 +6176,6 @@ end if
 
 !                          its, ite, jts, jte, k_start, min(k_end,kde-1),   &
 
-   END DO
-   !ZXOMP END PARALLEL DO
 
 !==[P10]==============================================================
 ! calculate some model diagnostics.
@@ -6363,14 +6393,14 @@ end if
    CALL wrf_debug ( 10 , ' call a_set_w_surface' )
    fill_w_flag = .false.
 
-   !ZXOMP PARALLEL DO   &
-   !ZXOMP PRIVATE ( ij )
-   DO ij = grid%num_tiles,1,-1  
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_w_surface{
 if (config_flags % sw_call_set_w_surface) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_w_surface ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1  
       CALL a_set_w_surface( config_flags, grid%znw, fill_w_flag,            &
                            grid%w_2,grid%a_w_2, grid%ht,                    &
                            grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2,        &
@@ -6381,14 +6411,14 @@ if (config_flags % sw_call_set_w_surface) then
                            grid%i_start(ij), grid%i_end(ij),                &
                            grid%j_start(ij), grid%j_end(ij),                &
                            k_start, k_end                                   )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_w_surface ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_w_surface }
 
-   END DO
-   !ZXOMP END PARALLEL DO
 
 !==[adj_P7]===============================================================
 !-----------------------------------------------------------
@@ -6445,9 +6475,6 @@ end if
 #endif
 
 BENCH_START(adj_bc_2d_tim)
-   !ZXOMP PARALLEL DO   &
-   !ZXOMP PRIVATE ( ij )
-   adj_tile_bc_loop_2: DO ij = grid%num_tiles,1,-1
 
      CALL wrf_debug ( 200 , ' call a_set_phys_bc_dry_2' )
 
@@ -6456,6 +6483,9 @@ BENCH_START(adj_bc_2d_tim)
 if (config_flags % sw_call_set_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_phys_bc_dry_2 ' )
 
+   !ZXOMP PARALLEL DO   &
+   !ZXOMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
      CALL a_set_phys_bc_dry_2( config_flags,                           &
                              grid%u_1,grid%a_u_1, grid%u_2,grid%a_u_2, &
                              grid%v_1,grid%a_v_1, grid%v_2,grid%a_v_2, &
@@ -6469,6 +6499,8 @@ if (config_flags % sw_call_set_phys_bc_dry_2) then
                              grid%i_start(ij), grid%i_end(ij),       &
                              grid%j_start(ij), grid%j_end(ij),       &
                              k_start    , k_end                     )
+   END DO
+   !ZXOMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_phys_bc_dry_2 ' )
@@ -6480,6 +6512,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
      CALL a_set_physical_bc3d( grid%a_tke_1, 'p', config_flags,       &
                              ids, ide, jds, jde, kds, kde,            &
                              ims, ime, jms, jme, kms, kme,            &
@@ -6487,6 +6522,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                              grid%i_start(ij), grid%i_end(ij),        &
                              grid%j_start(ij), grid%j_end(ij),        &
                              k_start    , k_end-1                    )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
@@ -6498,6 +6535,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
      CALL a_set_physical_bc3d( grid%a_tke_2 , 'p', config_flags,      &
                              ids, ide, jds, jde, kds, kde,            &
                              ims, ime, jms, jme, kms, kme,            &
@@ -6505,6 +6545,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                              grid%i_start(ij), grid%i_end(ij),        &
                              grid%j_start(ij), grid%j_end(ij),        &
                              k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
@@ -6519,6 +6561,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
        CALL a_set_physical_bc3d( a_moist(ims,kms,jms,im), 'p',         &
                                config_flags,                           &
                                ids, ide, jds, jde, kds, kde,           &
@@ -6527,6 +6572,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                grid%i_start(ij), grid%i_end(ij),       &
                                grid%j_start(ij), grid%j_end(ij),       &
                                k_start    , k_end                     )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
@@ -6541,6 +6588,9 @@ end if
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
        CALL a_set_physical_bc3d( a_scalar(ims,kms,jms,is) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
@@ -6548,6 +6598,8 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                grid%i_start(ij), grid%i_end(ij),        &
                                grid%j_start(ij), grid%j_end(ij),        &
                                k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
@@ -6556,8 +6608,6 @@ end if
 
      END DO adj_scalar_species_bdy_loop_2
 
-   END DO adj_tile_bc_loop_2
-   !ZXOMP END PARALLEL DO
 BENCH_END(adj_bc_2d_tim)
 
 !==[adj_P5]===============================================================
@@ -6566,9 +6616,6 @@ BENCH_END(adj_bc_2d_tim)
 #    include "HALO_EM_HYDRO_UV.inc"
 #    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
-     !ZXOMP PARALLEL DO   &
-     !ZXOMP PRIVATE ( ij )
-     DO ij = grid%num_tiles,1,-1  
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
 if (config_flags % sw_call_diagnose_w) then
@@ -6576,6 +6623,9 @@ if (config_flags % sw_call_diagnose_w) then
 
        CALL pop2restore (ph_tend, "ph_tend")
        CALL pop2restore (grid%muts, "muts")
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = grid%num_tiles,1,-1  
        CALL a_diagnose_w( ph_tend,a_ph_tend, grid%ph_2,grid%a_ph_2,  grid%ph_1,grid%a_ph_1, &
                        grid%w_2,grid%a_w_2, grid%muts,grid%a_muts, dt_rk,  &
                        grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2, grid%ht,  &
@@ -6585,14 +6635,14 @@ if (config_flags % sw_call_diagnose_w) then
                        grid%i_start(ij), grid%i_end(ij),       &
                        grid%j_start(ij), grid%j_end(ij),       &
                        k_start    , k_end                     )
+     END DO
+     !$OMP END PARALLEL DO
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_diagnose_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
 
-     END DO
-     !ZXOMP END PARALLEL DO
 
    END IF
 

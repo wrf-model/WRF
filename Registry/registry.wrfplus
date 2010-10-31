@@ -542,6 +542,8 @@ halo      HALO_EM_TKE_7_TL dyn_em   80:g_tke_1,g_tke_2
 halo      HALO_EM_MOIST_E_3_TL dyn_em 24:g_moist
 halo      HALO_EM_MOIST_E_5_TL dyn_em 48:g_moist
 halo      HALO_EM_MOIST_E_7_TL dyn_em 80:g_moist
+halo      HALO_EM_MOIST_OLD_E_5_TL dyn_em 48:g_moist_old
+halo      HALO_EM_MOIST_OLD_E_7_TL dyn_em 80:g_moist_old
 period    PERIOD_BDY_EM_MOIST2_TL dyn_em 4:g_moist
 period    PERIOD_BDY_EM_A_TL dyn_em 2:g_ru,g_rv,g_rw,g_ww,g_php,g_alt,g_p,g_muu,g_muv,g_mut,g_ph_2,g_al
 period    PERIOD_BDY_EM_B_TL dyn_em 2:g_ru_tend,g_rv_tend,g_ph_2,g_al,g_p,g_t_1,g_t_save,g_u_save,g_v_save,g_mu_1,g_mu_2,g_mudf,g_php,g_alt,g_pb
@@ -554,6 +556,7 @@ period    PERIOD_BDY_EM_TKE_OLD_TL dyn_em 4:g_tke_1
 period    PERIOD_BDY_EM_D3_TL dyn_em 3:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1,g_t_2,g_ph_1,g_ph_2,g_tke_1,g_tke_2,g_mu_1,g_mu_2
 period    PERIOD_BDY_EM_MOIST_TL dyn_em 4:g_moist
 period    PERIOD_EM_HYDRO_UV_TL dyn_em 1:g_u_2,g_v_2
+period    PERIOD_BDY_EM_MOIST_OLD_TL dyn_em 4:g_moist_old
 ##
 # BEGIN XTRAJ_TYPE DEFINITION:
 #      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>

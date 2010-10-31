@@ -55,7 +55,9 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
                  ,halo_em_tke_advect_3_tl_sub,halo_em_tke_advect_5_tl_sub                  &
                  ,halo_em_d2_3_tl_sub,halo_em_d2_5_tl_sub,period_bdy_em_moist2_tl_sub      &
                  ,halo_em_tke_3_tl_sub,halo_em_tke_5_tl_sub,halo_em_tke_7_tl_sub           &
-                 ,halo_em_moist_e_3_tl_sub,halo_em_moist_e_5_tl_sub,halo_em_moist_e_7_tl_sub
+                 ,halo_em_moist_e_3_tl_sub,halo_em_moist_e_5_tl_sub                        &
+                 ,halo_em_moist_e_7_tl_sub,period_bdy_em_moist_old_tl_sub                  &
+                 ,halo_em_moist_old_e_5_tl_sub,halo_em_moist_old_e_7_tl_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -2767,8 +2769,10 @@ end if
        IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_MOIST_OLD_E_5.inc"
+#     include "HALO_EM_MOIST_OLD_E_5_TL.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
 #     include "HALO_EM_MOIST_OLD_E_7.inc"
+#     include "HALO_EM_MOIST_OLD_E_7_TL.inc"
          ELSE
            WRITE(wrf_err_message,*)'solve_em_tl: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
            CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -2778,6 +2782,7 @@ end if
 
 #ifdef DM_PARALLEL
 #  include "PERIOD_BDY_EM_MOIST_OLD.inc"
+#  include "PERIOD_BDY_EM_MOIST_OLD_TL.inc"
 #endif
 
        !$OMP PARALLEL DO   &
@@ -5972,8 +5977,10 @@ end if
      CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
      IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
 #      include "HALO_EM_MOIST_E_3.inc"
+#      include "HALO_EM_MOIST_E_3_TL.inc"
      ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
 #      include "HALO_EM_MOIST_E_5.inc"
+#      include "HALO_EM_MOIST_E_5_TL.inc"
      ELSE
        WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))

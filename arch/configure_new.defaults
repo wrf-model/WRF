@@ -788,7 +788,7 @@ CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 # -qhot commented out in 3.0.1.1 release because of reported problems with 
 # model results under certain configurations. Use at your own risk.
-FCOPTIM		=       -O3 # -qhot
+FCOPTIM		=       -O3 -qalias_size=209715200 # -qhot
 FCREDUCEDOPT	=       -O2
 FCNOOPT		=       -qnoopt
 FCDEBUG         =       # -g $(FCNOOPT) -qfullpath
@@ -796,7 +796,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       

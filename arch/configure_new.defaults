@@ -111,7 +111,7 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS_NO_G =       -w -Kieee -pc 64 $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS_NO_G =       -w -Kieee -pc 64 -Ktrap=fp $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional

@@ -2996,8 +2996,8 @@ END SUBROUTINE a_rk_update_scalar
    INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
    INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
 
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003
-   REAL,DIMENSION(its:min(ite, ide-1),jts:min(jte, jde-1)) :: Tmpv300
+   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv300
    REAL,DIMENSION(its:min(ite, ide-1),jts:min(jte, jde-1)) :: Tmpv301
    REAL,DIMENSION(its:min(ite, ide-1),kts:min(kte, kde-1),jts:min(jte, jde-1)) :: Tmpv400
 
@@ -3047,6 +3047,8 @@ END SUBROUTINE a_rk_update_scalar
 
    sc_tend(i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc,im) =0.
 
+   ALLOCATE (Tmpv300(its:min(ite, ide-1),jts:min(jte, jde-1)))
+
    DO j =jts, min(jte, jde-1)
      DO i =its, min(ite, ide-1)
      Tmpv300(i,j) =mu_old(i,j) +mu_base(i,j)
@@ -3085,6 +3087,8 @@ END SUBROUTINE a_rk_update_scalar
    i_start_spc:i_end_spc,k_start_spc:k_end_spc,j_start_spc:j_end_spc)
 
    ENDDO
+
+   DEALLOCATE (Tmpv300)
 
    END SUBROUTINE a_rk_update_scalar_pd
 

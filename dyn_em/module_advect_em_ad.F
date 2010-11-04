@@ -51,7 +51,7 @@ CONTAINS
    REAL :: q_im3,a_q_im3,q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1, &
    q_ip2,a_q_ip2,ua,a_ua,vel,a_vel
 
-   INTEGER, DIMENSION(jms:jme) :: WALLS_jp0,WALLS_jp1
+   INTEGER, ALLOCATABLE, DIMENSION(:) :: WALLS_jp0,WALLS_jp1
 
 !REVISED BY WALLS: DUPLICATED FROM THE TL CODE      
    Diff_flux4(q_im2,a_q_im2, q_im1,a_q_im1, q_i,a_q_i, q_ip1,a_q_ip1, &
@@ -94,161 +94,181 @@ CONTAINS
 !  REAL,DIMENSION(1) :: Keep_Lpb26_vel   
    REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004, &
    a_Tmpv5,Tmpv005,a_Tmpv6,Tmpv006,a_Tmpv7,Tmpv007,a_Tmpv8,Tmpv008,a_Tmpv9,Tmpv009
-   REAL,DIMENSION(max(ids+1,its):min(ite,ide-1)) :: Tmpv200
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
-   :max0(min(jte,jde-1),min(ite,ide-1))) :: Tmpv300
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
-   :max0(min(jte,jde-1),min(ite,ide-1))) :: Tmpv301
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
-   :max0(min(jte,jde-1),min(ite,ide-1))) :: Tmpv302
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
-   :max0(min(jte,jde-1),min(ite,ide-1))) :: Tmpv303
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv304
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv305
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv306
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv307
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv308
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv309
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3010
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3011
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3012
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3013
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3014
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3015
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3016
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3017
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3018
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3019
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3020
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3021
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3022
-   REAL,DIMENSION(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)) :: Tmpv3023
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3024
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3025
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3026
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3027
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3028
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3029
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3030
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3031
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3032
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3033
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3034
-   REAL,DIMENSION(kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv3035
-   REAL,DIMENSION(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv400
-   REAL,DIMENSION(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv401
-   REAL,DIMENSION(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv402
-   REAL,DIMENSION(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv403
-   REAL,DIMENSION(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv404
-   REAL,DIMENSION(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv405
-   REAL,DIMENSION(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv406
-   REAL,DIMENSION(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
-   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv407
-   REAL,DIMENSION(its:ite,min0(kts,kts+1):min(kte,kde-1),min0(max(jts,jds+1),jts) &
-   :max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv408
-   REAL,DIMENSION(its:ite,min0(kts,kts+1):min(kte,kde-1),min0(max(jts,jds+1),jts) &
-   :max0(min(jte,jde-1)+1,min(jte,jde-1))) :: Tmpv409
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4010
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4011
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4012
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4013
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4014
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4015
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4016
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4017
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4018
-   REAL,DIMENSION(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4019
-   REAL,DIMENSION(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4020
-   REAL,DIMENSION(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)) &
-    :: Tmpv4021
-   REAL,DIMENSION(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)) &
-    :: Tmpv4022
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4023
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4024
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4025
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4026
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4027
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4028
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4029
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4030
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4031
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4032
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4033
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4034
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4035
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4036
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4037
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4038
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4039
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4040
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1) :: Tmpv4041
-   REAL,DIMENSION(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4042
-   REAL,DIMENSION(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4043
-   REAL,DIMENSION(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)) &
-    :: Tmpv4044
-   REAL,DIMENSION(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)) &
-    :: Tmpv4045
-   REAL,DIMENSION(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4046
-   REAL,DIMENSION(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4047
-   REAL,DIMENSION(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4048
-   REAL,DIMENSION(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4049
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4050
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4051
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4052
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4053
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4054
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4055
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4056
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4057
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4058
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4059
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4060
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4061
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4062
-   REAL,DIMENSION(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4063
-   REAL,DIMENSION(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4064
-   REAL,DIMENSION(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4065
-   REAL,DIMENSION(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4066
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4067
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4068
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4069
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4070
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4071
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4072
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4073
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4074
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4075
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4076
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4077
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4078
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1) :: Tmpv4079
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4080
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4081
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4082
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4083
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4084
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv4085
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4086
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4087
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4088
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4089
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4090
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4091
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4092
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4093
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4094
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4095
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4096
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)) :: Tmpv4097
+   REAL,ALLOCATABLE,DIMENSION(:) :: Tmpv200
+
+   REAL,ALLOCATABLE,DIMENSION(:,:) ::  &
+     Tmpv300, &
+     Tmpv301, Tmpv302, Tmpv303, Tmpv304, Tmpv305, Tmpv306, Tmpv307, Tmpv308, Tmpv309, Tmpv3010, &
+     Tmpv3011, Tmpv3012, Tmpv3013, Tmpv3014, Tmpv3015, Tmpv3016, Tmpv3017, Tmpv3018, Tmpv3019, Tmpv3020, &
+     Tmpv3021, Tmpv3022, Tmpv3023, Tmpv3024, Tmpv3025, Tmpv3026, Tmpv3027, Tmpv3028, Tmpv3029, Tmpv3030, &
+     Tmpv3031, Tmpv3032, Tmpv3033, Tmpv3034, Tmpv3035
+
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) ::  &
+     Tmpv400, &
+     Tmpv401, Tmpv402, Tmpv403, Tmpv404, Tmpv405, Tmpv406, Tmpv407, Tmpv408, Tmpv409, Tmpv4010, &
+     Tmpv4011, Tmpv4012, Tmpv4013, Tmpv4014, Tmpv4015, Tmpv4016, Tmpv4017, Tmpv4018, Tmpv4019, Tmpv4020, &
+     Tmpv4021, Tmpv4022, Tmpv4023, Tmpv4024, Tmpv4025, Tmpv4026, Tmpv4027, Tmpv4028, Tmpv4029, Tmpv4030, &
+     Tmpv4031, Tmpv4032, Tmpv4033, Tmpv4034, Tmpv4035, Tmpv4036, Tmpv4037, Tmpv4038, Tmpv4039, Tmpv4040, &
+     Tmpv4041, Tmpv4042, Tmpv4043, Tmpv4044, Tmpv4045, Tmpv4046, Tmpv4047, Tmpv4048, Tmpv4049, Tmpv4050, &
+     Tmpv4051, Tmpv4052, Tmpv4053, Tmpv4054, Tmpv4055, Tmpv4056, Tmpv4057, Tmpv4058, Tmpv4059, Tmpv4060, &
+     Tmpv4061, Tmpv4062, Tmpv4063, Tmpv4064, Tmpv4065, Tmpv4066, Tmpv4067, Tmpv4068, Tmpv4069, Tmpv4070, &
+     Tmpv4071, Tmpv4072, Tmpv4073, Tmpv4074, Tmpv4075, Tmpv4076, Tmpv4077, Tmpv4078, Tmpv4079, Tmpv4080, &
+     Tmpv4081, Tmpv4082, Tmpv4083, Tmpv4084, Tmpv4085, Tmpv4086, Tmpv4087, Tmpv4088, Tmpv4089, Tmpv4090, &
+     Tmpv4091, Tmpv4092, Tmpv4093, Tmpv4094, Tmpv4095, Tmpv4096, Tmpv4097
 
 !PART II: CALCULATIONS OF B. S. TRAJECTORY
+
+   ALLOCATE ( WALLS_jp0(jms:jme) ) 
+   ALLOCATE ( WALLS_jp1(jms:jme) ) 
+   ALLOCATE (Tmpv200(max(ids+1,its):min(ite,ide-1)))
+   ALLOCATE (Tmpv300(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
+   :max0(min(jte,jde-1),min(ite,ide-1))))
+   ALLOCATE (Tmpv301(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
+   :max0(min(jte,jde-1),min(ite,ide-1))))
+   ALLOCATE (Tmpv302(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
+   :max0(min(jte,jde-1),min(ite,ide-1))))
+   ALLOCATE (Tmpv303(min0(kts,its):max0(min(kte,kde-1),ite),min0(jts,max(ids+1,its)) &
+   :max0(min(jte,jde-1),min(ite,ide-1))))
+   ALLOCATE (Tmpv304(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv305(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv306(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv307(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv308(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv309(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3010(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3011(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3012(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3013(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3014(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3015(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3016(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3017(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3018(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3019(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3020(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3021(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3022(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3023(min0(kts,its):max0(min(kte,kde-1),ite),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3024(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3025(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3026(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3027(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3028(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3029(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3030(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3031(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3032(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3033(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3034(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv3035(kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv400(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv401(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv402(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv403(its:ite,min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv404(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv405(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv406(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv407(its:ite,min0(kts,kts+2):max0(min(kte,kde-1),min(kte,kde-1)-1) &
+   ,min0(max(jts,jds+1),jts):max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv408(its:ite,min0(kts,kts+1):min(kte,kde-1),min0(max(jts,jds+1),jts) &
+   :max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv409(its:ite,min0(kts,kts+1):min(kte,kde-1),min0(max(jts,jds+1),jts) &
+   :max0(min(jte,jde-1)+1,min(jte,jde-1))))
+   ALLOCATE (Tmpv4010(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4011(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4012(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4013(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4014(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4015(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4016(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4017(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4018(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4019(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4020(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4021(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4022(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4023(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4024(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4025(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4026(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4027(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4028(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4029(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4030(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4031(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4032(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4033(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4034(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4035(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4036(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4037(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4038(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4039(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4040(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4041(its:ite,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4042(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4043(ids+3:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4044(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4045(max(ids+1,its):min(ide-1,ite),kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4046(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4047(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4048(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4049(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4050(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4051(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4052(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4053(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4054(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4055(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4056(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4057(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4058(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4059(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4060(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4061(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4062(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4063(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4064(ids+1+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4065(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4066(ids+1:ide-1,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4067(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4068(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4069(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4070(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4071(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4072(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4073(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4074(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4075(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4076(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4077(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4078(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4079(its:ite,kts:min(kte,kde-1),jds+1:min(jte,jde-1)+1))
+   ALLOCATE (Tmpv4080(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4081(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4082(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4083(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4084(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4085(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv4086(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4087(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4088(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4089(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4090(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4091(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4092(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4093(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4094(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4095(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4096(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
+   ALLOCATE (Tmpv4097(its:ite,kts:min(kte,kde-1),max(jds+1,jts):min(jde-2,jte)))
 
 !LPB[0]
       specified = .false.
@@ -5946,6 +5966,29 @@ CONTAINS
 
 !LPB[0]
 !  specified =.false.
+
+   DEALLOCATE (WALLS_jp0)
+   DEALLOCATE (WALLS_jp1)
+
+   DEALLOCATE ( Tmpv200, &
+     Tmpv300, &
+     Tmpv301, Tmpv302, Tmpv303, Tmpv304, Tmpv305, Tmpv306, Tmpv307, Tmpv308, Tmpv309, Tmpv3010, &
+     Tmpv3011, Tmpv3012, Tmpv3013, Tmpv3014, Tmpv3015, Tmpv3016, Tmpv3017, Tmpv3018, Tmpv3019, Tmpv3020, &
+     Tmpv3021, Tmpv3022, Tmpv3023, Tmpv3024, Tmpv3025, Tmpv3026, Tmpv3027, Tmpv3028, Tmpv3029, Tmpv3030, &
+     Tmpv3031, Tmpv3032, Tmpv3033, Tmpv3034, Tmpv3035)
+
+   DEALLOCATE ( &
+     Tmpv400, &
+     Tmpv401, Tmpv402, Tmpv403, Tmpv404, Tmpv405, Tmpv406, Tmpv407, Tmpv408, Tmpv409, Tmpv4010, &
+     Tmpv4011, Tmpv4012, Tmpv4013, Tmpv4014, Tmpv4015, Tmpv4016, Tmpv4017, Tmpv4018, Tmpv4019, Tmpv4020, &
+     Tmpv4021, Tmpv4022, Tmpv4023, Tmpv4024, Tmpv4025, Tmpv4026, Tmpv4027, Tmpv4028, Tmpv4029, Tmpv4030, &
+     Tmpv4031, Tmpv4032, Tmpv4033, Tmpv4034, Tmpv4035, Tmpv4036, Tmpv4037, Tmpv4038, Tmpv4039, Tmpv4040, &
+     Tmpv4041, Tmpv4042, Tmpv4043, Tmpv4044, Tmpv4045, Tmpv4046, Tmpv4047, Tmpv4048, Tmpv4049, Tmpv4050, &
+     Tmpv4051, Tmpv4052, Tmpv4053, Tmpv4054, Tmpv4055, Tmpv4056, Tmpv4057, Tmpv4058, Tmpv4059, Tmpv4060, &
+     Tmpv4061, Tmpv4062, Tmpv4063, Tmpv4064, Tmpv4065, Tmpv4066, Tmpv4067, Tmpv4068, Tmpv4069, Tmpv4070, &
+     Tmpv4071, Tmpv4072, Tmpv4073, Tmpv4074, Tmpv4075, Tmpv4076, Tmpv4077, Tmpv4078, Tmpv4079, Tmpv4080, &
+     Tmpv4081, Tmpv4082, Tmpv4083, Tmpv4084, Tmpv4085, Tmpv4086, Tmpv4087, Tmpv4088, Tmpv4089, Tmpv4090, &
+     Tmpv4091, Tmpv4092, Tmpv4093, Tmpv4094, Tmpv4095, Tmpv4096, Tmpv4097 )
 
    END SUBROUTINE a_advect_u
 
@@ -17388,321 +17431,338 @@ CONTAINS
    REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004, &
    a_Tmpv5,Tmpv005,a_Tmpv6,Tmpv006,a_Tmpv7,Tmpv007,a_Tmpv8,Tmpv008,a_Tmpv9, &
    Tmpv009,a_Tmpv10,Tmpv010,a_Tmpv11,Tmpv011
-   REAL,DIMENSION(min0(jts,its):max0(MAX(jte,jde-1),MAX(ite,ide-1))) :: Tmpv200
-   REAL,DIMENSION(min0(jts,its):max0(MAX(jte,jde-1),MAX(ite,ide-1))) :: Tmpv201
-   REAL,DIMENSION(min0(jts,its):max0(MAX(jte,jde-1),MAX(ite,ide-1))) :: Tmpv202
-   REAL,DIMENSION(jts:MAX(jte,jde-1)) :: Tmpv203
-   REAL,DIMENSION(jts:MAX(jte,jde-1)) :: Tmpv204
-   REAL,DIMENSION(jts:MAX(jte,jde-1)) :: Tmpv205
-   REAL,DIMENSION(jts:MAX(jte,jde-1)) :: Tmpv206
-   REAL,DIMENSION(jts:MAX(jte,jde-1)) :: Tmpv207
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv208
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv209
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv2010
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv2011
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv2012
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv2013
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv2014
-   REAL,DIMENSION(its:MAX(ite,ide-1)) :: Tmpv2015
-   REAL,DIMENSION(min0(its,kts+1):max0(MAX(ite,ide-1),MAX(kte,kde-1)),min0(MIN(jts,jds+ &
-   1),jts,its):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1),MAX(ite,ide-1))) :: Tmpv300
-   REAL,DIMENSION(min0(its,kts+1):max0(MAX(ite,ide-1),MAX(kte,kde-1)),min0(MIN(jts,jds+ &
-   1),jts,its):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1),MAX(ite,ide-1))) :: Tmpv301
-   REAL,DIMENSION(min0(its,kts+1):max0(MAX(ite,ide-1),MAX(kte,kde-1)),min0(MIN(jts,jds+ &
-   1),jts,its):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1),MAX(ite,ide-1))) :: Tmpv302
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv303
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv304
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv305
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv306
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv307
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv308
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv309
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv3010
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv3011
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv3012
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv3013
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
-   +1,MAX(jte,jde-1))) :: Tmpv3014
-   REAL,DIMENSION(min0(MAX(MIN(ids+1,its)+2,ids+3),its):max0(ide-3,MAX(ite,ide-1)) &
-   ,jts:MAX(jte,jde-1)) :: Tmpv3015
-   REAL,DIMENSION(min0(MAX(MIN(ids+1,its)+2,ids+3),its):max0(ide-3,MAX(ite,ide-1)) &
-   ,jts:MAX(jte,jde-1)) :: Tmpv3016
-   REAL,DIMENSION(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)) :: Tmpv3017
-   REAL,DIMENSION(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)) :: Tmpv3018
-   REAL,DIMENSION(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)) :: Tmpv3019
-   REAL,DIMENSION(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)) :: Tmpv3020
-   REAL,DIMENSION(min0(ide-3+1,its):max0(MAX(ide-2,ite)+1,MAX(ite,ide-1)),jts:MAX(jte, &
-   jde-1)) :: Tmpv3021
-   REAL,DIMENSION(min0(ide-3+1,its):max0(MAX(ide-2,ite)+1,MAX(ite,ide-1)),jts:MAX(jte, &
-   jde-1)) :: Tmpv3022
-   REAL,DIMENSION(min0(ide-3+1,its):max0(MAX(ide-2,ite)+1,MAX(ite,ide-1)),jts:MAX(jte, &
-   jde-1)) :: Tmpv3023
-   REAL,DIMENSION(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv3024
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3025
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3026
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3027
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3028
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3029
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3030
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3031
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3032
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3033
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3034
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3035
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3036
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3037
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3038
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) :: Tmpv3039
-   REAL,DIMENSION(MAX(MIN(ids+1,its)+2,ids+3):ide-3,jts:MAX(jte,jde-1)) :: Tmpv3040
-   REAL,DIMENSION(MAX(MIN(ids+1,its)+2,ids+3):ide-3,jts:MAX(jte,jde-1)) :: Tmpv3041
-   REAL,DIMENSION(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)) :: Tmpv3042
-   REAL,DIMENSION(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)) :: Tmpv3043
-   REAL,DIMENSION(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)) :: Tmpv3044
-   REAL,DIMENSION(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)) :: Tmpv3045
-   REAL,DIMENSION(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv3046
-   REAL,DIMENSION(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv3047
-   REAL,DIMENSION(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv3048
-   REAL,DIMENSION(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv3049
-   REAL,DIMENSION(ids+1+1:ide-2,jts:MAX(jte,jde-1)) :: Tmpv3050
-   REAL,DIMENSION(ids+1+1:ide-2,jts:MAX(jte,jde-1)) :: Tmpv3051
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3052
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3053
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3054
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3055
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3056
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3057
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3058
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3059
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3060
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3061
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3062
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3063
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3064
-   REAL,DIMENSION(ids+1+1:ide-2,jts:MAX(jte,jde-1)) :: Tmpv3065
-   REAL,DIMENSION(ids+1+1:ide-2,jts:MAX(jte,jde-1)) :: Tmpv3066
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3067
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3068
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3069
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv3070
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3071
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3072
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3073
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3074
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3075
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3076
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3077
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3078
-   REAL,DIMENSION(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv3079
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)) :: Tmpv3080
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)) :: Tmpv3081
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)) :: Tmpv3082
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)) :: Tmpv3083
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)) :: Tmpv3084
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)) :: Tmpv3085
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)) :: Tmpv3086
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)) :: Tmpv3087
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)) :: Tmpv3088
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)) :: Tmpv3089
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)) :: Tmpv3090
-   REAL,DIMENSION(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)) :: Tmpv3091
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3092
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3093
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3094
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3095
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3096
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3097
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3098
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)) :: Tmpv3099
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
-   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv400
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
-   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv401
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
-   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv402
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
-   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv403
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
-   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv404
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
-   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv405
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
-   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv406
-   REAL,DIMENSION(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
-   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv407
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:max0(MAX(kte,kde-1),MAX(kte,kde-1)+1) &
-   ,min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv408
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:max0(MAX(kte,kde-1),MAX(kte,kde-1)+1) &
-   ,min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))) :: Tmpv409
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4010
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4011
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4012
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4013
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4014
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) &
-    :: Tmpv4015
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) &
-    :: Tmpv4016
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
-   :MAX(jte,jde-1)+1) :: Tmpv4017
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
-   :MAX(jte,jde-1)+1) :: Tmpv4018
-   REAL,DIMENSION(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
-   jde-1)) :: Tmpv4019
-   REAL,DIMENSION(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
-   jde-1)) :: Tmpv4020
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4021
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4022
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4023
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4024
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4025
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4026
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4027
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4028
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
-   1)) :: Tmpv4029
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
-   1)) :: Tmpv4030
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4031
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4032
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4033
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4034
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4035
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4036
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4037
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4038
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4039
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4040
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4041
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4042
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4043
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4044
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
-   +1) :: Tmpv4045
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) &
-    :: Tmpv4046
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1) &
-    :: Tmpv4047
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
-   :MAX(jte,jde-1)+1) :: Tmpv4048
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
-   :MAX(jte,jde-1)+1) :: Tmpv4049
-   REAL,DIMENSION(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
-   jde-1)) :: Tmpv4050
-   REAL,DIMENSION(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
-   jde-1)) :: Tmpv4051
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4052
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4053
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4054
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
-   -1,jts:MAX(jte,jde-1)) :: Tmpv4055
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4056
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4057
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4058
-   REAL,DIMENSION(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)) :: Tmpv4059
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
-   1)) :: Tmpv4060
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
-   1)) :: Tmpv4061
-   REAL,DIMENSION(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv4062
-   REAL,DIMENSION(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv4063
-   REAL,DIMENSION(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)) :: Tmpv4064
-   REAL,DIMENSION(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)) :: Tmpv4065
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4066
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4067
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4068
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4069
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4070
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4071
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4072
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4073
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4074
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4075
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4076
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1) :: Tmpv4077
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1) :: Tmpv4078
-   REAL,DIMENSION(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv4079
-   REAL,DIMENSION(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) :: Tmpv4080
-   REAL,DIMENSION(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)) :: Tmpv4081
-   REAL,DIMENSION(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)) :: Tmpv4082
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4083
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4084
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4085
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4086
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4087
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4088
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4089
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4090
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4091
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4092
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1) :: Tmpv4093
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1) :: Tmpv4094
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1) :: Tmpv4095
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) &
-    :: Tmpv4096
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) &
-    :: Tmpv4097
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) &
-    :: Tmpv4098
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) &
-    :: Tmpv4099
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) &
-    :: Tmpv40100
-   REAL,DIMENSION(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)) &
-    :: Tmpv40101
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)) &
-    :: Tmpv40102
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)) &
-    :: Tmpv40103
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)) &
-    :: Tmpv40104
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)) &
-    :: Tmpv40105
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)) &
-    :: Tmpv40106
-   REAL,DIMENSION(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)) &
-    :: Tmpv40107
 
+   REAL,ALLOCATABLE,DIMENSION(:) ::  &
+     Tmpv200, &
+     Tmpv201, Tmpv202, Tmpv203, Tmpv204, Tmpv205, Tmpv206, Tmpv207, Tmpv208, Tmpv209, Tmpv2010, &
+     Tmpv2011, Tmpv2012, Tmpv2013, Tmpv2014, Tmpv2015
+
+   REAL,ALLOCATABLE,DIMENSION(:,:) ::  &
+     Tmpv300, &
+     Tmpv301, Tmpv302, Tmpv303, Tmpv304, Tmpv305, Tmpv306, Tmpv307, Tmpv308, Tmpv309, Tmpv3010, &
+     Tmpv3011, Tmpv3012, Tmpv3013, Tmpv3014, Tmpv3015, Tmpv3016, Tmpv3017, Tmpv3018, Tmpv3019, Tmpv3020, &
+     Tmpv3021, Tmpv3022, Tmpv3023, Tmpv3024, Tmpv3025, Tmpv3026, Tmpv3027, Tmpv3028, Tmpv3029, Tmpv3030, &
+     Tmpv3031, Tmpv3032, Tmpv3033, Tmpv3034, Tmpv3035, Tmpv3036, Tmpv3037, Tmpv3038, Tmpv3039, Tmpv3040, &
+     Tmpv3041, Tmpv3042, Tmpv3043, Tmpv3044, Tmpv3045, Tmpv3046, Tmpv3047, Tmpv3048, Tmpv3049, Tmpv3050, &
+     Tmpv3051, Tmpv3052, Tmpv3053, Tmpv3054, Tmpv3055, Tmpv3056, Tmpv3057, Tmpv3058, Tmpv3059, Tmpv3060, &
+     Tmpv3061, Tmpv3062, Tmpv3063, Tmpv3064, Tmpv3065, Tmpv3066, Tmpv3067, Tmpv3068, Tmpv3069, Tmpv3070, &
+     Tmpv3071, Tmpv3072, Tmpv3073, Tmpv3074, Tmpv3075, Tmpv3076, Tmpv3077, Tmpv3078, Tmpv3079, Tmpv3080, &
+     Tmpv3081, Tmpv3082, Tmpv3083, Tmpv3084, Tmpv3085, Tmpv3086, Tmpv3087, Tmpv3088, Tmpv3089, Tmpv3090, &
+     Tmpv3091, Tmpv3092, Tmpv3093, Tmpv3094, Tmpv3095, Tmpv3096, Tmpv3097, Tmpv3098, Tmpv3099
+
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) ::  &
+     Tmpv400, &
+     Tmpv401, Tmpv402, Tmpv403, Tmpv404, Tmpv405, Tmpv406, Tmpv407, Tmpv408, Tmpv409, Tmpv4010, &
+     Tmpv4011, Tmpv4012, Tmpv4013, Tmpv4014, Tmpv4015, Tmpv4016, Tmpv4017, Tmpv4018, Tmpv4019, Tmpv4020, &
+     Tmpv4021, Tmpv4022, Tmpv4023, Tmpv4024, Tmpv4025, Tmpv4026, Tmpv4027, Tmpv4028, Tmpv4029, Tmpv4030, &
+     Tmpv4031, Tmpv4032, Tmpv4033, Tmpv4034, Tmpv4035, Tmpv4036, Tmpv4037, Tmpv4038, Tmpv4039, Tmpv4040, &
+     Tmpv4041, Tmpv4042, Tmpv4043, Tmpv4044, Tmpv4045, Tmpv4046, Tmpv4047, Tmpv4048, Tmpv4049, Tmpv4050, &
+     Tmpv4051, Tmpv4052, Tmpv4053, Tmpv4054, Tmpv4055, Tmpv4056, Tmpv4057, Tmpv4058, Tmpv4059, Tmpv4060, &
+     Tmpv4061, Tmpv4062, Tmpv4063, Tmpv4064, Tmpv4065, Tmpv4066, Tmpv4067, Tmpv4068, Tmpv4069, Tmpv4070, &
+     Tmpv4071, Tmpv4072, Tmpv4073, Tmpv4074, Tmpv4075, Tmpv4076, Tmpv4077, Tmpv4078, Tmpv4079, Tmpv4080, &
+     Tmpv4081, Tmpv4082, Tmpv4083, Tmpv4084, Tmpv4085, Tmpv4086, Tmpv4087, Tmpv4088, Tmpv4089, Tmpv4090, &
+     Tmpv4091, Tmpv4092, Tmpv4093, Tmpv4094, Tmpv4095, Tmpv4096, Tmpv4097, Tmpv4098, Tmpv4099, Tmpv40100, &
+     Tmpv40101, Tmpv40102, Tmpv40103, Tmpv40104, Tmpv40105, Tmpv40106, Tmpv40107
+
+
+   ALLOCATE (Tmpv200(min0(jts,its):max0(MAX(jte,jde-1),MAX(ite,ide-1))))
+   ALLOCATE (Tmpv201(min0(jts,its):max0(MAX(jte,jde-1),MAX(ite,ide-1))))
+   ALLOCATE (Tmpv202(min0(jts,its):max0(MAX(jte,jde-1),MAX(ite,ide-1))))
+   ALLOCATE (Tmpv203(jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv204(jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv205(jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv206(jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv207(jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv208(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv209(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv2010(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv2011(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv2012(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv2013(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv2014(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv2015(its:MAX(ite,ide-1)))
+   ALLOCATE (Tmpv300(min0(its,kts+1):max0(MAX(ite,ide-1),MAX(kte,kde-1)),min0(MIN(jts,jds+ &
+   1),jts,its):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1),MAX(ite,ide-1))))
+   ALLOCATE (Tmpv301(min0(its,kts+1):max0(MAX(ite,ide-1),MAX(kte,kde-1)),min0(MIN(jts,jds+ &
+   1),jts,its):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1),MAX(ite,ide-1))))
+   ALLOCATE (Tmpv302(min0(its,kts+1):max0(MAX(ite,ide-1),MAX(kte,kde-1)),min0(MIN(jts,jds+ &
+   1),jts,its):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1),MAX(ite,ide-1))))
+   ALLOCATE (Tmpv303(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv304(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv305(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv306(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv307(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv308(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv309(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv3010(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv3011(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv3012(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv3013(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv3014(its:MAX(ite,ide-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1) &
+   +1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv3015(min0(MAX(MIN(ids+1,its)+2,ids+3),its):max0(ide-3,MAX(ite,ide-1)) &
+   ,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3016(min0(MAX(MIN(ids+1,its)+2,ids+3),its):max0(ide-3,MAX(ite,ide-1)) &
+   ,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3017(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3018(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3019(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3020(min0(MIN(ids+1,its),its):max0(MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,MAX(ite,ide-1)),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3021(min0(ide-3+1,its):max0(MAX(ide-2,ite)+1,MAX(ite,ide-1)),jts:MAX(jte, &
+   jde-1)))
+   ALLOCATE (Tmpv3022(min0(ide-3+1,its):max0(MAX(ide-2,ite)+1,MAX(ite,ide-1)),jts:MAX(jte, &
+   jde-1)))
+   ALLOCATE (Tmpv3023(min0(ide-3+1,its):max0(MAX(ide-2,ite)+1,MAX(ite,ide-1)),jts:MAX(jte, &
+   jde-1)))
+   ALLOCATE (Tmpv3024(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3025(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3026(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3027(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3028(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3029(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3030(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3031(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3032(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3033(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3034(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3035(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3036(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3037(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3038(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3039(its:MAX(ite,ide-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3040(MAX(MIN(ids+1,its)+2,ids+3):ide-3,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3041(MAX(MIN(ids+1,its)+2,ids+3):ide-3,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3042(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3043(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3044(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3045(MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3)-1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3046(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3047(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3048(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3049(ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3050(ids+1+1:ide-2,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3051(ids+1+1:ide-2,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3052(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3053(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3054(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3055(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3056(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3057(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3058(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3059(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3060(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3061(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3062(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3063(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3064(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3065(ids+1+1:ide-2,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3066(ids+1+1:ide-2,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3067(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3068(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3069(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3070(kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3071(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3072(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3073(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3074(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3075(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3076(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3077(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3078(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3079(its:MAX(ite,ide-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv3080(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3081(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3082(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3083(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3084(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3085(MIN(ids+1,its):MAX(ide-2,ite),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv3086(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv3087(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv3088(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv3089(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv3090(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv3091(its:MAX(ite,ide-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv3092(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv3093(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv3094(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv3095(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv3096(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv3097(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv3098(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv3099(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)))
+   ALLOCATE (Tmpv400(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
+   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv401(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
+   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv402(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
+   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv403(its:MAX(ite,ide-1),min0(kts+1,kts+3):max0(MAX(kte,kde-1) &
+   ,MAX(kte,kde-1)-1),min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv404(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
+   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv405(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
+   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv406(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
+   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv407(its:MAX(ite,ide-1),min0(kts+1,kts+2):MAX(kte,kde-1),min0(MIN(jts,jds+ &
+   1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv408(its:MAX(ite,ide-1),kts+1:max0(MAX(kte,kde-1),MAX(kte,kde-1)+1) &
+   ,min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv409(its:MAX(ite,ide-1),kts+1:max0(MAX(kte,kde-1),MAX(kte,kde-1)+1) &
+   ,min0(MIN(jts,jds+1),jts):max0(MAX(jte,jde-1)+1,MAX(jte,jde-1))))
+   ALLOCATE (Tmpv4010(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4011(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4012(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4013(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4014(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4015(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4016(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4017(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
+   :MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4018(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
+   :MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4019(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
+   jde-1)))
+   ALLOCATE (Tmpv4020(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
+   jde-1)))
+   ALLOCATE (Tmpv4021(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4022(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4023(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4024(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4025(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4026(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4027(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4028(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4029(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
+   1)))
+   ALLOCATE (Tmpv4030(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
+   1)))
+   ALLOCATE (Tmpv4031(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4032(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4033(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4034(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4035(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4036(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4037(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4038(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4039(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4040(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4041(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4042(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4043(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4044(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4045(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1) &
+   +1))
+   ALLOCATE (Tmpv4046(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4047(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),MIN(jts,jds+1):MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4048(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
+   :MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4049(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,MIN(jts,jds+1) &
+   :MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4050(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
+   jde-1)))
+   ALLOCATE (Tmpv4051(MAX(MIN(ids+1,its)+2,ids+3):ide-3,kts+1:MAX(kte,kde-1),jts:MAX(jte, &
+   jde-1)))
+   ALLOCATE (Tmpv4052(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4053(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4054(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4055(kts+1:MAX(kte,kde-1),MIN(ids+1,its):MAX(MIN(ids+1,its)+2,ids+3) &
+   -1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4056(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4057(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4058(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4059(kts+1:MAX(kte,kde-1),ide-3+1:MAX(ide-2,ite)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4060(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
+   1)))
+   ALLOCATE (Tmpv4061(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde- &
+   1)))
+   ALLOCATE (Tmpv4062(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4063(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4064(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4065(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4066(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4067(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4068(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4069(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4070(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4071(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4072(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4073(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4074(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4075(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4076(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4077(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4078(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4079(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4080(ids+1+1:ide-2,kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4081(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4082(ids+1:ide-2,kts+1:MAX(kte,kde-1)+1,jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4083(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4084(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4085(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4086(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4087(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4088(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4089(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4090(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4091(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4092(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4093(its:MAX(ite,ide-1),kts:MAX(kte,kde-1),jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4094(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4095(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1)+1,jds+1:MAX(jte,jde-1)+1))
+   ALLOCATE (Tmpv4096(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4097(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4098(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv4099(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv40100(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv40101(MIN(ids+1,its):MAX(ide-2,ite),kts+1:MAX(kte,kde-1),jts:MAX(jte,jde-1)))
+   ALLOCATE (Tmpv40102(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv40103(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv40104(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv40105(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv40106(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)))
+   ALLOCATE (Tmpv40107(its:MAX(ite,ide-1),kts+1:MAX(kte,kde-1),MIN(jds+1,jts):MAX(jde-2,jte)))
 !PART II: CALCULATIONS OF B. S. TRAJECTORY
 
 !LPB[0]
@@ -24911,6 +24971,38 @@ CONTAINS
 !LPB[0]
 !  specified =.false.
 
+   DEALLOCATE(  &
+     Tmpv200, &
+     Tmpv201, Tmpv202, Tmpv203, Tmpv204, Tmpv205, Tmpv206, Tmpv207, Tmpv208, Tmpv209, Tmpv2010, &
+     Tmpv2011, Tmpv2012, Tmpv2013, Tmpv2014, Tmpv2015)
+
+   DEALLOCATE(  &
+     Tmpv300, &
+     Tmpv301, Tmpv302, Tmpv303, Tmpv304, Tmpv305, Tmpv306, Tmpv307, Tmpv308, Tmpv309, Tmpv3010, &
+     Tmpv3011, Tmpv3012, Tmpv3013, Tmpv3014, Tmpv3015, Tmpv3016, Tmpv3017, Tmpv3018, Tmpv3019, Tmpv3020, &
+     Tmpv3021, Tmpv3022, Tmpv3023, Tmpv3024, Tmpv3025, Tmpv3026, Tmpv3027, Tmpv3028, Tmpv3029, Tmpv3030, &
+     Tmpv3031, Tmpv3032, Tmpv3033, Tmpv3034, Tmpv3035, Tmpv3036, Tmpv3037, Tmpv3038, Tmpv3039, Tmpv3040, &
+     Tmpv3041, Tmpv3042, Tmpv3043, Tmpv3044, Tmpv3045, Tmpv3046, Tmpv3047, Tmpv3048, Tmpv3049, Tmpv3050, &
+     Tmpv3051, Tmpv3052, Tmpv3053, Tmpv3054, Tmpv3055, Tmpv3056, Tmpv3057, Tmpv3058, Tmpv3059, Tmpv3060, &
+     Tmpv3061, Tmpv3062, Tmpv3063, Tmpv3064, Tmpv3065, Tmpv3066, Tmpv3067, Tmpv3068, Tmpv3069, Tmpv3070, &
+     Tmpv3071, Tmpv3072, Tmpv3073, Tmpv3074, Tmpv3075, Tmpv3076, Tmpv3077, Tmpv3078, Tmpv3079, Tmpv3080, &
+     Tmpv3081, Tmpv3082, Tmpv3083, Tmpv3084, Tmpv3085, Tmpv3086, Tmpv3087, Tmpv3088, Tmpv3089, Tmpv3090, &
+     Tmpv3091, Tmpv3092, Tmpv3093, Tmpv3094, Tmpv3095, Tmpv3096, Tmpv3097, Tmpv3098, Tmpv3099)
+
+   DEALLOCATE(  &
+     Tmpv400, &
+     Tmpv401, Tmpv402, Tmpv403, Tmpv404, Tmpv405, Tmpv406, Tmpv407, Tmpv408, Tmpv409, Tmpv4010, &
+     Tmpv4011, Tmpv4012, Tmpv4013, Tmpv4014, Tmpv4015, Tmpv4016, Tmpv4017, Tmpv4018, Tmpv4019, Tmpv4020, &
+     Tmpv4021, Tmpv4022, Tmpv4023, Tmpv4024, Tmpv4025, Tmpv4026, Tmpv4027, Tmpv4028, Tmpv4029, Tmpv4030, &
+     Tmpv4031, Tmpv4032, Tmpv4033, Tmpv4034, Tmpv4035, Tmpv4036, Tmpv4037, Tmpv4038, Tmpv4039, Tmpv4040, &
+     Tmpv4041, Tmpv4042, Tmpv4043, Tmpv4044, Tmpv4045, Tmpv4046, Tmpv4047, Tmpv4048, Tmpv4049, Tmpv4050, &
+     Tmpv4051, Tmpv4052, Tmpv4053, Tmpv4054, Tmpv4055, Tmpv4056, Tmpv4057, Tmpv4058, Tmpv4059, Tmpv4060, &
+     Tmpv4061, Tmpv4062, Tmpv4063, Tmpv4064, Tmpv4065, Tmpv4066, Tmpv4067, Tmpv4068, Tmpv4069, Tmpv4070, &
+     Tmpv4071, Tmpv4072, Tmpv4073, Tmpv4074, Tmpv4075, Tmpv4076, Tmpv4077, Tmpv4078, Tmpv4079, Tmpv4080, &
+     Tmpv4081, Tmpv4082, Tmpv4083, Tmpv4084, Tmpv4085, Tmpv4086, Tmpv4087, Tmpv4088, Tmpv4089, Tmpv4090, &
+     Tmpv4091, Tmpv4092, Tmpv4093, Tmpv4094, Tmpv4095, Tmpv4096, Tmpv4097, Tmpv4098, Tmpv4099, Tmpv40100, &
+     Tmpv40101, Tmpv40102, Tmpv40103, Tmpv40104, Tmpv40105, Tmpv40106, Tmpv40107)
+
    END SUBROUTINE a_advect_w
 
    SUBROUTINE a_advect_scalar_pd(field,a_field,field_old,a_field_old,tendency, &
@@ -25041,623 +25133,821 @@ CONTAINS
 !"max(jts-1,jds):min(jte+1,jde-1)" to "min(jts-1,jds):min(jte+1,jde-1)"
 !"min0(max(its-1,ids),max(its-1,ids+1))" to "min0(its-1,ids)"
 
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv300
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv301
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv302
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv303
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv304
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv305
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv306
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv307
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv308
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv309
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3010
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3011
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3012
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3013
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3014
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3015
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3016
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3017
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3018
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3019
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3020
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3021
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3022
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3023
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3024
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3025
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3026
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3027
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3028
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3029
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3030
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3031
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3032
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3033
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3034
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3035
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3036
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3037
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3038
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3039
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3040
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3041
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3042
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3043
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3044
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3045
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3046
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3047
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3048
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3049
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3050
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3051
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3052
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3053
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3054
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3055
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3056
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3057
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3058
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3059
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3060
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3061
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3062
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3063
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3064
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3065
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3066
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3067
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3068
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3069
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3070
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3071
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3072
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3073
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3074
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3075
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3076
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3077
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3078
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3079
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3080
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3081
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3082
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3083
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3084
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3085
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3086
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3087
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3088
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3089
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3090
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3091
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3092
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3093
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3094
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3095
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv400
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv401
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv402
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv403
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv404
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv405
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv406
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv407
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv408
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv409
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4010
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4011
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4012
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4013
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4014
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4015
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4016
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4017
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4018
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4019
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4020
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4021
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4022
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4023
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4024
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4025
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4026
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4027
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4028
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4029
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4030
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4031
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4032
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4033
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4034
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4035
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4036
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4037
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4038
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4039
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4040
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4041
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4042
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4043
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4044
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4045
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4046
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4047
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4048
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4049
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4050
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4051
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4052
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4053
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4054
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4055
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4056
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4057
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4058
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4059
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4060
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4061
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4062
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4063
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4064
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4065
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4066
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4067
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4068
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4069
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4070
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4071
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4072
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4073
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4074
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4075
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4076
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4077
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4078
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4079
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4080
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4081
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4082
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4083
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4084
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4085
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4086
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4087
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4088
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4089
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4090
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4091
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4092
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4093
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4094
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4095
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4096
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4097
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4098
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4099
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40100
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40101
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40102
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40103
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40104
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40105
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40106
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40107
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40108
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40109
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40110
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40111
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40112
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40113
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40114
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40115
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40116
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40117
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40118
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40119
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40120
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40121
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40122
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40123
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40124
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40125
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40126
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40127
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40128
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40129
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40130
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40131
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40132
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40133
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40134
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40135
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40136
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40137
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40138
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40139
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40140
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40141
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40142
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40143
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40144
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40145
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40146
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40147
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40148
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40149
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40150
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40151
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40152
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40153
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40154
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40155
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40156
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40157
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv300
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv301
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv302
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv303
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv304
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv305
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv306
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv307
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv308
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv309
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3010
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3011
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3012
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3013
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3014
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3015
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3016
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3017
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3018
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3019
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3020
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3021
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3022
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3023
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3024
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3025
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3026
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3027
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3028
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3029
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3030
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3031
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3032
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3033
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3034
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3035
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3036
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3037
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3038
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3039
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3040
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3041
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3042
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3043
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3044
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3045
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3046
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3047
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3048
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3049
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3050
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3051
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3052
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3053
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3054
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3055
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3056
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3057
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3058
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3059
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3060
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3061
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3062
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3063
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3064
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3065
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3066
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3067
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3068
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3069
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3070
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3071
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3072
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3073
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3074
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3075
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3076
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3077
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3078
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3079
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3080
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3081
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3082
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3083
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3084
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3085
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3086
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3087
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3088
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3089
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3090
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3091
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3092
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3093
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3094
+   REAL,ALLOCATABLE,DIMENSION(:,:) :: Tmpv3095
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv400
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv401
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv402
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv403
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv404
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv405
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv406
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv407
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv408
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv409
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv4010, &
+     Tmpv4011, Tmpv4012, Tmpv4013, Tmpv4014, Tmpv4015, Tmpv4016, Tmpv4017, Tmpv4018, Tmpv4019, Tmpv4020, &
+     Tmpv4021, Tmpv4022, Tmpv4023, Tmpv4024, Tmpv4025, Tmpv4026, Tmpv4027, Tmpv4028, Tmpv4029, Tmpv4030, &
+     Tmpv4031, Tmpv4032, Tmpv4033, Tmpv4034, Tmpv4035, Tmpv4036, Tmpv4037, Tmpv4038, Tmpv4039, Tmpv4040, &
+     Tmpv4041, Tmpv4042, Tmpv4043, Tmpv4044, Tmpv4045, Tmpv4046, Tmpv4047, Tmpv4048, Tmpv4049, Tmpv4050, &
+     Tmpv4051, Tmpv4052, Tmpv4053, Tmpv4054, Tmpv4055, Tmpv4056, Tmpv4057, Tmpv4058, Tmpv4059, Tmpv4060, &
+     Tmpv4061, Tmpv4062, Tmpv4063, Tmpv4064, Tmpv4065, Tmpv4066, Tmpv4067, Tmpv4068, Tmpv4069, Tmpv4070, &
+     Tmpv4071, Tmpv4072, Tmpv4073, Tmpv4074, Tmpv4075, Tmpv4076, Tmpv4077, Tmpv4078, Tmpv4079, Tmpv4080, &
+     Tmpv4081, Tmpv4082, Tmpv4083, Tmpv4084, Tmpv4085, Tmpv4086, Tmpv4087, Tmpv4088, Tmpv4089, Tmpv4090, &
+     Tmpv4091, Tmpv4092, Tmpv4093, Tmpv4094, Tmpv4095, Tmpv4096, Tmpv4097, Tmpv4098, Tmpv4099, Tmpv40100, &
+     Tmpv40101, Tmpv40102, Tmpv40103, Tmpv40104, Tmpv40105, Tmpv40106, Tmpv40107, Tmpv40108, Tmpv40109, Tmpv40110, &
+     Tmpv40111, Tmpv40112, Tmpv40113, Tmpv40114, Tmpv40115, Tmpv40116, Tmpv40117, Tmpv40118, Tmpv40119, Tmpv40120, &
+     Tmpv40121, Tmpv40122, Tmpv40123, Tmpv40124, Tmpv40125, Tmpv40126, Tmpv40127, Tmpv40128, Tmpv40129, Tmpv40130, &
+     Tmpv40131, Tmpv40132, Tmpv40133, Tmpv40134, Tmpv40135, Tmpv40136, Tmpv40137, Tmpv40138, Tmpv40139, Tmpv40140, &
+     Tmpv40141, Tmpv40142, Tmpv40143, Tmpv40144, Tmpv40145, Tmpv40146, Tmpv40147, Tmpv40148, Tmpv40149, Tmpv40150, &
+     Tmpv40151, Tmpv40152, Tmpv40153, Tmpv40154, Tmpv40155, Tmpv40156, Tmpv40157
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40158
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40159
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40160
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40161
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40162
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40163
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40164
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40165
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40166
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40167
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40168
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40169
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40170
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40171
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40172
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40173
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40174
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40175
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40176
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40177
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40178
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40179
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40180
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40181
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40182
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40183
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40184
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40185
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40186
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40187
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40188
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40189
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40182
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40183
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40184
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40185
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40186
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40187
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40188
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40189
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40190
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40191
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40192
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40193
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40194
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40195
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40196
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40197
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40198
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40199
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40200
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40201
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40202
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40203
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40204
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40205
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40206
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40207
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40208
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40209
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40210
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40211
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40212
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40213
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40214
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40215
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40216
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40217
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40218
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40219
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40220
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40221
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40214
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40215
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40216
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40217
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40218
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40219
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40220
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) :: Tmpv40221
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40222
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40223
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40224
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40225
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40226
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40227
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40228
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40229
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40230
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40231
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40232
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40233
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40234
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40235
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40236
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
+   REAL,ALLOCATABLE,DIMENSION(:,:,:) &
     :: Tmpv40237
 
+   ALLOCATE (Tmpv300(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv301(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv302(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv303(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv304(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv305(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv306(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv307(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv308(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv309(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3010(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3011(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3012(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3013(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3014(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3015(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3016(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3017(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3018(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3019(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3020(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3021(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3022(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3023(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3024(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3025(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3026(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3027(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3028(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3029(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
+   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))))
+   ALLOCATE (Tmpv3030(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3031(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3032(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3033(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3034(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3035(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3036(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3037(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3038(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3039(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3040(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3041(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3042(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3043(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3044(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3045(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3046(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3047(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3048(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3049(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3050(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3051(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3052(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3053(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3054(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3055(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3056(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3057(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3058(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3059(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3061(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3062(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3063(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3064(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3065(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3066(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3067(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3068(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3060(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3069(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3070(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3071(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3072(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3073(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3074(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3075(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3076(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3077(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3078(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3079(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3080(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3081(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3082(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3083(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3084(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3085(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3086(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3087(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3088(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3089(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3090(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3091(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3092(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3093(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3094(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv3095(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv400(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv401(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv402(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv403(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv404(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv405(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv406(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv407(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv408(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv409(min0(its-1,ids):max0(min(ite+1,ide-1) &
+   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
+   ,min(jte+1,jde-2))))
+   ALLOCATE (Tmpv4010(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4011(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4012(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4013(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4014(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4015(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4016(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4017(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4018(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4019(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4020(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4021(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4022(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4023(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4024(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4025(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4026(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4027(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4028(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4029(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4030(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4031(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
+   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
+   +1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4032(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4033(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4034(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4035(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4036(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4037(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4038(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4039(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
+   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))))
+   ALLOCATE (Tmpv4040(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4041(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4042(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4043(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4044(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4045(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4046(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4047(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4048(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4049(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4050(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4051(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4052(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4053(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4054(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4055(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4056(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4057(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4058(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4059(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4060(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4061(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4062(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4063(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4064(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4065(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4066(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4067(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4068(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4069(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4070(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4071(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4072(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4073(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4074(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4075(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4076(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4077(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4078(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv4079(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4080(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4081(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4082(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4083(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4084(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4085(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4086(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4087(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4088(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4089(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4090(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4091(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4092(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4093(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4094(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4095(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4096(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4097(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4098(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv4099(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40100(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40101(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40102(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40103(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40104(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40105(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40106(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40107(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40108(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40109(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40110(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40111(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40112(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40113(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40114(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40115(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40116(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40117(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40118(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
+   :min(jte+1,jde-2)+1))
+   ALLOCATE (Tmpv40119(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40120(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40121(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40122(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40123(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40124(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40125(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40126(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40127(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40128(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40129(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40130(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40131(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40132(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40133(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40134(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40135(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40136(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40137(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40138(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40139(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40140(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40141(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40142(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40143(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40144(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40145(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40146(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40147(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40148(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40149(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40150(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40151(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40152(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40153(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40154(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40155(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40156(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40157(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
+   :min(jte+1,jde-1)))
+   ALLOCATE (Tmpv40158(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40159(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40160(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40161(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40162(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40163(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40164(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40165(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40166(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40167(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40168(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40169(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40170(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40171(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40172(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40173(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40174(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40175(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40176(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40177(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40178(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40179(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40180(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40181(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40182(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40183(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40184(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40185(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40186(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40187(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40188(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40189(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40190(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40191(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40192(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40193(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40194(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40195(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40196(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40197(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40198(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40199(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40200(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40201(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40202(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40203(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40204(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40205(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40206(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40207(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40208(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40209(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40210(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40211(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40212(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40213(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40214(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40215(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40216(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40217(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40218(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40219(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40220(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40221(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)))
+   ALLOCATE (Tmpv40222(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40223(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40224(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40225(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40226(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40227(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40228(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40229(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1))
+   ALLOCATE (Tmpv40230(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
+   ALLOCATE (Tmpv40231(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
+   ALLOCATE (Tmpv40232(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
+   ALLOCATE (Tmpv40233(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
+   ALLOCATE (Tmpv40234(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
+   ALLOCATE (Tmpv40235(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
+   ALLOCATE (Tmpv40236(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
+   ALLOCATE (Tmpv40237(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)))
 !PART II: CALCULATIONS OF B. S. TRAJECTORY
 
 !LPB[0]
@@ -34478,6 +34768,44 @@ CONTAINS
    END IF
 
 !LPB[0]
+
+   DEALLOCATE ( Tmpv300, &
+     Tmpv301, Tmpv302, Tmpv303, Tmpv304, Tmpv305, Tmpv306, Tmpv307, Tmpv308, Tmpv309, Tmpv3010, &
+     Tmpv3011, Tmpv3012, Tmpv3013, Tmpv3014, Tmpv3015, Tmpv3016, Tmpv3017, Tmpv3018, Tmpv3019, Tmpv3020, &
+     Tmpv3021, Tmpv3022, Tmpv3023, Tmpv3024, Tmpv3025, Tmpv3026, Tmpv3027, Tmpv3028, Tmpv3029, Tmpv3030, &
+     Tmpv3031, Tmpv3032, Tmpv3033, Tmpv3034, Tmpv3035, Tmpv3036, Tmpv3037, Tmpv3038, Tmpv3039, Tmpv3040, &
+     Tmpv3041, Tmpv3042, Tmpv3043, Tmpv3044, Tmpv3045, Tmpv3046, Tmpv3047, Tmpv3048, Tmpv3049, Tmpv3050, &
+     Tmpv3051, Tmpv3052, Tmpv3053, Tmpv3054, Tmpv3055, Tmpv3056, Tmpv3057, Tmpv3058, Tmpv3059, Tmpv3060, &
+     Tmpv3061, Tmpv3062, Tmpv3063, Tmpv3064, Tmpv3065, Tmpv3066, Tmpv3067, Tmpv3068, Tmpv3069, Tmpv3070, &
+     Tmpv3071, Tmpv3072, Tmpv3073, Tmpv3074, Tmpv3075, Tmpv3076, Tmpv3077, Tmpv3078, Tmpv3079, Tmpv3080, &
+     Tmpv3081, Tmpv3082, Tmpv3083, Tmpv3084, Tmpv3085, Tmpv3086, Tmpv3087, Tmpv3088, Tmpv3089, Tmpv3090, &
+     Tmpv3091, Tmpv3092, Tmpv3093, Tmpv3094, Tmpv3095)
+   DEALLOCATE ( &
+     Tmpv400, &
+     Tmpv401, Tmpv402, Tmpv403, Tmpv404, Tmpv405, Tmpv406, Tmpv407, Tmpv408, Tmpv409, Tmpv4010, &
+     Tmpv4011, Tmpv4012, Tmpv4013, Tmpv4014, Tmpv4015, Tmpv4016, Tmpv4017, Tmpv4018, Tmpv4019, Tmpv4020, &
+     Tmpv4021, Tmpv4022, Tmpv4023, Tmpv4024, Tmpv4025, Tmpv4026, Tmpv4027, Tmpv4028, Tmpv4029, Tmpv4030, &
+     Tmpv4031, Tmpv4032, Tmpv4033, Tmpv4034, Tmpv4035, Tmpv4036, Tmpv4037, Tmpv4038, Tmpv4039, Tmpv4040, &
+     Tmpv4041, Tmpv4042, Tmpv4043, Tmpv4044, Tmpv4045, Tmpv4046, Tmpv4047, Tmpv4048, Tmpv4049, Tmpv4050, &
+     Tmpv4051, Tmpv4052, Tmpv4053, Tmpv4054, Tmpv4055, Tmpv4056, Tmpv4057, Tmpv4058, Tmpv4059, Tmpv4060, &
+     Tmpv4061, Tmpv4062, Tmpv4063, Tmpv4064, Tmpv4065, Tmpv4066, Tmpv4067, Tmpv4068, Tmpv4069, Tmpv4070, &
+     Tmpv4071, Tmpv4072, Tmpv4073, Tmpv4074, Tmpv4075, Tmpv4076, Tmpv4077, Tmpv4078, Tmpv4079, Tmpv4080, &
+     Tmpv4081, Tmpv4082, Tmpv4083, Tmpv4084, Tmpv4085, Tmpv4086, Tmpv4087, Tmpv4088, Tmpv4089, Tmpv4090, &
+     Tmpv4091, Tmpv4092, Tmpv4093, Tmpv4094, Tmpv4095, Tmpv4096, Tmpv4097, Tmpv4098, Tmpv4099, Tmpv40100, &
+     Tmpv40101, Tmpv40102, Tmpv40103, Tmpv40104, Tmpv40105, Tmpv40106, Tmpv40107, Tmpv40108, Tmpv40109, Tmpv40110, &
+     Tmpv40111, Tmpv40112, Tmpv40113, Tmpv40114, Tmpv40115, Tmpv40116, Tmpv40117, Tmpv40118, Tmpv40119, Tmpv40120, &
+     Tmpv40121, Tmpv40122, Tmpv40123, Tmpv40124, Tmpv40125, Tmpv40126, Tmpv40127, Tmpv40128, Tmpv40129, Tmpv40130, &
+     Tmpv40131, Tmpv40132, Tmpv40133, Tmpv40134, Tmpv40135, Tmpv40136, Tmpv40137, Tmpv40138, Tmpv40139, Tmpv40140, &
+     Tmpv40141, Tmpv40142, Tmpv40143, Tmpv40144, Tmpv40145, Tmpv40146, Tmpv40147, Tmpv40148, Tmpv40149, Tmpv40150, &
+     Tmpv40151, Tmpv40152, Tmpv40153, Tmpv40154, Tmpv40155, Tmpv40156, Tmpv40157, Tmpv40158, Tmpv40159, Tmpv40160, &
+     Tmpv40161, Tmpv40162, Tmpv40163, Tmpv40164, Tmpv40165, Tmpv40166, Tmpv40167, Tmpv40168, Tmpv40169, Tmpv40170, &
+     Tmpv40171, Tmpv40172, Tmpv40173, Tmpv40174, Tmpv40175, Tmpv40176, Tmpv40177, Tmpv40178, Tmpv40179, Tmpv40180, &
+     Tmpv40181, Tmpv40182, Tmpv40183, Tmpv40184, Tmpv40185, Tmpv40186, Tmpv40187, Tmpv40188, Tmpv40189, Tmpv40190, &
+     Tmpv40191, Tmpv40192, Tmpv40193, Tmpv40194, Tmpv40195, Tmpv40196, Tmpv40197, Tmpv40198, Tmpv40199, Tmpv40200, &
+     Tmpv40201, Tmpv40202, Tmpv40203, Tmpv40204, Tmpv40205, Tmpv40206, Tmpv40207, Tmpv40208, Tmpv40209, Tmpv40210, &
+     Tmpv40211, Tmpv40212, Tmpv40213, Tmpv40214, Tmpv40215, Tmpv40216, Tmpv40217, Tmpv40218, Tmpv40219, Tmpv40220, &
+     Tmpv40221, Tmpv40222, Tmpv40223, Tmpv40224, Tmpv40225, Tmpv40226, Tmpv40227, Tmpv40228, Tmpv40229, Tmpv40230, &
+     Tmpv40231, Tmpv40232, Tmpv40233, Tmpv40234, Tmpv40235, Tmpv40236, Tmpv40237)
 
    END SUBROUTINE a_advect_scalar_pd
 

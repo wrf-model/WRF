@@ -152,7 +152,7 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS      =       -w -Kieee -pc 64 -Ktrap=fp $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
@@ -541,7 +541,7 @@ FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =       
 BYTESWAPIO      =       -byteswapio
-FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS_NO_G =       -w -Kieee -Ktrap=fp $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional

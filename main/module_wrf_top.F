@@ -618,7 +618,7 @@ ENDIF
 
    ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.
    CALL wrf_finalize
-
+   STOP
    END SUBROUTINE wrf_adtl_check
 
    SUBROUTINE wrf_run_tl( )

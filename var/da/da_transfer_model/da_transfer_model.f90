@@ -17,7 +17,7 @@ module da_transfer_model
       ntasks, data_order_xy
    use module_comm_dm, only : halo_xa_sub, halo_init_sub, halo_psichi_uv_adj_sub, &
                               halo_xb_sub, halo_xb_uv_sub, halo_em_c_sub, halo_em_c_tl_sub, &
-                              halo_xa_a_sub
+                              halo_xa_a_sub, halo_x6a_a_sub
 #endif
 
    use da_control, only : cos_xls, sin_xls, cos_xle, sin_xle, trace_use, &

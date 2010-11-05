@@ -220,7 +220,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    allocate ( g_v(ims:ime,jms:jme, kms:kme) )
 
 #ifdef DM_PARALLEL
-#include "HALO_XA_A.inc"
+#include "HALO_X6A_A.inc"
 
    allocate ( utmp(ims:ime,jms:jme, kms:kme) )
    allocate ( vtmp(ims:ime,jms:jme, kms:kme) )
@@ -303,6 +303,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    ! The southern boundary
    g_v(is:ie,js,ks:ke)=(3.0*grid%x6a%v(is:ie,js,ks:ke)-grid%x6a%v(is:ie,js+1,ks:ke))/2.0
 
+#endif
+
    CALL g_couple ( model_config_flags, grid%mu_2 , g_mu, grid%mub , ubdy3dtemp2 , grid%u_2 , g_u , 'u' , grid%msfuy , &
                    grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
@@ -331,8 +333,6 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                                       grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                                       grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-
-#endif
 
    !---------------------------------------------------------------------------
    ! [7.0] tidy up

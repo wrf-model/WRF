@@ -324,6 +324,7 @@ da_4dvar.o :
 	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(WRFPLUS_DIR)/dyn_em -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f
 
 da_wrfvar_main.o \
+da_wrfvar_io.o \
 da_wrfvar_top.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b

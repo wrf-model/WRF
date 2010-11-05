@@ -2315,6 +2315,7 @@ halo      HALO_PSICHI_UV     dyn_em 24:vp%v1,vp%v2,xb%cori,xb%rho,xa%u,xa%v,xa%p
 halo      HALO_BAL_EQN_ADJ   dyn_em 24:xp%v1z
 halo      HALO_PSICHI_UV_ADJ dyn_em 24:xa%u,xa%v,xa%psfc
 halo      HALO_XA_A          dyn_em 4:xa%u,xa%v
+halo      HALO_X6A_A         dyn_em 4:x6a%u,x6a%v
 halo      HALO_EM_C_TL       dyn_em 4:g_u_2,g_v_2
 halo      HALO_XB        dyn_em 24:xb%psac,xb%rough,xb%u,xb%v,xb%w,xb%wh,xb%t,xb%p,xb%q,xb%qrn,xb%qcw,xb%qci,xb%qt,xb%rho,xb%rh,xb%h,xb%hf,xb%u10,xb%v10,xb%t2,xb%q2,xb%psfc,xb%regime,xb%ztd,xb%tpw,xb%speed,xb%tb19v,xb%tb19h,xb%tb22v,xb%tb37v,xb%tb37h,xb%tb85v,xb%tb85h,xb%ref,xb%delt,xb%slp
 halo      HALO_XA            dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qci,xa%qt

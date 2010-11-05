@@ -103,7 +103,8 @@ bufrfile:  do ibufr=1,numbufr
       end if
    end if
 
-   call da_get_unit(iunit)
+   ! Use specified unit number, so we can control its endian format in environment.
+   iunit = 96
    call closbf(iunit)
    open(unit   = iunit, FILE   = trim(filename), &
       iostat =  iost, form = 'unformatted', STATUS = 'OLD')
@@ -111,7 +112,6 @@ bufrfile:  do ibufr=1,numbufr
       write(unit=message(1),fmt='(A,I5,A)') &
          "Error",iost," opening PREPBUFR obs file "//trim(filename)
       call da_warning(__FILE__,__LINE__,message(1:1))
-      call da_free_unit(iunit)
       if (trace_use) call da_trace_exit("da_read_obs_bufrgpsro")
       return
    end if
@@ -127,7 +127,7 @@ bufrfile:  do ibufr=1,numbufr
          "Error",iret," reading GPSRO BUFR obs file "//trim(filename)
       call da_warning(__FILE__,__LINE__,message(1:1))
       call closbf(iunit)
-      call da_free_unit(iunit)
+      close(iunit)
       if (trace_use) call da_trace_exit("da_read_obs_bufrgpsro")
       return
    end if
@@ -349,7 +349,6 @@ bufrfile:  do ibufr=1,numbufr
 
         call closbf(iunit)
         close(iunit)
-        call da_free_unit(iunit)
 
 end do bufrfile
          

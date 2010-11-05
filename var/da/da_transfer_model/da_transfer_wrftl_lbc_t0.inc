@@ -133,6 +133,10 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
    model_grid%g_w_btxe = 0.0
    model_grid%g_w_btys = 0.0
    model_grid%g_w_btye = 0.0
+   model_grid%g_t_btxs = 0.0
+   model_grid%g_t_btxe = 0.0
+   model_grid%g_t_btys = 0.0
+   model_grid%g_t_btye = 0.0
    model_grid%g_ph_btxs = 0.0
    model_grid%g_ph_btxe = 0.0
    model_grid%g_ph_btys = 0.0

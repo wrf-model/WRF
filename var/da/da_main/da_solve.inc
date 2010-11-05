@@ -392,6 +392,7 @@
 
          call wrfu_finalize
          call wrf_shutdown
+         stop
       end if
 
       ! [8.4] Minimize cost function:

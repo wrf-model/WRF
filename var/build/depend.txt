@@ -46,14 +46,14 @@ module_internal_header_util.o : module_internal_header_util.F
 module_interp_fcn.o : module_interp_fcn.F 
 module_io.o : module_io.F md_calls.inc module_driver_constants.o module_dm.o module_streams.o module_state_description.o module_configure.o 
 module_io_domain.o : module_io_domain.F module_utility.o module_state_description.o module_domain.o module_configure.o module_io_wrf.o module_io.o 
-module_io_quilt.o : module_io_quilt.F module_quilt_outbuf_ops.o module_state_description.o module_configure.o module_timing.o module_internal_header_util.o 
+module_io_quilt.o : module_io_quilt.F module_quilt_outbuf_ops.o module_state_description.o module_dm.o module_configure.o module_timing.o module_internal_header_util.o 
 module_io_wrf.o : module_io_wrf.F module_streams.o module_date_time.o module_wrf_error.o 
 module_llxy.o : module_llxy.F module_wrf_error.o 
 module_machine.o : module_machine.F module_driver_constants.o 
 module_model_constants.o : module_model_constants.F 
 module_nesting.o : module_nesting.F module_utility.o module_configure.o module_domain.o module_driver_constants.o module_machine.o 
 module_optional_input.o : module_optional_input.F module_io_wrf.o module_io_domain.o module_configure.o module_domain.o 
-module_quilt_outbuf_ops.o : module_quilt_outbuf_ops.F module_state_description.o 
+module_quilt_outbuf_ops.o : module_quilt_outbuf_ops.F module_timing.o module_state_description.o 
 module_sm.o : module_sm.F 
 module_soil_pre.o : module_soil_pre.F module_state_description.o module_date_time.o 
 module_state_description.o : module_state_description.F 

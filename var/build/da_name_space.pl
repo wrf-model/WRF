@@ -3,16 +3,6 @@
 #
 
 use strict;
-use Term::ANSIColor;
-use Time::HiRes qw(sleep gettimeofday);
-use Time::localtime;
-use Sys::Hostname;
-use File::Path;
-use File::Basename;
-use File::Compare;
-use IPC::Open2;
-use Net::FTP;
-use Getopt::Long;
 
 my @Subs_list;
 my $Sub;
@@ -34,7 +24,7 @@ foreach ( @Subs_list ) {
 while ($line = <>) {
   foreach $Sub ( @Subs_list ) {
     #print " replace $Sub\n" if ($line =~ /$Sub/i);
-    $line =~ s/$Sub/da_$Sub/gi; 
+    $line =~ s/\b$Sub/da_$Sub/gi; 
   }
   print $line;
 }
@@ -130,6 +120,7 @@ get_ijk_from_
 get_dims_from_grid_id
 rsl_comm_iter
 rsl_comm_iter_init
+reset_dm_debug
 set_dm_debug
 get_dm_debug
 set_wrf_debug_level

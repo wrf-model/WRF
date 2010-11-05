@@ -176,7 +176,6 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    num_bufr(:)=0
    numbufr=0
    if (num_fgat_time>1) then
-
       do i=1,7
          call da_get_unit(lnbufr)
          write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.bufr'
@@ -206,13 +205,14 @@ bufrfile:  do ibufr=1,numbufr
       end if
    end if
 
-   call da_get_unit(lnbufr)
+!  We want to use specific unit number for bufr data, so we can control the endian format in environment. 
+   lnbufr = 99
+
    open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      call da_free_unit(lnbufr)
       call da_trace_exit("da_read_obs_bufrtovs")
       return
    end if
@@ -221,6 +221,8 @@ bufrfile:  do ibufr=1,numbufr
    call datelen(10)
    call readmg(lnbufr,subset,idate,iret)
    if (subset /= subfgn) then
+      call closbf(lnbufr)
+      close(lnbufr)
       message(1)='The file title does not match the data subset'
       write(unit=message(2),fmt=*) &
          'infile=', lnbufr, infile,' subset=', subset, ' subfgn=',subfgn
@@ -459,7 +461,7 @@ bufrfile:  do ibufr=1,numbufr
    end do obs
 
    call closbf(lnbufr)
-   call da_free_unit(lnbufr)
+   close(lnbufr)
 
 end do bufrfile
 

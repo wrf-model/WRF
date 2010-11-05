@@ -55,12 +55,14 @@ subroutine da_transform_through_rf_adj(grid, mz,rf_alpha, val, field, scaling)
    ! vert_corr = vert_corr_1 as scaling is performed in vertical transform
    ! for vert_corr = vert_corr_2:
 
-   if (vert_corr == vert_corr_1 .or. (present(scaling).and.scaling)) then
-      do m = 1, mz
-         do i = its, ite
-            field(i,jts:jte,m) = field(i,jts:jte,m) * val(jts:jte,m)
+   if (vert_corr == vert_corr_1 .or. (present(scaling))) then
+      if (scaling .or. vert_corr == vert_corr_1) then
+         do m = 1, mz
+            do i = its, ite
+               field(i,jts:jte,m) = field(i,jts:jte,m) * val(jts:jte,m)
+            end do
          end do
-      end do
+      end if
    end if
 
    ! [4.2] Transform filtered field to dimensional space:

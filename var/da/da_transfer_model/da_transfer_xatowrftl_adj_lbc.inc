@@ -178,8 +178,9 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
      jde = jde + 1
   end if
 #endif
+
 #ifdef DM_PARALLEL
-#include "HALO_XA_A.inc"
+#include "HALO_X6A_A.inc"
 #endif
 
 #ifdef A2C

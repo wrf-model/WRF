@@ -617,4 +617,6 @@ module da_control
 
    logical :: global
 
+   integer :: num_fgat_time
+
 end module da_control

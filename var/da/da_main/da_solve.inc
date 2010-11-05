@@ -31,6 +31,11 @@
 
    character (len=3)            :: ci
    character (len=2)            :: outerloop
+   character (len=256)          :: timestr
+   integer   :: min_yyyy,min_mm,min_dd,min_hh,min_mn,min_ss
+   integer   :: max_yyyy,max_mm,max_dd,max_hh,max_mn,max_ss
+   character :: s
+   real*8    :: time_min, time_max 
    
 #ifdef DM_PARALLEL
    integer                      :: wrf_done_unit
@@ -62,6 +67,28 @@
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
    end if
+
+   ! Calculate the num_fgat_time based on time_window_min, time_window_max
+    if ( .not. var4d ) then
+       num_fgat_time = 1
+    else
+       read(unit=time_window_min,fmt='(i4,5(a1,i2))') min_yyyy,s,min_mm,s,min_dd,s,min_hh,s,min_mn,s,min_ss
+       read(unit=time_window_max,fmt='(i4,5(a1,i2))') max_yyyy,s,max_mm,s,max_dd,s,max_hh,s,max_mn,s,max_ss
+       call da_get_julian_time(min_yyyy,min_mm,min_dd,min_hh,min_mn,time_min)
+       call da_get_julian_time(max_yyyy,max_mm,max_dd,max_hh,max_mn,time_max)
+       if ( var4d_bin < time_step ) call nl_set_var4d_bin (1, time_step)
+       time_max = (time_max - time_min) * 60   ! unit is : seconds
+       num_fgat_time = NINT(time_max/var4d_bin)
+       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) .or. &
+            num_fgat_time/2*2 .ne. num_fgat_time .or. var4d_bin/time_step*time_step .ne. var4d_bin ) then
+          write(unit=message(1),fmt='(A,A,2I7)') &
+          'Please change var4d_bin in namelist and rerun==>', 'run_seconds, var4d_bin:',NINT(time_max),var4d_bin
+          call da_error(__FILE__,__LINE__,message(1:1))
+       endif
+       num_fgat_time = num_fgat_time + 1
+       write(unit=message(1),fmt='(a,i10)') 'num_fgat_time is: ', num_fgat_time
+       call da_message(message(1:1))
+    endif
 
    !---------------------------------------------------------------------------
    ! [1.0] Initial checks
@@ -155,7 +182,7 @@
 
          call da_transform_xtoy_adj(cv_size, xhat, grid, iv, jo_grad_y, grid%xa)
          call da_transform_xtoxa_adj(grid)
-         call da_transfer_wrftltoxa_adj(grid, config_flags, 'fcst')
+         call da_transfer_wrftltoxa_adj(grid, config_flags, 'fcst', timestr)
 
          call da_deallocate_y (y)
          call da_deallocate_y (jo_grad_y)
@@ -251,37 +278,96 @@
 
 !     if (var4d .and. multi_inc /= 2 ) then
       if (var4d) then
-         call da_trace ("da_solve","Starting da_run_wrf_nl.ksh")
-#ifdef DM_PARALLEL
-         if (var4d_coupling == var4d_coupling_disk_simul) then
-            if (rootproc) then
-               call da_system ("da_run_wrf_nl.ksh pre")
-               call da_system ("rm -rf wrfnl_done")
-               call da_system ("touch wrfnl_go_ahead")
-               call da_get_unit (wrf_done_unit)
-               do while ( .true. )
-                  open(wrf_done_unit,file="wrfnl_done",status="old",err=303)
-                  close(wrf_done_unit)
-                  exit
-303               continue
-                  call da_system ("sync")
-                  call da_system ("sleep 1")
-               end do
-               call da_free_unit (wrf_done_unit)
-               call da_system ("da_run_wrf_nl.ksh post")
-               call da_system ("touch wrfnl_stop_now")
-            end if
-            ! Wait until PE thinks NL model has finished
-            call mpi_barrier (comm, ierr)
-         end if
-#else
-         call da_system ("da_run_wrf_nl.ksh")
-#endif
-         call da_trace ("da_solve","Finished da_run_wrf_nl.ksh")
+#ifdef VAR4D
+         if (it > 1) then
+            call kj_swap (grid%u_2, model_grid%u_2, &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+            call kj_swap (grid%v_2, model_grid%v_2, &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+            call kj_swap (grid%w_2, model_grid%w_2, &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+            call kj_swap (grid%t_2, model_grid%t_2, &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+            call kj_swap (grid%ph_2, model_grid%ph_2, &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+            call kj_swap (grid%p, model_grid%p, &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+            model_grid%mu_2 = grid%mu_2
+            model_grid%t2 = grid%t2
+            model_grid%th2 = grid%th2
+            model_grid%q2 = grid%q2
+            model_grid%u10 = grid%u10
+            model_grid%v10 = grid%v10
+            model_grid%tsk = grid%tsk
+            model_grid%psfc = grid%psfc
+
+            do i = PARAM_FIRST_SCALAR, num_moist
+               call kj_swap (grid%moist(:,:,:,i), model_grid%moist(:,:,:,i), &
+                             grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+            enddo
+            
+            ! Update boundary condition of model
+
+            model_grid%u_bxs = grid%u_bxs
+            model_grid%u_bxe = grid%u_bxe
+            model_grid%u_bys = grid%u_bys
+            model_grid%u_bye = grid%u_bye
+            model_grid%v_bxs = grid%v_bxs
+            model_grid%v_bxe = grid%v_bxe
+            model_grid%v_bys = grid%v_bys
+            model_grid%v_bye = grid%v_bye
+            model_grid%t_bxs = grid%t_bxs
+            model_grid%t_bxe = grid%t_bxe
+            model_grid%t_bys = grid%t_bys
+            model_grid%t_bye = grid%t_bye
+            model_grid%mu_bxs = grid%mu_bxs
+            model_grid%mu_bxe = grid%mu_bxe
+            model_grid%mu_bys = grid%mu_bys
+            model_grid%mu_bye = grid%mu_bye
+            model_grid%ph_bxs = grid%ph_bxs
+            model_grid%ph_bxe = grid%ph_bxe
+            model_grid%ph_bys = grid%ph_bys
+            model_grid%ph_bye = grid%ph_bye
+            model_grid%moist_bxs = grid%moist_bxs
+            model_grid%moist_bxe = grid%moist_bxe
+            model_grid%moist_bys = grid%moist_bys
+            model_grid%moist_bye = grid%moist_bye
+
+            model_grid%u_btxs = grid%u_btxs
+            model_grid%u_btxe = grid%u_btxe
+            model_grid%u_btys = grid%u_btys
+            model_grid%u_btye = grid%u_btye
+            model_grid%v_btxs = grid%v_btxs
+            model_grid%v_btxe = grid%v_btxe
+            model_grid%v_btys = grid%v_btys
+            model_grid%v_btye = grid%v_btye
+            model_grid%t_btxs = grid%t_btxs
+            model_grid%t_btxe = grid%t_btxe
+            model_grid%t_btys = grid%t_btys
+            model_grid%t_btye = grid%t_btye
+            model_grid%mu_btxs = grid%mu_btxs
+            model_grid%mu_btxe = grid%mu_btxe
+            model_grid%mu_btys = grid%mu_btys
+            model_grid%mu_btye = grid%mu_btye
+            model_grid%ph_btxs = grid%ph_btxs
+            model_grid%ph_btxe = grid%ph_btxe
+            model_grid%ph_btys = grid%ph_btys
+            model_grid%ph_btye = grid%ph_btye
+            model_grid%moist_btxs = grid%moist_btxs
+            model_grid%moist_btxe = grid%moist_btxe
+            model_grid%moist_btys = grid%moist_btys
+            model_grid%moist_btye = grid%moist_btye
+
+            ! Turn off model boundary reading ad we already provide a new one.
+            call da_model_lbc_off
+         endif
+
+         call da_nl_model(it)
 !      elseif (var4d .and. multi_inc == 2 ) then
-!#ifdef DM_PARALLEL
-!         call da_system ("touch wrfnl_stop_now")
-!#endif
+#else
+         write(unit=message(1),fmt='(A)')'Please re-compile the code with 4dvar option'
+         call da_error(__FILE__,__LINE__,message(1:1))
+#endif
       end if
 
       ! [8.2] Calculate innovation vector (O-B):
@@ -292,11 +378,19 @@
 
       if (test_transforms) then
          call da_check (grid, config_flags, cv_size, xbx, be, grid%ep, iv, &
-            grid%vv, grid%vp, y)
-         if (var4d) then
-            call da_system ("touch wrf_stop_now")
-         end if
+                        grid%vv, grid%vp, y)
+
          ! No point continuing, as data corrupted
+         call da_wrfvar_finalize
+#ifdef VAR4D
+         if (var4d) call da_finalize_model
+#endif
+
+         call wrf_message("*** WRF-Var check completed successfully ***")
+         if (trace_use) call da_trace_exit("da_wrfvar_main")
+         if (trace_use) call da_trace_report
+
+         call wrfu_finalize
          call wrf_shutdown
          stop
       end if
@@ -331,7 +425,11 @@
 
       ! [8.5] Update latest analysis solution:
 
-      call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+      if (.not. var4d) then
+         call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+      else
+         call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
+      endif
       call da_transform_xtoxa (grid)
 
       ! [8.6] Only when use_radarobs = .false. and calc_w_increment =.true.,
@@ -398,6 +496,9 @@
      if ( it < max_ext_its .and. print_detail_outerloop ) then
         write(outerloop,'(i2.2)') it
         call da_med_initialdata_output (grid , config_flags, 'wrfvar_output_'//outerloop)
+#ifdef VAR4D
+        if (var4d) call da_med_initialdata_output_lbc (grid , config_flags, 'wrfvar_bdyout_'//outerloop)
+#endif
      end if
 
    end do
@@ -405,10 +506,6 @@
    !---------------------------------------------------------------------------
    ! [9.0] Tidy up:
    !---------------------------------------------------------------------------
-
-   if (var4d) then
-      call da_system ("touch wrf_stop_now")
-   end if
 
    deallocate (cvt)
    deallocate (xhat)

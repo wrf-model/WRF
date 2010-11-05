@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_geoamv (iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_geoamv")
 
-   do n=1, iv%info(geoamv)%nlocal
+   do n=iv%info(geoamv)%n1, iv%info(geoamv)%n2
       if (iv%info(geoamv)%proc_domain(1,n)) then
          do k=1, iv%info(geoamv)%levels(n)
             adjtest_lhs = adjtest_lhs + &

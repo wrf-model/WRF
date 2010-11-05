@@ -20,7 +20,7 @@ $sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
 $sw_rttov_flag = "" ;
 $sw_rttov_inc = "" ;
 $sw_crtm_flag = "" ;
-$sw_crtm_inc = "" ;
+$sw_4dvar_flag = "" ;
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
 $sw_mach = "ARCH" ;         # ARCH will match any
@@ -110,6 +110,14 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_em_core = "-DEM_CORE=1" ;
       $sw_da_core = "-DDA_CORE=1" ;
       $sw_wrfplus_core = "-DWRFPLUS=0" ;
+      $sw_nmm_core = "-DNMM_CORE=0" ;
+      $sw_exp_core = "-DEXP_CORE=0" ;
+      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+    }
+    if ( index ( $sw_wrf_core , "4D_DA_CORE" ) > -1 ) 
+    {
+      $sw_em_core = "-DEM_CORE=1" ;
+      $sw_da_core = "-DDA_CORE=1" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
@@ -210,12 +218,15 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      if ( $ENV{CRTM} )
        {
        $sw_crtm_flag = "-DCRTM";
-       $sw_crtm_inc = "-I\$(WRF_SRC_ROOT_DIR)/external/crtm/libsrc";
        }
      if ( $ENV{RTTOV} )
        {
        $sw_rttov_flag = "-DRTTOV";
        $sw_rttov_inc = "-I$ENV{RTTOV}/include -I$ENV{RTTOV}/mod";
+       }
+     if ( $sw_wrf_core eq "4D_DA_CORE" )
+       {
+       $sw_4dvar_flag = "-DVAR4D";
        }
    }
 
@@ -326,8 +337,8 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
+    $_ =~ s/CONFIGURE_4DVAR_FLAG/$sw_4dvar_flag/g ;
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
-    $_ =~ s/CONFIGURE_CRTM_INC/$sw_crtm_inc/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
     if ( $sw_ifort_r8 ) {

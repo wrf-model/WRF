@@ -65,8 +65,13 @@ subroutine da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cv1, vv, vp)
       adj_par_lhs = adj_par_lhs &
              + sum(grid%xa % qcw(its:ite, jts:jte, kts:kte)**2)/typical_qcw_rms**2 &
              + sum(grid%xa % qrn(its:ite, jts:jte, kts:kte)**2)/typical_qrn_rms**2
+#ifdef CLOUD_CV
+       adj_par_lhs = adj_par_lhs &
+             + sum(grid%xa % qci(its:ite, jts:jte, kts:kte)**2)/typical_qrn_rms**2
+#else
       adj_par_lhs = adj_par_lhs &
              + sum(grid%xa % qt (its:ite, jts:jte, kts:kte)**2)/typical_q_rms**2
+#endif
    end if
 
    if (use_radarobs) then
@@ -98,7 +103,11 @@ subroutine da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cv1, vv, vp)
    if (use_radar_rf .or.  crtm_cloud ) then
       grid%xa % qcw(:,:,:) = grid%xa % qcw(:,:,:) / typical_qcw_rms**2
       grid%xa % qrn(:,:,:) = grid%xa % qrn(:,:,:) / typical_qrn_rms**2
+#ifdef CLOUD_CV
+      grid%xa % qci(:,:,:) = grid%xa % qci(:,:,:) / typical_qrn_rms**2
+#else
       grid%xa % qt (:,:,:) = grid%xa % qt (:,:,:) / typical_q_rms**2
+#endif
    end if
 
 

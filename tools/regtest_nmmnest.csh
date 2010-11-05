@@ -2540,7 +2540,7 @@ banner 19a
 
 			sed -e 's/^ run_days *= *[0-9]*/ run_days = 0 /' \
 			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 900 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15,15 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
 			    namelist.input.temp >! namelist.input
 
@@ -2736,7 +2736,7 @@ banner 19a
 
 			sed -e 's/^ run_hours *= *[0-9]*/ run_hours = 0 /' \
 			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 900 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15,15 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
 			    namelist.input.temp >! namelist.input
 

@@ -80,8 +80,11 @@
  /
 
  &dynamics
- euler_adv                           = .false.,
- idtadt                              = 1,
+ coac                                = 1.6,
+ codamp                              = 6.4,
+ slophc                              = 0.0064,
+ euler_adv                           = .true.,
+ idtadt                              = 2,
  idtadc                              = 1
  /
 

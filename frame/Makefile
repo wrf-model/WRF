@@ -268,6 +268,7 @@ module_io.o : md_calls.inc \
 		module_driver_constants.o 
 
 module_io_quilt.o: module_state_description.o \
+                module_dm.o \
                 module_configure.o \
 		module_internal_header_util.o \
 		module_quilt_outbuf_ops.o 
@@ -280,7 +281,7 @@ module_nesting.o: module_machine.o \
 		$(ESMF_MOD_DEPENDENCE) \
 		module_domain.o 
 
-module_quilt_outbuf_ops.o: module_state_description.o
+module_quilt_outbuf_ops.o: module_state_description.o module_timing.o
 
 module_tiles.o: module_domain.o \
 		module_driver_constants.o \

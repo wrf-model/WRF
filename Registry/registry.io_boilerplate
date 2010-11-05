@@ -53,11 +53,12 @@ rconfig   integer restart_interval_h      namelist,time_control		1              
 rconfig   integer restart_interval_m      namelist,time_control		1              0       h     "restart_interval_m"       ""      "MINUTES"
 rconfig   integer restart_interval_s      namelist,time_control		1              0       h     "restart_interval_s"       ""      "SECONDS"
 
-rconfig  integer history_begin_y  namelist,time_control		max_domains    0     h   "history_begin_y"    ""   "YEARS from start of run"
+rconfig  integer history_begin_y   namelist,time_control	max_domains    0     h   "history_begin_y"    ""   "YEARS from start of run"
 rconfig  integer history_begin_d   namelist,time_control	max_domains    0     h   "history_begin_d"    ""   "DAYS from start of run"
 rconfig  integer history_begin_h   namelist,time_control	max_domains    0     h   "history_begin_h"    ""   "HOURS from start of run"
 rconfig  integer history_begin_m   namelist,time_control	max_domains    0     h   "history_begin_m"    ""   "MINUTES from start of run"
 rconfig  integer history_begin_s   namelist,time_control	max_domains    0     h   "history_begin_s"    ""   "SECONDS from start of run"
+rconfig  integer history_begin     namelist,time_control	max_domains    0     h   "history_begin"      ""   "MINUTES from start of run"
 
 rconfig  integer inputout_begin_y   namelist,time_control	max_domains    0     h   "inputout_begin_y"    ""   "YEARS from start of run"
 rconfig  integer inputout_begin_d   namelist,time_control	max_domains    0     h   "inputout_begin_d"    ""   "DAYS from start of run"
@@ -65,17 +66,20 @@ rconfig  integer inputout_begin_h   namelist,time_control	max_domains    0     h
 rconfig  integer inputout_begin_m   namelist,time_control	max_domains    0     h   "inputout_begin_m"    ""   "MINUTES from start of run"
 rconfig  integer inputout_begin_s   namelist,time_control	max_domains    0     h   "inputout_begin_s"    ""   "SECONDS from start of run"
 
-rconfig  integer restart_begin_y  namelist,time_control		1              0     h   "restart_begin_y"    ""   "YEARS from start of run"
+rconfig  integer restart_begin_y   namelist,time_control	1              0     h   "restart_begin_y"    ""   "YEARS from start of run"
 rconfig  integer restart_begin_d   namelist,time_control	1              0     h   "restart_begin_d"    ""   "DAYS from start of run"
 rconfig  integer restart_begin_h   namelist,time_control	1              0     h   "restart_begin_h"    ""   "HOURS from start of run"
 rconfig  integer restart_begin_m   namelist,time_control	1              0     h   "restart_begin_m"    ""   "MINUTES from start of run"
 rconfig  integer restart_begin_s   namelist,time_control	1              0     h   "restart_begin_s"    ""   "SECONDS from start of run"
+rconfig  integer restart_begin     namelist,time_control	1              0     h   "restart_begin"      ""   "MINUTES from start of run"
 
 rconfig integer history_end_y      namelist,time_control	max_domains    0    h  "history_end_y"       ""      "YEARS from start of run"
 rconfig integer history_end_d      namelist,time_control	max_domains    0    h  "history_end_d"       ""      "DAYS from start of run"
 rconfig integer history_end_h      namelist,time_control	max_domains    0    h  "history_end_h"       ""      "HOURS from start of run"
 rconfig integer history_end_m      namelist,time_control	max_domains    0    h  "history_end_m"       ""      "MINUTES from start of run"
 rconfig integer history_end_s      namelist,time_control	max_domains    0    h  "history_end_s"       ""      "SECONDS from start of run"
+rconfig integer history_end        namelist,time_control	max_domains    0    h  "history_end"         ""      "MINUTES from start of run"
+
 rconfig integer inputout_end_y      namelist,time_control     max_domains    0    h  "inputout_end_y"       ""      "YEARS from start of run"
 rconfig integer inputout_end_d      namelist,time_control     max_domains    0    h  "inputout_end_d"       ""      "DAYS from start of run"
 rconfig integer inputout_end_h      namelist,time_control     max_domains    0    h  "inputout_end_h"       ""      "HOURS from start of run"

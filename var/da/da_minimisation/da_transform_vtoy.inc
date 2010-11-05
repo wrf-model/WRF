@@ -16,77 +16,58 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
    type(vp_type),              intent(inout) :: vp6     ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
    type(vp_type),              intent(inout) :: vv6     ! Grdipt/EOF CV for 6h.
-   type(xbx_type),             intent(in)    :: xbx    ! For header & non-grid arrays.
+   type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
-   type (xbx_type)                    :: xbx_tmp
 
-   integer :: nobwin, jl_start, jl_end
+   type(x_type) :: shuffle
+   integer :: nobwin, jl_start, jl_end, time_step_seconds
 #ifdef DM_PARALLEL
    integer :: wrf_done_unit
 #endif
 
    character(len=4) :: filnam
+   character(len=256) :: timestr, timestr1
 
    if (trace_use) call da_trace_entry("da_transform_vtoy")
 
-   if (.not. var4d) then
-      call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
-   else
-      grid%xa_tmp = grid%xa
-      call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
-      jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
-      jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
-      grid%xa  = grid%x6a
-      call da_transform_vtox(grid, be%cv%size_jl, xbx, be, ep, cv(jl_start:jl_end), vv6, vp6)
-      grid%xa  = grid%xa_tmp
-   end if
-
    if (var4d) then
-      call da_transfer_xatowrftl(grid, config_flags, 'tl01')
-      call da_system("ncks -A wrfinput_d01 tl01")
-      if (var4d_lbc) then
-          call da_med_initialdata_input( grid , config_flags, 'fg07')
-          call da_setup_firstguess( xbx_tmp, grid, config_flags)
-          call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
-          call da_med_initialdata_input( grid , config_flags, 'fg01')
-          call da_setup_firstguess( xbx_tmp, grid, config_flags)
+#ifdef VAR4D
+      call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+      call domain_clock_get( grid, start_timestr=timestr )
+      call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
+
+      if ( var4d_lbc ) then
+         call da_get_2rd_firstguess ( grid )
+         call da_setup_firstguess( xbx, grid, config_flags)
+
+         shuffle = grid%xa
+         jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
+         jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
+         grid%xa  = grid%x6a
+         call da_transform_vtox(grid, be%cv%size_jl, xbx, be, ep, cv(jl_start:jl_end), vv6, vp6)
+         grid%xa  = shuffle
+
+         call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
+
+         call domain_clock_get( grid, start_timestr=timestr )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr )
       endif
-      if (trace_use) call da_trace("da_transform_vtoy","Starting da_run_wrfplus_tl.ksh")
-#ifdef DM_PARALLEL
-      if (var4d_coupling == var4d_coupling_disk_simul) then
 
-         if (rootproc) then
-            call da_system("da_run_wrfplus_tl.ksh pre")
-            call da_system("rm -rf wrf_done")
-            call da_system("touch wrf_go_ahead")
-            call da_get_unit(wrf_done_unit)
-            do while (.true.)
-               open(wrf_done_unit,file="wrf_done",status="old",err=303)
-               close(wrf_done_unit)
-               exit
-303            continue
-               call da_system("sleep 1")
-            end do
-            call da_free_unit(wrf_done_unit)
-            call da_system("da_run_wrfplus_tl.ksh post")
-         end if
-         ! Wait until PE 0 agrees that TL finished
-         call wrf_get_dm_communicator ( comm )
-         call mpi_barrier(comm, ierr)
-      end if
-#else
-      call da_system("da_run_wrfplus_tl.ksh")
+      call da_tl_model
 
-#endif
-      if (trace_use) call da_trace("da_transform_vtoy","Finished da_run_wrfplus_tl.ksh")
+      if ( num_fgat_time > 1 ) then
+         call domain_clock_get (grid, stop_timestr=timestr1)
+         call domain_clock_set( grid, current_timestr=timestr1 )
+         call domain_clock_set (grid, time_step_seconds=-1*var4d_bin)
+         call domain_clockprint(150, grid, 'get CurrTime from clock,')
+      endif
 
-      do nobwin=1, num_fgat_time
-         write(unit=filnam, fmt='(a, i2.2)') 'fg', nobwin
-         call da_med_initialdata_input( grid , config_flags, &
-            filnam)
-         call da_setup_firstguess( xbx_tmp, grid, config_flags)
+      do nobwin= num_fgat_time, 1 , -1
+
+         call domain_clock_get( grid, current_timestr=timestr )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr )
 
          iv%time = nobwin
          iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
@@ -97,13 +78,24 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
          end if
          write(filnam,'(a2,i2.2)') 'tl',nobwin
          call da_zero_x(grid%xa)
-         call da_transfer_wrftltoxa(grid, config_flags, filnam)
+         call da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
          call da_transform_xtoxa(grid)
          call da_transform_xtoy(cv_size, cv, grid, iv, y)
+
+         if ( nobwin > 1 ) call domain_clockadvance (grid) ! We don't need the advance at the last step
+         call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
+
       end do
-      call da_med_initialdata_input( grid , config_flags, 'fg')
-      call da_setup_firstguess( xbx_tmp, grid, config_flags)
+
+      if ( num_fgat_time > 1 ) then
+         call nl_get_time_step ( grid%id, time_step_seconds)
+         call domain_clock_set (grid, time_step_seconds=time_step_seconds)
+         call domain_clockprint(150, grid, 'get CurrTime from clock,')
+      endif
+
+#endif
    else  ! not var4d
+      call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
       iv%info(:)%n1 = 1
       iv%info(:)%n2 = iv%info(:)%nlocal
       if ( use_rad ) then

@@ -15,7 +15,7 @@ subroutine da_check_xtoy_adjoint_ssmi_tb (iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use) call da_trace_entry("da_check_xtoy_adjoint_ssmi_tb")
 
-   do n=1, iv%info(ssmi_tb)%nlocal
+   do n=iv%info(ssmi_tb)%n1, iv%info(ssmi_tb)%n2
       y%ssmi_tb(n)%tb19v = y%ssmi_tb(n)%tb19v/typical_tb19v_rms
       y%ssmi_tb(n)%tb19h = y%ssmi_tb(n)%tb19h/typical_tb19h_rms
       y%ssmi_tb(n)%tb22v = y%ssmi_tb(n)%tb22v/typical_tb22v_rms

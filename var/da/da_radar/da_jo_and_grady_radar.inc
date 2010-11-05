@@ -17,6 +17,7 @@ subroutine da_jo_and_grady_radar(iv, re, jo, jo_grad_y)
 
    jo % radar_rv = 0.0
    jo % radar_rf = 0.0
+   jo % radar_rr = 0.0
    
    do n=1, iv%info(radar)%nlocal
       do k=1, iv%info(radar)%levels(n)

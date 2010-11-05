@@ -777,7 +777,8 @@
 !
 !-----------------------------------------------------------------------
 !
-        IF(config_flags%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF) THEN
+!mp - allow for it to be applied in the no-physics realm
+        IF(config_flags%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF.and.CONFIG_FLAGS%MP_PHYSICS/=0) THEN
           WRITE( wrf_err_message , * ) 'EULER advection works only with ETAMPNEW microphysics.'
           CALL wrf_error_fatal ( wrf_err_message )
         ENDIF

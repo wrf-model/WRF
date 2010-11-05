@@ -5,7 +5,7 @@ subroutine da_read_obs_bufr (iv)
    !---------------------------------------------------------------------------
    !   METHOD: use F90 sequantial data structure to avoid read file twice
    !            so that da_scan_obs_bufr is not necessary any more.
-   !            1. read file radiance data in sequential data structure
+   !            1. read prepbufr data in sequential data structure
    !            2. do gross QC check
    !            3. assign sequential data structure to innovation structure
    !                  and deallocate sequential data structure
@@ -89,7 +89,7 @@ subroutine da_read_obs_bufr (iv)
        type(datalink_BUFR), pointer :: next
    end type datalink_BUFR
 
-   type(datalink_BUFR),pointer  :: head, plink, current
+   type(datalink_BUFR),pointer  :: head, plink
 
 
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
@@ -134,14 +134,17 @@ subroutine da_read_obs_bufr (iv)
 num_bufr(:)=0
 numbufr=0
 if (num_fgat_time>1) then
-  call da_get_unit(iunit)
   do i=1,7
+     call da_get_unit(iunit)
      write(filename,fmt='(A,I1,A)') 'ob0',i,'.bufr'
      open(unit   = iunit, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
      if (iost == 0) then
-	  numbufr=numbufr+1
-	  num_bufr(numbufr)=i
+        numbufr=numbufr+1
+	num_bufr(numbufr)=i
+     else
+        close (iunit)
      end if
+     call da_free_unit(iunit)
    end do
  else
    numbufr=1
@@ -153,23 +156,23 @@ bufrfile:  do ibufr=1,numbufr
      if (num_fgat_time==1) then
          filename='ob.bufr'
      else
-        if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
-	      filename='ob.bufr'
-	    else
-           write(filename,fmt='(A,I1,A)') 'ob0',num_bufr(ibufr),'.bufr'   
-	   end if
+         if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+	    filename='ob.bufr'
+        else
+            write(filename,fmt='(A,I1,A)') 'ob0',num_bufr(ibufr),'.bufr'   
+        end if
      end if
 !
-!   call da_get_unit(iunit)
-      iunit=96
+!     We want to use specific unit number to read preppbufr data, which enable us to control its endian
+      iunit = 96 
+
       open(unit   = iunit, FILE   = trim(filename), &
          iostat =  iost, form = 'unformatted', STATUS = 'OLD')
       if (iost /= 0) then
          write(unit=message(1),fmt='(A,I5,A)') &
             "Error",iost," opening PREPBUFR obs file "//trim(filename)
          call da_warning(__FILE__,__LINE__,message(1:1))
-!         call da_free_unit(iunit)
-          cycle bufrfile
+         cycle bufrfile
       end if
    ! open observation error table if provided.
    call da_get_unit(junit)
@@ -210,7 +213,6 @@ bufrfile:  do ibufr=1,numbufr
          "Error",iret," reading PREPBUFR obs file "//trim(filename)
       call da_warning(__FILE__,__LINE__,message(1:1))
       call closbf(iunit)
-!      call da_free_unit(iunit)
       if (trace_use) call da_trace_exit("da_read_obs_bufr")
       return
    end if
@@ -223,11 +225,6 @@ bufrfile:  do ibufr=1,numbufr
 !  2.0 read data
 !  scan reports first
 !--------------------------------------------------------------
-  if (ibufr ==1) then
-   allocate(head)
-   nullify(head%next)
-   plink => head
-  end if
   
    match        = .false.
    end_of_file  = .false.
@@ -762,7 +759,23 @@ bufrfile:  do ibufr=1,numbufr
 
      if (num_fgat_time > 1 ) then !for 4dvar
 
-      allocate ( plink%platform_BUFR%each(1:nlevels) )
+      if (.not. associated(head)) then
+         nullify ( head )
+         allocate ( head )
+         allocate ( head%platform_BUFR%each(1:nlevels) )
+         nullify ( head%next )
+         plink => head
+      else
+         allocate ( plink%next )
+         plink => plink%next
+         allocate ( plink%platform_BUFR%each(1:nlevels) )
+         nullify ( plink%next )
+      end if
+
+      ! Recalculate the tdiff  based on the base time at each slot
+      platform%info%dhr = ( obs_time - & 
+             time_slots(0) - (ifgat-1)*(time_slots(num_fgat_time)-time_slots(0))/float(num_fgat_time-1) & 
+                          ) / 60.0
       plink%platform_BUFR%info = platform%info
       plink%platform_BUFR%loc = platform%loc
       plink%platform_BUFR%each(1:nlevels) = platform%each(1:nlevels)
@@ -772,15 +785,12 @@ bufrfile:  do ibufr=1,numbufr
       plink%kx_BUFR=kx
       plink%t29_BUFR=t29
       plink%pco_BUFR=pco
-      
+
       num_p=num_p+1
-      allocate(plink%next)    
-      plink => plink%next
-      nullify(plink%next)
 
    else  !3dvar
           
-      tdiff = abs(platform%info%dhr-0.1)
+      tdiff = abs(platform%info%dhr-0.02)
       dlat_earth = platform%info%lat
       dlon_earth = platform%info%lon
       if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
@@ -1052,7 +1062,19 @@ bufrfile:  do ibufr=1,numbufr
       obs_index=fm_index(fm)
       iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, nlevels)    
       
-      allocate ( plink%platform_BUFR%each(1:nlevels) )
+      if (.not. associated(head)) then
+         nullify ( head )
+         allocate ( head )
+         allocate ( head%platform_BUFR%each(1:nlevels) )
+         nullify ( head%next )
+         plink => head
+      else
+         allocate ( plink%next )
+         plink => plink%next
+         allocate ( plink%platform_BUFR%each(1:nlevels) )
+         nullify ( plink%next )
+      end if
+
       plink%platform_BUFR%info = platform%info
       plink%platform_BUFR%loc = platform%loc
       plink%platform_BUFR%each(1:nlevels) = platform%each(1:nlevels)
@@ -1064,17 +1086,12 @@ bufrfile:  do ibufr=1,numbufr
       plink%pco_BUFR=pco
       
       num_p=num_p+1
-      allocate(plink%next)    
-      plink => plink%next
-      nullify(plink%next)
-
          end do dup_loop
        end if !3dvar and 4dvar
     end do reports
     
 call closbf(iunit)
 close(iunit)
-!call da_free_unit(iunit)
 if ( use_errtable ) then
   close(junit)
   call da_free_unit(junit)
@@ -1098,15 +1115,13 @@ end do bufrfile
        plink => head    
        reports2: do ii=1,num_p
 
-       kx=plink%kx_BUFR
-       t29=plink%t29_BUFR
-
        if (plink%ifgat_BUFR /= kk) then  !sort iv
+            if ( .not. associated(plink%next) ) exit reports2
             plink => plink%next
             cycle reports2
       else
                  ! for thinning
-      tdiff = abs(plink%platform_BUFR%info%dhr-0.1)
+      tdiff = abs(plink%platform_BUFR%info%dhr-0.02)
       dlat_earth = plink%platform_BUFR%info%lat
       dlon_earth = plink%platform_BUFR%info%lon
       if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
@@ -1125,9 +1140,9 @@ end do bufrfile
       ! global case with >1 MPI tasks due to obs duplication, halo, etc.
       ! TBH:  20050913
       dup_loop2: do n = 1, ndup
-         select case(t29)
+         select case(plink%t29_BUFR)
          case (11, 12, 13, 22, 23, 31)
-            select case (kx)
+            select case (plink%kx_BUFR)
             case (120, 122, 132, 220, 222, 232) ;         ! Sound
                if (.not.use_soundobs) then
                       plink => plink%next
@@ -1418,7 +1433,7 @@ end do bufrfile
                fm = 125      ! ssmi wind speed & tpw
                
          case default 
-            select case (kx)
+            select case (plink%kx_BUFR)
             case (111 , 210)    ;         !  Tropical Cyclone Bogus
                ! Note Tropical cyclone Bougus is given type 135 in Obs-ascii
                if (.not.use_bogusobs) then 
@@ -1446,7 +1461,7 @@ end do bufrfile
             case default
                if ( print_detail_obs ) then
                   write(unit=message(1), fmt='(a, 2i12)') &
-                     'unsaved obs found with kx & t29= ',kx,t29
+                     'unsaved obs found with kx & t29= ',plink%kx_BUFR,plink%t29_BUFR
                   call da_warning(__FILE__,__LINE__,message(1:1))
                end if
                exit dup_loop2
@@ -1457,9 +1472,12 @@ end do bufrfile
       iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, plink%nlevels_BUFR)    
       
       plink%fm_BUFR=fm
-      if (ii/= num_p)  plink => plink%next
+
       end do dup_loop2
      end if  !sort iv
+
+     plink => plink%next
+     if ( .not. associated(plink) ) exit reports2
 
    end do reports2
 
@@ -1494,15 +1512,13 @@ end if
    
       reports3: do ii=1,num_p
          
-     if (plink%ifgat_BUFR /= kk) then  !sort iv
-            current => plink
+     if (plink%ifgat_BUFR /=  kk) then  !sort iv
+            if ( .not. associated(plink%next) ) exit reports3
             plink => plink%next
-            deallocate (current%platform_BUFR%each)
-            deallocate (current)
             cycle reports3
       else
       ! for thinning
-      tdiff = abs(plink%platform_BUFR%info%dhr-0.1)
+      tdiff = abs(plink%platform_BUFR%info%dhr-0.02)
       dlat_earth = plink%platform_BUFR%info%lat
       dlon_earth = plink%platform_BUFR%info%lon
       if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
@@ -1521,19 +1537,13 @@ end if
             select case (plink%kx_BUFR)
               case (120, 122, 132, 220, 222, 232) ;         ! Sound
                if (.not.use_soundobs) then
-                      current => plink
                       plink => plink%next
-                      deallocate (current%platform_BUFR%each)
-                      deallocate (current)
                       cycle reports3
                end if
                  if (n==1) ntotal(sound) = ntotal(sound) + 1 
                  if (n==1) ntotal(sonde_sfc) = ntotal(sonde_sfc) + 1
                  if (outside) then
-                    current => plink
                     plink => plink%next
-                    deallocate (current%platform_BUFR%each)
-                    deallocate (current)
                     cycle reports3
                end if
                 if ( thin_conv ) then
@@ -1541,10 +1551,7 @@ end if
                   call map2grids_conv(sound,dlat_earth,dlon_earth,crit,nlocal(sound),itx,1,itt,ilocal(sound),iuse)
                   call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,nlocal(sonde_sfc),itx,1,itt,ilocal(sonde_sfc),iuse)
                    if ( .not. iuse ) then
-                     current => plink
                      plink => plink%next
-                     deallocate (current%platform_BUFR%each)
-                     deallocate (current)
                      cycle reports3
                   end if
                else
@@ -1623,28 +1630,19 @@ end if
 
             case (221) ;           ! Pilot 
                 if (.not.use_pilotobs) then
-                     current => plink
                      plink => plink%next
-                     deallocate (current%platform_BUFR%each)
-                     deallocate (current)
                      cycle reports3
                end if
                if (n==1) ntotal(pilot) = ntotal(pilot) + 1
                if (outside) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
                if ( thin_conv ) then
                   crit = tdiff
                   call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,nlocal(pilot),itx,1,itt,ilocal(pilot),iuse)
                   if ( .not. iuse ) then
-                     current => plink
                      plink => plink%next
-                     deallocate (current%platform_BUFR%each)
-                     deallocate (current)
                      cycle reports3
                   end if
                else
@@ -1672,29 +1670,20 @@ end if
             end select 
          case (41)
              if (.not.use_airepobs) then
-                      current => plink
                       plink => plink%next
-                      deallocate (current%platform_BUFR%each)
-                      deallocate (current)
                       cycle reports3
                end if
 
             if (n==1) ntotal(airep) = ntotal(airep) + 1
              if (outside) then 
-                    current => plink
                     plink => plink%next
-                    deallocate (current%platform_BUFR%each)
-                    deallocate (current)
                     cycle reports3
                end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(airep,dlat_earth,dlon_earth,crit,nlocal(airep),itx,1,itt,ilocal(airep),iuse)
                if ( .not. iuse ) then
-                    current => plink
                     plink => plink%next
-                    deallocate (current%platform_BUFR%each)
-                    deallocate (current)
                     cycle reports3
                   end if
             else
@@ -1721,29 +1710,20 @@ end if
 
          case (522,523);        ! Ships
           if (.not.use_shipsobs) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
            end if
 
             if (n==1) ntotal(ships) = ntotal(ships) + 1
              if (outside) then
-                  current => plink
                   plink => plink%next
-                  deallocate (current%platform_BUFR%each)
-                  deallocate (current)
                   cycle reports3
                end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(ships,dlat_earth,dlon_earth,crit,nlocal(ships),itx,1,itt,ilocal(ships),iuse)
                 if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                   end if
             else
@@ -1762,28 +1742,19 @@ end if
 
           case (531, 532, 561, 562) ;          ! Buoy
            if (.not.use_buoyobs) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
             if (n==1)  ntotal(buoy) = ntotal(buoy) + 1
              if (outside) then
-                current => plink
                 plink => plink%next
-                deallocate (current%platform_BUFR%each)
-                deallocate (current)
                 cycle reports3
                end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,nlocal(buoy),itx,1,itt,ilocal(buoy),iuse)
                if ( .not. iuse ) then
-                  current => plink
                   plink => plink%next
-                  deallocate (current%platform_BUFR%each)
-                  deallocate (current)
                   cycle reports3
                end if
             else
@@ -1810,28 +1781,19 @@ end if
 
          case (511, 514)
               if (.not.use_synopobs) then
-                 current => plink
                  plink => plink%next
-                 deallocate (current%platform_BUFR%each)
-                 deallocate (current)
                  cycle reports3
                end if
             if (n==1) ntotal(synop) = ntotal(synop) + 1
             if (outside) then
-               current => plink
                plink => plink%next
-               deallocate (current%platform_BUFR%each)
-               deallocate (current)
                cycle reports3
             end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(synop,dlat_earth,dlon_earth,crit,nlocal(synop),itx,1,itt,ilocal(synop),iuse)
                 if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                 end if
             else
@@ -1853,28 +1815,19 @@ end if
 
          case (512)
           if (.not.use_metarobs) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
              end if
             if (n==1) ntotal(metar) = ntotal(metar) + 1
              if (outside) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(metar,dlat_earth,dlon_earth,crit,nlocal(metar),itx,1,itt,ilocal(metar),iuse)
                 if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                   end if
 
@@ -1895,28 +1848,19 @@ end if
 
          case (63)
               if (.not.use_geoamvobs) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
                if (n==1) ntotal(geoamv) = ntotal(geoamv) + 1
                 if (outside) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
                if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,nlocal(geoamv),itx,1,itt,ilocal(geoamv),iuse)
                 if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                   end if
             else
@@ -1941,28 +1885,19 @@ end if
 
           case (582, 583)
           if (.not.use_qscatobs) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
             if (n==1) ntotal(qscat) = ntotal(qscat) + 1
             if (outside) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,nlocal(qscat),itx,1,itt,ilocal(qscat),iuse)
                if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                   end if
             else
@@ -1983,28 +1918,19 @@ end if
 
          case (74)       ! GPS PW
           if (.not.use_gpspwobs) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
             if (n==1)  ntotal(gpspw) = ntotal(gpspw) + 1
              if (outside) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,nlocal(gpspw),itx,1,itt,ilocal(gpspw),iuse)
                 if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                   end if
             else
@@ -2018,28 +1944,19 @@ end if
 
           case (71, 73, 75, 76, 77)
                 if (.not.use_profilerobs) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
                if (n==1) ntotal(profiler) = ntotal(profiler) + 1
                 if (outside) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
                if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,nlocal(profiler),itx,1,itt,ilocal(profiler),iuse)
                 if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                   end if
             else
@@ -2065,28 +1982,19 @@ end if
 
           case (571, 65)   ! SSM/I wind speed & TPW
           if (.not. use_ssmiretrievalobs) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
            if (n==1)  ntotal(ssmi_rv) = ntotal(ssmi_rv) + 1
            if (outside) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,nlocal(ssmi_rv),itx,1,itt,ilocal(ssmi_rv),iuse)
                 if ( .not. iuse ) then
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                   end if
             else
@@ -2125,28 +2033,19 @@ end if
             select case (plink%kx_BUFR)
             case (111 , 210) 
           if (.not.use_bogusobs) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
                if (n==1)  ntotal(bogus) = ntotal(bogus) + 1
                 if (outside) then 
-                   current => plink
                    plink => plink%next
-                   deallocate (current%platform_BUFR%each)
-                   deallocate (current)
                    cycle reports3
                end if
                 if ( thin_conv ) then
                   crit = tdiff
                   call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,nlocal(bogus),itx,1,itt,ilocal(bogus),iuse)
                   if ( .not. iuse ) then
-                     current => plink
                      plink => plink%next
-                     deallocate (current%platform_BUFR%each)
-                     deallocate (current)
                      cycle reports3
                   end if
                else
@@ -2234,14 +2133,11 @@ end if
 
          end if
  
-      ! if (ii/= num_p) plink => plink%next
        end do dup_loop3
      end if !sort iv
 
-     current => plink
      plink => plink%next
-     deallocate (current%platform_BUFR%each)
-     deallocate (current)
+     if ( .not. associated(plink) ) exit reports3
 
    end do reports3
    
@@ -2325,8 +2221,17 @@ write(unit=message(1),fmt='(A,4(1x,i7))') &
    call da_message(message(1:1))
 
 
-deallocate(plink)
-! deallocate(head)
+! Release the linked list
+plink => head
+
+DO WHILE ( ASSOCIATED (plink) )
+   head => plink%next
+   DEALLOCATE ( plink%platform_BUFR%each )
+   DEALLOCATE ( plink )
+   plink => head
+ENDDO
+
+NULLIFY (head)
 
    if (trace_use) call da_trace_exit("da_read_obs_bufr")
 #else

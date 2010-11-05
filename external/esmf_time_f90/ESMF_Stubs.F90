@@ -95,13 +95,20 @@ CONTAINS
 #if (defined SPMD) || (defined COUP_CSM)
 #include <mpif.h>
 #endif
+      LOGICAL :: flag
       INTEGER :: ier
 
       IF ( PRESENT( rc ) ) rc = ESMF_SUCCESS
 #if (defined SPMD) || (defined COUP_CSM)
-      CALL MPI_Finalize( ier ) 
+      CALL MPI_Finalized( flag, ier )
       IF ( ier .ne. mpi_success )THEN
         IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+      END IF
+      IF ( .NOT. flag ) THEN
+        CALL MPI_Finalize( ier ) 
+        IF ( ier .ne. mpi_success )THEN
+          IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
+        END IF
       END IF
 #endif
    END SUBROUTINE ESMF_Finalize

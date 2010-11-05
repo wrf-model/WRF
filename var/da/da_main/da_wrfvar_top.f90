@@ -12,6 +12,11 @@ module da_wrfvar_top
    use module_driver_constants, only : max_comms
    use module_symbols_util, only : wrfu_finalize, wrfu_initialize, &
       wrfu_cal_gregorian
+#ifdef VAR4D
+   use da_4dvar, only : da_nl_model, model_grid, &
+      kj_swap, da_finalize_model, da_model_lbc_off
+   use da_wrfvar_io, only : da_med_initialdata_output_lbc
+#endif
 
 #if defined(RTTOV) || defined(CRTM)
    use module_radiance, only : satinfo
@@ -22,7 +27,7 @@ module da_wrfvar_top
 
    use module_state_description, only : num_moist, num_a_moist, num_g_moist, &
       num_dfi_moist, num_scalar, num_a_scalar, num_g_scalar, num_dfi_scalar, &
-      num_fdda3d, num_fdda2d, num_ozmixm, num_aerosolc
+      num_fdda3d, num_fdda2d, num_ozmixm, num_aerosolc, PARAM_FIRST_SCALAR
    use module_tiles, only : set_tiles
 
 #ifdef DM_PARALLEL
@@ -60,13 +65,13 @@ module da_wrfvar_top
       da_setup_cv, da_scale_background_errors
    use da_test, only : da_check
    use da_tools_serial, only : da_get_unit, da_free_unit
-   use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
+   use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, da_trace_report
    use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
        da_transfer_wrftltoxa_adj
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
       da_transform_xtoxa_adj
    use da_wrfvar_io, only : da_med_initialdata_input, da_med_initialdata_output
-   use da_tools, only : da_set_randomcv
+   use da_tools, only : da_set_randomcv, da_get_julian_time
 
 #ifdef CRTM
    use module_radiance, only : crtm_destroy

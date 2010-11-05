@@ -60,7 +60,7 @@ MODULE module_wrf_top
       TYPE(domain), POINTER :: grid
      END SUBROUTINE Setup_Timekeeping
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
      SUBROUTINE wrf_dfi_write_initialized_state( )
      END SUBROUTINE wrf_dfi_write_initialized_state
  
@@ -75,7 +75,7 @@ MODULE module_wrf_top
      
      SUBROUTINE wrf_dfi_array_reset ( )
      END SUBROUTINE wrf_dfi_array_reset
-#endif
+! #endif
    END INTERFACE
 
 
@@ -314,12 +314,12 @@ CONTAINS
    CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ! In case we are doing digital filter initialization, set dfi_stage = DFI_SETUP 
    !   to indicate in Setup_Timekeeping that we want forecast start and
    !   end times at this point 
    IF ( head_grid%dfi_opt .NE. DFI_NODFI ) head_grid%dfi_stage = DFI_SETUP
-#endif
+! #endif
 
    CALL Setup_Timekeeping (head_grid)
 
@@ -847,7 +847,7 @@ ENDIF
 !</DESCRIPTION>
       IMPLICIT NONE
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
       ! Initialization procedure
       IF ( config_flags%dfi_opt .NE. DFI_NODFI ) THEN
    
@@ -928,7 +928,7 @@ ENDIF
          END SELECT
    
       END IF
-#endif
+! #endif
 
    END SUBROUTINE wrf_dfi
 
@@ -946,7 +946,7 @@ ENDIF
       INTEGER :: i
 
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
       IF ( model_config_rec % dfi_opt .EQ. DFI_NODFI ) THEN
         DO i = 1, model_config_rec % max_dom
            model_config_rec % mp_physics_dfi(i) = -1
@@ -956,7 +956,7 @@ ENDIF
            model_config_rec % mp_physics_dfi(i) = model_config_rec % mp_physics(i)
         ENDDO
       END IF
-#endif
+! #endif
 
 #if (DA_CORE == 1)
       IF ( model_config_rec % dyn_opt .EQ. 2 ) THEN

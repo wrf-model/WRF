@@ -5,7 +5,9 @@ MODULE module_ctrans_grell
 USE module_cu_gd
 USE module_dep_simple
 USE module_state_description, only:p_co,p_qv,p_so2,p_o3,p_sulf,p_nh3,p_h2o2, &
-                              p_paa,p_hno3,p_n2o5,p_so4aj,p_nh4aj,p_no3aj
+                              p_paa,p_hno3,p_n2o5,p_so4aj,p_nh4aj,p_no3aj,   &
+                              p_bc1,p_bc2,p_oc1,p_oc2,p_seas_1,p_seas_2,     &
+                              p_seas_3,p_seas_4,p_dms
 
 CONTAINS
 
@@ -356,19 +358,19 @@ CONTAINS
   ! cd  = detrainment function for updraft
   ! cdd = detrainment function for downdraft
 
-        cd,cdd,scr1,DELLAH,DELLAQ,DELLAT,DELLAQC
+        cd,cdd,cdd3,scr1,DELLAH,DELLAQ,DELLAT,DELLAQC
 
   ! edt = epsilon
   ! edt     = epsilon
      real,    dimension (its:ite) ::                                   &
-       edt,HKB,QKB,          &
+       edt,HKB,QKB,edt3,          &
        XMB,PWAV,PWEV,BU,cap_max,cap_max_increment
      real,    dimension (its:ite,kts:kte,num_chem)       ::             &
         tr3_c,tr3_up,tr3_pw
      real,    dimension (its:ite,num_chem)         ::                   &
         trkb3 
      real,    dimension (its:ite,kts:kte,num_chem)       ::             &
-        tr_c,tr_up,tr_dd,tre_cup,tr_pw,tr_pwd
+        tr_c,tr_up,tr_dd,tr_dd3,tre_cup,tr_pw,tr_pwd
      real,    dimension (its:ite,num_chem)         ::                   &
         trkb
      integer,    dimension (its:ite) ::                                &
@@ -414,7 +416,15 @@ CONTAINS
         cd(i,k)=0.1*entr_rate
         cd3(i,k)=entr_rate3
         cdd(i,k)=0.
+        cdd3(i,k)=0.
         clw_all(i,k)=0.
+      enddo
+      enddo
+      do ki=1,num_chem
+      do k=kts,ktf
+      do i=its,itf
+        tr_dd3(i,k,ki)=0.
+      enddo
       enddo
       enddo
 !
@@ -437,13 +447,12 @@ CONTAINS
         kbmax(i)=1
         cap_max_increment(i)=0.
         edt(i)=0.
+        edt3(i)=0.
         kstabm(i)=ktf-1
         IERR(i)=0
         IERR5(i)=0
         if(ktop3(i).lt.2)ierr5(i)=20
-        if(aaeq(i).ne.0.)then
-           ierr(i)=20
-        endif
+        if(xmb3(i).eq.0)ierr5(i)=21
  7    CONTINUE
       do i=its,itf
           cap_max(i)=cap_maxs
@@ -524,6 +533,15 @@ CONTAINS
          IF(K22(I).GE.KBMAX(i))ierr(i)=2
          endif
  36   CONTINUE
+!
+! done with basic stuff that is needed everywhere, from here on do not do
+! deep convection where aaeq .ne.0
+!
+      DO i=its,itf
+        if(aaeq(i).ne.0.)then
+           ierr(i)=20
+        endif
+      enddo
 !
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
 !
@@ -746,7 +764,7 @@ CONTAINS
                    numgas,chemopt,scalaropt,ids,ide, jds,jde, kds,kde, &
                    ims,ime, jms,jme, kms,kme, &
                    its,ite, jts,jte, kts,kte,ipr,jpr,j,npr,num_chem,'shallow')
-      call cup_dellas_tr(ierr5,z_cup,p_cup,tr_dd,edt,zd3,cdd,      &
+      call cup_dellas_tr(ierr5,z_cup,p_cup,tr_dd3,edt3,zd3,cdd3,      &
            tracer,tracert3,j,mentrd_rate,zu3,g,xmb3,                &
            cd3,tr3_up,ktop3,k23,kbcon3,mentr_rate3,jmin,tre_cup,kdet, &
            k23,ipr,jpr,npr,'shallow',num_chem,                      &
@@ -1282,7 +1300,7 @@ END subroutine cup_env_clev_tr
 !
 ! aerosol scavenging coeffs for aitken mode
 !
-           real alfa0,alfa2,alfa3
+           real alfa0,alfa2,alfa3,alpha_gocart
 ! output variables
 ! hpwdep h+ deposition
       real, dimension (ngas) :: gas,gaswdep
@@ -1515,8 +1533,16 @@ END subroutine cup_env_clev_tr
 !
 ! for gocart assuming scavenging factor of .6
 !
-        else if((chemopt.ge.300.and.nv.gt.numgas).or.(chemopt.ge.300.and.nv.eq.p_sulf))then
-               tr_c(i,k,nv)=.6*tr_up(i,k,nv)
+        else if(chemopt.ge.300)then
+          alpha_gocart = .5    ! scavenging factor
+          if(nv.le. numgas)alpha_gocart=0.
+          if(nv.eq.p_bc1 .or. nv.eq.p_oc1 .or. nv.eq.p_dms)alpha_gocart=0.
+          if(nv.eq.p_sulf .or. nv.eq.p_seas_1 .or. nv.eq.p_seas_2)alpha_gocart=1.
+          if(nv.eq.p_seas_3 .or. nv.eq.p_seas_4)alpha_gocart=1.
+          if(nv.eq.p_bc2 .or. nv.eq.p_oc2)alpha_gocart=0.8
+
+!       else if((chemopt.ge.300.and.nv.gt.numgas).or.(chemopt.ge.300.and.nv.eq.p_sulf))then
+               tr_c(i,k,nv)=alpha_gocart*tr_up(i,k,nv)
                trch=tr_up(i,k,nv)-tr_c(i,k,nv)
                trcc=(tr_up(i,k,nv)-trch)/(1.+c0*dz*zu(i,k))
                tr_pw(i,k,nv)=c0*dz*trcc*zu(i,k)

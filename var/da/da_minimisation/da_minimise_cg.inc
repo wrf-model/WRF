@@ -15,13 +15,14 @@ subroutine da_minimise_cg(grid, config_flags,            &
    ! History: 12/12/08 - Split J and GradJ calculations (Tom Auligne)
    !          12/12/08 - Re-orthonormalization option   (Tom Auligne)
    !
+   ! History: Sep. 2010 - Add Cloud control variables   (hongli Wang)
    !-------------------------------------------------------------------------
 
    implicit none
 
    integer, intent(in)               :: it    ! external iteration.
    integer, intent(in)               :: cv_size          ! Total cv size
-   type (xbx_type),intent(in)        :: xbx   ! Header & non-gridded vars.
+   type (xbx_type),intent(inout)     :: xbx   ! Header & non-gridded vars.
    type (be_type), intent(in)        :: be    ! background error structure.
    type (iv_type), intent(inout)     :: iv    ! ob. increment vector.
    real, intent(inout)               :: j_grad_norm_target ! Target norm.
@@ -37,7 +38,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    integer                           :: iter            
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
+#ifdef CLOUD_CV
+   integer                           :: mz(10)
+#else
    integer                           :: mz(7)
+#endif
    real                              :: fhat(1:cv_size)        ! cv copy.
    real                              :: ghat(1:cv_size)        ! cv copy.
    real                              :: ghat0(1:cv_size)       ! cv copy.
@@ -50,8 +55,13 @@ subroutine da_minimise_cg(grid, config_flags,            &
    ! Variables for Conjugate Gradient preconditioning
    real                              :: precon(1:cv_size)      ! cv copy.
    real                              :: g_total, g_partial, jo_partial                          
-   integer                           :: i, ii, nv, nn, istart, iend, sz(5)
-      
+   integer                           :: i, ii, nv, nn, istart, iend
+#ifdef CLOUD_CV
+   integer                           ::  sz(8)
+#else
+   integer                           ::  sz(5)
+#endif
+
    if (trace_use) call da_trace_entry("da_minimise_cg")
 
    write(unit=stdout,fmt='(A)') 'Minimize cost function using CG method'
@@ -60,9 +70,13 @@ subroutine da_minimise_cg(grid, config_flags,            &
    !-------------------------------------------------------------------------
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
+#ifdef CLOUD_CV
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%alpha%mz, be % ne /)
+   sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5, be%cv%size6, be%cv%size7,be%cv%size8 /)
+#else
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
    sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5 /)
-   
+#endif   
    jp_start   = be % cv % size_jb + be % cv % size_je + 1
    jp_end     = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
 
@@ -81,14 +95,21 @@ subroutine da_minimise_cg(grid, config_flags,            &
       g_total = da_dot(cv_size,ghat,ghat)
       
       iend    = 0
+#ifdef CLOUD_CV
+      do nv = 1, 8
+#else
       do nv = 1, 5
+#endif
          nn = sz(nv) / mz(nv)
 	 do ii = 1, mz(nv)
             istart     = iend + 1
             iend       = istart + nn - 1
 	    g_partial  = da_dot(nn, ghat(istart:iend), ghat(istart:iend))
+#ifdef CLOUD_CV
+            jo_partial = j0_total / SUM(mz(1:8))
+#else
             jo_partial = j0_total / SUM(mz(1:5))
-
+#endif
 	    precon(istart:iend)=  1 / &
 	       (1 + precondition_factor*(g_partial/g_total)/(jo_partial/j0_total)) 
 	 end do

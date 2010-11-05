@@ -66,7 +66,45 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
       else
          vp % v5(its:ite,jts:jte,kts:kts) = 0.0
       end if
+#ifdef CLOUD_CV
+!
+     if(cloud_cv_options == 2)then
+      if (be % v6 % mz > 0) then
+         call da_transform_vvtovp (grid, be % v6 % evec, be % v6 % val, vertical_wgt, &
+            vv % v6, vp % v6, be % v6 % mz, kte)
+      else
+         vp % v6(its:ite,jts:jte,kts:kte) = 0.0
+      end if
 
+      if (be % v7 % mz > 0) then
+         call da_transform_vvtovp (grid, be % v7 % evec, be % v7 % val, vertical_wgt, &
+            vv % v7, vp % v7, be % v7 % mz, kte)
+      else
+         vp % v7(its:ite,jts:jte,kts:kte) = 0.0
+      end if
+
+      if (be % v8 % mz > 0) then
+         call da_transform_vvtovp (grid, be % v8 % evec, be % v8 % val, vertical_wgt, &
+            vv % v8, vp % v8, be % v8 % mz, kte)
+      else
+         vp % v8(its:ite,jts:jte,kts:kte) = 0.0
+      end if
+
+     elseif(cloud_cv_options == 3)then
+      if (be % v6 % mz > 0) then
+         vp % v6 = vv % v6
+      end if
+
+      if (be % v7 % mz > 0) then
+         vp % v7 = vv % v7
+      end if
+
+      if (be % v8 % mz > 0) then
+         vp % v8 = vv % v8
+      end if
+
+     end if
+#endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
             call da_transform_vvtovp (grid, be % alpha % evec, be % alpha % val, vertical_wgt, &
@@ -122,6 +160,40 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
          end if
       end if
 
+#ifdef CLOUD_CV
+     if(cloud_cv_options == 2)then
+      if (be % v6 % mz > 0) then
+         call da_transform_vptovv (be % v6 % evec, be % v6 % val, vertical_wgt, &
+            vp % v6, vv % v6, be % v6 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+            its,ite, jts,jte, kts,kte)
+      end if
+
+      if (be % v7 % mz > 0) then
+         call da_transform_vptovv (be % v7 % evec, be % v7 % val, vertical_wgt, &
+            vp % v7, vv % v7, be % v7 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+            its,ite, jts,jte, kts,kte)
+      end if
+
+      if (be % v8 % mz > 0) then
+         call da_transform_vptovv (be % v8 % evec, be % v8 % val, vertical_wgt, &
+            vp % v8, vv % v8, be % v8 % mz, kds,kde, ims,ime, jms,jme, kms,kme, &
+            its,ite, jts,jte, kts,kte)
+      end if
+
+     elseif(cloud_cv_options == 3)then
+      if (be % v6 % mz > 0) then
+         vv % v6 = vp % v6
+      end if
+
+      if (be % v7 % mz > 0) then
+         vv % v7 = vp % v7
+      end if
+
+      if (be % v8 % mz > 0) then
+         vv % v8 = vp % v8
+      end if
+     end if
+#endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
             call da_transform_vptovv (be % alpha % evec, be % alpha % val, vertical_wgt, &
@@ -165,6 +237,37 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
          end if
       end if
 
+#ifdef CLOUD_CV
+     if(cloud_cv_options == 2)then
+      if (be % v6 % mz > 0) then
+         call da_transform_vvtovp_adj (grid, be % v6 % evec, be % v6 % val, vertical_wgt, &
+            vp % v6, vv % v6, be % v6 % mz, kte)
+      end if
+
+      if (be % v7 % mz > 0) then
+         call da_transform_vvtovp_adj (grid, be % v7 % evec, be % v7 % val, vertical_wgt, &
+            vp % v7, vv % v7, be % v7 % mz, kte)
+      end if
+
+      if (be % v8 % mz > 0) then
+         call da_transform_vvtovp_adj (grid, be % v8 % evec, be % v8 % val, vertical_wgt, &
+            vp % v8, vv % v8, be % v8 % mz, kte)
+      end if
+     elseif(cloud_cv_options == 3)then
+      if (be % v6 % mz > 0) then
+         vv % v6 = vp % v6
+      end if
+
+      if (be % v7 % mz > 0) then
+         vv % v7 = vp % v7
+      end if
+
+      if (be % v8 % mz > 0) then
+         vv % v8 = vp % v8
+      end if
+
+     end if
+#endif
       if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
          do n = 1, be % ne
             call da_transform_vvtovp_adj (grid, be % alpha % evec, be % alpha % val, vertical_wgt, &

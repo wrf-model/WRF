@@ -40,13 +40,22 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    allocate (vp1 % v3(ims:ime,jms:jme,kms:kme))
    allocate (vp1 % v4(ims:ime,jms:jme,kms:kme))
    allocate (vp1 % v5(ims:ime,jms:jme,kms:kme))
+#ifdef CLOUD_CV
+   allocate (vp1 % v6(ims:ime,jms:jme,kms:kme))
+   allocate (vp1 % v7(ims:ime,jms:jme,kms:kme))
+   allocate (vp1 % v8(ims:ime,jms:jme,kms:kme))
+#endif
 
    allocate (vv1 % v1(ims:ime,jms:jme,1:kz_vv(1)))
    allocate (vv1 % v2(ims:ime,jms:jte,1:kz_vv(2)))
    allocate (vv1 % v3(ims:ime,jms:jme,1:kz_vv(3)))
    allocate (vv1 % v4(ims:ime,jms:jme,1:kz_vv(4)))
    allocate (vv1 % v5(ims:ime,jms:jme,1:kz_vv(5)))
-
+#ifdef CLOUD_CV
+   allocate (vv1 % v6(ims:ime,jms:jme,1:kz_vv(6)))
+   allocate (vv1 % v7(ims:ime,jms:jme,1:kz_vv(7)))
+   allocate (vv1 % v8(ims:ime,jms:jme,1:kz_vv(8)))
+#endif 
    call da_zero_vp_type(vp1)
    call da_zero_vp_type(vv1)
 
@@ -97,13 +106,22 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    vv1 % v3(its:ite,jts:jte,1:kz_vv(3)) = vv % v3(its:ite,jts:jte,1:kz_vv(3))
    vv1 % v4(its:ite,jts:jte,1:kz_vv(4)) = vv % v4(its:ite,jts:jte,1:kz_vv(4))
    vv1 % v5(its:ite,jts:jte,1:kz_vv(5)) = vv % v5(its:ite,jts:jte,1:kz_vv(5))
+#ifdef CLOUD_CV
+   vv1 % v6(its:ite,jts:jte,1:kz_vv(6)) = vv % v6(its:ite,jts:jte,1:kz_vv(6))
+   vv1 % v7(its:ite,jts:jte,1:kz_vv(7)) = vv % v7(its:ite,jts:jte,1:kz_vv(7))
+   vv1 % v8(its:ite,jts:jte,1:kz_vv(8)) = vv % v8(its:ite,jts:jte,1:kz_vv(8))
+#endif
 
    vp1 % v1(its:ite,jts:jte,1:kz_vp(1)) = vp % v1(its:ite,jts:jte,1:kz_vp(1))
    vp1 % v2(its:ite,jts:jte,1:kz_vp(2)) = vp % v2(its:ite,jts:jte,1:kz_vp(2))
    vp1 % v3(its:ite,jts:jte,1:kz_vp(3)) = vp % v3(its:ite,jts:jte,1:kz_vp(3))
    vp1 % v4(its:ite,jts:jte,1:kz_vp(4)) = vp % v4(its:ite,jts:jte,1:kz_vp(4))
    vp1 % v5(its:ite,jts:jte,1:kz_vp(5)) = vp % v5(its:ite,jts:jte,1:kz_vp(5))
-
+#ifdef CLOUD_CV
+   vp1 % v6(its:ite,jts:jte,1:kz_vp(6)) = vp % v6(its:ite,jts:jte,1:kz_vp(6))
+   vp1 % v7(its:ite,jts:jte,1:kz_vp(7)) = vp % v7(its:ite,jts:jte,1:kz_vp(7))
+   vp1 % v8(its:ite,jts:jte,1:kz_vp(8)) = vp % v8(its:ite,jts:jte,1:kz_vp(8))
+#endif
    !----------------------------------------------------------------------
    ! [1.0]: Perform VvToVpToVv test:                        
    !----------------------------------------------------------------------
@@ -118,6 +136,11 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       vv % v3(its:ite,jts:jte,1:kz_vv(3)) = vp % v3(its:ite,jts:jte,1:kz_vp(3))
       vv % v4(its:ite,jts:jte,1:kz_vv(4)) = vp % v4(its:ite,jts:jte,1:kz_vp(4))
       vv % v5(its:ite,jts:jte,1:kz_vv(5)) = vp % v5(its:ite,jts:jte,1:kz_vp(5))
+#ifdef
+      vv % v6(its:ite,jts:jte,1:kz_vv(6)) = vp % v6(its:ite,jts:jte,1:kz_vp(6))
+      vv % v7(its:ite,jts:jte,1:kz_vv(7)) = vp % v7(its:ite,jts:jte,1:kz_vp(7))
+      vv % v8(its:ite,jts:jte,1:kz_vv(8)) = vp % v8(its:ite,jts:jte,1:kz_vp(8))
+#endif
    end if
 
    write(unit=stdout, fmt='(/a/)') 'da_check_vvtovptovv_errors'
@@ -136,6 +159,11 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       vp % v3(its:ite,jts:jte,1:kz_vv(3)) = vv % v3(its:ite,jts:jte,1:kz_vv(3))
       vp % v4(its:ite,jts:jte,1:kz_vv(4)) = vv % v4(its:ite,jts:jte,1:kz_vv(4))
       vp % v5(its:ite,jts:jte,1:kz_vv(5)) = vv % v5(its:ite,jts:jte,1:kz_vv(5))
+#ifdef CLOUD_CV
+      vp % v6(its:ite,jts:jte,1:kz_vv(6)) = vv % v6(its:ite,jts:jte,1:kz_vv(6))
+      vp % v7(its:ite,jts:jte,1:kz_vv(7)) = vv % v7(its:ite,jts:jte,1:kz_vv(7))
+      vp % v8(its:ite,jts:jte,1:kz_vv(8)) = vv % v8(its:ite,jts:jte,1:kz_vv(8))
+#endif
    end if
 
    ! Check inverse errors:
@@ -218,13 +246,22 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    deallocate (vp1 % v3)
    deallocate (vp1 % v4)
    deallocate (vp1 % v5)
+#ifdef CLOUD_CV
+   deallocate (vp1 % v6)
+   deallocate (vp1 % v7)
+   deallocate (vp1 % v8)
+#endif
 
    deallocate (vv1 % v1)
    deallocate (vv1 % v2)
    deallocate (vv1 % v3)
    deallocate (vv1 % v4)
    deallocate (vv1 % v5)
-
+#ifdef CLOUD_CV
+   deallocate (vv1 % v6)
+   deallocate (vv1 % v7)
+   deallocate (vv1 % v8)
+#endif
    if (trace_use) call da_trace_exit("da_test_vxtransform") 
 
 end subroutine da_test_vxtransform

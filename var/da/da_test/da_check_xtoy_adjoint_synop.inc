@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_synop(iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_synop")
 
-   do n=1, iv%info(synop)%nlocal
+   do n=iv%info(synop)%n1, iv%info(synop)%n2
       if (iv%info(synop)%zk(1,n) < 1.0) then
          y%synop(n)%u = 0.0
          y%synop(n)%v = 0.0

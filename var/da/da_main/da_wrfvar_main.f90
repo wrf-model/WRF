@@ -11,12 +11,15 @@ program da_wrfvar_main
 
    use module_symbols_util, only : wrfu_finalize
 
-   use da_control, only : trace_use
+   use da_control, only : trace_use, var4d
    use da_tracing, only : da_trace_init, da_trace_report, da_trace_entry, &
       da_trace_exit
    use da_wrf_interfaces, only : wrf_shutdown, wrf_message, disable_quilting
    use da_wrfvar_top, only : da_wrfvar_init1,da_wrfvar_init2,da_wrfvar_run, &
       da_wrfvar_finalize
+#ifdef VAR4D
+   use da_4dvar, only : clean_4dvar, da_finalize_model
+#endif
 
    implicit none
 
@@ -34,6 +37,13 @@ program da_wrfvar_main
    call da_wrfvar_run
 
    call da_wrfvar_finalize
+
+#ifdef VAR4D
+   if (var4d) then
+      call clean_4dvar
+      call da_finalize_model
+   end if
+#endif
 
    call wrf_message("*** WRF-Var completed successfully ***")
 

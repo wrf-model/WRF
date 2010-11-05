@@ -623,6 +623,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    enddo
 
    close(be_unit)
+   call da_free_unit(be_unit)
 
 end subroutine da_setup_be_ncep_gfs
 

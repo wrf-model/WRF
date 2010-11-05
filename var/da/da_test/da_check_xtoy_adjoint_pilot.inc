@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_pilot(iv, y, adjtest_lhs, pertile_lhs)
    
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_pilot")
 
-   do n=1, iv%info(pilot)%nlocal
+   do n=iv%info(pilot)%n1, iv%info(pilot)%n2
       if (iv%info(pilot)%proc_domain(1,n)) then
          do k=1, iv%info(pilot)%levels(n)
             adjtest_lhs = adjtest_lhs + &

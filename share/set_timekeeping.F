@@ -20,10 +20,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !end of zhang's doing
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    INTEGER :: dfi_fwdstop_year,dfi_fwdstop_month,dfi_fwdstop_day,dfi_fwdstop_hour,dfi_fwdstop_minute,dfi_fwdstop_second
    INTEGER :: dfi_bckstop_year,dfi_bckstop_month,dfi_bckstop_day,dfi_bckstop_hour,dfi_bckstop_minute,dfi_bckstop_second
-#endif
+! #endif
 
    INTEGER :: restart_interval_d
    INTEGER :: inputout_interval_d
@@ -76,9 +76,9 @@ SUBROUTINE Setup_Timekeeping ( grid )
                          __FILE__ , &
                          __LINE__  )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    IF ( (grid%dfi_opt .EQ. DFI_NODFI) .OR. (grid%dfi_stage .EQ. DFI_SETUP) ) THEN
-#endif
+! #endif
       CALL nl_get_start_year(grid%id,start_year)
       CALL nl_get_start_month(grid%id,start_month)
       CALL nl_get_start_day(grid%id,start_day)
@@ -100,7 +100,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             'WRFU_TimeSet(startTime) FAILED', &
                             __FILE__ , &
                             __LINE__  )
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ELSE
       IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN
          IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
@@ -201,21 +201,21 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    END IF
-#endif
+! #endif
 
    CALL nl_get_run_days(1,run_days)
    CALL nl_get_run_hours(1,run_hours)
    CALL nl_get_run_minutes(1,run_minutes)
    CALL nl_get_run_seconds(1,run_seconds)
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    IF ( (grid%dfi_opt .EQ. DFI_NODFI) .OR. (grid%dfi_stage .EQ. DFI_SETUP) .OR. (grid%dfi_stage .EQ. DFI_FST)) THEN
-#endif
+! #endif
 
       IF ( grid%id .EQ. head_grid%id .AND. &
            ( run_days .gt. 0 .or. run_hours .gt. 0 .or. run_minutes .gt. 0 .or. run_seconds .gt. 0 )) THEN
         CALL WRFU_TimeIntervalSet ( run_length , D=run_days, H=run_hours, M=run_minutes, S=run_seconds, rc=rc )
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
         IF ( grid%dfi_stage .EQ. DFI_FST .AND. grid%dfi_opt .EQ. DFI_DFL ) THEN
            CALL nl_get_start_year(grid%id,start_year)
            CALL nl_get_start_month(grid%id,start_month)
@@ -229,7 +229,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
            dfl_length = startTime - initialTime
            run_length = run_length - dfl_length
         END IF
-#endif
+! #endif
         CALL wrf_check_error( WRFU_SUCCESS, rc, &
                            'WRFU_TimeIntervalSet(run_length) FAILED', &
                            __FILE__ , &
@@ -252,7 +252,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
         run_length = stopTime - startTime
       ENDIF
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ELSE
 
       IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN 
@@ -311,7 +311,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       run_length = stopTime - startTime
 
    END IF
-#endif
+! #endif
 
    IF ( run_length .GT. zero_time ) THEN
      padding_interval = forever
@@ -522,17 +522,23 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 
-   CALL domain_alarm_create( grid, BOUNDARY_ALARM )
-   CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_AlarmEnable(BOUNDARY_ALARM) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
-   CALL WRFU_AlarmRingerOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_AlarmRingerOn(BOUNDARY_ALARM) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
+! without this test, it's possible for the value of the WRF_ALARM_SECS_TIL_NEXT_RING
+! that is written as metadata to a restart file to be garbage for BOUNDARY_ALARM for 
+! the nests.  Parallel NetCDF does a header check on all the metadata being written
+! from multiple processors and if it differs, it throws up an error. This avoids that.
+   IF ( grid%id .EQ. 1 ) THEN   ! only moad can have specified boundaries
+     CALL domain_alarm_create( grid, BOUNDARY_ALARM )
+     CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmEnable(BOUNDARY_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+     CALL WRFU_AlarmRingerOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(BOUNDARY_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
 
 ! This is the interval at which the code in time_for_move in share/mediation_integrate.F
 ! will recompute the center of the Vortex.  Other times, it will use the last position.

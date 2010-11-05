@@ -33,12 +33,13 @@
 !*  Date:    October 6, 2000
 !*
 !*----------------------------------------------------------------------------
-subroutine ext_pnc_RealFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
+subroutine ext_pnc_RealFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
+  logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
   integer                     ,intent(in)    :: NCID
   integer                     ,intent(in)    :: VarID
@@ -53,9 +54,17 @@ subroutine ext_pnc_RealFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   VCount_mpi = VCount
 
   if(IO == 'write') then
-    stat = NFMPI_PUT_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    if(Coll)then
+      stat = NFMPI_PUT_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    else
+      stat = NFMPI_PUT_VARA_REAL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    end if
   else
-    stat = NFMPI_GET_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    if(Coll)then
+      stat = NFMPI_GET_VARA_REAL_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   else
+      stat = NFMPI_GET_VARA_REAL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   end if
   endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -65,12 +74,13 @@ subroutine ext_pnc_RealFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   return
 end subroutine ext_pnc_RealFieldIO
 
-subroutine ext_pnc_DoubleFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
+subroutine ext_pnc_DoubleFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
+  logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
   integer                     ,intent(in)    :: NCID
   integer                     ,intent(in)    :: VarID
@@ -85,9 +95,17 @@ subroutine ext_pnc_DoubleFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   VCount_mpi = VCount
 
   if(IO == 'write') then
-    stat = NFMPI_PUT_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    if(Coll)then
+      stat = NFMPI_PUT_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   else
+      stat = NFMPI_PUT_VARA_DOUBLE(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   endif
   else
-    stat = NFMPI_GET_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    if(Coll)then
+      stat = NFMPI_GET_VARA_DOUBLE_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   else
+      stat = NFMPI_GET_VARA_DOUBLE(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   endif
   endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -97,12 +115,13 @@ subroutine ext_pnc_DoubleFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   return
 end subroutine ext_pnc_DoubleFieldIO
 
-subroutine ext_pnc_IntFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
+subroutine ext_pnc_IntFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
+  logical                     ,intent(in)    :: Coll
   character (*)               ,intent(in)    :: IO
   integer                     ,intent(in)    :: NCID
   integer                     ,intent(in)    :: VarID
@@ -117,9 +136,17 @@ subroutine ext_pnc_IntFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   VCount_mpi = VCount
 
   if(IO == 'write') then
-    stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    if(Coll)then
+      stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    else
+      stat = NFMPI_PUT_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    endif
   else
-    stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+    if(Coll)then
+      stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   else
+      stat = NFMPI_GET_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Data)
+   end if
   endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -129,12 +156,13 @@ subroutine ext_pnc_IntFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
   return
 end subroutine ext_pnc_IntFieldIO
 
-subroutine ext_pnc_LogicalFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
+subroutine ext_pnc_LogicalFieldIO(Coll,IO,NCID,VarID,VStart,VCount,Data,Status)
   use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
+  logical                                         ,intent(in)    :: Coll
   character (*)                                   ,intent(in)    :: IO
   integer                                         ,intent(in)    :: NCID
   integer                                         ,intent(in)    :: VarID
@@ -169,9 +197,17 @@ subroutine ext_pnc_LogicalFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
         enddo
       enddo
     enddo
-    stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+    if(Coll)then
+      stat = NFMPI_PUT_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+   else
+      stat = NFMPI_PUT_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+   end if
   else
-    stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+    if(Coll)then
+      stat = NFMPI_GET_VARA_INT_ALL(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+    else
+      stat = NFMPI_GET_VARA_INT(NCID,VarID,VStart_mpi,VCount_mpi,Buffer)
+    end if
     Data = Buffer == 1
   endif
   call netcdf_err(stat,Status)

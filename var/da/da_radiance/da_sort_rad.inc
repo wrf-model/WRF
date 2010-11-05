@@ -108,7 +108,7 @@ subroutine da_sort_rad (iv)
 
       iv%info(radiance)%plocal = iv%info(radiance)%plocal + iv%instid(i)%info%plocal
 
-      write(unit=stdout,fmt='(a,2x,a,2x,10i7)') &
+      write(unit=stdout,fmt='(a,2x,a,2x,240i7)') &
          ' FGAT: ',iv%instid(i)%rttovid_string, iv%instid(i)%info%plocal(1:num_fgat_time)
 
       do n = 1,iv%instid(i)%num_rad

@@ -1895,7 +1895,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  real, allocatable, dimension(:,:,:) :: real_domain
 
- character (len=10), dimension(10)  :: name = (/ "XLAT_M    ", &
+ character (len=10), dimension(24)  :: name = (/ "XLAT_M    ", &
                                                 "XLONG_M   ", &
                                                 "XLAT_V    ", &
                                                 "XLONG_V   ", &
@@ -1904,6 +1904,20 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
                                                 "LANDMASK  ", &
                                                 "LANDUSEF  ", &
                                                 "LU_INDEX  ", &
+                                                "HCNVX     ", &
+                                                "HSTDV     ", &
+                                                "HASYW     ", &
+                                                "HASYS     ", &
+                                                "HASYSW    ", &
+                                                "HASYNW    ", &
+                                                "HLENW     ", &
+                                                "HLENS     ", &
+                                                "HLENSW    ", &
+                                                "HLENNW    ", &
+                                                "HANIS     ", &
+                                                "HSLOP     ", &
+                                                "HANGL     ", &
+                                                "HZMAX     ", &
                                                 "HGT_M     " /)
 
  integer, parameter :: IO_BIN=1, IO_NET=2
@@ -2011,7 +2025,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
              if (istatus /= 0) CALL wrf_error_fatal('NEST_TERRAIN error after ext_XXX_open_for_read '//trim(input_fname))
 
 
-             do n=1,10
+             do n=1,24
 
              cname = name(n)
 
@@ -2474,20 +2488,27 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 !  Check land water interface
 
-! Skip this check for HWRF - causes some I/O performance issues at times
-#ifndef HWRF
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS,MIN(ITE,IDE-1)
       IF(grid%sm(I,J).GT.0.9 .AND. grid%vegfra(I,J) .NE. 0) THEN
-        WRITE(20,*)'PROBLEM AT THE LAND-WATER INTERFACE:',I,J,grid%sm(I-1,J),grid%vegfra(I-1,j),grid%sm(I,J),grid%vegfra(I,J)
+        WRITE(message,*)'PROBLEM AT THE LAND-WATER INTERFACE (VEGFRA):', &
+             I,J,grid%sm(I-1,J),grid%vegfra(I-1,j),grid%sm(I,J),grid%vegfra(I,J)
+        CALL wrf_message(trim(message))
       ENDIF
 !
+#if defined(HWRF)
+      ! HWRF should not perform the check below because the nmm_tsk is
+      ! update with the correct skin temperature every timestep (on both
+      ! land and sea points).
+#else
       IF(grid%sm(I,J).GT.0.9 .AND. grid%nmm_tsk(I,J) .NE. 0) THEN
-        WRITE(20,*)'PROBLEM AT THE LAND-WATER INTERFACE:',I,J,grid%sm(I-1,J),grid%nmm_tsk(I-1,J),grid%sm(I,J),grid%nmm_tsk(I,J)
+        WRITE(message,*)'PROBLEM AT THE LAND-WATER INTERFACE (NMM_TSK):', &
+             I,J,grid%sm(I-1,J),grid%nmm_tsk(I-1,J),grid%sm(I,J),grid%nmm_tsk(I,J)
+        CALL wrf_message(trim(message))
       ENDIF
+#endif
      ENDDO
     ENDDO
-#endif
 
 
 !   hardwire root depth for time being

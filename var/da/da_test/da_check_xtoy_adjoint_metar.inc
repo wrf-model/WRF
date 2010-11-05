@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_metar(iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_metar")
 
-   do n=1, iv%info(metar)%nlocal
+   do n=iv%info(metar)%n1, iv%info(metar)%n2
       if (iv%info(metar)%zk(1,n) < 1.0) then
          y%metar(n)%u = 0.0
          y%metar(n)%v = 0.0

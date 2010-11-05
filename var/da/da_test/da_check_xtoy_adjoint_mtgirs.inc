@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_mtgirs (iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_mtgirs")
 
-   do n=1, iv%info(mtgirs)%nlocal
+   do n=iv%info(mtgirs)%n1, iv%info(mtgirs)%n2
       do k=1, iv%info(mtgirs)%levels(n)
          if (iv%info(mtgirs)%proc_domain(k,n)) then
             adjtest_lhs = adjtest_lhs + &

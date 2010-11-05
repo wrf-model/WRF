@@ -93,50 +93,43 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
       if (use_hirs2obs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from hirs2.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'hirs2.bufr'
+         filename = 'hirs2 '
          call da_read_obs_bufrtovs ('hirs2', iv, filename)
       end if
 
       if (use_msuobs) then
-         filename = ' '
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from msu.bufr'
-         write(filename(1:8), fmt='(a)') 'msu.bufr'
+         filename = 'msu'
          call da_read_obs_bufrtovs ('msu  ', iv, filename)
       end if
 
       if (use_hirs3obs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from hirs3.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'hirs3.bufr'
+         filename = 'hirs3'
          call da_read_obs_bufrtovs('hirs3', iv, filename)
       end if
 
       if (use_amsuaobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from amsua.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'amsua.bufr'
+         filename = 'amsua'
          call da_read_obs_bufrtovs ('amsua', iv, filename)
       end if
 
       if (use_amsubobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from amsub.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'amsub.bufr'
+         filename = 'amsub'
          call da_read_obs_bufrtovs ('amsub', iv, filename)
       end if
 
       if (use_hirs4obs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from hirs4.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'hirs4.bufr'
+         filename = 'hirs4'
          call da_read_obs_bufrtovs('hirs4', iv, filename)
       end if
 
       if (use_mhsobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mhs.bufr'
-         filename = ' '
-         write(filename(1:8), fmt='(a)') 'mhs.bufr'
+         filename = 'mhs'
          call da_read_obs_bufrtovs('mhs  ', iv, filename)
       end if
 

@@ -57,7 +57,6 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
      rcv(cv_s:cv_e) = RESHAPE(vv % v1(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
-
    ! Store v2
    mz = mzs(2)
    if (mz > 0) then
@@ -77,7 +76,6 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
      rcv(cv_s:cv_e) = RESHAPE(vv % v2(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
-
    ! Store v3
    mz = mzs(3)
    if (mz > 0) then
@@ -98,7 +96,6 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       rcv(cv_s:cv_e) = RESHAPE(vv % v3(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
-
    ! Store v4
    mz = mzs(4)
    if (mz > 0) then
@@ -118,7 +115,6 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       rcv(cv_s:cv_e) = RESHAPE(vv % v4(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
-
    ! Store v5
    mz = mzs(5)
    if (mz > 0) then
@@ -138,11 +134,74 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       rcv(cv_s:cv_e) = RESHAPE(vv % v5(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
-
+#ifdef CLOUD_CV
+   ! Store v6
+   mz = mzs(6)
+   if (mz > 0) then
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+#ifdef NORESHAPE
+      do k=1,mz
+         do j=js,je
+            do i=is,ie
+               ijk = ijk + 1
+               rcv(ijk) = vv%v6(i,j,k)
+            end do
+         end do
+      end do
+#else
+      rcv(cv_s:cv_e) = RESHAPE(vv % v6(is:ie,js:je,1:mz), (/ijm/))
+#endif
+   end if
+   ! Store v7
+   mz = mzs(7)
+   if (mz > 0) then
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+#ifdef NORESHAPE
+      do k=1,mz
+         do j=js,je
+            do i=is,ie
+               ijk = ijk + 1
+               rcv(ijk) = vv%v7(i,j,k)
+            end do
+         end do
+      end do
+#else
+      rcv(cv_s:cv_e) = RESHAPE(vv % v7(is:ie,js:je,1:mz), (/ijm/))
+#endif
+   end if
+   ! Store v8
+   mz = mzs(8)
+   if (mz > 0) then
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+#ifdef NORESHAPE
+      do k=1,mz
+         do j=js,je
+            do i=is,ie
+               ijk = ijk + 1
+               rcv(ijk) = vv%v8(i,j,k)
+            end do
+         end do
+      end do
+#else
+      rcv(cv_s:cv_e) = RESHAPE(vv % v8(is:ie,js:je,1:mz), (/ijm/))
+#endif
+   end if
+#endif
+#ifdef CLOUD_CV
+   ! Store alpha:
+   mz = mzs(9)
+   ne = mzs(10)
+#else
    ! Store alpha:
    mz = mzs(6)
    ne = mzs(7)
-
+#endif
    if ( ne > 0 ) then
       ijmn = ix * jy * mz * ne
       cv_s = cv_e + 1

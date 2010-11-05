@@ -92,13 +92,13 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    CALL med_latbound_in ( grid , config_flags )
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-#else
-   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-#endif
+! #else
+!   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
+! #endif
      IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
        !  no history output on the first time of the restart
      ELSE
@@ -1273,12 +1273,12 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 !end of zhang's doing
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-#else
-   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-#endif
+! #else
+!    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
+! #endif
      CALL med_hist_out ( grid , HISTORY_ALARM , config_flags )
    ENDIF
 
@@ -1776,11 +1776,11 @@ integer myproc,i,j,k
 
    CALL wrf_debug ( 200 , 'in med_latbound_in' )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ! Avoid trying to re-read the boundary conditions if we are doing DFI integration
    !    and do not expect to find boundary conditions for the current time
    IF ( (grid%dfi_opt .EQ. DFI_DDFI .OR. grid%dfi_opt .EQ. DFI_TDFI) .AND. grid%dfi_stage .EQ. DFI_FWD ) RETURN
-#endif
+! #endif
 
 #if (WRFPLUS == 1)
    ! Avoid trying to re-read the boundary conditions if we are doing adjoint integration
@@ -1830,12 +1830,12 @@ integer myproc,i,j,k
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
        CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
        IF ( (config_flags%dfi_opt .NE. DFI_NODFI) .AND. (head_grid%dfi_stage .NE. DFI_FST) ) THEN
           CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
           CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
        END IF
-#endif
+! #endif
 #if (WRFPLUS == 1)
        ! In the beginning of the check, boundary will be read in advance to save it in s_xxx
        ! It will be read again when the first NL model start to run.

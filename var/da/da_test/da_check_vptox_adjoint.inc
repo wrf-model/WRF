@@ -28,6 +28,11 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    real                             :: vp2_v3(ims:ime,jms:jme,kms:kme)
    real                             :: vp2_v4(ims:ime,jms:jme,kms:kme)
    real                             :: vp2_v5(ims:ime,jms:jme,kms:kme)
+#ifdef CLOUD_CV
+   real                             :: vp2_v6(ims:ime,jms:jme,kms:kme)
+   real                             :: vp2_v7(ims:ime,jms:jme,kms:kme)
+   real                             :: vp2_v8(ims:ime,jms:jme,kms:kme)
+#endif
    real                             :: vp2_alpha(ims:ime,jms:jme,kms:kme,1:ne)
 
    if (trace_use) call da_trace_entry("da_check_vptox_adjoint")
@@ -92,6 +97,12 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    vp2_v3(:,:,:) = vp % v3(:,:,:)
    vp2_v4(:,:,:) = vp % v4(:,:,:)
    vp2_v5(:,:,:) = vp % v5(:,:,:)
+#ifdef CLOUD_CV
+   vp2_v6(:,:,:) = vp % v6(:,:,:)
+   vp2_v7(:,:,:) = vp % v7(:,:,:)
+   vp2_v8(:,:,:) = vp % v8(:,:,:)
+#endif
+
    if (be % ne > 0) vp2_alpha(:,:,:,:) = vp % alpha(:,:,:,:)
 
    !-------------------------------------------------------------------------
@@ -175,7 +186,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    grid%xa % t(:,:,:) = grid%xa % t(:,:,:) / typical_t_rms**2
    grid%xa % q(:,:,:) = grid%xa % q(:,:,:) / typical_q_rms**2
    grid%xa%psfc(:,:) = grid%xa%psfc(:,:) / typical_p_rms**2
-
+   
    grid%xa % p(:,:,:) = grid%xa % p(:,:,:) / typical_p_rms**2
    grid%xa % rho(:,:,:) = grid%xa % rho(:,:,:) / typical_rho_rms**2
 
@@ -230,7 +241,14 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
       adj_par_rhs
    adj_par_rhs = sum(vp % v5(its:ite,jts:jte,:) * vp2_v5(its:ite,jts:jte,:)) + &
       adj_par_rhs
-
+#ifdef CLOUD_CV
+   adj_par_rhs = sum(vp % v6(its:ite,jts:jte,:) * vp2_v6(its:ite,jts:jte,:)) + &
+      adj_par_rhs
+   adj_par_rhs = sum(vp % v7(its:ite,jts:jte,:) * vp2_v7(its:ite,jts:jte,:)) + &
+      adj_par_rhs
+   adj_par_rhs = sum(vp % v8(its:ite,jts:jte,:) * vp2_v8(its:ite,jts:jte,:)) + &
+      adj_par_rhs
+#endif
    if (be % ne > 0) then
       adj_par_rhs = sum(vp % alpha(its:ite,jts:jte,kts:kte,:) * &
          vp2_alpha(its:ite,jts:jte,kts:kte,:)) + adj_par_rhs
@@ -263,6 +281,11 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    vp % v3(:,:,:) = vp2_v3(:,:,:)
    vp % v4(:,:,:) = vp2_v4(:,:,:)
    vp % v5(:,:,:) = vp2_v5(:,:,:)
+#ifdef CLOUD_CV
+   vp % v6(:,:,:) = vp2_v6(:,:,:)
+   vp % v7(:,:,:) = vp2_v7(:,:,:)
+   vp % v8(:,:,:) = vp2_v8(:,:,:)
+#endif
    if (be % ne > 0) vp % alpha(:,:,:,:) = vp2_alpha(:,:,:,:)
 
    write(unit=stdout, fmt='(/a/)') 'da_check_vptox_adjoint: Test Finished:'

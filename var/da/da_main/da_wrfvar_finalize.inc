@@ -16,6 +16,9 @@ subroutine da_wrfvar_finalize
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
       call da_med_initialdata_output (head_grid, config_flags)
+#ifdef VAR4D
+      if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
+#endif
       call med_shutdown_io (head_grid, config_flags)
    end if
 

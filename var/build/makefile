@@ -1,13 +1,14 @@
 include ../../configure.wrf
 
-all_wrfvar: wrfvar be da_utils 
+all_wrfvar: wrfvar be da_utils
 
 setup : depend
 
 # preserve this makefile from overwriting
 links : 
 	@ cp makefile makefile.old
-	@ $(LN) ../../dyn_em/* .
+	@ $(LN) ../../dyn_em/init_modules_em.F .
+	@ $(LN) ../../dyn_em/module_em.F .
 	@ $(LN) ../gen_be/* .
 	@ $(LN) ../../share/* .
 	@ $(LN) ../../frame/* .
@@ -30,6 +31,10 @@ WRFVAR_LIBS = libwrfvar.a
 WRFVAR_LIB = -L. -lwrfvar $(RTTOV_LIB) $(CRTM_LIB)
 
 FPPFLAGS   = -I$(WRF_SRC_ROOT_DIR)/inc
+
+ifneq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
+	WRFPLUS_DIR = .
+endif
 
 depend : links module_state_description.F md_calls.inc \
                       da_generic_boilerplate.inc
@@ -56,6 +61,10 @@ libwrfvar.a : $(WRFVAR_OBJS)
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
+        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
+	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
+	mv $*.f.tmp $*.f
+        endif
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
 	  $(FC) -o $@ -c $(FCFLAGS) $(OMP) $(PROMOTION) $*.f ; \

@@ -1198,7 +1198,7 @@ SUBROUTINE ext_int_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Coun
            Status = 1
            return
         ENDIF
-        CALL int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, 4, &
+        CALL int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typesize, &
              locDataHandle, locElement, locVarName, Data, Outcount, code )
      ELSE
         Status = 1

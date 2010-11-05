@@ -205,6 +205,34 @@ state  real   told      ijk    dyn_nmm     1      -      r       "TOLD"    "T fr
 state  real   uold      ijk    dyn_nmm     1      -      r       "UOLD"    "U from previous timestep"                      "m s-1"
 state  real   vold      ijk    dyn_nmm     1      -      r       "VOLD"    "V from previous timestep"                      "m s-1"
 #
+# NMM DFI
+#
+state   real   hcoeff         {ndfi} misc        1         -     -    "HCOEFF"               "initialization weights"
+state   real   hcoeff_tot       -    misc        1         -     -    "HCOEFF_TOT"               "initialization weights"
+
+state  real   dfi_pd        ij     misc    1      -      r   "DFI_PD"      "Mass at I,J in the sigma domain"               "Pa"
+state  real   dfi_pint      ijk    misc    1      Z      r   "DFI_PINT"      "Model layer interface pressure"   "Pa"
+state  real   dfi_dwdt      ijk    misc    1      -     r    "DFI_DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
+state  real   dfi_t         ijk    misc    1      -      r   "DFI_T"       "Sensible temperature"                          "K"
+state  real   dfi_q         ijk    misc    1      -      r   "DFI_Q"       "Specific humidity"                             "kg kg-1"
+state  real   dfi_u         ijk    misc    1      -      r   "DFI_U"       "U component of wind"                           "m s-1"
+state  real   dfi_v         ijk    misc    1      -      r   "DFI_V"       "V component of wind"                           "m s-1"
+state  real   dfi_q2        ijk    misc    1      -      r   "DFI_Q2"      "2 * Turbulence kinetic energy"                 "m2 s-2"
+state  real   dfi_cwm       ijk    misc    1      -      r   "DFI_CWM"     "Total condensate"                              "kg kg-1"
+state  real   dfi_rrw       ijk    misc    1      -      r   "DFI_RRW"     "Tracer"                                        "kg kg-1"
+### remaining simply set aside, and restored to original values after filtering.
+### If a two-hour window, do the 00h fields get placed when restarting at f01?
+###
+state    real  dfi_STC        ilj   misc          1         Z     r    "DFI_STC"         "SOIL TEMPERATURE"   "K"
+state    real  dfi_SMC        ilj   misc          1         Z     r    "DFI_SMC"       "SOIL MOISTURE"     "m3 m-3"
+state    real  dfi_SH2O       ilj   misc          1         Z     r    "DFI_SH2O"      "UNFROZEN SOIL MOISTURE"     "m3 m-3"
+
+state    real  dfi_SNOW        ij    misc        1         -     r    "dfi_SNOW"         "SNOW WATER EQUIVALENT"    "kg m-2"
+state    real  dfi_SNOWH       ij    misc        1         -     r    "dfi_SNOWH"        "PHYSICAL SNOW DEPTH"      "m"
+state    real  dfi_CANWAT      ij    misc        1         -     r    "dfi_CANWAT"       "CANOPY WATER"             "kg m-2"
+state    real  dfi_NMM_TSK      ij      misc        1       -     r   "dfi_NMM_TSK"               "saved SURFACE SKIN TEMPERATURE"
+state    real  dfi_SNOWC        ij      misc        1       -      r  "dfi_SNOWC"             "FLAG INDICATING SNOW COVERAGE (1 FOR SNOW COVER)"         ""
+#
 # module_DYNAM
 #
 state  real   dx_nmm    ij     dyn_nmm     1      -      irh     "DX_NMM"  "East-west distance H-to-V points"              "m"
@@ -579,6 +607,15 @@ state   real    qr             ijkft   moist       1         -     rh       "QRA
 state   real    qi             ijkft   moist       1         -     rh       "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qs             ijkft   moist       1         -     rh       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ijkft   moist       1         -     rh       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+
+state   real    -              ijkft   dfi_moist       1         -     -    -
+state   real    dfi_qv         ijkft   dfi_moist       1         -     r      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    dfi_qc         ijkft   dfi_moist       1         -     r      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    dfi_qr         ijkft   dfi_moist       1         -     r      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    dfi_qi         ijkft   dfi_moist       1         -     r      "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    dfi_qs         ijkft   dfi_moist       1         -     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    dfi_qg         ijkft   dfi_moist       1         -     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+
 #                                               
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -    -
@@ -589,6 +626,25 @@ state   real    qng            ijkftb  scalar      1         -     i01rhusdf=(bd
 state   real    qndrop         ijkftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNDROP"           "Droplet number mixing ratio"        "# kg-1"
 state   real    qnn            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+
+state   real    -              ikjftb  dfi_scalar      1         -     -   -
+state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "Droplet number mixing ratio"        "# kg-1"
+state   real    dfi_qni        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNICE"     "Ice Number concentration" "# kg-1"
+state   real    dfi_qt         ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_CWM"       "Total condensate mixing ratio"      "kg kg-1"
+state   real    dfi_qns        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNSNOW"    "Snow Number concentration"   "# kg(-1)"
+state   real    dfi_qnr        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNRAIN"    "Rain Number concentration"   "# kg(-1)"
+state   real    dfi_qng        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNGRAUPEL" "Graupel Number concentration" "# kg(-1)"
+state   real    dfi_qnn        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
+state   real    dfi_qnc        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -863,10 +919,32 @@ rconfig   real    tstart                  namelist,time_control     max_domains 
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 
+# DFI namelist
+rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                ""      ""
+rconfig   integer dfi_nfilter            namelist,dfi_control   1       7     rh   "dfi_nfilter"                "Digital filter type"      ""
+rconfig   logical dfi_write_filtered_input  namelist,dfi_control  1  .true.   rh   "dfi_write_filtered_input"                "Write a wrfinput_filtered_d0n file?"      ""
+rconfig   logical dfi_write_dfi_history  namelist,dfi_control   1   .false.   rh   "dfi_write_dfi_history"    "Write history files during filtering?"      ""
+rconfig   integer dfi_cutoff_seconds     namelist,dfi_control   1    3600     rh   "dfi_cutoff_seconds"       "Digital filter cutoff time"      ""
+rconfig   integer dfi_time_dim           namelist,dfi_control   1    1000     rh   "dfi_time_dim"             "MAX DIMENSION FOR HCOEFF"
+rconfig   integer dfi_fwdstop_year       namelist,dfi_control   1    2004     rh   "dfi_fwdstop_year"         "4 DIGIT YEAR OF START OF DFI" "YEARS"
+rconfig   integer dfi_fwdstop_month      namelist,dfi_control   1      03     rh   "dfi_fwdstop_month"        "2 DIGIT MONTH OF THE YEAR OF START OF DFI" "MONTHS"
+rconfig   integer dfi_fwdstop_day        namelist,dfi_control   1      13     rh   "dfi_fwdstop_day"          "2 DIGIT DAY OF THE MONTH OF START OF DFI" "DAYS"
+rconfig   integer dfi_fwdstop_hour       namelist,dfi_control   1      12     rh   "dfi_fwdstop_hour"         "2 DIGIT HOUR OF THE DAY OF START OF DFI" "HOURS"
+rconfig   integer dfi_fwdstop_minute     namelist,dfi_control   1      00     rh   "dfi_fwdstop_minute"       "2 DIGIT MINUTE OF THE HOUR OF START OF DFI" "MINUTES"
+rconfig   integer dfi_fwdstop_second     namelist,dfi_control   1      00     rh   "dfi_fwdstop_second"       "2 DIGIT SECOND OF THE MINUTE OF START OF DFI" "SECONDS"
+rconfig   integer dfi_bckstop_year       namelist,dfi_control   1    2004     rh   "dfi_bckstop_year"         "4 DIGIT YEAR OF END OF DFI" "YEARS"
+rconfig   integer dfi_bckstop_month      namelist,dfi_control   1      03     rh   "dfi_bckstop_month"        "2 DIGIT MONTH OF THE YEAR OF END OF DFI" "MONTHS"
+rconfig   integer dfi_bckstop_day        namelist,dfi_control   1      14     rh   "dfi_bckstop_day"          "2 DIGIT DAY OF THE MONTH OF END OF DFI" "DAYS"
+rconfig   integer dfi_bckstop_hour       namelist,dfi_control   1      12     rh   "dfi_bckstop_hour"         "2 DIGIT HOUR OF THE DAY OF END OF DFI" "HOURS"
+rconfig   integer dfi_bckstop_minute     namelist,dfi_control   1      00     rh   "dfi_bckstop_minute"       "2 DIGIT MINUTE OF THE HOUR OF END OF DFI" "MINUTES"
+rconfig   integer dfi_bckstop_second     namelist,dfi_control   1      00     rh   "dfi_bckstop_second"       "2 DIGIT SECOND OF THE MINUTE OF END OF DFI" "SECONDS"
+
+
 # Domains
 rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     
 rconfig   integer time_step_fract_num     namelist,domains	1             0       ih   "time_step_fract_num"     
 rconfig   integer time_step_fract_den     namelist,domains	1             1       ih   "time_step_fract_den"     
+rconfig   integer time_step_dfi           namelist,domains      1             -       ih   "time_step_dfi"
 rconfig   integer max_dom                 namelist,domains	1             1       irh  "max_dom"               ""      ""
 rconfig   integer s_we                    namelist,domains	max_domains    1       irh    "s_we"          ""      ""
 rconfig   integer e_we                    namelist,domains	max_domains    32      irh    "e_we"          ""      ""
@@ -1025,9 +1103,12 @@ rconfig   real    tke_upper_bound         namelist,dynamics	max_domains    1000.
 rconfig   real    tke_drag_coefficient      namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      ""
 rconfig   real    tke_heat_flux           namelist,dynamics	max_domains    0.      h    "tke_heat_flux"              ""      ""
 rconfig   logical pert_coriolis           namelist,dynamics	max_domains  .false.  irh  "pert_coriolis"    ""   ""
-rconfig   logical euler_adv               namelist,dynamics     1            .false.  irh  "euler_adv"        "Logical flag to turn on/off Eulerian pasive advection"   ""
+rconfig   logical euler_adv               namelist,dynamics     1            .true.  irh  "euler_adv"        "Logical flag to turn on/off Eulerian pasive advection"   ""
 rconfig   integer idtadt                  namelist,dynamics     1              1      irh  "idtadt"           "Fundamental timesteps between calls to Eulerian advection for dynamics"   ""
 rconfig   integer idtadc                  namelist,dynamics     1              1      irh  "idtadc"           "Fundamental timesteps between calls to Eulerian advection for chemistry"   ""
+rconfig   real    codamp                  namelist,dynamics     max_domains   6.4     irh  "codamp"  "divergence damping weighting factor (larger = more damping) " ""
+rconfig   real    coac                    namelist,dynamics     max_domains   1.6     irh  "coac"  "horizontal diffusion weighting factor (larger = more diffusion) " ""
+rconfig   real    slophc                  namelist,dynamics     max_domains   6.364e-3     irh  "slophc"  "Maximum model level slope (dZ/dy) for which hor diffusion is applied" ""
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""
@@ -1159,6 +1240,18 @@ package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             -
 package   kfscheme       cu_physics==99              -             -
+
+package   dfi_setup      dfi_stage==0                -             -
+package   dfi_bck        dfi_stage==1                -             -
+package   dfi_fwd        dfi_stage==2                -             -
+package   dfi_fst        dfi_stage==3                -             -
+package   dfi_nodfi     dfi_opt==0                  -             -
+package   dfi_dfl       dfi_opt==1                  -            \
+ state:dfi_pd,dfi_pint,dfi_dwdt,dfi_t,dfi_q,dfi_u,dfi_v,dfi_q2,dfi_cwm,dfi_rrw,dfi_STC,dfi_SMC,dfi_SH2O,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_NMM_TSK,dfi_SNOWC
+package   dfi_ddfi      dfi_opt==2                  -            \
+ state:dfi_pd,dfi_pint,dfi_dwdt,dfi_t,dfi_q,dfi_u,dfi_v,dfi_q2,dfi_cwm,dfi_rrw,dfi_STC,dfi_SMC,dfi_SH2O,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_NMM_TSK,dfi_SNOWC
+package   dfi_tdfi      dfi_opt==3                  -            \
+ state:dfi_pd,dfi_pint,dfi_dwdt,dfi_t,dfi_q,dfi_u,dfi_v,dfi_q2,dfi_cwm,dfi_rrw,dfi_STC,dfi_SMC,dfi_SH2O,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_NMM_TSK,dfi_SNOWC
 
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -

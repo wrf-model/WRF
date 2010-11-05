@@ -15,7 +15,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    integer, intent(in)                :: cv_size_je ! Je cv size.
    integer, intent(in)                :: cv_size_jp ! Jp cv size.
    integer, intent(in)                :: cv_size_jl ! Jl cv size.
-   type (xbx_type),intent(in)         :: xbx    ! For header & non-grid arrays.
+   type (xbx_type),intent(inout)      :: xbx    ! For header & non-grid arrays.
    type (be_type), intent(in)         :: be     ! background error structure.
    type (iv_type), intent(inout)      :: iv     ! innovation vector (o-b).
    real, intent(in)                   :: xhat(1:cv_size) ! control variables.
@@ -33,7 +33,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    real             :: jo_partial                   ! jo for this processor
    type (y_type)    :: jo_grad_y ! Grad_y(jo)
    real             :: cv_xhat_jb(cv_size_jb), cv_xhat_je(cv_size_je), cv_xhat_jl(cv_size_jl)
+#ifdef CLOUD_CV
+   integer          :: mz(10)
+#else
    integer          :: mz(7)
+#endif
    integer          :: ndynopt, is, ie, js, je, ks, ke
    real             :: dtemp1x
 
@@ -52,8 +56,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    !-------------------------------------------------------------------------
    ! [0.0] initialization:
    !-------------------------------------------------------------------------
+#ifdef CLOUD_CV
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%alpha%mz, be % ne /)
+#else
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
-
+#endif
    je_start = cv_size_jb + 1
    je_end   = cv_size_jb + cv_size_je
    jl_start = cv_size_jb + cv_size_je + 1
@@ -94,16 +101,9 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    j % jc = 0.0
 
-   if ( var4d .and. grid%jcdfi_io .and. iter > 0 ) then
+   if ( var4d .and. (grid%jcdfi_use .or. grid%jcdfi_diag == 1) .and. iter > 0 ) then
 
-      ndynopt      = grid%dyn_opt
-      grid%dyn_opt = DYN_EM_TL
-      call nl_set_dyn_opt (1 , DYN_EM_TL)
-
-      call da_med_initialdata_input(grid , config_flags, 'tldf')
-
-      grid%dyn_opt = ndynopt
-      call nl_set_dyn_opt (1 , DYN_EM)
+#ifdef VAR4D
 
       is = grid%xp%ips
       ie = grid%xp%ipe
@@ -114,16 +114,20 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       ks = grid%xp%kps
       ke = grid%xp%kpe
       
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_u_2(is:ie,js:je,ks:ke), grid%g_u_2(is:ie,js:je,ks:ke) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_v_2(is:ie,js:je,ks:ke), grid%g_v_2(is:ie,js:je,ks:ke) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_t_2(is:ie,js:je,ks:ke), grid%g_t_2(is:ie,js:je,ks:ke) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1), grid%g_mu_2(is:ie,js:je), grid%g_mu_2(is:ie,js:je) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_moist(is:ie,js:je,ks:ke,P_G_QV), grid%g_moist(is:ie,js:je,ks:ke,P_G_QV) )
+      j % jc = j % jc + 0.5 * 1.0/grid%jcdfi_error_wind**2 * &
+               da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), model_grid%jcdfi_u(is:ie,ks:ke,js:je), model_grid%jcdfi_u(is:ie,ks:ke,js:je) )
+      j % jc = j % jc + 0.5 * 1.0/grid%jcdfi_error_wind**2 * &
+               da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), model_grid%jcdfi_v(is:ie,ks:ke,js:je), model_grid%jcdfi_v(is:ie,ks:ke,js:je) )
+      j % jc = j % jc + 0.5 * 1.0/grid%jcdfi_error_t**2 * &
+               da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), model_grid%jcdfi_t(is:ie,ks:ke,js:je), model_grid%jcdfi_t(is:ie,ks:ke,js:je) )
+      j % jc = j % jc + 0.5 * 1.0/grid%jcdfi_error_mu**2 * &
+               da_dot( (ie-is+1)*(je-js+1), model_grid%jcdfi_mu(is:ie,js:je), model_grid%jcdfi_mu(is:ie,js:je) )
 
       dtemp1x = j % jc
       ! summation across processors:
       j % jc  = wrf_dm_sum_real(dtemp1x)
 
+#endif
    end if
 
    !-------------------------------------------------------------------------
@@ -152,7 +156,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    if ( var4d ) then
       cv_xhat_jl(1:cv_size_jl) = cv (jl_start:jl_end) + xhat(jl_start:jl_end)
 
-      j % jl = jl_factor * 0.5 * da_dot_cv(cv_size_jl, cv_xhat_jl, cv_xhat_jl, grid, mz)
+      j % jl = 0.5 * da_dot_cv(cv_size_jl, cv_xhat_jl, cv_xhat_jl, grid, mz)
 
    endif
 

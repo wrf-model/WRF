@@ -1679,7 +1679,7 @@ CONTAINS
           CALL wrf_error_fatal ( message )
         END IF
 
-        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICAION = ', TRIM ( MMINSL )
+        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICATION = ', TRIM ( MMINSL )
         CALL wrf_message( mess )
 
         LUMATCH=0

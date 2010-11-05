@@ -84,7 +84,7 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
 !for gps
 
    if ( use_gpsrefobs ) then
-      call da_read_obs_bufrgpsro(iv, 'gpsro.bufr')
+      call da_read_obs_bufrgpsro(iv)
    end if
 
    if ( thin_conv ) then

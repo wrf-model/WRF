@@ -50,13 +50,23 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
    !----------------------------------------------------------------------
    ! [3.0] Calculate LHS of adjoint test equation:
    !----------------------------------------------------------------------
-
+#ifdef CLOUD_CV
    adj_par_lhs = sum(vv % v1(its:ite,jts:jte,1:be%v1%mz)**2) &
                + sum(vv % v2(its:ite,jts:jte,1:be%v2%mz)**2) &
                + sum(vv % v3(its:ite,jts:jte,1:be%v3%mz)**2) &
                + sum(vv % v4(its:ite,jts:jte,1:be%v4%mz)**2) &
-               + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2)
+               + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2) &
+               + sum(vv % v6(its:ite,jts:jte,1:be%v6%mz)**2) &
+               + sum(vv % v7(its:ite,jts:jte,1:be%v7%mz)**2) &
+               + sum(vv % v8(its:ite,jts:jte,1:be%v8%mz)**2)
+#else
+   adj_par_lhs = sum(vv % v1(its:ite,jts:jte,1:be%v1%mz)**2) &
+               + sum(vv % v2(its:ite,jts:jte,1:be%v2%mz)**2) &
+               + sum(vv % v3(its:ite,jts:jte,1:be%v3%mz)**2) &
+               + sum(vv % v4(its:ite,jts:jte,1:be%v4%mz)**2) &
+               + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2) 
 
+#endif
    if (be % ne > 0) then
       adj_par_lhs = adj_par_lhs + sum(vv % alpha(its:ite,jts:jte,1:be%alpha%mz,1:be%ne)**2)
    end if
@@ -71,7 +81,7 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
       call da_transform_vtovv_adj(grid, cv_size, be, cv2, vv)
    end if
 
-   cv_size_tmp = cv_size - be%cv%size_jp - be%cv%size_js
+   cv_size_tmp = cv_size - be%cv%size_jp - be%cv%size_js - be%cv%size_jl
    adj_par_rhs = sum(cv(1:cv_size_tmp) * cv2(1:cv_size_tmp))
 
    !----------------------------------------------------------------------

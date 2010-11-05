@@ -1604,7 +1604,6 @@ character *24 :: temp24 , temp24b
          DO j = jps , jpe
             DO i = ips , ipe
                pdbdy2dtemp1(i,j,1) = pdbdy2dtemp2(i,j,1)
-	if (J .eq. jpe) write(0,*) 'I,J, PDBDy2dtemp1(i,j,1):' , I,J, PDBDy2dtemp1(i,j,1)
             END DO
          END DO
 

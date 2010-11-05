@@ -38,11 +38,19 @@ subroutine da_setup_cv(be)
       be % cv % size3 = ij * be % v3 % mz
       be % cv % size4 = ij * be % v4 % mz
       be % cv % size5 = ij * be % v5 % mz
+#ifdef CLOUD_CV
+      be % cv % size6 = ij * be % v6 % mz
+      be % cv % size7 = ij * be % v7 % mz
+      be % cv % size8 = ij * be % v8 % mz
+#endif
    end if
-
+#ifdef CLOUD_CV
+   be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
+      be % cv % size4 + be % cv % size5+ be % cv % size6 + be % cv % size7 +  be % cv % size8
+#else
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5
-   
+#endif   
    !--------------------------------------------------------------
    ! [1.1] Define 4D-Var lateral boundary condition control variable size:
    !--------------------------------------------------------------
@@ -86,8 +94,13 @@ subroutine da_setup_cv(be)
       iy = ide - ids + 1
       jx = jde - jds + 1
       ij = iy * jx
+#ifdef CLOUD_CV
+      cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
+                                 be % v4 % mz + be % v5 % mz + be % v6 % mz + be % v7 % mz +  be % cv % size8 )
+#else
       cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
                                  be % v4 % mz + be % v5 % mz)
+#endif
       cv_size_domain_je = ij * be % alpha % mz * be % ne
       if ( var4d ) then
          cv_size_domain_jl = cv_size_domain_jb 

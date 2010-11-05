@@ -1,4 +1,4 @@
-subroutine da_transform_through_rf(grid,mz, rf_alpha, val,field)
+subroutine da_transform_through_rf(grid,mz, rf_alpha, val,field, scaling)
 
    !---------------------------------------------------------------------------
    ! Purpose: Control variable transform through the recursive filter.  
@@ -23,6 +23,8 @@ subroutine da_transform_through_rf(grid,mz, rf_alpha, val,field)
    real    :: p_x(ims:ime,jms:jme)! sqrt(Grid box area).
    real*8  :: val_j(grid%xp%jtsy:grid%xp%jtey)
    real*8  :: val_i(grid%xp%itsx:grid%xp%itex)
+   
+   logical, optional, intent(in) :: scaling
 
    !----------------------------------------------------------------------
    ! [1.0]: Initialise:
@@ -161,14 +163,15 @@ subroutine da_transform_through_rf(grid,mz, rf_alpha, val,field)
    ! vert_corr = vert_corr_1 as scaling is performed in vertical transform
    ! for vert_corr = vert_corr_2:
 
-   if (vert_corr == vert_corr_1) then
-      do m = 1, mz
-         do i = its, ite
-            field(i,jts:jte,m) = field(i,jts:jte,m) * val(jts:jte,m)
+   if (vert_corr == vert_corr_1 .or. present(scaling)) then
+      if (scaling .or. vert_corr == vert_corr_1) then
+         do m = 1, mz
+            do i = its, ite
+               field(i,jts:jte,m) = field(i,jts:jte,m) * val(jts:jte,m)
+            end do
          end do
-      end do
+      end if
    end if
-
    if (trace_use_dull) call da_trace_exit("da_transform_through_rf")
 
 end subroutine da_transform_through_rf

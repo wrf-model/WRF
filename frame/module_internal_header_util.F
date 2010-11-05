@@ -673,8 +673,8 @@ SUBROUTINE int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typ
   i = n/itypesize + 1
   CALL int_unpack_string ( Element, hdrbuf( i ), n ) ; i=i+n;
   CALL int_unpack_string ( VarName, hdrbuf( i ), n ) ; i = i + n
-  write(0,*)'int_get_ti_header_integer_varname "', &
-       TRIM(Element),'" "', TRIM(VarName),'" data(1)=',Data(1)
+!  write(0,*)'int_get_ti_header_integer_varname "', &
+!       TRIM(Element),'" "', TRIM(VarName),'" data(1)=',Data(1)
   hdrbufsize = hdrbuf(1)
   RETURN
 END SUBROUTINE int_get_ti_header_integer_varname

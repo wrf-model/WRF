@@ -94,7 +94,7 @@ MODULE module_si_io_nmm
 
       !  Input 2D surface fields.
 
-      REAL , DIMENSION(:,:)   , ALLOCATABLE :: soilt010_input , soilt040_input , &
+      REAL , DIMENSION(:,:)   , ALLOCATABLE,save :: soilt010_input , soilt040_input , &
                                                soilt100_input , soilt200_input , &
                                                soilm010_input , soilm040_input , &
                                                soilm100_input , soilm200_input , &
@@ -106,7 +106,7 @@ MODULE module_si_io_nmm
       REAL , DIMENSION(:)     , ALLOCATABLE :: DETA1_in, AETA1_in, ETA1_in
       REAL , DIMENSION(:)     , ALLOCATABLE :: DETA2_in, AETA2_in, ETA2_in, DFL_in
 
-      REAL , DIMENSION(:,:,:), ALLOCATABLE :: st_inputx , sm_inputx, sw_inputx
+      REAL , DIMENSION(:,:,:), ALLOCATABLE,save :: st_inputx , sm_inputx, sw_inputx
 
       !  Local input arrays
 
@@ -258,6 +258,7 @@ CONTAINS
       REAL :: dummy
 
       CHARACTER (LEN= 8) :: dummy_char
+      CHARACTER (LEN=256) :: dummy_char_256
 
       INTEGER :: ok , map_proj , ok_open
       REAL :: pt
@@ -307,9 +308,9 @@ CONTAINS
 
       !  Initialize what soil temperature and moisture is available.
 
-      write(0,*) 'dum3d I allocs: ', ids,ide-1
-      write(0,*) 'dum3d J allocs: ', jds,jde-1
-      write(0,*) 'dum3d K allocs: ', kds,kde-1
+!      write(0,*) 'dum3d I allocs: ', ids,ide-1
+!      write(0,*) 'dum3d J allocs: ', jds,jde-1
+!      write(0,*) 'dum3d K allocs: ', kds,kde-1
 
       flag_st000010 = 0
       flag_st010040 = 0
@@ -604,9 +605,9 @@ CONTAINS
       END IF
       CALL nl_set_map_proj ( grid%id , map_proj ) 
      
-      write(0,*) 'global_meta%si_version: ', global_meta%si_version
-      write(0,*) 'global_meta%lu_source: ', global_meta%lu_source
-      write(0,*) 'global_meta%lu_water: ', global_meta%lu_water
+!      write(0,*) 'global_meta%si_version: ', global_meta%si_version
+!      write(0,*) 'global_meta%lu_source: ', global_meta%lu_source
+!      write(0,*) 'global_meta%lu_water: ', global_meta%lu_water
       IF      ( global_meta%si_version .EQ. 1 ) THEN
          CALL nl_set_mminlu (grid%id, 'USGS' )
          CALL nl_set_iswater (grid%id, 16 )
@@ -662,7 +663,7 @@ CONTAINS
         IMAX=min(IDE-1,ITE)
          !  3D meteorological fields.
 
-         write(0,*)' read_si var_info%name=',var_info%name(1:8)
+!         write(0,*)' read_si var_info%name=',var_info%name(1:8)
 
          IF      ( var_info%name(1:8) .EQ. 'T       ' ) THEN
             READ (13) dum3d
@@ -1308,14 +1309,14 @@ print *,'------------------> skipping ', var_info%name(1:8)
       enddo
       enddo
 
-      write(0,*) 'size sw_input: ', size(sw_input,dim=1),size(sw_input,dim=2),size(sw_input,dim=3)
-      write(0,*) 'size sw_inputx: ', size(sw_inputx,dim=1),size(sw_inputx,dim=2),size(sw_inputx,dim=3)
+!      write(0,*) 'size sw_input: ', size(sw_input,dim=1),size(sw_input,dim=2),size(sw_input,dim=3)
+!      write(0,*) 'size sw_inputx: ', size(sw_inputx,dim=1),size(sw_inputx,dim=2),size(sw_inputx,dim=3)
       sw_input=0.
 
-        write(0,*) 'maxval st_inputx(1): ', maxval(st_input(:,:,1))
-        write(0,*) 'maxval st_inputx(2): ', maxval(st_input(:,:,2))
-        write(0,*) 'maxval st_inputx(3): ', maxval(st_input(:,:,3))
-        write(0,*) 'maxval st_inputx(4): ', maxval(st_input(:,:,4))
+!        write(0,*) 'maxval st_inputx(1): ', maxval(st_input(:,:,1))
+!        write(0,*) 'maxval st_inputx(2): ', maxval(st_input(:,:,2))
+!        write(0,*) 'maxval st_inputx(3): ', maxval(st_input(:,:,3))
+!        write(0,*) 'maxval st_inputx(4): ', maxval(st_input(:,:,4))
 
 
         do J=JTS,min(JDE-1,JTE)
@@ -1328,10 +1329,10 @@ print *,'------------------> skipping ', var_info%name(1:8)
          enddo
         enddo
 
-        write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
-        write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
-        write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
-        write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
+!        write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
+!        write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
+!        write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
+!        write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
 
 
          num_veg_cat      = SIZE ( grid%landusef , DIM=2 )
@@ -1402,6 +1403,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
       CHARACTER (LEN=19) , INTENT(IN) :: file_date_string
       CHARACTER (LEN=19)              :: VarName
       CHARACTER (LEN=150)             :: chartemp
+      CHARACTER (LEN=256)             :: mminlu_loc, message
       CHARACTER (*) , INTENT(IN) :: filename
 
       INTEGER :: ids,ide,jds,jde,kds,kde           &
@@ -1416,18 +1418,18 @@ print *,'------------------> skipping ', var_info%name(1:8)
       integer :: nrecs,iunit, L,hor_size
 
 !!
-      character*132, allocatable :: datestr_all(:)
-      character*132, allocatable :: varname_all(:)
-      integer, allocatable       :: domainend_all(:,:)
-      integer, allocatable       :: start_block(:)
-      integer, allocatable       :: end_block(:)
-      integer, allocatable       :: start_byte(:)
-      integer, allocatable       :: end_byte(:)
-      integer(kind=i_llong), allocatable           :: file_offset(:)
+      character*132, allocatable,save :: datestr_all(:)
+      character*132, allocatable,save :: varname_all(:)
+      integer, allocatable,save       :: domainend_all(:,:)
+      integer, allocatable,save       :: start_block(:)
+      integer, allocatable,save       :: end_block(:)
+      integer, allocatable,save       :: start_byte(:)
+      integer, allocatable,save       :: end_byte(:)
+      integer(kind=i_llong), allocatable,save           :: file_offset(:)
 !!
 
       REAL :: dummy,tmp,garb
-      REAL, ALLOCATABLE:: dumdata(:,:,:)
+      REAL, ALLOCATABLE,save :: dumdata(:,:,:)
 
       CHARACTER (LEN= 8) :: dummy_char
 
@@ -1513,15 +1515,16 @@ print *,'------------------> skipping ', var_info%name(1:8)
       st_levels_input = -1
       sm_levels_input = -1
 
-         CALL nl_set_mminlu ( grid%id, 'USGS')
+	mminlu_loc=''
+        mminlu_loc(1:4)='USGS'
+
+         CALL nl_set_mminlu ( grid%id, mminlu_loc)
          CALL nl_set_iswater (grid%id, 16 )
          CALL nl_set_isice (grid%id, 24 )
+         CALL nl_set_islake (grid%id, -1)
 
 
       !  Get the space for the data if this is the first time here.
-
-!       write(6,*) 'pre allocations'
-!       call summary()
 
         IF (.NOT. ALLOCATED (pmsl)              ) ALLOCATE ( pmsl(its:ite,jts:jte) )
         IF (.NOT. ALLOCATED (psfc_in)           ) ALLOCATE ( psfc_in(its:ite,jts:jte) )
@@ -1537,33 +1540,29 @@ print *,'------------------> skipping ', var_info%name(1:8)
         IF (.NOT. ALLOCATED (soilm100_input)    ) ALLOCATE ( soilm100_input(its:ite,jts:jte) )
         IF (.NOT. ALLOCATED (soilm200_input)    ) ALLOCATE ( soilm200_input(its:ite,jts:jte) )
 
-!       write(6,*) 'past allocations'
-!       call summary()
-
         !  Local arrays
-
 
 !!! MPI IO
 
       iunit=33
       call count_recs_wrf_binary_file(iunit, trim(fileName), nrecs)
-        write(0,*) 'nrecs: ', nrecs
 
-      allocate (datestr_all(nrecs))
-      allocate (varname_all(nrecs))
-      allocate (domainend_all(3,nrecs))
-      allocate (start_block(nrecs))
-      allocate (end_block(nrecs))
-      allocate (start_byte(nrecs))
-      allocate (end_byte(nrecs))
-      allocate (file_offset(nrecs))
+      if (.NOT. ALLOCATED (datestr_all)) allocate (datestr_all(nrecs))
+      if (.NOT. ALLOCATED (varname_all)) allocate (varname_all(nrecs))
+      if (.NOT. ALLOCATED (domainend_all)) allocate (domainend_all(3,nrecs))
+      if (.NOT. ALLOCATED (start_block)) allocate (start_block(nrecs))
+      if (.NOT. ALLOCATED (end_block)) allocate (end_block(nrecs))
+      if (.NOT. ALLOCATED (start_byte)) allocate (start_byte(nrecs))
+      if (.NOT. ALLOCATED (end_byte)) allocate (end_byte(nrecs))
+      if (.NOT. ALLOCATED (file_offset)) allocate (file_offset(nrecs))
 
       call inventory_wrf_binary_file(iunit, trim(filename), nrecs,  &
                       datestr_all,varname_all,domainend_all,   &
                       start_block,end_block,start_byte,end_byte,file_offset)
 
         do N=1,NRECS
-        write(0,*) 'N,varname_all(N): ',N, varname_all(N)
+         write(message,*) 'N,varname_all(N): ',N, varname_all(N)
+         call wrf_debug(100,message)
         enddo
 
       call mpi_file_open(mpi_comm_world, trim(filename),     &
@@ -1575,7 +1574,8 @@ print *,'------------------> skipping ', var_info%name(1:8)
       VarName='CEN_LAT'
       call retrieve_index(index,VarName,varname_all,nrecs,iret)
       if (iret /= 0) then
-        print*,VarName," not found in file"
+        write(message,*) VarName, ' not found in file'
+        call wrf_message(message)
       else
 
         call mpi_file_read_at(iunit,file_offset(index)+5*4,      &
@@ -1583,11 +1583,12 @@ print *,'------------------> skipping ', var_info%name(1:8)
                               mpi_status_ignore, ierr)
 
         if (ierr /= 0) then
-          print*,"Error reading ", VarName," using MPIIO"
+          write(message,*) 'Error reading ', VarName,' using MPIIO'
+          call wrf_message(message)
         else
-          print*,VarName, ' from MPIIO READ= ',garb
+          write(message,*) VarName, ' from MPIIO READ= ', garb
+          call wrf_message(message)
           CALL nl_set_cen_lat ( grid%id , garb )
-          write(0,*) 'cenlat= ', garb
         end if
       end if
 
@@ -1621,54 +1622,27 @@ print *,'------------------> skipping ', var_info%name(1:8)
 
           CALL  nl_set_map_proj( grid%id, igarb)
 
-
-!    CALL ext_int_ioinit(SysDepInfo,Status)
-!    CALL ext_int_open_for_read( trim(fileName), 0, 0, " ", &
-!                                DataHandle, Status)
-
     hor_size=(IDE-IDS)*(JDE-JDS)
-        write(0,*) 'hor_size: ', hor_size
-        write(0,*) 'IDE, JDE: ', IDE, JDE
 
     varName='PRES'
+	if (.not. allocated(dumdata)) then
     allocate(dumdata(IDS:IDE-1,JDS:JDE-1,num_metgrid_levels))
+	endif
 
      CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
      CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                           dumdata,hor_size*num_metgrid_levels,mpi_real4,             &
                           mpi_status_ignore, ierr)
 
-        write(0,*) 'ierr from mpi_file_read_at for PRES: ', ierr
-
-!    call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
-
-        write(6,*) 'post first read_from_wps_int'
-!       call summary()
-
        DO K=1,num_metgrid_levels
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%p_gc(I,J,K)=dumdata(I,J,K)
-        if (I .eq. 1 .and. J .eq. 1) then
-!       write(0,*) 'I,J,K,grid%p_gc(I,J,K): ', I,J,K,grid%p_gc(I,J,K)
-        endif
-        if (I .eq. min(ITE,IDE-1) .and. J .eq. min(JTE,JDE-1)) then
-!       write(0,*) 'I,J,K,grid%p_gc(I,J,K): ', I,J,K,grid%p_gc(I,J,K)
-        endif
          ENDDO
         ENDDO
        ENDDO
 
-!        write(0,*) 'grid%p_gc(25,25,25): ', grid%p_gc(25,25,25)
-
-!    varName='SMC_WPS'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
-!
-!    varName='STC_WPS'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
-
     varName='GHT'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
 
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
@@ -1680,29 +1654,12 @@ print *,'------------------> skipping ', var_info%name(1:8)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%ght_gc(I,J,K)=dumdata(I,J,K)
-
-!       if (K .eq. 15 .and. mod(I,10) .eq. 0 .and. mod(J,10) .eq. 0) then
-!       write(0,*) 'I,J,K,grid%ght_gc(I,J,K): ', I,J,K,grid%ght_gc(I,J,K)
-!       endif
-
-        if (I .eq. 1 .and. J .eq. 1) then
-!       write(0,*) 'I,J,K,grid%ght_gc(I,J,K): ', I,J,K,grid%ght_gc(I,J,K)
-        endif
-
-        if (I .eq. min(ITE,IDE-1) .and. J .eq. min(JTE,JDE-1)) then
-!       write(0,*) 'I,J,K,grid%ght_gc(I,J,K): ', I,J,K,grid%ght_gc(I,J,K)
-        endif
-
          ENDDO
         ENDDO
        ENDDO
 
 
-!       write(6,*) 'post GHT read'
-!       call summary()
-
     varName='VEGCAT'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
 
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
@@ -1720,7 +1677,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%input_soil_cat(I,J)=dumdata(I,J,1)
@@ -1733,7 +1689,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%canwat(I,J)=dumdata(I,J,1)
@@ -1745,7 +1700,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%snow(I,J)=dumdata(I,J,1)
@@ -1757,16 +1711,13 @@ print *,'------------------> skipping ', var_info%name(1:8)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%tsk_gc(I,J)=dumdata(I,J,1)
          ENDDO
         ENDDO
-!        write(0,*) 'skintemp(25,25): ', grid%tsk_gc(25,25)
 
     varName='SOILHGT'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -1777,16 +1728,11 @@ print *,'------------------> skipping ', var_info%name(1:8)
          ENDDO
         ENDDO
 
-!    varName='LANDSEA'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
-!???
-
     varName='SEAICE'
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%xice_gc(I,J)=dumdata(I,J,1)
@@ -1798,7 +1744,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%st100200(I,J)=dumdata(I,J,1)
@@ -1810,7 +1755,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%st040100(I,J)=dumdata(I,J,1)
@@ -1823,7 +1767,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%st010040(I,J)=dumdata(I,J,1)
@@ -1836,7 +1779,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%st000010(I,J)=dumdata(I,J,1)
@@ -1849,7 +1791,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%sm100200(I,J)=dumdata(I,J,1)
@@ -1862,7 +1803,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%sm040100(I,J)=dumdata(I,J,1)
@@ -1875,7 +1815,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%sm010040(I,J)=dumdata(I,J,1)
@@ -1888,7 +1827,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%sm000010(I,J)=dumdata(I,J,1)
@@ -1901,7 +1839,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%psfc(I,J)=dumdata(I,J,1)
@@ -1914,7 +1851,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size*num_metgrid_levels,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
        DO K=1,num_metgrid_levels
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
@@ -1924,7 +1860,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
        ENDDO
 
     varName='VV'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*num_metgrid_levels,mpi_real4,             &
@@ -1942,7 +1877,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*num_metgrid_levels,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
        DO K=1,num_metgrid_levels
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
@@ -1958,7 +1892,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*num_metgrid_levels,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
        DO K=1,num_metgrid_levels
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
@@ -1966,7 +1899,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
          ENDDO
         ENDDO
        ENDDO
-!        write(0,*) 't_gc(25,25,25): ', grid%t_gc(25,25,25)
         endif
 
 !    varName='RWMR'
@@ -2047,14 +1979,12 @@ print *,'------------------> skipping ', var_info%name(1:8)
   979   continue
 
 !    varName='PMSL'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
 
     varName='SLOPECAT'
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%slopecat(I,J)=dumdata(I,J,1)
@@ -2067,7 +1997,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                              dumdata,hor_size,mpi_real4,             &
                              mpi_status_ignore, ierr)
 
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%snoalb(I,J)=dumdata(I,J,1)
@@ -2075,12 +2004,10 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
          num_veg_cat      = SIZE ( grid%landusef_gc , DIM=3 )
-!         write(0,*) 'num_veg_cat: ', num_veg_cat
          num_soil_top_cat = SIZE ( grid%soilctop_gc , DIM=3 )
          num_soil_bot_cat = SIZE ( grid%soilcbot_gc , DIM=3 )
 
     varName='GREENFRAC'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*12,mpi_real4,             &
@@ -2095,7 +2022,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
        ENDDO
 
     varName='ALBEDO12M'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*12,mpi_real4,             &
@@ -2110,7 +2036,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
        ENDDO
 
     varName='SOILCBOT'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*num_soil_bot_cat,mpi_real4,             &
@@ -2125,7 +2050,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
        ENDDO
 
     varName='SOILCAT'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2137,10 +2061,8 @@ print *,'------------------> skipping ', var_info%name(1:8)
          ENDDO
         ENDDO
 
-!        write(0,*) 'veg_cat and soil_cat sizes:::: ', num_veg_cat , num_soil_top_cat
 
     varName='SOILCTOP'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*num_soil_top_cat,mpi_real4,             &
@@ -2154,7 +2076,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
        ENDDO
 
     varName='SOILTEMP'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2167,7 +2088,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
     varName='HGT_V'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2180,7 +2100,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
     varName='HGT_M'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2193,7 +2112,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
     varName='LU_INDEX'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2206,7 +2124,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
     varName='LANDUSEF'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size*num_veg_cat,mpi_real4,             &
@@ -2216,17 +2133,11 @@ print *,'------------------> skipping ', var_info%name(1:8)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%landusef_gc(I,J,K)=dumdata(I,J,K)
-
-        if (I .eq. 50 .and. J .eq. 50) then
-!        write(0,*) 'I,J,landusef_gc:: ', I,J,grid%landusef_gc(I,J,K)
-        endif
-
          ENDDO
         ENDDO
        ENDDO
 
     varName='LANDMASK'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2235,20 +2146,11 @@ print *,'------------------> skipping ', var_info%name(1:8)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%landmask(I,J)=dumdata(I,J,1)
-        if (I .eq. 50 .and. J .eq. 50) then
-!        write(0,*) 'I,J,landmask:: ', I,J,grid%landmask(I,J)
-        endif
          ENDDO
         ENDDO
 
-!    varName='F'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
-!    varName='E'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
-
 
     varName='XLONG_V'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2261,7 +2163,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
     varName='XLAT_V'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2274,7 +2175,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
     varName='XLONG_M'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2287,7 +2187,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         ENDDO
 
     varName='XLAT_M'
-!        call read_from_wps_int(filename,file_date_string,DataHandle,varname,dumdata,IDE,JDE,num_metgrid_levels)
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
                              dumdata,hor_size,mpi_real4,             &
@@ -2298,6 +2197,178 @@ print *,'------------------> skipping ', var_info%name(1:8)
            grid%hlat_gc(I,J)=dumdata(I,J,1)
          ENDDO
         ENDDO
+
+
+!!! GWD fields
+
+    varName='HSTDV'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hstdv(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HCNVX'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hcnvx(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HASYW'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hasyw(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HASYS'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hasys(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HASYSW'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hasysw(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HASYNW'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hasynw(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HLENW'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hlenw(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HLENS'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hlens(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HLENSW'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hlensw(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HLENNW'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hlennw(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HANGL'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hangl(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HANIS'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hanis(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HSLOP'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hslop(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='HZMAX'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%hzmax(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+	write(0,*) 'maxval grid%hzmax: ', maxval(grid%hzmax)
 
       call mpi_file_close(mpi_comm_world, ierr)
 
@@ -2389,13 +2460,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
 
       sw_input=0.
 
-!        write(0,*) 'maxval st_inputx(1): ', maxval(st_inputx(:,:,1))
-!        write(0,*) 'maxval st_inputx(2): ', maxval(st_inputx(:,:,2))
-!        write(0,*) 'maxval st_inputx(3): ', maxval(st_inputx(:,:,3))
-!        write(0,*) 'maxval st_inputx(4): ', maxval(st_inputx(:,:,4))
-
-!        write(6,*) 'to st_input...sw_input definition'
-!       call summary()
 
         do J=JTS,min(JDE-1,JTE)
          do K=1,num_st_levels_alloc
@@ -2406,28 +2470,21 @@ print *,'------------------> skipping ', var_info%name(1:8)
           enddo
          enddo
         enddo
-!        write(6,*) 'past st_input...sw_input definition'
-!       call summary()
 
-!        write(0,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
-!        write(0,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
-!        write(0,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
-!        write(0,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
-
-        DEALLOCATE(pmsl)
-        DEALLOCATE(psfc_in)
-        DEALLOCATE(st_inputx)
-        DEALLOCATE(sm_inputx)
-        DEALLOCATE(sw_inputx)
-        DEALLOCATE(soilt010_input)
-        DEALLOCATE(soilt040_input)
-        DEALLOCATE(soilt100_input)
-        DEALLOCATE(soilt200_input)
-        DEALLOCATE(soilm010_input)
-        DEALLOCATE(soilm040_input)
-        DEALLOCATE(soilm100_input)
-        DEALLOCATE(soilm200_input)
-        DEALLOCATE(dumdata)
+!        DEALLOCATE(pmsl)
+!        DEALLOCATE(psfc_in)
+!        DEALLOCATE(st_inputx)
+!        DEALLOCATE(sm_inputx)
+!        DEALLOCATE(sw_inputx)
+!        DEALLOCATE(soilt010_input)
+!        DEALLOCATE(soilt040_input)
+!        DEALLOCATE(soilt100_input)
+!        DEALLOCATE(soilt200_input)
+!        DEALLOCATE(soilm010_input)
+!        DEALLOCATE(soilm040_input)
+!        DEALLOCATE(soilm100_input)
+!        DEALLOCATE(soilm200_input)
+!        DEALLOCATE(dumdata)
 
 #endif
      end subroutine read_wps
@@ -2699,8 +2756,9 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
        hdrbuf4(i)=buf(locbyte)
     end do
 
-         if(lenrec==2048) write(6,*)' irecs,hdrbuf(2),int_dom_ti_char,int_field=', &
-                                      irecs,hdrbuf(2),int_dom_ti_char,int_field
+!         if(lenrec==2048) write(6,*)' irecs,hdrbuf(2),int_dom_ti_char,int_field=', &
+!                                      irecs,hdrbuf(2),int_dom_ti_char,int_field
+
     if(lenrec==2048.and.(hdrbuf(2) == int_dom_ti_char .or. hdrbuf(2) == int_field &
     .or. hdrbuf(2) == int_dom_ti_real .or. hdrbuf(2) == int_dom_ti_integer)) then
 
@@ -2720,7 +2778,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
                    datahandle,element,dumstr,strdata,loccode)
           varname_all(irecs)=trim(element)
           datestr_all(irecs)=trim(strdata)
-              write(6,*)' irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),trim(datestr_all(irecs))
+!              write(6,*)' irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),trim(datestr_all(irecs))
 
        else if(hdrbuf(2) == int_dom_ti_real) then
 
@@ -2748,8 +2806,8 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
           varname_all(irecs)=trim(varname)
           datestr_all(irecs)=trim(datestr)
           domainend_all(1:3,irecs)=domainend(1:3)
-              write(6,*)' irecs,datestr,domend,varname = ', &
-                  irecs,trim(datestr_all(irecs)),domainend_all(1:3,irecs),trim(varname_all(irecs))
+!              write(6,*)' irecs,datestr,domend,varname = ', &
+!                  irecs,trim(datestr_all(irecs)),domainend_all(1:3,irecs),trim(varname_all(irecs))
 
        end if
     end if

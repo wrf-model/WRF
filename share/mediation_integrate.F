@@ -54,13 +54,13 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
    CHARACTER*256          :: message
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-#else
-   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-#endif
+! #else
+!   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
+! #endif
      IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
        !  no history output on the first time of the restart
      ELSE
@@ -1096,12 +1096,12 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 !end of zhang's doing
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-#else
-   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-#endif
+! #else
+!    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
+! #endif
      CALL med_hist_out ( grid , HISTORY_ALARM , config_flags )
    ENDIF
 
@@ -1599,11 +1599,11 @@ integer myproc,i,j,k
 
    CALL wrf_debug ( 200 , 'in med_latbound_in' )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ! Avoid trying to re-read the boundary conditions if we are doing DFI integration
    !    and do not expect to find boundary conditions for the current time
    IF ( (grid%dfi_opt .EQ. DFI_DDFI .OR. grid%dfi_opt .EQ. DFI_TDFI) .AND. grid%dfi_stage .EQ. DFI_FWD ) RETURN
-#endif
+! #endif
 
    IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN
 
@@ -1647,12 +1647,12 @@ integer myproc,i,j,k
        CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
        CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
        IF ( (config_flags%dfi_opt .NE. DFI_NODFI) .AND. (head_grid%dfi_stage .NE. DFI_FST) ) THEN
           CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
           CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
        END IF
-#endif
+! #endif
 
        CALL domain_clock_get( grid, current_time=currentTime )
        DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file

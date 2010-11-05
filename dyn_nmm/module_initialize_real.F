@@ -25,7 +25,8 @@ MODULE module_initialize_real
 #endif
 
    INTEGER :: internal_time_loop
-      INTEGER:: MPI_COMM_COMP,MYPE
+   INTEGER:: MPI_COMM_COMP,MYPE
+   INTEGER:: loopinc, iloopinc
 
 CONTAINS
 
@@ -152,6 +153,8 @@ CONTAINS
         REAL:: SMCSUM,STCSUM,SEAICESUM,FISX
         REAL:: cur_smc, aposs_smc
 
+        REAL:: COAC, CODAMP
+
         INTEGER,PARAMETER:: DOUBLE=SELECTED_REAL_KIND(15,300)
         REAL(KIND=DOUBLE):: TERM1,APH,TLM,TPH,DLM,DPH,STPH,CTPH
 
@@ -161,13 +164,10 @@ CONTAINS
         REAL, PARAMETER:: DTR=0.01745329
         REAL, PARAMETER:: W_NMM=0.08
 #ifdef HWRF
-        REAL, PARAMETER:: COAC=0.75
         REAL, PARAMETER:: DDFC=1.0
 #else
-        REAL, PARAMETER:: COAC=1.6
         REAL, PARAMETER:: DDFC=8.0
 #endif
-        REAL, PARAMETER:: CODAMP=6.4
         REAL, PARAMETER:: TWOM=.00014584
         REAL, PARAMETER:: CP=1004.6
         REAL, PARAMETER:: DFC=1.0
@@ -399,8 +399,8 @@ CONTAINS
 
      num_metgrid_levels = grid%num_metgrid_levels
 
-	IF (grid%ght_gc(its,jts,num_metgrid_levels/2) .lt. grid%ght_gc(its,jts,num_metgrid_levels/2+1)) THEN
 
+	IF (grid%ght_gc(its,jts,num_metgrid_levels/2) .lt. grid%ght_gc(its,jts,num_metgrid_levels/2+1)) THEN
 
            write(message,*) 'normal ground up file order'
            hyb_coor=.false.
@@ -449,6 +449,7 @@ CONTAINS
 #if defined(HWRF)
           endif
 #endif
+
         endif
 
 
@@ -627,6 +628,21 @@ CONTAINS
      &,                          IMS,IME,JMS,JME,KMS,KME             &
      &,                          ITS,ITE,JTS,JTE,KTS,KTE ) ! H points
 
+       if (internal_time_loop .eq. 1) then
+
+       write(message,*) 'psfc points (final combined)'
+	loopinc=max( (JTE-JTS)/20,1)
+	iloopinc=max( (ITE-ITS)/10,1)
+       CALL wrf_message(message)
+       DO J=min(JTE,JDE-1),JTS,-loopinc
+         write(message,633) (grid%psfc_out(I,J)/100.,I=its,min(ite,IDE-1),iloopinc)
+         CALL wrf_message(message)
+       ENDDO
+       
+       endif
+
+  633   format(35(f5.0,1x))
+
       CALL compute_3d_pressure (grid%psfc_out,grid%aeta1,grid%aeta2   &
      &,            grid%pdtop,grid%pt,grid%pd,p3d_out                 &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
@@ -763,6 +779,7 @@ CONTAINS
           grid%psfc_out=grid%pdtop+grid%pd
        end if interp_notph
 #endif
+
          !  Get the monthly values interpolated to the current date
          !  for the traditional monthly
          !  fields of green-ness fraction and background grid%albedo.
@@ -819,7 +836,6 @@ CONTAINS
          END DO
 
          endif
-
 
 #if defined(HWRF)
        if(.not.grid%use_prep_hybrid) then
@@ -1705,6 +1721,9 @@ CONTAINS
        enddo
        enddo
 
+      COAC=model_config_rec%coac(grid%id)
+      CODAMP=model_config_rec%codamp(grid%id)
+
       DTAD=1.0
 !       IDTCF=DTCF, IDTCF=4
       DTCF=4.0 ! used?
@@ -2291,8 +2310,8 @@ CONTAINS
        integer :: IMS,IME,JMS,JME,KMS,KME
        integer :: ITS,ITE,JTS,JTE,KTS,KTE,Ilook,Jlook
        integer :: I,J,II,generic,L,KINSERT,K,bot_lev,LL
-       integer :: IHE(JMS:JME),IHW(JMS:JME), loopinc,iloopinc
-	
+       integer :: IHE(JMS:JME),IHW(JMS:JME)
+
        real :: TERRAIN_HGT_T(IMS:IME,JMS:JME)
        real :: Z3D_IN(IMS:IME,JMS:JME,generic)
        real :: T3D_IN(IMS:IME,JMS:JME,generic)
@@ -2689,14 +2708,13 @@ CONTAINS
         ENDDO I_loop
         ENDDO
 
-        write(message,*) 'psfc points (new style)'
-        CALL wrf_message(message)
-	loopinc=max( (JTE-JTS)/20,1)
-	iloopinc=max( (ITE-ITS)/10,1)
+!        write(message,*) 'psfc points (new style)'
+!        CALL wrf_message(message)
 
-        DO J=min(JTE,JDE-1),JTS,-loopinc
-          write(message,633) (dum2d(I,J)/100.,I=ITS,min(ITE,IDE-1),iloopinc)
-        END DO
+!        DO J=min(JTE,JDE-1),JTS,-loopinc
+!          write(message,633) (dum2d(I,J)/100.,I=ITS,min(ITE,IDE-1),iloopinc)
+!          CALL wrf_message(message)
+!        END DO
 
   633   format(35(f5.0,1x))
 
@@ -2819,12 +2837,12 @@ CONTAINS
        ENDDO
        ENDDO
 
-       write(message,*) 'psfc points (traditional)'
-       CALL wrf_message(message)
-       DO J=min(JTE,JDE-1),JTS,-loopinc
-         write(message,633) (DUM2DB(I,J)/100.,I=its,min(ite,IDE-1),iloopinc)
-         CALL wrf_message(message)
-       ENDDO
+!       write(message,*) 'psfc points (traditional)'
+!       CALL wrf_message(message)
+!       DO J=min(JTE,JDE-1),JTS,-loopinc
+!         write(message,633) (DUM2DB(I,J)/100.,I=its,min(ite,IDE-1),iloopinc)
+!         CALL wrf_message(message)
+!       ENDDO
 
        write(message,*) 'PSFC extremes (traditional)'
        CALL wrf_message(message)
@@ -2928,6 +2946,13 @@ CONTAINS
 
        ENDDO
        ENDDO
+
+!       write(message,*) 'psfc points (final combined)'
+!       CALL wrf_message(message)
+!       DO J=min(JTE,JDE-1),JTS,-loopinc
+!         write(message,633) (psfc_out(I,J)/100.,I=its,min(ite,IDE-1),iloopinc)
+!         CALL wrf_message(message)
+!       ENDDO
 	
 	deallocate(dum2d,dum2db)
 
@@ -3668,7 +3693,7 @@ CONTAINS
         if (JTE .eq. JDE) then
         J=JDE-1
 	write(message,*) 'DOING N BOUND SMOOTHING for J= ', J
-        CALL wrf_message(message)
+        CALL wrf_debug(100,message)
          do I=ITS,min(ITE,IDE-1)
           if (hbms(I,J) .eq. 1 .and. I .ge. IDS+1 .and. I .le. IDE-2) then
            h(I,J)=0.75*h(I,J)+0.125*(h(I+ihw(J),J-1)+h(I+ihe(J),J-1))
@@ -3689,7 +3714,7 @@ CONTAINS
 !       E bound
 	if (ITE .eq. IDE) then
 	write(message,*) 'DOING E BOUND SMOOTHING for I= ', min(ITE,IDE-1)
-        CALL wrf_message(message)
+        CALL wrf_debug(100,message)
          I=min(ITE,IDE-1)
          do J=JTS,min(JTE,JDE-1)
           if (hbms(I,J) .eq. 1  .and. J .ge. JDS+2 .and. J .le. JDE-3 .and. mod(J,2) .eq. 1) then

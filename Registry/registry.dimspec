@@ -31,6 +31,7 @@ dimspec    &       2     namelist=lagday                   z     lagday
 endif
 
 ifdef NMM_CORE=1
+dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
 dimspec    j       2     standard_domain                   y     south_north
 dimspec    k       3     standard_domain                   z     bottom_top
 #definitions for NMM slab arrays

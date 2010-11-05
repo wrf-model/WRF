@@ -522,17 +522,23 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
 
-   CALL domain_alarm_create( grid, BOUNDARY_ALARM )
-   CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_AlarmEnable(BOUNDARY_ALARM) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
-   CALL WRFU_AlarmRingerOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_AlarmRingerOn(BOUNDARY_ALARM) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
+! without this test, it's possible for the value of the WRF_ALARM_SECS_TIL_NEXT_RING
+! that is written as metadata to a restart file to be garbage for BOUNDARY_ALARM for 
+! the nests.  Parallel NetCDF does a header check on all the metadata being written
+! from multiple processors and if it differs, it throws up an error. This avoids that.
+   IF ( grid%id .EQ. 1 ) THEN   ! only moad can have specified boundaries
+     CALL domain_alarm_create( grid, BOUNDARY_ALARM )
+     CALL WRFU_AlarmEnable( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmEnable(BOUNDARY_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+     CALL WRFU_AlarmRingerOn( grid%alarms( BOUNDARY_ALARM ), rc=rc )
+     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                           'WRFU_AlarmRingerOn(BOUNDARY_ALARM) FAILED', &
+                           __FILE__ , &
+                           __LINE__  )
+   ENDIF
 
 ! This is the interval at which the code in time_for_move in share/mediation_integrate.F
 ! will recompute the center of the Vortex.  Other times, it will use the last position.

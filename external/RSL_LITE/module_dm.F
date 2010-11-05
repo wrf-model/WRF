@@ -78,6 +78,34 @@ CONTAINS
    RETURN
    END SUBROUTINE MPASPECT
 
+   SUBROUTINE compute_mesh( ntasks , ntasks_x, ntasks_y )
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)  :: ntasks
+     INTEGER, INTENT(OUT) :: ntasks_x, ntasks_y
+     CALL nl_get_nproc_x ( 1, ntasks_x )
+     CALL nl_get_nproc_y ( 1, ntasks_y )
+! check if user has specified in the namelist
+     IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
+       ! if only ntasks_x is specified then make it 1-d decomp in i
+       IF      ( ntasks_x .GT. 0 .AND. ntasks_y .EQ. -1 ) THEN
+         ntasks_y = ntasks / ntasks_x
+       ! if only ntasks_y is specified then make it 1-d decomp in j
+       ELSE IF ( ntasks_x .EQ. -1 .AND. ntasks_y .GT. 0 ) THEN
+         ntasks_x = ntasks / ntasks_y
+       ENDIF
+       ! make sure user knows what they're doing
+       IF ( ntasks_x * ntasks_y .NE. ntasks ) THEN
+         WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
+         CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+     ELSE
+       ! When neither is specified, work out mesh with MPASPECT
+       ! Pass nproc_ln and nproc_nt so that number of procs in
+       ! i-dim (nproc_ln) is equal or lesser.
+       CALL mpaspect ( ntasks, ntasks_x, ntasks_y, 1, 1 )
+     ENDIF
+   END SUBROUTINE compute_mesh
+
    SUBROUTINE wrf_dm_initialize
       IMPLICIT NONE
 #ifndef STUBMPI
@@ -91,30 +119,8 @@ CONTAINS
 
       CALL wrf_get_dm_communicator ( local_comm )
       CALL mpi_comm_size( local_comm, ntasks, ierr )
-      CALL nl_get_nproc_x ( 1, ntasks_x )
-      CALL nl_get_nproc_y ( 1, ntasks_y )
       CALL nl_get_reorder_mesh( 1, reorder_mesh )
-
-! check if user has specified in the namelist
-      IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
-        ! if only ntasks_x is specified then make it 1-d decomp in i
-        IF      ( ntasks_x .GT. 0 .AND. ntasks_y .EQ. -1 ) THEN
-          ntasks_y = ntasks / ntasks_x
-        ! if only ntasks_y is specified then make it 1-d decomp in j
-        ELSE IF ( ntasks_x .EQ. -1 .AND. ntasks_y .GT. 0 ) THEN
-          ntasks_x = ntasks / ntasks_y
-        ENDIF
-        ! make sure user knows what they're doing
-        IF ( ntasks_x * ntasks_y .NE. ntasks ) THEN
-          WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
-          CALL wrf_error_fatal ( wrf_err_message )
-        ENDIF
-      ELSE
-        ! When neither is specified, work out mesh with MPASPECT
-        ! Pass nproc_ln and nproc_nt so that number of procs in
-        ! i-dim (nproc_ln) is equal or lesser.
-        CALL mpaspect ( ntasks, ntasks_x, ntasks_y, 1, 1 )
-      ENDIF
+      CALL compute_mesh( ntasks, ntasks_x, ntasks_y )
       WRITE( wrf_err_message , * )'Ntasks in X ',ntasks_x,', ntasks in Y ',ntasks_y
       CALL wrf_message( wrf_err_message )
 
@@ -4455,3 +4461,4 @@ END SUBROUTINE tfp_message
     LOGICAL arg
     arg = dm_debug_flag
    END SUBROUTINE get_dm_debug
+

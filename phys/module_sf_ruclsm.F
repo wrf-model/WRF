@@ -5730,7 +5730,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
           CALL wrf_error_fatal ( message )
         END IF
 
-        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICAION = ',MMINSL
+        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICATION = ',MMINSL
         CALL wrf_message( mess )
 
         LUMATCH=0

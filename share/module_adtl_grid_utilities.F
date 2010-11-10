@@ -991,7 +991,7 @@ CONTAINS
   END SUBROUTINE copy_grid_to_b
 
   SUBROUTINE restore_grid ( grid )
-   TYPE (domain), INTENT(IN) :: grid
+   TYPE (domain), INTENT(INOUT) :: grid
 
    grid%u_2 = s_u_2
    grid%v_2 = s_v_2
@@ -1030,7 +1030,7 @@ CONTAINS
   END SUBROUTINE restore_grid
 
   SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
-   TYPE (domain), INTENT(IN) :: grid
+   TYPE (domain), INTENT(INOUT) :: grid
    REAL, INTENT(IN) :: factor
    REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
    
@@ -1498,7 +1498,7 @@ END IF
   END SUBROUTINE inner_dot
 
   SUBROUTINE copy_g_to_a_adjtest ( grid )
-   TYPE (domain), INTENT(IN) :: grid
+   TYPE (domain), INTENT(INOUT) :: grid
 
    grid%a_u_1 = 0.0
    IF (grid%check_u) THEN

@@ -201,7 +201,7 @@ CONTAINS
    sub_spread=max(1.,float(cugd_avedx*cugd_avedx-1))
    sub_spread=(1.-subcenter)/sub_spread
    iens=1
-   ipr=37
+   ipr=43
    jpr=1
    ipr=0
    jpr=0
@@ -356,6 +356,8 @@ CONTAINS
          pmean(i)=0.
          kpbli(i)=kpbl(i,j)
      ENDDO
+!    if(j.eq.jpr)write(0,*)'psur(ipr),ter11(ipr),kpbli(ipr)'
+!    if(j.eq.jpr)write(0,*)psur(ipr),ter11(ipr),kpbli(ipr),r_v
      DO K=kts,ktf
      DO I=ITS,ITF
          po(i,k)=phh(i,k)*.01
@@ -384,8 +386,12 @@ CONTAINS
          endif
          IF(TN(I,K).LT.200.)TN(I,K)=T2d(I,K)
          IF(QO(I,K).LT.1.E-08)QO(I,K)=1.E-08
+!        if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,123)k,p2d(i,k),t2d(i,k),tn(i,k),q2d(i,k),QO(i,k),RTHBLTEN(i,k,j),RQVBLTEN(i,k,j)
+!        endif
      ENDDO
      ENDDO
+123  format(1x,i2,f8.0,1x,2(1x,f8.3),4(1x,e12.4))
      ens4n=0
      nbegin=0
      nend=0
@@ -486,6 +492,7 @@ CONTAINS
 !                raincv(i,j)=pret(i)*dt
               endif
             ENDDO
+!           if(j.eq.jpr)write(0,*)'precip,ktop,kbcon = ',pret(ipr),ktop(ipr),kbcon(ipr)
             DO I=ibegc,iendc
             DO K=kts,ktf
                cugd_ttens(I,K,J)=subt(i,k)*cuten(i)*sub_spread
@@ -495,6 +502,9 @@ CONTAINS
                cugd_tten(I,K,J)=outts(i,k)+outt(i,k)*cuten(i)
                cugd_qvten(I,K,J)=outqs(i,k)+outq(i,k)*cuten(i)
                cugd_qcten(I,K,J)=outqc(i,k)*cuten(i)
+!              if(i.eq.ipr.and.j.eq.jpr)then
+!                write(0,*)subt(i,k)+outt(i,k),subq(i,k)+outq(i,k),outts(i,k),outqs(i,k)
+!              endif
             ENDDO
             ENDDO
             DO I=ibegc,iendc
@@ -742,12 +752,12 @@ CONTAINS
   ! hkb = moist static energy at originating level
   ! mentr_rate = entrainment rate
      real,    dimension (its:ite,kts:kte) ::                           &
-        he3,hes3,qes3,z3,zdo3,                                         &
+        he3,hes3,qes3,z3,zdo3,zu3_0,hc3_0,dby3_0,gamma3_0_cup,         &
         qes3_cup,q3_cup,he3_cup,hes3_cup,z3_cup,gamma3_cup,t3_cup,     &
-        xhe3,xhes3,xqes3,xz3,xt3,xq3,                                        &
-        xqes3_cup,xq3_cup,xhe3_cup,xhes3_cup,xz3_cup,xgamma3_cup,     &
-        xt3_cup,                                                        &
-        xdby3,xqc3,xhc3,xqrc3,xzu3,            &                       
+        xhe3,xhes3,xqes3,xz3,xt3,xq3,                                  &
+        xqes3_cup,xq3_cup,xhe3_cup,xhes3_cup,xz3_cup,xgamma3_cup,      &
+        xt3_cup,                                                       &
+        xdby3,xqc3,xhc3,xqrc3,xzu3,                                    &
         dby3,qc3,pw3,hc3,qrc3,zu3,cd3,DELLAH3,DELLAQ3,                 &
         dsubt3,dsubq3,DELLAT3,DELLAQC3
 
@@ -782,8 +792,8 @@ CONTAINS
   ! edt     = epsilon
 
      real,    dimension (its:ite) ::                                   &
-       aa3,hkb3,qkb3,pwav3,bu3,xaa3,xhkb3,                             &
-       edt,edto,edtx,AA1,AA0,XAA0,HKB,                                 &
+       aa3_0,aa3,hkb3,qkb3,pwav3,bu3,xaa3,xhkb3,                       &
+       hkb3_0,edt,edto,edtx,AA1,AA0,XAA0,HKB,                          &
        HKBO,aad,XHKB,QKB,QKBO,edt3,                                    &
        XMB,XPWAV,XPWEV,PWAV,PWEV,PWAVO,                                &
        PWEVO,BU,BUO,cap_max,xland1,                                    &
@@ -792,12 +802,12 @@ CONTAINS
         axx
      integer,    dimension (its:ite) ::                                &
        kzdown,KDET,K22,KB,JMIN,kstabi,kstabm,K22x,jmin3,kdet3,         &   !-lxz
-       KBCONx,KBx,KTOPx,ierr,ierr2,ierr3,KBMAX,ierr5 
+       KBCONx,KBx,KTOPx,ierr,ierr2,ierr3,KBMAX,ierr5,ierr5_0 
 
      integer                              ::                           &
        nall,iedt,nens,nens3,ki,I,K,KK,iresult
      real                                 ::                           &
-      day,dz,mbdt,entr_rate,radius,entrd_rate,mentr_rate,mentrd_rate,  &
+      day,dz,mbdt,mbdt_s,entr_rate,radius,entrd_rate,mentr_rate,mentrd_rate,  &
       zcutdown,edtmax,edtmin,depth_min,zkbmax,z_detr,zktop,            &
       massfld,dh,cap_maxs,trash,entr_rate3,mentr_rate3
 
@@ -872,6 +882,7 @@ CONTAINS
         jmin3(i)=0
         kdet3(i)=0
         aa0(i)=0.
+        aa3_0(i)=0.
         aa1(i)=0.
         aa3(i)=0.
         aad(i)=0.
@@ -882,9 +893,7 @@ CONTAINS
         IERR2(i)=0
         IERR3(i)=0
         IERR5(i)=0
-        if(aaeq(i).lt.-0.1)then
-           ierr(i)=20
-        endif
+        IERR5_0(i)=0
  enddo
 !
 !--- first check for upstream convection
@@ -976,7 +985,10 @@ CONTAINS
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
-      if(ierr(i).eq.0)then
+        if(aaeq(i).lt.-0.1)then
+           ierr(i)=20
+        endif
+!     if(ierr(i).eq.0)then
 !
       do k=kts,ktf
         if(zo_cup(i,k).gt.zkbmax+z1(i))then
@@ -996,7 +1008,7 @@ CONTAINS
       enddo
  26   continue
 !
-      endif
+!     endif
       enddo
 !
 !
@@ -1038,11 +1050,11 @@ CONTAINS
 !--- calculate incloud moist static energy
 !
       call cup_up_he(k22,hkb,z_cup,cd,mentr_rate,he_cup,hc, &
-           kbcon,ierr,dby,he,hes_cup, &
+           kbcon,ierr,dby,he,hes_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_up_he(k22,hkbo,zo_cup,cd,mentr_rate,heo_cup,hco, &
-           kbcon,ierr,dbyo,heo,heso_cup, &
+           kbcon,ierr,dbyo,heo,heso_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 
@@ -1218,11 +1230,12 @@ CONTAINS
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
        DO i=its,itf
-         if(kpbl(i).gt.1)cap_max3(i)=po_cup(i,kpbl(i))
+         if(kpbl(i).gt.5)cap_max3(i)=po_cup(i,kpbl(i))
          IF(ierr5(I).eq.0.)THEN
          IF(K23(I).Gt.Kbmax(i))ierr5(i)=2
-!        if(kpbl(i).gt.5)k23(i)=kpbl(i)
+         if(kpbl(i).gt.5)k23(i)=kpbl(i)
          endif
+         ierr5_0(i)=ierr5(i)
        ENDDO
       call cup_kbcon(cap_max_increment,5,k23,kbcon3,he3_cup,hes3_cup, &
            ierr5,kbmax,po_cup,cap_max3, &
@@ -1230,7 +1243,11 @@ CONTAINS
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_up_he(k23,hkb3,z3_cup,cd3,mentr_rate3,he3_cup,hc3, &
-           kbcon3,ierr5,dby3,he3,hes3_cup, &
+           kbcon3,ierr5,dby3,he3,hes3_cup,'shallow', &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_up_he(k23,hkb3_0,z_cup,cd3,mentr_rate3,he_cup,hc3_0, &
+           kbcon3,ierr5,dby3_0,he,hes_cup,'shallow', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_ktop(1,dby3,kbcon3,ktop3,ierr5, &
@@ -1240,6 +1257,20 @@ CONTAINS
            ierr5,k23, &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
+      call cup_up_nms(zu3_0,z_cup,mentr_rate3,cd3,kbcon3,ktop3,    &
+           ierr5,k23, &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+!
+! first calculate aa3_0_cup
+!
+      call cup_up_aa0(aa3_0,z,zu3_0,dby3_0,GAMMA3_0_CUP,t_cup, &
+           kbcon3,ktop3,ierr5,           &
+           itf,jtf,ktf, &
+          its,ite, jts,jte, kts,kte)
+!
+!  now what is necessary for aa3 and feedbacks
+!
       call cup_up_moisture('shallow',ierr5,z3_cup,qc3,qrc3,pw3,pwav3, &
            kbcon3,ktop3,cd3,dby3,mentr_rate3,clw_all, &
            qshall,GAMMA3_cup,zu3,qes3_cup,k23,q3_cup,xl,&
@@ -1249,13 +1280,13 @@ CONTAINS
            kbcon3,ktop3,ierr5,           &
            itf,jtf,ktf, &
           its,ite, jts,jte, kts,kte)
-      do i=its,itf
-         if(ierr5(i).eq.0)then
-           if(aa3(i).eq.0.)then
-               ierr5(i)=17
-           endif
-         endif
-      enddo
+!     do i=its,itf
+!        if(ierr5(i).eq.0)then
+!          if(aa3(i).eq.0.)then
+!              ierr5(i)=17
+!          endif
+!        endif
+!     enddo
 !     call cup_dellabot('shallow',ipr,jpr,q3_cup,ierr5,z3_cup,po,qrcdo,edto, &
 !          zdo,cdd,q3,dellaq3,dsubq,j,mentrd_rate,z3,g,&
 !          itf,jtf,ktf, &
@@ -1272,21 +1303,21 @@ CONTAINS
            k23,ipr,jpr,'shallow',0,               &
               itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte    )
-              mbdt=mbdt_ens(1)
+              mbdt_s=1.e-1*mbdt_ens(1)
               do k=kts,ktf
               do i=its,itf
                  dellat3(i,k)=0.
                  if(ierr5(i).eq.0)then
                     trash=dsubt3(i,k)
-                    XHE3(I,K)=(dsubt3(i,k)+DELLAH3(I,K))*MBDT+HE3(I,K)
-                    XQ3(I,K)=(dsubq3(i,k)+DELLAQ3(I,K))*MBDT+QSHALL(I,K)
+                    XHE3(I,K)=(dsubt3(i,k)+DELLAH3(I,K))*MBDT_S+HE3(I,K)
+                    XQ3(I,K)=(dsubq3(i,k)+DELLAQ3(I,K))*MBDT_S+QSHALL(I,K)
                     DELLAT3(I,K)=(1./cp)*(DELLAH3(I,K)-xl*DELLAQ3(I,K))
                     dSUBT3(I,K)=(1./cp)*(dsubt3(i,k)-xl*dsubq3(i,k))
-                    XT3(I,K)= (DELLAT3(I,K)+dsubt3(i,k))*MBDT+TSHALL(I,K)
+                    XT3(I,K)= (DELLAT3(I,K)+dsubt3(i,k))*MBDT_S+TSHALL(I,K)
                     IF(XQ3(I,K).LE.0.)XQ3(I,K)=1.E-08
-                     if(i.eq.ipr.and.j.eq.jpr)then
-                       write(0,*)k,trash,DELLAQ3(I,K),dsubq3(I,K),dsubt3(i,k)
-                     endif
+!                    if(i.eq.ipr.and.j.eq.jpr)then
+!                      write(0,*)k,trash,DELLAQ3(I,K),dsubq3(I,K),dsubt3(i,k)
+!                    endif
                  ENDIF
               enddo
               enddo
@@ -1325,7 +1356,7 @@ CONTAINS
         endif
       enddo
       call cup_up_he(k23,xhkb3,xz3_cup,cd3,mentr_rate3,xhe3_cup,xhc3, &
-           kbcon3,ierr5,xdby3,xhe3,xhes3_cup, &
+           kbcon3,ierr5,xdby3,xhe3,xhes3_cup,'shallow', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !          
@@ -1345,33 +1376,72 @@ CONTAINS
         xmb3(i)=0.
         xff_shal(1:9)=0.
         if(ierr5(i).eq.0)then
-          xkshal=(xaa3(i)-aa0(i))/mbdt
-          if(xkshal.le.0.and.xkshal.gt.-1.e-6)xkshal=-1.e-6
-          if(xkshal.gt.0.and.xkshal.lt.+1.e-6)xkshal=+1.e-6
-          xff_shal(1)=max(0.,-(aa3(i)-aa0(i))/(xkshal*dtime))
-          xff_shal(2)=max(0.,-(aa3(i)-aa0(i))/(xkshal*dtime))
-          xff_shal(3)=max(0.,-(aa3(i)-aa0(i))/(xkshal*dtime))
-          xff_shal(4)=max(0.,-aa3(i)/(xkshal*tscl_KF))
-          xff_shal(5)=max(0.,-aa3(i)/(xkshal*tscl_KF))
-          xff_shal(6)=max(0.,-aa3(i)/(xkshal*tscl_KF))
+          xkshal=(xaa3(i)-aa3(i))/mbdt_s
+          if(xkshal.gt.0.)xkshal=+1.e6
+          if(xkshal.gt.-1.e-4 .and. xkshal.lt.0.)xkshal=-1.e-4
+          xff_shal(1)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))
+          xff_shal(2)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))
+          xff_shal(3)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))
+          if(aa3_0(i).le.0)then
+           xff_shal(1)=0.
+           xff_shal(2)=0.
+           xff_shal(3)=0.
+          endif
+          if(aa3(i)-aa3_0(i).le.0.)then
+           xff_shal(1)=0.
+           xff_shal(2)=0.
+           xff_shal(3)=0.
+          endif
 ! boundary layer QE (from Saulo Freitas)
           blqe=0.
+          trash=0.
           if(k23(i).lt.kpbl(i)+1)then
              do k=1,kbcon3(i)-1
                 blqe=blqe+100.*dhdt(i,k)*(p_cup(i,k)-p_cup(i,k+1))/g
              enddo
-             trash=max((hc3(i,kbcon3(i))-he_cup(i,kbcon3(i))),1.e-4)
+             trash=max((hc3(i,kbcon3(i))-he_cup(i,kbcon3(i))),1.e1)
              xff_shal(7)=max(0.,blqe/trash)
-             xff_shal(7)=min(0.5,xff_shal(7))
+             xff_shal(7)=min(0.1,xff_shal(7))
           else
              xff_shal(7)=0.
           endif
+          if((xkshal.lt.-1.1e-04) .and.  &
+             ((aa3(i)-aa3_0(i).gt.0.) .or. (xff_shal(7).gt.0)))then
+          xff_shal(4)=max(0.,-aa3(i)/(xkshal*tscl_KF))
+          xff_shal(4)=min(0.1,xff_shal(4))
+          xff_shal(5)=xff_shal(4)
+          xff_shal(6)=xff_shal(4)
+          else
+           xff_shal(4)=0.
+           xff_shal(5)=0.
+           xff_shal(6)=0.
+          endif
+!         write(0,888)'i0=',i,j,kpbl(i),blqe,xff_shal(7)
+888       format(a3,3(1x,i3),2e12.4)
           xff_shal(8)= xff_shal(7)
           xff_shal(9)= xff_shal(7)
           do k=1,9
            xmb3(i)=xmb3(i)+xff_shal(k)
           enddo
           xmb3(i)=min(.1,xmb3(i)/9.)
+!         if(xmb3(i).eq.10.1 )then
+!           write(0,*)'i0,xmb3,blqe,xkshal = ',i,j,xmb3(i),blqe,xkshal
+!           if(xff_shal(7).ge.0.1)then
+!             write(0,*)'i1,blqe,trash = ',blqe,trash
+!           endif
+!           if(xff_shal(7).eq.0 .and. xff_shal(1).ge.0.1)then
+!              write(0,*)'i2,aa3_0(i),aa3(i),xaa3(i) = ',aa3_0(i),aa3(i),xaa3(i)
+!           endif
+!           if(xff_shal(5).ge.0.1)then
+!              write(0,*)'i3,aa3(i),a0,xkshal= ',aa3(i),aa3_0(i),xkshal
+!           endif
+!           write(0,*)'i0, xff_shallow = ',xff_shal
+!         endif
+!!         if(xff_shal(7).eq.0 .and. xff_shal(4).gt.0 .and. xmb3(i).eq.0.5)then
+!!           write(0,*)'i4,xmb3 = ',i,j,xmb3(i),xkshal
+!!           write(0,*)'xff_shallow = ',xff_shal
+!!           write(0,*)aa3(i),xaa3(i),blqe
+!!         endif
           if(xmb3(i).eq.0.)ierr5(i)=22
           if(xmb3(i).lt.0.)then
              ierr5(i)=21
@@ -1381,39 +1451,66 @@ CONTAINS
 !         if(ierr5(i).eq.0)write(0,*)'i,j,xmb3 for shallow = ',i,j,xmb3(i),k23(i),ktop3(i)
 !         if(ierr5(i).eq.0.and.i.eq.12.and.j.eq.25)write(0,*)'i,j,xmb3 for shallow = ',k23(i),ktop3(i),kbcon3(i),kpbl(i)
 !         if(ierr5(i).eq.0)write(0,*)'i,j,xmb3 for shallow = ',i,j,k23(i),ktop3(i),kbcon3(i),kpbl(i)
-        if(ierr5(i).eq.0)then
+        if(ierr5(i).ne.0)then
+           k23(i)=0
+           kbcon3(i)=0
+           ktop3(i)=0
+           xmb3(i)=0
+           do k=kts,ktf
+              outts(i,k)=0.
+              outqs(i,k)=0.
+           enddo
+        else if(ierr5(i).eq.0)then
 !
-! got the mass flux, now do feedback
-           trash=0.
+! got the mass flux, sanity check, first for heating rates
 !
+          trash=0.
           do k=2,ktop3(i)
            trash=max(trash,86400.*(dsubt3(i,k)+dellat3(i,k))*xmb3(i))
           enddo
           if(trash.gt.150.)xmb3(i)=xmb3(i)*150./trash
+!
+! sanity check on moisture tendencies: do not allow anything that may allow neg tendencies
+!
+          do k=2,ktop3(i)
+           trash=q(i,k)+(dsubq3(i,k)+dellaq3(i,k))*xmb3(i)*dtime
+          if(trash.lt.1.e-12)then
+! max allowable tendency over tendency that would lead to too small mix ratios
+!
+            trash=((1.e-12-q(i,k))/dtime)                   &
+                  /((dsubq3(i,k)+dellaq3(i,k))*xmb3(i))
+            trash=max(0.,trash)
+            trash=min(1.,trash)
+            xmb3(i)=trash*xmb3(i)
+          endif
+          enddo
+! 
+! final tendencies
+!
           do k=2,ktop3(i)
            outts(i,k)=(dsubt3(i,k)+dellat3(i,k))*xmb3(i)
            outqs(i,k)=(dsubq3(i,k)+dellaq3(i,k))*xmb3(i)
           enddo
         endif
        enddo
-       if(j.eq.-25)then
-        write(0,*)'!!!!!!!! j = ',j,' !!!!!!!!!!!!!!!!!!!!'
+!       if(j.eq.-25)then
+!!        write(0,*)'!!!!!!!! j = ',j,' !!!!!!!!!!!!!!!!!!!!'
         i=12
-        write(0,*)k23(i),kbcon3(i),ktop3(i)
-        write(0,*)kpbl(i),ierr5(i),ierr(i)
-        write(0,*)xmb3(i),xff_shal(1:9)
-        write(0,*)xaa3(i),aa1(i),aa0(i),aa3(i)
-        do k=1,ktf
-          write(0,*)po(i,k),he3(i,k),hes3(i,k),dellah3(i,k)
-        enddo
-        do k=1,ktf
-          write(0,*)zu3(i,k),hc3(i,k),dsubt3(i,k),dellat3(i,k)
-        enddo
-        do k=1,ktop3(i)+1
-          blqe=cp*outts(i,k)+xl*outqs(i,k)
-          write(0,*)outts(i,k),outqs(i,k),blqe
-        enddo
-       endif
+!        write(0,*)k23(i),kbcon3(i),ktop3(i)
+!        write(0,*)kpbl(i),ierr5(i),ierr(i)
+!        write(0,*)xmb3(i),xff_shal(1:9)
+!        write(0,*)xaa3(i),aa1(i),aa0(i),aa3(i)
+!        do k=1,ktf
+!          write(0,*)po(i,k),he3(i,k),hes3(i,k),dellah3(i,k)
+!        enddo
+!        do k=1,ktf
+!          write(0,*)zu3(i,k),hc3(i,k),dsubt3(i,k),dellat3(i,k)
+!        enddo
+!        do k=1,ktop3(i)+1
+!          blqe=cp*outts(i,k)+xl*outqs(i,k)
+!          write(0,*)outts(i,k),outqs(i,k),blqe
+!        enddo
+!       endif
 !      
 ! done shallow
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1459,22 +1556,22 @@ CONTAINS
         enddo
         enddo
 !
-      if(j.eq.jpr.and.iedt.eq.1.and.ipr.gt.its.and.ipr.lt.ite)then
-!      if(j.eq.jpr)then
-         i=ipr
-!        write(0,*)'in 250 loop ',iedt,edt(ipr),ierr(ipr)
-!       if(ierr(i).eq.0.or.ierr(i).eq.3)then
-         write(0,*)'250',k22(I),kbcon(i),ktop(i),jmin(i)
-         write(0,*)edt(i),aa0(i),aa1(i)
-         do k=kts,ktf
-           write(0,*)k,z(i,k),he(i,k),hes(i,k)
-         enddo
-         write(0,*)'end 250 loop ',iedt,edt(ipr),ierr(ipr)
-         do k=1,ktop(i)+1
-           write(0,*)zu(i,k),zd(i,k),pw(i,k),pwd(i,k)
-         enddo
-!        endif
-      endif
+!      if(j.eq.jpr.and.iedt.eq.1.and.ipr.gt.its.and.ipr.lt.ite)then
+!!      if(j.eq.jpr)then
+!         i=ipr
+!!        write(0,*)'in 250 loop ',iedt,edt(ipr),ierr(ipr)
+!!       if(ierr(i).eq.0.or.ierr(i).eq.3)then
+!         write(0,*)'250',k22(I),kbcon(i),ktop(i),jmin(i)
+!         write(0,*)edt(i),aa0(i),aa1(i)
+!         do k=kts,ktf
+!           write(0,*)k,z(i,k),he(i,k),hes(i,k)
+!         enddo
+!         write(0,*)'end 250 loop ',iedt,edt(ipr),ierr(ipr)
+!         do k=1,ktop(i)+1
+!           write(0,*)zu(i,k),zd(i,k),pw(i,k),pwd(i,k)
+!         enddo
+!!        endif
+!      endif
       do i=its,itf
         aad(i)=0.
       enddo
@@ -1539,9 +1636,9 @@ CONTAINS
       xaa0_ens(i,3)=0.
       enddo
 
-      if(j.eq.jpr)then
-               write(0,*)'xt',xl,'DELLAH(I,K),DELLAQ(I,K),dsubq(I,K),dsubt(i,k)'
-      endif
+!      if(j.eq.jpr)then
+!               write(0,*)'xt',xl,'DELLAH(I,K),DELLAQ(I,K),dsubq(I,K),dsubt(i,k)'
+!      endif
       do k=kts,ktf
       do i=its,itf
          dellat(i,k)=0.
@@ -1553,9 +1650,9 @@ CONTAINS
             dSUBT(I,K)=(1./cp)*(dsubt(i,k)-xl*dsubq(i,k))
             XT(I,K)= (DELLAT(I,K)+dsubt(i,k))*MBDT+TN(I,K)
             IF(XQ(I,K).LE.0.)XQ(I,K)=1.E-08
-             if(i.eq.ipr.and.j.eq.jpr)then
-               write(0,*)k,trash,DELLAQ(I,K),dsubq(I,K),dsubt(i,k)
-             endif
+!             if(i.eq.ipr.and.j.eq.jpr)then
+!               write(0,*)k,trash,DELLAQ(I,K),dsubq(I,K),dsubt(i,k)
+!             endif
          ENDIF
       enddo
       enddo
@@ -1594,7 +1691,7 @@ CONTAINS
         endif
       enddo
       call cup_up_he(k22,xhkb,xz_cup,cd,mentr_rate,xhe_cup,xhc, &
-           kbcon,ierr,xdby,xhe,xhes_cup, &
+           kbcon,ierr,xdby,xhe,xhes_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
@@ -1731,11 +1828,11 @@ CONTAINS
            dellaqc_ens(i,k,iedt)=0.
            pwo_ens(i,k,iedt)=0.
         endif
-       if(i.eq.ipr.and.j.eq.jpr)then
-         write(0,*)'1',iens,iedt,dellat(i,k),dellat_ens(i,k,iedt), &
-           dellaq(i,k), dellaqc(i,k)
-         write(0,*)'2',k,subt_ens(i,k,iedt),subq_ens(i,k,iedt)
-       endif
+!       if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,*)'1',iens,iedt,dellat(i,k),dellat_ens(i,k,iedt), &
+!           dellaq(i,k), dellaqc(i,k)
+!         write(0,*)'2',k,subt_ens(i,k,iedt),subq_ens(i,k,iedt)
+!       endif
       enddo
       enddo
  250  continue
@@ -1764,25 +1861,25 @@ CONTAINS
           endif
 
            PRE(I)=MAX(PRE(I),0.)
-           if(i.eq.ipr.and.j.eq.jpr)then
-             write(0,*)'i,j,pre(i),aa0(i),aa1(i)'
-             write(0,*)i,j,pre(i),aa0(i)
-           endif
+!           if(i.eq.ipr.and.j.eq.jpr)then
+!             write(0,*)'i,j,pre(i),aa0(i),aa1(i)'
+!             write(0,*)i,j,pre(i),aa0(i)
+!           endif
       enddo
 !
 !---------------------------done------------------------------
 !
-      do i=its,itf
-        if(ierr(i).eq.0)then
-       if(i.eq.ipr.and.j.eq.jpr)then
-         write(0,*)'on output, pre =',pre(i),its,itf,kts,ktf
-         do k=kts,ktf
-           write(0,*)z(i,k),outt(i,k)*86400.,subt(i,k)*86400.
-         enddo
-         write(0,*)i,j,(axx(i,k),k=1,ens4)
-       endif
-       endif
-      enddo
+!      do i=its,itf
+!        if(ierr(i).eq.0)then
+!       if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,*)'on output, pre =',pre(i),its,itf,kts,ktf
+!         do k=kts,ktf
+!           write(0,*)z(i,k),outt(i,k)*86400.,subt(i,k)*86400.
+!         enddo
+!         write(0,*)i,j,(axx(i,k),k=1,ens4)
+!       endif
+!       endif
+!      enddo
 !     print *,'ierr(i) = ',ierr(i),pre(i)
 
    END SUBROUTINE CUP_enss_3d
@@ -2361,10 +2458,10 @@ CONTAINS
                  +subin*he_cup(i,2) &
                  -entdo*he(i,1))*g/dp
       SUBS(I,1)=0.
-      if(i.eq.ipr.and.j.eq.jpr)then
-       write(0,*)'db1',della(i,1),subs(i,1),subin,entdo
-       write(0,*)'db2',detdo1,detdo2,detdo1+detdo2-entdo+subin
-      endif
+!      if(i.eq.ipr.and.j.eq.jpr)then
+!       write(0,*)'db1',della(i,1),subs(i,1),subin,entdo
+!       write(0,*)'db2',detdo1,detdo2,detdo1+detdo2-entdo+subin
+!      endif
  100  CONTINUE
 
    END SUBROUTINE cup_dellabot
@@ -2550,15 +2647,15 @@ CONTAINS
                subs(i,k)=(entupk*he(i,k)-entupk*he_cup(i,k))*g/dp
          endif
          endif
-       if(i.eq.ipr.and.j.eq.jpr)then
-         write(0,*)'d',k,della(i,k),subs(i,k),subin,subdown
-!        write(0,*)'d',detup,entup,entdo,entupk,entdoj
-!        print *,k,della(i,k),subin*he_cup(i,k+1),subdown*he_cup(i,k),
-!     1            detdo*.5*(HCD(i,K+1)+HCD(i,K))
-!        print *,k,detup*.5*(HC(i,K+1)+HC(i,K)),detupk*hc(i,ktop(i)),
-!     1         entup*he(i,k),entdo*he(i,k)
-!        print *,k,he_cup(i,k+1),he_cup(i,k),entupk*he_cup(i,k)
-       endif
+!       if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,*)'d',k,della(i,k),subs(i,k),subin,subdown
+!!        write(0,*)'d',detup,entup,entdo,entupk,entdoj
+!!        print *,k,della(i,k),subin*he_cup(i,k+1),subdown*he_cup(i,k),
+!!     1            detdo*.5*(HCD(i,K+1)+HCD(i,K))
+!!        print *,k,detup*.5*(HC(i,K+1)+HC(i,K)),detupk*hc(i,ktop(i)),
+!!     1         entup*he(i,k),entdo*he(i,k)
+!!        print *,k,he_cup(i,k+1),he_cup(i,k),entupk*he_cup(i,k)
+!       endif
 
  100  CONTINUE
 
@@ -3536,9 +3633,9 @@ CONTAINS
 !
 
      integer                              ::                           &
-        i
+        i,k
      real                                 ::                           &
-        pbcdif,plus
+        pbcdif,plus,hetest
 !
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
 !
@@ -3555,7 +3652,13 @@ CONTAINS
         GO TO 27
       ENDIF
  32   CONTINUE
-      IF(HE_cup(I,K22(I)).LT.HES_cup(I,KBCON(I)))GO TO 31
+      hetest=HE_cup(I,K22(I))
+      if(iloop.eq.5)then
+       do k=1,k22(i)
+         hetest=max(hetest,he_cup(i,k))
+       enddo
+      endif
+      IF(HETEST.LT.HES_cup(I,KBCON(I)))GO TO 31
 
 !     cloud base pressure and max moist static energy pressure
 !     i.e., the depth (in mb) of the layer of negative buoyancy
@@ -4032,7 +4135,7 @@ CONTAINS
 
 
    SUBROUTINE cup_up_he(k22,hkb,z_cup,cd,entr,he_cup,hc,     &
-              kbcon,ierr,dby,he,hes_cup,                     &
+              kbcon,ierr,dby,he,hes_cup,name,                &
               itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
@@ -4047,6 +4150,8 @@ CONTAINS
         ,intent (in   )                   ::                           &
                                   itf,jtf,ktf,           &
                                   its,ite, jts,jte, kts,kte
+      character *(*), intent (in)        ::                           &
+       name
   ! hc = cloud moist static energy
   ! hkb = moist static energy at originating level
   ! he = moist static energy on model levels
@@ -4096,28 +4201,31 @@ CONTAINS
 !
       do k=kts,ktf
       do i=its,itf
-       hc(i,k)=0.
-       DBY(I,K)=0.
+         hc(i,k)=0.
+         DBY(I,K)=0.
       enddo
       enddo
       do i=its,itf
-       hkb(i)=0.
+         hkb(i)=0.
       enddo
       do i=its,itf
-      if(ierr(i).eq.0.)then
-      hkb(i)=he_cup(i,k22(i))
-      do k=1,k22(i)
-        hc(i,k)=he_cup(i,k)
-!       DBY(I,K)=0.
-      enddo
-      do k=k22(i),kbcon(i)-1
-        hc(i,k)=hkb(i)
-!       DBY(I,K)=0.
-      enddo
-        k=kbcon(i)
-        hc(i,k)=hkb(i)
-        DBY(I,Kbcon(i))=Hkb(I)-HES_cup(I,K)
-      endif
+        if(ierr(i).eq.0.)then
+          hkb(i)=he_cup(i,k22(i))
+          if(name.eq.'shallow')then
+             do k=1,k22(i)
+               hkb(i)=max(hkb(i),he_cup(i,k))
+             enddo
+          endif
+          do k=1,k22(i)
+              hc(i,k)=he_cup(i,k)
+          enddo
+          do k=k22(i),kbcon(i)-1
+              hc(i,k)=hkb(i)
+          enddo
+          k=kbcon(i)
+          hc(i,k)=hkb(i)
+          DBY(I,Kbcon(i))=Hkb(I)-HES_cup(I,K)
+        endif
       enddo
       do k=kts+1,ktf
       do i=its,itf
@@ -4885,7 +4993,7 @@ CONTAINS
 !--- calculate incloud moist static energy
 !
       call cup_up_he(k22xx,hkb,z_cup,cd,mentr_rate,he_cup,hc, &
-           kbconxx,ierrxx,dby,he,hes_cup, &
+           kbconxx,ierrxx,dby,he,hes_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 

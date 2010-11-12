@@ -21,6 +21,7 @@ MODULES =                 		\
         module_first_rk_step_part2.o    \
         module_avgflx_em.o              \
 	module_sfs_nba.o		\
+        module_convtrans_prep.o         \
 	module_sfs_driver.o		\
 	$(CASE_MODULE)
 
@@ -136,6 +137,7 @@ module_initialize_b_wave.o : \
 		module_init_utilities.o
 
 module_force_scm.o: module_init_utilities.o
+module_convtrans_prep.o: module_convtrans_prep.o
 
 module_initialize_grav2d_x.o: \
 		../frame/module_domain.o \
@@ -306,6 +308,7 @@ solve_em.o:     module_small_step_em.o \
 module_first_rk_step_part1.o : \
                 module_force_scm.o \
 		module_big_step_utilities_em.o \
+                module_convtrans_prep.o \
                 module_em.o \
 		../phys/module_radiation_driver.o \
 		../phys/module_surface_driver.o \

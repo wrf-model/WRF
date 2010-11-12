@@ -290,7 +290,7 @@
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &
             pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
-            ids,ide, jds,jde, kds,kde,                                 &
+            config_flags%dust_opt,ids,ide, jds,jde, kds,kde,            &
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 

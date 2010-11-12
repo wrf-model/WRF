@@ -77,6 +77,7 @@ MODULES =                           \
   module_optical_averaging.o        \
   module_mosaic_initmixrats.o       \
   module_mosaic_wetscav.o           \
+  module_wetdep_ls.o           \
   module_cmu_dvode_solver.o         \
   module_cmu_bulkaqchem.o           \
   module_mosaic_cloudchem.o         \
@@ -138,6 +139,8 @@ module_gocart_settling.o: module_data_gocart_dust.o
 module_gocart_aerosols.o: 
 
 module_gocart_drydep.o: 
+
+module_wetdep_ls.o: 
 
 module_gocart_dmsemis.o: 
 

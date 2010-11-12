@@ -28,19 +28,17 @@ CONTAINS
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                               &
                                   numgas,chemopt,scalaropt, &
-                                  ids,ide, jds,jde, kds,kde,    & 
-                                  ims,ime, jms,jme, kms,kme,    & 
+                                  ids,ide, jds,jde, kds,kde,    &
+                                  ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte,    &
                                   ishallow,num_chem,num_moist
 
-  
    INTEGER,      INTENT(IN   ) :: ITIMESTEP
 
    REAL,         INTENT(IN   ) :: XLV, R_v
    REAL,         INTENT(IN   ) :: CP,G
-
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme,num_moist )         ,    &
-          INTENT(IN   ) ::                              moist 
+          INTENT(IN   ) ::                              moist
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
           INTENT(IN   ) ::                                      &
                                                           U,    &
@@ -64,7 +62,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ),    &
          INTENT(INOUT) ::                                       &
                                    chem
-                           
 
    REAL, DIMENSION( ims:ime , jms:jme ),                        &
          INTENT(IN) ::        RAINCV, xmb_shallow
@@ -111,10 +108,10 @@ CONTAINS
    itf=MIN(ite,ide-1)
    ktf=MIN(kte,kde-1)
    jtf=MIN(jte,jde-1)
-!                                                                      
-!                                                                      
+!
+!
 123  continue
-     DO 100 J = jts,jtf  
+     DO 100 J = jts,jtf
      if(j.eq.jpr)print *,'dt = ',dt
      DO I=ITS,ITF
          ktop(i)=0
@@ -186,11 +183,11 @@ CONTAINS
               endif
              enddo
              enddo
-      CALL neg_check_ct('deep',pret,ktop,epsilc,dt,tracer,tracert,iopt,num_chem,   &
-                        its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j) 
+      CALL neg_check_ct('deep',pret,ktop,epsilc,dt,tracer,tracert,iopt,num_chem,  &
+                        its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
       if(ishallow.eq.1)then
-      CALL neg_check_ct('shallow',pret,ktop3,epsilc,dt,tracer,tracert3,iopt,num_chem,   &  
-                        its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j) 
+      CALL neg_check_ct('shallow',pret,ktop3,epsilc,dt,tracer,tracert3,iopt,num_chem,   &
+                        its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
       endif
 !     CALL neg_check_ct(pret,ktop,epsilc,dt,tracer,tracert,iopt,num_chem,   &
 !                       its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
@@ -247,7 +244,7 @@ CONTAINS
      integer, intent (in   )              ::                           &
         j
   !
-  ! 
+  !
   !
   !tracert = output temp tendency (per s)
   ! pre    = input precip
@@ -277,7 +274,7 @@ CONTAINS
         ,intent (in   )                   ::                           &
         Z1,PSUR,AAEQ,xmb3
 
-       
+
        real                                                            &
         ,intent (in   )                   ::                           &
         dtime,tcrit,xl,cp,rv,g
@@ -368,14 +365,14 @@ CONTAINS
      real,    dimension (its:ite,kts:kte,num_chem)       ::             &
         tr3_c,tr3_up,tr3_pw
      real,    dimension (its:ite,num_chem)         ::                   &
-        trkb3 
+        trkb3
      real,    dimension (its:ite,kts:kte,num_chem)       ::             &
         tr_c,tr_up,tr_dd,tr_dd3,tre_cup,tr_pw,tr_pwd
      real,    dimension (its:ite,num_chem)         ::                   &
         trkb
      integer,    dimension (its:ite) ::                                &
        kzdown,KDET,K22,KB,JMIN,kstabi,kstabm,                     &   !-lxz
-       ierr,KBMAX,ierr5 
+       ierr,KBMAX,ierr5
 
      integer                              ::                           &
        ki,I,K,KK
@@ -438,7 +435,7 @@ CONTAINS
 !
       depth_min=500.
 !
-!--- maximum depth (mb) of capping 
+!--- maximum depth (mb) of capping
 !--- inversion (larger cap = no convection)
 !
       cap_maxs=175.
@@ -717,7 +714,7 @@ CONTAINS
 !
         pwdper=0.
         do i=its,itf
- 
+
           if(ierr(i).gt.0)pre(i)=0.
           if(ierr(i).eq.0)then
           xmb(i)=pre(i)/(pwav(i)+edt(i)*pwev(i))
@@ -856,10 +853,10 @@ CONTAINS
   !
   ! ierr error value, maybe modified in this routine
   !
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                   &
         ,intent (out  )                   ::                           &
         tracert
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                   &
         ,intent (in   )                   ::                           &
         tre_cup,tracer,tr_dd
      real,    dimension (its:ite,kts:kte)                              &
@@ -932,10 +929,10 @@ CONTAINS
   !
   ! ierr error value, maybe modified in this routine
   !
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
         ,intent (inout  )                   ::                           &
         tracert
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
         ,intent (in  )                   ::                           &
         tr_up,tr_dd,tre_cup,tracer
      real,    dimension (its:ite,kts:kte)                              &
@@ -1044,7 +1041,7 @@ CONTAINS
 !c    1      subdown,detup,entup,entupk,detupk
 !c          print *,'dddr stuff = ',entdo,
 !c    1      detdo,entdoj
-            CALL wrf_error_fatal ( 'cup_dellas_tr: TOTMAS > CRITICAL VALUE')
+        CALL wrf_error_fatal ( 'cup_dellas_tr: TOTMAS > CRITICAL VALUE')
          endif
          dp=100.*(p_cup(i,k-1)-p_cup(i,k))
          do nv=2,num_chem
@@ -1092,10 +1089,10 @@ CONTAINS
      real,    dimension (its:ite,kts:kte,1:num_chem)                   &
         ,intent (out  )                   ::                           &
         tre_cup
-! 
+!
 !  local variables in this routine
-! 
-  
+!
+
      integer                              ::                           &
        i,k,nv,itf,ktf
      itf=MIN(ite,ide-1)
@@ -1249,7 +1246,7 @@ END subroutine cup_env_clev_tr
 !
 !  on input
 !
-  
+
    ! only local wrf dimensions are need as of now in this routine
 
      integer                                                           &
@@ -1263,10 +1260,10 @@ END subroutine cup_env_clev_tr
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (inout  )                   ::                           &
         cupclw,clw_all
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
         ,intent (inout  )                   ::                           &
         tr_up,tr_c,tr_pw
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
         ,intent (in  )                   ::                           &
         tre_cup,tracer
      real,    dimension (its:ite)                              &
@@ -1281,7 +1278,7 @@ END subroutine cup_env_clev_tr
         ,intent (in   )                   ::                           &
         kbcon,ktop,k22
    ! ierr error value, maybe modified in this routine
-  
+
      integer, dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
         ierr
@@ -1392,7 +1389,7 @@ END subroutine cup_env_clev_tr
       GAS( LPAA )  = tr_up(i,k,p_paa)
       GAS( LHNO3 ) = tr_up(i,k,p_hno3)
       GAS( LN2O5 ) = tr_up(i,k,p_n2o5)
-!...convert to mol/mol  
+!...convert to mol/mol
 
       DO IGAS=1,NGAS
         GAS( IGAS ) = GAS( IGAS ) * 1.0E-6
@@ -1426,7 +1423,7 @@ END subroutine cup_env_clev_tr
 
 
 !...convert to mol/mol
-!      
+!
 
 !      DO IAER=1,NAER
 !        AEROSOL( IAER ) = AEROSOL( IAER ) * 1.0E-6 * CTHK1
@@ -1440,8 +1437,8 @@ END subroutine cup_env_clev_tr
      GASWDEP=0.
      AERWDEP=0.
      HPWDEP=0.
-!    if(clw_all(i,k).gt.1.e-12)then 
-!    if(cupclw(i,k).gt.1.e-12)then 
+!    if(clw_all(i,k).gt.1.e-12)then
+!    if(cupclw(i,k).gt.1.e-12)then
 !     CALL AQCHEM (t(i,k),p(i,k)*100.,taucld,cupclw(i,k)/3600.,           &
 !        clw_all(i,k)*dens,clw_all(i,k)*dens,airm,ALFA0,ALFA2,ALFA3,GAS,  &
 !                  AEROSOL, GASWDEP, AERWDEP, HPWDEP )
@@ -1478,28 +1475,29 @@ END subroutine cup_env_clev_tr
 !        tr_up(I,K,nv)=tr_c(I,K,nv)+qrch
       tr_up(i,k,p_so2)=gas(lso2)*1.e6
       tr_up(i,k,p_sulf)=gas(lh2so4)*1.e6
-      tr_up(i,k,p_nh3)=gas(lnh3)*1.e6 
+      tr_up(i,k,p_nh3)=gas(lnh3)*1.e6
       tr_up(i,k,p_h2o2)=gas(lh2o2)*1.e6
 
       tr_up(i,k,p_o3)=gas(lo3)*1.e6
       tr_up(i,k,p_paa)=gas(lpaa)*1.e6
-      tr_up(i,k,p_hno3)=gas(lhno3)*1.e6 
+      tr_up(i,k,p_hno3)=gas(lhno3)*1.e6
       tr_up(i,k,p_n2o5)=gas(ln2o5)*1.e6
       tr_up(i,k,p_so4aj)=AEROSOL( LSO4ACC )*1.e6
       tr_up(i,k,p_nh4aj)=AEROSOL( LNH4ACC )*1.e6
       tr_up(i,k,p_no3aj)=AEROSOL( LNO3ACC ) *1.e6
 
-      tr_pw(i,k,p_so2)=gaswdep(lso2)*1.e6 
+      tr_pw(i,k,p_so2)=gaswdep(lso2)*1.e6
       tr_pw(i,k,p_sulf)=gaswdep(lh2so4)*1.e6
       tr_pw(i,k,p_nh3)=gaswdep(lnh3)*1.e6
       tr_pw(i,k,p_h2o2)=gaswdep(lh2o2)*1.e6
- 
+
       tr_pw(i,k,p_o3)=gaswdep(lo3)*1.e6
       tr_pw(i,k,p_paa)=gaswdep(lpaa)*1.e6
       tr_pw(i,k,p_hno3)=gaswdep(lhno3)*1.e6
       tr_pw(i,k,p_n2o5)=gaswdep(ln2o5)*1.e6
       tr_pw(i,k,p_so4aj)=AERwdep( LSO4ACC )*1.e6
       tr_pw(i,k,p_nh4aj)=AERwdep( LNH4ACC )*1.e6
+
       tr_pw(i,k,p_no3aj)=AERwdep( LNO3ACC ) *1.e6
       if(i.eq.ipr.and.j.eq.jpr)then
           write(6,*)'a',tr_up(i,k,npr),tracer(i,K-1,npr),tr_pw(i,k,npr)
@@ -1579,7 +1577,7 @@ END subroutine cup_up_tracer
 !
 !  on input
 !
-  
+
    ! only local wrf dimensions are need as of now in this routine
 
      integer                                                           &
@@ -1589,11 +1587,11 @@ END subroutine cup_up_tracer
                                   its,ite, jts,jte, kts,kte
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in  )                   ::                           &
-       pwdper,zd,cdd,qrcd,z_cup 
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+       pwdper,zd,cdd,qrcd,z_cup
+     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
         ,intent (inout  )                   ::                           &
         tr_dd,tr_pwd,tr_up
-     real,    dimension (its:ite,kts:kte,1:num_chem)                              &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
         ,intent (in  )                   ::                           &
         tre_cup,tracer,tr_pw
      real,    dimension (its:ite,1:num_chem) :: pwav
@@ -1606,7 +1604,7 @@ END subroutine cup_up_tracer
         ,intent (in   )                   ::                           &
         jmin
    ! ierr error value, maybe modified in this routine
-  
+
      integer, dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
         ierr,k22
@@ -1649,7 +1647,6 @@ END subroutine cup_up_tracer
 !
 !--- in downdraft, do only transport of tracers, other
 !--- than evaporation of part of the rainwater (see below)
-!
 !
       do 100 i=its,ite
       IF(ierr(I).eq.0)then
@@ -1718,7 +1715,7 @@ END subroutine cup_dd_tracer
      real :: tracermin,tracermax,thresh,qmem,qmemf,qmem2,qtest,qmem1
      character *(*) name
 !
-! check whether routine produces negative q's. This can happen, since 
+! check whether routine produces negative q's. This can happen, since
 ! tendencies are calculated based on forced q's. This should have no
 ! influence on conservation properties, it scales linear through all
 ! tendencies. Use iopt=0 to test for each tracer seperately, iopt=1
@@ -1841,7 +1838,6 @@ END subroutine cup_dd_tracer
       endif
 
    END SUBROUTINE neg_check_ct
-
 
 !-------------------------------------------------------
 END MODULE module_ctrans_grell

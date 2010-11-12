@@ -484,11 +484,11 @@ CONTAINS
     SUBROUTINE sum_pm_sorgam (                                         &
          alt, chem, h2oaj, h2oai,                                      &
          pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                   &
-         ids,ide, jds,jde, kds,kde,                                    &
+         dust_opt,ids,ide, jds,jde, kds,kde,                                    &
          ims,ime, jms,jme, kms,kme,                                    &
          its,ite, jts,jte, kts,kte                                     )
 
-   INTEGER,      INTENT(IN   )    ::                                   &
+   INTEGER,      INTENT(IN   )    ::  dust_opt,                        &
                                       ids,ide, jds,jde, kds,kde,       &
                                       ims,ime, jms,jme, kms,kme,       &
                                       its,ite, jts,jte, kts,kte
@@ -514,6 +514,14 @@ CONTAINS
       do k=kts,kte
       do i=its,ite
          ii=min(ide-1,i)
+!        if(dust_opt == 1 ) then
+! first add gocart dust and seasalt (aqmeii)
+!        pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,p_dust_1)+ &
+!                              .286*chem(ii,k,jj,p_dust_2) +            &
+!                              chem(ii,k,jj,p_seas_1) +                 &
+!                              .942*chem(ii,k,jj,p_seas_2)
+!        endif
+!
          do n=p_so4aj,p_p25i
             pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,n)
          enddo
@@ -534,10 +542,19 @@ CONTAINS
          do k=kts,kte
             do i=its,ite
                ii=min(ide-1,i)
+!              if(dust_opt == 1 ) then
+!              pm10(i,k,j) = pm2_5_dry(i,k,j)                       &
+!                          + ( chem(ii,k,jj,p_antha)               &
+!                          + .714*chem(ii,k,jj,p_dust_2)                 &
+!                          + chem(ii,k,jj,p_dust_3)                 &
+!                          + .058*chem(ii,k,jj,p_seas_2)                 &
+!                          + chem(ii,k,jj,p_seas_3) ) / alt(ii,k,jj)
+!              else
                pm10(i,k,j) = pm2_5_dry(i,k,j)                       &
                            + ( chem(ii,k,jj,p_antha)               &
                            + chem(ii,k,jj,p_soila)                 &
                            + chem(ii,k,jj,p_seas) ) / alt(ii,k,jj)
+!              endif
             enddo
          enddo
       enddo
@@ -8128,7 +8145,8 @@ SUBROUTINE sorgam_addemiss(                                             &
        chem(its:ite,kts:kemit,jts:jte,p_nu0) +                   &
        factor(its:ite,kts:kemit,jts:jte)*factnumn*(                                  &
        anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25i) +            &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci) ) +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci)  +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naai) ) +                      &
        orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgi) )
 
 ! Accumulation mode next...
@@ -8137,7 +8155,8 @@ SUBROUTINE sorgam_addemiss(                                             &
        chem(its:ite,kts:kemit,jts:jte,p_ac0) +                   &
        factor(its:ite,kts:kemit,jts:jte)*factnuma*(                                  &
        anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25j) +            &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj) ) +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj)  +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naaj) ) +                      &
        orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgj) )
 
 ! And now the coarse mode...
@@ -8168,6 +8187,12 @@ SUBROUTINE sorgam_addemiss(                                             &
   chem(its:ite,kts:kemit,jts:jte,p_eci) =                        &
        chem(its:ite,kts:kemit,jts:jte,p_eci) +                   &
        emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci)*factor(its:ite,kts:kemit,jts:jte)
+  chem(its:ite,kts:kemit,jts:jte,p_naaj) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_naaj) +                   &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naaj)*factor(its:ite,kts:kemit,jts:jte)
+  chem(its:ite,kts:kemit,jts:jte,p_naai) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_naai) +                   &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naai)*factor(its:ite,kts:kemit,jts:jte)
 
   chem(its:ite,kts:kemit,jts:jte,p_orgpaj) =                     &
        chem(its:ite,kts:kemit,jts:jte,p_orgpaj) +                &

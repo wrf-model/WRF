@@ -538,6 +538,8 @@ call wrf_message("**************************************************************
          enddo
       enddo
    enddo
+        ch_dust(:,:)=0.8D-9
+        ch_ss(:,:)=1.
 
 !
 ! initialization for wesely (gas) dry deposition

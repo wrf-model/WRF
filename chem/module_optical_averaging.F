@@ -307,6 +307,9 @@
        endif
 !
        do k=kts,kte
+!         if(iclm.eq.45.and.jclm.eq.48)then
+!           write(0,*)k,relhum(iclm,k,jclm),tauaer(1,k),gaer(1,k)
+!         endif
          tauaer1(iclm,k,jclm) = tauaer(1,k)
          tauaer2(iclm,k,jclm) = tauaer(2,k)
          tauaer3(iclm,k,jclm) = tauaer(3,k)

@@ -2,7 +2,7 @@ MODULE module_gocart_drydep
 CONTAINS
          subroutine gocart_drydep_driver(dtstep,               &
                config_flags,numgas,                            &
-               t_phy,moist,p8w,t8w,                            &
+               t_phy,moist,p8w,t8w,rmol,aer_res,               &
                p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,        &
                ivgtyp,tsk,vegfra,pbl,ust,znt,xlat,xlong,       &
                ids,ide, jds,jde, kds,kde,                      &
@@ -37,9 +37,10 @@ CONTAINS
                                                      ust,       &
                                                      xlat,      &
                                                      xlong,     &
-                                                  xland,znt,hfx
+                                            rmol,xland,znt,hfx
       REAL,      INTENT(IN   ) ::                               &
                              dtstep
+   REAL, DIMENSION( its:ite, jts:jte ) ::   aer_res
 
 !! .. Local Scalars ..
       REAL ::  clwchem,  dvfog, dvpart,  &
@@ -58,7 +59,6 @@ CONTAINS
   real*8, DIMENSION (5) :: tc,bems
   real*8, dimension (1,1) :: z0,w10m,gwet,airden,airmas,delz_sfc,hflux,ts,pblz,ustar,ps
   REAL*8  :: dvel(1,1), drydf(1,1)
-
   do j=jts,jte
   do i=its,ite
     do nv=numgas+1,num_chem
@@ -71,6 +71,7 @@ CONTAINS
   lmx=1
   do j=max(jds+1,jts),min(jde-1,jte)
   do i=max(ids+1,its),min(ide-1,ite)
+      ipr=0
      dvel(1,1)=0.
      ilwi(1,1)=0
      if(xland(i,j).gt.1.5)ilwi=1
@@ -86,10 +87,10 @@ CONTAINS
      ps(1,1)=p8w(i,kts,j)*.01
      z0(1,1)=znt(i,j)
      ts(1,1)=tsk(i,j)
-
-     call depvel_gocart(ii,imx,jmx,lmx,&
+!    if(i.eq.23.and.j.eq.74)ipr=1
+     call depvel_gocart(ipr,ii,imx,jmx,lmx,&
      airden, delz_sfc, pblz, ts, ustar, hflux, ilwi, &
-     ps, z0, dvel, drydf,g)
+     ps, z0, dvel, drydf,g,rmol(i,j),aer_res(i,j))
   do nv=p_p25,num_chem
       ddvel(i,j,nv)=dvel(1,1)
   enddo
@@ -102,9 +103,9 @@ end subroutine gocart_drydep_driver
 
 
 SUBROUTINE depvel_gocart(      &
-     ii,imx,jmx,lmx,&
+     ipr,ii,imx,jmx,lmx,&
      airden, delz_sfc, pblz, ts, ustar, hflux, ilwi, &
-     ps, z0, dvel, drydf,g0)
+     ps, z0, dvel, drydf,g0,rmol,aer_res)
 
 ! ****************************************************************************
 ! *                                                                          *
@@ -149,12 +150,12 @@ SUBROUTINE depvel_gocart(      &
   INTEGER, INTENT(IN)  :: ilwi(imx,jmx)
   INTEGER, INTENT(IN)  :: imx,jmx,lmx
   REAL*8,    INTENT(IN)  :: z0(imx,jmx)
-  REAL,    INTENT(IN)  :: g0
+  REAL,    INTENT(IN)  :: g0,rmol,aer_res
   REAL*8,    INTENT(OUT) :: dvel(imx,jmx), drydf(imx,jmx)
   
   REAL*8    :: obk, vds, czh, rttl, frac, logmfrac, psi_h, cz, eps
   REAL*8    :: vd, ra, rb, rs  
-  INTEGER :: i, j, k, ldt, iolson, ii
+  INTEGER :: ipr,i, j, k, ldt, iolson, ii
   CHARACTER(LEN=50) :: msg
   REAL*8     :: prss, tempk, tempc, xnu, ckustr, reyno, aird, diam, xm, z
   REAL*8     :: frpath, speed, dg, dw, rt
@@ -194,8 +195,16 @@ SUBROUTINE depvel_gocart(      &
 211        FORMAT(1X,'OBK=', E11.2, 1X,' i,j = ', 2I4)
            
         END IF
+!       write(0,*)1./obk,rmol
+        
+        if(rmol.ne.0)then
+          obk=1./rmol
+        else
+          obk=1.e5
+        endif
 
         cz = delz_sfc(i,j) / 2.0 ! center of the grid box above surface
+        cz=2.
 
 ! ****************************************************************************
 ! *  (1) Aerosodynamic resistance Ra and sublayer resistance Rb.             *
@@ -252,22 +261,22 @@ SUBROUTINE depvel_gocart(      &
 
               ra = (LOG(cz/z0(i,j)) - psi_h) / (vk*ustar(i,j))
         
-
            vds = 0.002*ustar(i,j)
-           IF (obk < 0.0) &
-                vds = vds * (1.0+(-300.0/obk)**0.6667)
+           IF (obk < 0.0) vds = vds * (1.0+(-300.0/obk)**0.6667)
 
            czh  = pblz(i,j)/obk
            IF (czh < -30.0) vds = 0.0009*ustar(i,j)*(-czh)**0.6667
+           if(ipr.eq.1)write(0,*)ra,aer_res,vds
+           ra=aer_res
 
            ! --Set Vds to be less than VDSMAX (entry in input file divided --
            !   by 1.E4). VDSMAX is taken from Table 2 of Walcek et al. [1986].
            !   Invert to get corresponding R
-           if(ii.eq.1)then
-              rs=1.0/MIN(vds,2.0D-2)
-           else
+!          if(ii.eq.1)then
+!             rs=1.0/MIN(vds,2.0D-2)
+!          else
               rs=1.0/MIN(vds,2.0D-3)
-           endif
+!          endif
            
 
         ! ------ Set max and min values for bulk surface resistances ------
@@ -291,7 +300,8 @@ SUBROUTINE depvel_gocart(      &
            vd   = vd + 1./rttl
 
         ! ------ Load array DVEL ------
-           dvel(i,j) = vd * 1.2
+           if(ipr.eq.1)write(0,*)rs,ra,rb,vd
+           dvel(i,j) = vd !* 1.2
 
         ! -- Set a minimum value for DVEL
         !    MIN(VdSO2)      = 2.0e-3 m/s  over ice

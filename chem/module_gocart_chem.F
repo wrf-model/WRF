@@ -5,7 +5,7 @@ CONTAINS
   subroutine gocart_chem_driver(curr_secs,dt,config_flags,            &
          gmt,julday,t_phy,moist,                                      &
          chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,backg_no3,         &
-         dx,g,xlat,xlong,ttday,tcosz, &
+         gd_cldf,dx,g,xlat,xlong,ttday,tcosz, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -27,7 +27,10 @@ CONTAINS
           INTENT(IN   ) ::                                                 &
               xlat,xlong,ttday,tcosz
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
-          INTENT(IN   ) ::                     t_phy,               &
+          OPTIONAL,                                                        &
+          INTENT(IN   ) ::                     gd_cldf
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
+          INTENT(IN   ) ::                     t_phy,                      &
                               backg_oh,backg_h2o2,backg_no3,dz8w,p8w,      &
                                               rho_phy
   REAL(KIND=8), INTENT(IN) :: curr_secs
@@ -87,7 +90,11 @@ CONTAINS
        chpso4=0.
        chlso2_oh=0.
        chlso2_aq=0.
+       if (present(gd_cldf) ) then
+          cldf(1,1,1)=gd_cldf(i,k,j)
+       else
           cldf(1,1,1)=0.
+       endif
           if(p_qc.gt.1 .and. p_qi.gt.1)then
           if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0.)cldf(1,1,1)=1.
           elseif(p_qc.gt.1 .and. p_qi.le.1)then
@@ -150,7 +157,11 @@ CONTAINS
        chpso4=0.
        chlso2_oh=0.
        chlso2_aq=0.
-          cldf(1,1,1)=0.
+          if( present(gd_cldf) ) then
+            cldf(1,1,1)=gd_cldf(i,k,j)
+          else
+            cldf(1,1,1)=0.
+          endif
           if(p_qi.gt.1)then
           if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0.)cldf(1,1,1)=1.
           elseif(p_qc.gt.1)then
@@ -399,7 +410,7 @@ SUBROUTINE chem_dms( imx,jmx,lmx,&
 !       pmsa_dms(i,j,l) = (dms0 - dms_oh) * b*rk1/((rk1+rk2)*fx)
               pmsa_dms(i,j,l) = max(0.0D0,(dms0 - dms_oh) * b*rk1/((rk1+rk2) * fx) * eff)
            END IF
-           pso2_dms(i,j,l) =  max(0.0D0,dms0 - dms - pmsa_dms(i,j,l))
+       pso2_dms(i,j,l) =  max(0.0D0,dms0 - dms - pmsa_dms(i,j,l))
 !      pso2_dms(i,j,l) =  (dms0 - dms - pmsa_dms(i,j,l)/eff) * eff
 
            !    ------------------------------------------------------------
@@ -645,6 +656,9 @@ SUBROUTINE chem_so4( imx,jmx,lmx,&
 !           ELSE
               so4 = so40 + pso4_so2(i,j,l)
 !           END IF
+           if(pso4_so2(i,j,l).lt.0.)then
+             write(0,*)'so4 routine, pso4 = ',pso4_so2(i,j,l),so4,so40
+           endif
 
            so4    = MAX(so4, 1.0D-32)
            tc(i,j,l,NSO4) = so4

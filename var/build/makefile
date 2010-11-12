@@ -32,10 +32,6 @@ WRFVAR_LIB = -L. -lwrfvar $(RTTOV_LIB) $(CRTM_LIB)
 
 FPPFLAGS   = -I$(WRF_SRC_ROOT_DIR)/inc
 
-ifneq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	WRFPLUS_DIR = .
-endif
-
 depend : links module_state_description.F md_calls.inc \
                       da_generic_boilerplate.inc
 #	(cd $(WRF_SRC_ROOT_DIR)/var/da/makedepf90-2.8.8; ./setup_makedepf90)
@@ -61,10 +57,11 @@ libwrfvar.a : $(WRFVAR_OBJS)
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
-	mv $*.f.tmp $*.f
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
 	  $(FC) -o $@ -c $(FCFLAGS) $(OMP) $(PROMOTION) $*.f ; \

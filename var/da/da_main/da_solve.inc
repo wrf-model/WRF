@@ -69,9 +69,7 @@
    end if
 
    ! Calculate the num_fgat_time based on time_window_min, time_window_max
-    if ( .not. var4d ) then
-       num_fgat_time = 1
-    else
+    if ( var4d ) then
        read(unit=time_window_min,fmt='(i4,5(a1,i2))') min_yyyy,s,min_mm,s,min_dd,s,min_hh,s,min_mn,s,min_ss
        read(unit=time_window_max,fmt='(i4,5(a1,i2))') max_yyyy,s,max_mm,s,max_dd,s,max_hh,s,max_mn,s,max_ss
        call da_get_julian_time(min_yyyy,min_mm,min_dd,min_hh,min_mn,time_min)

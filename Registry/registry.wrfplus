@@ -557,6 +557,14 @@ period    PERIOD_BDY_EM_D3_TL dyn_em 3:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1
 period    PERIOD_BDY_EM_MOIST_TL dyn_em 4:g_moist
 period    PERIOD_EM_HYDRO_UV_TL dyn_em 1:g_u_2,g_v_2
 period    PERIOD_BDY_EM_MOIST_OLD_TL dyn_em 4:g_moist_old
+
+halo      HALO_EM_MU_AD dyn_em  4:a_muu,a_muv,a_mu_2,a_ru,a_rv
+halo      HALO_EM_SAVE_AD dyn_em  4:a_ph_save,a_t_save,a_u_save,a_v_save
+halo      HALO_EM_E_3_AD dyn_em 24:a_u_1,a_u_2,a_v_1,a_v_2,a_w_1,a_w_2,a_t_1,a_t_2,a_ph_1,a_ph_2,a_tke_1,a_tke_2,;4:a_mu_1,a_mu_2
+halo      HALO_EM_E_5_AD dyn_em 48:a_u_1,a_u_2,a_v_1,a_v_2,a_w_1,a_w_2,a_t_1,a_t_2,a_ph_1,a_ph_2,a_tke_1,a_tke_2,;4:a_mu_1,a_mu_2
+halo      HALO_EM_MOIST_E_3_AD dyn_em 24:a_moist
+halo      HALO_EM_MOIST_E_5_AD dyn_em 48:a_moist
+
 ##
 # BEGIN XTRAJ_TYPE DEFINITION:
 #      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>

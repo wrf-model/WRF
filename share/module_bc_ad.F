@@ -1330,6 +1330,31 @@ CONTAINS
            ENDDO
          ENDDO
        ENDDO
+
+       DO i = min(itf,ibe-spec_zone), max(its,ibe-relax_zone+1), -1
+         b_dist = ibe - i
+         IF (jtf < jbe-b_dist-1) THEN
+           DO k = kts, ktf
+             a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,jtf+1) 
+             a_field_bdy_xe(jtf, k, b_dist+1) = a_field_bdy_xe(jtf, k, b_dist+1) + a_fls1
+             a_field_bdy_tend_xe(jtf,k,b_dist+1) = a_field_bdy_tend_xe(jtf,k,b_dist+1) &
+                                                 + dtbc * a_fls1
+             a_field(i,k,jtf) = a_field(i,k,jtf) - a_fls1
+             a_fls1 = 0.
+           ENDDO
+         ENDIF
+         IF (jts > b_dist+jbs+1) THEN
+           DO k = kts, ktf
+             a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,jts-1) 
+             a_field_bdy_xe(jts, k, b_dist+1) = a_field_bdy_xe(jts, k, b_dist+1) + a_fls2
+             a_field_bdy_tend_xe(jts,k,b_dist+1) = a_field_bdy_tend_xe(jts,k,b_dist+1) &
+                                                 + dtbc * a_fls2
+             a_field(i,k,jts) = a_field(i,k,jts) - a_fls2
+             a_fls2 = 0.
+           ENDDO
+         ENDIF
+       ENDDO
+
      ENDIF
 
      IF (its - ibs .lt. relax_zone) THEN
@@ -1375,6 +1400,30 @@ CONTAINS
              a_fls0 = 0.
            ENDDO
          ENDDO
+       ENDDO
+
+       DO i = min(itf,ibs+relax_zone-1), max(its,ibs+spec_zone), -1
+         b_dist = i - ibs
+         IF ( jtf < jbe-b_dist-1 ) THEN
+           DO k = kts, ktf
+             a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,jtf+1) 
+             a_field_bdy_xs(jtf, k, b_dist+1) = a_field_bdy_xs(jtf, k, b_dist+1) + a_fls1
+             a_field_bdy_tend_xs(jtf,k,b_dist+1) = a_field_bdy_tend_xs(jtf,k,b_dist+1) &
+                                                 + dtbc * a_fls1
+             a_field(i,k,jtf) = a_field(i,k,jtf) - a_fls1
+             a_fls1 = 0.
+           ENDDO
+         ENDIF
+         IF ( jts > b_dist+jbs+1 ) THEN
+           DO k = kts, ktf
+             a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,jts-1) 
+             a_field_bdy_xs(jts, k, b_dist+1) = a_field_bdy_xs(jts, k, b_dist+1) + a_fls2
+             a_field_bdy_tend_xs(jts,k,b_dist+1) = a_field_bdy_tend_xs(jts,k,b_dist+1) &
+                                                 + dtbc * a_fls2
+             a_field(i,k,jts) = a_field(i,k,jts) - a_fls2
+             a_fls2 = 0.
+           ENDDO
+         ENDIF
        ENDDO
      ENDIF
 
@@ -1429,6 +1478,32 @@ CONTAINS
          ENDDO
        ENDDO
      ENDDO
+
+     DO j = min(jtf,jbe-spec_zone), max(jts,jbe-relax_zone+1), -1
+       b_dist = jbe - j
+       b_limit = b_dist
+       IF(periodic_x)b_limit = 0
+       IF (itf < ibe-b_limit) THEN
+         DO k = kts, ktf
+           a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(itf+1,k,j) 
+           a_field_bdy_ye(itf, k, b_dist+1) = a_field_bdy_ye(itf, k, b_dist+1) + a_fls1
+           a_field_bdy_tend_ye(itf,k,b_dist+1) = a_field_bdy_tend_ye(itf,k,b_dist+1) &
+                                               + dtbc * a_fls1
+           a_field(itf,k,j) = a_field(itf,k,j) - a_fls1
+           a_fls1 = 0.
+         ENDDO
+       ENDIF
+       IF (its > b_limit+ibs) THEN
+         DO k = kts, ktf
+           a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(its-1,k,j) 
+           a_field_bdy_ye(its, k, b_dist+1) = a_field_bdy_ye(its, k, b_dist+1) + a_fls2
+           a_field_bdy_tend_ye(its,k,b_dist+1) = a_field_bdy_tend_ye(its,k,b_dist+1) &
+                                               + dtbc * a_fls2
+           a_field(its,k,j) = a_field(its,k,j) - a_fls2
+           a_fls2 = 0.
+         ENDDO
+       ENDIF
+     ENDDO
    ENDIF
 
    IF (jts - jbs .lt. relax_zone) THEN
@@ -1479,6 +1554,32 @@ CONTAINS
            a_fls0 = 0.
          ENDDO
        ENDDO
+     ENDDO
+
+     DO j = min(jtf,jbs+relax_zone-1), max(jts,jbs+spec_zone), -1
+       b_dist = j - jbs
+       b_limit = b_dist
+       IF(periodic_x)b_limit = 0
+       IF (itf < ibe-b_limit ) THEN
+         DO k = kts, ktf
+           a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(itf+1,k,j) 
+           a_field_bdy_ys(itf, k, b_dist+1) = a_field_bdy_ys(itf, k, b_dist+1) + a_fls1
+           a_field_bdy_tend_ys(itf,k,b_dist+1) = a_field_bdy_tend_ys(itf,k,b_dist+1) &
+                                               + dtbc * a_fls1
+           a_field(itf,k,j) = a_field(itf,k,j) - a_fls1
+           a_fls1 = 0.
+         ENDDO
+       ENDIF
+       IF (its > b_limit+ibs ) THEN
+         DO k = kts, ktf
+           a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(its-1,k,j) 
+           a_field_bdy_ys(its, k, b_dist+1) = a_field_bdy_ys(its, k, b_dist+1) + a_fls2
+           a_field_bdy_tend_ys(its,k,b_dist+1) = a_field_bdy_tend_ys(its,k,b_dist+1) &
+                                               + dtbc * a_fls2
+           a_field(its,k,j) = a_field(its,k,j) - a_fls2
+           a_fls2 = 0.
+         ENDDO
+       ENDIF
      ENDDO
    ENDIF
 

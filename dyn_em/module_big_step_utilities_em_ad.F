@@ -65,6 +65,10 @@ SUBROUTINE a_calc_mu_uv ( config_flags,                 &
              a_muv(i,j) = 0.
          ENDDO
          ENDDO
+         DO i=its,itf
+             a_mu(i,jtf) = a_mu(i,jtf) + 0.5*a_muv(i,jtf+1)
+             a_muv(i,jtf+1) = 0.
+         ENDDO
       ELSE IF ( ( jts .EQ. jds ) .AND. ( jte .NE. jde ) ) THEN
          j=jts
          jm = jts
@@ -80,6 +84,10 @@ SUBROUTINE a_calc_mu_uv ( config_flags,                 &
              a_mu(i,j-1) = a_mu(i,j-1) + 0.5*a_muv(i,j)
              a_muv(i,j) = 0.
          ENDDO
+         ENDDO
+         DO i=its,itf
+             a_mu(i,jtf) = a_mu(i,jtf) + 0.5*a_muv(i,jtf+1)
+             a_muv(i,jtf+1) = 0.
          ENDDO
       ELSE IF ( ( jts .NE. jds ) .AND. ( jte .EQ. jde ) ) THEN
          j=jte
@@ -114,7 +122,7 @@ SUBROUTINE a_calc_mu_uv ( config_flags,                 &
              a_mu(i,jm) = a_mu(i,jm) + 0.5*a_muv(i,j)
              a_muv(i,j) = 0.
          ENDDO
-         DO j=jtf-1,jts+1,-1
+         DO j=jts+1,jtf-1
          DO i=its,itf
              a_mu(i,j) = a_mu(i,j) + 0.5*a_muv(i,j)
              a_mu(i,j-1) = a_mu(i,j-1) + 0.5*a_muv(i,j)
@@ -134,6 +142,10 @@ SUBROUTINE a_calc_mu_uv ( config_flags,                 &
             a_muu(i,j) = 0.
          ENDDO
          ENDDO
+         DO j=jts,jtf
+            a_mu(itf,j) = a_mu(itf,j) + 0.5*a_muu(itf+1,j)
+            a_muu(itf+1,j) = 0.
+         ENDDO
       ELSE IF ( ( its .EQ. ids ) .AND. ( ite .NE. ide ) ) THEN
          i=its
          im = its
@@ -149,6 +161,10 @@ SUBROUTINE a_calc_mu_uv ( config_flags,                 &
             a_mu(i-1,j) = a_mu(i-1,j) + 0.5*a_muu(i,j)
             a_muu(i,j) = 0.
          ENDDO
+         ENDDO
+         DO j=jts,jtf
+            a_mu(itf,j) = a_mu(itf,j) + 0.5*a_muu(itf+1,j)
+            a_muu(itf+1,j) = 0.
          ENDDO
       ELSE IF ( ( its .NE. ids ) .AND. ( ite .EQ. ide ) ) THEN
          i=ite
@@ -736,6 +752,16 @@ SUBROUTINE a_couple_momentum ( muu, a_muu, a_ru, u, a_u, msfu,              &
       ENDDO
       ENDDO
 
+      IF (jte < jde) THEN
+        DO k=kts,ktf
+          DO i=its,itf
+          ! a_v(i,k,jte+1)=a_v(i,k,jte+1) + muv(i,jte+1)*msfv_inv(i,jte+1) * a_rv(i,k,jte+1)
+            a_muv(i,jte+1)=a_muv(i,jte+1) + v(i,k,jte+1)*msfv_inv(i,jte+1) * a_rv(i,k,jte+1)
+            a_rv(i,k,jte+1)=0.
+          ENDDO
+        ENDDO
+      ENDIF
+
       itf=ite
       jtf=MIN(jte,jde-1)
 
@@ -749,6 +775,15 @@ SUBROUTINE a_couple_momentum ( muu, a_muu, a_ru, u, a_u, msfu,              &
       ENDDO
       ENDDO
 
+      IF (ite < ide) THEN
+        DO j=jts,jtf
+          DO k=kts,ktf
+          ! a_u(ite+1,k,j)=a_u(ite+1,k,j) + muu(ite+1,j)/msfu(ite+1,j) * a_ru(ite+1,k,j)
+            a_muu(ite+1,j)=a_muu(ite+1,j) + u(ite+1,k,j)/msfu(ite+1,j) * a_ru(ite+1,k,j) 
+            a_ru(ite+1,k,j)=0.
+          ENDDO
+        ENDDO
+      ENDIF
 END SUBROUTINE a_couple_momentum
 
    SUBROUTINE a_calc_ww_cp(u,a_u,v,a_v,mup,a_mup,mub,ww,a_ww,rdx,rdy,msftx, &

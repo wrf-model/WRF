@@ -43,7 +43,9 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                  ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
                  ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
-                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub
+                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
+                 ,halo_em_save_ad_sub,halo_em_e_3_ad_sub,halo_em_e_5_ad_sub                &
+                 ,halo_em_moist_e_3_ad_sub,halo_em_moist_e_5_ad_sub,halo_em_mu_ad_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -9788,6 +9790,9 @@ else
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_addtend_dry }
 
+#ifdef DM_PARALLEL
+#      include "HALO_EM_SAVE_AD.inc"
+#endif
 !======[adj_P1.8.1]=======================================================
 !      Adjoint of calculating tendencies for grid points in relax zone
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
@@ -10296,6 +10301,11 @@ else
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_1 }
 
+#ifdef DM_PARALLEL
+! a_ru, a_rv
+#    include "HALO_EM_MU_AD.inc"
+#endif
+
 BENCH_END(adj_set_phys_bc_tim)
 
 !====[adj_P1.3]===========================================================
@@ -10391,6 +10401,65 @@ end if
 
        ENDIF
 
+#ifdef DM_PARALLEL
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
+   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#    include "HALO_EM_E_3_AD.inc"
+   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#    include "HALO_EM_E_5_AD.inc"
+   ELSE
+     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+     CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF
+#endif
+
+#ifdef DM_PARALLEL
+   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
+     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_MOIST_E_3_AD.inc"
+     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_MOIST_E_5_AD.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   ENDIF
+   IF ( num_chem >= PARAM_FIRST_SCALAR ) THEN
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_CHEM' )
+     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_CHEM_E_3.inc"
+     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_CHEM_E_5.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   ENDIF
+   IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_TRACER' )
+     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_TRACER_E_3.inc"
+     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_TRACER_E_5.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   ENDIF
+#endif
 !==[P12_adj]==============================================================
 !  Max values of CFL for adaptive time step scheme
 

@@ -19980,24 +19980,9 @@ CONTAINS
 
    REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004, &
    a_Tmpv5,Tmpv005,a_Tmpv6,Tmpv006,a_Tmpv7,Tmpv007,a_Tmpv8,Tmpv008,a_Tmpv9, &
-   Tmpv009,a_Tmpv10,Tmpv010,a_Tmpv11,Tmpv011,a_Tmpv12,Tmpv012
-   REAL,DIMENSION(MIN(kts,its-2):MAX(kte,ite+2), &
-                  MIN(its-2,jts-2):MAX(ite+2,jte+2)) :: Tmpv300,Tmpv301,Tmpv302,Tmpv303
-   REAL,DIMENSION(its-2:ite+2,jts-2:jte+2) :: Tmpv304,Tmpv305,Tmpv306,Tmpv307
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jts-2:jte+2) :: Tmpv400,Tmpv401,Tmpv402,Tmpv403
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jds+1:jds+1) :: Tmpv404,Tmpv405,Tmpv406,Tmpv407
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jds+2:jds+2) :: Tmpv408,Tmpv409,Tmpv4010,Tmpv4011
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jde-1:jde-1) :: Tmpv4012,Tmpv4013,Tmpv4014,Tmpv4015
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jde-2:jde-2) :: Tmpv4016,Tmpv4017,Tmpv4018,Tmpv4019
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jts-2:jte+2) :: Tmpv4020,Tmpv4021,Tmpv4022,Tmpv4023
-   REAL,DIMENSION(kts:kte,ids+1:ids+1,jts-2:jte+2) :: Tmpv4024,Tmpv4025,Tmpv4026,Tmpv4027
-   REAL,DIMENSION(kts:kte,ids+2:ids+2,jts-2:jte+2) :: Tmpv4028,Tmpv4029,Tmpv4030,Tmpv4031
-   REAL,DIMENSION(kts:kte,ide-1:ide-1,jts-2:jte+2) :: Tmpv4032,Tmpv4033,Tmpv4034,Tmpv4035
-   REAL,DIMENSION(kts:kte,ide-2:ide-2,jts-2:jte+2) :: Tmpv4036,Tmpv4037,Tmpv4038,Tmpv4039
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jts-2:jte+2) :: Tmpv1400,Tmpv1401,Tmpv1402,Tmpv1403 
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jts-2:jte+2) :: Tmpv2400,Tmpv2401,Tmpv2402, &
-       Tmpv2403,Tmpv2404,Tmpv2405,Tmpv2406,Tmpv2408,Tmpv24010, Tmpv24012,Tmpv24014,Tmpv24016
-   REAL,DIMENSION(its-2:ite+2,kts:kte,jts-2:jte+2) :: Tmpv502,Tmpv503
+   Tmpv009,a_Tmpv10,Tmpv010,a_Tmpv11,Tmpv011,a_Tmpv12,Tmpv012,gwalls
+
+   REAL,DIMENSION(its-2:ite+2,kts:kte,jts-2:jte+2) :: Tmpv2400,Tmpv2401,Tmpv2402,Tmpv2403,Tmpv2404,Tmpv2405
    REAL,DIMENSION(its-2:ite+2,kts:kte,jts-2:jte+2) :: Tmpv600,Tmpv601,Tmpv602,Tmpv603
    REAL,DIMENSION(its-2:ite+2,kts:kte) :: Tmpv604,Tmpv605,Tmpv606,Tmpv607,Tmpv608, &
        Tmpv609,Tmpv6010,Tmpv6011,Tmpv6012,Tmpv6013,Tmpv6014,Tmpv6015,Tmpv6016, &
@@ -20141,22 +20126,15 @@ CONTAINS
    IF(degrade_ye) j_end   = MIN(jte,jde-2)
 
    DO j =j_end, j_start, -1
-
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
-   a_Tmpv6 =a_tendency(i,k,j)
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =msftx(i,j)*a_Tmpv5
-   a_Tmpv3 =rdy*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqyl(i,k,j+1) =a_fqyl(i,k,j+1) +a_Tmpv2
+   a_Tmpv1 =-rdy*msftx(i,j)*a_tendency(i,k,j)
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
+   a_fqyl(i,k,j+1) =a_fqyl(i,k,j+1) +a_Tmpv1
    a_fqy(i,k,j+1) =a_fqy(i,k,j+1) +a_Tmpv1
    a_fqy(i,k,j) =a_fqy(i,k,j) -a_Tmpv1
    ENDDO
    ENDDO
-
    ENDDO
 
 !LPB[30]
@@ -20168,25 +20146,16 @@ CONTAINS
    IF(degrade_xe) i_end   = MIN(ite,ide-2)
 
    DO j =j_end, j_start, -1
-
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
-   a_Tmpv6 =a_tendency(i,k,j)
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =msftx(i,j)*a_Tmpv5
-   a_Tmpv3 =rdx*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqxl(i+1,k,j) =a_fqxl(i+1,k,j) +a_Tmpv2
+   a_Tmpv1 =-rdx*msftx(i,j)*a_tendency(i,k,j)
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
+   a_fqxl(i+1,k,j) =a_fqxl(i+1,k,j) +a_Tmpv1
    a_fqx(i+1,k,j) =a_fqx(i+1,k,j) +a_Tmpv1
    a_fqx(i,k,j) =a_fqx(i,k,j) -a_Tmpv1
    ENDDO
    ENDDO
-
    ENDDO
-
-!LPB[29]
 
 !LPB[25]
    i_start = its
@@ -20195,40 +20164,29 @@ CONTAINS
    j_end   = MIN(jte,jde-1)
 
    DO j =j_end, j_start, -1
-
    DO k =ktf, kts, -1
+   gwalls=-rdzw(k)
    DO i =i_end, i_start, -1
-   a_Tmpv5 =a_tendency(i,k,j)
-   a_Tmpv4 =-a_Tmpv5
-   a_Tmpv3 =rdzw(k)*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqzl(i,k+1,j) =a_fqzl(i,k+1,j) +a_Tmpv2
+   a_Tmpv1 =gwalls*a_tendency(i,k,j)
+   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
+   a_fqzl(i,k+1,j) =a_fqzl(i,k+1,j) +a_Tmpv1
    a_fqz(i,k+1,j) =a_fqz(i,k+1,j) +a_Tmpv1
    a_fqz(i,k,j) =a_fqz(i,k,j) -a_Tmpv1
    ENDDO
    ENDDO
-
    ENDDO
 
 !LPB[1]
-   DO j=jts-2,jte+2
-   DO k =kts, kte
-   DO i =its-2, ite+2
-   qmin(i,k,j) =field_old(i,k,j)
-   qmax(i,k,j) =field_old(i,k,j)
-   scale_in(i,k,j) =1.
-   scale_out(i,k,j) =1.
-   fqx(i,k,j) =0.
-   fqy(i,k,j) =0.
-   fqz(i,k,j) =0.
-   fqxl(i,k,j) =0.
-   fqyl(i,k,j) =0.
-   fqzl(i,k,j) =0.
-   ENDDO
-   ENDDO
-   ENDDO
+   qmin(its-2:ite+2,kts:kte,jts-2:jte+2) =field_old(its-2:ite+2,kts:kte,jts-2:jte+2)
+   qmax(its-2:ite+2,kts:kte,jts-2:jte+2) =field_old(its-2:ite+2,kts:kte,jts-2:jte+2)
+   scale_in(its-2:ite+2,kts:kte,jts-2:jte+2) =1.
+   scale_out(its-2:ite+2,kts:kte,jts-2:jte+2) =1.
+   fqx(its-2:ite+2,kts:kte,jts-2:jte+2) =0.
+   fqy(its-2:ite+2,kts:kte,jts-2:jte+2) =0.
+   fqz(its-2:ite+2,kts:kte,jts-2:jte+2) =0.
+   fqxl(its-2:ite+2,kts:kte,jts-2:jte+2) =0.
+   fqyl(its-2:ite+2,kts:kte,jts-2:jte+2) =0.
+   fqzl(its-2:ite+2,kts:kte,jts-2:jte+2) =0.
 
 !LPB[3]
    IF( horz_order == 5 ) THEN
@@ -20256,174 +20214,118 @@ CONTAINS
    DO k =kts, ktf
    DO i =i_start, i_end
    vel =rv(i,k,j)
-   Tmpv400(i,k,j) =vel
-
    cr =vel
-   Tmpv401(i,k,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),vel)
-   Tmpv402(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv402(i,k,j)
-   fqyl(i,k,j) =Tmpv002
-
-   Tmpv001 =flux5(field(i,k,j-3),field(i,k,j-2),field(i,k,j-1),field(i,k,j)  &
+   fqyl(i,k,j) =vel*flux_upwind(field_old(i,k,j-1),field_old(i,k,j),vel)
+   fqy(i,k,j) =vel*flux5(field(i,k,j-3),field(i,k,j-2),field(i,k,j-1),field(i,k,j)  &
    ,field(i,k,j+1),field(i,k,j+2),vel)
-   Tmpv403(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv403(i,k,j)
-   fqy(i,k,j) =Tmpv002
 
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
+   fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv600(i,k,j) = qmax(i,k,j)
-   Tmpv001 =max(qmax(i,k,j), field_old(i,k,j-1))
-   qmax(i,k,j) =Tmpv001
+   qmax(i,k,j) =amax1(qmax(i,k,j), field_old(i,k,j-1))
 
    Tmpv601(i,k,j) = qmin(i,k,j)
-   Tmpv001 =min(qmin(i,k,j), field_old(i,k,j-1))
-   qmin(i,k,j) =Tmpv001
+   qmin(i,k,j) =amin1(qmin(i,k,j), field_old(i,k,j-1))
 
    else
+
    Tmpv602(i,k,j-1) = qmax(i,k,j-1)
-   Tmpv001 =max(qmax(i,k,j-1), field_old(i,k,j))
-   qmax(i,k,j-1) =Tmpv001
+   qmax(i,k,j-1) =amax1(qmax(i,k,j-1), field_old(i,k,j))
 
    Tmpv603(i,k,j-1) = qmin(i,k,j-1)
-   Tmpv001 =min(qmin(i,k,j-1), field_old(i,k,j))
-   qmin(i,k,j-1) =Tmpv001
+   qmin(i,k,j-1) =amin1(qmin(i,k,j-1), field_old(i,k,j))
 
    end IF
    ENDDO
    ENDDO
+
    ELSE IF( j == jds+1 ) THEN
 
    DO k =kts, ktf
    DO i =i_start, i_end
    vel =rv(i,k,j)
-   Tmpv404(i,k,j) =vel
-
    cr =vel
-   Tmpv405(i,k,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv406(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv406(i,k,j)
-   fqyl(i,k,j) =Tmpv002
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv407(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv407(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
+   fqyl(i,k,j) =vel*flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
+   fqy(i,k,j) =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
+   fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv604(i,k) = qmax(i,k,j)
-   Tmpv001 =max(qmax(i,k,j), field_old(i,k,j-1))
-   qmax(i,k,j) =Tmpv001
+   qmax(i,k,j) =amax1(qmax(i,k,j), field_old(i,k,j-1))
 
    Tmpv605(i,k) = qmin(i,k,j)
-   Tmpv001 =min(qmin(i,k,j), field_old(i,k,j-1))
-   qmin(i,k,j) =Tmpv001
+   qmin(i,k,j) =amin1(qmin(i,k,j), field_old(i,k,j-1))
 
    else
+
    Tmpv606(i,k) = qmax(i,k,j-1)
-   Tmpv001 =max(qmax(i,k,j-1), field_old(i,k,j))
-   qmax(i,k,j-1) =Tmpv001
+   qmax(i,k,j-1) =amax1(qmax(i,k,j-1), field_old(i,k,j))
 
    Tmpv607(i,k) = qmin(i,k,j-1)
-   Tmpv001 =min(qmin(i,k,j-1), field_old(i,k,j))
-   qmin(i,k,j-1) =Tmpv001
+   qmin(i,k,j-1) =amin1(qmin(i,k,j-1), field_old(i,k,j))
 
    end IF
    ENDDO
    ENDDO
+
    ELSE IF( j == jds+2 ) THEN
 
    DO k =kts, ktf
    DO i =i_start, i_end
    vel =rv(i,k,j)
-   Tmpv408(i,k,j) =vel
-
    cr =vel
-   Tmpv409(i,k,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4010(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4010(i,k,j)
-   fqyl(i,k,j) =Tmpv002
-
-   Tmpv001 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv4011(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4011(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
+   fqyl(i,k,j) =vel*flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
+   fqy(i,k,j) =vel*flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
+   fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv608(i,k) = qmax(i,k,j)
-   Tmpv001 =max(qmax(i,k,j), field_old(i,k,j-1))
-   qmax(i,k,j) =Tmpv001
+   qmax(i,k,j) =max(qmax(i,k,j), field_old(i,k,j-1))
 
    Tmpv609(i,k) = qmin(i,k,j)
-   Tmpv001 =min(qmin(i,k,j), field_old(i,k,j-1))
-   qmin(i,k,j) =Tmpv001
+   qmin(i,k,j) =min(qmin(i,k,j), field_old(i,k,j-1))
 
    else
+
    Tmpv6010(i,k) = qmax(i,k,j-1)
-   Tmpv001 =max(qmax(i,k,j-1), field_old(i,k,j))
-   qmax(i,k,j-1) =Tmpv001
+   qmax(i,k,j-1) =max(qmax(i,k,j-1), field_old(i,k,j))
 
    Tmpv6011(i,k) = qmin(i,k,j-1)
-   Tmpv001 =min(qmin(i,k,j-1), field_old(i,k,j))
-   qmin(i,k,j-1) =Tmpv001
+   qmin(i,k,j-1) =min(qmin(i,k,j-1), field_old(i,k,j))
 
    end IF
    ENDDO
    ENDDO
+
    ELSE IF( j == jde-1 ) THEN
 
    DO k =kts, ktf
    DO i =i_start, i_end
    vel =rv(i,k,j)
-   Tmpv4012(i,k,j) =vel
-
    cr =vel
-   Tmpv4013(i,k,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4014(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4014(i,k,j)
-   fqyl(i,k,j) =Tmpv002
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv4015(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv4015(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
+   fqyl(i,k,j) =vel*flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
+   fqy(i,k,j) =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
+   fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv6012(i,k) = qmax(i,k,j)
-   Tmpv001 =max(qmax(i,k,j), field_old(i,k,j-1))
-   qmax(i,k,j) =Tmpv001
+   qmax(i,k,j) =max(qmax(i,k,j), field_old(i,k,j-1))
 
    Tmpv6013(i,k) = qmin(i,k,j)
-   Tmpv001 =min(qmin(i,k,j), field_old(i,k,j-1))
-   qmin(i,k,j) =Tmpv001
+   qmin(i,k,j) =min(qmin(i,k,j), field_old(i,k,j-1))
 
    else
+
    Tmpv6014(i,k) = qmax(i,k,j-1)
-   Tmpv001 =max(qmax(i,k,j-1), field_old(i,k,j))
-   qmax(i,k,j-1) =Tmpv001
+   qmax(i,k,j-1) =max(qmax(i,k,j-1), field_old(i,k,j))
 
    Tmpv6015(i,k) = qmin(i,k,j-1)
-   Tmpv001 =min(qmin(i,k,j-1), field_old(i,k,j))
-   qmin(i,k,j-1) =Tmpv001
+   qmin(i,k,j-1) =min(qmin(i,k,j-1), field_old(i,k,j))
 
    end IF
    ENDDO
@@ -20433,23 +20335,11 @@ CONTAINS
    DO k =kts, ktf
    DO i =i_start, i_end
    vel =rv(i,k,j)
-   Tmpv4016(i,k,j) =vel
-
    cr =vel
-   Tmpv4017(i,k,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4018(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4018(i,k,j)
-   fqyl(i,k,j) =Tmpv002
-
-   Tmpv001 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv4019(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4019(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
+   fqyl(i,k,j) =vel*flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
+   fqy(i,k,j) =vel*flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
+   fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv6016(i,k) = qmax(i,k,j)
@@ -20461,13 +20351,12 @@ CONTAINS
    qmin(i,k,j) =Tmpv001
 
    else
+
    Tmpv6018(i,k) = qmax(i,k,j-1)
-   Tmpv001 =max(qmax(i,k,j-1), field_old(i,k,j))
-   qmax(i,k,j-1) =Tmpv001
+   qmax(i,k,j-1) =max(qmax(i,k,j-1), field_old(i,k,j))
 
    Tmpv6019(i,k) = qmin(i,k,j-1)
-   Tmpv001 =min(qmin(i,k,j-1), field_old(i,k,j))
-   qmin(i,k,j-1) =Tmpv001
+   qmin(i,k,j-1) =min(qmin(i,k,j-1), field_old(i,k,j))
 
    end IF
    ENDDO
@@ -20493,45 +20382,32 @@ CONTAINS
    ENDIF
 
    DO j =j_start, j_end
+
    DO k =kts, ktf
    DO i =i_start_f, i_end_f
    vel =ru(i,k,j)
-   Tmpv4020(i,k,j) =vel
-
    cr =vel
-   Tmpv4021(i,k,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4022(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4022(i,k,j)
-   fqxl(i,k,j) =Tmpv002
+   fqxl(i,k,j) =vel*flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
 
-   Tmpv001 =flux5(field(i-3,k,j),field(i-2,k,j),field(i-1,k,j),field(i,k,j)  &
+   fqx(i,k,j) =vel*flux5(field(i-3,k,j),field(i-2,k,j),field(i-1,k,j),field(i,k,j)  &
    ,field(i+1,k,j),field(i+2,k,j),vel)
-   Tmpv4023(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4023(i,k,j)
-   fqx(i,k,j) =Tmpv002
 
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
+   fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv700(i,k,j) = qmax(i,k,j)
-   Tmpv001 =max(qmax(i,k,j), field_old(i-1,k,j))
-   qmax(i,k,j) =Tmpv001
+   qmax(i,k,j) =max(qmax(i,k,j), field_old(i-1,k,j))
 
    Tmpv701(i,k,j) = qmin(i,k,j)
-   Tmpv001 =min(qmin(i,k,j), field_old(i-1,k,j))
-   qmin(i,k,j) =Tmpv001
+   qmin(i,k,j) =min(qmin(i,k,j), field_old(i-1,k,j))
 
    else
    Tmpv702(i-1,k,j) = qmax(i-1,k,j)
-   Tmpv001 =max(qmax(i-1,k,j), field_old(i,k,j))
-   qmax(i-1,k,j) =Tmpv001
+   qmax(i-1,k,j) =max(qmax(i-1,k,j), field_old(i,k,j))
 
    Tmpv703(i-1,k,j) = qmin(i-1,k,j)
-   Tmpv001 =min(qmin(i-1,k,j), field_old(i,k,j))
-   qmin(i-1,k,j) =Tmpv001
+   qmin(i-1,k,j) =min(qmin(i-1,k,j), field_old(i,k,j))
 
    end IF
    ENDDO
@@ -20544,20 +20420,10 @@ CONTAINS
 
    DO k =kts, ktf
    vel =ru(i,k,j)
-   Tmpv4024(k,i,j) =vel
-
    cr =vel
-   Tmpv4025(k,i,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4026(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4026(k,i,j)
-   fqxl(i,k,j) =Tmpv002
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv4027(k,i,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv4027(k,i,j)
-   fqx(i,k,j) =Tmpv002
+   fqxl(i,k,j) =vel*flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
+   fqx(i,k,j) =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
 
    Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
    fqx(i,k,j) =Tmpv001
@@ -20587,23 +20453,11 @@ CONTAINS
 
    DO k =kts, ktf
    vel =ru(i,k,j)
-   Tmpv4028(k,i,j) =vel
-
    cr =vel
-   Tmpv4029(k,i,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4030(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4030(k,i,j)
-   fqxl(i,k,j) =Tmpv002
-
-   Tmpv001 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv4031(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4031(k,i,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
+   fqxl(i,k,j) =vel*flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
+   fqx(i,k,j) =vel*flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
+   fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv708(k,j) = qmax(i,k,j)
@@ -20628,30 +20482,18 @@ CONTAINS
    ENDIF
    ENDDO
    ENDIF
-   IF( degrade_xe ) THEN
 
+   IF( degrade_xe ) THEN
    DO i =i_end_f+1, i_end+1
    IF( i == ide-1 ) THEN
 
    DO k =kts, ktf
    vel =ru(i,k,j)
-   Tmpv4032(k,i,j) =vel
-
    cr =vel
-   Tmpv4033(k,i,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4034(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4034(k,i,j)
-   fqxl(i,k,j) =Tmpv002
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv4035(k,i,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv4035(k,i,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
+   fqxl(i,k,j) =vel*flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
+   fqx(i,k,j) =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
+   fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv712(k,j) = qmax(i,k,j)
@@ -20678,19 +20520,14 @@ CONTAINS
 
    DO k =kts, ktf
    vel =ru(i,k,j)
-   Tmpv4036(k,i,j) =vel
-
    cr =vel
-   Tmpv4037(k,i,j) =cr
 
    Tmpv001 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4038(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4038(k,i,j)
+   Tmpv002 =vel*Tmpv001
    fqxl(i,k,j) =Tmpv002
 
    Tmpv001 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv4039(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4039(k,i,j)
+   Tmpv002 =vel*Tmpv001
    fqx(i,k,j) =Tmpv002
 
    Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
@@ -20722,8 +20559,6 @@ CONTAINS
    ENDDO
 
    ELSE
-   WRITE ( wrf_err_message , * ) 'a_module_advect: a_advect_scalar_mono, h_order not known ',horz_order
-   CALL wrf_error_fatal(Trim(wrf_err_message))
 
    ENDIF
 
@@ -20735,6 +20570,8 @@ CONTAINS
    IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
    IF(degrade_ys) j_start = MAX(jts-1,jds)
    IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
+
+!LPB[22]
 
    IF(vert_order == 3) THEN
    DO j =j_start, j_end
@@ -20748,42 +20585,26 @@ CONTAINS
    DO k =kts+2, ktf-1
    DO i =i_start, i_end
    vel =rom(i,k,j)
-   Tmpv1400(i,k,j) =vel
-
    cr =-vel
-   Tmpv1401(i,k,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv1402(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv1402(i,k,j)
-   fqzl(i,k,j) =Tmpv002
-
-   Tmpv001 =flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-   Tmpv1403(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv1403(i,k,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
+   fqzl(i,k,j) =vel*flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
+   fqz(i,k,j) =vel*flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
+   fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv800(i,k,j) = qmax(i,k,j)
-   Tmpv001 =max(qmax(i,k,j), field_old(i,k-1,j))
-   qmax(i,k,j) =Tmpv001
+   qmax(i,k,j) =max(qmax(i,k,j), field_old(i,k-1,j))
 
    Tmpv801(i,k,j) = qmin(i,k,j)
-   Tmpv001 =min(qmin(i,k,j), field_old(i,k-1,j))
-   qmin(i,k,j) =Tmpv001
+   qmin(i,k,j) =min(qmin(i,k,j), field_old(i,k-1,j))
 
    else
+
    Tmpv802(i,k-1,j) = qmax(i,k-1,j)
-   Tmpv001 =max(qmax(i,k-1,j), field_old(i,k,j))
-   qmax(i,k-1,j) =Tmpv001
+   qmax(i,k-1,j) =max(qmax(i,k-1,j), field_old(i,k,j))
 
    Tmpv803(i,k-1,j) = qmin(i,k-1,j)
-   Tmpv001 =min(qmin(i,k-1,j), field_old(i,k,j))
-   qmin(i,k-1,j) =Tmpv001
-
+   qmin(i,k-1,j) =min(qmin(i,k-1,j), field_old(i,k,j))
    end IF
    ENDDO
    ENDDO
@@ -20791,20 +20612,10 @@ CONTAINS
    DO i =i_start, i_end
    k =kts+1
    vel =rom(i,k,j)
-   Tmpv300(i,j) =vel
-
    cr =-vel
-   Tmpv301(i,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv302(i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv302(i,j)
-   fqzl(i,k,j) =Tmpv002
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv303(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv303(i,j)
-   fqz(i,k,j) =Tmpv002
+   fqzl(i,k,j) =vel*flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
+   fqz(i,k,j) =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
 
    Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
    fqz(i,k,j) =Tmpv001
@@ -20830,23 +20641,11 @@ CONTAINS
    end IF
    k =ktf
    vel =rom(i,k,j)
-   Tmpv304(i,j) =vel
-
    cr =-vel
-   Tmpv305(i,j) =cr
 
-   Tmpv001 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv306(i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv306(i,j)
-   fqzl(i,k,j) =Tmpv002
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv307(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv307(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
+   fqzl(i,k,j) =vel*flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
+   fqz(i,k,j) =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
+   fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
 
    IF(cr.gt. 0) THEN
    Tmpv808(i,j) = qmax(i,k,j)
@@ -20858,20 +20657,18 @@ CONTAINS
    qmin(i,k,j) =Tmpv001
 
    else
+
    Tmpv810(i,j) = qmax(i,k-1,j)
-   Tmpv001 =max(qmax(i,k-1,j), field_old(i,k,j))
-   qmax(i,k-1,j) =Tmpv001
+   qmax(i,k-1,j) =max(qmax(i,k-1,j), field_old(i,k,j))
 
    Tmpv811(i,j) = qmin(i,k-1,j)
-   Tmpv001 =min(qmin(i,k-1,j), field_old(i,k,j))
-   qmin(i,k-1,j) =Tmpv001
+   qmin(i,k-1,j) =min(qmin(i,k-1,j), field_old(i,k,j))
 
    end IF
    ENDDO
    ENDDO
+
    ELSE
-   WRITE ( wrf_err_message , * ) 'a_module_advect: a_advect_scalar_mono, v_order not known ',vert_order
-   CALL wrf_error_fatal(wrf_err_message)
 
    ENDIF
 
@@ -20929,6 +20726,7 @@ CONTAINS
    j_end =min(jte+1, jde-2)
    END IF
    END IF
+
    DO j =j_start, j_end
    DO k =kts, ktf
    DO i =i_start, i_end
@@ -20941,10 +20739,7 @@ CONTAINS
    Tmpv007 =msftx(i,j)*msfty(i,j)*Tmpv006
    Tmpv008 =fqzl(i,k+1,j) -fqzl(i,k,j)
    Tmpv009 =msfty(i,j)*rdzw(k)*Tmpv008
-   Tmpv010 =Tmpv007 +Tmpv009
-   Tmpv011 =dt*Tmpv010
-   Tmpv012 =Tmpv001 -Tmpv011
-   ph_upwind =Tmpv012  ! Remark removed by Ning Pan, 2010-07-26
+   ph_upwind =Tmpv001 -dt*(Tmpv007 +Tmpv009)
 
    Tmpv001 =min(0., fqx(i+1,k,j)) -max(0., fqx(i,k,j))
    Tmpv002 =rdx*Tmpv001
@@ -20959,7 +20754,6 @@ CONTAINS
    flux_in =Tmpv010
    Tmpv2400(i,k,j) =flux_in
 
-   Tmpv502(i,k,j) = qmax(i,k,j)  ! Added by Ning Pan, 2010-07-26
    Tmpv001 =mut(i,j)*qmax(i,k,j)
    Tmpv002 =Tmpv001 -ph_upwind
    ph_hi =Tmpv002
@@ -20969,8 +20763,8 @@ CONTAINS
    Tmpv001 =ph_hi/(flux_in +eps)
    Tmpv2402(i,k,j) =Tmpv001
    scale_in(i,k,j) =max(0., Tmpv2402(i,k,j))
-
    END IF
+
    Tmpv001 =max(0., fqx(i+1,k,j)) -min(0., fqx(i,k,j))
    Tmpv002 =rdx*Tmpv001
    Tmpv003 =max(0., fqy(i,k,j+1)) -min(0., fqy(i,k,j))
@@ -20984,7 +20778,6 @@ CONTAINS
    flux_out =Tmpv010
    Tmpv2403(i,k,j) =flux_out
 
-   Tmpv503(i,k,j) = qmin(i,k,j)  ! Added by Ning Pan, 2010-07-26
    Tmpv001 =mut(i,j)*qmin(i,k,j)
    Tmpv002 =ph_upwind -Tmpv001
    ph_low =Tmpv002
@@ -20994,65 +20787,11 @@ CONTAINS
    Tmpv001 =ph_low/(flux_out +eps)
    Tmpv2405(i,k,j) =Tmpv001
    scale_out(i,k,j) =max(0., Tmpv2405(i,k,j))
-
-   END IF
-   ENDDO
-   ENDDO
-   ENDDO
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   DO i =i_start, i_end+1
-   IF( fqx (i,k,j) .gt. 0.) THEN
-   Tmpv001 =min(scale_in(i,k,j), scale_out(i-1,k,j))
-   Tmpv2406(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv2406(i,k,j)*fqx(i,k,j)
-
-   ELSE
-   Tmpv001 =min(scale_out(i,k,j), scale_in(i-1,k,j))
-   Tmpv2408(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv2408(i,k,j)*fqx(i,k,j)
-
-   ENDIF
-   ENDDO
-   ENDDO
-   ENDDO
-   DO j =j_start, j_end+1
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   IF( fqy (i,k,j) .gt. 0.) THEN
-   Tmpv001 =min(scale_in(i,k,j), scale_out(i,k,j-1))
-   Tmpv24010(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv24010(i,k,j)*fqy(i,k,j)
-
-   ELSE
-   Tmpv001 =min(scale_out(i,k,j), scale_in(i,k,j-1))
-   Tmpv24012(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv24012(i,k,j)*fqy(i,k,j)
-
-   ENDIF
-   ENDDO
-   ENDDO
-   ENDDO
-   DO j =j_start, j_end
-   DO k =kts+1, ktf
-   DO i =i_start, i_end
-   IF( fqz (i,k,j) .lt. 0.) THEN
-   Tmpv001 =min(scale_in(i,k,j), scale_out(i,k-1,j))
-   Tmpv24014(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv24014(i,k,j)*fqz(i,k,j)
-
-   ELSE
-   Tmpv001 =min(scale_out(i,k,j), scale_in(i,k-1,j))
-   Tmpv24016(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv24016(i,k,j)*fqz(i,k,j)
-
-   ENDIF
-   ENDDO
-   ENDDO
-   ENDDO
    END IF
 
-   IF(mono_limit) THEN
+   ENDDO
+   ENDDO
+   ENDDO
 
    DO j =j_end, j_start, -1
    DO k =ktf, kts+1, -1
@@ -21063,27 +20802,28 @@ CONTAINS
    a_Tmpv2 =a_fqz(i,k,j)
    a_fqz(i,k,j) =0.0
    a_Tmpv1 =fqz(i,k,j)*a_Tmpv2
-   a_fqz(i,k,j) =a_fqz(i,k,j) +Tmpv24014(i,k,j)*a_Tmpv2
+   a_fqz(i,k,j) =a_fqz(i,k,j) +min(scale_in(i,k,j), scale_out(i,k-1,j))*a_Tmpv2
    a_scale_in(i,k,j) =a_scale_in(i,k,j)  +(1.0 -sign(1.0, scale_in(i,k,j)  &
-    -scale_out(i,k-1,j)))*0.5*1.0*a_Tmpv1
+   -scale_out(i,k-1,j)))*0.5*1.0*a_Tmpv1
    a_scale_out(i,k-1,j) =a_scale_out(i,k-1,j)  +(1.0 +sign(1.0, scale_in(i,k,j)  &
-    -scale_out(i,k-1,j)))*0.5*1.0*a_Tmpv1
+   -scale_out(i,k-1,j)))*0.5*1.0*a_Tmpv1
 
    ELSE
 
    a_Tmpv2 =a_fqz(i,k,j)
    a_fqz(i,k,j) =0.0
    a_Tmpv1 =fqz(i,k,j)*a_Tmpv2
-   a_fqz(i,k,j) =a_fqz(i,k,j) +Tmpv24016(i,k,j)*a_Tmpv2
+   a_fqz(i,k,j) =a_fqz(i,k,j) +min(scale_out(i,k,j), scale_in(i,k-1,j))*a_Tmpv2
    a_scale_out(i,k,j) =a_scale_out(i,k,j)  +(1.0 -sign(1.0, scale_out(i,k,j)  &
-    -scale_in(i,k-1,j)))*0.5*1.0*a_Tmpv1
+   -scale_in(i,k-1,j)))*0.5*1.0*a_Tmpv1
    a_scale_in(i,k-1,j) =a_scale_in(i,k-1,j)  +(1.0 +sign(1.0, scale_out(i,k,j)  &
-    -scale_in(i,k-1,j)))*0.5*1.0*a_Tmpv1
+   -scale_in(i,k-1,j)))*0.5*1.0*a_Tmpv1
 
    ENDIF
    ENDDO
    ENDDO
    ENDDO
+
    DO j =j_end+1, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
@@ -21093,27 +20833,28 @@ CONTAINS
    a_Tmpv2 =a_fqy(i,k,j)
    a_fqy(i,k,j) =0.0
    a_Tmpv1 =fqy(i,k,j)*a_Tmpv2
-   a_fqy(i,k,j) =a_fqy(i,k,j) +Tmpv24010(i,k,j)*a_Tmpv2
+   a_fqy(i,k,j) =a_fqy(i,k,j) +min(scale_in(i,k,j), scale_out(i,k,j-1))*a_Tmpv2
    a_scale_in(i,k,j) =a_scale_in(i,k,j)  +(1.0 -sign(1.0, scale_in(i,k,j)  &
-    -scale_out(i,k,j-1)))*0.5*1.0*a_Tmpv1
+   -scale_out(i,k,j-1)))*0.5*1.0*a_Tmpv1
    a_scale_out(i,k,j-1) =a_scale_out(i,k,j-1)  +(1.0 +sign(1.0, scale_in(i,k,j)  &
-    -scale_out(i,k,j-1)))*0.5*1.0*a_Tmpv1
+   -scale_out(i,k,j-1)))*0.5*1.0*a_Tmpv1
 
    ELSE
 
    a_Tmpv2 =a_fqy(i,k,j)
    a_fqy(i,k,j) =0.0
    a_Tmpv1 =fqy(i,k,j)*a_Tmpv2
-   a_fqy(i,k,j) =a_fqy(i,k,j) +Tmpv24012(i,k,j)*a_Tmpv2
+   a_fqy(i,k,j) =a_fqy(i,k,j) +min(scale_out(i,k,j), scale_in(i,k,j-1))*a_Tmpv2
    a_scale_out(i,k,j) =a_scale_out(i,k,j)  +(1.0 -sign(1.0, scale_out(i,k,j)  &
-    -scale_in(i,k,j-1)))*0.5*1.0*a_Tmpv1
+   -scale_in(i,k,j-1)))*0.5*1.0*a_Tmpv1
    a_scale_in(i,k,j-1) =a_scale_in(i,k,j-1)  +(1.0 +sign(1.0, scale_out(i,k,j)  &
-    -scale_in(i,k,j-1)))*0.5*1.0*a_Tmpv1
+   -scale_in(i,k,j-1)))*0.5*1.0*a_Tmpv1
 
    ENDIF
    ENDDO
    ENDDO
    ENDDO
+
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end+1, i_start, -1
@@ -21123,31 +20864,29 @@ CONTAINS
    a_Tmpv2 =a_fqx(i,k,j)
    a_fqx(i,k,j) =0.0
    a_Tmpv1 =fqx(i,k,j)*a_Tmpv2
-   a_fqx(i,k,j) =a_fqx(i,k,j) +Tmpv2406(i,k,j)*a_Tmpv2
+   a_fqx(i,k,j) =a_fqx(i,k,j) +min(scale_in(i,k,j), scale_out(i-1,k,j))*a_Tmpv2
    a_scale_in(i,k,j) =a_scale_in(i,k,j)  +(1.0 -sign(1.0, scale_in(i,k,j)  &
-    -scale_out(i-1,k,j)))*0.5*1.0*a_Tmpv1
+   -scale_out(i-1,k,j)))*0.5*1.0*a_Tmpv1
    a_scale_out(i-1,k,j) =a_scale_out(i-1,k,j)  +(1.0 +sign(1.0, scale_in(i,k,j)  &
-    -scale_out(i-1,k,j)))*0.5*1.0*a_Tmpv1
+   -scale_out(i-1,k,j)))*0.5*1.0*a_Tmpv1
 
    ELSE
-
-!   fqx(i,k,j) =Tmpv409(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_Tmpv2 =a_fqx(i,k,j)
    a_fqx(i,k,j) =0.0
    a_Tmpv1 =fqx(i,k,j)*a_Tmpv2
-! Revised by Ning Pan, 2010-07-26
-!   a_fqx(i,k,j) =a_fqx(i,k,j) +Tmpv408(i,k,j)*a_Tmpv2
-   a_fqx(i,k,j) =a_fqx(i,k,j) +Tmpv2408(i,k,j)*a_Tmpv2
+   a_fqx(i,k,j) =a_fqx(i,k,j) +min(scale_out(i,k,j), scale_in(i-1,k,j))*a_Tmpv2
    a_scale_out(i,k,j) =a_scale_out(i,k,j)  +(1.0 -sign(1.0, scale_out(i,k,j)  &
-    -scale_in(i-1,k,j)))*0.5*1.0*a_Tmpv1
+   -scale_in(i-1,k,j)))*0.5*1.0*a_Tmpv1
    a_scale_in(i-1,k,j) =a_scale_in(i-1,k,j)  +(1.0 +sign(1.0, scale_out(i,k,j)  &
-    -scale_in(i-1,k,j)))*0.5*1.0*a_Tmpv1
+   -scale_in(i-1,k,j)))*0.5*1.0*a_Tmpv1
 
    ENDIF
+
    ENDDO
    ENDDO
    ENDDO
+
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
@@ -21155,15 +20894,12 @@ CONTAINS
    ph_low = Tmpv2404(i,k,j)
 
    IF( flux_out .gt. ph_low ) THEN
-
-   a_Tmpv1 = (1.0 +(-1.0)*sign(1.0, 0. -Tmpv2405(i,k,j)))*0.5*a_scale_out(i,k,j)  ! Added by Ning Pan, 2010-07-26
+   a_Tmpv1 = (1.0 +(-1.0)*sign(1.0, 0. -Tmpv2405(i,k,j)))*0.5*a_scale_out(i,k,j)
    a_scale_out(i,k,j) =0.0
    a_ph_low =a_ph_low +a_Tmpv1/(flux_out +eps)
    a_flux_out =a_flux_out -ph_low/((flux_out +eps)*(flux_out +eps))*a_Tmpv1
-
    END IF
 
-   qmin(i,k,j) = Tmpv503(i,k,j)  ! Added by Ning Pan, 2010-07-26
    a_Tmpv2 =a_ph_low
    a_ph_low =0.0
    a_ph_upwind =a_ph_upwind +a_Tmpv2
@@ -21194,14 +20930,12 @@ CONTAINS
 
    IF( flux_in .gt. ph_hi ) THEN
 
-   a_Tmpv1 = (1.0 +(-1.0)*sign(1.0, 0. -Tmpv2402(i,k,j)))*0.5*a_scale_in(i,k,j)  ! Added by Ning Pan, 2010-07-26
+   a_Tmpv1 = (1.0 +(-1.0)*sign(1.0, 0. -Tmpv2402(i,k,j)))*0.5*a_scale_in(i,k,j)
    a_scale_in(i,k,j) =0.0
    a_ph_hi =a_ph_hi +a_Tmpv1/(flux_in +eps)
    a_flux_in =a_flux_in -ph_hi/((flux_in +eps)*(flux_in +eps))*a_Tmpv1
-
    END IF
 
-   qmax(i,k,j) = Tmpv502(i,k,j)  ! Added by Ning Pan, 2010-07-26
    a_Tmpv2 =a_ph_hi
    a_ph_hi =0.0
    a_Tmpv1 =a_Tmpv2
@@ -21269,8 +21003,9 @@ CONTAINS
    DO j =j_end, j_start, -1
    DO i =i_end, i_start, -1
    k =ktf
-   vel = Tmpv304(i,j)
-   cr = Tmpv305(i,j)
+
+   vel = rom(i,k,j)
+   cr = -vel
 
    IF(cr.gt. 0) THEN
    qmax(i,k,j) = Tmpv808(i,j)
@@ -21307,19 +21042,20 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
+
    a_Tmpv1 =a_fqz(i,k,j)
    a_fqz(i,k,j) =0.0
    a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
    a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
    a_Tmpv2 =a_fqz(i,k,j)
    a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv307(i,j)*a_Tmpv2
+   a_rom(i,k,j) =a_rom(i,k,j) +(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))*a_Tmpv2
    a_Tmpv1 =rom(i,k,j)*a_Tmpv2
    a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
    a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
    a_Tmpv2 =a_fqzl(i,k,j)
    a_fqzl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv306(i,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -21328,23 +21064,18 @@ CONTAINS
    a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv305(i,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel -a_cr
    a_cr =0.0
-
-!   vel =Tmpv304(i,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_rom(i,k,j) =a_rom(i,k,j) +a_vel
    a_vel =0.0
 
-! Added by Ning Pan, 2010-07-26
    k =kts+1
-   vel =Tmpv300(i,j)
-   cr =Tmpv301(i,j)
+
+   vel = rom(i,k,j)
+   cr = -vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv804(i,j)
    qmin(i,k,j) = Tmpv805(i,j)
 
@@ -21362,7 +21093,7 @@ CONTAINS
     -field_old(i,k-1,j)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i,k-1,j) = Tmpv806(i,j)
    qmin(i,k-1,j) = Tmpv807(i,j)
 
@@ -21386,13 +21117,13 @@ CONTAINS
    a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
    a_Tmpv2 =a_fqz(i,k,j)
    a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv303(i,j)*a_Tmpv2
+   a_rom(i,k,j) =a_rom(i,k,j) +(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))*a_Tmpv2
    a_Tmpv1 =rom(i,k,j)*a_Tmpv2
    a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
    a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
    a_Tmpv2 =a_fqzl(i,k,j)
    a_fqzl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv302(i,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -21401,24 +21132,19 @@ CONTAINS
    a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv301(i,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel -a_cr
    a_cr =0.0
-
-!   vel =Tmpv300(i,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_rom(i,k,j) =a_rom(i,k,j) +a_vel
    a_vel =0.0
    ENDDO
+
    DO k =ktf-1, kts+2, -1
    DO i =i_end, i_start, -1
-! Added by Ning Pan, 2010-07-26
-   vel =Tmpv1400(i,k,j)
-   cr =Tmpv1401(i,k,j)
+   vel = rom(i,k,j)
+   cr = -vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv800(i,k,j)
    qmin(i,k,j) = Tmpv801(i,k,j)
 
@@ -21436,7 +21162,7 @@ CONTAINS
     -field_old(i,k-1,j)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i,k-1,j) = Tmpv802(i,k-1,j)
    qmin(i,k-1,j) = Tmpv803(i,k-1,j)
 
@@ -21454,15 +21180,11 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
+
+   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_fqz(i,k,j)
    a_Tmpv2 =a_fqz(i,k,j)
    a_fqz(i,k,j) =0.0
-! Revised by Ning Pan, 2010-07-26
-!   a_vel =a_vel +Tmpv403(i,k,j)*a_Tmpv2
-   a_vel =a_vel +Tmpv1403(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel -Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,j),0.0,field(i,k,j)  &
    ,0.0,field(i,k+1,j),0.0,-vel,1.0)*a_Tmpv1
@@ -21477,9 +21199,7 @@ CONTAINS
 
    a_Tmpv2 =a_fqzl(i,k,j)
    a_fqzl(i,k,j) =0.0
-! Revised by Ning Pan, 2010-07-26
-!   a_vel =a_vel +Tmpv402(i,k,j)*a_Tmpv2
-   a_vel =a_vel +Tmpv1402(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -21488,27 +21208,24 @@ CONTAINS
    a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv401(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel -a_cr
    a_cr =0.0
-
-!   vel =Tmpv400(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_rom(i,k,j) =a_rom(i,k,j) +a_vel
    a_vel =0.0
    ENDDO
    ENDDO
+
    DO i =i_end, i_start, -1
    a_fqzl(i,kde,j) =0.0
    a_fqz(i,kde,j) =0.0
    a_fqzl(i,1,j) =0.0
    a_fqz(i,1,j) =0.0
    ENDDO
+
    ENDDO
 
    ELSE
-
    ENDIF
 
 !LPB[12]
@@ -21521,45 +21238,26 @@ CONTAINS
 !LPB[11]
 
    IF( (config_flags%open_ye) .and. (jte == jde)) THEN
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   Tmpv001 =rv(i,k,jte-1) +rv(i,k,jte)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,i) =Tmpv002
-   vb =max(Tmpv300(k,i), 0.)
-   Tmpv301(k,i) =vb
-
-   Tmpv001 =field_old(i,k,j_end) -field_old(i,k,j_end-1)
-   Tmpv302(k,i) =Tmpv001
-   Tmpv002 =vb*Tmpv302(k,i)
-   Tmpv003 =rv(i,k,jte) -rv(i,k,jte-1)
-   Tmpv303(k,i) =Tmpv003
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_ye) .and. (jte == jde)) THEN
 
    DO i =i_end, i_start, -1
    DO k =ktf, kts, -1
-   vb =Tmpv301(k,i)  ! Added by Ning Pan, 2010-07-25
+   gwalls =0.5*(rv(i,k,jte-1) +rv(i,k,jte))
+   vb =max(gwalls, 0.)
    a_Tmpv7 =a_tendency(i,k,j_end)
    a_tendency(i,k,j_end) =0.0
    a_tendency(i,k,j_end) =a_tendency(i,k,j_end) +a_Tmpv7
    a_Tmpv6 =-a_Tmpv7
    a_Tmpv5 =rdy*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_field(i,k,j_end) =a_field(i,k,j_end) +Tmpv303(k,i)*a_Tmpv4
-   a_Tmpv3 =field(i,k,j_end)*a_Tmpv4
+   a_field(i,k,j_end) =a_field(i,k,j_end) +(rv(i,k,jte) -rv(i,k,jte-1))*a_Tmpv5
+   a_Tmpv3 =field(i,k,j_end)*a_Tmpv5
    a_rv(i,k,jte) =a_rv(i,k,jte) +a_Tmpv3
    a_rv(i,k,jte-1) =a_rv(i,k,jte-1) -a_Tmpv3
-   a_vb =a_vb +Tmpv302(k,i)*a_Tmpv2
-   a_Tmpv1 =vb*a_Tmpv2
+   a_vb =a_vb +(field_old(i,k,j_end) -field_old(i,k,j_end-1))*a_Tmpv5
+   a_Tmpv1 =vb*a_Tmpv5
    a_field_old(i,k,j_end) =a_field_old(i,k,j_end) +a_Tmpv1
    a_field_old(i,k,j_end-1) =a_field_old(i,k,j_end-1) -a_Tmpv1
 
-   a_Tmpv2 = (1.0 +(1.0)*sign(1.0, Tmpv300(k,i) -0.))*0.5*a_vb
+   a_Tmpv2 = (1.0 +(1.0)*sign(1.0, gwalls-0.))*0.5*a_vb
    a_vb =0.0
    a_Tmpv1 =0.5*a_Tmpv2
    a_rv(i,k,jte-1) =a_rv(i,k,jte-1) +a_Tmpv1
@@ -21572,50 +21270,25 @@ CONTAINS
 !LPB[9]
 
    IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   Tmpv001 =rv(i,k,jts) +rv(i,k,jts+1)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,i) =Tmpv002
-   vb =min(Tmpv300(k,i), 0.)
-   Tmpv301(k,i) =vb
-
-   Tmpv001 =field_old(i,k,jts+1) -field_old(i,k,jts)
-   Tmpv302(k,i) =Tmpv001
-   Tmpv002 =vb*Tmpv302(k,i)
-   Tmpv003 =rv(i,k,jts+1) -rv(i,k,jts)
-   Tmpv303(k,i) =Tmpv003
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
    DO i =i_end, i_start, -1
    DO k =ktf, kts, -1
-   vb =Tmpv301(k,i)  ! Added by Ning Pan, 2010-07-25
+   gwalls =0.5*(rv(i,k,jts) +rv(i,k,jts+1))
+   vb =min(gwalls, 0.)
    a_Tmpv7 =a_tendency(i,k,jts)
    a_tendency(i,k,jts) =0.0
    a_tendency(i,k,jts) =a_tendency(i,k,jts) +a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   a_Tmpv5 =rdy*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_field(i,k,jts) =a_field(i,k,jts) +Tmpv303(k,i)*a_Tmpv4
-   a_Tmpv3 =field(i,k,jts)*a_Tmpv4
+   a_Tmpv5 =-rdy*a_Tmpv7
+   a_field(i,k,jts) =a_field(i,k,jts) +(rv(i,k,jts+1) -rv(i,k,jts))*a_Tmpv5
+   a_Tmpv3 =field(i,k,jts)*a_Tmpv5
    a_rv(i,k,jts+1) =a_rv(i,k,jts+1) +a_Tmpv3
    a_rv(i,k,jts) =a_rv(i,k,jts) -a_Tmpv3
-   a_vb =a_vb +Tmpv302(k,i)*a_Tmpv2
-   a_Tmpv1 =vb*a_Tmpv2
+   a_vb =a_vb +(field_old(i,k,jts+1) -field_old(i,k,jts))*a_Tmpv5
+   a_Tmpv1 =vb*a_Tmpv5
    a_field_old(i,k,jts+1) =a_field_old(i,k,jts+1) +a_Tmpv1
    a_field_old(i,k,jts) =a_field_old(i,k,jts) -a_Tmpv1
 
-!   vb =Tmpv301(k,i)  ! Remarked by Ning Pan, 2010-07-25
-
-!STOP  ! Remarked by Ning Pan, 2010-07-25
-!DELETED BY WALLS
-!  (1.0 -(1.0)*sign(1.0, Tmpv300(k,i) -0.))*0.5* =a_vb
-   a_Tmpv2 = (1.0 -(1.0)*sign(1.0, Tmpv300(k,i) -0.))*0.5*a_vb
+   a_Tmpv2 = (1.0 -(1.0)*sign(1.0, gwalls-0.))*0.5*a_vb
    a_vb =0.0
    a_Tmpv1 =0.5*a_Tmpv2
    a_rv(i,k,jts) =a_rv(i,k,jts) +a_Tmpv1
@@ -21625,44 +21298,14 @@ CONTAINS
 
    ENDIF
 
-!LPB[8]
-
 !LPB[7]
-!   ub =Keep_Lpb7_ub  ! Remarked Ning Pan, 2010-07-25
-
-   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   Tmpv001 =ru(ite-1,k,j) +ru(ite,k,j)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,j) =Tmpv002
-! Revised by Ning Pan, 2010-07-25
-!   Tmpv301(k,j) =ub
-!   ub =max(Tmpv300(k,j), 0.)
-   ub =max(Tmpv300(k,j), 0.)
-   Tmpv301(k,j) =ub
-
-   Tmpv001 =field_old(i_end,k,j) -field_old(i_end-1,k,j)
-   Tmpv302(k,j) =Tmpv001
-   Tmpv002 =ub*Tmpv302(k,j)
-   Tmpv003 =ru(ite,k,j) -ru(ite-1,k,j)
-   Tmpv303(k,j) =Tmpv003
-! Remarked by Ning Pan, 2010-07-25
-!   Tmpv004 =field(i_end,k,j)*Tmpv303(k,j)
-!   Tmpv005 =Tmpv002 +Tmpv004
-!   Tmpv006 =rdx*Tmpv005
-!   Tmpv007 =tendency(i_end,k,j) -Tmpv006
-!!  tendency(i_end,k,j) =Tmpv007
-
-   ENDDO
-   ENDDO
-   ENDIF
 
    IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
 
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
-   ub =Tmpv301(k,j)  ! Added by Ning Pan, 2010-07-25
+   gwalls=0.5*(ru(ite-1,k,j) +ru(ite,k,j))
+   ub =max(gwalls, 0.)
    a_Tmpv7 =a_tendency(i_end,k,j)
    a_tendency(i_end,k,j) =0.0
    a_tendency(i_end,k,j) =a_tendency(i_end,k,j) +a_Tmpv7
@@ -21670,21 +21313,16 @@ CONTAINS
    a_Tmpv5 =rdx*a_Tmpv6
    a_Tmpv2 =a_Tmpv5
    a_Tmpv4 =a_Tmpv5
-   a_field(i_end,k,j) =a_field(i_end,k,j) +Tmpv303(k,j)*a_Tmpv4
+   a_field(i_end,k,j) =a_field(i_end,k,j) +(ru(ite,k,j) -ru(ite-1,k,j))*a_Tmpv4
    a_Tmpv3 =field(i_end,k,j)*a_Tmpv4
    a_ru(ite,k,j) =a_ru(ite,k,j) +a_Tmpv3
    a_ru(ite-1,k,j) =a_ru(ite-1,k,j) -a_Tmpv3
-   a_ub =a_ub +Tmpv302(k,j)*a_Tmpv2
+   a_ub =a_ub +(field_old(i_end,k,j) -field_old(i_end-1,k,j))*a_Tmpv2
    a_Tmpv1 =ub*a_Tmpv2
    a_field_old(i_end,k,j) =a_field_old(i_end,k,j) +a_Tmpv1
    a_field_old(i_end-1,k,j) =a_field_old(i_end-1,k,j) -a_Tmpv1
 
-!   ub =Tmpv301(k,j)  ! Remarked by Ning Pan, 2010-07-25
-
-!STOP  ! Remarked by Ning Pan, 2010-07-25
-!DELETED BY WALLS
-!  (1.0 +(1.0)*sign(1.0, Tmpv300(k,j) -0.))*0.5* =a_ub
-   a_Tmpv2 = (1.0 +(1.0)*sign(1.0, Tmpv300(k,j) -0.))*0.5*a_ub
+   a_Tmpv2 = (1.0 +(1.0)*sign(1.0, gwalls-0.))*0.5*a_ub
    a_ub =0.0
    a_Tmpv1 =0.5*a_Tmpv2
    a_ru(ite-1,k,j) =a_ru(ite-1,k,j) +a_Tmpv1
@@ -21694,43 +21332,14 @@ CONTAINS
 
    ENDIF
 
-!LPB[6]
-
 !LPB[5]
-
-   IF( (config_flags%open_xs) .and. (its == ids) ) THEN
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   Tmpv001 =ru(its,k,j) +ru(its+1,k,j)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,j) =Tmpv002
-! Revised by Ning Pan, 2010-07-25
-!   Tmpv301(k,j) =ub
-!   ub =min(Tmpv300(k,j), 0.)
-   ub =min(Tmpv300(k,j), 0.)
-   Tmpv301(k,j) =ub
-
-   Tmpv001 =field_old(its+1,k,j) -field_old(its,k,j)
-   Tmpv302(k,j) =Tmpv001
-   Tmpv002 =ub*Tmpv302(k,j)
-   Tmpv003 =ru(its+1,k,j) -ru(its,k,j)
-   Tmpv303(k,j) =Tmpv003
-! Remarked by Ning Pan, 2010-07-25
-!   Tmpv004 =field(its,k,j)*Tmpv303(k,j)
-!   Tmpv005 =Tmpv002 +Tmpv004
-!   Tmpv006 =rdx*Tmpv005
-!   Tmpv007 =tendency(its,k,j) -Tmpv006
-!!  tendency(its,k,j) =Tmpv007
-
-   ENDDO
-   ENDDO
-   ENDIF
 
    IF( (config_flags%open_xs) .and. (its == ids) ) THEN
 
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
-   ub =Tmpv301(k,j)  ! Added by Ning Pan, 2010-07-25
+   gwalls =0.5*(ru(its,k,j) +ru(its+1,k,j))
+   ub =min(gwalls, 0.)
    a_Tmpv7 =a_tendency(its,k,j)
    a_tendency(its,k,j) =0.0
    a_tendency(its,k,j) =a_tendency(its,k,j) +a_Tmpv7
@@ -21738,21 +21347,16 @@ CONTAINS
    a_Tmpv5 =rdx*a_Tmpv6
    a_Tmpv2 =a_Tmpv5
    a_Tmpv4 =a_Tmpv5
-   a_field(its,k,j) =a_field(its,k,j) +Tmpv303(k,j)*a_Tmpv4
+   a_field(its,k,j) =a_field(its,k,j) +(ru(its+1,k,j) -ru(its,k,j))*a_Tmpv4
    a_Tmpv3 =field(its,k,j)*a_Tmpv4
    a_ru(its+1,k,j) =a_ru(its+1,k,j) +a_Tmpv3
    a_ru(its,k,j) =a_ru(its,k,j) -a_Tmpv3
-   a_ub =a_ub +Tmpv302(k,j)*a_Tmpv2
+   a_ub =a_ub +(field_old(its+1,k,j) -field_old(its,k,j))*a_Tmpv2
    a_Tmpv1 =ub*a_Tmpv2
    a_field_old(its+1,k,j) =a_field_old(its+1,k,j) +a_Tmpv1
    a_field_old(its,k,j) =a_field_old(its,k,j) -a_Tmpv1
 
-!   ub =Tmpv301(k,j)  ! Remarked by Ning Pan, 2010-07-25
-
-!STOP  ! Remarked by Ning Pan, 2010-07-25
-!DELETED BY WALLS
-!  (1.0 -(1.0)*sign(1.0, Tmpv300(k,j) -0.))*0.5* =a_ub
-   a_Tmpv2 = (1.0 -(1.0)*sign(1.0, Tmpv300(k,j) -0.))*0.5*a_ub  ! Added by Ning Pan, 2010-07-25
+   a_Tmpv2 = (1.0 -(1.0)*sign(1.0, gwalls -0.))*0.5*a_ub
    a_ub =0.0
    a_Tmpv1 =0.5*a_Tmpv2
    a_ru(its,k,j) =a_ru(its,k,j) +a_Tmpv1
@@ -21765,6 +21369,8 @@ CONTAINS
 !LPB[3]
 
    IF( horz_order == 5 ) THEN
+   ktf=MIN(kte,kde-1)
+
    i_start = its-1
    i_end   = MIN(ite,ide-1)+1
    i_start_f = i_start
@@ -21791,12 +21397,10 @@ CONTAINS
    IF( i == ide-2 ) THEN
 
    DO k =ktf, kts, -1
-! Added by Ning Pan, 2010-07-26
-   vel = Tmpv4036(k,i,j)
-   cr = Tmpv4037(k,i,j)
+   vel =ru(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv716(k,j)
    qmin(i,k,j) = Tmpv717(k,j)
 
@@ -21813,8 +21417,8 @@ CONTAINS
    a_field_old(i-1,k,j) =a_field_old(i-1,k,j)  +(1.0 +sign(1.0, qmin(i,k,j)  &
     -field_old(i-1,k,j)))*0.5*1.0*a_Tmpv1
 
-   else
-! Added by Ning Pan, 2010-07-26
+   ELSE
+
    qmax(i-1,k,j) = Tmpv718(k,j)
    qmin(i-1,k,j) = Tmpv719(k,j)
 
@@ -21830,15 +21434,12 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
    a_field_old(i,k,j) =a_field_old(i,k,j)  +(1.0 -sign(1.0, qmax(i-1,k,j)  &
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
+   END IF
 
-   end IF
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_fqx(i,k,j)
    a_Tmpv2 =a_fqx(i,k,j)
    a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4039(k,i,j)*a_Tmpv2
+   a_vel =a_vel +flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
    ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
@@ -21853,7 +21454,7 @@ CONTAINS
 
    a_Tmpv2 =a_fqxl(i,k,j)
    a_fqxl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4038(k,i,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -21862,12 +21463,8 @@ CONTAINS
    a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv4037(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv4036(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_ru(i,k,j) =a_ru(i,k,j) +a_vel
    a_vel =0.0
@@ -21878,12 +21475,10 @@ CONTAINS
    IF( i == ide-1 ) THEN
 
    DO k =ktf, kts, -1
-! Added by Ning Pan, 2010-07-26
-   vel =Tmpv4032(k,i,j)
-   cr =Tmpv4033(k,i,j)
+   vel =ru(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv712(k,j)
    qmin(i,k,j) = Tmpv713(k,j)
 
@@ -21901,7 +21496,7 @@ CONTAINS
     -field_old(i-1,k,j)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i-1,k,j) = Tmpv714(k,j)
    qmin(i-1,k,j) = Tmpv715(k,j)
 
@@ -21919,19 +21514,17 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
+
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_fqx(i,k,j)
    a_Tmpv2 =a_fqx(i,k,j)
    a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv4035(k,i,j)*a_Tmpv2
+   a_ru(i,k,j) =a_ru(i,k,j) +0.5*(field(i,k,j) +field(i-1,k,j))*a_Tmpv2
    a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
    a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
    a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
    a_Tmpv2 =a_fqxl(i,k,j)
    a_fqxl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4034(k,i,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -21940,12 +21533,8 @@ CONTAINS
    a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv4033(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv4032(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_ru(i,k,j) =a_ru(i,k,j) +a_vel
    a_vel =0.0
@@ -21963,12 +21552,10 @@ CONTAINS
    IF(i == ids+2) THEN
 
    DO k =ktf, kts, -1
-! Added by Ning Pan, 2010-07-26
-   vel =Tmpv4028(k,i,j)
-   cr =Tmpv4029(k,i,j)
+   vel =ru(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv708(k,j)
    qmin(i,k,j) = Tmpv709(k,j)
 
@@ -21986,7 +21573,7 @@ CONTAINS
     -field_old(i-1,k,j)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i-1,k,j) = Tmpv710(k,j)
    qmin(i-1,k,j) = Tmpv711(k,j)
 
@@ -22004,13 +21591,11 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
+
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_fqx(i,k,j)
    a_Tmpv2 =a_fqx(i,k,j)
    a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4031(k,i,j)*a_Tmpv2
+   a_vel =a_vel +flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
    ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
@@ -22025,7 +21610,7 @@ CONTAINS
 
    a_Tmpv2 =a_fqxl(i,k,j)
    a_fqxl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4030(k,i,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -22034,12 +21619,8 @@ CONTAINS
    a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv4029(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv4028(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_ru(i,k,j) =a_ru(i,k,j) +a_vel
    a_vel =0.0
@@ -22050,12 +21631,10 @@ CONTAINS
    IF(i == ids+1) THEN
 
    DO k =ktf, kts, -1
-! Added by Ning Pan, 2010-07-26
-   vel =Tmpv4024(k,i,j)
-   cr =Tmpv4025(k,i,j)
+   vel =ru(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv704(k,j)
    qmin(i,k,j) = Tmpv705(k,j)
 
@@ -22073,7 +21652,7 @@ CONTAINS
     -field_old(i-1,k,j)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i-1,k,j) = Tmpv706(k,j)
    qmin(i-1,k,j) = Tmpv707(k,j)
 
@@ -22091,19 +21670,17 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
+
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_fqx(i,k,j)
    a_Tmpv2 =a_fqx(i,k,j)
    a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv4027(k,i,j)*a_Tmpv2
+   a_ru(i,k,j) =a_ru(i,k,j) +0.5*(field(i,k,j)+field(i-1,k,j))*a_Tmpv2
    a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
    a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
    a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
    a_Tmpv2 =a_fqxl(i,k,j)
    a_fqxl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4026(k,i,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -22112,12 +21689,8 @@ CONTAINS
    a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv4025(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv4024(k,i,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_ru(i,k,j) =a_ru(i,k,j) +a_vel
    a_vel =0.0
@@ -22127,14 +21700,13 @@ CONTAINS
    ENDDO
 
    ENDIF
+
    DO k =ktf, kts, -1
    DO i =i_end_f, i_start_f, -1
-! Added by Ning Pan, 2010-07-26
-   vel =Tmpv4020(i,k,j)
-   cr =Tmpv4021(i,k,j)
+   vel =ru(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv700(i,k,j)
    qmin(i,k,j) = Tmpv701(i,k,j)
 
@@ -22152,7 +21724,7 @@ CONTAINS
     -field_old(i-1,k,j)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i-1,k,j) = Tmpv702(i-1,k,j)
    qmin(i-1,k,j) = Tmpv703(i-1,k,j)
 
@@ -22170,13 +21742,12 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
+
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_fqx(i,k,j)
    a_Tmpv2 =a_fqx(i,k,j)
    a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4023(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux5(field(i-3,k,j),field(i-2,k,j),field(i-1,k,j),field(i,k,j)  &
+   ,field(i+1,k,j),field(i+2,k,j),vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel +Diff_flux5(field(i-3,k,j),0.0,field(i-2,k,j),0.0,field(i-1,k,j)  &
    ,0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j),0.0,vel,1.0)*a_Tmpv1
@@ -22201,7 +21772,7 @@ CONTAINS
 
    a_Tmpv2 =a_fqxl(i,k,j)
    a_fqxl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4022(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -22210,12 +21781,8 @@ CONTAINS
    a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv4021(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv4020(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_ru(i,k,j) =a_ru(i,k,j) +a_vel
    a_vel =0.0
@@ -22223,24 +21790,8 @@ CONTAINS
    ENDDO
    ENDDO
 
-! Remarked by Ning Pan, 2010-07-25
-!   IF(degrade_xe) THEN
+   ktf=MIN(kte,kde-1)
 
-!   ENDIF
-
-!   IF(degrade_xs) THEN
-
-!   ENDIF
-
-!   IF(degrade_ye) THEN
-
-!   END IF
-
-!   IF(degrade_ys) THEN
-
-!   END IF
-
-! Added by Ning Pan, 2010-07-26
    i_start = its-1
    i_end   = MIN(ite,ide-1)+1
    j_start = jts-1
@@ -22264,12 +21815,10 @@ CONTAINS
 
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
-! Added by Ning Pan, 2010-07-26
-   vel =Tmpv400(i,k,j)
-   cr =Tmpv401(i,k,j)
+   vel =rv(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv600(i,k,j)
    qmin(i,k,j) = Tmpv601(i,k,j)
 
@@ -22287,7 +21836,7 @@ CONTAINS
     -field_old(i,k,j-1)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i,k,j-1) = Tmpv602(i,k,j-1)
    qmin(i,k,j-1) = Tmpv603(i,k,j-1)
 
@@ -22305,13 +21854,12 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
+
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_fqy(i,k,j)
    a_Tmpv2 =a_fqy(i,k,j)
    a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv403(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux5(field(i,k,j-3),field(i,k,j-2),field(i,k,j-1),field(i,k,j)  &
+   ,field(i,k,j+1),field(i,k,j+2),vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel +Diff_flux5(field(i,k,j-3),0.0,field(i,k,j-2),0.0,field(i,k,j-1)  &
    ,0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2),0.0,vel,1.0)*a_Tmpv1
@@ -22336,7 +21884,7 @@ CONTAINS
 
    a_Tmpv2 =a_fqyl(i,k,j)
    a_fqyl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv402(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k,j-1),field_old(i,k,j),vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
    ,0.0,vel,1.0)*a_Tmpv1
@@ -22345,12 +21893,8 @@ CONTAINS
    a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
    ,1.0,field_old(i,k,j),0.0,vel,0.0)*a_Tmpv1
 
-!   cr =Tmpv401(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv400(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_rv(i,k,j) =a_rv(i,k,j) +a_vel
    a_vel =0.0
@@ -22361,12 +21905,10 @@ CONTAINS
 
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
-! Added by Ning Pan, 2010-07-26
-   vel = Tmpv404(i,k,j)
-   cr = Tmpv405(i,k,j)
+   vel =rv(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv604(i,k)
    qmin(i,k,j) = Tmpv605(i,k)
 
@@ -22384,7 +21926,7 @@ CONTAINS
     -field_old(i,k,j-1)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i,k,j-1) = Tmpv606(i,k)
    qmin(i,k,j-1) = Tmpv607(i,k)
 
@@ -22402,19 +21944,17 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
+
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_fqy(i,k,j)
    a_Tmpv2 =a_fqy(i,k,j)
    a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv407(i,k,j)*a_Tmpv2
+   a_rv(i,k,j) =a_rv(i,k,j) +0.5*(field(i,k,j) +field(i,k,j-1))*a_Tmpv2
    a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
    a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
    a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
    a_Tmpv2 =a_fqyl(i,k,j)
    a_fqyl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv406(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -22423,12 +21963,8 @@ CONTAINS
    a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv405(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv404(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_rv(i,k,j) =a_rv(i,k,j) +a_vel
    a_vel =0.0
@@ -22439,12 +21975,10 @@ CONTAINS
 
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
-! Added by Ning Pan, 2010-07-26
-   vel = Tmpv408(i,k,j)
-   cr = Tmpv409(i,k,j)
+   vel =rv(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv608(i,k)
    qmin(i,k,j) = Tmpv609(i,k)
 
@@ -22462,7 +21996,7 @@ CONTAINS
     -field_old(i,k,j-1)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i,k,j-1) = Tmpv6010(i,k)
    qmin(i,k,j-1) = Tmpv6011(i,k)
 
@@ -22480,13 +22014,11 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
+
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_fqy(i,k,j)
    a_Tmpv2 =a_fqy(i,k,j)
    a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4011(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
    ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
@@ -22501,7 +22033,7 @@ CONTAINS
 
    a_Tmpv2 =a_fqyl(i,k,j)
    a_fqyl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4010(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -22510,12 +22042,8 @@ CONTAINS
    a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
 
-!   cr =Tmpv409(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
-
    a_vel =a_vel +a_cr
    a_cr =0.0
-
-!   vel =Tmpv408(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_rv(i,k,j) =a_rv(i,k,j) +a_vel
    a_vel =0.0
@@ -22526,12 +22054,10 @@ CONTAINS
 
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
-! Added by Ning Pan, 2010-07-26
-   vel = Tmpv4012(i,k,j)
-   cr = Tmpv4013(i,k,j)
+   vel =rv(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
-! Added by Ning Pan, 2010-07-26
    qmax(i,k,j) = Tmpv6012(i,k)
    qmin(i,k,j) = Tmpv6013(i,k)
 
@@ -22549,7 +22075,7 @@ CONTAINS
     -field_old(i,k,j-1)))*0.5*1.0*a_Tmpv1
 
    else
-! Added by Ning Pan, 2010-07-26
+
    qmax(i,k,j-1) = Tmpv6014(i,k)
    qmin(i,k,j-1) = Tmpv6015(i,k)
 
@@ -22567,19 +22093,17 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
+
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_fqy(i,k,j)
    a_Tmpv2 =a_fqy(i,k,j)
    a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv4015(i,k,j)*a_Tmpv2
+   a_rv(i,k,j) =a_rv(i,k,j) +0.5*(field(i,k,j) +field(i,k,j-1))*a_Tmpv2
    a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
    a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
    a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
    a_Tmpv2 =a_fqyl(i,k,j)
    a_fqyl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4014(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -22587,8 +22111,6 @@ CONTAINS
    ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv1
    a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
    ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv1
-
-!   cr =Tmpv4013(i,k,j)  ! Remarked by Ning Pan, 2010-07-26
 
    a_vel =a_vel +a_cr
    a_cr =0.0
@@ -22603,8 +22125,8 @@ CONTAINS
 
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
-   vel = Tmpv4016(i,k,j)
-   cr = Tmpv4017(i,k,j)
+   vel =rv(i,k,j)
+   cr =vel
 
    IF(cr.gt. 0) THEN
    qmax(i,k,j) = Tmpv6016(i,k)
@@ -22624,6 +22146,7 @@ CONTAINS
     -field_old(i,k,j-1)))*0.5*1.0*a_Tmpv1
 
    else
+
    qmax(i,k,j-1) = Tmpv6018(i,k)
    qmin(i,k,j-1) = Tmpv6019(i,k)
 
@@ -22641,13 +22164,11 @@ CONTAINS
     -field_old(i,k,j)))*0.5*1.0*a_Tmpv1
 
    end IF
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
+
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_fqy(i,k,j)
    a_Tmpv2 =a_fqy(i,k,j)
    a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4019(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_vel =a_vel +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
    ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
@@ -22662,7 +22183,7 @@ CONTAINS
 
    a_Tmpv2 =a_fqyl(i,k,j)
    a_fqyl(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4018(i,k,j)*a_Tmpv2
+   a_vel =a_vel +flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)*a_Tmpv2
    a_Tmpv1 =vel*a_Tmpv2
    a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
    ,0.0,cr,1.0)*a_Tmpv1
@@ -22685,25 +22206,14 @@ CONTAINS
    ENDIF
 
 !LPB[1]
-   DO j =jte+2, jts-2, -1
 
+   DO j =jte+2, jts-2, -1
    DO k =kte, kts, -1
    DO i =ite+2, its-2, -1
-   a_fqzl(i,k,j) =0.0
-   a_fqyl(i,k,j) =0.0
-   a_fqxl(i,k,j) =0.0
-   a_fqz(i,k,j) =0.0
-   a_fqy(i,k,j) =0.0
-   a_fqx(i,k,j) =0.0
-   a_scale_out(i,k,j) =0.0
-   a_scale_in(i,k,j) =0.0
    a_field_old(i,k,j) =a_field_old(i,k,j) +a_qmax(i,k,j)
-   a_qmax(i,k,j) =0.0
    a_field_old(i,k,j) =a_field_old(i,k,j) +a_qmin(i,k,j)
-   a_qmin(i,k,j) =0.0
    ENDDO
    ENDDO
-
    ENDDO
 
    END SUBROUTINE a_advect_scalar_mono

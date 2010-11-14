@@ -70,10 +70,10 @@
 !-----------------------------------------------------------------
 ! compute only if simulating aerosols and aer_ra_feedback=1
 
-   IF (config_flags%aer_ra_feedback .eq. 0) THEN
-         call wrf_debug(15,'no feedback, return from optical driver')
-     return
-   ENDIF
+!  IF (config_flags%aer_ra_feedback .eq. 0) THEN
+!        call wrf_debug(15,'no feedback, return from optical driver')
+!    return
+!  ENDIF
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  &

@@ -37,6 +37,7 @@ MODULES =                 		\
 	module_sfs_nba.o		\
 	module_sfs_nba_tl.o		\
 	module_sfs_nba_ad.o		\
+        module_convtrans_prep.o         \
 	module_sfs_driver.o		\
 	module_sfs_driver_tl.o		\
 	module_sfs_driver_ad.o		\
@@ -258,6 +259,7 @@ module_initialize_b_wave.o : \
 		module_init_utilities.o
 
 module_force_scm.o: module_init_utilities.o
+module_convtrans_prep.o: module_convtrans_prep.o
 
 module_initialize_grav2d_x.o: \
 		../frame/module_domain.o \
@@ -488,6 +490,7 @@ solve_em_ad.o:  module_small_step_em.o 		\
 module_first_rk_step_part1.o : \
                 module_force_scm.o \
 		module_big_step_utilities_em.o \
+                module_convtrans_prep.o \
                 module_em.o \
 		../phys/module_radiation_driver.o \
 		../phys/module_surface_driver.o \

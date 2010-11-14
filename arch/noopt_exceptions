@@ -145,11 +145,12 @@ wrf_tsin.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp
-	mv $*.f90.tmp $*.f90
-        endif
 	$(RM) $*.b $*.bb
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
 	if $(FGREP) '!$$OMP' $*.f90 ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90 ; \
@@ -262,9 +263,10 @@ module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp
-	mv $*.f90.tmp $*.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
 	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

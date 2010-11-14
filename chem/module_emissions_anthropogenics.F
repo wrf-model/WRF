@@ -107,6 +107,8 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_co)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
                          +emis_ant(i,k,j,p_e_no)*conv_rho
+        chem(i,k,j,p_no2)   = chem(i,k,j,p_no2)                          &
+                         +emis_ant(i,k,j,p_e_no2)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
                          +emis_ant(i,k,j,p_e_nh3)*conv_rho
         if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then

@@ -1261,6 +1261,7 @@ rconfig   logical   write_mod_filtered_obs  namelist,wrfvar2  1  .false.  -  "wr
 
 rconfig   integer   fg_format               namelist,wrfvar3  1  1        - "fg_format"                ""  "1=WRF, 3=KMA"
 rconfig   integer   ob_format               namelist,wrfvar3  1  2        - "ob_format"                ""  "1=BUFR,2=ASCII"
+rconfig   integer   num_fgat_time           namelist,wrfvar3  1  1        - "num_fgat_time"            ""  ""
 rconfig   logical   thin_conv               namelist,wrfvar4  1  .true.   - "thin_conv"                ""  ""
 rconfig   real      thin_mesh_conv          namelist,wrfvar4  max_instruments  20.0   - "thin_mesh_conv"            ""  ""
 rconfig   logical   use_synopobs            namelist,wrfvar4  1  .true.   - "use_synopobs"             ""  ""

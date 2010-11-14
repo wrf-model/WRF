@@ -1092,7 +1092,7 @@
            call sum_pm_sorgam (                                             &
                 grid%alt, chem, grid%h2oaj, grid%h2oai,                                    &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
-                ids,ide, jds,jde, kds,kde,                                  &
+                grid%dust_opt,ids,ide, jds,jde, kds,kde,                    &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
 

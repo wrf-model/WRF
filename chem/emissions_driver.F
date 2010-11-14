@@ -20,7 +20,7 @@ CONTAINS
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
-         xland,xlat,xlong,z_at_w,z,smois,                                  &
+         xland,xlat,xlong,z_at_w,z,smois,dustin,seasin,                    &
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
@@ -108,6 +108,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme,3),&
          INTENT(IN ) ::                                                 &
          erod
+   REAL, DIMENSION( ims:ime, jms:jme,5),&
+         INTENT(INOUT ) ::                                                 &
+         dustin,seasin
    REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),   &
          OPTIONAL, INTENT(INOUT ) ::                                       &
          emis_dust
@@ -335,7 +338,7 @@ CONTAINS
         CALL wrf_debug(15,'Gocart sea salt emissions')
          call gocart_seasalt_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
          v_phy,chem,rho_phy,dz8w,u10,v10,p8w,z_at_w,                  &
-         xland,xlat,xlong,dx,g,emis_seas, &
+         xland,xlat,xlong,dx,g,emis_seas, seasin,&
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -352,7 +355,7 @@ CONTAINS
       CASE (DUSTGOCART)
         CALL wrf_debug(15,'Gocart dust emissions')
         call gocart_dust_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,           &
          ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -639,7 +642,8 @@ CONTAINS
                 chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
                      +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*alt(i,k,j)*dtstep/dz8w(i,k,j)
                 chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
-                     +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                     +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*7.*alt(i,k,j)*dtstep/dz8w(i,k,j)
+!                    +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
                 chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
                      +(emis_ant(i,k,j,p_e_pm25j)+emis_ant(i,k,j,p_e_pm25i) &
                      +emis_ant(i,k,j,p_e_no3j)+emis_ant(i,k,j,p_e_no3i))   &

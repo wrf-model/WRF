@@ -449,7 +449,7 @@ SUBROUTINE read_nl_xtraj ( time )
    ENDDO
 
    WRITE(mess, FMT='(A,A)') &
-       'Can not find nonlinear xtraj time stamp:', TRIM(xtraj_pointer%time)
+       'Can not find nonlinear xtraj time stamp:', TRIM(time)
    CALL wrf_error_fatal ( mess )
 
 END SUBROUTINE read_nl_xtraj

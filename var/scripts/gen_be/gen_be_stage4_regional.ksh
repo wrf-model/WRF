@@ -17,13 +17,21 @@ export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 . ${SCRIPTS_DIR}/gen_be/gen_be_set_defaults.ksh
 
 echo "---------------------------------------------------------------"
-echo "Run Stage 4: Calculate horizontal covariances (regional lengthscales)." 
+if ${USE_RFi}; then
+   echo "Run Stage 4: Calculate horizontal covariances (regional lengthscales)." 
+else
+   echo "Run Stage 4: Calculate horizontal covariances (" $WAVELET_NBAND$WAVELET_NAME$WAVELET_FILT_LEN "-wavelet variances)."
+fi
 echo "---------------------------------------------------------------"
 
 export BEGIN_CPU=$(date)
 echo "Beginning CPU time: ${BEGIN_CPU}"
 
-export TMP_DIR=${WORK_DIR}/gen_be_stage4_regional.${STRIDE}
+export TMP_DIR=${WORK_DIR}/gen_be_stage4_regional
+if ${USE_RFi}; then
+   export TMP_DIR=${TMP_DIR}.${STRIDE}
+fi
+
 if [[ ! -d $TMP_DIR ]]; then mkdir $TMP_DIR 2> /dev/null; fi
 
 for VARIABLE in $CONTROL_VARIABLES; do
@@ -36,8 +44,10 @@ for VARIABLE in $CONTROL_VARIABLES; do
 
    if [[ $VARIABLE == "ps" || $VARIABLE == "ps_u" || $VARIABLE == "ps_b" ]]; then
       let MAX_VINDEX=1
+      export PRINT_WAVELETS=.true.
    else
       let MAX_VINDEX=$NUM_LEVELS
+      export PRINT_WAVELETS=.false.
    fi
 
    let VINDEX=1
@@ -62,7 +72,13 @@ for VARIABLE in $CONTROL_VARIABLES; do
     stride = ${STRIDE},
     nbins = ${NBINS},
     ibin = ${IBIN},
-    run_dir = '${WORK_DIR}' /
+    run_dir = '${WORK_DIR}',
+    print_wavelets = ${PRINT_WAVELETS},
+    do_normalize = ${DO_NORMALIZE},
+    lf = ${WAVELET_FILT_LEN},
+    namw = '${WAVELET_NAME}',
+    nb = ${WAVELET_NBAND},
+    use_rf = ${USE_RF} /
 EOF
  
       if $LOCAL; then
@@ -86,17 +102,18 @@ EOF
       fi
    done  # End loop over VINDEX.
 
-   # Collect files together: 
+   if ${USE_RFi};then
+      # Collect files together: 
+      let VINDEX=1
+      cp ${TMP_DIR}/dir.${VARIABLE}${VINDEX}/sl_* ${WORK_DIR}/${VARIABLE}/sl_print.${VARIABLE}
 
-   let VINDEX=1
-   cp ${TMP_DIR}/dir.${VARIABLE}${VINDEX}/sl_* ${WORK_DIR}/${VARIABLE}/sl_print.${VARIABLE}
-
-   if [[ $MAX_VINDEX -gt 1 ]]; then
-      let VINDEX=2
-      while [[ $VINDEX -le $MAX_VINDEX ]]; do
-         cat ${TMP_DIR}/dir.${VARIABLE}${VINDEX}/sl_* >> ${WORK_DIR}/${VARIABLE}/sl_print.${VARIABLE}
-         let VINDEX=$VINDEX+1
-      done
+      if [[ $MAX_VINDEX -gt 1 ]]; then
+         let VINDEX=2
+         while [[ $VINDEX -le $MAX_VINDEX ]]; do
+            cat ${TMP_DIR}/dir.${VARIABLE}${VINDEX}/sl_* >> ${WORK_DIR}/${VARIABLE}/sl_print.${VARIABLE}
+            let VINDEX=$VINDEX+1
+         done
+      fi
    fi
 
 done     # End loop over VARIABLE.

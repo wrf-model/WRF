@@ -1379,6 +1379,7 @@ rconfig   real      as2                     namelist,wrfvar7  3 -1.0      - "as2
 rconfig   real      as3                     namelist,wrfvar7  3 -1.0      - "as3"                      ""  ""
 rconfig   real      as4                     namelist,wrfvar7  3 -1.0      - "as4"                      ""  ""
 rconfig   real      as5                     namelist,wrfvar7  3 -1.0      - "as5"                      ""  ""
+rconfig   logical   use_rf                  namelist,wrfvar7  1  .true.   - "use_rf" "Use recursive filters" ""
 rconfig   integer   rf_passes               namelist,wrfvar7  1  6        - "rf_passes"                ""  ""
 rconfig   real      var_scaling1            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling1"             ""  ""
 rconfig   real      var_scaling2            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling2"             ""  ""

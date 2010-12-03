@@ -107,12 +107,16 @@
       end if
    end if
 
-   if (0.5 * real(rf_passes) /= real(rf_passes / 2)) then
-      write(unit=stdout,fmt='(A,I4,A)') &
-         'rf_passes = ', rf_passes, ' .Should be even.'
-      rf_passes = int(real(rf_passes / 2))
-      write(unit=stdout,fmt='(A,I4)') 'Resetting rf_passes = ', rf_passes
-   end if
+   if( use_rf )then
+      if (0.5 * real(rf_passes) /= real(rf_passes / 2)) then
+         write(unit=stdout,fmt='(A,I4,A)') &
+            'rf_passes = ', rf_passes, ' .Should be even.'
+         rf_passes = int(real(rf_passes / 2))
+         write(unit=stdout,fmt='(A,I4)') 'Resetting rf_passes = ', rf_passes
+      end if
+   else
+      write(stdout,'("da_solve: using wavelet transform")')
+   endif
 
    if (anal_type_randomcv) then
       ntmax = 0

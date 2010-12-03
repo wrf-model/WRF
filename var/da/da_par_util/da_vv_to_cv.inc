@@ -27,10 +27,15 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
 
    if (trace_use) call da_trace_entry("da_vv_to_cv")
 
-   is = xp % its
-   ie = xp % ite
-   js = xp % jts
-   je = xp % jte
+   if( use_rf )then
+      is = xp % its
+      ie = xp % ite
+      js = xp % jts
+      je = xp % jte
+   else
+      write(*,'(A," should not be called!"/)')__FILE__
+      call wrf_abort
+   endif
    ix = ie-is+1
    jy = je-js+1
    cv_e = 0

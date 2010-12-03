@@ -19,6 +19,7 @@ module da_gen_be
    use da_reporting, only : da_error, message
    use da_tools_serial, only : da_get_unit, da_free_unit, da_array_print
    use da_lapack, only : dsyev
+   use da_wavelet, only: do_normalize,lf,namw,nb,nij,sd,ws,wsd
 
    implicit none
 

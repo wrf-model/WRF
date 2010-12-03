@@ -212,9 +212,9 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
 
       end do
 
-      allocate (temperature(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-      allocate (absorber(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-      allocate (xb_q(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+      allocate (temperature(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+      allocate (absorber(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+      allocate (xb_q(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
       allocate (psfc(iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
 
       temperature(:,:) = 0.0
@@ -224,11 +224,11 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
 
       if (crtm_cloud) then
 
-         allocate (qcw(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qci(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qrn(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qsn(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qgr(Atmosphere(1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qcw(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qci(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qrn(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qsn(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qgr(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
          qcw(:,:) = 0.0
          qci(:,:) = 0.0
          qrn(:,:) = 0.0

@@ -3167,6 +3167,9 @@ BENCH_START(micro_driver_tim)
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)
+! YLIN
+! RI_CURR INPUT
+      &        , RI_CURR=grid%rimi                                          &
                                                                           )
 BENCH_END(micro_driver_tim)
 

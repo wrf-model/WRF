@@ -51,9 +51,13 @@ CONTAINS
 #if (NMM_CORE != 1)
                ,tke_pbl,el_pbl,wu_tur,wv_tur,wt_tur,wq_tur &
 #endif
-               ,a_e_bep,b_e_bep,dlg_bep                              &
-               ,dl_u_bep                                             &
-                                                                     )       
+               ,a_e_bep,b_e_bep,dlg_bep                            &
+               ,dl_u_bep                                           &
+! Wind Turbine Parameterizations
+               ,nturbine                                           &
+               ,phb,theight,tdiameter,thrustcof,cispeed,tdrag      &
+               ,cospeed,tpower,dcellx,dcelly,lwfx,lwfy,pwfx,pwfy   &
+               )        
 !------------------------------------------------------------------
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
@@ -259,6 +263,13 @@ CONTAINS
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
+! Optional for Wind Turbine Parameterizations
+   REAL, DIMENSION( ims:ime, kms:kme ,jms:jme ), &
+         INTENT(IN), OPTIONAL    :: phb
+   LOGICAL, INTENT(IN), OPTIONAL :: tdrag
+   REAL, INTENT(IN), OPTIONAL    :: theight,tdiameter,thrustcof,cospeed,cispeed 
+   REAL, INTENT(IN), OPTIONAL    :: tpower,nturbine
+   INTEGER, INTENT(IN), OPTIONAL :: lwfx,lwfy,pwfx,pwfy,dcellx,dcelly
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -271,7 +282,7 @@ CONTAINS
                                                            v_phy, &
                                                             dz8w, &
                                                                z, &
-                                                          th_phy
+                                                          th_phy                                                             
 !
 !
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &

@@ -13,6 +13,7 @@ MODULE module_physics_init
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
+   USE module_wind_generic
 
 CONTAINS
 
@@ -405,6 +406,11 @@ integer myproc
    CALL wrf_debug(100,'after nl_get_iswater, nl_get_isice, nl_get_mminlu_loc')
 !-- temporary fix by ww
    landuse_ISICE = isice
+
+! Added for Wind Turbine parameterization code -- This will only read in an optional 
+! configuration file with information that will be used by inividual turbine init routines 
+! as each domain is initialized.
+  IF ( id .EQ. 1 ) CALL init_module_wind_generic
 
   IF(.not.restart)THEN
 !-- initialize common variables

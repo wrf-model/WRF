@@ -11412,6 +11412,12 @@ END SUBROUTINE a_calculate_full
 
    ktf=MIN(kte,kde-1)
 
+   i_start = its
+   IF ( its > ids ) i_start = its - 1
+
+   j_start = jts
+   IF ( jts > jds ) j_start = jts - 1
+
 !   if(config_flags%specified .or. config_flags%nested) specified = .true.
 
 !   IF ( config_flags%open_xs .or. specified .or.   &
@@ -11441,7 +11447,7 @@ END SUBROUTINE a_calculate_full
 !PART IV: REVERSE/BACKWARD ACCUMULATIONS
 
 !LPB[20]
-   DO j =min(jte, jde-1), jts, -1
+   DO j =min(jte, jde-1), j_start, -1
 
 !  DO k =kts+1, ktf
 !  DO i =its, min(ite, ide-1)
@@ -11466,7 +11472,7 @@ END SUBROUTINE a_calculate_full
 !  ENDDO
 
    DO k =ktf, kts+1, -1
-   DO i =min(ite, ide-1), its, -1
+   DO i =min(ite, ide-1), i_start, -1
    a_Tmpv15 =a_rw_tend(i,k,j)
    a_rw_tend(i,k,j) =0.0
    a_rw_tend(i,k,j) =a_rw_tend(i,k,j) +a_Tmpv15
@@ -11560,6 +11566,8 @@ END SUBROUTINE a_calculate_full
    IF ( config_flags%open_ye .or. specified .or. &
         config_flags%nested .or. config_flags%polar) j_end   = MIN(jde-1,jte)
 
+   IF ( jte < jde ) j_end = jte + 1
+
    DO j =j_end, j_start, -1
 
 !  DO k =kts, ktf
@@ -11580,7 +11588,7 @@ END SUBROUTINE a_calculate_full
 !  ENDDO
 
    DO k =ktf, kts, -1
-   DO i =min(ide-1, ite), its, -1
+   DO i =min(ide-1, ite), i_start, -1
    a_Tmpv10 =a_rv_tend(i,k,j)
    a_rv_tend(i,k,j) =0.0
    a_Tmpv5 =a_Tmpv10
@@ -11690,7 +11698,6 @@ END SUBROUTINE a_calculate_full
 !  j_end =jte
 
 !LPB[10]
-   DO j =min(jte, jde-1), jts, -1
 
 !  DO k =kts, ktf
 !  DO i =i_start, i_end
@@ -11799,8 +11806,14 @@ END SUBROUTINE a_calculate_full
         config_flags%nested) i_start = MAX(ids+1,its)
    IF ( config_flags%open_xe .or. specified .or. &
         config_flags%nested) i_end   = MIN(ide-1,ite)
-      IF ( config_flags%periodic_x ) i_start = its
-      IF ( config_flags%periodic_x ) i_end = ite
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) i_end = ite
+
+   j_start = jts
+   IF ( ite < ide ) i_end = ite + 1
+   IF ( jts > jds ) j_start = jts - 1
+
+   DO j =min(jte, jde-1), j_start, -1
 
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
@@ -13180,7 +13193,7 @@ END SUBROUTINE a_calculate_full
    REAL :: rdx,rdy
    INTEGER :: i,j,k,itf,jtf,ktf
    INTEGER :: i_start,i_end,j_start,j_end
-   REAL,DIMENSION(its-1:ite,kts:kte,jts-1:jte) :: vxgm,a_vxgm
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: vxgm,a_vxgm
    LOGICAL :: specified
 
    REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004, &
@@ -13190,28 +13203,8 @@ END SUBROUTINE a_calculate_full
    a_Tmpv18,Tmpv018,a_Tmpv19,Tmpv019,a_Tmpv20,Tmpv020,a_Tmpv21,Tmpv021, &
    a_Tmpv22,Tmpv022,a_Tmpv23,Tmpv023,a_Tmpv24,Tmpv024,a_Tmpv25,Tmpv025, &
    a_Tmpv26,Tmpv026,a_Tmpv27,Tmpv027,a_Tmpv28,Tmpv028,a_Tmpv29,Tmpv029
-   REAL,DIMENSION(its:min(ite, ide-1),max(2, kts):min(kte,kde-1)) :: Tmpv300
-   REAL,DIMENSION(its:min(ite, ide-1),max(2, kts):min(kte,kde-1)) :: Tmpv301
-   REAL,DIMENSION(its:min(ite, ide-1),max(2, kts):min(kte,kde-1)) :: Tmpv302
-   REAL,DIMENSION(its:min(ite, ide-1),max(2, kts):min(kte,kde-1)) :: Tmpv303
-   REAL,DIMENSION(its:max0(ite,min(ite, ide-1)),kts:min(kte,kde-1),min0(jts,max(jds+1, &
-   jts)):max0(min(jde-1, jte),min(jde-1,jte))) :: Tmpv400
-   REAL,DIMENSION(its:max0(ite,min(ite, ide-1)),kts:min(kte,kde-1),min0(jts,max(jds+1, &
-   jts)):max0(min(jde-1, jte),min(jde-1,jte))) :: Tmpv401
-   REAL,DIMENSION(its:max0(ite,min(ite, ide-1)),kts:min(kte,kde-1),min0(jts,max(jds+1, &
-   jts)):max0(min(jde-1, jte),min(jde-1,jte))) :: Tmpv402
-   REAL,DIMENSION(its:max0(ite,min(ite, ide-1)),kts:min(kte,kde-1),min0(jts,max(jds+1, &
-   jts)):max0(min(jde-1, jte),min(jde-1,jte))) :: Tmpv403
-   REAL,DIMENSION(its:max0(ite,min(ite, ide-1)),kts:min(kte,kde-1),min0(jts,max(jds+1, &
-   jts)):max0(min(jde-1, jte),min(jde-1,jte))) :: Tmpv404
-   REAL,DIMENSION(its:min(ite, ide-1),kts:min(kte,kde-1),max(jds+1,jts):min(jde-1,jte)) &
-    :: Tmpv405
-   REAL,DIMENSION(its:min(ite, ide-1),kts:min(kte,kde-1),max(jds+1,jts):min(jde-1,jte)) &
-    :: Tmpv406
-   REAL,DIMENSION(its:min(ite, ide-1),kts:min(kte,kde-1),max(jds+1,jts):min(jde-1,jte)) &
-    :: Tmpv407
-   REAL,DIMENSION(its:min(ite, ide-1),kts:min(kte,kde-1),max(jds+1,jts):min(jde-1,jte)) &
-    :: Tmpv408
+   REAL,DIMENSION(ims:ime,max(2, kts):min(kte,kde-1)) :: Tmpv300, Tmpv301, Tmpv302, Tmpv303
+   REAL,DIMENSION(ims:ime,kts:min(kte,kde-1),jms:jme) :: Tmpv400, Tmpv401, Tmpv402, Tmpv403, Tmpv404, Tmpv405, Tmpv406, Tmpv407, Tmpv408
 
 !PART II: CALCULATIONS OF B. S. TRAJECTORY
 
@@ -13234,19 +13227,22 @@ END SUBROUTINE a_calculate_full
    IF ( ( config_flags%open_xs .or. specified .or.   &
         config_flags%nested) .and. (its == ids) ) i_start = its
 
+   IF ( its > ids ) i_start = its - 1 
 !LPB[4]
 
 !LPB[5]
    IF ( ( config_flags%open_xe .or. specified .or.   &
         config_flags%nested) .and. (ite == ide) ) i_end   = ite-1
 
+   IF ( ite < ide ) i_end = ite + 1
 !LPB[6]
 
 !LPB[7]
    IF ( ( config_flags%open_ys .or. specified .or.   &
         config_flags%nested .or. config_flags%polar) .and. (jts == jds) ) &
  j_start = jts
-
+  
+   IF ( jts > jds ) j_start = jts - 1
 !LPB[8]
 
 !LPB[9]
@@ -13254,6 +13250,7 @@ END SUBROUTINE a_calculate_full
         config_flags%nested .or. config_flags%polar) .and. (jte == jde) ) &
  j_end   = jte-1
 
+   IF ( jte < jde ) j_end = jte + 1
 !LPB[10]
 
 !LPB[11]
@@ -13282,7 +13279,7 @@ END SUBROUTINE a_calculate_full
    IF ( ( config_flags%open_xs .or. (specified .AND. .NOT. config_flags%periodic_x) &
  .or.          config_flags%nested) .and. (its == ids) ) THEN
 
-        DO j = jts, jte-1
+        DO j = j_start, j_end
         DO k = kts, ktf
           vxgm(its-1,k,j) =  vxgm(its,k,j)
         ENDDO
@@ -13297,7 +13294,7 @@ END SUBROUTINE a_calculate_full
    IF ( ( config_flags%open_xe .or. (specified .AND. .NOT. config_flags%periodic_x) &
  .or.          config_flags%nested) .and. (ite == ide) ) THEN
 
-        DO j = jts, jte-1
+        DO j = j_start, j_end
         DO k = kts, ktf
           vxgm(ite,k,j) =  vxgm(ite-1,k,j)
         ENDDO
@@ -13313,7 +13310,7 @@ END SUBROUTINE a_calculate_full
         config_flags%nested .or. config_flags%polar) .and. (jts == jds) ) THEN
 
         DO k = kts, ktf
-        DO i = its-1, ite
+        DO i = i_start, i_end
           vxgm(i,k,jts-1) =  vxgm(i,k,jts)
         ENDDO
         ENDDO
@@ -13328,7 +13325,7 @@ END SUBROUTINE a_calculate_full
         config_flags%nested .or. config_flags%polar) .and. (jte == jde) ) THEN
 
         DO k = kts, ktf
-        DO i = its-1, ite
+        DO i = i_start, i_end
           vxgm(i,k,jte) =  vxgm(i,k,jte-1)
         ENDDO
         ENDDO
@@ -13455,9 +13452,9 @@ END SUBROUTINE a_calculate_full
 
 !PART III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
 
-   Do K2_ADJ =jts-1, jte
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its-1, ite
+   Do K2_ADJ =jms, jme
+   Do K1_ADJ =kms, kme
+   Do K0_ADJ =ims, ime
    a_vxgm(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
    End Do
    End Do
@@ -13466,10 +13463,10 @@ END SUBROUTINE a_calculate_full
 !PART IV: REVERSE/BACKWARD ACCUMULATIONS
 
 !LPB[39]
-   DO j =min(jte, jde-1), jts, -1
+   DO j =j_end, j_start, -1
 
    DO k =max(2, kts), ktf
-   DO i =its, min(ite, ide-1)
+   DO i =i_start, i_end
    Tmpv001 =ru(i,k,j) +ru(i+1,k,j)
    Tmpv002 =fzm(k)*Tmpv001
    Tmpv003 =ru(i,k-1,j) +ru(i+1,k-1,j)
@@ -13511,7 +13508,7 @@ END SUBROUTINE a_calculate_full
    ENDDO
 
    DO k =ktf, max(2, kts), -1
-   DO i =min(ite, ide-1), its, -1
+   DO i =i_end, i_start, -1
    a_Tmpv29 =a_rw_tend(i,k,j)
    a_rw_tend(i,k,j) =0.0
    a_rw_tend(i,k,j) =a_rw_tend(i,k,j) +a_Tmpv29
@@ -13572,10 +13569,13 @@ END SUBROUTINE a_calculate_full
    IF ( config_flags%open_ye .or. specified .or. &
         config_flags%nested .or. config_flags%polar) j_end   = MIN ( jde-1 , jte )
 
+   IF ( jte < jde ) j_end = jte + 1
+   IF ( jts > jds ) j_start = jts - 1
+
    IF((config_flags%map_proj == 6) .OR. (config_flags%polar)) THEN
    DO j =j_start, j_end
    DO k =kts, ktf
-   DO i =its, min(ite, ide-1)
+   DO i =i_start, i_end
    Tmpv001 =u(i,k,j) +u(i+1,k,j)
    Tmpv002 =Tmpv001 +u(i,k,j-1)
    Tmpv003 =Tmpv002 +u(i+1,k,j-1)
@@ -13613,7 +13613,7 @@ END SUBROUTINE a_calculate_full
    ELSE
    DO j =j_start, j_end
    DO k =kts, ktf
-   DO i =its, min(ite, ide-1)
+   DO i =i_start, i_end
    Tmpv001 =vxgm(i,k,j) +vxgm(i,k,j-1)
    Tmpv002 =0.5*Tmpv001
    Tmpv003 =Tmpv002*0.25
@@ -13643,7 +13643,7 @@ END SUBROUTINE a_calculate_full
 
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
-   DO i =min(ite, ide-1), its, -1
+   DO i =min(ite, ide-1), i_start, -1
    a_Tmpv21 =a_rv_tend(i,k,j)
    a_rv_tend(i,k,j) =0.0
    a_rv_tend(i,k,j) =a_rv_tend(i,k,j) +a_Tmpv21
@@ -13691,7 +13691,7 @@ END SUBROUTINE a_calculate_full
 
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
-   DO i =min(ite, ide-1), its, -1
+   DO i =i_end, i_start, -1
    a_Tmpv13 =a_rv_tend(i,k,j)
    a_rv_tend(i,k,j) =0.0
    a_Tmpv8 =a_Tmpv13
@@ -13760,11 +13760,18 @@ END SUBROUTINE a_calculate_full
         config_flags%nested) i_start = MAX ( ids+1 , its )
    IF ( config_flags%open_xe .or. specified .or. &
         config_flags%nested) i_end   = MIN ( ide-1 , ite )
-      IF ( config_flags%periodic_x ) i_start = its
-      IF ( config_flags%periodic_x ) i_end = ite
+   IF ( config_flags%periodic_x ) i_start = its
+   IF ( config_flags%periodic_x ) i_end = ite
+
+   j_start = jts
+   j_end = min(jde-1, jte)
+   IF ( its > ids ) i_start = its - 1
+   IF ( ite < ide ) i_end = ite + 1
+   IF ( jts > jds ) j_start = jts - 1
+   IF ( jte < jde ) j_end = jte + 1
 
    IF((config_flags%map_proj == 6) .OR. (config_flags%polar)) THEN
-   DO j =jts, min(jde-1, jte)
+   DO j =j_start, j_end
    DO k =kts, ktf
    DO i =i_start, i_end
    Tmpv001 =rv(i-1,k,j+1) +rv(i,k,j+1)
@@ -13789,7 +13796,7 @@ END SUBROUTINE a_calculate_full
    ENDDO
    ENDDO
    ELSE
-   DO j =jts, min(jde-1, jte)
+   DO j =j_start, j_end
    DO k =kts, ktf
    DO i =i_start, i_end
    Tmpv001 =vxgm(i,k,j) +vxgm(i-1,k,j)
@@ -13819,7 +13826,7 @@ END SUBROUTINE a_calculate_full
 
    IF((config_flags%map_proj == 6) .OR. (config_flags%polar)) THEN
 
-   DO j =min(jde-1, jte), jts, -1
+   DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
    a_Tmpv12 =a_ru_tend(i,k,j)
@@ -13854,7 +13861,7 @@ END SUBROUTINE a_calculate_full
 
    ELSE
 
-   DO j =min(jde-1, jte), jts, -1
+   DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
    a_Tmpv13 =a_ru_tend(i,k,j)
@@ -13957,7 +13964,7 @@ END SUBROUTINE a_calculate_full
            config_flags%nested .or. config_flags%polar) .and. (jte == jde) ) THEN
 
    DO k =ktf, kts, -1
-   DO i =ite, its-1, -1
+   DO i =i_end, i_start, -1
    a_vxgm(i,k,jte-1) =a_vxgm(i,k,jte-1) +a_vxgm(i,k,jte)
    a_vxgm(i,k,jte) =0.0
    ENDDO
@@ -13982,7 +13989,7 @@ END SUBROUTINE a_calculate_full
            config_flags%nested .or. config_flags%polar) .and. (jts == jds) ) THEN
 
    DO k =ktf, kts, -1
-   DO i =ite, its-1, -1
+   DO i =i_end, i_start, -1
    a_vxgm(i,k,jts) =a_vxgm(i,k,jts) +a_vxgm(i,k,jts-1)
    a_vxgm(i,k,jts-1) =0.0
    ENDDO
@@ -14008,7 +14015,7 @@ END SUBROUTINE a_calculate_full
    IF( ( config_flags%open_xe .or. (specified .AND. .NOT. config_flags%periodic_x  &
    ) .or.          config_flags%nested) .and. (ite == ide) ) THEN
 
-   DO j =jte-1, jts, -1
+   DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    a_vxgm(ite-1,k,j) =a_vxgm(ite-1,k,j) +a_vxgm(ite,k,j)
    a_vxgm(ite,k,j) =0.0
@@ -14036,7 +14043,7 @@ END SUBROUTINE a_calculate_full
    IF( ( config_flags%open_xs .or. (specified .AND. .NOT. config_flags%periodic_x  &
    ) .or.          config_flags%nested) .and. (its == ids) ) THEN
 
-   DO j =jte-1, jts, -1
+   DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    a_vxgm(its,k,j) =a_vxgm(its,k,j) +a_vxgm(its-1,k,j)
    a_vxgm(its-1,k,j) =0.0
@@ -14061,8 +14068,8 @@ END SUBROUTINE a_calculate_full
         config_flags%nested .or. config_flags%polar) .and. (jts == jds) ) j_start = jts
    IF ( ( config_flags%open_ye .or. specified .or. &
         config_flags%nested .or. config_flags%polar) .and. (jte == jde) ) j_end   = jte-1
-      IF ( config_flags%periodic_x ) i_start = its-1
-      IF ( config_flags%periodic_x ) i_end = ite
+   IF ( config_flags%periodic_x ) i_start = its-1
+   IF ( config_flags%periodic_x ) i_end = ite
 
    DO j =j_end, j_start, -1
 

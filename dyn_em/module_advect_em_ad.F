@@ -5141,8 +5141,8 @@ CONTAINS
    INTEGER :: jmin,jmax,jp,jm,imin,imax
    REAL :: mrdx,mrdy,ub,a_ub,vb,a_vb,uw,a_uw,vw,a_vw
    REAL,DIMENSION(its:ite,kts:kte) :: vflux,a_vflux
-   REAL,DIMENSION(its:ite+1,kts:kte) :: fqx,a_fqx
-   REAL,DIMENSION(its:ite,kts:kte,2) :: fqy,a_fqy
+   REAL,DIMENSION(ims:ime,kms:kme) :: fqx,a_fqx
+   REAL,DIMENSION(ims:ime,kms:kme,2) :: fqy,a_fqy
    INTEGER :: horz_order,vert_order
    LOGICAL :: degrade_xs,degrade_ys
    LOGICAL :: degrade_xe,degrade_ye
@@ -5281,15 +5281,19 @@ CONTAINS
          j_start_f = j_start
          j_end_f   = j_end+1
       IF(degrade_ys) then
-
-           j_start = MAX(jts,jds+1)
-           j_start_f = jds+3
-         ENDIF
+         j_start = MAX(jts,jds+1)
+         j_start_f = jds+3
+      ELSE
+         j_start = j_start - 3
+         j_start_f = j_start_f - 2
+      ENDIF
       IF(degrade_ye) then
-
-           j_end = MIN(jte,jde-2)
-           j_end_f = jde-3
-         ENDIF
+         j_end = MIN(jte,jde-2)
+         j_end_f = jde-3
+      ELSE
+         j_end = j_end + 3
+         j_end_f = j_end_f + 3
+      ENDIF
       IF(config_flags%polar) j_end = MIN(jte,jde-1)
 
         jp1 = 2
@@ -5452,8 +5456,8 @@ CONTAINS
    End Do
    End Do
 
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its, ite+1
+   Do K1_ADJ =kms, kme
+   Do K0_ADJ =ims, ime
    a_fqx(K0_ADJ,K1_ADJ) =0.0
    End Do
    End Do
@@ -6509,11 +6513,17 @@ CONTAINS
       IF(degrade_xs) then
         i_start = MAX(ids+1,its)
         i_start_f = MIN(i_start+2,ids+3)
+      ELSE
+        i_start =  i_start - 3
+        i_start_f = i_start_f - 2
       ENDIF
 
       IF(degrade_xe) then
         i_end = MIN(ide-2,ite)
         i_end_f = ide-3
+      ELSE
+        i_end = i_end + 3
+        i_end_f = i_end_f + 2
       ENDIF
 
    DO j =j_end, j_start, -1
@@ -6664,11 +6674,17 @@ CONTAINS
       IF(degrade_ys) then
         j_start = MAX(jts,jds+1)
         j_start_f = jds+3
+      ELSE
+        j_start = j_start - 3
+        j_start_f = j_start_f - 2
       ENDIF
 
       IF(degrade_ye) then
         j_end = MIN(jte,jde-2)
         j_end_f = jde-3
+      ELSE
+        j_end = j_end + 3
+        j_end_f = j_end_f + 3
       ENDIF
 
       IF(config_flags%polar) j_end = MIN(jte,jde-1)

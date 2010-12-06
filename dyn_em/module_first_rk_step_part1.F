@@ -575,7 +575,14 @@ BENCH_START(pbl_driver_tim)
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
-     &                                                          )
+! For Wind Turbine Drag Parameterizations
+     &        ,theight=grid%theight,tdiameter=grid%tdiameter              &
+     &        ,thrustcof=grid%thrustcof,cispeed=grid%cispeed              &
+     &        ,cospeed=grid%cospeed,phb=grid%phb                          &
+     &        ,lwfx=grid%lwfx,lwfy=grid%lwfy,nturbine=grid%nturbine       &
+     &        ,tpower=grid%tpower,pwfx=grid%pwfx,pwfy=grid%pwfy           &
+     &        ,dcellx=grid%dcellx,dcelly=grid%dcelly,tdrag=grid%tdrag)
+                                                         
 
 BENCH_END(pbl_driver_tim)
 

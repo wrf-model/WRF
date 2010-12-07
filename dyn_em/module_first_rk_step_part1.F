@@ -508,16 +508,16 @@ BENCH_END(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call pbl_driver' )
 BENCH_START(pbl_driver_tim)
-      CALL pbl_driver(                                                    &
+      CALL pbl_driver(                                                              &
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
-     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                 &
+     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
-     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct         &
+     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
      &        ,EL_MYJ=grid%el_myj      ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m   &
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
-     &        ,ITIMESTEP=grid%itimestep                    ,KPBL=grid%kpbl          &
+     &        ,ID=grid%id         ,ITIMESTEP=grid%itimestep     ,KPBL=grid%kpbl          &
      &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
      &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
      &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
@@ -576,12 +576,8 @@ BENCH_START(pbl_driver_tim)
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
 ! For Wind Turbine Drag Parameterizations
-     &        ,theight=grid%theight,tdiameter=grid%tdiameter              &
-     &        ,thrustcof=grid%thrustcof,cispeed=grid%cispeed              &
-     &        ,cospeed=grid%cospeed,phb=grid%phb                          &
-     &        ,lwfx=grid%lwfx,lwfy=grid%lwfy,nturbine=grid%nturbine       &
-     &        ,tpower=grid%tpower,pwfx=grid%pwfx,pwfy=grid%pwfy           &
-     &        ,dcellx=grid%dcellx,dcelly=grid%dcelly,tdrag=grid%tdrag)
+     &        ,phb=grid%phb                                               &
+     &        )
                                                          
 
 BENCH_END(pbl_driver_tim)

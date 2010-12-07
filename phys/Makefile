@@ -86,7 +86,9 @@ MODULES = \
 	module_fdda_spnudging.o \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
-	module_fddaobs_driver.o
+	module_fddaobs_driver.o \
+	module_wind_generic.o \
+	module_wind_fitch.o
 
 FIRE_MODULES = \
         module_fr_sfire_driver.o \
@@ -116,7 +118,7 @@ include ../configure.wrf
 
 nmm_contrib : $(NMM_OBJS) $(NMM_MODULES) $(MODULES) $(OBJS)
 
-non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS)
 
 clean:
 	@ echo 'use the clean script'
@@ -321,6 +323,7 @@ module_pbl_driver.o:  \
 		module_bl_gfs.o \
 		module_bl_mynn.o \
 		module_bl_gwdo.o \
+		module_wind_fitch.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
@@ -432,6 +435,9 @@ module_fdda_spnudging.o :\
 
 module_sf_bep.o :\
 		module_sf_urban.o
+
+module_wind_fitch.o :\
+		module_wind_generic.o
 
 module_mp_wsm5.o :\
 		module_mp_wsm5_accel.F

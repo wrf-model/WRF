@@ -2,22 +2,24 @@ MODULE module_wind_generic
 
   IMPLICIT NONE
 
-  TYPE windfarm_specs
+  TYPE windturbine_specs
      INTEGER id             ! grid id
      REAL    lat, lon       ! lat/lon of the individual turbine
+     INTEGER i, j           ! coord in grid id (this is set internally, per grid)
      REAL    hubheight      ! hieght of the turbine hub
      REAL    diameter       ! diameter of the rotor
-     REAL    thrust         ! standing thrust coefficient
+     REAL    thrustcof      ! standing thrust coefficient
      REAL    power          ! turbine power in MW
      REAL    cutinspeed     ! cut-in speed
      REAL    cutoutspeed    ! cut-out speed
-  END TYPE windfarm_specs
+  END TYPE windturbine_specs
 
-  TYPE(windfarms_specs), ALLOCATABLE, DIMENSION(:) :: farmspec
+  TYPE(windturbine_specs), TARGET, ALLOCATABLE, DIMENSION(:) :: windturbines
+  INTEGER :: nwindturbines
 
-  INTEGER, PARAMETER ( WIND_TURBINES_OFF      = 0 )
-  INTEGER, PARAMETER ( WIND_TURBINES_IDEAL    = 1 )
-  INTEGER, PARAMETER ( WIND_TURBINES_FROMLIST = 2 ) 
+  INTEGER, PARAMETER :: WIND_TURBINES_OFF      = 0
+  INTEGER, PARAMETER :: WIND_TURBINES_IDEAL    = 1
+  INTEGER, PARAMETER :: WIND_TURBINES_FROMLIST = 2
 
   INTEGER windspec
 
@@ -25,26 +27,30 @@ MODULE module_wind_generic
 
 CONTAINS
 
-  SUBROUTINE read_windfarms_in
-! Check the namelist variable nl_get_windfarms_select.  If it is set to none,
+  SUBROUTINE read_windturbines_in
+! Check the namelist variable nl_get_windturbines_spec.  If it is set to none,
 ! which is the default value, then do nothing.  If it is set to ideal, then
 ! a wind scheme is active but no extra information beyond what is in the namelist
 ! is needed.  If it is set to the name of a file, read the file to get position
 ! and characteristics of each turbine and store that in a datastructure here 
-! (the array farmspec) that the parameterizations can refer to when initializing
+! (the array turbinespec) that the parameterizations can refer to when initializing
 ! themselves.
 
     IMPLICIT NONE
+! Local
     CHARACTER*256  fname, message
     INTEGER i,istat
     INTEGER id
-    REAL  lat,lon,hubheight,diameter,thrust,power,cutinspeed,cutoutspeed
-    CALL nl_get_windfarms_select( 1, fname )
+    INTEGER n,lineno
+    REAL  lat,lon,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
+!
+    CALL nl_get_windturbines_spec( 1, fname )
     windspec = WIND_TURBINES_OFF
     IF ( TRIM(fname) .EQ. "none" ) THEN
       RETURN
     ELSE IF ( TRIM(fname) .EQ. "ideal" ) THEN
-      RETURN   ! info is already available from namelist
+     ! get the turbine specs from the namelist and initialize in 
+     ! the specific turbine parameterization
       windspec = WIND_TURBINES_IDEAL
     ELSE
       !info is contained in a file named by fname
@@ -58,50 +64,63 @@ CONTAINS
             n = n + 1
           ENDDO
  30       CONTINUE
-          ALLOCATE(farmspec(n))
+          ALLOCATE(windturbines(n))
           REWIND(19)
           DO I = 1, n 
-            READ(19,*,ERR=130)id,lat,lon,hubheight,diameter,thrust,power,cutinspeed,cutoutspeed
-            farmspec(i)%id = id
-            farmspec(i)%lat = lat
-            farmspec(i)%lon = lon
-            farmspec(i)%hubheight = hubheight
-            farmspec(i)%diameter = diameter
-            farmspec(i)%thrust = thrust
-            farmspec(i)%power = power
-            farmspec(i)%cutinspeed = cutinspeed
-            farmspec(i)%cutoutspeed = cutoutspeed
+            lineno = i
+            READ(19,*,ERR=130)id,lat,lon,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
+            windturbines(i)%id = id
+            windturbines(i)%lat = lat
+            windturbines(i)%lon = lon
+            windturbines(i)%hubheight = hubheight
+            windturbines(i)%diameter = diameter
+            windturbines(i)%thrustcof = thrustcof
+            windturbines(i)%power = power
+            windturbines(i)%cutinspeed = cutinspeed
+            windturbines(i)%cutoutspeed = cutoutspeed
           ENDDO
+          CLOSE(19)
+          GOTO 150
+ 130      CONTINUE
+          istat = 150150
+          GOTO 150
         ENDIF
       ENDIF
+ 150  CONTINUE
       CALL wrf_dm_bcast_integer(istat,1) 
       IF ( istat .NE. 0 ) THEN
         WRITE(message,*)'Unable to open or read ',TRIM(fname),'. Proceeding without wind-turbine parameterization.'
         CALL wrf_message(message)
-        IF ( ALLOCATED(farmspec) ) DEALLOCATE(farmspec)
+        IF ( istat .EQ. 150150 ) THEN
+          WRITE(message,*)'Perhaps bad syntax at line ',lineno,' of ',TRIM(fname)
+          CALL wrf_message(message)
+        ENDIF
+        IF ( ALLOCATED(windturbines) ) DEALLOCATE(windturbines)
         RETURN
       ENDIF
       CALL wrf_dm_bcast_integer(n,1) 
-      IF ( .NOT. wrf_dm_on_monitor() ) ALLOCATE(farmspec(n))
+      IF ( .NOT. wrf_dm_on_monitor() ) ALLOCATE(windturbines(n))
       DO I = 1, n 
-        CALL wrf_dm_bcast_integer(farmspec(i)%id,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%lat,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%lon,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%hubheight,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%diameter,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%thrust,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%power,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%cutinspeed,1) 
-        CALL wrf_dm_bcast_real(farmspec(i)%cutoutspeed,1) 
+        CALL wrf_dm_bcast_integer(windturbines(i)%id,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%lat,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%lon,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%hubheight,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%diameter,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%thrustcof,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%power,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%cutinspeed,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%cutoutspeed,1) 
+        windturbines%i = -1   ! set to uninitialized
+        windturbines%j = -1
       ENDDO
       windspec = WIND_TURBINES_FROMLIST
       RETURN
     ENDIF
-  END SUBROUTINE read_windfarms_in
+  END SUBROUTINE read_windturbines_in
 
   SUBROUTINE init_module_wind_generic
     IMPLICIT NONE
-    CALL read_windfarms_in 
+    CALL read_windturbines_in 
   END SUBROUTINE init_module_wind_generic
 
 END MODULE module_wind_generic

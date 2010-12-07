@@ -6,7 +6,7 @@ CONTAINS
 
 !------------------------------------------------------------------
    SUBROUTINE pbl_driver(                                          &
-                  itimestep,dt,u_frame,v_frame                     &
+                  id,itimestep,dt,u_frame,v_frame                  &
                  ,bldt,curr_secs,adapt_step_flag                   &
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt,ht                                 &
@@ -54,9 +54,7 @@ CONTAINS
                ,a_e_bep,b_e_bep,dlg_bep                            &
                ,dl_u_bep                                           &
 ! Wind Turbine Parameterizations
-               ,nturbine                                           &
-               ,phb,theight,tdiameter,thrustcof,cispeed,tdrag      &
-               ,cospeed,tpower,dcellx,dcelly,lwfx,lwfy,pwfx,pwfy   &
+               ,phb                                                &
                )        
 !------------------------------------------------------------------
 #if (EM_CORE==1)
@@ -86,6 +84,7 @@ CONTAINS
    USE module_bl_boulac
 #if (EM_CORE==1)
    USE module_bl_mynn
+   USE module_wind_fitch
 #endif
 
    !  This driver calls subroutines for the PBL parameterizations.
@@ -152,6 +151,7 @@ CONTAINS
 !                 PBL parameterization (kg/kg/s)
 !-- RQIBLTEN      Qi tendency due to 
 !                 PBL parameterization (kg/kg/s)
+!-- id            WRF grid id
 !-- itimestep     number of time steps
 !-- GLW           downward long wave flux at ground surface (W/m^2)
 !-- GSW           downward short wave flux at ground surface (W/m^2)
@@ -246,7 +246,7 @@ CONTAINS
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                   &
   &                                    i_start,i_end,j_start,j_end
 
-   INTEGER,    INTENT(IN   )    ::     itimestep,STEPBL
+   INTEGER,    INTENT(IN   )    ::     id,itimestep,STEPBL
    INTEGER,    DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN   )    ::                        LOWLYR
 !
@@ -266,10 +266,6 @@ CONTAINS
 ! Optional for Wind Turbine Parameterizations
    REAL, DIMENSION( ims:ime, kms:kme ,jms:jme ), &
          INTENT(IN), OPTIONAL    :: phb
-   LOGICAL, INTENT(IN), OPTIONAL :: tdrag
-   REAL, INTENT(IN), OPTIONAL    :: theight,tdiameter,thrustcof,cospeed,cispeed 
-   REAL, INTENT(IN), OPTIONAL    :: tpower,nturbine
-   INTEGER, INTENT(IN), OPTIONAL :: lwfx,lwfy,pwfx,pwfy,dcellx,dcelly
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -1065,6 +1061,15 @@ CONTAINS
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
+
+               CALL turbine_dragforce(                                    &
+                   & ID=id                                                &
+                   &,PHB=phb,u=u_phy,v=v_phy,DX=dx,DZ=dz8w,DT=dt          &
+                   &,QKE=qke,DU=rublten,DV=rvblten                        &
+                   &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+                   &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+                   &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                   &)
 
            ELSE
                WRITE ( message , FMT = '(A,12(L1,1X))' )            &

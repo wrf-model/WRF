@@ -1693,6 +1693,26 @@ rconfig   integer mp_physics_dfi          derived                  max_domains  
 # Single dummy declaration to define a nodyn dyn option
 state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""      
 
+# turbine
+rconfig character windturbines_spec namelist,turbine 1 "none" - "" "" "none, ideal, or a file name"
+rconfig integer turbgridid  namelist,turbine 1 -1     - "turbgridid" ""  "which grid id has turbines in it"
+rconfig  real   hubheight   namelist,turbine 1 100.   - "hubheight"  ""  "default height in (m)"
+rconfig  real   diameter    namelist,turbine 1 60.    - "diameter"   ""  "default diameter in (m)"
+rconfig  real   thrustcof   namelist,turbine 1 .158   - "thrustcof"  ""  "default thrustcof"
+rconfig  real   cutinspeed  namelist,turbine 1 4.     - "cutinspeed"    ""  "default cispeed in (m/s)"
+rconfig  real   cutoutspeed namelist,turbine 1 27.    - "cutoutspeed"    ""  "default cospeed in (m/s)"
+rconfig  real   power       namelist,turbine 1 2.     - "power"     ""  "default tpower in (MW)"
+rconfig  real   turbpercell namelist,turbine 1 1.     - "turbpercell"   ""  "number of turbine per cell"
+rconfig integer ewfx        namelist,turbine 1 0      - "ewfx"       ""  "extent of wind farm in x-cells"
+rconfig integer ewfy        namelist,turbine 1 0      - "ewfy"       ""  "extent of wind farm in y-cells"
+rconfig integer pwfx        namelist,turbine 1 1      - "pwfx"       ""  "southwest corner of wind farm in x-cells"
+rconfig integer pwfy        namelist,turbine 1 1      - "pwfy"       ""  "southwest corner of wind farm in y-cells"
+
+# deprecated per A.F. 20101207. Use only turbpercell for this. JM
+#rconfig integer dcellx namelist,turbine   1 1      - "dcellx"     ""  "distance between two turbines in x-cells"
+#rconfig integer dcelly namelist,turbine   1 1      - "dcelly"     ""  "distance between two turbines in y-cells"
+
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations

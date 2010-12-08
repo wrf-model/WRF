@@ -38,15 +38,15 @@ ALL_MODULES =                           \
                $(INCLUDE_MODULES)
 
 configcheck:
-	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
-	 echo "------------------------------------------------------------------------------" ; \
-	 echo "WRF CONFIGURATION ERROR                                                       " ; \
-	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems." ; \
-	 echo "Only 3D WRF cases will run on these systems." ; \
-	 echo "Please chose a different case or rerun configure and chose a different option."  ; \
-	 echo "------------------------------------------------------------------------------" ; \
-         exit 2 ; \
-	fi
+#	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
+#	 echo "------------------------------------------------------------------------------" ; \
+#	 echo "WRF CONFIGURATION ERROR                                                       " ; \
+#	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems." ; \
+#	 echo "Only 3D WRF cases will run on these systems." ; \
+#	 echo "Please chose a different case or rerun configure and chose a different option."  ; \
+#	 echo "------------------------------------------------------------------------------" ; \
+#         exit 2 ; \
+#	fi
 
 framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext

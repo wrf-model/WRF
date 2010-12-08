@@ -431,6 +431,7 @@ CONTAINS
            CALL wrf_debug(0, "-- Replace it with obs_prt_max")
         ENDIF
 
+
 !---------------------------------- wrfvar1 -----------------------------
      else if ( TRIM(nml_name) .eq. "wrfvar1" ) then
 
@@ -480,8 +481,8 @@ CONTAINS
         ENDIF
 
 !---------------------------------- error -------------------------------
-     else
-        CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
+!     else
+!        CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
      end if
 
      IF ( nml_error .NE. 0 ) then    ! Still failed

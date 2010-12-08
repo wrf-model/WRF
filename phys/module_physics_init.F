@@ -411,10 +411,15 @@ integer myproc
 ! Added for Wind Turbine parameterization code -- This will only read in an optional 
 ! configuration file with information that will be used by inividual turbine init routines 
 ! as each domain is initialized.
+write(0,*)__FILE__,__LINE__
   IF ( id .EQ. 1 ) THEN
+write(0,*)__FILE__,__LINE__
     CALL init_module_wind_generic
+write(0,*)__FILE__,__LINE__
     CALL init_module_wind_fitch
+write(0,*)__FILE__,__LINE__
   ENDIF
+write(0,*)__FILE__,__LINE__
 !
 
   IF(.not.restart)THEN

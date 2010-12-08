@@ -67,10 +67,10 @@ CONTAINS
   jtf=MIN0(jte,jde-1)
   ktf=MIN0(kte,kde-1)
 
-  CALL nl_get_turbpercell(1,turbgridid)
+  CALL nl_get_turbpercell(1,turbpercell)
+  CALL nl_get_turbgridid(1,turbgridid)
   IF ( .NOT. inited(id) ) THEN
     IF ( windspec .EQ. WIND_TURBINES_IDEAL .AND. id .EQ. turbgridid ) THEN
-      CALL nl_get_turbpercell(1,turbpercell)
       CALL nl_get_ewfx(1,ewfx)
       CALL nl_get_ewfy(1,ewfy)
       CALL nl_get_pwfx(1,pwfx)
@@ -102,6 +102,7 @@ CONTAINS
             IF ( pwfx .LE. i .AND. i .LE. (pwfx+ewfx-1) ) THEN
               windturbines(n)%i = i
               windturbines(n)%j = j
+              windturbines(n)%id = id
               windturbines(n)%hubheight = hubheight
               windturbines(n)%diameter = diameter
               windturbines(n)%power = power
@@ -121,6 +122,9 @@ CONTAINS
   ELSE
     wfdensity = turbpercell/(dx*dx)   !  per turbine, so numerator is 1
   ENDIF
+write(0,*)'wfdensity ',wfdensity
+write(0,*)'turbpercell ',turbpercell
+write(0,*)'dx ',dx
 
   IF ((windspec .EQ. WIND_TURBINES_FROMLIST) .OR.       &
       (windspec .EQ. WIND_TURBINES_IDEAL .AND. id .EQ. turbgridid ) ) THEN
@@ -133,12 +137,14 @@ CONTAINS
         i = p%i
         j = p%j
 ! Finding vertical levels penetrated by wind turbine
+if (iturbine.eq.30)write(0,*)iturbine,'i,j,ht,dia',i,j,p%hubheight,p%diameter
         IF (( its .LE. i .AND. i .LE. itf ) .AND. &
             ( jts .LE. j .AND. j .LE. jtf )  ) THEN
 
           blade_l_point=p%hubheight-p%diameter/2. ! height of lower point of blade (m) (theight=turbine height)
           blade_u_point=p%hubheight+p%diameter/2. ! height of upper point of blade (m)
 
+if (iturbine.eq.30)write(0,*)iturbine,i,j,blade_l_point,blade_u_point
           kfound = .false.
           zheightl=0.0
           DO k=kts,ktf
@@ -156,6 +162,13 @@ CONTAINS
               zheightl = zheightu
             ENDIF
           ENDDO
+if (iturbine.eq.30)then
+if ( kfound ) then
+write(0,*)iturbine,'kfound ',kfound,k_turbine_bot,k_turbine_top
+else
+write(0,*)iturbine,'kfound ',kfound
+endif
+endif
           IF ( kfound ) THEN
           ! Implementing drag force
             l1=p%hubheight-p%diameter/2. ! height of lower tip of blade above ground (m)
@@ -174,6 +187,14 @@ CONTAINS
               CALL wfdensityi(z1,z2,p%diameter,wfdensity,tarea)
               ! output TKE tendency
               qke(i,k,j)     =    qke(i,k,j)+speed*speed*speed*tarea*tkecof*dt/dz(i,k,j)
+if (iturbine.eq.30)then
+write(0,*)'force for ',iturbine,' level ',k,' qke ',qke(i,k,j),speed*speed*speed*tarea*tkecof*dt/dz(i,k,j)
+write(0,*)'  speed = ',speed
+write(0,*)'  tarea = ',tarea
+write(0,*)'  tkecoef = ',tkecof
+write(0,*)'  dt = ',dt
+write(0,*)'  dz(i,k,j) ',dz(i,k,j)
+endif
               ! output u tendency
               du(i,k,j) = du(i,k,j)-.5*u(i,k,j)*thrcof*speed*tarea/dz(i,k,j)
               ! output v tendency
@@ -275,6 +296,7 @@ CONTAINS
   END SUBROUTINE dragcof
 
   SUBROUTINE init_module_wind_fitch
+write(0,*)__FILE__,__LINE__
     inited = .FALSE.
   END SUBROUTINE init_module_wind_fitch
   

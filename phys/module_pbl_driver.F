@@ -1062,6 +1062,7 @@ CONTAINS
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
 
+write(0,*)'calling turbine_dragforce'
                CALL turbine_dragforce(                                    &
                    & ID=id                                                &
                    &,PHB=phb,u=u_phy,v=v_phy,DX=dx,DZ=dz8w,DT=dt          &
@@ -1070,6 +1071,7 @@ CONTAINS
                    &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    &)
+write(0,*)'back from turbine_dragforce'
 
            ELSE
                WRITE ( message , FMT = '(A,12(L1,1X))' )            &

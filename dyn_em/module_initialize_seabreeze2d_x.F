@@ -2,14 +2,14 @@
 !
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains.  
+!  for the individual domains.
 
 !  This MODULE CONTAINS the following routines:
 
 !  initialize_field_test - 1. Set different fields to different constant
 !                             values.  This is only a test.  If the correct
 !                             domain is not found (based upon the "id")
-!                             then a fatal error is issued.               
+!                             then a fatal error is issued.
 
 !-----------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ MODULE module_initialize_ideal
    USE module_timing
    USE module_configure
    USE module_init_utilities
-   USE module_soil_pre
+!   USE module_soil_pre
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -37,19 +37,19 @@ CONTAINS
 ! Also dereferences the grid variables and passes them down as arguments.
 ! This is crucial, since the lower level routines may do message passing
 ! and this will get fouled up on machines that insist on passing down
-! copies of assumed-shape arrays (by passing down as arguments, the 
+! copies of assumed-shape arrays (by passing down as arguments, the
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
-! NOTE:  Modified to remove all but arrays of rank 4 or more from the 
-!        argument list.  Arrays with rank>3 are still problematic due to the 
-!        above-noted fie- and pox-ities.  TBH 20061129.  
+! NOTE:  Modified to remove all but arrays of rank 4 or more from the
+!        argument list.  Arrays with rank>3 are still problematic due to the
+!        above-noted fie- and pox-ities.  TBH 20061129.
 
    SUBROUTINE init_domain ( grid )
 
    IMPLICIT NONE
 
    !  Input data.
-   TYPE (domain), POINTER :: grid 
+   TYPE (domain), POINTER :: grid
    !  Local data.
    INTEGER :: idum1, idum2
 
@@ -89,13 +89,13 @@ CONTAINS
    REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
    INTEGER :: nl_in
 
-   INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
+   INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm, ly
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: z_scale, xrad, yrad, zrad, rad, delt, cof1, cof2
 !   REAL, EXTERNAL :: interp_0
    REAL    :: pi, rnd
 
-!  stuff from original initialization that has been dropped from the Registry 
+!  stuff from original initialization that has been dropped from the Registry
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
    REAL    :: qvf1, qvf2, pd_surf
    INTEGER :: it
@@ -104,7 +104,13 @@ CONTAINS
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
    character (len=256) :: mminlu2
-   
+
+   REAL    :: zrwa(200), zwa(200)
+
+   INTEGER :: kstr, kexp, ntop
+   REAL    :: dznw
+
+
 #ifdef DM_PARALLEL
 #    include <data_calls.inc>
 #endif
@@ -153,15 +159,15 @@ CONTAINS
 
    stretch_grid = .true.
    delt = 6.
-!   z_scale = .50
-   z_scale = .40
+   z_scale = 15.
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
    nyc = jde/2
    icm = ide/2
-! lm is the half width of the land in terms of grid points
-   lm = 25
+! lm is the half width of the land in terms of grid points (x dir)
+   lm = 10
+   ly = 20 ! y-dir
    write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -182,11 +188,11 @@ CONTAINS
     mminlu2 = ' '
     mminlu2(1:4) = 'USGS'
     CALL nl_set_mminlu(1, mminlu2)
-!   CALL nl_set_mminlu(1, 'USGS')
+!    CALL nl_set_mminlu(1, 'USGS')
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
-    CALL nl_set_cen_lat(1,20.)
-    CALL nl_set_cen_lon(1,-105.)
+    CALL nl_set_cen_lat(1,50.)
+    CALL nl_set_cen_lon(1,0.)
     CALL nl_set_truelat1(1,0.)
     CALL nl_set_truelat2(1,0.)
     CALL nl_set_moad_cen_lat (1,0.)
@@ -197,7 +203,7 @@ CONTAINS
 !   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
     CALL nl_get_iswater(1,grid%iswater)
 
-!  here we initialize data that currently is not initialized 
+!  here we initialize data that currently is not initialized
 !  in the input data
 
     DO j = jts, jte
@@ -216,54 +222,16 @@ CONTAINS
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.
          grid%f(i,j)        = 0.
-         grid%xlat(i,j)     = 30.
+         grid%xlat(i,j)     = 50.
          grid%xlong(i,j)     = 0.
 ! Hard-wire the ocean-land configuration
-        if (i .ge. (icm-lm) .and. i .lt. (icm+lm)) then
-         grid%xland(i,j)     = 1.
-         grid%lu_index(i,j)  = 18
-         grid%tsk(i,j) = 280.0
-	 grid%tmn(i,j) = 280.0
-	else
-	 grid%xland(i,j)     = 2.
+         grid%xland(i,j)     = 2.
          grid%lu_index(i,j)  = 16
-         grid%tsk(i,j) = 287.0
-         grid%tmn(i,j) = 280.0
-	end if
+         grid%tsk(i,j) = 288.0
+         grid%tmn(i,j) = 288.0
+!         grid%sst(i,j) = 280.0
       END DO
    END DO
-
-! for Noah LSM, additional variables need to be initialized
-
-   other_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
-
-      CASE (SLABSCHEME)
-
-      CASE (LSMSCHEME)
-
-        DO j = jts , MIN(jde-1,jte)
-           DO i = its , MIN(ide-1,ite)
-              IF (grid%xland(i,j) .lt. 1.5) THEN
-                 grid%vegfra(i,j) = 0.5
-                 grid%canwat(i,j) = 0.
-                 grid%ivgtyp(i,j) = 18
-                 grid%isltyp(i,j) = 8
-                 grid%xice(i,j) = 0.
-                 grid%snow(i,j) = 0.
-              ELSE
-                 grid%vegfra(i,j) = 0.
-                 grid%canwat(i,j) = 0.
-                 grid%ivgtyp(i,j) = 16
-                 grid%isltyp(i,j) = 14
-                 grid%xice(i,j) = 0.
-                 grid%snow(i,j) = 0.
-              ENDIF
-           END DO
-        END DO
-
-      CASE (RUCLSMSCHEME)
-
-   END SELECT other_masked_fields
 
    DO j = jts, jte
     DO k = kts, kte
@@ -275,27 +243,28 @@ CONTAINS
 
    grid%step_number = 0
 
-! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
-      CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
-                     grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
-                     grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
-                     model_config_rec%sf_surface_physics(grid%id), &
-                                   ids,ide, jds,jde, kds,kde,&
-                                   ims,ime, jms,jme, kms,kme,&
-                                   its,ite, jts,jte, kts,kte )
-
 ! set up the grid
 
-   IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
-     DO k=1, kde
-      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
-                                (1.-exp(-1./z_scale))
-     ENDDO
-   ELSE
-     DO k=1, kde
-      grid%znw(k) = 1. - float(k-1)/float(kde-1)
-     ENDDO
-   ENDIF
+    kstr=61;
+    kexp=41;
+    ntop=kde-kexp;
+
+    grid%znw(1) = 1.0
+    zrwa(kstr) = exp((kstr-1)/z_scale)
+    zwa(kstr) = grid%ztop
+
+    DO k=2, kexp
+       zrwa(k) = exp((k-1)/z_scale)
+       zwa(k) = (zrwa(k)-1.) * grid%ztop/(zrwa(kstr)-1.)
+       grid%znw(k) = 1. - (zwa(k) / zwa(kstr))
+    ENDDO
+
+    dznw=grid%znw(kexp)/ntop
+
+    DO k=kexp+1, kde-1
+       grid%znw(k) = grid%znw(k-1)-dznw
+    ENDDO
+    grid%znw(kde) = 0.
 
    DO k=1, kde-1
     grid%dnw(k) = grid%znw(k+1) - grid%znw(k)
@@ -309,18 +278,18 @@ CONTAINS
     grid%fnm(k) = .5* grid%dnw(k-1)/grid%dn(k)
    ENDDO
 
-   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2) 
-   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3) 
+   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2)
+   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3)
    grid%cf1  = grid%fnp(2) + cof1
    grid%cf2  = grid%fnm(2) - cof1 - cof2
-   grid%cf3  = cof2       
+   grid%cf3  = cof2
 
    grid%cfn  = (.5*grid%dnw(kde-1)+grid%dn(kde-1))/grid%dn(kde-1)
    grid%cfn1 = -.5*grid%dnw(kde-1)/grid%dn(kde-1)
    grid%rdx = 1./config_flags%dx
    grid%rdy = 1./config_flags%dy
 
-!  get the sounding from the ascii sounding file, first get dry sounding and 
+!  get the sounding from the ascii sounding file, first get dry sounding and
 !  calculate base state
 
   write(6,*) ' getting dry sounding for base state '
@@ -382,8 +351,8 @@ CONTAINS
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
 
-!  At this point grid%p_top is already set. find the DRY mass in the column 
-!  by interpolating the DRY pressure.  
+!  At this point grid%p_top is already set. find the DRY mass in the column
+!  by interpolating the DRY pressure.
 
    pd_surf = interp_0( pd_in, zk, grid%phb(i,1,j)/g, nl_in )
 
@@ -403,7 +372,7 @@ CONTAINS
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
       grid%t_2(i,k,j)          = grid%t_1(i,k,j)
-      
+
 
     enddo
 
@@ -447,8 +416,8 @@ CONTAINS
       grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (1./grid%rdnw(k-1))*(       &
                    (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
                     grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
-                                                   
-      grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
+
+      grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
     ENDDO
 
@@ -460,59 +429,6 @@ CONTAINS
 
   ENDDO
   ENDDO
-
-   if (0.gt.1) then
-!#if 0
-!  The seabreeze case is adapted from the squall line case
-!  so we just turn off the thermal perturbation
-
-!  thermal perturbation to kick off convection
-	call random_seed
-  write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
-  write(6,*) ' delt for perturbation ',delt
-
-  DO J = jts, min(jde-1,jte)
-!    yrad = config_flags%dy*float(j-nyc)/4000.
-     yrad = 0.
-    DO I = its, min(ide-1,ite)
-      xrad = config_flags%dx*float(i-nxc)/10000.
-!     xrad = 0.
-      DO K = 1, 35
-
-!  put in preturbation theta (bubble) and recalc density.  note,
-!  the mass in the column is not changing, so when theta changes,
-!  we recompute density and geopotential
-        zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
-                   +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
-        zrad = (zrad-1500.)/1500.
-        RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
-!        IF(RAD <= 1.) THEN
-	call RANDOM_NUMBER(rnd)
-	  grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*(rnd-0.5)
-         !  grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
-           grid%t_2(i,k,j)=grid%t_1(i,k,j)
-           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
-                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-!        ENDIF
-      ENDDO
-
-!  rebalance hydrostatically
-
-      DO k  = 2,kte
-        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (1./grid%rdnw(k-1))*(       &
-                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
-                                                   
-        grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
-        grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
-      ENDDO
-
-    ENDDO
-  ENDDO
-	endif 
-!#endif
 
    write(6,*) ' grid%mu_1 from comp ', grid%mu_1(1,1)
    write(6,*) ' full state sounding from comp, ph, grid%p, grid%al, grid%t_1, qv '
@@ -619,7 +535,7 @@ CONTAINS
      temp(3) = thtmp * (ptmp/p1000mb)**rcp
 
 !     grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
-     grid%tmn(I,J)=grid%tsk(I,J)-0.5
+!     grid%tmn(I,J)=grid%tsk(I,J)-0.5
   ENDDO
   ENDDO
 
@@ -713,7 +629,7 @@ CONTAINS
       enddo
 
       p_surf = 100.*p_surf  ! convert to pascals
-      qvf = 1. + rvovrd*qv_input(1) 
+      qvf = 1. + rvovrd*qv_input(1)
       rho_surf = 1./((r/p1000mb)*th_surf*qvf*((p_surf/p1000mb)**cvpm))
       pi_surf = (p_surf/p1000mb)**(r/cp)
 
@@ -727,7 +643,7 @@ CONTAINS
 !  specified surface pressure
 !  -> first, integrate from surface to lowest level
 
-          qvf = 1. + rvovrd*qv_input(1) 
+          qvf = 1. + rvovrd*qv_input(1)
           qvf1 = 1. + qv_input(1)
           rho_input(1) = rho_surf
           dz = h_input(1)
@@ -744,7 +660,7 @@ CONTAINS
             dz = h_input(k)-h_input(k-1)
             qvf1 = 0.5*(2.+(qv_input(k-1)+qv_input(k)))
             qvf = 1. + rvovrd*qv_input(k)   ! qv is in g/kg here
- 
+
             do it=1,10
               pm_input(k) = pm_input(k-1) &
                       - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1
@@ -766,7 +682,7 @@ CONTAINS
 
 
         do k=1,nl
-! For the seabreeze case, we can hard-wire the winds and qv fields 
+! For the seabreeze case, we can hard-wire the winds and qv fields
           zk(k) = h_input(k)
           p(k) = pm_input(k)
           p_dry(k) = p_input(k)

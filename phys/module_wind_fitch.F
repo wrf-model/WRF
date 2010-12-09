@@ -100,6 +100,10 @@ CONTAINS
         IF ( pwfy .LE. j .AND. j .LE. (pwfy+ewfy-1) ) THEN
           DO i = its,itf
             IF ( pwfx .LE. i .AND. i .LE. (pwfx+ewfx-1) ) THEN
+              n = n + 1
+              IF ( n .GT. nwindturbines ) THEN
+                CALL wrf_error_fatal('would overrun windturbines array')
+              ENDIF
               windturbines(n)%i = i
               windturbines(n)%j = j
               windturbines(n)%id = id
@@ -109,7 +113,6 @@ CONTAINS
               windturbines(n)%cutinspeed = cutinspeed
               windturbines(n)%cutoutspeed = cutoutspeed
               windturbines(n)%thrustcof = thrustcof
-              n = n + 1
             ENDIF
           ENDDO
         ENDIF

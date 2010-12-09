@@ -63,6 +63,13 @@ export N_SMTH_SL=${N_SMTH_SL:-2}                     # Amount of lengthscale smo
 export STRIDE=${STRIDE:-1}                           # Calculate correlation evert STRIDE point (stage4 regional).
 export NBINS=${NBINS:-1}                             # Number of latitude bins for length scale computation
 export IBIN=${IBIN:-1}                               # Index of latitude bin to compute length scale for
+export USE_RFi=${USE_RFi:-true}                      # Use recursive filters.
+export USE_RF=.${USE_RFi}.                           # ForTran syntax.
+export DO_NORMALIZE=${DO_NORMALIZE:-.true.}          # Normalize before wavelet transform.
+export PRINT_WAVELETS=${PRINT_WAVELETS:-.false.}     # Print wavelets.
+export WAVELET_FILT_LEN=${WAVELET_FILT_LEN:-6}       # Wavelet filter length.
+export WAVELET_NAME=${WAVELET_NAME:-C}               # Wavelet name (B, C, D or V).
+export WAVELET_NBAND=${WAVELET_NBAND:-1}             # Number of wavelet bands.
 export TESTING_SPECTRAL=${TESTING_SPECTRAL:-.false.} # True if performing spectral tests.
 export LOCAL=${LOCAL:-true}                          # True if local machine.
 export NUM_JOBS=${NUM_JOBS:-1}                       # Number of jobs to run (stage4 regional)).
@@ -99,7 +106,11 @@ export LAT_BINS_IN_DEG=${LAT_BINS_IN_DEG:-1.0}
 if $GLOBAL; then
    export UH_METHOD=power
 else
-   export UH_METHOD=scale
+   if ${USE_RFi}; then
+      export UH_METHOD=scale
+   else
+      export UH_METHOD=wavelet
+   fi
 fi
 
 if [[ $NL_CV_OPTIONS == 6 ]]; then

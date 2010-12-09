@@ -13,7 +13,7 @@ module da_define_structures
    use da_control, only : anal_type_randomcv, stdout, max_fgat_time, &
       vert_corr, global, vert_evalue,print_detail_be, maxsensor, &
       max_ob_levels, trace_use, num_ob_indexes, kms, kme, &
-      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, &
+      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, use_rf,&
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
@@ -24,6 +24,7 @@ module da_define_structures
    use da_tools_serial, only : da_array_print
 
    use da_reporting, only : da_error, message
+   use da_wavelet, only :  do_normalize,nij,ws
 
    implicit none
    
@@ -948,6 +949,10 @@ module da_define_structures
       REAL, POINTER    :: vz(:,:,:,:)
       REAL, POINTER    :: corz(:,:,:,:)
       REAL, POINTER    :: corp(:,:)
+
+!_____For wavelet option:
+      REAL, POINTER    ::sd( :,:,:)! 4 3D & 1 2D field   std. dev. sets.
+      REAL, POINTER    ::wsd(:,:,:)! 4 3D & 1 2D wavelet std. dev. sets.
    end type be_type
 
    ! Analysis_Stats maximum-minumum structure.

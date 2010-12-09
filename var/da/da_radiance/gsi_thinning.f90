@@ -38,15 +38,15 @@ module gsi_thinning
   real(r_kind),parameter:: r360  = 360.0_r_kind
   real(r_kind),parameter:: r999  = 999.0_r_kind
   real(r_kind),parameter:: r1000 = 1000.0_r_kind 
-
+ 
   ! lat/lon range inside tile
   real(r_kind) rlat_min,rlat_max,rlon_min,rlon_max,dlat_grid,dlon_grid
-
+  
   type thinning_type
 ! mlat: lat #, mlonx: max lon #, itxmax: grid box #
     integer(i_kind) mlat,maxthin,itxmax,dthin,mlonx,mlony
     integer(i_kind),dimension(0:51):: istart_val
-
+    
 ! mlon(mlat): lon # in each lat   
     integer(i_kind),allocatable,dimension(:):: mlon,icount,ibest_obs
     integer(i_kind),allocatable,dimension(:,:):: isli
@@ -58,18 +58,19 @@ module gsi_thinning
     real(r_kind),allocatable,dimension(:)   :: score_crit
   end type thinning_type
 
-  type(thinning_type), allocatable  :: thinning_grid(:)
+  type(thinning_type), allocatable  :: thinning_grid(:,:)   
   type(thinning_type), allocatable  :: thinning_grid_conv(:)
 
 contains
 
-  subroutine makegrids (n,rmesh)
+  subroutine makegrids (n,rmesh,ifgat)
 ! compute dimention of thinning box
 ! output (mlat,mlonx,istart_val)
     implicit none
 
     integer(i_kind), intent(in) :: n  ! sensor index
     real(r_kind), intent(in) :: rmesh ! thinning box size
+    integer(i_kind), intent(in) :: ifgat
 
     logical odd
     integer(i_kind) i,ii,j,k,nlat,nlon
@@ -80,38 +81,38 @@ contains
     real(r_kind) rkm2dg,glatm,glatx
 
 !   Initialize variables, set constants
-      thinning_grid(n)%dthin = 1
-      thinning_grid(n)%maxthin=thinning_grid(n)%dthin
+      thinning_grid(n,ifgat)%dthin = 1
+      thinning_grid(n,ifgat)%maxthin=thinning_grid(n,ifgat)%dthin
 
-      thinning_grid(n)%istart_val=0
+      thinning_grid(n,ifgat)%istart_val=0
       twopi  = two*pi
       halfpi = pi*half
       rkm2dg = r360/(twopi*rearth_equator)*r1000
 
        dx    = rmesh*rkm2dg
        dy    = dx
-       thinning_grid(n)%mlat  = dlat_grid/dy + half
-       thinning_grid(n)%mlonx = dlon_grid/dx + half
-       delat = dlat_grid/thinning_grid(n)%mlat
-       delonx= dlon_grid/thinning_grid(n)%mlonx
+       thinning_grid(n,ifgat)%mlat  = dlat_grid/dy + half
+       thinning_grid(n,ifgat)%mlonx = dlon_grid/dx + half
+       delat = dlat_grid/thinning_grid(n,ifgat)%mlat
+       delonx= dlon_grid/thinning_grid(n,ifgat)%mlonx
        dgv   = delat*half
 
-       thinning_grid(n)%mlat=max(2,thinning_grid(n)%mlat)
-       thinning_grid(n)%mlonx=max(2,thinning_grid(n)%mlonx)
+       thinning_grid(n,ifgat)%mlat=max(2,thinning_grid(n,ifgat)%mlat)
+       thinning_grid(n,ifgat)%mlonx=max(2,thinning_grid(n,ifgat)%mlonx)
     
-      do ii=1,thinning_grid(n)%maxthin
-       thinning_grid(n)%istart_val(ii+1)=thinning_grid(n)%istart_val(ii)
+      do ii=1,thinning_grid(n,ifgat)%maxthin
+       thinning_grid(n,ifgat)%istart_val(ii+1)=thinning_grid(n,ifgat)%istart_val(ii)
           icnt=0
-          do j = 1,thinning_grid(n)%mlat
+          do j = 1,thinning_grid(n,ifgat)%mlat
              glatx = rlat_min + (j-1)*delat
              glatx = glatx*deg2rad
              glatm = glatx + dgv*deg2rad
              factor = abs(cos(abs(glatm)))
-             mlonj = nint(thinning_grid(n)%mlonx*factor)
+             mlonj = nint(thinning_grid(n,ifgat)%mlonx*factor)
              mlonj = max(2,mlonj)
              do i = 1,mlonj
                 icnt=icnt+1
-                thinning_grid(n)%istart_val(ii+1)=thinning_grid(n)%istart_val(ii+1)+1
+                thinning_grid(n,ifgat)%istart_val(ii+1)=thinning_grid(n,ifgat)%istart_val(ii+1)+1
              enddo
           enddo
       end do
@@ -119,32 +120,32 @@ contains
 ! making thinning box
 ! output: mlon(mlat),glat(mlat),glon(mlonx,mlat),hll(mlonx,mlat)
 
-    allocate(thinning_grid(n)%mlon(thinning_grid(n)%mlat), &
-             thinning_grid(n)%glat(thinning_grid(n)%mlat), &
-             thinning_grid(n)%glon(thinning_grid(n)%mlonx,thinning_grid(n)%mlat), &
-             thinning_grid(n)%hll(thinning_grid(n)%mlonx,thinning_grid(n)%mlat))
+    allocate(thinning_grid(n,ifgat)%mlon(thinning_grid(n,ifgat)%mlat), &
+             thinning_grid(n,ifgat)%glat(thinning_grid(n,ifgat)%mlat), &
+             thinning_grid(n,ifgat)%glon(thinning_grid(n,ifgat)%mlonx,thinning_grid(n,ifgat)%mlat), &
+             thinning_grid(n,ifgat)%hll(thinning_grid(n,ifgat)%mlonx,thinning_grid(n,ifgat)%mlat))
 
 !   Set up thinning grid lon & lat.  The lon & lat represent the location of the
 !   lower left corner of the thinning grid box.
 
-       thinning_grid(n)%itxmax=0
-      do j = 1,thinning_grid(n)%mlat
-       thinning_grid(n)%glat(j) = rlat_min + (j-1)*delat
-       thinning_grid(n)%glat(j) = thinning_grid(n)%glat(j)*deg2rad
-       glatm = thinning_grid(n)%glat(j) + dgv*deg2rad
+       thinning_grid(n,ifgat)%itxmax=0
+      do j = 1,thinning_grid(n,ifgat)%mlat
+       thinning_grid(n,ifgat)%glat(j) = rlat_min + (j-1)*delat
+       thinning_grid(n,ifgat)%glat(j) = thinning_grid(n,ifgat)%glat(j)*deg2rad
+       glatm = thinning_grid(n,ifgat)%glat(j) + dgv*deg2rad
 
        factor = abs(cos(abs(glatm)))
-       mlonj  = nint(thinning_grid(n)%mlonx*factor)     
-       thinning_grid(n)%mlon(j) = max(2,mlonj)
-       delon = dlon_grid/thinning_grid(n)%mlon(j)
+       mlonj  = nint(thinning_grid(n,ifgat)%mlonx*factor)     
+       thinning_grid(n,ifgat)%mlon(j) = max(2,mlonj)
+       delon = dlon_grid/thinning_grid(n,ifgat)%mlon(j)
 
-       thinning_grid(n)%glat(j) = min(max(-halfpi,thinning_grid(n)%glat(j)),halfpi)
-       do i = 1,thinning_grid(n)%mlon(j)
-          thinning_grid(n)%itxmax=thinning_grid(n)%itxmax+1
-          thinning_grid(n)%hll(i,j)=thinning_grid(n)%itxmax
-          thinning_grid(n)%glon(i,j) = rlon_min + (i-1)*delon
-          thinning_grid(n)%glon(i,j) = thinning_grid(n)%glon(i,j)*deg2rad
-          thinning_grid(n)%glon(i,j) = min(max(zero,thinning_grid(n)%glon(i,j)),twopi)
+       thinning_grid(n,ifgat)%glat(j) = min(max(-halfpi,thinning_grid(n,ifgat)%glat(j)),halfpi)
+       do i = 1,thinning_grid(n,ifgat)%mlon(j)
+          thinning_grid(n,ifgat)%itxmax=thinning_grid(n,ifgat)%itxmax+1
+          thinning_grid(n,ifgat)%hll(i,j)=thinning_grid(n,ifgat)%itxmax
+          thinning_grid(n,ifgat)%glon(i,j) = rlon_min + (i-1)*delon
+          thinning_grid(n,ifgat)%glon(i,j) = thinning_grid(n,ifgat)%glon(i,j)*deg2rad
+          thinning_grid(n,ifgat)%glon(i,j) = min(max(zero,thinning_grid(n,ifgat)%glon(i,j)),twopi)
        enddo
        !write(6,'(f10.5,i8,2i10)') glat(j)*rad2deg, mlon(j),hll(1,j),hll(mlon(j),j)
        !write(6,'(10f8.3)')   (glon(i,j)*rad2deg,i=1,mlon(j))
@@ -152,14 +153,14 @@ contains
     end do
 
 !   Allocate  and initialize arrays
-    allocate(thinning_grid(n)%icount(thinning_grid(n)%itxmax))
-    allocate(thinning_grid(n)%ibest_obs(thinning_grid(n)%itxmax))
-    allocate(thinning_grid(n)%score_crit(thinning_grid(n)%itxmax))
+    allocate(thinning_grid(n,ifgat)%icount(thinning_grid(n,ifgat)%itxmax))
+    allocate(thinning_grid(n,ifgat)%ibest_obs(thinning_grid(n,ifgat)%itxmax))
+    allocate(thinning_grid(n,ifgat)%score_crit(thinning_grid(n,ifgat)%itxmax))
 
-    do j=1,thinning_grid(n)%itxmax
-       thinning_grid(n)%icount(j)     = 0
-       thinning_grid(n)%ibest_obs(j)  = 0
-       thinning_grid(n)%score_crit(j) = 9.99e6_r_kind
+    do j=1,thinning_grid(n,ifgat)%itxmax
+       thinning_grid(n,ifgat)%icount(j)     = 0
+       thinning_grid(n,ifgat)%ibest_obs(j)  = 0
+       thinning_grid(n,ifgat)%score_crit(j) = 9.99e6_r_kind
     end do
 
     return
@@ -267,7 +268,7 @@ contains
     return
   end subroutine make3grids
 
-  subroutine map2grids(n,dlat_earth,dlon_earth,crit1,iobs,itx,ithin,itt,iobsout,iuse)
+  subroutine map2grids(n,ifgat,dlat_earth,dlon_earth,crit1,iobs,itx,ithin,itt,iobsout,iuse)
 !$$$  subprogram documentation block
 !                .      .    .                                       .
 ! subprogram:    map2grids
@@ -285,6 +286,7 @@ contains
 !
 !   input argument list:
 !         n      - sensor index
+!     ifgat      - number of time slots for FGAT and 4DVAR 
 !     dlat_earth - earth relative observation latitude (radians)
 !     dlon_earth - earth relative observation longitude (radians)
 !     crit1      - quality indicator for observation (smaller = better)
@@ -300,7 +302,7 @@ contains
     implicit none
     logical, intent(out) :: iuse
     integer(i_kind), intent(out) :: itt,itx
-    integer(i_kind), intent(in)  :: ithin,n
+    integer(i_kind), intent(in)  :: ithin,n,ifgat
     integer(i_kind), intent(inout) :: iobs, iobsout
     real(r_kind),intent(in):: dlat_earth,dlon_earth,crit1
 
@@ -313,49 +315,49 @@ contains
     dlat1=dlat_earth
     dlon1=dlon_earth
 
-    call grdcrd(dlat1,1,thinning_grid(n)%glat,thinning_grid(n)%mlat,1)
+    call grdcrd(dlat1,1,thinning_grid(n,ifgat)%glat,thinning_grid(n,ifgat)%mlat,1)
     iy=int(dlat1)
     dy=dlat1-iy
-    iy=max(1,min(iy,thinning_grid(n)%mlat))
+    iy=max(1,min(iy,thinning_grid(n,ifgat)%mlat))
 
-    call grdcrd(dlon1,1,thinning_grid(n)%glon(1,iy),thinning_grid(n)%mlon(iy),1)
+    call grdcrd(dlon1,1,thinning_grid(n,ifgat)%glon(1,iy),thinning_grid(n,ifgat)%mlon(iy),1)
     ix=int(dlon1)
     dx=dlon1-ix
-    ix=max(1,min(ix,thinning_grid(n)%mlon(iy)))
+    ix=max(1,min(ix,thinning_grid(n,ifgat)%mlon(iy)))
 
     dxx=half-min(dx,one-dx)
     dyy=half-min(dy,one-dy)
     dist1=dxx*dxx+dyy*dyy+half
-    itx=thinning_grid(n)%hll(ix,iy)
-    itt=thinning_grid(n)%istart_val(ithin)+itx
+    itx=thinning_grid(n,ifgat)%hll(ix,iy)
+    itt=thinning_grid(n,ifgat)%istart_val(ithin)+itx
     if(ithin == 0) itt=0
 
 !   Increment obs counter on coarse mesh grid.  Also accumulate observation
 !   score and distance functions
 
-    thinning_grid(n)%icount(itx)=thinning_grid(n)%icount(itx)+1
+    thinning_grid(n,ifgat)%icount(itx)=thinning_grid(n,ifgat)%icount(itx)+1
 !   dist1=one - quarter*(dista + distb)  !dist1 is min at grid box center and 
                                     !ranges from 1 (at corners)to 
                                     !.5 (at center of box)
     crit=crit1*dist1
     iuse=.false.
     
-    if(thinning_grid(n)%icount(itx) == 1)then
+    if(thinning_grid(n,ifgat)%icount(itx) == 1)then
 
 !   Increment obs counter
 
       iuse=.true.
       iobs=iobs+1
-      thinning_grid(n)%score_crit(itx)= crit
-      thinning_grid(n)%ibest_obs(itx) = iobs
+      thinning_grid(n,ifgat)%score_crit(itx)= crit
+      thinning_grid(n,ifgat)%ibest_obs(itx) = iobs
       iobsout=iobs
 
     end if
-    if(crit < thinning_grid(n)%score_crit(itx) .and. thinning_grid(n)%icount(itx) > 1)then
+    if(crit < thinning_grid(n,ifgat)%score_crit(itx) .and. thinning_grid(n,ifgat)%icount(itx) > 1)then
       iuse=.true.
       iobs=iobs+1
-      thinning_grid(n)%score_crit(itx)= crit
-      thinning_grid(n)%ibest_obs(itx)=iobs
+      thinning_grid(n,ifgat)%score_crit(itx)= crit
+      thinning_grid(n,ifgat)%ibest_obs(itx)=iobs
       iobsout=iobs
     end if
 
@@ -455,13 +457,13 @@ contains
     return
   end subroutine map2grids_conv
 
-  subroutine map2tgrid(n,dlat_earth,dlon_earth,dist1,crit1,itx,ithin,itt,iuse)
+  subroutine map2tgrid(n,ifgat,dlat_earth,dlon_earth,dist1,crit1,itx,ithin,itt,iuse)
 !   input argument list:
 !     dlat_earth - earth relative observation latitude (radians)
 !     dlon_earth - earth relative observation longitude (radians)
 !     crit1      - quality indicator for observation (smaller = better)
 !     ithin      - number of obs to retain per thinning grid box
-!
+!     ifgat      - number of time slots for FGAT and 4DVAR 
 !   output argument list:
 !     iobs  - observation counter
 !     itx   - combined (i,j) index of observation on thinning grid
@@ -471,7 +473,7 @@ contains
 !     
     implicit none
     logical,intent(out):: iuse
-    integer(i_kind),intent(in):: ithin,n
+    integer(i_kind),intent(in):: ithin,n,ifgat
     integer(i_kind),intent(out):: itt,itx
     real(r_kind),intent(in):: dlat_earth,dlon_earth,crit1
     real(r_kind),intent(out):: dist1
@@ -485,24 +487,24 @@ contains
     dlat1=dlat_earth
     dlon1=dlon_earth
     
-    call grdcrd(dlat1,1,thinning_grid(n)%glat,thinning_grid(n)%mlat,1)
+    call grdcrd(dlat1,1,thinning_grid(n,ifgat)%glat,thinning_grid(n,ifgat)%mlat,1)
     iy=int(dlat1)
     dy=dlat1-iy
-    iy=max(1,min(iy,thinning_grid(n)%mlat))
+    iy=max(1,min(iy,thinning_grid(n,ifgat)%mlat))
 
-    call grdcrd(dlon1,1,thinning_grid(n)%glon(1,iy),thinning_grid(n)%mlon(iy),1)
+    call grdcrd(dlon1,1,thinning_grid(n,ifgat)%glon(1,iy),thinning_grid(n,ifgat)%mlon(iy),1)
     ix=int(dlon1)
     dx=dlon1-ix
-    ix=max(1,min(ix,thinning_grid(n)%mlon(iy)))
+    ix=max(1,min(ix,thinning_grid(n,ifgat)%mlon(iy)))
 
     dxx=half-min(dx,one-dx)
     dyy=half-min(dy,one-dy)
     dist1=dxx*dxx+dyy*dyy+half
-    itx=thinning_grid(n)%hll(ix,iy)
-    itt=thinning_grid(n)%istart_val(ithin)+itx
+    itx=thinning_grid(n,ifgat)%hll(ix,iy)
+    itt=thinning_grid(n,ifgat)%istart_val(ithin)+itx
     if(ithin == 0) itt=0
     iuse=.true.
-    if(dist1*crit1 > thinning_grid(n)%score_crit(itx) .and. thinning_grid(n)%icount(itx) == 0)iuse=.false.
+    if(dist1*crit1 > thinning_grid(n,ifgat)%score_crit(itx) .and. thinning_grid(n,ifgat)%icount(itx) == 0)iuse=.false.
 
     !write(6,'(a,3f10.3)') 'dlat_earth dlon_earth crit1 ',dlat_earth*rad2deg,dlon_earth*rad2deg,crit1
     !write(6,'(a,2i5,3f10.3,i10,e12.5,2x,L)') 'ix iy',ix,iy,dx,dy,dist1,itx,score_crit(itx),iuse
@@ -547,9 +549,10 @@ contains
   return
 end subroutine grdcrd 
 
-  subroutine checkob(n,dist1,crit1,itx,iuse)
+  subroutine checkob(n,ifgat,dist1,crit1,itx,iuse)
 !
 !   input argument list:
+!     ifgat  - number of time slots for FGAT and 4DVAR
 !     dist1  - quality indicator for distance (smaller = better)
 !     crit1      - quality indicator for observation (smaller = better)
 !     itx   - combined (i,j) index of observation on thinning grid
@@ -560,19 +563,20 @@ end subroutine grdcrd
 !
     implicit none
     logical,intent(inout):: iuse
-    integer(i_kind),intent(in):: n,itx
+    integer(i_kind),intent(in):: n,itx,ifgat
     real(r_kind),intent(in):: dist1,crit1
 
 !   If data (no thinning), simply return to calling routine
-    if(.not. iuse .or. thinning_grid(n)%icount(itx)==0)return
-    if(crit1*dist1 > thinning_grid(n)%score_crit(itx))iuse=.false.
+    if(.not. iuse .or. thinning_grid(n,ifgat)%icount(itx)==0)return
+    if(crit1*dist1 > thinning_grid(n,ifgat)%score_crit(itx))iuse=.false.
 
     return
   end subroutine checkob
 
-  subroutine finalcheck(n,dist1,crit1,iobs,itx,iobsout,iuse,sis)
+  subroutine finalcheck(n,ifgat,dist1,crit1,iobs,itx,iobsout,iuse,sis)
 !
 !   input argument list:
+!     ifgat  - number of time slots for FGAT and 4DVAR 
 !     dist1  - quality indicator for distance (smaller = better)
 !     crit1  - quality indicator for observation (smaller = better)
 !     itx    - combined (i,j) index of observation on thinning grid
@@ -588,7 +592,7 @@ end subroutine grdcrd
     implicit none
     logical,intent(inout):: iuse
     integer(i_kind),intent(inout):: iobs,iobsout
-    integer(i_kind),intent(in):: n,itx
+    integer(i_kind),intent(in):: n,itx,ifgat
     real(r_kind),intent(in):: dist1,crit1
     character(20),intent(in):: sis
 
@@ -601,25 +605,25 @@ end subroutine grdcrd
 
     crit=crit1*dist1
 
-    if(thinning_grid(n)%icount(itx) == 0)then
+    if(thinning_grid(n,ifgat)%icount(itx) == 0)then
 
 !   Increment obs counter
 
-      if(iobs < thinning_grid(n)%itxmax)then
+      if(iobs < thinning_grid(n,ifgat)%itxmax)then
        iobs=iobs+1
        iobsout=iobs
-       thinning_grid(n)%score_crit(itx)= crit
-       thinning_grid(n)%ibest_obs(itx) = iobs
-       thinning_grid(n)%icount(itx)=thinning_grid(n)%icount(itx)+1
+       thinning_grid(n,ifgat)%score_crit(itx)= crit
+       thinning_grid(n,ifgat)%ibest_obs(itx) = iobs
+       thinning_grid(n,ifgat)%icount(itx)=thinning_grid(n,ifgat)%icount(itx)+1
       else
        iuse = .false.
-       write(6,*)' ndata > maxobs when reading data for ',sis,thinning_grid(n)%itxmax
+       write(6,*)' ndata > maxobs when reading data for ',sis,thinning_grid(n,ifgat)%itxmax
       end if
 
-    else if(crit < thinning_grid(n)%score_crit(itx))then
-      thinning_grid(n)%score_crit(itx)= crit
-      iobsout=thinning_grid(n)%ibest_obs(itx)
-      thinning_grid(n)%icount(itx)=thinning_grid(n)%icount(itx)+1
+    else if(crit < thinning_grid(n,ifgat)%score_crit(itx))then
+      thinning_grid(n,ifgat)%score_crit(itx)= crit
+      iobsout=thinning_grid(n,ifgat)%ibest_obs(itx)
+      thinning_grid(n,ifgat)%icount(itx)=thinning_grid(n,ifgat)%icount(itx)+1
     else
       iuse = .false.
     end if
@@ -628,14 +632,14 @@ end subroutine grdcrd
     return
   end subroutine finalcheck
 
-  subroutine destroygrids(n)
+  subroutine destroygrids(n,ifgat)
     implicit none
-    integer(i_kind), intent(in) :: n
-    deallocate(thinning_grid(n)%mlon,thinning_grid(n)%glat, &
-               thinning_grid(n)%glon,thinning_grid(n)%hll)
-    deallocate(thinning_grid(n)%icount)
-    deallocate(thinning_grid(n)%ibest_obs)
-    deallocate(thinning_grid(n)%score_crit)
+    integer(i_kind), intent(in) :: n,ifgat
+    deallocate(thinning_grid(n,ifgat)%mlon,thinning_grid(n,ifgat)%glat, &
+               thinning_grid(n,ifgat)%glon,thinning_grid(n,ifgat)%hll)
+    deallocate(thinning_grid(n,ifgat)%icount)
+    deallocate(thinning_grid(n,ifgat)%ibest_obs)
+    deallocate(thinning_grid(n,ifgat)%score_crit)
     return
   end subroutine destroygrids
 
@@ -659,10 +663,10 @@ end subroutine grdcrd
     return
   end subroutine cleangrids_conv
 
-  subroutine destroy_sfc(n)
+  subroutine destroy_sfc(n,ifgat)
     implicit none
-    integer(i_kind), intent(in) :: n
-    deallocate(thinning_grid(n)%sli,thinning_grid(n)%sno,thinning_grid(n)%isli)
+    integer(i_kind), intent(in) :: n,ifgat
+    deallocate(thinning_grid(n,ifgat)%sli,thinning_grid(n,ifgat)%sno,thinning_grid(n,ifgat)%isli)
     return
   end subroutine destroy_sfc
 

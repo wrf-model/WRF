@@ -11,7 +11,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
    character(len=200)          :: filename
-   integer                     :: i, j, n, ios
+   integer                     :: i, j, n, ios, ifgat
    logical                     :: lprinttovs 
 
    ! thinning variables
@@ -79,10 +79,12 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
       dlat_grid = rlat_max - rlat_min
       dlon_grid = rlon_max - rlon_min
 
-      allocate(thinning_grid(iv%num_inst))
-      do n=1,iv%num_inst
-          call makegrids (n,thinning_mesh(n))
-      end do
+      allocate(thinning_grid(iv%num_inst,num_fgat_time))
+      do ifgat=1,num_fgat_time
+         do n=1,iv%num_inst
+            call makegrids (n,thinning_mesh(n),ifgat)
+         end do
+      end do 
    end if
 
    !-------------------------------------------------------------------
@@ -135,30 +137,26 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
       if (use_airsobs) then
          write(unit=stdout,fmt='(a)') 'Reading airs 1b data from airs.bufr'
-         filename = ' '
-         write(filename(1:9), fmt='(a)') 'airs.bufr'
+         filename = 'airs'
          call da_read_obs_bufrairs ('airs     ',iv, filename)
       end if
 
       if (use_eos_amsuaobs) then
          write(unit=stdout,fmt='(a)') 'Reading eos_amsua 1b data from airs.bufr'
-         filename = ' '
-         write(filename(1:9), fmt='(a)') 'airs.bufr'
+         filename = 'airs'
          call da_read_obs_bufrairs ('eos_amsua',iv, filename)
       end if
 
       if (use_hsbobs) then
          write(unit=stdout,fmt='(a)') 'Reading hsb 1b data from airs.bufr'
-         filename = ' '
-         write(filename(1:9), fmt='(a)') 'airs.bufr'
+         filename = 'airs'
          call da_read_obs_bufrairs ('hsb      ',iv, filename)
       end if
 
       if (use_ssmisobs) then
          write(unit=stdout,fmt='(a)') 'Reading ssmis data from ssmis.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'ssmis.bufr'
-         call da_read_obs_bufrssmis ('ssmis',iv, filename)
+         filename = 'ssmis'
+         call da_read_obs_bufrssmis ('ssmis    ',iv, filename)
       end if
 
    end if
@@ -195,8 +193,10 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    end if
 
    if (thinning) then
-      do n=1,iv%num_inst
-         call destroygrids (n)
+      do ifgat=1,num_fgat_time
+           do n=1,iv%num_inst
+              call destroygrids (n,ifgat)
+           end do
       end do
       deallocate(thinning_grid)
    end if

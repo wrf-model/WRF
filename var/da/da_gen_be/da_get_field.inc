@@ -32,11 +32,15 @@ subroutine da_get_field( input_file, var, field_dims, dim1, dim2, dim3,k,field)
 
    length = len_trim(input_file)
    rcode = nf_open( input_file(1:length), NF_NOwrite, cdfid)
+   if (rcode /= 0) then
+      write(message(1),'(3a,i0)')' nf_open(',input_file(1:length),') returned ',rcode
+      call da_error(__FILE__,__LINE__,message(1:1))
+   end if
 
    !  Check variable is in file:
    rcode = nf_inq_varid( cdfid, var, id_var)
    if (rcode /= 0) then
-      write(unit=message(1),fmt='(2a)')var, ' variable is not in input file'
+      write(message(1),'(3a)')var,' variable is not in input file ',input_file(1:length)
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 

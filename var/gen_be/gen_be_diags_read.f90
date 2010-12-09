@@ -316,6 +316,8 @@ program gen_be_diags_read
 
       deallocate (scale_length)
 
+   else
+      write(6,'(a,": uh_method=",a," not implemented.")')__FILE__,uh_method
    endif
 
    close(iunit)

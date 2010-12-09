@@ -11,36 +11,35 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
    integer, intent(in)      :: outunit                    ! Output unit number.
    integer, intent(in)      :: nk                         ! Number of vertical levels/modes.
    integer    , intent(in)  :: n_smth_sl                  ! Number of smoothing. 0: no smoothig
-   character*5, intent(in)  :: uh_method
+   character*7, intent(in)  :: uh_method                  ! Uh method (power, scale, wavelet)
    character*10, intent(in) :: variable                   ! Variable name.
-
-   character(len=filename_len) :: filename                   ! Input filename.
-   character*10             :: cvar                       ! Dummy variable name.
+   character, save          :: namw1                      ! Test namw.
+   character(len=filename_len) :: filename                ! Input filename.
+   character*10, save       :: cvar                       ! Dummy variable name.
    character*2              :: ck                         ! Loop index -> character.
+   integer                  :: iunit
    integer                  :: k                          ! Loop counter.
    integer                  :: kdum                       ! Dummy vertical index.
+   integer, save            :: lf1,nb1,nij1(0:1)          ! Test lf, nb & nij.
    integer                  :: max_wavenumber             ! Smallest scale required (ni/2 - 1).
+   logical, save            :: do_normalize1              ! Test do_normalize.
    real                     :: ml                         ! Gradient (read from file but not used).
    real                     :: mean_scale                 ! Average scale between points.
-   logical                  :: first_time                 ! True if first time through loop
-
+   logical, save            :: first_time=.true.          ! True if first time called.
+   real                     :: scale_length(nk)
+   real                     :: sl_smth(nk)
    real, allocatable        :: total_power(:)             ! Total Power spectrum.
-   real, allocatable        :: scale_length(:)
-   real, allocatable        :: sl_smth(:)
-   
-   integer :: iunit
 
-   first_time = .true.
+   call da_get_unit(iunit)
 
-   if (uh_method .eq. 'power') then
+   if (trim(uh_method) .eq. 'power') then
       do k = 1, nk
          write(ck,'(i2)')k
          if (k < 10) ck = '0'//ck(2:2)
 
-         filename = trim(variable)//'/'//trim(variable)
-         filename = trim(filename)//'.'//ck//'.spectrum'
+         filename = trim(variable)//'/'//trim(variable) &
+                                  //'.'//ck//'.spectrum'
 
-         call da_get_unit(iunit)
          open (iunit, file = filename, form='unformatted')
          read(iunit)cvar
          if (trim(cvar) /=  trim(variable)) then
@@ -54,31 +53,22 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
              (/"Inconsistent vertical label"/))
          end if
 
-         if (first_time) then
-            allocate(total_power(0:max_wavenumber))
-         end if
+         allocate(total_power(0:max_wavenumber))
 
-         read(iunit)total_power(:)
+         read(iunit)total_power
          close(iunit)
-         call da_free_unit(iunit)
 
          write(outunit)variable
          write(outunit)max_wavenumber, k
          write(outunit) .false. ! preserve file format
-         write(outunit)total_power(:)
+         write(outunit)total_power
 
-         first_time = .false.
+         deallocate(total_power)
+
       end do
 
-      deallocate(total_power)
+   else if (trim(uh_method) == 'scale') then
 
-   else if (uh_method == 'scale   ') then
-      if (first_time) then
-         allocate(scale_length(1:nk))
-         allocate(sl_smth(1:nk))
-      end if
-
-      call da_get_unit(iunit)
       filename = trim(variable)//'/'//'sl_print.'//trim(variable)
       open (iunit, file = filename)
 
@@ -110,13 +100,58 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
      
       write(outunit) variable
       write(outunit) scale_length
-
       close(iunit)
-      call da_free_unit(iunit)
 
-      deallocate (scale_length)
+   elseif (trim(uh_method) == 'wavelet') then
+      if( first_time )then
+         write(outunit) len_trim('wavelet')
+         write(outunit) 'wavelet'
+         cvar=trim(variable)
+      endif
+      write(outunit) len_trim(variable),nk
+      write(outunit) trim(variable)
+      do k=1, nk
+         write(ck,'(i0)')k
+         filename = "gen_be_stage4_regional/dir."//trim(variable)//trim(ck)//"/wmom"
+         open(iunit,action="read",file=trim(filename),form="unformatted",status="old")
+         read(iunit)do_normalize,namw,lf,nb
+         if( first_time )then		! Use same basis forall {variable,k}:
+            do_normalize1=do_normalize
+            namw1=namw
+            lf1=lf
+            nb1=nb
+            write(outunit)do_normalize,namw,lf,nb
+            allocate(nij(0:nb,0:1,0:2))
+         elseif( do_normalize.neqv.do_normalize1 .or. namw/=namw1 .or. lf/=lf1 .or. nb/=nb1 )then
+            write(message(1), &
+               '("{nb namw lf do_normalize}[",a,",k=",i0,"]/{nb namw lf do_normalize}[",a,",1]={",i0,a,i0,l2,"}/{",i0,a,i0,l2,"}.")') &
+               trim(variable),k,trim(cvar),nb,namw,lf,do_normalize,nb1,namw1,lf1,do_normalize1
+            call da_error(__FILE__,__LINE__,message(1:1))
+         endif
+         read(iunit)nij
+         if( first_time )then
+            nij1=nij(0,:,0)
+            write(outunit)nij
+            allocate(wsd(nij(0,1,2),nij(0,0,2)))
+            if( do_normalize )allocate(sd(nij(0,1,0),nij(0,0,0)))
+            first_time=.false.
+         elseif( any(nij(0,:,0)/=nij1) )then
+            write(message(1), &
+               '("{ni nj}[",a,",k=",i0,"]/{ni nj}[",a,",1]={",i0,1x,i0,"}/{",i0,1x,i0,"}.")') &
+               trim(variable),k,trim(cvar),nij(0,:,0),nij1
+            call da_error(__FILE__,__LINE__,message(1:1))
+         endif
+         read(iunit)wsd
+         write(outunit)wsd
+         if( do_normalize )then
+            read(iunit)sd
+            write(outunit)sd
+         endif
+         close(iunit)
+      end do				! do k=1,nk
+!     deallocate(nij,sd,wsd)
    end if
 
+   call da_free_unit(iunit)
+
 end subroutine da_readwrite_be_stage4
-
-

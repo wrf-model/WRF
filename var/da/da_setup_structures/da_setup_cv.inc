@@ -32,7 +32,15 @@ subroutine da_setup_cv(be)
    else
       iy = ite - its + 1
       jx = jte - jts + 1
-      ij = iy * jx
+      if( use_rf )then		! Use recursive filters:
+         ij = iy * jx		! cv space size same as state space size
+      else			! cv space size slightly larger for dwtai2():
+         ij = size(be%wsd,1)*size(be%wsd,2)
+!        call da_setup_cv_iyjx2ij(iy,jx,ij,nij,nb,lf,"tile")
+         write(*,&
+            '("da_setup_cv: using ",i0," 2D ",A1,i0," wavelets in ",i0," bands.")')&
+            ij,namw,lf,nb
+      endif			! if( use_rf )
       be % cv % size1 = ij * be % v1 % mz
       be % cv % size2 = ij * be % v2 % mz
       be % cv % size3 = ij * be % v3 % mz
@@ -93,7 +101,11 @@ subroutine da_setup_cv(be)
    if (.not. global) then
       iy = ide - ids + 1
       jx = jde - jds + 1
-      ij = iy * jx
+      if( use_rf )then
+         ij = iy * jx
+      else
+         ij = size(be%wsd,1)*size(be%wsd,2)
+      endif
 #ifdef CLOUD_CV
       cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
                                  be % v4 % mz + be % v5 % mz + be % v6 % mz + be % v7 % mz +  be % cv % size8 )

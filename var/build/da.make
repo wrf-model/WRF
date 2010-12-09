@@ -46,6 +46,7 @@ WRFVAR_OBJS = \
    da_rf_cv3.o \
    da_rfz_cv3.o \
    da_recursive_filter.o \
+   da_wavelet.o \
    da_interpolation.o \
    da_grid_definitions.o \
    da_statistics.o \
@@ -155,9 +156,9 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
                 da_control.o $(WRFVAR_LIBS) da_wrfvar_main.o
 	$(RM) $@
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
-          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o $(WRFPLUS_DIR)/main/module_wrf_top.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} -L$(WRFPLUS_DIR)/main -lwrflib $(LIB) ; \
+          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o $(WRFPLUS_DIR)/main/module_wrf_top.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} -L$(WRFPLUS_DIR)/main -lwrflib $(LIB) $(WAVELET_LIB) ; \
         else                                 \
-          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} $(LIB) ; \
+          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} $(LIB) $(WAVELET_LIB) ; \
         fi
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 

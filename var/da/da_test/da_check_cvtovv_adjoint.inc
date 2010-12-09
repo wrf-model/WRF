@@ -92,7 +92,8 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
     if( num_procs == 1) then
       write(unit=stdout, fmt='(a,1pe22.14)') &
          'Single Domain: < Vv, Vv >     = ', adj_par_lhs, &
-         'Single Domain: < cv_adj, cv > = ', adj_par_rhs
+         'Single Domain: < cv_adj, cv > = ', adj_par_rhs, &
+         '    <cv_adj,cv_adj>/<Vv,Vv>-1 = ', sum(cv2**2)/adj_par_lhs-1.
     else
       write(unit=stdout, fmt='(/a/,a/)')&
         'It is Multi Processor Run: ',&

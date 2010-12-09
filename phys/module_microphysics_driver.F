@@ -40,17 +40,20 @@ SUBROUTINE microphysics_driver(                                          &
                       ,hailnc,    hailncv                                &
                       ,graupelnc, graupelncv                             &
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
-                                                                         )
+! YLIN
+! Added the RI_CURR array to the call
+                      ,ri_curr                                           &
+                                                   )
 ! Framework
 #if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
-                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07  &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM
 #else
    USE module_state_description, ONLY :                                  &
-                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07  &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM
@@ -64,6 +67,7 @@ SUBROUTINE microphysics_driver(                                          &
 
    USE module_mp_kessler
    USE module_mp_lin
+   USE module_mp_sbu_ylin
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE module_mp_wsm6
@@ -307,6 +311,11 @@ SUBROUTINE microphysics_driver(                                          &
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
          INTENT(IN) :: mu
+! YLIN
+! Added RI_CURR similar to microphysics fields above
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: ri_curr
 
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                   &
@@ -711,6 +720,48 @@ SUBROUTINE microphysics_driver(                                          &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling lin_et_al' )
              ENDIF
+
+       CASE (SBU_YLINSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling sbu_ylin' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR )                           .AND.  &
+                  PRESENT( RI_CURR )                           .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( Z       ) ) THEN
+               CALL sbu_ylin(                                       &
+                  TH=th                                             &
+                 ,QV=qv_curr                                        &
+                 ,QL=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,RI3D=ri_curr                                      &
+!                 ,QLSINK=qlsink                                     &
+                 ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
+                 ,HT=ht, DZ8W=dz8w                                  &
+!                 , GRAV=G,  CP=cp                  &
+!                 ,RAIR=r_d, RVAPOR=R_v                              &
+!                 ,XLS=xls, XLV=xlv, XLF=xlf                         &
+!                 ,RHOWATER=rhowater, RHOSNOW=rhosnow                &
+!                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+!                 ,SVP3=svp3,SVPT0=svpt0                             &
+                 ,RAINNC=rainnc, RAINNCV=rainncv                    &
+!                 ,SNOWNC=snownc, SNOWNCV=snowncv                    &
+!                 ,GRAUPELNC=graupelnc, GRAUPELNCV=graupelncv, SR=sr &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+!                 ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   &
+!                 ,F_QG=f_qg                                         &
+!                 ,F_QNDROP=f_qndrop                      &
+!                 ,QG=qg_curr                                        &
+!                 ,QNDROP=qndrop_curr                                &
+                                                                     )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling sbu_ylin' )
+             ENDIF
+
 
         CASE (WSM3SCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm3' )

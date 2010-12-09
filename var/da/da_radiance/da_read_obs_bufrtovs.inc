@@ -405,7 +405,7 @@ bufrfile:  do ibufr=1,numbufr
             timedif = 0.0 !2.0_r_kind*abs(tdiff)        ! range:  0 to 6
             terrain = 0.01_r_kind*abs(bfr1bhdr(13))
             crit = 1.0 !0.01_r_kind+terrain + timedif !+ 10.0_r_kind*float(iskip)
-            call map2grids(inst,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
+            call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
             if (.not. iuse) then
                num_tovs_thinned=num_tovs_thinned+1
                cycle
@@ -471,18 +471,22 @@ end do bufrfile
 
       ! Get minimum crit and associated processor index.
       j = 0
-      do n = 1, iv%num_inst
-         j = j + thinning_grid(n)%itxmax
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            j = j + thinning_grid(n,ifgat)%itxmax
+         end do
       end do
 
       allocate ( in  (j) )
       allocate ( out (j) )
 
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            in(j) = thinning_grid(n)%score_crit(i) 
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               in(j) = thinning_grid(n,ifgat)%score_crit(i) 
+            end do
          end do
       end do
       call mpi_reduce(in, out, j, true_mpi_real, mpi_min, root, comm, ierr)
@@ -490,10 +494,12 @@ end do bufrfile
       call wrf_dm_bcast_real (out, j)
 
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            if ( ABS(out(j)-thinning_grid(n)%score_crit(i)) > 1.0E-10 ) thinning_grid(n)%ibest_obs(i)  = 0
+      do ifgat = 1, num_fgat_time 
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               if ( ABS(out(j)-thinning_grid(n,ifgat)%score_crit(i)) > 1.0E-10 ) thinning_grid(n,ifgat)%ibest_obs(i)  = 0
+            end do
          end do
       end do
 
@@ -509,15 +515,16 @@ end do bufrfile
       num_tovs_used_tmp = num_tovs_used
       do j = 1, num_tovs_used_tmp
          n = p%sensor_index
+         ifgat = p%ifgat 
          found = .false.
 
-         do i = 1, thinning_grid(n)%itxmax
-            if ( thinning_grid(n)%ibest_obs(i) == j .and. thinning_grid(n)%score_crit(i) < 9.99e6_r_kind ) then
+         do i = 1, thinning_grid(n,ifgat)%itxmax
+            if ( thinning_grid(n,ifgat)%ibest_obs(i) == j .and. thinning_grid(n,ifgat)%score_crit(i) < 9.99e6_r_kind ) then
                found = .true.
                exit
             endif
          end do 
-
+        
          ! free current data
          if ( .not. found ) then
             current => p
@@ -548,7 +555,7 @@ end do bufrfile
             prev => p
             p => p%next
          endif
-
+        
       end do
 
    endif  ! End of thinning

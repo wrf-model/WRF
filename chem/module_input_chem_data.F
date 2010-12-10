@@ -351,7 +351,10 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
   case (GOCART_SIMPLE)
      call wrf_debug("setup_profile_maps: nothing done for gocart simple")
-
+  case (CHEM_VASH)
+     call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
+  case (DUST)
+     call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (MOZART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozart_kpp")
 
@@ -1188,6 +1191,10 @@ SUBROUTINE input_chem_profile (si_grid)
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_co ) = 0.08
    ELSE IF ( si_grid%chem_opt == CHEM_TRACE2 ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_TRACER_1 ) = 0.08
+   ELSE IF ( si_grid%chem_opt == CHEM_VASH ) THEN
+      si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
+   ELSE IF ( si_grid%chem_opt == DUST ) THEN
+      si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
    ELSE IF ( si_grid%chem_opt == GOCART_SIMPLE ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:num_chem) = 1.e-12
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 1.e-6
@@ -1900,6 +1907,10 @@ SUBROUTINE input_chem_profile (si_grid)
           i_bdy_method = 5
       else if (config_flags%chem_opt == GOCART_SIMPLE) then
           i_bdy_method = 7
+      else if (config_flags%chem_opt == DUST) then
+          i_bdy_method = 7
+      else if (config_flags%chem_opt == CHEM_VASH) then
+          i_bdy_method = 8
       end if
       if (have_bcs_chem) i_bdy_method =6
       if (ic .lt. param_first_scalar) i_bdy_method = 0
@@ -1956,6 +1967,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 7) then
                    CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 8) then
+                   chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
                 else
@@ -2001,6 +2014,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bye(i,k,1),chem_btye(i,k,1),dt,ic)
                 else if (i_bdy_method .eq. 7) then
                    CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 8) then
+                   chem(i,k,j) = 0.
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2045,6 +2060,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxs(j,k,1),chem_btxs(j,k,1),dt,ic)
                 else if (i_bdy_method .eq. 7) then
                    CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 8) then
+                   chem(i,k,j) = 0.
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2089,6 +2106,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxe(j,k,1),chem_btxe(j,k,1),dt,ic)
                 else if (i_bdy_method .eq. 7) then
                    CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 8) then
+                   chem(i,k,j) = 0.
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2815,7 +2834,10 @@ SUBROUTINE input_chem_profile (si_grid)
 
      case (CBM4_KPP)
         get_last_gas = p_ho2
-
+     case (CHEM_VASH)
+        get_last_gas = 0
+     case (DUST)
+        get_last_gas = 0
      case (MOZART_KPP)
         get_last_gas = p_meko2
 

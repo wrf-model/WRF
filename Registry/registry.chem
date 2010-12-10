@@ -77,6 +77,18 @@ state    real  e_ecc          i+jf     emis_ant     1         Z      i5     "E_E
 state    real  e_bc          i+jf     emis_ant     1         Z      i5     "E_BC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_oc          i+jf     emis_ant     1         Z      i5     "E_OC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_sulf          i+jf     emis_ant     1         Z      i5     "E_sulf"                "EMISSIONS NO2"                 "mol km^-2 hr^-1"
+# volcanic ash emissions
+state    real  e_vash1          i+jf     emis_ant     1         Z      i5h    "E_VASH1"                "EMISSIONS VOLCANIC ASH BIN 1"                 "ug/m3 m/s"
+state    real  e_vash2          i+jf     emis_ant     1         Z      i5     "E_VASH2"                "EMISSIONS VOLCANIC ASH BIN 2"                 "ug/m3 m/s"
+state    real  e_vash3          i+jf     emis_ant     1         Z      i5     "E_VASH3"                "EMISSIONS VOLCANIC ASH BIN 3"                 "ug/m3 m/s"
+state    real  e_vash4          i+jf     emis_ant     1         Z      i5     "E_VASH4"                "EMISSIONS VOLCANIC ASH BIN 4"                 "ug/m3 m/s"
+state    real  e_vash5          i+jf     emis_ant     1         Z      i5     "E_VASH5"                "EMISSIONS VOLCANIC ASH BIN 5"                 "ug/m3 m/s"
+state    real  e_vash6          i+jf     emis_ant     1         Z      i5     "E_VASH6"                "EMISSIONS VOLCANIC ASH BIN 6"                 "ug/m3 m/s"
+state    real  e_vash7          i+jf     emis_ant     1         Z      i5     "E_VASH7"                "EMISSIONS VOLCANIC ASH BIN 7"                 "ug/m3 m/s"
+state    real  e_vash8          i+jf     emis_ant     1         Z      i5     "E_VASH8"                "EMISSIONS VOLCANIC ASH BIN 8"                 "ug/m3 m/s"
+state    real  e_vash9          i+jf     emis_ant     1         Z      i5     "E_VASH9"                "EMISSIONS VOLCANIC ASH BIN 9"                 "ug/m3 m/s"
+state    real  e_vash10         i+jf     emis_ant     1         Z      i5     "E_VASH10"               "EMISSIONS VOLCANIC ASH BIN 10"                 "ug/m3 m/s"
+
 
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
@@ -324,10 +336,16 @@ state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACK
 state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"      "volume mixing ratio"
 
 #
+# following used for volcanic eruptions only
+#
+state    real  ash_fall     ij      misc        1         -      h        "ASH_FALL"               "VOLCANIC ASH FALL"                 "kg/m2"
+state    real  erup_beg     ij      misc        1         -      i5       "ERUP_BEG"               "START TIME OF ERUPTION"        "?"
+state    real  erup_end     ij      misc        1         -      i5       "ERUP_END"               "END TIME OF ERUPTION"        "?"
 #
 # following used for output to look at all kinds of stuff
 state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
 state    real  cu_co_ten      ikj     misc        1         -      -        "CU_CO_TEN"             "CONV. TRANSPORT FOR CO"              "?"
+
 # deposition velocities for diagnostic package, feel free to add if you like!
 #
 state    real    -           i%jf      dvel           -         -     -    -      "deposition velocities"           ""                                       
@@ -635,6 +653,19 @@ state   real   c10h16      ikjftb   chem        1         -   irhusdf=(bdy_inter
 state   real   terpo2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "terpo2"        "TERPO2 concentration"        "ppmv"
 state   real   tolo2       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "tolo2"         "TOLO2 concentration"        "ppmv"
 state   real   xoh         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "xoh"           "XOH concentration"        "ppmv"
+#volcanic ash variables inside the chem array...
+#
+state   real   vash_1    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_1"             "vash1    concentration"        "ug/m3"
+state   real   vash_2    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_2"             "vash2  concentration  "        "ug/m3"
+state   real   vash_3    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_3"             "vash3    concentration"        "ug/m3"
+state   real   vash_4    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_4"             "vash4    concentration"        "ug/m3"
+state   real   vash_5    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_5"             "vash5    concentration"        "ug/m3"
+state   real   vash_6    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_6"             "vash6    concentration"        "ug/m3"
+state   real   vash_7    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_7"             "vash7    concentration"        "ug/m3"
+state   real   vash_8    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_8"             "vash8    concentration"        "ug/m3"
+state   real   vash_9    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_9"             "vash9    concentration"        "ug/m3"
+state   real   vash_10    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "vash_10"             "vash10    concentration"        "ug/m3"
+
 
 #tracer variables inside the chem array...for ensemble run or not
 #
@@ -1201,6 +1232,11 @@ package   gocartradm2_kpp     chem_opt==302                   -             chem
 
 package   gocartradm2     chem_opt==303                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
 
+# volcanic ash for ash-fall and conc prediction, not other aerosols in this option (so for other "400" options)
+package   chem_vash   chem_opt==400              -             chem:vash_1,vash_2,vash_3,vash_4,vash_5,vash_6,vash_7,vash_8,vash_9,vash_10
+# dust only (per AFWA request)
+package   dust   chem_opt==401              -             chem:dust_1,dust_2,dust_3,dust_4,dust_5
+
 #emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
@@ -1210,6 +1246,8 @@ package   ecptec          emiss_opt==5                   -             emis_ant:
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10
 package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16
 package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
+package   vash    emiss_opt==9                   -             emis_ant:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
+
 
 #
 #package   seasalt_pnnl    emiss_ssalt_opt==1                   -             -

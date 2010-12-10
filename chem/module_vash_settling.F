@@ -1,17 +1,17 @@
-MODULE MODULE_GOCART_SETTLING
+MODULE MODULE_VASH_SETTLING
 
 CONTAINS
 
-SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
-         chem,rho_phy,dz8w,p8w,p_phy,         &
-         dustin,seasin,dx,g, &
+SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
+         chem,rho_phy,dz8w,p8w,p_phy,                                      &
+         ash_fall,dx,g,                                                    &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
   USE module_configure
   USE module_state_description
-  USE module_data_gocart_dust
-  USE module_data_gocart_seas
+! USE module_data_gocart_dust
+! USE module_data_gocart_seas
   USE module_model_constants, ONLY: mwdry
   IMPLICIT NONE
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -26,53 +26,48 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
          INTENT(INOUT ) ::                                   chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) ::  t_phy,p_phy,dz8w,p8w,rho_phy
-   REAL,  DIMENSION( ims:ime , jms:jme, 5 ),                        &
-          INTENT(IN   ) ::  dustin,seasin
+   REAL,  DIMENSION( ims:ime , jms:jme ),                        &
+          INTENT(INOUT   ) ::  ash_fall
 
   REAL, INTENT(IN   ) :: dt,dx,g
-  integer :: kkk,nmx,i,j,k,kk,lmx,iseas,idust
+  integer :: nmx,i,j,k,kk,lmx,iseas,idust
   real*8, DIMENSION (1,1,kte-kts+1) :: tmp,airden,airmas,p_mid,delz,rh
-  real*8, DIMENSION (1,1,kte-kts+1,5) :: ddust
   real*8, DIMENSION (1,1,kte-kts+1,4) :: sea_salt
+!srf
+  real*8, DIMENSION (1,1,kte-kts+1,10) :: ash
+  real*8, DIMENSION (10), PARAMETER :: den_ash(10)=(/2500.,2500.,2500.,2500.,2500., &
+                                                     2500.,2500.,2500.,2500.,2500. /)
+  real*8, DIMENSION (10), PARAMETER :: reff_ash(10)=(/0.5000D-3,&! 1.00 mm diameter 
+                                                      0.3750D-3,&! 0.75 mm
+						      0.1875D-3,&!
+						      93.750D-6,&!
+						      46.875D-6,&!
+						      23.437D-6,&!
+						      11.719D-6,&!
+						      05.859D-6,&!
+						      02.930D-6,&!
+						      00.975D-6 /)! 3.9 um
+  real*8, DIMENSION (10) :: bstl_ash
+  integer iash
+!srf
+
 !
 ! bstl is for budgets
 !
-! real*8, DIMENSION (5), PARAMETER :: den_dust(5)=(/2500.,2650.,2650.,2650.,2650./)
-! real*8, DIMENSION (5), PARAMETER :: reff_dust(5)=(/0.73D-6,1.4D-6,2.4D-6,4.5D-6,8.0D-6/)
-! real*8, DIMENSION (4), PARAMETER :: den_seas(4)=(/2200.,2200.,2200.,2290./)
-! real*8, DIMENSION (4), PARAMETER :: reff_seas(4)=(/0.30D-6,1.00D-6,3.25D-6,7.50D-6/)
-  real*8, DIMENSION (5) :: bstl_dust
-  real*8, DIMENSION (4) :: bstl_seas
+
   real*8 conver,converi
        conver=1.e-9
        converi=1.e9
        lmx=kte-kts+1
-       ddust(:,:,:,:)=0.
-       sea_salt(:,:,:,:)=0.
        do j=jts,jte
        do i=its,ite
           kk=0
-          bstl_dust(:)=0.
-          bstl_seas(:)=0.
-          if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11) then
-           do kkk=1,5
-              ddust(1,1,kts,kkk)=dustin(i,j,kkk)*conver
-           enddo
-          else
-             do k=kts,kte
-                kk=kk+1
-                ddust(1,1,kk,1)=chem(i,k,j,p_dust_1)*conver
-                ddust(1,1,kk,2)=chem(i,k,j,p_dust_2)*conver
-                ddust(1,1,kk,3)=chem(i,k,j,p_dust_3)*conver
-                ddust(1,1,kk,4)=chem(i,k,j,p_dust_4)*conver
-                ddust(1,1,kk,5)=chem(i,k,j,p_dust_5)*conver
-             enddo
-          endif
+	  bstl_ash(:)=0.
           do k=kts,kte
           kk=kk+1
           p_mid(1,1,kk)=.01*p_phy(i,kte-k+kts,j)
           delz(1,1,kk)=dz8w(i,kte-k+kts,j)
-          airmas(1,1,kk)=-(p8w(i,k+1,j)-p8w(i,k,j))*dx*dx/g
+          airmas(1,1,kk)=-(p8w(i,k+1,j)-p8w(i,k,j))/g
           airden(1,1,kk)=rho_phy(i,k,j)
           tmp(1,1,kk)=t_phy(i,k,j)
           rh(1,1,kk) = .95
@@ -81,88 +76,60 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
                (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j))))
           rh(1,1,kk)=max(1.0D-1,rh(1,1,kk))
           enddo
-!         tmp(1,1,1)=244.3541
-!         tmp(1,1,1)=246.72290
-!         tmp(1,1,3)=245.79040
-!den=   2650.00000000000
-!reff=  8.000000000000000E-006
+
+!ash settling
 
           iseas=0
-          idust=1
-
-          call settling(1, 1, lmx, 5,g,dyn_visc, &
-                    ddust, tmp, p_mid, delz, airmas, &
-                    den_dust, reff_dust, dt, bstl_dust, rh, idust, iseas)
-          if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
-            do kkk=1,4
-              sea_salt(1,1,kts,kkk)=seasin(i,j,kkk)*conver
-            enddo
-            kk=1
-            do kkk=1,5
-            if(ddust(1,1,kk,kkk) .ge. dustin(i,j,kkk))ddust(1,1,kk,kkk)=dustin(i,j,kkk)
-            enddo
-            chem(i,kts,j,p_p25i)=chem(i,kts,j,p_p25i) &
-                         +.25*(ddust(1,1,kk,1)+.286*ddust(1,1,kk,2))*converi
-            chem(i,kts,j,p_p25i)=max(chem(i,kts,j,p_p25i),1.e-16)
-            chem(i,kts,j,p_p25j)=chem(i,kts,j,p_p25j) &
-                         +.75*(ddust(1,1,kk,1)+.286*ddust(1,1,kk,2))*converi
-            chem(i,kts,j,p_p25j)=max(chem(i,kts,j,p_p25j),1.e-16)
-            chem(i,kts,j,p_soila)=chem(i,kts,j,p_soila) &
-                         +(.714*ddust(1,1,kk,2)+ddust(1,1,kk,3))*converi
-            chem(i,kts,j,p_soila)=max(chem(i,kts,j,p_soila),1.e-16)
-          else
-             kk=0
-             do k=kts,kte
-                kk=kk+1
-                chem(i,k,j,p_dust_1)=ddust(1,1,kk,1)*converi
-                chem(i,k,j,p_dust_2)=ddust(1,1,kk,2)*converi
-                chem(i,k,j,p_dust_3)=ddust(1,1,kk,3)*converi
-                chem(i,k,j,p_dust_4)=ddust(1,1,kk,4)*converi
-                chem(i,k,j,p_dust_5)=ddust(1,1,kk,5)*converi
-                sea_salt(1,1,kk,1)=chem(i,k,j,p_seas_1)*conver
-                sea_salt(1,1,kk,2)=chem(i,k,j,p_seas_2)*conver
-                sea_salt(1,1,kk,3)=chem(i,k,j,p_seas_3)*conver
-                sea_salt(1,1,kk,4)=chem(i,k,j,p_seas_4)*conver
-             enddo
-          endif
-!         write(0,*)i,j,bstl_dust(3),bstl_dust(4),chem(i,1,j,p_dust_4)
-          iseas=1
           idust=0
-          call settling(1, 1, lmx, 4, g,dyn_visc,&
-                    sea_salt, tmp, p_mid, delz, airmas, &
-                    den_seas, reff_seas, dt, bstl_seas, rh, idust, iseas)
-          if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
-            kk=1
-            do kkk=1,4
-              if(sea_salt(1,1,kk,kkk) .ge. seasin(i,j,kkk))sea_salt(1,1,kk,kkk)=seasin(i,j,kkk)
-            enddo
-            chem(i,kts,j,p_naai)=chem(i,kts,j,p_naai) &
-                         +.25*(sea_salt(1,1,kk,1)+.942*sea_salt(1,1,kk,2))*converi
-            chem(i,kts,j,p_naai)=max(1.e-16,chem(i,kts,j,p_naai))
-            chem(i,kts,j,p_naaj)=chem(i,kts,j,p_naaj) &
-                         +.75*(sea_salt(1,1,kk,1)+.942*sea_salt(1,1,kk,2))*converi
-            chem(i,kts,j,p_naaj)=max(1.e-16,chem(i,kts,j,p_naaj))
-            chem(i,kts,j,p_seas)=chem(i,kts,j,p_seas) &
-                         +(.058*sea_salt(1,1,kk,2)+sea_salt(1,1,kk,3))*converi
-            chem(i,kts,j,p_seas)=max(1.e-16,chem(i,kts,j,p_seas))
-          else
-             kk=0
-             do k=kts,kte
-                kk=kk+1
-                chem(i,k,j,p_seas_1)=sea_salt(1,1,kk,1)*converi
-                chem(i,k,j,p_seas_2)=sea_salt(1,1,kk,2)*converi
-                chem(i,k,j,p_seas_3)=sea_salt(1,1,kk,3)*converi
-                chem(i,k,j,p_seas_4)=sea_salt(1,1,kk,4)*converi
+	  iash =1
+	  
+          kk=0
+!         write(0,*)'1',chem(i,1,j,p_dust_4)
+          do k=kts,kte
+          kk=kk+1
+          ash(1,1,kk,1)=chem(i,k,j,p_vash_1)*conver
+          ash(1,1,kk,2)=chem(i,k,j,p_vash_2)*conver
+          ash(1,1,kk,3)=chem(i,k,j,p_vash_3)*conver
+          ash(1,1,kk,4)=chem(i,k,j,p_vash_4)*conver
+          ash(1,1,kk,5)=chem(i,k,j,p_vash_5)*conver
+          ash(1,1,kk,6)=chem(i,k,j,p_vash_6)*conver
+          ash(1,1,kk,7)=chem(i,k,j,p_vash_7)*conver
+          ash(1,1,kk,8)=chem(i,k,j,p_vash_8)*conver
+          ash(1,1,kk,9)=chem(i,k,j,p_vash_9)*conver
+          ash(1,1,kk,10)=chem(i,k,j,p_vash_10)*conver
           enddo
-          endif
-       enddo
-       enddo
-END SUBROUTINE gocart_settling_driver
+          call vsettling(1, 1, lmx, 10, g,&
+                    ash, tmp, p_mid, delz, airmas, &
+                    den_ash, reff_ash, dt, bstl_ash, rh, idust, iseas,iash)
+          kk=0
+          ash_fall(i,j)=ash_fall(i,j)+sum(bstl_ash(1:10))
+          do k=kts,kte
+          kk=kk+1
+            chem(i,k,j,p_vash_1)=ash(1,1,kk,1)*converi
+            chem(i,k,j,p_vash_2)=ash(1,1,kk,2)*converi
+            chem(i,k,j,p_vash_3)=ash(1,1,kk,3)*converi
+            chem(i,k,j,p_vash_4)=ash(1,1,kk,4)*converi
+            chem(i,k,j,p_vash_5)=ash(1,1,kk,5)*converi
+            chem(i,k,j,p_vash_6)=ash(1,1,kk,6)*converi
+            chem(i,k,j,p_vash_7)=ash(1,1,kk,7)*converi
+            chem(i,k,j,p_vash_8)=ash(1,1,kk,8)*converi
+            chem(i,k,j,p_vash_9)=ash(1,1,kk,9)*converi
+            chem(i,k,j,p_vash_10)=ash(1,1,kk,10)*converi
+          enddo
+
+!ash settling end
 
 
-          subroutine settling(imx,jmx, lmx, nmx,g0,dyn_visc, &
+
+
+       enddo
+       enddo
+END SUBROUTINE vash_settling_driver
+
+
+          subroutine vsettling(imx,jmx, lmx, nmx,g0, &
                     tc, tmp, p_mid, delz, airmas, &
-                    den, reff, dt, bstl, rh, idust, iseas)
+                    den, reff, dt, bstl, rh, idust, iseas,iash)
 ! ****************************************************************************
 ! *                                                                          *
 ! *  Calculate the loss by settling, using an implicit method                *
@@ -178,9 +145,9 @@ END SUBROUTINE gocart_settling_driver
 
   IMPLICIT  NONE
 
-  INTEGER, INTENT(IN) :: imx, jmx, lmx, nmx,iseas,idust
+  INTEGER, INTENT(IN) :: imx, jmx, lmx, nmx,iseas,idust,iash
   INTEGER :: ntdt
-  REAL, INTENT(IN) :: dt,g0,dyn_visc
+  REAL, INTENT(IN) :: dt,g0 ! ,dyn_visc
   REAL*8,    INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),  &
                          airmas(imx,jmx,lmx), rh(imx,jmx,lmx), &
                          den(nmx), reff(nmx), p_mid(imx,jmx,lmx)
@@ -190,7 +157,8 @@ END SUBROUTINE gocart_settling_driver
   REAL*8    :: tc1(imx,jmx,lmx,nmx), dt_settl(nmx), rcm(nmx), rho(nmx)
   INTEGER :: ndt_settl(nmx)
   REAL*8    :: dzmin, vsettl, dtmax, pres, rhb, rwet(nmx), ratio_r(nmx)
-  REAL*8    :: c_stokes, free_path, c_cun, viscosity, vd_cor, growth_fac
+  REAL*8    :: addmass,c_stokes, free_path, c_cun, viscosity, vd_cor, growth_fac
+  REAL,    PARAMETER :: dyn_visc = 1.5E-5
   INTEGER :: k, n, i, j, l, l2
   ! for sea-salt:
   REAL*8, PARAMETER :: c1=0.7674, c2=3.079, c3=2.573E-11, c4=-1.424 
@@ -201,13 +169,14 @@ END SUBROUTINE gocart_settling_driver
   ! executable statements
 
 ! IF (type) /= 'dust' .AND. TRIM(aero_type) /= 'sea_salt') RETURN
-  if(idust.ne.1.and.iseas.ne.1)return
+  if(idust.ne.1.and.iseas.ne.1.and.iash.ne.1)return
 
-!!!  WHERE (tc(:,:,:,:) < 0.0) tc(:,:,:,:) = 1.0E-32
+  WHERE (tc(:,:,:,:) < 0.0) tc(:,:,:,:) = 1.0d-32
 
   dzmin = MINVAL(delz(:,:,:))
   IF (idust == 1)     growth_fac = 1.0
   IF (iseas == 1)     growth_fac = 3.0
+  IF (iash  == 1)     growth_fac = 1.0
 
   DO k = 1,nmx
 
@@ -234,7 +203,8 @@ END SUBROUTINE gocart_settling_driver
 
      ! Particles radius in centimeters
      IF (iseas.eq.1)rcm(k) = reff(k)*100.0
-     IF (idust.eq.1)then
+!srf     IF (idust.eq.1)then
+     IF (idust.eq.1   .or. iash==1)then
           rwet(k) = reff(k)
           ratio_r(k) = 1.0
           rho(k) = den(k)
@@ -252,7 +222,7 @@ END SUBROUTINE gocart_settling_driver
   DO j = 1,jmx
  
      DO k = 1,nmx
-        IF (idust.eq.1) THEN
+        IF (idust.eq.1 .or. iash==1) THEN
            rwet_priv(k) = rwet(k)
            rho_priv(k)  = rho(k)
         END IF
@@ -266,16 +236,6 @@ END SUBROUTINE gocart_settling_driver
 
 !           DO j = 1,jmx
               DO i = 1,imx
-
-                 IF (iseas.eq.1) THEN
-                    rhb = MIN(9.9D-1, rh(i,j,l))  
-                    ! Aerosol growth with relative humidity (Gerber, 1985)
-! td 
-! changed to LOG10
-                    rwet_priv(k) = 0.01*(c1*rcm(k)**c2/(c3*rcm(k)**c4 - &
-                         LOG10(rhb)) + rcm(k)**3)**0.33
-                    ratio_r(k) = (reff(k)/rwet_priv(k))**3.0
-                 END IF
 
                  ! Dynamic viscosity
                  c_stokes = 1.458E-6 * tmp(i,j,l)**1.5/(tmp(i,j,l) + 110.4) 
@@ -294,9 +254,9 @@ END SUBROUTINE gocart_settling_driver
                  viscosity = c_stokes / c_cun
 
                  ! Settling velocity
-                 IF (iseas.eq.1) THEN
-                    rho_priv(k) = ratio_r(k)*den(k) + (1.0 - ratio_r(k))*1000.0
-                 END IF
+!                IF (iseas.eq.1) THEN
+!                   rho_priv(k) = ratio_r(k)*den(k) + (1.0 - ratio_r(k))*1000.0
+!                END IF
 
                  vd_cor = 2.0/9.0*g0*rho_priv(k)*rwet_priv(k)**2/viscosity
 
@@ -324,15 +284,17 @@ END SUBROUTINE gocart_settling_driver
      DO i = 1,imx
         DO j = 1,jmx
            bstl(i,j,n) = 0.0
+           addmass=0.
            DO l = 1,lmx
-              IF (tc(i,j,l,n) < 1.0D-32) tc(i,j,l,n) = 1.0D-32
-              bstl(i,j,n) = bstl(i,j,n) + &
-                   (tc(i,j,l,n) - tc1(i,j,l,n)) * airmas(i,j,l)
+              addmass=addmass+(tc(i,j,l,n) - tc1(i,j,l,n)) * airmas(i,j,l)
+              IF (tc(i,j,l,n) < 0.0) tc(i,j,l,n) = 1.0D-32
            END DO
+           if(addmass.gt.0.)addmass=0
+           bstl(i,j,n) = bstl(i,j,n) - addmass
         END DO
      END DO
   END DO
   
-END SUBROUTINE settling
+END SUBROUTINE vsettling
 
-END MODULE MODULE_GOCART_SETTLING
+END MODULE MODULE_VASH_SETTLING

@@ -36,8 +36,9 @@ CONTAINS
 
   SUBROUTINE  turbine_dragforce(                 &
        & id                                      &
-       &,phb,u,v,dx,dz,dt                        &
-       &,qke,du,dv                               &
+       &,phb,u,v,xlat_u,xlong_u                  &
+       &,xlat_v,xlong_v                          &
+       &,dx,dz,dt,qke,du,dv                      &
        &,ids,ide,jds,jde,kds,kde                 &
        &,ims,ime,jms,jme,kms,kme                 &
        &,its,ite,jts,jte,kts,kte                 &
@@ -48,7 +49,9 @@ CONTAINS
   INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme
   INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde
   REAL, INTENT(IN) :: dx,dt
-  REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) ::dz,u,v,phb
+  REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: dz,u,v,phb
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN)         :: xlat_u, xlong_u
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN)         :: xlat_v, xlong_v
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: du,dv,qke
 ! Local
   TYPE(windturbine_specs), POINTER :: p
@@ -62,6 +65,7 @@ CONTAINS
   INTEGER  k_turbine_bot, k_turbine_top
 
   LOGICAL :: kfound
+  INTEGER :: allzero
 
   itf=MIN0(ite,ide-1)
   jtf=MIN0(jte,jde-1)
@@ -70,7 +74,38 @@ CONTAINS
   CALL nl_get_turbpercell(1,turbpercell)
   CALL nl_get_turbgridid(1,turbgridid)
   IF ( .NOT. inited(id) ) THEN
-    IF ( windspec .EQ. WIND_TURBINES_IDEAL .AND. id .EQ. turbgridid ) THEN
+    IF ( windspec .EQ. WIND_TURBINES_FROMLIST ) THEN 
+! first check and see if xlat and xlong are all zero, if so, then use i,j directly
+! (just check the u variables)
+      allzero=1
+      DO j=jts,jtf
+        DO i=its,itf
+          IF (xlat_u(i,j).NE.0. .OR. xlong_u(i,j).NE.0)allzero=0
+        ENDDO
+      ENDDO
+      CALL wrf_dm_bcast_integer(allzero,1)
+      IF ( allzero .NE. 1 ) THEN
+! if there are actual lats and lons available, find i and j based on lat and lon
+! otherwise, it is an idealized case and the user has specified i and j in the
+! turbines file read in by read_windturbines_in in module_wind_generic
+        DO iturbine = 1,nwindturbines   ! nwindturbines defined in module_wind_generic
+          p => windturbines(iturbine)
+          IF ( id .EQ. p%id ) THEN
+            DO j=jts,jtf
+              DO i=its,itf
+                p%i=-999
+                p%j=-999
+                IF (xlat_u(i,j) .LE. p%lat .AND. p%lat .LT. xlat_u(i+1,j) .AND. &
+                    xlong_v(i,j).LE. p%lon .AND. p%lon .LT. xlong_v(i,j+1)) THEN
+                  p%i=i
+                  p%j=j
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDIF
+        ENDDO
+      ENDIF
+    ELSE IF ( windspec .EQ. WIND_TURBINES_IDEAL .AND. id .EQ. turbgridid ) THEN
       CALL nl_get_ewfx(1,ewfx)
       CALL nl_get_ewfy(1,ewfy)
       CALL nl_get_pwfx(1,pwfx)
@@ -129,8 +164,9 @@ write(0,*)'wfdensity ',wfdensity
 write(0,*)'turbpercell ',turbpercell
 write(0,*)'dx ',dx
 
-  IF ((windspec .EQ. WIND_TURBINES_FROMLIST) .OR.       &
-      (windspec .EQ. WIND_TURBINES_IDEAL .AND. id .EQ. turbgridid ) ) THEN
+  IF (inited(id) .AND.                                              &
+      ((windspec .EQ. WIND_TURBINES_FROMLIST) .OR.       &
+       (windspec .EQ. WIND_TURBINES_IDEAL .AND. id .EQ. turbgridid ))) THEN
     DO iturbine = 1,nwindturbines   ! nwindturbines defined in module_wind_generic
       p => windturbines(iturbine)
       IF ( id .EQ. p%id ) THEN

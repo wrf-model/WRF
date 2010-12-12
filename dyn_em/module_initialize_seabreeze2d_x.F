@@ -229,6 +229,9 @@ CONTAINS
          grid%lu_index(i,j)  = 16
          grid%tsk(i,j) = 288.0
          grid%tmn(i,j) = 288.0
+!jm  per anna fitch to add coriolis
+         grid%f(i,j) = 1.0e-4
+
 !         grid%sst(i,j) = 280.0
       END DO
    END DO

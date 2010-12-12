@@ -5,7 +5,7 @@ MODULE module_wind_generic
   TYPE windturbine_specs
      INTEGER id             ! grid id
      REAL    lat, lon       ! lat/lon of the individual turbine
-     INTEGER i, j           ! coord in grid id (this is set internally, per grid)
+     INTEGER i, j           ! coord in grid (computed internally or specified from file in idealized cases)
      REAL    hubheight      ! hieght of the turbine hub
      REAL    diameter       ! diameter of the rotor
      REAL    thrustcof      ! standing thrust coefficient
@@ -41,7 +41,7 @@ CONTAINS
     CHARACTER*256  fname, message
     INTEGER i,istat
     INTEGER id
-    INTEGER n,lineno
+    INTEGER n,lineno,ig,jg
     REAL  lat,lon,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
 !
     CALL nl_get_windturbines_spec( 1, fname )
@@ -54,6 +54,8 @@ CONTAINS
       windspec = WIND_TURBINES_IDEAL
     ELSE
       !info is contained in a file named by fname
+      !read in and distributed between processors here (if dmpar or dm+sm) but
+      !the parameterizations themselves must initialize themselves
       IF ( wrf_dm_on_monitor() ) THEN
         OPEN(file=TRIM(fname),unit=19,FORM='FORMATTED',STATUS='OLD',IOSTAT=istat)
         IF ( istat .EQ. 0 ) THEN
@@ -63,15 +65,18 @@ CONTAINS
             READ(19,*,END=30) 
             n = n + 1
           ENDDO
+          nwindturbines = n
  30       CONTINUE
-          ALLOCATE(windturbines(n))
+          ALLOCATE(windturbines(nwindturbines))
           REWIND(19)
-          DO I = 1, n 
+          DO i = 1, n 
             lineno = i
-            READ(19,*,ERR=130)id,lat,lon,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
+            READ(19,*,ERR=130)id,lat,lon,ig,jg,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
             windturbines(i)%id = id
             windturbines(i)%lat = lat
             windturbines(i)%lon = lon
+            windturbines(i)%i   = ig    ! must be non-zero and only used if xlat and xlong are all zero
+            windturbines(i)%j   = jg
             windturbines(i)%hubheight = hubheight
             windturbines(i)%diameter = diameter
             windturbines(i)%thrustcof = thrustcof
@@ -82,6 +87,7 @@ CONTAINS
           CLOSE(19)
           GOTO 150
  130      CONTINUE
+          CLOSE(19)   ! in case of error, close the unit
           istat = 150150
           GOTO 150
         ENDIF
@@ -100,10 +106,12 @@ CONTAINS
       ENDIF
       CALL wrf_dm_bcast_integer(n,1) 
       IF ( .NOT. wrf_dm_on_monitor() ) ALLOCATE(windturbines(n))
-      DO I = 1, n 
+      DO i = 1, n 
         CALL wrf_dm_bcast_integer(windturbines(i)%id,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%lat,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%lon,1) 
+        CALL wrf_dm_bcast_integer(windturbines(i)%i,1) 
+        CALL wrf_dm_bcast_integer(windturbines(i)%j,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%hubheight,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%diameter,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%thrustcof,1) 

@@ -54,7 +54,7 @@ CONTAINS
                ,a_e_bep,b_e_bep,dlg_bep                            &
                ,dl_u_bep                                           &
 ! Wind Turbine Parameterizations
-               ,phb                                                &
+               ,phb,xlat_u,xlong_u,xlat_v,xlong_v                  &
                )        
 !------------------------------------------------------------------
 #if (EM_CORE==1)
@@ -62,6 +62,7 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, p_qi,param_first_scalar 
+   USE module_wind_generic, ONLY : windspec
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
@@ -266,6 +267,8 @@ CONTAINS
 ! Optional for Wind Turbine Parameterizations
    REAL, DIMENSION( ims:ime, kms:kme ,jms:jme ), &
          INTENT(IN), OPTIONAL    :: phb
+   REAL, DIMENSION( ims:ime, jms:jme ), &
+         INTENT(IN), OPTIONAL    :: xlat_u,xlong_u,xlat_v,xlong_v
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -1062,15 +1065,23 @@ CONTAINS
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
 
+               IF (windspec.GT.0                                         &
+                   .AND.PRESENT(phb)                                     &
+                   .AND.PRESENT(xlat_u).AND.PRESENT(xlong_u)             &
+                   .AND.PRESENT(xlat_v).AND.PRESENT(xlong_v)) THEN
 write(0,*)'calling turbine_dragforce'
-               CALL turbine_dragforce(                                    &
-                   & ID=id                                                &
-                   &,PHB=phb,u=u_phy,v=v_phy,DX=dx,DZ=dz8w,DT=dt          &
-                   &,QKE=qke,DU=rublten,DV=rvblten                        &
-                   &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-                   &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-                   &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                   &)
+                 CALL turbine_dragforce(                                    &
+                     & ID=id                                                &
+                     &,PHB=phb,u=u_phy,v=v_phy                              &
+                     &,XLAT_U=xlat_u,XLONG_U=xlong_u                        &
+                     &,XLAT_V=xlat_v,XLONG_V=xlong_v                        &
+                     &,DX=dx,DZ=dz8w,DT=dt                                  &
+                     &,QKE=qke,DU=rublten,DV=rvblten                        &
+                     &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+                     &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+                     &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                     &)
+               ENDIF
 write(0,*)'back from turbine_dragforce'
 
            ELSE

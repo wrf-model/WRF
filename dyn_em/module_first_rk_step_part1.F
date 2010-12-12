@@ -577,6 +577,8 @@ BENCH_START(pbl_driver_tim)
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
 ! For Wind Turbine Drag Parameterizations
      &        ,phb=grid%phb                                               &
+     &        ,XLAT_U=grid%xlat_u,XLONG_U=grid%xlong_u                    &
+     &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v                    &
      &        )
                                                          
 

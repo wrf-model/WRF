@@ -285,8 +285,8 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
       do k=kts,kte
          do j=jts,jte
             do i=its,ite
-             grid%xa%qcw(i,j,k)=grid%a_moist(i,j,k,P_A_QC)  !/(1.0-grid%xb%q(i,j,k))**2
-             grid%xa%qrn(i,j,k)=grid%a_moist(i,j,k,P_A_QR)  !/(1.0-grid%xb%q(i,j,k))**2
+             grid%xa%qcw(i,j,k)=grid%xa%qcw(i,j,k) + grid%a_moist(i,j,k,P_A_QC)
+             grid%xa%qrn(i,j,k)=grid%xa%qrn(i,j,k) + grid%a_moist(i,j,k,P_A_QR)
             end do
          end do
       end do

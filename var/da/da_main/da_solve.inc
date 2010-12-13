@@ -77,11 +77,13 @@
        if ( var4d_bin < time_step ) call nl_set_var4d_bin (1, time_step)
        time_max = (time_max - time_min) * 60   ! unit is : seconds
        num_fgat_time = NINT(time_max/var4d_bin)
-       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) .or. &
-            num_fgat_time/2*2 .ne. num_fgat_time .or. var4d_bin/time_step*time_step .ne. var4d_bin ) then
-          write(unit=message(1),fmt='(A,A,2I7)') &
-          'Please change var4d_bin in namelist and rerun==>', 'run_seconds, var4d_bin:',NINT(time_max),var4d_bin
-          call da_error(__FILE__,__LINE__,message(1:1))
+       if ( jcdfi_use ) then
+          if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) .or. &
+             num_fgat_time/2*2 .ne. num_fgat_time .or. var4d_bin/time_step*time_step .ne. var4d_bin ) then
+             write(unit=message(1),fmt='(A,A,2I7)') &
+             'Please change var4d_bin in namelist and rerun==>', 'run_seconds, var4d_bin:',NINT(time_max),var4d_bin
+             call da_error(__FILE__,__LINE__,message(1:1))
+          endif
        endif
        num_fgat_time = num_fgat_time + 1
        write(unit=message(1),fmt='(a,i10)') 'num_fgat_time is: ', num_fgat_time

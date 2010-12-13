@@ -32,6 +32,7 @@
 #else
      &                ,T,Q,U,V,Q2,Z,W,SM,SICE                           &
 #endif
+     &                ,DEF3D                                            &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,CONFIG_FLAGS                                     &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -112,6 +113,8 @@
      &                                             ,HDAC,HDACV          &
      &                                             ,SM,SICE
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: DEF3D          
+!
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: W,Z
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: T,Q,Q2   &
@@ -145,7 +148,11 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
       SLOPHC=SLOPHT*SQRT(2.)*0.5*9.
+#else
+      SLOPHC=config_flags%slophc
+#endif
       RDY=1./DY
 !
       DO J=JTS-5,JTE+5
@@ -192,6 +199,12 @@
 !-----------------------------------------------------------------------
 !
       main_integration : DO K=KTS,KTE
+
+      DO J=JMS,JME
+      DO I=IMS,IME
+        DEF3D(I,J,K)=0.
+      ENDDO
+      ENDDO
 !
 !-----------------------------------------------------------------------
 !***  SLOPE SWITCHES FOR MOISTURE
@@ -289,6 +302,7 @@
           DEF_IJ=MIN(DEF_IJ,DEFM)
           DEF_IJ=DEF_IJ*0.1
           DEF(I,J)=DEF_IJ
+          DEF3D(I,J,K)=DEF_IJ
         ENDDO
         ENDDO
 !

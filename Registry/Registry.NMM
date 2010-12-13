@@ -1043,6 +1043,7 @@ rconfig   integer idtadc                  namelist,dynamics     1              2
 rconfig   real    codamp                  namelist,dynamics     max_domains   6.4     irh  "codamp"  "divergence damping weighting factor (larger = more damping) " ""
 rconfig   real    coac                    namelist,dynamics     max_domains   1.6     irh  "coac"  "horizontal diffusion weighting factor (larger = more diffusion) " ""
 rconfig   real    slophc                  namelist,dynamics     max_domains   6.364e-3     irh  "slophc"  "Maximum model level slope (dZ/dy) for which hor diffusion is applied (larger = diffusion applied over more mountainous terrain) " ""
+rconfig   real    wp                      namelist,dynamics     max_domains   0.15    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""

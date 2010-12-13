@@ -6,8 +6,8 @@
 #BSUB -a poe                            # at NCAR: bluevista
 #BSUB -R "span[ptile=4]"                # how many tasks per node (up to 8)
 #BSUB -n 4                              # number of total tasks
-#BSUB -o reg.out                        # output filename (%J to add job id)
-#BSUB -e reg.err                        # error filename
+#BSUB -o regh.out                        # output filename (%J to add job id)
+#BSUB -e regh.err                        # error filename
 #BSUB -J regtest                        # job name
 #BSUB -q share                          # queue
 #BSUB -W 12:00                          # wallclock time
@@ -2555,7 +2555,7 @@ banner 19a
 
 			sed -e 's/^ run_days *= *[0-9]*/ run_days = 0 /' \
 			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 1800 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15,15 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 30,30 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
 			    namelist.input.temp >! namelist.input
 
@@ -2751,7 +2751,7 @@ banner 19a
 
 			sed -e 's/^ run_hours *= *[0-9]*/ run_hours = 0 /' \
 			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 1800 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15,15 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 30,30 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
 			    namelist.input.temp >! namelist.input
 
@@ -2953,7 +2953,7 @@ banner 19a
 
 			sed -e 's/^ run_hours *= *[0-9]*/ run_hours = 0 /' \
 			    -e 's/^ run_seconds *= *[0-9]*/ run_seconds = 1800 /' \
-			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 15,15 /' \
+			    -e 's/^ history_interval *= *[0-9][0-9]*/ history_interval = 30,30 /' \
 			    -e 's/^ frames_per_outfile *= [0-9]*/ frames_per_outfile = 200/g' \
 			    namelist.input.temp >! namelist.input
 

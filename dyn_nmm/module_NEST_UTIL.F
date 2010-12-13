@@ -367,6 +367,10 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 #endif
 !
       INTEGER, INTENT(OUT)                                  :: XLOC,YLOC
+#ifdef HWRFX
+      INTEGER                                               :: NXLOC,NYLOC
+      REAL                                                  :: NSUM1,NSUM2,NSUM3
+#endif
       REAL, DIMENSION(KMS:KME),                 INTENT(IN)  :: DETA1,DETA2
       REAL,                                     INTENT(IN)  :: PDTOP,PTOP
       REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN)  :: FIS,PD,SM
@@ -377,7 +381,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 
 #ifdef HWRF
 !zhang's doing
+#ifdef HWRFX
+      INTEGER,INTENT(INOUT)                                 :: NTIME0
+#else
       INTEGER                                               :: NTIME0
+#endif
       LOGICAL,INTENT(IN)                                    :: RESTART
 #else
       INTEGER,SAVE                                          :: NTIME0
@@ -443,7 +451,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
             SQWS(I,J) =  (U(I,J,9)*U(I,J,9) + V(I,J,9)*V(I,J,9)           &
                       +   U(I,J,10)*U(I,J,10) + V(I,J,10)*V(I,J,10)       &
                       +   U(I,J,11)*U(I,J,11) + V(I,J,11)*V(I,J,11))/3.0
+#ifdef HWRF
+            PDYN(I,J) =   MSLP(I,J)  
+#else
             PDYN(I,J) =   MSLP(I,J)  + 1.1*SQWS(I,J)/2.0
+#endif
         ENDDO
       ENDDO
 
@@ -494,6 +506,39 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 
       CALL WRF_DM_MINVAL(MINGBL_MIJ,XLOC,YLOC)
       CALL WRF_DM_MINVAL(STMP0,IDUM,JDUM)
+#ifdef HWRFX
+!     USE CENTROID TO FIND THE CENTER    Xuejin's doing
+
+      NSUM1=0.0
+      NSUM2=0.0
+      NSUM3=0.0
+      DO J = JTS, MIN(JTE,JDE)
+       DO I = ITS, MIN(ITE,IDE)
+        IF(I .GE. IM .AND. I .LE. IP .AND. J .GE. JM .AND. J .LE. JP )THEN
+!       IF(I .EQ. IM .AND. J .EQ. JM)THEN
+          NSUM1 = NSUM1 + I*(105000.1 - PDYN(I,J))
+          NSUM2 = NSUM2 + J*(105000.1 - PDYN(I,J))
+          NSUM3 = NSUM3 + (105000.1 - PDYN(I,J))
+!         NSUM1 = NSUM1 + I*(PCUT+0.1 - PDYN(I,J))
+!         NSUM2 = NSUM2 + J*(PCUT+0.1 - PDYN(I,J))
+!         NSUM3 = NSUM3 + (PCUT+0.1 - PDYN(I,J))
+!         WRITE(0,*)'TEST',NSUM1,I,J,0.01*(105000.0 - PDYN(I,J)),PDYN(I,J) 
+        ENDIF
+       ENDDO
+      ENDDO
+      NSUM1 = WRF_DM_SUM_REAL(NSUM1)
+      NSUM2 = WRF_DM_SUM_REAL(NSUM2)
+      NSUM3 = WRF_DM_SUM_REAL(NSUM3)
+      NXLOC = NINT(NSUM1/NSUM3)
+      NYLOC = NINT(NSUM2/NSUM3)
+
+      WRITE(0,*)'NEW CALC',NSUM1,NSUM2,NSUM3
+      WRITE(0,*)'XLOC,YLOC',NXLOC,XLOC,NYLOC,YLOC
+
+      XLOC = NXLOC
+      YLOC = NYLOC
+
+#endif
 
 !     DETERMINE THE MAXIMUM MSLP AT ABOUT 18 GRID POINTS AWAY FROM THE STORM CENTER 
 
@@ -537,6 +582,16 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 #endif
       DTMOVE=NTSD-NTIME0                    ! TIME INTERVAL SINCE THE PREVIOUS MOVE
 !
+#ifdef HWRFX
+       IF(XDIFF .GE. 1 .OR. YDIFF .GE. 2) THEN
+        MVNEST=.TRUE.
+        NTIME0=NTSD
+       ELSE
+        MVNEST=.FALSE.
+        WRITE(0,*)'SUSPEND MOTION: DTMOVE=',DTMOVE,'LESS THAN 3 MINUTS'
+        WRITE(0,*)'SUSPEND MOTION: NTIME0=',NTIME0
+       ENDIF
+#else
       IF(DTMOVE .LE. 45 .OR. PGR .LE. 200.)THEN
         WRITE(0,*)'SUSPEND MOTION: SMALL DTMOVE OR WEAK PGF:','DTMOVE=',DTMOVE,'PGR=',PGR
         MVNEST=.FALSE.                               ! SET STATIC GRID
@@ -558,10 +613,93 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       ELSE
         MVNEST=.TRUE.
       ENDIF
+#endif
 
       RETURN
 
 END SUBROUTINE STATS_FOR_MOVE
 !----------------------------------------------------------------------------------
+SUBROUTINE MSLP_DIAG (MSLP,PINT,T,Q               &
+                     ,FIS,PD,DETA1,DETA2,PDTOP    &
+                     ,IDS,IDE,JDS,JDE,KDS,KDE     &
+                     ,IMS,IME,JMS,JME,KMS,KME     &
+                     ,ITS,ITE,JTS,JTE,KTS,KTE     )
+
+
+!**********************************************************************
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .
+! SUBPROGRAM:  MSLP_DIAG 
+!   PRGRMMR: gopal
+!
+! ABSTRACT:
+!         THIS ROUTINE COMPUTES MSLP OVER THE PARENT DOMAIN FOR DIAGONOSTIC PURPOSE 
+! PROGRAM HISTORY LOG:
+!   07-21-2005  : gopal
+!
+! USAGE: CALL MSLP_DIAG FROM THE SOLVER 
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 90
+!   MACHINE : IBM SP/Linux cluster
+!$$$
+
+      USE MODULE_MODEL_CONSTANTS
+      USE MODULE_DM
+
+      IMPLICIT NONE
+
+!     global variables
+
+      INTEGER,INTENT(IN)                                      :: IDS,IDE,JDS,JDE,KDS,KDE   &
+                                                                ,IMS,IME,JMS,JME,KMS,KME   & 
+                                                                ,ITS,ITE,JTS,JTE,KTS,KTE   
+
+      REAL,                                     INTENT(IN)    :: PDTOP
+      REAL, DIMENSION(KMS:KME),                 INTENT(IN)    :: DETA1,DETA2
+      REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(INOUT) :: MSLP
+      REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN)    :: FIS,PD
+      REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN)    :: PINT,T,Q
+
+!     local variables
+
+      REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608
+      REAL, PARAMETER                                       :: COEF3=287.05*GI*LAPSR, COEF2=-1./COEF3
+      REAL, PARAMETER                                       :: TRG=2.0*R_D*GI,LAPSI=1.0/LAPSR
+      REAL                                                  :: RTOPP,APELP,DZ,SFCT,A
+      REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME)              :: Z
+      INTEGER                                               :: I,J,K
+!-----------------------------------------------------------------------------------------------------
+
+
+     DO J = JTS, MIN(JTE,JDE)
+      DO I = ITS, MIN(ITE,IDE)
+         Z(I,J,1)=FIS(I,J)*GI
+      ENDDO
+     ENDDO
+
+     DO K = KTS,KTE
+      DO J = JTS, MIN(JTE,JDE)
+       DO I = ITS, MIN(ITE,IDE)
+         APELP      = (PINT(I,J,K+1)+PINT(I,J,K))
+         RTOPP      = TRG*T(I,J,K)*(1.0+Q(I,J,K)*P608)/APELP
+         DZ         = RTOPP*(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
+         Z(I,J,K+1) = Z(I,J,K) + DZ
+       ENDDO
+      ENDDO
+     ENDDO
+
+     MSLP=-9999.99
+     DO J = JTS, MIN(JTE,JDE)
+       DO I = ITS, MIN(ITE,IDE)
+         SFCT      = T(I,J,1)*(1.+D608*Q(I,J,1)) + LAPSR*(Z(I,J,1)+Z(I,J,2))*0.5
+         A         = LAPSR*Z(I,J,1)/SFCT
+         MSLP(I,J) = PINT(I,J,1)*(1-A)**COEF2
+       ENDDO
+     ENDDO
+
+
+END SUBROUTINE MSLP_DIAG
+!------------------------------------------------------------------------------------------------------
 
 END  MODULE module_NEST_UTIL

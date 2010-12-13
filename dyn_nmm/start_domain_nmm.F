@@ -111,6 +111,15 @@
       REAL :: TSTART
 !zhang's doing ends
 #endif
+#ifdef HWRFX
+!     gopal's doing for the moving nest (MSLP computation)
+!-----------------------------------------------------------------------------------------------------
+      REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608
+      REAL, PARAMETER                                       :: COEF3=287.05*GI*LAPSR, COEF2=-1./COEF3
+      REAL, PARAMETER                                       :: TRG=2.0*R_D*GI,LAPSI=1.0/LAPSR
+      REAL                                                  :: RTOPP,APELP,DZ,SFCT,A
+!-----------------------------------------------------------------------------------------------------
+#endif
 
 !
 !!!   REAL,ALLOCATABLE,DIMENSION(:,:) :: RAINBL,RAINNC,RAINNC           &
@@ -1433,6 +1442,53 @@
 #ifdef HWRF
       ENDIF    !zhang 
 #endif
+
+#ifdef HWRFX
+! XUEJIN's doing
+! add to output MSLP at the initial time
+!
+!    COMPUTATION OF MSLP         ! This is gopal's doing
+!
+
+
+     DO J=JFS,JFE
+      DO I=IFS,IFE
+         grid%Z(I,J,1)=grid%FIS(I,J)*GI
+      ENDDO
+     ENDDO
+
+     DO K=KPS,2
+      DO J=JFS,JFE
+       DO I=IFS,IFE
+          APELP      = (grid%PINT(I,J,K+1)+grid%PINT(I,J,K))
+          RTOPP      = TRG*grid%T(I,J,K)*(1.0+grid%Q(I,J,K)*P608)/APELP
+          DZ         = RTOPP*(grid%DETA1(K)*grid%PDTOP+grid%DETA2(K)*grid%PD(I,J))
+          grid%Z(I,J,K+1) = grid%Z(I,J,K) + DZ
+       ENDDO
+      ENDDO
+     ENDDO
+
+     grid%MSLP=-9999.99
+     DO J=JFS,JFE
+      DO I=IFS,IFE
+         SFCT      = grid%T(I,J,1)*(1.+D608*grid%Q(I,J,1)) + LAPSR*(grid%Z(I,J,1)+grid%Z(I,J,2))*0.5
+         A         = LAPSR*grid%Z(I,J,1)/SFCT
+         grid%MSLP(I,J) = grid%PINT(I,J,1)*(1-A)**COEF2
+      ENDDO
+     ENDDO
+
+! SET BACK Z AS IN ORIGINAL CODE
+
+     DO K=KPS,KPE
+      DO J=JFS,JFE
+       DO I=IFS,IFE
+         grid%Z(I,J,K)=grid%PINT(I,J,K)
+       ENDDO
+      ENDDO
+     ENDDO
+
+#endif
+
 
 #ifndef NO_RESTRICT_ACCEL
 !----------------------------------------------------------------------

@@ -1781,7 +1781,6 @@ CONTAINS
                &El, Dfm, Dfh, Dfq, Tcd, Qcd, Pdk, Pdt, Pdq, Pdc)
 
           
-if ( i.eq.45 .and. j.eq.48 ) write(0,*)__FILE__,__LINE__,' before ',qke(i,5,j)
           CALL mym_predict (kts,kte,&
                &levflag,  &
                &delt,&
@@ -1791,7 +1790,6 @@ if ( i.eq.45 .and. j.eq.48 ) write(0,*)__FILE__,__LINE__,' before ',qke(i,5,j)
                &pdk, pdt, pdq, pdc,&
                &Qke(i,kts:kte,j), Tsq(i,kts:kte,j), &
                &Qsq(i,kts:kte,j), Cov(i,kts:kte,j))
-if ( i.eq.45 .and. j.eq.48 ) write(0,*)__FILE__,__LINE__,' after ',qke(i,5,j)
 
           CALL mynn_tendencies(kts,kte,&
                &levflag,grav_settling,&

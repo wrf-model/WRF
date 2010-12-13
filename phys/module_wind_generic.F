@@ -65,11 +65,11 @@ CONTAINS
             READ(19,*,END=30) 
             n = n + 1
           ENDDO
-          nwindturbines = n
  30       CONTINUE
+          nwindturbines = n
           ALLOCATE(windturbines(nwindturbines))
           REWIND(19)
-          DO i = 1, n 
+          DO i = 1, nwindturbines
             lineno = i
             READ(19,*,ERR=130)id,lat,lon,ig,jg,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
             windturbines(i)%id = id
@@ -104,9 +104,9 @@ CONTAINS
         IF ( ALLOCATED(windturbines) ) DEALLOCATE(windturbines)
         RETURN
       ENDIF
-      CALL wrf_dm_bcast_integer(n,1) 
-      IF ( .NOT. wrf_dm_on_monitor() ) ALLOCATE(windturbines(n))
-      DO i = 1, n 
+      CALL wrf_dm_bcast_integer(nwindturbines,1) 
+      IF ( .NOT. wrf_dm_on_monitor() ) ALLOCATE(windturbines(nwindturbines))
+      DO i = 1, nwindturbines 
         CALL wrf_dm_bcast_integer(windturbines(i)%id,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%lat,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%lon,1) 
@@ -118,8 +118,6 @@ CONTAINS
         CALL wrf_dm_bcast_real(windturbines(i)%power,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%cutinspeed,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%cutoutspeed,1) 
-        windturbines%i = -1   ! set to uninitialized
-        windturbines%j = -1
       ENDDO
       windspec = WIND_TURBINES_FROMLIST
       RETURN

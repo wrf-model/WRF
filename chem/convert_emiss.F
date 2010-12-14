@@ -95,13 +95,19 @@ PROGRAM convert_emissions
    INTEGER, PARAMETER  :: iklev=55
    real,dimension(iklev) :: p_g,p_wrf
    REAL        :: p00, t00, a, p_surf, pd_surf,p_top
-   integer :: kbot,ktop
+   integer :: kbot,ktop,k_initial,k_final,kk4,ko,kl
    REAL, ALLOCATABLE, DIMENSION(:) :: gocart_lev
    REAL, ALLOCATABLE, DIMENSION(:,:) :: tmp2
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: tmp_oh,tmp_no3,tmp_h2o2,tmp3,interpolate
-   REAL, ALLOCATABLE :: dumc0(:,:,:),dumc4(:,:,:)
+   REAL, ALLOCATABLE :: dumc0(:,:,:),dumc4(:,:,:),zlevel(:,:,:)
    REAL, ALLOCATABLE :: dumc1(:,:)
    real mmax
+! Volcanic stuff
+!     
+   real, allocatable, dimension (:,:) :: ash_mass,ash_height,erup_dt
+   real, allocatable, dimension (:) :: vert_mass_dist
+   real :: x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
+
 
 #if (NMM_CORE == 1)
    REAL, ALLOCATABLE :: plvl(:,:,:)
@@ -121,7 +127,7 @@ PROGRAM convert_emissions
 
    REAL :: cen_lat, cen_lon, moad_cen_lat, truelat1, truelat2, gmt, stand_lon, dum1
    INTEGER :: map_proj, julyr, julday, iswater, isice, isurban, isoilwater
-   INTEGER :: iswaterr,itest
+   INTEGER :: iswaterr,itest,beg_day,beg_hour
    INTEGER :: itime = 0
    INTEGER :: nv = 0
    INTEGER :: nv_f = 0
@@ -136,6 +142,7 @@ PROGRAM convert_emissions
    CHARACTER (LEN=80) :: inpname , eminame, dum_str, wrfinname
    CHARACTER (LEN=80)       :: bdyname, bdyname2
    CHARACTER (LEN=20)       :: dname
+   CHARACTER (LEN=12)       :: dname2
    CHARACTER (LEN=256)      :: timestr
 
 
@@ -348,6 +355,13 @@ PROGRAM convert_emissions
      ALLOCATE( tmp3(ids:ide,jds:jde,3) )
      ALLOCATE( interpolate(ids:ide,kds:kde,jds:jde) )
      ALLOCATE( gocart_lev(iklev))
+     if(config_flags%emiss_opt == 9 ) then
+        ALLOCATE( ash_mass(ids:ide,jds:jde) )
+        ALLOCATE( ash_height(ids:ide,jds:jde) )
+        ALLOCATE( erup_dt(ids:ide,jds:jde) )
+        ALLOCATE( vert_mass_dist(kds:kde) )
+        ALLOCATE( zlevel(ids:ide,kds:kde,jds:jde) )
+     endif
 
 
    ihour = start_hour
@@ -587,7 +601,170 @@ PROGRAM convert_emissions
    DEALLOCATE( tmp2)
    DEALLOCATE( tmp3)
    DEALLOCATE( interpolate )
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     if(config_flags%emiss_opt == 9 ) then
+     write(message, FMT='(A,4I6)') ' I am reading global volcanic emissions, dims: =',ids, ide-1, jds, jde-1
+     call wrf_message( TRIM( message ) )
+     CALL construct_filename1 ( bdyname , 'volc' , grid%id , 2 )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+        open (92,file=bdyname,form='unformatted')
+     ENDIf
+#else
+     OPEN(92,FILE=bdyname,FORM='UNFORMATTED')
+#endif
+     write(message, FMT='(A,A)') ' OPENED FILE: ',TRIM(bdyname)
+     call wrf_message( TRIM( message ) )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+       read(92)nv_g
+       read(92)dname
+       read(92)dname2
+       CALL wrf_dm_bcast_bytes ( nv_g , rnum8 )
+       CALL wrf_dm_bcast_bytes ( dname , rnum8 )
+       CALL wrf_dm_bcast_bytes ( dname2 , rnum8 )
+     ENDIF
+#else
+       read(92)nv_g
+       read(92)dname
+       read(92)dname2
+#endif
+       CALL nl_get_julday (grid%id, grid%julday)
+       read(unit=dname2(7:8), FMT='(I2)')beg_day
+       read(unit=dname2(9:10), FMT='(I2)')beg_hour
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)ash_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(ash_mass)
+#else
+       read(92)ash_mass(ids:ide  ,jds:jde  )
+#endif
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)ash_height(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(ash_height)
+#else
+       read(92)ash_height(ids:ide  ,jds:jde  )
+#endif
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)erup_dt(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(erup_dt)
+#else  
+       read(92)erup_dt(ids:ide  ,jds:jde  )
+#endif 
+       do j=jps,jpe
+       do k=kps,kpe
+       do i=ips,ipe
+         zlevel(i,k,j) = (grid%phb(i,k,j)+grid%ph_2(i,k,j))/9.81
+       enddo
+       enddo
+       enddo
+       percen_mass_umbrel=.75
+       base_umbrel=.25    ! fraction
+       do j=jps,jpe
+       do i=ips,ipe
+         ashz_above_vent=ash_height(i,j)+zlevel(i,kps,j)
+         if(erup_dt(i,j).le.0.)CYCLE
+!        write(0,*)'found active volcano at i,j,kps,kpe = ',i,j,kps,kpe
+!        write(0,*)ash_height(i,j),ash_mass(i,j),erup_dt(i,j),ashz_above_vent
+         do k=kpe-1,kps,-1
+!           write(0,*)k,zlevel(i,k,j)
+            if(zlevel(i,k,j) < ashz_above_vent)then
+              k_final=k+1
+              exit
+            endif
+         enddo
+!        write(0,*)'k_final = ',k_final
+         do k=kpe-1,kps,-1
+            write(0,*)k,zlevel(i,k,j)
+           if(zlevel(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
+              k_initial=k
+              exit
+            endif
+         enddo
+!        write(0,*)'k_init = ',k_initial
+         vert_mass_dist=0.
+           k_initial=int((k_final+k_initial)*0.5)
+            
+           !- parabolic vertical distribution between k_initial and k_final
+           kk4 = k_final-k_initial+2
+           do ko=1,kk4-1
+               kl=ko+k_initial-1
+               vert_mass_dist(kl) = 6.*percen_mass_umbrel* float(ko)/float(kk4)**2 * (1. - float(ko)/float(kk4))
+           enddo
+!          write(0,*)' mass=',sum(vert_mass_dist)*100.
+           if(sum(vert_mass_dist(kps:kpe)) .ne. percen_mass_umbrel) then
+               x1= ( percen_mass_umbrel- sum(vert_mass_dist(kps:kpe)) )/float(k_final-k_initial+1)
+               do ko=k_initial,k_final
+                 vert_mass_dist(ko) = vert_mass_dist(ko)+ x1 !- values between 0 and 1.
+               enddo
+!               print*,'new mass=',sum(vmd)*100.,x1
+               !pause
+           endif
+           !k_final > 0 .and. k_initial >
+
+!linear detrainment from vent to base of umbrella
+           do ko=1,k_initial-1
+              vert_mass_dist(ko)=float(ko)/float(k_initial-1)
+           enddo
+           x1=sum(vert_mass_dist(1:k_initial-1))
+           
+           do ko=1,k_initial-1
+               vert_mass_dist(ko)=(1.-percen_mass_umbrel)*vert_mass_dist(ko)/x1
+           enddo
+               
+               do ko=1,k_final
+!                vert_mass_dist(ko) = vert_mass_dist(ko)+ x1 !- values between 0 and 1.
+!                write(0,*)'k,vert_mass_dist = ',ko,vert_mass_dist(ko)
+                 grid%emis_ant(i,ko,j,p_e_vash1)=.02*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash2)=.04*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash3)=.11*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash4)=.09*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash5)=.09*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash6)=.13*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash7)=.16*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash8)=.16*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash9)=.1*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash10)=.1*vert_mass_dist(ko)*ash_mass(i,j)
+               enddo
+               grid%erup_beg(i,j)=float(grid%julday)*1000.+float(beg_hour)
+               grid%erup_end(i,j)=grid%erup_beg(i,j)+erup_dt(i,j)
+                write(0,*)'new mass=',sum(vert_mass_dist)*100.,x1
+               !pause
+!          endif
+       enddo
+       enddo
+
+!
+! simple file dump here....
+!
+         write(message,FMT='(A)') ' OPEN EMISSIONS WRF file for emissions coming from volcano data set'
+         call wrf_message( TRIM( message ) )
+         write(message, FMT='(A)') ' NO TIME DEPENDENCE IN THIS DATASET'
+! emissions from  volcanoes (prep_chem_sources)
+!              
+         CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
+               
+         CALL output_auxinput5 ( id1 , grid , config_flags , ierr )
+       
+         CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+
+
+     endif
+!!!!!!!!!!!!!!!!!!!! end volcanic stuff
+!        
+     if(config_flags%emiss_opt == 9 ) then 
+        DEALLOCATE( ash_mass )
+        DEALLOCATE( ash_height )
+        DEALLOCATE( erup_dt)
+        DEALLOCATE( zlevel)
+        DEALLOCATE( vert_mass_dist)
+     endif
+
 !
 ! now do fire and/or global emissions
 !

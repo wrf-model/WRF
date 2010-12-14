@@ -116,7 +116,7 @@
       REAL,DIMENSION(grid%sm32:grid%em32-1) :: QL,TL
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: REXNSFC,FACTRS                &
                                         ,TOT,TSFC
-     
+
 #endif
 ! Variables for adaptive time steps...
       TYPE(WRFU_TimeInterval) :: tmpTimeInterval
@@ -422,6 +422,10 @@
        CALL wrf_debug(15,'calling mozcart driver from chem_driver')
     CASE (CHEM_TRACER,CHEM_TRACE2)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
+    CASE (CHEM_VASH)
+       CALL wrf_debug(15,'Volcanic Ash mode: only doing emissions, settling, and subgrid transport in chem_driver')
+    CASE (DUST)
+       CALL wrf_debug(15,'Dust only mode: only doing emissions, settling, and subgrid transport chem_driver')
      CASE DEFAULT
        if(config_flags%tracer_opt > 0 )then
        CALL wrf_debug(15,'only doing tracer transport in chem_driver')
@@ -696,7 +700,7 @@
               grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
-              grid%ust,grid%znt,grid%dms_0,                                                &
+              grid%ust,grid%znt,grid%dms_0,grid%erup_beg,grid%erup_end,                    &
               grid%xland,grid%xlat,grid%xlong,                                             &
               z_at_w,zmid,grid%smois,dustin,seasin,                                        &
               grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
@@ -766,6 +770,8 @@
 !
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
+           config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 ) then
          call wrf_debug(15,'calling optical driver')
          call optical_driver (grid%id,curr_secs,grid%dt,config_flags,haveaer,         &
@@ -786,6 +792,8 @@
 !
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
+           config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 ) then
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,curr_secs,ktau,grid%dt,                      &
@@ -845,6 +853,7 @@
 !
 ! do vertical mixing with dry deposition
 !
+
       if (config_flags%vertmix_onoff>0) then
          if (ktau.gt.2) then
             call wrf_debug(15,'calling dry_deposition_driver')
@@ -860,7 +869,7 @@
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
-                 zmid,z_at_w,grid%xland,                                              &
+                 zmid,z_at_w,grid%xland,grid%ash_fall,                                &
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
@@ -878,7 +887,7 @@
             end if
 
          end if
-
+         
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (its <= CHEM_DBG_I .and. ite >= CHEM_DBG_I) .and. &
            (jts <= CHEM_DBG_J .and. jte >= CHEM_DBG_J) .and. &
@@ -964,6 +973,8 @@
 !
      if( do_chemstep .and.                           &
           config_flags%chem_opt /= CHEM_TRACER .and. &
+          config_flags%chem_opt /= CHEM_VASH .and. &
+          config_flags%chem_opt /= DUST .and. &
           config_flags%chem_opt /= CHEM_TRACE2 ) then
 
 !

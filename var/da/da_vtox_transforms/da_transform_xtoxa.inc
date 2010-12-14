@@ -144,8 +144,8 @@ subroutine da_transform_xtoxa(grid)
 
    ! Compute w increments using Richardson's eqn.
 
-   if (Use_RadarObs ) then
-      call da_uvprho_to_w_lin(grid)
+   if ( Use_RadarObs ) then
+      if ( .not. var4d ) call da_uvprho_to_w_lin(grid)
 
       do k=kts,kte
          do j=jts,jte
@@ -167,6 +167,7 @@ subroutine da_transform_xtoxa(grid)
       call da_moist_phys_lin(grid)
     end if
    end if
+
    !---------------------------------------------------------------
    ! Polar treatment for Global 
    !---------------------------------------------------------------

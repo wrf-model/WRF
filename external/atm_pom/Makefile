@@ -2,7 +2,7 @@
 FFLAGS = -I../io_int
 
 OBJ  =          module_PATCH_QUILT.o \
-        atm_comm_pom.o  \
+        atm_comm.o  \
         atm_tiles.o     \
         cmpcomm.o       \
         mpi_more.o
@@ -29,10 +29,10 @@ superclean: clean
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
 atm_tiles.o: \
-	atm_comm_pom.o \
+	atm_comm.o \
 	module_PATCH_QUILT.o
 
-atm_comm_pom.o: \
+atm_comm.o: \
 	cmpcomm.o
 atm_tiles.o:
 cmpcomm.o:

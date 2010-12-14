@@ -35,7 +35,7 @@ subroutine da_transform_xtoxa_adj(grid)
    end if     
 
    ! Compute w increments using Richardson's eqn.
-   if (Use_RadarObs)  then
+   if ( Use_RadarObs)  then
       do k=kts,kte
          do j=jts,jte
             do i=its,ite
@@ -46,7 +46,7 @@ subroutine da_transform_xtoxa_adj(grid)
          end do
       end do
 
-      call da_uvprho_to_w_adj(grid)
+      if ( .not. var4d ) call da_uvprho_to_w_adj(grid)
    end if
 
    if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then

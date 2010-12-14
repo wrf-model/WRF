@@ -235,6 +235,31 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 #endif
       end if
 
+   ! Compute w increments using Richardson's eqn.
+
+   if ( Use_RadarObs ) then
+      if ( .not. var4d ) call da_uvprho_to_w_lin(grid)
+
+      do k=kts,kte
+         do j=jts,jte
+            do i=its,ite
+               grid%xa%wh(i,j,k)=0.5*(grid%xa%w(i,j,k)+grid%xa%w(i,j,k+1))
+            end do
+         end do
+      end do
+
+#ifdef DM_PARALLEL
+#include "HALO_RADAR_XA_W.inc"
+#endif
+   end if
+
+   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+    if ( cloud_cv_options == 1 )then
+      print*,'Options: set CLOUD_CV and cloud_cv_options to 2 or 3 !'
+      ! Partition of hydrometeor increments via warm rain process
+      call da_moist_phys_lin(grid)
+    end if
+   end if
 
       !----------------------------------------------------------------------
       ! [2.0] Perform y = Hx transform:
@@ -293,6 +318,28 @@ print*,__FILE__,jte,' grid%xa%u.grid%xa%u for col= ',ite+1,sum(grid%xa%u(ite+1, 
     if( jte == jde ) &    
 print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite, jte+1, kts:kte) * grid%xa%v(its:ite, jte+1, kts:kte))
 #endif
+
+   ! Compute w increments using Richardson's eqn.
+   if ( Use_RadarObs)  then
+      do k=kts,kte
+         do j=jts,jte
+            do i=its,ite
+               grid%xa%w(i,j,k)=grid%xa%w(i,j,k)+0.5*grid%xa%wh(i,j,k)
+               grid%xa%w(i,j,k+1)=grid%xa%w(i,j,k+1)+0.5*grid%xa%wh(i,j,k)
+               grid%xa%wh(i,j,k)=0.0
+            end do
+         end do
+      end do
+
+      if ( .not. var4d ) call da_uvprho_to_w_adj(grid)
+   end if
+
+   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+     if ( cloud_cv_options == 1) then
+      ! Partition of hydrometeor increments via warm rain process
+      call da_moist_phys_adj(grid)
+     end if
+   end if
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &
           use_gpsztdobs .or. use_gpsrefobs .or.                 &

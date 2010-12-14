@@ -36,6 +36,7 @@ MODULES =                           \
   module_gocart_seasalt.o                     \
   module_gocart_dmsemis.o                     \
   module_gocart_settling.o                     \
+  module_vash_settling.o                     \
   module_gocart_aerosols.o                     \
   module_gocart_drydep.o                     \
   module_radm.o                     \
@@ -133,6 +134,8 @@ module_gocart_seasalt.o: module_data_gocart_seas.o
 module_gocart_chem.o: module_data_gocartchem.o module_phot_mad.o
 
 module_gocart_so2so4.o:
+
+module_vash_settling.o:
 
 module_gocart_settling.o: module_data_gocart_dust.o
 

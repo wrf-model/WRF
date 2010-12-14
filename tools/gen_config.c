@@ -388,6 +388,9 @@ gen_config_reads ( char * dirname )
   int i, n_nml ;
   char  fname[NAMELEN] ;
   char * fn = "config_reads.inc" ;
+  FILE * fp2 ;
+  char  fname2[NAMELEN] ;
+  char * fn2 = "namelist_nametest.inc" ;
   char  howset[NAMELEN] ;
   char *p1, *p2 ;
   node_t *p ;
@@ -396,6 +399,10 @@ gen_config_reads ( char * dirname )
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
+  strcpy( fname2, fn2 ) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname2,"%s/%s",dirname,fn2) ; }
+  if ((fp2 = fopen( fname2 , "w" )) == NULL ) return(1) ;
+  print_warning(fp2,fname2) ;
 
   fprintf(fp,"! Contains namelist statements for module_config.F.\n") ;
   fprintf(fp,"#ifndef NAMELIST_READ_UNIT\n") ;
@@ -405,6 +412,8 @@ gen_config_reads ( char * dirname )
   fprintf(fp,"#  define NAMELIST_WRITE_UNIT nml_write_unit\n") ;
   fprintf(fp,"#endif\n") ;
   fprintf(fp,"!\n") ;
+
+  fprintf(fp2,"! Contains tests for IF statement in wrf_alt_nml_obsolete in module_configure.F \n") ;
 
   sym_forget() ;
 
@@ -425,10 +434,12 @@ gen_config_reads ( char * dirname )
 	{
           n_nml ++ ;
 	  sym_add(p2) ;
+          fprintf(fp2,"& %s (TRIM(nml_name) .EQ. '%s') &\n",n_nml==1?"    ":".OR.",p2) ;
 	}
       }
     }
   }
+  fclose(fp2) ;
 
   sym_forget() ;
 

@@ -1840,9 +1840,9 @@
 !jdf    real, dimension (nspint, kmaxd+1),intent(out) :: sizeaer,extaer,waer,gaer,tauaer
 !jdf    real, dimension (nspint, kmaxd+1),intent(out) :: l2,l3,l4,l5,l6,l7
 !jdf    real, dimension (nspint, kmaxd+1),intent(out) :: bscoef  !JCB 2007/02/01
-        real, dimension (nspint, lpar+1),intent(out) :: sizeaer,extaer,waer,gaer,tauaer
-        real, dimension (nspint, lpar+1),intent(out) :: l2,l3,l4,l5,l6,l7
-        real, dimension (nspint, lpar+1),intent(out) :: bscoef  !JCB 2007/02/01
+        real, dimension (nspint, lpar  ),intent(out) :: sizeaer,extaer,waer,gaer,tauaer
+        real, dimension (nspint, lpar  ),intent(out) :: l2,l3,l4,l5,l6,l7
+        real, dimension (nspint, lpar  ),intent(out) :: bscoef  !JCB 2007/02/01
         real, dimension (nspint),save :: wavmid !cm
         data wavmid     &
             / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
@@ -1852,9 +1852,9 @@
 !jdf    real, intent(in), dimension(nbin_a, kmaxd) :: number_bin_col
 !jdf    real, intent(inout), dimension(nbin_a, kmaxd) :: radius_wet_col
 !jdf    complex, intent(in) :: refindx_col(nbin_a, kmaxd)
-    real, intent(in), dimension(nbin_a, lpar+1) :: number_bin_col
-    real, intent(inout), dimension(nbin_a, lpar+1) :: radius_wet_col
-    complex, intent(in) :: refindx_col(nbin_a, lpar+1)
+    real, intent(in), dimension(nbin_a, lpar  ) :: number_bin_col
+    real, intent(inout), dimension(nbin_a, lpar  ) :: radius_wet_col
+    complex, intent(in) :: refindx_col(nbin_a, lpar  )
     real, intent(in)    :: dz(lpar)		
 
 !local variables

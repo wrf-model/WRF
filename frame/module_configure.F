@@ -481,7 +481,13 @@ CONTAINS
 
 !---------------------------------- error -------------------------------
      else
-        CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
+         IF ( &
+#include "namelist_nametest.inc"
+              ) THEN
+            nml_error = 0
+         ELSE
+            CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
+         ENDIF
      end if
 
      IF ( nml_error .NE. 0 ) then    ! Still failed

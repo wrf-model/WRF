@@ -1069,8 +1069,7 @@ CONTAINS
                    .AND.PRESENT(phb)                                     &
                    .AND.PRESENT(xlat_u).AND.PRESENT(xlong_u)             &
                    .AND.PRESENT(xlat_v).AND.PRESENT(xlong_v)) THEN
-write(0,*)'calling turbine_dragforce'
-                 CALL turbine_dragforce(                                    &
+                 CALL turbine_drag(                                         &
                      & ID=id                                                &
                      &,PHB=phb,u=u_phy,v=v_phy                              &
                      &,XLAT_U=xlat_u,XLONG_U=xlong_u                        &
@@ -1082,7 +1081,6 @@ write(0,*)'calling turbine_dragforce'
                      &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                      &)
                ENDIF
-write(0,*)'back from turbine_dragforce'
 
            ELSE
                WRITE ( message , FMT = '(A,12(L1,1X))' )            &

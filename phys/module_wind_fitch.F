@@ -2,23 +2,25 @@
 
 MODULE module_wind_fitch
 
-! implement the drag force for wind farm
-! apply horizontal velocity tendencies in du,dv
-! add source term for TKE in qke
-! dz = vertical spacing in m
+! Calculates drag at model levels intersected by turbine blades
+! using wind speed dependent thrust coeff obtained from manufacturer.
+! Adds source of TKE from KE not extracted by turbine for power.
+! Output:
+!   du, dv: horizontal velocity tendencies
+!   qke: TKE
+! Input:
+! dz = dz between full levels (m)
 ! phb = geopotential height
 ! theight = hub height in m
 ! tdiameter = turbine diameter in m
-! thrustcof = standing thrust coeff.
+! stdthrcoef = standing thrust coeff.
 ! tpower = turbine power in MW
 ! cospeed = cut-out speed in m/s
 ! cispeed = cut-in speed in m/s
-! lwfx = length of wind farm in X- direction in grid cells
-! lwfy = length of wind farm in Y- direction in grid cells
-! dcellx = distance between two wind turbines in X- direction in grid cells
-! dcelly = distance between two wind turbines in Y- direction in grid cells
-! pwfx = position of wind farm in X- direction in grid cells
-! pwfy = position of wind farm in Y- direction in grid cells
+! ewfx = x-extent of rectangular wind farm in grid cells
+! ewfy = y-extent of rectangular wind farm in grid cells
+! pwfx = x-coord of grid cell in SW corner of farm
+! pwfy = y-coord of grid cell in SW corner of farm
 ! turbpercell = no. of turbines per grid cell
 
   USE module_wind_generic
@@ -29,12 +31,12 @@ MODULE module_wind_fitch
 
   LOGICAL, DIMENSION(max_domains) :: inited
 
-  PUBLIC  turbine_dragforce
-  PRIVATE dragcof, wfdensityi, inited
+  PUBLIC  turbine_drag
+  PRIVATE dragcof, turbine_area, inited
 
 CONTAINS
 
-  SUBROUTINE  turbine_dragforce(                 &
+  SUBROUTINE  turbine_drag(                      &
        & id                                      &
        &,phb,u,v,xlat_u,xlong_u                  &
        &,xlat_v,xlong_v                          &
@@ -56,10 +58,10 @@ CONTAINS
 ! Local
   TYPE(windturbine_specs), POINTER :: p
   INTEGER  turbgridid
-  REAL     hubheight,diameter,power,cutinspeed,cutoutspeed,thrustcof,turbpercell
+  REAL     hubheight,diameter,power,cutinspeed,cutoutspeed,stdthrcoef,turbpercell
   INTEGER  ewfx,ewfy,pwfx,pwfy
-  REAL     blade_l_point,blade_u_point,zheightl,zheightu,z1,z2,tarea,nt
-  REAL     l1,l2,speed,tkecof,powcof,thrcof,wfdensity
+  REAL     blade_l_point,blade_u_point,zheightl,zheightu,z1,z2,tarea
+  REAL     speed,tkecof,powcof,thrcof,wfdensity
   INTEGER  itf,jtf,ktf
   INTEGER  i,j,k,swfindx,ewfindx,swfindy,ewfindy,n,n1,n2,iturbine
   INTEGER  k_turbine_bot, k_turbine_top
@@ -113,7 +115,7 @@ CONTAINS
       CALL nl_get_power(1,power)
       CALL nl_get_cutinspeed(1,cutinspeed)
       CALL nl_get_cutoutspeed(1,cutoutspeed)
-      CALL nl_get_thrustcof(1,thrustcof)
+      CALL nl_get_stdthrcoef(1,stdthrcoef)
 ! count the turbines
       n = 0
       DO j = jts,jtf
@@ -144,7 +146,7 @@ CONTAINS
               windturbines(n)%j = j
               windturbines(n)%hubheight = hubheight
               windturbines(n)%diameter = diameter
-              windturbines(n)%thrustcof = thrustcof
+              windturbines(n)%stdthrcoef = stdthrcoef
               windturbines(n)%power = power
               windturbines(n)%cutinspeed = cutinspeed
               windturbines(n)%cutoutspeed = cutoutspeed
@@ -158,7 +160,7 @@ CONTAINS
   IF ( windspec .EQ.  WIND_TURBINES_FROMLIST ) THEN
     wfdensity = 1.0/(dx*dx)   !  per turbine, so numerator is 1
   ELSE
-    wfdensity = turbpercell/(dx*dx)   !  per turbine, so numerator is 1
+    wfdensity = turbpercell/(dx*dx)
   ENDIF
 
   IF (inited(id) .AND.                                              &
@@ -172,69 +174,75 @@ CONTAINS
         k_turbine_top=-1     !top level
         i = p%i
         j = p%j
-! Finding vertical levels penetrated by wind turbine
+
         IF (( its .LE. i .AND. i .LE. itf ) .AND. &
             ( jts .LE. j .AND. j .LE. jtf )  ) THEN
 
-          blade_l_point=p%hubheight-p%diameter/2. ! height of lower point of blade (m) (theight=turbine height)
-          blade_u_point=p%hubheight+p%diameter/2. ! height of upper point of blade (m)
+          blade_l_point=p%hubheight-p%diameter/2. ! height of lower blade tip above ground (m) (theight=hub height)
+          blade_u_point=p%hubheight+p%diameter/2. ! height of upper blade tip above ground (m)
 
           kfound = .false.
           zheightl=0.0
+          ! find vertical levels cut by turbine blades
           DO k=kts,ktf
             IF(kfound .EQ. .false.) THEN
               zheightu = zheightl + dz(i,k,j) ! increment height
 
               IF(blade_l_point .GE. zheightl .AND. blade_l_point .LE. zheightu) THEN
-                k_turbine_bot=k ! blade lower tip cuts this level
+                k_turbine_bot=k ! lower blade tip cuts this level
               ENDIF
 
               IF(blade_u_point .GE. zheightl .AND. blade_u_point .LE. zheightu) THEN
-                k_turbine_top=k ! blade upper tip cuts this level
+                k_turbine_top=k ! upper blade tip cuts this level
                 kfound = .TRUE.
               ENDIF
+
               zheightl = zheightu
             ENDIF
           ENDDO
           IF ( kfound ) THEN
-          ! Implementing drag force
-            l1=p%hubheight-p%diameter/2. ! height of lower tip of blade above ground (m)
-            l2=p%hubheight+p%diameter/2. ! height of upper tip of blade above ground (m)
             DO k=k_turbine_bot,k_turbine_top ! loop over turbine blade levels
-              z1=phb(i,k,j)/g-l1-phb(i,1,j)/g  ! distance between k level and lower blade tip
-              z2=phb(i,k+1,j)/g-l1-phb(i,1,j)/g ! distance between k+1 level and lower blade tip
+
+              z1=phb(i,k,j)/g-blade_l_point-phb(i,1,j)/g  ! distance between k level and lower blade tip
+              z2=phb(i,k+1,j)/g-blade_l_point-phb(i,1,j)/g ! distance between k+1 level and lower blade tip
+
               IF(z1 .LT. 0.) z1=0.0 ! k level lower than lower blade tip
               IF(z2 .GT. p%diameter) z2=p%diameter ! k+1 level higher than turbine upper blade tip
+
               ! magnitude of horizontal velocity
               speed=sqrt(u(i,k,j)*u(i,k,j)+v(i,k,j)*v(i,k,j))
+
               ! calculate TKE, power and thrust coeffs
               CALL dragcof(tkecof,powcof,thrcof,               &
                            speed,p%cutinspeed,p%cutoutspeed,   &
-                           p%power,p%diameter,p%thrustcof)
-              CALL wfdensityi(z1,z2,p%diameter,wfdensity,tarea)
+                           p%power,p%diameter,p%stdthrcoef)
+
+              CALL turbine_area(z1,z2,p%diameter,wfdensity,tarea)
+
               ! output TKE tendency
-              qke(i,k,j)     =    qke(i,k,j)+speed*speed*speed*tarea*tkecof*dt/dz(i,k,j)
+              qke(i,k,j) = qke(i,k,j)+speed*speed*speed*tarea*tkecof*dt/dz(i,k,j)
               ! output u tendency
               du(i,k,j) = du(i,k,j)-.5*u(i,k,j)*thrcof*speed*tarea/dz(i,k,j)
               ! output v tendency
               dv(i,k,j) = dv(i,k,j)-.5*v(i,k,j)*thrcof*speed*tarea/dz(i,k,j)
+
             ENDDO
           ENDIF
         ENDIF
       ENDIF
     ENDDO
   ENDIF
-  END SUBROUTINE turbine_dragforce
+  END SUBROUTINE turbine_drag
 
 ! calculates area of turbine between two vertical levels
-! Input variable : 
-!            z1 = position of lower level in m
-!            z2 = position of upper level in m
-!            nt = wind farm density in m2
+! Input variables : 
+!            z1 = distance between k level and lower blade tip
+!            z2 = distance between k+1 level and lower blade tip
+!            wfdensity = wind farm density in m^-2
 !     tdiameter = turbine diameter
 ! Output variable :
-!         tarea = area of turbine between two levels * nt               
-  SUBROUTINE wfdensityi(z1,z2,tdiameter,wfdensity,tarea)
+!         tarea = area of turbine between two levels * wfdensity
+  SUBROUTINE turbine_area(z1,z2,tdiameter,wfdensity,tarea)
 
   REAL, INTENT(IN) ::tdiameter,wfdensity
   REAL, INTENT(INOUT) ::z1,z2
@@ -259,36 +267,36 @@ CONTAINS
   ENDIF
   tarea=tarea*wfdensity      !turbine area * wind farm density 
 
-  END SUBROUTINE wfdensityi
+  END SUBROUTINE turbine_area
 
-! Caculates tke, power and thrust coefficients by curve fitting as a function of wind speed -
-! you can change accordingly
-! It is based on cut-in speed, cut-out speed and standing thrust coefficient
+! Caculates tke, power and thrust coefficients as function of horiz wind speed
+! from fit to turbine power curve - needs to be changed for particular turbine used
+
 ! tkecof = tke coefficient
 ! powcof = power coefficient
 ! thrcof = thrust coefficient
 ! cispeed = cut-in speed in m/s
 ! cospeed = cut-out speed in m/s
 ! tpower = turbine power in MW
-! speed = wind speed in m/s
+! speed = horiz wind speed in m/s
 ! tdiameter = turbine diameter in m 
-! thrustcof = standing thrust coefficents
+! stdthrcoef = standing thrust coefficient
 
   SUBROUTINE dragcof(tkecof,powcof,thrcof,speed,cispeed,cospeed, &
-                     tpower,tdiameter,thrustcof)
+                     tpower,tdiameter,stdthrcoef)
   REAL, PARAMETER :: pi=22./7.
-  REAL, INTENT(IN):: speed, cispeed, cospeed, tpower,tdiameter,thrustcof
+  REAL, INTENT(IN):: speed, cispeed, cospeed, tpower,tdiameter,stdthrcoef
   REAL, INTENT(OUT):: tkecof,powcof,thrcof
   REAL :: power,area
 
-  area=pi/4.*tdiameter*tdiameter          !swept area by turbine blades
+  area=pi/4.*tdiameter*tdiameter          ! area swept by turbine blades
 ! Thrust coefficient calculation
   IF (speed .LE. cispeed .OR. speed .GE. cospeed) THEN
-     thrcof=thrustcof
+     thrcof=stdthrcoef
   ELSE IF(speed .GT. cispeed .AND. speed .LT. cispeed+2.) THEN
-     thrcof=thrustcof+(.9-thrustcof)*(speed-cispeed)/2.
+     thrcof=stdthrcoef+(.9-stdthrcoef)*(speed-cispeed)/2.
   ELSE
-     thrcof=thrustcof+2.3/speed**.8
+     thrcof=stdthrcoef+2.3/speed**.8
   ENDIF
 ! power coefficient calculation
   IF(speed .LE. cispeed .OR. speed .GE. cospeed+2.) THEN

@@ -1712,13 +1712,13 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 # turbine
 rconfig character windturbines_spec namelist,turbine 1 "none" - "" "" "none, ideal, or a file name"
 rconfig integer turbgridid  namelist,turbine 1 -1     - "turbgridid" ""  "which grid id has turbines in it"
-rconfig  real   hubheight   namelist,turbine 1 100.   - "hubheight"  ""  "default height in (m)"
-rconfig  real   diameter    namelist,turbine 1 60.    - "diameter"   ""  "default diameter in (m)"
-rconfig  real   thrustcof   namelist,turbine 1 .158   - "thrustcof"  ""  "default thrustcof"
-rconfig  real   cutinspeed  namelist,turbine 1 4.     - "cutinspeed"    ""  "default cispeed in (m/s)"
-rconfig  real   cutoutspeed namelist,turbine 1 27.    - "cutoutspeed"    ""  "default cospeed in (m/s)"
-rconfig  real   power       namelist,turbine 1 2.     - "power"     ""  "default tpower in (MW)"
-rconfig  real   turbpercell namelist,turbine 1 1.     - "turbpercell"   ""  "number of turbine per cell"
+rconfig  real   hubheight   namelist,turbine 1 100.   - "hubheight"  ""  "hub height (m)"
+rconfig  real   diameter    namelist,turbine 1 60.    - "diameter"   ""  "turbine diameter (m)"
+rconfig  real   stdthrcoef  namelist,turbine 1 .158   - "stdthrcoef" ""  "standing thrust coefficient"
+rconfig  real   cutinspeed  namelist,turbine 1 4.     - "cutinspeed"    ""  "cut-in speed (m/s)"
+rconfig  real   cutoutspeed namelist,turbine 1 27.    - "cutoutspeed"    ""  "cut-out speed (m/s)"
+rconfig  real   power       namelist,turbine 1 2.     - "power"     ""  "turbine power (MW)"
+rconfig  real   turbpercell namelist,turbine 1 1.     - "turbpercell"   ""  "number of turbines per cell"
 rconfig integer ewfx        namelist,turbine 1 0      - "ewfx"       ""  "extent of wind farm in x-cells"
 rconfig integer ewfy        namelist,turbine 1 0      - "ewfy"       ""  "extent of wind farm in y-cells"
 rconfig integer pwfx        namelist,turbine 1 1      - "pwfx"       ""  "southwest corner of wind farm in x-cells"
@@ -1768,7 +1768,6 @@ package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
 #package   milbrandt3mom_dfi mp_physics_dfi==12       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qzr,dfi_qzi,dfi_qzs,dfi_qzg,dfi_qzh
-package   sbu_ylinscheme_dfi    mp_physics==13           -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   thompson07_dfi    mp_physics_dfi==98       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni

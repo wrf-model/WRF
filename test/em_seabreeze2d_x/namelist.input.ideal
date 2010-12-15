@@ -113,7 +113,7 @@
  turbgridid   =      1,
  hubheight    =   100.,
  diameter     =   100.,
- thrustcof    =   .158,
+ stdthrcoef   =   .158,
  cutinspeed   =    3.5,
  cutoutspeed  =    30.,
  power        =    5.0,

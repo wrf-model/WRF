@@ -128,8 +128,10 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer(i_kind)  :: i, l, n, error, airs_table_unit
   integer          :: iost, lnbufr
   real(r_kind),allocatable,dimension(:,:):: airdata_all
-  real(kind=8)  :: tocc(1,1)
-
+  real(kind=8)     :: tocc(1,1)
+  integer          ::num_bufr(7),numbufr,ibufr
+  character(20)    ::filename
+  
 ! Set standard parameters
   real(r_kind)     :: POinT001 =   0.001_r_kind
   real(r_kind)     :: POinT01  =   0.01_r_kind
@@ -158,7 +160,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer ::  nchanl(1)
 !end for RTTOV9_3
 
-   if (trace_use_dull) call da_trace_entry("da_read_obs_bufrairs")
+  call da_trace_entry("da_read_obs_bufrairs")
 
 !  0.0  Initialize variables
 !-----------------------------------
@@ -209,6 +211,9 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
           .or. satellite_id /= rtminit_satid(inst) &
           .or. sensor_id /= rtminit_sensor(inst)  ) return
 
+  size = 0     !
+  iobs = 0     ! for thinning, argument is inout
+
 !    1.0  Open BUFR table and BUFR file
 !--------------------------------------------------------------
   table_file = 'gmao_airs_bufr.tbl'      ! make table file name
@@ -229,8 +234,42 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
 ! Open BUFR file
 !  call da_get_unit(lnbufr)
+
+   num_bufr(:)=0
+   numbufr=0
+   if (num_fgat_time>1) then
+      do i=1,7
+         call da_get_unit(lnbufr)
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.bufr'
+         open(unit   = lnbufr, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+         if (iost == 0) then
+            numbufr=numbufr+1
+	    num_bufr(numbufr)=i
+         else
+            close (lnbufr)
+         end if
+         call da_free_unit(lnbufr)
+      end do
+   else
+     numbufr=1
+   end if
+
+   if (numbufr==0) numbufr=1
+
+bufrfile:  do ibufr=1,numbufr   
+   if (num_fgat_time==1) then
+      filename=trim(infile)//'.bufr'
+   else
+      if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+         filename=trim(infile)//'.bufr'
+      else
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.bufr'   
+      end if
+   end if
+
   lnbufr=97
-  open(unit=lnbufr,file=trim(infile),form='unformatted',iostat = iost)
+
+  open(unit=lnbufr,file=trim(filename),form='unformatted',iostat = iost, status = 'old')
   if (iost /= 0) then
      call da_warning(__FILE__,__LINE__, &
         (/"Cannot open file "//infile/))
@@ -256,21 +295,17 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
   write(unit=date,fmt='( i10)') idate
   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-   if (print_detail_rad) then
-      write(unit=message(1),fmt=*) 'Bufr file date is ', &
-         iy,im,idd,ihh
-      call da_message(message(1:1))
-   end if
+  write(unit=stdout,fmt=*) &
+      'Bufr file date is ',iy,im,idd,ihh,infile
   
 !   3.0 Loop over observations
 !----------------------------
-
-  allocate ( head )
-!  allocate ( head % tb (1:nchan) )
-  nullify  ( head % next )
-  p => head
-  size = 0
-  iobs = 0
+     if ( ibufr == 1 ) then
+        allocate ( head )
+      ! allocate ( head % tb (1:nchan) )
+        nullify  ( head % next )
+        p => head
+     endif  
 
   loop_obspoints: do
 
@@ -437,7 +472,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
           crit = 1.0 ! 0.01_r_kind+terrain + timedif !+ 10.0_r_kind*float(iskip)
 	  if (airs_warmest_fov) &
 	     crit = 1E10 * exp(-(airschan(129)%tmbrst-220.0)/2)   ! warmest bt for window channel (10.36 micron)
-          call map2grids(inst,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,luse)
+          call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,luse)
           if (.not. luse) cycle loop_obspoints
        end if
 
@@ -518,24 +553,33 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
   end do loop_obspoints
 
+  call closbf(lnbufr)
+  close(lnbufr)
+
+end do bufrfile
+
    if (thinning) then
 
 #ifdef DM_PARALLEL
          
       ! Get minimum crit and associated processor index.
       j = 0
-      do n = 1, iv%num_inst
-         j = j + thinning_grid(n)%itxmax
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            j = j + thinning_grid(n,ifgat)%itxmax
+         end do
       end do
          
       allocate ( in  (j) )
       allocate ( out (j) ) 
                
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            in(j) = thinning_grid(n)%score_crit(i)
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               in(j) = thinning_grid(n,ifgat)%score_crit(i)
+            end do
          end do             
       end do
       call mpi_reduce(in, out, j, true_mpi_real, mpi_min, root, comm, ierr)
@@ -543,10 +587,12 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
       call wrf_dm_bcast_real (out, j)
 
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            if ( ABS(out(j)-thinning_grid(n)%score_crit(i)) > 1.0E-10 ) thinning_grid(n)%ibest_obs(i)  = 0
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               if ( ABS(out(j)-thinning_grid(n,ifgat)%score_crit(i)) > 1.0E-10 ) thinning_grid(n,ifgat)%ibest_obs(i)  = 0
+            end do
          end do
       end do
 
@@ -563,10 +609,11 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
          size_tmp = size
          do j = 1, size_tmp
             n = p%sensor_index
+            ifgat = p%ifgat
             found = .false.
 
-            do i = 1, thinning_grid(n)%itxmax
-               if ( thinning_grid(n)%ibest_obs(i) == j .and. thinning_grid(n)%score_crit(i) < 9.99e6_r_kind ) then
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               if ( thinning_grid(n,ifgat)%ibest_obs(i) == j .and. thinning_grid(n,ifgat)%score_crit(i) < 9.99e6_r_kind ) then
                   found = .true.
                   exit
                endif
@@ -673,7 +720,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
       call da_free_unit(airs_table_unit)
    end if
 
-   if (trace_use_dull) call da_trace_exit("da_read_obs_bufrairs")
+   call da_trace_exit("da_read_obs_bufrairs")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/))
 #endif

@@ -144,8 +144,8 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
    ! [6.0] all the simple ones
    !---------------------------------------------------------------------------
 
-   do j=js,je
-      do k=ks,ke+1
+   do k=ks,ke+1
+      do j=js,je
          do i=is,ie
             grid%xa%w(i,j,k)=grid%g_w_2(i,j,k)
          end do

@@ -21,6 +21,7 @@ $sw_rttov_flag = "" ;
 $sw_rttov_inc = "" ;
 $sw_crtm_flag = "" ;
 $sw_4dvar_flag = "" ;
+$sw_wavelet_flag = "" ;
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
 $sw_mach = "ARCH" ;         # ARCH will match any
@@ -212,6 +213,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
        {
        $sw_4dvar_flag = "-DVAR4D";
        }
+     if ( $ENV{WAVELET} )
+       {
+       $sw_wavelet_flag = "-DWAVELET";
+       }
    }
 
 # A separately-installed ESMF library is required to build the ESMF 
@@ -323,6 +328,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
+    $_ =~ s/CONFIGURE_WAVELET_FLAG/$sw_wavelet_flag/g ;
     if ( $sw_ifort_r8 ) {
       $_ =~ s/^PROMOTION.*=/PROMOTION       =       -r8 /g ;
     }

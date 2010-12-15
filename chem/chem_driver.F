@@ -44,11 +44,12 @@
   USE module_gocart_so2so4
   USE module_aer_opt_out,only: aer_opt_out
   USE module_ctrans_grell
-  USE module_convtrans_prep
+! USE module_convtrans_prep
   USE module_dry_dep_driver
   USE module_emissions_driver
   USE module_input_tracer, only: set_tracer
   USE module_wetscav_driver, only: wetscav_driver
+  USE module_wetdep_ls, only:wetdep_ls
   USE module_input_chem_data, only: last_chem_time, &
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
                                      chem_dbg,      &
@@ -80,7 +81,7 @@
 ! ..
 ! .. Local Scalars ..
    INTEGER :: stepave,i,j,k,l,numgas,nv,n, nr,ktau,k_start,k_end,idf,jdf,kdf
-   REAL    :: convtrans_avglen_m
+!  REAL    :: convtrans_avglen_m
 
 ! ................................................................
 ! ..
@@ -111,10 +112,11 @@
                                                              ,t_phy,dz8w,t8w,p8w                  &
                                                              ,rho,rri,z_at_w,vvel,zmid,rh
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: pbl_h
+      REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33, 5) :: seasin,dustin
       REAL,DIMENSION(grid%sm32:grid%em32-1) :: QL,TL
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: REXNSFC,FACTRS                &
                                         ,TOT,TSFC
-     
+
 #endif
 ! Variables for adaptive time steps...
       TYPE(WRFU_TimeInterval) :: tmpTimeInterval
@@ -270,8 +272,8 @@
 !
 ! Some stuff for convective transport...
 !
-  convtrans_avglen_m = 30.  !Averaging time for convective transport in min.
-  stepave=convtrans_avglen_m*60./grid%dt
+!  convtrans_avglen_m = 30.  !Averaging time for convective transport in min.
+! stepave=convtrans_avglen_m*60./grid%dt
 
   CALL get_ijk_from_grid (  grid ,                   &
                             ids, ide, jds, jde, kds, kde,    &
@@ -284,6 +286,8 @@
 !
 !initialize
 !
+  seasin(:,:,:)=0.
+  dustin(:,:,:)=0.
   if (config_flags%lightning_opt > 0 ) then
 ! initialize lightning flash rates
      IF ( ktau==1 ) then
@@ -418,6 +422,10 @@
        CALL wrf_debug(15,'calling mozcart driver from chem_driver')
     CASE (CHEM_TRACER,CHEM_TRACE2)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
+    CASE (CHEM_VASH)
+       CALL wrf_debug(15,'Volcanic Ash mode: only doing emissions, settling, and subgrid transport in chem_driver')
+    CASE (DUST)
+       CALL wrf_debug(15,'Dust only mode: only doing emissions, settling, and subgrid transport chem_driver')
      CASE DEFAULT
        if(config_flags%tracer_opt > 0 )then
        CALL wrf_debug(15,'only doing tracer transport in chem_driver')
@@ -626,17 +634,17 @@
 ! 
 ! no time average available in first half hour
 !   
-       if( config_flags%chem_conv_tr>0)then
-           call convtrans_prep(grid%gd_cloud,grid%gd_cloud2,grid%gd_cloud_a,&
-               grid%gd_cloud_b,grid%raincv,grid%raincv_a,grid%raincv_b,     &
-               grid%gd_cloud2_a,grid%gd_cloud2_b,convtrans_avglen_m,stepave,&
-               adapt_step_flag,curr_secs,grid%stepave_count,                &
-               ktau,grid%dt,                                                &
-               config_flags%cu_rad_feedback,  config_flags%cu_physics,      &
-               ids,ide, jds,jde, kds,kde,                                   &
-               ims,ime, jms,jme, kms,kme,                                   &
-               its,ite, jts,jte,kts,kte                                     )
-       endif ! chem_conv_tr
+!      if( config_flags%chem_conv_tr>0)then
+!          call convtrans_prep(grid%gd_cloud,grid%gd_cloud2,grid%gd_cloud_a,&
+!              grid%gd_cloud_b,grid%raincv,grid%raincv_a,grid%raincv_b,     &
+!              grid%gd_cloud2_a,grid%gd_cloud2_b,convtrans_avglen_m,stepave,&
+!              adapt_step_flag,curr_secs,grid%stepave_count,                &
+!              ktau,grid%dt,                                                &
+!              config_flags%cu_rad_feedback,  config_flags%cu_physics,      &
+!              ids,ide, jds,jde, kds,kde,                                   &
+!              ims,ime, jms,jme, kms,kme,                                   &
+!              its,ite, jts,jte,kts,kte                                     )
+!      endif ! chem_conv_tr
 
 !
 !
@@ -692,9 +700,9 @@
               grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
-              grid%ust,grid%znt,grid%dms_0,                                                &
+              grid%ust,grid%znt,grid%dms_0,grid%erup_beg,grid%erup_end,                    &
               grid%xland,grid%xlat,grid%xlong,                                             &
-              z_at_w,zmid,grid%smois,                                                      &
+              z_at_w,zmid,grid%smois,dustin,seasin,                                        &
               grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
               grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &
               grid%sebio_ket,grid%sebio_ald,grid%sebio_hcho,grid%sebio_eth,                &
@@ -762,6 +770,8 @@
 !
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
+           config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 ) then
          call wrf_debug(15,'calling optical driver')
          call optical_driver (grid%id,curr_secs,grid%dt,config_flags,haveaer,         &
@@ -782,6 +792,8 @@
 !
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
+           config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 ) then
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,curr_secs,ktau,grid%dt,                      &
@@ -841,6 +853,7 @@
 !
 ! do vertical mixing with dry deposition
 !
+
       if (config_flags%vertmix_onoff>0) then
          if (ktau.gt.2) then
             call wrf_debug(15,'calling dry_deposition_driver')
@@ -852,11 +865,11 @@
                  grid%gmt,grid%julday,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
                  rri,p_phy,chem,tracer,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,         &
-                 grid%cldfra, grid%cldfra_old,grid%raincv_b,                          &
+                 grid%cldfra, grid%cldfra_old,grid%raincv_b,seasin,dustin,            &
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
-                 zmid,z_at_w,grid%xland,                                              &
+                 zmid,z_at_w,grid%xland,grid%ash_fall,                                &
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
@@ -874,7 +887,7 @@
             end if
 
          end if
-
+         
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (its <= CHEM_DBG_I .and. ite >= CHEM_DBG_I) .and. &
            (jts <= CHEM_DBG_J .and. jte >= CHEM_DBG_J) .and. &
@@ -960,6 +973,8 @@
 !
      if( do_chemstep .and.                           &
           config_flags%chem_opt /= CHEM_TRACER .and. &
+          config_flags%chem_opt /= CHEM_VASH .and. &
+          config_flags%chem_opt /= DUST .and. &
           config_flags%chem_opt /= CHEM_TRACE2 ) then
 
 !
@@ -972,7 +987,7 @@
               grid%gmt,grid%julday,t_phy,moist_trans,p8w,t8w,                         &
 #endif
 #if (EM_CORE == 1)
-              grid%gmt,grid%julday,t_phy,moist,p8w,t8w,                               &
+              grid%gmt,grid%julday,t_phy,moist,p8w,t8w,grid%gd_cldfr,                 &
 #endif
               p_phy,chem,rho,dz8w,grid%dx,g,                                          &
               zmid,z_at_w,grid%xlat,grid%xlong,                                       &
@@ -1026,7 +1041,7 @@ CALL kpp_mechanism_driver (chem,                                                
      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP)
        CALL wrf_debug(15,'gocart so2-so4 conversion')
           call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
-         grid%gd_cloud_b,                                                   &
+         grid%gd_cloud_b, grid%gd_cldfr,                                    &
          NUM_CHEM,NUM_MOIST,                                                &
          ids,ide, jds,jde, kds,kde,                                         &
          ims,ime, jms,jme, kms,kme,                                         &
@@ -1145,9 +1160,6 @@ CALL kpp_mechanism_driver (chem,                                                
        endif
 
 
-!
-!   now do wet removal
-!
 	if (config_flags%wetscav_onoff > 0) then
         call wetscav_driver (grid%id,ktau,grid%dt,grid%ktauc,config_flags,dtstepc,    &
 #if (NMM_CORE == 1)
@@ -1175,6 +1187,17 @@ CALL kpp_mechanism_driver (chem,                                                
        end if
 
 end if !Chemistry time step check
+!
+!   now do wet removal; first LS if there is no explicit aqeous phase
+!
+        if(config_flags%wetscav_onoff<0)then
+           call wrf_debug(15,'calculate LS wet deposition')
+           call wetdep_ls(grid%dt,chem,grid%rainncv,moist,rho,num_moist, &
+                num_chem,numgas,dz8w,vvel,grid%chem_opt,             &
+                ids,ide, jds,jde, kds,kde,                                        &
+                ims,ime, jms,jme, kms,kme,                                        &
+                its,ite, jts,jte, kts,kte                                         )
+         endif
 !
 ! Sum up the aerosol mass for radiation and diagnostic purposes. Unlike
 ! aerosol_driver, which is called every dtchem, this must be done every

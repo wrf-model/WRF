@@ -773,6 +773,7 @@ OMP		=	# -qsmp=noauto
 OMPCC		=	# -qsmp=noauto
 SFC		=       xlf90_r
 SCC		=       cc_r
+SC99		=	c99_r
 CCOMP		=       cc_r
 DM_FC		=	mpxlf90_r
 DM_CC		=       mpcc_r
@@ -1092,7 +1093,8 @@ RANLIB          =       ranlib
 CC_TOOLS        =       $(SCC) 
 
 LIB_EXTERNAL    = \
-                     ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib
+                     ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib \
+                     ../external/wavelet/libWavelet.a ../external/wavelet/lib_wavelet.a
 ESMF_IO_LIB     =    ../external/esmf_time_f90/libesmf_time.a
 LIB_BUNDLED     = \
                      ../external/fftpack/fftpack5/libfftpack.a \

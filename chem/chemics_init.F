@@ -201,6 +201,9 @@ call wrf_message("**************************************************************
     ENDIF
 
     if( .NOT. config_flags%restart ) then
+       if(config_flags%chem_in_opt == 0 )then
+          chem(:,:,:,:)=0.
+       endif
        do j=jts,jte
           do k=kts,kte
              do i=its,ite
@@ -421,6 +424,22 @@ call wrf_message("**************************************************************
            enddo
          endif
          endif
+     CASE (DUST)
+       if(config_flags%phot_opt .NE. 0 )then
+         call wrf_error_fatal("Dust only simple initialization, phot_opt  MUST BE ZERO")
+!        config_flags%phot_opt  = 0
+       endif
+       CALL wrf_debug(15,'call dust aerosols initialization')
+        ch_dust(:,:)=0.8D-9
+           do j=jts,jte
+              do k=kts,kte
+                 do i=its,ite
+                   do n=1,num_chem
+                     chem(i,k,j,n)=0.
+                   enddo
+                 enddo
+               enddo
+           enddo
      CASE (GOCART_SIMPLE)
        if(config_flags%phot_opt .NE. 0 )then
          call wrf_error_fatal("GOCART simple initialization, phot_opt  MUST BE ZERO")
@@ -474,8 +493,8 @@ call wrf_message("**************************************************************
                       TCOSZ(i,j)=TCOSZ(I,J)+cosszax(1,1) 
                       if(cosszax(1,1).gt.0.)ttday(i,j)=ttday(i,j)+dt
                     enddo
-                 if(i.eq.19.and.j.eq.19)write(0,*)'in cheminit'
-                 if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
+!                if(i.eq.19.and.j.eq.19)write(0,*)'in cheminit'
+!                if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
            enddo
           enddo
       CASE (MOZCART_KPP)
@@ -538,6 +557,8 @@ call wrf_message("**************************************************************
          enddo
       enddo
    enddo
+        ch_dust(:,:)=0.8D-9
+        ch_ss(:,:)=1.
 
 !
 ! initialization for wesely (gas) dry deposition

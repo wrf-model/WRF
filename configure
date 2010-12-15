@@ -298,6 +298,13 @@ else
   echo "PHDF5 not set in environment. Will configure WRF for use without."
 fi
 
+if [ "$wrf_core" = "DA_CORE" ]; then
+   if [ -n "$WRFPLUS_DIR" ] ; then
+      echo "To compile WRFDA without 4DVAR, please remove \$WRFPLUS_DIR from environment. "
+      exit
+   fi
+fi
+
 if [ "$wrf_core" = "4D_DA_CORE" ]; then
    if [ -n "$WRFPLUS_DIR" ] ; then
       echo "Will use WRFPLUS in dir: $WRFPLUS_DIR"
@@ -389,6 +396,9 @@ if [ -n "$WRF_NMM_CORE" ]; then
       if [ $HWRF = 1 ]; then
         echo building WRF with HWRF option
         compileflags="${compileflags}!-DHWRF=1"
+        if [ $HWRFX = 1 ]; then
+            compileflags="${compileflags}!-DHWRFX=1"
+        fi
       fi
     fi
   fi

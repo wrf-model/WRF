@@ -5,6 +5,7 @@ GEN_BE_OBJS = da_etkf.o \
 	da_lapack.o \
 	da_gen_be.o \
 	da_control.o \
+	da_wavelet.o \
 	da_be_spectral.o \
 	module_wrf_error.o \
 	module_driver_constants.o \
@@ -47,7 +48,7 @@ be : \
 	da_advance_time.exe
 
 GEN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
-GEN_BE_LIB = $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack
+GEN_BE_LIB = $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack $(WAVELET_LIB)
 
 gen_be_stage0_wrf.exe : gen_be_stage0_wrf.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(RM) $@
@@ -154,8 +155,8 @@ gen_be_stage4_global.exe : gen_be_stage4_global.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -o gen_be_stage4_global.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage4_global.o  $(GEN_BE_LIB)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
-gen_be_stage4_regional.exe : gen_be_stage4_regional.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
-	$(SFC) -o gen_be_stage4_regional.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage4_regional.o $(GEN_BE_LIB)
+gen_be_stage4_regional.exe : gen_be_stage4_regional.o $(GEN_BE_OBJS) $(GEN_BE_LIBS) $(WAVELET_LIB)
+	$(SFC) -o gen_be_stage4_regional.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage4_regional.o $(GEN_BE_LIB)  $(WAVELET_LIB)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 gen_be_cov2d.exe : gen_be_cov2d.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)

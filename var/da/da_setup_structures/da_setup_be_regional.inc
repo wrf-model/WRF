@@ -14,7 +14,7 @@ subroutine da_setup_be_regional(xb, be)
    type (xb_type), intent(in)    :: xb                    ! First guess structure.
    type (be_type), intent(inout) :: be                    ! Back. errors structure.
 
-   integer                     :: i, j, k, m       ! Loop counters.
+   integer             :: i, j, k, m         ! Loop counters.
    integer, allocatable:: bin(:,:,:)         ! Bin assigned to each 3D point
    integer, allocatable:: bin2d(:,:)         ! Bin assigned to each 2D point
    integer             :: bin_type           ! Type of bin to average over.
@@ -85,6 +85,7 @@ subroutine da_setup_be_regional(xb, be)
    real*8, allocatable           :: evec_loc(:,:,:)        ! Latitudinally varying eigenvectors.
    real*8, allocatable           :: eval_loc(:,:)          ! Latitudinally varying eigenvalues.
 
+   character*5                 :: namv(5)=(/"psi  ","chi_u","t_u  ","rh   ","ps_u "/)
    character*10                :: variable
    character*80                :: var80c
    integer                     :: ni, nj, nk, nk_2d, b
@@ -132,7 +133,7 @@ subroutine da_setup_be_regional(xb, be)
    else
       if ( nk /= kz ) then
          call da_error(__FILE__,__LINE__,  &
-            (/"Vertial levels in fg and be.dat do not match."/))
+            (/"Vertical levels in fg and be.dat do not match."/))
       end if
    endif
 
@@ -573,74 +574,130 @@ subroutine da_setup_be_regional(xb, be)
       write (unit=stdout,fmt='(3x,a,i10)') "b) Finished eigenvector processing!"
    end if
 
-   ! 5.0 Load the scale lengths
-   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if( use_rf )then		! use recursive filters:
+      ! 5.0 Load the scale lengths
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   ! 5.1 allocate the array for scale lengths
+      ! 5.1 allocate the array for scale lengths
 
-   allocate (be1_rf_lengthscale(1:nk))
-   allocate (be2_rf_lengthscale(1:nk))
-   allocate (be3_rf_lengthscale(1:nk))
-   allocate (be4_rf_lengthscale(1:nk))
-   allocate (be5_rf_lengthscale(1:nk))
+      allocate (be1_rf_lengthscale(1:nk))
+      allocate (be2_rf_lengthscale(1:nk))
+      allocate (be3_rf_lengthscale(1:nk))
+      allocate (be4_rf_lengthscale(1:nk))
+      allocate (be5_rf_lengthscale(1:nk))
 #ifdef CLOUD_CV
-   allocate (be6_rf_lengthscale(1:nk))
-   allocate (be7_rf_lengthscale(1:nk))
-   allocate (be8_rf_lengthscale(1:nk))
+      allocate (be6_rf_lengthscale(1:nk))
+      allocate (be7_rf_lengthscale(1:nk))
+      allocate (be8_rf_lengthscale(1:nk))
 #endif
-   ! 5.2 read in the scale lengths
-   do i = 1 , 5
-    read (be_unit) variable
-   select case( trim(adjustl(variable)) )
+      ! 5.2 read in the scale lengths
+      do i = 1 , 5
+         read (be_unit) variable
+         select case( trim(adjustl(variable)) )
 
-   case ('psi')
-     read(be_unit) be1_rf_lengthscale
-   case ('chi_u')
-     read(be_unit) be2_rf_lengthscale
-   case ('t_u')
-     read(be_unit) be3_rf_lengthscale
-   case ('rh_u' , 'rh')
-     read(be_unit) be4_rf_lengthscale
-   case ('ps_u')
-     read(be_unit) be5_rf_lengthscale(1:1)
-   case default;
-      message(1)=' Read problem in lengthscales in BE file '
-      write (unit=message(2),fmt='(A,A)') ' Trying to read lengthscales for variable: ',trim(adjustl(variable))
-      call da_error(__FILE__,__LINE__,message(1:2))
-   end select
-   end do
+            case ('psi')
+               read(be_unit) be1_rf_lengthscale
+            case ('chi_u')
+               read(be_unit) be2_rf_lengthscale
+            case ('t_u')
+               read(be_unit) be3_rf_lengthscale
+            case ('rh_u' , 'rh')
+               read(be_unit) be4_rf_lengthscale
+            case ('ps_u')
+               read(be_unit) be5_rf_lengthscale(1:1)
+            case default;
+               message(1)=' Read problem in lengthscales in BE file '
+               write (unit=message(2),fmt='(A,A)') ' Trying to read lengthscales for variable: ',trim(adjustl(variable))
+               call da_error(__FILE__,__LINE__,message(1:2))
+         end select
+      end do
 #ifdef CLOUD_CV
 !whl
-  if(cloud_cv_options.eq.2)then
-   be6_rf_lengthscale = be4_rf_lengthscale
-   be7_rf_lengthscale = be4_rf_lengthscale
-   be8_rf_lengthscale = be4_rf_lengthscale
-  else
-   be6_rf_lengthscale = 5.0
-   be7_rf_lengthscale = 5.0
-   be8_rf_lengthscale = 5.0
-  end if
-   print*,'lenth scale'
-   print*,'be1= ',be1_rf_lengthscale
-   print*,'be2= ',be2_rf_lengthscale
-   print*,'be3= ',be3_rf_lengthscale
-   print*,'be4= ',be4_rf_lengthscale
-   print*,'be5= ',be5_rf_lengthscale
-   print*,'be6= ',be6_rf_lengthscale
+     if(cloud_cv_options.eq.2)then
+      be6_rf_lengthscale = be4_rf_lengthscale
+      be7_rf_lengthscale = be4_rf_lengthscale
+      be8_rf_lengthscale = be4_rf_lengthscale
+     else
+      be6_rf_lengthscale = 5.0
+      be7_rf_lengthscale = 5.0
+      be8_rf_lengthscale = 5.0
+     end if
+      print*,'lenth scale'
+      print*,'be1= ',be1_rf_lengthscale
+      print*,'be2= ',be2_rf_lengthscale
+      print*,'be3= ',be3_rf_lengthscale
+      print*,'be4= ',be4_rf_lengthscale
+      print*,'be5= ',be5_rf_lengthscale
+      print*,'be6= ',be6_rf_lengthscale
 #endif
 
-   ! 5.3 Convert the scale lengths in the real distance (meter)
+      ! 5.3 Convert the scale lengths in the real distance (meter)
 
-   be1_rf_lengthscale(1:nk) = be1_rf_lengthscale(1:nk) * xb%ds
-   be2_rf_lengthscale(1:nk) = be2_rf_lengthscale(1:nk) * xb%ds
-   be3_rf_lengthscale(1:nk) = be3_rf_lengthscale(1:nk) * xb%ds
-   be4_rf_lengthscale(1:nk) = be4_rf_lengthscale(1:nk) * xb%ds
-   be5_rf_lengthscale(1:1)  = be5_rf_lengthscale(1:1)  * xb%ds
+      be1_rf_lengthscale(1:nk) = be1_rf_lengthscale(1:nk) * xb%ds
+      be2_rf_lengthscale(1:nk) = be2_rf_lengthscale(1:nk) * xb%ds
+      be3_rf_lengthscale(1:nk) = be3_rf_lengthscale(1:nk) * xb%ds
+      be4_rf_lengthscale(1:nk) = be4_rf_lengthscale(1:nk) * xb%ds
+      be5_rf_lengthscale(1:1)  = be5_rf_lengthscale(1:1)  * xb%ds
 #ifdef CLOUD_CV
-   be6_rf_lengthscale(1:nk) = be6_rf_lengthscale(1:nk) * xb%ds
-   be7_rf_lengthscale(1:nk) = be7_rf_lengthscale(1:nk) * xb%ds
-   be8_rf_lengthscale(1:nk) = be8_rf_lengthscale(1:nk) * xb%ds
+      be6_rf_lengthscale(1:nk) = be6_rf_lengthscale(1:nk) * xb%ds
+      be7_rf_lengthscale(1:nk) = be7_rf_lengthscale(1:nk) * xb%ds
+      be8_rf_lengthscale(1:nk) = be8_rf_lengthscale(1:nk) * xb%ds
 #endif
+   else				! use wavelets:
+      read(be_unit)k		! trimmed string length
+      if( k>len(variable) )then
+         write(message(1),'(i0,">",i0)')k,len(variable)
+         call da_error(__FILE__,__LINE__,message(1:1))
+      endif
+      read(be_unit)variable(1:k)
+      if( variable(1:k) /= 'wavelet' )then
+         write(message(1),'(A,"/=''wavelet''")')variable(1:k)
+         call da_error(__FILE__,__LINE__,message(1:1))
+      endif
+      b = 0			! pointer to variable*level
+      mz=kz			! length in be%wsd(:,:,b+1:b+mz)
+      do m=1,5			! variables loop:
+         if(m==5)mz=1
+         read(be_unit)k,nk
+         if( k>len(variable) )then
+            write(message(1),'(i0,">",i0," for ",A)')k,len(variable),namv(m)
+            call da_error(__FILE__,__LINE__,message(1:1))
+         elseif( nk /= mz )then
+            write(message(1),'(i0,"=nk/=mz=",i0," for ",A)')nk,mz,namv(m)
+            call da_error(__FILE__,__LINE__,message(1:1))
+         endif
+         read(be_unit)variable(1:k)
+         if( variable(1:k) /= trim(namv(m)) )then
+            write(message(1),'(A,"/=",A)')variable(1:k),trim(namv(m))
+            call da_error(__FILE__,__LINE__,message(1:1))
+         endif
+         if( m==1 )then
+            read(be_unit)do_normalize,namw,lf,nb
+!           print*,namv(m),nb,namw,lf
+            allocate(nij(0:nb,0:1,0:2))
+            read(be_unit)nij	! wavelet indexes
+            write(*,'(A,": ")',advance="no")__FILE__
+            do i=0,nb		! wavelet-band loop:
+               write(*,'(i2,"{",2(i3,","),i3,";",2(i3,","),i3,"}")',advance="no")&
+                  i,transpose(nij(i,:,:))
+            enddo
+            print*
+            allocate(be%wsd(nij(0,1,2),nij(0,0,2),4*kz+1), &
+!____________________max of {,i}dwtai wavelet scratch workspace sizes:
+                     ws(max(maxval(nij(0,:,2)), &
+                            2*floor(.5*(real(maxval(nij(0,:,0)))+lf))+lf-2)))
+            if( do_normalize )allocate(be%sd(nij(0,1,0),nij(0,0,0),4*kz+1))
+         endif			! if( m==1 )
+         do k=1,mz		! mz=kz (m<5), 1 (m>4).
+!___________level-k field & wavelet-coefficient std. devs.:
+            read(be_unit)be%wsd(:,:,b+k)
+            if( do_normalize )read(be_unit)be%sd(:,:,b+k)
+         enddo			! level-k loop.
+         write(*,'(A,": |wsd[",A,"]|=",es9.3)')__FILE__,namv(m),sqrt(sum(be%wsd(:,:,b+1:b+mz)**2))
+         if( do_normalize )write(*,'(A,": | sd[",A,"]|=",es9.3)')__FILE__,namv(m),sqrt(sum(be%sd(:,:,b+1:b+mz)**2))
+         b = b+mz		! point to next variable.
+      enddo			! variables loop
+   endif			! if( use_rf )
    ! 6.0 Perform checks on eigenvectors with be data structure:
    if (test_statistics) then
       call da_check_eof_decomposition(be%v1%val_g(:), be%v1%evec_g(:,:),&
@@ -658,68 +715,70 @@ subroutine da_setup_be_regional(xb, be)
    close(be_unit)
    call da_free_unit(be_unit)
 
-   ! 6.3 Keep the original be % v1, be % v2,...., and lengthscale in the first loop
-   !     for the rescaling in the later loops:
+   if( use_rf )then
+      ! 6.3 Keep the original be % v1, be % v2,...., and lengthscale in the first loop
+      !     for the rescaling in the later loops:
 
-   it = 1
+      it = 1
 
-   if (max_ext_its > 1) then
+      if (max_ext_its > 1) then
 
-       print '(/5x,">>> Save the variances and scale-lengths in outer-loop",i2/)', it
-       write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
+          print '(/5x,">>> Save the variances and scale-lengths in outer-loop",i2/)', it
+          write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
                                      be % v4 % mz, be % v5 % mz, xb % ds
-       write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
+          write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
                                      be % v4 % val, be % v5 % val, &
              be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
              be4_rf_lengthscale, be5_rf_lengthscale
      
-       if (print_detail_be ) then
-       write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
+          if (print_detail_be ) then
+             write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
                                                it, kz, jy, ix, xb % ds
-       write(be_print_unit,'("Original val and rf, and mz:",5i5)') &
+             write(be_print_unit,'("Original val and rf, and mz:",5i5)') &
                       be % v1 % mz, be % v2 % mz, be% v3 % mz, be % v4 % mz, be % v5 % mz
-       write(be_print_unit,'("mz=",i3,2x,"be%v1%val:"/(10e12.5))') be%v1%mz, be%v1%val(1,:)
-       write(be_print_unit,'("mz=",i3,2x,"be%v2%val:"/(10e12.5))') be%v2%mz, be%v2%val(1,:)
-       write(be_print_unit,'("mz=",i3,2x,"be%v3%val:"/(10e12.5))') be%v3%mz, be%v3%val(1,:)
-       write(be_print_unit,'("mz=",i3,2x,"be%v4%val:"/(10e12.5))') be%v4%mz, be%v4%val(1,:)
-       write(be_print_unit,'("mz=",i3,2x,"be%v5%val:"/(10e12.5))') be%v5%mz, be%v5%val(1,:)
-       write(be_print_unit,'(/"scale-length: kz=",i3)') kz
-       do i = 1,kz 
-         if (i == 1) then
-           write(be_print_unit,'(i3,2x,5e15.5)') i,be1_rf_lengthscale(i), &
-                be2_rf_lengthscale(i), be3_rf_lengthscale(i), be4_rf_lengthscale(i), &
-                be5_rf_lengthscale(i)
-         else
-           write(be_print_unit,'(i3,2x,5e15.5)') i,be1_rf_lengthscale(i), &
-                be2_rf_lengthscale(i), be3_rf_lengthscale(i), be4_rf_lengthscale(i)
-       endif
-       enddo
+             write(be_print_unit,'("mz=",i3,2x,"be%v1%val:"/(10e12.5))') be%v1%mz, be%v1%val(1,:)
+             write(be_print_unit,'("mz=",i3,2x,"be%v2%val:"/(10e12.5))') be%v2%mz, be%v2%val(1,:)
+             write(be_print_unit,'("mz=",i3,2x,"be%v3%val:"/(10e12.5))') be%v3%mz, be%v3%val(1,:)
+             write(be_print_unit,'("mz=",i3,2x,"be%v4%val:"/(10e12.5))') be%v4%mz, be%v4%val(1,:)
+             write(be_print_unit,'("mz=",i3,2x,"be%v5%val:"/(10e12.5))') be%v5%mz, be%v5%val(1,:)
+             write(be_print_unit,'(/"scale-length: kz=",i3)') kz
+             do i = 1,kz 
+               if (i == 1) then
+                 write(be_print_unit,'(i3,2x,5e15.5)') i,be1_rf_lengthscale(i), &
+                   be2_rf_lengthscale(i), be3_rf_lengthscale(i), be4_rf_lengthscale(i), &
+                   be5_rf_lengthscale(i)
+               else
+                 write(be_print_unit,'(i3,2x,5e15.5)') i,be1_rf_lengthscale(i), &
+                   be2_rf_lengthscale(i), be3_rf_lengthscale(i), be4_rf_lengthscale(i)
+               endif
+             enddo
     
-       endif
+          endif
 
-   endif
+      endif
 
-   ! 7.0 Apply empirical and recursive filter rescaling factor:
-   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      ! 7.0 Apply empirical and recursive filter rescaling factor:
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   call da_rescale_background_errors(var_scaling1(1), len_scaling1(1), &
-                                      xb % ds, be1_rf_lengthscale, be % v1)
-   call da_rescale_background_errors(var_scaling2(1), len_scaling2(1), &
-                                      xb % ds, be2_rf_lengthscale, be % v2)
-   call da_rescale_background_errors(var_scaling3(1), len_scaling3(1), &
-                                      xb % ds, be3_rf_lengthscale, be % v3)
-   call da_rescale_background_errors(var_scaling4(1), len_scaling4(1), &
-                                      xb % ds, be4_rf_lengthscale, be % v4)
-   call da_rescale_background_errors(var_scaling5(1), len_scaling5(1), &
-                                      xb % ds, be5_rf_lengthscale, be % v5)
+      call da_rescale_background_errors(var_scaling1(1), len_scaling1(1), &
+                                         xb % ds, be1_rf_lengthscale, be % v1)
+      call da_rescale_background_errors(var_scaling2(1), len_scaling2(1), &
+                                         xb % ds, be2_rf_lengthscale, be % v2)
+      call da_rescale_background_errors(var_scaling3(1), len_scaling3(1), &
+                                         xb % ds, be3_rf_lengthscale, be % v3)
+      call da_rescale_background_errors(var_scaling4(1), len_scaling4(1), &
+                                         xb % ds, be4_rf_lengthscale, be % v4)
+      call da_rescale_background_errors(var_scaling5(1), len_scaling5(1), &
+                                         xb % ds, be5_rf_lengthscale, be % v5)
 #ifdef CLOUD_CV
-   call da_rescale_background_errors(var_scaling6(1), len_scaling6(1), &
-                                      xb % ds, be6_rf_lengthscale, be % v6)
-   call da_rescale_background_errors(var_scaling7(1), len_scaling7(1), &
-                                      xb % ds, be7_rf_lengthscale, be % v7)
-   call da_rescale_background_errors(var_scaling8(1), len_scaling8(1), &
-                                      xb % ds, be8_rf_lengthscale, be % v8)
+      call da_rescale_background_errors(var_scaling6(1), len_scaling6(1), &
+                                         xb % ds, be6_rf_lengthscale, be % v6)
+      call da_rescale_background_errors(var_scaling7(1), len_scaling7(1), &
+                                         xb % ds, be7_rf_lengthscale, be % v7)
+      call da_rescale_background_errors(var_scaling8(1), len_scaling8(1), &
+                                         xb % ds, be8_rf_lengthscale, be % v8)
 #endif
+   endif
    if (print_detail_be ) then
 
        write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
@@ -763,16 +822,18 @@ subroutine da_setup_be_regional(xb, be)
    deallocate (be7_eval_loc)
    deallocate (be8_eval_loc)
 #endif
-   deallocate (be1_rf_lengthscale)
-   deallocate (be2_rf_lengthscale)
-   deallocate (be3_rf_lengthscale)
-   deallocate (be4_rf_lengthscale)
-   deallocate (be5_rf_lengthscale)
+   if( use_rf )then
+      deallocate (be1_rf_lengthscale)
+      deallocate (be2_rf_lengthscale)
+      deallocate (be3_rf_lengthscale)
+      deallocate (be4_rf_lengthscale)
+      deallocate (be5_rf_lengthscale)
 #ifdef CLOUD_CV
-   deallocate (be6_rf_lengthscale)
-   deallocate (be7_rf_lengthscale)
-   deallocate (be8_rf_lengthscale)
+      deallocate (be6_rf_lengthscale)
+      deallocate (be7_rf_lengthscale)
+      deallocate (be8_rf_lengthscale)
 #endif
+   endif
    if (vert_corr == vert_corr_2) then
       deallocate (be1_eval_glo)
       deallocate (be2_eval_glo)

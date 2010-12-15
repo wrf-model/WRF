@@ -67,6 +67,7 @@
            ph_terpooh,ph_mvk,ph_glyald,ph_hyac
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
+         OPTIONAL,                                                     &
          INTENT(INOUT ) ::                                             &
            gd_cloud,gd_cloud2
 !

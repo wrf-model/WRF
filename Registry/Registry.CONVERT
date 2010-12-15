@@ -470,6 +470,7 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             moist:qv,qc,qr,qi

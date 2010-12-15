@@ -402,6 +402,7 @@ state   real    dfi_qg         ijkftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QGRAUP"       "Graupel mixing ratio"          "kg kg-1"
 state   real    dfi_qh         ijkftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
+state    real   rimi             ikj    misc        1         -     irh         "RIMI"           "riming intensity"  "fraction"
 state   real    -              ijkft   a_moist     1         -     -    -
 state   real    -              ijkft   g_moist     1         -     -    -
 state   real    a_qv           ijkft   a_moist     1         -     rh   "A_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
@@ -1261,6 +1262,7 @@ rconfig   logical   write_mod_filtered_obs  namelist,wrfvar2  1  .false.  -  "wr
 
 rconfig   integer   fg_format               namelist,wrfvar3  1  1        - "fg_format"                ""  "1=WRF, 3=KMA"
 rconfig   integer   ob_format               namelist,wrfvar3  1  2        - "ob_format"                ""  "1=BUFR,2=ASCII"
+rconfig   integer   num_fgat_time           namelist,wrfvar3  1  1        - "num_fgat_time"            ""  ""
 rconfig   logical   thin_conv               namelist,wrfvar4  1  .true.   - "thin_conv"                ""  ""
 rconfig   real      thin_mesh_conv          namelist,wrfvar4  max_instruments  20.0   - "thin_mesh_conv"            ""  ""
 rconfig   logical   use_synopobs            namelist,wrfvar4  1  .true.   - "use_synopobs"             ""  ""
@@ -1377,6 +1379,7 @@ rconfig   real      as2                     namelist,wrfvar7  3 -1.0      - "as2
 rconfig   real      as3                     namelist,wrfvar7  3 -1.0      - "as3"                      ""  ""
 rconfig   real      as4                     namelist,wrfvar7  3 -1.0      - "as4"                      ""  ""
 rconfig   real      as5                     namelist,wrfvar7  3 -1.0      - "as5"                      ""  ""
+rconfig   logical   use_rf                  namelist,wrfvar7  1  .true.   - "use_rf" "Use recursive filters" ""
 rconfig   integer   rf_passes               namelist,wrfvar7  1  6        - "rf_passes"                ""  ""
 rconfig   real      var_scaling1            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling1"             ""  ""
 rconfig   real      var_scaling2            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling2"             ""  ""
@@ -2041,6 +2044,7 @@ package   passivec1     chem_opt==0                  -
 package   passiveqv     mp_physics==0                -             moist:qv;g_moist:g_qv;a_moist:a_qv
 package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
@@ -2058,6 +2062,7 @@ package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
 package   kesslerscheme_dfi mp_physics_dfi==1        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr
 package   linscheme_dfi     mp_physics_dfi==2        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
 package   wsm3scheme_dfi    mp_physics_dfi==3        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr
 package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   etampnew_dfi      mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
@@ -2074,6 +2079,7 @@ package   no4dvarmoist        mp_physics_4dvar==-1       -             -
 package   passiveqv_4dvar     mp_physics_4dvar==0        -             g_moist:g_qv;a_moist:a_qv
 package   kesslerscheme_4dvar mp_physics_4dvar==1        -             g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   linscheme_4dvar     mp_physics_4dvar==2        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   sbu_ylinscheme_4dvar    mp_physics==13           -           g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;state:rimi
 package   wsm3scheme_4dvar    mp_physics_4dvar==3        -             g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   wsm5scheme_4dvar    mp_physics_4dvar==4        -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   etampnew_4dvar      mp_physics_4dvar==5        -             g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs

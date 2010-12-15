@@ -284,6 +284,11 @@ else
        setenv BUFR_CPP " "
        setenv BUFR_LIB " "
     endif
+    if ( $?WAVELET ) then
+       setenv WAVELET_LIB "../external/wavelet/libWavelet.a ../external/wavelet/lib_wavelet.a"
+    else
+       setenv WAVELET_LIB " "
+    endif
     if ( $?MADIS ) then
        setenv MADIS_CPP "-DMADIS"
        setenv MADIS_STATIC ${MADIS}/static

@@ -13,10 +13,10 @@ CONTAINS
     subroutine dry_dep_driver(id,curr_secs,ktau,dtstep,config_flags,      &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
                p_phy,chem,tracer,rho_phy,dz8w,exch_h,hfx,dx,              &
-               cldfra, cldfra_old,raincv,                                 &
+               cldfra, cldfra_old,raincv,seasin,dustin,                   &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               xland,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,                &
+               xland,ash_fall,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,       &
                anh3,cvaro1,cvaro2,   &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
                e_co,kemit,sf_urban_physics,numgas,current_month,dvel,     &
@@ -34,6 +34,7 @@ CONTAINS
   USE module_data_sorgam
   USE module_aerosols_sorgam
   USE module_gocart_settling
+  USE module_vash_settling
   USE module_gocart_drydep
   USE module_mosaic_drydep, only:  mosaic_drydep_driver
   USE module_mixactivate_wrappers, only: mosaic_mixactivate, sorgam_mixactivate
@@ -97,11 +98,13 @@ CONTAINS
                                                      xlat,      &
                                                      xlong,     &
                                                      snowh,     &
-                                          xland,znt,raincv
+                                          xland,znt,raincv,ash_fall
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
                     cldfra,     & ! cloud fraction current timestep
                     cldfra_old    ! cloud fraction previous timestep
+   REAL,  DIMENSION( ims:ime , jms:jme, 5 )                   ,    &
+          INTENT(IN) ::            seasin,dustin 
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &
           INTENT(OUT) ::                                      &
                                                      dep_vel_o3
@@ -188,7 +191,7 @@ CONTAINS
           IF ( config_flags%chem_opt == MOZCART_KPP ) then
             call gocart_drydep_driver( dtstep,                            &
                   config_flags, numgas,                                   &
-                  t_phy, moist, p8w, t8w,                                 &
+                  t_phy, moist, p8w, t8w, rmol,aer_res_def,               &
                   p_phy, chem, rho_phy, dz8w, ddvel, xland, hfx,          &
                   ivgtyp, tsk, vegfra, pbl, ust, znt, xlat, xlong,        &
                   ids,ide, jds,jde, kds,kde,                              &
@@ -253,12 +256,25 @@ CONTAINS
 !
          call gocart_drydep_driver(dtstep,                                &
                config_flags,numgas,                                       &
-               t_phy,moist,p8w,t8w,                                       &
+               t_phy,moist,p8w,t8w,rmol,aer_res_def,                      &
                p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
                ivgtyp,tsk,vegfra,pbl,ust,znt,xlat,xlong,                  &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
+       ELSEIF ( config_flags%chem_opt == DUST) then
+!
+! this does aerosol species (dust) for gocart only
+!
+         call gocart_drydep_driver(dtstep,                                &
+               config_flags,numgas,                                       &
+               t_phy,moist,p8w,t8w,rmol,aer_res_def,                      &
+               p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
+               ivgtyp,tsk,vegfra,pbl,ust,znt,xlat,xlong,                  &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
+
 
        ELSEIF ( config_flags%chem_opt == GOCARTRACM_KPP) then
 !
@@ -275,7 +291,7 @@ CONTAINS
                its,ite, jts,jte, kts,kte                                  )
          call gocart_drydep_driver(dtstep,                                &
                config_flags,numgas,                                       &
-               t_phy,moist,p8w,t8w,                                       &
+               t_phy,moist,p8w,t8w,rmol,aer_res_def,                      &
                p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
                ivgtyp,tsk,vegfra,pbl,ust,znt,xlat,xlong,                  &
                ids,ide, jds,jde, kds,kde,                                 &
@@ -522,11 +538,19 @@ CONTAINS
    CASE DEFAULT
    END SELECT mixactivate_select
    settling_select: SELECT CASE(config_flags%chem_opt)
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP)
-       CALL wrf_debug(15,'call gocart settling routine')
+   CASE (DUST,GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP,RADM2SORG,RADM2SORG_AQ)
+       CALL wrf_debug(0,'call gocart settling routine')
          call gocart_settling_driver(dtstep,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,p_phy,         &
-         dx,g, &
+         dustin,seasin,dx,g, &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+   CASE (CHEM_VASH)
+       CALL wrf_debug(15,'call vash settling routine')
+         call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
+         chem,rho_phy,dz8w,p8w,p_phy,                                      &
+         ash_fall,dx,g,                                                    &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )

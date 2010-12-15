@@ -36,6 +36,7 @@ MODULES =                           \
   module_gocart_seasalt.o                     \
   module_gocart_dmsemis.o                     \
   module_gocart_settling.o                     \
+  module_vash_settling.o                     \
   module_gocart_aerosols.o                     \
   module_gocart_drydep.o                     \
   module_radm.o                     \
@@ -77,6 +78,7 @@ MODULES =                           \
   module_optical_averaging.o        \
   module_mosaic_initmixrats.o       \
   module_mosaic_wetscav.o           \
+  module_wetdep_ls.o           \
   module_cmu_dvode_solver.o         \
   module_cmu_bulkaqchem.o           \
   module_mosaic_cloudchem.o         \
@@ -133,11 +135,15 @@ module_gocart_chem.o: module_data_gocartchem.o module_phot_mad.o
 
 module_gocart_so2so4.o:
 
+module_vash_settling.o:
+
 module_gocart_settling.o: module_data_gocart_dust.o
 
 module_gocart_aerosols.o: 
 
 module_gocart_drydep.o: 
+
+module_wetdep_ls.o: 
 
 module_gocart_dmsemis.o: 
 

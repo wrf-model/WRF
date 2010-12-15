@@ -6,6 +6,7 @@ module da_par_util
    ! METHOD:  RSL/MPI.
    !---------------------------------------------------------------------------
 
+   use da_control, only: use_rf
    use module_domain, only : domain, xpose_type
 
 #ifdef DM_PARALLEL

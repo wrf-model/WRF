@@ -28,6 +28,8 @@
                     ,DWDT,DWDTMN,DWDTMX                                 &
                     ,FNS,FEW,FNE,FSE                                    &
                     ,T,U,V,W,Q,CWM                                      &
+                    ,DEF3D,HDAC                                    &
+                    ,WP                                                 &    
                     ,IHE,IHW,IVE,IVW                                    &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &
@@ -80,15 +82,16 @@
 !
       INTEGER,INTENT(IN) :: NTSD
 !
-      REAL,INTENT(IN) :: DT,DY,PDTOP,PT
+      REAL,INTENT(IN) :: DT,DY,PDTOP,PT,WP
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: DETA1,DETA2
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DWDTMN,DWDTMX,DX    &
                                                    ,FAD,HBM2,HBM3       &
-                                                   ,PDSL,PDSLO
+                                                   ,PDSL,PDSLO          &
+                                                   ,HDAC
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT,DEF3D
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: CWM         &
                                                            ,FEW,FNE     &
@@ -112,7 +115,7 @@
 !
       INTEGER,PARAMETER :: NTSHY=2
 !
-      REAL,PARAMETER :: WGHT=0.35,WP=0.
+      REAL,PARAMETER :: WGHT=0.35
 !
       INTEGER,DIMENSION(KTS:KTE) :: LA
 !
@@ -135,10 +138,12 @@
       REAL :: ADDT,DELP,DETAL,DP,DPDE,DPPL,DPSTR,DPTL,DPTU              &
              ,DWDTT,EPSN,FCT,FFC,GDT,GDT2                               &
              ,PNP,PP1,PSTRDN,PSTRUP,RDP,RDPDN,RDPUP,RDT                 &
-             ,TFC,TMP,TTAL,TTFC
+             ,TFC,TMP,TTAL,TTFC,HKNE_IJ,HKSE_IJ,ADVEC
 !
-      LOGICAL :: BOT,TOP
+      LOGICAL :: BOT,TOP,DIFFW
 !
+      CHARACTER(LEN=255) :: message
+
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -190,6 +195,38 @@
         ENDDO
         ENDDO
       ENDDO
+
+
+#if !defined ( HWRF)
+      IF (DT > 0) THEN
+         DIFFW=.TRUE.
+      ELSE
+         DIFFW=.FALSE.
+      ENDIF
+
+      IF(DIFFW) THEN
+
+
+        DO K=KTS,KTE
+         DO J=MYJS_P1,MYJE1_P1
+          DO I=MYIS_P1,MYIE1_P1
+            HKNE_IJ=(DEF3D(I,J,K)+DEF3D(I+IHE(J),J+1,K))
+            HKSE_IJ=(DEF3D(I+IHE(J),J-1,K)+DEF3D(I,J,K))
+            WNE(I,J)=(W (I+IHE(J),J+1,K)-W (I,J,K))*HKNE_IJ
+            WSE(I,J)=(W (I+IHE(J),J-1,K)-W (I,J,K))*HKSE_IJ
+          ENDDO 
+         ENDDO 
+
+         DO J=MYJS2,MYJE2
+          DO I=MYIS,MYIE
+              DWDT(I,J,K)= DWDT(I,J,K) - ( WNE (I,J)-WNE (I+IHW(J),J-1) +  &
+                                           WSE (I,J)-WSE (I+IHW(J),J+1) ) * &
+                                           HDAC(I,J)*HBM2(I,J)*RDT 
+          ENDDO 
+         ENDDO 
+        ENDDO
+       ENDIF
+#endif
 !
 !-----------------------------------------------------------------------
 !***
@@ -276,25 +313,71 @@
         DO J=MYJS3,MYJE3
         DO I=MYIS2,MYIE2
           DPDE=DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)
-          DWDT(I,J,K)=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
+#if defined ( HWRF )
+         DWDT(I,J,K)=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
                        +WNS(I,J-1)           +WNS(I,J+1)                &
                        +WNE(I+IHW(J),J-1)    +WNE(I,J)                  &
                        +WSE(I,J)             +WSE(I+IHW(J),J+1))        &
                        *FAD(I,J)*2.0*HBM3(I,J)/(DPDE*DT)                &
                        +DWDT(I,J,K)
+#else
+          ADVEC=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
+                       +WNS(I,J-1)           +WNS(I,J+1)                &
+                       +WNE(I+IHW(J),J-1)    +WNE(I,J)                  &
+                       +WSE(I,J)             +WSE(I+IHW(J),J+1))        &
+                       *FAD(I,J)*2.0*HBM3(I,J)/(DPDE*DT)
+          DWDT(I,J,K)= ADVEC + DWDT(I,J,K)
+#endif
+
         ENDDO
         ENDDO
-!
-!-----------------------------------------------------------------------
-!
+
       ENDDO main_horizontal
-!
+
 !-----------------------------------------------------------------------
 !***
 !***  END OF HORIZONTAL ADVECTION
 !***
 !-----------------------------------------------------------------------
+
+#if !defined ( HWRF )
+!-----------------------------------------------------------------------
+!---taking external mode out--------------------------------------------
+!-----------------------------------------------------------------------
+
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          TTB(I,J)=0.
+        ENDDO
+       ENDDO
 !
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            DPDE=DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)
+            TTB(I,J)=DPDE*DWDT(I,J,K)+TTB(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+!
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          TTB(I,J)=TTB(I,J)/(PDSLO(I,J)+PDTOP)
+        ENDDO
+       ENDDO
+!
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            DWDT(I,J,K)=DWDT(I,J,K)-TTB(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+
+!
+!
+#endif
+
 !$omp parallel do                                                       &
 !$omp& private(dwdtt,i,j,k)
       DO K=KTS,KTE
@@ -309,7 +392,46 @@
       ENDDO
       ENDDO
 !-----------------------------------------------------------------------
+#if !defined ( HWRF )
+!-----------------------------------------------------------------------
+!---setting dwdt (epsilon at this point) on h points to 1. along bdy ---
+!-----------------------------------------------------------------------
+        do K=KTS,KTE
+          if (JDS .eq. JTS) then
+            do J=jts,jts+1
+              do I=its,ite
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
 !
+          if (JTE .ge. JDE-2) then
+            do j=jte-1,jte
+              do i=its,ite
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
+!
+          if(ITS .eq. IDS)then
+            do j=jts,jte
+              do i=its,its+1
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
+!
+          if(ITE .ge. IDE-2)then
+            do j=jts,jte
+              do i=ite-1,ite
+                DWDT(I,J,K)=1.
+              enddo
+            enddo
+          endif
+        enddo
+
+!
+#endif
       GDT=G*DT
       GDT2=GDT*GDT
       FFC=-R_D/GDT2
@@ -508,6 +630,14 @@
           T(I,J,K)=T_IK(I,K)
           W(I,J,K)=W_IK(I,K)
           DWDT(I,J,K)=DWDT_IK(I,K)
+
+#if !defined ( HWRF )
+	if (DWDT(I,J,K) .lt. 0.80 .or. DWDT(I,J,K) .gt. 1.2) then
+	write(message,*) 'very nonhydro...: ', I,J,K,DWDT(I,J,K)
+        call wrf_message(message)
+	endif
+
+#endif
         ENDDO
         ENDDO
 !-----------------------------------------------------------------------
@@ -817,7 +947,7 @@
       REAL :: FEWP,FNEP,FNSP,FSEP,UDY,VDX
 !
       REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: DPDE,UNED,USED         &
-     &                                          ,ZEW,ZNE,ZNS,ZSE
+     &                                          ,ZEW,ZNE,ZNS,ZSE,TTB
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -931,10 +1061,43 @@
                     +W(I,J,K)
         ENDDO
         ENDDO
-!
-!-----------------------------------------------------------------------
-!
+
       ENDDO main_integration
+
+#if !defined ( HWRF )
+!-----------------------------------------------------------------------
+!---taking external mode out--------------------------------------------
+!-----------------------------------------------------------------------
+
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          TTB(I,J)=0.
+        ENDDO
+       ENDDO
+!
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            DPDE(I,J)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+            TTB(I,J)=(DPDE(I,J))*W(I,J,K)+TTB(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+!
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+          TTB(I,J)=TTB(I,J)/(PDSL(I,J)+PDTOP)
+        ENDDO
+       ENDDO
+!
+      DO K=KTS,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            W(I,J,K)=W(I,J,K)-TTB(I,J)
+        ENDDO
+       ENDDO
+      ENDDO
+#endif
 !
 !-----------------------------------------------------------------------
 !

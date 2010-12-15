@@ -20,7 +20,8 @@ CONTAINS
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
-         xland,xlat,xlong,z_at_w,z,smois,                                  &
+         erup_beg,erup_end,                                                &
+         xland,xlat,xlong,z_at_w,z,smois,dustin,seasin,                    &
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
@@ -104,10 +105,13 @@ CONTAINS
          emis_ant
    REAL, DIMENSION( ims:ime, jms:jme),&
          INTENT(IN ) ::                                                 &
-         dms_0,tsk
+         dms_0,tsk,erup_beg,erup_end
    REAL, DIMENSION( ims:ime, jms:jme,3),&
          INTENT(IN ) ::                                                 &
          erod
+   REAL, DIMENSION( ims:ime, jms:jme,5),&
+         INTENT(INOUT ) ::                                                 &
+         dustin,seasin
    REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),   &
          OPTIONAL, INTENT(INOUT ) ::                                       &
          emis_dust
@@ -223,6 +227,9 @@ CONTAINS
       REAL(KIND=8), INTENT(IN   ) ::                                   &
            curr_secs
 
+      REAL :: gmtp,gmtm
+      Integer :: endhr,endmin,beghr,begmin
+
       REAL, INTENT(IN   ) ::                                           &
            bioemdt, dtstep, dx, gmt, g
 
@@ -238,10 +245,10 @@ CONTAINS
 !
 ! Local variables...
 !
-      INTEGER :: i, j, k, ksub, dust_emiss_active, seasalt_emiss_active
+      INTEGER :: begday,endday,i, j, k, ksub, dust_emiss_active, seasalt_emiss_active
       REAL :: conv
       CHARACTER (LEN=80) :: message
-      LOGICAL :: do_bioemiss, do_plumerisefire
+      LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
 
 ! ..
 ! ..
@@ -262,6 +269,72 @@ CONTAINS
 ! Setup the timing flags...
 ! (methodology is adapated from module_radiation_driver.F)
 !
+      if(config_flags%emiss_opt == 9)then
+! for volcanic ash transport, vash variables are in mix ratio here...
+      do_ex_volcanoe = .false.
+      gmtp=curr_secs/3600.
+      gmtp=mod(gmt+gmtp,24.)
+         gmtm=curr_secs/60.
+         gmtm=mod(gmtm,60.)
+         write(0,*) 'gmtp,gmtm,curr_secs = ',gmtp,gmtm,curr_secs
+      do j=jts,jte
+      do i=its,ite
+         if(emis_ant(i,kts,j,p_e_vash1).le.0.)cycle
+! ! erup_beg is julday*1000+hour
+!
+!   erup_end is continuation in minutes
+!
+         begday=int(erup_beg(i,j))/1000
+         beghr=int(erup_beg(i,j))-begday*1000
+         begmin=00.
+         endhr=beghr+int(erup_end(i,j)/60.)
+         endday=begday+endhr/24
+         endmin=00.
+         write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
+         write(0,*)'begday,endday,julday = ',begday,endday,julday
+         if(begday.ge.julday .and. beghr.le.gmtp)then
+            write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
+            if(endhr.lt.int(gmtp) .and. endday.le.julday)then
+               write(0,*) 'not do volcano stuf at gmtp = ',gmtp
+            ENDIF
+            if(endhr.eq.int(gmtp))then
+               if(endmin.le.gmtm)then
+                  write(0,*) 'do volcano stuf at gmtp,endmin = ',gmtp,endmin
+                  do k=kts,kte
+                   conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                   chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
+                   chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
+                   chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
+                   chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
+                   chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
+                   chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
+                   chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
+                   chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
+                   chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
+                   chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+                  enddo
+               endif
+            ELSE IF(endhr.gt.gmtp .or. ((endhr.le.gmtp) .and. (endday.gt.julday)))then
+               write(0,*) 'do volcano stuuf at gmtp = ',gmtp,endmin
+               do k=kts,kte
+                conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
+                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
+                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
+                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
+                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
+                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
+                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
+                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
+                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+               enddo
+            ENDIF
+         endif
+      enddo
+      enddo
+      ENDIF
+
       do_plumerisefire = .false.
       IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. config_flags%biomass_burn_opt == BIOMASSB ) then
         IF ( ktau==1 ) then
@@ -335,7 +408,7 @@ CONTAINS
         CALL wrf_debug(15,'Gocart sea salt emissions')
          call gocart_seasalt_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
          v_phy,chem,rho_phy,dz8w,u10,v10,p8w,z_at_w,                  &
-         xland,xlat,xlong,dx,g,emis_seas, &
+         xland,xlat,xlong,dx,g,emis_seas, seasin,&
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -352,7 +425,7 @@ CONTAINS
       CASE (DUSTGOCART)
         CALL wrf_debug(15,'Gocart dust emissions')
         call gocart_dust_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,           &
          ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -639,7 +712,8 @@ CONTAINS
                 chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
                      +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*alt(i,k,j)*dtstep/dz8w(i,k,j)
                 chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
-                     +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                     +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*7.*alt(i,k,j)*dtstep/dz8w(i,k,j)
+!                    +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
                 chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
                      +(emis_ant(i,k,j,p_e_pm25j)+emis_ant(i,k,j,p_e_pm25i) &
                      +emis_ant(i,k,j,p_e_no3j)+emis_ant(i,k,j,p_e_no3i))   &

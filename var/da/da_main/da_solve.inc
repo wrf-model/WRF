@@ -69,9 +69,7 @@
    end if
 
    ! Calculate the num_fgat_time based on time_window_min, time_window_max
-    if ( .not. var4d ) then
-       num_fgat_time = 1
-    else
+    if ( var4d ) then
        read(unit=time_window_min,fmt='(i4,5(a1,i2))') min_yyyy,s,min_mm,s,min_dd,s,min_hh,s,min_mn,s,min_ss
        read(unit=time_window_max,fmt='(i4,5(a1,i2))') max_yyyy,s,max_mm,s,max_dd,s,max_hh,s,max_mn,s,max_ss
        call da_get_julian_time(min_yyyy,min_mm,min_dd,min_hh,min_mn,time_min)
@@ -79,11 +77,13 @@
        if ( var4d_bin < time_step ) call nl_set_var4d_bin (1, time_step)
        time_max = (time_max - time_min) * 60   ! unit is : seconds
        num_fgat_time = NINT(time_max/var4d_bin)
-       if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) .or. &
-            num_fgat_time/2*2 .ne. num_fgat_time .or. var4d_bin/time_step*time_step .ne. var4d_bin ) then
-          write(unit=message(1),fmt='(A,A,2I7)') &
-          'Please change var4d_bin in namelist and rerun==>', 'run_seconds, var4d_bin:',NINT(time_max),var4d_bin
-          call da_error(__FILE__,__LINE__,message(1:1))
+       if ( jcdfi_use ) then
+          if ( NINT(time_max/var4d_bin)*var4d_bin .ne. NINT(time_max) .or. &
+             num_fgat_time/2*2 .ne. num_fgat_time .or. var4d_bin/time_step*time_step .ne. var4d_bin ) then
+             write(unit=message(1),fmt='(A,A,2I7)') &
+             'Please change var4d_bin in namelist and rerun==>', 'run_seconds, var4d_bin:',NINT(time_max),var4d_bin
+             call da_error(__FILE__,__LINE__,message(1:1))
+          endif
        endif
        num_fgat_time = num_fgat_time + 1
        write(unit=message(1),fmt='(a,i10)') 'num_fgat_time is: ', num_fgat_time
@@ -109,12 +109,16 @@
       end if
    end if
 
-   if (0.5 * real(rf_passes) /= real(rf_passes / 2)) then
-      write(unit=stdout,fmt='(A,I4,A)') &
-         'rf_passes = ', rf_passes, ' .Should be even.'
-      rf_passes = int(real(rf_passes / 2))
-      write(unit=stdout,fmt='(A,I4)') 'Resetting rf_passes = ', rf_passes
-   end if
+   if( use_rf )then
+      if (0.5 * real(rf_passes) /= real(rf_passes / 2)) then
+         write(unit=stdout,fmt='(A,I4,A)') &
+            'rf_passes = ', rf_passes, ' .Should be even.'
+         rf_passes = int(real(rf_passes / 2))
+         write(unit=stdout,fmt='(A,I4)') 'Resetting rf_passes = ', rf_passes
+      end if
+   else
+      write(stdout,'("da_solve: using wavelet transform")')
+   endif
 
    if (anal_type_randomcv) then
       ntmax = 0

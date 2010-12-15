@@ -171,7 +171,8 @@
 ! these arrays are for cloudwater/ice coming from 
 ! grell convection, optional
 !----------------------------------------------------
-      real, intent(in   ) :: gd_cloud(ims:ime,kms:kme,jms:jme), &
+      real, optional,                                           &
+            intent(in   ) :: gd_cloud(ims:ime,kms:kme,jms:jme), &
                              gd_cloud2(ims:ime,kms:kme,jms:jme)
       real, intent(in   ) :: xlat(ims:ime,jms:jme),             &
                              xlong(ims:ime,jms:jme)

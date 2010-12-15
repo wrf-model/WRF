@@ -159,11 +159,11 @@ state  real    cwmnest_bt   ijk     dyn_nmm     1      -      r
 #
 
 state  real   pdyn       ij     dyn_nmm     1      -    r  "PDYN"  "DYNAMIC PRESSURE USED FOR TRACKING GRID MOTION" 
-state  real   mslp       ij     dyn_nmm     1      -    r  "MSLP"  "MSLP USED TO DETERMINE STORM LOCATION" 
+state  real   mslp       ij     dyn_nmm     1      -    rh  "MSLP"  "MSLP USED TO DETERMINE STORM LOCATION"
 state  real   sqws       ij     dyn_nmm     1      -    r  "SQWS"  "SQUARE OF WIND SPEED AT LEVEL 10"
 state integer xloc         -    dyn_nmm     2      -    r  "XLOC"  "I-LOCATION OF MINIMUM DYNAMIC PRESSURE"
 state integer yloc         -    dyn_nmm     2      -    r  "YLOC"  "J-LOCATION OF MINIMUM DYNAMIC PRESSURE"
-state logical mvnest       -    dyn_nmm     1      -    rm  "MVNEST" "LOGICAL SWITCH FOR NMM GRID MOTION" 
+state logical mvnest       -    dyn_nmm     1      -    r  "MVNEST" "LOGICAL SWITCH FOR NMM GRID MOTION"
 #for HWRF: zhang's doing added to calculate radiation constant for moving nest for restart
 state integer julyr_rst      -     dyn_nmm     1      -    r  "JULYR_RST" "JULYR for restart moving nest "
 state integer julday_rst     -     dyn_nmm     1      -    r  "JULDAY_RST" "JULDAY for restart moving nest "
@@ -182,26 +182,26 @@ state real store_rand        ij     dyn_nmm     1      -    rh  "RANDOM" "RANDOM
 
 # Location of the SOUTH-WEST nested pointed in terms of parent grid
 
-state integer  IIH      ij     dyn_nmm     1      -      r
-state integer  JJH      ij     dyn_nmm     1      -      r
-state integer  IIV      ij     dyn_nmm     1      -      r
-state integer  JJV      ij     dyn_nmm     1      -      r
+state integer  IIH      ij     dyn_nmm     1      -      rh
+state integer  JJH      ij     dyn_nmm     1      -      rh
+state integer  IIV      ij     dyn_nmm     1      -      rh
+state integer  JJV      ij     dyn_nmm     1      -      rh
 
 # Bi-linear weights
 
-state  real   HBWGT1       ij     dyn_nmm     1      -      r
-state  real   HBWGT2       ij     dyn_nmm     1      -      r
-state  real   HBWGT3       ij     dyn_nmm     1      -      r
-state  real   HBWGT4       ij     dyn_nmm     1      -      r
-state  real   VBWGT1       ij     dyn_nmm     1      -      r
-state  real   VBWGT2       ij     dyn_nmm     1      -      r
-state  real   VBWGT3       ij     dyn_nmm     1      -      r
-state  real   VBWGT4       ij     dyn_nmm     1      -      r
+state  real   HBWGT1       ij     dyn_nmm     1      -      rh
+state  real   HBWGT2       ij     dyn_nmm     1      -      rh
+state  real   HBWGT3       ij     dyn_nmm     1      -      rh
+state  real   HBWGT4       ij     dyn_nmm     1      -      rh
+state  real   VBWGT1       ij     dyn_nmm     1      -      rh
+state  real   VBWGT2       ij     dyn_nmm     1      -      rh
+state  real   VBWGT3       ij     dyn_nmm     1      -      rh
+state  real   VBWGT4       ij     dyn_nmm     1      -      rh
 #end of HWRF: 
 
 #
-state  real   HLON        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
-state  real   HLAT        ij     dyn_nmm     1      -      d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
+state  real   HLON        ij     dyn_nmm     1      -      h01d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
+state  real   HLAT        ij     dyn_nmm     1      -      h01d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
 state  real   VLON        ij     dyn_nmm     1      -      irh
 state  real   VLAT        ij     dyn_nmm     1      -      irh
 
@@ -329,6 +329,7 @@ state  real   pdslo     ij     dyn_nmm     1      -      r       "PDSLO"   "PDSL
 #end HWRF:
 state  real   psdt      ij     dyn_nmm     1      -      r       "PSDT"    "Surface pressure tendency"                  "Pa s-1"
 state  real   div       ijk    dyn_nmm     1      -      r       "DIV"     "Divergence"                                 "Pa s-1"
+state  real   def3d     ijk    dyn_nmm     1      -      r       "DEF3D"   "Deformation term from horizontal diffusion"      ""
 #for HWRF: add to restart
 state  real   few       ijk    dyn_nmm     1      -      r       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
 state  real   fne       ijk    dyn_nmm     1      -      r       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"
@@ -358,7 +359,7 @@ state  real   taux      ij    dyn_nmm   1    -     irh      "TAUX"     "Instanta
 state  real   tauy      ij    dyn_nmm   1    -     irh      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
 state  real   prec      ij    dyn_nmm   1    -     rh       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
-state  real   acprec    ij    dyn_nmm   1    -     rhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "ACPREC"   "Accumulated total precipitation"      "m"
+state  real   acprec    ij    dyn_nmm   1    -     rh01d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "ACPREC"   "Accumulatedtotal precipitation"      "m"
 state  real   cuprec    ij    dyn_nmm   1    -     rh       "CUPREC"   "Accumulated convective precipitation" "m"
 state  real   lspa      ij    dyn_nmm   1    -     h        "LSPA"     "Land Surface Precipitation Accumulation"   "kg m-2"
 state  real   ddata     ij    dyn_nmm   1    -     -        "DDATA"    "Observed precip to each physics timestep"  "kg m-2"
@@ -465,7 +466,7 @@ state  real   dwdtmx    ij    dyn_nmm   1    -     -        "DWDTMX"    "Maximum
 state  real   dwdt      ijk   dyn_nmm   1    -     rd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r
 state  real   pint      ijk   dyn_nmm   1    Z     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "PINT"      "Model layer interface pressure"   "Pa"
-state  real   w         ijk   dyn_nmm   1    Z     rh       "W"         "Vertical velocity"                "m s-1"
+state  real   w         ijk   dyn_nmm   1    Z     rhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "W"         "Vertical velocity"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
 #
 # module_ACCUM.F
@@ -771,8 +772,8 @@ state    real   PSFC             ij     misc        1         -     i1rh       "
 state    real   dtbc            -       misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 state    real   TH2              ij     misc        1         -     irh       "TH2"                  "POT TEMP at 2 M" ""
 state    real   T2               ij     misc        1         -     ir        "T2"                  "TEMP at 2 M" ""
-state    real   U10              ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "U10"                  "U at 10 M"         " "
-state    real   V10              ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "V10"                  "V at 10 M"         " "
+state    real   U10              ij     misc        1         -     irh01d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "U10"                  "U at 10 M"         " "
+state    real   V10              ij     misc        1         -     irh01d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)      "XICE"                 "SEA ICE"         ""
 state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
@@ -1140,6 +1141,8 @@ rconfig   integer idtadc                  namelist,dynamics     1              2
 rconfig   real    codamp                  namelist,dynamics     max_domains   6.4     irh  "codamp"  "divergence damping weighting factor (larger = more damping) " ""
 rconfig   real    coac                    namelist,dynamics     max_domains   1.6     irh  "coac"  "horizontal diffusion weighting factor (larger = more diffusion) " ""
 rconfig   real    slophc                  namelist,dynamics     max_domains   6.364e-3     irh  "slophc"  "Maximum model level slope (dZ/dy) for which hor diffusion is applied" ""
+rconfig   real    wp                      namelist,dynamics     max_domains   0.15    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
+
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""
@@ -1228,6 +1231,7 @@ package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,q
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
+package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
@@ -1245,6 +1249,7 @@ package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi
 package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
+package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   thompson07_dfi    mp_physics_dfi==98       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
@@ -1372,7 +1377,7 @@ halo HALO_NMM_INIT_39	dyn_nmm 120:TOLD,UOLD,VOLD
 
 #for HWRF: zhang increase halo width to fix feedback bug for HALO_NMM_A (24 => 48)
 #for HWRF: zhang HALO_NMM_C (24 => 48), HALO_NMM_G (24 => 48), HALO_NMM_K (8 => 24)
-halo      HALO_NMM_A  dyn_nmm 48:pd,t,u,v,q,cwm,dwdt,div;24:pint                          
+halo      HALO_NMM_A  dyn_nmm 48:pd,t,u,v,q,cwm,dwdt,div;48:pint
 halo      HALO_NMM_A_3  dyn_nmm 24:moist,scalar
 halo      HALO_NMM_B  dyn_nmm 24:div                   
 halo      HALO_NMM_C  dyn_nmm 48:u,v                    

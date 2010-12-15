@@ -8,7 +8,7 @@ program gen_be_diags
 !  Note: Please acknowledge author/institute in work that uses this code.
 !------------------------------------------------------------------------
 
-   use da_control, only : stderr, stdout, filename_len
+   use da_control, only : filename_len,stderr,stdout,use_rf
    use da_tools_serial, only : da_get_unit
    use da_gen_be, only : da_readwrite_be_stage2, da_readwrite_be_stage3, &
       da_readwrite_be_stage4
@@ -16,13 +16,13 @@ program gen_be_diags
    implicit none
 
    character*10        :: variable                   ! Variable name
-   character*8         :: uh_method                  ! Uh_method (power, scale)
+   character*8         :: uh_method                  ! Uh_method (power, scale, wavelet)
    integer             :: n_smth_sl                  ! Number of smoothing for scale-length
    integer             :: cv_options                 ! WRFDA CV_OPTIONS    
    character(len=filename_len)        :: filename                   ! Input filename.
    integer             :: nk,nk_3d                   ! Dimensions read in.
 
-   namelist / gen_be_diags_nl / cv_options, uh_method, n_smth_sl
+   namelist / gen_be_diags_nl / cv_options, n_smth_sl, uh_method, use_rf
 
    integer :: ounit,iunit,namelist_unit
 
@@ -75,8 +75,13 @@ program gen_be_diags
    if (uh_method == 'power') then
       write(6,'(/a)')' [3] Gather horizontal error power spectra.'
    else if (uh_method == 'scale') then
-      write(6,'(/a)')' [3] Gather horizontal scale length.'
+      if( use_rf )then
+         write(6,'(/a)')' [3] Gather horizontal scale length.'
+      else
+         uh_method = 'wavelet'
+      end if
    end if
+   if (uh_method == 'wavelet') write(6,'(/" [3] Gather horizontal wavelet std. devs.")')
 
    ! To assign the dimension nk for 3d fields:
    nk = nk_3d

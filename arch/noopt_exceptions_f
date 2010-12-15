@@ -48,7 +48,6 @@ module_io_wrf.o : module_io_wrf.F
 module_si_io.o : module_si_io.F
 module_state_description.o : module_state_description.F 
 output_wrf.o : output_wrf.F
-NMM_NEST_UTILS1.o : NMM_NEST_UTILS1.F
 solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
 start_domain_nmm.o : start_domain_nmm.F
@@ -87,7 +86,6 @@ module_io_wrf.o \
 module_si_io.o \
 module_tiles.o \
 output_wrf.o \
-NMM_NEST_UTILS1.o \
 solve_interface.o \
 start_domain.o \
 start_domain_nmm.o \
@@ -98,11 +96,12 @@ wrf_tsin.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp
-	mv $*.f90.tmp $*.f90
-        endif
 	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
 	if $(FGREP) '!$$OMP' $*.f90 ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
@@ -172,9 +171,10 @@ module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp
-	mv $*.f90.tmp $*.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
 	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

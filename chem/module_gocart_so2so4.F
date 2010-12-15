@@ -3,7 +3,7 @@ MODULE module_gocart_so2so4
 CONTAINS
 
   subroutine so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,gd,          &
-          NUM_CHEM,NUM_MOIST,                                              &
+          gd_cldfr,NUM_CHEM,NUM_MOIST,                                              &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -17,7 +17,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
-          INTENT(IN   ) ::                     t_phy,gd
+          INTENT(IN   ) ::                     t_phy,gd,gd_cldfr
 
    integer :: i,k,j
    real :: tc2,tc3,h2o2,cldf
@@ -25,11 +25,10 @@ CONTAINS
           do k=kts,kte
           do i=its,ite
           cldf=0.
-          if(p_qc.gt.1)then
-             if(moist(i,k,j,p_qc).gt.0  .or. gd(i,k,j).gt.0.)cldf=1.
-          else
-             if(gd(i,k,j).gt.0.)cldf=1.
-          endif
+!         if(p_qc.gt.1)then
+!            if(moist(i,k,j,p_qc).gt.0 )cldf=1.
+!         endif
+          cldf=gd_cldfr(i,k,j)
           tc2=chem(i,k,j,p_so2)
           IF (cldf > 0.0 .AND. tc2 > 0.0 .AND. t_phy(i,k,j) > 258.0) THEN
              tc3=chem(i,k,j,p_sulf)

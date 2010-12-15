@@ -1392,7 +1392,111 @@ CONTAINS
         grid%have_displayed_alloc_stats = .TRUE.   
       ENDIF
 
+
+      grid%alloced_sd31=sd31
+      grid%alloced_ed31=ed31
+      grid%alloced_sd32=sd32
+      grid%alloced_ed32=ed32
+      grid%alloced_sd33=sd33
+      grid%alloced_ed33=ed33
+      grid%alloced_sm31=sm31
+      grid%alloced_em31=em31
+      grid%alloced_sm32=sm32
+      grid%alloced_em32=em32
+      grid%alloced_sm33=sm33
+      grid%alloced_em33=em33
+      grid%alloced_sm31x=sm31x
+      grid%alloced_em31x=em31x
+      grid%alloced_sm32x=sm32x
+      grid%alloced_em32x=em32x
+      grid%alloced_sm33x=sm33x
+      grid%alloced_em33x=em33x
+      grid%alloced_sm31y=sm31y
+      grid%alloced_em31y=em31y
+      grid%alloced_sm32y=sm32y
+      grid%alloced_em32y=em32y
+      grid%alloced_sm33y=sm33y
+      grid%alloced_em33y=em33y
+
+      grid%allocated=.TRUE.
+
    END SUBROUTINE alloc_space_field
+
+   ! Ensure_space_field allocates a grid's arrays if they are not yet
+   ! allocated.  If they were already allocated, then it deallocates and
+   ! reallocates them if they were allocated with different dimensions.
+   ! If they were already allocated with the requested dimensions, then
+   ! ensure_space_field does nothing.
+
+   SUBROUTINE ensure_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+                                  sd31, ed31, sd32, ed32, sd33, ed33, &
+                                  sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                  sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                  sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                  sm31y, em31y, sm32y, em32y, sm33y, em33y )
+
+      IMPLICIT NONE
+
+      !  Input data.
+
+      TYPE(domain)               , POINTER          :: grid
+      INTEGER , INTENT(IN)            :: id
+      INTEGER , INTENT(IN)            :: setinitval_in   ! 3 = everything, 1 = arrays only, 0 = none
+      INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
+      INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
+      INTEGER , INTENT(IN)            :: sp31, ep31, sp32, ep32, sp33, ep33
+      INTEGER , INTENT(IN)            :: sp31x, ep31x, sp32x, ep32x, sp33x, ep33x
+      INTEGER , INTENT(IN)            :: sp31y, ep31y, sp32y, ep32y, sp33y, ep33y
+      INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+      INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+
+      ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.
+      ! e.g. to set both 1st and second time level, use 3
+      !      to set only 1st                        use 1
+      !      to set only 2st                        use 2
+      INTEGER , INTENT(IN)            :: tl_in
+  
+      ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
+      ! false otherwise (all allocated, modulo tl above)
+      LOGICAL , INTENT(IN)            :: inter_domain_in
+      LOGICAL                         :: size_changed
+
+      size_changed=         .not. ( &
+         grid%alloced_sd31 .eq. sd31 .and. grid%alloced_ed31 .eq. ed31 .and. &
+         grid%alloced_sd32 .eq. sd32 .and. grid%alloced_ed32 .eq. ed32 .and. &
+         grid%alloced_sd33 .eq. sd33 .and. grid%alloced_ed33 .eq. ed33 .and. &
+         grid%alloced_sm31 .eq. sm31 .and. grid%alloced_em31 .eq. em31 .and. &
+         grid%alloced_sm32 .eq. sm32 .and. grid%alloced_em32 .eq. em32 .and. &
+         grid%alloced_sm33 .eq. sm33 .and. grid%alloced_em33 .eq. em33 .and. &
+         grid%alloced_sm31x .eq. sm31x .and. grid%alloced_em31x .eq. em31x .and. &
+         grid%alloced_sm32x .eq. sm32x .and. grid%alloced_em32x .eq. em32x .and. &
+         grid%alloced_sm33x .eq. sm33x .and. grid%alloced_em33x .eq. em33x .and. &
+         grid%alloced_sm31y .eq. sm31y .and. grid%alloced_em31y .eq. em31y .and. &
+         grid%alloced_sm32y .eq. sm32y .and. grid%alloced_em32y .eq. em32y .and. &
+         grid%alloced_sm33y .eq. sm33y .and. grid%alloced_em33y .eq. em33y &
+      )
+      if(.not. grid%allocated .or. size_changed) then
+         if(.not. grid%allocated) then
+            call wrf_debug(1,'ensure_space_field: calling alloc_space_field because a grid was not allocated.')
+         else
+            if(size_changed) &
+                 call wrf_debug(1,'ensure_space_field: deallocating and reallocating a grid because grid size changed.')
+         end if
+         if(grid%allocated) &
+              call dealloc_space_field( grid )
+         call alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+                                  sd31, ed31, sd32, ed32, sd33, ed33, &
+                                  sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                  sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                  sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                  sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      end if
+
+   END SUBROUTINE ensure_space_field
 
 !  This routine is used to DEALLOCATE space for a single domain and remove 
 !  it from the linked list.  First the pointers in the linked list are fixed 

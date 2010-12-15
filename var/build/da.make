@@ -46,6 +46,7 @@ WRFVAR_OBJS = \
    da_rf_cv3.o \
    da_rfz_cv3.o \
    da_recursive_filter.o \
+   da_wavelet.o \
    da_interpolation.o \
    da_grid_definitions.o \
    da_statistics.o \
@@ -154,15 +155,11 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
                 $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o \
                 da_control.o $(WRFVAR_LIBS) da_wrfvar_main.o
 	$(RM) $@
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) \
-        da_control.o da_wrfvar_main.o $(WRFPLUS_DIR)/main/module_wrf_top.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) \
-        ${MADIS_LIB} ${BUFR_LIB} -L$(WRFPLUS_DIR)/main -lwrflib $(LIB)
-        else
-	$(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) \
-        da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) \
-        ${MADIS_LIB} ${BUFR_LIB} $(LIB)
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o $(WRFPLUS_DIR)/main/module_wrf_top.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} -L$(WRFPLUS_DIR)/main -lwrflib $(LIB) $(WAVELET_LIB) ; \
+        else                                 \
+          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} $(LIB) $(WAVELET_LIB) ; \
+        fi
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_wrfvar_esmf.exe : $(WRFVAR_LIBS) da_wrfvar_esmf.o da_wrfvar_esmf_super.o
@@ -269,11 +266,12 @@ init_modules.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
-	mv $*.f.tmp $*.f
-        endif
 	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I../../external/io_int $*.f
 
 da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
@@ -298,22 +296,24 @@ da_gen_be.o gen_be_ensmean.o:
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
-	mv $*.f.tmp $*.f
-        endif
 	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
 da_etkf.o da_tools.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
-	mv $*.f.tmp $*.f
-        endif
 	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
 da_4dvar.o :
@@ -329,11 +329,12 @@ da_wrfvar_top.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $(RTTOV_SRC) $*.b  > $*.f
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
-	mv $*.f.tmp $*.f
-        endif
 	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
 	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f ; \
@@ -354,11 +355,12 @@ da_varbc.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $(RTTOV_SRC) $*.b  > $*.f
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
-	mv $*.f.tmp $*.f
-        endif
 	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
 	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC)  $*.f ; \
@@ -373,11 +375,12 @@ da_minimisation.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $(RTTOV_SRC) $*.b  > $*.f
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp
-	mv $*.f.tmp $*.f
-        endif
 	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
 	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/dyn_em -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f ; \
@@ -416,145 +419,161 @@ da_advance_time.o :
 
 nl_set_0_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=0 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx0.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx0.f90 > xx0.f90.tmp
-	mv xx0.f90.tmp xx0.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+	  $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx0.f90 > xx0.f90.tmp ; \
+	  mv xx0.f90.tmp xx0.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx0.f90
 	$(RM) xx0.f90
 
 nl_set_1_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=1 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx1.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx1.f90 > xx1.f90.tmp
-	mv xx1.f90.tmp xx1.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx1.f90 > xx1.f90.tmp ; \
+          mv xx1.f90.tmp xx1.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx1.f90
 	$(RM) xx1.f90
 
 nl_set_2_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=2 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx2.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx2.f90 > xx2.f90.tmp
-	mv xx2.f90.tmp xx2.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx2.f90 > xx2.f90.tmp ; \
+          mv xx2.f90.tmp xx2.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx2.f90
 	$(RM) xx2.f90
 
 nl_set_3_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=3 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx3.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx3.f90 > xx3.f90.tmp
-	mv xx3.f90.tmp xx3.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx3.f90 > xx3.f90.tmp ; \
+          mv xx3.f90.tmp xx3.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx3.f90
 	$(RM) xx3.f90
 
 nl_set_4_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=4 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx4.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx4.f90 > xx4.f90.tmp
-	mv xx4.f90.tmp xx4.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx4.f90 > xx4.f90.tmp ; \
+          mv xx4.f90.tmp xx4.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx4.f90
 	$(RM) xx4.f90
 
 nl_set_5_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=5 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx5.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx5.f90 > xx5.f90.tmp
-	mv xx5.f90.tmp xx5.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx5.f90 > xx5.f90.tmp ; \
+          mv xx5.f90.tmp xx5.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx5.f90
 	$(RM) xx5.f90
 
 nl_set_6_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=6 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx6.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx6.f90 > xx6.f90.tmp
-	mv xx6.f90.tmp xx6.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx6.f90 > xx6.f90.tmp ; \
+          mv xx6.f90.tmp xx6.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx6.f90
 	$(RM) xx6.f90
 
 nl_set_7_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=7 -I./inc -DNL_set_ROUTINES nl_access_routines.F > xx7.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx7.f90 > xx7.f90.tmp
-	mv xx7.f90.tmp xx7.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl xx7.f90 > xx7.f90.tmp ; \
+          mv xx7.f90.tmp xx7.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) xx7.f90
 	$(RM) xx7.f90
 
 nl_get_0_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=0 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy0.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy0.f90 > yy0.f90.tmp
-	mv yy0.f90.tmp yy0.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy0.f90 > yy0.f90.tmp ; \
+          mv yy0.f90.tmp yy0.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy0.f90
 	$(RM) yy0.f90
 
 nl_get_1_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=1 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy1.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy1.f90 > yy1.f90.tmp
-	mv yy1.f90.tmp yy1.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy1.f90 > yy1.f90.tmp ; \
+          mv yy1.f90.tmp yy1.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy1.f90
 	$(RM) yy1.f90
 
 nl_get_2_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=2 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy2.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy2.f90 > yy2.f90.tmp
-	mv yy2.f90.tmp yy2.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy2.f90 > yy2.f90.tmp ; \
+          mv yy2.f90.tmp yy2.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy2.f90
 	$(RM) yy2.f90
 
 nl_get_3_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=3 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy3.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy3.f90 > yy3.f90.tmp
-	mv yy3.f90.tmp yy3.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy3.f90 > yy3.f90.tmp ; \
+          mv yy3.f90.tmp yy3.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy3.f90
 	$(RM) yy3.f90
 
 nl_get_4_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=4 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy4.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy4.f90 > yy4.f90.tmp
-	mv yy4.f90.tmp yy4.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy4.f90 > yy4.f90.tmp ; \
+          mv yy4.f90.tmp yy4.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy4.f90
 	$(RM) yy4.f90
 
 nl_get_5_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=5 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy5.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy5.f90 > yy5.f90.tmp
-	mv yy5.f90.tmp yy5.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy5.f90 > yy5.f90.tmp ; \
+          mv yy5.f90.tmp yy5.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy5.f90
 	$(RM) yy5.f90
 
 nl_get_6_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=6 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy6.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy6.f90 > yy6.f90.tmp
-	mv yy6.f90.tmp yy6.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy6.f90 > yy6.f90.tmp ; \
+          mv yy6.f90.tmp yy6.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy6.f90
 	$(RM) yy6.f90
 
 nl_get_7_routines.o : nl_access_routines.F module_configure.o
 	$(CPP) -DNNN=7 -I./inc -DNL_get_ROUTINES nl_access_routines.F > yy7.f90
-        ifeq ($(findstring DVAR4D,$(ARCHFLAGS)),DVAR4D)
-	$(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy7.f90 > yy7.f90.tmp
-	mv yy7.f90.tmp yy7.f90
-        endif
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl yy7.f90 > yy7.f90.tmp ; \
+          mv yy7.f90.tmp yy7.f90 ; \
+        fi
 	$(FC) -o $@ -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) yy7.f90
 	$(RM) yy7.f90
 

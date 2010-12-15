@@ -4,7 +4,7 @@ CONTAINS
 
 SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,p_phy,         &
-         dx,g, &
+         dustin,seasin,dx,g, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -26,11 +26,13 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
          INTENT(INOUT ) ::                                   chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) ::  t_phy,p_phy,dz8w,p8w,rho_phy
+   REAL,  DIMENSION( ims:ime , jms:jme, 5 ),                        &
+          INTENT(IN   ) ::  dustin,seasin
 
   REAL, INTENT(IN   ) :: dt,dx,g
-  integer :: nmx,i,j,k,kk,lmx,iseas,idust
+  integer :: kkk,nmx,i,j,k,kk,lmx,iseas,idust
   real*8, DIMENSION (1,1,kte-kts+1) :: tmp,airden,airmas,p_mid,delz,rh
-  real*8, DIMENSION (1,1,kte-kts+1,5) :: dust
+  real*8, DIMENSION (1,1,kte-kts+1,5) :: ddust
   real*8, DIMENSION (1,1,kte-kts+1,4) :: sea_salt
 !
 ! bstl is for budgets
@@ -45,20 +47,31 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
        conver=1.e-9
        converi=1.e9
        lmx=kte-kts+1
+       ddust(:,:,:,:)=0.
+       sea_salt(:,:,:,:)=0.
        do j=jts,jte
        do i=its,ite
           kk=0
           bstl_dust(:)=0.
           bstl_seas(:)=0.
+          if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11) then
+           do kkk=1,5
+              ddust(1,1,kts,kkk)=dustin(i,j,kkk)*conver
+           enddo
+          else
+             do k=kts,kte
+                kk=kk+1
+                ddust(1,1,kk,1)=chem(i,k,j,p_dust_1)*conver
+                ddust(1,1,kk,2)=chem(i,k,j,p_dust_2)*conver
+                ddust(1,1,kk,3)=chem(i,k,j,p_dust_3)*conver
+                ddust(1,1,kk,4)=chem(i,k,j,p_dust_4)*conver
+                ddust(1,1,kk,5)=chem(i,k,j,p_dust_5)*conver
+             enddo
+          endif
           do k=kts,kte
           kk=kk+1
           p_mid(1,1,kk)=.01*p_phy(i,kte-k+kts,j)
           delz(1,1,kk)=dz8w(i,kte-k+kts,j)
-          dust(1,1,kk,1)=chem(i,k,j,p_dust_1)*conver
-          dust(1,1,kk,2)=chem(i,k,j,p_dust_2)*conver
-          dust(1,1,kk,3)=chem(i,k,j,p_dust_3)*conver
-          dust(1,1,kk,4)=chem(i,k,j,p_dust_4)*conver
-          dust(1,1,kk,5)=chem(i,k,j,p_dust_5)*conver
           airmas(1,1,kk)=-(p8w(i,k+1,j)-p8w(i,k,j))*dx*dx/g
           airden(1,1,kk)=rho_phy(i,k,j)
           tmp(1,1,kk)=t_phy(i,k,j)
@@ -78,36 +91,70 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
           idust=1
 
           call settling(1, 1, lmx, 5,g,dyn_visc, &
-                    dust, tmp, p_mid, delz, airmas, &
+                    ddust, tmp, p_mid, delz, airmas, &
                     den_dust, reff_dust, dt, bstl_dust, rh, idust, iseas)
-          kk=0
-!         write(0,*)'1',bstl_dust(5),bstl_dust(2),chem(i,1,j,p_dust_4)
-          do k=kts,kte
-          kk=kk+1
-          chem(i,k,j,p_dust_1)=dust(1,1,kk,1)*converi
-          chem(i,k,j,p_dust_2)=dust(1,1,kk,2)*converi
-          chem(i,k,j,p_dust_3)=dust(1,1,kk,3)*converi
-          chem(i,k,j,p_dust_4)=dust(1,1,kk,4)*converi
-          chem(i,k,j,p_dust_5)=dust(1,1,kk,5)*converi
-          sea_salt(1,1,kk,1)=chem(i,k,j,p_seas_1)*conver
-          sea_salt(1,1,kk,2)=chem(i,k,j,p_seas_2)*conver
-          sea_salt(1,1,kk,3)=chem(i,k,j,p_seas_3)*conver
-          sea_salt(1,1,kk,4)=chem(i,k,j,p_seas_4)*conver
-          enddo
+          if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
+            do kkk=1,4
+              sea_salt(1,1,kts,kkk)=seasin(i,j,kkk)*conver
+            enddo
+            kk=1
+            do kkk=1,5
+            if(ddust(1,1,kk,kkk) .ge. dustin(i,j,kkk))ddust(1,1,kk,kkk)=dustin(i,j,kkk)
+            enddo
+            chem(i,kts,j,p_p25i)=chem(i,kts,j,p_p25i) &
+                         +.25*(ddust(1,1,kk,1)+.286*ddust(1,1,kk,2))*converi
+            chem(i,kts,j,p_p25i)=max(chem(i,kts,j,p_p25i),1.e-16)
+            chem(i,kts,j,p_p25j)=chem(i,kts,j,p_p25j) &
+                         +.75*(ddust(1,1,kk,1)+.286*ddust(1,1,kk,2))*converi
+            chem(i,kts,j,p_p25j)=max(chem(i,kts,j,p_p25j),1.e-16)
+            chem(i,kts,j,p_soila)=chem(i,kts,j,p_soila) &
+                         +(.714*ddust(1,1,kk,2)+ddust(1,1,kk,3))*converi
+            chem(i,kts,j,p_soila)=max(chem(i,kts,j,p_soila),1.e-16)
+          else
+             kk=0
+             do k=kts,kte
+                kk=kk+1
+                chem(i,k,j,p_dust_1)=ddust(1,1,kk,1)*converi
+                chem(i,k,j,p_dust_2)=ddust(1,1,kk,2)*converi
+                chem(i,k,j,p_dust_3)=ddust(1,1,kk,3)*converi
+                chem(i,k,j,p_dust_4)=ddust(1,1,kk,4)*converi
+                chem(i,k,j,p_dust_5)=ddust(1,1,kk,5)*converi
+                sea_salt(1,1,kk,1)=chem(i,k,j,p_seas_1)*conver
+                sea_salt(1,1,kk,2)=chem(i,k,j,p_seas_2)*conver
+                sea_salt(1,1,kk,3)=chem(i,k,j,p_seas_3)*conver
+                sea_salt(1,1,kk,4)=chem(i,k,j,p_seas_4)*conver
+             enddo
+          endif
 !         write(0,*)i,j,bstl_dust(3),bstl_dust(4),chem(i,1,j,p_dust_4)
           iseas=1
           idust=0
           call settling(1, 1, lmx, 4, g,dyn_visc,&
                     sea_salt, tmp, p_mid, delz, airmas, &
                     den_seas, reff_seas, dt, bstl_seas, rh, idust, iseas)
-          kk=0
-          do k=kts,kte
-          kk=kk+1
-            chem(i,k,j,p_seas_1)=sea_salt(1,1,kk,1)*converi
-            chem(i,k,j,p_seas_2)=sea_salt(1,1,kk,2)*converi
-            chem(i,k,j,p_seas_3)=sea_salt(1,1,kk,3)*converi
-            chem(i,k,j,p_seas_4)=sea_salt(1,1,kk,4)*converi
+          if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
+            kk=1
+            do kkk=1,4
+              if(sea_salt(1,1,kk,kkk) .ge. seasin(i,j,kkk))sea_salt(1,1,kk,kkk)=seasin(i,j,kkk)
+            enddo
+            chem(i,kts,j,p_naai)=chem(i,kts,j,p_naai) &
+                         +.25*(sea_salt(1,1,kk,1)+.942*sea_salt(1,1,kk,2))*converi
+            chem(i,kts,j,p_naai)=max(1.e-16,chem(i,kts,j,p_naai))
+            chem(i,kts,j,p_naaj)=chem(i,kts,j,p_naaj) &
+                         +.75*(sea_salt(1,1,kk,1)+.942*sea_salt(1,1,kk,2))*converi
+            chem(i,kts,j,p_naaj)=max(1.e-16,chem(i,kts,j,p_naaj))
+            chem(i,kts,j,p_seas)=chem(i,kts,j,p_seas) &
+                         +(.058*sea_salt(1,1,kk,2)+sea_salt(1,1,kk,3))*converi
+            chem(i,kts,j,p_seas)=max(1.e-16,chem(i,kts,j,p_seas))
+          else
+             kk=0
+             do k=kts,kte
+                kk=kk+1
+                chem(i,k,j,p_seas_1)=sea_salt(1,1,kk,1)*converi
+                chem(i,k,j,p_seas_2)=sea_salt(1,1,kk,2)*converi
+                chem(i,k,j,p_seas_3)=sea_salt(1,1,kk,3)*converi
+                chem(i,k,j,p_seas_4)=sea_salt(1,1,kk,4)*converi
           enddo
+          endif
        enddo
        enddo
 END SUBROUTINE gocart_settling_driver
@@ -278,7 +325,7 @@ END SUBROUTINE gocart_settling_driver
         DO j = 1,jmx
            bstl(i,j,n) = 0.0
            DO l = 1,lmx
-              IF (tc(i,j,l,n) < 0.0) tc(i,j,l,n) = 1.0D-32
+              IF (tc(i,j,l,n) < 1.0D-32) tc(i,j,l,n) = 1.0D-32
               bstl(i,j,n) = bstl(i,j,n) + &
                    (tc(i,j,l,n) - tc1(i,j,l,n)) * airmas(i,j,l)
            END DO

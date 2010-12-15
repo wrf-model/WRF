@@ -3,7 +3,7 @@ MODULE GOCART_SEASALT
 CONTAINS
   subroutine gocart_seasalt_driver(ktau,dt,config_flags,julday,alt,t_phy,moist,u_phy,  &
          v_phy,chem,rho_phy,dz8w,u10,v10,p8w,z_at_w,                  &
-         xland,xlat,xlong,dx,g,emis_seas, &
+         xland,xlat,xlong,dx,g,emis_seas,seasin, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -31,6 +31,8 @@ CONTAINS
                                                      xland,                &
                                                      xlat,                 &
                                                      xlong
+   REAL,  DIMENSION( ims:ime , jms:jme, 5 ),                        &
+          INTENT(INOUT   ) ::              seasin
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
           INTENT(IN   ) ::                                                 &
                                                         alt,               &
@@ -65,10 +67,14 @@ CONTAINS
 !
      if(xland(i,j).gt.1.5.and.z_at_w(i,kts,j).lt.1.e-3)then
      ilwi(1,1)=0
+     if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
+        tc(:)=1.e-16*conver
+     else
      tc(1)=chem(i,kts,j,p_seas_1)*conver
      tc(2)=chem(i,kts,j,p_seas_2)*conver
      tc(3)=chem(i,kts,j,p_seas_3)*conver
      tc(4)=chem(i,kts,j,p_seas_4)*conver
+     endif
      w10m(1,1)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
      airmas(1,1)=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
 !
@@ -80,15 +86,20 @@ CONTAINS
        ipr=0
 
     call source_ss( imx,jmx,lmx,nmx, dt, tc,ilwi, dxy, w10m, airmas, bems,ipr)
+
+    if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
+      seasin(i,j,1:4)=tc(1:4)*converi
+     else
      chem(i,kts,j,p_seas_1)=tc(1)*converi
      chem(i,kts,j,p_seas_2)=tc(2)*converi
      chem(i,kts,j,p_seas_3)=tc(3)*converi
      chem(i,kts,j,p_seas_4)=tc(4)*converi
+     endif
 ! for output diagnostics
-     emis_seas(i,1,j,p_eseas1)=bems(1)
-     emis_seas(i,1,j,p_eseas2)=bems(2)
-     emis_seas(i,1,j,p_eseas3)=bems(3)
-     emis_seas(i,1,j,p_eseas4)=bems(4)
+!    emis_seas(i,1,j,p_eseas1)=bems(1)
+!    emis_seas(i,1,j,p_eseas2)=bems(2)
+!    emis_seas(i,1,j,p_eseas3)=bems(3)
+!    emis_seas(i,1,j,p_eseas4)=bems(4)
      endif
   enddo
   enddo
@@ -246,12 +257,13 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
 !                 src = dfm*dxy(j)*water(i,j)*w10m(i,j)**c0(2)
                  src = dfm*dxy(j)*w10m(i,j)**c0(2)
 !                 src = ch_ss(n,dt(1)%mn)*dfm*dxy(j)*w10m(i,j)**c0(2)
-                 tc(i,j,1,n) = tc(i,j,1,n) + src/airmas(i,j,1)
+                 if(src < 0.0 ) src=0.
+                 tc(i,j,1,n) = tc(i,j,1,n) + .25*src/airmas(i,j,1)
 !                if(ipr.eq.1)write(0,*)n,dfm,c0(2),dxy(j),w10m(i,j),src,airmas(i,j,1)
               ELSE
                  src = 0.0
               END IF
-              bems(i,j,n) = bems(i,j,n) + src
+              bems(i,j,n) = bems(i,j,n) + .25*src
            END DO  ! i
         END DO ! j
      END DO ! ir

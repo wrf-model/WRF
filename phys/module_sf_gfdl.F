@@ -827,6 +827,19 @@ CONTAINS
         else
           ecof(i) = wetc(i)
           land(i) = 0.0
+#ifdef HWRF
+          zot (i) = zoc(i)
+!  now use 2 regime fit for znot thermal
+          windmks=wind(i)*.01
+          znott=0.2375*exp(-0.5250*windmks) + 0.0025*exp(-0.0211*windmks)
+          znott=0.01*znott
+!  go back to moon et al for below 7m/s
+          if(windmks.le. 7.)                         &
+          znott = (0.0185/9.8*(7.59e-8*wind(i)**2+   &
+                                  2.46e-4*wind(i))**2)
+! back to cgs
+          zot (i) = 100.*znott
+#else
 !         zot (i) = zoc(i)
 !  now use 2 regime fit for znot thermal
     windmks=wind(i)*.01
@@ -839,6 +852,7 @@ CONTAINS
                                   2.46e-4*wind(i))**2)
 ! back to cgs
    zot (i) = 100.*znott
+#endif
 !   end of kwon correction....
 !     in hwrf, thermal znot(zot) is passed as argument zoc
 !     in hwrf, momentum znot is recalculated internally

@@ -5,10 +5,10 @@ MODULE module_wind_generic
   TYPE windturbine_specs
      INTEGER id             ! grid id
      REAL    lat, lon       ! lat/lon of the individual turbine
-     INTEGER i, j           ! coord in grid (computed internally or specified from file in idealized cases)
+     REAL    i, j           ! x and y coords of turbines (set by packages themselves)
      REAL    hubheight      ! hieght of the turbine hub
      REAL    diameter       ! diameter of the rotor
-     REAL    thrustcof      ! standing thrust coefficient
+     REAL    stdthrcoef     ! standing thrust coefficient
      REAL    power          ! turbine power in MW
      REAL    cutinspeed     ! cut-in speed
      REAL    cutoutspeed    ! cut-out speed
@@ -39,10 +39,11 @@ CONTAINS
     IMPLICIT NONE
 ! Local
     CHARACTER*256  fname, message
+    CHARACTER*512 inline
     INTEGER i,istat
     INTEGER id
     INTEGER n,lineno,ig,jg
-    REAL  lat,lon,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
+    REAL  lat,lon,hubheight,diameter,stdthrcoef,power,cutinspeed,cutoutspeed
 !
     CALL nl_get_windturbines_spec( 1, fname )
     windspec = WIND_TURBINES_OFF
@@ -62,28 +63,35 @@ CONTAINS
           ! first time count things up
           n = 0
           DO WHILE (.true.)
-            READ(19,*,END=30) 
-            n = n + 1
+            READ(19,'(A256)',END=30)inline
+            IF ( index(inline,'!') .EQ. 0 ) n = n + 1
           ENDDO
  30       CONTINUE
           nwindturbines = n
           ALLOCATE(windturbines(nwindturbines))
           REWIND(19)
-          DO i = 1, nwindturbines
-            lineno = i
-            READ(19,*,ERR=130)id,lat,lon,ig,jg,hubheight,diameter,thrustcof,power,cutinspeed,cutoutspeed
-            windturbines(i)%id = id
-            windturbines(i)%lat = lat
-            windturbines(i)%lon = lon
-            windturbines(i)%i   = ig    ! must be non-zero and only used if xlat and xlong are all zero
-            windturbines(i)%j   = jg
-            windturbines(i)%hubheight = hubheight
-            windturbines(i)%diameter = diameter
-            windturbines(i)%thrustcof = thrustcof
-            windturbines(i)%power = power
-            windturbines(i)%cutinspeed = cutinspeed
-            windturbines(i)%cutoutspeed = cutoutspeed
+          i = 1 
+          lineno = 0
+          DO WHILE (.true.)
+            lineno = lineno + 1
+            READ(19,'(A256)',END=120)inline
+            IF ( i .LE. nwindturbines .AND. index(inline,'!') .EQ. 0 ) THEN
+              READ(inline,*,ERR=130)id,lat,lon,hubheight,diameter,stdthrcoef,power,cutinspeed,cutoutspeed
+              windturbines(i)%id = id
+              windturbines(i)%lat = lat
+              windturbines(i)%lon = lon
+              windturbines(i)%i = -999   ! set to invalid
+              windturbines(i)%j = -999   ! set to invalid
+              windturbines(i)%hubheight = hubheight
+              windturbines(i)%diameter = diameter
+              windturbines(i)%stdthrcoef = stdthrcoef
+              windturbines(i)%power = power
+              windturbines(i)%cutinspeed = cutinspeed
+              windturbines(i)%cutoutspeed = cutoutspeed
+              i = i + 1
+            ENDIF
           ENDDO
+ 120      CONTINUE
           CLOSE(19)
           GOTO 150
  130      CONTINUE
@@ -110,11 +118,9 @@ CONTAINS
         CALL wrf_dm_bcast_integer(windturbines(i)%id,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%lat,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%lon,1) 
-        CALL wrf_dm_bcast_integer(windturbines(i)%i,1) 
-        CALL wrf_dm_bcast_integer(windturbines(i)%j,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%hubheight,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%diameter,1) 
-        CALL wrf_dm_bcast_real(windturbines(i)%thrustcof,1) 
+        CALL wrf_dm_bcast_real(windturbines(i)%stdthrcoef,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%power,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%cutinspeed,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%cutoutspeed,1) 

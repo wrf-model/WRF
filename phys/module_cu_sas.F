@@ -6,9 +6,7 @@ CONTAINS
 !-----------------------------------------------------------------
       SUBROUTINE CU_SAS(DT,ITIMESTEP,STEPCU,                        &
                  RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,               &
-#if (NMM_CORE == 1)
                  RUCUTEN,RVCUTEN,                                   & ! gopal's doing for SAS
-#endif
                  RAINCV,PRATEC,HTOP,HBOT,                           &
                  U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,           &
                  DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
@@ -124,12 +122,12 @@ CONTAINS
                                         RQICUTEN,                       &
                                         RQVCUTEN,                       &
                                         RTHCUTEN
-#if (NMM_CORE == 1)
-      REAL,    INTENT(IN) ::    MOMMIX
       REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
                                         RUCUTEN,                        &  ! gopal's doing for SAS
                                         RVCUTEN                            ! gopal's doing for SAS 
-   REAL, DIMENSION( ims:ime , jms:jme ),                                &
+#if (NMM_CORE == 1)
+      REAL,    INTENT(IN) ::    MOMMIX
+      REAL, DIMENSION( ims:ime , jms:jme ),                             &
                          INTENT(IN) :: STORE_RAND
 
 #endif
@@ -305,8 +303,6 @@ CONTAINS
 
 ! --------------- end compute zi and zl -------------------------------------
 
-
-
 !    Based on some important findings from Morris Bender, XKT2 was defined in
 !    terms of random number instead of random number based cloud tops
 !    Also, these random numbers are stored and are changed only once in
@@ -314,6 +310,17 @@ CONTAINS
 
 !     call random_number(XKT2)
 
+#if (EM_CORE == 1)
+!    XKT2 was defined in terms of random number instead of random number based cloud tops
+!    ZCX   
+     call init_random_seed()
+     call random_number(XKT2)
+#ifdef REGTEST
+! for regtest only
+     xkt2 = 0.1
+#endif
+#endif
+!   
 #if (NMM_CORE == 1)
       DO i=its,ite
          XKT2(i) = STORE_RAND(i,j)
@@ -366,6 +373,9 @@ CONTAINS
 
 !!!   make more like GFDL ... eliminate shallow convection.....
 !!!   CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KUO,Q1,T1,DPSHC)
+#if (EM_CORE == 1)
+      CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KUO,Q1,T1,DPSHC)
+#endif
 
       DO I=ITS,ITE
         RAINCV(I,J)=RN(I)*1000./STEPCU
@@ -422,9 +432,7 @@ CONTAINS
 
 !====================================================================
    SUBROUTINE sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,          &
-#if (NMM_CORE == 1)
                       RUCUTEN,RVCUTEN,                              &   ! gopal's doing for SAS
-#endif
                       RESTART,P_QC,P_QI,P_FIRST_SCALAR,             &
                       allowed_to_read,                              &
                       ids, ide, jds, jde, kds, kde,                 &
@@ -444,11 +452,9 @@ CONTAINS
                                                               RQVCUTEN, &
                                                               RQCCUTEN, &
                                                               RQICUTEN
-#if (NMM_CORE == 1)
    REAL,     DIMENSION( ims:ime , jms:jme , kms:kme ) , INTENT(OUT) ::  &
                                                               RUCUTEN,  & ! gopal's doing for SAS
                                                               RVCUTEN   
-#endif
 
    INTEGER :: i, j, k, itf, jtf, ktf
 
@@ -468,10 +474,8 @@ CONTAINS
      DO i=its,itf
        RTHCUTEN(i,k,j)=0.
        RQVCUTEN(i,k,j)=0.
-#if (NMM_CORE == 1)
        RUCUTEN(i,j,k)=0.   ! gopal's doing for SAS
        RVCUTEN(i,j,k)=0.    ! gopal's doing for SAS
-#endif
      ENDDO
      ENDDO
      ENDDO
@@ -667,6 +671,15 @@ CONTAINS
 !     change for hurricane model
          evfact = 0.6
          evfactl = .6
+#if ( EM_CORE == 1 )
+!  HAWAII TEST - ZCX
+      ALPHAl  = .5
+      ALPHAs  = .75
+      BETAl   = .05
+      betas   = .05
+      evfact  = 0.5
+      evfactl = 0.5
+#endif
       PDPDWN  = 0.
       PDETRN  = 200.
       xlambu  = 1.e-4
@@ -2512,5 +2525,22 @@ CONTAINS
 !-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE MSTADBT3
-     
+
+#if (EM_CORE == 1)
+!   random seeds - ZCX    
+      SUBROUTINE init_random_seed()
+            INTEGER :: i, n, clock
+            INTEGER, DIMENSION(:), ALLOCATABLE :: seed
+
+            CALL RANDOM_SEED(size = n)
+            ALLOCATE(seed(n))
+
+            CALL SYSTEM_CLOCK(COUNT=clock)
+
+            seed = clock + 37 * (/ (i - 1, i = 1, n) /)
+            CALL RANDOM_SEED(PUT = seed)
+
+            DEALLOCATE(seed)
+      END SUBROUTINE 
+#endif
       END MODULE module_cu_sas

@@ -195,9 +195,10 @@ BENCH_END(init_zero_tend_tim)
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,           &
                         grid%rthcuten, grid%rqvcuten, grid%rqccuten,           &
                         grid%rqrcuten, grid%rqicuten, grid%rqscuten,           &
-                        grid%rthften,  grid%rqvften,                      &
+                        grid%rthften,  grid%rqvften,                           &
+                        grid%rucuten,  grid%rvcuten,                           &    
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,       &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,                 &
+                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,      &
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &
@@ -675,6 +676,9 @@ BENCH_START(cu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
+! Variables for tiedtke scheme - add by ZCX&YQW
+     &             ,ZNU=grid%znu, QFX=grid%qfx                            &
+     &             ,RUCUTEN=grid%rucuten, RVCUTEN=grid%rvcuten            &
 #ifdef WRF_CHEM
      &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
 #endif

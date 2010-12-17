@@ -2021,9 +2021,7 @@
          ratio = MIN( ABS(prr_rcg(k)), ABS(prg_rcg(k)) )
          prr_rcg(k) = ratio * SIGN(1.0, SNGL(prr_rcg(k)))
          prg_rcg(k) = -prr_rcg(k)
-         if (temp(k).lt.T_0) then
-            prg_rcs(k) = prs_rcs(k) + prr_rcs(k)
-         else
+         if (temp(k).gt.T_0) then
             ratio = MIN( ABS(prr_rcs(k)), ABS(prs_rcs(k)) )
             prr_rcs(k) = ratio * SIGN(1.0, SNGL(prr_rcs(k)))
             prs_rcs(k) = -prr_rcs(k)

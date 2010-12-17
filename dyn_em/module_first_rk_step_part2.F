@@ -38,7 +38,7 @@ CONTAINS
     USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
             ,halo_em_phys_pbl_sub,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
-            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub
+            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub
 #endif
     USE module_diffusion_em, ONLY : phy_bc, cal_deform_and_div, compute_diff_metrics, &
                                     vertical_diffusion_2, horizontal_diffusion_2, calculate_km_kh, &
@@ -147,6 +147,7 @@ BENCH_START(cal_phy_tend)
                      grid%rqvblten,grid%rqcblten,grid%rqiblten,                       &
                      grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten,              &
                      grid%rqicuten,grid%rqscuten,                                &
+                     grid%rucuten, grid%rvcuten,                                 &
                      grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,        &
                      grid%RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &
@@ -323,6 +324,7 @@ BENCH_START(phy_bc_tim)
                       grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,     &
                       grid%tke_2,                                  &
                       grid%rublten, grid%rvblten,                  &
+                      grid%rucuten, grid%rvcuten,                  & ! Tiedtke ZCX&YQW
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &
@@ -385,6 +387,9 @@ ENDIF
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
        ENDIF
+       IF ( config_flags%cu_physics .eq. 4 .or. config_flags%cu_physics .eq. 6 ) THEN
+#      include "HALO_EM_PHYS_CU.inc"
+       ENDIF
        IF ( config_flags%grid_fdda .ge. 1) THEN
 #      include "HALO_EM_FDDA.inc"
        ENDIF
@@ -440,6 +445,7 @@ BENCH_START(update_phy_ten_tim)
                            grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
+                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke ZCX&YQW
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
                            num_moist,num_scalar,config_flags,rk_step,          &
                            grid%adv_moist_cond,                             &

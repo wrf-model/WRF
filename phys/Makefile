@@ -20,6 +20,7 @@ MODULES = \
 	module_cu_kf.o  \
 	module_cu_bmj.o \
 	module_cu_kfeta.o \
+	module_cu_tiedtke.o\
 	module_cu_gd.o \
 	module_cu_sas.o \
 	module_mp_kessler.o \
@@ -161,6 +162,10 @@ module_gfs_funcphys.o: module_gfs_machine.o \
 module_cu_sas.o: module_gfs_machine.o \
 		 module_gfs_funcphys.o \
 		 module_gfs_physcons.o
+
+module_cu_tiedtke.o:module_gfs_machine.o \
+		module_gfs_funcphys.o \
+		module_gfs_physcons.o
 
 module_ra_gfdleta.o:  ../frame/module_dm.o \
 		module_mp_etanew.o

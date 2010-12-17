@@ -941,7 +941,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
       END IF
 
-     IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME) & 
+     IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
+         config_flags%cu_physics == TIEDTKESCHEME  ) &      ! Tiedtke ZCX&YQW
                      .and. moist_step .and. ( im == P_QV) ) THEN
 
         CALL set_tend( RQVFTEN, advect_tend, msfty,    &
@@ -1478,6 +1479,7 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                      RQVBLTEN,RQCBLTEN,RQIBLTEN,                       &
                      RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,              &
                      RQICUTEN,RQSCUTEN,                                &
+                     RUCUTEN, RVCUTEN,                                 & ! Tiedtke ZCX&YQW
                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,        &
                      RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &
@@ -1516,6 +1518,10 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                                                              RQRCUTEN, &
                                                              RQICUTEN, &
                                                              RQSCUTEN
+
+      REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+                INTENT(INOUT)   ::                            RUCUTEN, &  ! Tiedtke ZCX&YQW
+                                                              RVCUTEN     ! Tiedtke ZCX&YQW
 ! pbl
 
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )               , &
@@ -1581,6 +1587,17 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
       ENDDO
       ENDDO
       ENDDO
+
+      IF (config_flags%cu_physics .eq. 6) THEN
+        DO J=jts,jtf
+        DO I=its,itf
+        DO K=kts,ktf
+           RUCUTEN(I,K,J) =mu(I,J)*RUCUTEN(I,K,J) ! Tiedtke ZCX&YQW
+           RVCUTEN(I,K,J) =mu(I,J)*RVCUTEN(I,K,J) ! Tiedtke ZCX&YQW
+        ENDDO
+        ENDDO
+        ENDDO
+      ENDIF
 
       IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf

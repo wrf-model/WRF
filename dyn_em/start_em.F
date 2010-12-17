@@ -700,6 +700,7 @@
                       t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
                       grid%achfx, grid%aclhf, grid%acgrdflx                 &
+                      ,grid%te_temf,grid%cf3d_temf             & ! WA
                       )
        ENDIF   !tgs
 
@@ -712,6 +713,7 @@
            & grid%id
       CALL wrf_message(trim(message)) 
       grid%avgflx_count = 0
+      f_flux = config_flags%do_avgflx_cugd .EQ. 1  ! WA 9/24/10
       DO ij = 1, grid%num_tiles
          call wrf_debug(200,'In start_em, before zero_avgflx call')
          if (.not. grid%restart) call zero_avgflx(grid%avgflx_rum,grid%avgflx_rvm,grid%avgflx_wwm, &

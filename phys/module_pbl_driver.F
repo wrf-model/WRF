@@ -15,12 +15,20 @@ CONTAINS
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,tke_myj,el_myj,exch_h,exch_m,akhs,akms           &
                  ,thz0,qz0,uz0,vz0,qsfc,f                          &
-                 ,lowlyr,u10,v10                                   &
+                 ,lowlyr,u10,v10,t2                                   &
                  ,psim,psih,gz1oz0, wspd,br,chklowq                &
                  ,bl_pbl_physics, ra_lw_physics, dx                &
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
+              ! OPTIONAL for TEMF scheme
+                 ,te_temf,km_temf,kh_temf                     &
+                 ,shf_temf,qf_temf,uw_temf,vw_temf                &
+                 ,hd_temf,lcl_temf,hct_temf                       &
+                 ,wupd_temf,mf_temf,thup_temf,qtup_temf,qlup_temf &
+                 ,exch_temf,cf3d_temf,cfm_temf                    &
+                 ,flhc,flqc                                        &
+              ! 
                  ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
@@ -59,11 +67,13 @@ CONTAINS
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
-                   BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, p_qi,param_first_scalar 
+                   BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME,TEMFPBLSCHEME, &
+                   p_qi,param_first_scalar 
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
+                   , TEMFPBLSCHEME                          &
                    , MYJSFCSCHEME
 #endif
 
@@ -80,6 +90,7 @@ CONTAINS
    USE module_bl_gwdo
    USE module_bl_myjurb
    USE module_bl_boulac
+   USE module_bl_temf
 #if (EM_CORE==1)
    USE module_bl_mynn
 #endif
@@ -94,6 +105,7 @@ CONTAINS
    !      6. mynnpbl3
    !      7. acmpbl
    !      8. boulacpbl
+   !      88. temfpbl
    !      99. mrfpbl
    !
 !------------------------------------------------------------------
@@ -177,6 +189,23 @@ CONTAINS
 !-- wv_tur        turbulent flux of momentum (y) (m^2/s^2)
 !-- wt_tur        turbulent flux of potential temperature  (K m/s)
 !-- wq_tur        turbulent flux of water vapor  (- m/s)
+!-- te_temf       Total energy from TEMF BL scheme
+!-- km_temf       Exchange coefficient for momentum from TEMF BL scheme
+!-- kh_temf       Exchange coefficient for heat from TEMF BL scheme
+!-- shf_temf      Sensible heat flux from TEMF BL scheme
+!-- qf_temf       Water vapor flux from TEMF BL scheme
+!-- uw_temf       Momentum flux in U direction from TEMF BL scheme
+!-- vw_temf       Momentum flux in V direction from TEMF BL scheme
+!-- wupd_temf     Updraft velocity from TEMF BL scheme
+!-- mf_temf       Mass flux from TEMF BL scheme
+!-- thup_temf     Updraft thetal from TEMF BL scheme
+!-- qtup_temf     Updraft qt from TEMF BL scheme
+!-- qlup_temf     Updraft ql from TEMF BL scheme
+!-- cf3d_temf     3D cloud fraction from TEMF PBL
+!-- cfm_temf      Column cloud fraction from TEMF PBL
+!-- exch_temf     Surface exchange coefficient (as for moisture) from TEMF surface layer scheme
+!-- flhc          Surface exchange coefficient for heat (for TEMF)
+!-- flqc          Surface exchange coefficient for moisture (for TEMF)
 !-- thz0          potential temperature at roughness length (K)
 !-- uz0           u wind component at roughness length (m/s)
 !-- vz0           v wind component at roughness length (m/s)
@@ -303,6 +332,7 @@ CONTAINS
                                                           GRDFLX, &
                                                              U10, &
                                                              V10, &
+                                                              T2, &
                                                             WSPD
 
 !
@@ -369,6 +399,20 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::vl_bep            ! volumes
  
 ! Bep changes end
+!  New variables for TEMF scheme
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(INOUT) :: te_temf
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
+               INTENT(  OUT) :: km_temf, kh_temf,        &
+                         shf_temf,qf_temf,uw_temf,vw_temf,        &
+                         wupd_temf,mf_temf,thup_temf,qtup_temf,   &
+                         qlup_temf,cf3d_temf
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(INOUT) :: flhc,flqc
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(  OUT) :: hd_temf, lcl_temf, hct_temf, cfm_temf
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(INOUT) :: exch_temf
 
 !
 !
@@ -724,6 +768,54 @@ CONTAINS
    jte = j_end(ij)
 
    pbl_select: SELECT CASE(bl_pbl_physics)
+
+      CASE (TEMFPBLSCHEME)
+! WA Test
+       ! WRITE( message , * ) 'Calling TEMF PBL scheme, timestep = ', itimestep
+       ! CALL wrf_message ( message )
+       ! print *,'Calling TEMF PBL scheme'
+        CALL wrf_debug(100,'in TEMF PBL')
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( qi_curr )                            .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                PRESENT( rqiblten )                           .AND. &
+                PRESENT( te_temf ) .AND. PRESENT( cfm_temf ) .AND. &
+                PRESENT( hol      ) ) THEN
+             CALL temfpbl(                                              &
+               U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
+              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,RHO=rho               &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
+              ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
+              ,FLAG_QI=flag_qi                                      &
+              ,g=g,cp=cp,rcp=rcp,r_d=r_d,r_v=r_v,cpv=cpv                    &
+              ,Z=z,XLV=XLV,PSFC=PSFC               &
+              ,MUT=mut,P_TOP=p_top                  &
+              ,ZNT=znt,HT=ht,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh      &
+              ,PSIM=psim,PSIH=psih,XLAND=xland                      &
+              ,HFX=hfx,QFX=qfx,TSK=tskold,QSFC=qsfc,GZ1OZ0=gz1oz0   &
+              ,U10=u10,V10=v10,T2=t2                                &
+              ,WSPD=wspd,BR=br,DT=dtbl,DTMIN=dtmin,KPBL2D=kpbl      &
+              ,SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0            &
+              ,EP1=ep_1,EP2=ep_2,KARMAN=karman,EOMEG=eomeg          &
+              ,STBOLT=stbolt                                       &
+              ,te_temf=te_temf,kh_temf=kh_temf,km_temf=km_temf      &
+              ,shf_temf=shf_temf,qf_temf=qf_temf                    &
+              ,uw_temf=uw_temf,vw_temf=vw_temf                      &
+              ,hd_temf=hd_temf,lcl_temf=lcl_temf,hct_temf=hct_temf  &
+              ,wupd_temf=wupd_temf,mf_temf=mf_temf                  &
+              ,thup_temf=thup_temf,qtup_temf=qtup_temf,qlup_temf=qlup_temf  &
+              ,cf3d_temf=cf3d_temf,cfm_temf=cfm_temf                &
+              ,flhc=flhc,flqc=flqc,exch_temf=exch_temf              &
+              ,fCor=f                                            &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call TEMF pbl')
+           ENDIF
 
       CASE (YSUSCHEME)
         CALL wrf_debug(100,'in YSU PBL')

@@ -1277,6 +1277,9 @@ package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
+package   temfsfcscheme  sf_sfclay_physics==10       -             -
+package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
+
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
@@ -1289,6 +1292,7 @@ package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
 package   mrfscheme      bl_pbl_physics==99          -             -
+package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

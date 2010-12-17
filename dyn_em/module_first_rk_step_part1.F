@@ -113,6 +113,7 @@ CONTAINS
     LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
 
 ! Local
+    REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
     INTEGER                             :: ij
@@ -481,6 +482,15 @@ BENCH_START(surf_driver_tim)
      &        , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
      &        , KTS=k_start, KTE=min(k_end,kde-1)                         &
      &        , NUM_TILES=grid%num_tiles                                  &
+          ! Variables required by TEMF PBL - WA 1/7/09
+              ,te_temf=grid%te_temf,hd_temf=grid%hd_temf                  &
+              ,fCor=grid%f,exch_temf=exch_temf                              &
+          ! Variables required by IDEAL SCM sfc scheme - WA 1/6/10
+              ,hfx_force=grid%hfx_force,lh_force=grid%lh_force            &
+              ,tsk_force=grid%tsk_force                                   &
+              ,hfx_force_tend=grid%hfx_force_tend                         &
+              ,lh_force_tend=grid%lh_force_tend                           &
+              ,tsk_force_tend=grid%tsk_force_tend                         &
            ! Optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
@@ -532,6 +542,7 @@ BENCH_START(pbl_driver_tim)
      &        ,TSK=grid%tsk            ,T_PHY=t_phy        ,UST=grid%ust            &
      &        ,U10=grid%u10 ,UZ0=grid%uz0      ,U_FRAME=grid%u_frame    ,U_PHY=u_phy        &
      &        ,V10=grid%v10 ,VZ0=grid%vz0      ,V_FRAME=grid%v_frame    ,V_PHY=v_phy        &
+              ,T2=grid%t2 &
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
      &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%z                &
      &        ,ZNT=grid%znt                                                    &
@@ -558,6 +569,19 @@ BENCH_START(pbl_driver_tim)
      &        ,NUM_TILES=grid%num_tiles                                   &
           ! Variables Required by ACM PBL  - jp
      &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,P_TOP=grid%p_top    &
+          ! Variables required by TEMF PBL - WA 9/9/08
+              ,te_temf=grid%te_temf                                 &
+              ,kh_temf=grid%kh_temf,km_temf=grid%km_temf            &
+              ,shf_temf=grid%shf_temf,qf_temf=grid%qf_temf          &
+              ,uw_temf=grid%uw_temf,vw_temf=grid%vw_temf            &
+              ,hd_temf=grid%hd_temf,lcl_temf=grid%lcl_temf          &
+              ,wupd_temf=grid%wupd_temf,mf_temf=grid%mf_temf          &
+              ,thup_temf=grid%thup_temf,qtup_temf=grid%qtup_temf          &
+              ,qlup_temf=grid%qlup_temf          &
+              ,cf3d_temf=grid%cf3d_temf,cfm_temf=grid%cfm_temf          &
+              ,hct_temf=grid%hct_temf                               &
+              ,flhc=grid%flhc,flqc=grid%flqc                        &
+              ,exch_temf=exch_temf                      &
           ! optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
@@ -718,8 +742,15 @@ BENCH_END(cu_driver_tim)
      &             ,num_force_layers=grid%num_force_layers                &
      &             ,scm_th_adv=config_flags%scm_th_adv                    &
      &             ,scm_qv_adv=config_flags%scm_qv_adv                    &
+     &             ,scm_ql_adv=config_flags%scm_ql_adv                    &
      &             ,scm_wind_adv=config_flags%scm_wind_adv                &
      &             ,scm_vert_adv=config_flags%scm_vert_adv                &
+     &             ,scm_soilT_force=config_flags%scm_soilT_force          &
+     &             ,scm_soilQ_force=config_flags%scm_soilQ_force          &
+     &      ,scm_force_th_largescale=config_flags%scm_force_th_largescale &
+     &      ,scm_force_qv_largescale=config_flags%scm_force_qv_largescale &
+     &      ,scm_force_ql_largescale=config_flags%scm_force_ql_largescale &
+     &      ,scm_force_wind_largescale=config_flags%scm_force_wind_largescale &
      &             ,u_base=grid%u_base,v_base=grid%v_base                 &
      &             ,z_base=grid%z_base                                    &
      &             ,z_force=grid%z_force,z_force_tend=grid%z_force_tend   &
@@ -734,6 +765,10 @@ BENCH_END(cu_driver_tim)
      &             ,qv_upstream_x_tend=grid%qv_upstream_x_tend            &
      &             ,qv_upstream_y=grid%qv_upstream_y                      &
      &             ,qv_upstream_y_tend=grid%qv_upstream_y_tend            &
+     &             ,ql_upstream_x=grid%ql_upstream_x                      &
+     &             ,ql_upstream_x_tend=grid%ql_upstream_x_tend            &
+     &             ,ql_upstream_y=grid%ql_upstream_y                      &
+     &             ,ql_upstream_y_tend=grid%ql_upstream_y_tend            &
      &             ,u_upstream_x=grid%u_upstream_x                        &
      &             ,u_upstream_x_tend=grid%u_upstream_x_tend              &
      &             ,u_upstream_y=grid%u_upstream_y                        &
@@ -746,10 +781,34 @@ BENCH_END(cu_driver_tim)
      &             ,tau_x_tend=grid%tau_x_tend                            &
      &             ,tau_y=grid%tau_y                                      &
      &             ,tau_y_tend=grid%tau_y_tend                            &
+     &             ,th_largescale=grid%th_largescale                      &
+     &             ,th_largescale_tend=grid%th_largescale_tend            &
+     &             ,qv_largescale=grid%qv_largescale                      &
+     &             ,qv_largescale_tend=grid%qv_largescale_tend            &
+     &             ,ql_largescale=grid%ql_largescale                      &
+     &             ,ql_largescale_tend=grid%ql_largescale_tend            &
+     &             ,u_largescale=grid%u_largescale                      &
+     &             ,u_largescale_tend=grid%u_largescale_tend            &
+     &             ,v_largescale=grid%v_largescale                      &
+     &             ,v_largescale_tend=grid%v_largescale_tend            &
+     &             ,tau_largescale=grid%tau_largescale                    &
+     &             ,tau_largescale_tend=grid%tau_largescale_tend          &
+     &             ,num_force_soil_layers=config_flags%num_force_soil_layers &
+     &             ,num_soil_layers=config_flags%num_soil_layers          &
+     &             ,soil_depth_force=grid%soil_depth_force                &
+     &             ,zs=grid%zs                                            &
+     &             ,tslb=grid%tslb,smois=grid%smois                       &
+     &             ,t_soil_forcing_val=grid%t_soil_forcing_val            &
+     &             ,t_soil_forcing_tend=grid%t_soil_forcing_tend          &
+     &             ,q_soil_forcing_val=grid%q_soil_forcing_val            &
+     &             ,q_soil_forcing_tend=grid%q_soil_forcing_tend          &
+     &             ,tau_soil=grid%tau_soil                                &
      &             ,z=grid%z,z_at_w=grid%z_at_w                           &
      &             ,th=th_phy, qv=moist(ims,kms,jms,P_QV)                 &
+     &             ,ql=moist(ims,kms,jms,P_QC)                            &
      &             ,u=u_phy, v=v_phy                                      &
      &             ,thten=grid%rthblten, qvten=grid%rqvblten              &
+     &             ,qlten=grid%rqcblten                                   &
      &             ,uten=grid%rublten, vten=grid%rvblten                  &
      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

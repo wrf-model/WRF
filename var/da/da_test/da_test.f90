@@ -12,7 +12,7 @@ module da_test
       ntasks_x, ntasks_y, data_order_xyz, mytask, &
       ntasks, data_order_xy
    use module_comm_dm, only : halo_psichi_uv_adj_sub, halo_xa_sub, &
-      halo_sfc_xa_sub, halo_ssmi_xa_sub
+      halo_sfc_xa_sub, halo_ssmi_xa_sub, halo_radar_xa_w_sub
 !  use mpi, only : mpi_sum
 #endif
 

@@ -2982,13 +2982,15 @@ CONTAINS
 !**********************************************************
 !        FUNCTION SSUM, TLUCUA, TLUCUB, TLUCUC
 !**********************************************************
-      FUNCTION SSUM ( N, X, IX )
+      REAL FUNCTION SSUM ( N, X, IX )
 !
 ! COMPUTES SSUM = SUM OF [X(I)]
 !     FOR N ELEMENTS OF X WITH SKIP INCREMENT IX FOR VECTOR X
 !
-      real X(*)
-      integer N, IX
+      IMPLICIT NONE
+      REAL X(*)
+      REAL ZSUM
+      INTEGER N, IX, JX, JL
 !
       JX = 1
       ZSUM = 0.0
@@ -3007,7 +3009,7 @@ CONTAINS
 !  Set up lookup tables for cloud ascent calculations.
 !
       IMPLICIT NONE
-      REAL ZCVM3,ZCVM4,TT,TLUCUA
+      REAL ZCVM3,ZCVM4,TT !,TLUCUA
 !
       IF(TT-TMELT.GT.0.) THEN
          ZCVM3=C3LES
@@ -3026,7 +3028,7 @@ CONTAINS
 !  Set up lookup tables for cloud ascent calculations.
 !
       IMPLICIT NONE
-      REAL Z5ALVCP,Z5ALSCP,ZCVM4,ZCVM5,TT,TLUCUB
+      REAL Z5ALVCP,Z5ALSCP,ZCVM4,ZCVM5,TT !,TLUCUB
 !
       Z5ALVCP=C5LES*ALV/CPD
       Z5ALSCP=C5IES*ALS/CPD
@@ -3042,12 +3044,12 @@ CONTAINS
       RETURN
       END FUNCTION TLUCUB
 !
-      FUNCTION TLUCUC(TT)
+      REAL FUNCTION TLUCUC(TT)
 !
 !  Set up lookup tables for cloud ascent calculations.
 !
       IMPLICIT NONE
-      REAL ZALVDCP,ZALSDCP,TT,ZLDCP,TLUCUC
+      REAL ZALVDCP,ZALSDCP,TT,ZLDCP !,TLUCUC
 !
       ZALVDCP=ALV/CPD
       ZALSDCP=ALS/CPD

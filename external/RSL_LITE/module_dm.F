@@ -564,7 +564,7 @@ CONTAINS
          ALLOCATE ( intermediate_grid )
          ALLOCATE ( intermediate_grid%parents( max_parents ) )
          ALLOCATE ( intermediate_grid%nests( max_nests ) )
-
+         intermediate_grid%allocated=.false.
          NULLIFY( intermediate_grid%sibling )
          DO i = 1, max_nests
             NULLIFY( intermediate_grid%nests(i)%ptr )

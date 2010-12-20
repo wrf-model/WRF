@@ -43,7 +43,7 @@ gen_scalar_indices ( char * dirname )
     strcpy( fname5, fn5[i] ) ;
     if ( strlen(dirname) > 0 ) { sprintf(fname5,"%s/%s",dirname,fn5[i]) ; }
     if ((fp5[i] = fopen( fname5 , "w" )) == NULL ) return(1) ;
-    print_warning(fp5[i],fname) ;
+    print_warning(fp5[i],fname5) ;
   }
   gen_scalar_indices1 ( fp, fp5 ) ;
   close_the_file( fp ) ;

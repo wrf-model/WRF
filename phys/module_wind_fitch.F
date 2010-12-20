@@ -73,8 +73,8 @@ CONTAINS
   jtf=MIN0(jte,jde-1)
   ktf=MIN0(kte,kde-1)
 
-  CALL nl_get_turbpercell(1,turbpercell)
-  CALL nl_get_turbgridid(1,turbgridid)
+  CALL nl_get_td_turbpercell(1,turbpercell)
+  CALL nl_get_td_turbgridid(1,turbgridid)
   IF ( .NOT. inited(id) ) THEN
     IF ( windspec .EQ. WIND_TURBINES_FROMLIST ) THEN 
 ! first check and see if xlat and xlong are all zero, if so, then use i,j directly
@@ -106,16 +106,16 @@ CONTAINS
         ENDDO
       ENDIF
     ELSE IF ( windspec .EQ. WIND_TURBINES_IDEAL .AND. id .EQ. turbgridid ) THEN
-      CALL nl_get_ewfx(1,ewfx)
-      CALL nl_get_ewfy(1,ewfy)
-      CALL nl_get_pwfx(1,pwfx)
-      CALL nl_get_pwfy(1,pwfy)
-      CALL nl_get_hubheight(1,hubheight)
-      CALL nl_get_diameter(1,diameter)
-      CALL nl_get_power(1,power)
-      CALL nl_get_cutinspeed(1,cutinspeed)
-      CALL nl_get_cutoutspeed(1,cutoutspeed)
-      CALL nl_get_stdthrcoef(1,stdthrcoef)
+      CALL nl_get_td_ewfx(1,ewfx)
+      CALL nl_get_td_ewfy(1,ewfy)
+      CALL nl_get_td_pwfx(1,pwfx)
+      CALL nl_get_td_pwfy(1,pwfy)
+      CALL nl_get_td_hubheight(1,hubheight)
+      CALL nl_get_td_diameter(1,diameter)
+      CALL nl_get_td_power(1,power)
+      CALL nl_get_td_cutinspeed(1,cutinspeed)
+      CALL nl_get_td_cutoutspeed(1,cutoutspeed)
+      CALL nl_get_td_stdthrcoef(1,stdthrcoef)
 ! count the turbines
       n = 0
       DO j = jts,jtf

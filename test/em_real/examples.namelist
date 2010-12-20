@@ -57,7 +57,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  dfi_fwdstop_second                  = 00,
  /
 
- &time_control
+ &domains
  time_step_dfi                       = 60.
 
 ** Using gridded nudging option (note this is a separate namelist record) for

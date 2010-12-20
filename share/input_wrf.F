@@ -232,7 +232,8 @@
       CALL wrf_debug ( 100, TRIM(wrf_err_message) )
     ELSE IF ( switch .EQ. auxinput1_only ) then
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , first_date_input , ierr )
-      print *,'metgrid input_wrf.F first_date_input = ',first_date_input
+      WRITE(wrf_err_message,*)'metgrid input_wrf.F first_date_input = ',first_date_input
+      CALL wrf_message(wrf_err_message)
       CALL nl_get_start_year   ( 1 , first_date_start_year   )
       CALL nl_get_start_month  ( 1 , first_date_start_month  )
       CALL nl_get_start_day    ( 1 , first_date_start_day    )
@@ -272,8 +273,11 @@
              WRITE(wrf_err_message,*)'input_wrf: DX and DY from input file expected to be wrong'
              CALL wrf_debug ( 1 , wrf_err_message )
           ELSE
-             print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
-             CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
+             WRITE(wrf_err_message,*)'dx and dy from file     ',dx_compare,dy_compare
+             CALL wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,*)'dx and dy from namelist ',config_flags%dx,config_flags%dy
+             CALL wrf_message(wrf_err_message)
+             CALL wrf_error_fatal( 'DX and DY do not match comparing namelist to the input file' )
           END IF
        END IF
 #endif

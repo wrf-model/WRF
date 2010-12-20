@@ -9,12 +9,14 @@ GEN_BE_OBJS = da_etkf.o \
 	da_be_spectral.o \
 	module_wrf_error.o \
 	module_driver_constants.o \
+	module_domain_type.o \
+	module_streams.o \
+	module_symbols_util.o \
+ 	module_utility.o \
 	da_memory.o \
 	da_reporting.o \
 	da_tools_serial.o \
 	module_ffts.o 
-
-GEN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a 
 
 be : \
 	gen_be_stage0_wrf.exe \
@@ -48,7 +50,7 @@ be : \
 	da_advance_time.exe
 
 GEN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
-GEN_BE_LIB = $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack $(WAVELET_LIB)
+GEN_BE_LIB = $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack $(WAVELET_LIB) $(ESMF_IO_LIB)
 
 gen_be_stage0_wrf.exe : gen_be_stage0_wrf.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(RM) $@

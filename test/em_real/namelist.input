@@ -1,7 +1,7 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 12,
- run_minutes                         = 0,
+ run_hours                           = 0,
+ run_minutes                         = 60,
  run_seconds                         = 0,
  start_year                          = 2000, 2000, 2000,
  start_month                         = 01,   01,   01,
@@ -17,8 +17,8 @@
  end_second                          = 00,   00,   00,
  interval_seconds                    = 21600
  input_from_file                     = .true.,.true.,.true.,
- history_interval                    = 180,  60,   60,
- frames_per_outfile                  = 1000, 1000, 1000,
+ history_interval                    = 3,  60,   60,
+ frames_per_outfile                  = 1, 1000, 1000,
  restart                             = .false.,
  restart_interval                    = 5000,
  io_form_history                     = 2
@@ -52,13 +52,13 @@
  /
 
  &physics
- mp_physics                          = 3,     3,     3,
+ mp_physics                          = 8,     3,     3,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
  radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 1,     1,     1,
+ sf_sfclay_physics                   = 5,     1,     1,
  sf_surface_physics                  = 2,     2,     2,
- bl_pbl_physics                      = 1,     1,     1,
+ bl_pbl_physics                      = 5,     1,     1,
  bldt                                = 0,     0,     0,
  cu_physics                          = 1,     1,     0,
  cudt                                = 5,     5,     5,
@@ -73,6 +73,19 @@
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
+ windturbines_spec = "ideal"
+ td_turbgridid   =      1,
+ td_hubheight    =   100.,
+ td_diameter     =   100.,
+ td_stdthrcoef   =   .158,
+ td_cutinspeed   =    3.5,
+ td_cutoutspeed  =    30.,
+ td_power        =    5.0,
+ td_turbpercell  =    1.0,
+ td_ewfx         =     10,
+ td_ewfy         =     10,
+ td_pwfx         =     45,
+ td_pwfy         =     45,
  /
 
  &fdda
@@ -110,3 +123,4 @@
  nio_tasks_per_group = 0,
  nio_groups = 1,
  /
+

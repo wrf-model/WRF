@@ -58,6 +58,7 @@
  icloud                              = 0,
  num_soil_layers                     = 5,
  mp_zero_out                         = 0,
+ windturbines_spec = "windspec.in"
  /
 
  &fdda
@@ -108,7 +109,4 @@
  nio_groups = 1,
  /
 
- &turbine
- windturbines_spec = "windspec.in"
-/
 

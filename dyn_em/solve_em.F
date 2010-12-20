@@ -1922,7 +1922,6 @@ BENCH_END(small_step_finish_tim)
        moist_scalar_advance: IF (num_3d_m >= PARAM_FIRST_SCALAR )  THEN
 
          moist_variable_loop: DO im = PARAM_FIRST_SCALAR, num_3d_m
-write(0,*)'moist_variable_loop ',im,num_3d_m
 
 ! adv_moist_cond is set in module_physics_init based on mp_physics choice
 !       true except for Ferrier scheme
@@ -2139,7 +2138,6 @@ BENCH_START(chem_adv_tim)
        chem_scalar_advance: IF (num_3d_c >= PARAM_FIRST_SCALAR)  THEN
 
          chem_variable_loop: DO ic = PARAM_FIRST_SCALAR, num_3d_c
-write(0,*)'tracer_variable_loop ',ic,num_3d_c
 
            !$OMP PARALLEL DO   &
            !$OMP PRIVATE ( ij )
@@ -2259,7 +2257,6 @@ BENCH_START(tracer_adv_tim)
        tracer_advance: IF (num_tracer >= PARAM_FIRST_SCALAR)  THEN
 
          tracer_variable_loop: DO ic = PARAM_FIRST_SCALAR, num_tracer
-write(0,*)'tracer_variable_loop ',ic,num_tracer
 
            !$OMP PARALLEL DO   &
            !$OMP PRIVATE ( ij )
@@ -2390,7 +2387,6 @@ BENCH_END(tracer_adv_tim)
      other_scalar_advance: IF (num_3d_s >= PARAM_FIRST_SCALAR)  THEN
 
        scalar_variable_loop: do is = PARAM_FIRST_SCALAR, num_3d_s
-write(0,*)'other_scalar_advance ',is,num_3d_s
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          scalar_tile_loop_1: DO ij = 1 , grid%num_tiles

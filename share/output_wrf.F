@@ -697,7 +697,6 @@ endif
       newswitch = switch 
       p => grid%head_statevars%next
       DO WHILE ( ASSOCIATED( p ) ) 
-write(0,*)__FILE__,__LINE__,TRIM(p%DataName)
         IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN   ! no I/O for xposed variables
           IF ( p%Ndim .EQ. 0 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN

@@ -519,10 +519,6 @@ BENCH_END(surf_driver_tim)
 !*********
 ! pbl
 
-write(0,*)'P_qke ',P_qke,size(scalar,4),shape(scalar)
-write(0,*)'num_scalar ',num_scalar
-write(0,*)'scalar_index_table ',scalar_index_table
-
       CALL wrf_debug ( 200 , ' call pbl_driver' )
 BENCH_START(pbl_driver_tim)
       CALL pbl_driver(                                                              &

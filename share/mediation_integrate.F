@@ -61,6 +61,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    INTEGER                :: ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe, ij, im
+   CHARACTER*80           :: timestr
 
 
 #if (WRFPLUS == 1)
@@ -177,6 +178,18 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                                 grid%domain_clock%clockint%TimeStep )
           ENDIF
           CALL med_auxinput_in ( grid, ialarm, config_flags )
+          IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only ) THEN
+             CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
+                                    current_timestr=timestr )
+             WRITE(message, FMT='(A,A)') 'read xtraj from file at time stamp:', TRIM(timestr)
+             CALL wrf_debug ( -500 , message )
+          ENDIF
+          IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput7_only ) THEN
+             CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
+                                    current_timestr=timestr )
+             WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
+             CALL wrf_debug ( -500 , message )
+          ENDIF
           IF ( (config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) &
                .AND. ialarm .EQ. auxinput6_only .AND. &
                grid%itimestep .NE. 0 ) THEN
@@ -301,7 +314,9 @@ SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
    INTEGER                                    :: ialarm
    INTEGER                                    :: rc
 
+   TYPE(WRFU_Time)        :: currTime, startTime
    CHARACTER*256          :: message
+   CHARACTER*80           :: timestr
 
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) THEN
      IF ( .NOT. grid%trajectory_io ) THEN
@@ -311,8 +326,13 @@ SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
         CALL read_ad_forcing  ( message )
      ENDIF
      IF ( .NOT. grid%trajectory_io ) THEN
+        CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+        CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
+                               current_timestr=timestr )
+        WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
+        CALL wrf_debug ( -500 , message )
         WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
-           AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
+             AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
         CALL wrf_debug ( 0 , message )
      ENDIF
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )

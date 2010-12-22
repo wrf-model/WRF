@@ -15,16 +15,29 @@ subroutine da_setup_background_errors(grid, be)
 
 !  Hybrid parameters:
    be % ne = ensdim_alpha                          ! Size of ensemble.
-   jb_factor = 1.0
-   sigma_alpha = 0.0
 
-   if ( ensdim_alpha > 0 ) then ! Calculation to preserve total variance.
-      if ( je_factor > alpha_std_dev*alpha_std_dev ) then
-         jb_factor = je_factor / ( je_factor - alpha_std_dev*alpha_std_dev )
-         sigma_alpha = alpha_std_dev
+   if (be % ne > 0) then     ! Calculation to preserve total variance.
+      if ( je_factor > alpha_std_dev**2 ) then
+         jb_factor   = je_factor / ( je_factor - alpha_std_dev**2 )
+      else
+         jb_factor   = -999.
+         write(6,*) 'Full ensemble mode: deactivating Jb control variable'
+            max_vert_var1 = 0
+            max_vert_var2 = 0
+            max_vert_var3 = 0
+            max_vert_var4 = 0
+            max_vert_var5 = 0
+#ifdef CLOUD_CV
+            max_vert_var6 = 0
+            max_vert_var7 = 0
+            max_vert_var8 = 0
+#endif
       end if
+      sigma_alpha = alpha_std_dev
       write(6,'(a,4f15.5)')' jb_factor, je_factor, alpha_std_dev, sigma_alpha = ', &
                     jb_factor, je_factor, alpha_std_dev, sigma_alpha
+   else
+      jb_factor = 1.0
    end if
 
    be % v1 % mz = 0

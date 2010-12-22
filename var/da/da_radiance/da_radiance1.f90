@@ -229,6 +229,8 @@ contains
 #include "da_print_stats_rad.inc"
 #include "da_qc_rad.inc"
 #include "da_setup_satcv.inc"
+#include "da_mspps_emis.inc"
+#include "da_mspps_ts.inc"
 
 #endif
 

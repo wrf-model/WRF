@@ -629,6 +629,11 @@ CONTAINS
                                               AtmOptics_TL    , &  ! Output
                                               AAV               )  ! Internal variable input
 
+          ! ---------------------------------
+          ! Gamma correction to optical depth
+          ! ---------------------------------
+          AtmOptics_TL%Optical_Depth = AtmOptics_TL%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE) + &
+                                       AtmOptics%Optical_Depth * RTSolution_TL(ln,m)%Gamma
 
           ! -------------------------------------------
           ! Compute the molecular scattering properties
@@ -747,6 +752,10 @@ CONTAINS
           SfcOptics%Compute_Switch = SET
           ! Change SfcOptics emissivity/reflectivity
           ! contents/computation status
+          IF ( User_Emissivity .and.  &
+               (Options(m)%Emissivity(ln) <= ZERO .or. Options(m)%Emissivity(ln) > ONE) ) THEN
+             User_Emissivity = .FALSE.
+          END IF
           IF ( User_Emissivity ) THEN
             SfcOptics%Compute_Switch  = NOT_SET
             SfcOptics%Emissivity(1,1)       = Options(m)%Emissivity(ln)

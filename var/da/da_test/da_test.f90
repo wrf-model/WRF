@@ -22,7 +22,7 @@ module da_test
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_a_qv
 
    use da_control, only : trace_use,ierr, trace_use_dull, comm,global,stdout,rootproc, &
-      sfc_assi_options,typical_qrn_rms, jcdfi_use, jcdfi_diag, &
+      sfc_assi_options,typical_qrn_rms,typical_qci_rms,jcdfi_use, jcdfi_diag, &
       typical_u_rms,typical_v_rms,typical_w_rms,typical_t_rms, typical_p_rms, &
       typical_q_rms,typical_qcw_rms,print_detail_testing,typical_rh_rms, &
       fg_format, fg_format_wrf_arw_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
@@ -40,7 +40,8 @@ module da_test
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
-      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size, &
+      cloud_cv_options
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type

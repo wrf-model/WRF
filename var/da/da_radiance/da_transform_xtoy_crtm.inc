@@ -238,29 +238,29 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       end if
 
       do k=kts,kte ! from bottom to top
-         call da_interp_lin_2d_partial (grid%xa%t(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+         call da_interp_2d_partial (grid%xa%t(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             temperature(kte-k+1,:))
-         call da_interp_lin_2d_partial (grid%xa%q(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+         call da_interp_2d_partial (grid%xa%q(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             absorber(kte-k+1,:))
 
          if (crtm_cloud) then
 
-         call da_interp_lin_2d_partial (grid%xa%qcw(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+         call da_interp_2d_partial (grid%xa%qcw(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             qcw(kte-k+1,:))
-         call da_interp_lin_2d_partial (grid%xa%qci(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+         call da_interp_2d_partial (grid%xa%qci(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             qci(kte-k+1,:))
-         call da_interp_lin_2d_partial (grid%xa%qrn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+         call da_interp_2d_partial (grid%xa%qrn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             qrn(kte-k+1,:))
-         call da_interp_lin_2d_partial (grid%xa%qsn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+         call da_interp_2d_partial (grid%xa%qsn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             qsn(kte-k+1,:))
-         call da_interp_lin_2d_partial (grid%xa%qgr(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+         call da_interp_2d_partial (grid%xa%qgr(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             qgr(kte-k+1,:))
 
          end if
 
       end do
 
-      call da_interp_lin_2d_partial (grid%xa%psfc, iv%instid(inst)%info, 1, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, psfc(:))
+      call da_interp_2d_partial (grid%xa%psfc, iv%instid(inst)%info, 1, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, psfc(:))
 
       ! Gamma correction from VarBC
       !----------------------------
@@ -367,17 +367,18 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       ! -- Copy the TL surface structure
          Surface_TL(n) = Surface(n)
 
-    ! -- Zero the TL outputs
+    ! -- Zero the TL inputs
     ! Important: adjoint variables must be initialized
         call CRTM_Atmosphere_Zero( Atmosphere_TL(n) )
         call CRTM_Surface_Zero( Surface_TL(n) )
 
+        ! Humidity in g/kg. Zero Jacobian for top level(s) (above 75hPa)
         do k = kts, kte
           if ( iv%instid(inst)%pm(k,n) < 75.0 ) absorber(k,n) = 0.0
         end do
         Atmosphere_TL(n)%Absorber(kts+1:kte,1)  = 1000.0 / (1.0-xb_q(kts+1:kte,n))**2  &
                                                   * absorber(kts+1:kte,n)
-                                                  ! in g/kg  Zero Jacobian for top level(s)
+
         Atmosphere_TL(n)%Temperature(kts+1:kte) = temperature(kts+1:kte,n)       ! Zero Jacobian for top level
         Atmosphere_TL(n)%Level_Pressure(Atmosphere_TL(n)%n_Layers) = 0.01 * psfc(n)
 
@@ -388,7 +389,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
            Atmosphere_TL(n)%Cloud(4)%Water_Content(kts:kte)             = qsn(kts:kte,n)
            Atmosphere_TL(n)%Cloud(5)%Water_Content(kts:kte)             = qgr(kts:kte,n)
            Atmosphere_TL(n)%Cloud(6)%Water_Content(kts:kte)             = 0.
-! convert cloud content unit from kg/kg to kg/m^2
+        ! convert cloud content unit from kg/kg to kg/m^2
            do k=kts,kte
               do icld=1,Atmosphere(n)%n_Clouds
 
@@ -476,6 +477,15 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
                   RTSolution_TL(l,n)%brightness_temperature = RTSolution_TL(l,n)%brightness_temperature + &
                                        iv%instid(inst)%t_jacobian(l,k,n) * Atmosphere_TL(n)%Temperature(k) +  &
                                        iv%instid(inst)%q_jacobian(l,k,n) * Atmosphere_TL(n)%absorber(k,1)
+                  if (crtm_cloud) then
+                     RTSolution_TL(l,n)%brightness_temperature = RTSolution_TL(l,n)%brightness_temperature + &
+                        iv%instid(inst)%water_jacobian(l,k,n)   * Atmosphere_TL(n)%Cloud(1)%Water_Content(k) + &
+                        iv%instid(inst)%ice_jacobian(l,k,n)     * Atmosphere_TL(n)%Cloud(2)%Water_Content(k) + &
+                        iv%instid(inst)%rain_jacobian(l,k,n)    * Atmosphere_TL(n)%Cloud(3)%Water_Content(k) + &
+                        iv%instid(inst)%snow_jacobian(l,k,n)    * Atmosphere_TL(n)%Cloud(4)%Water_Content(k) + &
+                        iv%instid(inst)%graupel_jacobian(l,k,n) * Atmosphere_TL(n)%Cloud(5)%Water_Content(k) + &
+                        iv%instid(inst)%hail_jacobian(l,k,n)    * Atmosphere_TL(n)%Cloud(6)%Water_Content(k)
+                  end if
                end do
                RTSolution_TL(l,n)%brightness_temperature = RTSolution_TL(l,n)%brightness_temperature + &
                                        iv%instid(inst)%ps_jacobian(l,n) * Atmosphere_TL(n)%Level_Pressure(Atmosphere_TL(n)%n_Layers) 

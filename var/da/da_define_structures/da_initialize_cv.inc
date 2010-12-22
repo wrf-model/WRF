@@ -48,7 +48,6 @@ subroutine da_initialize_cv(cv_size, cv)
       write(unit=stdout,fmt='(a,f15.5)')' STD DEV = ', std_dev_cv
    else
       cv = 0.0
-      write(stdout,'(a,": null initial CV.")')__FILE__
    end if
 
    if (trace_use) call da_trace_exit("da_initialize_cv")

@@ -391,7 +391,7 @@ subroutine da_setup_be_nmm_regional(xb, be)
 
 !
    if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
-   be % v4 % name = 'qt   '
+      if ( cloud_cv_options == 1 ) be % v4 % name = 'qt   '
    end if
 
    write (unit=message(2),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &

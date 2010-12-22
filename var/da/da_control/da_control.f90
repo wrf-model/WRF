@@ -212,6 +212,7 @@ module da_control
    real, parameter    :: typical_thickness_rms = 50.0   ! m
    real, parameter    :: typical_qrn_rms = 0.00001 ! g/kg
    real, parameter    :: typical_qcw_rms = 0.00001 ! g/kg
+   real, parameter    :: typical_qci_rms = 0.00001 ! g/kg
    real, parameter    :: typical_w_rms = 0.1     ! m/s
    real, parameter    :: typical_rv_rms = 1.0    ! m/s
    real, parameter    :: typical_rf_rms = 1.0    ! dBZ

@@ -1265,15 +1265,10 @@ CONTAINS
        ! DO J=j_start(ij),j_end(ij)
        ! DO I=i_start(ij),i_end(ij)
        !    CHKLOWQ(i,j) = 1.0
-       !    Z0(i,j) = 0.03     ! For GABLS2
+       !    Z0(i,j) = 0.03      ! For GABLS2
        !    ZNT(i,j) = 0.03     ! For GABLS2
        ! ENDDO
        ! ENDDO
-! WA DEBUG
-      ! print *,'Before running TEMF sfc layer'
-      ! print *,'flqc = ', flqc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'znt = ', znt(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-! End WA DEBUG
          CALL TEMFSFCLAY(u3d=u_phytmp,v3d=v_phytmp,th3d=th_phy,    &
                qv3d=qv_curr,p3d=p_phy,pi3d=pi_phy,rho=rho,z=z,ht=ht, &
                CP=cp,G=g,ROVCP=rovcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,&
@@ -1291,30 +1286,10 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for TEMFSFCLAY in surface driver')
        ENDIF
-! WA DEBUG
-      ! print *,'After running TEMF sfc layer'
-      ! print *,'hfx = ', hfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'qfx = ', qfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'tsk = ', tsk(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'flhc = ', flhc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'flqc = ', flqc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'ust = ', ust(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'qsfc = ', qsfc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'chs2 = ', chs2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'cqs2 = ', cqs2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'t2 = ', t2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'th2 = ', th2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'q2 = ', q2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-! End WA DEBUG
 
      CASE (IDEALSCMSFCSCHEME)
        IF (PRESENT(qv_curr)) THEN
          CALL wrf_debug( 100, 'in IDEALSCMSFCLAY' )
-! WA DEBUG
-      print *,'Before running IDEALSCM sfc layer'
-      ! print *,'flqc = ', flqc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'znt = ', znt(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-! End WA DEBUG
          CALL IDEALSCMSFCLAY(u3d=u_phytmp,v3d=v_phytmp,th3d=th_phy,    &
                qv3d=qv_curr,p3d=p_phy,pi3d=pi_phy,rho=rho,z=z,ht=ht, &
                CP=cp,G=g,ROVCP=rovcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,&
@@ -1337,12 +1312,6 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for IDEALSCMSFCLAY in surface driver')
        ENDIF
-! WA DEBUG
-      ! print *,'After running IDEALSCM sfc layer'
-      ! print *,'hfx = ', hfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'qfx = ', qfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-      ! print *,'tsk = ', tsk(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
-! End WA DEBUG
 #endif
 
 #if (NMM_CORE==1)

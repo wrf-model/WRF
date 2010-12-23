@@ -46,6 +46,7 @@ CONTAINS
     USE module_force_scm
     USE module_convtrans_prep
     USE module_big_step_utilities_em, ONLY : phy_prep
+use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub
@@ -520,16 +521,16 @@ BENCH_END(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call pbl_driver' )
 BENCH_START(pbl_driver_tim)
-      CALL pbl_driver(                                                    &
+      CALL pbl_driver(                                                              &
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
-     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                 &
+     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
-     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct         &
+     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
      &        ,EL_MYJ=grid%el_myj      ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m   &
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
-     &        ,ITIMESTEP=grid%itimestep                    ,KPBL=grid%kpbl          &
+     &        ,ID=grid%id         ,ITIMESTEP=grid%itimestep     ,KPBL=grid%kpbl          &
      &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
      &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
      &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
@@ -591,7 +592,7 @@ BENCH_START(pbl_driver_tim)
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
-     &        ,qke=grid%qke, tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov     &
+     &        ,QKE=scalar(ims,kms,jms,P_qke), tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov     &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
@@ -601,7 +602,12 @@ BENCH_START(pbl_driver_tim)
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
-     &                                                          )
+! For Wind Turbine Drag Parameterizations
+     &        ,phb=grid%phb                                               &
+     &        ,XLAT_U=grid%xlat_u,XLONG_U=grid%xlong_u                    &
+     &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v                    &
+     &        )
+                                                         
 
 BENCH_END(pbl_driver_tim)
 

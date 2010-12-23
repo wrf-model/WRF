@@ -106,6 +106,8 @@ CONTAINS
 !-----------------------------------------------------------------
    USE module_domain
    USE module_wrf_error
+   USE module_wind_generic
+   USE module_wind_fitch
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -408,6 +410,15 @@ integer myproc
    CALL wrf_debug(100,'after nl_get_iswater, nl_get_isice, nl_get_mminlu_loc')
 !-- temporary fix by ww
    landuse_ISICE = isice
+
+! Added for Wind Turbine parameterization code -- This will only read in an optional 
+! configuration file with information that will be used by inividual turbine init routines 
+! as each domain is initialized.
+  IF ( id .EQ. 1 ) THEN
+    CALL init_module_wind_generic
+    CALL init_module_wind_fitch
+  ENDIF
+!
 
   IF(.not.restart)THEN
 !-- initialize common variables

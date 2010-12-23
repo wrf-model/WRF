@@ -799,7 +799,7 @@ state    real   hct_temf       ij      misc        1         -     rh          "
 state    real   cfm_temf       ij      misc        1         -     rh          "cfm_temf"            "Column cloud fraction from TEMF PBL"        "1"
 
 # MYNN PBL variables
-state   real   qke             ikj     misc        1         -      rh       "qke"               "twice TKE FROM MYNN"      "m2 s-2"
+state   real   qke             ikjftb  scalar      1         -      i0rhusdf=(bdy_interp:dt) "qke"               "twice TKE FROM MYNN"      "m2 s-2"
 state   real   tsq             ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
 state   real   qsq             ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
 state   real   cov             ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\
@@ -1775,6 +1775,25 @@ rconfig   integer mp_physics_dfi          derived                  max_domains  
 # Single dummy declaration to define a nodyn dyn option
 state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""      
 
+# Turbine drag (td) physics
+# Turbine positions and characteristics for real-data cases are specified in a file 
+# whose name is given in the windturbines_spec variable.  If the setting is "ideal",
+# the td_ variables specify idealized wind farm geometries and turbine characteristics.
+# If the setting is "none" then wind turbine drag physics is turned off.
+rconfig character windturbines_spec namelist,physics 1 "none" - - "" "none, ideal, or a file name"
+rconfig integer td_turbgridid  namelist,physics 1 -1     - - ""  "which grid id has turbines in it"
+rconfig  real   td_hubheight   namelist,physics 1 100.   - - ""  "hub height (m)"
+rconfig  real   td_diameter    namelist,physics 1 60.    - - ""  "turbine diameter (m)"
+rconfig  real   td_stdthrcoef  namelist,physics 1 .158   - - ""  "standing thrust coefficient"
+rconfig  real   td_cutinspeed  namelist,physics 1 4.     - - ""  "cut-in speed (m/s)"
+rconfig  real   td_cutoutspeed namelist,physics 1 27.    - - ""  "cut-out speed (m/s)"
+rconfig  real   td_power       namelist,physics 1 2.     - - ""  "turbine power (MW)"
+rconfig  real   td_turbpercell namelist,physics 1 1.     - - ""  "number of turbines per cell"
+rconfig integer td_ewfx        namelist,physics 1 0      - - ""  "extent of wind farm in x-cells"
+rconfig integer td_ewfy        namelist,physics 1 0      - - ""  "extent of wind farm in y-cells"
+rconfig integer td_pwfx        namelist,physics 1 1      - - ""  "southwest corner of wind farm in x-cells"
+rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corner of wind farm in y-cells"
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
@@ -1814,7 +1833,6 @@ package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
 #package   milbrandt3mom_dfi mp_physics_dfi==12       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qzr,dfi_qzi,dfi_qzs,dfi_qzg,dfi_qzh
-package   sbu_ylinscheme_dfi    mp_physics==13           -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   thompson07_dfi    mp_physics_dfi==98       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
@@ -1838,7 +1856,7 @@ package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             state:tke_myj
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
-package   mynnsfcscheme  sf_sfclay_physics==5        -             state:qke,tsq,qsq,cov
+package   mynnsfcscheme  sf_sfclay_physics==5        -             scalar:qke;state:tsq,qsq,cov
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 
 package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep
@@ -1856,8 +1874,8 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_myj,el_myj
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_myj,el_myj
-package   mynnpblscheme2 bl_pbl_physics==5           -             state:qke,tsq,qsq,cov
-package   mynnpblscheme3 bl_pbl_physics==6           -             state:qke,tsq,qsq,cov
+package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke;state:tsq,qsq,cov
+package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke;state:tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -

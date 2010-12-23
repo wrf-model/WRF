@@ -55,6 +55,8 @@ CONTAINS
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
                      ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux            &
+                 ! Optional trigger function activation variable
+                     ,kfeta_trigger                                   &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
@@ -187,6 +189,7 @@ CONTAINS
 !-- warm_rain
 !-- CU_ACT_FLAG
 !-- W0AVG         average vertical velocity, (for KF scheme) (m/s)
+!-- kfeta_trigger namelist for KF trigger (=1, default; =2, moisture-advection-dependent trigger)
 !-- rho           density (kg/m^3)
 !-- CLDEFI        precipitation efficiency (for BMJ scheme) (dimensionless)
 !-- STEPCU        # of fundamental timesteps between convection calls
@@ -301,6 +304,8 @@ CONTAINS
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                      &
           INTENT(INOUT) :: CU_ACT_FLAG
 
+   INTEGER, INTENT(IN   ), OPTIONAL        ::   kfeta_trigger
+
    REAL,  INTENT(IN   ) :: DT, DX
    INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
                    ips,ipe, jps,jpe, kps,kpe,imomentum,ishallow
@@ -399,7 +404,7 @@ CONTAINS
 
 ! LOCAL  VAR
 
-   INTEGER :: i,j,k,its,ite,jts,jte,ij
+   INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf
    logical :: l_flux
 
 !-----------------------------------------------------------------
@@ -432,7 +437,14 @@ CONTAINS
       tmppratec(:,:) = 0.
    end if
 
+   if (.not. PRESENT(kfeta_trigger)) then
+      trigger_kf = 1
+   else
+      trigger_kf = kfeta_trigger
+   endif
+
    IF (cu_physics .eq. 0) return
+
 #if  ( EM_CORE == 1 )
       if(cu_physics .eq. 5 ) then
       !$OMP PARALLEL DO   &
@@ -458,7 +470,7 @@ CONTAINS
 #include "HALO_CUP_G3_IN.inc"
 #endif
       endif
-#endif 
+#endif
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -533,6 +545,11 @@ CONTAINS
 
      CASE (KFETASCHEME)
           CALL wrf_debug(100,'in kf_eta_cps')
+#if  ( EM_CORE == 1 )
+#ifdef DM_PARALLEL                                      ! chen
+#include "HALO_CUP_G3_IN.inc"                           ! chen
+#endif                                                  ! chen
+#endif                                                  ! chen
           CALL KF_ETA_CPS(                                      &
                 U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho              &
                ,CUDT=cudt_pass                                  &
@@ -552,11 +569,12 @@ CONTAINS
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+               ,trigger=trigger_kf                              &
               ! optionals
                ,RTHCUTEN=rthcuten                               &
                ,RQVCUTEN=rqvcuten ,RQCCUTEN=rqccuten            &
                ,RQRCUTEN=rqrcuten ,RQICUTEN=rqicuten            &
-               ,RQSCUTEN=rqscuten                               &
+               ,RQSCUTEN=rqscuten, RQVFTEN=RQVFTEN              &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                                 )

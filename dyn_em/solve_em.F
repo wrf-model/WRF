@@ -634,7 +634,7 @@ BENCH_END(set_phys_bc_tim)
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy      &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , ids, ide, jds, jde, kds, kde     &
@@ -669,7 +669,7 @@ BENCH_END(set_phys_bc_tim)
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy      &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , nba_mij, num_nba_mij             & !JDM 

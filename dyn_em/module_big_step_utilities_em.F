@@ -4946,7 +4946,8 @@ END SUBROUTINE pole_point_bc
 
    if(( config_flags%cu_physics == GDSCHEME ) .OR.    &
       ( config_flags%cu_physics == G3SCHEME ) .OR.    &
-        config_flags%cu_physics == TIEDTKESCHEME ) then  ! Tiedtke ZCX&YQW
+      ( config_flags%cu_physics == KFETASCHEME ) .OR. &
+      ( config_flags%cu_physics == TIEDTKESCHEME ) ) then  ! Tiedtke ZCX&YQW
 
       DO J=j_start,j_end
       DO I=i_start,i_end

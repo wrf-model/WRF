@@ -461,6 +461,11 @@ Namelist variables for controlling the adaptive time step option:
 
  cudt                                = 0,       ; minutes between cumulus physics calls
 
+ kfeta_trigger                       KF trigger option (cu_physics=1 only):
+                                     = 1, default option
+                                     = 2, moisture-advection based trigger (Ma and Tan [2009]) - ARW only
+                                     = 3, RH-dependent additional perturbation to option 1 (JMA)
+
  cugd_avedx                          ; number of grid boxes over which subsidence is spread.
                                      = 1, default, for large grid distances
                                      = 3, for small grid distances (DX < 5 km)

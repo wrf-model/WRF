@@ -942,7 +942,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
       END IF
 
      IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
-         config_flags%cu_physics == TIEDTKESCHEME  ) &      ! Tiedtke ZCX&YQW
+         config_flags%cu_physics == KFETASCHEME .OR. &      ! new trigger in KF
+         config_flags%cu_physics == TIEDTKESCHEME  ) &      ! Tiedtke
                      .and. moist_step .and. ( im == P_QV) ) THEN
 
         CALL set_tend( RQVFTEN, advect_tend, msfty,    &

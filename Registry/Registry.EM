@@ -1130,7 +1130,7 @@ state    real     lu_state        p      misc       -          -     r
 i1       real  th_phy          ikj      misc        1         -                                          
 i1       real  pi_phy          ikj      misc        1         -                                          
 i1       real  p_phy           ikj      misc        1         -                                          
-i1       real  t_phy           ikj      misc        1         -                                          
+state    real  t_phy           ikj      misc        1         -      r      "T_PHY"                        "Temperature"         "K"           
 i1       real  u_phy           ikj      misc        1         -                                          
 i1       real  v_phy           ikj      misc        1         -                                          
 i1       real  dz8w            ikj      misc        1         Z                                          
@@ -1477,6 +1477,7 @@ rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
 rconfig   integer     cu_diag             namelist,physics      max_domains    0       rh       "cu_diag"            " additional t-averaged stuff for cuphys"      ""
+rconfig   integer     kfeta_trigger       namelist,physics	1              0       rh       "KFETA Trigger function"    ""    ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
@@ -1992,7 +1993,7 @@ halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,
 halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
 halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
 halo      HALO_EM_MOIST_E_7 dyn_em 80:moist
-halo      HALO_CUP_G3_IN dyn_em 24:RTHFTEN,RQVFTEN,w_2
+halo      HALO_CUP_G3_IN dyn_em 24:RTHFTEN,RQVFTEN,w_2,t_phy
 halo      HALO_CUP_G3_OUT dyn_em 48:cugd_tten,cugd_qvten,cugd_ttens,cugd_qvtens,raincv
 halo      HALO_EM_CHEM_E_3 dyn_em 24:chem
 halo      HALO_EM_CHEM_E_5 dyn_em 48:chem

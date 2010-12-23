@@ -23,6 +23,7 @@ MODULES = \
 	module_cu_kfeta.o \
 	module_cu_tiedtke.o\
 	module_cu_gd.o \
+	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
@@ -159,6 +160,8 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
 
+module_cu_nsas.o:
+
 module_gfs_physcons.o: module_gfs_machine.o
 
 module_gfs_funcphys.o: module_gfs_machine.o \
@@ -268,6 +271,7 @@ module_physics_init.o : \
 		module_cu_kfeta.o		\
 		module_cu_bmj.o			\
 		module_cu_gd.o			\
+		module_cu_nsas.o		\
 		module_cu_sas.o			\
 		module_mp_sbu_ylin.o		\
 		module_mp_wsm3.o		\
@@ -318,7 +322,9 @@ module_cumulus_driver.o: \
 		module_cu_kfeta.o \
 		module_cu_bmj.o \
 		module_cu_gd.o \
+		module_cu_nsas.o \
 		module_cu_sas.o \
+		module_cu_tiedtke.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_domain.o \

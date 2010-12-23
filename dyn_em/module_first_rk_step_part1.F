@@ -706,9 +706,11 @@ BENCH_START(cu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
-! Variables for tiedtke scheme - add by ZCX&YQW
+! Variables for Tiedtke and NSAS schemes
      &             ,ZNU=grid%znu, QFX=grid%qfx                            &
      &             ,RUCUTEN=grid%rucuten, RVCUTEN=grid%rvcuten            &
+     &             ,PBLH=grid%pblh ,HFX=grid%hfx                          &
+     &             ,MP_PHYSICS=config_flags%mp_physics                    &
 #ifdef WRF_CHEM
      &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
 #endif

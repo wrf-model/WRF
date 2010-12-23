@@ -37,6 +37,8 @@ CONTAINS
                      ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2      &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
+                 ! Optional arguments for NSAS scheme
+                     ,pblh,hfx,mp_physics                             &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
@@ -65,7 +67,7 @@ CONTAINS
                                           ,G3SCHEME                   &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,SASSCHEME                  &
-! TIEDTKE TEST - ZCX&YQW
+                                          ,NSASSCHEME                 &
                                           ,TIEDTKESCHEME
 
 ! *** add new modules of schemes here
@@ -83,13 +85,20 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
-   USE module_cu_tiedtke
+   USE module_cu_tiedtke, ONLY : cu_tiedtke
+   USE module_cu_nsas   , ONLY : cu_nsas
    USE module_wrf_error , ONLY : wrf_err_message
 
    !  This driver calls subroutines for the cumulus parameterizations.
    !
    !  1. Kain & Fritsch (1993)
    !  2. Betts-Miller-Janjic (Janjic, 1994)
+   !  3. Grell-Devenyi (Grell and Devenyi, 2002)
+   !  4. Simplified Arakawa-Schubert scheme (NCEP)
+   !     (adapted by Zhang and Wang to work with ARW in V3.3)
+   !  5. Grell 3D ensemble scheme
+   !  6. Modified Tiedtke scheme (Zhang and Wang 2010)
+   ! 14. New simplified Arakawa-Schubert scheme (NCEP, YSU)
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -281,8 +290,6 @@ CONTAINS
  
    REAL, DIMENSION( kms:kme ), OPTIONAL, INTENT(IN   ) ::        &
                                                             znu
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN   ) :: &
-                                                            QFX
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
         PRATEC
@@ -290,7 +297,6 @@ CONTAINS
                                                     
    INTEGER, DIMENSION( ims:ime , jms:jme ),                      &
                     INTENT(IN) ::                          KPBL
-
 
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                      &
           INTENT(INOUT) :: CU_ACT_FLAG
@@ -304,6 +310,11 @@ CONTAINS
    REAL   :: cudt_pass, curr_secs_pass
    LOGICAL :: adapt_step_flag_pass
 
+   INTEGER,      INTENT(IN   ), OPTIONAL    ::   mp_physics
+   REAL,  DIMENSION( ims:ime, jms:jme ), OPTIONAL,               &
+          INTENT(INOUT) ::                                  HFX, &!nsas
+                                                            QFX, &!Tiedtke
+                                                           PBLH   !nsas 
 #if (NMM_CORE==1)
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                     INTENT(IN) ::  STORE_RAND
@@ -682,7 +693,7 @@ CONTAINS
 #endif                                 
                                                                 )
 
-! TIEDTKE TEST - ZCX&YQW
+! TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (TIEDTKESCHEME)
 
         IF ( PRESENT ( QFX ) .AND. PRESENT( ZNU ) ) THEN
@@ -713,6 +724,42 @@ CONTAINS
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                              )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_TIEDTKE in cumulus driver')
+        ENDIF
+
+! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
+     CASE (NSASSCHEME)
+        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
+          CALL wrf_debug(100,'in nsas_cps')
+          CALL CU_NSAS(                                         &
+                DT=dt,P3DI=p8w,P3D=p,PI3D=pi,                   &
+                QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
+                ITIMESTEP=itimestep,STEPCU=STEPCU,              &
+                HBOT=HBOT,HTOP=HTOP,                            &
+                CU_ACT_FLAG=CU_ACT_FLAG,CUDT=cudt_pass,         &
+                CURR_SECS=curr_secs_pass,                       &
+                ADAPT_STEP_FLAG=adapt_step_flag_pass,           &
+                RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN,            &
+                RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN,            &
+                RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,                &
+                QV3D=QV_CURR,T3D=t,                             &
+                RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
+                XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
+                HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                MP_PHYSICS=mp_physics,                          & 
+                P_QC=p_qc,P_QI=p_qi,                            &
+                P_FIRST_SCALAR=param_first_scalar               &
+               ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
+               ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
+               ,CICE=cice,XLV0=xlv0,XLS=xls,PSAT=psat           &
+               ,F_QI=f_qi,F_QC=f_qc                             & 
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_NSAS in cumulus driver')
         ENDIF
 
      CASE DEFAULT 

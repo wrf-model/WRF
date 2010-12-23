@@ -4871,7 +4871,7 @@ END SUBROUTINE vertical_diffusion_s
 SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                     defor12,defor13,defor23,xkmh,xkmv,xkhh,xkhv,tke,       &
                     RUBLTEN, RVBLTEN,                                      &
-                    RUCUTEN, RVCUTEN,                                      &  !Tiedtke ZCX&YQW
+                    RUCUTEN, RVCUTEN,                                      &  !Tiedtke and NSAS
                     ids, ide, jds, jde, kds, kde,                          &
                     ims, ime, jms, jme, kms, kme,                          &
                     ips, ipe, jps, jpe, kps, kpe,                          &
@@ -4892,8 +4892,8 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::RUBLTEN, &
                                                                  RVBLTEN, &
                                                                  RUCUTEN, &
-                                                                 RVCUTEN, &  !Tiedtke ZCX&YQW
-                                                                 defor11, &  !Tiedtke ZCX&YQW
+                                                                 RVCUTEN, &
+                                                                 defor11, &
                                                                  defor22, &
                                                                  defor33, &
                                                                  defor12, &
@@ -4925,8 +4925,8 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
 
    ENDIF
 
-!Tiedtke ZCX&YQW
-   IF(config_flags%cu_physics == TIEDTKESCHEME) THEN
+   IF(config_flags%cu_physics == TIEDTKESCHEME .or.                       &
+      config_flags%cu_physics == NSASSCHEME ) THEN
 
         CALL set_physical_bc3d( RUCUTEN , 't', config_flags,              &
                                 ids, ide, jds, jde, kds, kde,             &

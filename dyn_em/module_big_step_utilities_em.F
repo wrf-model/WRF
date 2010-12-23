@@ -4564,7 +4564,7 @@ END SUBROUTINE pole_point_bc
                          RTHCUTEN, RQVCUTEN, RQCCUTEN,                &
                          RQRCUTEN, RQICUTEN, RQSCUTEN,                &
                          RTHFTEN,  RQVFTEN,                           &
-                         RUCUTEN,  RVCUTEN,                           &  ! Tiedtke ZCX&YQW
+                         RUCUTEN,  RVCUTEN,                           &  ! Tiedtke and NSAS
                          RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
                          RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
                          ids, ide, jds, jde, kds, kde,                &
@@ -4634,8 +4634,8 @@ END SUBROUTINE pole_point_bc
                                                            RQSCUTEN
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
-          INTENT(INOUT)   ::                                RUCUTEN, & ! Tiedtke ZCX&YQW
-                                                            RVCUTEN    ! Tiedtke ZCX&YQW
+          INTENT(INOUT)   ::                                RUCUTEN, &
+                                                            RVCUTEN
 
    REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
           INTENT(INOUT)   ::                                RUBLTEN, &
@@ -4834,12 +4834,13 @@ END SUBROUTINE pole_point_bc
       ENDDO
       ENDDO
 
-      IF (config_flags%cu_physics .eq. 6) THEN
+      IF (config_flags%cu_physics == TIEDTKESCHEME .or.        &
+          config_flags%cu_physics == NSASSCHEME ) THEN
         DO J=j_start,j_end
         DO I=i_start,i_end
         DO K=k_start,k_end
-           RUCUTEN(I,K,J)=RUCUTEN(I,K,J)/mu(I,J)     ! Tiedtke ZCX&YQW
-           RVCUTEN(I,K,J)=RVCUTEN(I,K,J)/mu(I,J)     ! Tiedtke ZCX&YQW
+           RUCUTEN(I,K,J)=RUCUTEN(I,K,J)/mu(I,J)
+           RVCUTEN(I,K,J)=RVCUTEN(I,K,J)/mu(I,J)
         ENDDO
         ENDDO
         ENDDO

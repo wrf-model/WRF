@@ -1319,6 +1319,7 @@ package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             -
 package   tiedtkescheme  cu_physics==6               -             -
+package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -
 
 package   dfi_setup      dfi_stage==0                -             -

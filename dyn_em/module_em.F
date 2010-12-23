@@ -1479,7 +1479,7 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                      RQVBLTEN,RQCBLTEN,RQIBLTEN,                       &
                      RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,              &
                      RQICUTEN,RQSCUTEN,                                &
-                     RUCUTEN, RVCUTEN,                                 & ! Tiedtke ZCX&YQW
+                     RUCUTEN, RVCUTEN,                                 & ! Tiedtke and NSAS
                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,        &
                      RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &
@@ -1520,8 +1520,8 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                                                              RQSCUTEN
 
       REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ),              &
-                INTENT(INOUT)   ::                            RUCUTEN, &  ! Tiedtke ZCX&YQW
-                                                              RVCUTEN     ! Tiedtke ZCX&YQW
+                INTENT(INOUT)   ::                            RUCUTEN, &
+                                                              RVCUTEN
 ! pbl
 
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )               , &
@@ -1588,12 +1588,13 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
       ENDDO
       ENDDO
 
-      IF (config_flags%cu_physics .eq. 6) THEN
+      IF (config_flags%cu_physics == TIEDTKESCHEME .or.     &
+          config_flags%cu_physics == NSASSCHEME ) THEN
         DO J=jts,jtf
         DO I=its,itf
         DO K=kts,ktf
-           RUCUTEN(I,K,J) =mu(I,J)*RUCUTEN(I,K,J) ! Tiedtke ZCX&YQW
-           RVCUTEN(I,K,J) =mu(I,J)*RVCUTEN(I,K,J) ! Tiedtke ZCX&YQW
+           RUCUTEN(I,K,J) =mu(I,J)*RUCUTEN(I,K,J)
+           RVCUTEN(I,K,J) =mu(I,J)*RVCUTEN(I,K,J)
         ENDDO
         ENDDO
         ENDDO

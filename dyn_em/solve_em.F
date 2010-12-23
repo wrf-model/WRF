@@ -648,6 +648,13 @@ BENCH_END(set_phys_bc_tim)
                              , f_flux                           &
                             )
 
+#ifdef DM_PARALLEL
+       IF ( config_flags%bl_pbl_physics == MYNNPBLSCHEME2 .OR. &
+            config_flags%bl_pbl_physics == MYNNPBLSCHEME3 ) THEN
+#        include "HALO_EM_SCALAR_E_5.inc"
+       ENDIF
+#endif
+
        CALL first_rk_step_part2 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &

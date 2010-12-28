@@ -808,7 +808,7 @@ state    real   hct_temf       ij      misc        1         -     rh          "
 state    real   cfm_temf       ij      misc        1         -     rh          "cfm_temf"            "Column cloud fraction from TEMF PBL"        "1"
 
 # MYNN PBL variables
-state   real   qke             ijk     misc        1         -      rh       "qke"               "twice TKE FROM MYNN"      "m2 s-2"
+state   real   qke             ikjftb  scalar      1         -      i0rhusdf=(bdy_interp:dt) "qke"               "twice TKE FROM MYNN"      "m2 s-2"
 state   real   tsq             ijk     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
 state   real   qsq             ijk     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
 state   real   cov             ijk     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\
@@ -2093,6 +2093,26 @@ rconfig   integer mp_physics_4dvar        derived                  max_domains  
 #
 # Single dummy declaration to define a nodyn dyn option
 state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""      
+
+# Turbine drag (td) physics
+# Turbine positions and characteristics for real-data cases are specified in a file 
+# whose name is given in the windturbines_spec variable.  If the setting is "ideal",
+# the td_ variables specify idealized wind farm geometries and turbine characteristics.
+# If the setting is "none" then wind turbine drag physics is turned off.
+rconfig character windturbines_spec namelist,physics 1 "none" - - "" "none, ideal, or a file name"
+rconfig integer td_turbgridid  namelist,physics 1 -1     - - ""  "which grid id has turbines in it"
+rconfig  real   td_hubheight   namelist,physics 1 100.   - - ""  "hub height (m)"
+rconfig  real   td_diameter    namelist,physics 1 60.    - - ""  "turbine diameter (m)"
+rconfig  real   td_stdthrcoef  namelist,physics 1 .158   - - ""  "standing thrust coefficient"
+rconfig  real   td_cutinspeed  namelist,physics 1 4.     - - ""  "cut-in speed (m/s)"
+rconfig  real   td_cutoutspeed namelist,physics 1 27.    - - ""  "cut-out speed (m/s)"
+rconfig  real   td_power       namelist,physics 1 2.     - - ""  "turbine power (MW)"
+rconfig  real   td_turbpercell namelist,physics 1 1.     - - ""  "number of turbines per cell"
+rconfig integer td_ewfx        namelist,physics 1 0      - - ""  "extent of wind farm in x-cells"
+rconfig integer td_ewfy        namelist,physics 1 0      - - ""  "extent of wind farm in y-cells"
+rconfig integer td_pwfx        namelist,physics 1 1      - - ""  "southwest corner of wind farm in x-cells"
+rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corner of wind farm in y-cells"
+
 
 #
 #---------------------------------------------------------------------------------------------------------------------------------------

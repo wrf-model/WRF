@@ -269,7 +269,7 @@ BENCH_START(rad_driver_tim)
      &        ,XLAT=grid%xlat          ,XLONG=grid%xlong        ,YR=yr               &
 !Optional solar variables
      &        ,DECLINX=grid%declin ,SOLCONX=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
-!
+     &        , CEN_LAT=grid%cen_lat                                      &
      &        ,Z=grid%z                                                   &
      &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
      &        ,N_AEROSOLC=num_aerosolc                                    &
@@ -286,6 +286,13 @@ BENCH_START(rad_driver_tim)
      &        ,kts=k_start, kte=min(k_end,kde-1)                          &
      &        ,num_tiles=grid%num_tiles                                   &
             ! Optional
+!JJS 20101020 vvvvv
+     &        , TLWDN=grid%tlwdn, TLWUP=grid%tlwup                        & ! goddard schemes
+     &        , SLWDN=grid%slwdn, SLWUP=grid%slwup                        & ! goddard schemes
+     &        , TSWDN=grid%tswdn, TSWUP=grid%tswup                        & ! goddard schemes
+     &        , SSWDN=grid%sswdn, SSWUP=grid%sswup                        & ! goddard schemes
+!JJS 20101020 ^^^^^
+
      &        , CLDFRA=grid%cldfra                                        &
      &        , PB=grid%pb                                                     &
      &        , F_ICE_PHY=grid%f_ice_phy,F_RAIN_PHY=grid%f_rain_phy                 &

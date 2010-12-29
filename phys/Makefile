@@ -42,6 +42,7 @@ MODULES = \
 	module_mp_wdm6.o \
 	module_ra_sw.o  \
 	module_ra_gsfcsw.o \
+	module_ra_goddard.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
@@ -196,8 +197,11 @@ module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
 module_mp_milbrandt2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
 
-module_mp_thompson.o : ../frame/module_wrf_error.o \
-			 ../frame/module_dm.o
+module_mp_thompson.o : ../frame/module_wrf_error.o 
+
+module_ra_goddard.o : ../frame/module_wrf_error.o
+
+module_mp_gsfcgce.o : ../frame/module_wrf_error.o
 
 module_sf_myjsfc.o: ../share/module_model_constants.o 
 

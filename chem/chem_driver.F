@@ -117,6 +117,10 @@
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33) :: REXNSFC,FACTRS                &
                                         ,TOT,TSFC
 
+      ! temporary arrays for old chemistry values
+      REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_chem_ct) :: chem_old
+      INTEGER,DIMENSION(num_chem_ct) :: chem_ct_indices
+
 #endif
 ! Variables for adaptive time steps...
       TYPE(WRFU_TimeInterval) :: tmpTimeInterval
@@ -242,6 +246,32 @@
      dtstepc = real(real_time_r8(tmpTimeInterval),4)
   end if
 #endif
+     
+  ! initializing diagnostics and macros
+
+#if (EM_CORE == 1)
+  if( ktau==1 ) then
+     grid%conv_ct(:,:,:,:)   = 0.
+     grid%chem_ct(:,:,:,:)   = 0.
+     grid%vmix_ct(:,:,:,:)   = 0.  
+  endif
+  if(config_flags%chemdiag == USECHEMDIAG)then
+  ! modify tendency list here
+      chem_ct_indices(p_chem_co)   = p_co
+      chem_ct_indices(p_chem_o3)   = p_o3
+      chem_ct_indices(p_chem_no)   = p_no
+      chem_ct_indices(p_chem_no2)  = p_no2
+      chem_ct_indices(p_chem_hno3) = p_hno3
+      chem_ct_indices(p_chem_iso)  = p_iso
+      chem_ct_indices(p_chem_ho)   = p_ho
+      chem_ct_indices(p_chem_ho2)  = p_ho2
+  endif
+  
+! full range of 4D domain for tendency diagnostics
+#define _tfr1_ its:ite,kts:kte,jts:jte,nv
+#define _tfr2_ its:ite,kts:kte,jts:jte,chem_ct_indices(nv)
+#endif
+  
   do_chemstep = .false.
   IF ( ktau==1 ) then
      do_chemstep = .true.
@@ -853,6 +883,12 @@
 !
 ! do vertical mixing with dry deposition
 !
+! save old concentrations for vertical mixing tendencies
+#if (EM_CORE == 1)
+   DO nv=PARAM_FIRST_SCALAR,num_chem_ct
+     chem_old(_tfr1_) = chem(_tfr2_)
+   ENDDO
+#endif
 
       if (config_flags%vertmix_onoff>0) then
          if (ktau.gt.2) then
@@ -888,6 +924,13 @@
 
          end if
          
+! accumulate vertical mixing tendencies
+#if (EM_CORE == 1)
+   DO nv=PARAM_FIRST_SCALAR,num_chem_ct
+      grid%vmix_ct(_tfr1_) = grid%vmix_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+   ENDDO
+#endif
+
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (its <= CHEM_DBG_I .and. ite >= CHEM_DBG_I) .and. &
            (jts <= CHEM_DBG_J .and. jte >= CHEM_DBG_J) .and. &
@@ -914,6 +957,12 @@
      if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0)then
         call wrf_debug(15,'calling conv transport for chemical species')
         if(config_flags%chem_opt >0 )then
+        ! save old concentrations for convective tendencies
+#if (EM_CORE == 1)
+        DO nv=PARAM_FIRST_SCALAR,num_chem_ct
+           chem_old(_tfr1_) = chem(_tfr2_)
+        ENDDO
+#endif
         call grelldrvct(grid%DT,ktau,grid%DX,                                         &
              rho,grid%RAINCV_B,chem,                                                  &
 #if (NMM_CORE == 1)
@@ -935,6 +984,12 @@
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
              end if
+        ! accumulate convective tendencies
+#if (EM_CORE == 1)
+        DO nv=PARAM_FIRST_SCALAR,num_chem_ct
+           grid%conv_ct(_tfr1_) = grid%conv_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+        ENDDO
+#endif
         endif
         if (config_flags%tracer_opt > 0)then
         call wrf_debug(15,'calling conv transport for tracers')
@@ -980,6 +1035,14 @@
 !
 ! chemical mechanisms
 !
+
+! save old concentrations for chemistry tendencies
+#if (EM_CORE == 1)
+   DO nv=PARAM_FIRST_SCALAR,num_chem_ct
+      chem_old(_tfr1_) = chem(_tfr2_)
+   ENDDO
+#endif
+
         if(config_flags%gaschem_onoff>0)then
 
           call mechanism_driver(grid%id,curr_secs,ktau,grid%dt,grid%ktauc,dtstepc,config_flags, &
@@ -1076,6 +1139,14 @@ CALL kpp_mechanism_driver (chem,                                                
 #endif
         endif !gaschem_onoff
 
+! accumulate gas phase chemistry tendencies
+#if (EM_CORE == 1)
+   DO nv=PARAM_FIRST_SCALAR,num_chem_ct
+      grid%chem_ct(_tfr1_) = grid%chem_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+   ENDDO
+#undef _tfr1_
+#undef _tfr2_
+#endif
 
 !   allocate gas_aqfrac if either cldchem or wetscav is on
         if ( (config_flags%cldchem_onoff > 0) .or.                                    &
@@ -1272,3 +1343,4 @@ end if !Chemistry time step check
 #endif
 
     END subroutine chem_driver
+

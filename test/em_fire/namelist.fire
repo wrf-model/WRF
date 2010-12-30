@@ -9,6 +9,23 @@ no_fuel_cat = 14                   ! extra category for no fuel
 /
 
 &fuel_categories                 
+ fuel_name = 
+'1: Short grass (1 ft)',
+'2: Timber (grass and understory)',
+'3: Tall grass (2.5 ft)',
+'4: Chaparral (6 ft)',
+'5: Brush (2 ft) ',
+'6: Dormant brush, hardwood slash',
+'7: Southern rough',
+'8: Closed timber litter',
+'9: Hardwood litter',
+'10: Timber (litter + understory)',
+'11: Light logging slash',
+'12: Medium logging slash',
+'13: Heavy logging slash',
+'14: no fuel'
+ windrf= 0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44,
+         0.36, 0.36, 0.36,  0.36,  0.43,  0.46, 1e-7
  fgi =  0.166, 0.897, 0.675, 2.468, 0.785, 1.345, 1.092, 
 !jc fgi=  0.166, 0.897, 1.076, 2.468, 0.785, 1.345, 1.092
         1.121, 0.780, 2.694, 2.582, 7.749, 13.024, 1.e-7, 

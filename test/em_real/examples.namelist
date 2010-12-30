@@ -35,6 +35,16 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  &physics
  sst_update                          = 1,
 
+
+** Using stochastic backscatter scheme
+
+&physics
+ stoch_force_opt                      = 1,      1,      1,
+ stoch_vertstruc_opt                  = 0,      0,      0,
+ tot_backscat_t                       = 2.0E-6, 2.0E-6, 2.0E-6
+ tot_backscat_psi                     = 2.0,    2.0,    2.0
+
+
 ** Using DFI options (note this is a separate namelist record):
 
  &dfi_control

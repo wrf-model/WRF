@@ -702,6 +702,10 @@ BENCH_END(set_phys_bc_tim)
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
+                             , imsx, imex, jmsx, jmex, kmsx, kmex    &
+                             , ipsx, ipex, jpsx, jpex, kpsx, kpex    &
+                             , imsy, imey, jmsy, jmey, kmsy, kmey    &
+                             , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                             )
 

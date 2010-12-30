@@ -658,6 +658,69 @@
 
 !==================================
 
+   SUBROUTINE p2c ( cfld,                                 &  ! CD field
+                    cids, cide, ckds, ckde, cjds, cjde,   &
+                    cims, cime, ckms, ckme, cjms, cjme,   &
+                    cits, cite, ckts, ckte, cjts, cjte,   &
+                    nfld,                                 &  ! ND field
+                    nids, nide, nkds, nkde, njds, njde,   &
+                    nims, nime, nkms, nkme, njms, njme,   &
+                    nits, nite, nkts, nkte, njts, njte,   &
+                    shw,                                  &  ! stencil half width
+                    imask,                                &  ! interpolation mask
+                    xstag, ystag,                         &  ! staggering of field
+                    ipos, jpos,                           &  ! Position of lower left of nest in CD
+                    nri, nrj,                             &  ! nest ratios
+                    cbdy_xs, nbdy_xs,                     &  ! boundary arrays
+                    cbdy_xe, nbdy_xe,                     &  ! no needed, but registry builds interface
+                    cbdy_ys, nbdy_ys,                     &  ! for lateral bc forcing this way
+                    cbdy_ye, nbdy_ye,                     &
+                    cbdy_txs, nbdy_txs,                   &
+                    cbdy_txe, nbdy_txe,                   &
+                    cbdy_tys, nbdy_tys,                   &
+                    cbdy_tye, nbdy_tye                    &
+                    )   
+     USE module_configure
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
+
+     CALL  interp_fcn  (cfld,                             &  ! CD field
+                        cids, cide, ckds, ckde, cjds, cjde,   &
+                        cims, cime, ckms, ckme, cjms, cjme,   &
+                        cits, cite, ckts, ckte, cjts, cjte,   &
+                        nfld,                             &  ! ND field
+                        nids, nide, nkds, nkde, njds, njde,   &
+                        nims, nime, nkms, nkme, njms, njme,   &
+                        nits, nite, nkts, nkte, njts, njte,   &
+                        shw,                                  &  ! stencil half width for interp
+                        imask,                                &  ! interpolation mask
+                        xstag, ystag,                         &  ! staggering of field
+                        ipos, jpos,                           &  ! Position of lower left of nest in CD
+                        nri, nrj                             )   ! nest ratios
+
+   END SUBROUTINE p2c
+
+!==================================
+
    SUBROUTINE bdy_interp ( cfld,                                 &  ! CD field
                            cids, cide, ckds, ckde, cjds, cjde,   &
                            cims, cime, ckms, ckme, cjms, cjme,   &

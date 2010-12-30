@@ -2201,4 +2201,4 @@ xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 
 include registry.fire
 include registry.avgflx
-
+include registry.stoch

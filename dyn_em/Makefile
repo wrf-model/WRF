@@ -23,6 +23,7 @@ MODULES =                 		\
 	module_sfs_nba.o		\
         module_convtrans_prep.o         \
 	module_sfs_driver.o		\
+	module_stoch.o		\
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings
@@ -270,6 +271,7 @@ nest_init_utils.o: \
 
 start_em.o:     module_bc_em.o \
                 module_avgflx_em.o              \
+                module_stoch.o              \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_state_description.o \
@@ -322,12 +324,14 @@ module_first_rk_step_part2.o : \
                 module_em.o \
 		module_diffusion_em.o  \
                 module_bc_em.o         \
+                module_stoch.o         \
 		module_sfs_driver.o \
 		../frame/module_domain.o \
 		../frame/module_state_description.o \
 		../frame/module_driver_constants.o \
 		../frame/module_configure.o \
 		../frame/module_dm.o \
+		../frame/module_driver_constants.o \
 		../share/module_bc.o \
 		../frame/module_comm_dm.o \
 		../phys/module_fddaobs_driver.o \

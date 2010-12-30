@@ -20,8 +20,12 @@ CONTAINS
 !=================================================================
    SUBROUTINE phy_init ( id, config_flags, DT, restart, zfull, zhalf,     &
                          p_top, TSK,RADT,BLDT,CUDT,MPDT,         &
+                         RUCUTEN, RVCUTEN,                       &
                          RTHCUTEN, RQVCUTEN, RQRCUTEN,           &
                          RQCCUTEN, RQSCUTEN, RQICUTEN,           &
+                         RUSHTEN,  RVSHTEN,  RTHSHTEN,           &
+                         RQVSHTEN, RQRSHTEN, RQCSHTEN,           &
+                         RQSSHTEN, RQISHTEN, RQGSHTEN,           &
                          RUBLTEN,RVBLTEN,RTHBLTEN,               &
                          RQVBLTEN,RQCBLTEN,RQIBLTEN,             &
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
@@ -42,7 +46,6 @@ CONTAINS
 #if (NMM_CORE != 1)
                          TKE_PBL,  &
 #endif
-                         RUCUTEN,  RVCUTEN,                      &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
                          adv_moist_cond,                         &
@@ -197,9 +200,11 @@ CONTAINS
 
 ! cps
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
-             RTHCUTEN, RQVCUTEN, RQRCUTEN, RQCCUTEN, RQSCUTEN,   &
-             RQICUTEN
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: &
+             RUCUTEN, RVCUTEN, RTHCUTEN, RQVCUTEN, RQRCUTEN, RQCCUTEN, &
+             RQSCUTEN, RQICUTEN,                                       &
+             RUSHTEN, RVSHTEN, RTHSHTEN, RQVSHTEN, RQRSHTEN, RQCSHTEN, &
+             RQSSHTEN, RQISHTEN, RQGSHTEN
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
 
@@ -228,9 +233,7 @@ CONTAINS
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_MYJ
 #if (NMM_CORE != 1)
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    TKE_PBL
-#endif
-   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME) , INTENT(OUT) :: &
-             RUCUTEN, RVCUTEN
+#endif 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
              cugd_qvtens,cugd_qcten
@@ -595,16 +598,26 @@ integer myproc
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
 
-   CALL cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,      &
-                RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,           &
-                RUCUTEN, RVCUTEN,                               &
-                RAINCV,W0AVG,config_flags,restart,              &
+   CALL cu_init(STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,        &
+                RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,   &
+                NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
                 CLDEFI,LOWLYR,MASS_FLUX,                        &
                 RTHFTEN, RQVFTEN,                               &
                 APR_GR,APR_W,APR_MC,APR_ST,APR_AS,              &
                 APR_CAPMA,APR_CAPME,APR_CAPMI,                  &
                 cugd_tten,cugd_ttens,cugd_qvten,                &
                 cugd_qvtens,cugd_qcten,                         &
+                allowed_to_read, start_of_simulation,           &
+                ids, ide, jds, jde, kds, kde,                   &
+                ims, ime, jms, jme, kms, kme,                   &
+                its, ite, jts, jte, kts, kte                    )
+
+   CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to shcu_init' )
+
+   CALL shcu_init(STEPCU,CUDT,DT,RUSHTEN,RVSHTEN,RTHSHTEN,      &
+                RQVSHTEN,RQRSHTEN,RQCSHTEN,                     &
+                RQSSHTEN,RQISHTEN,RQGSHTEN,                     &
+                NCA,RAINC,RAINCV,config_flags,restart,          &
                 allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
@@ -1316,6 +1329,7 @@ integer myproc
    USE module_bl_myjpbl
    USE module_bl_myjurb
    USE module_bl_boulac
+   USE module_bl_camuwpbl_driver, ONLY :  camuwpblinit
    USE module_bl_qnsepbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
@@ -1790,6 +1804,12 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
+        CASE (CAMUWPBLSCHEME)
+           CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
+                restart,TKE_MYJ,                      &
+                ids, ide, jds, jde, kds, kde,         &
+                ims, ime, jms, jme, kms, kme,         &
+                its, ite, jts, jte, kts, kte          )
 #endif
 
 #if ( EM_CORE == 1 )
@@ -1846,20 +1866,19 @@ integer myproc
    END SUBROUTINE bl_init
 
 !==================================================================
-   SUBROUTINE cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,  &
-                      RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,       &
-                      RUCUTEN, RVCUTEN,                           &
-                      RAINCV,W0AVG,config_flags,restart,          &
-                      CLDEFI,LOWLYR,MASS_FLUX,                    &
-                      RTHFTEN, RQVFTEN,                           &
-                      APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
-                      APR_CAPMA,APR_CAPME,APR_CAPMI,              &
-                      cugd_tten,cugd_ttens,cugd_qvten,            &
-                      cugd_qvtens,cugd_qcten,                     &
-                      allowed_to_read, start_of_simulation,       &
-                      ids, ide, jds, jde, kds, kde,               &
-                      ims, ime, jms, jme, kms, kme,               &
-                      its, ite, jts, jte, kts, kte                )
+   SUBROUTINE cu_init(STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
+                      RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,&
+                      NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
+                      CLDEFI,LOWLYR,MASS_FLUX,                     &
+                      RTHFTEN, RQVFTEN,                            &
+                      APR_GR,APR_W,APR_MC,APR_ST,APR_AS,           &
+                      APR_CAPMA,APR_CAPME,APR_CAPMI,               &
+                      cugd_tten,cugd_ttens,cugd_qvten,             &
+                      cugd_qvtens,cugd_qcten,                      &
+                      allowed_to_read, start_of_simulation,        &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      its, ite, jts, jte, kts, kte                 )
 !------------------------------------------------------------------
    USE module_cu_kf
    USE module_cu_kfeta
@@ -1867,6 +1886,7 @@ integer myproc
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
+   USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
    USE module_cu_tiedtke
 !------------------------------------------------------------------
@@ -1886,7 +1906,8 @@ integer myproc
    INTEGER , INTENT(INOUT)     :: STEPCU
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &
-            RTHCUTEN, RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
+            RUCUTEN, RVCUTEN, RTHCUTEN, &
+            RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                         cugd_tten,cugd_ttens,cugd_qvten,            &
                         cugd_qvtens,cugd_qcten
@@ -1907,9 +1928,6 @@ integer myproc
                                    APR_CAPMA,APR_CAPME,APR_CAPMI
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: LOWLYR
-
-   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(INOUT) :: &
-             RUCUTEN, RVCUTEN
 
 ! LOCAL VAR
 
@@ -1936,6 +1954,7 @@ integer myproc
      ENDDO
    ENDIF
 
+!-- deep convection and hybrid deep-shallow convection schemes
    cps_select: SELECT CASE(config_flags%cu_physics)
 
      CASE (KFSCHEME)
@@ -2008,6 +2027,15 @@ integer myproc
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
+     CASE (CAMZMSCHEME)
+          CALL zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,       &
+                      rqccuten, rqicuten,                               &
+                      p_qc, p_qi, param_first_scalar,                   &
+                      restart,                                          &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte, kts, kte                      )
+
 ! Tiedtke Scheme - ZCX&YQW
       CASE (TIEDTKESCHEME)
           CALL tiedtkeinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,   &
@@ -2023,6 +2051,93 @@ integer myproc
    END SELECT cps_select
 
    END SUBROUTINE cu_init
+
+!==================================================================
+   SUBROUTINE shcu_init(STEPCU,CUDT,DT,RUSHTEN,RVSHTEN,RTHSHTEN,   &
+                      RQVSHTEN,RQRSHTEN,RQCSHTEN,                  &
+                      RQSSHTEN,RQISHTEN,RQGSHTEN,                  &
+                      NCA,RAINC,RAINCV,config_flags,restart,       &
+                      allowed_to_read, start_of_simulation,        &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      its, ite, jts, jte, kts, kte                 )
+!------------------------------------------------------------------
+   USE uwshcu,        ONLY: init_uwshcu
+   USE physconst,     ONLY: cpair, gravit, latice, latvap, mwdry, mwh2o, &
+                            rair, zvir
+   USE shr_kind_mod,  ONLY: r8 => shr_kind_r8
+
+!------------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------------
+   TYPE (grid_config_rec_type) :: config_flags
+   LOGICAL , INTENT(IN)        :: restart
+
+
+   INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
+                                  ims, ime, jms, jme, kms, kme,   &
+                                  its, ite, jts, jte, kts, kte
+
+   REAL ,    INTENT(IN)        :: DT, CUDT
+   LOGICAL , INTENT(IN)        :: start_of_simulation
+   LOGICAL , INTENT(IN)        :: allowed_to_read
+   INTEGER , INTENT(INOUT)     :: STEPCU
+
+   REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &
+            RUSHTEN, RVSHTEN, RTHSHTEN, &
+            RQVSHTEN, RQCSHTEN, RQRSHTEN, RQISHTEN, RQSSHTEN, RQGSHTEN
+
+   REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: RAINC, RAINCV
+
+   REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: NCA
+
+! LOCAL VAR
+
+  INTEGER :: i,j,itf,jtf
+
+!--------------------------------------------------------------------
+
+! Some of this stuff is redundant with deep convection, but redo it
+! in case deep is turned off...
+
+!-- calculate cumulus parameterization time step
+
+   itf=min0(ite,ide-1)
+   jtf=min0(jte,jde-1)
+!
+   STEPCU = nint(CUDT*60./DT)
+   STEPCU = max(STEPCU,1)
+
+!-- initialization
+
+   IF(start_of_simulation)THEN
+     DO j=jts,jtf
+     DO i=its,itf
+        RAINC(i,j)=0.
+        RAINCV(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
+
+!-- independent shallow convection schemes
+   shcu_select: SELECT CASE(config_flags%shcu_physics)
+
+   CASE (CAMUWSHCUSCHEME)
+      CALL init_uwshcu(r8,latvap,cpair,latice,zvir,rair,gravit,      &
+           mwh2o/mwdry,                                              &
+           rushten, rvshten, rthshten, rqvshten,                     &
+           rqcshten, rqrshten, rqishten, rqsshten, rqgshten,         &
+           p_qc, p_qr, p_qi, p_qs, p_qg,                             &
+           config_flags%bl_pbl_physics, param_first_scalar, restart, &
+           ids, ide, jds, jde, kds, kde,                             &
+           ims, ime, jms, jme, kms, kme,                             &
+           its, ite, jts, jte, kts, kte                              )
+
+   CASE DEFAULT
+
+   END SELECT shcu_select
+
+   END SUBROUTINE shcu_init
 
 !==================================================================
    SUBROUTINE mp_init(RAINNC,config_flags,restart,warm_rain,      &

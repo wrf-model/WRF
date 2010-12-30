@@ -1519,9 +1519,12 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                      RTHRATEN,                                         &
                      RUBLTEN,RVBLTEN,RTHBLTEN,                         &
                      RQVBLTEN,RQCBLTEN,RQIBLTEN,                       &
-                     RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,              &
+                     RUCUTEN,RVCUTEN,RTHCUTEN,                         &
+                     RQVCUTEN,RQCCUTEN,RQRCUTEN,                       &
                      RQICUTEN,RQSCUTEN,                                &
-                     RUCUTEN, RVCUTEN,                                 & ! Tiedtke and NSAS
+                     RUSHTEN,RVSHTEN,RTHSHTEN,                         &
+                     RQVSHTEN,RQCSHTEN,RQRSHTEN,                       &
+                     RQISHTEN,RQSSHTEN,RQGSHTEN,                       &
                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,        &
                      RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &
@@ -1554,16 +1557,24 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
 
       REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ),              &
                 INTENT(INOUT)   ::                                     &
+                                                              RUCUTEN, &
+                                                              RVCUTEN, &
                                                              RTHCUTEN, &
                                                              RQVCUTEN, &
                                                              RQCCUTEN, &
                                                              RQRCUTEN, &
                                                              RQICUTEN, &
-                                                             RQSCUTEN
+                                                             RQSCUTEN, &
+                                                              RUSHTEN, &
+                                                              RVSHTEN, &
+                                                             RTHSHTEN, &
+                                                             RQVSHTEN, &
+                                                             RQCSHTEN, &
+                                                             RQRSHTEN, &
+                                                             RQISHTEN, &
+                                                             RQSSHTEN, &
+                                                             RQGSHTEN
 
-      REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ),              &
-                INTENT(INOUT)   ::                            RUCUTEN, &
-                                                              RVCUTEN
 ! pbl
 
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )               , &
@@ -1624,6 +1635,8 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
       DO J=jts,jtf
       DO I=its,itf
       DO K=kts,ktf
+         RUCUTEN(I,K,J) =mu(I,J)*RUCUTEN(I,K,J)
+         RVCUTEN(I,K,J) =mu(I,J)*RVCUTEN(I,K,J)
          RTHCUTEN(I,K,J)=mu(I,J)*RTHCUTEN(I,K,J)
          RQVCUTEN(I,K,J)=mu(I,J)*RQVCUTEN(I,K,J)
       ENDDO
@@ -1677,6 +1690,73 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
          DO I=its,itf
          DO K=kts,ktf
             RQSCUTEN(I,K,J)=mu(I,J)*RQSCUTEN(I,K,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+   ENDIF
+
+! shallow cumulus
+
+   IF (config_flags%shcu_physics .gt. 0) THEN
+
+      DO J=jts,jtf
+      DO I=its,itf
+      DO K=kts,ktf
+         RUSHTEN(I,K,J) =mu(I,J)*RUSHTEN(I,K,J)
+         RVSHTEN(I,K,J) =mu(I,J)*RVSHTEN(I,K,J)
+         RTHSHTEN(I,K,J)=mu(I,J)*RTHSHTEN(I,K,J)
+         RQVSHTEN(I,K,J)=mu(I,J)*RQVSHTEN(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO I=its,itf
+         DO K=kts,ktf
+            RQCSHTEN(I,K,J)=mu(I,J)*RQCSHTEN(I,K,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO I=its,itf
+         DO K=kts,ktf
+            RQRSHTEN(I,K,J)=mu(I,J)*RQRSHTEN(I,K,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO I=its,itf
+         DO K=kts,ktf
+            RQISHTEN(I,K,J)=mu(I,J)*RQISHTEN(I,K,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO I=its,itf
+         DO K=kts,ktf
+            RQSSHTEN(I,K,J)=mu(I,J)*RQSSHTEN(I,K,J)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+
+      IF(P_QG .ge. PARAM_FIRST_SCALAR)THEN
+         DO J=jts,jtf
+         DO I=its,itf
+         DO K=kts,ktf
+            RQGSHTEN(I,K,J)=mu(I,J)*RQGSHTEN(I,K,J)
          ENDDO
          ENDDO
          ENDDO

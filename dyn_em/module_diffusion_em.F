@@ -4871,7 +4871,8 @@ END SUBROUTINE vertical_diffusion_s
 SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                     defor12,defor13,defor23,xkmh,xkmv,xkhh,xkhv,tke,       &
                     RUBLTEN, RVBLTEN,                                      &
-                    RUCUTEN, RVCUTEN,                                      &  !Tiedtke and NSAS
+                    RUCUTEN, RVCUTEN,                                      &
+                    RUSHTEN, RVSHTEN,                                      &
                     ids, ide, jds, jde, kds, kde,                          &
                     ims, ime, jms, jme, kms, kme,                          &
                     ips, ipe, jps, jpe, kps, kpe,                          &
@@ -4893,6 +4894,8 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                                                  RVBLTEN, &
                                                                  RUCUTEN, &
                                                                  RVCUTEN, &
+                                                                 RUSHTEN, &
+                                                                 RVSHTEN, &
                                                                  defor11, &
                                                                  defor22, &
                                                                  defor33, &
@@ -4925,8 +4928,7 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
 
    ENDIF
 
-   IF(config_flags%cu_physics == TIEDTKESCHEME .or.                       &
-      config_flags%cu_physics == NSASSCHEME ) THEN
+   IF(config_flags%cu_physics .GT. 0) THEN
 
         CALL set_physical_bc3d( RUCUTEN , 't', config_flags,              &
                                 ids, ide, jds, jde, kds, kde,             &
@@ -4935,6 +4937,22 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                 its, ite, jts, jte, kts, kte              )
 
         CALL set_physical_bc3d( RVCUTEN , 't', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+   ENDIF
+
+   IF(config_flags%shcu_physics .GT. 0) THEN
+
+        CALL set_physical_bc3d( RUSHTEN , 't', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+        CALL set_physical_bc3d( RVSHTEN , 't', config_flags,              &
                                 ids, ide, jds, jde, kds, kde,             &
                                 ims, ime, jms, jme, kms, kme,             &
                                 ips, ipe, jps, jpe, kps, kpe,             &

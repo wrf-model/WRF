@@ -658,8 +658,12 @@
 
      CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
-                      grid%rthcuten, grid%rqvcuten, grid%rqrcuten,           &
-                      grid%rqccuten, grid%rqscuten, grid%rqicuten,           &
+                      grid%rucuten, grid%rvcuten, grid%rthcuten,             &
+                      grid%rqvcuten, grid%rqrcuten, grid%rqccuten,           &
+                      grid%rqscuten, grid%rqicuten,                          &
+                      grid%rushten, grid%rvshten, grid%rthshten,             &
+                      grid%rqvshten, grid%rqrshten, grid%rqcshten,           &
+                      grid%rqsshten, grid%rqishten, grid%rqgshten,           &
                       grid%rublten,grid%rvblten,grid%rthblten,               &
                       grid%rqvblten,grid%rqcblten,grid%rqiblten,             &
                       grid%rthraten,grid%rthratenlw,grid%rthratensw,         &
@@ -685,7 +689,6 @@
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_myj,    &
                       grid%tke_pbl,                                                                  &
-                      grid%rucuten,  grid%rvcuten,                                                   &
                       grid%exch_h,grid%thc,grid%snowc,grid%mavail,grid%hfx,grid%qfx,grid%rainbl, &
                       grid%tslb,grid%zs,grid%dzs,config_flags%num_soil_layers,grid%warm_rain,  &
                       grid%adv_moist_cond,                         &

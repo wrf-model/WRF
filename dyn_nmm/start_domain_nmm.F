@@ -131,6 +131,10 @@
      &                                    ,RUBLTEN,RVBLTEN              &
      &                                    ,RQCCUTEN,RQICUTEN,RQRCUTEN   &
      &                                    ,RQSCUTEN,RQVCUTEN,RTHCUTEN   &
+     &                                    ,RUSHTEN,RVSHTEN              &
+     &                                    ,RQCSHTEN,RQISHTEN,RQRSHTEN   &
+     &                                    ,RQSSHTEN,RQVSHTEN,RTHSHTEN   &
+     &                                    ,RQGSHTEN                     &
      &                                    ,RTHRATEN                     &
      &                                    ,RTHRATENLW,RTHRATENSW
       REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,EMTEMP,GLW,HFX           &
@@ -1608,6 +1612,15 @@
       ALLOCATE(RQSCUTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQSCUTEN = 0.
       ALLOCATE(RQVCUTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQVCUTEN = 0.
       ALLOCATE(RTHCUTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHCUTEN = 0.
+      ALLOCATE(RUSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)     ; RUSHTEN = 0.
+      ALLOCATE(RVSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)     ; RVSHTEN = 0.
+      ALLOCATE(RQCSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQCSHTEN = 0.
+      ALLOCATE(RQISHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQISHTEN  = 0.
+      ALLOCATE(RQRSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQRSHTEN = 0.
+      ALLOCATE(RQSSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQSSHTEN = 0.
+      ALLOCATE(RQGSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQGSHTEN = 0.
+      ALLOCATE(RQVSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQVSHTEN = 0.
+      ALLOCATE(RTHSHTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHSHTEN = 0.
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHRATEN  = 0.
       ALLOCATE(RTHRATENLW(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RTHRATENLW = 0.
       ALLOCATE(RTHRATENSW(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RTHRATENSW = 0.
@@ -1773,8 +1786,12 @@
 
       CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,LRESTART,SFULL,SMID    &
      &             ,grid%pt,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
+     &             ,grid%DUCUDT, grid%DVCUDT                            &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
      &             ,RQCCUTEN, RQSCUTEN, RQICUTEN                        &
+     &             ,RUSHTEN,  RVSHTEN,  RTHSHTEN                        &
+     &             ,RQVSHTEN, RQRSHTEN, RQCSHTEN                        &
+     &             ,RQSSHTEN, RQISHTEN, RQGSHTEN                        &
      &             ,RUBLTEN,RVBLTEN,RTHBLTEN                            &
      &             ,RQVBLTEN,RQCBLTEN,RQIBLTEN                          &
      &             ,RTHRATEN,RTHRATENLW,RTHRATENSW                      &
@@ -1792,7 +1809,6 @@
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
      &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_myj             &
-     &             ,grid%DUCUDT, grid%DVCUDT                                      &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
      &             ,grid%stc,ZS,DZS,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
      &             ,ADV_MOIST_COND                                      &
@@ -2128,6 +2144,15 @@
       DEALLOCATE(RQSCUTEN)
       DEALLOCATE(RQVCUTEN)
       DEALLOCATE(RTHCUTEN)
+      DEALLOCATE(RUSHTEN)
+      DEALLOCATE(RVSHTEN)
+      DEALLOCATE(RQCSHTEN)
+      DEALLOCATE(RQISHTEN)
+      DEALLOCATE(RQRSHTEN)
+      DEALLOCATE(RQSSHTEN)
+      DEALLOCATE(RQGSHTEN)
+      DEALLOCATE(RQVSHTEN)
+      DEALLOCATE(RTHSHTEN)
       DEALLOCATE(RTHRATEN)
       DEALLOCATE(RTHRATENLW)
       DEALLOCATE(RTHRATENSW)

@@ -316,6 +316,7 @@ module_first_rk_step_part1.o : \
 		../phys/module_radiation_driver.o \
 		../phys/module_surface_driver.o \
 		../phys/module_cumulus_driver.o \
+		../phys/module_shallowcu_driver.o \
 		../phys/module_pbl_driver.o \
 		../frame/module_comm_dm.o \
 		../phys/module_fddagd_driver.o

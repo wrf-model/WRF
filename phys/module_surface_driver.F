@@ -61,7 +61,7 @@ CONTAINS
      &           ,f_qi,f_qs,f_qg                                      &
              !  Other optionals (more or less em specific)
      &          ,capg,hol,mol                                         &
-     &          ,rainncv,rainbl,regime,thc                            &
+     &          ,rainncv,rainshv,rainbl,regime,thc                    &
      &          ,qsg,qvg,qcg,soilt1,tsnav                             &
      &          ,smfr3d,keepfr3dflag,dew                              &
              !  Other optionals (more or less nmm specific)
@@ -601,6 +601,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   mol
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   regime
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN )::     rainncv
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN )::     rainshv
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   RAINBL
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   t2
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN )::     thc
@@ -775,6 +776,7 @@ CONTAINS
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
          RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j) + RAINNCV(i,j)
+         IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
       ENDDO
       ENDDO
@@ -787,6 +789,7 @@ CONTAINS
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
          RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j)
+         IF ( PRESENT( rainshv ))RAINBL(i,j) = RAINBL(i,j) + RAINSHV(i,j)
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
       ENDDO
       ENDDO

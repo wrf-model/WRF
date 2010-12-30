@@ -40,7 +40,8 @@ CONTAINS
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
     USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
-            ,halo_em_phys_pbl_sub,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
+            ,halo_em_phys_pbl_sub,halo_em_phys_cu_sub,halo_em_phys_shcu_sub &
+            ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
             ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub
 #endif
@@ -314,15 +315,18 @@ BENCH_START(cal_phy_tend)
       DO ij = 1 , grid%num_tiles
 
         CALL wrf_debug ( 200 , ' call calculate_phy_tend' )
-        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy,            &
-                     grid%rthraten,                                         &
-                     grid%rublten,grid%rvblten,grid%rthblten,                         &
-                     grid%rqvblten,grid%rqcblten,grid%rqiblten,                       &
-                     grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten,              &
-                     grid%rqicuten,grid%rqscuten,                                &
-                     grid%rucuten, grid%rvcuten,                                 &
-                     grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,        &
-                     grid%RMUNDGDTEN,                                       &
+        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy, &
+                     grid%rthraten,                                    &
+                     grid%rublten,grid%rvblten,grid%rthblten,          &
+                     grid%rqvblten,grid%rqcblten,grid%rqiblten,        &
+                     grid%rucuten,grid%rvcuten,grid%rthcuten,          &
+                     grid%rqvcuten,grid%rqccuten,grid%rqrcuten,        &
+                     grid%rqicuten,grid%rqscuten,                      &
+                     grid%rushten,grid%rvshten,grid%rthshten,          &
+                     grid%rqvshten,grid%rqcshten,grid%rqrshten,        &
+                     grid%rqishten,grid%rqsshten,grid%rqgshten,        &
+                     grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
+                     grid%RMUNDGDTEN,                                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      grid%i_start(ij), min(grid%i_end(ij),ide-1),      &
@@ -497,7 +501,8 @@ BENCH_START(phy_bc_tim)
                       grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,     &
                       grid%tke_2,                                  &
                       grid%rublten, grid%rvblten,                  &
-                      grid%rucuten, grid%rvcuten,                  & ! Tiedtke and NSAS
+                      grid%rucuten, grid%rvcuten,                  &
+                      grid%rushten, grid%rvshten,                  &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &
@@ -534,6 +539,14 @@ ENDIF
 ! rublten                  x
 ! rvblten                             x
 !
+! (for Cumulus)
+! rucuten                  x
+! rvcuten                             x
+!
+! (for Shallow Cumulus)
+! rushten                  x
+! rvshten                             x
+!
 ! (for FDDA)
 ! rundgdten     x
 ! rvndgdten     x
@@ -560,8 +573,12 @@ ENDIF
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
        ENDIF
+       IF ( config_flags%shcu_physics .gt. 1 ) THEN
+#      include "HALO_EM_PHYS_SHCU.inc"
+       ENDIF
        IF ( config_flags%cu_physics == SASSCHEME      .or.   &
             config_flags%cu_physics == TIEDTKESCHEME  .or.   &
+            config_flags%cu_physics == CAMZMSCHEME    .or.   &
             config_flags%cu_physics == NSASSCHEME ) THEN
 #      include "HALO_EM_PHYS_CU.inc"
        ENDIF
@@ -613,16 +630,19 @@ BENCH_START(update_phy_ten_tim)
 #endif
          CALL update_phy_ten(ph_tendf,t_tendf, ru_tendf, rv_tendf,moist_tend ,&
                            scalar_tend, mu_tendf,                           &
-                           grid%rthraten,grid%rthblten,grid%rthcuten,       &
-                           grid%rublten,grid%rvblten,                       &
+                           grid%rthraten,grid%rthblten,grid%rthcuten,grid%rthshten, &
+                           grid%rublten,grid%rucuten,grid%rushten,          &
+                           grid%rvblten,grid%rvcuten,grid%rvshten,          &
                            grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
                            grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
-                           grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
+                           grid%rqicuten,grid%rqscuten,                     &
+                           grid%rqvshten,grid%rqcshten,grid%rqrshten,       &
+                           grid%rqishten,grid%rqsshten,grid%rqgshten,       &
+                           grid%RUNDGDTEN,                                  &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
-                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke and NSAS
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
-                           num_moist,num_scalar,config_flags,rk_step,          &
+                           num_moist,num_scalar,config_flags,rk_step,       &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &
                            ims, ime, jms, jme, kms, kme,                    &

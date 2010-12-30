@@ -23,10 +23,12 @@ MODULE module_initialize_ideal
    USE module_timing
    USE module_configure
    USE module_init_utilities
+   USE module_soil_pre        !AK/ak for full surface initialization
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
-
+   USE module_fr_sfire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
+     read_array_2d_integer,interpolate_2d,set_ideal_coord 
 
 CONTAINS
 
@@ -75,14 +77,14 @@ CONTAINS
 
    TYPE (grid_config_rec_type)              :: config_flags
 
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
    !  Local data
    INTEGER                             ::                       &
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
                                   its, ite, jts, jte, kts, kte, &
                                   i, j, k
-
-   ! Local data
 
    INTEGER, PARAMETER :: nl_max = 1000
    REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
@@ -92,6 +94,8 @@ CONTAINS
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: z_scale, xrad, yrad, zrad, rad, delt, cof1, cof2
+   REAL    :: x_rad, y_rad, z_rad, hght_pert   !Ak/ak
+   character (len=256) :: mminlu2              !AK/ak land use scheme (USGS)
 !   REAL, EXTERNAL :: interp_0
    REAL    :: hm
    REAL    :: pi
@@ -103,20 +107,27 @@ CONTAINS
    real :: thtmp, ptmp, temp(3)
 
    LOGICAL :: moisture_init
-   LOGICAL :: stretch_grid, dry_sounding
+   LOGICAL :: stretch_grd, dry_sounding
+   LOGICAL :: stretch_hyp, sfc_init           !AK/ak switches for hyperbolic grid streching and surface initialization
 
    INTEGER :: xs , xe , ys , ye
    INTEGER :: mtn_type
    INTEGER :: &  ! fire mesh sizes
+              iots,iote,jots,jote, &            ! tile dims out
              ifds,ifde, kfds,kfde, jfds,jfde,                              &
              ifms,ifme, kfms,kfme, jfms,jfme,                              &
              ifts,ifte, kfts,kfte, jfts,jfte
 
-   REAL :: mtn_ht, mtn_max, mtn_fdx, mtn_fdy, mtn_x, mtn_y, mtn_z
+   REAL :: mtn_ht, mtn_max, mtn_x, mtn_y, mtn_z, grad_max
    REAL :: mtn_axs, mtn_ays, mtn_axe, mtn_aye
    REAL :: mtn_fxs, mtn_fys, mtn_fxe, mtn_fye
    REAL :: mtn_xs, mtn_ys, mtn_xe, mtn_ye
-   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   REAL :: fdx,fdy ! fire mesh step
+   INTEGER:: ir,jr ! refinement factors
+
+   logical have_fire_ht,have_fire_grad,have_atm_grad
+
+!*** executable
 
    SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -158,11 +169,7 @@ CONTAINS
 
    END SELECT
 
-
-   stretch_grid = .true.
-   delt = 3.
-!   z_scale = .50
-   z_scale = .40
+!   z_scale = .40
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
@@ -173,8 +180,19 @@ CONTAINS
 ! here we check to see if the boundary conditions are set properly
 
    CALL boundary_condition_check( config_flags, bdyzone, error, grid%id )
+ 
+    delt = config_flags%delt_perturbation
+    x_rad = config_flags%xrad_perturbation
+    y_rad = config_flags%yrad_perturbation
+    z_rad = config_flags%zrad_perturbation
+    hght_pert = config_flags%hght_perturbation
 
-   moisture_init = .true.
+    stretch_grd = config_flags%stretch_grd   
+    stretch_hyp = config_flags%stretch_hyp
+        z_scale = config_flags%z_grd_scale
+       sfc_init = config_flags%sfc_full_init
+  
+ moisture_init = .true.   !AK/ak
 
     grid%itimestep=0
 
@@ -183,7 +201,14 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( jcm , IWORDSIZE )
 #endif
 
-    CALL nl_set_mminlu(1, '    ')
+!AK/ak land use initialization (USGS) 
+   IF (sfc_init) THEN  
+    mminlu2=' '
+    mminlu2(1:4) = 'USGS'                !Ak/ak
+    CALL nl_set_mminlu(1, mminlu2)       !Ak/ak
+    CALL nl_get_iswater(1,grid%iswater) ! Ak/ak
+   ENDIF
+
     CALL nl_set_iswater(1,0)
     CALL nl_set_cen_lat(1,40.)
     CALL nl_set_cen_lon(1,-105.)
@@ -194,7 +219,6 @@ CONTAINS
     CALL nl_set_pole_lon (1,0.)
     CALL nl_set_pole_lat (1,90.)
     CALL nl_set_map_proj(1,0)
-
 
 !  here we initialize data we currently is not initialized 
 !  in the input data
@@ -212,9 +236,60 @@ CONTAINS
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.
          grid%f(i,j)        = 0.
-
       END DO
-   END DO
+    END DO     
+
+!AK/ak surface initialization latitude, longitude, landuse index from from LANDUSE.TBL skin temperature and soil temperature
+write(6,*) '*************************************'
+   IF (sfc_init) THEN
+    DO j = jts, jte
+      DO i = its, ite
+          grid%xlat(i,j) = config_flags%fire_lat_init     !Ak/sk (35)
+         grid%xlong(i,j) = config_flags%fire_lon_init     !Ak/ak (-111)
+         grid%xland(i,j) = 1.                             !Ak/ak
+      grid%lu_index(i,j) = config_flags%sfc_lu_index      !AK/ak land use index (28)
+           grid%tsk(i,j) = config_flags%sfc_tsk           !AK/ak  surface skin temperature [K] (285)
+           grid%tmn(i,j) = config_flags%sfc_tmn           !AK/ak  soil temperature at lower boundary [K] (285)
+      END DO
+    END DO
+      ! read land use data from files, overwriting the constant 
+      if(config_flags%fire_read_lu) &
+          call read_array_2d_real('input_lu',grid%lu_index,ids,ide,jds,jde,ims,ime,jms,jme) 
+      if(config_flags%fire_read_tsk) &
+          call read_array_2d_real   ('input_tsk',grid%tsk,    ids,ide,jds,jde,ims,ime,jms,jme) 
+      if(config_flags%fire_read_tmn) &
+          call read_array_2d_real   ('input_tmn',grid%tmn,    ids,ide,jds,jde,ims,ime,jms,jme) 
+
+! for Noah LSM, additional variables need to be initializedi  !AK/ak |
+
+  other_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+      CASE (SLABSCHEME)
+      write(6,*) ' SLAB surface scheme activated'
+
+      CASE (LSMSCHEME)
+      write(6,*) ' Noah unified LSM scheme activated with:'
+      write(6,*) '    vegetation fraction=',config_flags%sfc_vegfra
+      write(6,*) '          canopy  water=',config_flags%sfc_canwat
+      write(6,*) '     dominant veg. type=',config_flags%sfc_ivgtyp
+      write(6,*) '     dominant soil type=',config_flags%sfc_isltyp
+
+        DO j = jts , MIN(jde-1,jte)
+           DO i = its , MIN(ide-1,ite)
+               grid%vegfra(i,j) = config_flags%sfc_vegfra  !0.5
+               grid%canwat(i,j) = config_flags%sfc_canwat  !0.
+               grid%ivgtyp(i,j) = config_flags%sfc_ivgtyp  !18
+               grid%isltyp(i,j) = config_flags%sfc_isltyp  !7
+               grid%xice(i,j) = 0.
+               grid%snow(i,j) = 0.
+           END DO
+        END DO
+
+      CASE (RUCLSMSCHEME)
+       write(6,*) ' RUS surface scheme activated'
+    END SELECT other_masked_fields                         !AK/ak |
+
+    ENDIF
 
     DO j = jts, jte
     DO k = kts, kte
@@ -226,18 +301,51 @@ CONTAINS
 
    grid%step_number = 0
 
-! set up the grid
+   IF (sfc_init) THEN
 
-   IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
-     DO k=1, kde
-      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
-                                (1.-exp(-1./z_scale))
+      write(6,*) ' full surface initialization activated '
+      ! write(6,*) ' land use index =', config_flags%sfc_lu_index
+      ! write(6,*) ' skin temperature=',grid%tsk(10,10),&
+      !         '[K] soil temperature=', grid%tmn(10,10),'[K]'    
+! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
+      CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
+                     grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
+                     grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
+                     model_config_rec%sf_surface_physics(grid%id), &
+                                   ids,ide, jds,jde, kds,kde,&
+                                   ims,ime, jms,jme, kms,kme,&
+                                   its,ite, jts,jte, kts,kte )
+
+
+     ELSE
+      write(6,*) 'full surface initialization is turned off!! '
+    ENDIF    !end of surface initialization
+
+! set up the grid
+   write(6,*) '*************************************'
+
+   IF (stretch_grd) THEN ! exponential or hyperbolic tangential stretch for eta
+
+    IF (stretch_hyp) THEN ! hyperbolic tangential stretch (more levels at the surface)
+     write(6,*) ' hyperbolic tangential stretching activated with z_scale =',z_scale
+     DO k=1, kde          
+      grid%znw(k) = -1.* (tanh(z_scale*(float(k-1) / float(kde-1) -1.)))/ &
+                                 (tanh(z_scale))
      ENDDO
+    ELSE                 ! exponential stretch for eta (nearly constant dz)
+    write(6,*) ' exponential grid stretching activated with z_scale =',z_scale
+     DO k=1, kde 
+     grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
+                            (1.-exp(-1./z_scale))
+     ENDDO
+    ENDIF 
    ELSE
-     DO k=1, kde
+   write(6,*) ' no grid stretching'
+     DO k=1, kde 
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
      ENDDO
    ENDIF
+   write(6,*) '*************************************'
 
    DO k=1, kde-1
     grid%dnw(k) = grid%znw(k+1) - grid%znw(k)
@@ -297,11 +405,14 @@ CONTAINS
   write (6,*)' ******** SFIRE ideal initialization ********'
 
   ! fire grid step size
-  mtn_fdx = grid%dx/grid%sr_x
-  mtn_fdy = grid%dy/grid%sr_y
+  fdx = grid%dx/grid%sr_x
+  fdy = grid%dy/grid%sr_y
+  ! refinement ratios
+  ir = grid%sr_x
+  jr = grid%sr_y
 
   write (6,*)' atm  mesh step ',grid%dx,grid%dy
-  write (6,*)' fire mesh step ',mtn_fdx,mtn_fdy
+  write (6,*)' fire mesh step ',fdx,fdy
   write (6,*)' refinement ratio ',grid%sr_x,grid%sr_y
   write (6,*)' atm  domain bounds ',ids,ide, jds,jde,kds,kde
   write (6,*)' atm  memory bounds ',ims,ime, jms,jme,kms,kme
@@ -311,11 +422,33 @@ CONTAINS
   write (6,*)' fire tile   bounds ',ifts,ifte, jfts,jfte,kfts,kfte
   write (6,*)' Note that atm mesh and fire mesh are cell-centered'
 
+! set ideal coordinates
+  call set_ideal_coord( fdx,fdy, &
+                ifds,ifde,jfds,jfde,  &
+                ifms,ifme,jfms,jfme,  &
+                ifts,ifte,jfts,jfte,  &
+                grid%fxlong,grid%fxlat          )
+  call set_ideal_coord( grid%dx,grid%dy, &
+                ids,ide,jds,jde,  &
+                ims,ime,jms,jme,  &
+                its,ite,jts,jte,  &
+                grid%xlong,grid%xlat          )
+
+! set terrain height
+
   DO j=jts,jte
   DO i=its,ite
     grid%ht(i,j) = 0.
   ENDDO
   ENDDO
+
+  if(config_flags%fire_fuel_read.eq.2) &
+      call read_array_2d_real('input_fc',grid%nfuel_cat,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+
+
+  have_fire_grad=.false.
+  have_atm_grad=.false.
+  have_fire_ht=.false.
 
   !******* set terrain height
 
@@ -329,6 +462,8 @@ CONTAINS
 
   IF(mtn_type .ne. 0)THEN
 
+    ! idealized mountain
+
     ! atmospheric grid coordinates of the mountain
     mtn_axs = mtn_xs/grid%dx + ids - 0.5 
     mtn_axe = mtn_xe/grid%dx + ids - 0.5
@@ -336,10 +471,10 @@ CONTAINS
     mtn_aye = mtn_ye/grid%dy + jds - 0.5
 
     ! fire grid coordinates of the mountain
-    mtn_fxs = mtn_xs/mtn_fdx + ifds - 0.5 
-    mtn_fxe = mtn_xe/mtn_fdx + ifds - 0.5
-    mtn_fys = mtn_ys/mtn_fdy + jfds - 0.5
-    mtn_fye = mtn_ye/mtn_fdy + jfds - 0.5
+    mtn_fxs = mtn_xs/fdx + ifds - 0.5 
+    mtn_fxe = mtn_xe/fdx + ifds - 0.5
+    mtn_fys = mtn_ys/fdy + jfds - 0.5
+    mtn_fye = mtn_ye/fdy + jfds - 0.5
 
     write(6,*)' Mountain height ',mtn_ht,' type',mtn_type
     write(6,*)' Mountain (m) LL=(0,0) ',mtn_xs,':',mtn_xe,' ',mtn_ys,':',mtn_ye
@@ -368,40 +503,122 @@ CONTAINS
 
     write(6, *)' Atm  tile ',its,':',ite,' ',jts,':',jte,' max terrain height ',mtn_max
 
-    IF (config_flags%fire_topo_from_atm == 0) THEN
+    DO j=jfts,jfte
+        DO i=ifts,ifte
+          mtn_x = pi + 2*pi* max(0. , min( (i - mtn_fxs)/(mtn_fxe - mtn_fxs), 1. ))
+          mtn_y = pi + 2*pi* max(0. , min( (j - mtn_fys)/(mtn_fye - mtn_fys), 1. ))
+          SELECT CASE(mtn_type)
+            CASE (1) ! circ/elliptic mountain
+              mtn_z = mtn_ht * 0.25 * (1. + COS(mtn_x))*(1. + COS(mtn_y))
+            CASE (2)  ! EW ridge
+              mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_y))
+            CASE (3)  ! NS ridge
+              mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_x))
+            CASE DEFAULT
+              call wrf_error_fatal ( ' bad fire_mountain_type ' )
+          END SELECT
+          grid%zsf(i,j) = mtn_z
+        ENDDO
+    ENDDO
+ 
+    have_fire_ht=.true.
+
+  ELSE ! mtn_type 
+
+    if(config_flags%fire_read_atm_ht)then !
+      call read_array_2d_real('input_ht',grid%ht,ids,ide,jds,jde,ims,ime,jms,jme) 
+      ! no flag - we always have the terrain height on atm mesh, zero if not set
+    endif
+
+    if(config_flags%fire_read_fire_ht)then !
+      call read_array_2d_real('input_zsf',grid%zsf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+      have_fire_ht=.true.
+    endif
+
+    if(config_flags%fire_read_atm_grad)then !
+      call crash('Reading terrain gradient on atm mesh from file not supported.')
+      have_atm_grad=.true.
+    endif
+
+    if(config_flags%fire_read_fire_grad)then !
+      call read_array_2d_real('input_dzdxf',grid%dzdxf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+      call read_array_2d_real('input_dzdyf',grid%dzdyf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+      have_fire_grad=.true.
+    endif
+  ENDIF  ! mtn_type
+
+  if(have_fire_ht)then 
+      write(6, *)'Fine-resolution terrain height on the fire mesh used.'
+  else
+      write(6,*)'Interpolating the terrain height from the atm mesh to the fire mesh'
+      call interpolate_2d(  &
+        ims,ime,jms,jme, & ! memory dims atm grid tile
+        its,ite,jts,jte, & ! where atm grid values set
+        ifms,ifme,jfms,jfme,    & ! array dims fire grid
+        ifts,ifte,jfts,jfte,  & ! dimensions fire grid tile
+        ir,jr,                & ! refinement ratio
+        real(ids),real(jds),ifds+(ir-1)*0.5,jfds+(jr-1)*0.5, & ! line up by lower left corner of domain
+        grid%ht,                                      & ! atm grid arrays in
+        grid%zsf)                                      ! fire grid arrays out
+      have_fire_ht=.true.
+  endif
+
+
+  if(have_fire_grad)then 
+     write(6, *)'Fine-resolution terrain gradient on the fire mesh used.'
+  else
+
+     write(6,*)'Computing the terrain gradient from fire mesh height'
+     if(.not.have_fire_ht)then
+        write(6,*)'WARNING: Fire mesh terrain height not given, setting to zero'
+        do j=jfts,jfte
+           do i=ifts,ifte
+              grid%zsf(i,j) = 0.
+           enddo
+        enddo
+      endif
+   
+      ! extend the terrain height one beyond the domain
+      call continue_at_boundary(1,1,0., & ! do x direction or y direction
+              ifms,ifme,jfms,jfme, &            ! memory dims
+              ifds,ifde,jfds,jfde, &            ! domain dims
+              ifds,ifde,jfds,jfde, &            ! patch dims = domain, not parallel!
+              ifts,ifte,jfts,jfte, &            ! tile dims
+              iots,iote,jots,jote, &            ! tile dims out
+              grid%zsf)                         ! array
+  
+      ! compute the terrain gradient by differencing
+      do j=jfts,jfte
+         do i=ifts,ifte
+            grid%dzdxf(i,j) = (grid%zsf(i+1,j)-grid%zsf(i-1,j))/(2.*fdx)
+            grid%dzdyf(i,j) = (grid%zsf(i,j+1)-grid%zsf(i,j-1))/(2.*fdy)
+         enddo
+      enddo
+      have_fire_grad=.true.
+   endif ! have_fire_grad
+   
+   if(.not.have_fire_grad)call crash('Fire mesh terrain gradient not set')
+ 
+    mtn_max = 0.
+    DO j=jts,jte
+      DO i=its,ite
+        mtn_max = max(mtn_max, grid%ht(i,j))
+      ENDDO
+    ENDDO
+    write(6, *)' Max terrain height on the atmosphere mesh ',mtn_max
 
     mtn_max = 0.
+    grad_max =0.
     DO j=jfts,jfte
-    DO i=ifts,ifte
-      mtn_x = pi + 2*pi* max(0. , min( (i - mtn_fxs)/(mtn_fxe - mtn_fxs), 1. ))
-      mtn_y = pi + 2*pi* max(0. , min( (j - mtn_fys)/(mtn_fye - mtn_fys), 1. ))
-      SELECT CASE(mtn_type)
-        CASE (1) ! circ/elliptic mountain
-          mtn_z = mtn_ht * 0.25 * (1. + COS(mtn_x))*(1. + COS(mtn_y))
-        CASE (2)  ! EW ridge
-          mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_y))
-        CASE (3)  ! NS ridge
-          mtn_z = mtn_ht * 0.5 * (1. + COS(mtn_x))
-        CASE DEFAULT
-          call wrf_error_fatal ( ' bad fire_mountain_type ' )
-      END SELECT
-      mtn_max = max(mtn_max, mtn_z)
-      grid%zsf(i,j) = mtn_z
+      DO i=ifts,ifte
+        mtn_max = max(mtn_max, grid%zsf(i,j))
+        grad_max = max( grad_max, sqrt(grid%dzdxf(i,j)**2+grid%dzdyf(i,j)**2) )
+      ENDDO
     ENDDO
-    ENDDO
-
-    write(6, *)' Fire tile ',ifts,':',ifte,' ',jfts,':',jfte,' max terrain height ',mtn_max
-    write(6, *)' Fine-resolution terrain will be used.'
- 
-    ELSE
-
-      write(6, *)' ******** WARNING ********'
-      write(6, *)' Terrain height on the fire grid will be interpolated from the atmosphere grid.'
-      write(6, *)' Set fire_topo_from_atm=0 in the namelist to use fine-resolution terrain.'
-      write(6, *)' ******** WARNING ********'
-
-    ENDIF
-  ENDIF
+    write(6, *)' Max terrain height on the fire mesh       ',mtn_max
+    write(6, *)' Max terrain gradient on the fire mesh     ',grad_max
+  
+! the rest of initialization dependent on the atmosphere grid terrain height set
 
   DO j=jts,jte
   DO i=its,ite
@@ -532,18 +749,24 @@ CONTAINS
   ENDDO
   ENDDO
 
-!#if 0
-
+! checking if the perturbation (bubble) is to be applied
+  IF ((delt/=0.) .and. (x_rad > 0.) &
+                 .and. (y_rad > 0.) &
+                 .and. (z_rad > 0.)) THEN
 !  thermal perturbation to kick off convection
 
   write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
-  write(6,*) ' delt for perturbation ',delt
+  write(6,'(A23,f18.16)') ' delt for perturbation ',delt
+  write(6,'(A30,f18.12)') ' x radius of the perturbation ' ,x_rad
+  write(6,'(A30,f18.12)') ' y radius of the perturbation ' ,y_rad
+  write(6,'(A30,f18.12)') ' z radius of the perturbation ' ,z_rad
+  write(6,'(A30,f18.12)') ' height of the perturbation   ' ,hght_pert  
 
   DO J = jts, min(jde-1,jte)
-    yrad = config_flags%dy*float(j-nyc)/10000.
+    yrad = config_flags%dy*float(j-nyc)/y_rad
 !   yrad = 0.
     DO I = its, min(ide-1,ite)
-      xrad = config_flags%dx*float(i-nxc)/10000.
+      xrad = config_flags%dx*float(i-nxc)/x_rad
 !     xrad = 0.
       DO K = 1, kte-1
 
@@ -553,7 +776,7 @@ CONTAINS
 
         zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
                    +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
-        zrad = (zrad-1500.)/1500.
+        zrad = (zrad-hght_pert)/z_rad
         RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
         IF(RAD <= 1.) THEN
            grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
@@ -564,7 +787,7 @@ CONTAINS
            grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
         ENDIF
       ENDDO
-
+   
 !  rebalance hydrostatically
 
       DO k  = 2,kte
@@ -579,7 +802,8 @@ CONTAINS
     ENDDO
   ENDDO
 
-!#endif
+!End of setting up the perturbation (bubble)
+ENDIF
 
    IF ( wrf_dm_on_monitor() ) THEN
    write(6,*) ' grid%mu_1 from comp ', grid%mu_1(1,1)
@@ -693,10 +917,20 @@ CONTAINS
      ptmp    = grid%p(i,3,j)+grid%pb(i,3,j)
      temp(3) = thtmp * (ptmp/p1000mb)**rcp
 
+!     grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3) !AK/AK it is already declared via namelist.input if sfc_init=.true.
+!     grid%tmn(I,J)=grid%tsk(I,J)-0.5                                  !AK/AK it is already declared via namelist.input if sfc_init=.true.
+  ENDDO
+  ENDDO
+
+  IF (.NOT.sfc_init) THEN
+  write(6,*) ' setting tsk and tmn default'
+    DO J = jts, min(jde-1,jte)
+    DO I = its, min(ide-1,ite)
      grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
      grid%tmn(I,J)=grid%tsk(I,J)-0.5
-  ENDDO
-  ENDDO
+   ENDDO
+   ENDDO
+ ENDIF
 
  END SUBROUTINE init_domain_rk
 

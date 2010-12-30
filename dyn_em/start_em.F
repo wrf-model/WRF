@@ -23,7 +23,7 @@
    USE module_comm_dm
 
    USE module_physics_init
-   USE module_fr_sfire_driver, ONLY : sfire_driver_em_init
+   USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_init
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart

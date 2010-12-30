@@ -40,7 +40,7 @@ CONTAINS
     USE module_surface_driver, ONLY : surface_driver
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_pbl_driver, ONLY : pbl_driver
-    USE module_fr_sfire_driver, ONLY : sfire_driver_em_step
+    USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_step
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm

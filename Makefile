@@ -115,6 +115,7 @@ em_fire : wrf
 	( cd test/em_fire ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_fire ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_fire ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd test/em_fire ; /bin/sh create_links.sh )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \

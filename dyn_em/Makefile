@@ -181,7 +181,8 @@ module_initialize_fire.o : \
                 ../share/module_io_domain.o \
                 ../share/module_model_constants.o \
                 ../share/module_bc.o \
-                module_init_utilities.o
+                module_init_utilities.o \
+                ../phys/module_fr_sfire_util.o
 
 module_initialize_quarter_ss.o : \
 		../frame/module_domain.o \

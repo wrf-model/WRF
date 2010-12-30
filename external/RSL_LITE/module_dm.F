@@ -1088,6 +1088,20 @@ CONTAINS
 #endif
    END FUNCTION wrf_dm_sum_integer
 
+   INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      INTEGER inval, retval
+      INTEGER ierr
+      CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_BXOR, local_communicator, ierr )
+      wrf_dm_bxor_integer = retval
+#else
+      INTEGER inval
+      wrf_dm_bxor_integer = inval
+#endif
+   END FUNCTION wrf_dm_bxor_integer
+
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
       IMPLICIT NONE
 #ifndef STUBMPI

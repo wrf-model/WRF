@@ -45,6 +45,12 @@ MODULE module_dm
       wrf_dm_sum_integer = inval
    END FUNCTION wrf_dm_sum_integer
 
+   INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
+      IMPLICIT NONE
+      INTEGER inval
+      wrf_dm_bxor_integer = inval
+   END FUNCTION wrf_dm_bxor_integer
+
    SUBROUTINE wrf_dm_maxval ( val, idex, jdex )
       IMPLICIT NONE
       REAL val

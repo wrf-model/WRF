@@ -1135,7 +1135,6 @@ end subroutine write_array_m
 subroutine write_array_m3(its,ite,kts,kte,jts,jte,           &
                          ims,ime,kms,kme,jms,jme,               &
                          a,name,id)
-use module_dm
 
 implicit none
 ! debug
@@ -1224,7 +1223,6 @@ end subroutine read_array_2d_integer
         
 
 subroutine read_array_2d_real(filename,a,its,ite,jts,jte,ims,ime,jms,jme)
-use module_dm
 #ifdef _OPENMP
 use OMP_LIB 
 #endif
@@ -1334,7 +1332,7 @@ subroutine print_chsum( id, &
     a,name)                      
 
 #ifdef DM_PARALLEL
-    USE module_dm
+    USE module_dm , only : wrf_dm_bxor_integer
 #endif
 
 integer, intent(in):: id, &
@@ -1408,7 +1406,7 @@ real function fun_real(fun,  &
     a,b)                      
 
 #ifdef DM_PARALLEL
-    USE module_dm
+    USE module_dm , only : wrf_dm_sum_real , wrf_dm_max_real
 #endif
 
 integer, intent(in)::  fun, &

@@ -49,13 +49,13 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07  &
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME  &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07  &
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM
 #endif
 
@@ -73,7 +73,6 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm6
    USE module_mp_etanew
    USE module_mp_thompson
-   USE module_mp_thompson07
    USE module_mp_gsfcgce
    USE module_mp_morr_two_moment
    USE module_mp_wdm5
@@ -986,37 +985,6 @@ SUBROUTINE microphysics_driver(                                          &
                                                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
-             ENDIF
-
-        CASE (THOMPSON07)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson07 et al' )
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                                           PRESENT ( QNI_CURR ).AND.  &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
-             CALL mp_gt_driver07(                        &
-                     QV=qv_curr,                         &
-                     QC=qc_curr,                         &
-                     QR=qr_curr,                         &
-                     QI=qi_curr,                         &
-                     QS=qs_curr,                         &
-                     QG=qg_curr,                         &
-                     NI=qni_curr,                        &
-                     TH=th,                              &
-                     PII=pi_phy,                         &
-                     P=p,                                &
-                     DZ=dz8w,                            &
-                     DT_IN=dt,                           &
-                     ITIMESTEP=itimestep,                &
-                     RAINNC=RAINNC,                      &
-                     RAINNCV=RAINNCV,                    &
-                     SR=SR                               &
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
-             ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling thompson07' )
              ENDIF
 
       CASE DEFAULT

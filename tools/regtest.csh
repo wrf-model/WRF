@@ -1239,7 +1239,7 @@ cat >! damp_real_12  << EOF
 EOF
 
 cat >! phys_real_13 << EOF
- mp_physics                          = 98,    98,    98, 
+ mp_physics                          = 13,    13,    13, 
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
  radt                                = 30,    30,    30,

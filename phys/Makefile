@@ -54,7 +54,6 @@ MODULES = \
 	module_mp_etanew.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
-	module_mp_thompson07.o \
 	module_mp_gsfcgce.o \
 	module_mp_morr_two_moment.o \
 	module_mp_milbrandt2mom.o \
@@ -397,7 +396,6 @@ module_physics_init.o : \
 		module_fdda_spnudging.o         \
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
-		module_mp_thompson07.o          \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
@@ -420,7 +418,6 @@ module_microphysics_driver.o: \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_HWRF.o  \
 		module_mp_thompson.o            \
-		module_mp_thompson07.o          \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \

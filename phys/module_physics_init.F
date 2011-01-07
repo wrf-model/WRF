@@ -2158,7 +2158,6 @@ integer myproc
    USE module_mp_HWRF
 #endif
    USE module_mp_thompson
-   USE module_mp_thompson07
    USE module_mp_morr_two_moment
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
@@ -2233,9 +2232,6 @@ integer myproc
 ! Cycling the WRF forecast with moving nests will cause this initialization to be
 ! called for each nest move. This is potentially very computationally expensive.
          IF(start_of_simulation.or.restart.or.config_flags%cycling)CALL thompson_init
-
-     CASE (THOMPSON07)
-         IF(start_of_simulation.or.restart.or.config_flags%cycling)CALL thompson07_init
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init

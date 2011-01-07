@@ -408,7 +408,7 @@
 
 	use module_state_description, only:   &
 		num_chem, param_first_scalar, p_qc,   &
-		p_nh3, p_hno3, p_hcl, p_sulf, p_hcho,   &
+		p_nh3, p_hno3, p_hcl, p_sulf, p_h2so4, p_hcho,   &
 		p_ora1, p_so2, p_h2o2, p_o3, p_ho,   &
 		p_ho2, p_no3, p_no, p_no2, p_hono,   &
 		p_pan, p_ch3o2, p_ch3oh, p_op1
@@ -569,7 +569,9 @@
 	gas(nga     ) = rbox(p_nh3   ) * factgas
 	gas(ngn     ) = rbox(p_hno3  ) * factgas
 	gas(ngc     ) = rbox(p_hcl   ) * factgas
-	gas(ng4     ) = rbox(p_sulf  ) * factgas
+	if(p_sulf > param_first_scalar )  gas(ng4 ) = rbox(p_sulf  ) * factgas
+	if(p_h2so4 > param_first_scalar ) gas(ng4 ) = rbox(p_h2so4 ) * factgas
+
 
 	gas(nghcho  ) = rbox(p_hcho  ) * factgas
 	gas(nghcooh ) = rbox(p_ora1  ) * factgas
@@ -641,7 +643,7 @@
 	    write(lunxx,9875) gas
 	    write(lunxx,*) 'rbox(nh3, hno3, hcl, h2so4, so2, h2o2, o3)'
 	    write(lunxx,9875) rbox(p_nh3), rbox(p_hno3), rbox(p_hcl),   &
-		rbox(p_sulf), rbox(p_so2), rbox(p_h2o2), rbox(p_o3)
+		rbox(p_sulf),rbox(p_h2so4), rbox(p_so2), rbox(p_h2o2), rbox(p_o3)
 	    write(lunxx,*) 'aerosol (1=na, 3=nh4, 4=no3, 5=cl, 6=so4, 8=ec, 9=oc, 10=crus)'
 	    write(lunxx,9875) aerosol
 	    write(lunxx,*) 'rbulk_cwaer (1=so4, 2=no3, 3-cl, 4=nh4, 5=na, 6=oin, 7=bc, 8=oc)'
@@ -814,7 +816,9 @@
 	rbox(p_nh3   ) = gas(nga     ) / factgas
 	rbox(p_hno3  ) = gas(ngn     ) / factgas
 	rbox(p_hcl   ) = gas(ngc     ) / factgas
-	rbox(p_sulf  ) = gas(ng4     ) / factgas
+	if(p_sulf .gt. param_first_scalar)  rbox(p_sulf  ) = gas(ng4) / factgas
+	if(p_h2so4 .gt. param_first_scalar) rbox(p_h2so4 ) = gas(ng4) / factgas
+
 
 	rbox(p_hcho  ) = gas(nghcho  ) / factgas
 	rbox(p_ora1  ) = gas(nghcooh ) / factgas
@@ -841,8 +845,10 @@
 		gas_aqfrac_box(p_hno3  ) = gas_aqfrac_cmu(ngn     )
 	if (p_hcl   .le. numgas_aqfrac)   &
 		gas_aqfrac_box(p_hcl   ) = gas_aqfrac_cmu(ngc     )
-	if (p_sulf  .le. numgas_aqfrac)   &
+	if (p_sulf  .le. numgas_aqfrac .and. p_sulf .gt. param_first_scalar)   &
 		gas_aqfrac_box(p_sulf  ) = gas_aqfrac_cmu(ng4     )
+	if (p_h2so4  .le. numgas_aqfrac .and. p_h2so4 .gt. param_first_scalar) &
+		gas_aqfrac_box(p_h2so4 ) = gas_aqfrac_cmu(ng4     )
 
 	if (p_hcho  .le. numgas_aqfrac)   &
 		gas_aqfrac_box(p_hcho  ) = gas_aqfrac_cmu(nghcho  )
@@ -898,7 +904,7 @@
 	    write(lunxx,9875) gas
 	    write(lunxx,*) 'rbox(nh3, hno3, hcl, h2so4, so2, h2o2, o3)'
 	    write(lunxx,9875) rbox(p_nh3), rbox(p_hno3), rbox(p_hcl),   &
-		rbox(p_sulf), rbox(p_so2), rbox(p_h2o2), rbox(p_o3)
+		rbox(p_sulf), rbox(p_h2so4), rbox(p_so2), rbox(p_h2o2), rbox(p_o3)
 	    write(lunxx,*) 'aerosol (1=na, 3=nh4, 4=no3, 5=cl, 6=so4, 8=ec, 9=oc, 10=crus)'
 	    write(lunxx,9875) aerosol
 	    write(lunxx,*) 'rbulk_cwaer (1=so4, 2=no3, 3-cl, 4=nh4, 5=na, 6=oin, 7=bc, 8=oc)'

@@ -23,7 +23,7 @@ CONTAINS
 
 !----------------------------------------------------------------------
    subroutine cbmz_addemiss_anthro( id, dtstep, dz8w, config_flags,       &
-               rho_phy, chem,emis_ant,                                    &
+               rho_phy, chem,emis_ant,alt,                                &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -60,12 +60,12 @@ CONTAINS
                          emis_ant
 ! layer thickness (m)
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
-          INTENT(IN   ) ::   dz8w, rho_phy
+          INTENT(IN   ) ::   dz8w, rho_phy,alt
 
 ! local variables
    integer :: i,j,k
    real, parameter :: efact1 = 1.0/60.0
-   real :: conv
+   real :: conv,conv3
    double precision :: chem_sum(num_chem)
 
 
@@ -101,6 +101,7 @@ CONTAINS
 !v1 units:        conv = dtstep/(dz8w(i,k,j)*60.)
 !v2 units:
         conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+        conv3 = (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/250*1e-3
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (i <= CHEM_DBG_I .and. i >= CHEM_DBG_I) .and. &
@@ -158,7 +159,14 @@ CONTAINS
         chem(i,k,j,p_xyl)  = chem(i,k,j,p_xyl)                         &
                          +emis_ant(i,k,j,p_e_xyl)*conv       
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &
-                         +emis_ant(i,k,j,p_e_ket)*conv       
+                         +emis_ant(i,k,j,p_e_ket)*conv      
+
+         chem_select_2 : SELECT CASE( config_flags%chem_opt )
+
+         END SELECT  chem_select_2
+
+
+ 
 
 ! when emissions input file is "radm2sorg" variety, calc par emissions as a 
 !   combination of the anthropogenic emissions for radm2 primary voc species

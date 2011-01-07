@@ -36,21 +36,21 @@
 
 #include <stdio.h>
 
-#define MAX_EQN         900 /* mz_rs_20050130 */
-#define MAX_SPECIES     400 /* mz_rs_20050130 */
+#define MAX_EQN         1200 /* mz_rs_20050130 */
+#define MAX_SPECIES     500 /* mz_rs_20050130 */
 #define MAX_SPNAME       30
 #define MAX_IVAL         40
 /* MAX_EQNTAG = max length of equation ID in eqn file */
-#define MAX_EQNTAG       12
+#define MAX_EQNTAG       32
 /* MAX_K = max length of rate expression in eqn file */
-#define MAX_K           150
+#define MAX_K           400
 #define MAX_ATOMS	 10
 #define MAX_ATNAME	 10
 #define MAX_ATNR	250 
 /* made bigger -- JM */
 #define MAX_PATH        1024
 #define MAX_FILES	 20
-#define MAX_EQNLEN      100
+#define MAX_EQNLEN      500
 
 #define NO_CODE 	-1
 #define max( x, y ) (x) > (y) ? (x) : (y)

@@ -42,10 +42,11 @@
 !   vicinity of Houston using a fully-coupled meteorology-chemistry-
 !   aerosol model, J. Geophys. Res., 111, D21305,
 !   doi:10.1029/2005JD006721.
-! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al.
-!   (2009), Closure on the single scattering albedo in the WRF-Chem
-!   framework using data from the MILAGRO campaign, Atmos. Chem. Phys.,
-!   submitted.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, and
+!   A. Laskin (2010), Technical note: evaluation of the WRF-Chem
+!   "aerosol chemical to aerosol optical properties" module using data
+!   from the MILAGRO campaign, Atmos. Chem. Phys., 10, 7325-7340,
+!   doi:10.5194/acp-10-7325-2010.
 !
 ! Contact Jerome Fast for updates on the status of manuscripts under
 ! review.
@@ -231,7 +232,7 @@
 ! only MOSAIC will work. The Mie routine does not know how to handle
 ! SORGAM aerosols.
     select case (config_flags%chem_opt)
-    case ( CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
+    case ( CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,  &
            CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
        processingAerosols = .true.
     case default

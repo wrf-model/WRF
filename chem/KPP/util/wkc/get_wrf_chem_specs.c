@@ -19,11 +19,11 @@ int
 get_wrf_chem_specs ( )
 {
   node_t * pkg;
-  char assoc_namelist_var[NAMELEN];
-  char scalars_str[NAMELEN] ;
+  char assoc_namelist_var[NAMELEN_LONG];
+  char scalars_str[NAMELEN_LONG] ;
   char * scalar ;
   char * suffix;
-  char pname[NAMELEN] ;
+  char pname[NAMELEN_LONG] ;
   int j;
 
   knode_t * q , * member  ;

@@ -7003,6 +7003,7 @@ contains
 
 ! Upper atmosphere loop
       do lay = laytrop+1, nlayers
+
          do ig = 1, ng12
             taug(lay,ngs11+ig) = 0.0_rb
             fracs(lay,ngs11+ig) = 0.0_rb
@@ -7043,7 +7044,6 @@ contains
       real(kind=rb) :: chi_co2, ratco2, adjfac, adjcolco2
       real(kind=rb) :: refrat_planck_a, refrat_m_a, refrat_m_a3
       real(kind=rb) :: tau_major, tau_major1
-
 
 ! Minor gas mapping levels :
 !     lower - co2, p = 1053.63 mb, t = 294.2 k
@@ -11333,6 +11333,14 @@ CONTAINS
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
+                       tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,   & ! czhao 
+                       tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,   & ! czhao 
+                       tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,   & ! czhao 
+                       tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,   & ! czhao 
+                       aer_ra_feedback,                           & !czhao
+!jdfcz                 progn,prescribe,                           & !czhao
+                       progn,                                     & !czhao
+                       qndrop3d,f_qndrop,                         & !czhao
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
@@ -11388,7 +11396,9 @@ CONTAINS
                                                             QR3D, &
                                                             QI3D, &
                                                             QS3D, &
-                                                            QG3D
+                                                            QG3D, &
+                                                        QNDROP3D
+   real pi,third,relconst,lwpmin,rhoh2o
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -11397,7 +11407,22 @@ CONTAINS
                                                       F_RAIN_PHY
 
    LOGICAL, OPTIONAL, INTENT(IN)   ::                             &
-                                   F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
+                                   F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,F_QNDROP
+! Optional
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN    ) :: tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
+                           tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8, & ! czhao 
+                           tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao 
+                           tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16
+
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
+!jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+
+      real, parameter :: thresh=1.e-9
+      real slope
+      character(len=200) :: msg
+
 
 ! Top of atmosphere and surface longwave fluxes (W m-2)
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
@@ -11426,7 +11451,8 @@ CONTAINS
                                                             QR1D, &
                                                             QI1D, &
                                                             QS1D, &
-                                                            QG1D
+                                                            QG1D, &
+                                                          qndrop1d 
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -11563,6 +11589,31 @@ CONTAINS
     LOGICAL :: predicate
 
 !------------------------------------------------------------------
+#ifdef WRF_CHEM
+      IF ( aer_ra_feedback == 1) then
+      IF ( .NOT. &
+      ( PRESENT(tauaerlw1) .AND. &
+        PRESENT(tauaerlw2) .AND. &
+        PRESENT(tauaerlw3) .AND. &
+        PRESENT(tauaerlw4) .AND. &
+        PRESENT(tauaerlw5) .AND. &
+        PRESENT(tauaerlw6) .AND. &
+        PRESENT(tauaerlw7) .AND. &
+        PRESENT(tauaerlw8) .AND. &
+        PRESENT(tauaerlw9) .AND. &
+        PRESENT(tauaerlw10) .AND. &
+        PRESENT(tauaerlw11) .AND. &
+        PRESENT(tauaerlw12) .AND. &
+        PRESENT(tauaerlw13) .AND. &
+        PRESENT(tauaerlw14) .AND. &
+        PRESENT(tauaerlw15) .AND. &
+        PRESENT(tauaerlw16) ) ) THEN
+      CALL wrf_error_fatal  &
+      ('Warning: missing fields required for aerosol radiation' )
+      ENDIF
+      ENDIF
+#endif
+
 
 !-----CALCULATE LONG WAVE RADIATION
 !                                                              
@@ -11626,6 +11677,14 @@ CONTAINS
                     QR1D(K)=max(0.,QR1D(K))
                  ENDDO
               ENDIF
+            ENDIF
+
+            IF ( PRESENT(F_QNDROP).AND.PRESENT(QNDROP3D)) THEN
+             IF (F_QNDROP) THEN
+              DO K=kts,kte
+               qndrop1d(K)=qndrop3d(I,K,J)
+              ENDDO
+             ENDIF
             ENDIF
 
 ! This logic is tortured because cannot test F_QI unless
@@ -11834,8 +11893,45 @@ CONTAINS
                cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
             end do
 
+!link the aerosol feedback to cloud  -czhao
+  if( PRESENT( progn ) ) then
+    if (progn == 1) then
+!jdfcz     if(prescribe==0) then
+
+      pi = 4.*atan(1.0)
+      third=1./3.
+      rhoh2o=1.e3
+      relconst=3/(4.*pi*rhoh2o)
+!     minimun liquid water path to calculate rel
+!     corresponds to optical depth of 1.e-3 for radius 4 microns.
+      lwpmin=3.e-5
+      do k = kts, kte
+         reliq(ncol,k) = 10.
+         if( PRESENT( F_QNDROP ) ) then
+            if( F_QNDROP ) then
+              if ( qc1d(k)*pdel(ncol,k).gt.lwpmin.and. &
+                   qndrop1d(k).gt.1000. ) then
+               reliq(ncol,k)=(relconst*qc1d(k)/qndrop1d(k))**third ! effective radius in m
+!           apply scaling from Martin et al., JAS 51, 1830.
+               reliq(ncol,k)=1.1*reliq(ncol,k)
+               reliq(ncol,k)=reliq(ncol,k)*1.e6 ! convert from m to microns
+               reliq(ncol,k)=max(reliq(ncol,k),4.)
+               reliq(ncol,k)=min(reliq(ncol,k),20.)
+              end if
+            end if
+         end if
+      end do
+!jdfcz     else ! prescribe 
 ! following Kiehl
-            call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+!     write(0,*) 'lw prescribe aerosol',maxval(qndrop3d)
+!jdfcz     endif
+    else  ! progn   
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+    endif
+  else   !present(progn) 
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+  endif
 
 ! following Kristjansson and Mitchell
             call reicalc(ncol, pcols, pver, tlay, reice)
@@ -11885,13 +11981,74 @@ CONTAINS
                        cldfrac, ciwpth, clwpth, rei, rel, taucld, cldfmcl, &
                        ciwpmcl, clwpmcl, reicmcl, relqmcl, taucmcl)
 
+!--------------------------------------------------------------------------
+! Aerosol optical depth, single scattering albedo and asymmetry parameter -czhao 03/2010
+!--------------------------------------------------------------------------
 ! Aerosol optical depth by layer for each RRTMG longwave band
 ! No aerosols in layer above model top (kte+1)
-         do nb = 1, nbndlw
-            do k = kts, kte+1
-               tauaer(ncol,k,nb) = 0.
-            enddo
-         enddo
+!        do nb = 1, nbndlw
+!           do k = kts, kte+1
+!              tauaer(ncol,k,nb) = 0.
+!           enddo
+!        enddo
+
+! ... Aerosol effects. Added aerosol feedbacks from Chem , 03/2010 -czhao
+!
+      do nb = 1, nbndlw
+      do k = kts,kte+1
+         tauaer(ncol,k,nb) = 0.
+      end do
+      end do
+
+#ifdef WRF_CHEM
+   IF ( AER_RA_FEEDBACK == 1) then
+!     do nb = 1, nbndlw 
+      do k = kts,kte      !wig
+        if(tauaerlw1(i,k,j).gt.thresh .and. tauaerlw16(i,k,j).gt.thresh) then
+          tauaer(ncol,k,1)=tauaerlw1(i,k,j)
+          tauaer(ncol,k,2)=tauaerlw2(i,k,j)
+          tauaer(ncol,k,3)=tauaerlw3(i,k,j)
+          tauaer(ncol,k,4)=tauaerlw4(i,k,j)
+          tauaer(ncol,k,5)=tauaerlw5(i,k,j)
+          tauaer(ncol,k,6)=tauaerlw6(i,k,j)
+          tauaer(ncol,k,7)=tauaerlw7(i,k,j)
+          tauaer(ncol,k,8)=tauaerlw8(i,k,j)
+          tauaer(ncol,k,9)=tauaerlw9(i,k,j)
+          tauaer(ncol,k,10)=tauaerlw10(i,k,j)
+          tauaer(ncol,k,11)=tauaerlw11(i,k,j)
+          tauaer(ncol,k,12)=tauaerlw12(i,k,j)
+          tauaer(ncol,k,13)=tauaerlw13(i,k,j)
+          tauaer(ncol,k,14)=tauaerlw14(i,k,j)
+          tauaer(ncol,k,15)=tauaerlw15(i,k,j)
+          tauaer(ncol,k,16)=tauaerlw16(i,k,j)
+        endif
+      enddo ! k
+!     end do ! nb
+
+!wig beg
+      do nb = 1, nbndlw
+         slope = 0.  !use slope as a sum holder
+         do k = kts,kte
+            slope = slope + tauaer(ncol,k,nb)
+         end do
+         if( slope < 0. ) then
+            write(msg,'("ERROR: Negative total lw optical depth of ",f8.2," at point i,j,nb=",3i5)') slope,i,j,nb
+            call wrf_error_fatal(msg)
+         else if( slope > 5. ) then
+            call wrf_message("-------------------------")
+            write(msg,'("WARNING: Large total lw optical depth of ",f8.2," at point i,j,nb=",3i5)') slope,i,j,nb
+            call wrf_message(msg)
+
+            call wrf_message("Diagnostics 1: k, tauaerlw1, tauaerlw16")
+            do k=kts,kte
+               write(msg,'(i4,2f8.2)') k, tauaerlw1(i,k,j), tauaerlw16(i,k,j)
+               call wrf_message(msg)
+            end do
+            call wrf_message("-------------------------")
+         endif
+      enddo  ! nb
+      endif  ! aer_ra_feedback
+#endif
 
 ! Call RRTMG longwave radiation model
          call rrtmg_lw &

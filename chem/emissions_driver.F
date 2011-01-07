@@ -246,7 +246,7 @@ CONTAINS
 ! Local variables...
 !
       INTEGER :: begday,endday,i, j, k, ksub, dust_emiss_active, seasalt_emiss_active
-      REAL :: conv
+      REAL :: conv,conv3,conv4,oconv3,oconv4
       CHARACTER (LEN=80) :: message
       LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
 
@@ -263,7 +263,7 @@ CONTAINS
 !
       dust_emiss_active    = 0
       seasalt_emiss_active = 0
-      if(config_flags%dust_opt == 2 )dust_emiss_active    = 1
+      if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1
       if(config_flags%seas_opt == 2 )seasalt_emiss_active = 1
 !
 ! Setup the timing flags...
@@ -603,8 +603,13 @@ CONTAINS
        end if 
 
        end if ! emiss_inpt_opt /= 3
-
-    CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+!For SAPRC99 need to define SAPRC99_addemiss_anthro and SAPRC99_addemiss_bio
+!so did not add saprcnov packages here
+    CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
+          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, & 
+          CBMZSORG, CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
+          CBMZ_MOSAIC_KPP, &
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
        IF(config_flags%kemit .GT. kte-ksub) THEN
           message = ' EMISSIONS_DRIVER: KEMIT > KME '
           CALL WRF_ERROR_FATAL (message)
@@ -612,7 +617,7 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_anthro')
        call cbmz_addemiss_anthro( id, dtstep, dz8w, config_flags,        &
             rho_phy, chem,                                               &
-            emis_ant,ids,ide, jds,jde, kds,kde,                                   &
+            emis_ant,alt,ids,ide, jds,jde, kds,kde,                      &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
@@ -646,6 +651,249 @@ CONTAINS
              end do
           end do
        end do
+
+    CASE (SAPRC99_KPP) !FIX FOR SAPRC07A
+     if(config_flags%emiss_opt == 13 ) then
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                             &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_c2h6)  = chem(i,k,j,p_c2h6)                           &
+                     +emis_ant(i,k,j,p_e_c2h6)*conv
+                chem(i,k,j,p_c3h8)  = chem(i,k,j,p_c3h8)                           &
+                     +emis_ant(i,k,j,p_e_c3h8)*conv
+                chem(i,k,j,p_c2h2)  = chem(i,k,j,p_c2h2)                           &
+                     +emis_ant(i,k,j,p_e_c2h2)*conv
+                chem(i,k,j,p_alk3)  = chem(i,k,j,p_alk3)                           &
+                     +emis_ant(i,k,j,p_e_alk3)*conv
+                chem(i,k,j,p_alk4)  = chem(i,k,j,p_alk4)                           &
+                     +emis_ant(i,k,j,p_e_alk4)*conv
+                chem(i,k,j,p_alk5)  = chem(i,k,j,p_alk5)                           &
+                     +emis_ant(i,k,j,p_e_alk5)*conv
+                chem(i,k,j,p_ethene)  = chem(i,k,j,p_ethene)                       &
+                     +emis_ant(i,k,j,p_e_ethene)*conv
+                chem(i,k,j,p_c3h6)  = chem(i,k,j,p_c3h6)                           &
+                     +emis_ant(i,k,j,p_e_c3h6)*conv
+                chem(i,k,j,p_ole1)  = chem(i,k,j,p_ole1)                           &
+                     +emis_ant(i,k,j,p_e_ole1)*conv
+                chem(i,k,j,p_ole2)  = chem(i,k,j,p_ole2)                           &
+                     +emis_ant(i,k,j,p_e_ole2)*conv
+                chem(i,k,j,p_aro1)  = chem(i,k,j,p_aro1)                           &
+                     +emis_ant(i,k,j,p_e_aro1)*conv
+                chem(i,k,j,p_aro2)  = chem(i,k,j,p_aro2)                           &
+                     +emis_ant(i,k,j,p_e_aro2)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                           &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+                chem(i,k,j,p_ccho)  = chem(i,k,j,p_ccho)                           &
+                     +emis_ant(i,k,j,p_e_ccho)*conv
+                chem(i,k,j,p_rcho)  = chem(i,k,j,p_rcho)                           &
+                     +emis_ant(i,k,j,p_e_rcho)*conv
+                chem(i,k,j,p_acet)  = chem(i,k,j,p_acet)                           &
+                     +emis_ant(i,k,j,p_e_acet)*conv
+                chem(i,k,j,p_mek)  = chem(i,k,j,p_mek)                             &
+                     +emis_ant(i,k,j,p_e_mek)*conv
+                chem(i,k,j,p_isoprene)  = chem(i,k,j,p_isoprene)                   &
+                     +emis_ant(i,k,j,p_e_isoprene)*conv
+                chem(i,k,j,p_terp)  = chem(i,k,j,p_terp)                           &
+                     +emis_ant(i,k,j,p_e_terp)*conv
+                chem(i,k,j,p_sesq)  = chem(i,k,j,p_sesq)                           &
+                     +emis_ant(i,k,j,p_e_sesq)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                               &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                               &
+                     +emis_ant(i,k,j,p_e_no)*conv
+                chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                             &
+                     +emis_ant(i,k,j,p_e_no2)*conv
+                chem(i,k,j,p_phen)  = chem(i,k,j,p_phen)                           &
+                     +emis_ant(i,k,j,p_e_phen)*conv
+                chem(i,k,j,p_cres)  = chem(i,k,j,p_cres)                           &
+                     +emis_ant(i,k,j,p_e_cres)*conv
+                chem(i,k,j,p_meoh)  = chem(i,k,j,p_meoh)                           &
+                     +emis_ant(i,k,j,p_e_meoh)*conv
+                chem(i,k,j,p_gly)  = chem(i,k,j,p_gly)                             &
+                     +emis_ant(i,k,j,p_e_gly)*conv
+                chem(i,k,j,p_mgly)  = chem(i,k,j,p_mgly)                           &
+                     +emis_ant(i,k,j,p_e_mgly)*conv
+                chem(i,k,j,p_bacl)  = chem(i,k,j,p_bacl)                           &
+                     +emis_ant(i,k,j,p_e_bacl)*conv
+                chem(i,k,j,p_isoprod)  = chem(i,k,j,p_isoprod)                     &
+                     +emis_ant(i,k,j,p_e_isoprod)*conv
+                chem(i,k,j,p_methacro)  = chem(i,k,j,p_methacro)                   &
+                     +emis_ant(i,k,j,p_e_methacro)*conv
+                chem(i,k,j,p_mvk)  = chem(i,k,j,p_mvk)                             &
+                     +emis_ant(i,k,j,p_e_mvk)*conv
+                chem(i,k,j,p_prod2)  = chem(i,k,j,p_prod2)                         &
+                     +emis_ant(i,k,j,p_e_prod2)*conv
+                chem(i,k,j,p_ch4)  = chem(i,k,j,p_ch4)                             &
+                     +emis_ant(i,k,j,p_e_ch4)*conv
+                chem(i,k,j,p_bald)  = chem(i,k,j,p_bald)                           &
+                     +emis_ant(i,k,j,p_e_bald)*conv
+                chem(i,k,j,p_hcooh)  = chem(i,k,j,p_hcooh)                         &
+                     +emis_ant(i,k,j,p_e_hcooh)*conv
+                chem(i,k,j,p_cco_oh)  = chem(i,k,j,p_cco_oh)                       &
+                     +emis_ant(i,k,j,p_e_cco_oh)*conv
+                chem(i,k,j,p_rco_oh)  = chem(i,k,j,p_rco_oh)                       &
+                     +emis_ant(i,k,j,p_e_rco_oh)*conv
+
+             end do
+          end do
+       end do
+      else
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+             end do
+          end do
+       end do
+      endif
+
+                  
+
+    CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP) !FIX FOR SAPRC07A
+     if(config_flags%emiss_opt == 13 ) then
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                conv3 = (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/250*1e-3! Molecular weight of C(15)H(27)N(0.3)O(4.5)
+                conv4= (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/226*1e-3  ! Molecular weight of C(15)H(27)N(0.3)O(0.9)
+                oconv3= (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/283*1e-3*4.5 !For biomass there are 4.5 moles of ) /mole of C15H27N0.3
+                oconv4=(dtstep/dz8w(i,k,j))*alt(i,k,j)*28/226*1e-3*0.9  !For fossil there are 0.9 moles of O per mole of C15H27N0.3
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                             &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_c2h6)  = chem(i,k,j,p_c2h6)                           &
+                     +emis_ant(i,k,j,p_e_c2h6)*conv
+                chem(i,k,j,p_c3h8)  = chem(i,k,j,p_c3h8)                           &
+                     +emis_ant(i,k,j,p_e_c3h8)*conv
+                chem(i,k,j,p_c2h2)  = chem(i,k,j,p_c2h2)                           &
+                     +emis_ant(i,k,j,p_e_c2h2)*conv
+                chem(i,k,j,p_alk3)  = chem(i,k,j,p_alk3)                           &
+                     +emis_ant(i,k,j,p_e_alk3)*conv
+                chem(i,k,j,p_alk4)  = chem(i,k,j,p_alk4)                           &
+                     +emis_ant(i,k,j,p_e_alk4)*conv
+                chem(i,k,j,p_alk5)  = chem(i,k,j,p_alk5)                           &
+                     +emis_ant(i,k,j,p_e_alk5)*conv
+                chem(i,k,j,p_ethene)  = chem(i,k,j,p_ethene)                       &
+                     +emis_ant(i,k,j,p_e_ethene)*conv
+                chem(i,k,j,p_c3h6)  = chem(i,k,j,p_c3h6)                           &
+                     +emis_ant(i,k,j,p_e_c3h6)*conv
+                chem(i,k,j,p_ole1)  = chem(i,k,j,p_ole1)                           &
+                     +emis_ant(i,k,j,p_e_ole1)*conv
+                chem(i,k,j,p_ole2)  = chem(i,k,j,p_ole2)                           &
+                     +emis_ant(i,k,j,p_e_ole2)*conv
+                chem(i,k,j,p_aro1)  = chem(i,k,j,p_aro1)                           &
+                     +emis_ant(i,k,j,p_e_aro1)*conv
+                chem(i,k,j,p_aro2)  = chem(i,k,j,p_aro2)                           &
+                     +emis_ant(i,k,j,p_e_aro2)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                           &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+                chem(i,k,j,p_ccho)  = chem(i,k,j,p_ccho)                           &
+                     +emis_ant(i,k,j,p_e_ccho)*conv
+                chem(i,k,j,p_rcho)  = chem(i,k,j,p_rcho)                           &
+                     +emis_ant(i,k,j,p_e_rcho)*conv
+                chem(i,k,j,p_acet)  = chem(i,k,j,p_acet)                           &
+                     +emis_ant(i,k,j,p_e_acet)*conv
+                chem(i,k,j,p_mek)  = chem(i,k,j,p_mek)                             &
+                     +emis_ant(i,k,j,p_e_mek)*conv
+                chem(i,k,j,p_isoprene)  = chem(i,k,j,p_isoprene)                   &
+                     +emis_ant(i,k,j,p_e_isoprene)*conv
+                chem(i,k,j,p_terp)  = chem(i,k,j,p_terp)                           &
+                     +emis_ant(i,k,j,p_e_terp)*conv
+                chem(i,k,j,p_sesq)  = chem(i,k,j,p_sesq)                           &
+                     +emis_ant(i,k,j,p_e_sesq)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                               &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                               &
+                     +emis_ant(i,k,j,p_e_no)*conv
+                chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                             &
+                     +emis_ant(i,k,j,p_e_no2)*conv
+                chem(i,k,j,p_phen)  = chem(i,k,j,p_phen)                           &
+                     +emis_ant(i,k,j,p_e_phen)*conv
+                chem(i,k,j,p_cres)  = chem(i,k,j,p_cres)                           &
+                     +emis_ant(i,k,j,p_e_cres)*conv
+                chem(i,k,j,p_meoh)  = chem(i,k,j,p_meoh)                           &
+                     +emis_ant(i,k,j,p_e_meoh)*conv
+                chem(i,k,j,p_gly)  = chem(i,k,j,p_gly)                             &
+                     +emis_ant(i,k,j,p_e_gly)*conv
+                chem(i,k,j,p_mgly)  = chem(i,k,j,p_mgly)                           &
+                     +emis_ant(i,k,j,p_e_mgly)*conv
+                chem(i,k,j,p_bacl)  = chem(i,k,j,p_bacl)                           &
+                     +emis_ant(i,k,j,p_e_bacl)*conv
+                chem(i,k,j,p_isoprod)  = chem(i,k,j,p_isoprod)                     &
+                     +emis_ant(i,k,j,p_e_isoprod)*conv
+                chem(i,k,j,p_methacro)  = chem(i,k,j,p_methacro)                   &
+                     +emis_ant(i,k,j,p_e_methacro)*conv
+                chem(i,k,j,p_mvk)  = chem(i,k,j,p_mvk)                             &
+                     +emis_ant(i,k,j,p_e_mvk)*conv
+                chem(i,k,j,p_prod2)  = chem(i,k,j,p_prod2)                         &
+                     +emis_ant(i,k,j,p_e_prod2)*conv
+                chem(i,k,j,p_ch4)  = chem(i,k,j,p_ch4)                             &
+                     +emis_ant(i,k,j,p_e_ch4)*conv
+                chem(i,k,j,p_bald)  = chem(i,k,j,p_bald)                           &
+                     +emis_ant(i,k,j,p_e_bald)*conv
+                chem(i,k,j,p_hcooh)  = chem(i,k,j,p_hcooh)                         &
+                     +emis_ant(i,k,j,p_e_hcooh)*conv
+                chem(i,k,j,p_cco_oh)  = chem(i,k,j,p_cco_oh)                       &
+                     +emis_ant(i,k,j,p_e_cco_oh)*conv
+                chem(i,k,j,p_rco_oh)  = chem(i,k,j,p_rco_oh)                       &
+                     +emis_ant(i,k,j,p_e_rco_oh)*conv
+                chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                       &
+                     +emis_ant(i,k,j,p_e_nh3)*conv
+
+!Use OM/OC of 1.25 for fossil and OM:OC of 1.57 for biomass
+! O:C=0.06,H:C=1.8, N:C=0.02 for fossil : OM/OC=(16*0.06+12+14*0.02+12)/12=1.25
+!O:C=0.3 H:C=1.8, N:C=0.02 for biomass, OM/OC=1.57 for biomass
+
+        chem(i,k,j,p_pcg1_b_c)  =  chem(i,k,j,p_pcg1_b_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*1.17
+        chem(i,k,j,p_pcg2_b_c)  =  chem(i,k,j,p_pcg2_b_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*7.605
+        chem(i,k,j,p_pcg1_f_c)  =  chem(i,k,j,p_pcg1_f_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*1.17
+        chem(i,k,j,p_pcg2_f_c)  =  chem(i,k,j,p_pcg2_f_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*7.605
+        chem(i,k,j,p_pcg1_b_o)  =  chem(i,k,j,p_pcg1_b_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*0.40
+        chem(i,k,j,p_pcg2_b_o)  =  chem(i,k,j,p_pcg2_b_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*2.60
+        chem(i,k,j,p_pcg1_f_o)  =  chem(i,k,j,p_pcg1_f_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.08
+        chem(i,k,j,p_pcg2_f_o)  =  chem(i,k,j,p_pcg2_f_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.52
+
+
+             end do
+          end do
+       end do
+      else
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+             end do
+          end do
+       end do
+      endif
+
 
     CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then
@@ -777,7 +1025,7 @@ CONTAINS
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 
     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP, &
-          RACMSORG_AQ,RACMSORG_KPP,RACM_ESRLSORG_KPP)
+          RACMSORG_AQ,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
        call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             ebu,                                                        &
@@ -786,15 +1034,26 @@ CONTAINS
             seasalt_emiss_active,config_flags%kemit,                    &
             config_flags%biomass_burn_opt,                              &
             config_flags%num_soil_layers,config_flags%emiss_opt,        &
+!jdf
+            config_flags%dust_opt,                                      &
+            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                     &
+!jdf
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-
-    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+!Added the aerosol case SAPRC99_MOSAIC_4BIN_VBS2_KPP to call mosaic addemiss
+    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, & 
+          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
-            emis_ant,                                                    &
+!jdf
+            emis_ant,ebu,config_flags%biomass_burn_opt,                  &
+            config_flags%dust_opt,                                       &
+            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                      &
+!jdf
             dust_emiss_active, seasalt_emiss_active,                     &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &

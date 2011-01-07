@@ -68,7 +68,8 @@ contains
     tc(1,1,1,1)=chem(i,kts,j,p_dms)*1.d-6
     dmso(1,1)=dms_0(i,j)
      w10m(1,1)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
-     airmas(1,1,1)=-.01*(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
+  !---bug fixing: modified by Qing.Yang@pnl.gov to delete a 0.01 factor -Aug,2010--
+     airmas(1,1,1)=-1.0*(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
      dxy(1)=dx*dx
      tskin(1,1)=tsk(i,j)
 !

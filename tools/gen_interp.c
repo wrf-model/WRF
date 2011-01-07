@@ -43,7 +43,8 @@ int contains_tok( char *s1, char *s2, char *delims )
 }
   
 
-char halo_define[4*4096], halo_use[NAMELEN], halo_id[NAMELEN], x[NAMELEN] ;
+ /* Had to increase size for SOA from 4*4096 to 4*7000 */
+char halo_define[4*7000], halo_use[NAMELEN], halo_id[NAMELEN], x[NAMELEN] ;
 
 int 
 gen_nest_interp ( char * dirname )

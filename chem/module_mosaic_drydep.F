@@ -77,6 +77,7 @@
 		dimension( its:ite, jts:jte, 1:num_chem ) :: &
 		ddvel
 
+
 	type(grid_config_rec_type), intent(in) :: config_flags
 
 

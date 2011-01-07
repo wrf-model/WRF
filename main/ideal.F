@@ -9,8 +9,24 @@ PROGRAM ideal
 
    USE module_timing
    USE module_wrf_error
+#ifdef WRF_CHEM
+   USE module_input_chem_data
+   USE module_input_chem_bioemiss
+   USE module_input_chem_emissopt3
+#endif
 
    IMPLICIT NONE
+#ifdef WRF_CHEM
+  ! interface
+   INTERFACE
+     ! mediation-supplied
+     SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags)
+       USE module_domain
+       TYPE (domain) grid
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_read_wrf_chem_bioemiss
+   END INTERFACE
+#endif
 
    REAL    :: time
 
@@ -144,6 +160,75 @@ PROGRAM ideal
    CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
+#endif
+      
+#ifdef WRF_CHEM
+         IF( grid%chem_opt > 0 ) then
+           ! Read the chemistry data from a previous wrf forecast (wrfout file)
+           IF(grid%chem_in_opt == 1 ) THEN
+              message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'
+              CALL  wrf_message ( message )
+
+              CALL input_ext_chem_file( grid )
+              IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
+                                         .or. grid%biomass_burn_opt == BIOMASSB) THEN
+                 message = 'READING EMISSIONS DATA OPT 3'
+                 CALL  wrf_message ( message )
+!                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
+                 CALL med_read_wrf_chem_emissopt3 ( grid , config_flags)
+              END IF
+
+              IF(grid%bio_emiss_opt == 2 ) THEN
+                 message = 'READING BEIS3.11 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              else IF(grid%bio_emiss_opt == 3 ) THEN !shc
+                 message = 'READING MEGAN 2 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              END IF
+
+              IF(grid%dust_opt == 1 .or. grid%dmsemis_opt == 1 .or. grid%chem_opt == 300) THEN !shc
+                 message = 'READING GOCART BG AND/OR DUST and DMS REF FIELDS'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_gocart_bg ( grid , config_flags)
+              END IF
+
+           ELSEIF(grid%chem_in_opt == 0)then
+              ! Generate chemistry data from a idealized vertical profile
+              message = 'STARTING WITH BACKGROUND CHEMISTRY '
+              CALL  wrf_message ( message )
+
+              CALL input_chem_profile ( grid )
+
+              IF(grid%bio_emiss_opt == 2 ) THEN
+                 message = 'READING BEIS3.11 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              else IF(grid%bio_emiss_opt == 3 ) THEN !shc
+                 message = 'READING MEGAN 2 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              END IF
+              IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
+                                         .or. grid%biomass_burn_opt == BIOMASSB) THEN
+                 message = 'READING EMISSIONS DATA OPT 3'
+                 CALL  wrf_message ( message )
+!                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
+                 CALL med_read_wrf_chem_emissopt3 ( grid , config_flags)
+              END IF
+
+              IF(grid%dust_opt == 1 .or. grid%dmsemis_opt == 1 .or. grid%chem_opt == 300) THEN !shc
+                 message = 'READING GOCART BG AND/OR DUST and DMS REF FIELDS'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_gocart_bg ( grid , config_flags)
+              END IF
+
+           ELSE
+             message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'
+             CALL  wrf_message ( message )
+           END IF
+         END IF
 #endif
 
    CALL med_initialdata_output( head_grid , config_flags )

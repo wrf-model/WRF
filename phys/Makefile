@@ -335,6 +335,8 @@ module_sf_pxlsm.o: ../share/module_model_constants.o
 
 module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
 
+module_ra_rrtmg_lw.o: ../share/module_model_constants.o
+
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\

@@ -282,7 +282,11 @@ start_em.o:     module_bc_em.o \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		../share/module_date_time.o \
-		../phys/module_physics_init.o 
+		../phys/module_physics_init.o \
+		../chem/module_aerosols_sorgam.o \
+		../chem/module_gocart_aerosols.o \
+		../chem/module_mosaic_driver.o \
+		../chem/module_input_tracer.o
 
 solve_em.o:     module_small_step_em.o \
 		module_em.o            \

@@ -4008,7 +4008,7 @@ print *,'p target= ',target_x
       REAL , PARAMETER :: Rd = r_d
 
       DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte
+         DO k = kts , kte-1
             DO i = its , MIN (ide-1 , ite )
                t(i,k,j) = t(i,k,j) / ( ( p00 / p(i,k,j) ) ** (Rd / Cp) )
             END DO
@@ -4257,7 +4257,7 @@ print *,'p sfc = ',psfc(i,j)
       !  at which the liquid and ice phase change occurs.
 
       DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte
+         DO k = kts , kte-1
             DO i = its , MIN (ide-1 , ite )
                   rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )
             END DO
@@ -4266,7 +4266,7 @@ print *,'p sfc = ',psfc(i,j)
 
       IF ( wrt_liquid ) THEN
          DO j = jts , MIN ( jde-1 , jte )
-            DO k = kts , kte
+            DO k = kts , kte-1
                DO i = its , MIN (ide-1 , ite )
 
 ! es is reduced by RH here to avoid problems in low-pressure cases
@@ -4285,7 +4285,7 @@ print *,'p sfc = ',psfc(i,j)
 
       ELSE
          DO j = jts , MIN ( jde-1 , jte )
-            DO k = kts , kte
+            DO k = kts , kte-1
                DO i = its , MIN (ide-1 , ite )
 
                   t1 = t(i,k,j) - 273.16
@@ -4341,7 +4341,7 @@ print *,'p sfc = ',psfc(i,j)
       !  domain that is above the selected pressure level.
      
       DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte
+         DO k = kts , kte-1
             DO i = its , MIN (ide-1 , ite )
                IF ( p(i,k,j) .LT. qv_max_p_safe ) THEN
                   IF ( q(i,k,j) .GT. qv_max_flag ) THEN

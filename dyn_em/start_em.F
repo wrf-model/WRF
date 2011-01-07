@@ -1107,6 +1107,14 @@
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &
                          grid%waer1,grid%waer2,grid%waer3,grid%waer4,                           &
                          grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,     &
+                         grid%extaerlw1,grid%extaerlw2,grid%extaerlw3,grid%extaerlw4,           &
+                         grid%extaerlw5,grid%extaerlw6,grid%extaerlw7,grid%extaerlw8,           &
+                         grid%extaerlw9,grid%extaerlw10,grid%extaerlw11,grid%extaerlw12,        &
+                         grid%extaerlw13,grid%extaerlw14,grid%extaerlw15,grid%extaerlw16,       &
+                         grid%tauaerlw1,grid%tauaerlw2,grid%tauaerlw3,grid%tauaerlw4,           &
+                         grid%tauaerlw5,grid%tauaerlw6,grid%tauaerlw7,grid%tauaerlw8,           &
+                         grid%tauaerlw9,grid%tauaerlw10,grid%tauaerlw11,grid%tauaerlw12,        &
+                         grid%tauaerlw13,grid%tauaerlw14,grid%tauaerlw15,grid%tauaerlw16,       &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
                          grid%last_chem_time_year,grid%last_chem_time_month,               &
                          grid%last_chem_time_day,grid%last_chem_time_hour,                 &

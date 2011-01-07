@@ -30,7 +30,8 @@ scalar_derefs ( char * dirname )
   char * fn = "scalar_derefs.inc" ;
   char * p ;
   int linelen ;
-  char outstr[64*4096] ;
+  /* Had to increase size for SOA from 64*4096 to 64*7000, Manish Shrivastava 2010 */
+  char outstr[64*7000] ;
 
   if ( dirname == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) 

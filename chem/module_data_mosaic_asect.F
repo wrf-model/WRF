@@ -193,7 +193,7 @@
 
 	integer, parameter :: maxd_atype = 1
 	integer, parameter :: maxd_asize = 8
-	integer, parameter :: maxd_acomp = 12
+	integer, parameter :: maxd_acomp = 120 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
 	integer, parameter :: maxd_aphase = 2
 
 	integer, save :: ai_phase = -999888777
@@ -234,6 +234,90 @@
 	integer, save :: mastercompindx_oin_aer = -999888777
 	integer, save :: mastercompindx_oc_aer  = -999888777
 	integer, save :: mastercompindx_bc_aer  = -999888777
+        integer, save :: mastercompindx_pcg1_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg2_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg3_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg4_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg5_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg6_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg7_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg8_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg9_b_c_aer = -999888777
+        integer, save :: mastercompindx_pcg1_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg2_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg3_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg4_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg5_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg6_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg7_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg8_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg9_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg1_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg2_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg3_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg4_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg5_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg6_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg7_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg8_b_c_aer = -999888777
+        integer, save :: mastercompindx_opcg1_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg2_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg3_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg4_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg5_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg6_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg7_b_o_aer = -999888777
+        integer, save :: mastercompindx_opcg8_b_o_aer = -999888777
+        integer, save :: mastercompindx_pcg1_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg2_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg3_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg4_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg5_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg6_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg7_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg8_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg9_f_c_aer = -999888777
+        integer, save :: mastercompindx_pcg1_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg2_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg3_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg4_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg5_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg6_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg7_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg8_f_o_aer = -999888777
+        integer, save :: mastercompindx_pcg9_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg1_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg2_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg3_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg4_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg5_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg6_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg7_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg8_f_c_aer = -999888777
+        integer, save :: mastercompindx_opcg1_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg2_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg3_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg4_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg5_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg6_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg7_f_o_aer = -999888777
+        integer, save :: mastercompindx_opcg8_f_o_aer = -999888777
+        integer, save :: mastercompindx_ant1_c_aer = -999888777
+        integer, save :: mastercompindx_ant2_c_aer = -999888777
+        integer, save :: mastercompindx_ant3_c_aer = -999888777
+        integer, save :: mastercompindx_ant4_c_aer = -999888777
+        integer, save :: mastercompindx_ant1_o_aer = -999888777
+        integer, save :: mastercompindx_ant2_o_aer = -999888777
+        integer, save :: mastercompindx_ant3_o_aer = -999888777
+        integer, save :: mastercompindx_ant4_o_aer = -999888777
+        integer, save :: mastercompindx_biog1_c_aer = -999888777
+        integer, save :: mastercompindx_biog2_c_aer = -999888777
+        integer, save :: mastercompindx_biog3_c_aer = -999888777
+        integer, save :: mastercompindx_biog4_c_aer = -999888777
+        integer, save :: mastercompindx_biog1_o_aer = -999888777
+        integer, save :: mastercompindx_biog2_o_aer = -999888777
+        integer, save :: mastercompindx_biog3_o_aer = -999888777
+        integer, save :: mastercompindx_biog4_o_aer = -999888777
 
 
 	real, save ::   &
@@ -268,7 +352,96 @@
       	  lptr_ca_aer(maxd_asize, maxd_atype, maxd_aphase),       &
       	  lptr_oin_aer(maxd_asize, maxd_atype, maxd_aphase),      &
       	  lptr_oc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
-      	  lptr_bc_aer(maxd_asize, maxd_atype, maxd_aphase)
+      	  lptr_bc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+          lptr_pcg1_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg2_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg3_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg4_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg5_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg6_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg7_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg8_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg9_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg1_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg2_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg3_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg4_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg5_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg6_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg7_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg8_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg9_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg1_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg2_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg3_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg4_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg5_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg6_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg7_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg8_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg1_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg2_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg3_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg4_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg5_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg6_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg7_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg8_b_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg1_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg2_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg3_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg4_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg5_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg6_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg7_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg8_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg9_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg1_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg2_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg3_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg4_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg5_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg6_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg7_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg8_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_pcg9_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg1_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg2_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg3_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg4_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg5_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg6_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg7_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg8_f_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg1_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg2_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg3_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg4_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg5_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg6_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg7_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_opcg8_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_ant1_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_ant2_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_ant3_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_ant4_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_ant1_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_ant2_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_ant3_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_ant4_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog1_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog2_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog3_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog4_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog1_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog2_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog3_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_biog4_o_aer(maxd_asize, maxd_atype, maxd_aphase)
+
+
+
+
+
 
 ! rce 11-sep-2004 - eliminated all of the "..._wrfch" pointers
 !    so now there is only one set of pointers ("..._amode")
@@ -285,9 +458,96 @@
 	real, parameter :: mw_na_aer  = 22.990
 	real, parameter :: mw_ca_aer  = 40.080
 	real, parameter :: mw_oin_aer = 1.0
-	real, parameter :: mw_oc_aer  = 1.0
+	real, parameter :: mw_oc_aer  = 250.0
 	real, parameter :: mw_bc_aer  = 1.0
 	real, parameter :: mw_water_aer  = 18.016
+        real, parameter :: mw_pcg1_b_c_aer = 250.0
+        real, parameter :: mw_pcg2_b_c_aer = 250.0
+        real, parameter :: mw_pcg3_b_c_aer = 250.0
+        real, parameter :: mw_pcg4_b_c_aer = 250.0
+        real, parameter :: mw_pcg5_b_c_aer = 250.0
+        real, parameter :: mw_pcg6_b_c_aer = 250.0
+        real, parameter :: mw_pcg7_b_c_aer = 250.0
+        real, parameter :: mw_pcg8_b_c_aer = 250.0
+        real, parameter :: mw_pcg9_b_c_aer = 250.0
+        real, parameter :: mw_pcg1_b_o_aer = 250.0
+        real, parameter :: mw_pcg2_b_o_aer = 250.0
+        real, parameter :: mw_pcg3_b_o_aer = 250.0
+        real, parameter :: mw_pcg4_b_o_aer = 250.0
+        real, parameter :: mw_pcg5_b_o_aer = 250.0
+        real, parameter :: mw_pcg6_b_o_aer = 250.0
+        real, parameter :: mw_pcg7_b_o_aer = 250.0
+        real, parameter :: mw_pcg8_b_o_aer = 250.0
+        real, parameter :: mw_pcg9_b_o_aer = 250.0
+        real, parameter :: mw_opcg1_b_c_aer = 250.0
+        real, parameter :: mw_opcg2_b_c_aer = 250.0
+        real, parameter :: mw_opcg3_b_c_aer = 250.0
+        real, parameter :: mw_opcg4_b_c_aer = 250.0
+        real, parameter :: mw_opcg5_b_c_aer = 250.0
+        real, parameter :: mw_opcg6_b_c_aer = 250.0
+        real, parameter :: mw_opcg7_b_c_aer = 250.0
+        real, parameter :: mw_opcg8_b_c_aer = 250.0
+        real, parameter :: mw_opcg1_b_o_aer = 250.0
+        real, parameter :: mw_opcg2_b_o_aer = 250.0
+        real, parameter :: mw_opcg3_b_o_aer = 250.0
+        real, parameter :: mw_opcg4_b_o_aer = 250.0
+        real, parameter :: mw_opcg5_b_o_aer = 250.0
+        real, parameter :: mw_opcg6_b_o_aer = 250.0
+        real, parameter :: mw_opcg7_b_o_aer = 250.0
+        real, parameter :: mw_opcg8_b_o_aer = 250.0
+        real, parameter :: mw_pcg1_f_c_aer = 250.0
+        real, parameter :: mw_pcg2_f_c_aer = 250.0
+        real, parameter :: mw_pcg3_f_c_aer = 250.0
+        real, parameter :: mw_pcg4_f_c_aer = 250.0
+        real, parameter :: mw_pcg5_f_c_aer = 250.0
+        real, parameter :: mw_pcg6_f_c_aer = 250.0
+        real, parameter :: mw_pcg7_f_c_aer = 250.0
+        real, parameter :: mw_pcg8_f_c_aer = 250.0
+        real, parameter :: mw_pcg9_f_c_aer = 250.0
+        real, parameter :: mw_pcg1_f_o_aer = 250.0
+        real, parameter :: mw_pcg2_f_o_aer = 250.0
+        real, parameter :: mw_pcg3_f_o_aer = 250.0
+        real, parameter :: mw_pcg4_f_o_aer = 250.0
+        real, parameter :: mw_pcg5_f_o_aer = 250.0
+        real, parameter :: mw_pcg6_f_o_aer = 250.0
+        real, parameter :: mw_pcg7_f_o_aer = 250.0
+        real, parameter :: mw_pcg8_f_o_aer = 250.0
+        real, parameter :: mw_pcg9_f_o_aer = 250.0
+        real, parameter :: mw_opcg1_f_c_aer = 250.0
+        real, parameter :: mw_opcg2_f_c_aer = 250.0
+        real, parameter :: mw_opcg3_f_c_aer = 250.0
+        real, parameter :: mw_opcg4_f_c_aer = 250.0
+        real, parameter :: mw_opcg5_f_c_aer = 250.0
+        real, parameter :: mw_opcg6_f_c_aer = 250.0
+        real, parameter :: mw_opcg7_f_c_aer = 250.0
+        real, parameter :: mw_opcg8_f_c_aer = 250.0
+        real, parameter :: mw_opcg1_f_o_aer = 250.0
+        real, parameter :: mw_opcg2_f_o_aer = 250.0
+        real, parameter :: mw_opcg3_f_o_aer = 250.0
+        real, parameter :: mw_opcg4_f_o_aer = 250.0
+        real, parameter :: mw_opcg5_f_o_aer = 250.0
+        real, parameter :: mw_opcg6_f_o_aer = 250.0
+        real, parameter :: mw_opcg7_f_o_aer = 250.0
+        real, parameter :: mw_opcg8_f_o_aer = 250.0
+        real, parameter :: mw_ant1_c_aer = 250
+        real, parameter :: mw_ant2_c_aer = 250
+        real, parameter :: mw_ant3_c_aer = 250
+        real, parameter :: mw_ant4_c_aer = 250
+        real, parameter :: mw_ant1_o_aer = 250
+        real, parameter :: mw_ant2_o_aer = 250
+        real, parameter :: mw_ant3_o_aer = 250
+        real, parameter :: mw_ant4_o_aer = 250
+        real, parameter :: mw_biog1_c_aer = 250.0
+        real, parameter :: mw_biog2_c_aer = 250.0
+        real, parameter :: mw_biog3_c_aer = 250.0
+        real, parameter :: mw_biog4_c_aer = 250.0
+        real, parameter :: mw_biog1_o_aer = 250.0
+        real, parameter :: mw_biog2_o_aer = 250.0
+        real, parameter :: mw_biog3_o_aer = 250.0
+        real, parameter :: mw_biog4_o_aer = 250.0
+
+
+
 	
 !   dry densities (g/cm3)
 	real, parameter :: dens_so4_aer = 1.80
@@ -301,6 +561,92 @@
 	real, parameter :: dens_oin_aer = 2.60
 	real, parameter :: dens_oc_aer  = 1.00
 	real, parameter :: dens_bc_aer  = 1.70
+        real, parameter :: dens_pcg1_b_c_aer = 1.0
+        real, parameter :: dens_pcg2_b_c_aer = 1.0
+        real, parameter :: dens_pcg3_b_c_aer = 1.0
+        real, parameter :: dens_pcg4_b_c_aer = 1.0
+        real, parameter :: dens_pcg5_b_c_aer = 1.0
+        real, parameter :: dens_pcg6_b_c_aer = 1.0
+        real, parameter :: dens_pcg7_b_c_aer = 1.0
+        real, parameter :: dens_pcg8_b_c_aer = 1.0
+        real, parameter :: dens_pcg9_b_c_aer = 1.0
+        real, parameter :: dens_pcg1_b_o_aer = 1.0
+        real, parameter :: dens_pcg2_b_o_aer = 1.0
+        real, parameter :: dens_pcg3_b_o_aer = 1.0
+        real, parameter :: dens_pcg4_b_o_aer = 1.0
+        real, parameter :: dens_pcg5_b_o_aer = 1.0
+        real, parameter :: dens_pcg6_b_o_aer = 1.0
+        real, parameter :: dens_pcg7_b_o_aer = 1.0
+        real, parameter :: dens_pcg8_b_o_aer = 1.0
+        real, parameter :: dens_pcg9_b_o_aer = 1.0
+        real, parameter :: dens_opcg1_b_c_aer = 1.0
+        real, parameter :: dens_opcg2_b_c_aer = 1.0
+        real, parameter :: dens_opcg3_b_c_aer = 1.0
+        real, parameter :: dens_opcg4_b_c_aer = 1.0
+        real, parameter :: dens_opcg5_b_c_aer = 1.0
+        real, parameter :: dens_opcg6_b_c_aer = 1.0
+        real, parameter :: dens_opcg7_b_c_aer = 1.0
+        real, parameter :: dens_opcg8_b_c_aer = 1.0
+        real, parameter :: dens_opcg1_b_o_aer = 1.0
+        real, parameter :: dens_opcg2_b_o_aer = 1.0
+        real, parameter :: dens_opcg3_b_o_aer = 1.0
+        real, parameter :: dens_opcg4_b_o_aer = 1.0
+        real, parameter :: dens_opcg5_b_o_aer = 1.0
+        real, parameter :: dens_opcg6_b_o_aer = 1.0
+        real, parameter :: dens_opcg7_b_o_aer = 1.0
+        real, parameter :: dens_opcg8_b_o_aer = 1.0
+        real, parameter :: dens_pcg1_f_c_aer = 1.0
+        real, parameter :: dens_pcg2_f_c_aer = 1.0
+        real, parameter :: dens_pcg3_f_c_aer = 1.0
+        real, parameter :: dens_pcg4_f_c_aer = 1.0
+        real, parameter :: dens_pcg5_f_c_aer = 1.0
+        real, parameter :: dens_pcg6_f_c_aer = 1.0
+        real, parameter :: dens_pcg7_f_c_aer = 1.0
+        real, parameter :: dens_pcg8_f_c_aer = 1.0
+        real, parameter :: dens_pcg9_f_c_aer = 1.0
+        real, parameter :: dens_pcg1_f_o_aer = 1.0
+        real, parameter :: dens_pcg2_f_o_aer = 1.0
+        real, parameter :: dens_pcg3_f_o_aer = 1.0
+        real, parameter :: dens_pcg4_f_o_aer = 1.0
+        real, parameter :: dens_pcg5_f_o_aer = 1.0
+        real, parameter :: dens_pcg6_f_o_aer = 1.0
+        real, parameter :: dens_pcg7_f_o_aer = 1.0
+        real, parameter :: dens_pcg8_f_o_aer = 1.0
+        real, parameter :: dens_pcg9_f_o_aer = 1.0
+        real, parameter :: dens_opcg1_f_c_aer = 1.0
+        real, parameter :: dens_opcg2_f_c_aer = 1.0
+        real, parameter :: dens_opcg3_f_c_aer = 1.0
+        real, parameter :: dens_opcg4_f_c_aer = 1.0
+        real, parameter :: dens_opcg5_f_c_aer = 1.0
+        real, parameter :: dens_opcg6_f_c_aer = 1.0
+        real, parameter :: dens_opcg7_f_c_aer = 1.0
+        real, parameter :: dens_opcg8_f_c_aer = 1.0
+        real, parameter :: dens_opcg1_f_o_aer = 1.0
+        real, parameter :: dens_opcg2_f_o_aer = 1.0
+        real, parameter :: dens_opcg3_f_o_aer = 1.0
+        real, parameter :: dens_opcg4_f_o_aer = 1.0
+        real, parameter :: dens_opcg5_f_o_aer = 1.0
+        real, parameter :: dens_opcg6_f_o_aer = 1.0
+        real, parameter :: dens_opcg7_f_o_aer = 1.0
+        real, parameter :: dens_opcg8_f_o_aer = 1.0
+        real, parameter :: dens_ant1_c_aer = 1.0
+        real, parameter :: dens_ant2_c_aer = 1.0
+        real, parameter :: dens_ant3_c_aer = 1.0
+        real, parameter :: dens_ant4_c_aer = 1.0
+        real, parameter :: dens_ant1_o_aer = 1.0
+        real, parameter :: dens_ant2_o_aer = 1.0
+        real, parameter :: dens_ant3_o_aer = 1.0
+        real, parameter :: dens_ant4_o_aer = 1.0
+        real, parameter :: dens_biog1_c_aer = 1.0
+        real, parameter :: dens_biog2_c_aer = 1.0
+        real, parameter :: dens_biog3_c_aer = 1.0
+        real, parameter :: dens_biog4_c_aer = 1.0
+        real, parameter :: dens_biog1_o_aer = 1.0
+        real, parameter :: dens_biog2_o_aer = 1.0
+        real, parameter :: dens_biog3_o_aer = 1.0
+        real, parameter :: dens_biog4_o_aer = 1.0
+
+
 
 !   water density (g/cm3)
 !	real, parameter :: dens_water_asize  = 1.0
@@ -318,6 +664,91 @@
 	real, parameter :: hygro_oin_aer = 0.14
 	real, parameter :: hygro_oc_aer  = 0.14
 	real, parameter :: hygro_bc_aer  = 1.e-6
+        real, parameter :: hygro_pcg1_b_c_aer = 0.14
+        real, parameter :: hygro_pcg2_b_c_aer = 0.14
+        real, parameter :: hygro_pcg3_b_c_aer = 0.14
+        real, parameter :: hygro_pcg4_b_c_aer = 0.14
+        real, parameter :: hygro_pcg5_b_c_aer = 0.14
+        real, parameter :: hygro_pcg6_b_c_aer = 0.14
+        real, parameter :: hygro_pcg7_b_c_aer = 0.14
+        real, parameter :: hygro_pcg8_b_c_aer = 0.14
+        real, parameter :: hygro_pcg9_b_c_aer = 0.14
+        real, parameter :: hygro_pcg1_b_o_aer = 0.14
+        real, parameter :: hygro_pcg2_b_o_aer = 0.14
+        real, parameter :: hygro_pcg3_b_o_aer = 0.14
+        real, parameter :: hygro_pcg4_b_o_aer = 0.14
+        real, parameter :: hygro_pcg5_b_o_aer = 0.14
+        real, parameter :: hygro_pcg6_b_o_aer = 0.14
+        real, parameter :: hygro_pcg7_b_o_aer = 0.14
+        real, parameter :: hygro_pcg8_b_o_aer = 0.14
+        real, parameter :: hygro_pcg9_b_o_aer = 0.14
+        real, parameter :: hygro_opcg1_b_c_aer = 0.14
+        real, parameter :: hygro_opcg2_b_c_aer = 0.14
+        real, parameter :: hygro_opcg3_b_c_aer = 0.14
+        real, parameter :: hygro_opcg4_b_c_aer = 0.14
+        real, parameter :: hygro_opcg5_b_c_aer = 0.14
+        real, parameter :: hygro_opcg6_b_c_aer = 0.14
+        real, parameter :: hygro_opcg7_b_c_aer = 0.14
+        real, parameter :: hygro_opcg8_b_c_aer = 0.14
+        real, parameter :: hygro_opcg1_b_o_aer = 0.14
+        real, parameter :: hygro_opcg2_b_o_aer = 0.14
+        real, parameter :: hygro_opcg3_b_o_aer = 0.14
+        real, parameter :: hygro_opcg4_b_o_aer = 0.14
+        real, parameter :: hygro_opcg5_b_o_aer = 0.14
+        real, parameter :: hygro_opcg6_b_o_aer = 0.14
+        real, parameter :: hygro_opcg7_b_o_aer = 0.14
+        real, parameter :: hygro_opcg8_b_o_aer = 0.14
+        real, parameter :: hygro_pcg1_f_c_aer = 0.14
+        real, parameter :: hygro_pcg2_f_c_aer = 0.14
+        real, parameter :: hygro_pcg3_f_c_aer = 0.14
+        real, parameter :: hygro_pcg4_f_c_aer = 0.14
+        real, parameter :: hygro_pcg5_f_c_aer = 0.14
+        real, parameter :: hygro_pcg6_f_c_aer = 0.14
+        real, parameter :: hygro_pcg7_f_c_aer = 0.14
+        real, parameter :: hygro_pcg8_f_c_aer = 0.14
+        real, parameter :: hygro_pcg9_f_c_aer = 0.14
+        real, parameter :: hygro_pcg1_f_o_aer = 0.14
+        real, parameter :: hygro_pcg2_f_o_aer = 0.14
+        real, parameter :: hygro_pcg3_f_o_aer = 0.14
+        real, parameter :: hygro_pcg4_f_o_aer = 0.14
+        real, parameter :: hygro_pcg5_f_o_aer = 0.14
+        real, parameter :: hygro_pcg6_f_o_aer = 0.14
+        real, parameter :: hygro_pcg7_f_o_aer = 0.14
+        real, parameter :: hygro_pcg8_f_o_aer = 0.14
+        real, parameter :: hygro_pcg9_f_o_aer = 0.14
+        real, parameter :: hygro_opcg1_f_c_aer = 0.14
+        real, parameter :: hygro_opcg2_f_c_aer = 0.14
+        real, parameter :: hygro_opcg3_f_c_aer = 0.14
+        real, parameter :: hygro_opcg4_f_c_aer = 0.14
+        real, parameter :: hygro_opcg5_f_c_aer = 0.14
+        real, parameter :: hygro_opcg6_f_c_aer = 0.14
+        real, parameter :: hygro_opcg7_f_c_aer = 0.14
+        real, parameter :: hygro_opcg8_f_c_aer = 0.14
+        real, parameter :: hygro_opcg1_f_o_aer = 0.14
+        real, parameter :: hygro_opcg2_f_o_aer = 0.14
+        real, parameter :: hygro_opcg3_f_o_aer = 0.14
+        real, parameter :: hygro_opcg4_f_o_aer = 0.14
+        real, parameter :: hygro_opcg5_f_o_aer = 0.14
+        real, parameter :: hygro_opcg6_f_o_aer = 0.14
+        real, parameter :: hygro_opcg7_f_o_aer = 0.14
+        real, parameter :: hygro_opcg8_f_o_aer = 0.14
+        real, parameter :: hygro_ant1_c_aer = 0.14
+        real, parameter :: hygro_ant2_c_aer = 0.14
+        real, parameter :: hygro_ant3_c_aer = 0.14
+        real, parameter :: hygro_ant4_c_aer = 0.14
+        real, parameter :: hygro_ant1_o_aer = 0.14
+        real, parameter :: hygro_ant2_o_aer = 0.14
+        real, parameter :: hygro_ant3_o_aer = 0.14
+        real, parameter :: hygro_ant4_o_aer = 0.14
+        real, parameter :: hygro_biog1_c_aer = 0.14
+        real, parameter :: hygro_biog2_c_aer = 0.14
+        real, parameter :: hygro_biog3_c_aer = 0.14
+        real, parameter :: hygro_biog4_c_aer = 0.14
+        real, parameter :: hygro_biog1_o_aer = 0.14
+        real, parameter :: hygro_biog2_o_aer = 0.14
+        real, parameter :: hygro_biog3_o_aer = 0.14
+        real, parameter :: hygro_biog4_o_aer = 0.14
+
 
 
 	integer, save ::   &

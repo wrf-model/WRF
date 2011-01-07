@@ -42,10 +42,10 @@
               naer, naercomp, nelectrolyte, nsalt,	&
               nsoluble, ncation, nanion
       parameter(ngas_ioa = 5)	! inorganic volatile aerosol species that have a gaseous counterpart
-      parameter(ngas_soa = 8)	! volatile soa species that have a gaseous counterpart
+      parameter(ngas_soa = 68+16)	! volatile soa species that have a gaseous counterpart
       parameter(ngas_volatile = ngas_ioa + ngas_soa)
-      parameter(naer = 19)	! num of chemical species per bin (inorg + oc + bc + oin + soa)
-      parameter(naercomp = 34)	! num of electrolytes + oc, bc, oin, & soa
+      parameter(naer = 11+68+16)	! num of chemical species per bin (inorg + oc + bc + oin + soa)
+      parameter(naercomp = 26+68+16)	! num of electrolytes + oc, bc, oin, & soa
       parameter(nelectrolyte = 22) ! num of electrolytes
       parameter(nsalt    = 15)	! num of soluble salts
       parameter(nsoluble = 20)	! num of soluble electrolytes
@@ -97,16 +97,66 @@
 ! gas
       integer, save ::   &
        ih2so4_g,     ihno3_g,      ihcl_g,      inh3_g,   &
-       imsa_g,                                            &
-       iaro1_g,      iaro2_g,      ialk1_g,     iole1_g,  &
-       iapi1_g,      iapi2_g,      ilim1_g,     ilim2_g
+       imsa_g
+
+      integer, save ::   &
+      ipcg1_b_c_g,ipcg2_b_c_g,ipcg3_b_c_g,ipcg4_b_c_g, &
+      ipcg5_b_c_g,ipcg6_b_c_g,ipcg7_b_c_g,ipcg8_b_c_g, &
+      ipcg9_b_c_g,ipcg1_b_o_g,ipcg2_b_o_g,ipcg3_b_o_g, &
+      ipcg4_b_o_g,ipcg5_b_o_g,ipcg6_b_o_g,ipcg7_b_o_g, &
+      ipcg8_b_o_g,ipcg9_b_o_g,iopcg1_b_c_g,iopcg2_b_c_g,&
+      iopcg3_b_c_g, iopcg4_b_c_g,iopcg5_b_c_g,iopcg6_b_c_g,&
+      iopcg7_b_c_g,iopcg8_b_c_g,iopcg1_b_o_g,iopcg2_b_o_g,&
+      iopcg3_b_o_g,iopcg4_b_o_g,iopcg5_b_o_g,iopcg6_b_o_g,&
+      iopcg7_b_o_g,iopcg8_b_o_g,&
+      ipcg1_f_c_g,ipcg2_f_c_g,ipcg3_f_c_g,ipcg4_f_c_g, &
+      ipcg5_f_c_g,ipcg6_f_c_g,ipcg7_f_c_g,ipcg8_f_c_g, &
+      ipcg9_f_c_g,ipcg1_f_o_g,ipcg2_f_o_g,ipcg3_f_o_g, &
+      ipcg4_f_o_g,ipcg5_f_o_g,ipcg6_f_o_g,ipcg7_f_o_g, &
+      ipcg8_f_o_g,ipcg9_f_o_g,iopcg1_f_c_g,iopcg2_f_c_g,&
+      iopcg3_f_c_g, iopcg4_f_c_g,iopcg5_f_c_g,iopcg6_f_c_g,&
+      iopcg7_f_c_g,iopcg8_f_c_g,iopcg1_f_o_g,iopcg2_f_o_g,&
+      iopcg3_f_o_g,iopcg4_f_o_g,iopcg5_f_o_g,iopcg6_f_o_g,&
+      iopcg7_f_o_g,iopcg8_f_o_g,iant1_c_g,iant2_c_g,iant3_c_g, &
+      iant4_c_g,ibiog1_c_g,ibiog2_c_g,ibiog3_c_g,ibiog4_c_g, &
+      iant1_o_g,iant2_o_g,iant3_o_g, &
+      iant4_o_g,ibiog1_o_g,ibiog2_o_g,ibiog3_o_g,ibiog4_o_g
+
+
+ 
 
 ! aerosol generic
       integer, save ::   &
        iso4_a,     ino3_a,     icl_a,     inh4_a,     ico3_a,  &
        imsa_a,     ina_a,      ica_a,     ioc_a,      ibc_a,   &
-       ioin_a,     iaro1_a,    iaro2_a,   ialk1_a,    iole1_a, &
-       iapi1_a,    iapi2_a,    ilim1_a,   ilim2_a
+       ioin_a
+
+      integer, save ::   &
+      ipcg1_b_c_a,ipcg2_b_c_a,ipcg3_b_c_a,ipcg4_b_c_a, &
+      ipcg5_b_c_a,ipcg6_b_c_a,ipcg7_b_c_a,ipcg8_b_c_a, &
+      ipcg9_b_c_a,ipcg1_b_o_a,ipcg2_b_o_a,ipcg3_b_o_a, &
+      ipcg4_b_o_a,ipcg5_b_o_a,ipcg6_b_o_a,ipcg7_b_o_a, &
+      ipcg8_b_o_a,ipcg9_b_o_a,iopcg1_b_c_a,iopcg2_b_c_a,&
+      iopcg3_b_c_a, iopcg4_b_c_a,iopcg5_b_c_a,iopcg6_b_c_a,&
+      iopcg7_b_c_a,iopcg8_b_c_a,iopcg1_b_o_a,iopcg2_b_o_a,&
+      iopcg3_b_o_a,iopcg4_b_o_a,iopcg5_b_o_a,iopcg6_b_o_a,&
+      iopcg7_b_o_a,iopcg8_b_o_a,&
+      ipcg1_f_c_a,ipcg2_f_c_a,ipcg3_f_c_a,ipcg4_f_c_a, &
+      ipcg5_f_c_a,ipcg6_f_c_a,ipcg7_f_c_a,ipcg8_f_c_a, &
+      ipcg9_f_c_a,ipcg1_f_o_a,ipcg2_f_o_a,ipcg3_f_o_a, &
+      ipcg4_f_o_a,ipcg5_f_o_a,ipcg6_f_o_a,ipcg7_f_o_a, &
+      ipcg8_f_o_a,ipcg9_f_o_a,iopcg1_f_c_a,iopcg2_f_c_a,&
+      iopcg3_f_c_a, iopcg4_f_c_a,iopcg5_f_c_a,iopcg6_f_c_a,&
+      iopcg7_f_c_a,iopcg8_f_c_a,iopcg1_f_o_a,iopcg2_f_o_a,&
+      iopcg3_f_o_a,iopcg4_f_o_a,iopcg5_f_o_a,iopcg6_f_o_a,&
+      iopcg7_f_o_a,iopcg8_f_o_a, &
+      iant1_c_a,iant2_c_a,iant3_c_a, &
+      iant4_c_a,ibiog1_c_a,ibiog2_c_a,ibiog3_c_a,ibiog4_c_a, &
+      iant1_o_a,iant2_o_a,iant3_o_a, &
+      iant4_o_a,ibiog1_o_a,ibiog2_o_a,ibiog3_o_a,ibiog4_o_a
+
+
+
 
 ! aerosol elecctrolytes/compounds
       integer, save ::   &
@@ -115,9 +165,34 @@
        jcaso4,     jcano3,     jcacl2,     jcaco3,     jh2so4,  &
        jhno3,      jhcl,       jhhso4,                          &
        jnh4msa,    jnamsa,     jcamsa2,    jmsa,                &
-       joc,        jbc,        join,       jaro1,      jaro2,   &
-       jalk1,      jole1,      japi1,      japi2,      jlim1,   &
-       jlim2,      jh2o
+       joc,        jbc,        join,       jh2o
+
+      integer, save ::   &
+      jpcg1_b_c,jpcg2_b_c,jpcg3_b_c,jpcg4_b_c, &
+      jpcg5_b_c,jpcg6_b_c,jpcg7_b_c,jpcg8_b_c, &
+      jpcg9_b_c,jpcg1_b_o,jpcg2_b_o,jpcg3_b_o, &
+      jpcg4_b_o,jpcg5_b_o,jpcg6_b_o,jpcg7_b_o, &
+      jpcg8_b_o,jpcg9_b_o,jopcg1_b_c,jopcg2_b_c,&
+      jopcg3_b_c, jopcg4_b_c,jopcg5_b_c,jopcg6_b_c,&
+      jopcg7_b_c,jopcg8_b_c,jopcg1_b_o,jopcg2_b_o,&
+      jopcg3_b_o,jopcg4_b_o,jopcg5_b_o,jopcg6_b_o,&
+      jopcg7_b_o,jopcg8_b_o,&
+      jpcg1_f_c,jpcg2_f_c,jpcg3_f_c,jpcg4_f_c, &
+      jpcg5_f_c,jpcg6_f_c,jpcg7_f_c,jpcg8_f_c, &
+      jpcg9_f_c,jpcg1_f_o,jpcg2_f_o,jpcg3_f_o, &
+      jpcg4_f_o,jpcg5_f_o,jpcg6_f_o,jpcg7_f_o, &
+      jpcg8_f_o,jpcg9_f_o,jopcg1_f_c,jopcg2_f_c,&
+      jopcg3_f_c, jopcg4_f_c,jopcg5_f_c,jopcg6_f_c,&
+      jopcg7_f_c,jopcg8_f_c,jopcg1_f_o,jopcg2_f_o,&
+      jopcg3_f_o,jopcg4_f_o,jopcg5_f_o,jopcg6_f_o,&
+      jopcg7_f_o,jopcg8_f_o, &
+      jant1_c,jant2_c,jant3_c, &
+      jant4_c,jbiog1_c,jbiog2_c,jbiog3_c,jbiog4_c, &
+      jant1_o,jant2_o,jant3_o, &
+      jant4_o,jbiog1_o,jbiog2_o,jbiog3_o,jbiog4_o
+
+
+
 
 ! aerosol ions
       integer, save ::   			&
@@ -212,12 +287,15 @@
 	idry_case3a(nbin_a_maxd),	&  ! mYES, mNO
 	ieqblm_bin(nbin_a_maxd),	&  ! myes, mno
 	ieqblm_astem,			&  ! myes, mno
+        ieqblm_soa,                     &  ! mYES, mNO
 	nastem_call,			&  !
 	nastem_fail,			&  !
 	isteps_astem,			&  !
 	nsteps_astem,			&  !
+        isteps_SOA,                     &
 	nsteps_astem_max,		&  !
 	nmax_ASTEM,			&  !
+        flagsoap(ngas_soa),             &       ! Added by Manish Shrivastav on 01/11/10
 	integrate(ngas_volatile,3,nbin_a_maxd)  ! mYES, mNO
 
 
@@ -228,10 +306,13 @@
 	sfc_a(ngas_volatile),			&  ! nmol/m^3
 	Heff(ngas_volatile,nbin_a_maxd),	&  ! 
 	kg(ngas_volatile,nbin_a_maxd),		&  ! 1/s
+        fraceq(ngas_volatile,nbin_a_maxd),      &  ! 1/s
 	df_gas_s(ngas_volatile,nbin_a_maxd),	&  ! nmol/m^3 (g-g*) = driving force)
 	df_gas_l(ngas_volatile,nbin_a_maxd),	&  ! nmol/m^3 (g-g*) = driving force)
+        df_gas_o(ngas_volatile,nbin_a_maxd),     &  ! nmol/m^3 (G-G*) = driving force)
 	flux_s(ngas_volatile,nbin_a_maxd),	&  ! nmol/m^3/s
 	flux_l(ngas_volatile,nbin_a_maxd),	&  ! nmol/m^3/s
+        flux_o(ngas_volatile,nbin_a_maxd),      &  ! nmol/m^3/s
 	sumkg_h2so4,				&  ! 1/s
 	sumkg_msa,				&  ! 1/s
 	sumkg_nh3,				&  ! 1/s
@@ -247,6 +328,7 @@
 	volatile_s(ngas_volatile,nbin_a_maxd), 	&  ! nmol/m^3
 	phi_volatile_s(ngas_volatile,nbin_a_maxd),	&  ! relative dr. force = (g-g*)/g
 	phi_volatile_l(ngas_volatile,nbin_a_maxd),	&  ! relative dr. force = (g-g*)/g
+        phi_volatile_o(ngas_volatile,nbin_a_maxd),      &  ! relative dr. force = (g-g*)/g
 	phi_nh4no3_s,				&  ! relative dr. force: 0 to 1
 	phi_nh4cl_s,				&  ! relative dr. force: 0 to 1
 	sum_vdf_s(ngas_volatile),		&  ! (nmol/m^3)^2

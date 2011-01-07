@@ -404,7 +404,7 @@ SUBROUTINE microphysics_driver(                                          &
 
 !-----------
        IF( PRESENT(chem_opt) .AND. PRESENT(progn) ) THEN
-       IF( chem_opt==0 .AND. progn==1 .AND. mp_physics==LINSCHEME ) THEN
+       IF( chem_opt==0 .AND. progn==1 .AND. (mp_physics==LINSCHEME  .OR. mp_physics==MORR_TWO_MOMENT)) THEN
           IF( PRESENT( QNDROP_CURR ) ) THEN
              CALL wrf_debug ( 100 , 'microphysics_driver: calling prescribe_aerosol_mixactivate' )
 ! 06-nov-2005 rce - id  & itimestep added to arg list
@@ -419,8 +419,8 @@ SUBROUTINE microphysics_driver(                                          &
                   its,ite, jts,jte, kts,kte,                    &
                   F_QC=f_qc, F_QI=f_qi                          )
           END IF
-       ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME ) THEN
-             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME.")
+       ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME .AND. mp_physics/=MORR_TWO_MOMENT) THEN
+             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
        END IF
        END IF
 
@@ -528,9 +528,13 @@ SUBROUTINE microphysics_driver(                                          &
                     ,qscuten=qscuten                     &  ! hm
                     ,qicuten=qicuten                     &  ! hm
                     ,mu=mu                          &  ! hm
+                    ,F_QNDROP=f_qndrop                   &  ! hm for wrf-chem
+                 ,QNDROP=qndrop_curr                     &  ! hm for wrf-chem
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,QLSINK=qlsink                                     & ! jdf for wrf-chem
+                 ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   & ! jdf for wrf-chem
                                                                     )
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling morrison two moment')

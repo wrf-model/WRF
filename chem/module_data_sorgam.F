@@ -1163,7 +1163,7 @@ MODULE module_data_sorgam
 	real, parameter :: mw_so4_aer   = 96.066
 	real, parameter :: mw_no3_aer   = 62.007
 	real, parameter :: mw_nh4_aer   = 18.042
-	real, parameter :: mw_oc_aer    = 1.0
+	real, parameter :: mw_oc_aer    = 250.0
 	real, parameter :: mw_ec_aer    = 1.0
 	real, parameter :: mw_oin_aer   = 1.0
 	real, parameter :: mw_dust_aer  = 100.087

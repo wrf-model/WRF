@@ -79,7 +79,7 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
   USE module_configure
   USE module_state_description                       
   USE module_data_sorgam
-          
+  USE module_state_description, only:  param_first_scalar        
    INTEGER,      INTENT(IN   ) :: id,julday,                              &
                                   numgas, current_month,                  &
                                   ids,ide, jds,jde, kds,kde,              &
@@ -236,7 +236,7 @@ tile_lon_loop : &
                             numgas, srfres, aer_res_def(i,j), aer_res_zcen(i,j), p_sulf )
 
 !-----------------------------------------------------------
-!wig: CMBZ does not have HO and HO2 last so need to copy all species
+!wig: CBMZ does not have HO and HO2 last so need to copy all species
 !      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
 !-----------------------------------------------------------
             ddvel(i,j,1:numgas) = ddvel0d(1:numgas)
@@ -256,6 +256,7 @@ tile_lon_loop : &
       if ( (config_flags%chem_opt == CBMZ          ) .or.   &
            (config_flags%chem_opt == CBMZ_BB       ) .or.   &
            (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.   &
+           (config_flags%chem_opt == CBMZ_MOSAIC_KPP   ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.   &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.   &
@@ -317,7 +318,27 @@ tile_lon_loop : &
          end do
       end if
 
-!-----------------------------------------------------------
+
+      if  (config_flags%chem_opt == CBMZ_MOSAIC_KPP  )   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_aro1)        = 0
+               ddvel(i,j,p_aro2)         = 0
+               ddvel(i,j,p_alk1)         = 0
+               ddvel(i,j,p_ole1)        = 0
+               ddvel(i,j,p_api1)        = 0
+               ddvel(i,j,p_api2)        = 0
+               ddvel(i,j,p_lim1)        = 0
+               ddvel(i,j,p_lim2)        = 0
+               ddvel(i,j,p_api)        = 0
+               ddvel(i,j,p_lim)        = 0
+
+            end do
+         end do
+      end if
+
+
+
 ! For gocartracm,radm
 !-----------------------------------------------------------
       if  ((config_flags%chem_opt == GOCARTRACM_KPP)  .OR.     &
@@ -1470,6 +1491,7 @@ include 'netcdf.inc'
 !     [KH298]=mole/(l atm)
 !--------------------------------------------------
 is_cbm4_kpp : &
+
         if (config_flags%chem_opt /= CBM4_KPP) then
            if( config_flags%chem_opt == MOZART_KPP .or. &
                config_flags%chem_opt == MOZCART_KPP ) then
@@ -1794,6 +1816,545 @@ is_cbm4_kpp : &
         dvj(p_ho2) = 0.174
         if(p_ol2 > 1) dvj(p_ol2) = 0.189
         if(p_par > 1) dvj(p_par) = 0.118   !wig, 1-May-2007: for CBMZ
+! Dep constants for SAPRCNOV, produced automatically using create_WRF_dep.m script,05-Oct-2009 pablosaide@uiowa.edu
+        if(p_methacro.gt.1)then
+! HSTAR
+          hstar(p_h2so4) = 2.600E+06
+          hstar(p_ccho) = 1.700E+01
+          hstar(p_rcho) = 4.200E+03
+          hstar(p_etoh) = 2.200E+02
+          hstar(p_cco_oh) = 4.100E+03
+          hstar(p_rco_oh) = 4.100E+03
+          hstar(p_bacl) = 2.700E+01
+          hstar(p_bald) = 4.200E+01
+          hstar(p_isoprod) = 1.300E-02
+          hstar(p_methacro) = 6.500E+00
+          hstar(p_prod2) = 2.000E+01
+          hstar(p_dcb1) = 4.200E+03
+          hstar(p_dcb2) = 4.200E+03
+          hstar(p_dcb3) = 4.200E+03
+          hstar(p_ethene) = 4.700E-03
+          hstar(p_isoprene) = 1.300E-02
+          hstar(p_c2h2) = 1.000E-03
+          hstar(p_alk3) = 1.200E-03
+          hstar(p_alk4) = 1.200E-03
+          hstar(p_alk5) = 1.200E-03
+          hstar(p_aro1) = 2.100E-01
+          hstar(p_aro2) = 2.100E-01
+          hstar(p_ole1) = 1.300E-02
+          hstar(p_ole2) = 1.300E-02
+          hstar(p_terp) = 1.200E-03
+          hstar(p_sesq) = 1.200E-03
+          hstar(p_rno3) = 2.000E+00
+          hstar(p_nphe) = 2.100E-01
+          hstar(p_phen) = 1.900E+03
+          hstar(p_pan2) = 2.900E+00
+          hstar(p_pbzn) = 2.900E+00
+          hstar(p_ma_pan) = 2.900E+00
+          hstar(p_cco_ooh) = 3.100E+02
+          hstar(p_rco_o2) = 4.100E+03
+          hstar(p_rco_ooh) = 3.100E+02
+          hstar(p_xn) = 1.000E+00
+          hstar(p_xc) = 1.000E+00
+          hstar(p_c_o2) = 4.000E+03
+          hstar(p_cooh) = 3.100E+02
+          hstar(p_rooh) = 3.400E+02
+          hstar(p_ro2_r) = 4.000E+03
+          hstar(p_r2o2) = 4.000E+03
+          hstar(p_ro2_n) = 4.000E+03
+          hstar(p_cco_o2) = 1.700E+01
+          hstar(p_bzco_o2) = 2.100E-01
+          hstar(p_ma_rco3) = 6.500E+00
+! DHR
+          dhr(p_h2so4) = 0.000E+00
+          dhr(p_ccho) = 5.000E+03
+          dhr(p_rcho) = 0.000E+00
+          dhr(p_etoh) = 5.200E+03
+          dhr(p_cco_oh) = 6.300E+03
+          dhr(p_rco_oh) = 6.300E+03
+          dhr(p_bacl) = 0.000E+00
+          dhr(p_bald) = 4.600E+03
+          dhr(p_isoprod) = 0.000E+00
+          dhr(p_methacro) = 0.000E+00
+          dhr(p_prod2) = 5.000E+03
+          dhr(p_dcb1) = 0.000E+00
+          dhr(p_dcb2) = 0.000E+00
+          dhr(p_dcb3) = 0.000E+00
+          dhr(p_ethene) = 1.800E+03
+          dhr(p_isoprene) = 0.000E+00
+          dhr(p_c2h2) = 0.000E+00
+          dhr(p_alk3) = 3.100E+03
+          dhr(p_alk4) = 3.100E+03
+          dhr(p_alk5) = 3.100E+03
+          dhr(p_aro1) = 3.600E+03
+          dhr(p_aro2) = 3.600E+03
+          dhr(p_ole1) = 6.400E+03
+          dhr(p_ole2) = 6.400E+03
+          dhr(p_terp) = 3.100E+03
+          dhr(p_sesq) = 3.100E+03
+          dhr(p_rno3) = 2.000E+03
+          dhr(p_nphe) = 3.600E+03
+          dhr(p_phen) = 7.300E+03
+          dhr(p_pan2) = 0.000E+00
+          dhr(p_pbzn) = 5.900E+03
+          dhr(p_ma_pan) = 0.000E+00
+          dhr(p_cco_ooh) = 5.200E+03
+          dhr(p_rco_o2) = 6.300E+03
+          dhr(p_rco_ooh) = 5.200E+03
+          dhr(p_xn) = 1.000E+00
+          dhr(p_xc) = 1.000E+00
+          dhr(p_c_o2) = 5.900E+03
+          dhr(p_cooh) = 5.200E+03
+          dhr(p_rooh) = 6.000E+03
+          dhr(p_ro2_r) = 5.900E+03
+          dhr(p_r2o2) = 5.900E+03
+          dhr(p_ro2_n) = 5.900E+03
+          dhr(p_cco_o2) = 5.000E+03
+          dhr(p_bzco_o2) = 3.600E+03
+          dhr(p_ma_rco3) = 0.000E+00
+! F0
+          f0(p_h2so4) = 0.000E+00
+          f0(p_ccho) = 0.000E+00
+          f0(p_rcho) = 0.000E+00
+          f0(p_etoh) = 0.000E+00
+          f0(p_cco_oh) = 0.000E+00
+          f0(p_rco_oh) = 0.000E+00
+          f0(p_bacl) = 0.000E+00
+          f0(p_bald) = 0.000E+00
+          f0(p_isoprod) = 0.000E+00
+          f0(p_methacro) = 0.000E+00
+          f0(p_prod2) = 0.000E+00
+          f0(p_dcb1) = 0.000E+00
+          f0(p_dcb2) = 0.000E+00
+          f0(p_dcb3) = 0.000E+00
+          f0(p_ethene) = 0.000E+00
+          f0(p_isoprene) = 0.000E+00
+          f0(p_c2h2) = 0.000E+00
+          f0(p_alk3) = 0.000E+00
+          f0(p_alk4) = 0.000E+00
+          f0(p_alk5) = 0.000E+00
+          f0(p_aro1) = 0.000E+00
+          f0(p_aro2) = 0.000E+00
+          f0(p_ole1) = 0.000E+00
+          f0(p_ole2) = 0.000E+00
+          f0(p_terp) = 0.000E+00
+          f0(p_sesq) = 0.000E+00
+          f0(p_rno3) = 0.000E+00
+          f0(p_nphe) = 0.000E+00
+          f0(p_phen) = 0.000E+00
+          f0(p_pan2) = 0.000E+00
+          f0(p_pbzn) = 0.000E+00
+          f0(p_ma_pan) = 0.000E+00
+          f0(p_cco_ooh) = 0.000E+00
+          f0(p_rco_o2) = 0.000E+00
+          f0(p_rco_ooh) = 0.000E+00
+          f0(p_xn) = 0.000E+00
+          f0(p_xc) = 0.000E+00
+          f0(p_c_o2) = 0.000E+00
+          f0(p_cooh) = 0.000E+00
+          f0(p_rooh) = 0.000E+00
+          f0(p_ro2_r) = 0.000E+00
+          f0(p_r2o2) = 0.000E+00
+          f0(p_ro2_n) = 0.000E+00
+          f0(p_cco_o2) = 0.000E+00
+          f0(p_bzco_o2) = 0.000E+00
+          f0(p_ma_rco3) = 0.000E+00
+! DVJ
+          dvj(p_h2so4) = 1.200E-01
+          dvj(p_ccho) = 1.420E-01
+          dvj(p_rcho) = 1.420E-01
+          dvj(p_etoh) = 1.280E-01
+          dvj(p_cco_oh) = 1.000E-01
+          dvj(p_rco_oh) = 1.000E-01
+          dvj(p_bacl) = 1.000E-01
+          dvj(p_bald) = 1.420E-01
+          dvj(p_isoprod) = 1.000E-01
+          dvj(p_methacro) = 1.420E-01
+          dvj(p_prod2) = 9.800E-02
+          dvj(p_dcb1) = 1.420E-01
+          dvj(p_dcb2) = 1.420E-01
+          dvj(p_dcb3) = 1.420E-01
+          dvj(p_ethene) = 1.780E-01
+          dvj(p_isoprene) = 1.000E-01
+          dvj(p_c2h2) = 1.000E-01
+          dvj(p_alk3) = 2.000E-01
+          dvj(p_alk4) = 2.000E-01
+          dvj(p_alk5) = 2.000E-01
+          dvj(p_aro1) = 9.800E-02
+          dvj(p_aro2) = 9.800E-02
+          dvj(p_ole1) = 1.780E-01
+          dvj(p_ole2) = 1.780E-01
+          dvj(p_terp) = 1.000E-01
+          dvj(p_sesq) = 1.000E-01
+          dvj(p_rno3) = 1.390E-01
+          dvj(p_nphe) = 1.000E-01
+          dvj(p_phen) = 1.000E-01
+          dvj(p_pan2) = 3.600E-02
+          dvj(p_pbzn) = 3.600E-02
+          dvj(p_ma_pan) = 3.600E-02
+          dvj(p_cco_ooh) = 1.500E-01
+          dvj(p_rco_o2) = 1.000E-01
+          dvj(p_rco_ooh) = 1.500E-01
+          dvj(p_xn) = 1.000E-01
+          dvj(p_xc) = 1.000E-01
+          dvj(p_c_o2) = 1.760E-01
+          dvj(p_cooh) = 1.500E-01
+          dvj(p_rooh) = 1.500E-01
+          dvj(p_ro2_r) = 1.000E-01
+          dvj(p_r2o2) = 1.760E-01
+          dvj(p_ro2_n) = 1.000E-01
+          dvj(p_cco_o2) = 1.000E-01
+          dvj(p_bzco_o2) = 1.000E-01
+          dvj(p_ma_rco3) = 1.420E-01
+          endif
+
+!hstar for SOA species assumed 2700 following CMU approach
+     if(p_pcg1_b_c.gt.1)  hstar(p_pcg1_b_c) =2.7E+3
+     if(p_pcg2_b_c.gt.1)  hstar(p_pcg2_b_c) =2.7E+3
+     if(p_pcg3_b_c.gt.1)  hstar(p_pcg3_b_c)=2.7E+3
+     if(p_pcg4_b_c.gt.1)  hstar(p_pcg4_b_c)=2.7E+3
+     if(p_pcg5_b_c.gt.1)  hstar(p_pcg5_b_c)=2.7E+3
+     if(p_pcg6_b_c.gt.1)  hstar(p_pcg6_b_c)=2.7E+3
+     if(p_pcg7_b_c.gt.1)  hstar(p_pcg7_b_c)=2.7E+3
+     if(p_pcg8_b_c.gt.1)  hstar(p_pcg8_b_c)=2.7E+3
+     if(p_pcg9_b_c.gt.1)  hstar(p_pcg9_b_c)=2.7E+3
+     if(p_opcg1_b_c.gt.1)  hstar(p_opcg1_b_c) =2.7E+3
+     if(p_opcg2_b_c.gt.1)  hstar(p_opcg2_b_c) =2.7E+3
+     if(p_opcg3_b_c.gt.1)  hstar(p_opcg3_b_c)=2.7E+3
+     if(p_opcg4_b_c.gt.1)  hstar(p_opcg4_b_c)=2.7E+3
+     if(p_opcg5_b_c.gt.1)  hstar(p_opcg5_b_c)=2.7E+3
+     if(p_opcg6_b_c.gt.1)  hstar(p_opcg6_b_c)=2.7E+3
+     if(p_opcg7_b_c.gt.1)  hstar(p_opcg7_b_c)=2.7E+3
+     if(p_opcg8_b_c.gt.1)  hstar(p_opcg8_b_c)=2.7E+3
+     if(p_pcg1_b_o.gt.1)  hstar(p_pcg1_b_o) =2.7E+3
+     if(p_pcg2_b_o.gt.1)  hstar(p_pcg2_b_o) =2.7E+3
+     if(p_pcg3_b_o.gt.1)  hstar(p_pcg3_b_o)=2.7E+3
+     if(p_pcg4_b_o.gt.1)  hstar(p_pcg4_b_o)=2.7E+3
+     if(p_pcg5_b_o.gt.1)  hstar(p_pcg5_b_o)=2.7E+3
+     if(p_pcg6_b_o.gt.1)  hstar(p_pcg6_b_o)=2.7E+3
+     if(p_pcg7_b_o.gt.1)  hstar(p_pcg7_b_o)=2.7E+3
+     if(p_pcg8_b_o.gt.1)  hstar(p_pcg8_b_o)=2.7E+3
+     if(p_pcg9_b_o.gt.1)  hstar(p_pcg9_b_o)=2.7E+3
+     if(p_opcg1_b_o.gt.1)  hstar(p_opcg1_b_o) =2.7E+3
+     if(p_opcg2_b_o.gt.1)  hstar(p_opcg2_b_o) =2.7E+3
+     if(p_opcg3_b_o.gt.1)  hstar(p_opcg3_b_o)=2.7E+3
+     if(p_opcg4_b_o.gt.1)  hstar(p_opcg4_b_o)=2.7E+3
+     if(p_opcg5_b_o.gt.1)  hstar(p_opcg5_b_o)=2.7E+3
+     if(p_opcg6_b_o.gt.1)  hstar(p_opcg6_b_o)=2.7E+3
+     if(p_opcg7_b_o.gt.1)  hstar(p_opcg7_b_o)=2.7E+3
+     if(p_opcg8_b_o.gt.1)  hstar(p_opcg8_b_o)=2.7E+3
+     if(p_pcg1_f_c.gt.1)  hstar(p_pcg1_f_c) =2.7E+3
+     if(p_pcg2_f_c.gt.1)  hstar(p_pcg2_f_c) =2.7E+3
+     if(p_pcg3_f_c.gt.1)  hstar(p_pcg3_f_c)=2.7E+3
+     if(p_pcg4_f_c.gt.1)  hstar(p_pcg4_f_c)=2.7E+3
+     if(p_pcg5_f_c.gt.1)  hstar(p_pcg5_f_c)=2.7E+3
+     if(p_pcg6_f_c.gt.1)  hstar(p_pcg6_f_c)=2.7E+3
+     if(p_pcg7_f_c.gt.1)  hstar(p_pcg7_f_c)=2.7E+3
+     if(p_pcg8_f_c.gt.1)  hstar(p_pcg8_f_c)=2.7E+3
+     if(p_pcg9_f_c.gt.1)  hstar(p_pcg9_f_c)=2.7E+3
+     if(p_opcg1_f_c.gt.1)  hstar(p_opcg1_f_c) =2.7E+3
+     if(p_opcg2_f_c.gt.1)  hstar(p_opcg2_f_c) =2.7E+3
+     if(p_opcg3_f_c.gt.1)  hstar(p_opcg3_f_c)=2.7E+3
+     if(p_opcg4_f_c.gt.1)  hstar(p_opcg4_f_c)=2.7E+3
+     if(p_opcg5_f_c.gt.1)  hstar(p_opcg5_f_c)=2.7E+3
+     if(p_opcg6_f_c.gt.1)  hstar(p_opcg6_f_c)=2.7E+3
+     if(p_opcg7_f_c.gt.1)  hstar(p_opcg7_f_c)=2.7E+3
+     if(p_opcg8_f_c.gt.1)  hstar(p_opcg8_f_c)=2.7E+3
+     if(p_pcg1_f_o.gt.1)  hstar(p_pcg1_f_o) =2.7E+3
+     if(p_pcg2_f_o.gt.1)  hstar(p_pcg2_f_o) =2.7E+3
+     if(p_pcg3_f_o.gt.1)  hstar(p_pcg3_f_o)=2.7E+3
+     if(p_pcg4_f_o.gt.1)  hstar(p_pcg4_f_o)=2.7E+3
+     if(p_pcg5_f_o.gt.1)  hstar(p_pcg5_f_o)=2.7E+3
+     if(p_pcg6_f_o.gt.1)  hstar(p_pcg6_f_o)=2.7E+3
+     if(p_pcg7_f_o.gt.1)  hstar(p_pcg7_f_o)=2.7E+3
+     if(p_pcg8_f_o.gt.1)  hstar(p_pcg8_f_o)=2.7E+3
+     if(p_pcg9_f_o.gt.1)  hstar(p_pcg9_f_o)=2.7E+3
+     if(p_opcg1_f_o.gt.1)  hstar(p_opcg1_f_o) =2.7E+3
+     if(p_opcg2_f_o.gt.1)  hstar(p_opcg2_f_o) =2.7E+3
+     if(p_opcg3_f_o.gt.1)  hstar(p_opcg3_f_o)=2.7E+3
+     if(p_opcg4_f_o.gt.1)  hstar(p_opcg4_f_o)=2.7E+3
+     if(p_opcg5_f_o.gt.1)  hstar(p_opcg5_f_o)=2.7E+3
+     if(p_opcg6_f_o.gt.1)  hstar(p_opcg6_f_o)=2.7E+3
+     if(p_opcg7_f_o.gt.1)  hstar(p_opcg7_f_o)=2.7E+3
+     if(p_opcg8_f_o.gt.1)  hstar(p_opcg8_f_o)=2.7E+3
+     if(p_ant1_c.gt.1)     hstar(p_ant1_c)=2.7E+3
+     if(p_ant2_c.gt.1)     hstar(p_ant2_c)=2.7E+3
+     if(p_ant3_c.gt.1)     hstar(p_ant3_c)=2.7E+3
+     if(p_ant4_c.gt.1)     hstar(p_ant4_c)=2.7E+3
+     if(p_ant1_o.gt.1)     hstar(p_ant1_o)=2.7E+3
+     if(p_ant2_o.gt.1)     hstar(p_ant2_o)=2.7E+3
+     if(p_ant3_o.gt.1)     hstar(p_ant3_o)=2.7E+3
+     if(p_ant4_o.gt.1)     hstar(p_ant4_o)=2.7E+3
+     if(p_biog1_c.gt.1)    hstar(p_biog1_c)=2.7E+3
+     if(p_biog2_c.gt.1)    hstar(p_biog2_c)=2.7E+3
+     if(p_biog3_c.gt.1)    hstar(p_biog3_c)=2.7E+3
+     if(p_biog4_c.gt.1)    hstar(p_biog4_c)=2.7E+3
+     if(p_biog1_o.gt.1)    hstar(p_biog1_o)=2.7E+3
+     if(p_biog2_o.gt.1)    hstar(p_biog2_o)=2.7E+3
+     if(p_biog3_o.gt.1)    hstar(p_biog3_o)=2.7E+3
+     if(p_biog4_o.gt.1)    hstar(p_biog4_o)=2.7E+3
+
+     if(p_pcg1_b_c.gt.1)  dhr(p_pcg1_b_c) =6.4E+3
+     if(p_pcg2_b_c.gt.1)  dhr(p_pcg2_b_c) =6.4E+3
+     if(p_pcg3_b_c.gt.1)  dhr(p_pcg3_b_c)=6.4E+3
+     if(p_pcg4_b_c.gt.1)  dhr(p_pcg4_b_c)=6.4E+3
+     if(p_pcg5_b_c.gt.1)  dhr(p_pcg5_b_c)=6.4E+3
+     if(p_pcg6_b_c.gt.1)  dhr(p_pcg6_b_c)=6.4E+3
+     if(p_pcg7_b_c.gt.1)  dhr(p_pcg7_b_c)=6.4E+3
+     if(p_pcg8_b_c.gt.1)  dhr(p_pcg8_b_c)=6.4E+3
+     if(p_pcg9_b_c.gt.1)  dhr(p_pcg9_b_c)=6.4E+3
+     if(p_opcg1_b_c.gt.1)  dhr(p_opcg1_b_c) =6.4E+3
+     if(p_opcg2_b_c.gt.1)  dhr(p_opcg2_b_c) =6.4E+3
+     if(p_opcg3_b_c.gt.1)  dhr(p_opcg3_b_c)=6.4E+3
+     if(p_opcg4_b_c.gt.1)  dhr(p_opcg4_b_c)=6.4E+3
+     if(p_opcg5_b_c.gt.1)  dhr(p_opcg5_b_c)=6.4E+3
+     if(p_opcg6_b_c.gt.1)  dhr(p_opcg6_b_c)=6.4E+3
+     if(p_opcg7_b_c.gt.1)  dhr(p_opcg7_b_c)=6.4E+3
+     if(p_opcg8_b_c.gt.1)  dhr(p_opcg8_b_c)=6.4E+3
+     if(p_pcg1_b_o.gt.1)  dhr(p_pcg1_b_o) =6.4E+3
+     if(p_pcg2_b_o.gt.1)  dhr(p_pcg2_b_o) =6.4E+3
+     if(p_pcg3_b_o.gt.1)  dhr(p_pcg3_b_o)=6.4E+3
+     if(p_pcg4_b_o.gt.1)  dhr(p_pcg4_b_o)=6.4E+3
+     if(p_pcg5_b_o.gt.1)  dhr(p_pcg5_b_o)=6.4E+3
+     if(p_pcg6_b_o.gt.1)  dhr(p_pcg6_b_o)=6.4E+3
+     if(p_pcg7_b_o.gt.1)  dhr(p_pcg7_b_o)=6.4E+3
+     if(p_pcg8_b_o.gt.1)  dhr(p_pcg8_b_o)=6.4E+3
+     if(p_pcg9_b_o.gt.1)  dhr(p_pcg9_b_o)=6.4E+3
+     if(p_opcg1_b_o.gt.1)  dhr(p_opcg1_b_o) =6.4E+3
+     if(p_opcg2_b_o.gt.1)  dhr(p_opcg2_b_o) =6.4E+3
+     if(p_opcg3_b_o.gt.1)  dhr(p_opcg3_b_o)=6.4E+3
+     if(p_opcg4_b_o.gt.1)  dhr(p_opcg4_b_o)=6.4E+3
+     if(p_opcg5_b_o.gt.1)  dhr(p_opcg5_b_o)=6.4E+3
+     if(p_opcg6_b_o.gt.1)  dhr(p_opcg6_b_o)=6.4E+3
+     if(p_opcg7_b_o.gt.1)  dhr(p_opcg7_b_o)=6.4E+3
+     if(p_opcg8_b_o.gt.1)  dhr(p_opcg8_b_o)=6.4E+3
+     if(p_pcg1_f_c.gt.1)  dhr(p_pcg1_f_c) =6.4E+3
+     if(p_pcg2_f_c.gt.1)  dhr(p_pcg2_f_c) =6.4E+3
+     if(p_pcg3_f_c.gt.1)  dhr(p_pcg3_f_c)=6.4E+3
+     if(p_pcg4_f_c.gt.1)  dhr(p_pcg4_f_c)=6.4E+3
+     if(p_pcg5_f_c.gt.1)  dhr(p_pcg5_f_c)=6.4E+3
+     if(p_pcg6_f_c.gt.1)  dhr(p_pcg6_f_c)=6.4E+3
+     if(p_pcg7_f_c.gt.1)  dhr(p_pcg7_f_c)=6.4E+3
+     if(p_pcg8_f_c.gt.1)  dhr(p_pcg8_f_c)=6.4E+3
+     if(p_pcg9_f_c.gt.1)  dhr(p_pcg9_f_c)=6.4E+3
+     if(p_opcg1_f_c.gt.1)  dhr(p_opcg1_f_c) =6.4E+3
+     if(p_opcg2_f_c.gt.1)  dhr(p_opcg2_f_c) =6.4E+3
+     if(p_opcg3_f_c.gt.1)  dhr(p_opcg3_f_c)=6.4E+3
+     if(p_opcg4_f_c.gt.1)  dhr(p_opcg4_f_c)=6.4E+3
+     if(p_opcg5_f_c.gt.1)  dhr(p_opcg5_f_c)=6.4E+3
+     if(p_opcg6_f_c.gt.1)  dhr(p_opcg6_f_c)=6.4E+3
+     if(p_opcg7_f_c.gt.1)  dhr(p_opcg7_f_c)=6.4E+3
+     if(p_opcg8_f_c.gt.1)  dhr(p_opcg8_f_c)=6.4E+3
+     if(p_pcg1_f_o.gt.1)  dhr(p_pcg1_f_o) =6.4E+3
+     if(p_pcg2_f_o.gt.1)  dhr(p_pcg2_f_o) =6.4E+3
+     if(p_pcg3_f_o.gt.1)  dhr(p_pcg3_f_o)=6.4E+3
+     if(p_pcg4_f_o.gt.1)  dhr(p_pcg4_f_o)=6.4E+3
+     if(p_pcg5_f_o.gt.1)  dhr(p_pcg5_f_o)=6.4E+3
+     if(p_pcg6_f_o.gt.1)  dhr(p_pcg6_f_o)=6.4E+3
+     if(p_pcg7_f_o.gt.1)  dhr(p_pcg7_f_o)=6.4E+3
+     if(p_pcg8_f_o.gt.1)  dhr(p_pcg8_f_o)=6.4E+3
+     if(p_pcg9_f_o.gt.1)  dhr(p_pcg9_f_o)=6.4E+3
+     if(p_opcg1_f_o.gt.1)  dhr(p_opcg1_f_o) =6.4E+3
+     if(p_opcg2_f_o.gt.1)  dhr(p_opcg2_f_o) =6.4E+3
+     if(p_opcg3_f_o.gt.1)  dhr(p_opcg3_f_o)=6.4E+3
+     if(p_opcg4_f_o.gt.1)  dhr(p_opcg4_f_o)=6.4E+3
+     if(p_opcg5_f_o.gt.1)  dhr(p_opcg5_f_o)=6.4E+3
+     if(p_opcg6_f_o.gt.1)  dhr(p_opcg6_f_o)=6.4E+3
+     if(p_opcg7_f_o.gt.1)  dhr(p_opcg7_f_o)=6.4E+3
+     if(p_opcg8_f_o.gt.1)  dhr(p_opcg8_f_o)=6.4E+3
+     if(p_ant1_c.gt.1)     dhr(p_ant1_c)=6.4E+3
+     if(p_ant2_c.gt.1)     dhr(p_ant2_c)=6.4E+3
+     if(p_ant3_c.gt.1)     dhr(p_ant3_c)=6.4E+3
+     if(p_ant4_c.gt.1)     dhr(p_ant4_c)=6.4E+3
+     if(p_ant1_o.gt.1)     dhr(p_ant1_o)=6.4E+3
+     if(p_ant2_o.gt.1)     dhr(p_ant2_o)=6.4E+3
+     if(p_ant3_o.gt.1)     dhr(p_ant3_o)=6.4E+3
+     if(p_ant4_o.gt.1)     dhr(p_ant4_o)=6.4E+3
+     if(p_biog1_c.gt.1)    dhr(p_biog1_c)=6.4E+3
+     if(p_biog2_c.gt.1)    dhr(p_biog2_c)=6.4E+3
+     if(p_biog3_c.gt.1)    dhr(p_biog3_c)=6.4E+3
+     if(p_biog4_c.gt.1)    dhr(p_biog4_c)=6.4E+3
+     if(p_biog1_o.gt.1)    dhr(p_biog1_o)=6.4E+3
+     if(p_biog2_o.gt.1)    dhr(p_biog2_o)=6.4E+3
+     if(p_biog3_o.gt.1)    dhr(p_biog3_o)=6.4E+3
+     if(p_biog4_o.gt.1)    dhr(p_biog4_o)=6.4E+3
+
+!Assume reactivity =0 for SOA species
+
+     if(p_pcg1_b_c.gt.1)  f0(p_pcg1_b_c) =0.0000
+     if(p_pcg2_b_c.gt.1)  f0(p_pcg2_b_c) =0.0000
+     if(p_pcg3_b_c.gt.1)  f0(p_pcg3_b_c)=0.0000
+     if(p_pcg4_b_c.gt.1)  f0(p_pcg4_b_c)=0.0000
+     if(p_pcg5_b_c.gt.1)  f0(p_pcg5_b_c)=0.0000
+     if(p_pcg6_b_c.gt.1)  f0(p_pcg6_b_c)=0.0000
+     if(p_pcg7_b_c.gt.1)  f0(p_pcg7_b_c)=0.0000
+     if(p_pcg8_b_c.gt.1)  f0(p_pcg8_b_c)=0.0000
+     if(p_pcg9_b_c.gt.1)  f0(p_pcg9_b_c)=0.0000
+     if(p_opcg1_b_c.gt.1)  f0(p_opcg1_b_c) =0.0000
+     if(p_opcg2_b_c.gt.1)  f0(p_opcg2_b_c) =0.0000
+     if(p_opcg3_b_c.gt.1)  f0(p_opcg3_b_c)=0.0000
+     if(p_opcg4_b_c.gt.1)  f0(p_opcg4_b_c)=0.0000
+     if(p_opcg5_b_c.gt.1)  f0(p_opcg5_b_c)=0.0000
+     if(p_opcg6_b_c.gt.1)  f0(p_opcg6_b_c)=0.0000
+     if(p_opcg7_b_c.gt.1)  f0(p_opcg7_b_c)=0.0000
+     if(p_opcg8_b_c.gt.1)  f0(p_opcg8_b_c)=0.0000
+     if(p_pcg1_b_o.gt.1)  f0(p_pcg1_b_o) =0.0000
+     if(p_pcg2_b_o.gt.1)  f0(p_pcg2_b_o) =0.0000
+     if(p_pcg3_b_o.gt.1)  f0(p_pcg3_b_o)=0.0000
+     if(p_pcg4_b_o.gt.1)  f0(p_pcg4_b_o)=0.0000
+     if(p_pcg5_b_o.gt.1)  f0(p_pcg5_b_o)=0.0000
+     if(p_pcg6_b_o.gt.1)  f0(p_pcg6_b_o)=0.0000
+     if(p_pcg7_b_o.gt.1)  f0(p_pcg7_b_o)=0.0000
+     if(p_pcg8_b_o.gt.1)  f0(p_pcg8_b_o)=0.0000
+     if(p_pcg9_b_o.gt.1)  f0(p_pcg9_b_o)=0.0000
+     if(p_opcg1_b_o.gt.1)  f0(p_opcg1_b_o) =0.0000
+     if(p_opcg2_b_o.gt.1)  f0(p_opcg2_b_o) =0.0000
+     if(p_opcg3_b_o.gt.1)  f0(p_opcg3_b_o)=0.0000
+     if(p_opcg4_b_o.gt.1)  f0(p_opcg4_b_o)=0.0000
+     if(p_opcg5_b_o.gt.1)  f0(p_opcg5_b_o)=0.0000
+     if(p_opcg6_b_o.gt.1)  f0(p_opcg6_b_o)=0.0000
+     if(p_opcg7_b_o.gt.1)  f0(p_opcg7_b_o)=0.0000
+     if(p_opcg8_b_o.gt.1)  f0(p_opcg8_b_o)=0.0000
+     if(p_pcg1_f_c.gt.1)  f0(p_pcg1_f_c) =0.0000
+     if(p_pcg2_f_c.gt.1)  f0(p_pcg2_f_c) =0.0000
+     if(p_pcg3_f_c.gt.1)  f0(p_pcg3_f_c)=0.0000
+     if(p_pcg4_f_c.gt.1)  f0(p_pcg4_f_c)=0.0000
+     if(p_pcg5_f_c.gt.1)  f0(p_pcg5_f_c)=0.0000
+     if(p_pcg6_f_c.gt.1)  f0(p_pcg6_f_c)=0.0000
+     if(p_pcg7_f_c.gt.1)  f0(p_pcg7_f_c)=0.0000
+     if(p_pcg8_f_c.gt.1)  f0(p_pcg8_f_c)=0.0000
+     if(p_pcg9_f_c.gt.1)  f0(p_pcg9_f_c)=0.0000
+     if(p_opcg1_f_c.gt.1)  f0(p_opcg1_f_c) =0.0000
+     if(p_opcg2_f_c.gt.1)  f0(p_opcg2_f_c) =0.0000
+     if(p_opcg3_f_c.gt.1)  f0(p_opcg3_f_c)=0.0000
+     if(p_opcg4_f_c.gt.1)  f0(p_opcg4_f_c)=0.0000
+     if(p_opcg5_f_c.gt.1)  f0(p_opcg5_f_c)=0.0000
+     if(p_opcg6_f_c.gt.1)  f0(p_opcg6_f_c)=0.0000
+     if(p_opcg7_f_c.gt.1)  f0(p_opcg7_f_c)=0.0000
+     if(p_opcg8_f_c.gt.1)  f0(p_opcg8_f_c)=0.0000
+     if(p_pcg1_f_o.gt.1)  f0(p_pcg1_f_o) =0.0000
+     if(p_pcg2_f_o.gt.1)  f0(p_pcg2_f_o) =0.0000
+     if(p_pcg3_f_o.gt.1)  f0(p_pcg3_f_o)=0.0000
+     if(p_pcg4_f_o.gt.1)  f0(p_pcg4_f_o)=0.0000
+     if(p_pcg5_f_o.gt.1)  f0(p_pcg5_f_o)=0.0000
+     if(p_pcg6_f_o.gt.1)  f0(p_pcg6_f_o)=0.0000
+     if(p_pcg7_f_o.gt.1)  f0(p_pcg7_f_o)=0.0000
+     if(p_pcg8_f_o.gt.1)  f0(p_pcg8_f_o)=0.0000
+     if(p_pcg9_f_o.gt.1)  f0(p_pcg9_f_o)=0.0000
+     if(p_opcg1_f_o.gt.1)  f0(p_opcg1_f_o) =0.0000
+     if(p_opcg2_f_o.gt.1)  f0(p_opcg2_f_o) =0.0000
+     if(p_opcg3_f_o.gt.1)  f0(p_opcg3_f_o)=0.0000
+     if(p_opcg4_f_o.gt.1)  f0(p_opcg4_f_o)=0.0000
+     if(p_opcg5_f_o.gt.1)  f0(p_opcg5_f_o)=0.0000
+     if(p_opcg6_f_o.gt.1)  f0(p_opcg6_f_o)=0.0000
+     if(p_opcg7_f_o.gt.1)  f0(p_opcg7_f_o)=0.0000
+     if(p_opcg8_f_o.gt.1)  f0(p_opcg8_f_o)=0.0000
+     if(p_ant1_c.gt.1)     f0(p_ant1_c)=0.0000
+     if(p_ant2_c.gt.1)     f0(p_ant2_c)=0.0000
+     if(p_ant3_c.gt.1)     f0(p_ant3_c)=0.0000
+     if(p_ant4_c.gt.1)     f0(p_ant4_c)=0.0000
+     if(p_ant1_o.gt.1)     f0(p_ant1_o)=0.0000
+     if(p_ant2_o.gt.1)     f0(p_ant2_o)=0.0000
+     if(p_ant3_o.gt.1)     f0(p_ant3_o)=0.0000
+     if(p_ant4_o.gt.1)     f0(p_ant4_o)=0.0000
+     if(p_biog1_c.gt.1)    f0(p_biog1_c)=0.0000
+     if(p_biog2_c.gt.1)    f0(p_biog2_c)=0.0000
+     if(p_biog3_c.gt.1)    f0(p_biog3_c)=0.0000
+     if(p_biog4_c.gt.1)    f0(p_biog4_c)=0.0000
+     if(p_biog1_o.gt.1)    f0(p_biog1_o)=0.0000
+     if(p_biog2_o.gt.1)    f0(p_biog2_o)=0.0000
+     if(p_biog3_o.gt.1)    f0(p_biog3_o)=0.0000
+     if(p_biog4_o.gt.1)    f0(p_biog4_o)=0.0000
+
+
+!Diffusion coefficients of SOA species
+     if(p_pcg1_b_c.gt.1)  dvj(p_pcg1_b_c) =1.0E-1
+     if(p_pcg2_b_c.gt.1)  dvj(p_pcg2_b_c) =1.0E-1
+     if(p_pcg3_b_c.gt.1)  dvj(p_pcg3_b_c)=1.0E-1
+     if(p_pcg4_b_c.gt.1)  dvj(p_pcg4_b_c)=1.0E-1
+     if(p_pcg5_b_c.gt.1)  dvj(p_pcg5_b_c)=1.0E-1
+     if(p_pcg6_b_c.gt.1)  dvj(p_pcg6_b_c)=1.0E-1
+     if(p_pcg7_b_c.gt.1)  dvj(p_pcg7_b_c)=1.0E-1
+     if(p_pcg8_b_c.gt.1)  dvj(p_pcg8_b_c)=1.0E-1
+     if(p_pcg9_b_c.gt.1)  dvj(p_pcg9_b_c)=1.0E-1
+     if(p_opcg1_b_c.gt.1)  dvj(p_opcg1_b_c) =1.0E-1
+     if(p_opcg2_b_c.gt.1)  dvj(p_opcg2_b_c) =1.0E-1
+     if(p_opcg3_b_c.gt.1)  dvj(p_opcg3_b_c)=1.0E-1
+     if(p_opcg4_b_c.gt.1)  dvj(p_opcg4_b_c)=1.0E-1
+     if(p_opcg5_b_c.gt.1)  dvj(p_opcg5_b_c)=1.0E-1
+     if(p_opcg6_b_c.gt.1)  dvj(p_opcg6_b_c)=1.0E-1
+     if(p_opcg7_b_c.gt.1)  dvj(p_opcg7_b_c)=1.0E-1
+     if(p_opcg8_b_c.gt.1)  dvj(p_opcg8_b_c)=1.0E-1
+     if(p_pcg1_b_o.gt.1)  dvj(p_pcg1_b_o) =1.0E-1
+     if(p_pcg2_b_o.gt.1)  dvj(p_pcg2_b_o) =1.0E-1
+     if(p_pcg3_b_o.gt.1)  dvj(p_pcg3_b_o)=1.0E-1
+     if(p_pcg4_b_o.gt.1)  dvj(p_pcg4_b_o)=1.0E-1
+     if(p_pcg5_b_o.gt.1)  dvj(p_pcg5_b_o)=1.0E-1
+     if(p_pcg6_b_o.gt.1)  dvj(p_pcg6_b_o)=1.0E-1
+     if(p_pcg7_b_o.gt.1)  dvj(p_pcg7_b_o)=1.0E-1
+     if(p_pcg8_b_o.gt.1)  dvj(p_pcg8_b_o)=1.0E-1
+     if(p_pcg9_b_o.gt.1)  dvj(p_pcg9_b_o)=1.0E-1
+     if(p_opcg1_b_o.gt.1)  dvj(p_opcg1_b_o) =1.0E-1
+     if(p_opcg2_b_o.gt.1)  dvj(p_opcg2_b_o) =1.0E-1
+     if(p_opcg3_b_o.gt.1)  dvj(p_opcg3_b_o)=1.0E-1
+     if(p_opcg4_b_o.gt.1)  dvj(p_opcg4_b_o)=1.0E-1
+     if(p_opcg5_b_o.gt.1)  dvj(p_opcg5_b_o)=1.0E-1
+     if(p_opcg6_b_o.gt.1)  dvj(p_opcg6_b_o)=1.0E-1
+     if(p_opcg7_b_o.gt.1)  dvj(p_opcg7_b_o)=1.0E-1
+     if(p_opcg8_b_o.gt.1)  dvj(p_opcg8_b_o)=1.0E-1
+     if(p_pcg1_f_c.gt.1)  dvj(p_pcg1_f_c) =1.0E-1
+     if(p_pcg2_f_c.gt.1)  dvj(p_pcg2_f_c) =1.0E-1
+     if(p_pcg3_f_c.gt.1)  dvj(p_pcg3_f_c)=1.0E-1
+     if(p_pcg4_f_c.gt.1)  dvj(p_pcg4_f_c)=1.0E-1
+     if(p_pcg5_f_c.gt.1)  dvj(p_pcg5_f_c)=1.0E-1
+     if(p_pcg6_f_c.gt.1)  dvj(p_pcg6_f_c)=1.0E-1
+     if(p_pcg7_f_c.gt.1)  dvj(p_pcg7_f_c)=1.0E-1
+     if(p_pcg8_f_c.gt.1)  dvj(p_pcg8_f_c)=1.0E-1
+     if(p_pcg9_f_c.gt.1)  dvj(p_pcg9_f_c)=1.0E-1
+     if(p_opcg1_f_c.gt.1)  dvj(p_opcg1_f_c) =1.0E-1
+     if(p_opcg2_f_c.gt.1)  dvj(p_opcg2_f_c) =1.0E-1
+     if(p_opcg3_f_c.gt.1)  dvj(p_opcg3_f_c)=1.0E-1
+     if(p_opcg4_f_c.gt.1)  dvj(p_opcg4_f_c)=1.0E-1
+     if(p_opcg5_f_c.gt.1)  dvj(p_opcg5_f_c)=1.0E-1
+     if(p_opcg6_f_c.gt.1)  dvj(p_opcg6_f_c)=1.0E-1
+     if(p_opcg7_f_c.gt.1)  dvj(p_opcg7_f_c)=1.0E-1
+     if(p_opcg8_f_c.gt.1)  dvj(p_opcg8_f_c)=1.0E-1
+     if(p_pcg1_f_o.gt.1)  dvj(p_pcg1_f_o) =1.0E-1
+     if(p_pcg2_f_o.gt.1)  dvj(p_pcg2_f_o) =1.0E-1
+     if(p_pcg3_f_o.gt.1)  dvj(p_pcg3_f_o)=1.0E-1
+     if(p_pcg4_f_o.gt.1)  dvj(p_pcg4_f_o)=1.0E-1
+     if(p_pcg5_f_o.gt.1)  dvj(p_pcg5_f_o)=1.0E-1
+     if(p_pcg6_f_o.gt.1)  dvj(p_pcg6_f_o)=1.0E-1
+     if(p_pcg7_f_o.gt.1)  dvj(p_pcg7_f_o)=1.0E-1
+     if(p_pcg8_f_o.gt.1)  dvj(p_pcg8_f_o)=1.0E-1
+     if(p_pcg9_f_o.gt.1)  dvj(p_pcg9_f_o)=1.0E-1
+     if(p_opcg1_f_o.gt.1)  dvj(p_opcg1_f_o) =1.0E-1
+     if(p_opcg2_f_o.gt.1)  dvj(p_opcg2_f_o) =1.0E-1
+     if(p_opcg3_f_o.gt.1)  dvj(p_opcg3_f_o)=1.0E-1
+     if(p_opcg4_f_o.gt.1)  dvj(p_opcg4_f_o)=1.0E-1
+     if(p_opcg5_f_o.gt.1)  dvj(p_opcg5_f_o)=1.0E-1
+     if(p_opcg6_f_o.gt.1)  dvj(p_opcg6_f_o)=1.0E-1
+     if(p_opcg7_f_o.gt.1)  dvj(p_opcg7_f_o)=1.0E-1
+     if(p_opcg8_f_o.gt.1)  dvj(p_opcg8_f_o)=1.0E-1
+     if(p_ant1_c.gt.1)     dvj(p_ant1_c)=1.0E-1
+     if(p_ant2_c.gt.1)     dvj(p_ant2_c)=1.0E-1
+     if(p_ant3_c.gt.1)     dvj(p_ant3_c)=1.0E-1
+     if(p_ant4_c.gt.1)     dvj(p_ant4_c)=1.0E-1
+     if(p_ant1_o.gt.1)     dvj(p_ant1_o)=1.0E-1
+     if(p_ant2_o.gt.1)     dvj(p_ant2_o)=1.0E-1
+     if(p_ant3_o.gt.1)     dvj(p_ant3_o)=1.0E-1
+     if(p_ant4_o.gt.1)     dvj(p_ant4_o)=1.0E-1
+     if(p_biog1_c.gt.1)    dvj(p_biog1_c)=1.0E-1
+     if(p_biog2_c.gt.1)    dvj(p_biog2_c)=1.0E-1
+     if(p_biog3_c.gt.1)    dvj(p_biog3_c)=1.0E-1
+     if(p_biog4_c.gt.1)    dvj(p_biog4_c)=1.0E-1
+     if(p_biog1_o.gt.1)    dvj(p_biog1_o)=1.0E-1
+     if(p_biog2_o.gt.1)    dvj(p_biog2_o)=1.0E-1
+     if(p_biog3_o.gt.1)    dvj(p_biog3_o)=1.0E-1
+     if(p_biog4_o.gt.1)    dvj(p_biog4_o)=1.0E-1
+
+
+
         DO l = 1, numgas
           hstar4(l) = hstar(l) ! preliminary              
 !--------------------------------------------------

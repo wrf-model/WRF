@@ -4846,18 +4846,6 @@ END SUBROUTINE pole_point_bc
       ENDDO
       ENDDO
 
-      IF (config_flags%cu_physics == TIEDTKESCHEME .or.        &
-          config_flags%cu_physics == NSASSCHEME ) THEN
-        DO J=j_start,j_end
-        DO I=i_start,i_end
-        DO K=k_start,k_end
-           RUCUTEN(I,K,J)=RUCUTEN(I,K,J)/mu(I,J)
-           RVCUTEN(I,K,J)=RVCUTEN(I,K,J)/mu(I,J)
-        ENDDO
-        ENDDO
-        ENDDO
-      ENDIF
-
       IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
          DO I=i_start,i_end

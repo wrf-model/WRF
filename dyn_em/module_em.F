@@ -1643,18 +1643,6 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
       ENDDO
       ENDDO
 
-      IF (config_flags%cu_physics == TIEDTKESCHEME .or.     &
-          config_flags%cu_physics == NSASSCHEME ) THEN
-        DO J=jts,jtf
-        DO I=its,itf
-        DO K=kts,ktf
-           RUCUTEN(I,K,J) =mu(I,J)*RUCUTEN(I,K,J)
-           RVCUTEN(I,K,J) =mu(I,J)*RVCUTEN(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-      ENDIF
-
       IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
          DO J=jts,jtf
          DO I=its,itf

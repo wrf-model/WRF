@@ -1,3 +1,7 @@
+!
+!
+!
+!
 MODULE module_cu_nsas
 CONTAINS
 !
@@ -528,7 +532,6 @@ CONTAINS
    real            ::  delubar(its:ite),delvbar(its:ite)
    real            ::  qlko_ktcon(its:ite)
 !
-!  real            ::  fpvs,fpvs0
    real            ::  alpha,beta,                                             &
                        dt2,dtmin,dtmax,dtmaxl,dtmaxs,                          &
                        el2orc,eps,fact1,fact2,                                 &
@@ -2273,7 +2276,6 @@ CONTAINS
                        qcond(its:ite),   qevap(its:ite),  hmax(its:ite),       &
                        vshear(its:ite),                                        &
                        xlamud(its:ite),  xmb(its:ite),    xmbmax(its:ite)
-
    real            ::  delubar(its:ite), delvbar(its:ite)
 !
    real            ::  cincr
@@ -2301,8 +2303,6 @@ CONTAINS
 !
    logical         ::  totflg, cnvflg(its:ite), flg(its:ite)
 !
-!  real            ::  fpvs,fpvs0
-!
 !  physical parameters
 !
    real,parameter  ::  c0=.002,c1=5.e-4
@@ -2325,10 +2325,12 @@ CONTAINS
           thx(i,k) = t1(i,k)/prslk(i,k)
         enddo
       enddo
+!
       do i=its,ite
          tvcon = (1.+fv_*q1(i,1))
          rhox(i) = prsl(i,1)*1.e3/(rd_*t1(i,1)*tvcon)
       enddo
+!
       do i=its,ite
 !        sflx(i) = heat(i)+fv_*t1(i,1)*evap(i)
          sflx(i) = hfx(i)/rhox(i)/cp_ + qfx(i)/rhox(i)*fv_*thx(i,1)
@@ -2354,13 +2356,13 @@ CONTAINS
         aa1(i)  = 0.
         vshear(i) = 0.
       enddo
-!!
+!
       totflg = .true.
       do i=its,ite
         totflg = totflg .and. (.not. cnvflg(i))
       enddo
       if(totflg) return
-!!
+!
       dt2   =  delt
       val   =         1200.
       dtmin = max(dt2, val )
@@ -2372,7 +2374,6 @@ CONTAINS
       betaw   = .03
       evfact  = 0.3
       evfactl = 0.3
-!
       pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
       val     =           1.
 !
@@ -2428,6 +2429,7 @@ CONTAINS
         flg(i) = cnvflg(i)
         kpbl(i)= 1
       enddo
+!
       do k = kts+1, km1
         do i=its,ite
           if (flg(i).and.zl(i,k).le.hpbl(i)) then 
@@ -2437,6 +2439,7 @@ CONTAINS
           endif
         enddo
       enddo
+!
       do i=its,ite
         kpbl(i)= min(kpbl(i),kbm(i))
       enddo
@@ -2506,6 +2509,7 @@ CONTAINS
             kb(i) = 1
          endif
       enddo
+!
       do k = kts+1, kte
         do i=its,ite
           if (cnvflg(i).and.k.le.kpbl(i)) then
@@ -2563,6 +2567,7 @@ CONTAINS
         flg(i)   = cnvflg(i)
         if(flg(i)) kbcon(i) = kmax(i)
       enddo
+!
       do k = kts+1, km1
         do i=its,ite
           if (flg(i).and.k.lt.kbm(i)) then
@@ -2579,13 +2584,12 @@ CONTAINS
           if(kbcon(i).eq.kmax(i)) cnvflg(i) = .false.
         endif
       enddo
-!!
+!
       totflg = .true.
       do i=its,ite
         totflg = totflg .and. (.not. cnvflg(i))
       enddo
       if(totflg) return
-!!
 !
 !  determine critical convective inhibition
 !  as a function of vertical velocity at cloud base.
@@ -2595,6 +2599,7 @@ CONTAINS
           pdot(i)  = 10.* dot(i,kbcon(i))
         endif
       enddo
+!
       do i=its,ite
         if(cnvflg(i)) then
           if(slimsk(i).eq.1.) then
@@ -2628,13 +2633,12 @@ CONTAINS
           endif
         endif
       enddo
-!!
+!
       totflg = .true.
       do i=its,ite
         totflg = totflg .and. (.not. cnvflg(i))
       enddo
       if(totflg) return
-!!
 !
 !  assume the detrainment rate for the updrafts to be same as 
 !  the entrainment rate at cloud base
@@ -2713,21 +2717,24 @@ CONTAINS
         flg(i) = cnvflg(i)
         kbcon1(i) = kmax(i)
       enddo
+!
       do k = kts+1, km1
-      do i=its,ite
-        if (flg(i).and.k.lt.kbm(i)) then
-          if(k.ge.kbcon(i).and.dbyo(i,k).gt.0.) then
-            kbcon1(i) = k
-            flg(i)    = .false.
+        do i=its,ite
+          if (flg(i).and.k.lt.kbm(i)) then
+            if(k.ge.kbcon(i).and.dbyo(i,k).gt.0.) then
+              kbcon1(i) = k
+              flg(i)    = .false.
+            endif
           endif
-        endif
+        enddo
       enddo
-      enddo
+!
       do i=its,ite
         if(cnvflg(i)) then
           if(kbcon1(i).eq.kmax(i)) cnvflg(i) = .false.
         endif
       enddo
+!
       do i=its,ite
         if(cnvflg(i)) then
           tem = p(i,kbcon(i)) - p(i,kbcon1(i))
@@ -2736,13 +2743,12 @@ CONTAINS
           endif
         endif
       enddo
-!!
+!
       totflg = .true.
       do i = its,ite
         totflg = totflg .and. (.not. cnvflg(i))
       enddo
       if(totflg) return
-!!
 !
 !  determine first guess cloud top as the level of zero buoyancy
 !    limited to the level of sigma=0.7
@@ -2751,15 +2757,16 @@ CONTAINS
         flg(i) = cnvflg(i)
         if(flg(i)) ktcon(i) = kbm(i)
       enddo
+!
       do k = kts+1, km1
-      do i=its,ite
-        if (flg(i).and.k .lt. kbm(i)) then
-          if(k.gt.kbcon1(i).and.dbyo(i,k).lt.0.) then
-             ktcon(i) = k
-             flg(i)   = .false.
+        do i=its,ite
+          if (flg(i).and.k .lt. kbm(i)) then
+            if(k.gt.kbcon1(i).and.dbyo(i,k).lt.0.) then
+               ktcon(i) = k
+               flg(i)   = .false.
+            endif
           endif
-        endif
-      enddo
+        enddo
       enddo
 !
 !  specify upper limit of mass flux at cloud base
@@ -2780,6 +2787,7 @@ CONTAINS
           qcko(i,kb(i)) = qo(i,kb(i))
         endif
       enddo
+!
       do k = kts+1, km1
         do i = its,ite
           if (cnvflg(i)) then
@@ -2788,13 +2796,11 @@ CONTAINS
               gamma = el2orc * qeso(i,k) / (to(i,k)**2)
               qrch = qeso(i,k)                                                 &
                    + gamma * dbyo(i,k) / (hvap_ * (1. + gamma))
-!
               tem  = 0.5 * (xlamue(i,k)+xlamue(i,k-1)) * dz
               tem1 = 0.5 * xlamud(i) * dz
               factor = 1. + tem - tem1
               qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*                      &
                           (qo(i,k)+qo(i,k-1)))/factor
-!
               dq = eta(i,k) * (qcko(i,k) - qrch)
 !
 !             rhbar(i) = rhbar(i) + qo(i,k) / qeso(i,k)
@@ -2838,16 +2844,16 @@ CONTAINS
           endif
         enddo
       enddo
+!
       do i = its,ite
         if(cnvflg(i).and.aa1(i).le.0.) cnvflg(i) = .false.
       enddo
-!!
+!
       totflg = .true.
       do i=its,ite
         totflg = totflg .and. (.not. cnvflg(i))
       enddo
       if(totflg) return
-!!
 !
 !  estimate the convective overshooting as the level
 !    where the [aafac * cloud work function] becomes zero,
@@ -2863,6 +2869,7 @@ CONTAINS
         flg(i) = cnvflg(i)
         ktcon1(i) = kbm(i)
       enddo
+!
       do k = kts+1, km1
         do i = its,ite
           if (flg(i)) then
@@ -2952,6 +2959,7 @@ CONTAINS
           endif
         endif
       enddo
+!
       endif
 !
 !--- compute precipitation efficiency in terms of windshear
@@ -2961,7 +2969,8 @@ CONTAINS
           vshear(i) = 0.
         endif
       enddo
-       do k = kts+1,kte
+!
+      do k = kts+1,kte
         do i = its,ite
           if (cnvflg(i)) then
             if(k.gt.kb(i).and.k.le.ktcon(i)) then
@@ -2972,6 +2981,7 @@ CONTAINS
           endif
         enddo
       enddo
+!
       do i = its,ite
         if(cnvflg(i)) then
           vshear(i) = 1.e3 * vshear(i) / (zi(i,ktcon(i))-zi(i,kb(i)))
@@ -3095,8 +3105,6 @@ CONTAINS
         endif
       enddo
 !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
       do k = kts,kte
         do i = its,ite
           if (cnvflg(i) .and. k .le. kmax(i)) then
@@ -3107,7 +3115,6 @@ CONTAINS
           endif
         enddo
       enddo
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
       do i = its,ite
         delhbar(i) = 0.
@@ -3117,6 +3124,7 @@ CONTAINS
         delvbar(i) = 0.
         qcond(i) = 0.
       enddo
+!
       do k = kts,kte
         do i = its,ite
           if (cnvflg(i)) then
@@ -3137,11 +3145,13 @@ CONTAINS
           endif
         enddo
       enddo
+!
       do k = kts,kte
         do i = its,ite
           if (cnvflg(i)) then
             if(k.gt.kb(i).and.k.le.ktcon(i)) then
-              qeso(i,k)=0.01* fpvs(t1(i,k),1,rd_,rv_,cvap_,cliq_,cice,xlv0,xls,psat,t0c_)
+              qeso(i,k)=0.01* fpvs(t1(i,k),1,rd_,rv_,cvap_,cliq_,cice,xlv0,xls &
+                        ,psat,t0c_)
               qeso(i,k) = eps * qeso(i,k)/(p(i,k) + (eps-1.)*qeso(i,k))
               val     =             1.e-8
               qeso(i,k) = max(qeso(i,k), val )
@@ -3156,6 +3166,7 @@ CONTAINS
         delq2(i) = 0.
         flg(i) = cnvflg(i)
       enddo
+!
       do k = kte, kts, -1
         do i = its,ite
           if (cnvflg(i)) then
@@ -3233,16 +3244,16 @@ CONTAINS
 !
       do k = kts, km1
         do i = its,ite
-         if (cnvflg(i)) then
+          if (cnvflg(i)) then
             if (k.ge.kbcon(i).and.k.le.ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
               tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
-             if (ncloud.ge.4) then
-               qi2(i,k) = qi2(i,k) + tem * tem1            ! ice
-               qc2(i,k) = qc2(i,k) + tem *(1.0-tem1)       ! water
-             else
-               qc2(i,k) = qc2(i,k) + tem
-             endif
+              if (ncloud.ge.4) then
+                qi2(i,k) = qi2(i,k) + tem * tem1            ! ice
+                qc2(i,k) = qc2(i,k) + tem *(1.0-tem1)       ! water
+              else
+                qc2(i,k) = qc2(i,k) + tem
+              endif
             endif
           endif
         enddo

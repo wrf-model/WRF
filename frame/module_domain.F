@@ -997,9 +997,13 @@ CONTAINS
       CHARACTER*256      :: fieldlst
       CHARACTER*1        :: op, strmtyp
       CHARACTER*3        :: strmid
+      CHARACTER*10       :: strmtyp_name
       INTEGER            :: io_status
+      INTEGER            :: strmtyp_int, count_em
       INTEGER            :: lineno, fieldno, istrm, retval, itrace
       LOGICAL            :: keepgoing, noerr, gavewarning, ignorewarning, found
+      LOGICAL, SAVE      :: you_warned_me = .FALSE.
+      LOGICAL, SAVE      :: you_warned_me2(100,max_domains) = .FALSE.
 
       gavewarning = .FALSE.
 
@@ -1017,6 +1021,7 @@ CONTAINS
         IF ( io_status .EQ. 0 ) THEN   ! only on success
           keepgoing = .TRUE.
           lineno = 0
+          count_em = 0    ! Count the total number of fields
           DO WHILE ( keepgoing )
             READ(UNIT=read_unit,FMT='(A)',IOSTAT=io_status) inln
             keepgoing = (io_status .EQ. 0) .AND. (LEN(TRIM(inln)) .GT. 0)  
@@ -1036,6 +1041,19 @@ CONTAINS
                   ENDIF
                   CALL get_fieldstr(2,':',inln,t1,1,noerr)          ! i is input, h is history
                   CALL change_to_lower_case(t1,strmtyp) 
+
+                  SELECT CASE (TRIM(strmtyp))
+                  CASE ('h')
+                     strmtyp_name = 'history'
+                     strmtyp_int  = first_history
+                  CASE ('i')
+                     strmtyp_name = 'input'
+                     strmtyp_int  = first_input
+                  CASE DEFAULT
+                     WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
+                     gavewarning = .TRUE.
+                  END SELECT
+
                   CALL get_fieldstr(3,':',inln,strmid,3,noerr)      ! number of stream (main input and hist are 0)
                   READ(strmid,'(I3)') istrm
                   IF ( istrm .LT. 0 .OR. istrm .GT. last_history ) THEN
@@ -1050,64 +1068,19 @@ CONTAINS
                     DO WHILE ( noerr )    ! linear search, blargh...
                       p => grid%head_statevars
                       found = .FALSE.
+                      count_em = count_em + 1
                       DO WHILE ( ASSOCIATED( p ) )
   
                         IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
   
                           DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
                             CALL change_to_lower_case( p%dname_table( grid%id, itrace ) , dname ) 
-                            IF ( TRIM(dname) .EQ. TRIM(lookee) ) THEN
-                              found = .TRUE.
-                              IF      ( TRIM(strmtyp) .EQ. 'h' ) THEN
-                                IF      ( TRIM(op) .EQ. '+' ) THEN
-                                  CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1, retval )
-                                  IF ( retval .NE. 0 ) THEN
-                                    WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on history stream ',istrm, &
-                                                 '.  File: ', TRIM(fname),' at line ',lineno
-                                    gavewarning = .TRUE.
-                                  ELSE
-                                    WRITE(mess,*)'Setting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess)
-                                    CALL set_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1 )
-                                  ENDIF
-                                ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                                  CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1, retval )
-                                  IF ( retval .EQ. 0 ) THEN
-                                    WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off history stream ',istrm, &
-                                                 '. File: ',TRIM(fname),' at line ',lineno
-                                    gavewarning = .TRUE.
-                                  ELSE
-                                    WRITE(mess,*)'Resetting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                    CALL reset_mask( p%streams_table(grid%id,itrace)%stream, first_history + istrm - 1)
-                                  ENDIF
-                                ENDIF
-                              ELSE IF ( TRIM(strmtyp) .EQ. 'i' ) THEN
-                                IF      ( TRIM(op) .EQ. '+' ) THEN
-                                  CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1, retval )
-                                  IF ( retval .NE. 0 ) THEN
-                                    WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on input stream ',istrm, &
-                                                 '. File: ',TRIM(fname),' at line ',lineno
-                                    gavewarning = .TRUE.
-                                  ELSE
-                                    WRITE(mess,*)'Setting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                    CALL set_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1)
-                                  ENDIF
-                                ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                                  CALL get_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1, retval )
-                                  IF ( retval .EQ. 0 ) THEN
-                                    WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off input stream ',istrm, &
-                                                 '. File: ',TRIM(fname),' at line ',lineno
-                                    gavewarning = .TRUE.
-                                  ELSE
-                                    WRITE(mess,*)'Resetting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess)
-                                    CALL reset_mask( p%streams_table(grid%id,itrace)%stream, first_input + istrm - 1)
-                                  ENDIF
-                                ENDIF
-                              ELSE
-                                WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
-                                CALL wrf_debug(1,mess)
-                                gavewarning = .TRUE.
-                              ENDIF
-                            ENDIF
+
+                            IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
+                            CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                                      strmtyp_name, dname, fname, lookee,      &
+                                                      p%streams_table(grid%id,itrace)%stream,  &
+                                                      mess, found, you_warned_me2)
                           ENDDO
                         ELSE 
                           IF ( p%Ntl .GT. 0 ) THEN
@@ -1116,58 +1089,10 @@ CONTAINS
                             CALL change_to_lower_case(p%DataName,dname)
                           ENDIF
   
-                          IF ( TRIM(dname) .EQ. TRIM(lookee) ) THEN
-                            found = .TRUE.
-                            IF      ( TRIM(strmtyp) .EQ. 'h' ) THEN
-                              IF      ( TRIM(op) .EQ. '+' ) THEN
-                                CALL get_mask( p%streams, first_history + istrm - 1, retval )
-                                IF ( retval .NE. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on history stream ',istrm, &
-                                               '.  File: ', TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Setting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                  CALL set_mask( p%streams, first_history + istrm - 1 )
-                                ENDIF
-                              ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                                CALL get_mask( p%streams, first_history + istrm - 1, retval )
-                                IF ( retval .EQ. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off history stream ',istrm, &
-                                               '. File: ',TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Resetting history stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                  CALL reset_mask( p%streams, first_history + istrm - 1)
-                                ENDIF
-                              ENDIF
-                            ELSE IF ( TRIM(strmtyp) .EQ. 'i' ) THEN
-                              IF      ( TRIM(op) .EQ. '+' ) THEN
-                                CALL get_mask( p%streams, first_input + istrm - 1, retval )
-                                IF ( retval .NE. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already on input stream ',istrm, &
-                                               '. File: ',TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Setting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                  CALL set_mask( p%streams, first_input + istrm - 1)
-                                ENDIF
-                              ELSE IF ( TRIM(op) .EQ. '-' ) THEN
-                                CALL get_mask( p%streams, first_input + istrm - 1, retval )
-                                IF ( retval .EQ. 0 ) THEN
-                                  WRITE(mess,*)'W A R N I N G : Variable ',TRIM(lookee),' already off input stream ',istrm, &
-                                               '. File: ',TRIM(fname),' at line ',lineno
-                                  gavewarning = .TRUE.
-                                ELSE
-                                  WRITE(mess,*)'Resetting input stream ',istrm,' for ',TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
-                                  CALL reset_mask( p%streams, first_input + istrm - 1)
-                                ENDIF
-                              ENDIF
-                            ELSE
-                              WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
-                              CALL wrf_debug(1,mess)
-                              gavewarning = .TRUE.
-                            ENDIF
-                          ENDIF
+                          IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
+                          CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                                    strmtyp_name, dname, fname, lookee,      &
+                                                    p%streams, mess, found, you_warned_me2)
                         ENDIF
                         p => p%next
                       ENDDO
@@ -1187,8 +1112,8 @@ CONTAINS
                     gavewarning = .TRUE.
                   ENDIF
                 ENDIF  ! keepgoing
-              ENDIF  ! keepgoing
-            ENDIF  ! skip comments
+              ENDIF    ! skip comments
+            ENDIF      ! keepgoing
           ENDDO
         ELSE
           WRITE(mess,*)'W A R N I N G : Problem opening ',TRIM(fname)
@@ -1199,13 +1124,19 @@ CONTAINS
         IF ( gavewarning ) THEN
           CALL nl_get_ignore_iofields_warning(1,ignorewarning)
           IF ( .NOT. ignorewarning ) THEN
+            CALL wrf_message(mess)
             WRITE(mess,*)'modify_io_masks: problems reading ',TRIM(fname) 
             CALL wrf_message(mess)
             CALL wrf_error_fatal('Set ignore_iofields_warn to true in namelist to ignore')
           ELSE
-            WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
-            CALL wrf_message(mess)
-            CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )
+            IF ( .NOT. you_warned_me ) THEN
+              if ( .NOT. you_warned_me2(count_em,id) ) CALL wrf_message(mess)  ! Don't repeat the W A R N I N G message
+              WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
+              CALL wrf_message(mess)
+              CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )
+              CALL wrf_message(' ')
+              you_warned_me = .TRUE.
+            ENDIF
           ENDIF
         ENDIF
       ENDIF  ! wrf_dm_on_monitor
@@ -1228,6 +1159,63 @@ CONTAINS
 #endif
       
    END SUBROUTINE modify_io_masks1
+
+   SUBROUTINE warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                   strmtyp_name, dname, fname, lookee,      &
+                                   p_stream, mess, found, you_warned_me2)
+
+      IMPLICIT NONE
+
+! See if a field that is requested to be added to or removed from the I/O stream
+!    is already present or absent
+! If the requested action has already been done, write a warning message
+! If not, satisfy the request
+
+     INTEGER,       INTENT(IN )   :: id, istrm, lineno, strmtyp_int
+     INTEGER,       INTENT(IN )   :: p_stream(*), count_em
+     CHARACTER*1,   INTENT(IN )   :: op
+     CHARACTER*10,  INTENT(IN )   :: strmtyp_name
+     CHARACTER*256, INTENT(IN )   :: dname, fname, lookee
+     CHARACTER*256, INTENT(OUT)   :: mess
+     LOGICAL,       INTENT(OUT)   :: found
+     LOGICAL,       INTENT(INOUT) :: you_warned_me2(100,max_domains)
+   ! Local
+     INTEGER                      :: retval
+
+     found = .TRUE.
+     IF      ( TRIM(op) .EQ. '+' ) THEN
+       CALL get_mask( p_stream, strmtyp_int + istrm - 1, retval )
+       IF ( retval .NE. 0 ) THEN
+         WRITE(mess,*) 'Domain ',id, ' W A R N I N G : Variable ',TRIM(lookee),' already on ', &
+                       TRIM(strmtyp_name), ' stream ',istrm, '.  File: ', TRIM(fname),' at line ',lineno
+       ELSE
+         WRITE(mess,*) 'Domain ', id, ' Setting ', TRIM(strmtyp_name), ' stream ',istrm,' for ', &
+                                  TRIM(DNAME)  ; CALL wrf_debug(1,mess)
+         CALL set_mask( p_stream, strmtyp_int + istrm - 1 )
+       ENDIF
+     ELSE IF ( TRIM(op) .EQ. '-' ) THEN
+       CALL get_mask( p_stream, strmtyp_int + istrm - 1, retval )
+       IF ( retval .EQ. 0 ) THEN
+         WRITE(mess,*) 'Domain ',id, ' W A R N I N G : Variable ',TRIM(lookee),' already off ', &
+                       TRIM(strmtyp_name), ' stream ',istrm, '. File: ',TRIM(fname),' at line ',lineno
+       ELSE
+         WRITE(mess,*) 'Domain ', id, ' Resetting ', TRIM(strmtyp_name), ' stream ',istrm,' for ', &
+                                    TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
+         CALL reset_mask( p_stream, strmtyp_int + istrm - 1)
+       ENDIF
+     ENDIF
+     IF ( count_em > 100 ) THEN
+       WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at 100'
+       CALL wrf_message(mess)
+       CALL wrf_error_fatal('Did you really type > 100 fields into ', TRIM(fname) ,' ?')
+     ELSE
+       IF ( .NOT. you_warned_me2(count_em,id) ) THEN
+         CALL wrf_message(mess)     ! Write warning message once for each field
+         you_warned_me2(count_em,id) = .TRUE.
+       ENDIF
+     ENDIF
+
+   END SUBROUTINE warn_me_or_set_mask 
 
 !  This routine ALLOCATEs the required space for the meteorological fields
 !  for a specific domain.  The fields are simply ALLOCATEd as an -1.  They

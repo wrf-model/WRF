@@ -325,10 +325,10 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         pcact, prevp, psdep, pgdep, praut, psaut, pgaut,          &
         pracw, psacw, pgacw, pgacr, pgacs, psaci, pgmlt, praci,   &
-        piacr, pracs, psacr, pgaci, pseml, pgeml, prevp_s      
+        piacr, pracs, psacr, pgaci, pseml, pgeml       
   REAL, DIMENSION( its:ite , kts:kte ) :: paacw
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
-        nraut, nracw, nrevp, ncevp, nccol, nrcol,                 &
+        nraut, nracw, ncevp, nccol, nrcol,                        &
         nsacw, ngacw, niacr, nsacr, ngacr, naacw,                 &
         nseml, ngeml, ncact 
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
@@ -534,7 +534,6 @@ CONTAINS
           psevp(i,k) = 0.
           pgevp(i,k) = 0.
           pcact(i,k) = 0.
-          prevp_s(i,k) = 0.
           falk(i,k,1) = 0.
           falk(i,k,2) = 0.
           falk(i,k,3) = 0.
@@ -559,7 +558,6 @@ CONTAINS
           nrcol(i,k) = 0.
           ncact(i,k) = 0.
           nraut(i,k) = 0.
-          nrevp(i,k) = 0.
           ncevp(i,k) = 0.
         enddo
       enddo
@@ -1041,15 +1039,11 @@ CONTAINS
               prevp(i,k) = max(prevp(i,k),satdt/2)
 !----------------------------------------------------------------
 ! Nrevp: evaporation/condensation rate of rain   [LH A14] 
-!        (NR->NC) 
+!        (NR->NCCN) 
 !----------------------------------------------------------------
-              if(avedia(i,k,2).le.di82) then
-                nrevp(i,k) = ncr(i,k,3)/dtcld
-!----------------------------------------------------------------
-! Prevp_s: evaporation/condensation rate of rain [LH A15] [KK 23]
-!        (QR->QC) 
-!----------------------------------------------------------------
-                prevp_s(i,k) = qrs(i,k,1)/dtcld
+              if(prevp(i,k).eq.-qrs(i,k,1)/dtcld) then 
+                ncr(i,k,1) = ncr(i,k,1)+ncr(i,k,3)
+                ncr(i,k,3) = 0. 
               endif
             else
 !
@@ -1418,14 +1412,13 @@ CONTAINS
 !     cloud water
 !
             value = max(qmin,qci(i,k,1))
-            source = (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k)-prevp_s(i,k))&
+            source = (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k))&
                     *dtcld
             if (source.gt.value) then
               factor = value/source
               praut(i,k) = praut(i,k)*factor
               pracw(i,k) = pracw(i,k)*factor
               paacw(i,k) = paacw(i,k)*factor
-              prevp_s(i,k) = prevp_s(i,k)*factor 
             endif
 !
 !     cloud ice
@@ -1447,7 +1440,7 @@ CONTAINS
 !
             value = max(qmin,qrs(i,k,1))
             source = (-praut(i,k)-prevp(i,k)-pracw(i,k)+piacr(i,k)             &
-                    +prevp_s(i,k)+psacr(i,k)+pgacr(i,k))*dtcld
+                    +psacr(i,k)+pgacr(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               praut(i,k) = praut(i,k)*factor
@@ -1456,7 +1449,6 @@ CONTAINS
               piacr(i,k) = piacr(i,k)*factor
               psacr(i,k) = psacr(i,k)*factor
               pgacr(i,k) = pgacr(i,k)*factor
-              prevp_s(i,k) = prevp_s(i,k)*factor 
             endif
 !
 !     snow
@@ -1505,21 +1497,20 @@ CONTAINS
 !
             value = max(ncmin,ncr(i,k,2))
             source = (nraut(i,k)+nccol(i,k)+nracw(i,k)                         &
-                    +naacw(i,k)+naacw(i,k)-nrevp(i,k))*dtcld
+                    +naacw(i,k)+naacw(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               nraut(i,k) = nraut(i,k)*factor
               nccol(i,k) = nccol(i,k)*factor
               nracw(i,k) = nracw(i,k)*factor
               naacw(i,k) = naacw(i,k)*factor
-              nrevp(i,k) = nrevp(i,k)*factor
             endif
 !
 !     rain
 !
             value = max(nrmin,ncr(i,k,3))
             source = (-nraut(i,k)+nrcol(i,k)+niacr(i,k)+nsacr(i,k)+ngacr(i,k)  &
-                     +nrevp(i,k))*dtcld
+                     )*dtcld
             if (source.gt.value) then
               factor = value/source
               nraut(i,k) = nraut(i,k)*factor
@@ -1527,17 +1518,16 @@ CONTAINS
               niacr(i,k) = niacr(i,k)*factor
               nsacr(i,k) = nsacr(i,k)*factor
               ngacr(i,k) = ngacr(i,k)*factor
-              nrevp(i,k) = nrevp(i,k)*factor
             endif
 !
             work2(i,k)=-(prevp(i,k)+psdep(i,k)+pgdep(i,k)+pigen(i,k)+pidep(i,k))
 !     update
             q(i,k) = q(i,k)+work2(i,k)*dtcld
             qci(i,k,1) = max(qci(i,k,1)-(praut(i,k)+pracw(i,k)                 &
-                           +paacw(i,k)+paacw(i,k)+prevp_s(i,k))*dtcld,0.)
+                           +paacw(i,k)+paacw(i,k))*dtcld,0.)
             qrs(i,k,1) = max(qrs(i,k,1)+(praut(i,k)+pracw(i,k)                 &
                            +prevp(i,k)-piacr(i,k)-pgacr(i,k)                   &
-                           -psacr(i,k)-prevp_s(i,k))*dtcld,0.)
+                           -psacr(i,k))*dtcld,0.)
             qci(i,k,2) = max(qci(i,k,2)-(psaut(i,k)+praci(i,k)                 &
                            +psaci(i,k)+pgaci(i,k)-pigen(i,k)-pidep(i,k))       &
                            *dtcld,0.)
@@ -1552,9 +1542,9 @@ CONTAINS
                            +pracs(i,k)*(1.-delta2)+pgaci(i,k)+paacw(i,k)       &
                            +pgacr(i,k)+pgacs(i,k))*dtcld,0.)
             ncr(i,k,2) = max(ncr(i,k,2)+(-nraut(i,k)-nccol(i,k)-nracw(i,k)     &
-                           -naacw(i,k)-naacw(i,k)+nrevp(i,k))*dtcld,0.)
+                           -naacw(i,k)-naacw(i,k))*dtcld,0.)
             ncr(i,k,3) = max(ncr(i,k,3)+(nraut(i,k)-nrcol(i,k)-niacr(i,k)      &
-                           -nsacr(i,k)-ngacr(i,k)-nrevp(i,k))*dtcld,0.)
+                           -nsacr(i,k)-ngacr(i,k))*dtcld,0.)
             xlf = xls-xl(i,k)
             xlwork2 = -xls*(psdep(i,k)+pgdep(i,k)+pidep(i,k)+pigen(i,k))       &
                       -xl(i,k)*prevp(i,k)-xlf*(piacr(i,k)+paacw(i,k)           &
@@ -1565,21 +1555,20 @@ CONTAINS
 !     cloud water
 !
             value = max(qmin,qci(i,k,1))
-            source= (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k)-prevp_s(i,k)) &
+            source= (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k)) &
                    *dtcld
             if (source.gt.value) then
               factor = value/source
               praut(i,k) = praut(i,k)*factor
               pracw(i,k) = pracw(i,k)*factor
               paacw(i,k) = paacw(i,k)*factor
-              prevp_s(i,k) = prevp_s(i,k)*factor
             endif
 !
 !     rain
 !
             value = max(qmin,qrs(i,k,1))
             source = (-paacw(i,k)-praut(i,k)+pseml(i,k)+pgeml(i,k)             &
-                     +prevp_s(i,k)-pracw(i,k)-paacw(i,k)-prevp(i,k))*dtcld
+                     -pracw(i,k)-paacw(i,k)-prevp(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               praut(i,k) = praut(i,k)*factor
@@ -1588,7 +1577,6 @@ CONTAINS
               paacw(i,k) = paacw(i,k)*factor
               pseml(i,k) = pseml(i,k)*factor
               pgeml(i,k) = pgeml(i,k)*factor
-              prevp_s(i,k) = prevp_s(i,k)*factor
             endif
 !
 !     snow
@@ -1617,26 +1605,24 @@ CONTAINS
 !
             value = max(ncmin,ncr(i,k,2))
             source = (+nraut(i,k)+nccol(i,k)+nracw(i,k)+naacw(i,k)             &
-                     +naacw(i,k)-nrevp(i,k))*dtcld
+                     +naacw(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               nraut(i,k) = nraut(i,k)*factor
               nccol(i,k) = nccol(i,k)*factor
               nracw(i,k) = nracw(i,k)*factor
               naacw(i,k) = naacw(i,k)*factor
-              nrevp(i,k) = nrevp(i,k)*factor
             endif
 !
 !     rain
 !
             value = max(nrmin,ncr(i,k,3))
             source = (-nraut(i,k)+nrcol(i,k)-nseml(i,k)-ngeml(i,k)             &
-                      +nrevp(i,k))*dtcld
+                      )*dtcld
             if (source.gt.value) then
               factor = value/source
               nraut(i,k) = nraut(i,k)*factor
               nrcol(i,k) = nrcol(i,k)*factor
-              nrevp(i,k) = nrevp(i,k)*factor
               nseml(i,k) = nseml(i,k)*factor
               ngeml(i,k) = ngeml(i,k)*factor
             endif
@@ -1645,18 +1631,18 @@ CONTAINS
 !     update
             q(i,k) = q(i,k)+work2(i,k)*dtcld
             qci(i,k,1) = max(qci(i,k,1)-(praut(i,k)+pracw(i,k)                 &
-                    +prevp_s(i,k)+paacw(i,k)+paacw(i,k))*dtcld,0.)
+                    +paacw(i,k)+paacw(i,k))*dtcld,0.)
             qrs(i,k,1) = max(qrs(i,k,1)+(praut(i,k)+pracw(i,k)                 &
-                    +prevp(i,k)-prevp_s(i,k)+paacw(i,k)+paacw(i,k)-pseml(i,k)  &
+                    +prevp(i,k)+paacw(i,k)+paacw(i,k)-pseml(i,k)  &
                     -pgeml(i,k))*dtcld,0.)
             qrs(i,k,2) = max(qrs(i,k,2)+(psevp(i,k)-pgacs(i,k)                 &
                     +pseml(i,k))*dtcld,0.)
             qrs(i,k,3) = max(qrs(i,k,3)+(pgacs(i,k)+pgevp(i,k)                 &
                     +pgeml(i,k))*dtcld,0.)
             ncr(i,k,2) = max(ncr(i,k,2)+(-nraut(i,k)-nccol(i,k)-nracw(i,k)     &
-                   -naacw(i,k)-naacw(i,k)+nrevp(i,k))*dtcld,0.)
+                   -naacw(i,k)-naacw(i,k))*dtcld,0.)
             ncr(i,k,3) = max(ncr(i,k,3)+(nraut(i,k)-nrcol(i,k)+nseml(i,k)      &
-                           +ngeml(i,k)-nrevp(i,k))*dtcld,0.)
+                           +ngeml(i,k))*dtcld,0.)
             xlf = xls-xl(i,k)
             xlwork2 = -xl(i,k)*(prevp(i,k)+psevp(i,k)+pgevp(i,k))              &
                       -xlf*(pseml(i,k)+pgeml(i,k))
@@ -1695,6 +1681,32 @@ CONTAINS
           qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
           qs(i,k,2) = max(qs(i,k,2),qmin)
           rh(i,k,1) = max(q(i,k) / qs(i,k,1),qmin)
+        enddo
+      enddo
+!
+      call slope_wdm6(qrs_tmp,ncr_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2, &
+                     rslope3,work1,workn,its,ite,kts,kte)
+      do k = kts, kte
+        do i = its, ite
+!-----------------------------------------------------------------             
+! re-compute the mean-volume drop diameter       [LH A10]
+! for raindrop distribution                          
+!-----------------------------------------------------------------
+          avedia(i,k,2) = rslope(i,k,1)*((24.)**(.3333333))
+!----------------------------------------------------------------
+! Nrevp_s: evaporation/condensation rate of rain   [LH A14]
+!        (NR->NC)
+!----------------------------------------------------------------
+          if(avedia(i,k,2).le.di82) then
+            ncr(i,k,2) = ncr(i,k,2)+ncr(i,k,3)
+            ncr(i,k,3) = 0.
+!----------------------------------------------------------------
+! Prevp_s: evaporation/condensation rate of rain [LH A15] [KK 23]
+!        (QR->QC)
+!----------------------------------------------------------------
+            qci(i,k,1) = qci(i,k,1)+qrs(i,k,1)
+            qrs(i,k,1) = 0.    
+          endif
         enddo
       enddo
 !

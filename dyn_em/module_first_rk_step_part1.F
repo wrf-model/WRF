@@ -618,6 +618,7 @@ BENCH_START(pbl_driver_tim)
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &

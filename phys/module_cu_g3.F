@@ -839,7 +839,7 @@ CONTAINS
 !--- program, depending what your detrainment is!!)
 !
       entr_rate =.2/radius
-      entr_rate3=.2/500.
+      entr_rate3=.2/200.
 !
 !--- entrainment of mass
 !

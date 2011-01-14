@@ -115,12 +115,14 @@
    integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
    real, DIMENSION (1,1) :: sza,cosszax
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
+#include "version_decl"
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif
+   program_name = "*             PROGRAM:WRF/CHEM " // TRIM(release_version) // " MODEL"
 
 call wrf_message("*********************************************************************")
-call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.1.1                       *")
+call wrf_message(program_name)
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF/CHEM HELP at                     *")
 call wrf_message("*                                                                   *")

@@ -183,33 +183,30 @@ CONTAINS
               endif
              enddo
              enddo
+      if(ishallow.eq.1)then
+        CALL neg_check_ct('shallow',pret,ktop3,epsilc,dt,tracer,tracert3,iopt,num_chem,   &
+                        its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
+        do nv=2,num_chem
+            DO I=its,itf
+               DO K=kts,ktf
+                  chem(i,k,j,nv)=max(epsilc,chem(i,k,j,nv)+tracert3(i,k,nv)*dt)
+               enddo
+            ENDDO
+       ENDDO
+     endif
+!
+! now deep convection
+!
       CALL neg_check_ct('deep',pret,ktop,epsilc,dt,tracer,tracert,iopt,num_chem,  &
                         its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
-      if(ishallow.eq.1)then
-      CALL neg_check_ct('shallow',pret,ktop3,epsilc,dt,tracer,tracert3,iopt,num_chem,   &
-                        its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
-      endif
-!     CALL neg_check_ct(pret,ktop,epsilc,dt,tracer,tracert,iopt,num_chem,   &
-!                       its,ite,kts,kte,itf,ktf,ipr,jpr,npr,j)
-       do nv=2,num_chem
+        do nv=2,num_chem
             DO I=its,itf
-                 if(ishallow.eq.1)then
-                    DO K=kts,ktf
-                        chem(i,k,j,nv)=max(epsilc,chem(i,k,j,nv)+tracert3(i,k,nv)*dt)
-                    enddo
-                    if(nv.eq.npr)then
-                    DO K=kts,ktf
-                        cu_co_ten(i,k,j)=tracert3(i,k,npr)*dt
-                        if(i.eq.ipr.and.j.eq.jpr)print *,'shal',k,chem(i,k,j,nv),cu_co_ten(i,k,j)
-                    enddo
-                    endif
-                 endif
               if(pret(i).gt.0.)then
                  DO K=kts,ktf
                    chem(i,k,j,nv)=max(epsilc,chem(i,k,j,nv)+tracert(i,k,nv)*dt)
                    if(nv.eq.npr)then
                         cu_co_ten(i,k,j)=tracert(i,k,npr)*dt
-                        if(i.eq.ipr.and.j.eq.jpr)print *,k,chem(i,k,j,nv),cu_co_ten(i,k,j)
+!                       if(i.eq.ipr.and.j.eq.jpr)print *,k,chem(i,k,j,nv),cu_co_ten(i,k,j)
                    endif
                  ENDDO
               else
@@ -398,7 +395,7 @@ CONTAINS
 !--- program, depending what your detrainment is!!)
 !
       entr_rate=.2/radius
-      entr_rate3=.2/500.
+      entr_rate3=.2/200.
 !
 !--- entrainment of mass
 !

@@ -1,8 +1,9 @@
 program gen_be_stage4_regional
 
-   use da_control, only : filename_len,stderr,stdout,use_rf
+   use da_control, only : filename_len,stderr,stdout,do_normalize,use_rf
+   use da_reporting, only : da_error
    use da_tools_serial, only : da_get_unit, da_advance_cymdh
-   use da_wavelet, only: do_normalize,lf,namw,nb,nij,sd,ws,wsd
+   use da_wavelet, only: lf,namw,nb,nij,ws,wsd
 
    implicit none
 
@@ -30,6 +31,8 @@ program gen_be_stage4_regional
    real                :: fnorm                      ! field norm
    integer, allocatable:: nr(:)                      ! Number of points in each bin.
    real, allocatable   :: field(:,:)                 ! Input 2D field.
+   real, allocatable   :: grid_box_area(:,:)         ! cf. da_transfer_wrftoxb
+   real, allocatable   :: sd(:,:)                    ! Field standard deviations.
    real, allocatable   :: cov(:)                     ! Covariance as a function of distance.
 
    real, allocatable   :: wav(:,:)                   ! Wavelet-coefficient averages.
@@ -78,8 +81,7 @@ program gen_be_stage4_regional
 #ifdef WAVELET
       call qftest_w(namw//char(0),lf)
 #else
-      write(6,*) "Needs qftest_w, please compile code with WAVELET setting"
-      stop
+      call da_error(__FILE__,__LINE__,(/"needs qftest_w, compile after setenv WAVELET 1"/))
 #endif
       write(6,'(" Computing field and wavelet std. devs. for dates ",a," to ",a)')start_date,end_date
       write(6,'("    using ",i8," bands of ",a,i0.2," wavelet.")')nb,namw,lf
@@ -101,32 +103,38 @@ program gen_be_stage4_regional
 
 !---------------------------------------------------------------------------------------------
    if( use_rf )then
-      write(6,'(a)')' [2] Input fields and calculate correlation as a function of distance between points.'
+      write(6,'(" [2.0] Input fields and calculate correlation as a function of distance between points.")')
    else
-      write(6,'(" [2.0] Input fields and calculate field and wavelet mean and mean-square values.")')
+      write(6,'(" [2.0] Input fields and calculate wavelet mean and mean-square values.")')
+      filename=trim(run_dir)//'/grid_box_area'
+      open(iunit,file=filename,form='unformatted')
+      read(iunit)ni,nj
+      allocate(grid_box_area(ni,nj))
+      read(iunit)grid_box_area
+      close(iunit)
+   endif
 !---------------------------------------------------------------------------------------------
-      if( do_normalize )then
-         do while( cdate<=edate )		! Do part of later cdate loop in advance:
-            do member = 1, ne			! Loop over members:
-               call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj)
-               if( rcount==1.0 )then
-                  call allocate_field_moments(field,wav,sd,ni,nj)
-               endif
-               read(iunit)field
-               close(iunit)
-               call update_moments(field,wav,sd,ni,nj,rcount,1.)
-            end do				! End loop over members.
-            call calculate_next_date(date,interval,new_date,cdate)
-         end do					! do while ( cdate <= edate )
+
+   if( do_normalize )then
+      do while( cdate<=edate )			! Do part of later cdate loop now:
+         do member = 1, ne			! Loop over members:
+            call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj)
+            if( rcount==1.0 )call allocate_field_moments(field,wav,sd,ni,nj)
+            read(iunit)field
+            close(iunit)
+            call update_moments(field,wav,sd,ni,nj,rcount,1.)
+         enddo					! End loop over members.
+         call calculate_next_date(date,interval,new_date,cdate)
+      enddo					! do while ( cdate<=edate )
 !---------------------------------------------------------------------------------------------
-         write(6,'(" [2.1] Compute field standard deviations.")')
+      write(6,'(" [2.1] Compute field standard deviations.")')
 !---------------------------------------------------------------------------------------------
-         call update_moments(field,wav,sd,ni,nj,rcount,0.)
-         print'(es9.2,"< sd[",a,",k=",i0,"]~",es9.2,"<",es9.2)',minval(sd),trim(variable),k,sqrt(sum(sd**2)/product(nij(0,:,0))),maxval(sd)
-         deallocate(field,wav)			! Need different SIZEs later.
-         call initialize_dates(date,start_date,cdate,sdate,rcount)
-      endif					! if( do_normalize )
-   endif					! if( use_rf )
+      call update_moments(field,wav,sd,ni,nj,rcount,0.)
+!     print'(es9.2,"< sd[",a,",k=",i0,"]~",es9.2,"<",es9.2)', &
+!        minval(sd),trim(variable),k,sqrt(sum(sd**2)/product(nij(0,:,0))),maxval(sd)
+      deallocate(field,wav)			! Need different SIZEs later.
+      call initialize_dates(date,start_date,cdate,sdate,rcount)
+   endif					! if( do_normalize )
 
    do while ( cdate <= edate )
       do member = 1, ne
@@ -149,15 +157,14 @@ program gen_be_stage4_regional
                allocate(cov(0:nn))
                cov(0:nn) = 0.0
                call get_grid_info( ni, nj, nn, stride, nr, jstart, jend )
-            else
+            else				! Use wavelets:
                nij(0,0,0)=nj			! Largest low-pass dimension along j.
                nij(0,1,0)=ni			! Largest low-pass dimension along i.
                do i=1,0,-1			! loop over i & j directions:
 #ifdef WAVELET
                   call dwta_partition(nij(:,i,0),nij(:,i,1),nij(:,i,2),nb,lf,lf)
 #else
-                  write(6,*) "Needs dwta_partition, please compile code with WAVELET setting"
-                  stop
+                  call da_error(__FILE__,__LINE__,(/"needs dwta_partition, compile after setenv WAVELET 1"/))
 #endif
                   write(6,&
                         '("Direction ",a," has partition nij(0:",i1,",",i1,",0:2)={",99("{",i3,",",i3,",",i3,"}",:))',&
@@ -167,35 +174,33 @@ program gen_be_stage4_regional
                call allocate_field_moments(field,wav,wsd,nij(0,1,2),nij(0,0,2))
                allocate(ws(maxval(nij(0,:,2))))
             endif
-         end if
+         endif					! rcount == 1.0
 
          read(UNIT=iunit)field(1:ni,1:nj)
          close(UNIT=iunit)
 
+         if( do_normalize )field(:ni,:nj)=field(:ni,:nj)/sd
          if( use_rf )then
 !           Calculate spatial correlation:
             call get_covariance( ni, nj, nn, stride, rcount, nr, jstart, jend, field(:ni,:nj), cov )
             rcount=rcount+1.0
          else
-            if( do_normalize )field(:ni,:nj)=field(:ni,:nj)/sd
+            field(:ni,:nj)=field(:ni,:nj)*sqrt(grid_box_area)
             fnorm=sqrt(sum(field(:ni,:nj)**2))
-            write(6,&
-                  '("r=||    ",a,"(",a,",",i0,",:",i0,",:",i0,") ||  : ",ES15.9)')&
+            print'("r=||    ",a,"(",a,",",i0,",:",i0,",:",i0,") ||  : ",ES15.9)', &
                   trim(variable),date,member,ni,nj,fnorm
 !           Calculate wavelet transform:
 #ifdef WAVELET
             call dwtai2_w(namw//char(0),lf,field,ws,nij(0,0,0),nij(0,0,2),nb)
 #else
-            write(6,*) "Needs dwtai2_w, please compile code with WAVELET setting"
-            stop
+            call da_error(__FILE__,__LINE__,(/"needs dwtai2_w, compile after setenv WAVELET 1"/))
 #endif
-            write(6,&
-                  '("1-||  W[",a,"(",a,",",i0,",:",i0,",:",i0,")]||/r: ",ES15.9)')&
+            print'("1-||  W[",a,"(",a,",",i0,",:",i0,",:",i0,")]||/r: ",ES15.9)', &
                   trim(variable),date,member,nij(0,1,2),nij(0,0,2),1.-sqrt(sum(field**2))/fnorm
             call update_moments(field,wav,wsd,nij(0,1,2),nij(0,0,2),rcount,1.)
          endif
 
-      end do					! End loop over members.
+      enddo					! End loop over members.
       call calculate_next_date(date,interval,new_date,cdate)
    end do					! do while ( cdate <= edate )
 
@@ -209,13 +214,22 @@ program gen_be_stage4_regional
       call make_scale_length( variable, ck, ounit, nn, nr, cov )
       close(unit=ounit, status='keep')
       deallocate(cov)
+      if( do_normalize )then
+         write(ck,'(i0)')k
+         open(ounit,action="write",file="mom",form="unformatted",status="replace")
+         write(ounit)do_normalize
+         write(ounit)nj,ni
+         write(ounit)sd
+         close(ounit)
+      endif
    else 
 !---------------------------------------------------------------------------------------------
       write(6,'(" [3] Compute wavelet standard deviations.")')
 !---------------------------------------------------------------------------------------------
       call update_moments(field,wav,wsd,nij(0,1,2),nij(0,0,2),rcount,0.)
-      print'(es9.2,"<wsd[",a,",k=",i0,"]~",es9.2,"<",es9.2)',minval(wsd),trim(variable),k,sqrt(sum(wsd**2)/product(nij(0,:,2))),maxval(wsd)
-      open(ounit,action="write",file="wmom",form="unformatted",status="replace")
+      print'(es9.2,"<wsd[",a,",k=",i0,"]~",es9.2,"<",es9.2)', &
+         minval(wsd),trim(variable),k,sqrt(sum(wsd**2)/product(nij(0,:,2))),maxval(wsd)
+      open(ounit,action="write",file="momw",form="unformatted",status="replace")
 !     Note that namw is just 1 byte!
       write(ounit)do_normalize,namw,lf,nb
       write(ounit)nij
@@ -244,7 +258,7 @@ program gen_be_stage4_regional
          enddo
       endif 
 !     deallocate(fw)
-      deallocate(nij,wav,ws,wsd)
+      deallocate(grid_box_area,nij,wav,ws,wsd)
       if( do_normalize )deallocate(sd)
    endif
    deallocate(field) 

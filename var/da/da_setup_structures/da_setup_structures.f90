@@ -4,7 +4,7 @@ module da_setup_structures
    ! Purpose: Sets up various structures.
    !---------------------------------------------------------------------------
 
-   use da_wavelet, only: do_normalize,lf,namw,nb,nij,ws
+   use da_wavelet, only: lf,namw,nb,nij,ws
    use module_domain, only : xb_type, ep_type, domain
 
    use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, j_type, &
@@ -33,7 +33,7 @@ module da_setup_structures
       len_scaling6, len_scaling7, len_scaling8,&
       max_vert_var1, max_vert_var2, max_vert_var3, max_vert_var4, max_vert_var5, &
       max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var_alpha, &
-      print_detail_be, test_statistics, use_rf, &
+      print_detail_be, test_statistics, do_normalize, use_rf, &
       var_scaling1, var_scaling2, var_scaling3, var_scaling4, &
       var_scaling5, var_scaling6, var_scaling7, var_scaling8, &
       vert_corr,max_vert_var5,power_truncation,alpha_truncation, &

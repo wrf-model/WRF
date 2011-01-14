@@ -87,7 +87,7 @@ test_filter.o:		test_filter.F90
 			$(FC) $(FFLAGS_LOCAL) -c test_filter.F90
 
 xp.o:			awaprogs/chap09/xp.c awaprogs/chap02/common.h awaprogs/chap02/real.h awaprogs/chap09/xp.h
-			cc_r $(CFLAGS_LOCAL) -c $<
+			$(CC) $(CFLAGS_LOCAL) -c $<
 
 clean : 
 			$(RM) *.f *.o *.mod *.obj *.i

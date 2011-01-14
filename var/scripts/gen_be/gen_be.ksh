@@ -279,7 +279,8 @@ if $RUN_GEN_BE_DIAGS; then
 &gen_be_diags_nl
    uh_method = '${UH_METHOD}',
    n_smth_sl = ${N_SMTH_SL},
-   use_rf = ${USE_RF}, /
+   use_rf = ${USE_RF},
+   do_normalize = ${DO_NORMALIZE}, /
 EOF
 
    ./gen_be_diags.exe > gen_be_diags.log 2>&1

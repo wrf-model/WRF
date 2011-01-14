@@ -115,10 +115,10 @@ subroutine da_deallocate_background_errors (be)
    
    end if
 
-   if (.not.use_rf) then	! Deallocate wavelet parameters:
-      deallocate(be%wsd,nij,ws)
-      if( do_normalize )deallocate(be%sd)
-   endif
+   ! Deallocate wavelet parameters:
+   if( .not. use_rf )deallocate(be%wsd,ws)
+   if( do_normalize )deallocate(be%sd)
+   if( do_normalize .or. .not. use_rf )deallocate(nij)
 
    if (trace_use) call da_trace_exit("da_deallocate_background_errors")
 

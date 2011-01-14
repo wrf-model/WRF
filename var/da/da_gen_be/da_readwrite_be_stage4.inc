@@ -28,6 +28,7 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
    logical, save            :: first_time=.true.          ! True if first time called.
    real                     :: scale_length(nk)
    real                     :: sl_smth(nk)
+   real, allocatable        :: sd(:,:)                    ! Horizontal standard deviations.
    real, allocatable        :: total_power(:)             ! Total Power spectrum.
 
    call da_get_unit(iunit)
@@ -69,6 +70,7 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
 
    else if (trim(uh_method) == 'scale') then
 
+      if( .not.use_rf )call da_error(__FILE__,__LINE__,(/"{uh_method,use_rf}={''scale'',.false.} error"/))
       filename = trim(variable)//'/'//'sl_print.'//trim(variable)
       open (iunit, file = filename)
 
@@ -102,7 +104,30 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
       write(outunit) scale_length
       close(iunit)
 
-   elseif (trim(uh_method) == 'wavelet') then
+      if( do_normalize )then
+         allocate(nij(0:0,0:1,0:0))
+         do k=1, nk
+            write(ck,'(i0)')k
+            filename = trim(variable)//"/mom"//trim(ck)
+            open(iunit,action="read",file=trim(filename),form="unformatted",status="old")
+            read(iunit)do_normalize1
+            if( do_normalize.neqv.do_normalize1 ) &
+               call da_error(__FILE__,__LINE__,(/"do_normalize.neqv.do_normalize1 for uh_method==''scale''"/))
+            read(iunit)nij
+            if( k==1 )then
+               write(outunit)do_normalize
+               write(outunit)nij
+               allocate(sd(nij(0,1,0),nij(0,0,0)))
+            endif
+            read(iunit)sd
+            write(outunit)sd
+            close(iunit)
+         enddo
+         deallocate(nij,sd)
+      endif
+
+   elseif( trim(uh_method) == 'wavelet' )then
+      if( use_rf )call da_error(__FILE__,__LINE__,(/"{uh_method,use_rf}={''wavelet'',.true.} error"/))
       if( first_time )then
          write(outunit) len_trim('wavelet')
          write(outunit) 'wavelet'
@@ -112,11 +137,12 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
       write(outunit) trim(variable)
       do k=1, nk
          write(ck,'(i0)')k
-         filename = "gen_be_stage4_regional/dir."//trim(variable)//trim(ck)//"/wmom"
+         filename = "gen_be_stage4_regional/dir."//trim(variable)//trim(ck)//"/momw"
          open(iunit,action="read",file=trim(filename),form="unformatted",status="old")
-         read(iunit)do_normalize,namw,lf,nb
+         read(iunit)do_normalize1,namw,lf,nb
          if( first_time )then		! Use same basis forall {variable,k}:
-            do_normalize1=do_normalize
+            if( do_normalize.neqv.do_normalize1 ) &
+               call da_error(__FILE__,__LINE__,(/"do_normalize.neqv.do_normalize1 in "//trim(filename)/))
             namw1=namw
             lf1=lf
             nb1=nb
@@ -149,7 +175,6 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
          endif
          close(iunit)
       end do				! do k=1,nk
-!     deallocate(nij,sd,wsd)
    end if
 
    call da_free_unit(iunit)

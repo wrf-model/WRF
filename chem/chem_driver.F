@@ -81,6 +81,7 @@
 ! ..
 ! .. Local Scalars ..
    INTEGER :: stepave,i,j,k,l,numgas,nv,n, nr,ktau,k_start,k_end,idf,jdf,kdf
+   INTEGER :: ijulian
 !  REAL    :: convtrans_avglen_m
 
 ! ................................................................
@@ -201,6 +202,7 @@
   adapt_step_flag = .FALSE.
   KTAU=GRID%NTSD
   curr_secs = (ktau-1)*real(grid%dt,8) !I think this breaks around 68 yrs w/ i4
+  ijulian=ifix(grid%julian)
 #endif
 #if ( EM_CORE == 1 )
   !The necesssary variables exist for the EM core and using the adaptive
@@ -211,6 +213,7 @@
   ktau = grid%itimestep
   tmpTimeInterval = domain_get_time_since_sim_start(grid)
   curr_secs = real_time_r8(tmpTimeInterval)
+  ijulian=ifix(grid%julian)
 #endif
 
   do_photstep = .false.
@@ -747,10 +750,10 @@
               grid%bioemdt,grid%stepbioe,                                                  &
               config_flags,                                                                &
 #if (NMM_CORE == 1)
-              grid%gmt,grid%julday,rri,t_phy,moist_trans,p8w,t8w,u_phy,v_phy,vvel,         &
+              grid%gmt,ijulian,rri,t_phy,moist_trans,p8w,t8w,u_phy,v_phy,vvel,         &
 #endif
 #if (EM_CORE == 1 )
-              grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
+              grid%gmt,ijulian,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
 #endif
               grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,grid%tsk,               &
               grid%erod,g,emis_seas,emis_dust,tracer, &
@@ -868,10 +871,10 @@
          call photolysis_driver (grid%id,curr_secs,ktau,grid%dt,                      &
               config_flags,haveaer,                                                   &
 #if (NMM_CORE == 1)
-              grid%gmt,grid%julday,t_phy,moist_trans,grid%aerwrf,p8w,t8w,p_phy,       &
+              grid%gmt,ijulian,t_phy,moist_trans,grid%aerwrf,p8w,t8w,p_phy,       &
 #endif
 #if (EM_CORE == 1)
-              grid%gmt,grid%julday,t_phy,moist,grid%aerwrf,p8w,t8w,p_phy,             &
+              grid%gmt,ijulian,t_phy,moist,grid%aerwrf,p8w,t8w,p_phy,             &
 #endif
               chem,rho,dz8w,grid%xlat,grid%xlong,                                     &
               z_at_w,                                                                 &
@@ -934,10 +937,10 @@
             call wrf_debug(15,'calling dry_deposition_driver')
             call dry_dep_driver(grid%id,curr_secs,ktau,grid%dt,config_flags,          &
 #if (NMM_CORE == 1)
-                 grid%gmt,grid%julday,t_phy,moist_trans,scalar_trans,p8w,t8w,vvel,    &
+                 grid%gmt,ijulian,t_phy,moist_trans,scalar_trans,p8w,t8w,vvel,    &
 #endif
 #if (EM_CORE == 1)
-                 grid%gmt,grid%julday,t_phy,moist,scalar,p8w,t8w,vvel,                &
+                 grid%gmt,ijulian,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
                  rri,p_phy,chem,tracer,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,         &
                  grid%cldfra, grid%cldfra_old,grid%raincv_b,seasin,dustin,            &
@@ -1092,10 +1095,10 @@
 
           call mechanism_driver(grid%id,curr_secs,ktau,grid%dt,grid%ktauc,dtstepc,config_flags, &
 #if (NMM_CORE == 1)
-              grid%gmt,grid%julday,t_phy,moist_trans,p8w,t8w,                         &
+              grid%gmt,ijulian,t_phy,moist_trans,p8w,t8w,                         &
 #endif
 #if (EM_CORE == 1)
-              grid%gmt,grid%julday,t_phy,moist,p8w,t8w,grid%gd_cldfr,                 &
+              grid%gmt,ijulian,t_phy,moist,p8w,t8w,grid%gd_cldfr,                 &
 #endif
               p_phy,chem,rho,dz8w,grid%dx,g,                                          &
               zmid,z_at_w,grid%xlat,grid%xlong,                                       &

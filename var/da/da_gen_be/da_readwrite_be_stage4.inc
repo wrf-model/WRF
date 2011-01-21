@@ -142,7 +142,7 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
          read(iunit)do_normalize1,namw,lf,nb
          if( first_time )then		! Use same basis forall {variable,k}:
             if( do_normalize.neqv.do_normalize1 ) &
-               call da_error(__FILE__,__LINE__,(/"do_normalize.neqv.do_normalize1 in "//trim(filename)/))
+               call da_error(__FILE__,__LINE__,(/"do_normalize.neqv.do_normalize1 in "//filename/))
             namw1=namw
             lf1=lf
             nb1=nb

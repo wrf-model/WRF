@@ -21,7 +21,7 @@ subroutine da_scan_obs_radar (iv, filename)
    logical                       :: outside
    integer                       :: n_dup, ndup
 
-   real                          :: obs_time
+   real*8                        :: obs_time
    integer                       :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_scan_obs_radar")

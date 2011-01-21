@@ -220,6 +220,16 @@
     CALL domain_clock_get( grid, current_time=currentTime, &
                                  start_time=startTime,     &
                                  current_timestr=current_date )
+
+    IF (switch .EQ. history_only) THEN
+      CALL nl_get_adjust_output_times( grid%id, adjust )
+      IF ( adjust ) THEN
+        CALL adjust_io_timestr( grid%io_intervals( history_alarm ), currentTime, startTime, timestring )
+        current_date_save = current_date
+        current_date = timestring
+      ENDIF
+    ENDIF
+
     WRITE ( wrf_err_message , * ) 'output_wrf: begin, current_date=',current_date
     CALL wrf_debug ( 300 , wrf_err_message )
 
@@ -687,9 +697,6 @@ endif
        grid%save_topo_from_real=0
     ENDIF
 #endif
-
-    CALL nl_get_adjust_output_times( grid%id, adjust )
-    current_date_save = current_date
 
     IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
          (first_history .LE. switch .AND. switch .LE. last_history ) .OR. &
@@ -1207,7 +1214,12 @@ endif
          CALL wrf_bdyout( fid , grid , config_flags, switch, dryrun,  ierr )
        ENDIF
     ENDIF
-    current_date = current_date_save
+
+    IF ( switch .EQ. history_only ) THEN
+      IF (adjust) THEN
+        current_date = current_date_save
+      ENDIF
+    ENDIF
 
 #if (EM_CORE == 1)
       grid%save_topo_from_real = save_topo_orig

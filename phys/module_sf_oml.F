@@ -78,7 +78,6 @@ CONTAINS
 
    DO J=jts,jte
 
-      CALL wrf_debug( 100, 'Call OML' )
          DO i=its,ite
             IF (XLAND(I,J).GT.1.5) THEN
                CALL OML1D(I,J,TML(i,j),T0ML(i,j),HML(i,j),H0ML(i,j),           &

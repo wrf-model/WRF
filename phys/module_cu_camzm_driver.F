@@ -19,7 +19,7 @@ SUBROUTINE camzm_driver(                                      &
              ,ims,ime, jms,jme, kms,kme                       &
              ,its,ite, jts,jte, kts,kte                       &
              ,itimestep, bl_pbl_physics, sf_sfclay_physics    &
-             ,th, t_phy, tsk, tke_myj, ust, qv, qc, qi        &
+             ,th, t_phy, tsk, tke_pbl, ust, qv, qc, qi        &
              ,mavail, kpbl, pblh, xland, z                    &
              ,z_at_w, dz8w, ht, p, p8w, pi_phy, psfc          &
              ,u_phy, v_phy, hfx, qfx, cldfra                  &
@@ -65,7 +65,7 @@ SUBROUTINE camzm_driver(                                      &
                              pi_phy, & !exner function, (p0/p)^(R/cpair) (none)
                                  qv, & !water vapor mixing ratio (kg/kg-dry air)
                                  th, & !potential temperature (K)
-                            tke_myj, & !turbulent kinetic energy from MYJ (m2/s2)
+                            tke_pbl, & !turbulent kinetic energy from PBL (m2/s2)
                               t_phy, & !temperature (K)
                               u_phy, & !zonal wind component on T points (m/s)
                               v_phy, & !meridional wind component on T points (m/s)
@@ -323,7 +323,7 @@ SUBROUTINE camzm_driver(                                      &
         call get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
              mavail(i,j), kpbl(i,j), pblh(i,j), &
              dz8w(i,1,j), psfc(i,j), qv(i,1,j), t_phy(i,1,j), &
-             th(i,1,j), tsk(i,j), tke_myj(i,:,j), ust(i,j), &
+             th(i,1,j), tsk(i,j), tke_pbl(i,:,j), ust(i,j), &
              u_phy(i,1,j), v_phy(i,1,j), hfx(i,j), qfx(i,j), &
              tpert_camuwpbl(i,j), kte, &
              tpert(1))
@@ -666,7 +666,7 @@ END SUBROUTINE zm_conv_init
 !------------------------------------------------------------------------
 SUBROUTINE get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
      mavail, kpbl, pblh, dzlowest, &
-     psfc, qvlowest, t_phylowest, thlowest, tsk, tke_myj, ust, &
+     psfc, qvlowest, t_phylowest, thlowest, tsk, tke_pbl, ust, &
      u_phylowest, v_phylowest, hfx, qfx, tpert_camuwpbl, kte, tpert)
 ! Calculates the temperature perturbation used to trigger convection.
 ! This should only be used if tpert is not already provided by CAM's PBL
@@ -694,7 +694,7 @@ SUBROUTINE get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
 !
 ! Subroutine arguments...
 !
-  real, dimension(:), intent(in) :: tke_myj
+  real, dimension(:), intent(in) :: tke_pbl
   real, intent(in) :: dx, dzlowest, hfx, mavail, pblh, psfc, qvlowest, &
        tpert_camuwpbl, tsk, t_phylowest, thlowest, ust, u_phylowest, &
        v_phylowest
@@ -796,7 +796,7 @@ SUBROUTINE get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
         !1st, get avg TKE w/n the PBL as a proxy for ebrk variable in CAM
         ebrk = 0.
         do k=1,min(kpbl,kte)
-           ebrk = ebrk + tke_myj(k)
+           ebrk = ebrk + tke_pbl(k)
         end do
         ebrk = ebrk/real(kpbl)
 

@@ -18,7 +18,7 @@ CONTAINS
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
                      ,rainsh,pratesh,nca,rainshv                      &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w                   &
-                     ,tke_myj                                         &
+                     ,tke_pbl                                         &
                      ,cldfra,cldfra_old,cldfrash                      &
                      ,htop,hbot     &
                  ! Package selection variables
@@ -134,7 +134,7 @@ CONTAINS
 !-- v_phy         v-velocity interpolated to theta points (m/s)
 !-- th_phy        potential temperature (K)
 !-- t_phy         temperature (K)
-!-- tke_myj       turbulent kinetic energy from MYJ scheme (m2/s2)
+!-- tke_pbl       turbulent kinetic energy from PBL scheme (m2/s2)
 !-- w             vertical velocity (m/s)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
 !-- z             height above sea level at middle of layers (m)
@@ -231,7 +231,7 @@ CONTAINS
                                                       ,       v  &
                                                       ,      th  &
                                                       ,       t  &
-                                                      , tke_myj  &
+                                                      , tke_pbl  &
                                                       ,     rho
 
 
@@ -367,7 +367,7 @@ CONTAINS
            ,Z=z, Z_AT_W=z_at_w, DZ8W=dz8w                                &
            ,T_PHY=t, U_PHY=u, V_PHY=v                                    &
            ,MOIST=moist, QV=qv_curr, QC=qc_curr, QI=qi_curr              &
-           ,PBLH_IN=pblh, TKE_MYJ=tke_myj                                &
+           ,PBLH_IN=pblh, TKE_PBL=tke_pbl                                &
            ,CLDFRA=cldfra, CLDFRA_OLD=cldfra_old, CLDFRASH=cldfrash      &
            ,CUSH_INOUT=cush, RAINSH=rainsh, PRATESH=tmppratesh           &
            ,SNOWSH=snowsh                                                &

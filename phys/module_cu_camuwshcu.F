@@ -113,11 +113,10 @@
 !
 ! The CAM UW shallow Cu scheme only works with PBL schemes that generate
 ! TKE. So, for example, YSU would be an invalid choice to combine with
-! the UW scheme. For now, we are coupling into the tke_myj version of
-! TKE used by MYJ and CAMUWPBL. At some point, it would be great to unify
+! the UW scheme. For now, we are coupling into the tke_pbl version of
+! TKE used by MYJ, CAMUWPBL and others. At some point, it would be great to unify
 ! all the different TKEs output so that things work together properly.
-! For now, we are not trying to deal with the cacophony of variables,
-! i.e. tke & tke_pbl.
+! QKE from MYNN remains separate
 !
   select case(bl_pbl_physics)
   case (CAMUWPBLSCHEME, MYJPBLSCHEME)

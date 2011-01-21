@@ -21,7 +21,7 @@ SUBROUTINE camuwshcu_driver(                                  &
              ,p, p8w, pi_phy, z, z_at_w, dz8w                 &
              ,t_phy, u_phy, v_phy                             &
              ,moist, qv, qc, qi                               &
-             ,pblh_in, tke_myj, cldfra, cldfra_old, cldfrash  &
+             ,pblh_in, tke_pbl, cldfra, cldfra_old, cldfrash  &
              ,cush_inout, rainsh, pratesh, snowsh, icwmrsh    &
              ,cmfmc, cmfmc2_inout, rprdsh_inout, cbmf_inout   &
              ,cmfsl, cmflq, dlf, evapcsh_inout                &
@@ -63,7 +63,7 @@ SUBROUTINE camuwshcu_driver(                                  &
                              pi_phy, & !exner function, (p0/p)^(R/cpair) (none)
                                  qv, & !water vapor mixing ratio (kg/kg-dry air)
                               t_phy, & !temperature (K)
-                            tke_myj, & !turbulent kinetic energy from MYJ (m2/s2)
+                            tke_pbl, & !turbulent kinetic energy from PBL (m2/s2)
                               u_phy, & !zonal wind component on T points (m/s)
                               v_phy, & !meridional wind component on T points (m/s)
                                   z, & !height above sea level at mid-level (m)
@@ -228,11 +228,11 @@ SUBROUTINE camuwshcu_driver(                                  &
         !middle. We will interpolate the TKE from the to the interfaces
         !and then just use the lowest TKE for the surface and the highest
         !TKE at the top.
-        tke8(1,kte+1) = tke_myj(i,1,j)    !surface
-        tke8(1,1)     = tke_myj(i,kte,j)  !model top interface
+        tke8(1,kte+1) = tke_pbl(i,1,j)    !surface
+        tke8(1,1)     = tke_pbl(i,kte,j)  !model top interface
         do k = kts,kte-1
            kflip = kte-k+1
-           tke8(1,kflip) = 0.5*(tke_myj(i,k,j) + tke_myj(i,k+1,j))
+           tke8(1,kflip) = 0.5*(tke_pbl(i,k,j) + tke_pbl(i,k+1,j))
         end do
 
         !Flip the tracer array -

@@ -1332,7 +1332,7 @@ SUBROUTINE a_couple ( config_flags, mu, a_mu, mub, a_rfield, field, &
 
 END SUBROUTINE a_couple
 
- SUBROUTINE da_calc_2rd_fg ( data3d , space_bdy_xs, space_bdy_xe, space_bdy_ys, space_bdy_ye, &
+ SUBROUTINE da_calc_2nd_fg ( data3d , space_bdy_xs, space_bdy_xe, space_bdy_ys, space_bdy_ye, &
                              space_bdy_txs, space_bdy_txe, space_bdy_tys, space_bdy_tye, &
                              time_diff, char_stagger , &
                              spec_bdy_width , &
@@ -1533,7 +1533,7 @@ END SUBROUTINE a_couple
        END DO
     END IF
     
- END SUBROUTINE da_calc_2rd_fg
+ END SUBROUTINE da_calc_2nd_fg
 
 SUBROUTINE decouple ( mu, mub, field, name, &
                     msf,                          &

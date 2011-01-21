@@ -81,7 +81,7 @@ module da_test
       da_transform_xtoxa_adj, da_apply_be, da_apply_be_adj, da_transform_bal, &
       da_transform_bal_adj
 #ifdef VAR4D
-   use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, da_get_2rd_firstguess
+   use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, da_get_2nd_firstguess
    use da_4dvar, only : model_grid, da_tl_model, da_ad_model, input_nl_xtraj, upsidedown_ad_forcing
 #endif
 

@@ -101,7 +101,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
       call da_zero_x(grid%x6a)
       if (var4d_lbc) then
-         call da_get_2rd_firstguess ( grid )
+         call da_get_2nd_firstguess ( grid )
          call da_setup_firstguess( xbx, grid, config_flags)
 
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')

@@ -848,7 +848,7 @@ CONTAINS
                 P_FIRST_SCALAR=param_first_scalar               &
                ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
                ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
-               ,CICE=cice,XLV0=xlv0,XLS=xls,PSAT=psat           &
+               ,CICE=cice,XLS=xls,PSAT=psat                     &
                ,F_QI=f_qi,F_QC=f_qc                             & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &

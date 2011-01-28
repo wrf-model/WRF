@@ -988,17 +988,19 @@ USE module_timing
    ENDIF
    kid = 1
 
+#if ( EM_CORE == 1 )
 !  Check if it is time to move the nest
-!     xtime = grid%xtime
-!     CALL nl_get_time_to_move ( grid%id , time_to_move )
-!     if ( xtime .lt. time_to_move ) then
-!        time_for_move = .FALSE.
-!        move_cd_x = 0
-!        move_cd_y = 0
-!!       write(0,*) 'it is not the time to move ', xtime, time_to_move
-!        return
-!     endif
-!!
+      xtime = grid%xtime
+      CALL nl_get_time_to_move ( grid%id , time_to_move )
+      if ( xtime .lt. time_to_move ) then
+         time_for_move = .FALSE.
+         move_cd_x = 0
+         move_cd_y = 0
+!        write(0,*) 'it is not the time to move ', xtime, time_to_move
+         return
+      endif
+#endif
+! 
 ! find out if this is the innermost nest (will not have kids)
    IF   ( grid%num_nests .EQ. 0 ) THEN
      ! code that executes on innermost nest

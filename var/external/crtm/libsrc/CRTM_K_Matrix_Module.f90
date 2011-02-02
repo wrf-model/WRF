@@ -657,6 +657,10 @@ CONTAINS
                                            AtmOptics     , &  ! Output
                                            AAV             )  ! Internal variable output
 
+          ! ---------------------------------
+          ! Gamma correction to optical depth
+          ! ---------------------------------
+          AtmOptics%Optical_Depth = AtmOptics%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
 
            ! Solar radiation
           IF( SC(SensorIndex)%Solar_Irradiance(ChannelIndex) > ZERO .AND. &
@@ -746,6 +750,10 @@ CONTAINS
           SfcOptics%Compute_Switch = SET
           ! Change SfcOptics emissivity/reflectivity
           ! contents/computation status
+          IF ( User_Emissivity .and.  &
+               (Options(m)%Emissivity(ln) <= ZERO .or. Options(m)%Emissivity(ln) > ONE) ) THEN
+             User_Emissivity = .FALSE.
+          END IF
           IF ( User_Emissivity ) THEN
             SfcOptics%Compute_Switch  = NOT_SET
             SfcOptics%Emissivity(1,1)       = Options(m)%Emissivity(ln)
@@ -926,6 +934,12 @@ CONTAINS
                                               Predictor_K , &  ! K   Output
                                               AAV           )  ! Internal variable input
 
+          ! ---------------------------------
+          ! Gamma correction to optical depth
+          ! ---------------------------------
+          RTSolution_K(ln,m)%Gamma      = RTSolution_K(ln,m)%Gamma + &
+                                          SUM(AtmOptics%Optical_Depth * AtmOptics_K%Optical_Depth)
+          AtmOptics_K%Optical_Depth = AtmOptics_K%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
           
           ! --------------------------------------          
           ! K-matrix of the predictor calculations

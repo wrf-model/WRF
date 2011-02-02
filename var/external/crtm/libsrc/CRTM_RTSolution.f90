@@ -526,6 +526,12 @@ CONTAINS
       END IF
     END IF
  
+    ! --------------------------------------------------------------
+    ! Fill the RTSolution optional structure with overcast radiances
+    ! --------------------------------------------------------------
+    IF ( ALLOCATED( RTSolution%Overcast ) ) &
+       RTSolution%Overcast(:) = RTV%Overcast(RTV%n_Added_Layers+1:RTV%n_Layers)
+
     ! accumulate Fourier component
     RTSolution%Radiance = RTSolution%Radiance + Radiance*  &
        cos( RTV%mth_Azi*(GeometryInfo%Sensor_Azimuth_Radian-GeometryInfo%Source_Azimuth_Radian) )
@@ -1647,6 +1653,7 @@ CONTAINS
     ! ------------------
     ! Initialise upwelling radiance
     RTV%Up_Radiance = ZERO
+    RTV%Overcast(:) = ZERO
 
     ! Loop from SFC->TOA
     DO k = n_Layers, 1, -1
@@ -1659,6 +1666,8 @@ CONTAINS
                                 layer_source_up 
       ! upwelling radiance (atmospheric portion only)
       RTV%Up_Radiance = (RTV%Up_Radiance*RTV%e_Layer_Trans_UP(k)) + layer_source_up
+      ! upwelling radiance (overcast)
+      RTV%Overcast(k:n_Layers) = (RTV%Overcast(k:n_Layers)*RTV%e_Layer_Trans_UP(k)) + layer_source_up
     END DO
 
   END SUBROUTINE CRTM_Emission 

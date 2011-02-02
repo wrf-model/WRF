@@ -461,7 +461,7 @@ subroutine da_setup_be_regional(xb, be)
 
 !
    if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
-   be % v4 % name = 'qt   '
+      if ( cloud_cv_options == 1 ) be % v4 % name = 'qt   '
    end if
 
    write (unit=message(1),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &
@@ -501,19 +501,15 @@ subroutine da_setup_be_regional(xb, be)
       call da_get_vertical_truncation(max_vert_var3, be3_eval_glo(:), be % v3)
       call da_get_vertical_truncation(max_vert_var4, be4_eval_glo(:), be % v4)
 #ifdef CLOUD_CV
-     if(cloud_cv_options.eq.1)then
-      be % v6 % mz = xb % mkz
-      be % v7 % mz = xb % mkz
-      be % v8 % mz = xb % mkz
-     elseif(cloud_cv_options.eq.2)then
-      call da_get_vertical_truncation(max_vert_var6, be6_eval_glo(:), be % v6)
-      call da_get_vertical_truncation(max_vert_var7, be7_eval_glo(:), be % v7)
-      call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
-     elseif(cloud_cv_options.eq.3)then
-      be % v6 % mz = xb % mkz
-      be % v7 % mz = xb % mkz
-      be % v8 % mz = xb % mkz
-     endif
+      if (cloud_cv_options.eq.2) then
+         call da_get_vertical_truncation(max_vert_var6, be6_eval_glo(:), be % v6)
+         call da_get_vertical_truncation(max_vert_var7, be7_eval_glo(:), be % v7)
+         call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
+      else
+         be % v6 % mz = xb % mkz
+         be % v7 % mz = xb % mkz
+         be % v8 % mz = xb % mkz
+      endif
 #endif
       if (max_vert_var5 == 0.0) then
          be % v5 % mz = 0

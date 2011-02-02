@@ -15,6 +15,7 @@ RM = /bin/rm -f
 AR = ar
 #RANLIB	= ranlib
 RANLIB	= echo
+FGREP = fgrep -iq
 
 OBJS = ESMF_Alarm.o ESMF_BaseTime.o ESMF_Clock.o ESMF_Time.o \
         Meat.o ESMF_Base.o ESMF_Calendar.o ESMF_Fraction.o   \
@@ -56,6 +57,11 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 	$(SED_FTN) $*.F90 > $*.b
 	$(CPP) -C -P -I. $*.b > $*.f
 	$(RM) $*.b
+	@ if echo $(CPP) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 	$(FC) -o $@ -c $*.f
 
 .F90.f :
@@ -63,6 +69,11 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 	$(SED_FTN) $*.F90 > $*.b
 	$(CPP) -C -P -I. $*.b > $*.f
 	$(RM) $*.b
+	@ if echo $(CPP) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
 
 .f.o :
 	$(RM) $@

@@ -38,11 +38,11 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    real, allocatable              :: xb_q(:,:)
 
 !! for crtm_cloud
-   real, allocatable              :: qcw(:,:)
-   real, allocatable              :: qci(:,:)
-   real, allocatable              :: qrn(:,:)
-   real, allocatable              :: qsn(:,:)
-   real, allocatable              :: qgr(:,:)
+   real, allocatable              :: qcw_ad(:,:)
+   real, allocatable              :: qci_ad(:,:)
+   real, allocatable              :: qrn_ad(:,:)
+   real, allocatable              :: qsn_ad(:,:)
+   real, allocatable              :: qgr_ad(:,:)
 
 !   type(infa_type), pointer       :: info                
 !   integer                        :: i,j
@@ -201,18 +201,23 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       allocate (p_ad(iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
       allocate (xb_q(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
 
-      if (crtm_cloud) then
-         allocate (qcw(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qci(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qrn(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qsn(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-         allocate (qgr(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-      end if
-      
       q_ad = 0.0
       t_ad = 0.0
       p_ad = 0.0
       xb_q = 0.0
+
+      if (crtm_cloud) then
+         allocate (qcw_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qci_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qrn_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qsn_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         allocate (qgr_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+         qcw_ad = 0.0
+         qci_ad = 0.0
+         qrn_ad = 0.0
+         qsn_ad = 0.0
+         qgr_ad = 0.0
+      end if
 
 !      info => iv%instid(inst)%info
 
@@ -400,6 +405,20 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
                                 iv%instid(inst)%t_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
                   Atmosphere_AD(n)%absorber(k,1) = Atmosphere_AD(n)%absorber(k,1) + &
                                 iv%instid(inst)%q_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                  if (crtm_cloud) then
+                     Atmosphere_AD(n)%Cloud(1)%Water_Content(k) = Atmosphere_AD(n)%Cloud(1)%Water_Content(k) + &
+                        iv%instid(inst)%water_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                     Atmosphere_AD(n)%Cloud(2)%Water_Content(k) = Atmosphere_AD(n)%Cloud(2)%Water_Content(k) + &
+                        iv%instid(inst)%ice_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                     Atmosphere_AD(n)%Cloud(3)%Water_Content(k) = Atmosphere_AD(n)%Cloud(3)%Water_Content(k) + &
+                        iv%instid(inst)%rain_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                     Atmosphere_AD(n)%Cloud(4)%Water_Content(k) = Atmosphere_AD(n)%Cloud(4)%Water_Content(k) + &
+                        iv%instid(inst)%snow_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                     Atmosphere_AD(n)%Cloud(5)%Water_Content(k) = Atmosphere_AD(n)%Cloud(5)%Water_Content(k) + &
+                        iv%instid(inst)%graupel_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                     Atmosphere_AD(n)%Cloud(6)%Water_Content(k) = Atmosphere_AD(n)%Cloud(6)%Water_Content(k) + &
+                        iv%instid(inst)%hail_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                  end if
                end do
             end do
          endif
@@ -455,12 +474,13 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
       ! [1.5] Scale transformation and fill zero for no-control variable
 
+        ! Convert cloud content unit from kg/kg to kg/m^2
          if (crtm_cloud) then
             do k=kts,kte
                do icld=1,Atmosphere(n)%n_Clouds
                   Atmosphere_AD(n)%Cloud(icld)%Water_Content(k) = &
 		        Atmosphere_AD(n)%Cloud(icld)%Water_Content(k) * &
-		        (Atmosphere(n)%Level_Pressure(k)- Atmosphere(n)%Level_Pressure(k-1)) / gravity
+		        (Atmosphere(n)%Level_Pressure(k)- Atmosphere(n)%Level_Pressure(k-1))*100.0/gravity
                enddo
             enddo
          end if
@@ -469,20 +489,19 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
          if (crtm_cloud) then
             do k=kts,kte ! from bottom to top
-               qcw(k,n)=Atmosphere_AD(n)%Cloud(1)%Water_Content(kte-k+1)
-               qci(k,n)=Atmosphere_AD(n)%Cloud(2)%Water_Content(kte-k+1)
-               qrn(k,n)=Atmosphere_AD(n)%Cloud(3)%Water_Content(kte-k+1)
-               qsn(k,n)=Atmosphere_AD(n)%Cloud(4)%Water_Content(kte-k+1)
-               qgr(k,n)=Atmosphere_AD(n)%Cloud(5)%Water_Content(kte-k+1)
+               qcw_ad(k,n)=Atmosphere_AD(n)%Cloud(1)%Water_Content(kte-k+1)
+               qci_ad(k,n)=Atmosphere_AD(n)%Cloud(2)%Water_Content(kte-k+1)
+               qrn_ad(k,n)=Atmosphere_AD(n)%Cloud(3)%Water_Content(kte-k+1)
+               qsn_ad(k,n)=Atmosphere_AD(n)%Cloud(4)%Water_Content(kte-k+1)
+               qgr_ad(k,n)=Atmosphere_AD(n)%Cloud(5)%Water_Content(kte-k+1)
             end do
          end if
 
-         do k=kts,kte ! from bottom to top
+         do k=kts,kte-1 ! from bottom to top.  Zero Jacobian for top level
             if (atmosphere(n)%pressure(kte-k+1) >= 75.0) &        ! Zero Jacobian for top level(s)
                q_ad(k,n) = Atmosphere_AD(n)%Absorber(kte-k+1,1) * 1000.0 /  &
                            (1.0-xb_q(kte-k+1,n))**2               ! in g/kg
-            if (k < kte) &                                        ! Zero Jacobian for top level
-               t_ad(k,n)=Atmosphere_AD(n)%Temperature(kte-k+1)
+               t_ad(k,n) = Atmosphere_AD(n)%Temperature(kte-k+1)
          end do
 
          p_ad(n) = Atmosphere_AD(n)%Level_Pressure(atmosphere(n)%n_layers) * 0.01   ! in hPa
@@ -524,11 +543,11 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 #endif
       
         if (crtm_cloud) then
-           call da_interp_lin_2d_adj_partial(jo_grad_x%qcw(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qcw)
-           call da_interp_lin_2d_adj_partial(jo_grad_x%qci(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qci)
-           call da_interp_lin_2d_adj_partial(jo_grad_x%qrn(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qrn)
-           call da_interp_lin_2d_adj_partial(jo_grad_x%qsn(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qsn)
-           call da_interp_lin_2d_adj_partial(jo_grad_x%qgr(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qgr)
+           call da_interp_lin_2d_adj_partial(jo_grad_x%qcw(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qcw_ad)
+           call da_interp_lin_2d_adj_partial(jo_grad_x%qci(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qci_ad)
+           call da_interp_lin_2d_adj_partial(jo_grad_x%qrn(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qrn_ad)
+           call da_interp_lin_2d_adj_partial(jo_grad_x%qsn(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qsn_ad)
+           call da_interp_lin_2d_adj_partial(jo_grad_x%qgr(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qgr_ad)
         endif
 
          call da_interp_lin_2d_adj_partial(jo_grad_x%t(:,:,kts:kte),    iv%instid(inst)%info, kts,kte, t_ad)
@@ -541,11 +560,11 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
          deallocate (xb_q)
 
          if (crtm_cloud) then
-            deallocate (qcw)
-            deallocate (qci)
-            deallocate (qrn)
-            deallocate (qsn)
-            deallocate (qgr)
+            deallocate (qcw_ad)
+            deallocate (qci_ad)
+            deallocate (qrn_ad)
+            deallocate (qsn_ad)
+            deallocate (qgr_ad)
          end if
 
       !-------------------------------------------------------------------

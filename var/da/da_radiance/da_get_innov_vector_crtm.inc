@@ -44,6 +44,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real    :: model_rho(kms:kme)
    real, allocatable :: model_snow(:)  ! snow water equivalent, different from model_snowh,
                                        ! used in calculating reff_water
+   real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
+   real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
 
    ! real    :: model_tm(kms:kme)
 
@@ -266,6 +268,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end do		         
       end if   
 #endif
+
+      if ( use_mspps_emis(inst) ) allocate(em_mspps(nchanl))
 	
       do n=n1,n2
          ! if ( n > iv%instid(inst)%num_rad ) exit
@@ -304,7 +308,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             ! NOTE: WRF high-level q values seems too big, replaced by constants
             if (p(1)*0.01 < 75.0) Atmosphere(1)%Absorber(kte-k+1,1) = 0.001
 
-            call da_interp_lin_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
+            call da_interp_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
             
             if (crtm_cloud) then
 
@@ -421,6 +425,20 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          ! CRTM Surface parameter data
 
+         if ( use_mspps_ts(inst) ) then
+            ! only for AMSU-A over land
+            if ( trim(crtm_sensor_name(rtminit_sensor(inst))) == 'amsua' &
+                 .and. model_isflg == 2 ) then
+               call da_mspps_ts(ob%instid(inst)%tb(1:nchanl,n), nchanl,  &
+                                iv%instid(inst)%satzen(n), ts_mspps)
+               ! ts_mspps is initilaized as negative values in the
+               ! da_mspps_ts subroutine.  Apply only valid values here.
+               if ( ts_mspps > 0.0 ) then
+                  model_ts(n) = ts_mspps
+               end if
+            end if
+         end if
+
          if (Surface(1)%Land_Coverage > 0.0) then
             Surface(1)%Land_Type=GRASS_SOIL           ! land type (User guide appendix 3)
             Surface(1)%Land_Temperature=model_ts(n)      ! K
@@ -460,7 +478,19 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             Surface(1)%SensorData%WMO_Sensor_Id     = ChannelInfo(inst)%WMO_Sensor_Id
             Surface(1)%SensorData%Tb(1:nchanl)      = ob%instid(inst)%tb(1:nchanl,n)
          end if
-	 
+
+         ! user emissivity options
+         Options(1)%use_emissivity = .false.
+         if ( use_mspps_emis(inst) ) then
+            ! Only for AMSU-A over land
+            if ( trim(crtm_sensor_name(rtminit_sensor(inst))) == 'amsua' &
+                 .and. model_isflg == 2 ) then
+               call da_mspps_emis(ob%instid(inst)%tb(1:nchanl,n), nchanl, em_mspps)
+               Options(1)%use_emissivity = .true.
+               Options(1)%emissivity(1:nchanl) = em_mspps(1:nchanl)
+            end if
+         end if
+
          if (use_crtm_kmatrix) then
 
             ! CRTM surface/atmosphere K initialization
@@ -625,31 +655,19 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                if (use_crtm_kmatrix) then
 	          ! Cloud Jacobian
                   do l=1,nchanl
-                     iv%instid(inst)%water_jacobian(l,k,n) =   &
-                        Atmosphere_k(l,1)%cloud(1)%water_content(k)
-                     iv%instid(inst)%ice_jacobian(l,k,n) =     &
-                        Atmosphere_k(l,1)%cloud(2)%water_content(k)
-                     iv%instid(inst)%rain_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(3)%water_content(k)
-                     iv%instid(inst)%snow_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(4)%water_content(k)
-                     iv%instid(inst)%graupel_jacobian(l,k,n) = &
-                        Atmosphere_k(l,1)%cloud(5)%water_content(k)
-                     iv%instid(inst)%hail_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(6)%water_content(k)
+                     iv%instid(inst)%water_jacobian(l,k,n)    = Atmosphere_k(l,1)%cloud(1)%water_content(k)
+                     iv%instid(inst)%ice_jacobian(l,k,n)      = Atmosphere_k(l,1)%cloud(2)%water_content(k)
+                     iv%instid(inst)%rain_jacobian(l,k,n)     = Atmosphere_k(l,1)%cloud(3)%water_content(k)
+                     iv%instid(inst)%snow_jacobian(l,k,n)     = Atmosphere_k(l,1)%cloud(4)%water_content(k)
+                     iv%instid(inst)%graupel_jacobian(l,k,n)  = Atmosphere_k(l,1)%cloud(5)%water_content(k)
+                     iv%instid(inst)%hail_jacobian(l,k,n)     = Atmosphere_k(l,1)%cloud(6)%water_content(k)
 
-                     iv%instid(inst)%water_r_jacobian(l,k,n) =   &
-                        Atmosphere_k(l,1)%cloud(1)%effective_radius(k)
-                     iv%instid(inst)%ice_r_jacobian(l,k,n) =     &
-                        Atmosphere_k(l,1)%cloud(2)%effective_radius(k)
-                     iv%instid(inst)%rain_r_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(3)%effective_radius(k)
-                     iv%instid(inst)%snow_r_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(4)%effective_radius(k)
-                     iv%instid(inst)%graupel_r_jacobian(l,k,n) = &
-                        Atmosphere_k(l,1)%cloud(5)%effective_radius(k)
-                     iv%instid(inst)%hail_r_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(6)%effective_radius(k)
+                     iv%instid(inst)%water_r_jacobian(l,k,n)  = Atmosphere_k(l,1)%cloud(1)%effective_radius(k)
+                     iv%instid(inst)%ice_r_jacobian(l,k,n)    = Atmosphere_k(l,1)%cloud(2)%effective_radius(k)
+                     iv%instid(inst)%rain_r_jacobian(l,k,n)   = Atmosphere_k(l,1)%cloud(3)%effective_radius(k)
+                     iv%instid(inst)%snow_r_jacobian(l,k,n)   = Atmosphere_k(l,1)%cloud(4)%effective_radius(k)
+                     iv%instid(inst)%graupel_r_jacobian(l,k,n)= Atmosphere_k(l,1)%cloud(5)%effective_radius(k)
+                     iv%instid(inst)%hail_r_jacobian(l,k,n)   = Atmosphere_k(l,1)%cloud(6)%effective_radius(k)
                   end do
 	       end if	  
             end do
@@ -678,6 +696,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          iv%instid(inst)%ice_coverage(n)   = Surface(1)%ice_coverage                              
          iv%instid(inst)%snow_coverage(n)  = Surface(1)%snow_coverage
       end do       !  end loop for pixels
+
+      if ( use_mspps_emis(inst) ) deallocate(em_mspps)
 
       deallocate (model_u10)
       deallocate (model_v10)

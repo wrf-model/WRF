@@ -5161,7 +5161,7 @@ END SUBROUTINE g_calculate_full
 ! g_p_hyd_w,fzm,fzp,znw,p_top,g_p_top,RTHRATEN,RTHBLTEN,RUBLTEN,RVBLTEN,RQVBLTEN, &
  g_p_hyd_w,fzm,fzp,znw,p_top,RTHRATEN,RTHBLTEN,RUBLTEN,RVBLTEN,RQVBLTEN, &
  RQCBLTEN,RQIBLTEN,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,RTHFTEN, &
- RQVFTEN,RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,ids,ide,jds, &
+ RQVFTEN,RUCUTEN,RVCUTEN,RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,ids,ide,jds, &
  jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
  IMPLICIT NONE
@@ -5186,6 +5186,7 @@ END SUBROUTINE g_calculate_full
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RTHRATEN
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN, &
  RQICUTEN,RQSCUTEN
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RUCUTEN,RVCUTEN
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
  RQCBLTEN,RQIBLTEN
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RTHFTEN,RQVFTEN
@@ -5446,6 +5447,17 @@ END SUBROUTINE g_calculate_full
  ENDDO
  ENDDO
 
+ IF (config_flags%cu_physics .eq. 6) THEN
+   DO J=j_start,j_end
+   DO I=i_start,i_end
+   DO K=k_start,k_end
+      RUCUTEN(I,K,J)=RUCUTEN(I,K,J)/mu(I,J)     ! Tiedtke ZCX&YQW
+      RVCUTEN(I,K,J)=RVCUTEN(I,K,J)/mu(I,J)     ! Tiedtke ZCX&YQW
+   ENDDO
+   ENDDO
+   ENDDO
+ ENDIF
+
  IF(P_QV .ge. PARAM_FIRST_SCALAR) THEN
 
  DO J =j_start,j_end
@@ -5560,7 +5572,8 @@ END SUBROUTINE g_calculate_full
  ENDIF
 
  IF(( config_flags%cu_physics == GDSCHEME ) .OR.      &
-      ( config_flags%cu_physics == G3SCHEME )) THEN
+    ( config_flags%cu_physics == G3SCHEME ) .OR.      &
+      config_flags%cu_physics == TIEDTKESCHEME ) THEN  ! Tiedtke ZCX&YQW
 
  DO J =j_start,j_end
  DO I =i_start,i_end

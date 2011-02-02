@@ -43,7 +43,7 @@ CONTAINS
     USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
             ,halo_em_phys_pbl_sub,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
-            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub
+            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub
 #endif
     USE module_diffusion_em, ONLY : phy_bc, cal_deform_and_div, compute_diff_metrics, &
                                     vertical_diffusion_2, horizontal_diffusion_2, calculate_km_kh, &
@@ -395,6 +395,9 @@ ENDIF
 !-----------------------------------------------------------------------
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
+       ENDIF
+       IF ( config_flags%cu_physics .eq. 4 .or. config_flags%cu_physics .eq. 6 ) THEN
+#      include "HALO_EM_PHYS_CU.inc"
        ENDIF
        IF ( config_flags%grid_fdda .ge. 1) THEN
 #      include "HALO_EM_FDDA.inc"
@@ -840,6 +843,7 @@ BENCH_START(adj_phy_bc_tim)
                       grid%xkhh,grid%a_xkhh,grid%xkhv,grid%a_xkhv, &
                       grid%tke_2,grid%a_tke_2,                     &
                       grid%rublten,grid%a_rublten, grid%rvblten,grid%a_rvblten, &
+                      grid%rucuten,grid%a_rucuten, grid%rvcuten,grid%a_rvcuten, & ! Tiedtke ZCX&YQW
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &

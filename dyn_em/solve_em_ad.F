@@ -10144,6 +10144,7 @@ else
                         grid%rthcuten, grid%rqvcuten, grid%rqccuten,          &
                         grid%rqrcuten, grid%rqicuten, grid%rqscuten,          &
                         grid%rthften,  grid%rqvften,                          &
+                        grid%rucuten,  grid%rvcuten,                          &
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,      &
                         grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,     &
                         ids, ide, jds, jde, kds, kde,           &

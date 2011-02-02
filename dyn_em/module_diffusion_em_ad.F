@@ -6936,7 +6936,7 @@ CONTAINS
    SUBROUTINE a_phy_bc(config_flags,div,a_div,defor11,a_defor11,defor22, &
    a_defor22,defor33,a_defor33,defor12,a_defor12,defor13,a_defor13,defor23, &
    a_defor23,xkmh,a_xkmh,xkmv,a_xkmv,xkhh,a_xkhh,xkhv,a_xkhv,tke,a_tke, &
-   RUBLTEN,a_RUBLTEN,RVBLTEN,a_RVBLTEN,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms, &
+   RUBLTEN,a_RUBLTEN,RVBLTEN,a_RVBLTEN,RUCUTEN,a_RUCUTEN,RVCUTEN,a_RVCUTEN,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms, &
    kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,jte,kts,kte)
 
    IMPLICIT NONE
@@ -6945,6 +6945,7 @@ CONTAINS
    INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe, &
    its,ite,jts,jte,kts,kte
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RUBLTEN,a_RUBLTEN,RVBLTEN,a_RVBLTEN, &
+   RUCUTEN,a_RUCUTEN,RVCUTEN,a_RVCUTEN, &
    defor11,a_defor11,defor22,a_defor22,defor33,a_defor33,defor12,a_defor12, &
    defor13,a_defor13,defor23,a_defor23,xkmh,a_xkmh,xkmv,a_xkmv,xkhh,a_xkhh, &
    xkhv,a_xkhv,tke,a_tke,div,a_div
@@ -7019,6 +7020,22 @@ CONTAINS
                                 ims, ime, jms, jme, kms, kme,             &
                                 ips, ipe, jps, jpe, kps, kpe,             &
                                 its, ite, jts, jte, kts, kte              )
+
+   IF(config_flags%cu_physics == TIEDTKESCHEME) THEN
+
+        CALL a_set_physical_bc3d( a_RVCUTEN , 't', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+        CALL a_set_physical_bc3d( a_RUCUTEN , 't', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+   ENDIF
 
    IF(config_flags%bl_pbl_physics .GT. 0) THEN
 

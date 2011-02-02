@@ -451,13 +451,20 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
                                      = 3, Grell-Devenyi ensemble scheme
-                                     = 4, Simplified Arakawa-Schubert scheme (NMM only)
+                                     = 4, Simplified Arakawa-Schubert scheme
                                      = 5, Grell 3D ensemble scheme
+                                     = 6, Modifed Tiedtke scheme (ARW only, from Zhang and Wang)
+                                     = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 99, previous Kain-Fritsch scheme
 
  ishallow                            = 1,   Shallow convection used with Grell 3D ensemble scheme (cu_physics = 5)
 
  cudt                                = 0,       ; minutes between cumulus physics calls
+
+ kfeta_trigger                       KF trigger option (cu_physics=1 only):
+                                     = 1, default option
+                                     = 2, moisture-advection based trigger (Ma and Tan [2009]) - ARW only
+                                     = 3, RH-dependent additional perturbation to option 1 (JMA)
 
  cugd_avedx                          ; number of grid boxes over which subsidence is spread.
                                      = 1, default, for large grid distances

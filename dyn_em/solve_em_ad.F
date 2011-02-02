@@ -794,7 +794,7 @@ if (config_flags % sw_call_first_rk_step_part1) then
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy      &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , ids, ide, jds, jde, kds, kde     &
@@ -848,7 +848,7 @@ BENCH_END(init_zero_tend_tim)
                         grid%v_2, grid%p, grid%pb, grid%alt,              &
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
                         rho,th_phy, p_phy, pi_phy, u_phy, v_phy,    &
-                        p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w, &
+                        p8w, grid%t_phy, t8w, grid%z, grid%z_at_w, dz8w, &
                         grid%p_hyd, grid%p_hyd_w,                   &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,   &
                         grid%rthraten,                          &
@@ -877,10 +877,17 @@ end if
 if (config_flags % sw_call_first_rk_step_part2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call first_rk_step_part2 ' )
 
+#ifdef DM_PARALLEL
+       IF ( config_flags%bl_pbl_physics == MYNNPBLSCHEME2 .OR. &
+            config_flags%bl_pbl_physics == MYNNPBLSCHEME3 ) THEN
+#        include "HALO_EM_SCALAR_E_5.inc"
+       ENDIF
+#endif
+
        CALL push4backup (grid%mut,grid%hfx,grid%qfx,grid%ustm, "mut,hfx,qfx,ustm") 
        CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2,grid%tke_2, &
                          "u,v,w,t,ph,tke") 
-       CALL push4backup (rho,t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
+       CALL push4backup (rho,grid%t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
        CALL push4backup (moist, "moist") 
 !!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
 !       CALL push4backup (chem, "chem") 
@@ -900,7 +907,7 @@ if (config_flags % sw_call_first_rk_step_part2) then
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy      &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , nba_mij, num_nba_mij             & !JDM
@@ -6361,7 +6368,7 @@ end if
   a_th_phy = 0. 
   a_p_phy = 0. 
   a_pi_phy = 0. 
-  a_t_phy = 0. 
+  grid%a_t_phy = 0. 
   a_u_phy = 0. 
   a_v_phy = 0. 
   a_rho = 0. 
@@ -10037,7 +10044,7 @@ if (config_flags % sw_call_first_rk_step_part2) then
 !       CALL pop2restore (tracer, "tracer") 
 !       CALL pop2restore (chem, "chem") 
        CALL pop2restore (moist, "moist") 
-       CALL pop2restore (rho,t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
+       CALL pop2restore (rho,grid%t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
        CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2,grid%tke_2, &
                          "u,v,w,t,ph,tke") 
        CALL pop2restore (grid%mut,grid%hfx,grid%qfx,grid%ustm, "mut,hfx,qfx,ustm") 
@@ -10067,7 +10074,7 @@ if (config_flags % sw_call_first_rk_step_part2) then
               , psim ,  psim , psih ,  psih , wspd ,  wspd ,        &
                 gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq     &
               , cu_act_flag , hol ,  hol, th_phy,a_th_phy           &
-              , pi_phy ,a_pi_phy, p_phy ,a_p_phy , t_phy ,a_t_phy , &
+              , pi_phy ,a_pi_phy, p_phy ,a_p_phy , grid%t_phy ,grid%a_t_phy , &
                 u_phy ,a_u_phy , v_phy,a_v_phy                      &
               , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w,             &
                 rho_phy ,a_rho_phy , rho,a_rho   &
@@ -10103,7 +10110,7 @@ if (config_flags % sw_call_first_rk_step_part1) then
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy      &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , ids, ide, jds, jde, kds, kde     &
@@ -10134,7 +10141,7 @@ else
                         grid%tsk,grid%tsk, moist,a_moist, num_moist,        &
                         rho,a_rho, th_phy,a_th_phy, p_phy,a_p_phy, pi_phy,a_pi_phy, &
                         u_phy,a_u_phy, v_phy,a_v_phy,                         &
-                        p8w,a_p8w, t_phy,a_t_phy, t8w,a_t8w, grid%z,grid%a_z, &
+                        p8w,a_p8w, grid%t_phy,grid%a_t_phy, t8w,a_t8w, grid%z,grid%a_z, &
                         grid%z_at_w,grid%a_z_at_w, dz8w,a_dz8w,               &
                         grid%p_hyd,grid%a_p_hyd, grid%p_hyd_w,grid%a_p_hyd_w, &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &

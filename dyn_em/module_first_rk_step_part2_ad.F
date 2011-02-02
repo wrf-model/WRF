@@ -334,7 +334,7 @@ BENCH_START(phy_bc_tim)
                       grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,     &
                       grid%tke_2,                                  &
                       grid%rublten, grid%rvblten,                  &
-                      grid%rucuten, grid%rvcuten,                  & ! Tiedtke ZCX&YQW
+                      grid%rucuten, grid%rvcuten,                  & ! Tiedtke and NSAS
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &
@@ -396,7 +396,9 @@ ENDIF
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
        ENDIF
-       IF ( config_flags%cu_physics .eq. 4 .or. config_flags%cu_physics .eq. 6 ) THEN
+       IF ( config_flags%cu_physics == SASSCHEME      .or.   &
+            config_flags%cu_physics == TIEDTKESCHEME  .or.   &
+            config_flags%cu_physics == NSASSCHEME ) THEN
 #      include "HALO_EM_PHYS_CU.inc"
        ENDIF
        IF ( config_flags%grid_fdda .ge. 1) THEN
@@ -454,7 +456,7 @@ BENCH_START(update_phy_ten_tim)
                            grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
-                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke ZCX&YQW
+                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke and NSAS
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
                            num_moist,num_scalar,config_flags,rk_step,          &
                            grid%adv_moist_cond,                             &
@@ -776,7 +778,7 @@ BENCH_START(adj_update_phy_ten_tim)
                            grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
-                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke ZCX&YQW
+                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke and NSAS
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
                            num_moist,num_scalar,config_flags,rk_step,          &
                            grid%adv_moist_cond,                             &
@@ -843,7 +845,7 @@ BENCH_START(adj_phy_bc_tim)
                       grid%xkhh,grid%a_xkhh,grid%xkhv,grid%a_xkhv, &
                       grid%tke_2,grid%a_tke_2,                     &
                       grid%rublten,grid%a_rublten, grid%rvblten,grid%a_rvblten, &
-                      grid%rucuten,grid%a_rucuten, grid%rvcuten,grid%a_rvcuten, & ! Tiedtke ZCX&YQW
+                      grid%rucuten,grid%a_rucuten, grid%rvcuten,grid%a_rvcuten, & ! Tiedtke and NSAS
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &

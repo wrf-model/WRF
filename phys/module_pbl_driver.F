@@ -59,9 +59,11 @@ CONTAINS
 #if (NMM_CORE != 1)
                ,tke_pbl,el_pbl,wu_tur,wv_tur,wt_tur,wq_tur &
 #endif
-               ,a_e_bep,b_e_bep,dlg_bep                              &
-               ,dl_u_bep                                             &
-                                                                     )       
+               ,a_e_bep,b_e_bep,dlg_bep                            &
+               ,dl_u_bep                                           &
+! Wind Turbine Parameterizations
+               ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id               &
+               )        
 !------------------------------------------------------------------
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
@@ -69,6 +71,7 @@ CONTAINS
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME,TEMFPBLSCHEME, &
                    p_qi,param_first_scalar 
+   USE module_wind_generic, ONLY : windspec
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
@@ -93,6 +96,7 @@ CONTAINS
    USE module_bl_temf
 #if (EM_CORE==1)
    USE module_bl_mynn
+   USE module_wind_fitch
 #endif
 
    !  This driver calls subroutines for the PBL parameterizations.
@@ -160,6 +164,7 @@ CONTAINS
 !                 PBL parameterization (kg/kg/s)
 !-- RQIBLTEN      Qi tendency due to 
 !                 PBL parameterization (kg/kg/s)
+!-- id            WRF grid id  (optional, only needed by turbine drag schemes)
 !-- itimestep     number of time steps
 !-- GLW           downward long wave flux at ground surface (W/m^2)
 !-- GSW           downward short wave flux at ground surface (W/m^2)
@@ -288,6 +293,11 @@ CONTAINS
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
+! Optional for Wind Turbine Parameterizations
+   REAL, DIMENSION( ims:ime, kms:kme ,jms:jme ), &
+         INTENT(IN), OPTIONAL    :: phb
+   REAL, DIMENSION( ims:ime, jms:jme ), &
+         INTENT(IN), OPTIONAL    :: xlat_u,xlong_u,xlat_v,xlong_v
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -300,7 +310,7 @@ CONTAINS
                                                            v_phy, &
                                                             dz8w, &
                                                                z, &
-                                                          th_phy
+                                                          th_phy                                                             
 !
 !
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
@@ -352,6 +362,7 @@ CONTAINS
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), &
         &OPTIONAL, INTENT(INOUT) :: &
         & qke,tsq,qsq,cov!,k_m,k_h,k_q
+   INTEGER, OPTIONAL :: id
 
    REAL,    DIMENSION( ims:ime , jms:jme ), &
         &OPTIONAL, INTENT(IN) ::  &
@@ -1146,6 +1157,24 @@ CONTAINS
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                    )
+
+               IF (windspec.GT.0                                         &
+                   .AND.PRESENT(id)                                      &
+                   .AND.PRESENT(phb)                                     &
+                   .AND.PRESENT(xlat_u).AND.PRESENT(xlong_u)             &
+                   .AND.PRESENT(xlat_v).AND.PRESENT(xlong_v)) THEN
+                 CALL turbine_drag(                                         &
+                     & ID=id                                                &
+                     &,PHB=phb,u=u_phy,v=v_phy                              &
+                     &,XLAT_U=xlat_u,XLONG_U=xlong_u                        &
+                     &,XLAT_V=xlat_v,XLONG_V=xlong_v                        &
+                     &,DX=dx,DZ=dz8w,DT=dt                                  &
+                     &,QKE=qke,DU=rublten,DV=rvblten                        &
+                     &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+                     &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+                     &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                     &)
+               ENDIF
 
            ELSE
                WRITE ( message , FMT = '(A,12(L1,1X))' )            &

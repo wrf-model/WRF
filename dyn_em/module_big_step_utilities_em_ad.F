@@ -14718,9 +14718,10 @@ END SUBROUTINE a_calculate_full
 
 !LPB[19]
 
-!   if(( config_flags%cu_physics == GDSCHEME ) .OR.      &
-!      ( config_flags%cu_physics == G3SCHEME ) .OR.      &
-!        config_flags%cu_physics == TIEDTKESCHEME ) then ! Tiedtke ZCX&YQW
+!   if(( config_flags%cu_physics == GDSCHEME ) .OR.    &
+!      ( config_flags%cu_physics == G3SCHEME ) .OR.    &
+!      ( config_flags%cu_physics == KFETASCHEME ) .OR. &
+!      ( config_flags%cu_physics == TIEDTKESCHEME ) ) then  ! Tiedtke
 
 !         DO J=j_start,j_end
 !         DO I=i_start,i_end
@@ -15046,12 +15047,13 @@ END SUBROUTINE a_calculate_full
 !   ENDDO
 !   ENDDO
 !   ENDDO
-!   IF (config_flags%cu_physics .eq. 6) THEN
+!   IF (config_flags%cu_physics == TIEDTKESCHEME .or.        &
+!       config_flags%cu_physics == NSASSCHEME ) THEN
 !     DO J=j_start,j_end
 !     DO I=i_start,i_end
 !     DO K=k_start,k_end
-!        RUCUTEN(I,K,J)=RUCUTEN(I,K,J)/mu(I,J)     ! Tiedtke ZCX&YQW
-!        RVCUTEN(I,K,J)=RVCUTEN(I,K,J)/mu(I,J)     ! Tiedtke ZCX&YQW
+!        RUCUTEN(I,K,J)=RUCUTEN(I,K,J)/mu(I,J)
+!        RVCUTEN(I,K,J)=RVCUTEN(I,K,J)/mu(I,J)
 !     ENDDO
 !     ENDDO
 !     ENDDO

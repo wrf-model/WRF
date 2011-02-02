@@ -2606,8 +2606,10 @@ END SUBROUTINE a_rk_addtend_dry
 
    ENDIF
 
-   IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics ==   &
-   G3SCHEME)                        .and. moist_step .and. ( im == P_QV) ) THEN
+    IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
+         config_flags%cu_physics == KFETASCHEME .OR. &      ! new trigger in KF
+         config_flags%cu_physics == TIEDTKESCHEME  ) &      ! Tiedtke
+         .and. moist_step .and. ( im == P_QV) ) THEN
 
    CALL a_set_tend(RQVFTEN,a_RQVFTEN,advect_tend,a_advect_tend,msfty,ids,ide,  &
    jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)

@@ -112,9 +112,6 @@ CONTAINS
 
       INTEGER ::  J
 !
-! WA DEBUG
-!      print *,'kms,fCor = ',kms,fCor
-
 ! WA 1/6/10 This routine just populates HFX, QFX, and TSK
 ! with the suitable converted forcing values.
 ! Note that flhc,flqc are not populated, this will NOT WORK with
@@ -238,22 +235,10 @@ CONTAINS
 !!!!!!! ******
 ! WA Known outages:  None
 
-   ! WA DEBUG
-   ! print *,'In idealscmsfclay1d, ims, its, kms, kts = ',ims,its,kms,kts
-   ! print *,'z = ',z(its:ite)
-   ! print *,'zsrf = ',zsrf(its:ite)
-   ! print *,'znt = ',znt(its:ite)
-   ! print *,'fCor = ',fCor(its:ite)
-   ! print *,'th1d = ',th1d(its:ite)
-   ! print *,'g = ',g
-
    do i = its,ite      ! Main loop 
 
       ! WA 1/6/10 This routine just populates HFX, QFX, and TSK
       ! with the suitable converted forcing values.
-
-      ! WA DEBUG
-      ! print *,'In idealscmsfclay, i,j = ', i,j
 
       ! Surface fluxes
       ust(i) = sqrt(ftau(i)/ftau0) * sqrt(u1d(i)**2. + v1d(i)**2.) * leps(i) / log(zm(i)/znt(i)) / zt(i)
@@ -270,15 +255,6 @@ CONTAINS
       exch_temfx(i)  = flhc(i) / (rho(i) * cp)
       ! flqc(i) = qfx(i) / (qsfc_air(i) - qv1d(i))
       flqc(i) = exch_temfx(i) * mavail(i)
-
-      ! WA DEBUG
-      print *,'hfx = ', hfx(i)
-      print *,'qfx = ',qfx(i)
-      print *,'lh  = ',lh(i)
-      print *,'tsk = ', tsk(i)
-      print *,'flhc = ', flhc(i)
-      print *,'flqc = ', flqc(i)
-      print *,'exch_temf = ', exch_temfx(i)
 
    end do  ! Main loop
 

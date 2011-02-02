@@ -738,7 +738,7 @@ if (config_flags % sw_call_first_rk_step_part1) then
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy      &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , ids, ide, jds, jde, kds, kde     &
@@ -792,7 +792,7 @@ BENCH_END(init_zero_tend_tim)
                         grid%v_2, grid%p, grid%pb, grid%alt,              &
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
                         rho,th_phy, p_phy, pi_phy, u_phy, v_phy,    &
-                        p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w, &
+                        p8w, grid%t_phy, t8w, grid%z, grid%z_at_w, dz8w, &
                         grid%p_hyd, grid%p_hyd_w,                   &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,   &
                         grid%rthraten,                          &
@@ -821,6 +821,13 @@ end if
 if (config_flags % sw_call_first_rk_step_part2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call first_rk_step_part2 ' )
 
+#ifdef DM_PARALLEL
+       IF ( config_flags%bl_pbl_physics == MYNNPBLSCHEME2 .OR. &
+            config_flags%bl_pbl_physics == MYNNPBLSCHEME3 ) THEN
+#        include "HALO_EM_SCALAR_E_5.inc"
+       ENDIF
+#endif
+
        CALL first_rk_step_part2 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
@@ -835,7 +842,7 @@ if (config_flags % sw_call_first_rk_step_part2) then
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy      &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , nba_mij, num_nba_mij             & !JDM

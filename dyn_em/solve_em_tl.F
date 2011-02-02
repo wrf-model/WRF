@@ -777,7 +777,7 @@ if (config_flags % sw_call_first_rk_step_part1) then
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , t_phy           &
+                             , pi_phy , p_phy , grid%t_phy           &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
                              , ids, ide, jds, jde, kds, kde     &
@@ -844,7 +844,7 @@ BENCH_END(tl_init_zero_tend_tim)
                         grid%tsk,grid%tsk, moist,g_moist, num_moist,        &
                         rho,g_rho, th_phy,g_th_phy, p_phy,g_p_phy, pi_phy,g_pi_phy, &
                         u_phy,g_u_phy, v_phy,g_v_phy,                         &
-                        p8w,g_p8w, t_phy,g_t_phy, t8w,g_t8w, grid%z,grid%g_z, &
+                        p8w,g_p8w, grid%t_phy,grid%g_t_phy, t8w,g_t8w, grid%z,grid%g_z, &
                         grid%z_at_w,grid%g_z_at_w, dz8w,g_dz8w,               &
                         grid%p_hyd,grid%g_p_hyd, grid%p_hyd_w,grid%g_p_hyd_w, &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
@@ -874,6 +874,13 @@ end if
 if (config_flags % sw_call_first_rk_step_part2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call g_first_rk_step_part2 ' )
 
+#ifdef DM_PARALLEL
+       IF ( config_flags%bl_pbl_physics == MYNNPBLSCHEME2 .OR. &
+            config_flags%bl_pbl_physics == MYNNPBLSCHEME3 ) THEN
+#        include "HALO_EM_SCALAR_E_5.inc"
+       ENDIF
+#endif
+
         CALL g_first_rk_step_part2 (   grid , config_flags   &
                , moist ,g_moist , moist_tend ,g_moist_tend   &
 !!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
@@ -900,7 +907,7 @@ if (config_flags % sw_call_first_rk_step_part2) then
                , psim ,  psim , psih ,  psih , wspd ,  wspd ,         &
                  gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq      &
                , cu_act_flag , hol ,  hol, th_phy,g_th_phy           &
-               , pi_phy ,g_pi_phy, p_phy ,g_p_phy , t_phy ,g_t_phy , &
+               , pi_phy ,g_pi_phy, p_phy ,g_p_phy , grid%t_phy ,grid%g_t_phy , &
                  u_phy ,g_u_phy , v_phy,g_v_phy                      &
                , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w,             &
                  rho_phy ,g_rho_phy , rho,g_rho   &

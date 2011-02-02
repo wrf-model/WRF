@@ -371,7 +371,7 @@ state   real    a_smnsmn  ikjf    a_nba_rij		1       -       -       "a_smnsmn" 
 i1       real  a_th_phy          ikj      misc        1         -
 i1       real  a_pi_phy          ikj      misc        1         -
 i1       real  a_p_phy           ikj      misc        1         -
-i1       real  a_t_phy           ikj      misc        1         -
+state    real  a_t_phy           ikj      misc        1         -       r      "g_T_PHY"                        "Temperature"         "K"           
 i1       real  a_u_phy           ikj      misc        1         -
 i1       real  a_v_phy           ikj      misc        1         -
 i1       real  a_dz8w            ikj      misc        1         Z
@@ -382,7 +382,7 @@ i1       real  a_rho_phy         ikj      misc        1         -
 i1       real  g_th_phy          ikj      misc        1         -
 i1       real  g_pi_phy          ikj      misc        1         -
 i1       real  g_p_phy           ikj      misc        1         -
-i1       real  g_t_phy           ikj      misc        1         -
+state    real  g_t_phy           ikj      misc        1         -       r      "a_T_PHY"                        "Temperature"         "K"           
 i1       real  g_u_phy           ikj      misc        1         -
 i1       real  g_v_phy           ikj      misc        1         -
 i1       real  g_dz8w            ikj      misc        1         Z

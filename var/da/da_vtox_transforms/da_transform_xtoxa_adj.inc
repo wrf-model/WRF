@@ -46,7 +46,7 @@ subroutine da_transform_xtoxa_adj(grid)
          end do
       end do
 
-      if ( .not. var4d ) call da_uvprho_to_w_adj(grid)
+      call da_uvprho_to_w_adj(grid)
    end if
 
    if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then

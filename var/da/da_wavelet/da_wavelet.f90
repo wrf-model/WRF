@@ -3,7 +3,7 @@ MODULE da_wavelet
 ! Purpose: wavelet routines by Aime' Fournier
 !
  USE da_control,    ONLY: ite,its,jte,jts,kme,kms,trace_use_dull
- USE module_domain, ONLY: domain, vp_type
+ USE module_domain_type, ONLY: domain, vp_type
  IMPLICIT NONE
  CHARACTER            :: namw		! Wavelet name 'B', 'C', 'D' or 'V'.
  INTEGER              :: lf		! Wavelet filter length.

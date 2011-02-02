@@ -44,8 +44,11 @@ CONTAINS
                      ,rthcuten,rthraten,rthblten,rthften              &
 #if (NMM_CORE==1)
                  ! for hwrf-sas                      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
-                     ,rucuten,rvcuten,mommix,store_rand               &
+                     ,mommix,store_rand                               &
 #endif
+! Optional variables for tiedtke scheme - add by ZCX&YQW 
+                     ,znu,qfx                                         &
+                     ,rucuten,rvcuten                                 &
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
@@ -61,7 +64,9 @@ CONTAINS
                                           ,KFETASCHEME,GDSCHEME       &
                                           ,G3SCHEME                   &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
-                                          ,SASSCHEME
+                                          ,SASSCHEME                  &
+! TIEDTKE TEST - ZCX&YQW
+                                          ,TIEDTKESCHEME
 
 ! *** add new modules of schemes here
 
@@ -78,6 +83,7 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
+   USE module_cu_tiedtke
    USE module_wrf_error , ONLY : wrf_err_message
 
    !  This driver calls subroutines for the cumulus parameterizations.
@@ -256,7 +262,7 @@ CONTAINS
                                                       ,      th  &
                                                       ,       t  &
                                                       ,     rho  &
-                                                      ,       w
+                                                      ,       w  
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                                       &
@@ -271,8 +277,12 @@ CONTAINS
                                                     ,       NCA  & 
                                                     ,      HTOP  & 
                                                     ,      HBOT  &
-                                                    ,    CLDEFI 
+                                                    ,    CLDEFI
  
+   REAL, DIMENSION( kms:kme ), OPTIONAL, INTENT(IN   ) ::        &
+                                                            znu
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN   ) :: &
+                                                            QFX
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
         PRATEC
@@ -295,13 +305,13 @@ CONTAINS
    LOGICAL :: adapt_step_flag_pass
 
 #if (NMM_CORE==1)
-   REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
-                   INTENT(INOUT) :: rucuten,rvcuten
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                     INTENT(IN) ::  STORE_RAND
    REAL,            INTENT(INOUT) :: mommix
 #endif
 
+   REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
+                   INTENT(INOUT) :: rucuten,rvcuten
 !
 ! optional arguments
 !
@@ -591,9 +601,7 @@ CONTAINS
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
-#if (NMM_CORE==1)
                ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
-#endif
                ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
                ,U3D=u,V3D=v,W=w,T3D=t                           &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
@@ -673,6 +681,39 @@ CONTAINS
               ,cap_suppress_loc=cap_suppress_loc                &
 #endif                                 
                                                                 )
+
+! TIEDTKE TEST - ZCX&YQW
+     CASE (TIEDTKESCHEME)
+
+        IF ( PRESENT ( QFX ) .AND. PRESENT( ZNU ) ) THEN
+
+          IF ( adapt_step_flag_pass ) THEN
+            WRITE( wrf_err_message , * ) 'The tiedtke cumulus option will not work properly with an adaptive time step'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF
+          CALL wrf_debug(100,'in cu_tiedtke')
+          CALL CU_TIEDTKE(                                      &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx,ZNU=znu  &
+               ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,QVFTEN=RQVFTEN,QVPBLTEN=RQVBLTEN                &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,CUDT=cudt_pass                                  &
+               ,CURR_SECS=curr_secs_pass                        &
+               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ! optionals
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                             )
+        ENDIF
 
      CASE DEFAULT 
 

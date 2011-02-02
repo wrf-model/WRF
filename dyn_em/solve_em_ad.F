@@ -856,9 +856,10 @@ BENCH_END(init_zero_tend_tim)
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,           &
                         grid%rthcuten, grid%rqvcuten, grid%rqccuten,           &
                         grid%rqrcuten, grid%rqicuten, grid%rqscuten,           &
-                        grid%rthften,  grid%rqvften,                      &
+                        grid%rthften,  grid%rqvften,                           &
+                        grid%rucuten,  grid%rvcuten,                           &
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,       &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,                 &
+                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,      &
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &

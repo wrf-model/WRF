@@ -70,6 +70,11 @@ CONTAINS
      &          ,t2_ndg_old, q2_ndg_old, t2_ndg_new, q2_ndg_new       &
      &          ,sn_ndg_old, sn_ndg_new                               &
      &          ,t2obs, q2obs                                         &
+             ! OPTIONAL, Required by TEMF surface layer 1/7/09 WA
+     &          ,hd_temf,te_temf,fCor,exch_temf                       &
+             ! Required by ideal SCM surface layer 1/6/10 WA
+     &          ,hfx_force,lh_force,tsk_force                       &
+     &          ,hfx_force_tend,lh_force_tend,tsk_force_tend          &
              !  Optional observation nudging
      &          ,uratx,vratx,tratx                                    &
              !  Optional simple oml model
@@ -108,6 +113,8 @@ CONTAINS
                                        ,QNSESFCSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
+                                       ,TEMFSFCSCHEME             &
+                                       ,IDEALSCMSFCSCHEME         &
                                        ,SLABSCHEME                &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
@@ -123,6 +130,7 @@ CONTAINS
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
+                                       ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
                                        ,GFDLSLAB 
 
@@ -139,6 +147,8 @@ CONTAINS
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
    USE module_sf_pxlsm
+   USE module_sf_temfsfclay
+   USE module_sf_idealscmsfclay
 #if ( EM_CORE==1)
    USE module_sf_mynn
    USE module_sf_oml
@@ -608,6 +618,15 @@ CONTAINS
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   keepfr3dflag
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
+
+! Variables for TEMF surface layer
+   REAL,OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: te_temf
+   REAL,OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: hd_temf, exch_temf
+   REAL,OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: fCor
+
+! Variables for ideal SCM surface layer
+   REAL,OPTIONAL, INTENT(INOUT) :: hfx_force,lh_force,tsk_force
+   REAL,OPTIONAL, INTENT(IN   ) :: hfx_force_tend,lh_force_tend,tsk_force_tend
 
 !  LOCAL  VAR
 
@@ -1236,6 +1255,94 @@ CONTAINS
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
  
        ENDIF
+#endif
+
+#if ( EM_CORE==1)
+     CASE (TEMFSFCSCHEME)
+       IF (PRESENT(qv_curr).and.PRESENT(hd_temf)) THEN
+         CALL wrf_debug( 100, 'in TEMFSFCLAY' )
+! WA 9/7/09 must initialize Z0 and ZNT for TEMF in ideal cases
+       ! DO J=j_start(ij),j_end(ij)
+       ! DO I=i_start(ij),i_end(ij)
+       !    CHKLOWQ(i,j) = 1.0
+       !    Z0(i,j) = 0.03     ! For GABLS2
+       !    ZNT(i,j) = 0.03     ! For GABLS2
+       ! ENDDO
+       ! ENDDO
+! WA DEBUG
+      ! print *,'Before running TEMF sfc layer'
+      ! print *,'flqc = ', flqc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'znt = ', znt(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+! End WA DEBUG
+         CALL TEMFSFCLAY(u3d=u_phytmp,v3d=v_phytmp,th3d=th_phy,    &
+               qv3d=qv_curr,p3d=p_phy,pi3d=pi_phy,rho=rho,z=z,ht=ht, &
+               CP=cp,G=g,ROVCP=rovcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,&
+               chs2=chs2,cqs2=cqs2,CPM=cpm,znt=znt,ust=ust,        &
+               MAVAIL=mavail,XLAND=xland,HFX=hfx,QFX=qfx,LH=lh,   &
+               TSK=tsk,FLHC=flhc,FLQC=flqc,QGH=qgh,qsfc=qsfc,      &
+               U10=u10,V10=v10,TH2=th2,T2=t2,Q2=q2,                &
+               SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0,EP1=ep_1, &
+               EP2=ep_2,KARMAN=karman,fCor=fCor,te_temf=te_temf,   &
+               hd_temf=hd_temf,exch_temf=exch_temf,                &
+               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,  &
+               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,  &
+               its=i_start(ij),ite=i_end(ij),                      &
+               jts=j_start(ij),jte=j_end(ij), kts=kts,kte=kte )
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for TEMFSFCLAY in surface driver')
+       ENDIF
+! WA DEBUG
+      ! print *,'After running TEMF sfc layer'
+      ! print *,'hfx = ', hfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'qfx = ', qfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'tsk = ', tsk(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'flhc = ', flhc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'flqc = ', flqc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'ust = ', ust(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'qsfc = ', qsfc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'chs2 = ', chs2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'cqs2 = ', cqs2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'t2 = ', t2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'th2 = ', th2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'q2 = ', q2(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+! End WA DEBUG
+
+     CASE (IDEALSCMSFCSCHEME)
+       IF (PRESENT(qv_curr)) THEN
+         CALL wrf_debug( 100, 'in IDEALSCMSFCLAY' )
+! WA DEBUG
+      print *,'Before running IDEALSCM sfc layer'
+      ! print *,'flqc = ', flqc(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'znt = ', znt(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+! End WA DEBUG
+         CALL IDEALSCMSFCLAY(u3d=u_phytmp,v3d=v_phytmp,th3d=th_phy,    &
+               qv3d=qv_curr,p3d=p_phy,pi3d=pi_phy,rho=rho,z=z,ht=ht, &
+               CP=cp,G=g,ROVCP=rovcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,&
+               chs2=chs2,cqs2=cqs2,CPM=cpm,znt=znt,ust=ust,        &
+               MAVAIL=mavail,XLAND=xland,HFX=hfx,QFX=qfx,LH=lh,   &
+               TSK=tsk,FLHC=flhc,FLQC=flqc,QGH=qgh,qsfc=qsfc,      &
+               U10=u10,V10=v10,TH2=th2,T2=t2,Q2=q2,                &
+               SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0,EP1=ep_1, &
+               EP2=ep_2,KARMAN=karman,fCor=fCor,   &
+               exch_temf=exch_temf,                &
+               hfx_force=hfx_force,lh_force=lh_force,tsk_force=tsk_force, &
+               hfx_force_tend=hfx_force_tend,                      &
+               lh_force_tend=lh_force_tend,                        &
+               tsk_force_tend=tsk_force_tend,                      &
+               dt=dt,itimestep=itimestep,                          &
+               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,  &
+               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,  &
+               its=i_start(ij),ite=i_end(ij),                      &
+               jts=j_start(ij),jte=j_end(ij), kts=kts,kte=kte )
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for IDEALSCMSFCLAY in surface driver')
+       ENDIF
+! WA DEBUG
+      ! print *,'After running IDEALSCM sfc layer'
+      ! print *,'hfx = ', hfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'qfx = ', qfx(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+      ! print *,'tsk = ', tsk(i_start(ij):i_end(ij),j_start(ij):j_end(ij))
+! End WA DEBUG
 #endif
 
 #if (NMM_CORE==1)

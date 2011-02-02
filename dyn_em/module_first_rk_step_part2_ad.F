@@ -157,6 +157,7 @@ BENCH_START(cal_phy_tend)
                      grid%rqvblten,grid%rqcblten,grid%rqiblten,                       &
                      grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten,              &
                      grid%rqicuten,grid%rqscuten,                                &
+                     grid%rucuten, grid%rvcuten,                                 &
                      grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,        &
                      grid%RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &
@@ -333,6 +334,7 @@ BENCH_START(phy_bc_tim)
                       grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,     &
                       grid%tke_2,                                  &
                       grid%rublten, grid%rvblten,                  &
+                      grid%rucuten, grid%rvcuten,                  & ! Tiedtke ZCX&YQW
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &
@@ -449,6 +451,7 @@ BENCH_START(update_phy_ten_tim)
                            grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
+                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke ZCX&YQW
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
                            num_moist,num_scalar,config_flags,rk_step,          &
                            grid%adv_moist_cond,                             &
@@ -770,8 +773,9 @@ BENCH_START(adj_update_phy_ten_tim)
                            grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
+                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke ZCX&YQW
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
-                           num_moist,num_scalar,config_flags,rk_step,       &
+                           num_moist,num_scalar,config_flags,rk_step,          &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &
                            ims, ime, jms, jme, kms, kme,                    &
@@ -1005,6 +1009,7 @@ BENCH_START(adj_cal_phy_tend)
                      grid%rqvblten,grid%rqcblten,grid%rqiblten,                       &
                      grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten,              &
                      grid%rqicuten,grid%rqscuten,                                &
+                     grid%rucuten, grid%rvcuten,                                 &
                      grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,        &
                      grid%RMUNDGDTEN,                                       &
                      ids,ide, jds,jde, kds,kde,                        &

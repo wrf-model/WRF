@@ -194,6 +194,11 @@ state    real   qv_upstream_x_tend  |     dyn_em      1      -      i3rh     "QV
 state    real   qv_upstream_y       |     dyn_em      1      -      i3rh     "QV_UPSTREAM_Y" "upstream qv y-advection" "kg kg-1 s-1"
 state    real   qv_upstream_y_tend  |     dyn_em      1      -      i3rh     "QV_UPSTREAM_Y_TEND" "tendency upstream qv y-advection" "kg kg-1 s-2"
 
+state    real   ql_upstream_x       |     dyn_em      1      -      i3rh     "QL_UPSTREAM_X" "upstream ql x-advection" "kg kg-1 s-1"
+state    real   ql_upstream_x_tend  |     dyn_em      1      -      i3rh     "QL_UPSTREAM_X_TEND" "tendency upstream ql x-advection" "kg kg-1 s-2"
+state    real   ql_upstream_y       |     dyn_em      1      -      i3rh     "QL_UPSTREAM_Y" "upstream ql y-advection" "kg kg-1 s-1"
+state    real   ql_upstream_y_tend  |     dyn_em      1      -      i3rh     "QL_UPSTREAM_Y_TEND" "tendency upstream ql y-advection" "kg kg-1 s-2"
+
 state    real   u_upstream_x        |     dyn_em      1      -      i3rh     "U_UPSTREAM_X" "upstream u x-advection" "m s-2"
 state    real   u_upstream_x_tend   |     dyn_em      1      -      i3rh     "U_UPSTREAM_X_TEND" "tendency upstream u x-advection" "m s-3"
 state    real   u_upstream_y        |     dyn_em      1      -      i3rh     "U_UPSTREAM_Y" "upstream u y-advection" "m s-2"
@@ -204,11 +209,43 @@ state    real   v_upstream_x_tend   |     dyn_em      1      -      i3rh     "V_
 state    real   v_upstream_y        |     dyn_em      1      -      i3rh     "V_UPSTREAM_Y" "upstream v y-advection" "m s-2"
 state    real   v_upstream_y_tend   |     dyn_em      1      -      i3rh     "V_UPSTREAM_Y_TEND" "tendency upstream v y-advection" "m s-3"
 
+state    real   th_largescale       |     dyn_em      1      -      i3rh     "TH_LARGESCALE" "SCM largescale theta" "K"
+state    real   th_largescale_tend  |     dyn_em      1      -      i3rh     "TH_LARGESCALE_TEND" "SCM tendency largescale theta" "K s-1"
+
+state    real   qv_largescale       |     dyn_em      1      -      i3rh     "QV_LARGESCALE" "SCM largescale qv" "kg kg-1 s-1"
+state    real   qv_largescale_tend  |     dyn_em      1      -      i3rh     "QV_LARGESCALE_TEND" "SCM tendency largescale qv" "kg kg-1 s-2"
+
+state    real   ql_largescale       |     dyn_em      1      -      i3rh     "QL_LARGESCALE" "SCM largescale ql" "kg kg-1 s-1"
+state    real   ql_largescale_tend  |     dyn_em      1      -      i3rh     "QL_LARGESCALE_TEND" "SCM tendency largescale ql" "kg kg-1 s-2"
+
+state    real   u_largescale        |     dyn_em      1      -      i3rh     "U_LARGESCALE" "SCM largescale u" "m s-2"
+state    real   u_largescale_tend   |     dyn_em      1      -      i3rh     "U_LARGESCALE_TEND" "SCM tendency largescale u" "m s-3"
+
+state    real   v_largescale        |     dyn_em      1      -      i3rh     "V_LARGESCALE" "SCM largescale v" "m s-2"
+state    real   v_largescale_tend   |     dyn_em      1      -      i3rh     "V_LARGESCALE_TEND" "SCM tendency largescale v" "m s-3"
+
+state    real   tau_largescale       |     dyn_em      1      -      i3rh     "TAU_LARGESCALE" "SCM largescale timescale" "s"
+state    real   tau_largescale_tend  |     dyn_em      1      -      i3rh     "TAU_LARGESCALE_TEND" "SCM tendency largescale timescale" ""
+
 state    real   tau_x               |     dyn_em      1      -      i3rh     "TAU_X" "X-direction advective timescale" "s"
 state    real   tau_x_tend          |     dyn_em      1      -      i3rh     "TAU_X_TEND" "tendency X-direction advective timescale" ""
 state    real   tau_y               |     dyn_em      1      -      i3rh     "TAU_Y" "Y-direction advective timescale" "s"
 state    real   tau_y_tend          |     dyn_em      1      -      i3rh     "TAU_Y_TEND" "tendency Y-direction advective timescale" ""
 
+dimspec  fslay  2     namelist=num_force_soil_layers    z     force_soil_layers
+state    real   t_soil_forcing_val  {fslay}     dyn_em      1      -      i3rh     "T_SOIL_FORCING_VAL" "Soil temp value for SCM forcing" "K"
+state    real   t_soil_forcing_tend {fslay}     dyn_em      1      -      i3rh     "T_SOIL_FORCING_TEND" "tendency soil temp for SCM forcing" "K s-1"
+state    real   q_soil_forcing_val  {fslay}     dyn_em      1      -      i3rh     "Q_SOIL_FORCING_VAL" "Soil moisture value for SCM forcing" "1"
+state    real   q_soil_forcing_tend {fslay}     dyn_em      1      -      i3rh     "Q_SOIL_FORCING_TEND" "tendency soil moisture for SCM forcing" "s-1"
+state    real   tau_soil            {fslay}     dyn_em      1      -      i3rh     "TAU_SOIL" "SCM soil forcing timescale" "s"
+state    real   soil_depth_force    {fslay}     dyn_em      1      -      i3rh     "SOIL_DEPTH_FORCE" "SCM depth at center of soil layers in forcing file" "1"
+
+state    real   hfx_force           -     dyn_em      1      -      i3rh     "HFX_FORCE" "SCM ideal surface sensible heat flux" "W m-2"
+state    real   lh_force            -     dyn_em      1      -      i3rh     "LH_FORCE" "SCM ideal surface latent heat flux" "W m-2"
+state    real   tsk_force           -     dyn_em      1      -      i3rh     "TSK_FORCE" "SCM ideal surface skin temperature" "W m-2"
+state    real   hfx_force_tend      -     dyn_em      1      -      i3rh     "HFX_FORCE_TEND" "SCM ideal surface sensible heat flux tendency" "W m-2 s-1"
+state    real   lh_force_tend       -     dyn_em      1      -      i3rh     "LH_FORCE_TEND" "SCM ideal surface latent heat flux tendency" "W m-2 s-1"
+state    real   tsk_force_tend      -     dyn_em      1      -      i3rh     "TSK_FORCE_TEND" "SCM ideal surface skin temperature tendency" "W m-2 s-1"
 # Mass
 state    real   mu              ijb     dyn_em      2         -     \
      irhusdf=(bdy_interp:dt)   "mu"  "perturbation dry air mass in column" "Pa"
@@ -742,6 +779,25 @@ state   real   TH10             ij     misc        1         -      r        "TH
 state   real   Q10              ij     misc        1         -      r        "Q10"                   "10-M SPECIFIC HUMIDITY FROM MYJ"              "kg kg-1"
 i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
 
+# TEMF PBL variables
+state    real   te_temf        ikj     misc        1         -      rh        "te_temf"               "Total energy from TEMF PBL scheme"      "m2 s-2"
+state    real   kh_temf        ikj     misc        1         -     rh          "kh_temf"               "Diffusion coefficient for heat from TEMF PBL"
+state    real   km_temf        ikj     misc        1         -     rh          "km_temf"               "Diffusion coefficient for momentum from TEMF PBL"
+state    real   shf_temf       ikj     misc        1         -     rh          "shf_temf"              "Sensible heat flux from TEMF PBL"      "K m s-1"
+state    real   qf_temf        ikj     misc        1         -     rh          "qf_temf"              "Sensible heat flux from TEMF PBL"       "kg/kg m s-1"
+state    real   uw_temf        ikj     misc        1         -     rh          "uw_temf"              "U momentum flux from TEMF PBL"       "m2 s-2"
+state    real   vw_temf        ikj     misc        1         -     rh          "vw_temf"              "V momentum flux from TEMF PBL"       "m2 s-2"
+state    real   wupd_temf      ikj     misc        1         -     rh          "wupd_temf"            "Updraft velocity from TEMF PBL"      "m s-1"
+state    real   mf_temf        ikj     misc        1         -     rh          "mf_temf"              "Mass flux from TEMF PBL"             "m s-1"
+state    real   thup_temf      ikj     misc        1         -     rh          "thup_temf"            "Updraft thetal from TEMF PBL"        "K"
+state    real   qtup_temf      ikj     misc        1         -     rh          "qtup_temf"            "Updraft qt from TEMF PBL"        "1"
+state    real   qlup_temf      ikj     misc        1         -     rh          "qlup_temf"            "Updraft ql (liquid water) from TEMF PBL"        "1"
+state    real   cf3d_temf      ikj     misc        1         -     rh          "cf3d_temf"            "3D Cloud fraction from TEMF PBL"        "1"
+state    real   hd_temf        ij      misc        1         -     rh          "hd_temf"              "Dry thermal top height from TEMF PBL"       "m"
+state    real   lcl_temf       ij      misc        1         -     rh          "lcl_temf"             "Lifting condensation level from TEMF PBL"       "m"
+state    real   hct_temf       ij      misc        1         -     rh          "hct_temf"             "Cloud top height from TEMF PBL"       "m"
+state    real   cfm_temf       ij      misc        1         -     rh          "cfm_temf"            "Column cloud fraction from TEMF PBL"        "1"
+
 # MYNN PBL variables
 state   real   qke             ikj     misc        1         -      rh       "qke"               "twice TKE FROM MYNN"      "m2 s-2"
 state   real   tsq             ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
@@ -898,9 +954,11 @@ state   real    tlp            -       misc         -         -     i02rh     "t
 state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
-                                                
+
 # Other physics variables
-                                                
+
+state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
 state    real  RTHCUTEN        ikj      misc        1         -      r        "RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
 state    real  RQVCUTEN        ikj      misc        1         -      r        "RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  RQRCUTEN        ikj      misc        1         -      r        "RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
@@ -1582,11 +1640,19 @@ rconfig   real    scm_lon                 namelist,scm  1       -97.485     rh  
 rconfig   logical scm_th_adv              namelist,scm  1       .true.      rh   "scm_th_adv"           "Turn on theta advection in SCM"      ""
 rconfig   logical scm_wind_adv            namelist,scm  1       .true.      rh   "scm_wind_adv"         "Turn on wind advection in SCM"      ""
 rconfig   logical scm_qv_adv              namelist,scm  1       .true.      rh   "scm_qv_adv"           "Turn on qv advection in SCM"      ""
+rconfig   logical scm_ql_adv              namelist,scm  1       .false.     rh   "scm_ql_adv"           "Turn on ql advection in SCM"      ""
 rconfig   logical scm_vert_adv            namelist,scm  1       .true.      rh   "scm_vert_adv"         "Turn on vertical advection in SCM"      ""
+rconfig   integer num_force_soil_layers   namelist,scm  1       5           rh   "num_force_soil_layers" "Number of SCM soil forcing layers" ""
+rconfig   logical scm_soilT_force         namelist,scm  1       .false.     rh   "scm_soilT_force"      "Turn on soil temp forcing in SCM"      ""
+rconfig   logical scm_soilq_force         namelist,scm  1       .false.     rh   "scm_soilq_force"      "Turn on soil moisture forcing in SCM"      ""
+rconfig   logical scm_force_th_largescale namelist,scm  1       .false.     rh   "scm_force_th_largescale" "Turn on large scale theta forcing in SCM"      ""
+rconfig   logical scm_force_qv_largescale namelist,scm  1       .false.     rh   "scm_force_qv_largescale" "Turn on large scale qv forcing in SCM"      ""
+rconfig   logical scm_force_ql_largescale namelist,scm  1       .false.     rh   "scm_force_ql_largescale" "Turn on large scale ql forcing in SCM"      ""
+rconfig   logical scm_force_wind_largescale namelist,scm  1     .false.     rh   "scm_force_wind_largescale" "Turn on large scale wind forcing in SCM"      ""
 
 # Dynamics
 # dynamics option (see package definitions, below)
-rconfig   integer dyn_opt                 namelist,dynamics	1             - 
+rconfig   integer dyn_opt                 namelist,dynamics	1             2 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
@@ -1783,6 +1849,8 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
+package   temfsfcscheme  sf_sfclay_physics==10       -             -
+package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_myj,el_myj
@@ -1793,6 +1861,7 @@ package   mynnpblscheme3 bl_pbl_physics==6           -             state:qke,tsq
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -
+package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
@@ -1800,6 +1869,7 @@ package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,RAINCV_A,RAINCV_B,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
+package   tiedtkescheme  cu_physics==6               -             -
 package   kfscheme       cu_physics==99              -             -
 
 package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
@@ -1810,7 +1880,8 @@ package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_
 package   slopeopt       slope_rad==1               -              state:swnorm
 package   gwdopt         gwd_opt==1                 -              state:var2d,oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4
 package   omlopt         omlcall==1                 -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
-package   scmopt         scm_force==1               -              state:z_force,z_force_tend,u_g,u_g_tend,v_g,v_g_tend,w_subs,w_subs_tend,th_upstream_x,th_upstream_x_tend,th_upstream_y,th_upstream_y_tend,qv_upstream_x,qv_upstream_x_tend,qv_upstream_y,qv_upstream_y_tend,u_upstream_x,u_upstream_x_tend,u_upstream_y,u_upstream_y_tend,v_upstream_x,v_upstream_x_tend,v_upstream_y,v_upstream_y_tend,tau_x,tau_x_tend,tau_y,tau_y_tend
+package   scmopt         scm_force==1               -              state:z_force,z_force_tend,u_g,u_g_tend,v_g,v_g_tend,w_subs,w_subs_tend,th_upstream_x,th_upstream_x_tend,th_upstream_y,th_upstream_y_tend,qv_upstream_x,qv_upstream_x_tend,qv_upstream_y,qv_upstream_y_tend,u_upstream_x,u_upstream_x_tend,u_upstream_y,u_upstream_y_tend,v_upstream_x,v_upstream_x_tend,v_upstream_y,v_upstream_y_tend,tau_x,tau_x_tend,tau_y,tau_y_tend,th_largescale,th_largescale_tend,qv_largescale,qv_largescale_tend,ql_largescale,ql_largescale_tend,u_largescale,u_largescale_tend,v_largescale,v_largescale_tend,tau_largescale,tau_largescale_tend,ql_upstream_x,ql_upstream_x_tend,ql_upstream_y,ql_upstream_y_tend,t_soil_forcing_val,t_soil_forcing_tend,q_soil_forcing_val,q_soil_forcing_tend,tau_soil,soil_depth_force
+
 package   prec_acc       prec_acc_opt==1            -              state:prec_acc_c,prec_acc_nc,snow_acc_nc
 package   bucketropt     bucketr_opt==1             -              state:i_rainc,i_rainnc
 
@@ -1871,6 +1942,7 @@ halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
+halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
 halo      HALO_EM_FDDA_SFC dyn_em 48:z,z_at_w,pblh,regime,znt,odis_ndg_old,odis_ndg_new
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2

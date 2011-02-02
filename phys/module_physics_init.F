@@ -42,9 +42,7 @@ CONTAINS
 #if (NMM_CORE != 1)
                          TKE_PBL,  &
 #endif
-#if (NMM_CORE == 1)
-                         RUCUTEN, RVCUTEN,  &
-#endif
+                         RUCUTEN,  RVCUTEN,                      &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
                          adv_moist_cond,                         &
@@ -99,7 +97,10 @@ CONTAINS
 #endif
                          t00, p00, tlp,                          & !for obs-nudging
                          TYR,TYRA,TDLY,TLAG,NYEAR,NDAY,tmn_update,   &
-                         ACHFX,ACLHF,ACGRDFLX                   &
+                         ACHFX,ACLHF,ACGRDFLX                    &
+   ! OPTIONAL 
+                         ,te_temf          & ! WA 12/21/09
+                         ,cf3d_temf        & ! WA 9/27/10
                          )
 
 !-----------------------------------------------------------------
@@ -225,11 +226,9 @@ CONTAINS
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_MYJ
 #if (NMM_CORE != 1)
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    TKE_PBL
-#endif 
-#if (NMM_CORE == 1)
-   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(INOUT) :: &
-             RUCUTEN, RVCUTEN
 #endif
+   REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME) , INTENT(OUT) :: &
+             RUCUTEN, RVCUTEN
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
              cugd_qvtens,cugd_qcten
@@ -340,6 +339,10 @@ CONTAINS
    TYPE(fdob_type), OPTIONAL, INTENT(INOUT) :: fdob
 #endif
    REAL, OPTIONAL, INTENT(IN) :: p00, t00, tlp   ! for obs-nudging base-state calcn
+
+! WA 12/21/09
+   REAL,OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
+          INTENT(OUT) ::    te_temf, cf3d_temf    
 
 ! Local data
 
@@ -550,6 +553,7 @@ integer myproc
                 TRIM (MMINLU_LOC),                              &
                 allowed_to_read ,                               &
                 start_of_simulation ,                           &
+                te_temf,cf3d_temf,                              & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
                 XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,    & !Optional urban
@@ -582,9 +586,7 @@ integer myproc
 
    CALL cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,      &
                 RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,           &
-#if (NMM_CORE == 1)
-                         RUCUTEN, RVCUTEN,  &
-#endif
+                RUCUTEN, RVCUTEN,                               &
                 RAINCV,W0AVG,config_flags,restart,              &
                 CLDEFI,LOWLYR,MASS_FLUX,                        &
                 RTHFTEN, RQVFTEN,                               &
@@ -1254,6 +1256,7 @@ integer myproc
                 MMINLU,                                         &
                 allowed_to_read,                                &
                 start_of_simulation,                            &
+                te_temf,cf3d_temf,                              & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -1305,6 +1308,7 @@ integer myproc
    USE module_bl_qnsepbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
+   USE module_bl_temf
    USE module_sf_mynn
 #endif
 
@@ -1387,6 +1391,9 @@ integer myproc
    INTEGER,  INTENT(IN)           :: ISURBAN
    INTEGER :: isn, isfc
    INTEGER :: k
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
+            INTENT(OUT) :: te_temf, cf3d_temf !WA 
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -1801,6 +1808,23 @@ integer myproc
                 &,IMS,IME,JMS,JME,KMS,KME                    &
                 &,ITS,ITE,JTS,JTE,KTS,KTE)
 
+      CASE (TEMFPBLSCHEME)
+           ! if(isfc .ne. 0)CALL wrf_error_fatal &
+           !  ( 'module_physics_init: use sfclay scheme = 0 for this pbl option' )
+         IF ( PRESENT( te_temf ) .AND. PRESENT( cf3d_temf )) THEN
+           CALL temfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,                   &
+                        restart,                              &
+                        allowed_to_read ,                     &
+                        te_temf,cf3d_temf,                    & ! WA
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling TEMF scheme' )
+         ENDIF
+
 #endif
 
       CASE DEFAULT
@@ -1813,9 +1837,7 @@ integer myproc
 !==================================================================
    SUBROUTINE cu_init(STEPCU,CUDT,DT,RTHCUTEN,RQVCUTEN,RQRCUTEN,  &
                       RQCCUTEN,RQSCUTEN,RQICUTEN,NCA,RAINC,       &
-#if (NMM_CORE == 1)
-                         RUCUTEN, RVCUTEN,  &
-#endif
+                      RUCUTEN, RVCUTEN,                           &
                       RAINCV,W0AVG,config_flags,restart,          &
                       CLDEFI,LOWLYR,MASS_FLUX,                    &
                       RTHFTEN, RQVFTEN,                           &
@@ -1834,6 +1856,7 @@ integer myproc
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
+   USE module_cu_tiedtke
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -1872,10 +1895,9 @@ integer myproc
                                    APR_CAPMA,APR_CAPME,APR_CAPMI
 
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: LOWLYR
-#if (NMM_CORE == 1)
+
    REAL,     DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(INOUT) :: &
              RUCUTEN, RVCUTEN
-#endif
 
 ! LOCAL VAR
 
@@ -1956,10 +1978,19 @@ integer myproc
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 #endif
+     CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
-#if (NMM_CORE == 1)
                       RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
-#endif
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
+! Tiedtke Scheme - ZCX&YQW
+      CASE (TIEDTKESCHEME)
+          CALL tiedtkeinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,   &
+                      RUCUTEN,RVCUTEN,                            & 
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &

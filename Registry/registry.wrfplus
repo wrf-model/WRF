@@ -21,14 +21,10 @@ rconfig   logical check_TL              namelist,perturbation          1      .t
 rconfig   logical check_AD              namelist,perturbation          1      .true. -    "AD check"                  ""      ""
 rconfig   logical jcdfi_use             namelist,perturbation          1     .false. -    "jcdfi_use"   "JcDFI on/off"      ""
 rconfig   integer jcdfi_diag            namelist,perturbation          1           0 -    "jcdfi_diag"  "JcDFI diag. on/off"      ""
-rconfig   real    jcdfi_gama            namelist,perturbation          1          1. -    "jcdfi_gama"    "Weighting for JcDFI"      ""
-rconfig   real    jcdfi_error_wind      namelist,perturbation          1          3. -    "jcdfi_error_wind"    "Wind Error for JcDFI"      "m/s"
-rconfig   real    jcdfi_error_t         namelist,perturbation          1          1. -    "jcdfi_error_t"    "Temp. Error for JcDFI"      "K"
-rconfig   real    jcdfi_error_q         namelist,perturbation          1       0.001 -    "jcdfi_error_q"    "Moist Error for JcDFI"      "kg/kg"
-rconfig   real    jcdfi_error_mu        namelist,perturbation          1       1000. -    "jcdfi_error_mu"    "Pert. Pres. Error for JcDFI"      "Pa"
+rconfig   real    jcdfi_penalty         namelist,perturbation          1          1. -    "jcdfi_penalty"    "Penalty parameter for JcDF"      ""
 rconfig   logical enable_identity       namelist,perturbation          1      .false. -   "enable identity AD/TL model"                         ""      ""
 
-Debug controls for AD/TL/NL of boundary-related subroutines in solve_em* (Added by Ning Pan, 2010-05-24)
+#Debug controls for AD/TL/NL of boundary-related subroutines in solve_em* (Added by Ning Pan, 2010-05-24)
 rconfig   logical sw_call_advance_all                          namelist,dynamics          1      .false. -    "sw_call_advance_all"                         ""      ""
 rconfig   logical sw_call_spec_bdyupdate_all                   namelist,dynamics          1      .false. -    "sw_call_spec_bdyupdate_all"                  ""      ""
 rconfig   logical sw_call_zero_bdytend                         namelist,dynamics          1      .true. -     "sw_call_zero_bdytend"                        ""      ""
@@ -456,7 +452,7 @@ state   real    g_qh             ikjftb   g_moist       1         -     \
 # JC_DFI variables
 state   real   jcdfi_u           ikj   misc        1         -     -    "U_JCDFI"               "u accumulation array"          "   "
 state   real   jcdfi_v           ikj   misc        1         -     -    "V_JCDFI"               "v accumulation array"          "   "
-state   real   jcdfi_t           ikj   misc        1         -     -    "TT_JCDFI"               "t accumulation array"          "   "
+state   real   jcdfi_t           ikj   misc        1         -     -    "T_JCDFI"               "t accumulation array"          "   "
 state   real   jcdfi_mu          ij    misc        1         -     -    "MU_JCDFI"  "perturbation dry air mass in column" "Pa"
 
 # Other Scalars

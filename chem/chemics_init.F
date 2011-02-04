@@ -76,11 +76,16 @@
                                tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,      &
                                tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,   &
                                tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,  &
-                               gd_cloud, gd_cloud2,                  &
-                               gd_cloud_a, gd_cloud2_a,              &
-                               gd_cloud_b, gd_cloud2_b,              &
                                gaer1,gaer2,gaer3,gaer4,              &
                                waer1,waer2,waer3,waer4
+
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
+          OPTIONAL,                                                  &
+          INTENT(INOUT   ) ::                                        &
+                               gd_cloud, gd_cloud2,                  &
+                               gd_cloud_a, gd_cloud2_a,              &
+                               gd_cloud_b, gd_cloud2_b
+
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , 1:4 )   ,         &
           INTENT(INOUT   ) ::                                        &
                                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer
@@ -217,6 +222,11 @@ call wrf_message("**************************************************************
          call wrf_message("ERROR: chem_conv_tr=1 requires cu_physics=5")
       end if
    end if
+   if ( config_flags%cu_physics == 5 .OR. config_flags%cu_physics == 3) then
+   if ( config_flags%cu_diag == 0) then
+         call wrf_message(" No time averaged variables. Time averaged chem variables requires cu_diag = 1")
+   endif
+   endif
 
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0
@@ -323,12 +333,12 @@ call wrf_message("**************************************************************
     do j=jts,jte
        do k=kts,kte
           do i=its,ite
-             gd_cloud(i,k,j) = 0.
-             gd_cloud2(i,k,j) = 0.
-             gd_cloud_a(i,k,j) = 0.
-             gd_cloud2_a(i,k,j) = 0.
-             gd_cloud_b(i,k,j) = 0.
-             gd_cloud2_b(i,k,j) = 0.
+             if (present(gd_cloud)    ) gd_cloud(i,k,j) = 0.
+             if (present(gd_cloud2)   ) gd_cloud2(i,k,j) = 0.
+             if (present(gd_cloud_a)  ) gd_cloud_a(i,k,j) = 0.
+             if (present(gd_cloud2_a) ) gd_cloud2_a(i,k,j) = 0.
+             if (present(gd_cloud_b)  ) gd_cloud_b(i,k,j) = 0.
+             if (present(gd_cloud2_b) ) gd_cloud2_b(i,k,j) = 0.
           end do
        end do
     end do

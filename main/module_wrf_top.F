@@ -783,6 +783,7 @@ ENDIF
 !<DESCRIPTION>
 !     WRF run routine.
 !</DESCRIPTION>
+   LOGICAL :: save_part1
 
 !<DESCRIPTION>
 ! Once the top-level domain has been allocated, configured, and
@@ -799,7 +800,14 @@ ENDIF
 
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
    model_config_rec%dyn_opt = dyn_em
+   ! Forcing the sw_call_first_rk_step_part1 to be true for any NL run
+   ! and restore to its original value
+   save_part1 = config_flags % sw_call_first_rk_step_part1
+   config_flags % sw_call_first_rk_step_part1 = .true.
+   model_config_rec % sw_call_first_rk_step_part1 = .true.
    CALL integrate ( head_grid )
+   config_flags % sw_call_first_rk_step_part1 = save_part1
+   model_config_rec % sw_call_first_rk_step_part1 = save_part1
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 
    END SUBROUTINE wrf_run

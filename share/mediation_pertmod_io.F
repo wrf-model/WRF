@@ -4,7 +4,7 @@
 MODULE mediation_pertmod_io
 
 USE module_domain, ONLY : domain, head_grid, get_ijk_from_grid
-USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist
+USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_scalar
 
 TYPE pertmod_io
     CHARACTER*256 :: time                       ! time stamp
@@ -300,6 +300,11 @@ SUBROUTINE xtraj_io_initialize
       bytes_xtraj = bytes_xtraj + n3d
    ENDDO
 
+   ! Scalar variables
+   DO i = PARAM_FIRST_SCALAR, num_scalar
+      bytes_xtraj = bytes_xtraj + n3d
+   ENDDO
+
    ! Boundary variables: bxs, bxe, btxs, btxe : u,v,w,ph,t
    bytes_xtraj = bytes_xtraj + (jme-jms+1)*n1d*nbd*4*5
 
@@ -314,6 +319,12 @@ SUBROUTINE xtraj_io_initialize
    
    ! Moist boundary variables
    DO i = PARAM_FIRST_SCALAR, num_moist
+      bytes_xtraj = bytes_xtraj + (jme-jms+1)*n1d*nbd*4 ! bxs, bxe, btxs, btxe
+      bytes_xtraj = bytes_xtraj + (ime-ims+1)*n1d*nbd*4 ! bys, bye, btys, btye
+   ENDDO
+
+   ! Scalar boundary variables
+   DO i = PARAM_FIRST_SCALAR, num_scalar
       bytes_xtraj = bytes_xtraj + (jme-jms+1)*n1d*nbd*4 ! bxs, bxe, btxs, btxe
       bytes_xtraj = bytes_xtraj + (ime-ims+1)*n1d*nbd*4 ! bys, bye, btys, btye
    ENDDO
@@ -611,6 +622,10 @@ SUBROUTINE packup_xtraj (data)
       ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%moist(:,:,:,n), (/n3d/))
    ENDDO
 
+   DO n = PARAM_FIRST_SCALAR, num_scalar
+      ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%scalar(:,:,:,n), (/n3d/))
+   ENDDO
+
    ! Boundary variables: bxs, bxe, btxs, btxe : u,v,w,ph,t
    ntmp = (jme-jms+1)*n1d*nbd
    ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%u_bxs(:,:,:), (/ntmp/))
@@ -683,6 +698,20 @@ SUBROUTINE packup_xtraj (data)
       ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_bye(:,:,:,n), (/ntmp/))
       ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_btys(:,:,:,n), (/ntmp/))
       ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%moist_btye(:,:,:,n), (/ntmp/))
+   ENDDO
+
+   ! Scalar boundary variables
+   DO n = PARAM_FIRST_SCALAR, num_scalar
+      ntmp = (jme-jms+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_bxs(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_bxe(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_btxs(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_btxe(:,:,:,n), (/ntmp/))
+      ntmp = (ime-ims+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_bys(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_bye(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_btys(:,:,:,n), (/ntmp/))
+      ns =    ne+1 ; ne = ne+ntmp ; data(ns:ne) = RESHAPE( head_grid%scalar_btye(:,:,:,n), (/ntmp/))
    ENDDO
 
    IF ( ne .NE. bytes_xtraj ) &
@@ -796,6 +825,10 @@ SUBROUTINE restore_xtraj (data)
       ns =    ne+1 ; ne = ne+n3d ; head_grid%moist(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ENDDO
 
+   DO n = PARAM_FIRST_SCALAR, num_scalar
+      ns =    ne+1 ; ne = ne+n3d ; head_grid%scalar(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ENDDO
+
    ! Boundary variables: bxs, bxe, btxs, btxe : u,v,w,ph,t
    ntmp = (jme-jms+1)*n1d*nbd
    ns =    ne+1 ; ne = ne+ntmp ; head_grid%u_bxs(:,:,:) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
@@ -868,6 +901,20 @@ SUBROUTINE restore_xtraj (data)
       ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_bye(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
       ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_btys(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
       ns =    ne+1 ; ne = ne+ntmp ; head_grid%moist_btye(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+   ENDDO
+
+   ! Scalar boundary variables
+   DO n = PARAM_FIRST_SCALAR, num_scalar
+      ntmp = (jme-jms+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_bxs(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_bxe(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_btxs(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_btxe(:,:,:,n) = RESHAPE( data(ns:ne), (/jme-jms+1,kme-kms+1,nbd/))
+      ntmp = (ime-ims+1)*n1d*nbd
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_bys(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_bye(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_btys(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
+      ns =    ne+1 ; ne = ne+ntmp ; head_grid%scalar_btye(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,nbd/))
    ENDDO
 
    IF ( ne .NE. bytes_xtraj ) &

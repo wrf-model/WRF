@@ -886,14 +886,6 @@ CONTAINS
 
              CALL wrf_debug(100, 'CALL camrad lw')
 
-             IF ( PRESENT( OZMIXM ) ) print *, ' OZMIXM present '
-             IF ( PRESENT( PIN ) ) print *, ' PIN present '
-             IF ( PRESENT( M_PS_1 ) ) print *, ' M_PS_1 present '
-             IF ( PRESENT( M_PS_2 ) ) print *, ' M_PS_2 present '
-             IF ( PRESENT( M_HYBI0 ) ) print *, ' M_HYBI0 present '
-             IF ( PRESENT( AEROSOLC_1 ) ) print *, ' AEROSOLC_1 present '
-             IF ( PRESENT( AEROSOLC_2 ) ) print *, ' AEROSOLC_2 present '
-
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &

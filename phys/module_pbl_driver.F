@@ -1241,7 +1241,7 @@ CONTAINS
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten               &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqvblten                             &
               ,TKE=tke_pbl,DLK=el_pbl,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur  &
-              ,EXCH_H=exch_h,EXCH_M=exch_m                                     &
+              ,EXCH_H=exch_h,EXCH_M=exch_m,PBLH=pblh                           &
               ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep                 &
               ,A_Q_BEP=a_q_bep                                                 &
               ,A_E_BEP=a_e_bep,B_U_BEP=b_u_bep,B_V_BEP=b_v_bep                 &

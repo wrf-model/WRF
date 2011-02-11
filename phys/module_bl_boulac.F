@@ -37,7 +37,7 @@ MODULE module_bl_boulac
                       ,qfx,ustar,cp,g                                          &
                       ,rublten,rvblten,rthblten                                &
                       ,rqvblten,rqcblten                        & 
-                      ,tke,dlk,wu,wv,wt,wq,exch_h,exch_m        &
+                      ,tke,dlk,wu,wv,wt,wq,exch_h,exch_m,pblh        &
                       ,a_u_bep,a_v_bep,a_t_bep,a_q_bep          &
                       ,a_e_bep,b_u_bep,b_v_bep                  &
                       ,b_t_bep,b_q_bep,b_e_bep,dlg_bep          &
@@ -71,6 +71,7 @@ MODULE module_bl_boulac
    REAL, INTENT(IN )::   DT                                                      ! Time step
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )    ::   FRC_URB2D          !fraction cover urban
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)    ::   PBLH          !PBL height
 !
 ! variable added for urban
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::a_u_bep        ! Implicit component for the momemtum in X-direction
@@ -284,6 +285,8 @@ MODULE module_bl_boulac
                    tke1D,ustar(ix,iy),hfx(ix,iy),qfx(ix,iy),cp,g,        & 
                    a_e1D,b_e1D,                              & 
                    dlg1D,dl_u1D,sf1D,vl1D,dlk1D,dls1D,exch1D,sh1D,bu1D)                    
+
+         call pbl_height(kms,kme,kts,kte,dz1d,z1d,th1D,q1D,pblh(ix,iy))
 
 
 ! store turbulent exchange coefficients, TKE, and other variables
@@ -826,6 +829,46 @@ MODULE module_bl_boulac
          
        return
        end subroutine tke_bougeault    
+!######################################################################
+       subroutine pbl_height(kms,kme,kts,kte,dz,z,th,q,pblh)
+
+! this routine computes the PBL height
+! with an approach similar to MYNN
+       implicit none
+       integer kms,kme,kts,kte,iz
+       real z(kms:kme),dz(kms:kme),th(kms:kme),q(kms:kme)
+       real pblh
+!Local
+       real thv(kms:kme),zc(kms:kme)
+       real thsfc
+
+! compute the height of the center of the grid cells
+      do iz=kts,kte
+       zc(iz)=z(iz)+dz(iz)/2.
+      enddo
+
+! compute the virtual potential temperature
+
+       do iz=kts,kte
+        thv(iz)=th(iz)*(1.+0.61*q(iz))
+       enddo
+! now compute the PBL height
+
+       pblh=0.
+       thsfc=thv(kts)+0.5
+       do iz=kts+1,kte
+        if(pblh.eq.0.and.thv(iz).gt.thsfc)then
+         pblh=zc(iz-1)+(thsfc-thv(iz-1))/(max(0.01,thv(iz)-thv(iz-1)))*(zc(iz)-zc(iz-1))
+!         pblh=z(iz-1)+(thsfc-thv(iz-1))/(max(0.01,thv(iz)-thv(iz-1)))*(z(iz)-z(iz-1))
+        endif
+       enddo
+
+       return
+       end subroutine pbl_height
+
+
+! ===6=8===============================================================72
+
 
 ! ===6=8===============================================================72
       SUBROUTINE BOULACINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &

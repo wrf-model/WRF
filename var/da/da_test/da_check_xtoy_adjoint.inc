@@ -43,6 +43,7 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, xbx, be, grid, config_flags, iv, y
    character(len=256) :: timestr
    integer :: wrf_done_unit, time_step_seconds
    type(x_type) :: shuffle
+   real             :: subarea, whole_area
 
    if (trace_use) call da_trace_entry("da_check_xtoy_adjoint")
 
@@ -164,11 +165,27 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 
       if (jcdfi_use) then
 
-         pertile_lhs = pertile_lhs &
-                       + (1.0)/grid%jcdfi_error_wind**2 * sum( model_grid%jcdfi_u(ims:ime, kms:kme, jms:jme)*model_grid%jcdfi_u(ims:ime, kms:kme, jms:jme) ) &  
-                       + (1.0)/grid%jcdfi_error_wind**2 * sum( model_grid%jcdfi_v(ims:ime, kms:kme, jms:jme)*model_grid%jcdfi_v(ims:ime, kms:kme, jms:jme) ) &  
-                       + (1.0)/grid%jcdfi_error_t**2 * sum( model_grid%jcdfi_t(ims:ime, kms:kme, jms:jme)*model_grid%jcdfi_t(ims:ime, kms:kme, jms:jme) ) &  
-                       + (1.0)/grid%jcdfi_error_mu**2 * sum( model_grid%jcdfi_mu(ims:ime, jms:jme)*model_grid%jcdfi_mu(ims:ime, jms:jme) ) 
+         subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
+         whole_area = wrf_dm_sum_real(subarea)
+
+         do j = jms, jme
+            do k = kms, kme
+               do i = ims, ime
+                  pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_u(i,k,j)**2 * &
+                        grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,j)**2 * &
+                        grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,j)**2 * &
+                        cp/280.*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+               enddo
+            enddo
+         enddo 
+         do j = jms, jme
+            do i = ims, ime  
+               pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j)**2 * gas_constant * &
+                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+            enddo
+         enddo
 
          ! We can not calculate the Y just with tile.
          partial_lhs = pertile_lhs
@@ -414,10 +431,25 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
    if (var4d) then
 #ifdef VAR4D
       if (jcdfi_use) then
-         model_grid%jcdfi_u = (1.0)/grid%jcdfi_error_wind**2 * model_grid%jcdfi_u
-         model_grid%jcdfi_v = (1.0)/grid%jcdfi_error_wind**2 * model_grid%jcdfi_v
-         model_grid%jcdfi_t = (1.0)/grid%jcdfi_error_t**2 * model_grid%jcdfi_t
-         model_grid%jcdfi_mu = (1.0)/grid%jcdfi_error_mu**2 * model_grid%jcdfi_mu
+
+         do j = jms, jme
+            do k = kms, kme
+               do i = ims, ime
+                  model_grid%jcdfi_u(i,k,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_u(i,k,j) * &
+                        grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  model_grid%jcdfi_v(i,k,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,j) * &
+                        grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  model_grid%jcdfi_t(i,k,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,j) * &
+                        cp/280.0*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+               enddo
+            enddo
+         enddo
+         do j = jms, jme
+            do i = ims, ime
+               model_grid%jcdfi_mu(i,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j) * gas_constant * &
+                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+            enddo
+         enddo
       endif
 
       ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.

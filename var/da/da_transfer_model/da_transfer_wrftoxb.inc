@@ -602,6 +602,14 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end do
    !$OMP END PARALLEL DO
 
+#ifdef VAR4D
+   CALL set_physical_bc2d( grid%xb%grid_box_area, 't', config_flags, &
+                           ids, ide, jds, jde,    &
+                           ims, ime, jms, jme,    &
+                           ips, ipe, jps, jpe,    &
+                           its, ite, jts, jte    )
+#endif
+
    !---------------------------------------------------------------------------
    ! Calculate saturation vapour pressure and relative humidity:
    !---------------------------------------------------------------------------

@@ -25,6 +25,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
    type(x_type) :: shuffle
    integer :: nobwin,ndynopt, jl_start, jl_end, time_step_seconds
    character*256 :: timestr, timestr1
+   integer       :: i, j, k
+   real          :: subarea, whole_area
 
 #ifdef DM_PARALLEL
    integer :: wrf_done_unit
@@ -47,11 +49,31 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
       endif
 
       if (jcdfi_use .and. jcdf_flag ) then
+
+         subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
+         whole_area = wrf_dm_sum_real(subarea)
+
          ! Multipled by -1.0 because the calulated gradient of Jo will be multiplied by -1.0 
-         model_grid%jcdfi_u = -1.0 * 1.0/grid%jcdfi_error_wind**2 * model_grid%jcdfi_u
-         model_grid%jcdfi_v = -1.0 * 1.0/grid%jcdfi_error_wind**2 * model_grid%jcdfi_v
-         model_grid%jcdfi_t = -1.0 * 1.0/grid%jcdfi_error_t**2 * model_grid%jcdfi_t
-         model_grid%jcdfi_mu = -1.0 * 1.0/grid%jcdfi_error_mu**2 * model_grid%jcdfi_mu
+
+         do j = jms, jme
+            do k = kms, kme
+               do i = ims, ime
+                  model_grid%jcdfi_u(i,k,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_u(i,k,j) * &
+                        grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  model_grid%jcdfi_v(i,k,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,j) * &
+                        grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  model_grid%jcdfi_t(i,k,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,j) * &
+                        cp/280.0*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+               enddo
+            enddo
+         enddo
+         do j = jms, jme
+            do i = ims, ime
+               model_grid%jcdfi_mu(i,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j) * gas_constant * &
+                     280.0/(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+            enddo
+         enddo
+
       endif
    
       if (num_fgat_time > 1) then

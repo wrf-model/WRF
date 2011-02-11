@@ -14,9 +14,8 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
 
    integer :: s(4)   ! Index bounds into arrays.
    integer :: n      ! Loop counter.
-   integer :: mz,mzs ! Vertical truncations.
+   integer :: mz     ! Vertical truncations.
    integer :: ne     ! Ensemble size.
-   real    :: tv     ! test value.
 
    logical :: scaling
 
@@ -36,19 +35,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
       call da_cv_to_vv(cv_size, cv, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be%ne /), vv)
 #endif
    endif					! use wavelets:
-   if( .not. use_rf .or. do_normalize )then
-      s(1:2)=1
-      if( use_rf .and. do_normalize )then
-         tv=(size(be%sd ,3)-1.)/4.	! integer, see da_setup_be_regional
-      else
-         tv=(size(be%wsd,3)-1.)/4.
-      endif
-      mzs=tv
-      if(tv/=mzs)then
-         write(*,'(a,": ",f6.2,"==tv/=mzs=",i6)')__FILE__,tv,mzs
-         call wrf_abort
-      endif
-   endif
+   if( .not. use_rf .or. do_normalize ) s(1:2)=1
 
    !-------------------------------------------------------------------------
    ! [2.0] Perform VToVV Transform:
@@ -57,7 +44,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    ! [2.1] Transform 1st control variable:
 
    mz = be % v1 % mz
-   s(3)=s(1)+mzs-1
+   s(3)=s(1)+mz-1
    if( use_rf .and. mz > 0 .and. len_scaling1(1) /= 0.0) then
       call da_transform_through_rf(grid, mz, be % v1 % rf_alpha, be % v1 % val, vv % v1)
    elseif( mz > 0 ) then
@@ -73,7 +60,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    ! [2.2] Transform 2nd control variable:
 
    mz = be % v2 % mz
-   s(3)=s(1)+mzs-1
+   s(3)=s(1)+mz-1
    if( use_rf .and. mz > 0 .and. len_scaling2(1) /= 0.0) then
       call da_transform_through_rf(grid, mz, be % v2 % rf_alpha, be % v2 % val, vv % v2)
    elseif( mz > 0 ) then
@@ -89,7 +76,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    ! [2.3] Transform 3rd control variable
 
    mz = be % v3 % mz
-   s(3)=s(1)+mzs-1
+   s(3)=s(1)+mz-1
    if( use_rf .and. mz > 0 .and. len_scaling3(1) /= 0.0) then
       call da_transform_through_rf(grid, mz, be % v3 % rf_alpha,be % v3 % val, vv % v3)
    elseif( mz > 0 ) then
@@ -105,7 +92,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    ! [2.4] Transform 4th control variable
       
    mz = be % v4 % mz
-   s(3)=s(1)+mzs-1
+   s(3)=s(1)+mz-1
    if( use_rf .and. mz > 0 .and. len_scaling4(1) /= 0.0) then
       call da_transform_through_rf(grid, mz, be % v4 % rf_alpha, be % v4 % val, vv % v4)
    elseif( mz > 0 ) then
@@ -121,7 +108,7 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    ! [2.5] Transform 5th control variable
 
    mz = be % v5 % mz
-   s(3)=s(1)+mzs-1
+   s(3)=s(1)+mz-1
    if( use_rf .and. mz > 0 .and. len_scaling5(1) /= 0.0) then
       call da_transform_through_rf(grid, mz, be % v5 % rf_alpha, be % v5 % val, vv % v5)
    elseif( mz > 0 ) then

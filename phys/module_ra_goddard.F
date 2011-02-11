@@ -903,7 +903,6 @@ contains
    do k = kts, kte
       do i = its, ite
              tten2d(i,k) = - fac * (flx(i,k) - flx(i,k+1))/ (p8w2d(i,k)-p8w2d(i,k+1))
-             call Find_NaN_Inf_Double('in goddardrad sw: tten2d(k) is ', tten2d(i,k),i,j,k )
       end do
    end do
 
@@ -929,7 +928,6 @@ contains
 ! absorbed part in surface energy budget [W/m^2] (Note that flxd in SW is flux fraction)
 !
           gsf(i,j) = (1. - rsuvbm(i)) * flxd(i,kte+1) * solcon * cosz(i)
-          call Find_NaN_Inf_Single('in goddardrad sw: gsf(i,j) is ', gsf(i,j),i,j,k )
 
 !
 ! extra output for SDSU
@@ -988,7 +986,6 @@ contains
    do k = kts, kte
       do i = its, ite
          tten2d(i,k) = - fac * (flx(i,k) - flx(i,k+1))/(p8w2d(i,k)-p8w2d(i,k+1)) 
-         call Find_NaN_Inf_Double('in goddardrad lw: tten2d(i,k) is ', tten2d(i,k),i,j,k )
       end do
    end do
 
@@ -1005,7 +1002,6 @@ contains
 
       do i = its, ite
           gsf(i,j) = flxd(i,kte+1)  !surface downwelling LW radiation
-          call Find_NaN_Inf_Single('in goddardrad lw: gsf(i,j) is ', gsf(i,j),i,j,k )
 
 !
 ! extra output for SDSU
@@ -10214,75 +10210,6 @@ contains
 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
- subroutine Find_NaN_Inf_Double(Warning_MSG, real_input, i_in,j_in,k_in)
- implicit none
-
- real(Kind=fp_kind),intent(inout) :: real_input  !anykind of Non-dimensional input Real parameters
- integer,intent(in) :: i_in, j_in, k_in
- character*(*),intent(in) :: Warning_MSG
-
-!
-! Find Infinity
-!
-!if( exp(-abs(real_input)) == 0.) then ! this formulae is bit slow 
-
- if( 1e+10/real_input == 0. ) then
-    real_input = 0.
-    return
- endif
-
-!
-! Find NaN
-! 
- if( real_input==0. .or. real_input>0. .or. real_input<0. .or. real_input>=0. .or. real_input<=0. ) then
- else    
-    real_input = 0.
-    return
- endif
-
- return
- end subroutine Find_NaN_Inf_Double
-
-!SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU 
-!SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU SDSU  
-
- subroutine Find_NaN_Inf_Single(Warning_MSG, real_input, i_in,j_in,k_in)
- implicit none
-
-!---------------------------------------------------------------------------------------------------
-! Comments:  Find out infinity of NaN values 
-!  
-! History:
-! 10/2008  Toshi Matsui@NASA GSFC ; Initial
-!           
-! References: 
-!----------------------------------------------------------------------------------------------------
-
- real,intent(inout) :: real_input  !anykind of Non-dimensional single-precision Real parameters
- integer,intent(in) :: i_in, j_in, k_in
- character*(*),intent(in) :: Warning_MSG
-
-!
-! Find Infinity
-!
-!if( exp(-abs(real_input)) == 0.) then ! this formulae is bit slow 
-
- if( 1e+10/real_input == 0. ) then
-    real_input = 0.
-    return
- endif
-
-!
-! Find NaN
-! 
- if( real_input==0. .or. real_input>0. .or. real_input<0. .or. real_input>=0. .or. real_input<=0. ) then
- else
-    real_input = 0.
-    return
- endif
-
- return
- end subroutine Find_NaN_Inf_Single
 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 

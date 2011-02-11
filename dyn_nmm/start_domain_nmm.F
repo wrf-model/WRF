@@ -141,6 +141,8 @@
      &                                  ,NCA                            &
      &                                  ,QFX,RAINBL,RAINC,RAINNC        &
      &                                  ,RAINNCV                        &
+     &                                  ,SNOWNC,SNOWNCV                 &
+     &                                  ,GRAUPELNC,GRAUPELNCV           &
      &                                  ,SNOWC,THC,TMN,TSFC
 
       REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM, ALBEDO_DUM
@@ -1590,6 +1592,10 @@
       ALLOCATE(RAINC(IMS:IME,JMS:JME),STAT=I)   ; RAINC    = 0.
       ALLOCATE(RAINNC(IMS:IME,JMS:JME),STAT=I)  ; RAINNC   = 0.
       ALLOCATE(RAINNCV(IMS:IME,JMS:JME),STAT=I) ; RAINNCV  = 0.
+      ALLOCATE(SNOWNC(IMS:IME,JMS:JME),STAT=I)  ; SNOWNC   = 0.
+      ALLOCATE(SNOWNCV(IMS:IME,JMS:JME),STAT=I) ; SNOWNCV  = 0.
+      ALLOCATE(GRAUPELNC(IMS:IME,JMS:JME),STAT=I)  ; GRAUPELNC   = 0.
+      ALLOCATE(GRAUPELNCV(IMS:IME,JMS:JME),STAT=I) ; GRAUPELNCV  = 0.
 
       ALLOCATE(ZS(KMS:KME),STAT=I)              ; ZS       = 0.
       ALLOCATE(SNOWC(IMS:IME,JMS:JME),STAT=I)   ; SNOWC    = 0.
@@ -1797,6 +1803,7 @@
      &             ,RTHRATEN,RTHRATENLW,RTHRATENSW                      &
      &             ,STEPBL,STEPRA,STEPCU                                &
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
+     &             ,SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV              &
      &             ,NCA,GRID%SWRAD_SCAT                                 &
      &             ,grid%cldefi,LOWLYR                                       &
      &             ,grid%mass_flux                                           &

@@ -106,7 +106,11 @@
                                aerwrf
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
-                               ttday,tcosz,xlat,xlong,raincv_a,raincv_b
+                               ttday,tcosz,xlat,xlong
+   REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
+          OPTIONAL,                                                  &
+          INTENT(INOUT   ) ::                                        &
+                               raincv_a,raincv_b
    real, INTENT (IN) :: g
    integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
@@ -228,6 +232,10 @@ call wrf_message("**************************************************************
    endif
    endif
 
+   if ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) then
+         call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
+   endif
+
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")
@@ -242,10 +250,11 @@ call wrf_message("**************************************************************
       call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
     ENDIF
 
+     IF (config_flags%bio_emiss_opt == 3 .AND. bioemdt*60. /= dt ) THEN
+        call wrf_error_fatal(" ERROR: CHEM_INIT: bioemdt needs to match the model time_step. ")
+     ENDIF
+
     if( .NOT. config_flags%restart ) then
-       if(config_flags%chem_in_opt == 0 )then
-          chem(:,:,:,:)=0.
-       endif
        do j=jts,jte
           do k=kts,kte
              do i=its,ite
@@ -344,8 +353,8 @@ call wrf_message("**************************************************************
     end do
     do j=jts,jte
           do i=its,ite
-            raincv_a(i,j)=0.
-            raincv_b(i,j)=0.
+            if(present(raincv_a) ) raincv_a(i,j)=0.
+            if(present(raincv_b) ) raincv_b(i,j)=0.
        end do
     end do
 

@@ -68,6 +68,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,  &
                 ddust(1,1,kk,5)=chem(i,k,j,p_dust_5)*conver
              enddo
           endif
+          kk=0
           do k=kts,kte
           kk=kk+1
           p_mid(1,1,kk)=.01*p_phy(i,kte-k+kts,j)

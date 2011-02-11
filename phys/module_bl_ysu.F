@@ -308,7 +308,7 @@ contains
 !               ==> negligible differences
 !              implicit forcing for momentum with clean up, july 2009
 !               ==> prevents model blowup when sfc layer is too low
-!              incresea of lamda, 30 < 0.1 x del z < 300, feb 2010
+!              increase of lamda, 30 < 0.1 x del z < 300, feb 2010
 !               ==> prevents model blowup when delz is extremely large
 !              revised prandtl number at surface, peggy lemone, feb 2010
 !               ==> increase kh, decrease mixing due to counter-gradient term

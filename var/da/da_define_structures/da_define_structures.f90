@@ -520,6 +520,7 @@ module da_define_structures
       real,    pointer     :: land_coverage(:)
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
+      integer, pointer     :: crtm_climat(:) ! CRTM only
 
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)

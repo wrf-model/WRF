@@ -92,6 +92,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%solzen(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%solazi(iv%instid(i)%num_rad))
       if (rtm_option == rtm_option_crtm) then
+         allocate(iv%instid(i)%crtm_climat(iv%instid(i)%num_rad))
          allocate(iv%instid(i)%water_coverage(iv%instid(i)%num_rad))
          allocate(iv%instid(i)%land_coverage(iv%instid(i)%num_rad))
          allocate(iv%instid(i)%ice_coverage(iv%instid(i)%num_rad))

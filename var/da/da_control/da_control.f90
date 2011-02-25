@@ -355,6 +355,8 @@ module da_control
    real, parameter :: maximum_rh = 100.0
    real, parameter :: minimum_rh =  10.0
 
+   real, parameter :: qlimit = 1.0e-12   ! imposed minimum mixing ratio
+
    ! other
 
    integer, parameter :: jperr = 6

@@ -351,25 +351,29 @@ subroutine da_transfer_xatowrf(grid)
             grid%v_2(i,j,k) = grid%v_2(i,j,k) + v_cgrid(i,j,k)
 #endif
             grid%w_2(i,j,k) = grid%w_2(i,j,k) + grid%xa%w(i,j,k)
-            grid%moist(i,j,k,P_QV) = grid%moist(i,j,k,P_QV) + q_cgrid(i,j,k)
+
+            ! (xb%q+xa%q in specific humidity) >= 0.0
+            ! does not guarantee that (qv+q_cgrid in mixing ratio) >= 0.0
+            ! for example, when xa%q is negative, q_cgrid is a lager negative value.
+            ! impose a minimum value to prevent negative final qv
+            if ( num_pseudo == 0 ) then
+               grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV)+q_cgrid(i,j,k), qlimit)
+            else
+               grid%moist(i,j,k,P_QV) = grid%moist(i,j,k,P_QV)+q_cgrid(i,j,k)
+            end if
 
             if (size(grid%moist,dim=4) >= 4) then
-               grid%moist(i,j,k,p_qc) = grid%moist(i,j,k,p_qc) + grid%xa%qcw(i,j,k)
-               grid%moist(i,j,k,p_qr) = grid%moist(i,j,k,p_qr) + grid%xa%qrn(i,j,k)
-               if (grid%moist(i,j,k,p_qc) < 0.0) grid%moist(i,j,k,p_qc) = 0.0
-               if (grid%moist(i,j,k,p_qr) < 0.0) grid%moist(i,j,k,p_qr) = 0.0
+               grid%moist(i,j,k,p_qc) = max(grid%moist(i,j,k,p_qc) + grid%xa%qcw(i,j,k), 0.0)
+               grid%moist(i,j,k,p_qr) = max(grid%moist(i,j,k,p_qr) + grid%xa%qrn(i,j,k), 0.0)
             end if
 
             if (size(grid%moist,dim=4) >= 6) then
-               grid%moist(i,j,k,p_qi) = grid%moist(i,j,k,p_qi) + grid%xa%qci(i,j,k)
-               grid%moist(i,j,k,p_qs) = grid%moist(i,j,k,p_qs) + grid%xa%qsn(i,j,k)
-               if (grid%moist(i,j,k,p_qi) < 0.0) grid%moist(i,j,k,p_qi) = 0.0
-               if (grid%moist(i,j,k,p_qs) < 0.0) grid%moist(i,j,k,p_qs) = 0.0
+               grid%moist(i,j,k,p_qi) = max(grid%moist(i,j,k,p_qi) + grid%xa%qci(i,j,k), 0.0)
+               grid%moist(i,j,k,p_qs) = max(grid%moist(i,j,k,p_qs) + grid%xa%qsn(i,j,k), 0.0)
             end if
 
             if (size(grid%moist,dim=4) >= 7) then
-               grid%moist(i,j,k,p_qg) = grid%moist(i,j,k,p_qg) + grid%xa%qgr(i,j,k)
-               if (grid%moist(i,j,k,p_qg) < 0.0) grid%moist(i,j,k,p_qg) = 0.0
+               grid%moist(i,j,k,p_qg) = max(grid%moist(i,j,k,p_qg) + grid%xa%qgr(i,j,k), 0.0)
             end if
          end do
       end do

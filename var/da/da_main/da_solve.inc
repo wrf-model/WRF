@@ -640,6 +640,7 @@
                end if
             end if
             if (rtm_option == rtm_option_crtm) then
+               deallocate(iv%instid(i)%crtm_climat)
                deallocate(iv%instid(i)%water_coverage)
                deallocate(iv%instid(i)%land_coverage)
                deallocate(iv%instid(i)%ice_coverage)

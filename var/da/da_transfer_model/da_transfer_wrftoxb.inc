@@ -408,6 +408,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             grid%xb%wh(i,j,k)= 0.5*(grid%xb%w(i,j,k)+grid%xb%w(i,j,k+1))
             grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
 
+            if ( num_pseudo == 0 ) then
+               grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV), qlimit)
+            end if
             grid%xb%q(i,j,k) = grid%moist(i,j,k,P_QV)
 
             theta = t0 + grid%t_2(i,j,k)
@@ -415,25 +418,23 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
-            if (num_pseudo == 0 .and. grid%xb%q(i,j,k) < 1.0e-9) &
-               grid%xb%q(i,j,k) = 1.0e-9
    
             ! Background qrn needed for radar radial velocity assmiilation:
 
             if (size(grid%moist,dim=4) >= 4) then
-               grid%xb%qcw(i,j,k) = grid%moist(i,j,k,p_qc)
-               grid%xb%qrn(i,j,k) = grid%moist(i,j,k,p_qr)
+               grid%xb%qcw(i,j,k) = max(grid%moist(i,j,k,p_qc), 0.0)
+               grid%xb%qrn(i,j,k) = max(grid%moist(i,j,k,p_qr), 0.0)
                grid%xb%qt (i,j,k) = grid%xb%q(i,j,k) + grid%xb%qcw(i,j,k) + &
                   grid%xb%qrn(i,j,k)
             end if
 
             if (size(grid%moist,dim=4) >= 6) then
-               grid%xb%qci(i,j,k) = grid%moist(i,j,k,p_qi)
-               grid%xb%qsn(i,j,k) = grid%moist(i,j,k,p_qs)
+               grid%xb%qci(i,j,k) = max(grid%moist(i,j,k,p_qi), 0.0)
+               grid%xb%qsn(i,j,k) = max(grid%moist(i,j,k,p_qs), 0.0)
             end if
 
             if (size(grid%moist,dim=4) >= 7) then
-               grid%xb%qgr(i,j,k) = grid%moist(i,j,k,p_qg)
+               grid%xb%qgr(i,j,k) = max(grid%moist(i,j,k,p_qg), 0.0)
             end if
 
             if ( config_flags%mp_physics == 3 ) then   ! WSM3-class scheme

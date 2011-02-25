@@ -23,7 +23,7 @@ module da_obs_io
       sound, mtgirs,synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       tamdar, tamdar_sfc, metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, pseudo, &
       radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc, &
-      qmarker_retain, anal_type_verify
+      qmarker_retain, anal_type_verify, top_km_gpsro, bot_km_gpsro
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &

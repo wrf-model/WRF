@@ -166,7 +166,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
          Atmosphere(n)%Absorber_ID(2)=O3_ID
          Atmosphere(n)%Absorber_Units(1) = MASS_MIXING_RATIO_UNITS
          Atmosphere(n)%Absorber_Units(2) = VOLUME_MIXING_RATIO_UNITS
-         Atmosphere(n)%Climatology=crtm_atmosphere
+         Atmosphere(n)%Climatology=iv%instid(inst)%crtm_climat(n)
 
          if (crtm_cloud) then
             Atmosphere(n)%Cloud(1)%Type=WATER_CLOUD

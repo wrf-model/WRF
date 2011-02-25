@@ -436,6 +436,12 @@ bufrfile:  do ibufr=1,numbufr
             if ( tb_inv(k) < tbmin .or. tb_inv(k) > tbmax) &
                tb_inv(k) = missing_r
          end do
+         if ( all(tb_inv<0.0) ) then
+            num_tovs_local = num_tovs_local -1
+            num_tovs_used = num_tovs_used - 1
+            nread(inst) = nread(inst) - 1
+            cycle
+         end if
 
          !  4.0   assign information to sequential radiance structure
          !--------------------------------------------------------------------------

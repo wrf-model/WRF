@@ -124,6 +124,7 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
    px = isign(grid%parent_grid_ratio,disp_x)
    py = isign(grid%parent_grid_ratio,disp_y)
 
+#ifdef DM_PARALLEL
 ! shift the nest domain in x
    do ii = 1,abs(disp_x)
 #include <../inc/SHIFT_HALO_X_HALO.inc>
@@ -135,6 +136,7 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
 #include <../inc/SHIFT_HALO_Y_HALO.inc>
 #include <../frame/loop_based_y_shift_code.h>
    enddo
+#endif
 
 !#define COPY_OUT
 !#include <scalar_derefs.inc>

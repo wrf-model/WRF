@@ -2694,7 +2694,7 @@ banner 22
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-						if ( if ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) ) exit ( 6 )
+						if ( ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) ) exit ( 6 )
 					endif
 					mv wrfout_d01_${filetag} $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.${compopt}_${n}p
 #DAVE###################################################

@@ -396,8 +396,10 @@ if [ -n "$WRF_NMM_CORE" ]; then
       if [ $HWRF = 1 ]; then
         echo building WRF with HWRF option
         compileflags="${compileflags}!-DHWRF=1"
-        if [ $HWRFX = 1 ]; then
+        if [ -n "$HWRFX" ]; then
+          if [ $HWRFX = 1 ]; then
             compileflags="${compileflags}!-DHWRFX=1"
+          fi
         fi
       fi
     fi

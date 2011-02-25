@@ -9,7 +9,7 @@ OBJ  =          module_PATCH_QUILT.o \
 
 AR = ar
 ARFLAGS = cr
-TARGET = libatm_pom.a
+TARGET = libatm_ocn.a
 
 library: $(OBJ)
 	$(AR) $(ARFLAGS) $(TARGET) $(OBJ)

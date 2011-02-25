@@ -1493,6 +1493,7 @@ integer myproc
 
 !-- calculate pbl time step
 
+   print *,config_flags%grid_id,'=config_flags%grid_id'
    STEPBL = nint(BLDT*60./DT)
    STEPBL = max(STEPBL,1)
 !-- initialization
@@ -1794,7 +1795,7 @@ integer myproc
                          its, ite, jts, jte, kts, kte          )
         CASE (CAMUWPBLSCHEME)
            CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                restart,TKE_PBL,                      &
+                restart,TKE_PBL,config_flags%grid_id,           &
                 ids, ide, jds, jde, kds, kde,         &
                 ims, ime, jms, jme, kms, kme,         &
                 its, ite, jts, jte, kts, kte          )
@@ -2117,6 +2118,7 @@ integer myproc
            rqcshten, rqrshten, rqishten, rqsshten, rqgshten,         &
            p_qc, p_qr, p_qi, p_qs, p_qg,                             &
            config_flags%bl_pbl_physics, param_first_scalar, restart, &
+           config_flags%grid_id,                                     &
            ids, ide, jds, jde, kds, kde,                             &
            ims, ime, jms, jme, kms, kme,                             &
            its, ite, jts, jte, kts, kte                              )

@@ -836,7 +836,7 @@ CONTAINS
  
  !-----------------------------------------------------------------------------------------   
   subroutine camuwpblinit(rublten,rvblten,rthblten,rqvblten, &
-       restart,tke_pbl,                              &
+       restart,tke_pbl,grid_id,                              &
        ids,ide,jds,jde,kds,kde,                            &
        ims,ime,jms,jme,kms,kme,                            &
        its,ite,jts,jte,kts,kte)
@@ -864,6 +864,7 @@ CONTAINS
     !Input and output variables                                                           !
     !-------------------------------------------------------------------------------------!
     logical,intent(in) :: restart
+    integer,intent(in) :: grid_id
     integer,intent(in) :: ids,ide,jds,jde,kds,kde
     integer,intent(in) :: ims,ime,jms,jme,kms,kme
     integer,intent(in) :: its,ite,jts,jte,kts,kte
@@ -896,7 +897,7 @@ CONTAINS
      pverp = pver + 1
 
      !Initialize flags and add constituents
-     call vd_register()  
+     if(grid_id.eq.1)call vd_register()  
  
      !! ----------------------------------------------------------------- !
      !! Get indices of cloud liquid and ice within the constituents array !

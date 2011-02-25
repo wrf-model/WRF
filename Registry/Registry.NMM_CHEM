@@ -625,25 +625,25 @@ state   real    qns            ijkftb  scalar      1         -     i01rhusdf=(bd
 state   real    qnr            ijkftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNR"              "Rain Number concentration" "# kg(-1)"
 state   real    qng            ijkftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNG"              "Graupel Number concentration" "# kg(-1)"
 state   real    qndrop         ijkftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNDROP"           "Droplet number mixing ratio"        "# kg-1"
-state   real    qnn            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
-state   real    qnc            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+state   real    qnn            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
+state   real    qnc            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
 
-state   real    -              ikjftb  dfi_scalar      1         -     -   -
-state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
+state   real    -              ijkftb  dfi_scalar      1         -     -   -
+state   real    dfi_qndrop     ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "Droplet number mixing ratio"        "# kg-1"
-state   real    dfi_qni        ikjftb  dfi_scalar      1         -     \
+state   real    dfi_qni        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNICE"     "Ice Number concentration" "# kg-1"
-state   real    dfi_qt         ikjftb  dfi_scalar      1         -     \
+state   real    dfi_qt         ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_CWM"       "Total condensate mixing ratio"      "kg kg-1"
-state   real    dfi_qns        ikjftb  dfi_scalar      1         -     \
+state   real    dfi_qns        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNSNOW"    "Snow Number concentration"   "# kg(-1)"
-state   real    dfi_qnr        ikjftb  dfi_scalar      1         -     \
+state   real    dfi_qnr        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNRAIN"    "Rain Number concentration"   "# kg(-1)"
-state   real    dfi_qng        ikjftb  dfi_scalar      1         -     \
+state   real    dfi_qng        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNGRAUPEL" "Graupel Number concentration" "# kg(-1)"
-state   real    dfi_qnn        ikjftb  dfi_scalar      1         -     \
+state   real    dfi_qnn        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
-state   real    dfi_qnc        ikjftb  dfi_scalar      1         -     \
+state   real    dfi_qnc        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
 
 
@@ -1375,3 +1375,4 @@ halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBW
 halo      HALO_NMM_SAS_A  dyn_nmm 24:uz0h,vz0h,hbm2
 halo      HALO_NMM_SAS_B  dyn_nmm 24:ducudt,dvcudt
 halo      HALO_TRACERS dyn_nmm 48:szj,s1z,spz,tcs
+

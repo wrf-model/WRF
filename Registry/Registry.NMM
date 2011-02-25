@@ -716,8 +716,8 @@ state    real  ZNT              ij      misc        1         -     ir        "Z
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
-state    real   tke_pbl         ijk     misc        1         -     r         "TKE_MYJ"               "TKE FROM PBL SCHEME"     "m2 s-2"
-state    real   el_pbl          ikj     misc        1         -     -         "EL_MYJ"                "MIXING LENGTH FROM PBL SCHEME"     "m"
+state    real   tke_pbl         ijk     misc        1         -     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
+state    real   el_pbl          ikj     misc        1         -     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
 state    real   EXCH_H         ikj     misc        1         -      r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
 state    real   EXCH_M         ikj     misc        1         -      r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"        "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"       "K"

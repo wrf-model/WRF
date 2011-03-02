@@ -13,7 +13,7 @@ module da_define_structures
    use da_control, only : anal_type_randomcv, stdout, max_fgat_time, &
       vert_corr, global, vert_evalue,print_detail_be, maxsensor, &
       max_ob_levels, trace_use, num_ob_indexes, kms, kme, &
-      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, use_rf,&
+      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, do_normalize, use_rf, &
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
@@ -24,7 +24,7 @@ module da_define_structures
    use da_tools_serial, only : da_array_print
 
    use da_reporting, only : da_error, message
-   use da_wavelet, only :  do_normalize,nij,ws
+   use da_wavelet, only : nij,ws
 
    implicit none
    
@@ -894,12 +894,15 @@ module da_define_structures
       integer           :: mz          ! Vertical truncation of errors.
       integer           :: max_wave    ! Global only - horizontal spectral truncation.
       character*5       :: name        ! Variable name.
-      real*8, pointer     :: rf_alpha(:) ! RF scale length.
-      real*8, pointer     :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
-      real*8, pointer     :: evec(:,:,:) ! Local Vertical eigenvectors.
-      real*8, pointer     :: val_g(:)    ! Global Standard dev./sqrt(eigenvalue).
-      real*8, pointer     :: evec_g(:,:) ! Global Vertical eigenvectors.
-      real*8, pointer     :: power(:,:)  ! Power spectrum
+      real*8, pointer   :: rf_alpha(:) ! RF scale length.
+      real*8, pointer   :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
+      real*8, pointer   :: evec(:,:,:) ! Local Vertical eigenvectors.
+      real*8, pointer   :: val_g(:)    ! Global Standard dev./sqrt(eigenvalue).
+      real*8, pointer   :: evec_g(:,:) ! Global Vertical eigenvectors.
+      real*8, pointer   :: power(:,:)  ! Power spectrum
+!_____For wavelet option:
+      REAL, POINTER     ::sd(:,:,:)    ! 3D field   std. dev.
+      REAL, POINTER     ::wsd(:,:,:)   ! 3D wavelet std. dev.
    end type be_subtype
 
    type be_type

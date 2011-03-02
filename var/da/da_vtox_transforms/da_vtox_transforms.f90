@@ -36,7 +36,7 @@ module da_vtox_transforms
       ids, ide, stdout, use_rad, crtm_cloud, vert_corr_2, fg_format_wrf_arw_global, &
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull, &
       ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum, cloud_cv_options, &
-      use_background_errors,use_rf,len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
+      use_background_errors,do_normalize,use_rf,len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
       len_scaling5, len_scaling6, len_scaling7, len_scaling8
 #endif
 
@@ -59,7 +59,7 @@ module da_vtox_transforms
    use da_tools, only : da_set_boundary_xa
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_wrf_interfaces, only : wrf_debug
-   use da_wavelet, only: da_transform_through_wavelet, da_transform_through_wavelet_adj
+   use da_wavelet, only: da_transform_through_wavelet, da_transform_through_wavelet_adj, nij
 
    implicit none
 
@@ -73,6 +73,7 @@ module da_vtox_transforms
 #include "da_check_eof_decomposition.inc"
 #include "da_transform_vtovv.inc"
 #include "da_transform_vtovv_adj.inc"
+#include "da_transform_rescale.inc"
 #include "da_transform_vtox.inc"
 #include "da_transform_xtoxa.inc"
 #include "da_transform_vtox_adj.inc"

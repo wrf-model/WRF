@@ -8,7 +8,7 @@ program gen_be_diags
 !  Note: Please acknowledge author/institute in work that uses this code.
 !------------------------------------------------------------------------
 
-   use da_control, only : filename_len,stderr,stdout,use_rf
+   use da_control, only : do_normalize,filename_len,stderr,stdout,use_rf
    use da_tools_serial, only : da_get_unit
    use da_gen_be, only : da_readwrite_be_stage2, da_readwrite_be_stage3, &
       da_readwrite_be_stage4
@@ -22,7 +22,7 @@ program gen_be_diags
    character(len=filename_len)        :: filename                   ! Input filename.
    integer             :: nk,nk_3d                   ! Dimensions read in.
 
-   namelist / gen_be_diags_nl / cv_options, n_smth_sl, uh_method, use_rf
+   namelist / gen_be_diags_nl / cv_options, do_normalize, n_smth_sl, uh_method, use_rf
 
    integer :: ounit,iunit,namelist_unit
 

@@ -60,12 +60,12 @@ export DATA_ON_LEVELS=${DATA_ON_LEVELS:-.false.}     # False if fields projected
 export GLOBAL=${GLOBAL:-false}                       # Global or regional models
 export NUM_LEVELS=${NUM_LEVELS:-27}                  # Hard-wired for now....
 export N_SMTH_SL=${N_SMTH_SL:-2}                     # Amount of lengthscale smoothing (0=none).
-export STRIDE=${STRIDE:-1}                           # Calculate correlation evert STRIDE point (stage4 regional).
+export STRIDE=${STRIDE:-1}                           # Calculate correlation every STRIDE point (stage4 regional).
 export NBINS=${NBINS:-1}                             # Number of latitude bins for length scale computation
 export IBIN=${IBIN:-1}                               # Index of latitude bin to compute length scale for
 export USE_RFi=${USE_RFi:-true}                      # Use recursive filters.
 export USE_RF=.${USE_RFi}.                           # ForTran syntax.
-export DO_NORMALIZE=${DO_NORMALIZE:-.true.}          # Normalize before wavelet transform.
+export DO_NORMALIZE=${DO_NORMALIZE:-.false.}         # Normalize before rf or wavelet filtering.
 export PRINT_WAVELETS=${PRINT_WAVELETS:-.false.}     # Print wavelets.
 export WAVELET_FILT_LEN=${WAVELET_FILT_LEN:-6}       # Wavelet filter length.
 export WAVELET_NAME=${WAVELET_NAME:-C}               # Wavelet name (B, C, D or V).

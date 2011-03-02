@@ -6,7 +6,7 @@
 #
 # Note: START_DATE and END_DATE are defined as the times of the first and 
 # last perturbation. We derive START_DATE_STAGE0 and END_DATE_STAGE0
-# from these using FCST_RANGE.  
+# from these using FCST_RANGE1.  
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------------
@@ -50,10 +50,10 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    export FILE_DATE=${YYYY}-${MM}-${DD}_${HH}:00:00
    export FILE=${FC_DIR}/${DATE}/wrfout_d${DOMAIN}_${FILE_DATE}
    export FILE1=wrfout_d${DOMAIN}_${FILE_DATE}
-   export FILE2=wrfout_d${DOMAIN}_${FILE_DATE}.e001
-   export FILE3=wrfout_d${DOMAIN}_${FILE_DATE}.e002
    export NEXT_DATE=$($DAAT $DATE $INTERVAL)
    if [[ $BE_METHOD == NMC ]]; then
+      export FILE2=wrfout_d${DOMAIN}_${FILE_DATE}.e001
+      export FILE3=wrfout_d${DOMAIN}_${FILE_DATE}.e002
       ln -sf $FILE $FILE1
       ln -sf $FILE $FILE2
       ln -sf ${FC_DIR}/${NEXT_DATE}/wrfout_d${DOMAIN}_${FILE_DATE} $FILE3

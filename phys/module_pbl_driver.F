@@ -40,6 +40,7 @@ CONTAINS
                  ,hol, mol, regime                                 &
              ! Optional gravity-wave drag             
                  ,gwd_opt                                          &
+                 ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
                  ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
              !  Optional moisture tracers
@@ -483,7 +484,12 @@ CONTAINS
 !
    INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt
    REAL,       OPTIONAL, INTENT(IN)    ::               p_top
-
+!
+  real,   dimension( ims:ime, kms:kme, jms:jme )                             , &
+          optional                                                           , &
+             intent(inout  )   ::                                     dtaux3d, &
+                                                                      dtauy3d
+!
   real,   dimension( ims:ime, jms:jme )                                      , &
           optional                                                           , &
              intent(inout  )   ::                                      dusfcg, &
@@ -1284,13 +1290,14 @@ CONTAINS
 
    END SELECT pbl_select
 
-   IF (PRESENT(gwd_opt)) THEN
+   IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN
              CALL gwdo(                                              &
                U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
               ,QV3D=qv_curr                                         &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,DTAUX3D=dtaux3d,DTAUY3D=dtauy3d                      &
               ,DUSFCG=dusfcg,DVSFCG=dvsfcg &
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &

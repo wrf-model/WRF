@@ -14,6 +14,7 @@ subroutine da_setup_be_regional(xb, be)
    type (xb_type), intent(in)    :: xb                    ! First guess structure.
    type (be_type), intent(inout) :: be                    ! Back. errors structure.
 
+   logical                do_normalize1      ! Test do_normalize.
    integer             :: i, j, k, m         ! Loop counters.
    integer, allocatable:: bin(:,:,:)         ! Bin assigned to each 3D point
    integer, allocatable:: bin2d(:,:)         ! Bin assigned to each 2D point
@@ -132,8 +133,11 @@ subroutine da_setup_be_regional(xb, be)
       stop "Stopped, Please check if proper BE file s provided"
    else
       if ( nk /= kz ) then
+         write(message(1),'("{ni,nj,nk}={",3(1x,i0),"} in be.dat but {ix,jy,kz}={",3(1x,i0),"}!")') &
+            ni,nj,nk,ix,jy,kz
          call da_error(__FILE__,__LINE__,  &
-            (/"Vertical levels in fg and be.dat do not match."/))
+            message(1:1))
+!           (/"Vertical levels in fg and be.dat do not match."/))
       end if
    endif
 
@@ -586,11 +590,16 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be7_rf_lengthscale(1:nk))
       allocate (be8_rf_lengthscale(1:nk))
 #endif
+      b=0			! pointer to variable*level
+      mz=kz			! length in be%sd(:,:,b+1:b+mz)
+      allocate(nij(0:0,0:1,0:0))
       ! 5.2 read in the scale lengths
-      do i = 1 , 5
-         read (be_unit) variable
+      do i = 1 , 5		! variables loop:
+         read (be_unit,IOSTAT=k) variable
+         if( k/=0 ) &
+            print'("Error ",I0," reading namv(",I0,")=",A,"/=",A,", do_normalize=",L)', &
+               k,i,namv(i),variable,do_normalize
          select case( trim(adjustl(variable)) )
-
             case ('psi')
                read(be_unit) be1_rf_lengthscale
             case ('chi_u')
@@ -602,11 +611,24 @@ subroutine da_setup_be_regional(xb, be)
             case ('ps_u')
                read(be_unit) be5_rf_lengthscale(1:1)
             case default;
-               message(1)=' Read problem in lengthscales in BE file '
-               write (unit=message(2),fmt='(A,A)') ' Trying to read lengthscales for variable: ',trim(adjustl(variable))
+               message(1)='Read problem in lengthscales in be.dat'
+               write(message(2),'("Trying to read lengthscales for variable ",I0,": ",A)')i,trim(adjustl(variable))
                call da_error(__FILE__,__LINE__,message(1:2))
-         end select
-      end do
+         endselect
+         if( do_normalize )then
+            if(i==5)mz=1	! sfc pressure is 2D
+            read(be_unit)do_normalize1
+            if( do_normalize.neqv.do_normalize1 ) &
+               call da_error(__FILE__,__LINE__,(/namv(i)//": do_normalize.neqv.do_normalize1"/))
+            read(be_unit)nij
+            if( i==1 )allocate(be%sd(nij(0,1,0),nij(0,0,0),4*mz+1))
+            do k=1,mz
+               read(be_unit)be%sd(:,:,b+k)
+            enddo
+            write(*,'(A,": |sd[",A,"]|=",es9.3)')__FILE__,namv(i),sqrt(sum(be%sd(:,:,b+1:b+mz)**2))
+            b=b+mz		! point to next variable.
+         endif
+      enddo
 #ifdef CLOUD_CV
 !whl
      if(cloud_cv_options.eq.2)then
@@ -618,7 +640,7 @@ subroutine da_setup_be_regional(xb, be)
       be7_rf_lengthscale = 5.0
       be8_rf_lengthscale = 5.0
      end if
-      print*,'lenth scale'
+      print*,'length scale'
       print*,'be1= ',be1_rf_lengthscale
       print*,'be2= ',be2_rf_lengthscale
       print*,'be3= ',be3_rf_lengthscale
@@ -653,7 +675,7 @@ subroutine da_setup_be_regional(xb, be)
       b = 0			! pointer to variable*level
       mz=kz			! length in be%wsd(:,:,b+1:b+mz)
       do m=1,5			! variables loop:
-         if(m==5)mz=1
+         if(m==5)mz=1		! sfc pressure is 2D
          read(be_unit)k,nk
          if( k>len(variable) )then
             write(message(1),'(i0,">",i0," for ",A)')k,len(variable),namv(m)
@@ -668,6 +690,7 @@ subroutine da_setup_be_regional(xb, be)
             call da_error(__FILE__,__LINE__,message(1:1))
          endif
          if( m==1 )then
+!           Possibly reassign namelist do_normalize value:
             read(be_unit)do_normalize,namw,lf,nb
 !           print*,namv(m),nb,namw,lf
             allocate(nij(0:nb,0:1,0:2))
@@ -913,6 +936,15 @@ subroutine da_setup_be_regional(xb, be)
       do m = 1, mz
          be % alpha % val(:,m) = alpha_rf_scale_factor(m) * be % alpha % val(:,m)
       end do
+
+      if( .not. use_rf ) then
+         allocate(be%alpha%wsd(nij(0,1,2),nij(0,0,2),mz))
+         call random_number(be%alpha%wsd)			! need to parallelize
+         if( do_normalize )then
+            allocate(be%alpha%sd(nij(0,1,0),nij(0,0,0),mz))
+            call random_number(be%alpha%sd)			! need to parallelize
+         endif
+      endif
 
       deallocate(alpha_val)
       deallocate(alpha_evec)

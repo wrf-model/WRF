@@ -14,31 +14,40 @@ export RUN_GEN_BE_STAGE2A=true
 export RUN_GEN_BE_STAGE3=true
 export RUN_GEN_BE_STAGE4=true
 export RUN_GEN_BE_DIAGS=true
-export RUN_GEN_BE_DIAGS_READ=true
-export RUN_GEN_BE_MULTICOV=true
+export RUN_GEN_BE_DIAGS_READ=false
+export RUN_GEN_BE_MULTICOV=false
 
-export WRFVAR_DIR=~/research/trunk
+export WRFVAR_DIR=`pwd`/trunk
 
-export START_DATE=2008020612  # the first perturbation valid date
-export END_DATE=2008020700    # the last perturbation valid date
-export NUM_LEVELS=40          # e_vert - 1
+#export START_DATE=2008020612	# the first perturbation valid date
+#export START_DATE=2007032903	# the first perturbation valid date
+export START_DATE=2006102800	# the first perturbation valid date
+#export END_DATE=2008020700	# the last perturbation valid date
+export END_DATE=$START_DATE	# the last perturbation valid date
+#export NUM_LEVELS=40		# = bottom_top = e_vert - 1
+#export NUM_LEVELS=34		# = bottom_top = e_vert - 1
+export NUM_LEVELS=41		# = bottom_top = e_vert - 1
 export BIN_TYPE=5
 #export DATA_ON_LEVELS=.true. # "False if fields projected onto modes."
 
 #Example of changes required for "be_method=ENS":
-#export BE_METHOD=ENS
-export BE_METHOD=NMC
-#export NE=30
-#export FCST_RANGE=12
+#export BE_METHOD=NMC
+export BE_METHOD=ENS
+export NE=2 # 30
+export FCST_RANGE=12
 
-# from /mmmtmp/hclin/wrfda_tut_data_200907.tar.gz
-export FC_DIR=~/research/wrf-da/wrfda_tut_data_200907/Testcase/fc # where wrf forecasts are
+# E.g., use http://www.mmm.ucar.edu/wrf/users/wrfda/download/gen_be_forecasts_20080205.tar.gz
+#export FC_DIR=`pwd`/fc		# where wrf forecasts are
+#export FC_DIR=~/ptmp/ENS/fc	# where wrf forecasts are
+export FC_DIR=~/ptmp/ENS/fc/tutorial_200907_hybrid	# where wrf forecasts are
 export SDIR=
 #export SDIR=/subsam
 #export FC_DIR=~/research/wrf-da/var/gen_be/${BE_METHOD}/fc${SDIR} # where wrf forecast ensemble is
-export RUN_DIR=~/research/wrf-da/var/gen_be/${BE_METHOD}${SDIR}/gen_be${BIN_TYPE}
+typeset -l RUN_DIR=be_dir_${BE_METHOD}
+export RUN_DIR=`pwd`/${RUN_DIR}/gen_be${BIN_TYPE}
 export DOMAIN=01
-export FCST_RANGE1=24
+#export FCST_RANGE1=24
+export FCST_RANGE1=12
 #export FCST_RANGE1=0
 export FCST_RANGE2=12
 export INTERVAL=12
@@ -49,7 +58,8 @@ export USE_RFi=false		# use recursive filters?
 if ${USE_RFi}; then
    ${WRFVAR_DIR}/var/scripts/gen_be/gen_be.ksh
 else                          # loop over wavelet filter lengths:
-   set echo
+   NEW_SUF=
+   export RUN_DIR=${RUN_DIR}.
    for L in 7;do
       export WAVELET_NBAND=$L
       for N in C;do          # possible WAVELET_NAME values: B C D V
@@ -71,12 +81,13 @@ else                          # loop over wavelet filter lengths:
             export IINC=1
             export IFIN=$ISTRT
          fi
-         export RUN_DIR=${RUN_DIR}.
          for I in `seq ${ISTRT} ${IINC} ${IFIN}`; do
 #        for I in {${ISTRT}..${IFIN}..${IINC}}; do
             export WAVELET_FILT_LEN=$I
 #           ${var.abc/%.*/.xyz} replaces var.abc by var.xyz:
-            export RUN_DIR=${RUN_DIR/%.*/.${WAVELET_NBAND}${WAVELET_NAME}${WAVELET_FILT_LEN}}n
+            OLD_SUF=${NEW_SUF}
+            NEW_SUF=${WAVELET_NBAND}${WAVELET_NAME}${WAVELET_FILT_LEN}n
+            export RUN_DIR=${RUN_DIR%${OLD_SUF}}${NEW_SUF}
             ${WRFVAR_DIR}/var/scripts/gen_be/gen_be.ksh
          done
       done

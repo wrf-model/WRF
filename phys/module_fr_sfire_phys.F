@@ -336,7 +336,7 @@ do k=1,nfuelcats
     call write_var(k,'fci_d',fci_d(k),'INITIAL DRY MASS OF CANOPY FUEL')
     call write_var(k,'fct',fct(k),'BURN OUT TIME FOR CANOPY FUEL, AFTER DRY (S)')
 #if ( WRFPLUS == 1 )
-    call write_var(k,'ichap',dble(ichap(k)),'1 if chaparral, 0 if not')
+    call write_var(k,'ichap',real(ichap(k)),'1 if chaparral, 0 if not')
 #else
     call write_var(k,'ichap',float(ichap(k)),'1 if chaparral, 0 if not')
 #endif

@@ -323,6 +323,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 8, Thompson scheme (new for V3.1)
                                      = 9, Milbrandt-Yau 2-moment scheme (new for V3.2)
                                      = 10, Morrison (2 moments)
+                                     = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
                                      = 98, Thompson scheme (version from V3.0)
@@ -357,6 +358,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
+                                     = 5, Goddard longwave scheme
                                      = 31, Earth Held-Suarez forcing
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
@@ -367,6 +369,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Goddard short wave
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
+                                     = 5, Goddard shortwave scheme
                                      = 4, rrtmg scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW

@@ -23,7 +23,7 @@
    USE module_comm_dm
 
    USE module_physics_init
-   USE module_fr_sfire_driver, ONLY : sfire_driver_em_init
+   USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_init
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -1119,7 +1119,19 @@
               enddo
            enddo
         end select
+        
+        ! initialize advective tendency diagnostics for chem
+        if ( grid%itimestep .eq. 0 .and. config_flags%chemdiag .eq. USECHEMDIAG ) then
+          grid%advh_ct(:,:,:,:) = 0.
+          grid%advz_ct(:,:,:,:) = 0.
+        endif
 #endif
+
+        ! initialize advective tendency diagnostics for non-chem
+        if ( grid%itimestep .eq. 0 .and. config_flags%tenddiag .eq. USETENDDIAG ) then
+          grid%advh_t(:,:,:,:) = 0.
+          grid%advz_t(:,:,:,:) = 0.
+        endif
 
    IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
 ! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray

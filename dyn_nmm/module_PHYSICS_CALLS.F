@@ -356,6 +356,7 @@
 #endif
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=RTHRATEN                               &
+     &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
      &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &

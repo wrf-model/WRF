@@ -25,6 +25,7 @@ CONTAINS
               ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
               ,julyr, JULDAY, julian, YR, xtime, RADT, STEPRA, ICLOUD, warm_rain     &
               ,declinx,solconx,COSZEN, HRANG                              & !Optional 
+              ,cen_lat                                                    &
               ,ra_call_offset,RSWTOA,RLWTOA, CZMEAN                       &
               ,CFRACL, CFRACM, CFRACH                                     &
               ,ACFRST,NCFRST,ACFRCV,NCFRCV,SWDOWNC                        &
@@ -51,24 +52,31 @@ CONTAINS
               ,waer300, waer400, waer600, waer999                         & ! jcb
               ,qc_adjust ,qi_adjust                                       & ! jm
               ,cu_rad_feedback, aer_ra_feedback                           & ! jm
-              ,ht,dx,dy,shadowmask,slope_rad ,topo_shading                ) ! slope-dependent radiation
+              ,ht,dx,dy,shadowmask,slope_rad ,topo_shading                & ! slope-dependent radiation
+!JJS 20101021 vvvvv
+              ,tlwdn, tlwup      &  ! optoinal for Goddard schemes
+              ,slwdn, slwup      &  ! optoinal for Goddard schemes
+              ,tswdn, tswup      &  ! optoinal for Goddard schemes
+              ,sswdn, sswup      &  ! optoinal for Goddard schemes
+!JJS 20101021 ^^^^^
+                                                                          )
+
 
 !-------------------------------------------------------------------------
 
 ! !USES:
+   USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
+                                       ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
+                                       ,SWRADSCHEME, GSFCSWSCHEME       &
+                                       ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
+                                       ,HELDSUAREZ                      &
 #ifdef HWRF
-   USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
-                                       ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
-                                       ,SWRADSCHEME, GSFCSWSCHEME       &
-                                       ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
-                                       ,HELDSUAREZ, HWRFSWSCHEME, HWRFLWSCHEME
-#else
-   USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
-                                       ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
-                                       ,SWRADSCHEME, GSFCSWSCHEME       &
-                                       ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
-                                       ,HELDSUAREZ
+                                       ,HWRFSWSCHEME, HWRFLWSCHEME  &
 #endif
+                                       ,goddardlwscheme                 & 
+                                       ,goddardswscheme                   
+
+
    USE module_model_constants
    USE module_wrf_error , ONLY : wrf_err_message
 
@@ -85,6 +93,9 @@ CONTAINS
    USE module_ra_hwrf
 #endif
    USE module_ra_hs         , ONLY : hsrad
+
+   USE module_ra_goddard    , ONLY : goddardrad  !Goddard Radiation Scheme by Toshihisa Matsui and Jainn Shi
+
 
 
    !  This driver calls subroutines for the radiation parameterizations.
@@ -399,6 +410,15 @@ CONTAINS
    INTEGER,DIMENSION( ims:ime, jms:jme ),INTENT(INOUT)        ::  &
                                                           NCFRST, &  !Added
                                                           NCFRCV     !Added
+
+! Optional, only for Goddard LW and SW
+   REAL, DIMENSION(IMS:IME, JMS:JME, 1:8)       :: ERBE_out  !extra output for SDSU
+   REAL, DIMENSION(IMS:IME, JMS:JME), OPTIONAL, INTENT(OUT) ::   &
+                                               TLWDN, TLWUP,     &
+                                               SLWDN, SLWUP,     &
+                                               TSWDN, TSWUP,     &
+                                               SSWDN, SSWUP        ! for Goddard schemes
+
 ! Optional (only used by CAM lw scheme)
 
    REAL, DIMENSION( ims:ime, kms:kme, cam_abs_dim2, jms:jme ), OPTIONAL ,&
@@ -451,7 +471,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    CEMISS
    REAL, DIMENSION( ims:ime, jms:jme ) ::             coszr
 
-   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24
+   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24, CEN_LAT
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
    LOGICAL ::    gfdl_lw,gfdl_sw
@@ -747,6 +767,40 @@ CONTAINS
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
 
+! by Toshihisa Matsui and Jainn Shi 20090623
+        CASE (goddardlwscheme)
+
+             CALL wrf_debug (100, 'CALL goddard longwave radiation scheme ')
+             IF (itimestep.eq.1) then
+                call wrf_message('running goddard lw radiation')
+             ENDIF
+             CALL goddardrad(sw_or_lw='lw'                             &
+                    ,rthraten=rthraten,gsf=glw,xlat=xlat,xlong=xlong   &
+                    ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
+                    ,dz8w=dz8w,rho_phy=rho,emiss=emiss                 &
+                    ,cldfra3d=cldfra                                   &
+                    ,gmt=gmt,cp=cp,g=g,t8w=t8w                         &
+                    ,julday=julday,xtime=xtime                         &
+                    ,declin=declin,solcon=solcon                       &
+                    , center_lat = cen_lat                             &
+                    ,radfrq=radt,degrad=degrad                         &
+                    ,taucldi=taucldi,taucldc=taucldc                   &
+                    ,warm_rain=warm_rain                               &
+                    ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde &
+                    ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme &
+                    ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte &
+!                    ,cosz_urb2d=cosz_urb2d ,omg_urb2d=omg_urb2d        & !urban
+                    ,qv3d=qv                                           &
+                    ,qc3d=qc                                           &
+                    ,qr3d=qr                                           &
+                    ,qi3d=qi                                           &
+                    ,qs3d=qs                                           &
+                    ,qg3d=qg                                           &
+                    ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
+                    ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
+                    ,erbe_out=erbe_out                                 & !optional
+                                                                       )
+
         CASE (GFDLLWSCHEME)
 
              CALL wrf_debug (100, 'CALL gfdllw')
@@ -917,6 +971,20 @@ CONTAINS
         ENDDO
         ENDDO
      ENDIF
+
+!JJS 20090623 vvvvv
+     IF (lw_physics .eq. goddardlwscheme) THEN
+        DO j=jts,jte
+        DO i=its,ite
+           tlwdn(i,j) = erbe_out(i,j,1)    ! TOA LW downwelling flux [W/m2]
+           tlwup(i,j) = erbe_out(i,j,2)    ! TOA LW upwelling flux [W/m2]
+           slwdn(i,j) = erbe_out(i,j,3)    ! surface LW downwelling flux [W/m2]
+           slwup(i,j) = erbe_out(i,j,4)    ! surface LW upwelling flux [W/m2]
+        ENDDO    
+        ENDDO    
+     ENDIF       
+!JJS 20090623 ^^^^^
+
 !
      swrad_cldfra_select: SELECT CASE(sw_physics)
 
@@ -1017,6 +1085,42 @@ CONTAINS
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,F_QNDROP=f_qndrop                                 &
                                                                        )
+
+! by Toshihisa Matsui and Jainn Shi 20090624
+
+        CASE (goddardswscheme)
+
+             CALL wrf_debug(100, 'CALL goddard shortwave radiation scheme ')
+             IF (itimestep.eq.1) then
+                call wrf_message('running goddard sw radiation')
+             ENDIF
+             CALL goddardrad(sw_or_lw='sw'                             &
+                    ,rthraten=rthraten,gsf=gsw,xlat=xlat,xlong=xlong   &
+                    ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
+                    ,dz8w=dz8w,rho_phy=rho,emiss=emiss                 &
+                    ,cldfra3d=cldfra                                   &
+                    ,gmt=gmt,cp=cp,g=g,t8w=t8w                         &
+                    ,julday=julday,xtime=xtime                         &
+                    ,declin=declin,solcon=solcon                       &
+                    , center_lat = cen_lat                             &
+                    ,radfrq=radt,degrad=degrad                         &
+                    ,taucldi=taucldi,taucldc=taucldc                   &
+                    ,warm_rain=warm_rain                               &
+                    ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde &
+                    ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme &
+                    ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte &
+!                    ,cosz_urb2d=cosz_urb2d ,omg_urb2d=omg_urb2d        & !urban
+                    ,qv3d=qv                                           &
+                    ,qc3d=qc                                           &
+                    ,qr3d=qr                                           &
+                    ,qi3d=qi                                           &
+                    ,qs3d=qs                                           &
+                    ,qg3d=qg                                           &
+                    ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
+                    ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
+                    ,erbe_out=erbe_out                                 & !optional
+                                                                       )
+
         CASE (CAMSWSCHEME)
              CALL wrf_debug(100, 'CALL camrad sw')
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
@@ -1188,6 +1292,19 @@ CONTAINS
              CALL wrf_error_fatal ( wrf_err_message )
 
      END SELECT swrad_select    
+
+!JJS 20090623  vvvvv
+     IF (sw_physics .eq. goddardswscheme) THEN
+        DO j=jts,jte
+        DO i=its,ite
+           tswdn(i,j) = erbe_out(i,j,5)    ! TOA SW downwelling flux [W/m2]
+           tswup(i,j) = erbe_out(i,j,6)    ! TOA SW upwelling flux [W/m2]
+           sswdn(i,j) = erbe_out(i,j,7)    ! surface SW downwelling flux [W/m2]
+           sswup(i,j) = erbe_out(i,j,8)    ! surface SW upwelling flux [W/m2]
+        ENDDO
+        ENDDO
+     ENDIF
+!JJS 20090623  ^^^^^
 
      IF (sw_physics .gt. 0 .and. .not.gfdl_sw) THEN
         DO j=jts,jte

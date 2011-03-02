@@ -533,10 +533,10 @@ END SUBROUTINE g_rk_addtend_dry
 
 ! Revised by Ning Pan, 2010-08-02
 ! SUBROUTINE g_rk_scalar_tend(scs,sce,config_flags,rk_step,dt,g_dt,ru,g_ru,rv, &
- SUBROUTINE g_rk_scalar_tend(scs,sce,config_flags,rk_step,dt,ru,g_ru,rv, &
+ SUBROUTINE g_rk_scalar_tend(scs,sce,config_flags,tenddec,rk_step,dt,ru,g_ru,rv, &
  g_rv,ww,g_ww,mut,g_mut,mub,mu_old,g_mu_old,alt,g_alt,scalar_old, &
  g_scalar_old,scalar,g_scalar,scalar_tends,g_scalar_tends,advect_tend, &
- g_advect_tend,RQVFTEN,g_RQVFTEN,base,moist_step,fnm,fnp,msfux,msfuy,msfvx, &
+ g_advect_tend,h_tendency,g_h_tendency,z_tendency,g_z_tendency,RQVFTEN,g_RQVFTEN,base,moist_step,fnm,fnp,msfux,msfuy,msfvx, &
  msfvx_inv,msfvy,msftx,msfty,rdx,rdy,rdn,rdnw,khdif,kvdif,xkmhd,g_xkmhd, &
 ! Revised by Ning Pan, 2010-08-02
 ! diff_6th_opt,diff_6th_factor,g_diff_6th_factor,adv_opt,ids,ide,jds,jde,kds,kde, &
@@ -547,6 +547,7 @@ END SUBROUTINE g_rk_addtend_dry
 
  REAL :: Tmpv1,g_Tmpv1
  TYPE(grid_config_rec_type) :: config_flags
+ LOGICAL :: tenddec
  INTEGER :: rk_step,scs,sce
  INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
  LOGICAL :: moist_step
@@ -554,6 +555,8 @@ END SUBROUTINE g_rk_addtend_dry
  g_scalar_old
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme,scs:sce) :: scalar_tends,g_scalar_tends
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: advect_tend,g_advect_tend
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_tendency, z_tendency
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: g_h_tendency, g_z_tendency
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RQVFTEN,g_RQVFTEN
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: ru,g_ru,rv,g_rv,ww,g_ww,xkmhd, &
  g_xkmhd,alt,g_alt
@@ -581,6 +584,10 @@ END SUBROUTINE g_rk_addtend_dry
 
  CALL g_zero_tend(advect_tend(ims,kms,jms),g_advect_tend(ims,kms,jms) &
 ,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+ CALL g_zero_tend(h_tendency(ims,kms,jms),g_h_tendency(ims,kms,jms) &
+,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+ CALL g_zero_tend(z_tendency(ims,kms,jms),g_z_tendency(ims,kms,jms) &
+,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 !This line is fail to be recognized
       CALL nl_get_time_step ( 1, time_step )
 
@@ -588,8 +595,9 @@ END SUBROUTINE g_rk_addtend_dry
 
  CALL g_advect_scalar_pd(scalar(ims,kms,jms,im),g_scalar(ims,kms,jms,im) &
  ,scalar_old(ims,kms,jms,im),g_scalar_old(ims,kms,jms,im),advect_tend(ims,kms,jms) &
- ,g_advect_tend(ims,kms,jms),ru,g_ru,rv,g_rv,ww,g_ww,mut,g_mut,mub, &
- mu_old,g_mu_old,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm, &
+ ,g_advect_tend(ims,kms,jms),h_tendency(ims,kms,jms),g_h_tendency(ims,kms,jms),z_tendency(ims,kms,jms),g_z_tendency(ims,kms,jms) &
+ ,ru,g_ru,rv,g_rv,ww,g_ww,mut,g_mut,mub, &
+ mu_old,g_mu_old,time_step,config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm, &
 ! Revised by Ning Pan, 2010-08-02
 ! fnp,rdx,rdy,rdnw,dt,g_dt,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
  fnp,rdx,rdy,rdnw,dt,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
@@ -598,8 +606,9 @@ END SUBROUTINE g_rk_addtend_dry
 
  CALL g_advect_scalar_mono(scalar(ims,kms,jms,im),g_scalar(ims,kms,jms,im) &
  ,scalar_old(ims,kms,jms,im),g_scalar_old(ims,kms,jms,im),advect_tend(ims,kms,jms) &
- ,g_advect_tend(ims,kms,jms),ru,g_ru,rv,g_rv,ww,g_ww,mut,g_mut,mub, &
- mu_old,g_mu_old,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,fnp,rdx,rdy, &
+ ,g_advect_tend(ims,kms,jms),h_tendency(ims,kms,jms),g_h_tendency(ims,kms,jms),z_tendency(ims,kms,jms),g_z_tendency(ims,kms,jms) &
+ ,ru,g_ru,rv,g_rv,ww,g_ww,mut,g_mut,mub, &
+ mu_old,g_mu_old,config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,fnp,rdx,rdy, &
 ! Revised by Ning Pan, 2010-08-02
 ! rdnw,dt,g_dt,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
  rdnw,dt,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
@@ -664,10 +673,15 @@ END SUBROUTINE g_rk_addtend_dry
 
 SUBROUTINE g_rk_update_scalar ( scs, sce,                      &
                                 scalar_1, g_scalar_1, scalar_2, g_scalar_2, sc_tend, g_sc_tend,  &
-                                advect_tend, g_advect_tend, msftx, msfty,     &
+                                advh_t, g_advh_t, advz_t, g_advz_t,              & 
+                                advect_tend, g_advect_tend,    &
+                                h_tendency, g_h_tendency,      & 
+                                z_tendency, g_z_tendency,      & 
+                                msftx, msfty,     &
                                 mu_old, g_mu_old, mu_new, g_mu_new, mu_base,  &
                                 rk_step, dt, spec_zone,        &
                                 config_flags,                  &
+                                tenddec,                       &
                                 ids, ide, jds, jde, kds, kde,  &
                                 ims, ime, jms, jme, kms, kme,  &
                                 its, ite, jts, jte, kts, kte  )
@@ -677,6 +691,7 @@ SUBROUTINE g_rk_update_scalar ( scs, sce,                      &
    !  Input data.
 
    TYPE(grid_config_rec_type), INTENT(IN) :: config_flags
+   LOGICAL :: tenddec
 
    INTEGER, INTENT(IN) :: scs, sce, rk_step, spec_zone
    INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, &
@@ -701,6 +716,11 @@ SUBROUTINE g_rk_update_scalar ( scs, sce,                      &
          INTENT(IN)                                  :: g_advect_tend
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                &
          INTENT(IN)                                  :: advect_tend
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: advh_t,  advz_t ! accumulating for output
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: g_advh_t,  g_advz_t ! accumulating for output
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: h_tendency, z_tendency ! from rk_scalar_tend
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: g_h_tendency, g_z_tendency ! from rk_scalar_tend
 
    REAL, DIMENSION(ims:ime, jms:jme  ), INTENT(IN   ) ::  g_mu_old,  &
                                                           g_mu_new
@@ -872,6 +892,23 @@ SUBROUTINE g_rk_update_scalar ( scs, sce,                      &
 
       ENDDO
       ENDDO
+
+      ! This is separated from the k/i-loop above for better performance
+      IF(tenddec.and.rk_step.eq.config_flags%rk_ord) THEN
+      DO  k = kts, min(kte,kde-1)
+      DO  i = its, min(ite,ide-1)
+
+          g_advh_t(i,k,j) = g_advh_t(i,k,j) + (dt*g_h_tendency(i,k,j)* msfty(i,j))*r_munew(i) &
+                                            + (dt*h_tendency(i,k,j)* msfty(i,j))*g_r_munew(i)
+          advh_t(i,k,j) = advh_t(i,k,j) + (dt*h_tendency(i,k,j)* msfty(i,j))*r_munew(i)
+          g_advz_t(i,k,j) = g_advz_t(i,k,j) + (dt*g_z_tendency(i,k,j)* msfty(i,j))*r_munew(i) &
+                                            + (dt*z_tendency(i,k,j)* msfty(i,j))*g_r_munew(i)
+          advz_t(i,k,j) = advz_t(i,k,j) + (dt*z_tendency(i,k,j)* msfty(i,j))*r_munew(i)
+
+      ENDDO
+      ENDDO
+      END IF
+
       ENDDO
 
       ENDDO

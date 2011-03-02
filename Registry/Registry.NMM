@@ -1171,6 +1171,7 @@ package   thompson07_dfi    mp_physics_dfi==98       -             dfi_moist:dfi
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   rrtmg_lwscheme  ra_lw_physics==4           -             -
+package   goddardlwscheme  ra_lw_physics==5          -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
 package   hwrflwscheme  ra_lw_physics==98
 package   heldsuarez    ra_lw_physics==31            -             -
@@ -1179,6 +1180,7 @@ package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
+package   goddardswscheme  ra_sw_physics==5          -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98
 

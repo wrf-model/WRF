@@ -8712,8 +8712,8 @@
  END SUBROUTINE g_advect_w
 
  SUBROUTINE g_advect_scalar_pd(field,g_field,field_old,g_field_old,tendency, &
- g_tendency,ru,g_ru,rv,g_rv,rom,g_rom,mut,g_mut,mub,mu_old,g_mu_old, &
- time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
+ g_tendency,h_tendency,g_h_tendency,z_tendency,g_z_tendency,ru,g_ru,rv,g_rv,rom,g_rom,mut,g_mut,mub,mu_old,g_mu_old, &
+ time_step,config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
  ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
  IMPLICIT NONE
@@ -8723,11 +8723,14 @@
 
  REAL g_FuncVal1,FuncVal1
  TYPE(grid_config_rec_type) :: config_flags
+ LOGICAL :: tenddec
  INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: field,g_field,field_old,g_field_old, &
  ru,g_ru,rv,g_rv,rom,g_rom
  REAL,DIMENSION(ims:ime,jms:jme) :: mut,g_mut,mub,mu_old,g_mu_old
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,g_tendency
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_tendency, z_tendency
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: g_h_tendency, g_z_tendency
  REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
  REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
  REAL :: rdx,rdy,dt
@@ -12236,6 +12239,21 @@
  ENDDO
  ENDDO
 
+ IF(tenddec) THEN
+ DO j = j_start, j_end
+ DO k = kts, ktf
+ DO i = i_start, i_end
+
+    g_z_tendency (i,k,j) = -rdzw(k)*( g_fqz (i,k+1,j)-g_fqz (i,k,j)  &
+                                     +g_fqzl(i,k+1,j)-g_fqzl(i,k,j))
+    z_tendency (i,k,j) = 0. -rdzw(k)*( fqz (i,k+1,j)-fqz (i,k,j)  &
+                                     +fqzl(i,k+1,j)-fqzl(i,k,j))
+
+ ENDDO
+ ENDDO
+ ENDDO
+ END IF
+
  IF(degrade_xs) i_start =max(its,ids+1)
 
  IF(degrade_xe) i_end =min(ite,ide-2)
@@ -12253,6 +12271,23 @@
  ENDDO
  ENDDO
  ENDDO
+
+ IF(tenddec) THEN
+ DO j = j_start, j_end
+ DO k = kts, ktf
+ DO i = i_start, i_end
+
+    g_h_tendency (i,k,j) =                                       &
+              - msftx(i,j)*( rdx*( g_fqx (i+1,k,j)-g_fqx (i,k,j)     &
+                                  +g_fqxl(i+1,k,j)-g_fqxl(i,k,j))   )
+    h_tendency (i,k,j) = 0.                                      &
+              - msftx(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
+                                  +fqxl(i+1,k,j)-fqxl(i,k,j))   )
+
+ ENDDO
+ ENDDO
+ ENDDO
+ END IF
 
  i_start =its
 
@@ -12277,11 +12312,28 @@
  ENDDO
  ENDDO
 
+ IF(tenddec) THEN
+ DO j = j_start, j_end
+ DO k = kts, ktf
+ DO i = i_start, i_end
+
+    g_h_tendency (i,k,j) = g_h_tendency (i,k,j)                      &
+              - msftx(i,j)*( rdy*( g_fqy (i,k,j+1)-g_fqy (i,k,j)     &
+                                  +g_fqyl(i,k,j+1)-g_fqyl(i,k,j))   )
+    h_tendency (i,k,j) = h_tendency (i,k,j)                      &
+              - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+                                  +fqyl(i,k,j+1)-fqyl(i,k,j))   )
+
+ ENDDO
+ ENDDO
+ ENDDO
+ END IF
+
  END SUBROUTINE g_advect_scalar_pd
 
  SUBROUTINE g_advect_scalar_mono(field,g_field,field_old,g_field_old, &
- tendency,g_tendency,ru,g_ru,rv,g_rv,rom,g_rom,mut,g_mut,mub,mu_old, &
- g_mu_old,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
+ tendency,g_tendency,h_tendency,g_h_tendency,z_tendency,g_z_tendency,ru,g_ru,rv,g_rv,rom,g_rom,mut,g_mut,mub,mu_old, &
+ g_mu_old,config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
  ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
  IMPLICIT NONE
@@ -12291,11 +12343,14 @@
 
  REAL g_FuncVal1,FuncVal1
  TYPE(grid_config_rec_type) :: config_flags
+ LOGICAL :: tenddec
  INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: field,g_field,field_old,g_field_old, &
  ru,g_ru,rv,g_rv,rom,g_rom
  REAL,DIMENSION(ims:ime,jms:jme) :: mut,g_mut,mub,mu_old,g_mu_old
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,g_tendency
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_tendency, z_tendency
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: g_h_tendency, g_z_tendency
  REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
  REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
  REAL :: rdx,rdy,dt
@@ -13653,6 +13708,22 @@ CALL wrf_error_fatal(wrf_err_message)  ! Added by Ning Pan, 2010-07-25
  ENDDO
  ENDDO
 
+ IF(tenddec) THEN
+ DO j = j_start, j_end
+ DO k = kts, ktf
+ DO i = i_start, i_end
+
+    g_z_tendency (i,k,j) = -rdzw(k)*( g_fqz (i,k+1,j)-g_fqz (i,k,j)  &
+                                     +g_fqzl(i,k+1,j)-g_fqzl(i,k,j))
+
+    z_tendency (i,k,j) = 0. -rdzw(k)*( fqz (i,k+1,j)-fqz (i,k,j)  &
+                                     +fqzl(i,k+1,j)-fqzl(i,k,j))
+
+ ENDDO
+ ENDDO
+ ENDDO
+ END IF
+
  IF(degrade_xs) i_start =max(its,ids+1)
 
  IF(degrade_xe) i_end =min(ite,ide-2)
@@ -13669,6 +13740,23 @@ CALL wrf_error_fatal(wrf_err_message)  ! Added by Ning Pan, 2010-07-25
  ENDDO
  ENDDO
  ENDDO
+
+ IF(tenddec) THEN
+ DO j = j_start, j_end
+ DO k = kts, ktf
+ DO i = i_start, i_end
+
+    g_h_tendency (i,k,j) =                                       &
+              - msftx(i,j)*( rdx*( g_fqx (i+1,k,j)-g_fqx (i,k,j)     &
+                                  +g_fqxl(i+1,k,j)-g_fqxl(i,k,j))   )
+    h_tendency (i,k,j) = 0.                                      &
+              - msftx(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
+                                  +fqxl(i+1,k,j)-fqxl(i,k,j))   )
+
+ ENDDO
+ ENDDO
+ ENDDO
+ END IF
 
  i_start =its
 
@@ -13690,6 +13778,23 @@ CALL wrf_error_fatal(wrf_err_message)  ! Added by Ning Pan, 2010-07-25
  ENDDO
  ENDDO
  ENDDO
+
+ IF(tenddec) THEN
+ DO j = j_start, j_end
+ DO k = kts, ktf
+ DO i = i_start, i_end
+
+    g_h_tendency (i,k,j) = g_h_tendency (i,k,j)                      &
+              - msftx(i,j)*( rdy*( g_fqy (i,k,j+1)-g_fqy (i,k,j)     &
+                                  +g_fqyl(i,k,j+1)-g_fqyl(i,k,j))   )
+    h_tendency (i,k,j) = h_tendency (i,k,j)                      &
+              - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+                                  +fqyl(i,k,j+1)-fqyl(i,k,j))   )
+
+ ENDDO
+ ENDDO
+ ENDDO
+ END IF
 
  END SUBROUTINE g_advect_scalar_mono
 

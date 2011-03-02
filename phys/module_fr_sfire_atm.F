@@ -70,6 +70,16 @@ SUBROUTINE fire_tendency( &
    
 !!   character(len=128)::msg
 
+        do j=jts,jte
+            do k=kts,min(kte+1,kde)
+               do i=its,ite
+                   rthfrten(i,k,j)=0.
+                   rqvfrten(i,k,j)=0.
+               enddo
+            enddo
+        enddo
+
+
 ! --- set some local constants
    
 
@@ -159,5 +169,9 @@ SUBROUTINE fire_tendency( &
    RETURN
 
 END SUBROUTINE fire_tendency
+
+!
+!***
+!
 
 end module module_fr_sfire_atm

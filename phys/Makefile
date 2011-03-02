@@ -42,6 +42,7 @@ MODULES = \
 	module_mp_wdm6.o \
 	module_ra_sw.o  \
 	module_ra_gsfcsw.o \
+	module_ra_goddard.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
@@ -98,6 +99,7 @@ MODULES = \
 
 FIRE_MODULES = \
         module_fr_sfire_driver.o \
+        module_fr_sfire_driver_wrf.o \
         module_fr_sfire_atm.o \
         module_fr_sfire_model.o \
         module_fr_sfire_core.o \
@@ -196,8 +198,11 @@ module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
 module_mp_milbrandt2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
 
-module_mp_thompson.o : ../frame/module_wrf_error.o \
-			 ../frame/module_dm.o
+module_mp_thompson.o : ../frame/module_wrf_error.o 
+
+module_ra_goddard.o : ../frame/module_wrf_error.o
+
+module_mp_gsfcgce.o : ../frame/module_wrf_error.o
 
 module_sf_myjsfc.o: ../share/module_model_constants.o 
 
@@ -418,9 +423,15 @@ module_fddaobs_driver.o: \
 module_fr_sfire_driver.o: \
 		../share/module_model_constants.o  \
                 ../frame/module_comm_dm.o \
-		module_fr_sfire_atm.o \
 		module_fr_sfire_phys.o \
 		module_fr_sfire_model.o \
+		module_fr_sfire_util.o 
+
+module_fr_sfire_driver_wrf.o: \
+		../share/module_model_constants.o  \
+                ../frame/module_comm_dm.o \
+		module_fr_sfire_driver.o \
+		module_fr_sfire_atm.o \
 		module_fr_sfire_util.o 
 
 module_fr_sfire_atm.o: \
@@ -428,22 +439,16 @@ module_fr_sfire_atm.o: \
 		module_fr_sfire_util.o 
 
 module_fr_sfire_model.o: \
-                fr_sfire_params_args.h \
-                fr_sfire_params_decl.h \
 	        module_fr_sfire_core.o \
                 module_fr_sfire_phys.o \
 		module_fr_sfire_util.o 
 
 module_fr_sfire_core.o: \
-                fr_sfire_params_args.h \
-                fr_sfire_params_decl.h \
 		module_fr_sfire_util.o \
 	        module_fr_sfire_phys.o 
 
 module_fr_sfire_phys.o: \
 		../share/module_model_constants.o  \
-                fr_sfire_params_args.h \
-                fr_sfire_params_decl.h \
 		module_fr_sfire_util.o 
 
 module_fire_debug_output.o: \

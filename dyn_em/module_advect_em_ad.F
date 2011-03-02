@@ -10966,8 +10966,8 @@ CONTAINS
    END SUBROUTINE a_advect_w
 
    SUBROUTINE a_advect_scalar_pd(field,a_field,field_old,a_field_old,tendency, &
-   a_tendency,ru,a_ru,rv,a_rv,rom,a_rom,mut,a_mut,mub,mu_old,a_mu_old, &
-   time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
+   a_tendency,h_tendency,a_h_tendency,z_tendency,a_z_tendency,ru,a_ru,rv,a_rv,rom,a_rom,mut,a_mut,mub,mu_old,a_mu_old, &
+   time_step,config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
    ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -10976,11 +10976,14 @@ CONTAINS
 
    INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
    TYPE(grid_config_rec_type) :: config_flags
+   LOGICAL :: tenddec
    INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: field,a_field,field_old,a_field_old, &
    ru,a_ru,rv,a_rv,rom,a_rom
    REAL,DIMENSION(ims:ime,jms:jme) :: mut,a_mut,mub,mu_old,a_mu_old
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_tendency, z_tendency
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: a_h_tendency, a_z_tendency
    REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
    REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
    REAL :: rdx,rdy,dt
@@ -13016,6 +13019,24 @@ CONTAINS
   IF(degrade_ys) j_start = MAX(jts,jds+1)
   IF(degrade_ye) j_end   = MIN(jte,jde-2)
 
+  IF(tenddec) THEN
+   DO j =j_end, j_start, -1
+   DO k =ktf, kts, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv6 =a_h_tendency(i,k,j)
+   a_Tmpv5 =-a_Tmpv6
+   a_Tmpv4 =msftx(i,j)*a_Tmpv5
+   a_Tmpv3 =rdy*a_Tmpv4
+   a_Tmpv2 =a_Tmpv3
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv3
+   a_Tmpv1 =a_Tmpv2
+   a_fqyl(i,k,j+1) =a_fqyl(i,k,j+1) +a_Tmpv2
+   a_fqy(i,k,j+1) =a_fqy(i,k,j+1) +a_Tmpv1
+   a_fqy(i,k,j) =a_fqy(i,k,j) -a_Tmpv1
+   ENDDO
+   ENDDO
+   ENDDO
+  ENDIF
 !LPB[39]
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
@@ -13032,7 +13053,6 @@ CONTAINS
    a_fqy(i,k,j) =a_fqy(i,k,j) -a_Tmpv1
    ENDDO
    ENDDO
-
    ENDDO
 
 !LPB[34]
@@ -13046,8 +13066,27 @@ CONTAINS
   IF(degrade_xs) i_start = MAX(its,ids+1)
   IF(degrade_xe) i_end   = MIN(ite,ide-2)
 
+  IF(tenddec) THEN
    DO j =j_end, j_start, -1
+   DO k =ktf, kts, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv6 =a_h_tendency(i,k,j)
+   a_Tmpv5 =-a_Tmpv6
+   a_Tmpv4 =msftx(i,j)*a_Tmpv5
+   a_Tmpv3 =rdx*a_Tmpv4
+   a_Tmpv2 =a_Tmpv3
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv3
+   a_Tmpv1 =a_Tmpv2
+   a_fqxl(i+1,k,j) =a_fqxl(i+1,k,j) +a_Tmpv2
+   a_fqx(i+1,k,j) =a_fqx(i+1,k,j) +a_Tmpv1
+   a_fqx(i,k,j) =a_fqx(i,k,j) -a_Tmpv1
+   a_h_tendency(i,k,j) = 0.0
+   ENDDO
+   ENDDO
+   ENDDO
+  ENDIF
 
+   DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
    a_Tmpv6 =a_tendency(i,k,j)
@@ -13062,7 +13101,6 @@ CONTAINS
    a_fqx(i,k,j) =a_fqx(i,k,j) -a_Tmpv1
    ENDDO
    ENDDO
-
    ENDDO
 
 !LPB[33]
@@ -13076,8 +13114,26 @@ CONTAINS
   j_start = jts
   j_end   = MIN(jte,jde-1)
 
+  IF(tenddec) THEN
    DO j =j_end, j_start, -1
+   DO k =ktf, kts, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv5 =a_z_tendency(i,k,j)
+   a_Tmpv4 =-a_Tmpv5
+   a_Tmpv3 =rdzw(k)*a_Tmpv4
+   a_Tmpv2 =a_Tmpv3
+   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv3
+   a_Tmpv1 =a_Tmpv2
+   a_fqzl(i,k+1,j) =a_fqzl(i,k+1,j) +a_Tmpv2
+   a_fqz(i,k+1,j) =a_fqz(i,k+1,j) +a_Tmpv1
+   a_fqz(i,k,j) =a_fqz(i,k,j) -a_Tmpv1
+   a_z_tendency(i,k,j) = 0.0
+   ENDDO
+   ENDDO
+   ENDDO
+  ENDIF
 
+   DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
    a_Tmpv5 =a_tendency(i,k,j)
@@ -13091,7 +13147,6 @@ CONTAINS
    a_fqz(i,k,j) =a_fqz(i,k,j) -a_Tmpv1
    ENDDO
    ENDDO
-
    ENDDO
 
    IF(pd_limit) THEN
@@ -19917,8 +19972,8 @@ CONTAINS
    END SUBROUTINE a_advect_scalar_pd
 
    SUBROUTINE a_advect_scalar_mono(field,a_field,field_old,a_field_old,tendency, &
-   a_tendency,ru,a_ru,rv,a_rv,rom,a_rom,mut,a_mut,mub,mu_old,a_mu_old, &
-   config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt,ids,ide,jds, &
+   a_tendency,h_tendency,a_h_tendency,z_tendency,a_z_tendency,ru,a_ru,rv,a_rv,rom,a_rom,mut,a_mut,mub,mu_old,a_mu_old, &
+   config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt,ids,ide,jds, &
    jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -19927,11 +19982,14 @@ CONTAINS
 
    INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
    TYPE(grid_config_rec_type) :: config_flags
+   LOGICAL :: tenddec
    INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: field,a_field,field_old,a_field_old, &
    ru,a_ru,rv,a_rv,rom,a_rom
    REAL,DIMENSION(ims:ime,jms:jme) :: mut,a_mut,mub,mu_old,a_mu_old
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_tendency, z_tendency
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: a_h_tendency, a_z_tendency
    REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
    REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
    REAL :: rdx,rdy,dt
@@ -20141,6 +20199,20 @@ CONTAINS
    IF(degrade_ys) j_start = MAX(jts,jds+1)
    IF(degrade_ye) j_end   = MIN(jte,jde-2)
 
+   IF(tenddec) THEN
+   DO j =j_end, j_start, -1
+   DO k =ktf, kts, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv1 =-rdy*msftx(i,j)*a_h_tendency(i,k,j)
+   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
+   a_fqyl(i,k,j+1) =a_fqyl(i,k,j+1) +a_Tmpv1
+   a_fqy(i,k,j+1) =a_fqy(i,k,j+1) +a_Tmpv1
+   a_fqy(i,k,j) =a_fqy(i,k,j) -a_Tmpv1
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDIF
+
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
@@ -20161,6 +20233,21 @@ CONTAINS
    IF(degrade_xs) i_start = MAX(its,ids+1)
    IF(degrade_xe) i_end   = MIN(ite,ide-2)
 
+   IF(tenddec) THEN
+   DO j =j_end, j_start, -1
+   DO k =ktf, kts, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv1 =-rdx*msftx(i,j)*a_h_tendency(i,k,j)
+   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
+   a_fqxl(i+1,k,j) =a_fqxl(i+1,k,j) +a_Tmpv1
+   a_fqx(i+1,k,j) =a_fqx(i+1,k,j) +a_Tmpv1
+   a_fqx(i,k,j) =a_fqx(i,k,j) -a_Tmpv1
+   a_h_tendency(i,k,j) = 0.0
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDIF
+
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1
    DO i =i_end, i_start, -1
@@ -20178,6 +20265,22 @@ CONTAINS
    i_end   = MIN(ite,ide-1)
    j_start = jts
    j_end   = MIN(jte,jde-1)
+
+   IF(tenddec) THEN
+   DO j =j_end, j_start, -1
+   DO k =ktf, kts, -1
+   gwalls=-rdzw(k)
+   DO i =i_end, i_start, -1
+   a_Tmpv1 =gwalls*a_z_tendency(i,k,j)
+   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
+   a_fqzl(i,k+1,j) =a_fqzl(i,k+1,j) +a_Tmpv1
+   a_fqz(i,k+1,j) =a_fqz(i,k+1,j) +a_Tmpv1
+   a_fqz(i,k,j) =a_fqz(i,k,j) -a_Tmpv1
+   a_z_tendency(i,k,j) = 0.0
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDIF
 
    DO j =j_end, j_start, -1
    DO k =ktf, kts, -1

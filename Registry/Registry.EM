@@ -955,6 +955,16 @@ state   real    tiso           -       misc         -         -     i02rh     "t
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 
+# State variables for Goddard LW and SW radiation  
+state    real  TLWDN           ij      misc        1         -      h         "TLWDN"                 "TOA LW downwelling flux"           "W m-2"
+state    real  TLWUP           ij      misc        1         -      h         "TLWUP"                 "TOA LW upwelling flux"             "W m-2"
+state    real  SLWDN           ij      misc        1         -      h         "SLWDN"                 "Surface LW downwelling flux"       "W m-2"
+state    real  SLWUP           ij      misc        1         -      h         "SLWUP"                 "Surface LW upwelling flux"         "W m-2"
+state    real  TSWDN           ij      misc        1         -      h         "TSWDN"                 "TOA SW downwelling flux"           "W m-2"
+state    real  TSWUP           ij      misc        1         -      h         "TSWUP"                 "TOA SW upwelling flux"             "W m-2"
+state    real  SSWDN           ij      misc        1         -      h         "SSWDN"                 "Surface SW downwelling flux"       "W m-2"
+state    real  SSWUP           ij      misc        1         -      h         "SSWUP"                 "Surface SW upwelling flux"         "W m-2"
+
 # Other physics variables
 
 state    real  RUCUTEN         ikj      misc        1         -      rh       "RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
@@ -1274,6 +1284,13 @@ state   real    max_cfl         -       misc        1         -     -       "max
 state   real  prec_acc_c       ij       misc        1         -     rh       "prec_acc_c"       "ACCUMULATED CUMULUS PRECIPITATION OVER prec_acc_dt PERIODS OF TIME"       "mm"
 state   real  prec_acc_nc      ij       misc        1         -     rh       "prec_acc_nc"      "ACCUMULATED GRID SCALE  PRECIPITATION OVER prec_acc_dt PERIODS OF TIME"   "mm"
 state   real  snow_acc_nc      ij       misc        1         -     rh       "snow_acc_nc"      "ACCUMULATED SNOW WATER EQUIVALENT OVER prec_acc_dt PERIODS OF TIME"       "mm"
+
+# Placeholder for decoupled advective tendency diagnostics for non-chem
+state   real  -               ikjf      advh_t      1         -     -         -
+state   real  advh_qv         ikjf      advh_t      1         -     -         "advh_qv"    "ACCUMULATED HORIZONTAL TENDENCY FOR WATER VAPOR"        "kg kg-1"
+
+state   real  -               ikjf      advz_t      1         -     -         -
+state   real  advz_qv         ikjf      advz_t      1         -     -         "advz_qv"    "ACCUMULATED VERTICAL TENDENCY FOR WATER VAPOR"          "kg kg-1"
 
 # Ocean Mixed-Layer State Variables
 state   real    TML            ij      misc         1         -     rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "TML"    "OCEAN MIXED-LAYER TEMPERATURE"   "K"
@@ -1708,6 +1725,8 @@ rconfig   logical do_coriolis             namelist,dynamics	max_domains  .true. 
 rconfig   logical do_curvature            namelist,dynamics	max_domains  .true.   irh  "do_curvature"   ""   ""
 rconfig   logical do_gradp                namelist,dynamics	max_domains  .true.   irh  "do_gradp"    ""   ""
 rconfig   integer     tracer_opt          namelist,dynamics     max_domains    0       rh    "tracer_opt"          ""      ""
+# Placeholder for decoupled advective tendency diagnostics
+rconfig   integer tenddiag                namelist,dynamics     max_domains    0       -     "Decoupled tendency diagnostics"   ""    ""
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""
@@ -1844,6 +1863,7 @@ package   progndrop     progn==1                     -             scalar:qndrop
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
 package   rrtmg_lwscheme  ra_lw_physics==4           -             state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
+package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup
 package   gfdllwscheme  ra_lw_physics==99            -             -
 package   heldsuarez    ra_lw_physics==31            -             -
 
@@ -1851,6 +1871,7 @@ package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
 package   rrtmg_swscheme  ra_sw_physics==4           -             state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc
+package   goddardswscheme  ra_sw_physics==5          -             state:tswdn,tswup,sswdn,sswup
 package   gfdlswscheme  ra_sw_physics==99            -             -
 
 package   sfclayscheme   sf_sfclay_physics==1        -             -
@@ -1945,7 +1966,13 @@ package   io_yyy      io_form_restart==8                     -             -
 package   io_zzz      io_form_restart==9                     -             -
 package   io_grib2    io_form_restart==10                    -             -
 package   io_pnetcdf  io_form_restart==11                     -             -
-                                                
+             
+# Tendency diagnostics for non-chemistry
+#
+# Placeholders for decoupled advective tendency arrays
+package   notenddiag    tenddiag==0                     -             -
+package   usetenddiag   tenddiag==1                     -             -
+                                   
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               
 

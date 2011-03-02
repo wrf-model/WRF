@@ -15,7 +15,7 @@
  end_hour                            = 00,   00,   00,
  end_minute                          = 600,   600,   600,
  end_second                          = 00,   00,   00,
- history_interval                    = 5,   30,   30,
+ history_interval_s                  = 5,   30,   30,
  frames_per_outfile                  = 1000, 1000, 1000,
  restart                             = .false.,
  restart_interval                    = 1
@@ -23,7 +23,7 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 101 
+ debug_level                         = 1 
  /
 
  &domains
@@ -124,28 +124,34 @@
  fire_fuel_read     = 0,    ! integer, -1: from WPS, 0= use fire_fuel_cat, 1= by altitude
  fire_fuel_cat      = 3,    ! integer, if specified which fuel category?
 ! ignition 
- fire_num_ignitions = 2,        ! integer, only the first fire_num_ignition used, up to 5 allowed
- fire_ignition_start_x1 = 1000,  ! start points of ignition lines, in m from lower left corner
+ fire_num_ignitions = 2,         ! integer, only the first fire_num_ignition used, up to 5 allowed
+ fire_ignition_ros1 = 0.1,      ! ignition rate of spread, m/s
+ fire_ignition_start_x1 = 1005,  ! start points of ignition lines, in m from lower left corner
  fire_ignition_start_y1 =  500,  ! start points of ignition lines, in m from lower left corner
- fire_ignition_end_x1 =   1000,  ! end points of ignition lines, in m from lower left corner
+ fire_ignition_end_x1 =   1005,  ! end points of ignition lines, in m from lower left corner
  fire_ignition_end_y1 =   1900,  ! end points of ignition lines, in m from lower left corner
  fire_ignition_radius1 =    18,  ! all within this radius will ignite, > fire mesh step
- fire_ignition_time1  =      2,  ! sec for ignition from the start
- fire_ignition_start_x2 = 1500,  ! start points of ignition lines, in m from lower left corner
+ fire_ignition_start_time1 = 2,  ! sec for ignition from the start
+ fire_ignition_end_time1  =502,  ! sec for ignition from the start
+ fire_ignition_ros2 = 0.01,      ! ignition rate of spread, m/s
+ fire_ignition_start_x2 = 1503,  ! start points of ignition lines, in m from lower left corner
  fire_ignition_start_y2 =  500,  ! start points of ignition lines, in m from lower left corner
- fire_ignition_end_x2 =   1500,  ! end points of ignition lines, in m from lower left corner
+ fire_ignition_end_x2 =   1503,  ! end points of ignition lines, in m from lower left corner
  fire_ignition_end_y2 =   1900,  ! end points of ignition lines, in m from lower left corner
  fire_ignition_radius2 =    18,  ! all within this radius will ignite, > fire mesh step
- fire_ignition_time2  =      3,  ! sec for ignition from the start! end ignition for sfire
+ fire_ignition_start_time2 = 3,  ! sec for ignition from the start! end ignition for sfire
+ fire_ignition_end_time2  =503,  ! sec for ignition from the start! end ignition for sfire
+ fire_ignition_ros3 = 0.1,      ! ignition rate of spread, m/s
  !fire_ignition_start_x3 = 1400,  ! start points of ignition lines, in m from lower left corner
  !fire_ignition_start_y3 = 1400,  ! start points of ignition lines, in m from lower left corner
  !fire_ignition_end_x3 =   1400,  ! end points of ignition lines, in m from lower left corner
  !fire_ignition_end_y3 =   1400,  ! end points of ignition lines, in m from lower left corner
  !fire_ignition_radius3 =    50,  ! all within this radius will ignite, > fire mesh step
- !fire_ignition_time3  =      4,  ! sec for ignition from the start! end ignition for sfire
+ !fire_ignition_start_time3 = 4,  ! sec for ignition from the start! end ignition for sfire
+ !fire_ignition_end_time3  =  4,  ! sec for ignition from the start! end ignition for sfire
 !
 ! verbosity
- fire_print_msg     = 1,        ! 1 print fire debugging messages
+ fire_print_msg     = 2,        ! 1 print fire debugging messages
  fire_print_file    = 0,        ! 1 write files for matlab
 !
 ! experiments
@@ -156,12 +162,17 @@
  fire_const_grnqfx = -1,        ! (W/s) if both >=0, use this flux (meant to be used when fire_const_time=ignition time) 
  fire_test_steps=0,             ! >0 = on first call, do specified number of steps and terminate (testing only)
  fire_mountain_type=1,          ! in ideal: 0=none, 1= hill, 2=EW ridge, 3=NS ridge
- fire_mountain_height=200.,     ! (m) ideal mountain height
+ fire_mountain_height=100.,     ! (m) ideal mountain height
  fire_mountain_start_x=900.,   ! (m) coord of start of the mountain from lower left corder (just like ignition)
  fire_mountain_start_y=1000.,   ! (m) coord of start of the mountain from lower left corder (just like ignition)
  fire_mountain_end_x=1400.,     ! (m) coord of end of the mountain from lower left corder (just like ignition)
  fire_mountain_end_y=1600.,     ! (m) coord of end of the mountain from lower left corder (just like ignition)
  fire_topo_from_atm=0,          ! 0 = fire mesh topo set from fine-res data, 1 = populate by interpolating from atmosphere
+ !delt_perturbation = 3.0,       ! Temperature perturbation for creating cold (negative) / warm (positive) bubble [K], 0 turns it off
+ !xrad_perturbation = 10000.0,   ! Horizontal radius of the bubble in E-W direction [m]
+ !yrad_perturbation = 10000.0,   ! Horizontal radius of the bubble in N-S direction [m]
+ !zrad_perturbation = 1500.0,    ! Vertical radius of the bubble [m]
+ !hght_perturbation = 1500.0,    ! Perturbation height - height at which the warm/cold bubble will be suspended [m]
 
 !
 ! method switches for developers only, do not change!

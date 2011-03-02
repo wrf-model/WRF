@@ -500,6 +500,18 @@ state   real    g_qnn            ikjftb  g_scalar      1         -     \
 state   real    g_qnc            ikjftb  g_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "G_QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
 
+# Placeholder for decoupled advective tendency diagnostics for non-chem
+state   real  -               ikjf      g_advh_t      1         -     -         -
+state   real  g_advh_qv       ikjf      g_advh_t      1         -     -         "g_advh_qv"    "ACCUMULATED HORIZONTAL TENDENCY FOR WATER VAPOR"        "kg kg-1"
+
+state   real  -               ikjf      g_advz_t      1         -     -         -
+state   real  g_advz_qv       ikjf      g_advz_t      1         -     -         "g_advz_qv"    "ACCUMULATED VERTICAL TENDENCY FOR WATER VAPOR"          "kg kg-1"
+
+state   real  -               ikjf      a_advh_t      1         -     -         -
+state   real  a_advh_qv       ikjf      a_advh_t      1         -     -         "a_advh_qv"    "ACCUMULATED HORIZONTAL TENDENCY FOR WATER VAPOR"        "kg kg-1"
+
+state   real  -               ikjf      a_advz_t      1         -     -         -
+state   real  a_advz_qv       ikjf      a_advz_t      1         -     -         "a_advz_qv"    "ACCUMULATED VERTICAL TENDENCY FOR WATER VAPOR"          "kg kg-1"
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations

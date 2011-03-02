@@ -23,7 +23,7 @@ subroutine da_read_obs_radar (iv, filename)
    integer                       :: nlocal(num_ob_indexes)
    integer                       :: ntotal(num_ob_indexes)
 
-   real                          :: obs_time
+   real*8                        :: obs_time
    integer                       :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_read_obs_radar")

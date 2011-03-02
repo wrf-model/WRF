@@ -1392,8 +1392,8 @@ subroutine compute_var_inv (variance_threshold, nk, num_bins2d, mmax, var, var_i
    real                :: total_variance             ! Total variance of <psi psi> matrix.
    real                :: cumul_variance             ! Cumulative variance of <psi psi> matrix.
 
-   real, allocatable   :: eval(:)                    ! Gridpoint sqrt(eigenvalues).
-   real, allocatable   :: evec(:,:)                  ! Gridpoint eigenvectors.
+   real*8, allocatable   :: eval(:)                    ! Gridpoint sqrt(eigenvalues).
+   real*8, allocatable   :: evec(:,:)                  ! Gridpoint eigenvectors.
    real, allocatable   :: work(:,:)                  ! EOF work array.
    real, allocatable   :: LamInvET(:,:)              ! ET/sqrt(Eigenvalue).
 

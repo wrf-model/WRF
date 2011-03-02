@@ -17,7 +17,7 @@ CONTAINS
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
                      ,rainc,raincv,pratec,nca                         &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
-                     ,tke_myj, ust                                    &
+                     ,tke_pbl, ust                                    &
                      ,forcet,forceq,w0avg,stepcu,gsw                  &
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
                      ,hfx,qfx,cldfra,tpert2d,htop,hbot,kpbl,ht&
@@ -186,7 +186,7 @@ CONTAINS
 !-- th_phy        potential temperature (K)
 !-- t_phy         temperature (K)
 !-- tsk           skin temperature (K)
-!-- tke_myj       turbulent kinetic energy from MYJ scheme (m2/s2)
+!-- tke_pbl       turbulent kinetic energy from PBL scheme (m2/s2)
 !-- ust           u* in similarity theory (m/s)
 !-- w             vertical velocity (m/s)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
@@ -305,7 +305,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ),OPTIONAL ::                         z_at_w  &
                                                       ,  cldfra  &
-                                                      , tke_myj  
+                                                      , tke_pbl  
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                                       &
@@ -757,7 +757,7 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte     &
                ,ITIMESTEP=itimestep, BL_PBL_PHYSICS=bl_pbl_physics  &
                ,SF_SFCLAY_PHYSICS=sf_sfclay_physics                 &
-               ,TH=th, T_PHY=t, TSK=tsk, TKE_MYJ=tke_myj, UST=ust   &
+               ,TH=th, T_PHY=t, TSK=tsk, TKE_PBL=tke_pbl, UST=ust   &
                ,QV=qv_curr, QC=qc_curr, QI=qi_curr, MAVAIL=mavail   &
                ,KPBL=kpbl, PBLH=pblh, XLAND=xland                   & 
                ,Z=z, Z_AT_W=z_at_w                                  &

@@ -56,7 +56,7 @@ module da_transfer_model
 #ifdef VAR4D
    use da_4dvar, only : model_grid, push_ad_forcing, push_tl_pert, pop_tl_pert, kj_swap, &
        kj_swap_reverse, model_config_flags, g_couple, g_stuff_bdy, a_couple, a_stuff_bdy, &
-       g_stuff_bdytend, a_stuff_bdytend_old, a_stuff_bdytend_new, decouple, da_calc_2rd_fg, &
+       g_stuff_bdytend, a_stuff_bdytend_old, a_stuff_bdytend_new, decouple, da_calc_2nd_fg, &
        ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1, mbdy2dtemp1, &
        ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2, mbdy2dtemp2
    use module_big_step_utilities_em, only : calc_mu_uv
@@ -87,6 +87,6 @@ module da_transfer_model
 #include "da_setup_firstguess_wrf.inc"
 #include "da_setup_firstguess_wrf_nmm_regional.inc"
 #include "da_setup_firstguess_kma.inc"
-#include "da_get_2rd_firstguess.inc"
+#include "da_get_2nd_firstguess.inc"
 
 end module da_transfer_model

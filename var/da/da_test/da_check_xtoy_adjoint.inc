@@ -128,7 +128,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
       if ( var4d_lbc ) then
-         call da_get_2rd_firstguess ( grid )
+         call da_get_2nd_firstguess ( grid )
          call da_setup_firstguess( xbx, grid, config_flags)
 
          shuffle = grid%xa
@@ -431,7 +431,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
       if (var4d_lbc) then
          !call domain_clock_get( grid, stop_timestr=timestr )
          !call da_read_basicstates ( xbx, grid, config_flags, timestr )
-         call da_get_2rd_firstguess ( grid )
+         call da_get_2nd_firstguess ( grid )
          call da_setup_firstguess( xbx, grid, config_flags)
 
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')

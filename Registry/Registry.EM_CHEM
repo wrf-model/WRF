@@ -723,8 +723,6 @@ i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1O
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 
 # MYJ PBL variables
-state    real   tke_myj        ikj     misc        1         -      rh       "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"      "m2 s-2"
-state    real   EL_MYJ          ikj     misc        1         -     h        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H          ikj     misc        1         -     r          "EXCH_H"               "SCALAR EXCHANGE COEFFICIENTS "
 state    real   EXCH_M          ikj     misc        1         -     r          "EXCH_M"               "EXCHANGE COEFFICIENTS "
 state    real  CT              ij      misc        1         -      r        "CT"                    "COUNTERGRADIENT TERM"    "K"
@@ -1866,7 +1864,7 @@ package   goddardswscheme  ra_sw_physics==5          -             state:tswdn,t
 package   gfdlswscheme  ra_sw_physics==99            -             -
 
 package   sfclayscheme   sf_sfclay_physics==1        -             -
-package   myjsfcscheme   sf_sfclay_physics==2        -             state:tke_myj
+package   myjsfcscheme   sf_sfclay_physics==2        -             state:tke_pbl
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             scalar:qke;state:tsq,qsq,cov
@@ -1884,14 +1882,14 @@ package   temfsfcscheme  sf_sfclay_physics==10       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   ysuscheme      bl_pbl_physics==1           -             -
-package   myjpblscheme   bl_pbl_physics==2           -             state:tke_myj,el_myj
+package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
-package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_myj,el_myj
+package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl
 package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke;state:tsq,qsq,cov
 package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke;state:tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
-package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,kvh3d,kvm3d,qpert2d,wpert2d,tke_myj
+package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,kvh3d,kvm3d,qpert2d,wpert2d,tke_pbl
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qlup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 

@@ -23,39 +23,39 @@ subroutine da_setup_be_nmm_regional(xb, be)
    real    :: lat_min, lat_max, binwidth_lat ! Used if bin_type = 2 (degrees)..
    real    :: hgt_min, hgt_max, binwidth_hgt ! Used if bin_type = 2 (m). .
 
-   real, allocatable           :: be1_eval_loc(:,:)     ! Temp arrays.
-   real, allocatable           :: be2_eval_loc(:,:)     ! Temp arrays.
-   real, allocatable           :: be3_eval_loc(:,:)     ! Temp arrays.
-   real, allocatable           :: be4_eval_loc(:,:)     ! Temp arrays.
-   real, allocatable           :: be5_eval_loc(:,:)     ! Temp arrays.
+   real*8, allocatable         :: be1_eval_loc(:,:)     ! Temp arrays.
+   real*8, allocatable         :: be2_eval_loc(:,:)     ! Temp arrays.
+   real*8, allocatable         :: be3_eval_loc(:,:)     ! Temp arrays.
+   real*8, allocatable         :: be4_eval_loc(:,:)     ! Temp arrays.
+   real*8, allocatable         :: be5_eval_loc(:,:)     ! Temp arrays.
 
-   real, allocatable           :: be1_eval_glo(:)       ! Global Eigenvalues.
-   real, allocatable           :: be2_eval_glo(:)       ! Global Eigenvalues.
-   real, allocatable           :: be3_eval_glo(:)       ! Global Eigenvalues.
-   real, allocatable           :: be4_eval_glo(:)       ! Global Eigenvalues.
-   real, allocatable           :: be5_eval_glo(:)       ! Global Eigenvalues.
-   real, allocatable           :: alpha_val(:)          ! Global Eigenvalues.
+   real*8, allocatable         :: be1_eval_glo(:)       ! Global Eigenvalues.
+   real*8, allocatable         :: be2_eval_glo(:)       ! Global Eigenvalues.
+   real*8, allocatable         :: be3_eval_glo(:)       ! Global Eigenvalues.
+   real*8, allocatable         :: be4_eval_glo(:)       ! Global Eigenvalues.
+   real*8, allocatable         :: be5_eval_glo(:)       ! Global Eigenvalues.
+   real*8, allocatable         :: alpha_val(:)          ! Global Eigenvalues.
 
-   real, allocatable           :: be1_evec_loc(:,:,:)   ! Local Eigenvectors.
-   real, allocatable           :: be2_evec_loc(:,:,:)   ! Local Eigenvectors.
-   real, allocatable           :: be3_evec_loc(:,:,:)   ! Local Eigenvectors.
-   real, allocatable           :: be4_evec_loc(:,:,:)   ! Local Eigenvectors.
-   real, allocatable           :: be5_evec_loc(:,:,:)   ! Local Eigenvectors.
+   real*8, allocatable         :: be1_evec_loc(:,:,:)   ! Local Eigenvectors.
+   real*8, allocatable         :: be2_evec_loc(:,:,:)   ! Local Eigenvectors.
+   real*8, allocatable         :: be3_evec_loc(:,:,:)   ! Local Eigenvectors.
+   real*8, allocatable         :: be4_evec_loc(:,:,:)   ! Local Eigenvectors.
+   real*8, allocatable         :: be5_evec_loc(:,:,:)   ! Local Eigenvectors.
 
-   real, allocatable           :: be1_evec_glo(:,:)     ! Global Eigenvectors.
-   real, allocatable           :: be2_evec_glo(:,:)     ! Global Eigenvectors.
-   real, allocatable           :: be3_evec_glo(:,:)     ! Global Eigenvectors.
-   real, allocatable           :: be4_evec_glo(:,:)     ! Global Eigenvectors.
-   real, allocatable           :: be5_evec_glo(:,:)     ! Global Eigenvectors.
+   real*8, allocatable         :: be1_evec_glo(:,:)     ! Global Eigenvectors.
+   real*8, allocatable         :: be2_evec_glo(:,:)     ! Global Eigenvectors.
+   real*8, allocatable         :: be3_evec_glo(:,:)     ! Global Eigenvectors.
+   real*8, allocatable         :: be4_evec_glo(:,:)     ! Global Eigenvectors.
+   real*8, allocatable         :: be5_evec_glo(:,:)     ! Global Eigenvectors.
    real, allocatable           :: alpha_evec(:,:)       ! Global Eigenvectors.
 
-   real, allocatable           :: be1_rf_lengthscale(:) ! RF lengthscale.
-   real, allocatable           :: be2_rf_lengthscale(:) ! RF lengthscale.
-   real, allocatable           :: be3_rf_lengthscale(:) ! RF lengthscale.
-   real, allocatable           :: be4_rf_lengthscale(:) ! RF lengthscale.
-   real, allocatable           :: be5_rf_lengthscale(:)
-   real, allocatable           :: alpha_rf_lengthscale(:)
-   real, allocatable           :: alpha_rf_scale_factor(:)
+   real*8, allocatable         :: be1_rf_lengthscale(:) ! RF lengthscale.
+   real*8, allocatable         :: be2_rf_lengthscale(:) ! RF lengthscale.
+   real*8, allocatable         :: be3_rf_lengthscale(:) ! RF lengthscale.
+   real*8, allocatable         :: be4_rf_lengthscale(:) ! RF lengthscale.
+   real*8, allocatable         :: be5_rf_lengthscale(:)
+   real*8, allocatable         :: alpha_rf_lengthscale(:)
+   real*8, allocatable         :: alpha_rf_scale_factor(:)
 
    real, allocatable           :: evec_loc(:,:,:)        ! Latitudinally varying eigenvectors.
    real, allocatable           :: eval_loc(:,:)          ! Latitudinally varying eigenvalues.

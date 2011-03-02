@@ -202,8 +202,8 @@
 
  &perturbation
  trajectory_io=.true.,
- check_TL = .true.
- check_AD = .false.
+ check_TL = .false.
+ check_AD = .true.
  check_u = .true.
  check_v = .true.
  check_w = .true.

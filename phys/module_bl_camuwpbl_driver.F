@@ -99,7 +99,7 @@ CONTAINS
   
   subroutine camuwpbl(dt,u_phy,v_phy,th_phy,rho,qv_curr,hfx             &
        ,qfx,ustar,rublten,rvblten,rthblten,rqvblten,rqcblten            & 
-       ,tke_myj,pblh2d,kpbl2d,p8w,p_phy,z,t_phy,qc_curr,qi_curr,z_at_w  &
+       ,tke_pbl,pblh2d,kpbl2d,p8w,p_phy,z,t_phy,qc_curr,qi_curr,z_at_w  &
        ,cldfra,ht,rthratenlw,exner,itimestep,tauresx2d,tauresy2d,kvh3d  &
        ,kvm3d,tpert2d,qpert2d,wpert2d                                   & 
        ,ids,ide, jds,jde, kds,kde                                       &
@@ -164,7 +164,7 @@ CONTAINS
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rthblten !Tendency for th_phy  (Pa K s-1)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rqvblten !Tendency for qv_curr (Pa kg kg-1 s-1)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rqcblten !Tendency for qc_curr (Pa kg kg-1 s-1)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: tke_myj  !Turbulence kinetic energy from Mellor-Yamada-Janjic (MYJ) (m^2/s^2)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: tke_pbl  !Turbulence kinetic energy from PBL scheme (m^2/s^2)
 
     
     !---------------------------------------------------------------------------!
@@ -396,7 +396,7 @@ CONTAINS
     cloud(     :,:,:) = 0.0_r8   
     cloudtnd(  :,:,:) = 0.0_r8   
     wind_tends(:,:,:) = 0.0_r8   
-    tke_myj(   :,:,:) = 0.0_r8 
+    tke_pbl(   :,:,:) = 0.0_r8 
     cflx(:,:)         = 0.0_r8
 
     
@@ -734,8 +734,8 @@ CONTAINS
              !rqiblten tendency computed but not output (JD) ? also above comment may be no longer valid
              rqvblten(i,k,j) = cloudtnd(1,kflip,1)/(1. - qv_curr(i,k,j))
              rqcblten(i,k,j) = cloudtnd(1,kflip,2)/(1. - qv_curr(i,k,j))
-             tke_myj (i,k,j) = tke8(1,kflip)
-             !if(k==kts+10)print*,i,j,k,rublten(i,k,j),rvblten(i,k,j), rqvblten(i,k,j),rqcblten(i,k,j) ,tke_myj (i,k,j)
+             tke_pbl (i,k,j) = tke8(1,kflip)
+             !if(k==kts+10)print*,i,j,k,rublten(i,k,j),rvblten(i,k,j), rqvblten(i,k,j),rqcblten(i,k,j) ,tke_pbl (i,k,j)
                           
           end do
 
@@ -836,7 +836,7 @@ CONTAINS
  
  !-----------------------------------------------------------------------------------------   
   subroutine camuwpblinit(rublten,rvblten,rthblten,rqvblten, &
-       restart,tke_myj,                              &
+       restart,tke_pbl,                              &
        ids,ide,jds,jde,kds,kde,                            &
        ims,ime,jms,jme,kms,kme,                            &
        its,ite,jts,jte,kts,kte)
@@ -869,7 +869,7 @@ CONTAINS
     integer,intent(in) :: its,ite,jts,jte,kts,kte
     
     real,dimension(ims:ime,kms:kme,jms:jme),intent(out) :: &
-         rublten, rvblten, rthblten, rqvblten,TKE_MYJ
+         rublten, rvblten, rthblten, rqvblten,TKE_PBL
 
     !-------------------------------------------------------------------------------------!
     !Local Variables                                                                      ! 
@@ -1002,7 +1002,7 @@ CONTAINS
         do j = jts , jtf
            do k = kts , ktf
               do i = its , itf
-                 tke_myj(i,k,j)  = epsq2
+                 tke_pbl(i,k,j)  = epsq2
                  rublten(i,k,j)  = 0.
                  rvblten(i,k,j)  = 0.
                  rthblten(i,k,j) = 0.

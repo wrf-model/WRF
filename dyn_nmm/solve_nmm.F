@@ -1550,7 +1550,7 @@
      &            ,grid%czen,grid%czmean,grid%sigt4,grid%rlwin,grid%rswin,grid%radot                 &
      &            ,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%f_ice,grid%f_rain,grid%sr                 &
      &            ,grid%q2,grid%u,grid%v,grid%ths,grid%nmm_tsk,grid%sst,grid%prec,grid%sno                     &
-     &            ,grid%fis,grid%z0,grid%z0base,grid%ustar,grid%mixht,grid%pblh,grid%lpbl,grid%el_myj          &   !PLee (3/07)
+     &            ,grid%fis,grid%z0,grid%z0base,grid%ustar,grid%mixht,grid%pblh,grid%lpbl,grid%el_pbl          &   !PLee (3/07)
      &            ,MOIST,grid%rmol,grid%mol                                      &
      &            ,grid%exch_h,grid%exch_m,grid%f,grid%akhs,grid%akms,grid%akhs_out,grid%akms_out         &
      &            ,grid%thz0,grid%qz0,grid%uz0,grid%vz0,grid%qsh,grid%mavail                         &
@@ -2132,13 +2132,13 @@
       bocov_tim=bocov_tim+timef()-btimx
 !
 !----------------------------------------------------------------------
-!***  COPY THE NMM VARIABLE grid%q2 TO THE WRF VARIABLE grid%tke_myj
+!***  COPY THE NMM VARIABLE grid%q2 TO THE WRF VARIABLE grid%tke_pbl
 !----------------------------------------------------------------------
 !
       DO K=KTS,KTE
       DO J=JTS,JTE
       DO I=ITS,ITE
-        grid%tke_myj(I,J,K)=0.5*grid%q2(I,J,K) !TKE is grid%q squared over 2
+        grid%tke_pbl(I,J,K)=0.5*grid%q2(I,J,K) !TKE is grid%q squared over 2
       ENDDO
       ENDDO
       ENDDO

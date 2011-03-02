@@ -61,12 +61,10 @@ CONTAINS
               ,qc_adjust ,qi_adjust                                       & ! jm
               ,cu_rad_feedback, aer_ra_feedback                           & ! jm
               ,ht,dx,dy,shadowmask,slope_rad ,topo_shading                & ! slope-dependent radiation
-!JJS 20101021 vvvvv
-              ,tlwdn, tlwup      &  ! optoinal for Goddard schemes
-              ,slwdn, slwup      &  ! optoinal for Goddard schemes
-              ,tswdn, tswup      &  ! optoinal for Goddard schemes
-              ,sswdn, sswup      &  ! optoinal for Goddard schemes
-!JJS 20101021 ^^^^^
+              ,tlwdn, tlwup      &  ! optional for Goddard schemes
+              ,slwdn, slwup      &  ! optional for Goddard schemes
+              ,tswdn, tswup      &  ! optional for Goddard schemes
+              ,sswdn, sswup      &  ! optional for Goddard schemes
                                                                           )
 
 
@@ -102,7 +100,7 @@ CONTAINS
 #endif
    USE module_ra_hs         , ONLY : hsrad
 
-   USE module_ra_goddard    , ONLY : goddardrad  !Goddard Radiation Scheme by Toshihisa Matsui and Jainn Shi
+   USE module_ra_goddard    , ONLY : goddardrad
 
 
 
@@ -783,7 +781,6 @@ CONTAINS
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
 
-! by Toshihisa Matsui and Jainn Shi 20090623
         CASE (goddardlwscheme)
 
              CALL wrf_debug (100, 'CALL goddard longwave radiation scheme ')
@@ -1011,8 +1008,8 @@ CONTAINS
         ENDDO
      ENDIF
 
-!JJS 20090623 vvvvv
      IF (lw_physics .eq. goddardlwscheme) THEN
+          IF ( PRESENT (tlwdn) ) THEN
         DO j=jts,jte
         DO i=its,ite
            tlwdn(i,j) = erbe_out(i,j,1)    ! TOA LW downwelling flux [W/m2]
@@ -1021,8 +1018,8 @@ CONTAINS
            slwup(i,j) = erbe_out(i,j,4)    ! surface LW upwelling flux [W/m2]
         ENDDO    
         ENDDO    
+          ENDIF
      ENDIF       
-!JJS 20090623 ^^^^^
 
 !
      swrad_cldfra_select: SELECT CASE(sw_physics)
@@ -1124,8 +1121,6 @@ CONTAINS
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,F_QNDROP=f_qndrop                                 &
                                                                        )
-
-! by Toshihisa Matsui and Jainn Shi 20090624
 
         CASE (goddardswscheme)
 
@@ -1344,8 +1339,8 @@ CONTAINS
 
      END SELECT swrad_select    
 
-!JJS 20090623  vvvvv
      IF (sw_physics .eq. goddardswscheme) THEN
+          IF ( PRESENT (tswdn) ) THEN
         DO j=jts,jte
         DO i=its,ite
            tswdn(i,j) = erbe_out(i,j,5)    ! TOA SW downwelling flux [W/m2]
@@ -1354,8 +1349,8 @@ CONTAINS
            sswup(i,j) = erbe_out(i,j,8)    ! surface SW upwelling flux [W/m2]
         ENDDO
         ENDDO
+          ENDIF
      ENDIF
-!JJS 20090623  ^^^^^
 
      IF (sw_physics .gt. 0 .and. .not.gfdl_sw) THEN
         DO j=jts,jte

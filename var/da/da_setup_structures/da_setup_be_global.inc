@@ -32,10 +32,10 @@ subroutine da_setup_be_global (be)
    character*10         :: variable
    integer              :: ni, nj, nk, b, be_unit
    integer, allocatable :: max_wave(:)
-   real, allocatable    :: evec_g(:,:)
-   real, allocatable    :: eval_g(:)  
-   real, allocatable    :: evec_loc(:,:,:)
-   real, allocatable    :: eval_loc(:,:)  
+   real*8, allocatable  :: evec_g(:,:)
+   real*8, allocatable  :: eval_g(:)  
+   real*8, allocatable  :: evec_loc(:,:,:)
+   real*8, allocatable  :: eval_loc(:,:)  
    real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
    real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t   regression cooefficient.
    real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression cooefficient.
@@ -46,7 +46,7 @@ subroutine da_setup_be_global (be)
    real, allocatable   :: regcoeff_t_u_rh(:,:,:)     ! t_u/rh  regression coefficient
    real, allocatable   :: regcoeff_ps_u_rh(:,:)      ! ps_u/rh    regression coefficient
 
-   real, allocatable    :: power(:)               ! Temporary power spectrum.
+   real*8, allocatable :: power(:)               ! Temporary power spectrum.
    real, allocatable    :: power2d(:,:)           ! Temporary power spectrum.
 
    if (trace_use) call da_trace_entry("da_setup_be_global")

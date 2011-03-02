@@ -626,20 +626,17 @@ SUBROUTINE input_ext_chem_file (si_grid)
    ! Note that this is *not* the intended use of alloc_and_configure_domain()
    ! It does not seem to hurt anything, yet...  
 
-!   if( si_grid%id .EQ. 1) then
-   CALL alloc_and_configure_domain ( domain_id  = 1           , &
-                                     grid       = chem_grid   , &
-                                     parent     = null_domain , &
-                                     kid        = -1            )
-
-!    else
-!     CALL alloc_and_configure_domain ( domain_id  = 2 ,                  &
-!                                       grid       = chem_grid ,        &
-!                                       parent     = parent_grid ,        &
-!                                       kid        = 1                   )
-!    endif
-
-
+    if( si_grid%id .EQ. 1) then
+      CALL alloc_and_configure_domain ( domain_id  = 1           , &
+                                        grid       = chem_grid   , &
+                                        parent     = null_domain , &
+                                        kid        = -1            )
+    else
+      CALL alloc_and_configure_domain ( domain_id  = si_grid%id ,                  &
+                                        grid       = chem_grid ,                   &
+                                        parent     = si_grid%parents(1)%ptr ,      &
+                                        kid        = 1                   )
+    endif
 
    CALL       wrf_debug ( 100 , 'wrfchem:input_chem: set pointer for domain 1' )
    chgrid => chem_grid

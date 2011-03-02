@@ -1808,7 +1808,7 @@
      &             ,grid%xlat,grid%xlong,grid%albedo,grid%albbck                            &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
-     &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_myj             &
+     &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_pbl             &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
      &             ,grid%stc,ZS,DZS,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
      &             ,ADV_MOIST_COND                                      &

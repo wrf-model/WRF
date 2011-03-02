@@ -1215,7 +1215,7 @@
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
-     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE,SFENTH=SFENTH     &
+     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
      &          ,PSFC=PSFC_OUT,EMISS=EPSR,EMBCK=EMBCK                   &
@@ -1316,7 +1316,7 @@
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
      &               ,U_PHY=U_PHY,V_PHY=V_PHY,TH_PHY=TH_PHY,RHO=RR    &
      &               ,P_PHY=P_PHY,PI_PHY=PI_PHY,P8W=P8W,T_PHY=T_PHY   &
-     &               ,DZ8W=DZ,Z=Z,TKE_MYJ=TKE,EL_MYJ=EL_MYJ,F=F       &
+     &               ,DZ8W=DZ,Z=Z,TKE_PBL=TKE,EL_PBL=EL_MYJ,F=F       &
      &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &

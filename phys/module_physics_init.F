@@ -42,10 +42,7 @@ CONTAINS
                          lu_state,                               &
                          XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
-                         TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
-#if (NMM_CORE != 1)
-                         TKE_PBL,  &
-#endif
+                         TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_PBL,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
                          adv_moist_cond,                         &
@@ -230,10 +227,7 @@ CONTAINS
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
-             RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_MYJ
-#if (NMM_CORE != 1)
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    TKE_PBL
-#endif 
+             RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
              cugd_qvtens,cugd_qcten
@@ -549,10 +543,7 @@ integer myproc
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_MYJ,                        &
-#if (NMM_CORE != 1)
-                TKE_PBL,                                     &
-#endif
+                num_soil_layers,TKE_PBL,                        &
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -1262,10 +1253,7 @@ integer myproc
    SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_MYJ,                        &
-#if (NMM_CORE != 1)
-                TKE_PBL,                                     &
-#endif
+                num_soil_layers,TKE_PBL,                        &
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -1404,11 +1392,7 @@ integer myproc
                                                           RQVBLTEN, &
                                                           RQCBLTEN, &
                                                           RQIBLTEN, &
-                                                          TKE_MYJ
-#if (NMM_CORE != 1)
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
                                                           TKE_PBL
-#endif
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
    CHARACTER(LEN=*), INTENT(IN)   :: MMINLU
@@ -1771,7 +1755,7 @@ integer myproc
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
            CALL myjurbinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                        TKE_MYJ,EXCH_H,restart,               &
+                        TKE_PBL,EXCH_H,restart,               &
                         allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
@@ -1779,7 +1763,7 @@ integer myproc
           ELSE
 
            CALL myjpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                        TKE_MYJ,EXCH_H,restart,               &
+                        TKE_PBL,EXCH_H,restart,               &
                         allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
@@ -1789,7 +1773,7 @@ integer myproc
            if(isfc .ne. 4)CALL wrf_error_fatal &
             ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
            CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                        TKE_MYJ,EXCH_H,restart,               &
+                        TKE_PBL,EXCH_H,restart,               &
                         allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
@@ -1806,7 +1790,7 @@ integer myproc
                          its, ite, jts, jte, kts, kte          )
         CASE (CAMUWPBLSCHEME)
            CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                restart,TKE_MYJ,                      &
+                restart,TKE_PBL,                      &
                 ids, ide, jds, jde, kds, kde,         &
                 ims, ime, jms, jme, kms, kme,         &
                 its, ite, jts, jte, kts, kte          )

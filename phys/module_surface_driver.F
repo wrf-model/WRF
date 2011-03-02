@@ -24,9 +24,9 @@ CONTAINS
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
 #if (NMM_CORE==1)
-     &          ,xicem,isice,iswater,ct,tke_myj,sfenth                &
+     &          ,xicem,isice,iswater,ct,tke_pbl,sfenth                &
 #else
-     &          ,xicem,isice,iswater,ct,tke_myj                       &
+     &          ,xicem,isice,iswater,ct,tke_pbl                       &
 #endif
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
      &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin,t2,emiss               &
@@ -247,7 +247,7 @@ CONTAINS
 !-- TAUY          RHO*U**2 for ocean coupling
 !-- LH            net upward latent heat flux at surface (W/m^2)
 !-- REGIME        flag indicating PBL regime (stable, unstable, etc.)
-!-- tke_myj       turbulence kinetic energy from Mellor-Yamada-Janjic (MYJ) (m^2/s^2)
+!-- tke_pbl       turbulence kinetic energy from PBL schemes (m^2/s^2)
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
 !-- akms          sfc exchange coefficient of momentum from MYJ
 !-- thz0          potential temperature at roughness length (K)
@@ -461,7 +461,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   V_PHY
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   Z
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::   TKE_MYJ
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::   TKE_PBL
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   DZS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
    REAL, INTENT(IN )::   DT
@@ -1121,7 +1121,7 @@ CONTAINS
            CALL MYJSFC_SEAICE_WRAPPER(itimestep,ht,dz8w,             &
                 p_phy,p8w,th_phy,t_phy,                              &
                 qv_curr,qc_curr,                                     &
-                u_phy,v_phy,tke_myj,                                 &
+                u_phy,v_phy,tke_pbl,                                 &
                 tsk,qsfc,thz0,qz0,uz0,vz0,                           &
                 lowlyr,                                              &
                 xland,ivgtyp,isurban,iz0tlnd,                        &
@@ -1145,7 +1145,7 @@ CONTAINS
             CALL MYJSFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
               qv_curr,qc_curr,                                      &
-              u_phy,v_phy,tke_myj,                                 &
+              u_phy,v_phy,tke_pbl,                                 &
               tsk,qsfc,thz0,qz0,uz0,vz0,                           &
               lowlyr,                                              &
               xland,ivgtyp,isurban,iz0tlnd,                        &
@@ -1180,7 +1180,7 @@ CONTAINS
             CALL QNSESFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
               qv_curr,qc_curr,                                     &
-              u_phy,v_phy,tke_myj,                                 &
+              u_phy,v_phy,tke_pbl,                                 &
               tsk,qsfc,thz0,qz0,uz0,vz0,                           &
               lowlyr,                                              &
               xland,                                               &

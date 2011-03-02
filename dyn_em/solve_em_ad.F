@@ -342,6 +342,19 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    ENDIF
 # endif
 !--------------------------------------------------------------
+   adv_ct_indices(   :  ) = 1
+   IF ( config_flags%chemdiag == USECHEMDIAG ) THEN
+   ! modify tendency list here
+   ! note that the referencing direction here is opposite of that in chem_driver
+       adv_ct_indices(p_co  ) = p_advh_co
+       adv_ct_indices(p_o3  ) = p_advh_o3
+       adv_ct_indices(p_no  ) = p_advh_no
+       adv_ct_indices(p_no2 ) = p_advh_no2
+       adv_ct_indices(p_hno3) = p_advh_hno3
+       adv_ct_indices(p_iso ) = p_advh_iso
+       adv_ct_indices(p_ho  ) = p_advh_ho
+       adv_ct_indices(p_ho2 ) = p_advh_ho2
+   END IF
 #endif
 
    rk_order = config_flags%rk_ord

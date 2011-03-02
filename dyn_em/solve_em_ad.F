@@ -870,28 +870,31 @@ BENCH_END(init_zero_tend_tim)
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
 
-        CALL phy_prep ( config_flags,                           &
-                        grid%mut, grid%muu, grid%muv, grid%u_2, &
-                        grid%v_2, grid%p, grid%pb, grid%alt,              &
+        CALL phy_prep ( config_flags,                                    &
+                        grid%mut, grid%muu, grid%muv, grid%u_2,          &
+                        grid%v_2, grid%p, grid%pb, grid%alt,             &
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
-                        rho,th_phy, p_phy, pi_phy, u_phy, v_phy,    &
-                        p8w, grid%t_phy, t8w, grid%z, grid%z_at_w, dz8w, &
-                        grid%p_hyd, grid%p_hyd_w,                   &
-                        grid%fnm, grid%fnp, grid%znw, grid%p_top,   &
-                        grid%rthraten,                          &
-                        grid%rthblten, grid%rublten, grid%rvblten,             &
-                        grid%rqvblten, grid%rqcblten, grid%rqiblten,           &
-                        grid%rthcuten, grid%rqvcuten, grid%rqccuten,           &
-                        grid%rqrcuten, grid%rqicuten, grid%rqscuten,           &
-                        grid%rthften,  grid%rqvften,                           &
-                        grid%rucuten,  grid%rvcuten,                           &
-                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,       &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,      &
-                        ids, ide, jds, jde, kds, kde,           &
-                        ims, ime, jms, jme, kms, kme,           &
-                        grid%i_start(ij), grid%i_end(ij),       &
-                        grid%j_start(ij), grid%j_end(ij),       &
-                        k_start, k_end                         )
+                        rho,th_phy, p_phy, pi_phy, u_phy, v_phy,         &
+                        p8w, grid%t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
+                        grid%p_hyd, grid%p_hyd_w,                        &
+                        grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
+                        grid%rthraten,                                   &
+                        grid%rthblten, grid%rublten, grid%rvblten,       &
+                        grid%rqvblten, grid%rqcblten, grid%rqiblten,     &
+                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
+                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
+                        grid%rqicuten, grid%rqscuten,                    &
+                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
+                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
+                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
+                        grid%rthften,  grid%rqvften,                     &
+                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+                        ids, ide, jds, jde, kds, kde,                    &
+                        ims, ime, jms, jme, kms, kme,                    &
+                        grid%i_start(ij), grid%i_end(ij),                &
+                        grid%j_start(ij), grid%j_end(ij),                &
+                        k_start, k_end                                   )
       ENDDO
       !$OMP END PARALLEL DO
  
@@ -942,6 +945,10 @@ if (config_flags % sw_call_first_rk_step_part2) then
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
+                             , imsx, imex, jmsx, jmex, kmsx, kmex    &
+                             , ipsx, ipex, jpsx, jpex, kpsx, kpex    &
+                             , imsy, imey, jmsy, jmey, kmsy, kmey    &
+                             , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                             )
 
@@ -5224,10 +5231,10 @@ BENCH_START(advance_ppt_tim)
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_ppt{
 if (config_flags % sw_call_advance_ppt) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_ppt ' )
-
      CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
-                      grid%rqicuten,grid%rqscuten,grid%rainc,grid%raincv,grid%pratec, grid%nca,    &
-                      grid%htop,grid%hbot,grid%cutop,grid%cubot,                 &
+                      grid%rqicuten,grid%rqscuten,           &
+                      grid%rainc,grid%raincv,grid%rainsh,grid%pratec,grid%pratesh, &
+                      grid%nca,grid%htop,grid%hbot,grid%cutop,grid%cubot,  &
                       grid%cuppt, grid%dt, config_flags,                   &
                       ids,ide, jds,jde, kds,kde,             &
                       ims,ime, jms,jme, kms,kme,             &
@@ -7050,8 +7057,9 @@ if (config_flags % sw_call_advance_ppt) then
 
 !!!!! REPLACE WITH a_advance_ppt WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
      CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
-                      grid%rqicuten,grid%rqscuten,grid%rainc,grid%raincv,grid%pratec, grid%nca,&
-                      grid%htop,grid%hbot,grid%cutop,grid%cubot,                 &
+                      grid%rqicuten,grid%rqscuten,           &
+                      grid%rainc,grid%raincv,grid%rainsh,grid%pratec,grid%pratesh, &
+                      grid%nca,grid%htop,grid%hbot,grid%cutop,grid%cubot,  &
                       grid%cuppt, grid%dt, config_flags,                   &
                       ids,ide, jds,jde, kds,kde,             &
                       ims,ime, jms,jme, kms,kme,             &
@@ -10155,6 +10163,10 @@ if (config_flags % sw_call_first_rk_step_part2) then
               , ids, ide, jds, jde, kds, kde     &
               , ims, ime, jms, jme, kms, kme     &
               , ips, ipe, jps, jpe, kps, kpe     &
+              , imsx, imex, jmsx, jmex, kmsx, kmex    &
+              , ipsx, ipex, jpsx, jpex, kpsx, kpex    &
+              , imsy, imey, jmsy, jmey, kmsy, kmey    &
+              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
               , k_start , k_end                  &
              )
 
@@ -10220,12 +10232,15 @@ else
                         grid%rthraten,                                        &
                         grid%rthblten, grid%rublten, grid%rvblten,            &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,          &
-                        grid%rthcuten, grid%rqvcuten, grid%rqccuten,          &
-                        grid%rqrcuten, grid%rqicuten, grid%rqscuten,          &
-                        grid%rthften,  grid%rqvften,                          &
-                        grid%rucuten,  grid%rvcuten,                          &
-                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,      &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,     &
+                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
+                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
+                        grid%rqicuten, grid%rqscuten,                    &
+                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
+                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
+                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
+                        grid%rthften,  grid%rqvften,                     &
+                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &

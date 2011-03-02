@@ -438,6 +438,7 @@ Namelist variables for controlling the adaptive time step option:
                                           MYNNSFC (sf_sfclay_physics = 5)
                                      = 7, ACM2 (Pleim) PBL (ARW)
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
+                                     = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -457,8 +458,14 @@ Namelist variables for controlling the adaptive time step option:
                                      = 4, Simplified Arakawa-Schubert scheme
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only, from Zhang and Wang)
+                                     = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 99, previous Kain-Fritsch scheme
+
+ shcu_physics (max_dom)              independent shallow cumulus option (not tied to deep convection)
+                                     = 0, no independent shallow cumulus
+                                     = 1, Grell 3D ensemble scheme (use with cu_physics=5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
+                                     = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
 
  ishallow                            = 1,   Shallow convection used with Grell 3D ensemble scheme (cu_physics = 5)
 

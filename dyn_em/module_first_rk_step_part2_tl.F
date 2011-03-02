@@ -31,6 +31,10 @@ CONTAINS
                , ids, ide, jds, jde, kds, kde     &
                , ims, ime, jms, jme, kms, kme     &
                , ips, ipe, jps, jpe, kps, kpe     &
+               , imsx,imex,jmsx,jmex,kmsx,kmex    &
+               , ipsx,ipex,jpsx,jpex,kpsx,kpex    &
+               , imsy,imey,jmsy,jmey,kmsy,kmey    &
+               , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                , k_start , k_end                  &
               )
 
@@ -39,12 +43,15 @@ CONTAINS
     USE module_domain, ONLY : domain
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
 #ifdef DM_PARALLEL
-    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval, wrf_err_message
+    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
     USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
-            ,halo_em_phys_pbl_sub,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
+            ,halo_em_phys_pbl_sub,halo_em_phys_cu_sub,halo_em_phys_shcu_sub &
+            ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
             ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub
 #endif
+
+    USE module_driver_constants
     USE g_module_diffusion_em, ONLY : g_phy_bc, g_cal_deform_and_div, &
             g_compute_diff_metrics, g_vertical_diffusion_2,              &
             g_horizontal_diffusion_2, g_calculate_km_kh, g_tke_rhs
@@ -54,6 +61,8 @@ CONTAINS
     USE module_physics_addtendc, ONLY : update_phy_ten
 
     USE g_module_sfs_driver
+    USE module_stoch, ONLY : update_stoch_ten, update_stoch , update_stoch_ten_subdomains,  & 
+                             do_fftback_along_x,do_fftback_along_y,sp2gp_prep
 
     IMPLICIT NONE
 
@@ -62,7 +71,11 @@ CONTAINS
 
     INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
-                           ips, ipe, jps, jpe, kps, kpe
+                           ips, ipe, jps, jpe, kps, kpe,     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey
 
     LOGICAL ,INTENT(IN)                        :: adapt_step_flag
     REAL, INTENT(IN)                           :: curr_secs
@@ -120,6 +133,7 @@ CONTAINS
 ! Local
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc,g_ht_loc
+    REAL :: scale_factor
     INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask 
     INTEGER                             :: ij
     INTEGER  num_roof_layers
@@ -134,6 +148,164 @@ CONTAINS
 
     rk_step = 1
 
+!!!!! REPLACE WITH g_??? WHEN CONSTRUCTING TL OF PHYSICS. Xing Zhang
+   stoch_force_select: SELECT CASE(config_flags%stoch_force_opt)
+
+      CASE (STOCH_BACKSCATTER)
+
+         IF ( grid%id .EQ. 1 ) THEN
+
+          !$OMP PARALLEL DO   &
+          !$OMP PRIVATE ( ij )
+          DO ij = 1 , grid%num_tiles
+
+          CALL UPDATE_STOCH(grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,           &
+                         grid%SPTFORCS,grid%SPTFORCC,                        &
+                         grid%SPT_AMP,grid%SPSTREAM_AMP,                     &
+                         ids, ide, jds, jde, kds, kde,                       &
+                         ims, ime, jms, jme, kms, kme,                       &
+                         grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), &
+                         grid%j_end(ij), k_start, k_end                      )
+
+          call sp2gp_prep(grid%ru_tendf_stoch,                                & 
+                         grid%rv_tendf_stoch, grid%rt_tendf_stoch,           & 
+                         grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,              &
+                         grid%SPTFORCS,grid%SPTFORCC,                        &
+                         grid%VERTSTRUCC,grid%VERTSTRUCS,                    &
+                         grid%RU_IMAG,grid%RV_IMAG,grid%RT_IMAG,             & 
+                         grid%DX,grid%DY,grid%stoch_vertstruc_opt,           & 
+                         ids, ide, jds, jde, kds, kde,                       &
+                         ims, ime, jms, jme, kms, kme,                       &
+                         grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), & 
+                         grid%j_end(ij), k_start, k_end) 
+           ENDDO
+           !$OMP END PARALLEL DO
+
+!          Roll out into latitude bands and perform FFT along latitude bands 
+#ifdef DM_PARALLEL
+#include "XPOSE_STOCH_BACK_U_REAL_z2x.inc"
+#include "XPOSE_STOCH_BACK_U_IMAG_z2x.inc"
+#include "XPOSE_STOCH_BACK_V_REAL_z2x.inc"
+#include "XPOSE_STOCH_BACK_V_IMAG_z2x.inc"
+#include "XPOSE_STOCH_BACK_T_REAL_z2x.inc"
+#include "XPOSE_STOCH_BACK_T_IMAG_z2x.inc"
+#else
+           grid%RU_REAL_xxx=grid%ru_tendf_stoch
+           grid%RU_IMAG_xxx=grid%RU_IMAG
+           grid%RV_REAL_xxx=grid%rv_tendf_stoch
+           grid%RV_IMAG_xxx=grid%RV_IMAG
+           grid%RT_REAL_xxx=grid%rt_tendf_stoch
+           grid%RT_IMAG_xxx=grid%RT_IMAG
+#endif
+           call do_fftback_along_x(                             & 
+                              grid%RU_REAL_xxx,grid%RU_IMAG_xxx,& 
+                              grid%RV_REAL_xxx,grid%RV_IMAG_xxx,& 
+                              grid%RT_REAL_xxx,grid%RT_IMAG_xxx,& 
+                              ids, ide, jds, jde, kds, kde,     &
+                              ims, ime, jms, jme, kms, kme,     &
+                              ips, ipe, jps, jpe, kps, kpe,     &
+                              imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                              ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                              imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                              ipsy,ipey,jpsy,jpey,kpsy,kpey,    &
+                              k_start , k_end                   &
+                             )
+
+!          Reassemble fields from latitude bands into 3D arrays
+#ifdef DM_PARALLEL
+! reassemble field  X_REAL and X_IMAG
+#include "XPOSE_STOCH_BACK_U_REAL_x2z.inc"
+#include "XPOSE_STOCH_BACK_U_IMAG_x2z.inc"
+#include "XPOSE_STOCH_BACK_V_REAL_x2z.inc"
+#include "XPOSE_STOCH_BACK_V_IMAG_x2z.inc"
+#include "XPOSE_STOCH_BACK_T_REAL_x2z.inc"
+#include "XPOSE_STOCH_BACK_T_IMAG_x2z.inc"
+
+!          Roll out into longitude bands and perform FFT along longitude bands 
+#include "XPOSE_STOCH_BACK_U_REAL_z2y.inc"
+#include "XPOSE_STOCH_BACK_U_IMAG_z2y.inc"
+#include "XPOSE_STOCH_BACK_V_REAL_z2y.inc"
+#include "XPOSE_STOCH_BACK_V_IMAG_z2y.inc"
+#include "XPOSE_STOCH_BACK_T_REAL_z2y.inc"
+#include "XPOSE_STOCH_BACK_T_IMAG_z2y.inc"
+#else
+            grid%RU_REAL_yyy=grid%RU_REAL_xxx
+            grid%RU_IMAG_yyy=grid%RU_IMAG_xxx
+            grid%RV_REAL_yyy=grid%RV_REAL_xxx
+            grid%RV_IMAG_yyy=grid%RV_IMAG_xxx
+            grid%RT_REAL_yyy=grid%RT_REAL_xxx
+            grid%RT_IMAG_yyy=grid%RT_IMAG_xxx
+#endif
+            call do_fftback_along_y(                            & 
+                              grid%RU_REAL_yyy,grid%RU_IMAG_yyy,& 
+                              grid%RV_REAL_yyy,grid%RV_IMAG_yyy,& 
+                              grid%RT_REAL_yyy,grid%RT_IMAG_yyy,& 
+                              ids, ide, jds, jde, kds, kde,     &
+                              ims, ime, jms, jme, kms, kme,     &
+                              ips, ipe, jps, jpe, kps, kpe,     &
+                              imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                              ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                              imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                              ipsy,ipey,jpsy,jpey,kpsy,kpey,    &
+                              k_start , k_end                   &
+                             )
+#ifdef DM_PARALLEL
+!          Reassemble fields from longitude bands into 3D arrays
+#include "XPOSE_STOCH_BACK_U_REAL_y2z.inc"
+#include "XPOSE_STOCH_BACK_U_IMAG_y2z.inc"
+#include "XPOSE_STOCH_BACK_V_REAL_y2z.inc"
+#include "XPOSE_STOCH_BACK_V_IMAG_y2z.inc"
+#include "XPOSE_STOCH_BACK_T_REAL_y2z.inc"
+#include "XPOSE_STOCH_BACK_T_IMAG_y2z.inc"
+#else
+            grid%ru_tendf_stoch=grid%RU_REAL_yyy
+            grid%RU_IMAG=grid%RU_IMAG_yyy
+            grid%rv_tendf_stoch=grid%RV_REAL_yyy
+            grid%RV_IMAG=grid%RV_IMAG_yyy
+            grid%rt_tendf_stoch=grid%RT_REAL_yyy
+            grid%RT_IMAG=grid%RT_IMAG_yyy
+#endif
+ 
+             !$OMP PARALLEL DO   &
+             !$OMP PRIVATE ( ij )
+             DO ij = 1 , grid%num_tiles
+               CALL wrf_debug ( 200 , ' call update_stoch_ten' )
+               CALL update_stoch_ten(ru_tendf, rv_tendf, t_tendf,           &
+                              grid%ru_tendf_stoch,                          &
+                              grid%rv_tendf_stoch,                          &
+                              grid%rt_tendf_stoch,                          &
+                              ids, ide, jds, jde, kds, kde,                 &
+                              ims, ime, jms, jme, kms, kme,                 &
+                              grid%i_start(ij), grid%i_end(ij),             &
+                              grid%j_start(ij), grid%j_end(ij),             &
+                              k_start, k_end,                               &
+                              grid%dt)
+
+             ENDDO
+             !$OMP END PARALLEL DO
+         ELSE ! (grid%id .NE> 1)
+
+          !$OMP PARALLEL DO   &
+          !$OMP PRIVATE ( ij )
+          DO ij = 1 , grid%num_tiles
+               CALL wrf_debug ( 200 , ' call update_stoch_ten_subdomains' )
+                CALL update_stoch_ten_subdomains(ru_tendf, rv_tendf, t_tendf,&
+                               grid%ru_tendf_stoch,                          &
+                               grid%rv_tendf_stoch,                          &
+                               grid%rt_tendf_stoch,                          &
+                               ids, ide, jds, jde, kds, kde,                 &
+                               ims, ime, jms, jme, kms, kme,                 &
+                               grid%i_start(ij), grid%i_end(ij),             &
+                               grid%j_start(ij), grid%j_end(ij),             &
+                               k_start, k_end,                               & 
+                               grid%dt                                       )
+
+           ENDDO
+           !$OMP END PARALLEL DO
+         END IF
+
+   END SELECT stoch_force_select
+
 BENCH_START(tl_cal_phy_tend)
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
@@ -142,15 +314,18 @@ BENCH_START(tl_cal_phy_tend)
 
         CALL wrf_debug ( 200 , ' call g_calculate_phy_tend' )
 !!!!! REPLACE WITH g_calculate_phy_tend WHEN CONSTRUCTING TL OF PHYSICS. Ning Pan
-        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy,            &
-                     grid%rthraten,                                         &
-                     grid%rublten,grid%rvblten,grid%rthblten,                         &
-                     grid%rqvblten,grid%rqcblten,grid%rqiblten,                       &
-                     grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten,              &
-                     grid%rqicuten,grid%rqscuten,                                &
-                     grid%rucuten, grid%rvcuten,                                 &
-                     grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,        &
-                     grid%RMUNDGDTEN,                                       &
+        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy, &
+                     grid%rthraten,                                    &
+                     grid%rublten,grid%rvblten,grid%rthblten,          &
+                     grid%rqvblten,grid%rqcblten,grid%rqiblten,        &
+                     grid%rucuten,grid%rvcuten,grid%rthcuten,          &
+                     grid%rqvcuten,grid%rqccuten,grid%rqrcuten,        &
+                     grid%rqicuten,grid%rqscuten,                      &
+                     grid%rushten,grid%rvshten,grid%rthshten,          &
+                     grid%rqvshten,grid%rqcshten,grid%rqrshten,        &
+                     grid%rqishten,grid%rqsshten,grid%rqgshten,        &
+                     grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
+                     grid%RMUNDGDTEN,                                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      grid%i_start(ij), min(grid%i_end(ij),ide-1),      &
@@ -329,7 +504,8 @@ BENCH_START(tl_phy_bc_tim)
                       grid%xkhh,grid%g_xkhh,grid%xkhv,grid%g_xkhv, &
                       grid%tke_2,grid%g_tke_2,                     &
                       grid%rublten,grid%g_rublten, grid%rvblten,grid%g_rvblten, &
-                      grid%rucuten,grid%g_rucuten, grid%rvcuten,grid%g_rvcuten, & ! Tiedtke and NSAS
+                      grid%rucuten,grid%g_rucuten, grid%rvcuten,grid%g_rvcuten, & 
+                      grid%rushten,grid%g_rushten, grid%rvshten,grid%g_rvshten, &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &
@@ -364,6 +540,14 @@ ENDIF
 ! rublten                  x
 ! rvblten                             x
 !
+! (for Cumulus)
+! rucuten                  x
+! rvcuten                             x
+!
+! (for Shallow Cumulus)
+! rushten                  x
+! rvshten                             x
+!
 ! (for FDDA)
 ! rundgdten     x
 ! rvndgdten     x
@@ -390,8 +574,12 @@ ENDIF
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
        ENDIF
+       IF ( config_flags%shcu_physics .gt. 1 ) THEN
+#      include "HALO_EM_PHYS_SHCU.inc"
+       ENDIF
        IF ( config_flags%cu_physics == SASSCHEME      .or.   &
             config_flags%cu_physics == TIEDTKESCHEME  .or.   &
+            config_flags%cu_physics == CAMZMSCHEME    .or.   &
             config_flags%cu_physics == NSASSCHEME ) THEN
 #      include "HALO_EM_PHYS_CU.inc"
        ENDIF
@@ -446,16 +634,19 @@ BENCH_START(tl_update_phy_ten_tim)
 !!!!! REPLACE WITH g_update_phy_ten WHEN CONSTRUCTING TL OF PHYSICS. Ning Pan
          CALL update_phy_ten(ph_tendf,t_tendf, ru_tendf, rv_tendf,moist_tend ,&
                            scalar_tend, mu_tendf,                           &
-                           grid%rthraten,grid%rthblten,grid%rthcuten,       &
-                           grid%rublten,grid%rvblten,                       &
+                           grid%rthraten,grid%rthblten,grid%rthcuten,grid%rthshten, &
+                           grid%rublten,grid%rucuten,grid%rushten,          &
+                           grid%rvblten,grid%rvcuten,grid%rvshten,          &
                            grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
                            grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
-                           grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
+                           grid%rqicuten,grid%rqscuten,                     &
+                           grid%rqvshten,grid%rqcshten,grid%rqrshten,       &
+                           grid%rqishten,grid%rqsshten,grid%rqgshten,       &
+                           grid%RUNDGDTEN,                                  &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
-                           grid%RUCUTEN, grid%RVCUTEN,                      &  ! Tiedtke and NSAS
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
-                           num_moist,num_scalar,config_flags,rk_step,          &
+                           num_moist,num_scalar,config_flags,rk_step,       &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &
                            ims, ime, jms, jme, kms, kme,                    &

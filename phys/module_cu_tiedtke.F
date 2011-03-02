@@ -24,8 +24,8 @@ MODULE module_cu_tiedtke
 !-------------------------------------------------------------    
 !  Ends the parameters set
 !++++++++++++++++++++++++++++
-     REAL,PRIVATE :: G
-     REAL :: API,A,EOMEGA,RD,RV,CPD,RCPD,VTMPC1,VTMPC2,CPV,   &
+     REAL,PRIVATE :: G,CPV
+     REAL :: API,A,EOMEGA,RD,RV,CPD,RCPD,VTMPC1,VTMPC2,   &
              RHOH2O,ALV,ALS,ALF,CLW,TMELT,SOLC,STBO,DAYL,YEARL, &
              C1ES,C2ES,C3LES,C3IES,C4LES,C4IES,C5LES,C5IES,ZRG 
     

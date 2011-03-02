@@ -24,6 +24,7 @@
 
    USE module_physics_init
    USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_init
+   USE module_stoch, ONLY : SETUP_STOCH,rand_seed, update_stoch
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -77,6 +78,8 @@
    REAL :: MPDT
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
 #ifndef WRF_CHEM
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
 #endif
@@ -117,6 +120,36 @@
          grid%id,ide,ids,config_flags%parent_grid_ratio,jde,jds,config_flags%parent_grid_ratio
       CALL wrf_error_fatal ( message )
    END IF
+
+!   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
+
+   IF ( (grid%id.eq.1) .AND. ( .NOT. grid%did_stoch ) ) THEN
+   grid%did_stoch = .TRUE.
+   stoch_force_select: SELECT CASE(config_flags%stoch_force_opt)
+
+   CASE (STOCH_BACKSCATTER)
+
+     IF ( wrf_dm_on_monitor () ) THEN
+       CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
+     ENDIF
+#ifdef DM_PARALLEL
+     CALL wrf_dm_bcast_bytes ( grid%SEED1, IWORDSIZE )
+     CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
+#endif
+
+     call SETUP_STOCH(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
+                      grid%SPT_AMP,grid%SPSTREAM_AMP,                    &
+                      grid%stoch_vertstruc_opt,                          & 
+                      grid%SEED1,grid%SEED2,grid%time_step,              &
+                      grid%DX,grid%DY,                                   &
+                      grid%TOT_BACKSCAT_PSI,grid%TOT_BACKSCAT_T,         &
+                      ids, ide, jds, jde, kds, kde,                      &
+                      ims, ime, jms, jme, kms, kme,                      &
+                      its, ite, jts, jte, kts, kte                       )
+    
+    END SELECT stoch_force_select
+    END IF
+!   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
 
    IF ( config_flags%polar ) THEN
 !write(0,*)__FILE__,__LINE__,' clat ',ips,ipe,jps,jpe
@@ -625,8 +658,12 @@
 
      CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
-                      grid%rthcuten, grid%rqvcuten, grid%rqrcuten,           &
-                      grid%rqccuten, grid%rqscuten, grid%rqicuten,           &
+                      grid%rucuten, grid%rvcuten, grid%rthcuten,             &
+                      grid%rqvcuten, grid%rqrcuten, grid%rqccuten,           &
+                      grid%rqscuten, grid%rqicuten,                          &
+                      grid%rushten, grid%rvshten, grid%rthshten,             &
+                      grid%rqvshten, grid%rqrshten, grid%rqcshten,           &
+                      grid%rqsshten, grid%rqishten, grid%rqgshten,           &
                       grid%rublten,grid%rvblten,grid%rthblten,               &
                       grid%rqvblten,grid%rqcblten,grid%rqiblten,             &
                       grid%rthraten,grid%rthratenlw,grid%rthratensw,         &
@@ -652,7 +689,6 @@
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_myj,    &
                       grid%tke_pbl,                                                                  &
-                      grid%rucuten,  grid%rvcuten,                                                   &
                       grid%exch_h,grid%thc,grid%snowc,grid%mavail,grid%hfx,grid%qfx,grid%rainbl, &
                       grid%tslb,grid%zs,grid%dzs,config_flags%num_soil_layers,grid%warm_rain,  &
                       grid%adv_moist_cond,                         &

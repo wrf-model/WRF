@@ -6,6 +6,21 @@ RM      =       rm -f
 
 
 MODULES = \
+	module_cam_shr_kind_mod.o \
+	module_cam_support.o \
+	module_cam_shr_const_mod.o \
+	module_cam_physconst.o \
+	module_cam_cldwat.o \
+	module_cam_wv_saturation.o \
+	module_cam_esinti.o \
+	module_cam_gffgch.o \
+	module_cam_error_function.o \
+	module_cam_constituents.o \
+	module_cam_trb_mtn_stress.o \
+	module_cam_molec_diff.o \
+	module_cam_upper_bc.o \
+	module_cam_bl_diffusion_solver.o \
+	module_cam_bl_eddy_diff.o \
 	module_bl_ysu.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
@@ -16,6 +31,11 @@ MODULES = \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
+	module_bl_camuwpbl_driver.o \
+	module_cu_camuwshcu_driver.o \
+	module_cu_camuwshcu.o \
+	module_cu_camzm_driver.o \
+	module_cu_camzm.o \
 	module_bl_temf.o \
 	module_cu_g3.o \
 	module_cu_kf.o  \
@@ -83,6 +103,7 @@ MODULES = \
 	module_pbl_driver.o \
 	module_data_gocart_dust.o \
 	module_cumulus_driver.o \
+	module_shallowcu_driver.o \
 	module_microphysics_driver.o \
 	module_microphysics_zero_out.o \
 	module_mixactivate.o \
@@ -146,6 +167,38 @@ module_bl_gfs.o: module_gfs_machine.o \
 
 module_bl_mynn.o: ../share/module_model_constants.o
 
+module_cam_upper_bc.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o
+
+module_cam_constituents.o: module_cam_shr_kind_mod.o \
+		module_cam_physconst.o \
+		module_cam_support.o \
+		../frame/module_wrf_error.o 
+
+module_cam_trb_mtn_stress.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o
+
+module_cam_molec_diff.o: module_cam_support.o \
+		module_cam_constituents.o \
+		module_cam_upper_bc.o 
+
+module_cam_bl_diffusion_solver.o: module_cam_support.o 
+
+module_cam_bl_eddy_diff.o:module_cam_bl_diffusion_solver.o \
+		module_cam_support.o 
+
+module_bl_camuwpbl_driver.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_constituents.o \
+		module_cam_bl_diffusion_solver.o\
+		module_cam_physconst.o \
+		module_cam_trb_mtn_stress.o \
+		module_cam_bl_eddy_diff.o \
+		module_cam_wv_saturation.o \
+		module_cam_molec_diff.o \
+		../share/module_model_constants.o \
+		module_cam_esinti.o 
+
 module_sf_mynn.o: module_sf_sfclay.o module_bl_mynn.o \
                 ../share/module_model_constants.o
 
@@ -155,6 +208,59 @@ module_sf_gfdl.o : \
 		module_gfs_physcons.o
 
 module_cu_bmj.o: ../share/module_model_constants.o
+
+module_cu_camuwshcu_driver.o: module_cam_support.o \
+                module_cam_physconst.o \
+                module_cam_wv_saturation.o \
+                module_cu_camuwshcu.o
+
+module_cu_camuwshcu.o: module_cam_support.o \
+                module_cam_constituents.o \
+                module_cam_error_function.o \
+                module_cam_esinti.o \
+                module_cam_support.o \
+                module_cam_physconst.o \
+                module_bl_camuwpbl_driver.o
+
+module_cu_camzm_driver.o: ../share/module_model_constants.o \
+                module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_physconst.o \
+                module_bl_camuwpbl_driver.o \
+                module_cu_camzm.o
+
+module_cu_camzm.o: module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_physconst.o \
+                module_cam_wv_saturation.o \
+                module_cam_cldwat.o
+
+module_cam_error_function.o: 
+
+module_cam_cldwat.o: module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_wv_saturation.o \
+                module_cam_physconst.o
+
+module_cam_esinti.o: module_cam_shr_kind_mod.o \
+                module_cam_wv_saturation.o
+
+module_cam_wv_saturation.o: module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_gffgch.o
+
+module_cam_gffgch.o: module_cam_shr_kind_mod.o \
+                module_cam_support.o \
+                module_cam_physconst.o
+
+module_cam_physconst.o: module_cam_shr_kind_mod.o \
+                module_cam_shr_const_mod.o
+
+module_cam_shr_const_mod.o: module_cam_shr_kind_mod.o
+
+module_cam_support.o: module_cam_shr_kind_mod.o
+
+module_cam_shr_kind_mod.o:
 
 module_cu_kf.o:  ../frame/module_wrf_error.o
 
@@ -270,6 +376,7 @@ module_physics_init.o : \
 		module_bl_mynn.o                \
 		module_bl_myjurb.o              \
 		module_bl_boulac.o              \
+		module_bl_camuwpbl_driver.o     \
 		module_bl_temf.o              \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
@@ -278,6 +385,8 @@ module_physics_init.o : \
 		module_cu_gd.o			\
 		module_cu_nsas.o		\
 		module_cu_sas.o			\
+		module_cu_camzm_driver.o        \
+		module_cu_camuwshcu.o		\
 		module_mp_sbu_ylin.o		\
 		module_mp_wsm3.o		\
 		module_mp_wsm5.o		\
@@ -294,6 +403,8 @@ module_physics_init.o : \
                 module_mp_milbrandt2mom.o     \
 		module_mp_wdm5.o		\
 		module_mp_wdm6.o		\
+		module_cam_physconst.o		\
+		module_cam_shr_kind_mod.o	\
 		module_wind_fitch.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -320,15 +431,20 @@ module_microphysics_driver.o: \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
 
+module_shallowcu_driver.o: \
+		module_cu_camuwshcu_driver.o \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o
 
 module_cumulus_driver.o: \
-                module_cu_kf.o \
-	        module_cu_g3.o \
+		module_cu_kf.o \
+		module_cu_g3.o \
 		module_cu_kfeta.o \
 		module_cu_bmj.o \
 		module_cu_gd.o \
 		module_cu_nsas.o \
 		module_cu_sas.o \
+		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -346,6 +462,7 @@ module_pbl_driver.o:  \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
                 module_bl_boulac.o \
+		module_bl_camuwpbl_driver.o \
 		module_bl_gfs.o \
 		module_bl_mynn.o \
 		module_bl_gwdo.o \

@@ -20,7 +20,7 @@
 # Note that it is all right to more than one dimension name for, say, the
 # x dimension.  However, the Order and Coord-axis relationship must be
 # consistent throughout.
-# 
+#
 # Note: these entries do not enforce storage order on a particular field.
 # That is determined by the dimension strings for each field. But it does
 # relate the dimspec to the internal data structures that the driver uses
@@ -45,20 +45,20 @@ include registry.dimspec
 ################################################################################
 ################################################################################
 
-#state    real   floob       ikjb     dyn_em      1         -    
-#state    real   floob_x     ikjx     dyn_em      1         -     
-#state    real   floob_y     ikjy     dyn_em      1         - 
+#state    real   floob       ikjb     dyn_em      1         -
+#state    real   floob_x     ikjx     dyn_em      1         -
+#state    real   floob_y     ikjy     dyn_em      1         -
 #xpose FLOOB dyn_em floob,floob_x,floob_y
 
 #state real xxx ijk misc 2 - h6ud
 #halo  HALO_FLOOB dyn_em  4:xxx_2
 
-# Lines that start with the word 'state' form a table that is                                           
-# used by the script use_registry to generate module_state_descript.F                                           
-# and other files.  Also see documentation in use_registry.                                             
+# Lines that start with the word 'state' form a table that is
+# used by the script use_registry to generate module_state_descript.F
+# and other files.  Also see documentation in use_registry.
 #                                               
-# table entries are of the form                                         
-#<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
+# table entries are of the form
+#<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
 #
 
 # It is required that LU_INDEX appears before any variable that is
@@ -354,7 +354,7 @@ state   real    zetatop        -        misc      -         -     irh       "zet
 state   real    cf1            -        misc      -         -     irh       "cf1"                   "2nd order extrapolation constant"         ""      
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
-state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
+state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
@@ -363,11 +363,11 @@ state   real    julian         -        -          -         -     -          "j
 
 
 # input file descriptor for lbcs on parent domain                                               
-state   integer lbc_fid        -        -          -         -     -         "lbc_fid"               ""         ""      
+state   integer lbc_fid        -        -          -         -     -         "lbc_fid"               ""         ""
 # indicates if tiling has been computed                                         
-state   logical tiled          -        -          -         -     -         "tiled"                 ""         ""      
+state   logical tiled          -        -          -         -     -         "tiled"                 ""         ""
 # indicates if patches have been computed                                               
-state   logical patched        -        -          -         -     -         "patched"               ""         ""      
+state   logical patched        -        -          -         -     -         "patched"               ""         ""
 # indicates whether to read input from file or generate                                         
 #state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
 # indicates whether to recompute mu                                                             
@@ -390,7 +390,7 @@ state    real    vc_j                 -       misc     -     -    r
 # Moist Scalars
 #                                               
 # The first line ensures that there will be identifiers named moist and                                         
-# moist_tend even if there are not any moist scalars (so the essentially                                                
+# moist_tend even if there are not any moist scalars (so the essentially
 # dry code will will still link properly)                                               
 #                                               
 state   real    -              ikjftb   moist       1         -     -    -
@@ -432,6 +432,8 @@ include registry.les
 
 #-------------------
 
+# CAM physics (UW PBL, UW SHCU, ZM CU)
+include registry.cam
 
 # Chem Scalars
 state   real    -              ikjftb   chem        1         -     -    -                                       
@@ -760,7 +762,7 @@ i1      real   BR             ij     misc        1         -     -         "BR" 
 # MYJ PBL variables
 state    real   tke_myj        ikj     misc        1         -      rh       "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"      "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -     h        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
-state    real   EXCH_H          ikj     misc        1         -     r          "EXCH_H"               "EXCHANGE COEFFICIENTS "
+state    real   EXCH_H          ikj     misc        1         -     r          "EXCH_H"               "SCALAR EXCHANGE COEFFICIENTS "
 state    real   EXCH_M          ikj     misc        1         -     r          "EXCH_M"               "EXCHANGE COEFFICIENTS "
 state    real  CT              ij      misc        1         -      r        "CT"                    "COUNTERGRADIENT TERM"    "K"
 state   real   THZ0             ij     misc        1         -      r        "THZ0"                  "POTENTIAL TEMPERATURE AT ZNT"                 "K"
@@ -854,7 +856,7 @@ state    real    HTOPR           ij     misc        1         -      r        "H
 state    real    HBOTR           ij     misc        1         -      r        "HBOTR"                "BOT OF CONVECTION LEVEL FOR RADIATION"    ""
 state    real    CUTOP           ij     misc        1         -      r        "CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
 state    real    CUBOT           ij     misc        1         -      r        "CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
-state    REAL      CUPPT         ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
+state    REAL    CUPPT           ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
 state    real   rswtoa           ij     misc        1         -      -
 state    real   rlwtoa           ij     misc        1         -      -
 state    real   czmean           ij     misc        1         -      -
@@ -893,11 +895,11 @@ state  real   OCPHO    idjf aerosolc    2    -   -     "OCPHO"        "OCPHO aer
 state  real   BCPHO    idjf aerosolc    2    -   -     "BCPHO"        "BCPHO aerosol concentration"
 state  real   OCPHI    idjf aerosolc    2    -   -     "OCPHI"        "OCPHI aerosol concentration"
 state  real   BCPHI    idjf aerosolc    2    -   -     "BCPHI"        "BCPHI aerosol concentration"
-state  real   BG       idjf aerosolc    2    -   -     "BG"        "BG aerosol concentration"
-state  real   VOLC     idjf aerosolc    2    -   -     "VOLC"        "VOLC aerosol concentration"
-state  real   m_hybi    d     misc      1    -   -     "m_hybi"         "MATCH hybi"
+state  real   BG       idjf aerosolc    2    -   -     "BG"           "BG aerosol concentration"
+state  real   VOLC     idjf aerosolc    2    -   -     "VOLC"         "VOLC aerosol concentration"
+state  real   m_hybi    d     misc      1    -   -     "m_hybi"       "MATCH hybi"
 
-# new eta microphpysics State Variables
+# new eta microphysics State Variables
 state   real    F_ICE_PHY      ikj     misc         1         -      rhdu     "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state   real    F_RAIN_PHY     ikj     misc         1         -      rhdu     "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
 state   real    F_RIMEF_PHY    ikj     misc         1         -      rhdu     "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
@@ -967,24 +969,37 @@ state    real  SSWUP           ij      misc        1         -      h         "S
 
 # Other physics variables
 
-state    real  RUCUTEN         ikj      misc        1         -      rh       "RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
-state    real  RVCUTEN         ikj      misc        1         -      rh       "RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
-state    real  RTHCUTEN        ikj      misc        1         -      rh       "RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
-state    real  RQVCUTEN        ikj      misc        1         -      rh       "RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "COUPLED X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+state    real  RVSHTEN         ikj      misc        1         -      r        "RVSHTEN"               "COUPLED Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+state    real  RTHSHTEN        ikj      misc        1         -      r        "RTHSHTEN"              "COUPLED THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "Pa K s-1"
+state    real  RQVSHTEN        ikj      misc        1         -      r        "RQVSHTEN"              "COUPLED Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RQRSHTEN        ikj      misc        1         -      r        "RQRSHTEN"              "COUPLED Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RQCSHTEN        ikj      misc        1         -      r        "RQCSHTEN"              "COUPLED Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+
+state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  RTHCUTEN        ikj      misc        1         -      r        "RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
+state    real  RQVCUTEN        ikj      misc        1         -      r        "RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  RQRCUTEN        ikj      misc        1         -      r        "RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  RQCCUTEN        ikj      misc        1         -      r        "RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  RQSCUTEN        ikj      misc        1         -      r        "RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  RQICUTEN        ikj      misc        1         -      r        "RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  W0AVG           ikj      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
                                                 
-state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
-state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"
+state    real  RAINSH           ij      misc        1         -      rhdu     "RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
+state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"
 state  integer I_RAINC          ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINC"            "BUCKET FOR RAINC"                    ""
 state  integer I_RAINNC         ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINNC"           "BUCKET FOR RAINNC"                   ""
 state    real  PRATEC           ij      misc        1         -      r        "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
-state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
+state    real  PRATESH          ij      misc        1         -      r        "PRATESH"               "PRECIP RATE FROM SHALLOW CUMULUS SCHEME"                 "mm s-1"
+state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real  RAINSHV          ij      misc        1         -      r        "RAINSHV"               "TIME-STEP SHALLOW CUMULUS PRECIPITATION"                 "mm"
 state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
-state    real  RAINBL           ij      misc        1         -      r        "RAINBL"                "PBL TIME-STEP TOTAL PRECIPITATION"                       "mm"      
+state    real  RAINBL           ij      misc        1         -      r        "RAINBL"                "PBL TIME-STEP TOTAL PRECIPITATION"                       "mm"
 state    real  SNOWNC           ij      misc        1         -      rhdu     "SNOWNC"                "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"               "mm"
 state    real  GRAUPELNC        ij      misc        1         -      rhdu     "GRAUPELNC"             "ACCUMULATED TOTAL GRID SCALE GRAUPEL"                    "mm"
 state    real  HAILNC           ij      misc        1         -      rhdu     "HAILNC"                "ACCUMULATED TOTAL GRID SCALE HAIL"                       "mm"
@@ -992,7 +1007,7 @@ state    real  SNOWNCV          ij      misc        1         -      r        "S
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
 state    real    refl_10cm      ikj     dyn_em      1         -     hdu     "refl_10cm" "Radar reflectivity (lamda = 10 cm)"  "dBZ"
-state    real  NCA              ij      misc        1         -      r        "NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""      
+state    real  NCA              ij      misc        1         -      r        "NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
 state    real  apr_gr           ij      misc        1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
@@ -1037,6 +1052,7 @@ state    real  RTHRATEN        ikj      misc        1         -      rd       "R
 state    real  RTHRATENLW      ikj      misc        1         -      r        "RTHRATLW"              "UNCOUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"                                       ""
+state    real  CLDFRA_OLD      ikj      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
 
 state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
@@ -1491,8 +1507,9 @@ rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0     
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
-rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
-rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
+rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
+rconfig   integer cu_physics              namelist,physics      max_domains    0       rh   "cu_physics"    ""      ""
+rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
 rconfig   integer     cu_diag             namelist,physics      max_domains    0       rh       "cu_diag"            " additional t-averaged stuff for cuphys"      ""
 rconfig   integer     kfeta_trigger       namelist,physics	1              0       rh       "KFETA Trigger function"    ""    ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
@@ -1900,18 +1917,23 @@ package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke;st
 package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke;state:tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
+package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,qpert2d,wpert2d,tke_myj
 package   mrfscheme      bl_pbl_physics==99          -             -
-package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
+package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qlup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
+package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,RAINCV_A,RAINCV_B,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -
+
+package   g3shcuscheme   shcu_physics==1             -             -
+package   camuwshcuscheme shcu_physics==2            -             state:cmfmc,cmfmc2,qtflx_cu,slflx_cu,uflx_cu,vflx_cu,qtten_cu,slten_cu,uten_cu,vten_cu,qvten_cu,qlten_cu,qiten_cu,cbmf_cu,ufrcinvbase_cu,ufrclcl_cu,winvbase_cu,wlcl_cu,plcl_cu,pinv_cu,plfc_cu,pbup_cu,ppen_cu,qtsrc_cu,thlsrc_cu,thvlsrc_cu,emkfbup_cu,cin_cu,cinlcl_cu,cbmflimit_cu,tkeavg_cu,zinv_cu,rcwp_cu,rlwp_cu,riwp_cu,tophgt_cu,wu_cu,ufrc_cu,qtu_cu,thlu_cu,thvu_cu,uu_cu,vu_cu,qtu_emf_cu,thlu_emf_cu,uu_emf_cu,vu_emf_cu,umf_cu,uemf_cu,qcu_cu,qlu_cu,qiu_cu,cufrc_cu,fer_cu,fdr_cu,dwten_cu,diten_cu,qrten_cu,qsten_cu,flxrain_cu,flxsnow_cu,ntraprd_cu,ntsnprd_cu,excessu_cu,excessu0_cu,xc_cu,aquad_cu,bquad_cu,cquad_cu,bogbot_cu,bogtop_cu,exit_uwcu_cu,exit_conden_cu,exit_klclmkx_cu,exit_klfcmkx_cu,exit_ufrc_cu,exit_wtw_cu,exit_drycore_cu,exit_wu_cu,exit_cufliter_cu,exit_kinv1_cu,exit_rei_cu,limit_shcu_cu,limit_negcon_cu,limit_ufrc_cu,limit_ppen_cu,limit_emf_cu,limit_cinlcl_cu,limit_cin_cu,limit_cbmf_cu,limit_rei_cu,ind_delcin_cu,evapcsh,cmfsl,cmflq,cldfrash,cush,icwmrsh,snowsh,rprdsh,rliq2
 
 package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
 package   psusfddagd     grid_sfdda==1               -             state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new
@@ -1990,6 +2012,7 @@ halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten
+halo      HALO_EM_PHYS_SHCU dyn_em       4:rushten,rvshten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
 halo      HALO_EM_FDDA_SFC dyn_em 48:z,z_at_w,pblh,regime,znt,odis_ndg_old,odis_ndg_new
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
@@ -2052,7 +2075,7 @@ halo      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
 period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
 halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
-                                       moist,chem,TRACER,scalar
+                                       moist,chem,tracer,scalar
 period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
                                        moist,chem,tracer,scalar
 
@@ -2205,3 +2228,4 @@ include registry.avgflx
 #ifdef WRFPLUS=1
 include registry.wrfplus
 #endif
+include registry.stoch

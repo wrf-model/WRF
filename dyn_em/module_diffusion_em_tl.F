@@ -2405,7 +2405,8 @@
  SUBROUTINE g_phy_bc(config_flags,div,g_div,defor11,g_defor11,defor22, &
  g_defor22,defor33,g_defor33,defor12,g_defor12,defor13,g_defor13,defor23, &
  g_defor23,xkmh,g_xkmh,xkmv,g_xkmv,xkhh,g_xkhh,xkhv,g_xkhv,tke, &
- g_tke,RUBLTEN,g_RUBLTEN,RVBLTEN,g_RVBLTEN,RUCUTEN,g_RUCUTEN,RVCUTEN,g_RVCUTEN,ids,ide,jds,jde,kds,kde,ims,ime, &
+ g_tke,RUBLTEN,g_RUBLTEN,RVBLTEN,g_RVBLTEN,RUCUTEN,g_RUCUTEN,RVCUTEN,g_RVCUTEN,&
+ RUSHTEN,g_RUSHTEN,RVSHTEN,g_RVSHTEN,ids,ide,jds,jde,kds,kde,ims,ime, &
  jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,jte,kts,kte)
 
  IMPLICIT NONE
@@ -2415,7 +2416,7 @@
  INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe, &
  its,ite,jts,jte,kts,kte
  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RUBLTEN,g_RUBLTEN,RVBLTEN,g_RVBLTEN, &
- RUCUTEN,g_RUCUTEN,RVCUTEN,g_RVCUTEN, &
+ RUCUTEN,g_RUCUTEN,RVCUTEN,g_RVCUTEN, RUSHTEN,g_RUSHTEN,RVSHTEN,g_RVSHTEN, &
  defor11,g_defor11,defor22,g_defor22,defor33,g_defor33,defor12,g_defor12, &
  defor13,g_defor13,defor23,g_defor23,xkmh,g_xkmh,xkmv,g_xkmv,xkhh, &
  g_xkhh,xkhv,g_xkhv,tke,g_tke,div,g_div
@@ -2430,7 +2431,7 @@
  ENDIF
 
 !Tiedtke ZCX&YQW
- IF(config_flags%cu_physics == TIEDTKESCHEME) THEN
+ IF(config_flags%cu_physics .GT. 0) THEN
 
  CALL g_set_physical_bc3d(RUCUTEN,g_RUCUTEN,'t',config_flags,ids,ide,jds,jde, &
  kds,kde,ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,jte,kts,kte)
@@ -2438,6 +2439,22 @@
  CALL g_set_physical_bc3d(RVCUTEN,g_RVCUTEN,'t',config_flags,ids,ide,jds,jde, &
  kds,kde,ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,jte,kts,kte)
  ENDIF
+
+   IF(config_flags%shcu_physics .GT. 0) THEN
+
+        CALL g_set_physical_bc3d( RUSHTEN, g_RUSHTEN,'t', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+        CALL g_set_physical_bc3d( RVSHTEN, g_RVSHTEN,'t', config_flags,              &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
+   ENDIF
 
  CALL g_set_physical_bc3d(xkmh,g_xkmh,'t',config_flags,ids,ide,jds,jde,kds,kde, &
  ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,jte,kts,kte)

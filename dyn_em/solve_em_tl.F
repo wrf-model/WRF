@@ -878,12 +878,15 @@ BENCH_END(tl_init_zero_tend_tim)
                         grid%rthraten,                                        &
                         grid%rthblten, grid%rublten, grid%rvblten,            &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,          &
-                        grid%rthcuten, grid%rqvcuten, grid%rqccuten,          &
-                        grid%rqrcuten, grid%rqicuten, grid%rqscuten,          &
-                        grid%rthften,  grid%rqvften,                          &
-                        grid%rucuten,  grid%rvcuten,                          &
-                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,      &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,     &
+                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
+                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
+                        grid%rqicuten, grid%rqscuten,                    &
+                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
+                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
+                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
+                        grid%rthften,  grid%rqvften,                     &
+                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &
@@ -943,6 +946,10 @@ if (config_flags % sw_call_first_rk_step_part2) then
                , ids, ide, jds, jde, kds, kde     &
                , ims, ime, jms, jme, kms, kme     &
                , ips, ipe, jps, jpe, kps, kpe     &
+               , imsx, imex, jmsx, jmex, kmsx, kmex    &
+               , ipsx, ipex, jpsx, jpex, kpsx, kpex    &
+               , imsy, imey, jmsy, jmey, kmsy, kmey    &
+               , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                , k_start , k_end                  &
               )
 
@@ -4968,8 +4975,9 @@ if (config_flags % sw_call_advance_ppt) then
 
 !!!!! REPLACE WITH g_advance_ppt WHEN CODING TL OF PHYSICS. Ning Pan
      CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
-                      grid%rqicuten,grid%rqscuten,grid%rainc,grid%raincv,grid%pratec, grid%nca,    &
-                      grid%htop,grid%hbot,grid%cutop,grid%cubot,                 &
+                      grid%rqicuten,grid%rqscuten,           &
+                      grid%rainc,grid%raincv,grid%rainsh,grid%pratec,grid%pratesh, &
+                      grid%nca,grid%htop,grid%hbot,grid%cutop,grid%cubot,  &
                       grid%cuppt, grid%dt, config_flags,                   &
                       ids,ide, jds,jde, kds,kde,             &
                       ims,ime, jms,jme, kms,kme,             &

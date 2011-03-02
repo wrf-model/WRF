@@ -14391,9 +14391,9 @@ END SUBROUTINE a_calculate_full
    a_z_at_w,dz8w,a_dz8w,p_hyd,a_p_hyd,p_hyd_w,a_p_hyd_w,fzm,fzp,znw,p_top, &
 ! Revised by Ning Pan, 2010-08-30
 !   a_p_top,RTHRATEN,RTHBLTEN,RUBLTEN,RVBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,RTHCUTEN, &
-   RTHRATEN,RTHBLTEN,RUBLTEN,RVBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,RTHCUTEN, &
-   RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,RTHFTEN,RQVFTEN,RUCUTEN,RVCUTEN,RUNDGDTEN,RVNDGDTEN, &
-   RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme, &
+   RTHRATEN,RTHBLTEN,RUBLTEN,RVBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,RUCUTEN,RVCUTEN,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN, &
+   RQICUTEN,RQSCUTEN,RUSHTEN,RVSHTEN,RTHSHTEN,RQVSHTEN,RQCSHTEN,RQRSHTEN,RQISHTEN,RQSSHTEN,RQGSHTEN,RTHFTEN,RQVFTEN, &
+   RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme, &
    kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART I: DECLARATION OF VARIABLES
@@ -14417,16 +14417,47 @@ END SUBROUTINE a_calculate_full
    a_ph,phb,t,a_t
    REAL,DIMENSION(kms:kme) :: fzm,fzp
    REAL,DIMENSION(kms:kme) :: znw
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RTHRATEN
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN, &
-   RQICUTEN,RQSCUTEN
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RUCUTEN,RVCUTEN
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-   RQCBLTEN,RQIBLTEN
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RTHFTEN,RQVFTEN
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN, &
-   RQVNDGDTEN
-   REAL,DIMENSION(ims:ime,jms:jme) :: RMUNDGDTEN
+   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ) :: RTHRATEN
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                     &
+                          ::                                RUCUTEN, &
+                                                            RVCUTEN, &
+                                                           RTHCUTEN, &
+                                                           RQVCUTEN, &
+                                                           RQCCUTEN, &
+                                                           RQRCUTEN, &
+                                                           RQICUTEN, &
+                                                           RQSCUTEN, &
+                                                            RUSHTEN, &
+                                                            RVSHTEN, &
+                                                           RTHSHTEN, &
+                                                           RQVSHTEN, &
+                                                           RQCSHTEN, &
+                                                           RQRSHTEN, &
+                                                           RQISHTEN, &
+                                                           RQSSHTEN, &
+                                                           RQGSHTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                     &
+                          ::                                RUBLTEN, &
+                                                            RVBLTEN, &
+                                                           RTHBLTEN, &
+                                                           RQVBLTEN, &
+                                                           RQCBLTEN, &
+                                                           RQIBLTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                     &
+                          ::                                RTHFTEN, &
+                                                            RQVFTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                     &
+                          ::                                RUNDGDTEN, &
+                                                            RVNDGDTEN, &
+                                                           RTHNDGDTEN, &
+                                                           RPHNDGDTEN, &
+                                                           RQVNDGDTEN
+
+   REAL,  DIMENSION( ims:ime, jms:jme )                              &
+                          ::                               RMUNDGDTEN
    INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end,i_startu,j_startv
    INTEGER :: i,j,k
    REAL :: w1,a_w1,w2,a_w2,z0,a_z0,z1,a_z1,z2,a_z2
@@ -14609,6 +14640,8 @@ END SUBROUTINE a_calculate_full
 !         DO J=j_start,j_end
 !         DO I=i_start,i_end
 !         DO K=k_start,k_end
+!            RUCUTEN(I,K,J) =RUCUTEN(I,K,J)/mu(I,J)
+!            RVCUTEN(I,K,J) =RVCUTEN(I,K,J)/mu(I,J)
 !            RTHCUTEN(I,K,J)=RTHCUTEN(I,K,J)/mu(I,J)
 !         ENDDO
 !         ENDDO
@@ -14665,6 +14698,81 @@ END SUBROUTINE a_calculate_full
 !         ENDIF
 
 !   ENDIF
+
+!   IF (config_flags%shcu_physics .gt. 0) THEN
+!
+!      DO J=j_start,j_end
+!      DO I=i_start,i_end
+!      DO K=k_start,k_end
+!         RUSHTEN(I,K,J) =RUSHTEN(I,K,J)/mu(I,J)
+!         RVSHTEN(I,K,J) =RVSHTEN(I,K,J)/mu(I,J)
+!         RTHSHTEN(I,K,J)=RTHSHTEN(I,K,J)/mu(I,J)
+!      ENDDO
+!      ENDDO
+!      ENDDO
+!
+!      IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
+!         DO J=j_start,j_end
+!         DO I=i_start,i_end
+!         DO K=k_start,k_end
+!            RQVSHTEN(I,K,J)=RQVSHTEN(I,K,J)/mu(I,J)
+!         ENDDO
+!         ENDDO
+!         ENDDO
+!      ENDIF
+!
+!      IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
+!         DO J=j_start,j_end
+!         DO I=i_start,i_end
+!         DO K=k_start,k_end
+!            RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)/mu(I,J)
+!         ENDDO
+!         ENDDO
+!         ENDDO
+!      ENDIF
+!
+!      IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
+!         DO J=j_start,j_end
+!         DO I=i_start,i_end
+!         DO K=k_start,k_end
+!            RQRSHTEN(I,K,J)=RQRSHTEN(I,K,J)/mu(I,J)
+!         ENDDO
+!         ENDDO
+!         ENDDO
+!      ENDIF
+!
+!      IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
+!         DO J=j_start,j_end
+!         DO I=i_start,i_end
+!         DO K=k_start,k_end
+!            RQISHTEN(I,K,J)=RQISHTEN(I,K,J)/mu(I,J)
+!         ENDDO
+!         ENDDO
+!         ENDDO
+!      ENDIF
+!
+!      IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
+!         DO J=j_start,j_end
+!         DO I=i_start,i_end
+!         DO K=k_start,k_end
+!            RQSSHTEN(I,K,J)=RQSSHTEN(I,K,J)/mu(I,J)
+!         ENDDO
+!         ENDDO
+!         ENDDO
+!      ENDIF
+!
+!      IF(P_QG .ge. PARAM_FIRST_SCALAR)THEN
+!         DO J=j_start,j_end
+!         DO I=i_start,i_end
+!         DO K=k_start,k_end
+!            RQGSHTEN(I,K,J)=RQGSHTEN(I,K,J)/mu(I,J)
+!         ENDDO
+!         ENDDO
+!         ENDDO
+!      ENDIF
+!
+!   ENDIF
+
 
 !LPB[16]
 
@@ -15043,6 +15151,8 @@ END SUBROUTINE a_calculate_full
 !   DO J =j_start, j_end
 !   DO I =i_start, i_end
 !   DO K =k_start, k_end
+!   RUCUTEN(I,K,J) =RUCUTEN(I,K,J)/mu(I,J)
+!   RVCUTEN(I,K,J) =RVCUTEN(I,K,J)/mu(I,J)
 !   RTHCUTEN(I,K,J) =RTHCUTEN(I,K,J)/mu(I,J)
 !   ENDDO
 !   ENDDO

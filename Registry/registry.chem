@@ -1146,7 +1146,6 @@ state   real    meo2no2  ikjftb   chem        1         -     irhusdf=(bdy_inter
 #state    real  GD_CLOUD2_A       ikj      misc        1         -      r      "GD_CLOUD2_A"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 #state    real  GD_CLOUD_B        ikj      misc        1         -      r      "GD_CLOUD_B"           "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
 #state    real  GD_CLOUD2_B       ikj      misc        1         -      r      "GD_CLOUD2_B"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
-state    real  cldfra_old        ikj      misc        1         -      r      "CLDFRA_OLD"           "old time level cldfra"         ""
 state integer  STEPBIOE          -        misc        1         -      r      "STEPBIOE"             "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN BIOGENIC EMIS CALLS"             "NA"
 state integer  STEPPHOT          -        misc     1         -      r        "STEPPHOT"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN PHOTOLYSIS CALLS"             "NA"
 state integer  STEPCHEM          -        misc     1         -      r        "STEPCHEM"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CHEM MECH CALLS"             "NA"
@@ -1320,7 +1319,7 @@ package   photfastj     phot_opt==2                  -             -
 package   ftuv          phot_opt==3                  -             -
 package   wesely        gas_drydep_opt==1            -             -
 #
-# diagmostiv pakages, first for deposition velocities (original package for Mozart)
+# diagnostic packages, first for deposition velocities (original package for Mozart)
 #
 package   depvel1  diagnostic_chem==1                -             dvel:dvel_o3,dvel_no,dvel_no2,dvel_nh3,dvel_hno3,dvel_hno4,dvel_h2o2,dvel_co,dvel_ch3ooh,dvel_hcho,dvel_ch3oh,dvel_eo2,dvel_ald,dvel_ch3cooh,dvel_acet,dvel_mgly,dvel_paa,dvel_pooh,dvel_pan,dvel_mpan,dvel_mco3,dvel_mvkooh,dvel_c2h5oh,dvel_etooh,dvel_prooh,dvel_acetp,dvel_onit,dvel_onitr,dvel_isooh,dvel_acetol,dvel_glyald,dvel_hydrald,dvel_alkooh,dvel_mekooh,dvel_tolooh,dvel_xooh,dvel_so2,dvel_so4,dvel_terpooh
 #

@@ -59,17 +59,21 @@ CONTAINS
 #if (NMM_CORE != 1)
                ,tke_pbl,el_pbl,wu_tur,wv_tur,wt_tur,wq_tur &
 #endif
-               ,a_e_bep,b_e_bep,dlg_bep                            &
-               ,dl_u_bep                                           &
+               ,a_e_bep,b_e_bep,dlg_bep                              &
+               ,dl_u_bep                                             &
 ! Wind Turbine Parameterizations
-               ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id               &
-               )        
+               ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
+! variables required for camuwpbl scheme
+               , z_at_w,cldfra,rthratenlw,tauresx2d,tauresy2d        &
+               , tpert2d,qpert2d,wpert2d                 &
+                                                                     )       
 !------------------------------------------------------------------
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
-                   BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME,TEMFPBLSCHEME, &
+                   CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
+                   TEMFPBLSCHEME, &
                    p_qi,param_first_scalar 
    USE module_wind_generic, ONLY : windspec
 #else
@@ -93,6 +97,7 @@ CONTAINS
    USE module_bl_gwdo
    USE module_bl_myjurb
    USE module_bl_boulac
+   USE module_bl_camuwpbl_driver, only:CAMUWPBL
    USE module_bl_temf
 #if (EM_CORE==1)
    USE module_bl_mynn
@@ -109,7 +114,8 @@ CONTAINS
    !      6. mynnpbl3
    !      7. acmpbl
    !      8. boulacpbl
-   !      88. temfpbl
+   !      9. camuwpbl
+   !      10. temfpbl
    !      99. mrfpbl
    !
 !------------------------------------------------------------------
@@ -311,6 +317,19 @@ CONTAINS
                                                             dz8w, &
                                                                z, &
                                                           th_phy                                                             
+!3D Variables for camuwpbl scheme
+    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
+               INTENT(IN   ), OPTIONAL    ::              z_at_w, &
+                                                          cldfra, &
+                                                      rthratenlw
+
+!2D Variables required by camuwpbl scheme
+    REAL,       DIMENSION( ims:ime , jms:jme ),                   &
+               INTENT(INOUT   ), OPTIONAL    ::        tauresx2d, &
+                                                       tauresy2d, &
+                                                         tpert2d, &
+                                                         qpert2d, &
+                                                         wpert2d
 !
 !
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
@@ -1233,7 +1252,28 @@ CONTAINS
               if(flag_myjsfc)then
                tke_myj(its:ite,kts:kte,jts:jte)=tke_pbl(its:ite,kts:kte,jts:jte)
               endif
-
+           CASE (CAMUWPBLSCHEME)
+              
+           IF ( PRESENT( z_at_w )  .AND. PRESENT( tauresx2d )) THEN 
+              CALL wrf_debug(100,'in camuwpbl')
+              
+              CALL CAMUWPBL(DT=dt,U_PHY=u_phy,V_PHY=v_phy,TH_PHY=th_phy,RHO=rho   &
+               ,QV_CURR=qv_curr,HFX=hfx,QFX=qfx,USTAR=ust,RUBLTEN=rublten         &
+               ,RVBLTEN=rvblten,RTHBLTEN=rthblten,RQVBLTEN=rqvblten               &
+               ,RQCBLTEN=rqcblten,TKE_MYJ=tke_myj,PBLH2D=pblh,KPBL2D=kpbl         &
+               ,P8W=p8w,P_PHY=p_phy,Z=z,T_PHY=t_phy,QC_CURR=qc_curr               &
+               ,QI_CURR=qi_curr,Z_AT_W=z_at_w,CLDFRA=cldfra,HT=ht                 &
+               ,RTHRATENLW=rthratenlw,EXNER=pi_phy,ITIMESTEP=itimestep            &
+               ,TAURESX2D=tauresx2d,TAURESY2D=tauresy2d,KVH3D=exch_h,KVM3D=exch_m &
+               ,TPERT2D=tpert2d,QPERT2D=qpert2d,WPERT2D=wpert2d                   & 
+               ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde                 &
+               ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme                 &
+               ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte                 )
+              
+           ELSE
+               CALL wrf_debug(0,message)
+               CALL wrf_error_fatal('Lack arguments to call CAMUWPBL pbl')
+           ENDIF
 #endif
 
 

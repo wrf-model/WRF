@@ -1855,7 +1855,6 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;scalar:qnn,qnc,qnr;g_scalar:g_qnn,g_qnc,g_qnr;a_scalar:a_qnn,a_qnc,a_qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qnn,qnc,qnr;g_scalar:g_qnn,g_qnc,g_qnr;a_scalar:a_qnn,a_qnc,a_qnr
-package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni;g_scalar:g_qni;a_scalar:a_qni
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
@@ -1872,7 +1871,6 @@ package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi
 #package   milbrandt3mom_dfi mp_physics_dfi==12       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qzr,dfi_qzi,dfi_qzs,dfi_qzg,dfi_qzh
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
-package   thompson07_dfi    mp_physics_dfi==98       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop

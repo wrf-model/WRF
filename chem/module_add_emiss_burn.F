@@ -295,7 +295,7 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (RADM2,RACM_KPP,RACM_MIM_KPP)
+      CASE (RADM2,RACM_KPP,RACM_MIM_KPP,SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte

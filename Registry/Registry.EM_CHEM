@@ -57,7 +57,7 @@ include registry.dimspec
 # interpolated with a mask, as lu_index supplies that mask.
 # this next 1 is for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
-state    real  LU_INDEX         ij      misc        1         -     i02rh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
+state    real  LU_INDEX         ij      misc        1         -     i012rh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
 # znw, znu, dzs, and zs must be listed before any 3-d fields
@@ -66,8 +66,8 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 # dzs, and zs are not listed first, vertical level will not be encoded at 
 # time 0.
 
-state    real    znu            k       dyn_em      1         -     irh       "znu"  "eta values on half (mass) levels"  ""
-state    real    znw            k       dyn_em      1         Z     i01rh     "znw"  "eta values on full (w) levels"  ""
+state    real    znu            k       dyn_em      1         -     irh      "znu"  "eta values on half (mass) levels"  ""
+state    real    znw            k       dyn_em      1         Z     i0rh     "znw"  "eta values on full (w) levels"  ""
 state    real   ZS              l        misc      -         Z     irh       "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
 state    real   DZS             l        misc      -         Z     irh       "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
 
@@ -118,7 +118,7 @@ endif
 #
 # U Vel
 state    real   u              ikjb     dyn_em      2         X     \
-     i01rhusdf=(bdy_interp:dt)       "U"                      "x-wind component"   "m s-1"
+     i0rhusdf=(bdy_interp:dt)       "U"                      "x-wind component"   "m s-1"
 state    real   ru             ikj     dyn_em      1         X      -        "MU_U"        "mu-coupled u"   "Pa m s-1"
 state    real   ru_m           ikj     dyn_em      1         X      -        "ru_m"        ""   ""
 state    real   ru_tend        ikj     dyn_em      1         X      -        "ru_tend"        ""   ""                                   
@@ -131,7 +131,7 @@ state    real   u_g_tend       |       dyn_em      1         -      i3rh     "U_
 #                                               
 # V Vel
 state    real   v              ikjb     dyn_em      2         Y     \
-     i01rhusdf=(bdy_interp:dt)        "V"                     "y-wind component"   "m s-1"
+     i0rhusdf=(bdy_interp:dt)        "V"                     "y-wind component"   "m s-1"
 state    real   rv             ikj     dyn_em      1         Y      -        "MU_V"        "mu-coupled v"   "Pa m s-1"
 state    real   rv_m           ikj     dyn_em      1         Y      -        "rv_m"
 state    real   rv_tend        ikj     dyn_em      1         Y      -        "rv_tend"
@@ -167,7 +167,7 @@ i1       real   ph_save        ikj     dyn_em      1         Z
 
 # Potential Temperature
 state    real   t              ikjb     dyn_em      2         -     \
-       i01rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
+       i0rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
 
 state    real   t_init         ikj     dyn_em      1         -      ir       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
@@ -304,7 +304,7 @@ state    real    dnw            k       dyn_em      1         -     irh       "d
 state    real    dn             k       dyn_em      1         -     irh       "dn " "d(eta) values between half (mass) levels"   ""
 state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATE T IN IDEALIZED CASES"         "K"      
 state    real    z              ikj     dyn_em      1         -     -         " " " " " "
-i1       real    mu_3d          ikj     dyn_em      1         -                                          
+#i1       real    mu_3d          ikj     dyn_em      1         -                                          
 state    real    z_at_w         ikj     dyn_em      1         Z 
 state    real    cfn            -       misc      -         -     irh       "cfn"    "extrapolation constant"  ""
 state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
@@ -394,17 +394,17 @@ state    real    vc_j                 -       misc     -     -    r
 #                                               
 state   real    -              ikjftb   moist       1         -     -    -
 state   real    qv             ikjftb   moist       1         -     \
-   i01rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
 state   real    qc             ikjftb   moist       1         -     \
-   i01rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
 state   real    qr             ikjftb   moist       1         -     \
-   i01rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ikjftb   moist       1         -     \
-   i01rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qs             ikjftb   moist       1         -     \
-   i01rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjftb   moist       1         -     \
-   i01rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    qh             ikjftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 state   real    -              ikjftb   dfi_moist       1         -     -    -
@@ -436,24 +436,24 @@ include registry.cam
 # Other Tracers in registry.chem
 # Other Scalars
 state   real    -              ikjftb  scalar      1         -     -   -
-state   real    qni            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration"           "# kg-1"
 state   real    qndrop         ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt) "QNDROP"           "Droplet number mixing ratio"        "# kg-1"
+   i0rhusdf=(bdy_interp:dt)    "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
+state   real    qni            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg-1"
 state   real    qt             ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
+   i0rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
 state   real    qns            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNSNOW"         "Snow Number concentration"   "# kg(-1)"
+   i0rhusdf=(bdy_interp:dt)    "QNSNOW"         "Snow Number concentration"   "# kg(-1)"
 state   real    qnr            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNRAIN"        "Rain Number concentration"   "# kg(-1)"
+   i0rhusdf=(bdy_interp:dt)    "QNRAIN"        "Rain Number concentration"   "# kg(-1)"
 state   real    qng            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNGRAUPEL"     "Graupel Number concentration" "# kg(-1)"
+   i0rhusdf=(bdy_interp:dt)    "QNGRAUPEL"     "Graupel Number concentration" "# kg(-1)"
 state   real    qnh            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNHAIL"        "Hail Number concentration" "# kg(-1)"
 state   real    qnn            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNCCN"         "CCN Number concentration" "# kg(-1)"
+   i0rhusdf=(bdy_interp:dt)    "QNCCN"         "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
+   i0rhusdf=(bdy_interp:dt)    "QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "Droplet number mixing ratio"        "# kg-1"
@@ -601,7 +601,7 @@ state    real   SFCRUNOFF        ij     misc        1         -      rhd=(interp
 state    real   UDRUNOFF         ij     misc        1         -      rhd=(interp_mask_land_field:lu_index)      "UDROFF"           "UNDERGROUND RUNOFF" "mm"
 state  integer  IVGTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)            "IVGTYP"           "DOMINANT VEGETATION CATEGORY" ""
 state  integer  ISLTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)            "ISLTYP"           "DOMINANT SOIL CATEGORY"       ""
-state    real   VEGFRA           ij     misc        1         -     i0124rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "VEGFRA"           "VEGETATION FRACTION" ""
+state    real   VEGFRA           ij     misc        1         -     i024rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "VEGFRA"           "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -      r                                          "SFCEVP"           "SURFACE EVAPORATION" "kg m-2"
 state    real   GRDFLX           ij     misc        1         -      rh                                         "GRDFLX"           "GROUND HEAT FLUX" "W m-2"
 state    real   ACGRDFLX         ij     misc        1         -      rhdu                                       "ACGRDFLX"         "ACCUMULATED GROUND HEAT FLUX" "J m-2"
@@ -611,7 +611,7 @@ state    real   ACSNOW           ij     misc        1         -      rd=(interp_
 state    real   ACSNOM           ij     misc        1         -      rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "ACSNOM"           "ACCUMULATED MELTED SNOW"  "kg m-2"
 state    real   SNOW             ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
 state    real   SNOWH            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
-#state    real   RHOSN            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
+#state    real   RHOSN            ij     misc        1         -    i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state    real   SST              ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
@@ -1285,7 +1285,7 @@ state   real  advz_qv         ikjf      advz_t      1         -     -         "a
 state   real    TML            ij      misc         1         -     rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "TML"    "OCEAN MIXED-LAYER TEMPERATURE"   "K"
 state   real    T0ML           ij      misc         1         -     rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "T0ML"   "INITIAL OCEAN MIXED-LAYER TEMPERATURE"   "K"
 state   real    HML            ij      misc         1         -     rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HML"    "OCEAN MIXED-LAYER DEPTH"   "m"
-state   real    H0ML           ij      misc         1         -     012rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "H0ML"   "INITIAL OCEAN MIXED-LAYER DEPTH"   "m"
+state   real    H0ML           ij      misc         1         -     i012rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "H0ML"   "INITIAL OCEAN MIXED-LAYER DEPTH"   "m"
 state   real    HUML           ij      misc         1         -     rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HUML"   "OCEAN MIXED-LAYER DEPTH * U-CURRENT"  " m2s-1 "
 state   real    HVML           ij      misc         1         -     rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HVML"   "OCEAN MIXED-LAYER DEPTH * V-CURRENT"  " m2s-1 "
 state   real    TMOML          ij      misc         1         -     i012rhd=(interp_mask_water_field:lu_index)u=(copy_fcnm) "TMOML"  "OCEAN LAYER MEAN TEMPERATURE   "   "K"
@@ -1830,7 +1830,6 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
-package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
 package   kesslerscheme_dfi mp_physics_dfi==1        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr
@@ -1846,10 +1845,9 @@ package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi
 package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
-package   thompson07_dfi    mp_physics_dfi==98       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
 
 package   noprogn       progn==0                     -             -
-package   progndrop     progn==1                     -             scalar:qndrop
+package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
@@ -1903,7 +1901,7 @@ package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,RAINCV_A,RAINCV_B,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
-package   tiedtkescheme  cu_physics==6
+package   tiedtkescheme  cu_physics==6               -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -
 

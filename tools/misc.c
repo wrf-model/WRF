@@ -426,7 +426,8 @@ int
 make_entries_uniq ( char * fname )
 {
   char tempfile[NAMELEN] ;
-  char commline[4096] ;
+  /* Had to increase size for SOA from 4096 to 7000 */
+  char commline[7000] ;
   sprintf(tempfile,"regtmp1%d",getpid()) ;
   sprintf(commline,"%s < %s > %s ; %s %s %s ",
           UNIQSORT,fname,tempfile,
@@ -440,7 +441,8 @@ add_warning ( char * fname )
   FILE * fp ;
   char tempfile[NAMELEN] ;
   char tempfile1[NAMELEN] ;
-  char commline[4096] ;
+  /* Had to increase size for SOA from 4096 to 7000 */
+  char commline[7000] ;
   sprintf(tempfile,"regtmp1%d",getpid()) ;
   sprintf(tempfile1,"regtmp2%d",getpid()) ;
   if (( fp = fopen( tempfile, "w" )) == NULL ) return(1) ;

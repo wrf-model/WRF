@@ -144,6 +144,7 @@
 	if (ntype_aer .le. 0) return
 	if (nphase_aer .le. 0) return
 
+ 
 !
 !   run diagnostic tests
 !   (these will only be run for certain values of idiag_movesect
@@ -1543,7 +1544,9 @@
 	llworstb = 0
 	do ll = 1, ncomp_plustracer_aer(itype)+7
 	    dumtop = thesum(jj+1,ll) - thesum(jj,ll)
-	    dumbot = max( abs(thesum(jj,ll)), abs(thesum(jj+1,ll)), 1.0e-35 )
+!	    dumbot = max( abs(thesum(jj,ll)), abs(thesum(jj+1,ll)), 1.0e-35 )
+! change minimum dumbot to 1.0e-30 to reduce unimportant error messages
+	    dumbot = max( abs(thesum(jj,ll)), abs(thesum(jj+1,ll)), 1.0e-30 )
 	    dumerr = dumtop/dumbot
 
 ! rce 21-jul-2006 - encountered some cases when delta_*_conform1 is negative 
@@ -1563,7 +1566,8 @@
 		    duma = thesum(3,ll) - dumc
 		    dumb = thesum(4,ll) - dumc
 		    dumtop = dumb - duma
-		    dumbot = max( abs(duma), abs(dumb), 1.0e-35 )
+!		    dumbot = max( abs(duma), abs(dumb), 1.0e-35 )
+		    dumbot = max( abs(duma), abs(dumb), 1.0e-30 )
 		    dume = dumtop/dumbot
 		    if (abs(dume) .lt. abs(dumerr)) dumerr = dume
 		end if
@@ -1602,7 +1606,8 @@
 		     (abs(dumworstb) .gt. dumtoler) ) then
 		    ll = max( 1, llworstb )
 		    dumtop = thesum(jj+1,ll) - thesum(jj,ll)
-		    dumbot = max( abs(thesum(jj,ll)), abs(thesum(jj+1,ll)), 1.0e-35 )
+!		    dumbot = max( abs(thesum(jj,ll)), abs(thesum(jj+1,ll)), 1.0e-35 )
+		    dumbot = max( abs(thesum(jj,ll)), abs(thesum(jj+1,ll)), 1.0e-30 )
 		    dumerr = dumtop/dumbot
 		    write(msg,97130) 'name/relerr/thesum', jj, '/thesum', jj+1,   &
       			dumname(ll), dumerr, thesum(jj,ll), thesum(jj+1,ll)

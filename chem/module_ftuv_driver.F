@@ -246,7 +246,7 @@
 
       isorg=0
       aer_select: SELECT CASE(config_flags%chem_opt)
-         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,RACMSORG_AQ)
+         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,RACMSORG_AQ,CBMZSORG,CBMZSORG_AQ)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
          CASE DEFAULT
@@ -263,7 +263,7 @@
       gmtp  = mod( xhour, 24.0_dp )
       gmtp  = gmtp + xmin/m2s
 
-      xlwc(:) = 0
+      xlwc(:) = 0  !initialize in case no cloud water is present
 
 !----------------------------------------------------
 !     set photolysis rates

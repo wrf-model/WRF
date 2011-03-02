@@ -677,7 +677,7 @@ CPP             =      cpp -C -P -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
-RANLIB          =      ranlib
+RANLIB          =      ranlib -c
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################

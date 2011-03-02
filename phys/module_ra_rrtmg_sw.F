@@ -9579,6 +9579,13 @@ CONTAINS
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
+                       tauaer300,tauaer400,tauaer600,tauaer999,   & ! czhao 
+                       gaer300,gaer400,gaer600,gaer999,           & ! czhao 
+                       waer300,waer400,waer600,waer999,           & ! czhao 
+                       aer_ra_feedback,                           &
+!jdfcz                 progn,prescribe,                           &
+                       progn,                                     &
+                       qndrop3d,f_qndrop,                         & !czhao
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
@@ -9638,7 +9645,10 @@ CONTAINS
                                                             QR3D, &
                                                             QI3D, &
                                                             QS3D, &
-                                                            QG3D
+                                                            QG3D, &
+                                                        QNDROP3D
+
+   real pi,third,relconst,lwpmin,rhoh2o
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -9647,7 +9657,29 @@ CONTAINS
                                                       F_RAIN_PHY
 
    LOGICAL, OPTIONAL, INTENT(IN)   ::                             &
-                                   F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
+                                F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,F_QNDROP
+
+! Optional
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN    ) :: tauaer300,tauaer400,tauaer600,tauaer999, & ! czhao 
+                                 gaer300,gaer400,gaer600,gaer999, & ! czhao 
+                                 waer300,waer400,waer600,waer999    ! czhao 
+
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
+!jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+
+      !wavelength corresponding to wavenum1 and wavenum2 (cm-1)
+      real, save :: wavemin(nbndsw) ! Min wavelength (um) of 14 intervals
+      data wavemin /3.077,2.500,2.150,1.942,1.626,1.299, &
+      1.242,0.778,0.625,0.442,0.345,0.263,0.200,3.846/
+      real, save :: wavemax(nbndsw) ! Max wavelength (um) of interval
+      data wavemax/3.846,3.077,2.500,2.150,1.942,1.626, &
+      1.299,1.242,0.778,0.625,0.442,0.345,0.263,12.195/
+      real wavemid(nbndsw) ! Mid wavelength (um) of interval
+      real, parameter :: thresh=1.e-9
+      real ang,slope
+      character(len=200) :: msg
 
 ! Top of atmosphere and surface shortwave fluxes (W m-2)
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
@@ -9676,7 +9708,8 @@ CONTAINS
                                                             QR1D, &
                                                             QI1D, &
                                                             QS1D, &
-                                                            QG1D
+                                                            QG1D, &
+                                                          qndrop1d 
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -9815,6 +9848,26 @@ CONTAINS
     LOGICAL :: predicate
 
 !------------------------------------------------------------------
+#ifdef WRF_CHEM
+      IF ( aer_ra_feedback == 1) then
+      IF ( .NOT. &
+      ( PRESENT(tauaer300) .AND. &
+        PRESENT(tauaer400) .AND. &
+        PRESENT(tauaer600) .AND. &
+        PRESENT(tauaer999) .AND. &
+        PRESENT(gaer300) .AND. &
+        PRESENT(gaer400) .AND. &
+        PRESENT(gaer600) .AND. &
+        PRESENT(gaer999) .AND. &
+        PRESENT(waer300) .AND. &
+        PRESENT(waer400) .AND. &
+        PRESENT(waer600) .AND. &
+        PRESENT(waer999) ) ) THEN
+      CALL wrf_error_fatal  &
+      ('Warning: missing fields required for aerosol radiation' )
+      ENDIF
+      ENDIF
+#endif
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
@@ -9861,6 +9914,7 @@ CONTAINS
             QI1D(K)=0.
             QS1D(K)=0.
             CLDFRA1D(k)=0.
+            QNDROP1D(k)=0.
          ENDDO
 
          DO K=kts,kte
@@ -9900,6 +9954,14 @@ CONTAINS
                     QR1D(K)=max(0.,QR1D(K))
                  ENDDO
               ENDIF
+            ENDIF
+
+            IF ( PRESENT(F_QNDROP).AND.PRESENT(QNDROP3D)) THEN
+             IF (F_QNDROP) THEN
+              DO K=kts,kte
+               qndrop1d(K)=qndrop3d(I,K,J)
+              ENDDO
+             ENDIF
             ENDIF
 
 ! This logic is tortured because cannot test F_QI unless
@@ -10108,11 +10170,56 @@ CONTAINS
                cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
             end do
 
+!link the aerosol feedback to cloud  -czhao
+  if( PRESENT( progn ) ) then
+    if (progn == 1) then
+!jdfcz     if(prescribe==0) then
+
+      pi = 4.*atan(1.0)
+      third=1./3.
+      rhoh2o=1.e3
+      relconst=3/(4.*pi*rhoh2o)
+!     minimun liquid water path to calculate rel
+!     corresponds to optical depth of 1.e-3 for radius 4 microns.
+      lwpmin=3.e-5
+      do k = kts, kte
+         reliq(ncol,k) = 10.
+         if( PRESENT( F_QNDROP ) ) then
+            if( F_QNDROP ) then
+              if ( qc1d(k)*pdel(ncol,k).gt.lwpmin.and. &
+                   qndrop1d(k).gt.1000. ) then
+               reliq(ncol,k)=(relconst*qc1d(k)/qndrop1d(k))**third ! effective radius in m
+!           apply scaling from Martin et al., JAS 51, 1830.
+               reliq(ncol,k)=1.1*reliq(ncol,k)
+               reliq(ncol,k)=reliq(ncol,k)*1.e6 ! convert from m to microns
+               reliq(ncol,k)=max(reliq(ncol,k),4.)
+               reliq(ncol,k)=min(reliq(ncol,k),20.)
+              end if
+            end if
+         end if
+      end do
+!jdfcz     else ! prescribe 
 ! following Kiehl
-            call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+!      write(0,*) 'sw prescribe aerosol',maxval(qndrop3d)
+!jdfcz     endif
+    else  ! progn   
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+    endif
+  else   !progn 
+      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+  endif
 
 ! following Kristjansson and Mitchell
-            call reicalc(ncol, pcols, pver, tlay, reice)
+      call reicalc(ncol, pcols, pver, tlay, reice)
+
+      if (i==80.and.j==30) then
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
+      if( PRESENT( progn ) ) write(0,*) 'aerosol indirect',progn
+      write(0,*)'sw water eff radius',reliq(ncol,10),reliq(ncol,20),reliq(ncol,25)
+      write(0,*)'sw ice eff radius',reice(ncol,10),reice(ncol,20),reice(ncol,25)
+#endif
+      endif
 
 ! Limit upper bound of reice for Fu ice parameterization and convert
 ! from effective radius to generalized effective size (*1.0315; Fu, 1996)
@@ -10166,16 +10273,110 @@ CONTAINS
                        cldfmcl, ciwpmcl, clwpmcl, reicmcl, relqmcl, &
                        taucmcl, ssacmcl, asmcmcl, fsfcmcl)
 
-! Aerosol optical depth, single scattering albedo and asymmetry parameter
+!--------------------------------------------------------------------------
+! Aerosol optical depth, single scattering albedo and asymmetry parameter -czhao 03/2010
+!--------------------------------------------------------------------------
 ! by layer for each RRTMG shortwave band
 ! No aerosols in top layer above model top (kte+1).
-         do nb = 1, nbndsw
-            do k = kts, kte+1
-               tauaer(ncol,k,nb) = 0.
-               ssaaer(ncol,k,nb) = 1.
-               asmaer(ncol,k,nb) = 0.
-            enddo
-         enddo
+!cz        do nb = 1, nbndsw
+!cz           do k = kts, kte+1
+!cz              tauaer(ncol,k,nb) = 0.
+!cz              ssaaer(ncol,k,nb) = 1.
+!cz              asmaer(ncol,k,nb) = 0.
+!cz           enddo
+!cz        enddo
+
+! ... Aerosol effects. Added aerosol feedbacks from Chem , 03/2010 -czhao
+!
+      do nb = 1, nbndsw
+      do k = kts,kte+1
+         tauaer(ncol,k,nb) = 0.
+         ssaaer(ncol,k,nb) = 1.
+         asmaer(ncol,k,nb) = 0.
+      end do
+      end do
+
+#ifdef WRF_CHEM
+   IF ( AER_RA_FEEDBACK == 1) then
+      do nb = 1, nbndsw
+         wavemid(nb)=0.5*(wavemin(nb)+wavemax(nb))  ! um
+      do k = kts,kte      !wig
+
+! convert optical properties at 300,400,600, and 999 to conform to the band wavelengths
+! tauaer - use angstrom exponent
+        if(tauaer300(i,k,j).gt.thresh .and. tauaer999(i,k,j).gt.thresh) then
+           ang=alog(tauaer300(i,k,j)/tauaer999(i,k,j))/alog(999./300.)
+           tauaer(ncol,k,nb)=tauaer400(i,k,j)*(0.4/wavemid(nb))**ang
+           !tauaer(ncol,k,nb)=tauaer600(i,k,j)*(0.6/wavemid(nb))**ang 
+           if (i==30.and.j==49.and.k==2.and.nb==12) then
+            write(0,*) 'TAU from 600 vs 400 in RRTMG',tauaer600(i,k,j),tauaer400(i,k,j)
+            print*, 'TAU from 600 vs 400 in RRTMG',tauaer600(i,k,j),tauaer400(i,k,j)
+            write(0,*) tauaer600(i,k,j)*(0.6/wavemid(nb))**ang,tauaer400(i,k,j)*(0.4/wavemid(nb))**ang
+            print*, tauaer600(i,k,j)*(0.6/wavemid(nb))**ang,tauaer400(i,k,j)*(0.4/wavemid(nb))**ang
+           endif
+! ssa - linear interpolation; extrapolation
+           slope=(waer600(i,k,j)-waer400(i,k,j))/.2
+           ssaaer(ncol,k,nb) = slope*(wavemid(nb)-.6)+waer600(i,k,j)
+           if(ssaaer(ncol,k,nb).lt.0.4) ssaaer(ncol,k,nb)=0.4
+           if(ssaaer(ncol,k,nb).ge.1.0) ssaaer(ncol,k,nb)=1.0
+! g - linear interpolation;extrapolation
+           slope=(gaer600(i,k,j)-gaer400(i,k,j))/.2
+           asmaer(ncol,k,nb) = slope*(wavemid(nb)-.6)+gaer600(i,k,j) ! notice reversed varaibles
+           if(asmaer(ncol,k,nb).lt.0.5) asmaer(ncol,k,nb)=0.5
+           if(asmaer(ncol,k,nb).ge.1.0) asmaer(ncol,k,nb)=1.0
+        endif
+      end do ! k
+      end do ! nb
+
+!wig beg
+      do nb = 1, nbndsw
+         slope = 0.  !use slope as a sum holder
+         do k = kts,kte
+            slope = slope + tauaer(ncol,k,nb)
+         end do
+         if( slope < 0. ) then
+            write(msg,'("ERROR: Negative total optical depth of ",f8.2," at point i,j,nb=",3i5)') slope,i,j,nb
+            call wrf_error_fatal(msg)
+         else if( slope > 6. ) then
+            call wrf_message("-------------------------")
+            write(msg,'("WARNING: Large total sw optical depth of ",f8.2," at point i,j,nb=",3i5)') slope,i,j,nb
+            call wrf_message(msg)
+
+            call wrf_message("Diagnostics 1: k, tauaer300, tauaer400, tauaer600, tauaer999, tauaer")
+            do k=kts,kte
+               write(msg,'(i4,5f8.2)') k, tauaer300(i,k,j), tauaer400(i,k,j), &
+                    tauaer600(i,k,j), tauaer999(i,k,j),tauaer(ncol,k,nb)
+               call wrf_message(msg)
+               !czhao set an up-limit here to avoid segmentation fault 
+               !from extreme AOD
+               tauaer(ncol,k,nb)=tauaer(ncol,k,nb)*6.0/slope 
+            end do
+
+            call wrf_message("Diagnostics 2: k, gaer300, gaer400, gaer600, gaer999")
+            do k=kts,kte
+               write(msg,'(i4,4f8.2)') k, gaer300(i,k,j), gaer400(i,k,j), &
+                    gaer600(i,k,j), gaer999(i,k,j)
+               call wrf_message(msg)
+            end do
+
+            call wrf_message("Diagnostics 3: k, waer300, waer400, waer600, waer999")
+            do k=kts,kte
+               write(msg,'(i4,4f8.2)') k, waer300(i,k,j), waer400(i,k,j), &
+                    waer600(i,k,j), waer999(i,k,j)
+               call wrf_message(msg)
+            end do
+
+            call wrf_message("Diagnostics 4: k, ssaal, asyal, taual")
+            do k=kts-1,kte
+               write(msg,'(i4,3f8.2)') k, ssaaer(i,k,nb), asmaer(i,k,nb), tauaer(i,k,nb)
+               call wrf_message(msg)
+            end do
+            call wrf_message("-------------------------")
+         endif
+      enddo  ! nb
+      endif  ! aer_ra_feedback
+#endif
+
 
 ! Zero array for input of aerosol optical thickness for use with
 ! ECMWF aerosol types (not used)

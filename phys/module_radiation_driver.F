@@ -20,6 +20,8 @@ CONTAINS
               ,LWCF,SWCF,OLR                                              & ! Optional
               ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
               ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
+!jdfcz        ,progn,prescribe                                            & ! Optional
+              ,progn                                                      & ! Optional
               ,GLW, GSW, SWDOWN, XLAT, XLONG, ALBEDO                      &
               ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
               ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
@@ -47,9 +49,15 @@ CONTAINS
               ,CLDFRA ,Pb                                                 &
               ,f_ice_phy,f_rain_phy                                       &
               ,pm2_5_dry, pm2_5_water, pm2_5_dry_ec                       &
+               !aerosol shortwave
               ,tauaer300, tauaer400, tauaer600, tauaer999                 & ! jcb
               ,gaer300, gaer400, gaer600, gaer999                         & ! jcb
               ,waer300, waer400, waer600, waer999                         & ! jcb
+               !aerosol longwave
+              ,tauaerlw1, tauaerlw2, tauaerlw3, tauaerlw4                 & ! czhao 
+              ,tauaerlw5, tauaerlw6, tauaerlw7, tauaerlw8                 & ! czhao 
+              ,tauaerlw9, tauaerlw10, tauaerlw11, tauaerlw12                 & ! czhao 
+              ,tauaerlw13, tauaerlw14, tauaerlw15, tauaerlw16                 & ! czhao 
               ,qc_adjust ,qi_adjust                                       & ! jm
               ,cu_rad_feedback, aer_ra_feedback                           & ! jm
               ,ht,dx,dy,shadowmask,slope_rad ,topo_shading                & ! slope-dependent radiation
@@ -321,10 +329,18 @@ CONTAINS
                                  waer300,waer400,waer600,waer999, & ! jcb
                                  qc_adjust, qi_adjust
 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
+                         tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8, & ! czhao 
+                         tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao 
+                         tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16
+
    LOGICAL, OPTIONAL :: cu_rad_feedback
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
 
+!jdfcz   INTEGER, OPTIONAL, INTENT(IN   )    :: progn,prescribe
+   INTEGER, OPTIONAL, INTENT(IN   )    :: progn
 !
 ! variables for aerosols (only if running with chemistry)
 !
@@ -869,6 +885,15 @@ CONTAINS
         CASE (CAMLWSCHEME)
 
              CALL wrf_debug(100, 'CALL camrad lw')
+
+             IF ( PRESENT( OZMIXM ) ) print *, ' OZMIXM present '
+             IF ( PRESENT( PIN ) ) print *, ' PIN present '
+             IF ( PRESENT( M_PS_1 ) ) print *, ' M_PS_1 present '
+             IF ( PRESENT( M_PS_2 ) ) print *, ' M_PS_2 present '
+             IF ( PRESENT( M_HYBI0 ) ) print *, ' M_HYBI0 present '
+             IF ( PRESENT( AEROSOLC_1 ) ) print *, ' AEROSOLC_1 present '
+             IF ( PRESENT( AEROSOLC_2 ) ) print *, ' AEROSOLC_2 present '
+
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
@@ -937,6 +962,20 @@ CONTAINS
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
+#ifdef WRF_CHEM
+                  TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
+                  TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
+                  TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
+                  TAUAERLW7=tauaerlw7,TAUAERLW8=tauaerlw8,          & ! jcb
+                  TAUAERLW9=tauaerlw9,TAUAERLW10=tauaerlw10,          & ! jcb
+                  TAUAERLW11=tauaerlw11,TAUAERLW12=tauaerlw12,          & ! jcb
+                  TAUAERLW13=tauaerlw13,TAUAERLW14=tauaerlw14,          & ! jcb
+                  TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,          & ! jcb
+                  aer_ra_feedback=aer_ra_feedback,                  &
+!jdfcz            progn=progn,prescribe=prescribe,                   &
+                  progn=progn,                                       &
+#endif
+                  QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
@@ -1200,6 +1239,18 @@ CONTAINS
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
                      F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
+#ifdef WRF_CHEM
+                     TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
+                     TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
+                     GAER300=gaer300,GAER400=gaer400,                  & ! jcb
+                     GAER600=gaer600,GAER999=gaer999,                  & ! jcb
+                     WAER300=waer300,WAER400=waer400,                  & ! jcb
+                     WAER600=waer600,WAER999=waer999,                  & ! jcb
+                     aer_ra_feedback=aer_ra_feedback,                  &
+!jdfcz               progn=progn,prescribe=prescribe,                  &
+                     progn=progn,                                      &
+#endif
+                     QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&

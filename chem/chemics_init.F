@@ -10,6 +10,14 @@
                gaer1,gaer2,gaer3,gaer4,                              &
                waer1,waer2,waer3,waer4,                              &
                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                  &
+               extaerlw1,extaerlw2,extaerlw3,extaerlw4,              &
+               extaerlw5,extaerlw6,extaerlw7,extaerlw8,              &
+               extaerlw9,extaerlw10,extaerlw11,extaerlw12,           &
+               extaerlw13,extaerlw14,extaerlw15,extaerlw16,          &
+               tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,              &
+               tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,              &
+               tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,           &
+               tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,          &
                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
@@ -60,6 +68,14 @@
           INTENT(INOUT   ) ::                                        &
                                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,   &
                                tauaer1,tauaer2,tauaer3,tauaer4,      &
+                               extaerlw1,extaerlw2,extaerlw3,extaerlw4,      &
+                               extaerlw5,extaerlw6,extaerlw7,extaerlw8,      &
+                               extaerlw9,extaerlw10,extaerlw11,extaerlw12,   &
+                               extaerlw13,extaerlw14,extaerlw15,extaerlw16,  &
+                               tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,      &
+                               tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,      &
+                               tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,   &
+                               tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,  &
                                gd_cloud, gd_cloud2,                  &
                                gd_cloud_a, gd_cloud2_a,              &
                                gd_cloud_b, gd_cloud2_b,              &
@@ -139,6 +155,13 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling NMHC9 from chem_driver')
        call wrf_message("WARNING: NMHC9 chemistry option is highly experimental and not recommended for use.")
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+     CASE (SAPRC99_KPP )
+       CALL wrf_debug(15,'calling SAPRC99 from chem_driver')
+       call wrf_message("WARNING: SAPRC99 chemistry option is highly experimental and not recommended for use.")
+     CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP )
+       CALL wrf_debug(15,'calling SAPRC99_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
+       call wrf_message("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
      CASE (RADM2SORG_AQ )
        CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQ chemistry from chem_driver')
        call wrf_message("WARNING: RADM2SORG_AQ chemistry option is experimental and not yet fully tested.")
@@ -172,8 +195,8 @@ call wrf_message("**************************************************************
       if ( config_flags%chem_opt >= 13 .OR. config_flags%chem_opt <= 8) then
         call wrf_error_fatal("ERROR: wet scavaging option requires chem_opt = 9 through 12 to function.")
       endif
-      if ( config_flags%mp_physics /= 2 ) then
-        call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = 2 (Lin et al.) to function.")
+      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10) then
+        call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
       endif
    endif
 
@@ -181,10 +204,17 @@ call wrf_message("**************************************************************
       if ( config_flags%chem_opt >= 13 .OR. config_flags%chem_opt <= 8) then
         call wrf_error_fatal("ERROR:  cloud chemistry option requires chem_opt = 9 through 12 to function.")
       endif
-      if ( config_flags%mp_physics /= 2 ) then
-        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) to function.")
+      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 ) then
+        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
       endif
    endif
+
+   if ( config_flags%chem_opt > 0 .and. config_flags%chem_conv_tr == 1 ) then
+      if ( config_flags%cu_physics /= 5 ) then
+!        call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_physics=5")
+         call wrf_message("ERROR: chem_conv_tr=1 requires cu_physics=5")
+      end if
+   end if
 
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0
@@ -243,6 +273,38 @@ call wrf_message("**************************************************************
                 l7aer(i,k,j,2) = 0.
                 l7aer(i,k,j,3) = 0.
                 l7aer(i,k,j,4) = 0.
+                extaerlw1(i,k,j) = 0.
+                extaerlw2(i,k,j) = 0.
+                extaerlw3(i,k,j) = 0.
+                extaerlw4(i,k,j) = 0.
+                extaerlw5(i,k,j) = 0.
+                extaerlw6(i,k,j) = 0.
+                extaerlw7(i,k,j) = 0.
+                extaerlw8(i,k,j) = 0.
+                extaerlw9(i,k,j) = 0.
+                extaerlw10(i,k,j) = 0.
+                extaerlw11(i,k,j) = 0.
+                extaerlw12(i,k,j) = 0.
+                extaerlw13(i,k,j) = 0.
+                extaerlw14(i,k,j) = 0.
+                extaerlw15(i,k,j) = 0.
+                extaerlw16(i,k,j) = 0.
+                tauaerlw1(i,k,j) = 0.
+                tauaerlw2(i,k,j) = 0.
+                tauaerlw3(i,k,j) = 0.
+                tauaerlw4(i,k,j) = 0.
+                tauaerlw5(i,k,j) = 0.
+                tauaerlw6(i,k,j) = 0.
+                tauaerlw7(i,k,j) = 0.
+                tauaerlw8(i,k,j) = 0.
+                tauaerlw9(i,k,j) = 0.
+                tauaerlw10(i,k,j) = 0.
+                tauaerlw11(i,k,j) = 0.
+                tauaerlw12(i,k,j) = 0.
+                tauaerlw13(i,k,j) = 0.
+                tauaerlw14(i,k,j) = 0.
+                tauaerlw15(i,k,j) = 0.
+                tauaerlw16(i,k,j) = 0.
              end do
           end do
        end do
@@ -360,7 +422,7 @@ call wrf_message("**************************************************************
              enddo
           enddo
         endif
-     CASE (RADM2_KPP,RADM2SORG_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+     CASE (RADM2_KPP,RADM2SORG_KPP,GOCARTRADM2,GOCARTRADM2_KPP,SAPRC99_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
@@ -381,8 +443,139 @@ call wrf_message("**************************************************************
              enddo
           enddo
         endif
+
+
+        CASE (CBMZ_MOSAIC_KPP)
+        if(config_flags%chem_in_opt == 0 )then
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+                   chem(i,k,j,p_ch4)=1.7
+                   chem(i,k,j,p_aro1)=0.0
+                   chem(i,k,j,p_aro2)=0.0
+                   chem(i,k,j,p_alk1)=0.0
+                   chem(i,k,j,p_ole1)=0.0
+                   chem(i,k,j,p_api1)=0.0
+                   chem(i,k,j,p_api2)=0.0
+                   chem(i,k,j,p_lim1)=0.0
+                   chem(i,k,j,p_lim2)=0.0
+                   chem(i,k,j,p_api)=0.0
+                   chem(i,k,j,p_lim)=0.0
+                enddo
+             enddo
+          enddo
+        endif 
+
+
+
+
+        CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+        if(config_flags%chem_in_opt == 0 )then
+                   grid%vbs_nbin=2
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_ch4)=1.7
+         if (p_pcg1_b_c.gt.1) chem(i,k,j,p_pcg1_b_c)=0.00
+         if (p_pcg2_b_c.gt.1) chem(i,k,j,p_pcg2_b_c)=0.00
+         if (p_pcg3_b_c.gt.1) chem(i,k,j,p_pcg3_b_c)=0.00
+         if (p_pcg4_b_c.gt.1) chem(i,k,j,p_pcg4_b_c)=0.00
+         if (p_pcg5_b_c.gt.1) chem(i,k,j,p_pcg5_b_c)=0.00
+         if (p_pcg6_b_c.gt.1) chem(i,k,j,p_pcg6_b_c)=0.00
+         if (p_pcg7_b_c.gt.1) chem(i,k,j,p_pcg7_b_c)=0.00
+         if (p_pcg8_b_c.gt.1) chem(i,k,j,p_pcg8_b_c)=0.00
+         if (p_pcg9_b_c.gt.1) chem(i,k,j,p_pcg9_b_c)=0.00
+         if (p_pcg1_b_o.gt.1) chem(i,k,j,p_pcg1_b_o)=0.00
+         if (p_pcg2_b_o.gt.1) chem(i,k,j,p_pcg2_b_o)=0.00
+         if (p_pcg3_b_o.gt.1) chem(i,k,j,p_pcg3_b_o)=0.00
+         if (p_pcg4_b_o.gt.1) chem(i,k,j,p_pcg4_b_o)=0.00
+         if (p_pcg5_b_o.gt.1) chem(i,k,j,p_pcg5_b_o)=0.00
+         if (p_pcg6_b_o.gt.1) chem(i,k,j,p_pcg6_b_o)=0.00
+         if (p_pcg7_b_o.gt.1) chem(i,k,j,p_pcg7_b_o)=0.00
+         if (p_pcg8_b_o.gt.1) chem(i,k,j,p_pcg8_b_o)=0.00
+         if (p_pcg9_b_o.gt.1) chem(i,k,j,p_pcg9_b_o)=0.00
+         if (p_opcg1_b_c.gt.1) chem(i,k,j,p_opcg1_b_c)=0.00
+         if (p_opcg2_b_c.gt.1) chem(i,k,j,p_opcg2_b_c)=0.00
+         if (p_opcg3_b_c.gt.1) chem(i,k,j,p_opcg3_b_c)=0.00
+         if (p_opcg4_b_c.gt.1) chem(i,k,j,p_opcg4_b_c)=0.00
+         if (p_opcg5_b_c.gt.1) chem(i,k,j,p_opcg5_b_c)=0.00
+         if (p_opcg6_b_c.gt.1) chem(i,k,j,p_opcg6_b_c)=0.00
+         if (p_opcg7_b_c.gt.1) chem(i,k,j,p_opcg7_b_c)=0.00
+         if (p_opcg8_b_c.gt.1) chem(i,k,j,p_opcg8_b_c)=0.00
+         if (p_opcg1_b_o.gt.1) chem(i,k,j,p_opcg1_b_o)=0.00
+         if (p_opcg2_b_o.gt.1) chem(i,k,j,p_opcg2_b_o)=0.00
+         if (p_opcg3_b_o.gt.1) chem(i,k,j,p_opcg3_b_o)=0.00
+         if (p_opcg4_b_o.gt.1) chem(i,k,j,p_opcg4_b_o)=0.00
+         if (p_opcg5_b_o.gt.1) chem(i,k,j,p_opcg5_b_o)=0.00
+         if (p_opcg6_b_o.gt.1) chem(i,k,j,p_opcg6_b_o)=0.00
+         if (p_opcg7_b_o.gt.1) chem(i,k,j,p_opcg7_b_o)=0.00
+         if (p_opcg8_b_o.gt.1) chem(i,k,j,p_opcg8_b_o)=0.00
+         if (p_pcg1_f_c.gt.1) chem(i,k,j,p_pcg1_f_c)=0.00
+         if (p_pcg2_f_c.gt.1) chem(i,k,j,p_pcg2_f_c)=0.00
+         if (p_pcg3_f_c.gt.1) chem(i,k,j,p_pcg3_f_c)=0.00
+         if (p_pcg4_f_c.gt.1) chem(i,k,j,p_pcg4_f_c)=0.00
+         if (p_pcg5_f_c.gt.1) chem(i,k,j,p_pcg5_f_c)=0.00
+         if (p_pcg6_f_c.gt.1) chem(i,k,j,p_pcg6_f_c)=0.00
+         if (p_pcg7_f_c.gt.1) chem(i,k,j,p_pcg7_f_c)=0.00
+         if (p_pcg8_f_c.gt.1) chem(i,k,j,p_pcg8_f_c)=0.00
+         if (p_pcg9_f_c.gt.1) chem(i,k,j,p_pcg9_f_c)=0.00
+         if (p_pcg1_f_o.gt.1) chem(i,k,j,p_pcg1_f_o)=0.00
+         if (p_pcg2_f_o.gt.1) chem(i,k,j,p_pcg2_f_o)=0.00
+         if (p_pcg3_f_o.gt.1) chem(i,k,j,p_pcg3_f_o)=0.00
+         if (p_pcg4_f_o.gt.1) chem(i,k,j,p_pcg4_f_o)=0.00
+         if (p_pcg5_f_o.gt.1) chem(i,k,j,p_pcg5_f_o)=0.00
+         if (p_pcg6_f_o.gt.1) chem(i,k,j,p_pcg6_f_o)=0.00
+         if (p_pcg7_f_o.gt.1) chem(i,k,j,p_pcg7_f_o)=0.00
+         if (p_pcg8_f_o.gt.1) chem(i,k,j,p_pcg8_f_o)=0.00
+         if (p_pcg9_f_o.gt.1) chem(i,k,j,p_pcg9_f_o)=0.00
+         if (p_opcg1_f_c.gt.1) chem(i,k,j,p_opcg1_f_c)=0.00
+         if (p_opcg2_f_c.gt.1) chem(i,k,j,p_opcg2_f_c)=0.00
+         if (p_opcg3_f_c.gt.1) chem(i,k,j,p_opcg3_f_c)=0.00
+         if (p_opcg4_f_c.gt.1) chem(i,k,j,p_opcg4_f_c)=0.00
+         if (p_opcg5_f_c.gt.1) chem(i,k,j,p_opcg5_f_c)=0.00
+         if (p_opcg6_f_c.gt.1) chem(i,k,j,p_opcg6_f_c)=0.00
+         if (p_opcg7_f_c.gt.1) chem(i,k,j,p_opcg7_f_c)=0.00
+         if (p_opcg8_f_c.gt.1) chem(i,k,j,p_opcg8_f_c)=0.00
+         if (p_opcg1_f_o.gt.1) chem(i,k,j,p_opcg1_f_o)=0.00
+         if (p_opcg2_f_o.gt.1) chem(i,k,j,p_opcg2_f_o)=0.00
+         if (p_opcg3_f_o.gt.1) chem(i,k,j,p_opcg3_f_o)=0.00
+         if (p_opcg4_f_o.gt.1) chem(i,k,j,p_opcg4_f_o)=0.00
+         if (p_opcg5_f_o.gt.1) chem(i,k,j,p_opcg5_f_o)=0.00
+         if (p_opcg6_f_o.gt.1) chem(i,k,j,p_opcg6_f_o)=0.00
+         if (p_opcg7_f_o.gt.1) chem(i,k,j,p_opcg7_f_o)=0.00
+         if (p_opcg8_f_o.gt.1) chem(i,k,j,p_opcg8_f_o)=0.00
+         if (p_ant1_c.gt.1)    chem(i,k,j,p_ant1_c)=0.0
+         if (p_ant2_c.gt.1)    chem(i,k,j,p_ant2_c)=0.0
+         if (p_ant3_c.gt.1)    chem(i,k,j,p_ant3_c)=0.0
+         if (p_ant4_c.gt.1)    chem(i,k,j,p_ant4_c)=0.0
+         if (p_ant1_o.gt.1)    chem(i,k,j,p_ant1_o)=0.0
+         if (p_ant2_o.gt.1)    chem(i,k,j,p_ant2_o)=0.0
+         if (p_ant3_o.gt.1)    chem(i,k,j,p_ant3_o)=0.0
+         if (p_ant4_o.gt.1)    chem(i,k,j,p_ant4_o)=0.0
+         if (p_biog1_c.gt.1)    chem(i,k,j,p_biog1_c)=0.0
+         if (p_biog2_c.gt.1)    chem(i,k,j,p_biog2_c)=0.0
+         if (p_biog3_c.gt.1)    chem(i,k,j,p_biog3_c)=0.0
+         if (p_biog4_c.gt.1)    chem(i,k,j,p_biog4_c)=0.0
+         if (p_biog1_o.gt.1)    chem(i,k,j,p_biog1_o)=0.0
+         if (p_biog2_o.gt.1)    chem(i,k,j,p_biog2_o)=0.0
+         if (p_biog3_o.gt.1)    chem(i,k,j,p_biog3_o)=0.0
+         if (p_biog4_o.gt.1)    chem(i,k,j,p_biog4_o)=0.0
+
+
+
+                enddo
+             enddo
+          enddo
+        endif
+
+
+
+
+
    END SELECT kpp_select
    endif
+
    aer_select: SELECT CASE(config_flags%chem_opt)
      CASE (RACMPM_KPP)
         if(config_flags%chem_in_opt == 0 )then
@@ -501,7 +694,7 @@ call wrf_message("**************************************************************
         CALL wrf_debug(15,'MOZCART dust initialization')
         ch_dust(:,:) = 0.8e-9_8
 
-     CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG_KPP,RACM_ESRLSORG_KPP)
+     CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 
        call aerosols_sorgam_init(chem,convfac,z_at_w,                &
@@ -528,7 +721,9 @@ call wrf_message("**************************************************************
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 
 
-     CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+     CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+           SAPRC99_MOSAIC_4BIN_VBS2_KPP )
        call wrf_debug(15,'call MOSAIC aerosols initialization')
        call init_data_mosaic_asect(is_aerosol)
        if(config_flags%chem_in_opt == 0 )then
@@ -574,8 +769,10 @@ call wrf_message("**************************************************************
 ! initialization for cbmz gas-phase chemistry
 !
    cbmz_select: SELECT CASE(config_flags%chem_opt)
-     CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
-           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+     CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP,CBMZ_MOSAIC_KPP,  CBMZ_MOSAIC_4BIN, &
+           CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG,CBMZSORG_AQ, &
+           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, & 
+           CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'initializing cbmz gas-phase chemistry')
        if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
@@ -818,7 +1015,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_ch3so2oo,"ch3so2oo"
      print*,p_ch3so2ch2oo,"ch3so2ch2oo"
      print*,p_mtf,"mtf"
-  case (CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+  case (CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG,CBMZSORG_AQ)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -881,12 +1078,173 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_isopp,"isopp"
      print*,p_isopn,"isopn"
      print*,p_isopo2,"isopo2"
+
+  case (CBMZ_MOSAIC_KPP)
+    print*,p_so2,"so2"
+     print*,p_sulf,"sulf"
+     print*,p_no2,"no2"
+     print*,p_no,"no"
+     print*,p_o3,"o3"
+     print*,p_hno3,"hno3"
+     print*,p_h2o2,"h2o2"
+     print*,p_ald,"ald"
+     print*,p_hcho,"hcho"
+     print*,p_op1,"op1"
+     print*,p_op2,"op2"
+     print*,p_paa,"paa"
+     print*,p_ora1,"ora1"
+     print*,p_ora2,"ora2"
+     print*,p_nh3,"nh3"
+     print*,p_n2o5,"n2o5"
+     print*,p_no3,"no3"
+     print*,p_pan,"pan"
+     print*,p_hc3,"hc3"
+     print*,p_hc5,"hc5"
+     print*,p_hc8,"hc8"
+     print*,p_eth,"eth"
+     print*,p_ch4,"ch4"
+     print*,p_co,"co"
+     print*,p_ol2,"ol2"
+     print*,p_olt,"olt"
+     print*,p_oli,"oli"
+     print*,p_tol,"tol"
+     print*,p_xyl,"xyl"
+     print*,p_aco3,"aco3"
+     print*,p_tpan,"tpan"
+     print*,p_hono,"hono"
+     print*,p_hno4,"hno4"
+     print*,p_ket,"ket"
+     print*,p_gly,"gly"
+     print*,p_mgly,"mgly"
+     print*,p_dcb,"dcb"
+     print*,p_onit,"onit"
+     print*,p_csl,"csl"
+     print*,p_iso,"iso"
+     print*,p_ho,"ho"
+     print*,p_ho2,"ho2"
+     print*,p_hcl,"hcl"
+     print*,p_ch3o2,"ch3o2"
+     print*,p_ethp,"ethp"
+     print*,p_ch3oh,"ch3oh"
+     print*,p_c2h5oh,"c2h5oh"
+     print*,p_par,"par"
+     print*,p_to2,"to2"
+     print*,p_cro,"cro"
+     print*,p_open,"open"
+     print*,p_op3,"op3"
+     print*,p_c2o3,"c2o3"
+     print*,p_ro2,"ro2"
+     print*,p_ano2,"ano2"
+     print*,p_nap,"nap"
+     print*,p_xo2,"xo2"
+     print*,p_xpar,"xpar"
+     print*,p_isoprd,"isoprd"
+     print*,p_isopp,"isopp"
+     print*,p_isopn,"isopn"
+     print*,p_isopo2,"isopo2"
+     print*,p_aro1,"aro1"
+     print*,p_aro2,"aro2"
+     print*,p_alk1,"alk1"
+     print*,p_ole1,"ole1"
+     print*,p_api1,"api1"
+     print*,p_api2,"api2"
+     print*,p_lim1,"lim1"
+     print*,p_lim2,"lim2"
+     print*,p_api,"api"
+     print*,p_lim,"lim"
+
+  case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+     print*,p_o3,"o3"
+     print*,p_h2o2,"h2o2"
+     print*,p_no,"no"
+     print*,p_no2,"no2"
+     print*,p_no3,"no3"
+     print*,p_n2o5,"n2o5"
+     print*,p_hono,"hono"
+     print*,p_hno3,"hno3"
+     print*,p_hno4,"hno4"
+     print*,p_so2,"so2"
+     print*,p_h2so4,"h2so4"
+     print*,p_co,"co"
+     print*,p_hcho,"hcho"
+     print*,p_ccho,"ccho"
+     print*,p_rcho,"rcho"
+     print*,p_acet,"acet"
+     print*,p_mek,"mek"
+     print*,p_hcooh,"hcooh"
+     print*,p_meoh,"meoh"
+     print*,p_etoh,"etoh"
+     print*,p_cco_oh,"cco_oh"
+     print*,p_rco_oh,"rco_oh"
+     print*,p_gly,"gly"
+     print*,p_mgly,"mgly"
+     print*,p_bacl,"bacl"
+     print*,p_cres,"cres"
+     print*,p_bald,"bald"
+     print*,p_isoprod,"isoprod"
+     print*,p_methacro,"methacro"
+     print*,p_mvk,"mvk"
+     print*,p_prod2,"prod2"
+     print*,p_dcb1,"dcb1"
+     print*,p_dcb2,"dcb2"
+     print*,p_dcb3,"dcb3"
+     print*,p_ethene,"ethene"
+     print*,p_isoprene,"isoprene"
+     print*,p_c2h6,"c2h6"
+     print*,p_c3h8,"c3h8"
+     print*,p_c2h2,"c2h2"
+     print*,p_c3h6,"c3h6"
+     print*,p_alk3,"alk3"
+     print*,p_alk4,"alk4"
+     print*,p_alk5,"alk5"
+     print*,p_aro1,"aro1"
+     print*,p_aro2,"aro2"
+     print*,p_ole1,"ole1"
+     print*,p_ole2,"ole2"
+     print*,p_terp,"terp"
+     print*,p_sesq,"sesq"
+     print*,p_rno3,"rno3"
+     print*,p_nphe,"nphe"
+     print*,p_phen,"phen"
+     print*,p_pan,"pan"
+     print*,p_pan2,"pan2"
+     print*,p_pbzn,"pbzn"
+     print*,p_ma_pan,"ma_pan"
+     print*,p_bc_spr,"bc_spr"
+     print*,p_oc_spr,"oc_spr"
+     print*,p_ssf,"ssf"
+     print*,p_ssc,"ssc"
+     print*,p_pm10_spr,"pm10_spr"
+     print*,p_pm25_spr,"pm25_spr"
+     print*,p_dms,"dms"
+     print*,p_dst1,"dst1"
+     print*,p_dst2,"dst2"
+     print*,p_dst3,"dst3"
+     print*,p_co2,"co2"
+     print*,p_cco_ooh,"cco_ooh"
+     print*,p_rco_o2,"rco_o2"
+     print*,p_rco_ooh,"rco_ooh"
+     print*,p_xn,"xn"
+     print*,p_xc,"xc"
+     print*,p_ho,"oh"
+     print*,p_ho2,"ho2"
+     print*,p_c_o2,"c_o2"
+     print*,p_cooh,"cooh"
+     print*,p_rooh,"rooh"
+     print*,p_ro2_r,"ro2_r"
+     print*,p_r2o2,"r2o2"
+     print*,p_ro2_n,"ro2_n"
+     print*,p_cco_o2,"cco_o2"
+     print*,p_bzco_o2,"bzco_o2"
+     print*,p_ma_rco3,"ma_rco3"
+     print*,p_ch4,"ch4"
+
   end select
 !
 ! Aerosol species...
 !
   select case (chem_opt)
-  case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP,RACM_ESRLSORG_KPP)
+  case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, RACMSORG_AQ, RACMSORG_KPP,RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"
@@ -1055,6 +1413,176 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_hysw_a08,"hysw_a08"
      print*,p_water_a08,"water_a08"
      print*,p_num_a08,"num_a08"
+  case (CBMZ_MOSAIC_KPP)
+     print*,p_so4_a01,"so4_a01"
+     print*,p_no3_a01,"no3_a01"
+     print*,p_cl_a01,"cl_a01"
+     print*,p_nh4_a01,"nh4_a01"
+     print*,p_na_a01,"na_a01"
+     print*,p_oin_a01,"oin_a01"
+     print*,p_oc_a01,"oc_a01"
+     print*,p_bc_a01,"bc_a01"
+     print*,p_hysw_a01,"hysw_a01"
+     print*,p_water_a01,"water_a01"
+     print*,p_num_a01,"num_a01"
+     print*,p_aro1_a01,"aro1_a01"
+     print*,p_aro2_a01,"aro2_a01"
+     print*,p_alk1_a01,"alk1_a01"
+     print*,p_ole1_a01,"ole1_a01"
+     print*,p_api1_a01,"api1_a01"
+     print*,p_api2_a01,"api2_a01"
+     print*,p_lim1_a01,"lim1_a01"
+     print*,p_lim2_a01,"lim2_a01"
+     print*,p_so4_a02,"so4_a02"
+     print*,p_no3_a02,"no3_a02"
+     print*,p_cl_a02,"cl_a02"
+     print*,p_nh4_a02,"nh4_a02"
+     print*,p_na_a02,"na_a02"
+     print*,p_oin_a02,"oin_a02"
+     print*,p_oc_a02,"oc_a02"
+     print*,p_bc_a02,"bc_a02"
+     print*,p_hysw_a02,"hysw_a02"
+     print*,p_water_a02,"water_a02"
+     print*,p_num_a02,"num_a02"
+     print*,p_aro1_a02,"aro1_a02"
+     print*,p_aro2_a02,"aro2_a02"
+     print*,p_alk1_a02,"alk1_a02"
+     print*,p_ole1_a02,"ole1_a02"
+     print*,p_api1_a02,"api1_a02"
+     print*,p_api2_a02,"api2_a02"
+     print*,p_lim1_a02,"lim1_a02"
+     print*,p_lim2_a02,"lim2_a02"
+     print*,p_so4_a03,"so4_a03"
+     print*,p_no3_a03,"no3_a03"
+     print*,p_cl_a03,"cl_a03"
+     print*,p_nh4_a03,"nh4_a03"
+     print*,p_na_a03,"na_a03"
+     print*,p_oin_a03,"oin_a03"
+     print*,p_oc_a03,"oc_a03"
+     print*,p_bc_a03,"bc_a03"
+     print*,p_hysw_a03,"hysw_a03"
+     print*,p_water_a03,"water_a03"
+     print*,p_num_a03,"num_a03"
+     print*,p_aro1_a03,"aro1_a03"
+     print*,p_aro2_a03,"aro2_a03"
+     print*,p_alk1_a03,"alk1_a03"
+     print*,p_ole1_a03,"ole1_a03"
+     print*,p_api1_a03,"api1_a03"
+     print*,p_api2_a03,"api2_a03"
+     print*,p_lim1_a03,"lim1_a03"
+     print*,p_lim2_a03,"lim2_a03"
+     print*,p_so4_a04,"so4_a04"
+     print*,p_no3_a04,"no3_a04"
+     print*,p_cl_a04,"cl_a04"
+     print*,p_nh4_a04,"nh4_a04"
+     print*,p_na_a04,"na_a04"
+     print*,p_oin_a04,"oin_a04"
+     print*,p_oc_a04,"oc_a04"
+     print*,p_bc_a04,"bc_a04"
+     print*,p_hysw_a04,"hysw_a04"
+     print*,p_water_a04,"water_a04"
+     print*,p_num_a04,"num_a04"
+     print*,p_aro1_a04,"aro1_a04"
+     print*,p_aro2_a04,"aro2_a04"
+     print*,p_alk1_a04,"alk1_a04"
+     print*,p_ole1_a04,"ole1_a04"
+     print*,p_api1_a04,"api1_a04"
+     print*,p_api2_a04,"api2_a04"
+     print*,p_lim1_a04,"lim1_a04"
+     print*,p_lim2_a04,"lim2_a04"
+     print*,p_so4_a05,"so4_a05"
+     print*,p_no3_a05,"no3_a05"
+     print*,p_cl_a05,"cl_a05"
+     print*,p_nh4_a05,"nh4_a05"
+     print*,p_na_a05,"na_a05"
+     print*,p_oin_a05,"oin_a05"
+     print*,p_oc_a05,"oc_a05"
+     print*,p_bc_a05,"bc_a05"
+     print*,p_hysw_a05,"hysw_a05"
+     print*,p_water_a05,"water_a05"
+     print*,p_num_a05,"num_a05"
+     print*,p_aro1_a05,"aro1_a05"
+     print*,p_aro2_a05,"aro2_a05"
+     print*,p_alk1_a05,"alk1_a05"
+     print*,p_ole1_a05,"ole1_a05"
+     print*,p_api1_a05,"api1_a05"
+     print*,p_api2_a05,"api2_a05"
+     print*,p_lim1_a05,"lim1_a05"
+     print*,p_lim2_a05,"lim2_a05"
+     print*,p_so4_a06,"so4_a06"
+     print*,p_no3_a06,"no3_a06"
+     print*,p_cl_a06,"cl_a06"
+     print*,p_nh4_a06,"nh4_a06"
+     print*,p_na_a06,"na_a06"
+     print*,p_oin_a06,"oin_a06"
+     print*,p_oc_a06,"oc_a06"
+     print*,p_bc_a06,"bc_a06"
+     print*,p_hysw_a06,"hysw_a06"
+     print*,p_water_a06,"water_a06"
+     print*,p_num_a06,"num_a06"
+     print*,p_aro1_a06,"aro1_a06"
+     print*,p_aro2_a06,"aro2_a06"
+     print*,p_alk1_a06,"alk1_a06"
+     print*,p_ole1_a06,"ole1_a06"
+     print*,p_api1_a06,"api1_a06"
+     print*,p_api2_a06,"api2_a06"
+     print*,p_lim1_a06,"lim1_a06"
+     print*,p_lim2_a06,"lim2_a06"
+     print*,p_so4_a07,"so4_a07"
+     print*,p_no3_a07,"no3_a07"
+     print*,p_cl_a07,"cl_a07"
+     print*,p_nh4_a07,"nh4_a07"
+     print*,p_na_a07,"na_a07"
+     print*,p_oin_a07,"oin_a07"
+     print*,p_oc_a07,"oc_a07"
+     print*,p_bc_a07,"bc_a07"
+     print*,p_hysw_a07,"hysw_a07"
+     print*,p_water_a07,"water_a07"
+     print*,p_num_a07,"num_a07"
+     print*,p_aro1_a07,"aro1_a07"
+     print*,p_aro2_a07,"aro2_a07"
+     print*,p_alk1_a07,"alk1_a07"
+     print*,p_ole1_a07,"ole1_a07"
+     print*,p_api1_a07,"api1_a07"
+     print*,p_api2_a07,"api2_a07"
+     print*,p_lim1_a07,"lim1_a07"
+     print*,p_lim2_a07,"lim2_a07"
+     print*,p_so4_a08,"so4_a08"
+     print*,p_no3_a08,"no3_a08"
+     print*,p_cl_a08,"cl_a08"
+     print*,p_nh4_a08,"nh4_a08"
+     print*,p_na_a08,"na_a08"
+     print*,p_oin_a08,"oin_a08"
+     print*,p_oc_a08,"oc_a08"
+     print*,p_bc_a08,"bc_a08"
+     print*,p_hysw_a08,"hysw_a08"
+     print*,p_water_a08,"water_a08"
+     print*,p_num_a08,"num_a08"
+     print*,p_aro1_a08,"aro1_a08"
+     print*,p_aro2_a08,"aro2_a08"
+     print*,p_alk1_a08,"alk1_a08"
+     print*,p_ole1_a08,"ole1_a08"
+     print*,p_api1_a08,"api1_a08"
+     print*,p_api2_a08,"api2_a08"
+     print*,p_lim1_a08,"lim1_a08"
+     print*,p_lim2_a08,"lim2_a08"
+     print*,p_ca_a01,"ca_a01"
+     print*,p_ca_a02,"ca_a02"
+     print*,p_ca_a03,"ca_a03"
+     print*,p_ca_a04,"ca_a04"
+     print*,p_ca_a05,"ca_a05"
+     print*,p_ca_a06,"ca_a06"
+     print*,p_ca_a07,"ca_a07"
+     print*,p_ca_a08,"ca_a08"
+     print*,p_co3_a01,"co3_a01"
+     print*,p_co3_a02,"co3_a02"
+     print*,p_co3_a03,"co3_a03"
+     print*,p_co3_a04,"co3_a04"
+     print*,p_co3_a05,"co3_a05"
+     print*,p_co3_a06,"co3_a06"
+     print*,p_co3_a07,"co3_a07"
+     print*,p_co3_a08,"co3_a08"
+
   case (CBMZ_MOSAIC_4BIN_AQ)
      print*,p_so4_a01,"so4_a01"
      print*,p_no3_a01,"no3_a01"

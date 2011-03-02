@@ -15,7 +15,7 @@
 
 /* read in the Registry file and build the internal representation of the registry */
 
-#define MAXTOKENS 1000
+#define MAXTOKENS 5000 /*changed MAXTOKENS from 1000 to 5000 by Manish Shrivastava on 01/28/2010*/
 
 /* fields for state entries (note, these get converted to field entries in the
    reg_parse routine; therefore, only TABLE needs to be looked at */
@@ -90,12 +90,13 @@ static char tracers[1000][100] ;
 int
 pre_parse( char * dir, FILE * infile, FILE * outfile )
 {
-  char inln[8192], parseline[8192], parseline_save[8192] ;
+  /* Decreased size for SOA from 8192 to 8000--double check if necessary, Manish Shrivastava 2010 */
+  char inln[8000], parseline[8000], parseline_save[8000] ;
   int found ; 
   char *p, *q ;
-  char *tokens[MAXTOKENS], *toktmp[MAXTOKENS], newdims[NAMELEN], newdims4d[NAMELEN],newname[NAMELEN] ;
+  char *tokens[MAXTOKENS], *toktmp[MAXTOKENS], newdims[NAMELEN_LONG], newdims4d[NAMELEN_LONG],newname[NAMELEN_LONG] ;
   int i, ii, len_of_tok ;
-  char x, xstr[NAMELEN] ;
+  char x, xstr[NAMELEN_LONG] ;
   int is4d, wantstend, wantsbdy ;
   int ifdef_stack_ptr = 0 ;
   int ifdef_stack[100] ;
@@ -106,7 +107,8 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
 
   parseline[0] = '\0' ;
 /* main parse loop over registry lines */
-  while ( fgets ( inln , 4096 , infile ) != NULL )
+  /* Had to increase size for SOA from 4096 to 7000, Manish Shrivastava 2010 */
+  while ( fgets ( inln , 7000 , infile ) != NULL )
   {
 
 /*** preprocessing directives ****/
@@ -300,7 +302,8 @@ normal:
 int
 reg_parse( FILE * infile )
 {
-  char inln[4096], parseline[4096] ;
+  /* Had to increase size for SOA from 4096 to 7000, Manish Shrivastava 2010 */
+  char inln[7000], parseline[7000] ;
   char *p, *q ;
   char *tokens[MAXTOKENS], *toktmp[MAXTOKENS] ; 
   int i, ii ;
@@ -311,7 +314,8 @@ reg_parse( FILE * infile )
   max_time_level = 1 ;
 
 /* main parse loop over registry lines */
-  while ( fgets ( inln , 4096 , infile ) != NULL )
+/* Had to increase size for SOA from 4096 to 7000, Manish Shrivastava 2010 */
+  while ( fgets ( inln , 7000 , infile ) != NULL )
   {
     strcat( parseline , inln ) ; 
     /* allow \ to continue the end of a line */

@@ -51,6 +51,7 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
 ! SWITCHES FOR MICROPHYSICS SCHEME
 ! IACT = 1, USE POWER-LAW CCN SPECTRA, NCCN = CS^K
 ! IACT = 2, USE LOGNORMAL AEROSOL SIZE DIST TO DERIVE CCN SPECTRA
+! IACT = 3, ACTIVATION CALCULATED IN MODULE_MIXACTIVATE
 
      INTEGER, PRIVATE ::  IACT
 
@@ -464,9 +465,12 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                 RHO, PII, P, DT_IN, DZ, HT, W,          &
                 RAINNC, RAINNCV, SR,                    &
                 qrcuten, qscuten, qicuten, mu           & ! hm added
+               ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
                ,IDS,IDE, JDS,JDE, KDS,KDE               & ! domain dims
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
                ,ITS,ITE, JTS,JTE, KTS,KTE               & ! tile   dims            )
+!jdf		   ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
+		   ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
                                             )
  
 ! QV - water vapor mixing ratio (kg/kg)
@@ -501,6 +505,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! KZH - heat eddy diffusion coefficient from YSU scheme (M^2 S-1), NEEDED FOR DROPLET ACTIVATION (SEE CODE BELOW)
 ! EFFCS - CLOUD DROPLET EFFECTIVE RADIUS OUTPUT TO RADIATION CODE (micron)
 ! EFFIS - CLOUD DROPLET EFFECTIVE RADIUS OUTPUT TO RADIATION CODE (micron)
+! HM, ADDED FOR WRF-CHEM COUPLING
+! QLSINK - TENDENCY OF CLOUD WATER TO RAIN, SNOW, GRAUPEL (KG/KG/S)
+! CSED,ISED,SSED,GSED,RSED - SEDIMENTATION FLUXES (KG/M^2/S) FOR CLOUD WATER, ICE, SNOW, GRAUPEL, RAIN
+! PRECI,PRECS,PRECG,PRECR - SEDIMENTATION FLUXES (KG/M^2/S) FOR ICE, SNOW, GRAUPEL, RAIN
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! reflectivity currently not included!!!!
@@ -538,7 +546,12 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! Temporary changed from INOUT to IN
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
-                          qv, qc, qr, qi, qs, qg, ni, ns, nr, TH, NG
+                          qv, qc, qr, qi, qs, qg, ni, ns, nr, TH, NG   
+!jdf                      qndrop ! hm added, wrf-chem
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional,INTENT(INOUT):: qndrop
+!jdf  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT):: CSED3D, &
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional,INTENT(INOUT):: QLSINK, &
+                          PRECI,PRECS,PRECG,PRECR ! HM, WRF-CHEM
 !, effcs, effis
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
@@ -586,6 +599,12 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN):: &
       mu
 
+  LOGICAL, INTENT(IN), OPTIONAL ::                F_QNDROP  ! wrf-chem
+  LOGICAL :: flag_qndrop  ! wrf-chem
+  integer :: iinum ! wrf-chem
+
+! wrf-chem
+   REAL, DIMENSION(kts:kte) :: nc1d, nc_tend1d,C2PREC,CSED,ISED,SSED,GSED,RSED    
 ! HM add reflectivity      
 !                            dbz
                           
@@ -596,6 +615,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    REAL DT
 
 !   LOGICAL:: dBZ_tstep ! GT
+! below for wrf-chem
+   flag_qndrop = .false.
+   IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
+!!!!!!!!!!!!!!!!!!!!!!
 
    ! Initialize tendencies (all set to 0) and transfer
    ! array to local variables
@@ -643,6 +666,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
           NR_TEND1D(k)  = 0.
           T_TEND1D(k)   = 0.
           QV_TEND1D(k)  = 0.
+          nc_tend1d(k) = 0. ! wrf-chem
 
           QC1D(k)       = QC(i,k,j)
           QI1D(k)       = QI(i,k,j)
@@ -669,7 +693,22 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
           qrcu1d(k)     = qrcuten(i,k,j)/mu(i,j)
           qscu1d(k)     = qscuten(i,k,j)/mu(i,j)
           qicu1d(k)     = qicuten(i,k,j)/mu(i,j)
-      end do
+      end do  !jdf added this
+! below for wrf-chem
+   IF (flag_qndrop .AND. PRESENT( qndrop )) THEN
+      iact = 3
+      DO k = kts, kte
+         nc1d(k)=qndrop(i,k,j)
+         iinum=0
+      ENDDO
+   ELSE
+      DO k = kts, kte
+         nc1d(k)=0. ! temporary placeholder, set to constant in microphysics subroutine
+         iinum=1
+      ENDDO
+   ENDIF
+
+!jdf  end do
 
       call MORR_TWO_MOMENT_MICRO(QC_TEND1D, QI_TEND1D, QNI_TEND1D, QR_TEND1D,            &
        NI_TEND1D, NS_TEND1D, NR_TEND1D,                                                  &
@@ -682,7 +721,9 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                                     QG_TEND1D,NG_TEND1D,QG1D,NG1D,EFFG1D, &
                                     qrcu1d, qscu1d, qicu1d, &
 ! ADD SEDIMENTATION TENDENCIES
-                                  QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN)
+                                  QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
+                                  nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
+                       )
 
    !
    ! Transfer 1D arrays back into 3D arrays
@@ -713,6 +754,22 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
           EFFR(i,k,j)      = EFFR1D(k)
 	  EFFG(I,K,j)      = EFFG1D(K)
 
+! wrf-chem
+          IF (flag_qndrop .AND. PRESENT( qndrop )) THEN
+             qndrop(i,k,j) = nc1d(k)
+!jdf         CSED3D(I,K,J) = CSED(K)
+          END IF
+          IF ( PRESENT( QLSINK ) ) THEN
+             if(qc(i,k,j)>1.e-10) then
+                QLSINK(I,K,J)  = C2PREC(K)/QC(I,K,J)
+             else
+                QLSINK(I,K,J)  = 0.0
+             endif
+          END IF
+          IF ( PRESENT( PRECR ) ) PRECR(I,K,J) = RSED(K)
+          IF ( PRESENT( PRECI ) ) PRECI(I,K,J) = ISED(K)
+          IF ( PRESENT( PRECS ) ) PRECS(I,K,J) = SSED(K)
+          IF ( PRESENT( PRECG ) ) PRECG(I,K,J) = GSED(K)
 ! EFFECTIVE RADIUS FOR RADIATION CODE (currently not coupled)
 ! HM, ADD LIMIT TO PREVENT BLOWING UP OPTICAL PROPERTIES, 8/18/07
 !          EFFCS(I,K,J)     = MIN(EFFC(I,K,J),50.)
@@ -741,7 +798,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                                             IMS,IME, JMS,JME, KMS,KME,           &
                                             ITS,ITE, JTS,JTE, KTS,KTE,           & ! ADD GRAUPEL
                         QG3DTEN,NG3DTEN,QG3D,NG3D,EFFG,qrcu1d,qscu1d, qicu1d,    &
-                        QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN)
+                        QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
+                        nc3d,nc3dten,iinum, & ! wrf-chem
+				c2prec,CSED,ISED,SSED,GSED,RSED  &  ! hm added, wrf-chem
+                        )
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! THIS PROGRAM IS THE MAIN TWO-MOMENT MICROPHYSICS SUBROUTINE DESCRIBED BY
@@ -796,6 +856,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       REAL, DIMENSION(KTS:KTE) ::  DZQ                ! DIFFERENCE IN HEIGHT ACROSS LEVEL (m)
       REAL, DIMENSION(KTS:KTE) ::  W3D                ! GRID-SCALE VERTICAL VELOCITY (M/S)
       REAL, DIMENSION(KTS:KTE) ::  WVAR               ! SUB-GRID VERTICAL VELOCITY (M/S)
+! below for wrf-chem
+      REAL, DIMENSION(KTS:KTE) ::  nc3d
+      REAL, DIMENSION(KTS:KTE) ::  nc3dten
+      integer, intent(in) :: iinum
 
 ! HM ADDED GRAUPEL VARIABLES
       REAL, DIMENSION(KTS:KTE) ::  QG3DTEN            ! GRAUPEL MIX RATIO TENDENCY (KG/KG/S)
@@ -1044,11 +1108,15 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
         INTEGER IDROP
 
+! FOR WRF-CHEM
+	REAL, DIMENSION(KTS:KTE)::C2PREC,CSED,ISED,SSED,GSED,RSED 
+
 ! DROPLET CONCENTRATION AND ITS TENDENCY
 ! NOTE: CURRENTLY DROPLET CONCENTRATION IS SPECIFIED !!!!!
 ! TENDENCY OF NC IS CALCULATED BUT IT IS NOT USED !!!
-       REAL, DIMENSION(KTS:KTE) ::  NC3DTEN            ! CLOUD DROPLET NUMBER CONCENTRATION (1/KG/S)
-       REAL, DIMENSION(KTS:KTE) ::  NC3D               ! CLOUD DROPLET NUMBER CONCENTRATION (1/KG)
+! comment lines for wrf-chem since these are intent(in) in that case
+!       REAL, DIMENSION(KTS:KTE) ::  NC3DTEN            ! CLOUD DROPLET NUMBER CONCENTRATION (1/KG/S)
+!       REAL, DIMENSION(KTS:KTE) ::  NC3D               ! CLOUD DROPLET NUMBER CONCENTRATION (1/KG)
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
@@ -1061,6 +1129,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! NC3DTEN LOCAL ARRAY INITIALIZED
                NC3DTEN(K) = 0.
+! INITIALIZE VARIABLES FOR WRF-CHEM OUTPUT TO ZERO
+
+		C2PREC(K)=0.
+		CSED(K)=0.
+		ISED(K)=0.
+		SSED(K)=0.
+		GSED(K)=0.
+		RSED(K)=0.
 
 ! LATENT HEAT OF VAPORATION
 
@@ -1254,10 +1330,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! INUM = 0, PREDICT DROPLET NUMBER
 ! INUM = 1, SET CONSTANT DROPLET NUMBER
 
-!         IF (INUM.EQ.1) THEN
+         IF (iinum.EQ.1) THEN
 ! CONVERT NDCNST FROM CM-3 TO KG-1
             NC3D(K)=NDCNST*1.E6/RHO(K)
-!         END IF
+         END IF
 
 ! GET SIZE DISTRIBUTION PARAMETERS
 
@@ -1742,6 +1818,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       NC3DTEN(K) = NC3DTEN(K)+ (-NPRA(K)-NPRC(K))
       NR3DTEN(K) = NR3DTEN(K)+ (NPRC1(K)+NRAGG(K)-NPRACG(K))
 
+! HM ADD, WRF-CHEM, ADD TENDENCIES FOR C2PREC
+
+	C2PREC(K) = PRA(K)+PRC(K)
       IF (PRE(K).LT.0.) THEN
          DUM = PRE(K)*DT/QR3D(K)
            DUM = MAX(-1.,DUM)
@@ -1828,10 +1907,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! INUM = 0, PREDICT DROPLET NUMBER
 ! INUM = 1, SET CONSTANT DROPLET NUMBER
 
-!         IF (INUM.EQ.1) THEN
+         IF (iinum.EQ.1) THEN
 ! CONVERT NDCNST FROM CM-3 TO KG-1
             NC3D(K)=NDCNST*1.E6/RHO(K)
-!         END IF
+         END IF
 
 ! CALCULATE SIZE DISTRIBUTION PARAMETERS
 ! MAKE SURE NUMBER CONCENTRATIONS AREN'T NEGATIVE
@@ -2944,6 +3023,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       NR3DTEN(K) = NR3DTEN(K)+(NPRC1(K)-NPRACS(K)-NNUCCR(K)      &
                    +NRAGG(K)-NIACR(K)-NIACRS(K)-NPRACG(K)-NGRACS(K))
 
+! HM ADD, WRF-CHEM, ADD TENDENCIES FOR C2PREC
+
+	C2PREC(K) = PRA(K)+PRC(K)+PSACWS(K)+QMULTS(K)+QMULTG(K)+PSACWG(K)+ &
+       PGSACW(K)+MNUCCC(K)+PSACWI(K)
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! NOW CALCULATE SATURATION ADJUSTMENT TO CONDENSE EXTRA VAPOR ABOVE
 ! WATER SATURATION
@@ -3059,9 +3142,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 	DUMFNG(K) = NG3D(K)+NG3DTEN(K)*DT
 
 ! SWITCH FOR CONSTANT DROPLET NUMBER
-!        IF (INUM.EQ.1) THEN
+        IF (iinum.EQ.1) THEN
         DUMFNC(K) = NC3D(K)
-!        END IF
+        END IF
 
 ! GET DUMMY LAMDA FOR SEDIMENTATION CALCULATIONS
 
@@ -3298,6 +3381,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       DUMG(K) = DUMG(K)+FALTNDG*DT/NSTEP
       DUMFNG(K) = DUMFNG(K)+FALTNDNG*DT/NSTEP
 
+! FOR WRF-CHEM, NEED PRECIP RATES (UNITS OF KG/M^2/S)
+	  CSED(K)=CSED(K)+FALOUTC(K)/NSTEP
+	  ISED(K)=ISED(K)+FALOUTI(K)/NSTEP
+	  SSED(K)=SSED(K)+FALOUTS(K)/NSTEP
+	  GSED(K)=GSED(K)+FALOUTG(K)/NSTEP
+	  RSED(K)=RSED(K)+FALOUTR(K)/NSTEP
       END DO
 
 ! GET PRECIPITATION AND SNOWFALL ACCUMULATION DURING THE TIME STEP
@@ -3340,7 +3429,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
           QI3D(k)        = QI3D(k)+QI3DTEN(k)*DT
           QNI3D(k)        = QNI3D(k)+QNI3DTEN(k)*DT
           QR3D(k)        = QR3D(k)+QR3DTEN(k)*DT
-!          NC3D(k)        = NC3D(k)+NC3DTEN(k)*DT
+          NC3D(k)        = NC3D(k)+NC3DTEN(k)*DT
           NI3D(k)        = NI3D(k)+NI3DTEN(k)*DT
           NS3D(k)        = NS3D(k)+NS3DTEN(k)*DT
           NR3D(k)        = NR3D(k)+NR3DTEN(k)*DT
@@ -3680,14 +3769,14 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! OF DROPLETS, ESPECIALLY WHEN INUM = 1, SET MAX AT 10 CM-3
           NI3D(K) = MIN(NI3D(K),10.E6/RHO(K))
 ! ADD BOUND ON DROPLET NUMBER - CANNOT EXCEED AEROSOL CONCENTRATION
-          IF (INUM.EQ.0.AND.IACT.EQ.2) THEN
+          IF (iinum.EQ.0.AND.IACT.EQ.2) THEN
           NC3D(K) = MIN(NC3D(K),(NANEW1+NANEW2)/RHO(K))
           END IF
 ! SWITCH FOR CONSTANT DROPLET NUMBER
-!          IF (INUM.EQ.1) THEN
+          IF (iinum.EQ.1) THEN 
 ! CHANGE NDCNST FROM CM-3 TO KG-1
              NC3D(K) = NDCNST*1.E6/RHO(K)
-!          END IF
+          END IF
 
       END DO !!! K LOOP
 

@@ -633,7 +633,7 @@
 !
       integer iradmaxd_wrk, iaertymaxd_wrk
       parameter (iradmaxd_wrk=16)
-      parameter (iaertymaxd_wrk=32)
+      parameter (iaertymaxd_wrk=150)
 
       integer irad
       integer iaerty

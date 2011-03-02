@@ -425,6 +425,18 @@
      CASE (GOCARTRADM2)
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
        haveaer = .false.
+     CASE (SAPRC99_KPP)
+       CALL wrf_debug(15,'calling saprc99_kpp from chem_driver')
+       haveaer = .false.
+     CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+       CALL wrf_debug(15,'calling saprc99_mosaic_4bin_vbs2_kpp from chem_driver')
+       haveaer = .false.
+     CASE (CBMZSORG)
+       CALL wrf_debug(15,'calling cbmzsorg aerosols from chem_driver')
+       haveaer = .true.
+     CASE (CBMZSORG_AQ)
+       CALL wrf_debug(15,'calling cbmzsorg_aq aerosols from chem_driver')
+       haveaer = .true.
      CASE (CBMZ)
        CALL wrf_debug(15,'calling cbmz from chem_driver')
        haveaer = .false.
@@ -433,6 +445,9 @@
        haveaer = .false.
      CASE (CBMZ_BB_KPP)
        CALL wrf_debug(15,'calling cbmz_bb_kpp from chem_driver')
+       haveaer = .false.
+     CASE (CBMZ_MOSAIC_KPP)
+       CALL wrf_debug(15,'calling cbmz_mosaic_kpp from chem_driver')
        haveaer = .false.
      CASE (CBMZ_MOSAIC_4BIN)
        CALL wrf_debug(15,'calling cbmz_mosaic_4bin aerosols driver from chem_driver')
@@ -609,6 +624,19 @@
                enddo
             enddo
          enddo
+
+! Special treatment of CH4 in SAPRC99
+      case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+         CALL wrf_debug ( 15 , ' fixing ch4 conc using co conc' )
+         do j=jps,jpe
+            do k=kps,kpe
+               do i=ips,ipe
+                  chem(i,k,j,p_ch4)=1.74
+               enddo
+            enddo
+         enddo
+
+
       end select
 
 
@@ -808,10 +836,21 @@
               chem,dz8w,rri,rh,                                                       &
               grid%h2oai,grid%h2oaj,                                                  &
               grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                    &
+             !czhao
+              grid%extaer1,grid%extaer2,grid%extaer3,grid%extaer4,                    &
               grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                            &
               grid%waer1,grid%waer2,grid%waer3,grid%waer4,                            &
               grid%bscoef1,grid%bscoef2,grid%bscoef3,grid%bscoef4,                    &
               grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,      &
+              grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,            &
+              grid%extaerlw1,grid%extaerlw2,grid%extaerlw3,grid%extaerlw4,grid%extaerlw5, &
+              grid%extaerlw6,grid%extaerlw7,grid%extaerlw8,grid%extaerlw9,grid%extaerlw10, &
+              grid%extaerlw11,grid%extaerlw12,grid%extaerlw13,grid%extaerlw14,grid%extaerlw15, &
+              grid%extaerlw16,    &
+              grid%tauaerlw1,grid%tauaerlw2,grid%tauaerlw3,grid%tauaerlw4,grid%tauaerlw5,  &
+              grid%tauaerlw6,grid%tauaerlw7,grid%tauaerlw8,grid%tauaerlw9,grid%tauaerlw10,  &
+              grid%tauaerlw11,grid%tauaerlw12,grid%tauaerlw13,grid%tauaerlw14,grid%tauaerlw15,  &
+              grid%tauaerlw16,    &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite, jts,jte, kts,kte)
@@ -942,6 +981,12 @@
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts, kte,                                            &
                config_flags%kemit,                                                    &
+               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
+               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
+               grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,           &
+               grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,                     &
+               grid%ph_hcochest,grid%ph_ch3o2h,grid%ph_ch3coo2h,                      &
+               grid%ph_ch3ono2,grid%ph_hcochob,grid%ph_n2o5,grid%ph_o2                &
                                                                                       )
        end if
 #endif
@@ -1072,7 +1117,18 @@
 !
 
 #ifdef WRF_KPP
+
+         do k=kts,kte
+           do i=its,ite
+             do j=jts,jte
+               chem(i,k,j,p_psd1)=0.0
+               chem(i,k,j,p_psd2)=0.0
+          enddo
+         enddo
+          enddo
+
    CALL wrf_debug(15,'calling kpp_mechanism_driver')
+
 CALL kpp_mechanism_driver (chem,                                                      &
    grid%id,dtstepc,config_flags,                                                      &
    p_phy,t_phy,rho,                                                                   &
@@ -1100,6 +1156,7 @@ CALL kpp_mechanism_driver (chem,                                                
        chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
 !      chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
    endif
+
    so2so4_select: SELECT CASE(config_flags%chem_opt)
      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP)
        CALL wrf_debug(15,'gocart so2-so4 conversion')
@@ -1199,7 +1256,7 @@ CALL kpp_mechanism_driver (chem,                                                
               rri,t_phy,moist,grid%aerwrf,p8w,t8w,                                    &
 #endif
               p_phy,chem,rho,dz8w,                                                    &
-              zmid,z_at_w,                                                            &
+              zmid,z_at_w,grid%vbs_nbin,                                              &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,           &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
               grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,vcsulf_old,             &
@@ -1277,9 +1334,20 @@ end if !Chemistry time step check
       call sum_pm_driver ( config_flags,                                              &
            rri, chem, grid%h2oaj, grid%h2oai,                                         &
            grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,            &
-           ids,ide, jds,jde, kds,kde,                                                 &
-           ims,ime, jms,jme, kms,kme,                                                 &
-           its,ite, jts,jte, kts,kte                                                  )
+           grid% hoa_a01,grid%hoa_a02,grid%hoa_a03,grid%hoa_a04,                      &
+           grid%bboa_a01,grid%bboa_a02,grid%bboa_a03,grid%bboa_a04,                   &
+           grid%soa_a01,grid%soa_a02,grid%soa_a03,grid%soa_a04,                       &
+           grid%bbsoa_a01,grid%bbsoa_a02,grid%bbsoa_a03,grid%bbsoa_a04,               &
+           grid%hsoa_a01,grid%hsoa_a02,grid%hsoa_a03,grid%hsoa_a04,                   &
+           grid%biog_a01,grid%biog_a02,grid%biog_a03,grid%biog_a04,                   &
+           grid%arosoa_a01,grid%arosoa_a02,grid%arosoa_a03,grid%arosoa_a04,           &
+           grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,               &
+           grid%hsoa_c,grid%hsoa_o,grid%bbsoa_c,grid%bbsoa_o,                         &
+           grid%biog_v1,grid%biog_v2,grid%biog_v3,grid%biog_v4,                       &
+           grid%ant_v1,grid%ant_v2,grid%ant_v3,grid%ant_v4,                           &
+             ids,ide, jds,jde, kds,kde,                                               &
+             ims,ime, jms,jme, kms,kme,                                               &
+             its,ite, jts,jte, kts,kte             )
 
 ! Fill top level to prevent spurious interpolation results (no extrapolation)
       do nv=1,num_chem

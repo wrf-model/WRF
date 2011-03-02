@@ -64,7 +64,8 @@
          INTENT(INOUT ) ::                                             &
                addt,addx,addc,etep,oltp,olip,cslp,limp,hc5p,hc8p,tolp, &
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
-               ketp,olnd 
+               ketp,olnd
+
 
 !
 ! on input from meteorological model 
@@ -118,6 +119,7 @@
             max(chem(its:ite,kts:kte,jts:jte,p_so2),epsilc)
        vch2o2_old(its:ite,kts:kte,jts:jte) = &
             max(chem(its:ite,kts:kte,jts:jte,p_h2o2),epsilc)
+
 
      CASE (RADM2, RADM2SORG, RADM2SORG_AQ)
        CALL wrf_debug(15,'calling radm2_driver from mechanism_driver')

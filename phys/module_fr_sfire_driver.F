@@ -67,7 +67,7 @@ module module_fr_sfire_driver
 ! use this module for standalone call, you only need to provide some mock-up wrf modules  
 
 use module_fr_sfire_model
-use module_fr_sfire_phys
+use module_fr_sfire_phys, only : fire_params , init_fuel_cats
 use module_fr_sfire_util
 use module_fr_sfire_core, only: ignition_line_type
 
@@ -102,7 +102,9 @@ subroutine sfire_driver_em ( grid , config_flags                    &
 ! Driver layer modules
 #ifdef DM_PARALLEL
     USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
-    USE module_comm_dm 
+    USE module_comm_dm , ONLY : halo_fire_fuel_sub, halo_fire_tign_sub, halo_fire_wind_f_sub, &
+halo_fire_wind_a_sub, halo_fire_ph_sub, halo_fire_zsf_sub, halo_fire_longlat_sub, &
+halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
 #endif
 
     implicit none
@@ -795,7 +797,7 @@ end subroutine sfire_driver_phys
 
 subroutine fire_ignition_convert (config_flags,fire_max_ignitions,fire_ignition_longlat, &
     ignition_line,fire_num_ignitions,unit_fxlong,unit_fxlat)
-    USE module_configure
+    USE module_configure, only : grid_config_rec_type
     implicit none
 ! create ignition arrays from scalar flags
 !*** arguments
@@ -1417,8 +1419,6 @@ end subroutine check_fmesh
 !*****************************
 !
 subroutine set_flags(config_flags)
-USE module_configure
-use module_fr_sfire_util
 implicit none
 TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
 ! copy flags from wrf to module_fr_sfire_util

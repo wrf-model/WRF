@@ -51,6 +51,7 @@ CONTAINS
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
    INTEGER,      INTENT(IN   ) :: ktau
+   integer l
    REAL(KIND=8), INTENT(IN   ) :: curr_secs
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
          INTENT(IN ) ::                                   moist
@@ -60,6 +61,7 @@ CONTAINS
          INTENT(INOUT ) ::                                 chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_tracer ),         &
          INTENT(INOUT ) ::                                 tracer
+
 
    INTEGER,      INTENT(IN   ) :: kemit
    REAL, DIMENSION( ims:ime, kms:kemit, jms:jme ),            &
@@ -315,15 +317,18 @@ CONTAINS
 
        idrydep_onoff = 1
        aer_mech_id_select: SELECT CASE(config_flags%chem_opt)
-          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP)
+          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
              aer_mech_id = 1
           CASE (RACMSORG_AQ,RACMSORG_KPP)
              aer_mech_id = 2
-          CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+          CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
+                 CBMZ_MOSAIC_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+                 CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
              aer_mech_id = 3
           CASE DEFAULT
              aer_mech_id = 0
        END SELECT aer_mech_id_select
+
 !  config_flags%aer_drydep_opt <= 0   -- aerosol depositon velocities are set to zero
 !  config_flags%aer_drydep_opt >= 100 -- aerosol depvels are calculated in subr aer_depvel_driver
 !                                        (see module_aer_drydep.F for details)
@@ -331,15 +336,13 @@ CONTAINS
 !                                        MOSAIC chem packages subr aerosol_depvel_2 of module_mosaic_drydep.F
 !  config_flags%aer_drydep_opt == 11  -- SORGAM chem packages use subr vdvg of module_aerosols_sorgam.F
 
-
        if ((config_flags%aer_drydep_opt <= 0) .or. (aer_mech_id <= 0)) then
           CALL wrf_debug(15,'AEROSOL DRY DEP VELOCITIES  = 0.0')
-
 
        else if (config_flags%aer_drydep_opt <= 99) then
 
    adrydep_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP)
+     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RADM')
        call sorgam_depdriver (id,config_flags,ktau,dtstep,              &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
@@ -363,7 +366,9 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
-     CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
+     CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+          SAPRC99_MOSAIC_4BIN_VBS2_KPP )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR MOSAIC AEROSOLS')
        call mosaic_drydep_driver(                                       &
                id, curr_secs, ktau, dtstep, config_flags,               &
@@ -406,7 +411,23 @@ CONTAINS
                                                      
    END SELECT drydep_select                              
 
-
+! Add dvel here for all aerosol and gas species in the dvel array 
+!    l = max( 1, min( num_chem, numddvel ) )
+!       do i=its,ite
+!        do j=jts,jte
+!          do k=1,l
+!    dvel(i,j,k) = ddvel(i,j,k)
+!        enddo
+!         enddo
+!        enddo
+!
+!        do i=its,ite
+!        do j=jts,jte
+!         do k=l+1,numddvel
+!    if (l < numddvel) dvel(i,j,k) = 0.0
+!        enddo
+!        enddo
+!          enddo
 
 !   This will be called later from subgrd_transport_driver.F !!!!!!!!
 !
@@ -435,14 +456,14 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-      if (sf_urban_physics .eq. 0) then
-        if (e_co(i,kts,j) .gt. 0) then
-           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
-        endif
-        if (e_co(i,kts,j) .gt. 200) then
-           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
-        endif
-      endif
+!!$      if (sf_urban_physics .eq. 0) then
+!!$        if (e_co(i,kts,j) .gt. 0) then
+!!$           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+!!$        endif
+!!$        if (e_co(i,kts,j) .gt. 200) then
+!!$           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+!!$        endif
+!!$      endif
 !
       do k=kts,kte
          zz(k)=z(i,k,j)-z_at_w(i,kts,j)
@@ -467,7 +488,10 @@ CONTAINS
                            zzfull,zz,ddvel(i,j,nv),kts,kte)
 
             endif
-
+!The default case below does turbulent mixing for all gas and aerosol species
+!If aqueous phase is not activated
+!It requires ddvel array as a boundary condition near surface for flux of species 
+!The top boundary condition for eddy diffusivity is zero
          CASE DEFAULT
             call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                         zzfull,zz,ddvel(i,j,nv),kts,kte)

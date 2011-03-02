@@ -2174,7 +2174,6 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qnn,qnc,qnr
-package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
@@ -2191,7 +2190,6 @@ package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
 package   wdm5scheme_dfi    mp_physics_dfi==14       -                 dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -                 dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
-package   thompson07_dfi    mp_physics_dfi==98           -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
 
 package   no4dvarmoist        mp_physics_4dvar==-1       -             -
 package   passiveqv_4dvar     mp_physics_4dvar==0        -             g_moist:g_qv;a_moist:a_qv
@@ -2208,7 +2206,6 @@ package   milbrandt2mom_4dvar mp_physics_4dvar==9        -             g_moist:g
 package   morr_two_moment_4dvar  mp_physics_4dvar==10    -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   wdm5scheme_4dvar    mp_physics_4dvar==14       -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   wdm6scheme_4dvar    mp_physics_4dvar==16       -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   thompson07_4dvar    mp_physics_4dvar==98       -             g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 
 
 package   noprogn       progn==0                     -             -

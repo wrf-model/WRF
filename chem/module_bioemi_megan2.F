@@ -421,7 +421,11 @@ CONTAINS
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
 
-    CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+    CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_KPP, &
+          CBMZ_MOSAIC_4BIN, & 
+          CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, CBMZSORG, CBMZSORG_AQ)
         
        ! get p_of_megan2cbmz(:), p_of_cbmz(:), and cbmz_per_megan(:)
        CALL get_megan2cbmz_table
@@ -429,6 +433,9 @@ CONTAINS
     CASE ( MOZART_KPP, MOZCART_KPP )
        ! get p_of_megan2mozcart(:), p_of_mozcart(:), and mozcart_per_megan(:)
        CALL get_megan2mozcart_table
+
+    CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! FIX FOR SAPRC07A
+       CALL get_megan2saprcnov_table
 
     CASE DEFAULT
        
@@ -690,6 +697,13 @@ CONTAINS
 
           ! Output emissions for some species as diagnostics
           ! (mol km-2 hr-1)
+!          print*,'is_isoprene',is_isoprene
+!          print*,'is_pinene_a',is_pinene_a
+!          print*,'is_pinene_b',is_pinene_b
+
+!          if (E_megan2 (is_isoprene).gt.0) print*,'E_megan2 (is_isoprene)',E_megan2 (is_isoprene)
+!          if (E_megan2 (is_pinene_a).gt.0) print*,'E_megan2 (is_pinene_a)',E_megan2 (is_pinene_a)
+
           mebio_isop  (i,j) = E_megan2 ( is_isoprene        )
           mebio_apin  (i,j) = E_megan2 ( is_pinene_a        )
           mebio_bpin  (i,j) = E_megan2 ( is_pinene_b        )
@@ -972,7 +986,11 @@ is_mozcart_species : &
 
              END DO
 
-          CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+          CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_KPP, &
+                CBMZ_MOSAIC_4BIN, &
+                CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+                CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
+                CBMZ_MOSAIC_DMS_4BIN_AQ,CBMZ_MOSAIC_DMS_8BIN_AQ,CBMZSORG, CBMZSORG_AQ)
 
              DO icount = 1, n_megan2cbmz
 
@@ -992,7 +1010,9 @@ is_mozcart_species : &
 
                       ! Increase gas-phase concentrations (in ppmv) due to
                       ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis * emis2ppm
+                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis * emis2ppm !for eg. p_in_chem=p_iso for cbmz species
+                                                                                              !make another table for sorgam species (such as api and lim) 
+                                                                                              ! similar to racm table
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the 
@@ -1041,7 +1061,53 @@ is_mozcart_species : &
                 END IF ! ( p_of_cbmz (icount) .NE. non_react )
 
              END DO
-             
+            
+          CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! FIX FOR SAPRC99 AND SAPRC07
+
+             DO icount = 1, n_megan2saprcnov
+
+                IF ( p_of_saprcnov(icount) .NE. non_react ) THEN
+
+                   ! Get index to chem array for the corresponding RADM2
+                   ! species.
+                   p_in_chem = p_of_saprcnov(icount)
+
+                   ! Check if the species is actually in the mechanism
+                   IF ( p_in_chem > param_first_scalar ) THEN
+
+                      ! Emission rate for mechanism species in mol km-2 hr-1
+                      gas_emis = saprcnov_per_megan(icount) * E_megan2(p_of_megan2saprcnov(icount))
+
+                      ! Increase gas-phase concentrations (in ppmv) due to
+                      ! biogenic emissions
+                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
+
+                      ! Add emissions to diagnostic output variables.
+                      ! ebio_xxx (mol km-2 hr-1) were originally used by the
+                      ! BEIS3.11 biogenic emissions module.
+                      ! I have also borrowed variable e_bio (ppm m min-1).
+                      IF ( p_in_chem .EQ. p_isoprene ) THEN
+                         ebio_iso(i,j)        = ebio_iso(i,j)       + gas_emis
+                         e_bio(i,j,p_isoprene-1)   = e_bio(i,j,p_isoprene-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem .EQ. p_terp) THEN
+                         ebio_api(i,j)       = ebio_api(i,j)      + gas_emis
+                         e_bio(i,j,p_terp-1)  = e_bio(i,j,p_terp-1) + gas_emis*convert2
+                      ELSE IF ( p_in_chem .EQ. p_sesq) THEN
+                         ebio_lim(i,j)         = ebio_lim(i,j)        + gas_emis
+                         e_bio(i,j,p_sesq-1)    = e_bio(i,j,p_sesq-1)   + gas_emis*convert2
+                      ELSE IF ( p_in_chem .EQ. p_no) THEN
+                         ebio_no(i,j)         = ebio_no(i,j)        + gas_emis
+                         e_bio(i,j,p_no-1)    = e_bio(i,j,p_no-1)   + gas_emis*convert2
+                      END IF
+
+                   END IF !( p_in_chem > param_first_scalar )
+
+                END IF !( p_of_saprcnov(icount) .NE. non_react )
+
+             END DO
+
+
+ 
              CASE DEFAULT
 
                 CALL wrf_error_fatal('Species conversion table for MEGAN v2.04 not available. ')

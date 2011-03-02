@@ -73,7 +73,7 @@ MODULE module_input_chem_data
     INTEGER :: kx              ! number of vertical levels in temp profile        
     INTEGER :: kxm1
 
-    PARAMETER( kx=16, kxm1=kx-1, logg=100, lo=34)
+    PARAMETER( kx=16, kxm1=kx-1, logg=200, lo=34) ! Changed value of logg from 100 to 200 for additional gas species
    
     INTEGER, DIMENSION(logg)                     :: iref
 
@@ -342,8 +342,23 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
         GOCARTRACM_KPP, GOCARTRADM2,GOCARTRADM2_KPP,CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
-  case (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
-        CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+  case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+     call setup_gasprofile_map_saprcnov
+
+
+
+  case (CBMZ, CBMZ_BB, CBMZ_BB_KPP, &
+        CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN,  &
+        CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,CBMZSORG, &
+        CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
+        CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+!    This call works for CBMZ_BB_KPP and CBMZ_SORGAM_KPP if all additional
+!    gas species such as ch4, api, lim etc. are put after ho2 in the
+!    package definitions in registry.chem. This is important to not mess
+!    up the mapping of the first 33 species, and also make sure the last
+!    gas is isopo2. This is important for aerosol driver routines. Right
+!    now I put all additional species just before isopo2 in cbmz_mosaic_kpp
+!    Manish Shrivastava 12/8/2009
      call setup_gasprofile_map_cbmz(numgas)
 
   case (CBM4_KPP)
@@ -396,6 +411,46 @@ SUBROUTINE setup_gasprofile_map_radm_racm
                    'ONIT','CSL ','ISO ','HO  ','HO2 '           /)
 
 END SUBROUTINE setup_gasprofile_map_radm_racm
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Maps for indices and fractional apportionment of the default
+! species profiles to the SAPRC99 species for ICs and BCs.
+! Code build atomatically using write_BD_and_IC_code.m script and
+! BD_and_IC_NALROM_to_WRF-SAPRC.txt file
+! pablo-saide@uiowa.edu; 25-Aug-2009
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE setup_gasprofile_map_saprcnov
+  iref(:)    = 7 !default value
+  iref(1:49) = (/1,4,2,2,30,30,23,3,31,12, &
+                  19,6,8,9,18,17,6,6,6,23, &
+                  23,23,21,20,14,7,26,27,15,13, &
+                  11,11,23,23,6,6,23,10,16,25, &
+                  32,32,32,28,29,5,5,32,32/)
+
+  fracref(:)    = 1. !default value
+  fracref(1:49) = (/1.00E+00,1.00E+00,2.50E-01,7.50E-01,9.00E-01,1.00E-01, &
+                  1.00E+00,1.00E+00,1.00E+00,1.00E+00,1.00E+00,1.00E+00, &
+                  1.00E+00,1.00E+00,1.00E+00,1.00E+00,6.25E-04,5.00E-04, &
+                  2.50E-04,1.00E+00,1.00E+00,1.00E+00,1.00E+00,1.00E+00, &
+                  1.00E+00,1.00E+00,1.00E+00,1.00E+00,1.00E+00,1.00E+00, &
+                  5.00E-01,5.00E-01,1.00E+00,1.00E+00,8.00E-03,8.00E-03, &
+                  1.00E+00,1.00E+00,1.00E+00,1.00E+00,3.00E-01,2.00E-01, &
+                  2.00E-01,1.00E+00,1.00E+00,1.00E+00,5.00E-01,1.00E+00, &
+                  3.00E-01/)
+
+  ggnam(:) = 'JUNK' !default value
+  ggnam(1:49) = (/'O3  ','H2O2','NO  ','NO2 ','NO3 ','N2O5', &
+                  'HONO','HNO3','HNO4','SO2 ','H2SO','CO  ', & !H2SO really is H2SO4
+                  'HCHO','CCHO','RCHO','MEK ','HCOH','CCOH', & !HCOH=HCOOH, CCOH=CCO_OH
+                  'RCOH','GLY ','MGLY','CRES','MEAC','MVK ', & !RCOH=RCO_OH, MEAC=METHACRO
+                  'ETHE','ISPR','C3H8','C2H2','C3H6','ALK3', & !ETHE=ETHENE, ISPR=ISOPRENE
+                  'ALK4','ALK5','ARO1','ARO2','OLE1','OLE2', &
+                  'RNO3','PAN ','PAN2','MAPN','COOH','RCO2', & !MAPN=MA_PAN, COOH=CCO_OOH, RCO2=RCO_O2
+                  'ROOH','OH  ','HO2 ','COOH','ROOH','RO2R', & !ROOH=RCO_OOH, RO2R=RO2_R
+                  'RO2R'/)                                     !RO2R=RO2_R
+
+END SUBROUTINE setup_gasprofile_map_saprcnov
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Maps for indices and fractional apportionment of the default
@@ -1303,8 +1358,11 @@ SUBROUTINE input_chem_profile (si_grid)
 ! we have to treat it separately. (wig, 2-May-2007)
 !
       SELECT CASE(chem_opt)
-      CASE (CBMZ,CBMZ_BB,CBMZ_BB_KPP,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
-            CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
+      CASE (CBMZ,CBMZ_BB,CBMZ_BB_KPP, CBMZ_MOSAIC_KPP, &
+            CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
+            CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ, &
+            CBMZSORG,CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
+            CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
          do j = ny1,ny2
          do k = nz1,nz2
          do i = nx1,nx2
@@ -2817,10 +2875,15 @@ SUBROUTINE input_chem_profile (si_grid)
 	       GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
         get_last_gas = p_ho2
 
-     case (CBMZ)
+     case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+        get_last_gas = p_ch4
+
+
+     case (CBMZ,CBMZ_MOSAIC_DMS_4BIN,CBMZ_MOSAIC_DMS_8BIN,CBMZ_MOSAIC_DMS_4BIN_AQ,CBMZ_MOSAIC_DMS_8BIN_AQ)
         get_last_gas = p_mtf
 
-     case (CBMZ_BB,CBMZ_BB_KPP,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
+     case (CBMZ_BB,CBMZ_BB_KPP, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN, &
+           CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ,CBMZSORG,CBMZSORG_AQ)
         get_last_gas = p_isopo2
 
      case (CHEM_TRACER)
@@ -3098,6 +3161,268 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_o3-1),3:10)  = 6.00e-8 !60 ppbv > 2 km and < stratosphere
       end if
 #endif
+
+#if (CASENAME == 101)
+
+      if( p_o3 > 1 ) then
+         xl(iref(p_o3-1),12:16) = 1.4e-7
+         xl(iref(p_o3-1),11:11) = 1.40e-7
+         xl(iref(p_o3-1),10:10) = 1.4e-7
+         xl(iref(p_o3-1),9:9)   = 1.4e-7
+         xl(iref(p_o3-1),8:8)   = 1.4e-7
+         xl(iref(p_o3-1),7:7)   = 1.4e-7
+         xl(iref(p_o3-1),6:6)   = 1.4e-7
+         xl(iref(p_o3-1),5:5)   = 1.4e-7
+         xl(iref(p_o3-1),4:4)   = 1.4e-7
+         xl(iref(p_o3-1),3:3)   = 1.4e-7
+         xl(iref(p_o3-1),2:2)   = 1.44e-7
+         xl(iref(p_o3-1),1:1)   = 2.00e-7
+      end if
+
+      if( p_co > 1 ) then
+         xl(iref(p_co-1),12:16) = 5.0e-7
+         xl(iref(p_co-1),11:11) = 5.0e-7
+         xl(iref(p_co-1),10:10) = 5.0e-7
+         xl(iref(p_co-1),9:9)   = 5.0e-7
+         xl(iref(p_co-1),8:8)   = 5.0e-7
+         xl(iref(p_co-1),7:7)   = 5.0e-7
+         xl(iref(p_co-1),6:6)   = 5.0e-7
+         xl(iref(p_co-1),5:5)   = 5.0e-7
+         xl(iref(p_co-1),4:4)   = 5.0e-7
+         xl(iref(p_co-1),3:3)   = 5.0e-7
+         xl(iref(p_co-1),2:2)   = 6.50e-8
+         xl(iref(p_co-1),1:1)   = 6.10e-8
+      end if
+
+      if( p_so2 > 1 ) then
+         xl(iref(p_so2-1),12:16) = 6.00e-9
+         xl(iref(p_so2-1),11:11) = 1.00e-9
+         xl(iref(p_so2-1),10:10) = 4.00e-9
+         xl(iref(p_so2-1),9:9)   = 5.00e-9
+         xl(iref(p_so2-1),8:8)   = 2.00e-9
+         xl(iref(p_so2-1),7:7)   = 2.00e-9
+         xl(iref(p_so2-1),6:6)   = 5.00e-9
+         xl(iref(p_so2-1),5:5)   = 4.00e-9
+         xl(iref(p_so2-1),4:4)   = 5.00e-9
+         xl(iref(p_so2-1),3:3)   = 1.00e-9
+         xl(iref(p_so2-1),2:2)   = 2.00e-9
+         xl(iref(p_so2-1),1:1)   = 5.00e-9
+      end if
+      if( p_no2 > 1 ) then
+         xl(iref(p_no2-1),12:16) = 5.00e-9
+         xl(iref(p_no2-1),11:11) = 5.00e-9
+         xl(iref(p_no2-1),10:10) = 5.0e-9
+         xl(iref(p_no2-1),9:9)   = 5.0e-9
+         xl(iref(p_no2-1),8:8)   = 5.0e-9
+         xl(iref(p_no2-1),7:7)   = 5.0e-9
+         xl(iref(p_no2-1),6:6)   = 5.0e-9
+         xl(iref(p_no2-1),5:5)   = 5.0e-9
+         xl(iref(p_no2-1),4:4)   = 5.0e-9
+         xl(iref(p_no2-1),3:3)   = 5.0e-9
+         xl(iref(p_no2-1),2:2)   = 2.50e-10
+         xl(iref(p_no2-1),1:1)   = 2.80e-10
+      end if
+      if( p_h2o2 > 1 ) then
+         xl(iref(p_h2o2-1),12:16) = 0.18e-9
+         xl(iref(p_h2o2-1),11:11) = 0.13e-9
+         xl(iref(p_h2o2-1),10:10) = 0.30e-9
+         xl(iref(p_h2o2-1),9:9)   = 0.77e-9
+         xl(iref(p_h2o2-1),8:8)   = 0.30e-9
+         xl(iref(p_h2o2-1),7:7)   = 0.25e-9
+         xl(iref(p_h2o2-1),6:6)   = 0.21e-9
+         xl(iref(p_h2o2-1),5:5)   = 0.23e-9
+         xl(iref(p_h2o2-1),4:4)   = 0.24e-9
+         xl(iref(p_h2o2-1),3:3)   = 0.36e-9
+         xl(iref(p_h2o2-1),2:2)   = 0.15e-10
+         xl(iref(p_h2o2-1),1:1)   = 0.17e-10
+      end if
+
+      if( p_hno3 > 1 ) then
+         xl(iref(p_hno3-1),12:16) = 2.0e-10
+         xl(iref(p_hno3-1),11:11) = 2.0e-10
+         xl(iref(p_hno3-1),10:10) = 2.0e-10
+         xl(iref(p_hno3-1),9:9)   = 2.0e-10
+         xl(iref(p_hno3-1),8:8)   = 2.0e-10
+         xl(iref(p_hno3-1),7:7)   = 2.0e-10
+         xl(iref(p_hno3-1),6:6)   = 2.0e-10
+         xl(iref(p_hno3-1),5:5)   = 2.0e-10
+         xl(iref(p_hno3-1),4:4)   = 2.0e-10
+         xl(iref(p_hno3-1),3:3)   = 0.57e-10
+         xl(iref(p_hno3-1),2:2)   = 0.17e-9
+         xl(iref(p_hno3-1),1:1)   = 0.12e-9
+      end if
+      if( p_no3 > 1 ) then
+         xl(iref(p_no3-1),12:16) = 0.98e-11
+         xl(iref(p_no3-1),11:11) = 0.58e-11
+         xl(iref(p_no3-1),10:10) = 0.53e-11
+         xl(iref(p_no3-1),9:9)   = 0.53e-11
+         xl(iref(p_no3-1),8:8)   = 0.68e-11
+         xl(iref(p_no3-1),7:7)   = 0.25e-11
+         xl(iref(p_no3-1),6:6)   = 0.82e-11
+         xl(iref(p_no3-1),5:5)   = 0.21e-11
+         xl(iref(p_no3-1),4:4)   = 0.39e-11
+         xl(iref(p_no3-1),3:3)   = 0.57e-10
+         xl(iref(p_no3-1),2:2)   = 0.17e-9
+         xl(iref(p_no3-1),1:1)   = 0.12e-9
+      end if
+
+      if( p_n2o5 > 1 ) then
+         xl(iref(p_n2o5-1),12:16) = 0.12e-14
+         xl(iref(p_n2o5-1),11:11) = 0.11e-12
+         xl(iref(p_n2o5-1),10:10) = 0.20e-12
+         xl(iref(p_n2o5-1),9:9)   = 0.25e-12
+         xl(iref(p_n2o5-1),8:8)   = 0.98e-12
+         xl(iref(p_n2o5-1),7:7)   = 0.12e-11
+         xl(iref(p_n2o5-1),6:6)   = 0.13e-11
+         xl(iref(p_n2o5-1),5:5)   = 0.45e-12
+         xl(iref(p_n2o5-1),4:4)   = 0.38e-12
+         xl(iref(p_n2o5-1),3:3)   = 0.94e-12
+         xl(iref(p_n2o5-1),2:2)   = 0.16e-11
+         xl(iref(p_n2o5-1),1:1)   = 0.11e-11
+      end if
+      if( p_nh3 > 1 ) then
+         xl(iref(p_nh3-1),12:16) = 0.14e-9
+         xl(iref(p_nh3-1),11:11) = 0.60e-10
+         xl(iref(p_nh3-1),10:10) = 0.30e-10
+         xl(iref(p_nh3-1),9:9)   = 0.24e-10
+         xl(iref(p_nh3-1),8:8)   = 0.49e-11
+         xl(iref(p_nh3-1),7:7)   = 0.19e-11
+         xl(iref(p_nh3-1),6:6)   = 0.41e-11
+         xl(iref(p_nh3-1),5:5)   = 0.11e-11
+         xl(iref(p_nh3-1),4:4)   = 0.52e-11
+         xl(iref(p_nh3-1),3:3)   = 0.35e-10
+         xl(iref(p_nh3-1),2:2)   = 0.86e-11
+         xl(iref(p_nh3-1),1:1)   = 0.84e-11
+      end if
+      if( p_hcho > 1 ) then
+         xl(iref(p_hcho-1),12:16) = 2.00e-9
+         xl(iref(p_hcho-1),11:11) = 2.0e-9
+         xl(iref(p_hcho-1),10:10) = 2.0e-9
+         xl(iref(p_hcho-1),9:9)   = 2.00e-9
+         xl(iref(p_hcho-1),8:8)   = 2.00e-9
+         xl(iref(p_hcho-1),7:7)   = 2.00e-9
+         xl(iref(p_hcho-1),6:6)   = 2.00e-9
+         xl(iref(p_hcho-1),5:5)   = 2.00e-9
+         xl(iref(p_hcho-1),4:4)   = 2.00e-9
+         xl(iref(p_hcho-1),3:3)   = 2.00e-9
+         xl(iref(p_hcho-1),2:2)   = 2.00e-9
+         xl(iref(p_hcho-1),1:1)   = 1.40e-11
+      end if
+      if( p_ket > 1 ) then
+         xl(iref(p_ket-1),12:16) = 0.19e-9
+         xl(iref(p_ket-1),11:11) = 0.15e-9
+         xl(iref(p_ket-1),10:10) = 0.13e-9
+         xl(iref(p_ket-1),9:9)   = 0.98e-10
+         xl(iref(p_ket-1),8:8)   = 0.54e-10
+         xl(iref(p_ket-1),7:7)   = 0.46e-10
+         xl(iref(p_ket-1),6:6)   = 0.66e-10
+         xl(iref(p_ket-1),5:5)   = 0.64e-10
+         xl(iref(p_ket-1),4:4)   = 0.68e-10
+         xl(iref(p_ket-1),3:3)   = 0.63e-10
+         xl(iref(p_ket-1),2:2)   = 0.91e-11
+         xl(iref(p_ket-1),1:1)   = 0.55e-11
+      end if
+      if( p_par > 1 ) then
+         xl(iref(p_par-1),12:16) = 0.75e-10+0.68e-10
+         xl(iref(p_par-1),11:11) = 0.50e-10+0.21e-10
+         xl(iref(p_par-1),10:10) = 0.41e-10+0.11e-10
+         xl(iref(p_par-1),9:9)   = 0.37e-10+0.17e-10
+         xl(iref(p_par-1),8:8)   = 0.24e-10+0.53e-11
+         xl(iref(p_par-1),7:7)   = 0.22e-10+0.45e-11
+         xl(iref(p_par-1),6:6)   = 0.31e-10+0.79e-11
+         xl(iref(p_par-1),5:5)   = 0.28e-10+0.22e-11
+         xl(iref(p_par-1),4:4)   = 0.29e-10+0.26e-11
+         xl(iref(p_par-1),3:3)   = 0.29e-10+0.43e-11
+         xl(iref(p_par-1),2:2)   = 0.16e-10+0.18e-12
+         xl(iref(p_par-1),1:1)   = 0.17e-10+0.26e-12
+      end if
+      if( p_olt > 1 ) then
+         xl(iref(p_olt-1),12:16) = 0.54e-13
+         xl(iref(p_olt-1),11:11) = 0.52e-13
+         xl(iref(p_olt-1),10:10) = 0.33e-13
+         xl(iref(p_olt-1),9:9)   = 0.16e-13
+         xl(iref(p_olt-1),8:8)   = 0.20e-14
+         xl(iref(p_olt-1),7:7)   = 0.14e-14
+         xl(iref(p_olt-1),6:6)   = 0.37e-14
+         xl(iref(p_olt-1),5:5)   = 0.26e-15
+         xl(iref(p_olt-1),4:4)   = 0.40e-15
+         xl(iref(p_olt-1),3:3)   = 0.15e-14
+         xl(iref(p_olt-1),2:2)   = 0.33e-17
+         xl(iref(p_olt-1),1:1)   = 0.27e-15
+      end if
+      if( p_ol2 > 1 ) then
+         xl(iref(p_ol2-1),12:16) = 0.87e-12
+         xl(iref(p_ol2-1),11:11) = 0.10e-11
+         xl(iref(p_ol2-1),10:10) = 0.68e-12
+         xl(iref(p_ol2-1),9:9)   = 0.38e-12
+         xl(iref(p_ol2-1),8:8)   = 0.38e-12
+         xl(iref(p_ol2-1),7:7)   = 0.45e-13
+         xl(iref(p_ol2-1),6:6)   = 0.58e-13
+         xl(iref(p_ol2-1),5:5)   = 0.52e-14
+         xl(iref(p_ol2-1),4:4)   = 0.12e-13
+         xl(iref(p_ol2-1),3:3)   = 0.66e-13
+         xl(iref(p_ol2-1),2:2)   = 0.14e-14
+         xl(iref(p_ol2-1),1:1)   = 0.51e-13
+      end if
+      if( p_ald > 1 ) then
+         xl(iref(p_ald-1),12:16) = 0.30e-10
+         xl(iref(p_ald-1),11:11) = 0.28e-10
+         xl(iref(p_ald-1),10:10) = 0.22e-10
+         xl(iref(p_ald-1),9:9)   = 0.16e-10
+         xl(iref(p_ald-1),8:8)   = 0.10e-10
+         xl(iref(p_ald-1),7:7)   = 0.83e-11
+         xl(iref(p_ald-1),6:6)   = 0.89e-11
+         xl(iref(p_ald-1),5:5)   = 0.93e-11
+         xl(iref(p_ald-1),4:4)   = 0.98e-11
+         xl(iref(p_ald-1),3:3)   = 0.10e-10
+         xl(iref(p_ald-1),2:2)   = 0.93e-12
+         xl(iref(p_ald-1),1:1)   = 0.64e-12
+      end if
+      if( p_tol > 1 ) then
+         xl(iref(p_tol-1),12:16) = 0.29e-11/2.0
+         xl(iref(p_tol-1),11:11) = 0.16e-11/2.0
+         xl(iref(p_tol-1),10:10) = 0.12e-11/2.0
+         xl(iref(p_tol-1),9:9)   = 0.97e-12/2.0
+         xl(iref(p_tol-1),8:8)   = 0.16e-12/2.0
+         xl(iref(p_tol-1),7:7)   = 0.13e-12/2.0
+         xl(iref(p_tol-1),6:6)   = 0.13e-12/2.0
+         xl(iref(p_tol-1),5:5)   = 0.28e-13/2.0
+         xl(iref(p_tol-1),4:4)   = 0.42e-13/2.0
+         xl(iref(p_tol-1),3:3)   = 0.12e-12/2.0
+         xl(iref(p_tol-1),2:2)   = 0.39e-15/2.0
+         xl(iref(p_tol-1),1:1)   = 0.11e-14/2.0
+      end if
+      if( p_xyl > 1 ) then
+         xl(iref(p_xyl-1),12:16) = 0.29e-11/2.0
+         xl(iref(p_xyl-1),11:11) = 0.16e-11/2.0
+         xl(iref(p_xyl-1),10:10) = 0.12e-11/2.0
+         xl(iref(p_xyl-1),9:9)   = 0.97e-12/2.0
+         xl(iref(p_xyl-1),8:8)   = 0.16e-12/2.0
+         xl(iref(p_xyl-1),7:7)   = 0.13e-12/2.0
+         xl(iref(p_xyl-1),6:6)   = 0.13e-12/2.0
+         xl(iref(p_xyl-1),5:5)   = 0.28e-13/2.0
+         xl(iref(p_xyl-1),4:4)   = 0.42e-13/2.0
+         xl(iref(p_xyl-1),3:3)   = 0.12e-12/2.0
+         xl(iref(p_xyl-1),2:2)   = 0.39e-15/2.0
+         xl(iref(p_xyl-1),1:1)   = 0.11e-14/2.0
+      end if
+      if( p_eth > 1 ) then
+         xl(iref(p_eth-1),12:16) = 0.60e-9
+         xl(iref(p_eth-1),11:11) = 0.63e-9
+         xl(iref(p_eth-1),10:10) = 0.49e-9
+         xl(iref(p_eth-1),9:9)   = 0.51e-9
+         xl(iref(p_eth-1),8:8)   = 0.44e-9
+         xl(iref(p_eth-1),7:7)   = 0.43e-9
+         xl(iref(p_eth-1),6:6)   = 0.45e-9
+         xl(iref(p_eth-1),5:5)   = 0.47e-9
+         xl(iref(p_eth-1),4:4)   = 0.48e-9
+         xl(iref(p_eth-1),3:3)   = 0.47e-9
+         xl(iref(p_eth-1),2:2)   = 0.38e-9
+         xl(iref(p_eth-1),1:1)   = 0.36e-9
+      end if
+
+#endif
+
 #if (CASENAME == 2)
       if( p_o3 > 1 ) then
          xl(iref(p_o3-1),12:16) = 2.50e-8
@@ -3459,10 +3784,8 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
      print*,"e_ch3oh:",emis_ant(i,k,j,p_e_ch3oh)*convg
      print*,"e_c2h5oh:",emis_ant(i,k,j,p_e_c2h5oh)*convg
      print*,"e_iso:",emis_ant(i,k,j,p_e_iso)*convg
-     print*,"e_so4 f,c:",emis_ant(i,k,j,p_e_so4j)*conva, &
-          emis_ant(i,k,j,p_e_so4c(i,k,j)*conva
-     print*,"e_no3 f,c:",emis_ant(i,k,j,p_e_no3j)*conva, &
-          emis_ant(i,k,j,p_e_no3c(i,k,j)*conva
+     print*,"e_so4 f,c:",emis_ant(i,k,j,p_e_so4j)*conva
+     print*,"e_no3 f,c:",emis_ant(i,k,j,p_e_no3j)*conva
      print*,"e_orgc:",emis_ant(i,k,j,p_e_orgc)*conva
      print*,"e_ecc:",emis_ant(i,k,j,p_e_ecc)*conva
      print*

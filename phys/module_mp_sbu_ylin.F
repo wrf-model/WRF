@@ -157,7 +157,7 @@ CONTAINS
       pptsnow=0.
       pptice =0.
 
-     CALL wrf_debug ( 100 , 'microphysics_driver: calling clphy1d_ylin' )
+!     CALL wrf_debug ( 100 , 'microphysics_driver: calling clphy1d_ylin' )
 
      CALL clphy1d_ylin(  dt, qvz, qlz, qrz, qiz, qsz,              &
                          thz, tothz, rhoz, orhoz, sqrhoz,          &
@@ -549,7 +549,7 @@ CONTAINS
 !
 !-- rain
 !
-       CALL wrf_debug ( 100 , 'module_ylin, start precip fluxes' )
+!       CALL wrf_debug ( 100 , 'module_ylin, start precip fluxes' )
 
       t_del_tv=0.
       del_tv=dtb
@@ -736,7 +736,7 @@ CONTAINS
 !
       ENDDO
 
-     CALL wrf_debug ( 100 , 'module_ylin: end precip flux' )
+!     CALL wrf_debug ( 100 , 'module_ylin: end precip flux' )
 
 ! Microphpysics processes
 
@@ -1082,7 +1082,7 @@ CONTAINS
 !
         end if      !---- end of snow/ice processes
 
-         CALL wrf_debug ( 100 , 'module_ylin: finish ice/snow processes' )
+!         CALL wrf_debug ( 100 , 'module_ylin: finish ice/snow processes' )
 
 
 !***********************************************************************
@@ -1141,7 +1141,7 @@ CONTAINS
          tmp3=amax1( tmp3,tmpd )
          prevp(k)=amax1( tmp3,-qrzodt(k) )
 
-        CALL wrf_debug ( 100 , 'module_ylin: finish rain processes' )
+!        CALL wrf_debug ( 100 , 'module_ylin: finish rain processes' )
 
 !c
 !c**********************************************************************
@@ -1299,7 +1299,7 @@ CONTAINS
           qvsbar(k)=qswz(k)
 !
       end if
-      CALL wrf_debug ( 100 , 'module_ylin: finish sum of all processes' )
+!      CALL wrf_debug ( 100 , 'module_ylin: finish sum of all processes' )
 
 !
 !***********************************************************************
@@ -1451,9 +1451,9 @@ CONTAINS
       enddo
 !
 
-      CALL wrf_debug ( 100 , 'module_ylin: finish saturation adjustment' )
+!      CALL wrf_debug ( 100 , 'module_ylin: finish saturation adjustment' )
 
-     END SUBROUTINE clphy1d_ylin
+      END SUBROUTINE clphy1d_ylin
 
 
 

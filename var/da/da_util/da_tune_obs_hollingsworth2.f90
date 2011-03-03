@@ -15,7 +15,7 @@ program da_tune_obs_hollingsworth2
    integer, parameter        :: ounit = 10
    integer, parameter        :: num_bins_p = 10
    integer, parameter        :: obs_qc_pointer = 0
-   integer, parameter        :: max_stations = 5000
+   integer, parameter        :: max_stations = 2526
    integer, parameter        :: max_times = 200  
    integer, parameter        :: inunit = 35
    integer, parameter        :: min_obs = 30

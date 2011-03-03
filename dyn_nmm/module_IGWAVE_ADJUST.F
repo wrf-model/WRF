@@ -14,6 +14,7 @@
       USE MODULE_MODEL_CONSTANTS
 !     USE MODULE_EXCHANGE
       USE MODULE_MPP,ONLY: MYPE
+      USE MODULE_WRF_ERROR     
 !     USE MODULE_TIMERS  ! this one creates a name conflict at compile time
 !-----------------------------------------------------------------------
 !***
@@ -727,7 +728,11 @@
         ENDDO
       ENDDO
 
+#ifdef DM_PARALLEL
       GLB_NPTS=wrf_dm_sum_integer(LOC_NPTS)
+#else
+      GLB_NPTS=LOC_NPTS
+#endif
 
 !
 !-----------------------------------------------------------------------
@@ -763,12 +768,22 @@
       ENDDO
       ENDDO
 
+#ifdef DM_PARALLEL
       GLOBAL_CHANGE_WRF=wrf_dm_sum_real(TASK_CHANGE)/GLB_NPTS
+#else
+      GLOBAL_CHANGE_WRF=TASK_CHANGE/GLB_NPTS
+#endif
 
+#ifdef DM_PARALLEL
       if ( MYPE == 0 ) then
         write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
         call wrf_debug(1,wrf_err_message)
       endif
+#else
+        write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
+        call wrf_debug(1,wrf_err_message)
+#endif
+
 !
 !-----------------------------------------------------------------------
 !***  COMPUTATION OF PETDT

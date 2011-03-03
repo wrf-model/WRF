@@ -54,6 +54,7 @@
        rqcshten, rqrshten, rqishten, rqsshten, rqgshten,         &
        p_qc, p_qr, p_qi, p_qs, p_qg,                             &
        bl_pbl_physics, param_first_scalar, restart,              &
+       grid_id,                                                  &
        ids, ide, jds, jde, kds, kde,                             &
        ims, ime, jms, jme, kms, kme,                             &
        its, ite, jts, jte, kts, kte                              )
@@ -87,6 +88,7 @@
 
 #ifdef WRF_PORT
     LOGICAL , INTENT(IN)           ::   restart
+    INTEGER , INTENT(IN)           ::   grid_id
     INTEGER , INTENT(IN)           ::   ids, ide, jds, jde, kds, kde, &
                                         ims, ime, jms, jme, kms, kme, &
                                         its, ite, jts, jte, kts, kte, &
@@ -147,7 +149,7 @@
 ! This would avoid mistakes from multiple initiations.
 !
   if( bl_pbl_physics /= CAMUWPBLSCHEME ) then
-     call vd_register
+     if(grid_id.eq.1)call vd_register
   end if
 #endif
 

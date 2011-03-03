@@ -1368,6 +1368,8 @@ rconfig   logical   use_satemobs            namelist,wrfvar4  1  .true.   - "use
 rconfig   logical   use_gpsztdobs           namelist,wrfvar4  1  .false.  - "use_gpsztdobs"            ""  ""
 rconfig   logical   use_gpspwobs            namelist,wrfvar4  1  .true.   - "use_gpspwobs"             ""  ""
 rconfig   logical   use_gpsrefobs           namelist,wrfvar4  1  .true.   - "use_gpsrefobs"            ""  ""
+rconfig   real      top_km_gpsro            namelist,wrfvar4  1  30.0     - "top_km_gpsro"             ""  ""
+rconfig   real      bot_km_gpsro            namelist,wrfvar4  1   0.0     - "bot_km_gpsro"             ""  ""
 rconfig   logical   use_ssmiretrievalobs    namelist,wrfvar4  1  .false.  - "use_ssmiretrievalobs"     ""  ""
 rconfig   logical   use_ssmitbobs           namelist,wrfvar4  1  .false.  - "use_ssmitbobs"            ""  ""
 rconfig   logical   use_ssmt1obs            namelist,wrfvar4  1  .false.  - "use_ssmt1obs"             ""  ""
@@ -1599,7 +1601,6 @@ rconfig   integer   varbc_nbgerr            namelist,wrfvar14  1  1        - "va
 rconfig   integer   varbc_nobsmin           namelist,wrfvar14  1  10       - "varbc_nobsmin"           ""  ""
 rconfig   logical   use_airs_mmr            namelist,wrfvar14  1  .false.  - "use_airs_mmr"            ""  ""
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""
-rconfig   integer   crtm_atmosphere         namelist,wrfvar14  1  0        - "crtm_atmosphere"         ""  ""
 rconfig   logical   use_satcv               namelist,wrfvar14  2  .false.  - "use_satcv"               ""  ""
 
 rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "num_pseudo"              ""  ""   

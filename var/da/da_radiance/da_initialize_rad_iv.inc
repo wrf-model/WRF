@@ -94,6 +94,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
  !  iv%instid(i)%solazi(n)       = 0.0
 
    if (rtm_option == rtm_option_crtm) then
+      iv%instid(i)%crtm_climat(n)=0  ! invalid_model
       iv%instid(i)%water_coverage(n)=1.0
       iv%instid(i)%land_coverage(n)=0.0
       iv%instid(i)%ice_coverage(n)=0.0

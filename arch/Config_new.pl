@@ -436,15 +436,15 @@ while ( <CONFIGURE_DEFAULTS> )
       }
      if ( $ENV{HWRF} )
        {
-        $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
-        $_ =~ s:CONFIGURE_ATMPOM_INC:-I\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom:g;
-        $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
+        $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;
+        $_ =~ s:CONFIGURE_ATMOCN_INC:-I\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn:g;
+        $_ =~ s/CONFIGURE_ATMOCN/atm_ocn/g ;
        }
      else
        {
-        $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
-        $_ =~ s/CONFIGURE_ATMPOM//g ;
-        $_ =~ s:CONFIGURE_ATMPOM_INC::g;
+        $_ =~ s:CONFIGURE_ATMOCN_LIB::g ;
+        $_ =~ s/CONFIGURE_ATMOCN//g ;
+        $_ =~ s:CONFIGURE_ATMOCN_INC::g;
        }
 
     if ( ! (substr( $_, 0, 5 ) eq "#ARCH") ) { @machopts = ( @machopts, $_ ) ; }
@@ -582,13 +582,13 @@ while ( <ARCH_PREAMBLE> )
     }
   if ( $ENV{HWRF} )
     {
-    $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
-    $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
+    $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;
+    $_ =~ s/CONFIGURE_ATMOCN/atm_ocn/g ;
     }
   else
     {
-    $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
-    $_ =~ s/CONFIGURE_ATMPOM//g ;
+    $_ =~ s:CONFIGURE_ATMOCN_LIB::g ;
+    $_ =~ s/CONFIGURE_ATMOCN//g ;
     }
   $_ =~ s:CONFIGURE_EM_CORE:$sw_em_core:g ;
   $_ =~ s:CONFIGURE_DA_CORE:$sw_da_core:g ;

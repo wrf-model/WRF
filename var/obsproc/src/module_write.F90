@@ -139,7 +139,7 @@ counts: &
 ! 1.2.1 TOTAL NUMBER OF STATIONS CONTAINED IN FILE AND MISSING VALUE
 !       ------------------------------------------------------------
 
-        WRITE  (UNIT = 125, FMT = '(A,I7,A))',ADVANCE='no' ) "SSMI  =",ssmi_125,","
+        WRITE  (UNIT = 125, FMT = '(A,I7,A)',ADVANCE='no' ) "SSMI  =",ssmi_125,","
         WRITE  (UNIT = 125, FMT = '((A,F8.0),A)') " MISS. = ",missing_r,","
 
 ! 1.2.2 REFERENCE STATE INFO
@@ -222,7 +222,7 @@ counts: &
 ! 1.4.1 M TOTAL NUMBER OF STATIONS CONTAINED IN FILE AND ISSING VALUE FLAG 
 !       ------------------------------------------------------------------
 
-        WRITE  (UNIT = 126, FMT = '(A,I7,A))',ADVANCE='no' ) "SSMI  =",ssmi_126,","
+        WRITE  (UNIT = 126, FMT = '(A,I7,A)',ADVANCE='no' ) "SSMI  =",ssmi_126,","
         WRITE  (UNIT = 126, FMT = '((A,F8.0),A)') " MISS. = ",missing_r,","
 
 ! 1.4.2 REFERENCE STATE INFO

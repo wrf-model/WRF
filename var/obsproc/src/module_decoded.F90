@@ -1537,7 +1537,7 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
 
       IF ((     eps_equal (current%meas%dew_point%data , missing_r , 1.)) .AND.&
           (.NOT.eps_equal (current%meas%rh       %data , missing_r , 1.))) THEN
-           WRITE (iunit,'(A,F10.2,/,A,F10.2))') &
+           WRITE (iunit,'(A,F10.2,/,A,F10.2)') &
           " Td = ",current%meas%dew_point%data,&
           " Rh = ",current%meas%rh%data  
       ENDIF

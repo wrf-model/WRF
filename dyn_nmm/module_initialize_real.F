@@ -101,6 +101,8 @@ CONTAINS
               INTEGER, ALLOCATABLE::  ITEMP(:,:)
               INTEGER :: my_e,my_n,my_s,my_w,my_ne,my_nw,my_se,my_sw,myi,myj,npe
               INTEGER :: istat,inpes,jnpes
+#else 
+	integer:: IHW(JDS:JDE-1),IHE(JDS:JDE-1)
 #endif
 
 

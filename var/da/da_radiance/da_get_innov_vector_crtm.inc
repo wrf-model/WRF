@@ -47,6 +47,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
    real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
 
+   integer :: month, crtm_climat
+
    ! real    :: model_tm(kms:kme)
 
    integer :: inst, nchanl, n1,n2
@@ -159,9 +161,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    Atmosphere(1)%Absorber_ID(2)=O3_ID
    Atmosphere(1)%Absorber_Units(1) = MASS_MIXING_RATIO_UNITS
    Atmosphere(1)%Absorber_Units(2) = VOLUME_MIXING_RATIO_UNITS
-   Atmosphere(1)%Climatology=crtm_atmosphere
-   write(stdout,*) 'CRTM Reference profile is: ', &
-                    CLIMATOLOGY_MODEL_NAME(Atmosphere(1)%Climatology)
 
    if (crtm_cloud) then
       Atmosphere(1)%Cloud(1)%Type=WATER_CLOUD
@@ -271,7 +270,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
       if ( use_mspps_emis(inst) ) allocate(em_mspps(nchanl))
 	
-      do n=n1,n2
+      pixel_loop: do n=n1,n2
          ! if ( n > iv%instid(inst)%num_rad ) exit
 
          ! [1.1] Get horizontal interpolation weights:
@@ -282,6 +281,12 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          dy = iv%instid(inst)%info%dy(1,n)
          dxm = iv%instid(inst)%info%dxm(1,n)
          dym = iv%instid(inst)%info%dym(1,n)
+
+         ! determine CRTM climatology based on latitude and month
+         read(unit=iv%instid(inst)%info%date_char(6:7), fmt='(i2.2)') month
+         call da_det_crtm_climat(iv%instid(inst)%info%lat(1,n), month, crtm_climat)
+         iv%instid(inst)%crtm_climat(n) = crtm_climat
+         Atmosphere(1)%Climatology = iv%instid(inst)%crtm_climat(n)
 
          ! determine surface type of obs location
          !-----------------------------------------
@@ -376,6 +381,17 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                               Atmosphere(1)%Pressure(k)
          end do
  
+         ! check for pressure monotonicity
+         do k = kte, kts+1, -1  ! from bottom to top
+            if ( Atmosphere(1)%Level_Pressure(k) <= Atmosphere(1)%Level_Pressure(k-1) ) then
+               write(message(1),'(a,2i5.0,a)') ' Skipping the pixel at loc ', i, j,  &
+                  ' where the pressure is not monotonic'
+               call da_warning(__FILE__,__LINE__,message(1:1))
+               iv%instid(inst)%tb_inv(:,n) = missing_r
+               cycle pixel_loop
+            end if
+         end do
+
          ! convert cloud content unit from kg/kg to kg/m^2        
          if (crtm_cloud) then
             do k=kts,kte
@@ -695,7 +711,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          iv%instid(inst)%land_coverage(n)  = Surface(1)%land_coverage
          iv%instid(inst)%ice_coverage(n)   = Surface(1)%ice_coverage                              
          iv%instid(inst)%snow_coverage(n)  = Surface(1)%snow_coverage
-      end do       !  end loop for pixels
+      end do pixel_loop      !  end loop for pixels
 
       if ( use_mspps_emis(inst) ) deallocate(em_mspps)
 

@@ -121,7 +121,7 @@ bufrfile:  do ibufr=1,numbufr
    !--------------------------------
    call openbf(iunit,'IN',iunit)
    call datelen(10)
-   call readns(iunit,subset,idate,iret)  ! read in the next subset
+   call readmg(iunit,subset,idate,iret)
    if ( iret /= 0 ) then
       write(unit=message(1),fmt='(A,I5,A)') &
          "Error",iret," reading GPSRO BUFR obs file "//trim(filename)
@@ -188,6 +188,11 @@ bufrfile:  do ibufr=1,numbufr
          info%lat  = rdata1(1,k)
          info%lon  = rdata1(2,k)
 
+         ! gpsro.bufr contains missing longitude, occasionally
+         if ( info%lat > r8bfms .or. info%lon > r8bfms ) then
+            cycle lev_loop
+         end if
+
          height    = rdata2(1,k)
          ref_data  = rdata2(2,k)
 
@@ -218,8 +223,9 @@ bufrfile:  do ibufr=1,numbufr
          end if
          nlocal = nlocal + 1
 
-         ! check height, only keep data below 30km
-         if ( height > 30000.0 ) then
+         ! check height, only keep data below certain height (default is 30km)
+         if ( height > top_km_gpsro*1000.0 .or. &
+              height < bot_km_gpsro*1000.0 ) then
             ref_qc = -77
          end if
          

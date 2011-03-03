@@ -21,6 +21,7 @@ subroutine da_setup_be_regional(xb, be)
    integer             :: bin_type           ! Type of bin to average over.
    integer             :: num_bins           ! Number of bins (3D fields).
    integer             :: num_bins2d         ! Number of bins (3D fields).
+   real*8  :: junk                           ! For reading truncated sd, wsd
    real*8  :: lat_min, lat_max, binwidth_lat ! Used if bin_type = 2 (degrees)..
    real*8  :: hgt_min, hgt_max, binwidth_hgt ! Used if bin_type = 2 (m). .
 
@@ -90,7 +91,7 @@ subroutine da_setup_be_regional(xb, be)
    character*10                :: variable
    character*80                :: var80c
    integer                     :: ni, nj, nk, nk_2d, b
-   integer                     :: ix, jy, kz, mz
+   integer                     :: ix, jy, kz, kzs(5), mz, mzs(5)
    real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
    real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t      regression cooefficient.
    real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression cooefficient.
@@ -538,6 +539,8 @@ subroutine da_setup_be_regional(xb, be)
       be % v8 % mz = xb % mkz
 #endif
    end if
+   kzs=(/kz,kz,kz,kz,1/)
+   mzs=(/be%v1%mz,be%v2%mz,be%v3%mz,be%v4%mz,be%v5%mz/)
 
    ! 4.0 Initialise control variable space components of header:
    ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -590,8 +593,7 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be7_rf_lengthscale(1:nk))
       allocate (be8_rf_lengthscale(1:nk))
 #endif
-      b=0			! pointer to variable*level
-      mz=kz			! length in be%sd(:,:,b+1:b+mz)
+      b=0			! pointer to variable*mode
       allocate(nij(0:0,0:1,0:0))
       ! 5.2 read in the scale lengths
       do i = 1 , 5		! variables loop:
@@ -616,17 +618,19 @@ subroutine da_setup_be_regional(xb, be)
                call da_error(__FILE__,__LINE__,message(1:2))
          endselect
          if( do_normalize )then
-            if(i==5)mz=1	! sfc pressure is 2D
             read(be_unit)do_normalize1
             if( do_normalize.neqv.do_normalize1 ) &
                call da_error(__FILE__,__LINE__,(/namv(i)//": do_normalize.neqv.do_normalize1"/))
             read(be_unit)nij
-            if( i==1 )allocate(be%sd(nij(0,1,0),nij(0,0,0),4*mz+1))
-            do k=1,mz
+            if( i==1 )allocate(be%sd(nij(0,1,0),nij(0,0,0),sum(mzs)))
+            do k=1,mzs(i)
                read(be_unit)be%sd(:,:,b+k)
             enddo
-            write(*,'(A,": |sd[",A,"]|=",es9.3)')__FILE__,namv(i),sqrt(sum(be%sd(:,:,b+1:b+mz)**2))
-            b=b+mz		! point to next variable.
+            do k=mzs(i)+1,kzs(i)! read and discard truncated modes:
+               read(be_unit)(junk,j=1,nij(0,1,0)*nij(0,0,0))
+            enddo
+            write(*,'(A,": |sd[",A,"]|=",es9.3)')__FILE__,namv(i),sqrt(sum(be%sd(:,:,b+1:b+mzs(i))**2))
+            b=b+mzs(i)		! point to next variable.
          endif
       enddo
 #ifdef CLOUD_CV
@@ -664,7 +668,7 @@ subroutine da_setup_be_regional(xb, be)
    else				! use wavelets:
       read(be_unit)k		! trimmed string length
       if( k>len(variable) )then
-         write(message(1),'(i0,">",i0)')k,len(variable)
+         write(message(1),'(i0,">",i0," for use_rf=.false.")')k,len(variable)
          call da_error(__FILE__,__LINE__,message(1:1))
       endif
       read(be_unit)variable(1:k)
@@ -672,16 +676,14 @@ subroutine da_setup_be_regional(xb, be)
          write(message(1),'(A,"/=''wavelet''")')variable(1:k)
          call da_error(__FILE__,__LINE__,message(1:1))
       endif
-      b = 0			! pointer to variable*level
-      mz=kz			! length in be%wsd(:,:,b+1:b+mz)
+      b = 0			! pointer to variable*mode
       do m=1,5			! variables loop:
-         if(m==5)mz=1		! sfc pressure is 2D
          read(be_unit)k,nk
          if( k>len(variable) )then
             write(message(1),'(i0,">",i0," for ",A)')k,len(variable),namv(m)
             call da_error(__FILE__,__LINE__,message(1:1))
-         elseif( nk /= mz )then
-            write(message(1),'(i0,"=nk/=mz=",i0," for ",A)')nk,mz,namv(m)
+         elseif( nk /= kzs(m) )then
+            write(message(1),'(i0,"=nk/=kzs(",i0,")=",i0," for ",A)')nk,m,kzs(m),namv(m)
             call da_error(__FILE__,__LINE__,message(1:1))
          endif
          read(be_unit)variable(1:k)
@@ -701,20 +703,24 @@ subroutine da_setup_be_regional(xb, be)
                   i,transpose(nij(i,:,:))
             enddo
             print*
-            allocate(be%wsd(nij(0,1,2),nij(0,0,2),4*kz+1), &
+            allocate(be%wsd(nij(0,1,2),nij(0,0,2),sum(mzs)), &
 !____________________max of {,i}dwtai wavelet scratch workspace sizes:
                      ws(max(maxval(nij(0,:,2)), &
                             2*floor(.5*(real(maxval(nij(0,:,0)))+lf))+lf-2)))
-            if( do_normalize )allocate(be%sd(nij(0,1,0),nij(0,0,0),4*kz+1))
+            if( do_normalize )allocate(be%sd(nij(0,1,0),nij(0,0,0),sum(mzs)))
          endif			! if( m==1 )
-         do k=1,mz		! mz=kz (m<5), 1 (m>4).
-!___________level-k field & wavelet-coefficient std. devs.:
+         do k=1,mzs(m)
+!___________mode-k field & wavelet-coefficient std. devs.:
             read(be_unit)be%wsd(:,:,b+k)
             if( do_normalize )read(be_unit)be%sd(:,:,b+k)
-         enddo			! level-k loop.
-         write(*,'(A,": |wsd[",A,"]|=",es9.3)')__FILE__,namv(m),sqrt(sum(be%wsd(:,:,b+1:b+mz)**2))
-         if( do_normalize )write(*,'(A,": | sd[",A,"]|=",es9.3)')__FILE__,namv(m),sqrt(sum(be%sd(:,:,b+1:b+mz)**2))
-         b = b+mz		! point to next variable.
+         enddo			! mode-k loop.
+         do k=mzs(m)+1,kzs(m)	! read and discard truncated modes:
+            read(be_unit)(junk,j=1,nij(0,1,2)*nij(0,0,2))
+            if( do_normalize )read(be_unit)(junk,j=1,nij(0,1,0)*nij(0,0,0))
+         enddo			! mode-k loop.
+         write(*,'(A,": |wsd[",A,"]|=",es9.3)')__FILE__,namv(m),sqrt(sum(be%wsd(:,:,b+1:b+mzs(m))**2))
+         if( do_normalize )write(*,'(A,": | sd[",A,"]|=",es9.3)')__FILE__,namv(m),sqrt(sum(be%sd(:,:,b+1:b+mzs(m))**2))
+         b = b+mzs(m)		! point to next variable.
       enddo			! variables loop
    endif			! if( use_rf )
    ! 6.0 Perform checks on eigenvectors with be data structure:

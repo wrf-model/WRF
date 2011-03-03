@@ -37,6 +37,8 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    ! [7.0] Adjoint of outPUT (inPUT)
    !---------------------------------------------------------------------------
 
+   if ( .not. adj_sens ) then
+
    call kj_swap_reverse (model_grid%a_u_2, grid%a_u_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    call kj_swap_reverse (model_grid%a_v_2, grid%a_v_2, &
@@ -56,6 +58,26 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    enddo
 
    call da_transfer_wrftl_lbc_t0_adj ( grid )
+
+   else
+
+   if ( grid%auxinput17_oid .NE. 0 ) then
+      call close_dataset ( grid%auxinput17_oid , config_flags , "DATASET=AUXINPUT17" )
+   endif
+
+   call open_r_dataset ( grid%auxinput17_oid, TRIM(filnam) , grid , config_flags, &
+                              "DATASET=AUXINPUT17", ierr )
+   if ( ierr .NE. 0 ) then
+      WRITE( message(1) , * ) 'Error opening ', TRIM( filnam )
+      CALL wrf_error_fatal( TRIM( message(1) ) )
+   endif
+
+   call wrf_debug (00 , 'Calling input_auxinput17' )
+   call input_auxinput17 ( grid%auxinput17_oid, grid , config_flags , ierr )
+
+   call close_dataset ( grid%auxinput17_oid , config_flags , "DATASET=AUXINPUT17" )
+
+   endif
 
    !---------------------------------------------------------------------------
    ! [6.0] Adjoint of save OTHERinCREMENT

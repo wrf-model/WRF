@@ -452,12 +452,12 @@ real::t1,t2,t3,t4
               message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'
               CALL  wrf_message ( message )
 
-              CALL input_ext_chem_file( grid )
+              CALL med_read_wrf_chem_input ( grid , config_flags)
+
               IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
                                          .or. grid%biomass_burn_opt == BIOMASSB) THEN
                  message = 'READING EMISSIONS DATA OPT 3'
                  CALL  wrf_message ( message )
-!                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
                  CALL med_read_wrf_chem_emissopt3 ( grid , config_flags)
               END IF
 

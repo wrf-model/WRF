@@ -645,7 +645,7 @@ CONTAINS
 
    REAL    :: DTMIN,DTBL
 !
-   INTEGER :: i,J,K,NK,jj,ij,n
+   INTEGER :: i,J,K,NK,jj,ij
    INTEGER :: gfdl_ntsflg
    LOGICAL :: radiation, myj, frpcpn, isisfc
    LOGICAL, INTENT(in), OPTIONAL :: rdlai2d

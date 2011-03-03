@@ -31,6 +31,7 @@ CONTAINS
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
+                         SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -213,7 +214,8 @@ CONTAINS
              RTHFTEN, RQVFTEN
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) ::           &
-             RAINNC, RAINC, RAINCV, RAINNCV
+             RAINNC, RAINC, RAINCV, RAINNCV,  &
+             SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: CLDEFI, NCA
 
@@ -434,6 +436,8 @@ integer myproc
       QFX(i,j)=0.
       RAINBL(i,j)=0.
       RAINNCV(i,j)=0.
+      SNOWNCV(i,j)=0.
+      GRAUPELNCV(i,j)=0.
       ACSNOW(i,j)=0.
       DO k=kms,kme  !wig, 17-May-2006: Added for idealized chem. runs
          EXCH_H(i,k,j) = 0.
@@ -616,7 +620,7 @@ integer myproc
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to mp_init' )
 
-   CALL mp_init(RAINNC,config_flags,restart,warm_rain,          &
+   CALL mp_init(RAINNC,SNOWNC,GRAUPELNC,config_flags,restart,warm_rain,          &
                 adv_moist_cond,                                 &
                 MPDT, DT, DX, DY, LOWLYR,                       &
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
@@ -2124,7 +2128,7 @@ integer myproc
    END SUBROUTINE shcu_init
 
 !==================================================================
-   SUBROUTINE mp_init(RAINNC,config_flags,restart,warm_rain,      &
+   SUBROUTINE mp_init(RAINNC,SNOWNC,GRAUPELNC,config_flags,restart,warm_rain,      &
                       adv_moist_cond,                             &
                       MPDT, DT, DX, DY, LOWLYR,                   & ! for eta mp
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
@@ -2162,7 +2166,7 @@ integer myproc
                                   its, ite, jts, jte, kts, kte
 
    INTEGER , DIMENSION( ims:ime , jms:jme ) ,INTENT(INOUT)  :: LOWLYR
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RAINNC,SNOWNC,GRAUPELNC
    REAL,     DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(INOUT) :: &
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
@@ -2180,6 +2184,8 @@ integer myproc
      DO j=jts,jtf
      DO i=its,itf
         RAINNC(i,j) = 0.
+        SNOWNC(i,j) = 0.
+        GRAUPELNC(i,j) = 0.
      ENDDO
      ENDDO
    ENDIF

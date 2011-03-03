@@ -6,6 +6,7 @@ module da_transfer_model
 
    use module_configure, only : grid_config_rec_type
    use module_domain, only : domain, domain_clock_get
+   use module_io_domain, only : open_r_dataset, close_dataset, input_auxinput17
    use module_state_description, only : dyn_em_ad, dyn_em, dyn_em_tl, &
       p_qv, p_qh, p_qr, p_qi, p_qs, p_qg, p_qc, param_first_scalar, num_moist, &
       p_g_qv, p_g_qh, p_g_qr, p_g_qi, p_g_qs, p_g_qg, p_g_qc, &
@@ -28,7 +29,7 @@ module da_transfer_model
       fg_format, fg_format_wrf_arw_regional, fg_format_wrf_nmm_regional, &  
       print_detail_map,stdout,truelat1_3dv, base_pres, fg_format_wrf_arw_global, &
       truelat2_3dv, periodic_x,write_increments,max_ext_its, gravity, &
-      kappa, print_detail_xa,rd_over_rv,t0, print_detail_xa, check_rh, &
+      kappa, print_detail_xa,rd_over_rv,t0, print_detail_xa, check_rh, adj_sens,&
       print_detail_xb,test_dm_exact,base_lapse,base_temp,vertical_ip,ptop, &
       use_gpsztdobs, use_ssmitbobs, use_radarobs, use_radar_rf,use_radar_rle, use_radar_rr, dt_cloud_model, cp, use_ssmiretrievalobs, &
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
@@ -59,6 +60,7 @@ module da_transfer_model
        g_stuff_bdytend, a_stuff_bdytend_old, a_stuff_bdytend_new, decouple, da_calc_2nd_fg, &
        ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1, mbdy2dtemp1, &
        ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2, mbdy2dtemp2
+   use module_bc, only : set_physical_bc2d
    use module_big_step_utilities_em, only : calc_mu_uv
    use g_module_big_step_utilities_em, only : g_calc_mu_uv
    use a_module_big_step_utilities_em, only : a_calc_mu_uv

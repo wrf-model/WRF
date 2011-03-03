@@ -15,7 +15,7 @@ CONTAINS
                      mp_physics,                                               &
                      p_qc,p_qi,p_first_scalar,                                 &
                      cp,cliq,cpv,g,xlv,r_d,r_v,ep_1,ep_2,                      &
-                     cice,xlv0,xls,psat,f_qi,f_qc,                             &
+                     cice,xls,psat,f_qi,f_qc,                                  &
                      ids,ide, jds,jde, kds,kde,                                &
                      ims,ime, jms,jme, kms,kme,                                &
                      its,ite, jts,jte, kts,kte)
@@ -63,7 +63,7 @@ CONTAINS
                                      p_qc,p_qi,p_first_scalar
 !
   real,     intent(in   )   ::      cp,cliq,cpv,g,xlv,r_d,r_v,ep_1,ep_2,       &
-                                    cice,xlv0,xls,psat
+                                    cice,xls,psat
   real,     intent(in   )   ::      dt
 !
   real,     dimension( ims:ime, kms:kme, jms:jme ),optional                  , &
@@ -216,9 +216,8 @@ CONTAINS
           del(i,k)=prsll(i,k)*g/r_d*dz8w(i,k,j)/t3d(i,k,j)
           u1(i,k)=u3d(i,k,j)
           v1(i,k)=v3d(i,k,j)
-          q1(i,k)=qv3d(i,k,j)
-!          q1(i,k)=qv3d(i,k,j)/(1.+qv3d(i,k,j))
           t1(i,k)=t3d(i,k,j)
+          q1(i,k)=qv3d(i,k,j)
           qi2(i,k) = qi3d(i,k,j)
           qc2(i,k) = qc3d(i,k,j)
         enddo
@@ -227,7 +226,7 @@ CONTAINS
 ! NCEP SAS 
       call nsas2d(delt=dt,del=del(its,kts),prsl=prsll(its,kts),                &
               prsi=prsii(its,kts),prslk=pi3d(ims,kms,j),zl=zll(its,kts),       &
-              zi=zii(its,kts),ncloud=ncloud,qi2=qi2(its,kts),qc2=qc2(its,kts), &
+              zi=zii(its,kts),ncloud=ncloud,qc2=qc2(its,kts),qi2=qi2(its,kts), &
               q1=q1(its,kts),t1=t1(its,kts),rain=rain(its),                    &
               kbot=kbot(its),ktop=ktop(its),                                   &
               kuo=kuo(its),                                                    &
@@ -235,7 +234,7 @@ CONTAINS
               u1=u1(its,kts), v1=v1(its,kts),                                  &
               cp_=cp,cliq_=cliq,cvap_=cpv,g_=g,hvap_=xlv,                      &
               rd_=r_d,rv_=r_v,fv_=ep_1,ep2=ep_2,                               &
-              cice=cice,xlv0=xlv0,xls=xls,psat=psat,                           &
+              cice=cice,xls=xls,psat=psat,                                     &
               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,               &
               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,               &
               its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -256,7 +255,7 @@ CONTAINS
               u1=u1(its,kts), v1=v1(its,kts),                                  &
               cp_=cp,cliq_=cliq,cvap_=cpv,g_=g,hvap_=xlv,                      &
               rd_=r_d,rv_=r_v,fv_=ep_1,ep2=ep_2,                               &
-              cice=cice,xlv0=xlv0,xls=xls,psat=psat,                           &
+              cice=cice,xls=xls,psat=psat,                                     &
               hpbl=hpbl(ims,j),hfx=hfx(ims,j),qfx=qfx(ims,j),                  &
               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,               &
               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,               &
@@ -278,7 +277,6 @@ CONTAINS
       do k = kts,kte
         do i= its,ite
           rthcuten(i,k,j)=(t1(i,k)-t3d(i,k,j))/pi3d(i,k,j)*rdelt
-!         rqvcuten(i,k,j) = (q1(i,k)/(1.-q1(i,k))-qv3d(i,k,j))*rdelt
           rqvcuten(i,k,j)=(q1(i,k)-qv3d(i,k,j))*rdelt
         enddo
       enddo
@@ -326,7 +324,7 @@ CONTAINS
             q1,t1,rain,kbot,ktop,                                              &
             kuo,                                                               &
             lat,slimsk,dot,u1,v1,cp_,cliq_,cvap_,g_,hvap_,rd_,rv_,fv_,ep2,     &
-            cice,xlv0,xls,psat,                                                &
+            cice,xls,psat,                                                     &
             ids,ide, jds,jde, kds,kde,                                         &
             ims,ime, jms,jme, kms,kme,                                         &
             its,ite, jts,jte, kts,kte)
@@ -564,6 +562,7 @@ CONTAINS
    pi_   = 3.14159
    qmin_ = 1.0e-30
    t0c_ = 273.15
+   xlv0 = hvap_
    rcs  = 1.
    el2orc = hvap_*hvap_/(rv_*cp_)
    eps    = rd_/rv_
@@ -2111,9 +2110,9 @@ CONTAINS
                       ids, ide, jds, jde, kds, kde,                            &
                       ims, ime, jms, jme, kms, kme,                            &
                       its, ite, jts, jte, kts, kte                  )
-!--------------------------------------------------------------------
+!-------------------------------------------------------------------------------
    implicit none
-!--------------------------------------------------------------------
+!-------------------------------------------------------------------------------
    logical , intent(in)           ::  allowed_to_read,restart
    integer , intent(in)           ::  ids, ide, jds, jde, kds, kde,            &
                                       ims, ime, jms, jme, kms, kme,            &
@@ -2170,7 +2169,7 @@ CONTAINS
                  kuo,                                                          &
                  slimsk,dot,u1,v1,                                             &
                  cp_,cliq_,cvap_,g_,hvap_,rd_,rv_,fv_,ep2,                     &
-                 cice,xlv0,xls,psat,                                           &
+                 cice,xls,psat,                                                &
                  hpbl,hfx,qfx,                                                 &
                  ids,ide, jds,jde, kds,kde,                                    &
                  ims,ime, jms,jme, kms,kme,                                    &
@@ -2316,6 +2315,7 @@ CONTAINS
    pi_ = 3.14159
    qmin_ = 1.0e-30
    t0c_ = 273.15
+   xlv0 = hvap_
       km1 = kte - 1
 !
 !  compute surface buoyancy flux
@@ -3262,6 +3262,6 @@ CONTAINS
       endif
 !
       end subroutine nscv2d
-!--------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 END MODULE module_cu_nsas

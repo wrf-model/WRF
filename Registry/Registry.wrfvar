@@ -1634,9 +1634,7 @@ rconfig   character time_window_max         namelist,wrfvar22  1  "2002-08-03_03
 
 rconfig   logical jcdfi_use                 namelist,perturbation  1  .true.   -   "jcdfi_use"   "JcDFI on/off"      ""
 rconfig   integer jcdfi_diag                namelist,perturbation  1  1        -   "jcdfi_diag"  "JcDFI diag. on/off"      ""
-rconfig   real    jcdfi_error_wind          namelist,perturbation  1  2.       -   "jcdfi_error_wind"    "Wind Error for JcDFI"      "m/s"
-rconfig   real    jcdfi_error_t             namelist,perturbation  1  1.       -   "jcdfi_error_t"    "Temp. Error for JcDFI"      "K"
-rconfig   real    jcdfi_error_mu            namelist,perturbation  1  1000.    -   "jcdfi_error_mu"    "Pert. Pres. Error for JcDFI"      "Pa"
+rconfig   real    jcdfi_penalty             namelist,perturbation  1  10.      -   "jcdfi_penalty"    "Penalty parameter for JcDF"      ""
 rconfig   logical enable_identity           namelist,perturbation  1  .false.  -   "enable identity AD/TL model"        ""      ""
 rconfig   logical   trajectory_io           namelist,perturbation  1  .true.   -  "0:disk IO;1:memory IO"   ""  ""
 
@@ -1821,7 +1819,7 @@ rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
-rconfig   integer     kfeta_trigger       namelist,physics	1              0       rh       "KFETA Trigger function"    ""    ""
+rconfig   integer     kfeta_trigger       namelist,physics	1              1       rh       "KFETA Trigger function"    ""    ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""

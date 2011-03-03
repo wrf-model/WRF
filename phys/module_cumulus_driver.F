@@ -499,10 +499,13 @@ CONTAINS
        enddo
       ENDDO
       !$OMP END PARALLEL DO
+      endif
+
+      IF ( cu_physics == G3SCHEME .OR. cu_physics == KFETASCHEME ) THEN
 #ifdef DM_PARALLEL
 #include "HALO_CUP_G3_IN.inc"
 #endif
-      endif
+      ENDIF
 #endif
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
@@ -578,11 +581,6 @@ CONTAINS
 
      CASE (KFETASCHEME)
           CALL wrf_debug(100,'in kf_eta_cps')
-#if  ( EM_CORE == 1 )
-#ifdef DM_PARALLEL                                      ! chen
-#include "HALO_CUP_G3_IN.inc"                           ! chen
-#endif                                                  ! chen
-#endif                                                  ! chen
           CALL KF_ETA_CPS(                                      &
                 U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho              &
                ,CUDT=cudt_pass                                  &
@@ -850,7 +848,7 @@ CONTAINS
                 P_FIRST_SCALAR=param_first_scalar               &
                ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
                ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
-               ,CICE=cice,XLV0=xlv0,XLS=xls,PSAT=psat           &
+               ,CICE=cice,XLS=xls,PSAT=psat                     &
                ,F_QI=f_qi,F_QC=f_qc                             & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &

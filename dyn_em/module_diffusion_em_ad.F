@@ -15444,6 +15444,8 @@ Tmpv001 =z(i,k+1,j) -z(i,k,j)
 
 !       DO j = j_start, j_end
 !       DO i = i_start, i_end
+!          cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV)) 
+!          hfx(i,j)=heat_flux*cp*rho(i,1,j)         ! provided for output only
 !          rt_tendf(i,kts,j)=rt_tendf(i,kts,j)    &
 !               +mu(i,j)*heat_flux*rdzw(i,kts,j)
 !       ENDDO

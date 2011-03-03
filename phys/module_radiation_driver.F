@@ -507,6 +507,9 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: HRANG
 !------------------------------------------------------------------
 
+   CALL wrf_debug (1, 'Top of Radiation Driver')
+   WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
+   CALL wrf_debug (1, wrf_err_message )
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
 
 ! ra_call_offset = -1 gives old method where radiation may be called just before output
@@ -882,14 +885,6 @@ CONTAINS
         CASE (CAMLWSCHEME)
 
              CALL wrf_debug(100, 'CALL camrad lw')
-
-             IF ( PRESENT( OZMIXM ) ) print *, ' OZMIXM present '
-             IF ( PRESENT( PIN ) ) print *, ' PIN present '
-             IF ( PRESENT( M_PS_1 ) ) print *, ' M_PS_1 present '
-             IF ( PRESENT( M_PS_2 ) ) print *, ' M_PS_2 present '
-             IF ( PRESENT( M_HYBI0 ) ) print *, ' M_HYBI0 present '
-             IF ( PRESENT( AEROSOLC_1 ) ) print *, ' AEROSOLC_1 present '
-             IF ( PRESENT( AEROSOLC_2 ) ) print *, ' AEROSOLC_2 present '
 
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &

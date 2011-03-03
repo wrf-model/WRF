@@ -890,8 +890,7 @@ CONTAINS
           Z0(I,J)=Z0BRD
           EMISS(I,J) = EMISSI
           EMISS_RURAL(I,J) = EMISSI
-! MEK Nov2006 turn off
-!          ZNT(I,J)=Z0K
+          ZNT(I,J)=Z0K
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
           HFX(I,J)=SHEAT

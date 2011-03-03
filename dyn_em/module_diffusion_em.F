@@ -3466,7 +3466,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
    :: nba_mij
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   )   :: rho  
-   REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   )            :: hfx,  &
+   REAL , DIMENSION( ims:ime, jms:jme), INTENT(INOUT)            :: hfx,  &
                                                                     qfx
    REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   )            :: ust
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::    thp
@@ -3653,6 +3653,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                             ! set in namelist.input
     DO j = j_start, j_end
     DO i = i_start, i_end
+       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV)) 
+       hfx(i,j)=heat_flux*cp*rho(i,1,j)         ! provided for output only
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             +mu(i,j)*heat_flux*rdzw(i,kts,j)
     ENDDO

@@ -142,7 +142,7 @@ if ( -e util/run_wkc ) then
 
    cd $WRFC_ROOT
 
-    chem/KPP/util/wkc/registry_kpp -DDA_CORE=0 -DEM_CORE=1 Registry/Registry.EM_CHEM
+    chem/KPP/util/wkc/registry_kpp -DDA_CORE=0 -DEM_CORE=1 -DBUILD_CHEM=1 Registry/Registry.EM_CHEM
    
    cd $WKC_HOME
 

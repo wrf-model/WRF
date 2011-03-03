@@ -773,8 +773,7 @@ CONTAINS
         if (cosz(i) .le. thresh) then
           RSWTOA(i,j) = 0.
         else
-          RSWTOA(i,j) = flx(i,kts) - flxd(i,kts) * SOLCON * cosz(i)
-!	  print *,'cosz,rswtoa=',cosz(i),rswtoa(i,j)
+          RSWTOA(i,j) = (flx(i,kts) - flxd(i,kts)) * SOLCON * cosz(i)
         endif
       end do
 !

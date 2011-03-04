@@ -32,6 +32,12 @@ MODULE module_initialize_real
    REAL , SAVE :: p_top_save
    INTEGER :: internal_time_loop
 
+   !  Excluded middle processing info.
+
+   LOGICAL :: hold_ups
+   INTEGER :: em_width
+   LOGICAL , EXTERNAL :: skip_middle_points_t
+
 CONTAINS
 
 !-------------------------------------------------------------------
@@ -104,7 +110,8 @@ CONTAINS
       REAL    :: cof1, cof2
       REAL    :: qvf , qvf1 , qvf2 , pd_surf
       REAL    :: p00 , t00 , a , tiso
-      REAL    :: hold_znw
+      REAL    :: hold_znw , ptemp
+      REAL    :: vap_pres_mb , sat_vap_pres_mb
       LOGICAL :: were_bad
 
       LOGICAL :: stretch_grid, dry_sounding, debug
@@ -138,8 +145,11 @@ integer::oops1,oops2
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
 
+      REAL :: t_start , t_end
+
       !  Dimension information stored in grid data structure.
 
+      CALL cpu_time(t_start)
       CALL get_ijk_from_grid (  grid ,                   &
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
@@ -196,11 +206,36 @@ integer::oops1,oops2
       grid%tlp  = a
       grid%tiso = tiso
 
+      !  Are there any hold-ups to us bypassing the middle of the domain?  These
+      !  holdups would be situations where we need data in the middle of the domain.
+      !  FOr example, if this si the first time period, we need the full domain
+      !  processed for ICs.  Also, if there is some sort of gridded FDDA turned on, or
+      !  if the SST update is activated, then we can't just blow off the middle of the 
+      !  domain all willy-nilly.  Other cases of these hold-ups?  Sure - what if the
+      !  user wants to smooth the CG topo, we need several rows and columns available.
+      !  What if the lat/lon proj is used, then we need to run a spectral filter on
+      !  the topo.  Both are killers when trying to ignore data in the middle of the
+      !  domain.
+
+      !  If hold_ups = .F., then there are no hold-ups to excluding the middle
+      !  domain processing.  If hold_ups = .T., then there are hold-ups, and we 
+      !  must process the middle of the domain.
+
+      hold_ups = ( internal_time_loop .EQ. 1 ) .OR. &
+                 ( config_flags%grid_fdda .NE. 0 ) .OR. &
+                 ( config_flags%sst_update .EQ. 1 ) .OR. &
+                 ( config_flags%all_ic_times ) .OR. &
+                 ( config_flags%smooth_cg_topo ) .OR. &
+                 ( config_flags%map_proj .EQ. PROJ_CASSINI )
+
+      em_width = MAX ( config_flags%spec_bdy_width , config_flags%emw )
+
       !  Replace traditional seaice field with optional seaice (AFWA source)
 
       IF ( flag_icefrac .EQ. 1 ) THEN
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%xice(i,j) = grid%icefrac_gc(i,j)
             END DO
          END DO
@@ -212,6 +247,7 @@ integer::oops1,oops2
       IF      ( ( flag_snow .EQ. 0 ) .AND. ( flag_snowh .EQ. 0 ) ) THEN
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%snow(i,j)  = 0.
                grid%snowh(i,j) = 0.
             END DO
@@ -221,6 +257,7 @@ integer::oops1,oops2
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
 !              ( m -> kg/m^2 )  & ( reduce to liquid, 5:1 ratio )
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%snow(i,j)  = grid%snowh(i,j) * 1000. / 5.
             END DO
          END DO
@@ -229,6 +266,7 @@ integer::oops1,oops2
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
 !              ( kg/m^2 -> m)  & ( liquid to snow depth, 5:1 ratio )
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%snowh(i,j) = grid%snow(i,j) / 1000. * 5.
             END DO
          END DO
@@ -241,17 +279,20 @@ integer::oops1,oops2
       IF      ( ( config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=max(jds+1,jts),min(jde-1,jte)
             DO i=its,min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
          IF(jts == jds) THEN
             DO i=its,ite
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx(i,jts) = 0.
                grid%msfvx_inv(i,jts) = 0.
             END DO
          END IF
          IF(jte == jde) THEN
             DO i=its,ite
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx(i,jte) = 0.
                grid%msfvx_inv(i,jte) = 0.
             END DO
@@ -259,12 +300,14 @@ integer::oops1,oops2
       ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
       ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,ite
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx(i,j) = grid%msfv(i,j)
                grid%msfvy(i,j) = grid%msfv(i,j)
                grid%msfux(i,j) = grid%msfu(i,j)
@@ -275,6 +318,7 @@ integer::oops1,oops2
          ENDDO
          DO j=jts,min(jde,jte)
             DO i=its,min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
@@ -284,6 +328,7 @@ integer::oops1,oops2
          END IF
          DO j=jts,min(jde,jte)
             DO i=its,min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
@@ -317,6 +362,7 @@ integer::oops1,oops2
          IF ( we_have_tavgsfc ) THEN
             DO j=jts,min(jde,jte)
                DO i=its,min(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%tsk(i,j) = grid%tavgsfc(i,j)
                END DO
             END DO
@@ -344,6 +390,7 @@ integer::oops1,oops2
             CALL wrf_message ( a_message )
             DO j=jts,jte
                DO i=its,ite
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%u_gc(i,1,j) = grid%u_gc(i,2,j)
                   grid%v_gc(i,1,j) = grid%v_gc(i,2,j)
                   grid%rh_gc(i,1,j) = grid%rh_gc(i,2,j)
@@ -359,13 +406,14 @@ integer::oops1,oops2
          !  Variables that are named differently between SI and WPS.
 
          DO j = jts, MIN(jte,jde-1)
-           DO i = its, MIN(ite,ide-1)
-              grid%tsk(i,j) = grid%tsk_gc(i,j)
-              grid%tmn(i,j) = grid%tmn_gc(i,j)
-              grid%xlat(i,j) = grid%xlat_gc(i,j)
-              grid%xlong(i,j) = grid%xlong_gc(i,j)
-              grid%ht(i,j) = grid%ht_gc(i,j)
-           END DO
+            DO i = its, MIN(ite,ide-1)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               grid%tsk(i,j) = grid%tsk_gc(i,j)
+               grid%tmn(i,j) = grid%tmn_gc(i,j)
+               grid%xlat(i,j) = grid%xlat_gc(i,j)
+               grid%xlong(i,j) = grid%xlong_gc(i,j)
+               grid%ht(i,j) = grid%ht_gc(i,j)
+            END DO
          END DO
 
          !  A user could request that the most coarse grid has the
@@ -470,6 +518,7 @@ integer::oops1,oops2
          IF ( flag_psfc .EQ. 1 ) THEN
             DO j = jts, MIN(jte,jde-1)
               DO i = its, MIN(ite,ide-1)
+                 IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                  grid%psfc_gc(i,j) = grid%psfc(i,j)
                  grid%p_gc(i,1,j) = grid%psfc(i,j)
               END DO
@@ -485,6 +534,7 @@ integer::oops1,oops2
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
 !                 IF ( grid%landmask(i,j) .GT. 0.5 ) THEN
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      grid%ght_gc(i,1,j) = grid%toposoil(i,j)
                      grid%ht_gc(i,j)= grid%toposoil(i,j)
 !                 END IF
@@ -497,6 +547,22 @@ integer::oops1,oops2
 
          num_metgrid_levels = grid%num_metgrid_levels
 
+         !  For UM data, swap incoming extra (theta-based) pressure with the standardly
+         !  named (rho-based) pressure.
+
+         IF ( flag_ptheta .EQ. 1 ) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO k = 1 , num_metgrid_levels
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     ptemp = grid%p_gc(i,k,j)
+                     grid%p_gc(i,k,j) = grid%prho_gc(i,k,j)
+                     grid%prho_gc(i,k,j) = ptemp
+                  END DO
+               END DO
+            END DO
+         END IF
+
          !  Check for and semi-fix missing surface fields.
 
          IF ( grid%p_gc(its,num_metgrid_levels,jts) .LT. grid%p_gc(its,2,jts) ) THEN
@@ -508,6 +574,7 @@ integer::oops1,oops2
          IF ( grid%t_gc(its,1,jts) .EQ. -1.E30 ) THEN
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%t_gc(i,1,j) = grid%t_gc(i,k,j)
                END DO
             END DO
@@ -520,6 +587,7 @@ integer::oops1,oops2
          IF ( grid%rh_gc(its,1,jts) .EQ. -1.E30 ) THEN
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%rh_gc(i,1,j) = grid%rh_gc(i,k,j)
                END DO
             END DO
@@ -532,6 +600,7 @@ integer::oops1,oops2
          IF ( grid%u_gc(its,1,jts) .EQ. -1.E30 ) THEN
             DO j = jts, MIN(jte,jde-1)
                DO i = its, ite
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%u_gc(i,1,j) = grid%u_gc(i,k,j)
                END DO
             END DO
@@ -544,6 +613,7 @@ integer::oops1,oops2
          IF ( grid%v_gc(its,1,jts) .EQ. -1.E30 ) THEN
             DO j = jts, jte
                DO i = its, MIN(ite,ide-1)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%v_gc(i,1,j) = grid%v_gc(i,k,j)
                END DO
             END DO
@@ -582,10 +652,27 @@ integer::oops1,oops2
             IF ( grid%sh_gc(its,kts,jts) .LT. 1.e-6 ) THEN
                DO j = jts, MIN(jte,jde-1)
                   DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      grid%sh_gc(i,1,j) = grid%sh_gc(i,k,j)
                   END DO
                END DO
             END IF
+
+            DO j = jts, MIN(jte,jde-1)
+               DO k = 1 , num_metgrid_levels
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid%qv_gc(i,k,j) = grid%sh_gc(i,k,j) /( 1. - grid%sh_gc(i,k,j) )
+                     sat_vap_pres_mb = 0.6112*10.*EXP(17.67*(grid%t_gc(i,k,j)-273.15)/(grid%t_gc(i,k,j)-29.65))
+                     vap_pres_mb = grid%qv_gc(i,k,j) * grid%p_gc(i,k,j)/100. / (grid%qv_gc(i,k,j) + 0.622 )
+                     IF ( sat_vap_pres_mb .GT. 0 ) THEN
+                        grid%rh_gc(i,k,j) = ( vap_pres_mb / sat_vap_pres_mb ) * 100.
+                     ELSE
+                        grid%rh_gc(i,k,j) = 0.
+                     END IF
+                  END DO
+               END DO
+            END DO
 
          END IF
 
@@ -595,6 +682,7 @@ integer::oops1,oops2
             DO j = jts, MIN(jte,jde-1)
                DO k = kts+1 , grid%num_metgrid_levels
                   DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      grid%ght_gc(i,k,j) = grid%ght_gc(i,k-1,j) - &
                         R_d / g * 0.5 * ( grid%t_gc(i,k  ,j) * ( 1 + 0.608 * grid%qv_gc(i,k  ,j) ) +   &
                                           grid%t_gc(i,k-1,j) * ( 1 + 0.608 * grid%qv_gc(i,k-1,j) ) ) * &
@@ -611,18 +699,21 @@ integer::oops1,oops2
 
          DO j = jts, min(jde-1,jte)
             DO i = its, min(ide,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%u10(i,j)=grid%u_gc(i,1,j)
             END DO
          END DO
 
          DO j = jts, min(jde,jte)
             DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%v10(i,j)=grid%v_gc(i,1,j)
             END DO
          END DO
 
          DO j = jts, min(jde-1,jte)
             DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%t2(i,j)=grid%t_gc(i,1,j)
             END DO
          END DO
@@ -630,6 +721,7 @@ integer::oops1,oops2
          IF ( flag_qv .EQ. 1 ) THEN
             DO j = jts, min(jde-1,jte)
                DO i = its, min(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%q2(i,j)=grid%qv_gc(i,1,j)
                END DO
             END DO
@@ -726,14 +818,15 @@ integer::oops1,oops2
          !  water values to 8%.
 
          DO j = jts, MIN(jte,jde-1)
-           DO i = its, MIN(ite,ide-1)
-              grid%albbck(i,j) = grid%albbck(i,j) / 100.
-              grid%snoalb(i,j) = grid%snoalb(i,j) / 100.
-              IF ( grid%landmask(i,j) .LT. 0.5 ) THEN
-                 grid%albbck(i,j) = 0.08
-                 grid%snoalb(i,j) = 0.08
-              END IF
-           END DO
+            DO i = its, MIN(ite,ide-1)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               grid%albbck(i,j) = grid%albbck(i,j) / 100.
+               grid%snoalb(i,j) = grid%snoalb(i,j) / 100.
+               IF ( grid%landmask(i,j) .LT. 0.5 ) THEN
+                  grid%albbck(i,j) = 0.08
+                  grid%snoalb(i,j) = 0.08
+               END IF
+            END DO
          END DO
 
          !  If the pressure levels in the middle of the atmosphere are upside down, then
@@ -787,6 +880,7 @@ integer::oops1,oops2
          IF ( flag_psfc .NE. 1 ) THEN
             DO j = jts, MIN(jte,jde-1)
               DO i = its, MIN(ite,ide-1)
+                 IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                  grid%psfc_gc(i,j) = grid%psfc(i,j)
                  grid%p_gc(i,1,j) = grid%psfc(i,j)
               END DO
@@ -799,6 +893,23 @@ integer::oops1,oops2
                             ids , ide , jds , jde , 1   , num_metgrid_levels , &
                             ims , ime , jms , jme , 1   , num_metgrid_levels , &
                             its , ite , jts , jte , 1   , num_metgrid_levels )
+
+         !  If this is UM data, the same moisture removed from the "theta" level pressure data can 
+         !  be removed from the "rho" level pressures.  This is an approximation.  We'll revisit to
+         !  see if this is a bad idea.
+
+         IF ( flag_ptheta .EQ. 1 ) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO k = num_metgrid_levels-1 , 1 , -1
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     ptemp = ((grid%p_gc(i,k,j) - grid%pd_gc(i,k,j)) + (grid%p_gc(i,k+1,j) - grid%pd_gc(i,k+1,j)))/2
+                     grid%pdrho_gc(i,k,j) = grid%prho_gc(i,k,j) - ptemp
+                  END DO
+               END DO
+            END DO
+         END IF
+
 
          !  Compute the difference between the dry, total surface pressure (input) and the
          !  dry top pressure (constant).
@@ -890,6 +1001,7 @@ integer::oops1,oops2
 
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%pd_gc(i,1,j) = grid%psfc_gc(i,j)
                   grid%ght_gc(i,1,j) = grid%ht_gc(i,j)
                END DO
@@ -964,9 +1076,6 @@ integer::oops1,oops2
                            ids , ide , jds , jde , kds , kde ,                    &
                            ims , ime , jms , jme , kms , kme ,                    &
                            its , ite , jts , jte , kts , kte-1 )
-
-#ifdef RUC_CLOUD
-         !  Add -DRUC_CLOUD to ARCHFLAGS in configure.wrf file to activate the following code
 
          num_3d_m = num_moist
          num_3d_s = num_scalar
@@ -1046,6 +1155,21 @@ integer::oops1,oops2
             END DO
          END IF
 
+         IF ( flag_qh .EQ. 1 ) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_m
+               IF ( im .EQ. P_QH ) THEN
+                  CALL vert_interp ( grid%qh_gc , grid%pd_gc , moist(:,:,:,P_QH) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         END IF
+
          IF ( flag_qni .EQ. 1 ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_s
                IF ( im .EQ. P_QNI ) THEN
@@ -1060,7 +1184,20 @@ integer::oops1,oops2
                END IF
             END DO
          END IF
-#endif
+
+         !  If this is UM data, put the dry rho-based pressure back into the dry pressure array.
+         !  Since the dry pressure is no longer needed, no biggy.
+
+         IF ( flag_ptheta .EQ. 1 ) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO k = 1 , num_metgrid_levels
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     grid%pd_gc(i,k,j) = grid%prho_gc(i,k,j)
+                  END DO
+               END DO
+            END DO
+         END IF
 
 #ifdef DM_PARALLEL
          ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
@@ -1110,6 +1247,7 @@ integer::oops1,oops2
             DO j=jts,MIN(jde-1,jte)
                DO i=its,MIN(ide-1,ite)
                   IF ( grid%landusef(i,grid%islake,j) >= 0.5 ) THEN
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      grid%sst(i,j) = grid%tavgsfc(i,j)
                      grid%tsk(i,j) = grid%tavgsfc(i,j)
                   END IF
@@ -1123,6 +1261,7 @@ integer::oops1,oops2
          END IF
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%landusef(i,grid%iswater,j) = grid%landusef(i,grid%iswater,j) + &
                                                  grid%landusef(i,grid%islake,j)
                grid%landusef(i,grid%islake,j) = 0.
@@ -1136,6 +1275,7 @@ integer::oops1,oops2
 
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             grid%tsk_save(i,j) = grid%tsk(i,j)
          END DO
       END DO
@@ -1145,6 +1285,7 @@ integer::oops1,oops2
 
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
                  ( grid%sst(i,j) .GT. 170. ) .AND. ( grid%sst(i,j) .LT. 400. ) ) THEN
                grid%tsk(i,j) = grid%sst(i,j)
@@ -1157,6 +1298,7 @@ integer::oops1,oops2
 
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             IF ( grid%snow(i,j) .GE. 10. ) then
                grid%snowc(i,j) = 1.
             ELSE
@@ -1245,6 +1387,7 @@ integer::oops1,oops2
 
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%vegcat(i,j)  = grid%ivgtyp(i,j)
                grid%soilcat(i,j) = grid%isltyp(i,j)
             END DO
@@ -1257,6 +1400,7 @@ integer::oops1,oops2
          IF ( grid%soilcat(its,jts) .GT. 0.5 ) THEN
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%isltyp(i,j) = NINT( grid%soilcat(i,j) )
                END DO
             END DO
@@ -1264,6 +1408,7 @@ integer::oops1,oops2
          IF ( grid%vegcat(its,jts) .GT. 0.5 ) THEN
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%ivgtyp(i,j) = NINT( grid%vegcat(i,j) )
                END DO
             END DO
@@ -1276,6 +1421,7 @@ integer::oops1,oops2
          IF ( grid%sct_dom_gc(its,jts) .GT. 0.5 ) THEN
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%isltyp(i,j) = NINT( grid%sct_dom_gc(i,j) )
                   grid%soilcat(i,j) = grid%isltyp(i,j)
                END DO
@@ -1287,6 +1433,7 @@ integer::oops1,oops2
          IF ( grid%lu_index(its,jts) .GT. 0.5 ) THEN
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%ivgtyp(i,j) = NINT( grid%lu_index(i,j) )
                   grid%vegcat(i,j) = grid%ivgtyp(i,j)
                END DO
@@ -1323,6 +1470,7 @@ integer::oops1,oops2
 
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             grid%lu_index(i,j) = grid%ivgtyp(i,j)
             IF ( grid%lu_index(i,j) .NE. model_config_rec%iswater(grid%id) ) THEN
                grid%landmask(i,j) = 1
@@ -1341,6 +1489,7 @@ integer::oops1,oops2
          CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
                        ( grid%sst(i,j) .GT. 170. ) .AND. ( grid%sst(i,j) .LT. 400. ) ) THEN
                      grid%tmn(i,j) = grid%sst(i,j)
@@ -1357,6 +1506,7 @@ integer::oops1,oops2
       IF ( internal_time_loop .NE. 1 ) THEN
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                IF ( grid%tsk(i,j) .LT. 170 .or. grid%tsk(i,j) .GT. 400. ) THEN
                   grid%tsk(i,j) = grid%t_2(i,1,j)
                END IF
@@ -1365,6 +1515,7 @@ integer::oops1,oops2
       ELSE
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                IF ( grid%tsk(i,j) .LT. 170 .or. grid%tsk(i,j) .GT. 400. ) THEN
                   print *,'error in the grid%tsk'
                   print *,'i,j=',i,j
@@ -1386,6 +1537,7 @@ integer::oops1,oops2
 
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             IF ( ( ( grid%tmn(i,j) .LT. 170. ) .OR. ( grid%tmn(i,j) .GT. 400. ) ) &
                .AND. ( grid%landmask(i,j) .GT. 0.5 ) ) THEN
                IF ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME ) THEN
@@ -1429,6 +1581,7 @@ integer::oops1,oops2
                IF      ( flag_soil_layers == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
@@ -1443,11 +1596,13 @@ integer::oops1,oops2
                ELSE IF ( flag_soil_levels == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'RUC -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
@@ -1466,6 +1621,7 @@ integer::oops1,oops2
                IF      ( flag_soil_layers == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
@@ -1480,6 +1636,7 @@ integer::oops1,oops2
                ELSE IF ( flag_soil_levels == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
@@ -1494,6 +1651,7 @@ integer::oops1,oops2
          DO j = jts, MIN(jde-1,jte)
             DO ns = 1 , model_config_rec%num_soil_layers
                DO i = its, MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( grid%tslb(i,ns,j) .LT. 170 .or. grid%tslb(i,ns,j) .GT. 400. ) THEN
                      grid%tslb(i,ns,j) = grid%t_2(i,1,j)
                      grid%smois(i,ns,j) = 0.3
@@ -1504,6 +1662,7 @@ integer::oops1,oops2
       ELSE
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                IF ( ( ( grid%tslb(i,1,j) .LT. 170. ) .OR. ( grid%tslb(i,1,j) .GT. 400. ) ) .AND. &
                        ( grid%landmask(i,j) .GT. 0.5 ) ) THEN
                      IF ( ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME    ) .AND. &
@@ -1591,6 +1750,7 @@ oops1=0
 oops2=0
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             IF ( ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. &
                    ( grid%ivgtyp(i,j) .NE. config_flags%iswater .OR. grid%isltyp(i,j) .NE. 14 ) ) .OR. &
                  ( ( grid%landmask(i,j) .GT. 0.5 ) .AND. &
@@ -1630,6 +1790,7 @@ endif
 ! fill grid%sst array with grid%tsk if missing in real input (needed for time-varying grid%sst in wrf)
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
+           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
            IF ( flag_sst .NE. 1 ) THEN
              grid%sst(i,j) = grid%tsk(i,j)
            ENDIF
@@ -1638,6 +1799,7 @@ endif
 !tgs set snoalb to land value if the water point is covered with ice
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
+           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
            IF ( grid%ivgtyp(i,j) .EQ. config_flags%isice) THEN
              grid%snoalb(i,j) = 0.75
            ENDIF
@@ -1729,6 +1891,7 @@ endif
 
       DO j=jts,jte
          DO i=its,ite
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             grid%ph0(i,1,j) = grid%ht(i,j) * g
             grid%ph_2(i,1,j) = 0.
          END DO
@@ -1741,6 +1904,8 @@ endif
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
 
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+    
             !  Base state pressure is a function of eta level and terrain, only, plus
             !  the hand full of constants: p00 (sea level pressure, Pa), t00 (sea level
             !  temperature, K), and A (temperature difference, from 1000 mb to 300 mb, K).
@@ -1815,6 +1980,7 @@ endif
 
       DO j = jts, min(jde-1,jte)
          DO i = its, min(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             grid%mu_2(i,j) = grid%mu0(i,j) - grid%mub(i,j)
          END DO
       END DO
@@ -1838,6 +2004,7 @@ endif
       lev500 = 0
       DO j = jts, min(jde-1,jte)
          DO i = its, min(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
             !  Assign the potential temperature (perturbation from t0) and qv on all the mass
             !  point locations.
@@ -1920,6 +2087,7 @@ endif
                !  surfaces, and folks have asked to do this option.
 
                IF ( ( flag_metgrid .EQ. 1 ) .AND. &
+                    ( flag_ptheta  .EQ. 1 ) .AND. &
                     ( config_flags%adjust_heights ) .AND. &
                     ( lev500 .NE. 0 ) ) THEN
 
@@ -1983,18 +2151,21 @@ endif
       IF ( flag_metgrid .NE. 1 ) THEN
          DO j = jts, min(jde-1,jte)
             DO i = its, min(ide,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%u10(i,j)=grid%u_2(i,1,j)
             END DO
          END DO
 
          DO j = jts, min(jde,jte)
             DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%v10(i,j)=grid%v_2(i,1,j)
             END DO
          END DO
 
          DO j = jts, min(jde-1,jte)
             DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
                grid%psfc(i,j)=p_surf + grid%p(i,1,j)
                grid%q2(i,j)=moist(i,1,j,P_QV)
@@ -2012,6 +2183,7 @@ endif
 
          DO j = jts, min(jde-1,jte)
             DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
                grid%psfc(i,j)=p_surf + grid%p(i,1,j)
                grid%th2(i,j)=grid%t2(i,j)*(p00/(grid%p(i,1,j)+grid%pb(i,1,j)))**(r_d/cp)
@@ -2020,12 +2192,14 @@ endif
          IF ( flag_qv .NE. 1 ) THEN
             DO j = jts, min(jde-1,jte)
                DO i = its, min(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   grid%q2(i,j)=moist(i,1,j,P_QV)
                END DO
             END DO
          END IF
 
       END IF
+      CALL cpu_time(t_end)
 
 !  Set flag to denote that we are saving original values of HT, MUB, and
 !  PHB for 2-way nesting and cycling.
@@ -2691,6 +2865,7 @@ end subroutine fillitup
          DO j = jstart,jend
             DO k = 1,generic
                DO i = MAX(ids+1,its) , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = ( po(i,k,j) + po(i-1,k,j) ) * 0.5
                END DO
             END DO
@@ -2707,6 +2882,7 @@ end subroutine fillitup
 
             DO k = kstart,kend
                DO i = MAX(ids+1,its) , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   pnew(i,k,j) = ( pnu(i,k,j) + pnu(i-1,k,j) ) * 0.5
                END DO
             END DO
@@ -2731,6 +2907,7 @@ end subroutine fillitup
          DO i = istart,iend
             DO k = 1,generic
                DO j = MAX(jds+1,jts) , MIN(jde-1,jte)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = ( po(i,k,j) + po(i,k,j-1) ) * 0.5
                END DO
             END DO
@@ -2747,6 +2924,7 @@ end subroutine fillitup
 
             DO k = kstart,kend
                DO j = MAX(jds+1,jts) , MIN(jde-1,jte)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   pnew(i,k,j) = ( pnu(i,k,j) + pnu(i,k,j-1) ) * 0.5
                END DO
             END DO
@@ -2771,12 +2949,14 @@ end subroutine fillitup
          DO j = jstart,jend
             DO k = 1,generic
                DO i = istart,iend
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = po(i,k,j)
                END DO
             END DO
 
             DO k = kstart,kend
                DO i = istart,iend
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   pnew(i,k,j) = pnu(i,k,j)
                END DO
             END DO
@@ -2791,12 +2971,14 @@ end subroutine fillitup
          DO j = jstart,jend
             DO k = 1,generic
                DO i = istart,iend
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = po(i,k,j)
                END DO
             END DO
 
             DO k = kstart,kend
                DO i = istart,iend
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   pnew(i,k,j) = pnu(i,k,j)
                END DO
             END DO
@@ -2811,12 +2993,14 @@ end subroutine fillitup
          DO j = jstart,jend
             DO k = 1,generic
                DO i = istart,iend
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   porig(i,k,j) = po(i,k,j)
                END DO
             END DO
 
             DO k = kstart,kend
                DO i = istart,iend
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   pnew(i,k,j) = pnu(i,k,j)
                END DO
             END DO
@@ -2878,6 +3062,7 @@ end subroutine fillitup
          !  the iterpolator.
 
          DO i = istart , iend
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
             !  If the surface value is in the middle of the array, three steps: 1) do the
             !  values below the ground (this is just to catch the occasional value that is
@@ -3771,8 +3956,10 @@ print *,'p target= ',target_x
             numer = numer * ( target_x  - x(k) )
             denom = denom * ( x(i)  - x(k) )
          END DO
-         Ln(i) = y(i) * numer / denom
-         Px = Px + Ln(i)
+         IF ( denom .NE. 0. ) THEN
+            Ln(i) = y(i) * numer / denom
+            Px = Px + Ln(i)
+         ENDIF
       END DO
       target_y = Px
 
@@ -4006,11 +4193,23 @@ print *,'p target= ',target_x
       INTEGER :: i , j , k
 
       REAL , PARAMETER :: Rd = r_d
+      CHARACTER (LEN=80) :: mess
 
       DO j = jts , MIN ( jde-1 , jte )
          DO k = kts , kte-1
             DO i = its , MIN (ide-1 , ite )
+             if ( p(i,k,j) .NE. 0. ) then
                t(i,k,j) = t(i,k,j) / ( ( p00 / p(i,k,j) ) ** (Rd / Cp) )
+             else
+               WRITE(mess,FMT='(*)') 'Troubles in theta_to_t'
+               CALL wrf_debug(0,mess)
+               WRITE(mess,FMT='(*)') "i,j,k = ", i,j,k
+               CALL wrf_debug(0,mess)
+               WRITE(mess,FMT='(*)') "p(i,k,j) = ", p(i,k,j)
+               CALL wrf_debug(0,mess)
+               WRITE(mess,FMT='(*)') "t(i,k,j) = ", t(i,k,j)
+               CALL wrf_debug(0,mess)
+             endif
             END DO
          END DO
       END DO
@@ -4251,6 +4450,8 @@ print *,'p sfc = ',psfc(i,j)
       REAL,         PARAMETER     :: SVP3        = 29.65
       REAL,         PARAMETER     :: SVPT0       = 273.15
 
+      CHARACTER (LEN=80) :: mess
+
       !  This subroutine computes mixing ratio (q, kg/kg) from basic variables
       !  pressure (p, Pa), temperature (t, K) and relative humidity (rh, 1-100%).
       !  The reference temperature (t_ref, C) is used to describe the temperature
@@ -4259,7 +4460,8 @@ print *,'p sfc = ',psfc(i,j)
       DO j = jts , MIN ( jde-1 , jte )
          DO k = kts , kte-1
             DO i = its , MIN (ide-1 , ite )
-                  rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )
             END DO
          END DO
       END DO
@@ -4268,17 +4470,23 @@ print *,'p sfc = ',psfc(i,j)
          DO j = jts , MIN ( jde-1 , jte )
             DO k = kts , kte-1
                DO i = its , MIN (ide-1 , ite )
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
 ! es is reduced by RH here to avoid problems in low-pressure cases
-
-                  es=.01*rh(i,k,j)*svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
-                  IF (es .ge. p(i,k,j)/100.)THEN
-                    q(i,k,j)=0.0
-                    print *,'warning: vapor pressure exceeds total pressure '
-                    print *,'setting mixing ratio to 0'
-                  ELSE
-                    q(i,k,j)=eps*es/(p(i,k,j)/100.-es)
-                  ENDIF
+                  if (t(i,k,j) .ne. 0.) then
+                     es=.01*rh(i,k,j)*svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
+                     IF (es .ge. p(i,k,j)/100.)THEN
+                       q(i,k,j)=0.0
+                       WRITE(mess,FMT='(*)') 'Warning: vapor pressure exceeds total pressure, setting Qv to 0'
+                       CALL wrf_debug(0,mess)
+                     ELSE
+                       q(i,k,j)=eps*es/(p(i,k,j)/100.-es)
+                     ENDIF
+                  else
+                     q(i,k,j)=0.0
+                     WRITE(mess,FMT='(*)') 't(i,j,k) was 0 at ', i,j,k,', setting Qv to 0'
+                     CALL wrf_debug(0,mess)
+                  endif
                END DO
             END DO
          END DO
@@ -4287,6 +4495,7 @@ print *,'p sfc = ',psfc(i,j)
          DO j = jts , MIN ( jde-1 , jte )
             DO k = kts , kte-1
                DO i = its , MIN (ide-1 , ite )
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
                   t1 = t(i,k,j) - 273.16
 
@@ -5322,4 +5531,32 @@ print *,'namelist p_top (Pa) = ',p_top
 !---------------------------------------------------------------------
 
 END MODULE module_initialize_real
+
+FUNCTION skip_middle_points_t ( ids , ide , jds , jde , &
+                                i_in , j_in , width ,   &
+                                subtleties_exist )      &
+                       RESULT ( skip_it )
+ 
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) :: ids , ide , jds , jde
+   INTEGER , INTENT(IN) :: i_in , j_in , width
+   LOGICAL , INTENT(IN) :: subtleties_exist
+   
+   LOGICAL              :: skip_it
+
+   INTEGER , PARAMETER :: slop = 2
+
+   IF ( subtleties_exist ) THEN
+      skip_it = .FALSE.
+   ELSE
+      IF ( ( i_in .GE. ids+width+slop ) .AND. ( i_in .LE. ide-1-slop )   .AND. &
+           ( j_in .GE. jds+width+slop ) .AND. ( j_in .LE. jde-1-slop ) ) THEN
+         skip_it = .TRUE.
+      ELSE
+         skip_it = .FALSE.
+      END IF
+   END IF
+
+END FUNCTION skip_middle_points_t
 #endif

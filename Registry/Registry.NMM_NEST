@@ -1332,6 +1332,8 @@ package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -
 package   dfi_fwd        dfi_stage==2                -             -
 package   dfi_fst        dfi_stage==3                -             -
+package   dfi_startfwd   dfi_stage==4                -             -
+package   dfi_startbck   dfi_stage==5                -             -
 package   dfi_nodfi     dfi_opt==0                  -             -
 package   dfi_dfl       dfi_opt==1                  -            \
  state:dfi_pd,dfi_pint,dfi_dwdt,dfi_t,dfi_q,dfi_u,dfi_v,dfi_q2,dfi_cwm,dfi_rrw,dfi_STC,dfi_SMC,dfi_SH2O,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_NMM_TSK,dfi_SNOWC

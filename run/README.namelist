@@ -68,9 +68,12 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
                                                 ; 1 = Cycle between two 12 hour files (set frames_per_emissfile=12)
                                                 ; 2 = Dated files with length set by frames_per_emissfile
  debug_level                         = 0, 	; 50,100,200,300 values give increasing prints
+ diag_print                          = 0, 	; print out time series of model diagnostics
+                                                ; 0 = no print
+                                                ; 1 = no print
 
 To choose between SI and WPS input to real for EM core:
- auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS
+ auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS (default since 3.0)
                                      = "wrf_real_input_em.d<domain>.<date>"  ; Input to real from SI
 
 To choose between SI and WPS input to real for NMM core:

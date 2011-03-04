@@ -512,15 +512,56 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Darwin (MACOS) PGI compiler with pgcc #serial smpar dmpar dm+sm
+#ARCH    Darwin (MACOS) PGI 32 bit compiler with pgcc #serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -mp -Minfo=mp -Mrecursive
 OMPCC		=	# -mp
-SFC		=       pgf90
-SCC		=       pgcc
-CCOMP		=       pgcc
+SFC		=       pgf90 -m32
+SCC		=       pgcc -m32
+CCOMP		=       pgcc -m32
+DM_FC		=	mpif90 -f90=$(SFC)
+DM_CC		=       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD		=	$(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_SUBR
+CFLAGS_LOCAL    =       -DMACOS
+LDFLAGS_LOCAL   =       
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM		=       -O2 -fast
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+FCSUFFIX        =       
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      -traditional
+CPP             =      cpp -C -P -xassembler-with-cpp
+AR              =      ar
+ARFLAGS         =      ru
+M4 		=      m4 -B 14000
+RANLIB 		=      ranlib
+CC_TOOLS        =      cc
+
+###########################################################
+#ARCH    Darwin (MACOS) PGI 64 bit compiler with pgcc #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP		=	# -D_OPENMP
+OMP		=	# -mp -Minfo=mp -Mrecursive
+OMPCC		=	# -mp
+SFC		=       pgf90 -m64
+SCC		=       pgcc -m64
+CCOMP		=       pgcc -m64
 DM_FC		=	mpif90 -f90=$(SFC)
 DM_CC		=       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC

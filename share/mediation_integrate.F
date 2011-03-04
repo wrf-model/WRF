@@ -352,6 +352,9 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      where ( parent%nest_pos .gt. 0. ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
 #endif
 
+! initialize some other constants (and 1d arrays in z)
+     CALL init_domain_constants ( parent, nest )
+
 ! fill in entire fine grid domain with interpolated coarse grid data
      CALL med_interp_domain( parent, nest )
 
@@ -361,9 +364,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                ims, ime, jms, jme, kms, kme,    &
                                ips, ipe, jps, jpe, kps, kpe    )
   
-! initialize some other constants (and 1d arrays in z)
-     CALL init_domain_constants ( parent, nest )
-
 ! get the nest config flags
      CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
 

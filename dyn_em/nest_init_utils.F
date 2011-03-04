@@ -25,6 +25,11 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%gmt     = parent%gmt
    nest%julyr   = parent%julyr
    nest%julday  = parent%julday
+   nest%iswater = parent%iswater
+   nest%isice   = parent%isice
+   nest%isurban = parent%isurban
+   nest%islake  = parent%islake
+   nest%isoilwater = parent%isoilwater
 
    CALL nl_get_mminlu ( 1,char_junk(1:256) )
    CALL nl_get_iswater (1, iswater )

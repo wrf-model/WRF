@@ -474,6 +474,7 @@
          ENDIF
     ENDIF
     CALL nl_set_iswater ( grid%id , config_flags%iswater )
+    grid%iswater = config_flags%iswater
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISLAKE' ,  config_flags%islake , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISLAKE returns ',config_flags%islake
@@ -482,6 +483,7 @@
          config_flags%islake = -1
     ENDIF
     CALL nl_set_islake ( grid%id , config_flags%islake )
+    grid%islake = config_flags%islake
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISICE returns ',config_flags%isice
@@ -494,6 +496,7 @@
          ENDIF
     ENDIF
     CALL nl_set_isice ( grid%id , config_flags%isice )
+    grid%isice = config_flags%isice
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISURBAN returns ',config_flags%isurban
@@ -506,6 +509,7 @@
          ENDIF
     ENDIF
     CALL nl_set_isurban ( grid%id , config_flags%isurban )
+    grid%isurban = config_flags%isurban
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISOILWATER returns ',config_flags%isoilwater
@@ -514,6 +518,7 @@
          config_flags%isoilwater = 14
     ENDIF
     CALL nl_set_isoilwater ( grid%id , config_flags%isoilwater )
+    grid%isoilwater = config_flags%isoilwater
 
 #ifdef MOVE_NESTS
 ! Added these fields for restarting of moving nests, JM

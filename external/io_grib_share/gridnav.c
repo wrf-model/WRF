@@ -47,7 +47,6 @@ int GRID_init(float central_lat, float central_lon, int projection,
 
   int status = 1;
 
-  fprintf(stderr,"central_lon: %f\n",central_lon);
   gridnav->proj.central_lon = central_lon;
   gridnav->proj.central_lat = central_lat;
   gridnav->proj.map_proj = projection;

@@ -18,6 +18,7 @@ MODULE module_wrf_top
 
    USE module_timing
    USE module_wrf_error
+   USE module_nesting
 
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : wrf_dm_initialize
@@ -31,7 +32,10 @@ MODULE module_wrf_top
               levels_to_process
 
    TYPE (domain) , POINTER :: keep_grid, grid_ptr, null_domain
+   TYPE (domain) , pointer :: parent_grid, new_nest
+   LOGICAL                                :: a_nest_was_opened
    TYPE (grid_config_rec_type), SAVE :: config_flags
+   INTEGER        :: kid, nestid
    INTEGER                 :: number_at_same_level
    INTEGER                 :: time_step_begin_restart
 
@@ -59,6 +63,12 @@ MODULE module_wrf_top
      SUBROUTINE wrf_dfi_write_initialized_state( )
      END SUBROUTINE wrf_dfi_write_initialized_state
  
+     SUBROUTINE wrf_dfi_startfwd_init( )
+     END SUBROUTINE wrf_dfi_startfwd_init
+     
+     SUBROUTINE wrf_dfi_startbck_init( )
+     END SUBROUTINE wrf_dfi_startbck_init
+     
      SUBROUTINE wrf_dfi_bck_init( )
      END SUBROUTINE wrf_dfi_bck_init
      
@@ -71,6 +81,14 @@ MODULE module_wrf_top
      SUBROUTINE wrf_dfi_array_reset ( )
      END SUBROUTINE wrf_dfi_array_reset
 ! #endif
+
+     SUBROUTINE med_nest_initial ( parent , grid , config_flags )
+       USE module_domain
+       USE module_configure
+       TYPE (domain), POINTER ::  grid , parent
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_nest_initial
+
    END INTERFACE
 
 
@@ -358,6 +376,19 @@ CONTAINS
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
 
+   !  For EM (but not DA), if this is a DFI run, we can allocate some space.  We are
+   !  not allowing anyting tricky for nested DFI.  If there are any nested domains,
+   !  they all need to start at the same time.  Otherwise, why even do the DFI?  If
+   !  the domains do not all start at the same time, then there will be inconsistencies,
+   !  which is what DFI is supposed to address.
+
+#if (EM_CORE == 1)
+   IF ( head_grid%dfi_opt .NE. DFI_NODFI ) THEN
+      CALL alloc_doms_for_dfi ( head_grid )
+   END IF
+#endif
+
+
    END SUBROUTINE wrf_init
 
 
@@ -553,5 +584,55 @@ CONTAINS
 #endif
 
    END SUBROUTINE set_derived_rconfigs
+
+   RECURSIVE SUBROUTINE alloc_doms_for_dfi ( grid )
+   
+      !  Input variables.
+
+      TYPE (domain) , pointer :: grid
+
+      !  Local variables.
+
+      TYPE (domain) , pointer :: new_nest_loc
+      TYPE (grid_config_rec_type) :: parent_config_flags
+      INTEGER :: nestid_loc , kid_loc
+   
+         !  Are there any subdomains from this level.  The output is the nestid (the domain
+         !  ID of the nest), and kid (an index to which of the parent's children this new nested
+         !  domain represents).
+   
+         DO WHILE ( nests_to_open( grid , nestid_loc , kid_loc ) )
+
+            !  If we found another child domain, we continue on: allocate, set up time keeping, 
+            !  initialize.
+   
+            CALL alloc_and_configure_domain ( domain_id  = nestid_loc   , &
+                                              grid       = new_nest_loc , &
+                                              parent     = grid         , &
+                                              kid        = kid_loc        )
+         
+print *,'for parent domain id #',grid%id,', found child domain #',nestid_loc
+            !  Since this is a DFI run, set the DFI switches to the same for all domains.
+
+            new_nest_loc%dfi_opt = head_grid%dfi_opt
+            new_nest_loc%dfi_stage = DFI_SETUP
+         
+            !  Set up time keeping for the fine grid space that was just allocated.
+
+            CALL Setup_Timekeeping (new_nest_loc)
+
+            !  With space allocated, and timers set, the fine grid can be initialized with data.
+
+            CALL model_to_grid_config_rec ( grid%id , model_config_rec , parent_config_flags )
+            CALL med_nest_initial ( grid , new_nest_loc , config_flags )
+
+            !  Here's the recursive part.  For each of these child domains, we call this same routine.
+            !  This will find all of "new_nest_loc" first generation progeny.
+   
+            CALL alloc_doms_for_dfi ( new_nest_loc )
+   
+         END DO
+   
+   END SUBROUTINE alloc_doms_for_dfi
 
 END MODULE module_wrf_top

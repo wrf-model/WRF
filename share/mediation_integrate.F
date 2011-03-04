@@ -377,23 +377,20 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 ! data is from a pristine, un-cycled model input file.  For the original topo from
 ! the real program, we will need to adjust the terrain (and a couple of other base-
 ! state fields) so reflect the smoothing and matching between the parent and child
-! domains.  For cycled forecasts, the topo has already been adjusted, and we skip
-! over this step.
+! domains.
 
-       IF ( nest%save_topo_from_real == 1 ) THEN
-          CALL  copy_3d_field ( nest%ht_int  , nest%ht , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  copy_3d_field ( nest%mub_fine , nest%mub , &
-                                ids , ide , jds , jde , 1   , 1   , &
-                                ims , ime , jms , jme , 1   , 1   , &
-                                ips , ipe , jps , jpe , 1   , 1   )
-          CALL  copy_3d_field ( nest%phb_fine , nest%phb , &
-                                ids , ide , jds , jde , kds , kde , &
-                                ims , ime , jms , jme , kms , kme , &
-                                ips , ipe , jps , jpe , kps , kpe )
-       END IF
+       CALL  copy_3d_field ( nest%ht_int  , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  copy_3d_field ( nest%mub_fine , nest%mub , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  copy_3d_field ( nest%phb_fine , nest%phb , &
+                             ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe )
 
        IF ( nest_config_flags%input_from_file ) THEN
 ! read input from dataset

@@ -250,6 +250,7 @@ CONTAINS
      v_ls_tend  = 0.0
      w_dthdz     = 0.0
      w_dqvdz     = 0.0
+     w_dqldz     = 0.0
      w_dudz      = 0.0
      w_dvdz      = 0.0
      adv_timescale_x = 0.0
@@ -268,33 +269,13 @@ CONTAINS
        CALL wrf_debug ( 100, message )
     enddo
 
-    if ( scm_th_adv .or. scm_qv_adv .or. scm_wind_adv ) then
+    if ( scm_th_adv .or. scm_qv_adv .or. scm_ql_adv .or. scm_wind_adv ) then
        if ( scm_th_adv ) CALL wrf_debug ( 100, 'k  tau_x  tau_y t_ups_x t_ups_y t_m ' )
        do k = kms,kme-1
-
-          u_x = interp_0(u_upstream_x,z_force,z(ids,k,jds),num_force_layers)
-          u_y = interp_0(u_upstream_y,z_force,z(ids,k,jds),num_force_layers)
-
-          v_x = interp_0(v_upstream_x,z_force,z(ids,k,jds),num_force_layers)
-          v_y = interp_0(v_upstream_y,z_force,z(ids,k,jds),num_force_layers)
-
           adv_timescale_x(k) = interp_0(tau_x,z_force,z(ids,k,jds),num_force_layers)
           adv_timescale_y(k) = interp_0(tau_y,z_force,z(ids,k,jds),num_force_layers)
-
-
-!          tau_u(k) = dx/abs(u(ids,k,jds))
-!          tau_v(k) = dx/abs(v(ids,k,jds))
-!          adv_timescale_x(k) = dx/abs(u(ids,k,jds))
-!          adv_timescale_y(k) = dx/abs(v(ids,k,jds))
-
-          if ( scm_wind_adv ) then
-             u_adv_tend(k) = (u_x-u(ids,k,jds))/adv_timescale_x(k) + (u_y-u(ids,k,jds))/adv_timescale_y(k)
-             v_adv_tend(k) = (v_x-v(ids,k,jds))/adv_timescale_x(k) + (v_y-v(ids,k,jds))/adv_timescale_y(k)
-          endif
-
        enddo
     endif
-
 
     if ( scm_th_adv ) then
        if ( th_upstream_x(kms) > 0.) then
@@ -483,10 +464,10 @@ CONTAINS
 
 ! set tendencies for return
 ! vertical advection tendencies need to be interpolated back to half levels
-    CALL wrf_debug ( 100, 'j, k, th_adv_ten, qv_adv_ten, u_adv_ten, v_adv_ten')
+    CALL wrf_debug ( 100, 'j, k, th_adv_ten, qv_adv_ten, ql_adv_ten, u_adv_ten, v_adv_ten')
     do j = jms,jme
     do k = kms,kme-1
-    if(j==1) WRITE( message, '(i4,4f12.4)' ) k,th_adv_tend(k),qv_adv_tend(k),u_adv_tend(k),v_adv_tend(k)
+    if(j==1) WRITE( message, * ) k,th_adv_tend(k),qv_adv_tend(k),ql_adv_tend(k), u_adv_tend(k),v_adv_tend(k)
     if(j==1) CALL wrf_debug ( 100, message )
     do i = ims,ime
        thten(i,k,j) = thten(i,k,j) + th_adv_tend(k) +              &

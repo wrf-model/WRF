@@ -532,8 +532,7 @@ endif
                   WRITE ( message , FMT = '('//num_cat_count//'(i3,1x))' ) (ints(l),l=1,num_soil_top_cat)
                   CALL wrf_debug(1,message)
                   WRITE ( message , FMT = '('//num_cat_count//'(i3,1x))' ) &
-                     nint(soil_top_cat(i,ints(1:num_soil_top_cat),j)*100)
-!                    nint(soil_top_cat(i,(ints(k),k=1:num_soil_top_cat),j)*100)
+                    ((nint(soil_top_cat(i,ints(l),j)*100)), l=1,num_soil_top_cat)
                   CALL wrf_debug(1,message)
                   dominant_index = 8
                END IF

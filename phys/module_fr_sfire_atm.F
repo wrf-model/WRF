@@ -1,8 +1,4 @@
 !WRF:MEDIATION_LAYER:FIRE_MODEL
-
-!*** Jan Mandel August 2007 - February 2008
-!*** email: jmandel@ucar.edu or Jan.Mandel@gmail.com or Jan.Mandel@cudenver.edu
-
 ! Routines dealing with the atmosphere
 
 module module_fr_sfire_atm
@@ -22,9 +18,8 @@ SUBROUTINE fire_tendency( &
     rthfrten,rqvfrten)             ! theta and Qv tendencies 
 
 ! This routine is atmospheric physics 
-! it does NOT go into module_fr_sfire_phys because it is not fire physics
+! it does NOT go into module_fr_sfire_phys because it is not related to fire physical processes
 
-! taken from the code by Ned Patton, only order of arguments change to the convention here
 ! --- this routine takes fire generated heat and moisture fluxes and
 !     calculates their influence on the theta and water vapor 
 ! --- note that these tendencies are valid at the Arakawa-A location
@@ -46,7 +41,7 @@ SUBROUTINE fire_tendency( &
    REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: dz8w   ! dz across w-lvl
    REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: rho    ! density
 
-   REAL, INTENT(in) :: alfg ! extinction depth ground fire heat (m)
+   REAL, INTENT(in) :: alfg ! extinction depth surface fire heat (m)
    REAL, INTENT(in) :: alfc ! extinction depth crown  fire heat (m)
    REAL, INTENT(in) :: z1can    ! height of crown fire heat release (m)
 
@@ -65,6 +60,7 @@ SUBROUTINE fire_tendency( &
    REAL :: xlv_i
    REAL :: z_w
    REAL :: fact_g, fact_c
+   REAL :: alfg_i, alfc_i
 
    REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: hfx,qfx
    
@@ -85,6 +81,8 @@ SUBROUTINE fire_tendency( &
 
    cp_i = 1./cp     ! inverse of specific heat
    xlv_i = 1./xlv   ! inverse of latent heat
+   alfg_i = 1./alfg
+   alfc_i = 1./alfc
 
 !!write(msg,'(8e11.3)')cp,cp_i,xlv,xlv_i,alfg,alfc,z1can
 !!call message(msg)
@@ -113,11 +111,11 @@ SUBROUTINE fire_tendency( &
 
             ! --- heat flux
 
-            fact_g = cp_i * EXP( - alfg * z_w )
+            fact_g = cp_i * EXP( - alfg_i * z_w )
             IF ( z_w < z1can ) THEN
                fact_c = cp_i
             ELSE
-               fact_c = cp_i * EXP( - alfc * (z_w - z1can) )
+               fact_c = cp_i * EXP( - alfc_i * (z_w - z1can) )
             END IF
             hfx(i,k,j) = fact_g * grnhfx(i,j) + fact_c * canhfx(i,j) 
 
@@ -127,11 +125,11 @@ SUBROUTINE fire_tendency( &
 
             ! --- vapor flux
 
-            fact_g = xlv_i * EXP( - alfg * z_w )
+            fact_g = xlv_i * EXP( - alfg_i * z_w )
             IF (z_w < z1can) THEN
                fact_c = xlv_i
             ELSE
-               fact_c = xlv_i * EXP( - alfc * (z_w - z1can) )
+               fact_c = xlv_i * EXP( - alfc_i * (z_w - z1can) )
             END IF
             qfx(i,k,j) = fact_g * grnqfx(i,j) + fact_c * canqfx(i,j) 
             

@@ -1,67 +1,17 @@
-! SFIRE - Spread fire model in WRF-Fire
 !
-!*** Jan Mandel August 2007 - July 2010 
-!*** email: Jan.Mandel@gmail.com
-
-! For support please subscribe to the wrf-fire mailing list at NCAR at
-! http://mailman.ucar.edu/mailman/listinfo/wrf-fire
-! or go to http://www.openwfm.org/wiki/WRF-Fire_user_support 
-
-! This module is the only entry point from WRF-ARW to the wildland 
-! fire model. The call to sfire_driver advances the fire model by 
-! one timestep. The fire model inputs the wind and outputs 
-! temperature and humidity tendencies. The fire model also inputs a 
+! This module is the entry point from WRF ARW to the wildland 
+! fire module. The call to sfire_driver advances the fire module by 
+! one timestep. The fire module inputs the wind and outputs 
+! temperature and humidity tendencies. The fire module also inputs a 
 ! number of constant arrays (fuel data, topography). Additional 
 ! arguments are model state (for data assimilation) and constant arrays 
 ! the model gives to WRF for safekeeping because it is not allowed 
 ! to save anything.
-
-! This code is described in [1]. The fire model is coupled with WRF 
-! but the fire code itself is not dependent on WRF in any way other 
-! than calls to few WRF utilities from module_fr_sfire_util. This 
-! model uses a level set function method for advancing the fireline. 
-! It is a reimplementation of an earlier model, which used fireline 
-! propagation by tracers and was coupled with the Clark-Hall 
-! atmospheric code, described in [2]. For WRF documentation see [3].
-
-! If you use this code, please acknowledge our work by citing [1].
-! Thank you.
-
-! Acknowledgements
 !
-! Contributions to development of the level set 
-! method by Mijeong Kim. Contribution to fuel calculation by Volodymyr
-! Kondratenko.
+! Contributions to this wildland fire module have come from individuals at
+! NCAR, the U.S.D.A. Forest Service, the Australian Bureau of Meteorology, 
+! and the University of Colorado at Denver. 
 !
-! The fire physics is adapted from an earlier code by Terry  
-! L. Clark, Janice L. Coen, and Don Latham [2]. The interface with 
-! WRF is adapted from a code by Ned Patton for coupling of the earlier 
-! fire model with WRF, based on the foundation outlined in [4].
-! The changes in WRF infrastructure and support of
-! refined fire grids were provided by John Michalakes.
-
-! Jonathan D. Beezley has set up and maintained the WRF build and
-! execution environment, provided software engineering infrastructure 
-! including synchronization with the WRF repository, and was responsibe
-! for all aspects of WRF modification.
-
-! Refefences
-!
-! [1] Jan Mandel, Jonathan D. Beezley, Janice L. Coen, and Minjeong Kim,
-! Data Asimilation for Wildland Fires: Ensemble Kalman filters in 
-! coupled atmosphere-surface models, IEEE Control Systems Magazine 29,
-! Issue 3, June 2009, 47-65. 
-
-! [2] T. L. Clark, J. Coen, and D. Latham, Description of a coupled 
-! atmosphere-fire model, Intl. J. Wildland Fire, vol. 13, pp. 49-64, 
-! 2004
-!
-! [3] http://www.mmm.ucar.edu/wrf/OnLineTutorial/Introduction/index.html
-!
-! [4] Edward G. Patton and Janice L. Coen, WRF-Fire: A Coupled 
-! Atmosphere-Fire Module for WRF, Preprints of Joint MM5/Weather 
-! Research and Forecasting Model Users' Workshop, Boulder, CO, 
-! June 22-25, 2004, pp. 221-223, NCAR
 
 module module_fr_sfire_driver
 ! use this module for standalone call, you only need to provide some mock-up wrf modules  
@@ -135,22 +85,20 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
 
 !*** executable
 
-    if(fire_ifun_start.le.1)call print_id  ! print id only once, during initialization
-
 ! populate our structures from wrf
 
-    ! pointers to be passed to fire spread formulas
-    fp%vx => grid%uf         ! fire winds
-    fp%vy => grid%vf         ! fire winds
+    ! pointers to be passed to fire rate of spread formulas
+    fp%vx => grid%uf         ! W-E winds used in fire module
+    fp%vy => grid%vf         ! S-N winds used in fire module
     fp%zsf => grid%zsf       ! terrain height 
     fp%dzdxf => grid%dzdxf   ! terrain grad 
     fp%dzdyf => grid%dzdyf   ! terrain grad 
-    fp%bbb => grid%bbb       ! spread formula coeff 
-    fp%betafl => grid%betafl ! spread formula coeff 
-    fp%phiwc => grid%phiwc   ! spread formula coeff 
-    fp%r_0 => grid%r_0       ! spread formula coeff 
-    fp%fgip => grid%fgip     ! spread formula coeff 
-    fp%ischap => grid%ischap ! spread formula coeff 
+    fp%bbb => grid%bbb       ! a rate of spread formula coeff 
+    fp%betafl => grid%betafl ! a rate of spread formula variable 
+    fp%phiwc => grid%phiwc   ! a rate of spread formula coeff 
+    fp%r_0 => grid%r_0       ! a rate of spread formula variable
+    fp%fgip => grid%fgip     ! a rate of spread formula coeff 
+    fp%ischap => grid%ischap ! a rate of spread formula switch
             
     ! get ignition data 
     call fire_ignition_convert (config_flags,fire_max_ignitions,fire_ignition_longlat, &
@@ -352,7 +300,7 @@ real, intent(in):: &
     u_frame,v_frame,                              & ! velocity offset
     unit_fxlong,unit_fxlat,                       & ! fxlong, fxlat units in m  
     fire_crwn_hgt,                                & ! lowest height crown fire heat is released (m)
-    fire_ext_grnd,                                & ! extinction depth of ground fire heat (m)
+    fire_ext_grnd,                                & ! extinction depth of surface fire heat flux (m)
     fire_ext_crwn,                                & ! wind height for vertical interploation to fire spread
     fire_wind_height 
 
@@ -383,14 +331,14 @@ real, intent(out), dimension(ifms:ifme, jfms:jfme)::  &
 
 real, intent(out), dimension(ims:ime, jms:jme):: &  ! redundant arrays, for display purposes only (atm grid)
     avg_fuel_frac,                               &  ! average fuel fraction
-    grnhfx,                                      &  ! heat flux from ground fire (W/m^2) 
-    grnqfx,                                      &  ! moisture flux from ground fire (W/m^2) 
+    grnhfx,                                      &  ! heat flux from surface fire (W/m^2) 
+    grnqfx,                                      &  ! moisture flux from surface fire (W/m^2) 
     canhfx,                                      &  ! heat flux from crown fire (W/m^2) 
     canqfx                                         ! moisture flux from crown fire (W/m^2) 
 
 real, intent(out), dimension(ifms:ifme, jfms:jfme):: &  ! redundant arrays, for display only, fire grid
-    fgrnhfx,                                      &  ! heat flux from ground fire (W/m^2) 
-    fgrnqfx,                                      &  ! moisture flux from ground fire (W/m^2) 
+    fgrnhfx,                                      &  ! heat flux from surface fire (W/m^2) 
+    fgrnqfx,                                      &  ! moisture flux from surface fire (W/m^2) 
     fcanhfx,                                      &  ! heat flux from crown fire (W/m^2) 
     fcanqfx,                                      &   ! moisture flux from crown fire (W/m^2) 
     ros                                             ! fire rate of spread (m/s)
@@ -698,7 +646,7 @@ do ij=1,num_tiles
           s = 1./(ir*jr)
           do j=jts,jte
             do i=its,ite
-                ! scale ground fluxes to get the averages
+                ! scale surface fluxes to get the averages
                 avg_fuel_frac(i,j)=avg_fuel_frac(i,j)*s
                 grnhfx(i,j)=fire_atm_feedback*grnhfx(i,j)*s
                 grnqfx(i,j)=fire_atm_feedback*grnqfx(i,j)*s

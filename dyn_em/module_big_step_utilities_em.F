@@ -5335,11 +5335,12 @@ END SUBROUTINE phy_prep
     k_end = min( kte, kde-1 )
 
 #if ( WRF_DFI_RADAR == 1 )
-         if ( PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD            &
-             .and. PRESENT(dfi_tten_rad) ) then
-             WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
-             CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
-         endif
+         IF ( PRESENT(dfi_stage) .and.  PRESENT(dfi_tten_rad) ) THEN
+            IF ( dfi_stage ==DFI_FWD ) THEN
+               WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
+               CALL wrf_debug ( 100 , TRIM(wrf_err_message) )
+            ENDIF
+         ENDIF
      dfi_tten_max=-999
      old_max=-999
 #endif
@@ -5372,17 +5373,17 @@ END SUBROUTINE phy_prep
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)
        endif
 
-       if ( PRESENT(dfi_stage) .and.                                   &
-          dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.       &
-          dfi_tten_rad(i,k,j) >= -0.1 .and. dfi_tten_rad(i,k,j) <= 0.1 &
-          .and. k < k_end ) then
+       IF ( PRESENT(dfi_stage) .and. PRESENT(dfi_tten_rad) ) THEN
+          IF ( dfi_stage == DFI_FWD .and. dfi_tten_rad(i,k,j) >= -0.1 .and. &
+               dfi_tten_rad(i,k,j) <= 0.1 .and. k < k_end ) THEN
 ! add radar temp tendency
 ! there is radar coverage
-           t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
-       else
+               t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
+          ELSE
 ! no radar coverage
-           t_new(i,k,j) = t_new(i,k,j) + mpten
-       endif
+               t_new(i,k,j) = t_new(i,k,j) + mpten
+          ENDIF
+       ENDIF
 #else
          t_new(i,k,j) = t_new(i,k,j) + mpten
 #endif

@@ -224,7 +224,8 @@ RSL_LITE_INIT_EXCH (
   int ips , ipe , jps , jpe , kps , kpe ;
   int xy ;
   int yp, ym, xp, xm ;
-  int nbytes, nbytes_x_recv, nbytes_y_recv ;
+  int nbytes ;
+  int nbytes_x_recv = 0, nbytes_y_recv = 0 ;
 
 #ifndef STUBMPI
   MPI_Comm comm, *comm0, dummy_comm ;

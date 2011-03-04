@@ -204,6 +204,7 @@ MODULE module_domain_type
 !
       REAL :: max_cfl_val
       REAL :: last_max_vert_cfl
+      REAL :: last_max_horiz_cfl
       REAL :: max_vert_cfl
       REAL :: max_horiz_cfl
       Type(WRFU_TimeInterval) :: last_dtInterval

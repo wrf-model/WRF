@@ -598,7 +598,12 @@
 
 !     Set a starting timestep.
 
-      grid%dt = grid%starting_time_step / grid%parent_time_step_ratio
+      grid%dt = grid%starting_time_step
+
+!     Initialize max cfl values
+      
+      grid%last_max_vert_cfl = 0
+      grid%last_max_horiz_cfl = 0
 
 !     Check to assure that time_step_sound is to be dynamically set.
 
@@ -653,8 +658,9 @@
         grid%stepfg=max(grid%stepfg,1)
      ENDIF
      
-     IF ( ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FWD) .or.            &
-          ( grid%dfi_opt .EQ. DFI_NODFI)) THEN
+    IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .or. &
+          ( ( grid%dfi_stage .NE. DFI_BCK ) .and. &
+          ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN    !tgs, mods by tah
 
      CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &

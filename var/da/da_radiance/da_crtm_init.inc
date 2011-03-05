@@ -1,8 +1,8 @@
 subroutine da_crtm_init(iv,ob, nsensor)
 !------------------------------------------------------------------------------
-!  PURPOSE: interface to the initialization subroutine of RTTOV.
+!  PURPOSE: interface to the initialization subroutine of CRTM
 !
-!  METHOD:  1. read CRTM coefs files; 2. allocate radiance structure
+!  METHOD:  read CRTM coefs files
 !
 !  HISTORY: 10/15/2006  added crtm initialization    Tomislava Vukicevic, ATOC, University of Colorado
 !           11/09/2006  Updated                      Zhiquan Liu
@@ -33,37 +33,6 @@ subroutine da_crtm_init(iv,ob, nsensor)
 !  character( 80 ), pointer :: Sensor_Descriptor(:)
 !
 ! end of CRTM local
-!----------------------------------------------------------------
-!  input parameters of RTTOV_SETUP
-!----------------------------------
-!  integer :: err_unit        ! Logical error unit (<0 for default)
-!  integer :: verbosity_level ! (<0 for default)
-  integer :: unit_factor_rad
-!  integer, allocatable :: sensor(:,:) ! instrument id
-
-!  output parameters of RTTOV_SETUP
-!-------------------------------------
-!  integer, allocatable :: errorstatus(:)  ! return code
-!  integer              :: coef_errorstatus
-!  integer              :: i_amsua, i_amsub
-  integer     :: error
-
-! local variables
-!----------------
-! integer             :: nprofiles, nfrequencies, nchannels, nbtout
-! integer , pointer   :: lprofiles(:)
-! real    , pointer   :: surfem(:)
-! real    , pointer   :: emissivity(:)
-! integer , pointer   :: channels (:)
-! integer , pointer   :: polarisations(:,:)
-! integer             :: mxchn
- integer             :: idum, wmo_sensor_id, sensor_type, iost
- integer             :: iunit
-
-! local variables for tuning error factor
- character(len=20)   ::  rttovid_string
- integer             ::  num_tot
- real                ::  joa, jo, trace, factor 
 
   call da_trace_entry("da_crtm_init")
 
@@ -110,6 +79,8 @@ subroutine da_crtm_init(iv,ob, nsensor)
          (/"Error in initializing CRTM"/))
      END IF
 
+     iv%instid(1:nsensor)%nlevels = kme-kms+1
+
 !    do n = 1, nsensor
 !       write (6,*) 'in da_crtm_init: ChannelInfo content'
 !       write (6,*) 'Sensor_Index ',ChannelInfo(n)%Sensor_Index
@@ -122,4 +93,5 @@ subroutine da_crtm_init(iv,ob, nsensor)
 !    end do
 
   call da_trace_exit("da_crtm_init")
+
 end subroutine da_crtm_init

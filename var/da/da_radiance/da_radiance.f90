@@ -7,15 +7,14 @@ module da_radiance
 #if defined(RTTOV) || defined(CRTM)
 
    use module_domain, only : xb_type, domain
-   use module_radiance, only : satinfo, coefs_scatt_instname, &
+   use module_radiance, only : satinfo, &
       i_kind,r_kind, r_double, &
        one, zero, three,deg2rad,rad2deg, &
-      n_scatt_coef,q2ppmv, &
-      init_constants_derived, gsi_emiss, &
+      q2ppmv, &
+      init_constants_derived, &
       rttov_platform_name, rttov_inst_name, crtm_sensor_name  ! names used by both RTTOV and CRTM
 #ifdef RTTOV
-   use module_radiance, only : coefs,coefs_scatt_ir,optps,coefs_scatt,profile_type,radiance_type, & !RTTOV9_3
-      rttov_coef,rttov_coef_scatt_ir,rttov_optpar_ir,sensor_descriptor, &
+   use module_radiance, only : coefs, rttov_coefs, profile_type, radiance_type, &
       transmission_type,errorstatus_success,gas_id_watervapour
 #endif
 #ifdef CRTM
@@ -101,11 +100,6 @@ module da_radiance
    
 contains
 
-#ifdef RTTOV
-#include "da_rttov_setupchan.inc"   
-#include "da_rttov_setupindex.inc"
-#endif
-
 #include "da_calculate_grady_rad.inc"
 #include "da_read_filtered_rad.inc"
 #include "da_read_simulated_rad.inc"
@@ -123,7 +117,6 @@ contains
 #include "da_read_pseudo_rad.inc"
 
 #endif
-
 
 end module da_radiance
 

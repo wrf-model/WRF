@@ -65,8 +65,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%isflg(n)        = 0
    iv%instid(i)%soiltyp(n)      = 0.0
    iv%instid(i)%landsea_mask(n) = p%landsea_mask
-   iv%instid(i)%elevation(n)    = 0.0                    !RTTOV9_3
-  ! iv%instid(i)%elevation(n)    = p%info%elv            !RTTOV9_3
+   iv%instid(i)%elevation(n)    = 0.0
    iv%instid(i)%vegfra(n)       = 0.0
    iv%instid(i)%vegtyp(n)       = 0.0
    iv%instid(i)%clwp(n)         = 0.0
@@ -90,8 +89,24 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%satzen(n)       = p%satzen
    iv%instid(i)%satazi(n)       = p%satazi
    iv%instid(i)%solzen(n)       = p%solzen
-   iv%instid(i)%solazi(n)       = p%solazi      !RTTOV9_3
+   iv%instid(i)%solazi(n)       = p%solazi
  !  iv%instid(i)%solazi(n)       = 0.0
+
+   if ( rtm_option == rtm_option_rttov ) then
+      iv%instid(i)%surftype(n)     = 0
+      iv%instid(i)%snow_frac(n)     = 0.0
+   end if
+
+   iv%instid(i)%gamma_jacobian(:,n)=0.0
+
+   if ( use_rttov_kmatrix .or. use_crtm_kmatrix ) then
+      iv%instid(i)%ts_jacobian(:,n)=0.0
+      iv%instid(i)%ps_jacobian(:,n)=0.0
+      iv%instid(i)%emiss_jacobian(:,n)=0.0
+      iv%instid(i)%windspeed_jacobian(:,n)=0.0
+      iv%instid(i)%t_jacobian(:,:,n)=0.0
+      iv%instid(i)%q_jacobian(:,:,n)=0.0
+   end if
 
    if (rtm_option == rtm_option_crtm) then
       iv%instid(i)%crtm_climat(n)=0  ! invalid_model
@@ -100,12 +115,6 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
       iv%instid(i)%ice_coverage(n)=0.0
       iv%instid(i)%snow_coverage(n)=0.0
       if (use_crtm_kmatrix) then
-         iv%instid(i)%ts_jacobian(:,n)=0.0
-         iv%instid(i)%windspeed_jacobian(:,n)=0.0
-         iv%instid(i)%emiss_jacobian(:,n)=0.0
-         iv%instid(i)%gamma_jacobian(:,n)=0.0
-         iv%instid(i)%t_jacobian(:,:,n)=0.0
-         iv%instid(i)%q_jacobian(:,:,n)=0.0
          if ( crtm_cloud ) then
             iv%instid(i)%water_jacobian(:,:,n)=0.0
             iv%instid(i)%ice_jacobian(:,:,n)=0.0
@@ -121,16 +130,6 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
             iv%instid(i)%hail_r_jacobian(:,:,n)=0.0
          end if
       end if
-   end if
-
-   if (rtm_option == rtm_option_rttov) then
-         if (use_rttov_kmatrix) then
-            iv%instid(i)%ts_jacobian(:,n)=0.0
-            iv%instid(i)%ps_jacobian(:,n) =0.0
-            iv%instid(i)%emiss_jacobian(:,n)=0.0
-            iv%instid(i)%t_jacobian(:,:,n)=0.0
-            iv%instid(i)%q_jacobian(:,:,n)=0.0
-         end if
    end if
 
    call da_trace_exit("da_initialize_rad_iv")

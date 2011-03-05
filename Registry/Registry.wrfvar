@@ -1554,6 +1554,8 @@ rconfig   real      chi_u_rh_factor         namelist,wrfvar13  1  1.0      - "ch
 rconfig   real      t_u_rh_factor           namelist,wrfvar13  1  1.0      - "t_u_rh_factor"           ""  ""
 rconfig   real      ps_u_rh_factor          namelist,wrfvar13  1  1.0      - "ps_u_rh_factor"          ""  ""
 
+rconfig   integer   rttov_emis_atlas_ir     namelist,wrfvar14  1  0        - "rttov_emis_atlas_ir"     ""  ""  
+rconfig   integer   rttov_emis_atlas_mw     namelist,wrfvar14  1  0        - "rttov_emis_atlas_mw"     ""  ""  
 rconfig   integer   rtminit_print           namelist,wrfvar14  1  1        - "rtminit_print"           ""  ""  
 rconfig   integer   rtminit_nsensor         namelist,wrfvar14  1  1        - "rtminit_nsensor"         ""  ""  
 rconfig   integer   rtminit_platform        namelist,wrfvar14  max_instruments -1       - "rtminit_platform"        ""  ""  

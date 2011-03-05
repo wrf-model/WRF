@@ -155,11 +155,6 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   type(model_loc_type)       :: loc
   type (datalink_type), pointer   :: head, p, current, prev
 
-!local varialble RTTOV9_3
-
-  integer ::  nchanl(1)
-!end for RTTOV9_3
-
   call da_trace_entry("da_read_obs_bufrairs")
 
 !  0.0  Initialize variables
@@ -672,23 +667,11 @@ end do bufrfile
       write(UNIT=stdout,FMT='(a,i3,2x,a,3x,i10)') &
         'Allocating space for radiance innov structure', &
          inst, iv%instid(inst)%rttovid_string, iv%instid(inst)%num_rad
-      if (rtm_option == rtm_option_crtm) then
-         iv%instid(inst)%nlevels = kme-kms+1
-         iv%instid(inst)%nchannels=nchan
-      end if
    end if
 !  end do
 
 !   6.0 assign sequential structure to innovation structure
 !-------------------------------------------------------------
-#ifdef RTTOV
-      if (rtm_option == rtm_option_rttov) then
-         nchanl(1) = nchan
-         call da_rttov_setupchan(1, nchanl, coefs(inst), &   ! in
-            iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &  !RTTOV9_3
-            iv%instid(inst)%nbtout)      ! out    RTTOV9_3
-      end if
-#endif
 
   n = 0
   p => head

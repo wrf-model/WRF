@@ -287,13 +287,13 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 	    if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
   	       kte_surf   = iv%instid(i)%nlevels     
-               kts_100hPa = MAXLOC(coefs(i)%ref_prfl_p(1:kte_surf), &
-	                    MASK = coefs(i)%ref_prfl_p(1:kte_surf) < 100.0)
+               kts_100hPa = MAXLOC(coefs(i)%coef%ref_prfl_p(1:kte_surf), &
+	                    MASK = coefs(i)%coef%ref_prfl_p(1:kte_surf) < 100.0)
 	       do k=1,nchan 
-                  tstore = coefs(i)%ff_bco(k) + coefs(i)%ff_bcs(k) * &
+                  tstore = coefs(i)%coef%ff_bco(k) + coefs(i)%coef%ff_bcs(k) * &
 		          (ob%instid(i)%tb(k,n) - bias_global(k))
-                  iv%instid(i)%rad_obs(k,n) = coefs(i)%planck1(k) / &
-		                             (EXP(coefs(i)%planck2(k)/tstore) - 1.0)
+                  iv%instid(i)%rad_obs(k,n) = coefs(i)%coef%planck1(k) / &
+		                             (EXP(coefs(i)%coef%planck2(k)/tstore) - 1.0)
 	       end do   
 #endif
             elseif (rtm_option == rtm_option_crtm) then

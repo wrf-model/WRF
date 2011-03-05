@@ -14,8 +14,8 @@ subroutine da_biascorr ( i, ob, iv)
 
    ! Local variables
    integer   :: k,iband,iscan, n,j,npred,nlevels, num_rad
-   real      :: q(43),pred(4),airbias
-   real,allocatable      :: temp(:), hum(:), pf(:)
+   real      :: pred(4),airbias
+   real,allocatable      :: q(:), temp(:), hum(:), pf(:)
 
    num_rad = iv%instid(i)%info%n2-iv%instid(i)%info%n1+1
    if (num_rad < 1) return
@@ -33,9 +33,9 @@ subroutine da_biascorr ( i, ob, iv)
       !-------------------------
         if (rtm_option==rtm_option_rttov) then
 #ifdef RTTOV
-         q(1:43) = iv%instid(i)%mr(1:43,n)/q2ppmv
-         call da_predictor_rttov(pred(1:npred), npred, iv%instid(i)%t(1:43,n), &
-            q(1:43), iv%instid(i)%ts(n))
+         q(1:nlevels) = iv%instid(i)%mr(1:nlevels,n)/q2ppmv
+         call da_predictor_rttov(i, pred(1:npred), npred, nlevels, &
+            iv%instid(i)%t(1:nlevels,n), q(1:nlevels), iv%instid(i)%ts(n))
 #endif
         else if (rtm_option==rtm_option_crtm) then
 #ifdef CRTM
@@ -75,6 +75,7 @@ subroutine da_biascorr ( i, ob, iv)
       end do
    end do
 
+   deallocate(q)
    deallocate(temp)
    deallocate(hum)
    deallocate(pf)

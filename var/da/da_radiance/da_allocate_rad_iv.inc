@@ -66,6 +66,10 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%snowh(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%isflg(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%landsea_mask(iv%instid(i)%num_rad))
+      if (rtm_option == rtm_option_rttov) then
+         allocate (iv%instid(i)%surftype(iv%instid(i)%num_rad))
+         allocate (iv%instid(i)%snow_frac(iv%instid(i)%num_rad))
+      end if
       allocate (iv%instid(i)%elevation(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%vegfra(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%vegtyp(iv%instid(i)%num_rad))
@@ -80,8 +84,8 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%tb_imp(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%rad_xb(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%rad_obs(nchan,iv%instid(i)%num_rad))
-      allocate (iv%instid(i)%rad_ovc(nchan,kts:kte,iv%instid(i)%num_rad))
-      allocate (iv%instid(i)%emiss(iv%instid(i)%nchannels,iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%rad_ovc(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%emiss(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%scanpos(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%scanline(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%ifgat(iv%instid(i)%num_rad))
@@ -91,6 +95,15 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%satazi(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%solzen(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%solazi(iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
+      if ( use_rttov_kmatrix .or. use_crtm_kmatrix ) then
+         allocate(iv%instid(i)%ts_jacobian(nchan,iv%instid(i)%num_rad))
+         allocate(iv%instid(i)%ps_jacobian(nchan,iv%instid(i)%num_rad))
+         allocate(iv%instid(i)%emiss_jacobian(nchan,iv%instid(i)%num_rad))
+         allocate(iv%instid(i)%windspeed_jacobian(nchan,iv%instid(i)%num_rad))
+         allocate(iv%instid(i)%t_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+         allocate(iv%instid(i)%q_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+      end if
       if (rtm_option == rtm_option_crtm) then
          allocate(iv%instid(i)%crtm_climat(iv%instid(i)%num_rad))
          allocate(iv%instid(i)%water_coverage(iv%instid(i)%num_rad))
@@ -98,13 +111,6 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
          allocate(iv%instid(i)%ice_coverage(iv%instid(i)%num_rad))
          allocate(iv%instid(i)%snow_coverage(iv%instid(i)%num_rad))
          if (use_crtm_kmatrix) then
-            allocate(iv%instid(i)%ts_jacobian(nchan,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%ps_jacobian(nchan,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%windspeed_jacobian(nchan,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%emiss_jacobian(nchan,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%t_jacobian(nchan,kte,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%q_jacobian(nchan,kte,iv%instid(i)%num_rad))
             if ( crtm_cloud ) then
                allocate(iv%instid(i)%water_jacobian(nchan,kte,iv%instid(i)%num_rad))
                allocate(iv%instid(i)%ice_jacobian(nchan,kte,iv%instid(i)%num_rad))
@@ -120,15 +126,6 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
                allocate(iv%instid(i)%hail_r_jacobian(nchan,kte,iv%instid(i)%num_rad))
             end if
          end if
-      end if
-      if (rtm_option == rtm_option_rttov) then
-         if (use_rttov_kmatrix) then
-            allocate(iv%instid(i)%ts_jacobian(nchan,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%ps_jacobian(nchan,iv%instid(i)%num_rad))
-            allocate(iv%instid(i)%emiss_jacobian(nchan,iv%instid(i)%num_rad))
-           allocate(iv%instid(i)%t_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
-           allocate(iv%instid(i)%q_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
-	 end if
       end if
 
       call da_trace_exit("da_allocate_rad_iv")

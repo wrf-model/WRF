@@ -11,9 +11,6 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    !               and deallocate sequential data structure
    !---------------------------------------------------------------------------
 
-
-
-
    implicit none
 
    character(5)      ,  intent (in)    :: obstype
@@ -25,8 +22,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer          :: iost
    integer(i_kind), allocatable :: nread(:)
 
- !  integer(i_kind),parameter:: n1bhdr=14          !RTTOV9_3 add SOLAZI
-   integer(i_kind),parameter:: n1bhdr=15           !RTTOV9_3
+   integer(i_kind),parameter:: n1bhdr=15
    integer(i_kind),parameter:: maxinfo=12
    integer(i_kind),parameter:: maxchanl=100
 
@@ -62,7 +58,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer   ::  year,month,day,hour,minute,second  ! observation time
    real*8    ::  obs_time
    ! real      ::  rlat, rlon                         !  lat/lon in degrees   for Anfovs
-   real      ::  satzen, satazi, solzen ,solazi              !  scan angles for Anfovs  !RTTOV9_3 solazi
+   real      ::  satzen, satazi, solzen ,solazi       !  scan angles for Anfovs
    integer   ::  landsea_mask
    real      ::  srf_height
    ! channels' bright temperature
@@ -74,10 +70,6 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer                        ::  ifgat
    type(info_type)                ::  info
    type(model_loc_type)           ::  loc
-
-!RTTOV9_3
-  integer :: nchanl(1)
-!end for RTTOV9_3
 
    data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SOLAZI'/
    !  data hdr1b /'FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SLNM BEARAZ'/
@@ -591,26 +583,12 @@ end do bufrfile
    !----------------------------------------------------------------  
    
    do i = 1, iv%num_inst
-      if (rtm_option == rtm_option_crtm) then
-         iv%instid(i)%nlevels = kme-kms+1
-         iv%instid(i)%nchannels=nchan
-      end if
       if (nread(i) < 1) cycle
       iv%instid(i)%num_rad = nread(i)
       iv%instid(i)%info%nlocal = nread(i)
       write(UNIT=stdout,FMT='(a,i3,2x,a,3x,i10)') &
         'Allocating space for radiance innov structure', &
          i, iv%instid(i)%rttovid_string, iv%instid(i)%num_rad
-
-#ifdef RTTOV
-      if (rtm_option == rtm_option_rttov) then
-         nchanl(1) = nchan
-         call da_rttov_setupchan(1, nchanl, coefs(i), &   ! in
-            iv%instid(i)%nfrequencies,iv%instid(i)%nchannels, &
-            iv%instid(i)%nbtout)      ! out
-           iv%instid(i)%nchannels= iv%instid(i)%nfrequencies   ! RTTOV9_3
-      end if
-#endif
 
       call da_allocate_rad_iv(i,nchan,iv)
 

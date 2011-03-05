@@ -31,7 +31,7 @@ module da_crtm
       use_error_factor_rad,read_biascoef, analysis_date,time_window_max, &
       time_window_min,num_fgat_time,rtminit_platform, &
       rtminit_satid, global,kms,kme,ims,ime,jms,jme,kts,kte,use_airs_mmr, &
-      use_rttov_kmatrix,use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad, &
+      use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad, &
       use_antcorr, time_slots, use_satcv, use_simulated_rad, simulated_rad_io, &
       simulated_rad_ngrid, interp_option, use_mspps_emis, use_mspps_ts
    use da_interpolation, only : da_interp_lin_2d_partial,da_interp_lin_2d_adj_partial, &

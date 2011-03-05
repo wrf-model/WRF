@@ -31,10 +31,6 @@ subroutine da_read_pseudo_rad (iv)
    type(info_type)       ::  info
    type(model_loc_type)  ::  loc
 
-!RTTOV_9_3
-   integer :: nchanl(1)
-!end for RTTOV9_3
-
    call da_trace_entry("da_read_pseudo_rad")
 
    ! Initialize variables
@@ -92,22 +88,9 @@ subroutine da_read_pseudo_rad (iv)
    i = 1
 
    if ( iv%instid(inst)%num_rad > 0 ) then
-      if (rtm_option == rtm_option_crtm) then
-         iv%instid(inst)%nlevels = kme-kms+1
-         iv%instid(inst)%nchannels=nchan
-      end if
       write(UNIT=stdout,FMT='(a,i3,2x,a,3x,i10)') &
         'Allocating space for radiance innov structure', &
          i, iv%instid(inst)%rttovid_string, iv%instid(inst)%num_rad
-
-#ifdef RTTOV
-      if (rtm_option == rtm_option_rttov) then
-         nchanl(1) = nchan
-         call da_rttov_setupchan(1, nchanl, coefs(i), &   ! in  RTTOV9_3
-            iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &
-            iv%instid(inst)%nbtout)      ! out
-      end if
-#endif
 
       call da_allocate_rad_iv(i,nchan,iv)
 

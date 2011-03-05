@@ -217,6 +217,36 @@ MODULE module_mp_etanew
       ENDDO
       ENDDO
 
+!-- 6/11/2010: Update QT, F_ice, F_rain arrays
+!
+!-- NOTE:  The total ice array in this code is "QS" because the vast
+!          majority of the ice mass is in the form of snow, and using
+!          the "QS" array should result in better coupling with the
+!          Dudhia SW package.
+
+      DO j = jts,jte
+      DO k = kts,kte
+      DO i = its,ite
+#if (NMM_CORE==1)
+! Note ARW QT has been advected, while QR, QS and QC have not, so use updated QT
+! NMM calls microphysics after other physics, so use updated QR, QS and QC
+         QT(I,K,J)=QC(I,K,J)+QR(I,K,J)+QS(I,K,J)
+#endif
+         IF (QS(I,K,J) <= EPSQ) THEN
+            F_ICE_PHY(I,K,J)=0.
+            IF (T_PHY(I,K,J) < T_ICEK) F_ICE_PHY(I,K,J)=1.
+         ELSE
+            F_ICE_PHY(I,K,J)=MAX( 0., MIN(1., QS(I,K,J)/QT(I,K,J) ) )
+         ENDIF
+         IF (QR(I,K,J) <= EPSQ) THEN
+            F_RAIN_PHY(I,K,J)=0.
+         ELSE
+            F_RAIN_PHY(I,K,J)=QR(I,K,J)/(QC(I,K,J)+QR(I,K,J))
+         ENDIF
+      ENDDO
+      ENDDO
+      ENDDO
+
 !-----------------------------------------------------------------------
 
       CALL EGCP01DRV(DT,LOWLYR,                                         &

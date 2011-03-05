@@ -310,7 +310,7 @@ contains
        iseed(1) = iseed1
        iseed(2) = iseed2
        call random_seed
-       call random_seed(put=iseed(1:2))   ! set random seed.
+       call random_seed(put=iseed(1:18))   ! set random seed.
 
        END subroutine SETUP_STOCH
 

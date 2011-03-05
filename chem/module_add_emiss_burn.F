@@ -156,7 +156,7 @@ CONTAINS
         chem(i,k,j,p_pm_10)  =  chem(i,k,j,p_pm_10)                        &
                          +r_q*ebu(i,k,j,p_ebu_pm10)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
- ;       enddo
+        enddo
         enddo
       CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RACM_ESRLSORG_KPP, RADM2SORG_AQ, RACMSORG_AQ)
           do j=jts,jte

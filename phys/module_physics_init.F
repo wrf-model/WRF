@@ -102,6 +102,7 @@ CONTAINS
    ! OPTIONAL 
                          ,te_temf          & ! WA 12/21/09
                          ,cf3d_temf        & ! WA 9/27/10
+                         ,wm_temf          & ! WA 2/22/11
                          )
 
 !-----------------------------------------------------------------
@@ -344,6 +345,9 @@ CONTAINS
 ! WA 12/21/09
    REAL,OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
           INTENT(OUT) ::    te_temf, cf3d_temf    
+! WA 2/22/11
+   REAL,OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
+          INTENT(OUT) ::    wm_temf
 
 ! Local data
 
@@ -562,7 +566,7 @@ integer myproc
                 TRIM (MMINLU_LOC),                              &
                 allowed_to_read ,                               &
                 start_of_simulation ,                           &
-                te_temf,cf3d_temf,                              & ! WA
+                te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
                 XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,    & !Optional urban
@@ -1272,7 +1276,7 @@ integer myproc
                 MMINLU,                                         &
                 allowed_to_read,                                &
                 start_of_simulation,                            &
-                te_temf,cf3d_temf,                              & ! WA
+                te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -1326,6 +1330,7 @@ integer myproc
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
+   USE module_sf_temfsfclay
    USE module_sf_mynn
 #endif
 
@@ -1407,6 +1412,8 @@ integer myproc
 
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
             INTENT(OUT) :: te_temf, cf3d_temf !WA 
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
+            INTENT(OUT) :: wm_temf
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -1587,6 +1594,13 @@ integer myproc
            isfc=5
 !          isfc=3
 
+      CASE (TEMFSFCSCHEME)
+           CALL wrf_debug( 100, 'calling temfsfclayinit' )
+           CALL temfsfclayinit( restart, allowed_to_read ,        &
+                             wm_temf,                          &
+                         ids, ide, jds, jde, kds, kde,         &
+                         ims, ime, jms, jme, kms, kme,         &
+                         its, ite, jts, jte, kts, kte          )
 #endif
 
       CASE DEFAULT

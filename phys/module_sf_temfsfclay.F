@@ -12,7 +12,7 @@ CONTAINS
                      u10,v10,th2,t2,q2,                            &
                      svp1,svp2,svp3,svpt0,ep1,ep2,                 &
                      karman,fCor,te_temf,                          &
-                     hd_temf,exch_temf,                            &
+                     hd_temf,exch_temf,wm_temf,                           &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                    &
@@ -110,6 +110,8 @@ CONTAINS
                 INTENT(INOUT) :: te_temf
       REAL,     DIMENSION( ims:ime, jms:jme )           , &
                 INTENT(  OUT) :: exch_temf
+      REAL,     DIMENSION( ims:ime, jms:jme )           , &
+                INTENT(INOUT) :: wm_temf
 
                                         
       REAL,     INTENT(IN   ) :: cp,g,rovcp,r,xlv
@@ -138,7 +140,7 @@ CONTAINS
                 svp1=svp1,svp2=svp2,svp3=svp3,svpt0=svpt0,             &
                 ep1=ep1,ep2=ep2,karman=karman,fCor=fCor(ims,j),  &
                 te_temfx=te_temf(ims,kms,j),hd_temfx=hd_temf(ims,j), &
-                exch_temfx=exch_temf(ims,j), &
+                exch_temfx=exch_temf(ims,j),wm_temfx=wm_temf(ims,j), &
                 ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,     &
                 ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,     &
                 its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte      &
@@ -156,7 +158,7 @@ CONTAINS
                 flhc,flqc,qgh,qsfc,u10,v10,        &
                 th2,t2,q2,svp1,svp2,svp3,svpt0,             &
                 ep1,ep2,karman,fCor,  &
-                te_temfx,hd_temfx,exch_temfx,       &
+                te_temfx,hd_temfx,exch_temfx,wm_temfx,       &
                 ids,ide, jds,jde, kds,kde,                    &
                 ims,ime, jms,jme, kms,kme,                    &
                 its,ite, jts,jte, kts,kte                    &
@@ -189,7 +191,7 @@ CONTAINS
       REAL,     INTENT(IN   ) ::        ep1,ep2,karman
       REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: fCor,hd_temfx
       REAL,     DIMENSION( ims:ime ), INTENT(INOUT) :: te_temfx
-      REAL,     DIMENSION( ims:ime ), INTENT(  OUT) :: exch_temfx
+      REAL,     DIMENSION( ims:ime ), INTENT(  OUT) :: exch_temfx, wm_temfx
 !
 !! LOCAL VARS
 ! TE model constants
@@ -330,6 +332,11 @@ CONTAINS
       ! wm(i) = (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
       ! WA TEST (R2,R11) 7/23/10 reduce velocity scale to fix excessive fluxes
       wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
+      ! WA TEST 2/14/11 limit contribution of w*
+      ! wm(i) = 0.5 * (1./5. * (min(0.8,wstr(i))**3. + 5. * ust(i)**3.)) ** (1./3.) 
+      ! WA TEST 2/22/11 average with previous value to reduce instability
+      wm(i) = (wm(i) + wm_temfx(i)) / 2.0
+      wm_temfx(i) = wm(i)
       ! WA TEST (R3-R10) 7/23/10 wm = u*
       ! wm(i) = ust(i)
 
@@ -350,7 +357,8 @@ CONTAINS
 
       ! Populate surface heat and moisture fluxes
       hfx(i) = flhc(i) * (tsk(i) - th1d(i)*pi1d(i))
-      qfx(i) = flqc(i) * (qsfc_air(i) - qv1d(i))
+      ! qfx(i) = flqc(i) * (qsfc_air(i) - qv1d(i))  ! WA 2/16/11
+      qfx(i) = flqc(i) * (qsfc(i) - qv1d(i))
       qfx(i) = max(qfx(i),0.)  ! WA this is done in sfclay, is it right?
       lh(i)=xlv*qfx(i)
 
@@ -377,9 +385,35 @@ CONTAINS
    END SUBROUTINE temfsfclay1d
 
 !====================================================================
-   SUBROUTINE temfsfclayinit( allowed_to_read )         
+   SUBROUTINE temfsfclayinit( restart, allowed_to_read,                &
+                              wm_temf,                                 &
+                              ids, ide, jds, jde, kds, kde,            &
+                              ims, ime, jms, jme, kms, kme,            &
+                              its, ite, jts, jte, kts, kte                 )
 
-   LOGICAL , INTENT(IN)      ::      allowed_to_read
+   logical , intent(in)          :: restart, allowed_to_read
+   REAL,     DIMENSION( ims:ime, jms:jme )           , &
+                INTENT(  OUT) :: wm_temf
+   integer , intent(in)          ::  ids, ide, jds, jde, kds, kde,             &
+                                     ims, ime, jms, jme, kms, kme,             &
+                                     its, ite, jts, jte, kts, kte
+   
+! Local variables
+   integer :: i, j, itf, jtf
+!
+   CALL wrf_debug( 100, 'in temfsfclayinit' )
+   jtf = min0(jte,jde-1)
+   itf = min0(ite,ide-1)
+!
+   if(.not.restart)then
+     do j = jts,jtf
+     do i = its,itf
+     ! do j = jms,jme
+     ! do i = ims,ime
+        wm_temf(i,j) = 0.0
+     enddo
+     enddo
+   endif
 
    END SUBROUTINE temfsfclayinit
 

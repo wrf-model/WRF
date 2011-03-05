@@ -71,7 +71,7 @@ CONTAINS
      &          ,sn_ndg_old, sn_ndg_new                               &
      &          ,t2obs, q2obs                                         &
              ! OPTIONAL, Required by TEMF surface layer 1/7/09 WA
-     &          ,hd_temf,te_temf,fCor,exch_temf                       &
+     &          ,hd_temf,te_temf,fCor,exch_temf,wm_temf               &
              ! Required by ideal SCM surface layer 1/6/10 WA
      &          ,hfx_force,lh_force,tsk_force                       &
      &          ,hfx_force_tend,lh_force_tend,tsk_force_tend          &
@@ -622,7 +622,7 @@ CONTAINS
 
 ! Variables for TEMF surface layer
    REAL,OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: te_temf
-   REAL,OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: hd_temf, exch_temf
+   REAL,OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: hd_temf, exch_temf, wm_temf
    REAL,OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: fCor
 
 ! Variables for ideal SCM surface layer
@@ -1281,7 +1281,7 @@ CONTAINS
                U10=u10,V10=v10,TH2=th2,T2=t2,Q2=q2,                &
                SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0,EP1=ep_1, &
                EP2=ep_2,KARMAN=karman,fCor=fCor,te_temf=te_temf,   &
-               hd_temf=hd_temf,exch_temf=exch_temf,                &
+               hd_temf=hd_temf,exch_temf=exch_temf,wm_temf=wm_temf,&
                ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,  &
                ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,  &
                its=i_start(ij),ite=i_end(ij),                      &

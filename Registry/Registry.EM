@@ -797,6 +797,7 @@ state    real   hd_temf        ij      misc        1         -     rh          "
 state    real   lcl_temf       ij      misc        1         -     rh          "lcl_temf"             "Lifting condensation level from TEMF PBL"       "m"
 state    real   hct_temf       ij      misc        1         -     rh          "hct_temf"             "Cloud top height from TEMF PBL"       "m"
 state    real   cfm_temf       ij      misc        1         -     rh          "cfm_temf"            "Column cloud fraction from TEMF PBL"        "1"
+state    real   wm_temf        ij      misc        1         -     rh        "wm_temf"               "Velocity scale in TEMF surface layer scheme"      "m s-1"
 
 # MYNN PBL variables
 state   real   qke             ikjftb  scalar      1         -      i0rhusdf=(bdy_interp:dt) "qke"               "twice TKE FROM MYNN"      "m2 s-2"
@@ -1028,11 +1029,11 @@ state    integer  kbcon_deep     ij      misc        1         -    h       "KBC
 state    integer  ktop_deep     ij      misc        1         -     h       "KTOP_DEEP"             "KTOP LEVEL FROM DEEP CONVECTION (G3 only)"             ""
 state    real  xf_ens           ije     misc        1         Z      r        "XF_ENS"                "MASS FLUX PDF IN GRELL CUMULUS SCHEME"     "mb hour-1"
 state    real  pr_ens           ije     misc        1         Z      r        "PR_ENS"                "PRECIP RATE PDF IN GRELL CUMULUS SCHEME"    "mb hour-1"
-state    real  cugd_tten        ikj     misc        1         -      h        "CUGD_TTEN"             "INITIAL TTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
-state    real  cugd_qvten       ikj     misc        1         -      h        "CUGD_QVTEN"            "INITIAL QTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
-state    real  cugd_ttens       ikj     misc        1         -      h        "CUGD_TTENS"            "INITIAL SUBSIDENCE TTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
-state    real  cugd_qvtens      ikj     misc        1         -      h        "CUGD_QVTENS"           "INITIAL SUBSIDNCE QTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
-state    real  cugd_qcten       ikj     misc        1         -      h        "CUGD_QCTEN"            "INITIAL TEMPERATURE TENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_tten        ikj     misc        1         -      r        "CUGD_TTEN"             "INITIAL TTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_qvten       ikj     misc        1         -      r        "CUGD_QVTEN"            "INITIAL QTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_ttens       ikj     misc        1         -      r        "CUGD_TTENS"            "INITIAL SUBSIDENCE TTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_qvtens      ikj     misc        1         -      r        "CUGD_QVTENS"           "INITIAL SUBSIDNCE QTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_qcten       ikj     misc        1         -      r        "CUGD_QCTEN"            "INITIAL TEMPERATURE TENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
 state    real  GD_CLOUD         ikj      misc        1         -      rh      "GD_CLOUD"              "CLOUD WATER/ICE MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state    real  GD_CLOUD2        ikj      misc        1         -      rh      "GD_CLOUD2"              "TEST for GD CLOUD"         "kg kg-1"
 state    real  GD_CLDFR         ikj      misc        1         -      rh     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
@@ -1907,7 +1908,7 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
-package   temfsfcscheme  sf_sfclay_physics==10       -             -
+package   temfsfcscheme  sf_sfclay_physics==10       -             state:wm_temf
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   ysuscheme      bl_pbl_physics==1           -             -

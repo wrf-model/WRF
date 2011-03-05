@@ -742,7 +742,7 @@
                       t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
                       grid%achfx, grid%aclhf, grid%acgrdflx                 &
-                      ,grid%te_temf,grid%cf3d_temf             & ! WA
+                      ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
                       )
        ENDIF   !tgs
 

@@ -24,7 +24,7 @@ contains
                   wupd_temf,mf_temf,thup_temf,qtup_temf,qlup_temf,            &
                   cf3d_temf,cfm_temf,                                         &
                   hd_temf,lcl_temf,hct_temf,                            &
-                  flhc,flqc,exch_temf,                                  &
+                  flhc,flqc,exch_temf,                                &
                   fCor,                                                        &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -272,7 +272,7 @@ contains
                   te_temfx,shf_temfx,qf_temfx,uw_temfx,vw_temfx,               &
                   wupd_temfx,mf_temfx,thup_temfx,qtup_temfx,qlup_temfx,       &
                   cf3d_temfx,cfm_temfx,                                        &
-                  hd_temfx,lcl_temfx,hct_temfx,exch_temfx,              &
+                  hd_temfx,lcl_temfx,hct_temfx,exch_temfx,           &
                   flhc,flqc,                                                 &
                   fCor,                                                        &
                   ids,ide, jds,jde, kds,kde,                                   &
@@ -465,6 +465,8 @@ contains
 ! TSK.  This isn't exactly robust.  Also I pass out the surface
 ! exchange coefficients flhc, flqc for the surface scheme to use in the 
 ! next timestep.
+! WA 2/16/11 removed calculation of flhc, flqc which are not needed here.
+! These should be removed from the calling sequence someday.
 !
 ! Other notes:
 ! - I have often used 1 instead of kts below, because the scheme demands
@@ -979,6 +981,8 @@ contains
       ! wm(i) = (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
       ! WA TEST (R2,R11) 7/23/10 reduce velocity scale to fix excessive fluxes
       wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
+      ! WA TEST 2/14/11 limit contribution of w*
+      ! wm(i) = 0.5 * (1./5. * (min(0.8,wstr(i))**3. + 5. * ust(i)**3.)) ** (1./3.) 
       ! WA TEST (R3-R11) 7/23/10 wm = u*
       ! wm(i) = ust(i)
 
@@ -1113,8 +1117,9 @@ contains
       ! flux (kg(water)/(m^2*s)) when multiplied by a difference.
       ! These formulae are the same as what's used above to get surface
       ! flux from surface temperature and specific humidity.
-      flhc(i) = rho(i,1) * cp * fth(i,1)/fth0 * wm(i) * leps(i,1) / PrT0 / log(zm(i,2)/z0t(i)) / zt(i,1)
-      flqc(i)  = rho(i,1) * fth(i,1)/fth0 * wm(i) * leps(i,1) / PrT0 / log(zm(i,2)/z0t(i)) / zt(i,1)
+      ! WA 2/16/11 removed, not needed in BL
+      ! flhc(i) = rho(i,1) * cp * fth(i,1)/fth0 * wm(i) * leps(i,1) / PrT0 / log(zm(i,2)/z0t(i)) / zt(i,1)
+      ! flqc(i)  = rho(i,1) * fth(i,1)/fth0 * wm(i) * leps(i,1) / PrT0 / log(zm(i,2)/z0t(i)) / zt(i,1)
       ! WA Must exchange coeffs be limited to avoid runaway in some 
       ! (convective?) conditions?  Something like this is done in sfclay.
       ! Doing nothing for now.

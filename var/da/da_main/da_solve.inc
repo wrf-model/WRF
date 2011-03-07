@@ -567,7 +567,7 @@
             deallocate (iv%instid(i)%qm)
             deallocate (iv%instid(i)%qrn)
             deallocate (iv%instid(i)%qcw)
-            if ( crtm_cloud) then
+            if ( crtm_cloud ) then
                deallocate (iv%instid(i)%qci)
                deallocate (iv%instid(i)%qsn)
                deallocate (iv%instid(i)%qgr)
@@ -594,6 +594,10 @@
             deallocate (iv%instid(i)%isflg)
             deallocate (iv%instid(i)%soiltyp)
             deallocate (iv%instid(i)%landsea_mask)
+            if (rtm_option == rtm_option_rttov) then
+               deallocate (iv%instid(i)%surftype)
+               deallocate (iv%instid(i)%snow_frac)
+            end if
             deallocate (iv%instid(i)%elevation)
             deallocate (iv%instid(i)%vegfra)
             deallocate (iv%instid(i)%vegtyp)
@@ -618,6 +622,7 @@
             deallocate (iv%instid(i)%satazi)
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
+            deallocate (iv%instid(i)%gamma_jacobian)
 
            if (ANY(use_satcv)) then
 	      if (use_satcv(2)) then
@@ -628,17 +633,15 @@
 	      end if
               deallocate (iv%instid(i)%cv_index)  
            end if
-            
         
-           if (rtm_option == rtm_option_rttov) then
-               if (use_rttov_kmatrix) then
-                   deallocate(iv%instid(i)%ts_jacobian)
-                   deallocate(iv%instid(i)%ps_jacobian)
-                   deallocate(iv%instid(i)%emiss_jacobian)
-                   deallocate(iv%instid(i)%t_jacobian)
-                   deallocate(iv%instid(i)%q_jacobian)
-               end if
-            end if
+           if ( use_rttov_kmatrix .or. use_crtm_kmatrix ) then
+              deallocate(iv%instid(i)%ts_jacobian)
+              deallocate(iv%instid(i)%ps_jacobian)
+              deallocate(iv%instid(i)%emiss_jacobian)
+              deallocate(iv%instid(i)%windspeed_jacobian)
+              deallocate(iv%instid(i)%t_jacobian)
+              deallocate(iv%instid(i)%q_jacobian)
+           end if
             if (rtm_option == rtm_option_crtm) then
                deallocate(iv%instid(i)%crtm_climat)
                deallocate(iv%instid(i)%water_coverage)
@@ -646,12 +649,6 @@
                deallocate(iv%instid(i)%ice_coverage)
                deallocate(iv%instid(i)%snow_coverage)
                if (use_crtm_kmatrix) then
-                  deallocate(iv%instid(i)%ts_jacobian)
-                  deallocate(iv%instid(i)%t_jacobian)
-                  deallocate(iv%instid(i)%q_jacobian)
-                  deallocate(iv%instid(i)%windspeed_jacobian)
-                  deallocate(iv%instid(i)%emiss_jacobian)
-                  deallocate(iv%instid(i)%gamma_jacobian)
                  if ( crtm_cloud ) then
                      deallocate(iv%instid(i)%water_jacobian)
                      deallocate(iv%instid(i)%ice_jacobian)
@@ -689,11 +686,12 @@
 	     end do
    	     deallocate (iv%instid(i)%varbc)
 	  end if
-
 #ifdef RTTOV
          if (rtm_option == rtm_option_rttov) then
- !           call rttov_dealloc_coef (ierr,coefs(i))
-             call rttov_dealloc_coef (ierr,coefs(i),coefs_scatt_ir(i), optps(i))    !RTTOV9_3
+            call rttov_dealloc_coefs (ierr,coefs(i))
+            if ( ierr /= 0 ) then
+               call da_error(__FILE__,__LINE__,(/'failure in rttov_dealloc_coefs'/))
+            end if
          end if
 #endif
       end do
@@ -704,8 +702,7 @@
 #ifdef RTTOV
       if (rtm_option == rtm_option_rttov) then
          deallocate (coefs)
-         deallocate (coefs_scatt_ir)                                               !RTTOV9_3
-         deallocate (optps)                                                        !RTTOV9_3
+         deallocate (opts)
       end if
 #endif
    end if

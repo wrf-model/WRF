@@ -342,7 +342,7 @@ level_loop : &
              aoc1(kp1) = chem(i,k,j,p_oc1)*atm_mass_den
              aoc2(kp1) = chem(i,k,j,p_oc2)*atm_mass_den
              aant(kp1) = 0._dp
-             aso4(kp1) = chem(i,j,k,p_so4)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
+             aso4(kp1) = chem(i,k,j,p_so4)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
              asal(kp1) = (chem(i,k,j,p_seas_1) + chem(i,k,j,p_seas_2) &
                           + chem(i,k,j,p_seas_3) + chem(i,k,j,p_seas_4))*atm_mass_den
           else

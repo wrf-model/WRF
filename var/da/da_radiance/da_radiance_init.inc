@@ -72,11 +72,19 @@ subroutine da_radiance_init(iv,ob)
              trim( rttov_platform_name(rtminit_platform(n)) )//'-',  &
              rtminit_satid(n),     &
              '-'//trim( rttov_inst_name(rtminit_sensor(n)) )
+      write(iv%instid(n)%rttovid_string_coef, '(a,i1,a)')  &
+             trim( rttov_platform_name(rtminit_platform(n)) )//'_',  &
+             rtminit_satid(n),     &
+             '_'//trim( rttov_inst_name(rtminit_sensor(n)) )
    else
       write(iv%instid(n)%rttovid_string, '(a,i2.2,a)')  &
              trim( rttov_platform_name(rtminit_platform(n)) )//'-',  &
              rtminit_satid(n),     &
              '-'//trim( rttov_inst_name(rtminit_sensor(n)) )
+      write(iv%instid(n)%rttovid_string_coef, '(a,i2.2,a)')  &
+             trim( rttov_platform_name(rtminit_platform(n)) )//'_',  &
+             rtminit_satid(n),     &
+             '_'//trim( rttov_inst_name(rtminit_sensor(n)) )
    end if
 
    if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'msu' ) then

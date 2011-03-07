@@ -2,6 +2,12 @@ MODULE module_cu_kfeta
 
    USE module_wrf_error
 
+!
+!  V3.3: A new trigger function is added based Ma and Tan (2009):
+!   Ma, L.-M. and Z.-M. Tan, 2009: Improving the behavior of 
+!   the cumulus parameterization for tropical cyclone prediction: 
+!   Convection trigger. Atmospheric Research, 92, 190 - 211.
+!
 !--------------------------------------------------------------------
 ! Lookup table variables:
       INTEGER, PARAMETER :: KFNT=250,KFNP=220

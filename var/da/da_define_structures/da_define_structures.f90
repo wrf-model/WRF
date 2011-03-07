@@ -437,8 +437,8 @@ module da_define_structures
                                              ! 1 (monitor_on):  monitoring
                                              ! monitor_on and monitor_off defined in da_control.f90
       character(len=20)    :: rttovid_string
+      character(len=20)    :: rttovid_string_coef
       integer              :: num_rad, nchan, nlevels
-      integer              :: nchannels, nfrequencies,nbtout
       integer              :: num_rad_glo
       integer, pointer     :: ichan(:)
       real,    pointer     :: tb_inv(:,:)
@@ -492,6 +492,8 @@ module da_define_structures
       integer, pointer     :: isflg(:)
       integer, pointer     :: ifgat(:)
       integer, pointer     :: landsea_mask(:)
+      integer, pointer     :: surftype(:)     ! RTTOV only, 0:land, 1:sea, 2:sea-ice
+      real,    pointer     :: snow_frac(:)    ! RTTOV only
       real,    pointer     :: elevation(:)
       real,    pointer     :: soiltyp(:)
       real,    pointer     :: vegtyp(:)

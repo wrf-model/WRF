@@ -177,12 +177,12 @@ CONTAINS
                          grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), &
                          grid%j_end(ij), k_start, k_end                      )
 
-          call sp2gp_prep(grid%ru_tendf_stoch,                                & 
-                         grid%rv_tendf_stoch, grid%rt_tendf_stoch,           & 
+          call sp2gp_prep( &
                          grid%SPSTREAMFORCS,grid%SPSTREAMFORCC,              &
                          grid%SPTFORCS,grid%SPTFORCC,                        &
                          grid%VERTSTRUCC,grid%VERTSTRUCS,                    &
-                         grid%RU_IMAG,grid%RV_IMAG,grid%RT_IMAG,             & 
+                         grid%RU_REAL,grid%RV_REAL,grid%RT_REAL,            & 
+                         grid%RU_IMAG,grid%RV_IMAG,grid%RT_IMAG,            & 
                          grid%DX,grid%DY,grid%stoch_vertstruc_opt,           & 
                          ids, ide, jds, jde, kds, kde,                       &
                          ims, ime, jms, jme, kms, kme,                       &
@@ -199,14 +199,6 @@ CONTAINS
 #include "XPOSE_STOCH_BACK_V_IMAG_z2x.inc"
 #include "XPOSE_STOCH_BACK_T_REAL_z2x.inc"
 #include "XPOSE_STOCH_BACK_T_IMAG_z2x.inc"
-#else
-           grid%RU_REAL_xxx=grid%ru_tendf_stoch
-           grid%RU_IMAG_xxx=grid%RU_IMAG
-           grid%RV_REAL_xxx=grid%rv_tendf_stoch
-           grid%RV_IMAG_xxx=grid%RV_IMAG
-           grid%RT_REAL_xxx=grid%rt_tendf_stoch
-           grid%RT_IMAG_xxx=grid%RT_IMAG
-#endif
            call do_fftback_along_x(                             & 
                               grid%RU_REAL_xxx,grid%RU_IMAG_xxx,& 
                               grid%RV_REAL_xxx,grid%RV_IMAG_xxx,& 
@@ -222,7 +214,6 @@ CONTAINS
                              )
 
 !          Reassemble fields from latitude bands into 3D arrays
-#ifdef DM_PARALLEL
 ! reassemble field  X_REAL and X_IMAG
 #include "XPOSE_STOCH_BACK_U_REAL_x2z.inc"
 #include "XPOSE_STOCH_BACK_U_IMAG_x2z.inc"
@@ -238,14 +229,6 @@ CONTAINS
 #include "XPOSE_STOCH_BACK_V_IMAG_z2y.inc"
 #include "XPOSE_STOCH_BACK_T_REAL_z2y.inc"
 #include "XPOSE_STOCH_BACK_T_IMAG_z2y.inc"
-#else
-            grid%RU_REAL_yyy=grid%RU_REAL_xxx
-            grid%RU_IMAG_yyy=grid%RU_IMAG_xxx
-            grid%RV_REAL_yyy=grid%RV_REAL_xxx
-            grid%RV_IMAG_yyy=grid%RV_IMAG_xxx
-            grid%RT_REAL_yyy=grid%RT_REAL_xxx
-            grid%RT_IMAG_yyy=grid%RT_IMAG_xxx
-#endif
             call do_fftback_along_y(                            & 
                               grid%RU_REAL_yyy,grid%RU_IMAG_yyy,& 
                               grid%RV_REAL_yyy,grid%RV_IMAG_yyy,& 
@@ -259,7 +242,6 @@ CONTAINS
                               ipsy,ipey,jpsy,jpey,kpsy,kpey,    &
                               k_start , k_end                   &
                              )
-#ifdef DM_PARALLEL
 !          Reassemble fields from longitude bands into 3D arrays
 #include "XPOSE_STOCH_BACK_U_REAL_y2z.inc"
 #include "XPOSE_STOCH_BACK_U_IMAG_y2z.inc"
@@ -268,12 +250,32 @@ CONTAINS
 #include "XPOSE_STOCH_BACK_T_REAL_y2z.inc"
 #include "XPOSE_STOCH_BACK_T_IMAG_y2z.inc"
 #else
-            grid%ru_tendf_stoch=grid%RU_REAL_yyy
-            grid%RU_IMAG=grid%RU_IMAG_yyy
-            grid%rv_tendf_stoch=grid%RV_REAL_yyy
-            grid%RV_IMAG=grid%RV_IMAG_yyy
-            grid%rt_tendf_stoch=grid%RT_REAL_yyy
-            grid%RT_IMAG=grid%RT_IMAG_yyy
+           call do_fftback_along_x(                             & 
+                              grid%RU_REAL,grid%RU_IMAG,& 
+                              grid%RV_REAL,grid%RV_IMAG,& 
+                              grid%RT_REAL,grid%RT_IMAG,& 
+                              ids, ide, jds, jde, kds, kde,     &
+                              ims, ime, jms, jme, kms, kme,     &
+                              ips, ipe, jps, jpe, kps, kpe,     &
+                              imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                              ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                              imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                              ipsy,ipey,jpsy,jpey,kpsy,kpey,    &
+                              k_start , k_end                   &
+                             )
+            call do_fftback_along_y(                            & 
+                              grid%RU_REAL,grid%RU_IMAG,& 
+                              grid%RV_REAL,grid%RV_IMAG,& 
+                              grid%RT_REAL,grid%RT_IMAG,& 
+                              ids, ide, jds, jde, kds, kde,     &
+                              ims, ime, jms, jme, kms, kme,     &
+                              ips, ipe, jps, jpe, kps, kpe,     &
+                              imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                              ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                              imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                              ipsy,ipey,jpsy,jpey,kpsy,kpey,    &
+                              k_start , k_end                   &
+                             )
 #endif
  
              !$OMP PARALLEL DO   &
@@ -281,15 +283,16 @@ CONTAINS
              DO ij = 1 , grid%num_tiles
                CALL wrf_debug ( 200 , ' call update_stoch_ten' )
                CALL update_stoch_ten(ru_tendf, rv_tendf, t_tendf,           &
-                              grid%ru_tendf_stoch,                          &
-                              grid%rv_tendf_stoch,                          &
-                              grid%rt_tendf_stoch,                          &
-                              ids, ide, jds, jde, kds, kde,                 &
-                              ims, ime, jms, jme, kms, kme,                 &
-                              grid%i_start(ij), grid%i_end(ij),             &
-                              grid%j_start(ij), grid%j_end(ij),             &
-                              k_start, k_end,                               &
-                              grid%dt)
+                               grid%ru_tendf_stoch,                          &
+                               grid%rv_tendf_stoch,                          &
+                               grid%rt_tendf_stoch,                          &
+                               grid%RU_REAL,grid%RV_REAL,grid%RT_REAL,       & 
+                               ids, ide, jds, jde, kds, kde,                 &
+                               ims, ime, jms, jme, kms, kme,                 &
+                               grid%i_start(ij), grid%i_end(ij),             &
+                               grid%j_start(ij), grid%j_end(ij),             &
+                               k_start, k_end,                               &
+                               grid%dt)
 
              ENDDO
              !$OMP END PARALLEL DO

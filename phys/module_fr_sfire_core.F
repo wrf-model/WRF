@@ -1,7 +1,4 @@
 !
-!*** Jan Mandel August-October 2007 email: jmandel@ucar.edu or Jan.Mandel@gmail.com
-!
-! With contributions by Minjeong Kim.
 #define DEBUG_OUT
 #define DEBUG_PRINT
 !#define FUEL_LEFT
@@ -354,8 +351,6 @@ implicit none
 
 !*** purpose: determine fraction of fuel remaining
 !*** NOTE: because variables are cell centered, need halo/sync width 1 before
-
-!*** Jan Mandel August 2007 email: jmandel@ucar.edu or Jan.Mandel@gmail.com
 
 !*** arguments
 
@@ -1292,8 +1287,6 @@ implicit none
 
 !*** purpose: advance level function in time
 
-! Jan Mandel August 2007 - February 2008
-
 !*** description
 !
 ! Propagation of closed curve by a level function method. The level function
@@ -1657,7 +1650,8 @@ type(fire_params),intent(in)::fp
 !*** local 
 real:: te,diffLx,diffLy,diffRx,diffRy, & 
    diffCx,diffCy,diff2x,diff2y,grad,rr, &
-   ros_back,ros_wind,ros_slope,advx,advy,scale,nvx,nvy,speed,tanphi
+   ros_base,ros_wind,ros_slope,ros_back,advx,advy,scale,nvx,nvy, &
+   speed,tanphi
 integer::i,j,itso,iteo,jtso,jteo
 character(len=128)msg
 
@@ -1743,10 +1737,10 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
     
             ! get rate of spread from wind speed and slope
 
-            call fire_ros(ros_back,ros_wind,ros_slope, &
+            call fire_ros(ros_base,ros_wind,ros_slope, &
             nvx,nvy,i,j,fp)
 
-            rr=ros_back + ros_wind + ros_slope
+            rr=ros_base + ros_wind + ros_slope
             if(fire_grows_only.gt.0)rr=max(rr,0.)
 
             ! set ros for output
@@ -1760,7 +1754,7 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
             else
 
                 ! normal direction backing rate only
-                te = - ros_back*grad
+                te = - ros_base*grad
 
 		! advection in wind direction 
                 if (abs(speed)> eps) then
@@ -1923,7 +1917,7 @@ integer, intent(in)::i,j         ! indices of the node to compute the speed at
 type(fire_params),intent(in)::fp
 !*** local
 real::scale,nvx,nvy,r
-real::ros_back , ros_wind , ros_slope
+real::ros_base , ros_wind , ros_slope
 real, parameter:: eps=epsilon(0.0)
 !*** executable
             ! normal direction, from central differences
@@ -1933,10 +1927,10 @@ real, parameter:: eps=epsilon(0.0)
                       
             ! get rate of spread from wind speed and slope
 
-            call fire_ros(ros_back,ros_wind,ros_slope, &
+            call fire_ros(ros_base,ros_wind,ros_slope, &
             nvx,nvy,i,j,fp)
 
-            r=ros_back + ros_wind + ros_slope
+            r=ros_base + ros_wind + ros_slope
             if(fire_grows_only.gt.0)r=max(r,0.)
             speed_func=r
 

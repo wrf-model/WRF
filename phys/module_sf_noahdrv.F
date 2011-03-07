@@ -168,6 +168,8 @@ CONTAINS
 !  important note: here RUNOFF2 is actually the sum of RUNOFF2 and RUNOFF3
 !-- RUNOFF3     numerical trunctation in excess of porosity (smcmax)
 !                  for a given soil layer at the end of a time step (m s-1).
+!SFCRUNOFF     Surface Runoff (mm)
+!UDRUNOFF      Total Underground Runoff (mm), which is the sum of RUNOFF2 and RUNOFF3
 ! ----------------------------------------------------------------------
 !-- RC          canopy resistance (s m-1)
 !-- PC          plant coefficient (unitless fraction, 0-1) where PC*ETP = actual transp
@@ -890,6 +892,7 @@ CONTAINS
           Z0(I,J)=Z0BRD
           EMISS(I,J) = EMISSI
           EMISS_RURAL(I,J) = EMISSI
+! Noah: activate time-varying roughness length (V3.3 Feb 2011)
           ZNT(I,J)=Z0K
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
@@ -1147,7 +1150,7 @@ CONTAINS
           ENDDO
 !         Convert the water unit into mm
           SFCRUNOFF(I,J)=SFCRUNOFF(I,J)+RUNOFF1*DT*1000.0
-          UDRUNOFF(I,J)=UDRUNOFF(I,J)+(RUNOFF2+RUNOFF3)*DT*1000.0
+          UDRUNOFF(I,J)=UDRUNOFF(I,J)+RUNOFF2*DT*1000.0
 ! snow defined when fraction of frozen precip (FFROZP) > 0.5,
           IF(FFROZP.GT.0.5)THEN
             ACSNOW(I,J)=ACSNOW(I,J)+PRCP*DT

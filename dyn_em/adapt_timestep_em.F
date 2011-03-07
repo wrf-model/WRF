@@ -33,6 +33,8 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   INTEGER                                    :: idex=0, jdex=0
   INTEGER                                    :: rc
   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, dtInterval
+  TYPE(WRFU_TimeInterval)                    :: dtInterval_horiz
+  TYPE(WRFU_TimeInterval)                    :: dtInterval_vert  
   TYPE(WRFU_TimeInterval)                    :: parent_dtInterval
   INTEGER                                    :: num_small_steps
   integer                                    :: tile
@@ -41,10 +43,10 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   double precision                           :: dt = 0
   INTEGER, PARAMETER                         :: precision = 100
   INTEGER                                    :: dt_num, dt_den, dt_whole
-  REAL                                       :: factor
   INTEGER                                    :: num, den, history_interval_sec
   TYPE(WRFU_TimeInterval)                    :: last_dtInterval
   REAL                                       :: real_time
+  REAL                                       :: max_vert_cfl, max_horiz_cfl
 
   !
   ! If use_last2 is true, this routine will use the time step
@@ -129,46 +131,24 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
   else
 
-     if (grid%max_cfl_val < 0.001) then 
-        !
-        ! If the max_cfl_val is small, then we increase dtInterval the maximum
-        !    amount allowable.
-        !
-        num = INT(max_increase_factor * precision + 0.5)
-        den = precision
-        dtInterval = last_dtInterval * num / den
-
+     if (grid%stepping_to_time) then
+        max_vert_cfl = grid%last_max_vert_cfl
+        max_horiz_cfl = grid%last_max_horiz_cfl
      else
-        !
-        ! If the max_cfl_val is greater than the user input target cfl, we 
-        !    reduce the time step, 
-        ! else, we increase it.
-        !
-        if (grid%max_cfl_val .gt. grid%target_cfl) then
-           !
-           ! If we are reducing the time step, we go below target cfl by half the
-           !   difference between max and target 
-           !   This tends to keep the model more stable.
-           !
-           
-           factor = ( (grid%target_cfl - 0.5 * &
-                (grid%max_cfl_val - grid%target_cfl) ) / grid%max_cfl_val )
-           num = INT(factor * precision + 0.5)
-           den = precision
+        max_vert_cfl = grid%max_vert_cfl
+        max_horiz_cfl = grid%max_horiz_cfl
+     endif
 
-           dtInterval = last_dtInterval * num / den
+     CALL calc_dt(dtInterval_vert, max_vert_cfl, max_increase_factor, &
+          precision, last_dtInterval, grid%target_cfl)
 
-        else
-           !
-           ! Linearly increase dtInterval (we'll limit below)
-           !
-           
-           factor = grid%target_cfl / grid%max_cfl_val
-           num = INT(factor * precision + 0.5)
-           den = precision
-           dtInterval = last_dtInterval * num / den
-        endif
+     CALL calc_dt(dtInterval_horiz, max_horiz_cfl, max_increase_factor, &
+          precision, last_dtInterval, grid%target_hcfl)
 
+     if (dtInterval_vert < dtInterval_horiz) then
+        dtInterval = dtInterval_vert
+     else
+        dtInterval = dtInterval_horiz
      endif
 
   endif
@@ -258,7 +238,6 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   call wrf_dm_tile_val_int(dt_whole, tile)
   CALL WRFU_TimeIntervalSet(dtInterval, Sn = dt_whole*dt_den + dt_num, Sd = dt_den)
 
-  call wrf_dm_maxtile_real(grid%max_cfl_val, tile)
   call wrf_dm_maxtile_real(grid%max_vert_cfl, tile)
   call wrf_dm_maxtile_real(grid%max_horiz_cfl, tile)
 #endif
@@ -387,8 +366,12 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
   if (use_last2) then
      grid%last_dtInterval = last_dtInterval
+     grid%last_max_vert_cfl = grid%last_max_vert_cfl
+     grid%last_max_horiz_cfl = grid%last_max_horiz_cfl
   else
      grid%last_dtInterval = dtInterval
+     grid%last_max_vert_cfl = grid%max_vert_cfl
+     grid%last_max_horiz_cfl = grid%max_horiz_cfl
   endif
 
   grid%dt = real_time(dtInterval)
@@ -439,6 +422,64 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
 END SUBROUTINE adapt_timestep
 
+SUBROUTINE calc_dt(dtInterval, max_cfl, max_increase_factor, precision, &
+     last_dtInterval, target_cfl)
+
+  USE module_domain
+
+  TYPE(WRFU_TimeInterval) ,INTENT(OUT)      :: dtInterval
+  REAL                    ,INTENT(IN)       :: max_cfl
+  REAL                    ,INTENT(IN)       :: max_increase_factor
+  INTEGER                 ,INTENT(IN)       :: precision
+  REAL                    ,INTENT(IN)       :: target_cfl
+  TYPE(WRFU_TimeInterval) ,INTENT(IN)       :: last_dtInterval
+  REAL                                      :: factor
+  INTEGER                                   :: num, den
+  
+
+  if (max_cfl < 0.001) then 
+     !
+     ! If the max_cfl is small, then we increase dtInterval the maximum
+     !    amount allowable.
+     !
+     num = INT(max_increase_factor * precision + 0.5)
+     den = precision
+     dtInterval = last_dtInterval * num / den
+
+  else
+     !
+     ! If the max_cfl is greater than the user input target cfl, we 
+     !    reduce the time step, 
+     ! else, we increase it.
+     !
+     if (max_cfl .gt. target_cfl) then
+        !
+        ! If we are reducing the time step, we go below target cfl by half
+        !   the difference between max and target.
+        !   This tends to keep the model more stable.
+        !
+        
+        factor = ( target_cfl - 0.5 * (max_cfl - target_cfl) ) / max_cfl
+        num = INT(factor * precision + 0.5)
+        den = precision
+
+        dtInterval = last_dtInterval * num / den
+
+     else
+        !
+        ! Linearly increase dtInterval (we'll limit below)
+        !
+        
+        factor = target_cfl / max_cfl
+        num = INT(factor * precision + 0.5)
+        den = precision
+        dtInterval = last_dtInterval * num / den
+     endif
+  endif
+
+END SUBROUTINE calc_dt
+
+
 FUNCTION real_time( timeinterval ) RESULT ( out_time )
 
   USE module_domain
@@ -469,7 +510,6 @@ FUNCTION real_time( timeinterval ) RESULT ( out_time )
          out_time = dt_whole + dt_num / REAL(dt_den)
       endif
 END FUNCTION 
-
 
 FUNCTION real_time_r8( timeinterval ) RESULT ( out_time )
 

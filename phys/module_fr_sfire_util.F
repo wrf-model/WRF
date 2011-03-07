@@ -1,9 +1,6 @@
 !
-!*** Jan Mandel August-October 2007
-!*** email: jmandel@ucar.edu or Jan.Mandel@gmail.com or Jan.Mandel@cudenver.edu
-!
-! This module contains general purpose utilities and WRF wrappers because I want the
-! model to be able to run standalone. No physics here.
+! This module contains general purpose utilities and WRF wrappers because some
+! applications require this module to run standalone. No physics here.
 ! Some are dependent on WRF indexing scheme. Some violate WRF conventions but these
 ! are not called from the WRF dependent code. Some are not called at all.
 ! 
@@ -96,8 +93,8 @@ if(fire_print_msg.ge.mlevel)then
       msg='SFIRE:'//s
 #endif
       call wrf_message(msg)
-      flush(6)
-      flush(0)
+!      flush(6)
+!      flush(0)
 !$OMP END CRITICAL(SFIRE_MESSAGE_CRIT)
 endif
 end subroutine message
@@ -1316,13 +1313,6 @@ else
     snode=t+i
 endif
 end function snode
-
-subroutine print_id
-character(len=128)::msg
-
-msg='commit fa26d08d8154124ac51514b11bc671eb312e20f8'
-call message(msg,level=1)
-end subroutine print_id
 
 subroutine print_chsum( id, & 
     ims,ime,kms,kme,jms,jme, &                ! memory dims

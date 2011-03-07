@@ -4,6 +4,10 @@ LN      =       ln -s
 MAKE    =       make -i -r
 MV	=	/bin/mv
 RM      =       /bin/rm -f
+CHEM_FILES =	../chem/module_aerosols_sorgam.o \
+		../chem/module_gocart_aerosols.o \
+		../chem/module_mosaic_driver.o \
+		../chem/module_input_tracer.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -525,7 +529,12 @@ physics :
 
 em_core :
 	@ echo '--------------------------------------'
-	( cd dyn_em ; $(MAKE) $(J) )
+	if [ $(WRF_CHEM) -eq 0 ] ; then \
+		CF= ; \
+	else \
+		CF=$(CHEM_FILES) ; \
+	fi
+	( cd dyn_em ; $(MAKE) $(J) CF="$(CF)" )
 
 # rule used by configure to test if this will compile with MPI 2 calls MPI_Comm_f2c and _c2f
 mpi2_test :

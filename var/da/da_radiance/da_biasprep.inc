@@ -13,9 +13,9 @@ subroutine da_biasprep(inst,ob,iv)
    integer  :: n,jx,npred,nchan,num_rad,nlevels
    character(len=80)  :: filename
    character(len=1)   :: s1
-   real               :: pred(6), q(43)
+   real               :: pred(6)
    type (bias_type)   :: radbias
-   real,allocatable      :: temp(:), hum(:), pf(:)
+   real,allocatable      :: q(:), temp(:), hum(:), pf(:)
 
    num_rad = iv%instid(inst)%info%n2-iv%instid(inst)%info%n1+1
 
@@ -36,6 +36,7 @@ subroutine da_biasprep(inst,ob,iv)
    npred = 4
    nchan = iv%instid(inst)%nchan 
    nlevels = iv%instid(inst)%nlevels-1
+   allocate(q(nlevels))
    allocate(temp(nlevels))
    allocate(hum(nlevels))
    allocate(pf(0:nlevels))
@@ -51,9 +52,11 @@ subroutine da_biasprep(inst,ob,iv)
       if (iv%instid(inst)%info%proc_domain(1,n)) then 
 
         if (rtm_option==rtm_option_rttov) then
-         q(1:43) = iv%instid(inst)%mr(1:43,n)/q2ppmv
-         call da_predictor_rttov(pred(1:npred), npred, iv%instid(inst)%t(1:43,n), &
-            q(1:43), iv%instid(inst)%ts(n))
+#ifdef RTTOV
+         q(1:nlevels) = iv%instid(inst)%mr(1:nlevels,n)/q2ppmv
+         call da_predictor_rttov(inst, pred(1:npred), npred, nlevels, &
+            iv%instid(inst)%t(1:nlevels,n), q(1:nlevels), iv%instid(inst)%ts(n))
+#endif
         else if (rtm_option==rtm_option_crtm) then
 #ifdef CRTM
 ! FIX? problems with IBM AIX COMPILER
@@ -116,6 +119,7 @@ subroutine da_biasprep(inst,ob,iv)
    close(unit=biasprep_unit)
    call da_free_unit(biasprep_unit)
 
+   deallocate(q)
    deallocate(temp)
    deallocate(hum)
    deallocate(pf)

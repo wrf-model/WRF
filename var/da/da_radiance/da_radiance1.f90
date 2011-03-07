@@ -73,6 +73,9 @@ module da_radiance1
       real   ,  pointer  ::  t(:)
       real   ,  pointer  ::  q(:)
       real               ::  ps
+      real   ,  pointer  ::  t_jac(:,:) => null()
+      real   ,  pointer  ::  q_jac(:,:) => null()
+      real   ,  pointer  ::  ps_jac(:)  => null()
    end type con_vars_type
 
    type con_cld_vars_type
@@ -91,8 +94,8 @@ module da_radiance1
       integer            ::  surftype
       real               ::  surft, t2m, q2m, u10, v10
       real               ::  satzen, satazi  !!, fastem(5)
-      real               ::  solzen,solazi  !   solar angles   RTTOV9_3
-      real               ::  elevation ,rlat      !  RTTOV9_3
+      real               ::  solzen, solazi
+      real               ::  elevation ,rlat
    end type aux_vars_type
 
    type maxmin_rad_stats_type
@@ -207,7 +210,9 @@ contains
 #include "da_read_biascoef.inc"
 #include "da_biasprep.inc"
 #include "da_write_biasprep.inc"
+#ifdef RTTOV
 #include "da_predictor_rttov.inc"
+#endif
 #ifdef CRTM
 #include "da_predictor_crtm.inc"
 #include "da_qc_crtm.inc"

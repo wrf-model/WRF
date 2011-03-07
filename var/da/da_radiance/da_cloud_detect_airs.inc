@@ -255,7 +255,7 @@ REAL :: ZHOOK_HANDLE
     
     if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
-       iv%instid(isensor)%clwp(n) = coefs(isensor)%ref_prfl_p(cldtoplevel)
+       iv%instid(isensor)%clwp(n) = coefs(isensor)%coef%ref_prfl_p(cldtoplevel)
 #endif
     elseif (rtm_option == rtm_option_crtm) then
 #ifdef CRTM

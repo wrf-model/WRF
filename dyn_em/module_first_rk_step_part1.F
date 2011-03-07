@@ -505,7 +505,7 @@ BENCH_START(surf_driver_tim)
      &        , NUM_TILES=grid%num_tiles                                  &
           ! Variables required by TEMF PBL - WA 1/7/09
               ,te_temf=grid%te_temf,hd_temf=grid%hd_temf                  &
-              ,fCor=grid%f,exch_temf=exch_temf                              &
+              ,fCor=grid%f,exch_temf=exch_temf,wm_temf=grid%wm_temf       &
           ! Variables required by IDEAL SCM sfc scheme - WA 1/6/10
               ,hfx_force=grid%hfx_force,lh_force=grid%lh_force            &
               ,tsk_force=grid%tsk_force                                   &

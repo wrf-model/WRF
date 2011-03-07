@@ -12,8 +12,6 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
 
    implicit none
 
-   !#include "rttov_q2v.interface"
-
    type (domain),     intent(in)     :: grid
    type (y_type),     intent(inout)  :: y        ! H' delta_x
    type (iv_type),    intent(in)     :: iv       ! O-B structure.
@@ -42,6 +40,7 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
    real, allocatable :: temp_t(:,:),temp_q(:,:)
    real, allocatable :: temp_t_tl(:,:),temp_q_tl(:,:),rtemp(:,:)
    real, allocatable :: temp_tb(:,:)
+   real, allocatable :: temp_t_jac(:,:,:), temp_q_jac(:,:,:), temp_ps_jac(:,:)
    integer, allocatable :: itemp(:,:)
   
   
@@ -72,7 +71,6 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
          allocate(model_mr(nlevels,num_rad))
          allocate(model_psfc(num_rad))
 
-
          model_t(:,:)=0.0
          model_q(:,:)=0.0
          model_mr(:,:)=0.0
@@ -102,12 +100,6 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
                else
                   ! model_mr(k,n) = model_q(k,n) * 1.60771704e+6 ! convert q(kg/kg) to ppmv 
                   model_mr(k,n) = model_q(k,n) * q2ppmv
-                  ! call rttov_q2v ( &
-                  !    gas_unit_specconc,  &! in
-                  !    model_q(k,n),         &! in
-                  !    gas_id_watervapour, &! in
-                  !    model_q(k,n),         &! in
-                  !    model_mr(k,n)     )    ! inout
                end if
             end do
 
@@ -117,10 +109,19 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             con_vars(n) % q(:) = iv%instid(i)%mr(:,n)
             con_vars(n) % ps   = iv%instid(i)%ps(n) 
 
+            if ( use_rttov_kmatrix ) then
+               allocate (con_vars(n) % t_jac(nchan,nlevels))
+               allocate (con_vars(n) % q_jac(nchan,nlevels))
+               allocate (con_vars(n) % ps_jac(nchan))
+               do k = 1, nlevels
+                  con_vars(n) % t_jac(:,k) = iv%instid(i)%t_jacobian(:,k,n)
+                  con_vars(n) % q_jac(:,k) = iv%instid(i)%q_jacobian(:,k,n)
+               end do
+               con_vars(n) % ps_jac(:)= iv%instid(i)%ps_jacobian(:,n) 
+            end if
+
             allocate (con_vars_tl(n) % t(nlevels))
             allocate (con_vars_tl(n) % q(nlevels))
-
-
 
             con_vars_tl(n) % t(:) = model_t  (:,n)
             con_vars_tl(n) % q(:) = model_mr (:,n)
@@ -130,27 +131,14 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             aux_vars(n) % q2m = iv%instid(i)%mr2m(n)
             aux_vars(n) % u10 = iv%instid(i)%u10(n)
             aux_vars(n) % v10 = iv%instid(i)%v10(n)
-            aux_vars(n) % surftype = iv%instid(i)%landsea_mask(n)
-            aux_vars(n) % surft    = iv%instid(i)%ts(n)
-            aux_vars(n) % satzen  = iv%instid(i)%satzen(n)
-            aux_vars(n) % satazi  = iv%instid(i)%satazi(n)
-!RTTOV9_3
-            aux_vars(n) % solzen   = iv%instid(i)%solzen(n)
-            aux_vars(n) % solazi   = iv%instid(i)%solazi(n)
-            aux_vars(n) % elevation   = iv%instid(i)%elevation(n)
-            aux_vars(n) % rlat     = iv%instid(i)%info%lat(1,n)
-!END OF RTTOV9_3
-
-            aux_vars_tl(n) % surftype = iv%instid(i)%landsea_mask(n) 
-            aux_vars_tl(n) % satzen  = iv%instid(i)%satzen(n)
-            aux_vars_tl(n) % satazi  = iv%instid(i)%satazi(n)
-!RTTOV9_3
-            aux_vars_tl(n) % solzen   = iv%instid(i)%solzen(n)
-            aux_vars_tl(n) % solazi   = iv%instid(i)%solazi(n)
-            aux_vars_tl(n) % elevation   = iv%instid(i)%elevation(n)
-            aux_vars_tl(n) % rlat     = iv%instid(i)%info%lat(1,n)
- 
-!END OF RTTOV9_3
+            aux_vars(n) % surftype  = iv%instid(i)%surftype(n)
+            aux_vars(n) % surft     = iv%instid(i)%ts(n)
+            aux_vars(n) % satzen    = iv%instid(i)%satzen(n)
+            aux_vars(n) % satazi    = iv%instid(i)%satazi(n)
+            aux_vars(n) % solzen    = iv%instid(i)%solzen(n)
+            aux_vars(n) % solazi    = iv%instid(i)%solazi(n)
+            aux_vars(n) % elevation = iv%instid(i)%elevation(n)
+            aux_vars(n) % rlat      = iv%instid(i)%info%lat(1,n)
 
          end do
 
@@ -176,6 +164,12 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             allocate (d_con_vars(n) % t(nlevels))
             allocate (d_con_vars(n) % q(nlevels))
 
+            if ( use_rttov_kmatrix ) then
+               allocate (d_con_vars(n) % t_jac(nchan,nlevels))
+               allocate (d_con_vars(n) % q_jac(nchan,nlevels))
+               allocate (d_con_vars(n) % ps_jac(nchan))
+            end if
+
             allocate (d_con_vars_tl(n) % t(nlevels))
             allocate (d_con_vars_tl(n) % q(nlevels))
          end do
@@ -191,6 +185,11 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
          do n = 1, l_num_rad
             d_con_vars(n) % t(:)    = con_vars(n) % t(:) 
             d_con_vars(n) % q(:)    = con_vars(n) % q(:)
+            if ( use_rttov_kmatrix ) then
+               d_con_vars(n) % t_jac(:,:) = con_vars(n) % t_jac(:,:) 
+               d_con_vars(n) % q_jac(:,:) = con_vars(n) % q_jac(:,:)
+               d_con_vars(n) % ps_jac(:)  = con_vars(n) % ps_jac(:)
+            end if
             d_con_vars_tl(n) % t(:) = con_vars_tl(n) % t(:) 
             d_con_vars_tl(n) % q(:) = con_vars_tl(n) % q(:)
             ! d_aux_vars(n) % fastem(:) = 0.0
@@ -205,34 +204,20 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
          d_aux_vars(1:l_num_rad) % v10         = aux_vars(1:l_num_rad) % v10
          d_aux_vars(1:l_num_rad) % surftype    = aux_vars(1:l_num_rad) % surftype
          d_aux_vars(1:l_num_rad) % surft       = aux_vars(1:l_num_rad) % surft
-         ! d_aux_vars(1:l_num_rad) % fastem(:) = aux_vars(1:l_num_rad) % fastem(:)
+         ! d_aux_vars(1:l_num_rad) % fastem(:)   = aux_vars(1:l_num_rad) % fastem(:)
          d_aux_vars(1:l_num_rad) % satzen      = aux_vars(1:l_num_rad) % satzen
          d_aux_vars(1:l_num_rad) % satazi      = aux_vars(1:l_num_rad) % satazi
-!RTTOV9_3
-         d_aux_vars(1:l_num_rad) % solzen   = aux_vars(1:l_num_rad) % solzen
-         d_aux_vars(1:l_num_rad) % solazi   = aux_vars(1:l_num_rad) % solazi
+         d_aux_vars(1:l_num_rad) % solzen      = aux_vars(1:l_num_rad) % solzen
+         d_aux_vars(1:l_num_rad) % solazi      = aux_vars(1:l_num_rad) % solazi
          d_aux_vars(1:l_num_rad) % elevation   = aux_vars(1:l_num_rad) % elevation
-         d_aux_vars(1:l_num_rad) % rlat     =  aux_vars(1:l_num_rad) % rlat
+         d_aux_vars(1:l_num_rad) % rlat        =  aux_vars(1:l_num_rad) % rlat
  
-!END OF RTTOV9_3
-
          d_aux_vars_tl(1:l_num_rad) % t2m      = aux_vars_tl(1:l_num_rad) % t2m
          d_aux_vars_tl(1:l_num_rad) % q2m      = aux_vars_tl(1:l_num_rad) % q2m
          d_aux_vars_tl(1:l_num_rad) % u10      = aux_vars_tl(1:l_num_rad) % u10
          d_aux_vars_tl(1:l_num_rad) % v10      = aux_vars_tl(1:l_num_rad) % v10
-         d_aux_vars_tl(1:l_num_rad) % surftype = aux_vars_tl(1:l_num_rad) % surftype
          d_aux_vars_tl(1:l_num_rad) % surft    = aux_vars_tl(1:l_num_rad) % surft
          ! d_aux_vars_tl(1:l_numrad) % fastem(:)    = aux_vars_tl(1:l_num_rad) % fastem(:)
-         d_aux_vars_tl(1:l_num_rad) % satzen   = aux_vars_tl(1:l_num_rad) % satzen
-         d_aux_vars_tl(1:l_num_rad) % satazi   = aux_vars_tl(1:l_num_rad) % satazi
-!RTTOV9_3
-         d_aux_vars_tl(1:l_num_rad) % solzen   = aux_vars_tl(1:l_num_rad) % solzen
-         d_aux_vars_tl(1:l_num_rad) % solazi   = aux_vars_tl(1:l_num_rad) % solazi
-         d_aux_vars_tl(1:l_num_rad) % elevation   = aux_vars_tl(1:l_num_rad) % elevation
-         d_aux_vars_tl(1:l_num_rad) % rlat     =  aux_vars_tl(1:l_num_rad) % rlat
- 
-!END OF RTTOV9_3
-
 
       end if
 
@@ -250,30 +235,30 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
                temp_t(:,j)=con_vars(s+j-1) % t(:)
             end do
             call mpi_send( temp_t,nl, true_mpi_real, tovs_recv_pe(i,c), &
-               c*7+1, comm, ierr)
+               c*10+1, comm, ierr)
 
             allocate(temp_t_tl(nlevels,len))
             do j=1,len
                temp_t_tl(:,j)=con_vars_tl(s+j-1) % t(:)
             end do
             call mpi_send( temp_t_tl,nl, true_mpi_real, tovs_recv_pe(i,c), &
-               c*7+2, comm, ierr)
+               c*10+2, comm, ierr)
 
             allocate(temp_q(nlevels,len))
             do j=1,len
                temp_q(:,j)=con_vars(s+j-1) % q(:)
             end do
             call mpi_send (temp_q,nl, true_mpi_real, tovs_recv_pe(i,c), &
-               c*7+3, comm, ierr)
+               c*10+3, comm, ierr)
 
             allocate(temp_q_tl(nlevels,len))
             do j=1,len
                temp_q_tl(:,j)=con_vars_tl(s+j-1) % q(:)
             end do
             call mpi_send (temp_q_tl,nl, true_mpi_real, tovs_recv_pe(i,c), &
-               c*7+4, comm, ierr)
+               c*10+4, comm, ierr)
 
-            allocate (rtemp(len,16))
+            allocate (rtemp(len,18))
             rtemp(:,1)= con_vars(s:e) % ps
             rtemp(:,2)= con_vars_tl(s:e) % ps
             rtemp(:,3)= aux_vars(s:e) % t2m
@@ -283,21 +268,23 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             rtemp(:,7)= aux_vars(s:e) % surft
             rtemp(:,8)= aux_vars(s:e) % satzen
             rtemp(:,9)= aux_vars(s:e) % satazi
-            rtemp(:,10)= aux_vars_tl(s:e) % t2m
-            rtemp(:,11)= aux_vars_tl(s:e) % q2m
-            rtemp(:,12)= aux_vars_tl(s:e) % u10
-            rtemp(:,13)= aux_vars_tl(s:e) % v10
-            rtemp(:,14)= aux_vars_tl(s:e) % surft
-            rtemp(:,15)= aux_vars_tl(s:e) % satzen
-            rtemp(:,16)= aux_vars_tl(s:e) % satazi
-            call mpi_send (rtemp,len*16, true_mpi_real, tovs_recv_pe(i,c), &
-               c*7+5, comm, ierr)
+            rtemp(:,10)= aux_vars(s:e) % solzen
+            rtemp(:,11)= aux_vars(s:e) % solazi
+            rtemp(:,12)= aux_vars(s:e) % elevation
+            rtemp(:,13)= aux_vars(s:e) % rlat
+            rtemp(:,14)= aux_vars_tl(s:e) % t2m
+            rtemp(:,15)= aux_vars_tl(s:e) % q2m
+            rtemp(:,16)= aux_vars_tl(s:e) % u10
+            rtemp(:,17)= aux_vars_tl(s:e) % v10
+            rtemp(:,18)= aux_vars_tl(s:e) % surft
+            call mpi_send (rtemp,len*18, true_mpi_real, tovs_recv_pe(i,c), &
+               c*10+5, comm, ierr)
 
             allocate (itemp(len,2))
             itemp(:,1)= con_vars(s:e) % nlevels  ! aux_vars_tl identical
             itemp(:,2)= aux_vars(s:e) % surftype ! aux_vars_tl identical
             call mpi_send (itemp,len*2, mpi_integer, tovs_recv_pe(i,c), &
-               c*7+6, comm, ierr)
+               c*10+6, comm, ierr)
 
             deallocate (temp_t)
             deallocate (temp_q)
@@ -305,6 +292,37 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             deallocate (temp_q_tl)
             deallocate (rtemp)
             deallocate (itemp)
+
+            if ( use_rttov_kmatrix ) then
+               allocate(temp_t_jac(nchan,nlevels,len))
+               do k = 1, nlevels
+                  do j=1,len
+                     temp_t_jac(:,k,j)=con_vars(s+j-1) % t_jac(:,k)
+                  end do
+               end do
+               call mpi_send( temp_t_jac, nl*nchan, true_mpi_real, tovs_recv_pe(i,c), &
+                  c*10+7, comm, ierr)
+
+               allocate(temp_q_jac(nchan,nlevels,len))
+               do k = 1, nlevels
+                  do j=1,len
+                     temp_q_jac(:,k,j)=con_vars(s+j-1) % q_jac(:,k)
+                  end do
+               end do
+               call mpi_send( temp_q_jac, nl*nchan, true_mpi_real, tovs_recv_pe(i,c), &
+                  c*10+8, comm, ierr)
+
+               allocate(temp_ps_jac(nchan,len))
+               do j=1,len
+                  temp_ps_jac(:,j)=con_vars(s+j-1) % ps_jac(:)
+               end do
+               call mpi_send( temp_ps_jac, len*nchan, true_mpi_real, tovs_recv_pe(i,c), &
+                  c*10+9, comm, ierr)
+
+               deallocate (temp_t_jac)
+               deallocate (temp_q_jac)
+               deallocate (temp_ps_jac)
+            end if
          end if
          if (tovs_recv_pe(i,c)==myproc) then
             s=tovs_recv_start(i,c)
@@ -314,35 +332,35 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
 
             allocate(temp_t(nlevels,len))
             call mpi_recv (temp_t,nl, true_mpi_real, tovs_send_pe(i,c), &
-               c*7+1, comm, status, ierr)
+               c*10+1, comm, status, ierr)
             do j=1,len
                d_con_vars(s+j-1) % t(:)=temp_t(:,j)
             end do
 
             allocate(temp_t_tl(nlevels,len))
             call mpi_recv (temp_t_tl,nl, true_mpi_real, tovs_send_pe(i,c), &
-               c*7+2, comm, status, ierr)
+               c*10+2, comm, status, ierr)
             do j=1,len
                d_con_vars_tl(s+j-1) % t(:)=temp_t_tl(:,j)
             end do
 
             allocate(temp_q(nlevels,len))
             call mpi_recv (temp_q,nl, true_mpi_real, tovs_send_pe(i,c), &
-               c*7+3, comm, status, ierr)
+               c*10+3, comm, status, ierr)
             do j=1,len
                d_con_vars(s+j-1) % q(:)=temp_q(:,j)
             end do
 
             allocate(temp_q_tl(nlevels,len))
             call mpi_recv (temp_q_tl,nl, true_mpi_real, tovs_send_pe(i,c), &
-               c*7+4, comm, status, ierr)
+               c*10+4, comm, status, ierr)
             do j=1,len
                d_con_vars_tl(s+j-1) % q(:)=temp_q_tl(:,j)
             end do
 
-            allocate (rtemp(len,16))
-            call mpi_recv (rtemp,len*16, true_mpi_real, tovs_send_pe(i,c), &
-               c*7+5, comm, status, ierr)
+            allocate (rtemp(len,18))
+            call mpi_recv (rtemp,len*18, true_mpi_real, tovs_send_pe(i,c), &
+               c*10+5, comm, status, ierr)
             d_con_vars(s:e) % ps          = rtemp(:,1)
             d_con_vars_tl(s:e) % ps       = rtemp(:,2)
             d_aux_vars(s:e) % t2m         = rtemp(:,3)
@@ -352,17 +370,20 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             d_aux_vars(s:e) % surft       = rtemp(:,7)
             d_aux_vars(s:e) % satzen      = rtemp(:,8)
             d_aux_vars(s:e) % satazi      = rtemp(:,9)
-            d_aux_vars_tl(s:e) % t2m      = rtemp(:,10)
-            d_aux_vars_tl(s:e) % q2m      = rtemp(:,11)
-            d_aux_vars_tl(s:e) % u10      = rtemp(:,12)
-            d_aux_vars_tl(s:e) % v10      = rtemp(:,13)
-            d_aux_vars_tl(s:e) % surft    = rtemp(:,14)
-            d_aux_vars_tl(s:e) % satzen   = rtemp(:,15)
-            d_aux_vars_tl(s:e) % satazi   = rtemp(:,16)
+            d_aux_vars(s:e) % solzen      = rtemp(:,10)
+            d_aux_vars(s:e) % solazi      = rtemp(:,11)
+            d_aux_vars(s:e) % elevation   = rtemp(:,12)
+            d_aux_vars(s:e) % rlat        = rtemp(:,13)
+            d_aux_vars_tl(s:e) % t2m      = rtemp(:,14)
+            d_aux_vars_tl(s:e) % q2m      = rtemp(:,15)
+            d_aux_vars_tl(s:e) % u10      = rtemp(:,16)
+            d_aux_vars_tl(s:e) % v10      = rtemp(:,17)
+            d_aux_vars_tl(s:e) % surft    = rtemp(:,18)
 
             allocate (itemp(len,2))
             call mpi_recv (itemp,len*2, mpi_integer, tovs_send_pe(i,c), &
-               c*7+6, comm, status, ierr)
+               c*10+6, comm, status, ierr)
+
             d_con_vars(s:e) % nlevels     = itemp(:,1)
             d_aux_vars(s:e) % surftype    = itemp(:,2)
 
@@ -375,6 +396,37 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             deallocate (temp_q_tl)
             deallocate (itemp)
             deallocate (rtemp)
+
+            if ( use_rttov_kmatrix ) then
+               allocate(temp_t_jac(nchan,nlevels,len))
+               call mpi_recv (temp_t_jac,nl*nchan, true_mpi_real, tovs_send_pe(i,c), &
+                  c*10+7, comm, status, ierr)
+               do k = 1, nlevels
+                  do j=1,len
+                     d_con_vars(s+j-1) % t_jac(:,k) = temp_t_jac(:,k,j)
+                  end do
+               end do
+
+               allocate(temp_q_jac(nchan,nlevels,len))
+               call mpi_recv (temp_q_jac,nl*nchan, true_mpi_real, tovs_send_pe(i,c), &
+                  c*10+8, comm, status, ierr)
+               do k = 1, nlevels
+                  do j=1,len
+                     d_con_vars(s+j-1) % q_jac(:,k) = temp_q_jac(:,k,j)
+                  end do
+               end do
+
+               allocate(temp_ps_jac(nchan,len))
+               call mpi_recv (temp_ps_jac,len*nchan, true_mpi_real, tovs_send_pe(i,c), &
+                  c*10+9, comm, status, ierr)
+               do j=1,len
+                  d_con_vars(s+j-1) % ps_jac(:) = temp_ps_jac(:,j)
+               end do
+
+               deallocate (temp_t_jac)
+               deallocate (temp_q_jac)
+               deallocate (temp_ps_jac)
+            end if
          end if
       end do
 #endif
@@ -384,32 +436,30 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
                call da_rttov_tl (i, nchan, d_num_rad, d_con_vars, &
                   d_aux_vars, d_con_vars_tl, d_aux_vars_tl, d_tb)
 
-        else
-         if (.not. use_rttov_kmatrix) then  
-           !$OMP PARALLEL DO &
-           !$OMP PRIVATE ( n )
-           do n=1,d_num_rad
-               call da_rttov_tl (i, nchan, 1, d_con_vars(n:n), &
-                  d_aux_vars(n:n), d_con_vars_tl(n:n), d_aux_vars_tl(n:n), &
-                  d_tb(:,n:n))
-           end do
-           !$OMP END PARALLEL DO 
          else
-
-           do n = 1, d_num_rad
-               d_tb(:,n) = 0.0
-               do l = 1, nchan
-                  do k = 1, nlevels 
-                     d_tb(l,n) = d_tb(l,n) + & 
-                              iv%instid(i)%t_jacobian(l,k,n) * d_con_vars_tl(n)%t(k) + &
-                              iv%instid(i)%q_jacobian(l,k,n) * d_con_vars_tl(n)%q(k)
-                  end do
-                     d_tb(l,n) = d_tb(l,n) + &
-                             iv%instid(i)%ps_jacobian(l,n) * d_con_vars_tl(n)%ps
+            if (.not. use_rttov_kmatrix) then  
+               !$OMP PARALLEL DO &
+               !$OMP PRIVATE ( n )
+               do n=1,d_num_rad
+                  call da_rttov_tl (i, nchan, 1, d_con_vars(n:n), &
+                     d_aux_vars(n:n), d_con_vars_tl(n:n), d_aux_vars_tl(n:n), &
+                     d_tb(:,n:n))
                end do
-           end do 
-          end if
-
+               !$OMP END PARALLEL DO 
+            else
+               do n = 1, d_num_rad
+                  d_tb(:,n) = 0.0
+                  do l = 1, nchan
+                     do k = 1, nlevels 
+                        d_tb(l,n) = d_tb(l,n) + & 
+                              d_con_vars(n)%t_jac(l,k) * d_con_vars_tl(n)%t(k) + &
+                              d_con_vars(n)%q_jac(l,k) * d_con_vars_tl(n)%q(k)
+                     end do
+                     d_tb(l,n) = d_tb(l,n) + &
+                              d_con_vars(n)%ps_jac(l) * d_con_vars_tl(n)%ps
+                  end do
+               end do 
+            end if
          end if
       end if
 
@@ -423,27 +473,24 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
       ! Return the data to other processors. Note the meaning of send_pe and recv_pe is
       ! swapped here
 
-      nl=nlevels
 #ifdef DM_PARALLEL
       do c=1,tovs_copy_count(i)
          if (tovs_recv_pe(i,c)==myproc) then
             s=tovs_recv_start(i,c)
             len=tovs_send_count(i,c)
             e=s+len-1
-            nl=len*nlevels
             allocate(temp_tb(nchan,len))
             temp_tb(:,:) = d_tb(:,s:e)
-            call mpi_send (temp_tb,len*nchan, true_mpi_real, tovs_send_pe(i,c), c*7+7, comm, ierr)
+            call mpi_send (temp_tb,len*nchan, true_mpi_real, tovs_send_pe(i,c), c*10+10, comm, ierr)
             deallocate(temp_tb)
          end if
          if (tovs_send_pe(i,c)==myproc) then
             s=tovs_send_start(i,c)
             len=tovs_send_count(i,c)
             e=s+len-1
-            nl=len*nlevels
             allocate(temp_tb(nchan,len))
             call mpi_recv (temp_tb,len*nchan, true_mpi_real, &
-               tovs_recv_pe(i,c), c*7+7, comm, status, ierr)
+               tovs_recv_pe(i,c), c*10+10, comm, status, ierr)
             y%instid(i)%tb(:,s:e)=temp_tb(:,:)
             deallocate(temp_tb)
          end if
@@ -456,6 +503,11 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             deallocate (d_con_vars(n) % q)
             deallocate (d_con_vars_tl(n) % t)
             deallocate (d_con_vars_tl(n) % q)
+            if ( use_rttov_kmatrix ) then
+               deallocate (d_con_vars(n) % t_jac)
+               deallocate (d_con_vars(n) % q_jac)
+               deallocate (d_con_vars(n) % ps_jac)
+            end if
          end do
 
          deallocate (d_tb)
@@ -475,6 +527,11 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             deallocate (con_vars(n) % q)
             deallocate (con_vars_tl(n) % t)
             deallocate (con_vars_tl(n) % q)
+            if ( use_rttov_kmatrix ) then
+               deallocate (con_vars(n) % t_jac)
+               deallocate (con_vars(n) % q_jac)
+               deallocate (con_vars(n) % ps_jac)
+            end if
          end do
          deallocate (con_vars)
          deallocate (aux_vars)
@@ -490,5 +547,4 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
 #endif
 
 end subroutine da_transform_xtoy_rttov
-
 

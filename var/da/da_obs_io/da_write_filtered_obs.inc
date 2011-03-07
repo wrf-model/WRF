@@ -1094,6 +1094,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
                call da_ffdduv(speed, dir, uu, vv, iv%info(profiler)%lon(k,n), &
                   convert_uv2fd)
                speed_error = iv%profiler(n)%u(k)%error
+               speed_qc    = iv%profiler(n)%u(k)%qc
+               dir_qc      = speed_qc
             else
                speed = missing_r
                dir   = missing_r

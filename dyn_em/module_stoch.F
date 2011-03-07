@@ -1,4 +1,4 @@
-MODULE module_stoch
+module module_stoch
 !***********************************************************************
 !
 ! Purpose: Stochastic kinetic-energy backscatter scheme (SKEB)
@@ -51,7 +51,8 @@ MODULE module_stoch
 !     ----------Fields for spectral transform -----------
 
       INTEGER :: LENSAV
-      REAL, ALLOCATABLE :: WSAVE1_U(:),WSAVE2_U(:), WSAVE1_V(:),WSAVE2_V(:)
+      INTEGER,ALLOCATABLE:: wavenumber_k(:), wavenumber_l(:)
+      REAL, ALLOCATABLE :: WSAVE1(:),WSAVE2(:)
 
 !     --------- Others -------------------------------------------------
       REAL, PARAMETER:: RPI= 3.141592653589793 !4.0*atan(1.0) 
@@ -90,7 +91,6 @@ contains
       REAL, DIMENSION (ims:ime,jms:jme)         :: SPSTREAM_AMP,SPT_AMP
       REAL, DIMENSION (ids:ide,jds:jde)         :: ZCHI,ZCHIT
       LOGICAL :: is_print = .true.
-
     
 !     --------- SETUP PARAMETERS ---------------------------------------
       KMAX=(jde-jds)+1 !NLAT
@@ -100,24 +100,21 @@ contains
       LENSAV= 4*(KMAX+LMAX)+INT(LOG(REAL(KMAX))) + INT(LOG(REAL(LMAX))) + 8
 
 !     --------- ALLOCATE FIELDS FOR FFTPACK----------------------------
-      ALLOCATE(WSAVE1_U(LENSAV),WSAVE2_U(LENSAV))
-      ALLOCATE(WSAVE1_V(LENSAV),WSAVE2_V(LENSAV))
+      ALLOCATE(WSAVE1(LENSAV),WSAVE2(LENSAV))
+      ALLOCATE (wavenumber_k(jds:jde),wavenumber_l(ids:ide))
 
 !     -------- INITIALIZE FFTPACK ROUTINES -----------------------------
-      call CFFT1I (LMAX, WSAVE1_U, LENSAV, IER)
+      call CFFT1I (LMAX, WSAVE1, LENSAV, IER)
       if(ier.ne. 0) write(*,95) ier
 
-      call CFFT1I (KMAX-1, WSAVE2_U, LENSAV, IER)
+      call CFFT1I (KMAX, WSAVE2, LENSAV, IER)
       if(ier.ne. 0) write(*,95) ier
-      95 format('error in cFFT2I=  'i5) 
+      95 format('error in cFFT2I=  'i5)
 
-      call CFFT1I (LMAX-1, WSAVE1_V, LENSAV, IER)
-      if(ier.ne. 0) write(*,95) ier
-
-      call CFFT1I (KMAX, WSAVE2_V, LENSAV, IER)
-      if(ier.ne. 0) write(*,95) ier
-
-!     Equalities WSAVE1_T=WSAVE1_U and WSAVE2_T=WSAVE2_V used to save computational effort
+      call findindex( wavenumber_k, wavenumber_l,             &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      its, ite, jts, jte, kts, kte                 )
 
 !     ---------- INITIAIZE STOCHASTIC KINETIC ENERGY BACKSCATTER PARAMETERS-----------
       REXPONENT=-1.83 !produces 2(p+1) kinetic energy spectra % p=-11/6=1.83 => k=-5/3 
@@ -309,6 +306,10 @@ contains
        endif
              
 !      Set seed for random number generator 
+       iseed=0
+       iseed(1) = iseed1
+       iseed(2) = iseed2
+       call random_seed
        call random_seed(put=iseed(1:18))   ! set random seed.
 
        END subroutine SETUP_STOCH
@@ -409,6 +410,7 @@ contains
       SUBROUTINE UPDATE_STOCH_TEN(                                  &
                        ru_tendf,rv_tendf,t_tendf,                   &
                        GPUFORC,GPVFORC,GPTFORC,                     &
+                       ru_real,rv_real,rt_real,                     &
                        ids, ide, jds, jde, kds, kde,                &
                        ims, ime, jms, jme, kms, kme,                &
                        its, ite, jts, jte, kts, kte,                &
@@ -420,10 +422,11 @@ contains
                                        its, ite, jts, jte, kts, kte
 
        REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(INOUT) ::   &
-                                        ru_tendf, rv_tendf, t_tendf
+                                        ru_tendf, rv_tendf, t_tendf,   & 
+                                        GPUFORC,GPVFORC,GPTFORC
 
        REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(IN) ::   &
-                                        GPUFORC,GPVFORC,GPTFORC
+                                        ru_real,rv_real,rt_real
 
        INTEGER :: I,J,K
        REAL    :: dt
@@ -431,7 +434,8 @@ contains
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,ite 
-             ru_tendf(i,k,j) = ru_tendf(i,k,j) + dt * GPUFORC(i,k,j)
+             GPUFORC(i,k,j)= ru_real(i,k,j)
+             ru_tendf(i,k,j) = ru_tendf(i,k,j) + GPUFORC(i,k,j)
            ENDDO
          ENDDO
        ENDDO
@@ -439,7 +443,8 @@ contains
        DO j = jts,jte
          DO k = kts,kte-1
            DO i = its,MIN(ide-1,ite)
-             rv_tendf(i,k,j) = rv_tendf(i,k,j) + dt *  GPVFORC(i,k,j)
+             GPVFORC(i,k,j)= rv_real(i,k,j)
+             rv_tendf(i,k,j) = rv_tendf(i,k,j) +  GPVFORC(i,k,j)
            ENDDO
          ENDDO
        ENDDO
@@ -447,7 +452,8 @@ contains
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,MIN(ide-1,ite)
-             t_tendf(i,k,j) = t_tendf(i,k,j) + dt *  GPTFORC(i,k,j)
+             GPTFORC(i,k,j)= rt_real(i,k,j)
+             t_tendf(i,k,j) = t_tendf(i,k,j) +  GPTFORC(i,k,j)
            ENDDO
          ENDDO
        ENDDO
@@ -479,7 +485,7 @@ contains
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,ite 
-             ru_tendf(i,k,j) = ru_tendf(i,k,j) + dt *  GPUFORC(i,k,j) 
+             ru_tendf(i,k,j) = ru_tendf(i,k,j) +  GPUFORC(i,k,j) 
            ENDDO
          ENDDO
        ENDDO
@@ -487,7 +493,7 @@ contains
        DO j = jts,jte
          DO i = its,MIN(ide-1,ite)
            DO k = kts,kte-1
-             rv_tendf(i,k,j) = rv_tendf(i,k,j) + dt *  GPVFORC(i,k,j) 
+             rv_tendf(i,k,j) = rv_tendf(i,k,j) +  GPVFORC(i,k,j) 
            ENDDO
          ENDDO
        ENDDO
@@ -495,20 +501,19 @@ contains
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,MIN(ide-1,ite)
-             t_tendf(i,k,j) = t_tendf(i,k,j) + dt * GPTFORC(i,k,j) 
+             t_tendf(i,k,j) = t_tendf(i,k,j) + GPTFORC(i,k,j) 
            ENDDO
          ENDDO
        ENDDO
 
        END SUBROUTINE UPDATE_STOCH_TEN_SUBDOMAINS
-
 !     ------------------------------------------------------------------
 !!************** TRANSFORM FROM SPHERICAL HARMONICS TO GRIDPOILT SPACE**
 !     ------------------------------------------------------------------
        subroutine SP2GP_prep(                                               & 
-                                    GPUFORC,GPVFORC,GPTFORC,           & 
                        SPSTREAMFORCS,SPSTREAMFORCC,SPTFORCS,SPTFORCC,  &             
                        VERTSTRUCC,VERTSTRUCS,                          &
+                       RU_REAL,RV_REAL,RT_REAL,                        & 
                        RU_IMAG,RV_IMAG,RT_IMAG,                        & 
                        dx,dy,stoch_vertstruc_opt,                      & 
                        ids, ide, jds, jde, kds, kde,                   & 
@@ -519,11 +524,9 @@ contains
       INTEGER , INTENT(IN)     ::  ids, ide, jds, jde, kds, kde,   &
                                    ims, ime, jms, jme, kms, kme,   &
                                    its, ite, jts, jte, kts, kte
-      REAL, DIMENSION    (ims:ime , kms:kme, jms:jme) :: GPUFORC,GPVFORC,GPTFORC,VERTSTRUCC,VERTSTRUCS
       REAL, DIMENSION    (ims:ime , jms:jme)          :: SPSTREAMFORCS,SPSTREAMFORCC,SPTFORCS,SPTFORCC
-      REAL, DIMENSION    (ims:ime , kms:kme, jms:jme) :: RU_IMAG,RV_IMAG,RT_IMAG
-      INTEGER, DIMENSION (jds:jde)::  wavenumber_k
-      INTEGER, DIMENSION (ids:ide)::  wavenumber_l
+      REAL, DIMENSION    (ims:ime , kms:kme, jms:jme) :: RU_REAL,RV_REAL,RT_REAL,RU_IMAG,RV_IMAG,RT_IMAG, & 
+                                                         VERTSTRUCC,VERTSTRUCS
       INTEGER :: IK,IL,ILEV,NLAT,NLON,stoch_vertstruc_opt
       REAL    :: dx,dy,RY,RX
 
@@ -532,55 +535,36 @@ contains
       RY=  NLAT*DY
       RX=  NLON*DX
 
-      call findindex( wavenumber_k, wavenumber_l,             & 
-                      ids, ide, jds, jde, kds, kde,                &
-                      ims, ime, jms, jme, kms, kme,                &
-                      its, ite, jts, jte, kts, kte                 )
 
-      DO ILEV=kts,kte-1
+      DO ILEV=kts,kte
 
       if (stoch_vertstruc_opt==0) then
-        DO IK=jts,min(jte,jde-1)
-        DO IL=its,min(ite,ite-1)
-          GPTFORC(IL,ILEV,IK)  = SPTFORCC(IL,IK)
-          rt_imag(IL,ILEV,IK)  = SPTFORCS(IL,IK)
-        ENDDO
-        ENDDO
-        DO IK=jts,min(jte,jde-1)
         DO IL=its,ite
-          GPUFORC(IL,ILEV,IK)  = 2*RPI/RX*  wavenumber_l(IL) * SPSTREAMFORCS(IL,IK)
-          ru_imag(IL,ILEV,IK)  =-2*RPI/RX*  wavenumber_l(IL) * SPSTREAMFORCC(IL,IK)
-        ENDDO
-        ENDDO
         DO IK=jts,jte
-        DO IL=its,min(ite,ite-1)
-          GPVFORC(IL,ILEV,IK)  =-2*RPI/RY*  wavenumber_k(IK) * SPSTREAMFORCS(IL,IK)
-          rv_imag(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) * SPSTREAMFORCC(IL,IK)
+          rt_real(IL,ILEV,IK)  = SPTFORCC(IL,IK)
+          rt_imag(IL,ILEV,IK)  = SPTFORCS(IL,IK)
+          ru_real(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) * SPSTREAMFORCS(IL,IK)
+          ru_imag(IL,ILEV,IK)  =-2*RPI/RY*  wavenumber_k(IK) * SPSTREAMFORCC(IL,IK)
+          rv_real(IL,ILEV,IK)  =-2*RPI/RX*  wavenumber_l(IL) * SPSTREAMFORCS(IL,IK)
+          rv_imag(IL,ILEV,IK)  = 2*RPI/RX*  wavenumber_l(IL) * SPSTREAMFORCC(IL,IK)
         ENDDO
         ENDDO
 
        elseif (stoch_vertstruc_opt==1) then
  
-        DO IK=jts,min(jte,jde-1)
-        DO IL=its,min(ite,ite-1)
-          GPTFORC(IL,ILEV,IK)  = SPTFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK)      - SPTFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK)
-          rt_imag(IL,ILEV,IK)  = SPTFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK)      + SPTFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK)
-        ENDDO
-        ENDDO
-        DO IK=jts,min(jte,jde-1)
         DO IL=its,ite
-          GPUFORC(IL,ILEV,IK)  = 2*RPI/RX* wavenumber_l(IL) *&
-                             (SPSTREAMFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK) + SPSTREAMFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK))
-          ru_imag(IL,ILEV,IK)  = 2*RPI/RX* wavenumber_l(IL) *&
-                             (-SPSTREAMFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK) + SPSTREAMFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK))
-        ENDDO
-        ENDDO
         DO IK=jts,jte
-        DO IL=its,min(ite,ite-1)
-          GPVFORC(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) *&
-                            (-SPSTREAMFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK) - SPSTREAMFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK))
-          rv_imag(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) *&
-                             (SPSTREAMFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK) - SPSTREAMFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK))
+          rt_real(IL,ILEV,IK)  = SPTFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK)      - SPTFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK)
+          rt_imag(IL,ILEV,IK)  = SPTFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK)      + SPTFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK)
+          ru_real(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) *&
+                            (+SPSTREAMFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK) + SPSTREAMFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK))
+          ru_imag(IL,ILEV,IK)  = 2*RPI/RY*  wavenumber_k(IK) *&
+                            (-SPSTREAMFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK) + SPSTREAMFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK))
+          rv_real(IL,ILEV,IK)  = 2*RPI/RX* wavenumber_l(IL) *&
+                             (-SPSTREAMFORCC(IL,IK)*VERTSTRUCS(IL,ILEV,IK) - SPSTREAMFORCS(IL,IK)*VERTSTRUCC(IL,ILEV,IK))
+          rv_imag(IL,ILEV,IK)  = 2*RPI/RX* wavenumber_l(IL) *&
+                             (+SPSTREAMFORCC(IL,IK)*VERTSTRUCC(IL,ILEV,IK) - SPSTREAMFORCS(IL,IK)*VERTSTRUCS(IL,ILEV,IK))
+      
         ENDDO
         ENDDO
 
@@ -624,6 +608,8 @@ contains
        INTEGER                                   :: IER,LENWRK,KMAX,LMAX,I,J,K
        REAL, ALLOCATABLE                         :: WORK(:)
 
+       CHARACTER (LEN=160) :: mess
+
 
        KMAX=(jde-jds)+1
        LMAX=(ide-ids)+1
@@ -637,8 +623,11 @@ contains
            DO i = ipsx, ipex
              dummy_complex(i)=cmplx(fieldc_U_xxx(i,k,j),fields_U_xxx(i,k,j))
            ENDDO
-           CALL cFFT1B (LMAX, 1 ,dummy_complex,LMAX, WSAVE1_U, LENSAV, WORK, LENWRK, IER)
-           if (ier.ne.0) print*,'error in cFFT1B in do_fftback_along_x, field U'
+           CALL cFFT1B (LMAX, 1 ,dummy_complex,LMAX, WSAVE1, LENSAV, WORK, LENWRK, IER)
+           if (ier.ne.0) then 
+              WRITE(mess,FMT='(A)') 'error in cFFT1B in do_fftback_along_x, field U'
+              CALL wrf_debug(0,mess)
+           end if
            DO i = ipsx, ipex
              fieldc_U_xxx(i,k,j)=real(dummy_complex(i))
              fields_U_xxx(i,k,j)=imag(dummy_complex(i))
@@ -648,12 +637,15 @@ contains
 
        DO k=kpsx,kpex 
          DO j = jpsx, jpex
-           DO i = ipsx, min(ipex,ide-1)
+           DO i = ipsx, ipex
              dummy_complex(i)=cmplx(fieldc_V_xxx(i,k,j),fields_V_xxx(i,k,j))
            ENDDO
-           CALL cFFT1B (LMAX-1, 1 ,dummy_complex,LMAX, WSAVE1_V, LENSAV, WORK, LENWRK, IER)
-           if (ier.ne.0) print*,'error in cFFT1B in do_fftback_along_x, field V'
-           DO i = ipsx, min(ipex,ide-1)
+           CALL cFFT1B (LMAX, 1 ,dummy_complex,LMAX, WSAVE1, LENSAV, WORK, LENWRK, IER)
+           if (ier.ne.0) then 
+              WRITE(mess,FMT='(A)') 'error in cFFT1B in do_fftback_along_x, field V'
+              CALL wrf_debug(0,mess)
+           end if
+           DO i = ipsx,ipex
              fieldc_V_xxx(i,k,j)=real(dummy_complex(i))
              fields_V_xxx(i,k,j)=imag(dummy_complex(i))
            END DO
@@ -662,12 +654,15 @@ contains
 
        DO k=kpsx,kpex 
          DO j = jpsx, jpex
-           DO i = ipsx, min(ipex,ide-1)
+           DO i = ipsx, ipex
              dummy_complex(i)=cmplx(fieldc_T_xxx(i,k,j),fields_T_xxx(i,k,j))
            ENDDO
-           CALL cFFT1B (LMAX-1, 1 ,dummy_complex,LMAX, WSAVE1_V, LENSAV, WORK, LENWRK, IER)
-           if (ier.ne.0) print*,'error in cFFT1B in do_fftback_along_x, field T'
-           DO i = ipsx,  min(ipex,ide-1)
+           CALL cFFT1B (LMAX, 1 ,dummy_complex,LMAX, WSAVE1, LENSAV, WORK, LENWRK, IER)
+           if (ier.ne.0) then 
+              WRITE(mess,FMT='(A)') 'error in cFFT1B in do_fftback_along_x, field T'
+              CALL wrf_debug(0,mess)
+           end if
+           DO i = ipsx, ipex
             fieldc_T_xxx(i,k,j)=real(dummy_complex(i))
             fields_T_xxx(i,k,j)=imag(dummy_complex(i))
            END DO
@@ -712,6 +707,8 @@ contains
        COMPLEX, DIMENSION (jpsy:jpey)            :: dummy_complex
        REAL, ALLOCATABLE :: WORK(:)
 
+       CHARACTER (LEN=160) :: mess
+
        KMAX=(jde-jds)+1
        LMAX=(ide-ids)+1
        LENWRK=2*KMAX*LMAX
@@ -720,13 +717,15 @@ contains
 
         DO k=kpsy,kpey
           DO i = ipsy, ipey
-            DO j = jpsy,min(jpey,jde-1)
+            DO j = jpsy,jpey
             dummy_complex(j)=cmplx(fieldc_U_yyy(i,k,j),fields_U_yyy(i,k,j))
             ENDDO
-            IER=99
-            CALL cFFT1B ((KMAX-1), 1 ,dummy_complex,KMAX, WSAVE2_U, LENSAV, WORK, LENWRK, IER)
-            if (ier.ne.0) print*,'error in cFFT1B in do_fftback_along_y, field U'
-            DO j = jpsy, min(jpey,jde-1)
+            CALL cFFT1B (KMAX, 1 ,dummy_complex,KMAX, WSAVE2, LENSAV, WORK, LENWRK, IER)
+            if (ier.ne.0) then 
+               WRITE(mess,FMT='(A)') 'error in cFFT1B in do_fftback_along_y, field U'
+               CALL wrf_debug(0,mess)
+            end if
+            DO j = jpsy, jpey
             fieldc_U_yyy(i,k,j)=real(dummy_complex(j))
             fields_U_yyy(i,k,j)=imag(dummy_complex(j))
             END DO
@@ -738,8 +737,11 @@ contains
             DO j = jpsy, jpey
             dummy_complex(j)=cmplx(fieldc_V_yyy(i,k,j),fields_V_yyy(i,k,j))
             ENDDO
-            CALL cFFT1B (KMAX, 1 ,dummy_complex,KMAX, WSAVE2_V, LENSAV, WORK, LENWRK, IER)
-            if (ier.ne.0) print*,'error in cFFT1B in do_fftback_along_y, field V'
+            CALL cFFT1B (KMAX, 1 ,dummy_complex,KMAX, WSAVE2, LENSAV, WORK, LENWRK, IER)
+            if (ier.ne.0) then 
+               WRITE(mess,FMT='(A)') 'error in cFFT1B in do_fftback_along_y, field V'
+               CALL wrf_debug(0,mess)
+            end if
             DO j = jpsy, jpey
             fieldc_V_yyy(i,k,j)=real(dummy_complex(j))
             fields_V_yyy(i,k,j)=imag(dummy_complex(j))
@@ -749,12 +751,15 @@ contains
 
         DO k=kpsy,kpey 
           DO i = ipsy, ipey
-            DO j = jpsy, MIN(jpey,jde-1)
+            DO j = jpsy,jpey
             dummy_complex(j)=cmplx(fieldc_T_yyy(i,k,j),fields_T_yyy(i,k,j))
             ENDDO
-            CALL cFFT1B (KMAX-1, 1 ,dummy_complex,KMAX, WSAVE2_U, LENSAV, WORK, LENWRK, IER)
-            if (ier.ne.0) print*,'error in cFFT1B in do_fftback_along_y, field T'
-            DO j = jpsy, MIN(jpey,jde-1)
+            CALL cFFT1B (KMAX, 1 ,dummy_complex,KMAX, WSAVE2, LENSAV, WORK, LENWRK, IER)
+            if (ier.ne.0) then 
+               WRITE(mess,FMT='(A)') 'error in cFFT1B in do_fftback_along_y, field T'
+               CALL wrf_debug(0,mess)
+            end if
+            DO j = jpsy,jpey
             fieldc_T_yyy(i,k,j)=real(dummy_complex(j))
             fields_T_yyy(i,k,j)=imag(dummy_complex(j))
             END DO
@@ -763,7 +768,6 @@ contains
 
        DEALLOCATE(WORK)
        end subroutine do_fftback_along_y
-
 !     ------------------------------------------------------------------
 !!************** TRANSFORM FROM GRIDPOILT SPACE TO SPHERICAL HARMONICS **
 !     ------------------------------------------------------------------
@@ -885,6 +889,7 @@ contains
         seed1 = newtime+iphys+nens*1000000
         seed2 = mod(newtime+iphys+nens*1000000,idiv)
         if(is_print) print *,'Rand_seed (iphys/newtime/idiv):',iphys,newtime,idiv,nens
- 
-        end SUBROUTINE rand_seed 
-      end module module_stoch
+
+        end SUBROUTINE rand_seed
+
+        end module module_stoch

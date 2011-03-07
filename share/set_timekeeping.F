@@ -165,7 +165,15 @@ SUBROUTINE Setup_Timekeeping ( grid )
             CALL nl_get_dfi_bckstop_minute(grid%id,start_minute)
             CALL nl_get_dfi_bckstop_second(grid%id,start_second)
 
-            run_length = grid%start_subtime - grid%stop_subtime
+            ! Here, we look at head_grid to determine run_length.
+            !   Since start_subtime and stop_subtime were
+            !   updated for nesting, they no longer bound the dfi
+            !   time window, so, start_subtime and stop_subtime from
+            !   from the grid structure won't work.  However, we can use
+            !   head_grid since the dfi time window is the same for all 
+            !   domains.
+
+            run_length = head_grid%start_subtime - head_grid%stop_subtime
             CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
 ! What about fractional seconds?
             run_seconds = run_seconds / 2
@@ -191,11 +199,23 @@ SUBROUTINE Setup_Timekeeping ( grid )
             CALL nl_get_start_hour(grid%id,start_hour)
             CALL nl_get_start_minute(grid%id,start_minute)
             CALL nl_get_start_second(grid%id,start_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_STARTFWD ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
          END IF
       END IF
-      CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
-                                   H=start_hour, M=start_minute, S=start_second,&
-                                   rc=rc)
+
+      IF ( grid%dfi_stage .EQ. DFI_STARTBCK ) THEN
+         CALL WRFU_ClockGet( grid%domain_clock, CurrTime=startTime, rc=rc)
+      ELSE
+         CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+              H=start_hour, M=start_minute, S=start_second,&
+              rc=rc)
+      ENDIF
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
                             'WRFU_TimeSet(startTime) FAILED', &
                             __FILE__ , &
@@ -253,8 +273,19 @@ SUBROUTINE Setup_Timekeeping ( grid )
       ENDIF
 
 ! #if (EM_CORE == 1)
+   ELSE IF ( grid%dfi_stage .EQ. DFI_STARTFWD ) THEN
+      CALL nl_get_time_step ( 1, time_step )
+      CALL nl_get_time_step_fract_num( 1, time_step_fract_num )
+      CALL nl_get_time_step_fract_den( 1, time_step_fract_den )
+      CALL WRFU_TimeIntervalSet( run_length, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
+      stopTime = startTime + run_length
+   ELSE IF ( grid%dfi_stage .EQ. DFI_STARTBCK ) THEN
+      CALL nl_get_time_step ( 1, time_step )
+      CALL nl_get_time_step_fract_num( 1, time_step_fract_num )
+      CALL nl_get_time_step_fract_den( 1, time_step_fract_den )
+      CALL WRFU_TimeIntervalSet( run_length, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
+      stopTime = startTime + run_length
    ELSE
-
       IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN 
          IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
             CALL nl_get_dfi_fwdstop_year(grid%id,end_year)

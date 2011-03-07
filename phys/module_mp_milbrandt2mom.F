@@ -7,8 +7,11 @@
 !  called by the wrapper 'mp_milbrandt2mom_driver' which makes the necessary    !
 !  adjustments to the calling parameters for the interface to WRF.              !
 !                                                                               !
-!  For questions, bug reports, etc. pertaining to the scheme, please contact    !
+!  For questions, bug reports, etc. pertaining to the scheme, or to request     !
+!  updates to the code (before the next offical WRF release) please contact     !
 !  Jason Milbrandt (Environment Canada) at jason.milbrandt@ec.gc.ca             !
+!                                                                               !
+!  Last modified:  2011-02-25                                                   !
 !_______________________________________________________________________________!
 
 module my_fncs_mod
@@ -16,14 +19,14 @@ module my_fncs_mod
 !==============================================================================!
 !  The following functions are used by the schemes in the multimoment package. !
 !                                                                              !
-!  Package version:  2.12.2                                                    !
+!  Package version:  2.19.0      (internal bookkeeping)                        !
 !  Last modified  :  2009-04-27                                                !
 !==============================================================================!
 
    implicit none
 
    private
-   public  :: NccnFNC,SxFNC,gamma,gammaDP,gser,gammp,cfg,gamminc
+   public  :: NccnFNC,SxFNC,gamma,gammaDP,gser,gammln,gammp,cfg,gamminc
 
    contains
 
@@ -191,7 +194,7 @@ module my_fncs_mod
   gammadp= exp(gammadp)
 
 #if (DWORDSIZE == 8 && RWORDSIZE == 8)
-  gamma  =      gammadp 
+  gamma  =      gammadp
 #elif (DWORDSIZE == 8 && RWORDSIZE == 4)
   gamma  = sngl(gammadp)
 #else
@@ -200,13 +203,112 @@ module my_fncs_mod
 
  END FUNCTION gamma
 !======================================================================!
-
-! The following functions are used only by 'my_main_full.ftn90'.  They are somewhat
-! redundant from above routines, though there are small differences.  Eventually,
-! 'my_main_full.ftn90' should be modified to use the same functions as the other
-! versions of the scheme.
-! 2008-04-15
-
+! ! !
+! ! ! -- USED BY DIAGNOSTIC-ALPHA DOUBLE-MOMENT (SINGLE-PRECISION) VERSION --
+! ! !      FOR FUTURE VERSIONS OF M-Y PACKAGE WITH, THIS S/R CAN BE USED
+! ! !
+! ! !  real FUNCTION diagAlpha(Dm,x)
+! ! !
+! ! !   IMPLICIT NONE
+! ! !
+! ! !   integer :: x
+! ! !   real    :: Dm
+! ! !   real, dimension(5) :: c1,c2,c3,c4
+! ! !   real, parameter    :: pi = 3.14159265
+! ! !   real, parameter    :: alphaMAX= 80.e0
+! ! !   data c1 /19.0, 12.0, 4.5, 5.5, 3.7/
+! ! !   data c2 / 0.6,  0.7, 0.5, 0.7, 0.3/
+! ! !   data c3 / 1.8,  1.7, 5.0, 4.5, 9.0/
+! ! !   data c4 /17.0, 11.0, 5.5, 8.5, 6.5/
+! ! !   diagAlpha= c1(x)*tanh(c2(x)*(1.e3*Dm-c3(x)))+c4(x)
+! ! !   if (x==5.and.Dm>0.008) diagAlpha= 1.e3*Dm-2.6
+! ! !   diagAlpha= min(diagAlpha, alphaMAX)
+! ! !
+! ! !  END function diagAlpha
+! ! !
+! ! ! !======================================================================!
+! ! !
+! ! ! -- USED BY DIAGNOSTIC-ALPHA DOUBLE-MOMENT (SINGLE-PRECISION) VERSION --
+! ! !      FOR FUTURE VERSIONS OF M-Y PACKAGE WITH, THIS S/R CAN BE USED
+! ! !
+! ! !  real FUNCTION solveAlpha(Q,N,Z,Cx,rho)
+! ! !
+! ! !  IMPLICIT NONE
+! ! !
+! ! ! ! PASSING PARAMETERS:
+! ! !   real, intent(IN) :: Q, N, Z, Cx, rho
+! ! !
+! ! ! ! LOCAL PARAMETERS:
+! ! !   real             :: a,g,a1,g1,g2,tmp1
+! ! !   integer          :: i
+! ! !   real, parameter  :: alphaMax= 40.
+! ! !   real, parameter  :: epsQ    = 1.e-14
+! ! !   real, parameter  :: epsN    = 1.e-3
+! ! !   real, parameter  :: epsZ    = 1.e-32
+! ! !
+! ! ! !  Q         mass mixing ratio
+! ! ! !  N         total concentration
+! ! ! !  Z         reflectivity
+! ! ! !  Cx        (pi/6)*RHOx
+! ! ! !  rho       air density
+! ! ! !  a         alpha (returned as solveAlpha)
+! ! ! !  g         function g(a)= [(6+a)(5+a)(4+a)]/[(3+a)(2+a)(1+a)],
+! ! ! !              where g = (Cx/(rho*Q))**2.*(Z*N)
+! ! !
+! ! !
+! ! !   if (Q==0. .or. N==0. .or. Z==0. .or. Cx==0. .or. rho==0.) then
+! ! !   ! For testing/debugging only; this module should never be called
+! ! !   ! if the above condition is true.
+! ! !     print*,'*** STOPPED in MODULE ### solveAlpha *** '
+! ! !     print*,'*** : ',Q,N,Z,Cx*1.9099,rho
+! ! !     stop
+! ! !   endif
+! ! !
+! ! !   IF (Q>epsQ .and. N>epsN .and. Z>epsZ ) THEN
+! ! !
+! ! !      tmp1= Cx/(rho*Q)
+! ! !      g   = tmp1*Z*tmp1*N    ! g = (Z*N)*[Cx / (rho*Q)]^2
+! ! !
+! ! !  !Note: The above order avoids OVERFLOW, since tmp1*tmp1 is very large
+! ! !
+! ! ! !----------------------------------------------------------!
+! ! ! ! !Solve alpha numerically: (brute-force; for testing only)
+! ! ! !      a= 0.
+! ! ! !      g2= 999.
+! ! ! !      do i=0,4000
+! ! ! !         a1= i*0.01
+! ! ! !         g1= (6.+a1)*(5.+a1)*(4.+a1)/((3.+a1)*(2.+a1)*(1.+a1))
+! ! ! !         if(abs(g-g1)<abs(g-g2)) then
+! ! ! !            a = a1
+! ! ! !            g2= g1
+! ! ! !         endif
+! ! ! !      enddo
+! ! ! !----------------------------------------------------------!
+! ! !
+! ! ! !Piecewise-polynomial approximation of g(a) to solve for a:  [2004-11-29]
+! ! !      if (g>=20.) then
+! ! !        a= 0.
+! ! !      else
+! ! !        g2= g*g
+! ! !        if (g<20.  .and.g>=13.31) a= 3.3638e-3*g2 - 1.7152e-1*g + 2.0857e+0
+! ! !        if (g<13.31.and.g>=7.123) a= 1.5900e-2*g2 - 4.8202e-1*g + 4.0108e+0
+! ! !        if (g<7.123.and.g>=4.200) a= 1.0730e-1*g2 - 1.7481e+0*g + 8.4246e+0
+! ! !        if (g<4.200.and.g>=2.946) a= 5.9070e-1*g2 - 5.7918e+0*g + 1.6919e+1
+! ! !        if (g<2.946.and.g>=1.793) a= 4.3966e+0*g2 - 2.6659e+1*g + 4.5477e+1
+! ! !        if (g<1.793.and.g>=1.405) a= 4.7552e+1*g2 - 1.7958e+2*g + 1.8126e+2
+! ! !        if (g<1.405.and.g>=1.230) a= 3.0889e+2*g2 - 9.0854e+2*g + 6.8995e+2
+! ! !        if (g<1.230) a= alphaMax
+! ! !      endif
+! ! !
+! ! !      solveAlpha= max(0.,min(a,alphaMax))
+! ! !
+! ! !   ELSE
+! ! !
+! ! !      solveAlpha= 0.
+! ! !
+! ! !   ENDIF
+! ! !
+! ! !  END FUNCTION solveAlpha
 !======================================================================!
 
  FUNCTION gammaDP(xx)
@@ -233,7 +335,9 @@ module my_fncs_mod
   tmp=x+5.5d0
   tmp=(x+0.5d0)*log(tmp)-tmp
   ser=1.000000000190015d0
-  do j=1,6
+! do j=1,6   !original
+  do j=1,4
+!!do j=1,3   !gives result to within ~ 3 %
      y=y+1.d0
      ser=ser+cof(j)/y
   enddo
@@ -292,7 +396,7 @@ END SUBROUTINE gser
 
 ! LOCAL PARAMETERS:
   integer  :: j
-  real*8   :: ser,stp,tmp,x,y,cof(6),gammadp
+  real*8   :: ser,stp,tmp,x,y,cof(6)
 
   SAVE cof,stp
   DATA cof,stp/76.18009172947146d0,-86.50532032941677d0,               &
@@ -410,15 +514,14 @@ module my_sedi_mod
 !================================================================================!
 !  The following subroutines are used by the schemes in the multimoment package. !
 !                                                                                !
-!  Package version:  2.12.2                                                      !
-!  Last modified  :  2009-09-12                                                  !
+!  Package version:  2.19.0     (internal bookkeeping)                           !
+!  Last modified  :  2011-01-07                                                  !
 !================================================================================!
 
    implicit none
 
   private
-  public :: SEDI_main_1,SEDI_main_1b,SEDI_main_2,blg4sedi,blg5sedi,countColumns_a,  &
-            countColumns
+  public :: SEDI_main_1b,SEDI_main_2,countColumns
 
    contains
 
@@ -480,7 +583,7 @@ module my_sedi_mod
 
    massFlux = 0.
 
-!Factor to estimate increased V from size-sorting:
+  !Factor to estimate increased V from size-sorting:
   ! - this factor should be higher for categories with more time-splitting, since Vmax
   !   increases after each sedimentation split step (to be tuned)
    VincFact = 1.
@@ -533,22 +636,6 @@ module my_sedi_mod
                  VVQ(i,k)= -calcVV()*ckQx1
               endif
               VVN(i,k)= VVQ(i,k)*ratio_Vn2Vq
-
-            !-- Control size-sorting:
-!               if (cat==3) then
-!                !  note: When LAMDAs<LAMDA_s_1, size-sorting is reduced by increasing VVN
-!                !        towards the value of VVQ, more so the lower the LAMDAs.  Note that
-!                !        if VVN=VVQ, there is no size-sorting.  This approach can (should) be
-!                !        done for all categories and can be done similarly be specifying a
-!                !        size threshold, above which (mean-mass-diameter) VVN approaches VVQ.
-!                  tmp1    = (NX(i,k)/(ckQx4*DE(i,k)*QX(i,k)))**idmx    !lamda_s
-!                  VVN(i,k)= VVN(i,k) + (VVQ(i,k)-VVN(i,k))*max(0.,tmp1-lamda_s_1)*iDelLamda
-!               endif
-!           ** This is currently commented since LAMDAs_min is imposed in DMOM_MAIN immediately
-!              following call to SEDI, so effectively size-sorting is reduced there anyway. In the
-!              future, it may be deemed desirable to tend VVN-->VVQ here for snow, however.
-            !==
-
               VqMax   = max(VxMAX,-VVQ(i,k))
               VnMax   = max(VxMAX,-VVN(i,k))
            else
@@ -661,97 +748,6 @@ CONTAINS
    end function calcVV
 
  END SUBROUTINE SEDI_main_2
-
-!=====================================================================================!
- SUBROUTINE SEDI_main_1(QX,cat,T,DE,gamfact,epsQ,afx,bfx,icmx,dmx,dtx,cx6,ckQx1,    &
-                      ckQx2,ckQx4,npassx,ni,nk,VxMax,DxMax,DZ,PR,No_x,ktop_sedi,    &
-                      massFlux3D)
-
-!                  ** Used by 'my_smom' (from 2.7.1) only **                          !
-
-!-------------------------------------------------------------------------------------!
-!  SINGLE-MOMENT version of sedimentation subroutine for categories whose
-!  fall velocity equation is V(D) = gamfact * afx * D^bfx
-!
-!     ** ASSUMES INVERSE-EXPONENTIAL DISTRIBTIONS (alpha_x=0) **
-!-------------------------------------------------------------------------------------!
-
-  USE my_fncs_mod
-  IMPLICIT NONE
-
-! PASSING ARGUMENTS:
-  real, dimension(ni,nk), intent(inout) :: QX,T
-  real, optional, dimension(:,:), intent(out) :: massFlux3D
-  real, dimension(ni),    intent(inout) :: PR
-  real, dimension(ni,nk), intent(in)    :: DE,DZ
-  real, intent(in)       :: dtx,epsQ,cx6,VxMax,afx,bfx,icmx,dmx,ckQx1,ckQx2,ckQx4,  &
-                            DxMax,No_x
-  integer, intent(in)    :: npassx,ni,nk,cat,ktop_sedi
-
-
-! LOCAL ARGUMENTS:
-  logical                :: slabHASmass,LOCALLIM,QxPresent
-  real, dimension(ni,nk) :: VVQ,VVN,VVZ,RHOQX,gamfact
-  integer, dimension(nk) :: FLIM
-  integer, dimension(ni) :: activeColumn
-  real                   :: VqMax,iLAMx,tmp1,tmp2,Dx,iDxMax,No_s,NX,iNo_x
-  integer                :: nnn,a,i,k,counter
-  real, parameter        :: thrd    = 1./3.
-  real, parameter        :: sxth    = 1./6.
-
-!-------------------------------------------------------------------------------------!
-
-   if (present(massFlux3D)) massFlux3D= 0.  !(for use in MAIN for diagnostics)
-
-  !Determine for which slabs and columns sedimentation should be computes:
-   call countColumns_a(QX,ni,nk,epsQ,counter,activeColumn,ktop_sedi)
-
-    iNo_x = 1./No_x
-    iDxMax= 1./DxMax
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-    DO nnn= 1,npassx
-
-       RHOQX= DE*QX
-       VVQ  = 0.;  VqMax= 0.
-       do a= 1,counter
-         i= activeColumn(a)
-         do k= ktop_sedi,nk   !do k=1,nk
-
-           QxPresent=  (QX(i,k)>epsQ)
-           if (QxPresent) then
-            !ice:
-              if (cat==2) then
-                 NX    = 5.*exp(0.304*(273.15-max(233.,T(i,k))))
-                 iLAMx = (ckQx4*QX(i,k)*DE(i,k)/NX)**thrd
-            !snow:
-              else if (cat==3) then
-                 No_s  = min(2.e+8, 2.e+6*exp(-0.12*min(-0.001,T(i,k)-273.15))) !T2004
-                 iNo_x = 1./No_s
-                 iLAMx = sqrt(sqrt(QX(i,k)*DE(i,k)*icmx*sxth*iNo_x))
-            !rain, graupel, hail:
-              else
-                 iLAMx = sqrt(sqrt(QX(i,k)*DE(i,k)*icmx*sxth*iNo_x))
-              endif
-              VVQ(i,k) = -gamfact(i,k)*ckQx1*iLAMx**bfx
-              VqMax    = max(VxMAX,-VVQ(i,k))
-
-              if (present(massFlux3D)) massFlux3D(i,k)= -VVQ(i,k)*DE(i,k)*QX(i,k)  !(for use in MAIN)
-
-           endif
-
-         enddo  !k-loop
-       enddo    !i(a)-loop
-
-       locallim= (nnn==1)
-       call blg4sedi(RHOQX,DZ,VVQ,nk,dtx,locallim,VqMax,FLIM,counter,activeColumn,ktop_sedi)
-       QX= RHOQX/DE
-
-       PR(:)= PR(:) - cx6*VVQ(:,nk)*DE(:,nk)*QX(:,nk)
-
-    ENDDO  !nnn-loop
-!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-
- END SUBROUTINE SEDI_main_1
 
 !=====================================================================================!
  SUBROUTINE SEDI_main_1b(QX,cat,T,DE,iDE,gamfact,epsQ,afx,bfx,icmx,dmx,ckQx1,ckQx4, &
@@ -867,18 +863,6 @@ CONTAINS
          do k= ktop_sedi(i),nk  !do k= 1,nk
            RHOQX(i,k) = DE(i,k)*QX(i,k)
            QxPresent  = (QX(i,k)>epsQ)
-! !            if (QxPresent) then
-! !               if (locallim) then     !to avoid re-computing VVQ on first pass
-! !                  VVQ(i,k)= -VVQ(i,k)
-! !               else
-! !                  VVQ(i,k)= -calcVV()*ckQx1
-! !               endif
-! !               VqMax   = max(VxMAX,-VVQ(i,k))
-! !            else
-! !               VVQ(i,k)= 0.
-! !               VqMax   = 0.
-! !            endif
-
             if (QxPresent) then
              !ice:
                if (cat==2) then
@@ -957,61 +941,7 @@ CONTAINS
     ENDDO  !a(i)-loop
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
-!CONTAINS
-!   real function calcVVQ()
-!    !Calculates portion of moment-weighted fall velocities
-!       iLAMx   = ((QX(i,k)*DE(i,k)/NX(i,k))*ckQx4)**thrd
-!       iLAMxB0 = iLAMx**bfx
-!       calcVVQ  = gamfact(i,k)*iLAMxB0
-!   end function calcVVQ
-
  END SUBROUTINE SEDI_main_1b
-
-!=====================================================================================!
- SUBROUTINE countColumns_a(QX,ni,nk,minQX,counter,activeColumn,ktop_sedi)
-
-!    ***  Used by SEDI_main_1, which is ued my my_smom (2.5.1) only ***      !
-
-! Searches the hydrometeor array QX(ni,nk) for non-zero (>minQX) values.
-! Returns the array if i-indices (activeColumn) for the columns (i)
-! which contain at least one non-zero value, as well as the number of such
-! columns (counter).
-
- IMPLICIT NONE
-
-!PASSING PARAMETERS:
-  integer, intent(in)                   :: ni,nk,ktop_sedi
-  integer, intent(out)                  :: counter
-  integer, dimension(ni), intent(out)   :: activeColumn
-  real,    dimension(ni,nk), intent(in) :: QX
-  real,    intent(in)                   :: minQX
-
-!LOCAL PARAMETERS:
-  integer                               :: i,k
-
-   k=ktop_sedi-1; counter=0; activeColumn=0
-!  k=0; counter=0; activeColumn=0
-   do i=1,ni
-
-      do
-         k=k+1
-         if (QX(i,k)>minQX) then
-            counter=counter+1
-            activeColumn(counter)=i
-!             slabHASmass=.true.     <-- results in i-dependency
-            k=0
-            exit
-         else
-            if (k==nk) then
-               k=0
-               exit
-            endif
-         endif
-      enddo
-
-   enddo  !i-loop
-
- END SUBROUTINE countColumns_a
 
 !=====================================================================================!
  SUBROUTINE countColumns(QX,ni,nk,minQX,counter,activeColumn,ktop_sedi)
@@ -1061,373 +991,6 @@ CONTAINS
 
 !=====================================================================================!
 
-! The following subroutines are used only by 'my_main_full.ftn90'.  They are somewhat
-! redundant from above routines, though there are small differences.  Eventually,
-! 'my_main_full.ftn90' should be modified to use the same routines as the other
-! versions of the scheme.
-! 2008-04-15
-
-!=====================================================================================!
-
-!This subroutine is modified from S/P BLG.FTN
-
- SUBROUTINE blg4sedi (RO,DZ,WW,NK,DT,COMPLIM,WMAX,FLIM,counter,activeColumn,ktop_sedi)
-
- implicit none
-
-!PASSING ARGUMENTS:
-
- integer, intent(in)                             :: NK,counter
- real, dimension(:,:), intent(inout)             :: ro
- real, dimension(:,:), intent(in)                :: dz,ww
- real, intent(in)                                :: dt,wmax
- integer, dimension(nk)                          :: FLIM
- integer, dimension(size(RO,dim=1)), intent(in)  :: activeColumn
- logical, intent(inout)                          :: COMPLIM
- integer, intent(in)                             :: ktop_sedi
-
-! Author
-!          C. Girard and A. Plante (2001)
-!
-! Revisions
-!
-! 001      A. Glazer and A. Plante (Oct 2001)
-!             - introduced complim and ind_limit in computation of precipitation
-! 002      A. Plante (June 2003)
-!             - IBM conversion, added ro_star. This imporved sedimentaion
-!               in mixphase4 by 38%.
-!             - change computation limit to insure reentrance in OpenMP
-!             - blg2.ftn validates perfectly with blg.ftn of PHY 3.8.
-! 003      J. Milbrandt (Nov 2004)
-!             - Modified for use in Milbrandt-Yau microphysics scheme
-!               + add condition for mass-in-column (activeColumn); for all i-loops, the
-!                 line 'do i=1,ni' was replaced with 'do a=1,counter' & 'i=activeColumn(a)'
-!               + remove RT calculation (and pass)
-!               + hard-wired various options for multimoment.ftn90 (removed unnecessary IF statements)
-! 004      J. Milbrandt (Jan 2007)
-!             - corrected 'idzmin' initial value (for use in activeColumn i-loops)
-!             - added option to exclude upper levels (ktop_sedi)
-! 005      J. Milbrandt and R. McTaggart-Cowan (March 2007)
-!             - removed i-dependency; cleaned up arrays, etc.  RO, DZ, WW are (ni,nk) arrays but there is
-!               only one outer i (a)-loop (which could be moved outside of this subroutine, leaving it
-!               as a single column subroutine).
-!
-! Object
-!
-!
-!   Version 1.0
-!
-!   CALCULATES
-!                sedimentation of a quantity of matter ro(kg/m3)
-!                falling with negative downward velocity ww(m/s)
-!
-!   ACCORDING TO
-!                the BOX-LAGRANGIAN SCHEME
-!                         (Kato,1995:JMSJ,73,241-245)
-!             OR
-!                the ADJACENT-LAGRANGIAN SCHEME
-!                Girard and Plante
-!
-!   PLUS
-!                a conservative two-grid-length filter
-!                in order to control noise if needed
-!
-!Arguments
-!
-!          - Input/Output -
-!
-! RO       density in cell before and after sedimentation.
-! COMPLIM  logical switch to force recomputing the table FLIM
-!
-!          - Input -
-!
-! DZ       cell thickness
-! WW       vertical velocity (negative downward)
-! NI       number of profiles
-! NK       number of grid point in profiles
-! DT       timestep
-! KF       number of filtering pass
-! FLIM     index of hier grid point where to look for mass in sedimentation.
-! WMAX     maximum vertical velocity (positive or negative value).
-!          This is used to save computation time. For each
-!          level, the index of the heighest level from which
-!          mass can be received will be computed if COMPLIM is .true.
-! IDIR           direction of index:
-!                idir=0 if index one is at top of model
-!                idir=1 if index one is at surface of model
-! ktop_sedi      uppermost level below which sedimentation is computed
-! COUNTER        number of columns in (ni,nk) slab with non-zero RO
-! ACTIVECOLUMN   array of i-indices with non-zero columns in RO(ni,nk)
-
-!#include "maxlev.cdk"
-      INTEGER LEVMAX
-      PARAMETER (LEVMAX = 200)
-
-! LOCAL VARIABLES AND PARAMETERS:
-
- integer               :: i,k,l,km1,kp1,ks,ke,kw,a
- real, dimension(nk)   :: vp,zt,zb,dzi,ro_star
- real, dimension(0:nk) :: zz
- real                  :: zmax,tempo
- integer               :: idzmin
- real, parameter       :: epsilon = 1.e-2
-
-!---------------------------------------------------------------------------
-!     Set parameters related to index direction.
-
-!       ks=1
-!       ke=nk
-!       kw=1
-!       if(idir.eq.0)then
-!          ks=nk
-!          ke=1
-!          kw=-1
-!       endif
-
-  !For nk=bottom:  (hard-wired to remove pass of 'idir' parameter)
-     ks=  nk
-     ke=  ktop_sedi   !ke=1 (old)
-     kw= -1
-
-    !------------------------------------------------------------------------
-     DO a= 1,counter   !i=1,ni
-        i=activeColumn(a)
-
-!     Compute cell height and final position of the top (zt) and bottom (zb)
-!     of moving boxes:
-
-        zz(ks)=0.
-        do k=ks,ke,kw
-            zz (k+kw)=zz(k)+dz(i,k)
-            dzi(k)=1./dz(i,k)
-            vp (k)=0.
-        enddo
-
-        do k=ks,ke,kw
-            zb(k)=zz(k)+ww(i,k)*dt
-        enddo
-
-!     Scheme='Girard' (not 'Kato')
-        zt(ke)=zb(ke)+dz(i,ke)
-        do k=ks,ke-kw,kw
-               zb(k)=min(zb(k+kw)-epsilon*dz(i,k),zz(k)+ww(i,k)*dt)
-               zt(k)=zb(k+kw)
-        enddo
-
-        do k=ks,ke,kw    !k=1,nk
-            ro_star(k)= ro(i,k)*dz(i,k)/(zt(k)-zb(k))
-        enddo
-
-!      Compute limit index where to look for mass:
-        if (complim) then
-           zmax=abs(wmax*dt)
-           do l=ks,ke,kw
-              flim(l)=l
-              do k=l,ke,kw
-                  if (zmax.ge.zz(k)-zz(l+kw)) flim(l)=k
-              enddo
-           enddo
-        endif
-
-        do l=ks,ke,kw
-          do k=l,flim(l),kw
-               vp(l)= vp(l) + ro_star(k)*max( 0.,min(zz(l+kw),zt(k)) &
-                         - max(zz(l),zb(k)) )
-          enddo
-        enddo
-
-        do k=ks,ke,kw
-            ro(i,k)=vp(k)*dzi(k)
-        enddo
-
-
-     ENDDO !i-loop
-    !------------------------------------------------------------------------
-
- RETURN
- END SUBROUTINE blg4sedi
-
-!=====================================================================================!
-!This subroutine is modified from S/P BLG.FTN
-
- SUBROUTINE blg5sedi (RO,DZ,WW,NK,DT,COMPLIM,WMAX,FLIM,counter,activeColumn,ktop_sedi)
-
- implicit none
-
-!PASSING ARGUMENTS:
-
- integer, intent(in)                             :: NK,counter
- real, dimension(:,:), intent(inout)             :: ro
- real, dimension(:,:), intent(in)                :: dz,ww
- real, intent(in)                                :: dt,wmax
- integer, dimension(nk)                          :: FLIM
- integer, dimension(size(RO,dim=1)), intent(in)  :: activeColumn
- logical, intent(inout)                          :: COMPLIM
-! integer, intent(in)                             :: ktop_sedi
- integer, dimension(size(RO,dim=1))              :: ktop_sedi
-
-! Author
-!          C. Girard and A. Plante (2001)
-!
-! Revisions
-!
-! 001      A. Glazer and A. Plante (Oct 2001)
-!             - introduced complim and ind_limit in computation of precipitation
-! 002      A. Plante (June 2003)
-!             - IBM conversion, added ro_star. This imporved sedimentaion
-!               in mixphase4 by 38%.
-!             - change computation limit to insure reentrance in OpenMP
-!             - blg2.ftn validates perfectly with blg.ftn of PHY 3.8.
-! 003      J. Milbrandt (Nov 2004)
-!             - Modified for use in Milbrandt-Yau microphysics scheme
-!               + add condition for mass-in-column (activeColumn); for all i-loops, the
-!                 line 'do i=1,ni' was replaced with 'do a=1,counter' & 'i=activeColumn(a)'
-!               + remove RT calculation (and pass)
-!               + hard-wired various options for multimoment.ftn90 (removed unnecessary IF statements)
-! 004      J. Milbrandt (Jan 2007)
-!             - corrected 'idzmin' initial value (for use in activeColumn i-loops)
-!             - added option to exclude upper levels (ktop_sedi)
-! 005      J. Milbrandt and R. McTaggart-Cowan (March 2007)
-!             - removed i-dependency; cleaned up arrays, etc.  RO, DZ, WW are (ni,nk) arrays but there is
-!               only one outer i (a)-loop (which could be moved outside of this subroutine, leaving it
-!               as a single column subroutine).
-! 006      J. Milbrandt (Nov 2008)
-!             - changed 'ktop_sedi' from scalar to i-array
-!
-! Object
-!
-!
-!   Version 1.0
-!
-!   CALCULATES
-!                sedimentation of a quantity of matter ro(kg/m3)
-!                falling with negative downward velocity ww(m/s)
-!
-!   ACCORDING TO
-!                the BOX-LAGRANGIAN SCHEME
-!                         (Kato,1995:JMSJ,73,241-245)
-!             OR
-!                the ADJACENT-LAGRANGIAN SCHEME
-!                Girard and Plante
-!
-!   PLUS
-!                a conservative two-grid-length filter
-!                in order to control noise if needed
-!
-!Arguments
-!
-!          - Input/Output -
-!
-! RO       density in cell before and after sedimentation.
-! COMPLIM  logical switch to force recomputing the table FLIM
-!
-!          - Input -
-!
-! DZ       cell thickness
-! WW       vertical velocity (negative downward)
-! NI       number of profiles
-! NK       number of grid point in profiles
-! DT       timestep
-! KF       number of filtering pass
-! FLIM     index of hier grid point where to look for mass in sedimentation.
-! WMAX     maximum vertical velocity (positive or negative value).
-!          This is used to save computation time. For each
-!          level, the index of the heighest level from which
-!          mass can be received will be computed if COMPLIM is .true.
-! IDIR           direction of index:
-!                idir=0 if index one is at top of model
-!                idir=1 if index one is at surface of model
-! ktop_sedi      uppermost level below which sedimentation is computed
-! COUNTER        number of columns in (ni,nk) slab with non-zero RO
-! ACTIVECOLUMN   array of i-indices with non-zero columns in RO(ni,nk)
-
-
-! LOCAL VARIABLES AND PARAMETERS:
-
- integer                :: i,k,l,km1,kp1,ks,kw,a !,ke
- integer, dimension(size(RO,dim=1)) :: ke
- real, dimension(nk)    :: vp,zt,zb,dzi,ro_star
- real, dimension(0:nk)  :: zz
- real                   :: zmax,tempo
- integer                :: idzmin
- real, parameter        :: epsilon = 1.e-2
-
-!---------------------------------------------------------------------------
-!     Set parameters related to index direction.
-
-!       ks=1
-!       ke=nk
-!       kw=1
-!       if(idir.eq.0)then
-!          ks=nk
-!          ke=1
-!          kw=-1
-!       endif
-
-  !For nk=bottom:  (hard-wired to remove pass of 'idir' parameter)
-     ks=  nk
-     ke=  ktop_sedi   !ke=1 (old)
-     kw= -1
-
-    !------------------------------------------------------------------------
-     DO a= 1,counter   !i=1,ni
-        i=activeColumn(a)
-
-!     Compute cell height and final position of the top (zt) and bottom (zb)
-!     of moving boxes:
-
-        zz(ks)=0.
-        do k=ks,ke(i),kw
-            zz (k+kw)=zz(k)+dz(i,k)
-            dzi(k)=1./dz(i,k)
-            vp (k)=0.
-        enddo
-
-        do k=ks,ke(i),kw
-            zb(k)=zz(k)+ww(i,k)*dt
-        enddo
-
-!     Scheme='Girard' (not 'Kato')
-        zt(ke(i))=zb(ke(i))+dz(i,ke(i))
-        do k=ks,ke(i)-kw,kw
-               zb(k)=min(zb(k+kw)-epsilon*dz(i,k),zz(k)+ww(i,k)*dt)
-               zt(k)=zb(k+kw)
-        enddo
-
-        do k=ks,ke(i),kw    !k=1,nk
-            ro_star(k)= ro(i,k)*dz(i,k)/(zt(k)-zb(k))
-        enddo
-
-!      Compute limit index where to look for mass:
-        if (complim) then
-           zmax=abs(wmax*dt)
-           do l=ks,ke(i),kw
-              flim(l)=l
-              do k=l,ke(i),kw
-                  if (zmax.ge.zz(k)-zz(l+kw)) flim(l)=k
-              enddo
-           enddo
-        endif
-
-        do l=ks,ke(i),kw
-          do k=l,flim(l),kw
-               vp(l)= vp(l) + ro_star(k)*max( 0.,min(zz(l+kw),zt(k)) &
-                         - max(zz(l),zb(k)) )
-          enddo
-        enddo
-
-        do k=ks,ke(i),kw
-            ro(i,k)=vp(k)*dzi(k)
-        enddo
-
-
-     ENDDO !i-loop
-    !------------------------------------------------------------------------
-
- RETURN
- END SUBROUTINE blg5sedi
-!=====================================================================================!
-
 end module my_sedi_mod
 
 !________________________________________________________________________________________!
@@ -1442,6 +1005,7 @@ module my_dmom_mod
   contains
 
 !_______________________________________________________________________________________!
+
  SUBROUTINE mp_milbrandt2mom_main(W_omega,T,Q,QC,QR,QI,QN,QG,QH,NC,NR,NY,NN,NG,NH,PS,TM,  &
      QM,QCM,QRM,QIM,QNM,QGM,QHM,NCM,NRM,NYM,NNM,NGM,NHM,PSM,S,RT_rn1,RT_rn2,RT_fr1,RT_fr2,&
      RT_sn1,RT_sn2,RT_sn3,RT_pe1,RT_pe2,RT_peL,RT_snd,GZ,T_TEND,Q_TEND,QCTEND,QRTEND,     &
@@ -1451,10 +1015,13 @@ module my_dmom_mod
      Dm_g,Dm_h,ZET,ZEC,SLW,VIS,VIS1,VIS2,VIS3,h_CB,h_ML1,h_ML2,h_SN,SS01,SS02,SS03,SS04,  &
      SS05,SS06,SS07,SS08,SS09,SS10,SS11,SS12,SS13,SS14,SS15,SS16,SS17,SS18,SS19,SS20)
 
+
   use my_fncs_mod
   use my_sedi_mod
-  use module_model_constants, ONLY: CPD => cp, CPV => cpv, RGASD => r_d, RGASV => r_v, &
-      EPS1 => EP_2, DELTA => EP_1, CAPPA => rcp, GRAV => g, CHLC => XLV, CHLF => XLF
+!--WRF:
+    use module_model_constants, ONLY: CPD => cp, CPV => cpv, RGASD => r_d, RGASV => r_v, &
+        EPS1 => EP_2, DELTA => EP_1, CAPPA => rcp, GRAV => g, CHLC => XLV, CHLF => XLF
+!==
 
   implicit none
 
@@ -1481,8 +1048,8 @@ module my_dmom_mod
 !                    Milbrandt-Yau Multimoment Bulk Microphysics Scheme                 !
 !                              - double-moment version   -                              !
 !_______________________________________________________________________________________!
-!  Package version:   2.12.5                                                            !
-!  Last modified  :   2009-12-14                                                        !
+!  Package version:   2.19.0      (internal bookkeeping)                                !
+!  Last modified  :   2011-02-25                                                        !
 !_______________________________________________________________________________________!
 !
 !  Author:
@@ -1496,8 +1063,8 @@ module my_dmom_mod
 !  002  J. Milbrandt  (Mar 2007) - Added options for single-moment/double-moment for
 !                                  each hydrometeor category
 !  003  J. Milbrandt  (Feb 2008) - Modified single-moment version for use in GEM-LAM-2.5
-!  004  J. Milbrandt  (Nov 2008) - Modified double-moment version for use in V2010 Olympics
-!                                  high-resolution (2.5 and 1-km) GEM-LAM configuration
+!  004  J. Milbrandt  (Nov 2008) - Modified double-moment version for use in 2010 Vancouver
+!                                  Olympics GEM-LAM configuration
 !  005  J. Milbrandt  (Aug 2009) - Modified (dmom) for PHY_v5.0.4, for use in V2010 system:
 !                                  + reduced ice/snow capacitance to C=0.25D (from C=0.5D)
 !                                  + added diagnostic fields (VIS, levels, etc.)
@@ -1509,6 +1076,13 @@ module my_dmom_mod
 !                                  + modified condition for conversion of graupel to hail
 !                                  + corrected bug it diagnostic "ice pellets" vs. "hail"
 !                                  + minor bug corrections (uninitialized values, etc.)
+!  006  J. Milbrandt  (Jan 2011) - Bug fixes and minor code clean-up from PHY_v5.1.3 version
+!                                  + corrected latent heat constants in thermodynamic functions
+!                                    (ABi and ABw) for sublimation and evaporation
+!                                  + properly initialized variables No_g and No_h
+!                                  + changed max ice crystal size (fallspeed) to 5 mm (2 m s-1)
+!                                  + imposed maximum ice number concentration of 1.e+7 m-3
+!                                  + removed unused supersaturation reduction
 !
 !  Object:
 !          Computes changes to the temperature, water vapor mixing ratio, and the
@@ -1532,20 +1106,20 @@ module my_dmom_mod
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 !            - Input -
 !
-! NI                 number of x-dir points (local subdomain)
+! NI                 number of x-dir points (in local subdomain)
 ! NK                 number of vertical levels
-! N
+! N                  not used (to be removed)
 ! J                  y-dir index (local subdomain)
 ! KOUNT              current model time step number
 ! dt                 model time step                                      [s]
 ! CCNtype            switch for airmass type
-!                      1 = maritime                   --> N_c =  80 cm-3  (sng-mom cloud)
+!                      1 = maritime                   --> N_c =  80 cm-3  (1-moment cloud)
 !                      2 = continental 1              --> N_c = 200 cm-3     "       "
 !                      3 = continental 2  (polluted)  --> N_c = 500 cm-3     "       "
 !                      4 = land-sea-mask-dependent (TBA)
 ! W_omega            vertical velocity                                    [Pa s-1]
-! S                  sigma
-! GZ                 geopotential height                                  [m]
+! S                  sigma (=p/p_sfc)
+! GZ                 geopotential
 ! dblMom_(x)         logical switch for double(T)-single(F)-moment for category (x)
 ! precipDiag_ON      logical switch, .F. to suppress calc. of sfc precip types
 ! sedi_ON            logical switch, .F. to suppress sedimentation
@@ -1629,17 +1203,17 @@ module my_dmom_mod
   integer :: i,k,niter,ll,start
 
   real    :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8,tmp9,tmp10,                    &
-       VDmax,NNUmax,X,D,DEL,QREVP,NuDEPSOR,NuCONTA,NuCONTB,NuCONTC,iMUkin,          &
-       NuCONT,GG,Na,Tcc,F1,F2,Kdiff,PSIa,Kn,source,sink,sour,ratio,qvs0,            &
-       DELqvs,ft,esi,Si,Simax,Vq,Vn,Vz,LAMr,No_r_DM,No_i,No_s,No_g,No_h,            &
-       iABi,ABw,VENTr,VENTs,VENTg,VENTi,VENTh,Cdiff,Ka,MUdyn,MUkin,DEo,             &
+       VDmax,NNUmax,X,D,DEL,QREVP,NuDEPSOR,NuCONTA,NuCONTB,NuCONTC,iMUkin,Ecg,Erg,  &
+       NuCONT,GG,Na,Tcc,F1,F2,Kdiff,PSIa,Kn,source,sink,sour,ratio,qvs0,Kstoke,     &
+       DELqvs,ft,esi,Si,Simax,Vq,Vn,Vz,LAMr,No_r_DM,No_i,No_s,No_g,No_h,D_sll,      &
+       iABi,ABw,VENTr,VENTs,VENTg,VENTi,VENTh,Cdiff,Ka,MUdyn,MUkin,DEo,Ng_tail,     &
        gam,ScTHRD,Tc,mi,ff,Ec,Ntr,Dho,DMrain,Ech,DMice,DMsnow,DMgrpl,DMhail,        &
        ssat,Swmax,dey,Esh,Eii,Eis,Ess,Eig,Eih,FRAC,JJ,Dirg,Dirh,Dsrs,Dsrg,Dsrh,     &
-       Dgrg,Dgrh,SIGc,L,TAU,DrAUT,DrINIT,Di,Ds,Dg,Dh,qFact,nFact,Ki,Rz,             &
-       vr0,vi0,vs0,vg0,vh0,Dc,Dr,QCLcs,QCLrs,QCLis,QCLcg,QCLrg,QCLig,QCNig,NCNig,   &
+       Dgrg,Dgrh,SIGc,L,TAU,DrAUT,DrINIT,Di,Ds,Dg,Dh,qFact,nFact,Ki,Rz,NgCNgh,      &
+       vr0,vi0,vs0,vg0,vh0,Dc,Dr,QCLcs,QCLrs,QCLis,QCLcg,QCLrg,QCLig,NhCNgh,        &
        QCLch,QCLrh,QCLsh,QMLir,QMLsr,QMLgr,QMLhr,QCLih,QVDvg,QVDvh,QSHhr,           &
-       QFZci,QNUvi,QVDvi,QCNis,QCNis1,QCNis2,QCLir,QCLri,QCNsg,QCLsr,QCNgh,QCLgr,   &
-       QHwet,QVDvs,QFZrh,QIMsi,QIMgi,NhMLhr,NrMLhr,NCNgh,NVDvh,NCLir,NCLri,NCLrh,   &
+       QFZci,QNUvi,QVDvi,QCNis,QCNis1,QCNis2,QCLir,QCLri,QCNsg,QCLsr,QCNgh,         &
+       QCLgr,QHwet,QVDvs,QFZrh,QIMsi,QIMgi,NMLhr,NVDvh,NCLir,NCLri,NCLrh,           &
        NCLch,NCLsr,NCLirg,NCLirh,NrFZrh,NhFZrh,NCLsrs,NCLsrg,NCLsrh,NCLgrg,         &
        NCLgrh,NVDvg,NMLgr,NiCNis,NsCNis,NVDvs,NMLsr,NCLsh,NCLss,NNUvi,NFZci,NVDvi,  &
        NCLis,NCLig,NCLih,NMLir,NCLrs,NCNsg,NCLcs,NCLcg,NIMsi,NIMgi,NCLgr,NCLrg,     &
@@ -1668,11 +1242,11 @@ module my_dmom_mod
 !Size distribution parameters:
   real, parameter :: MUc      =  3.    !shape parameter for cloud
   real, parameter :: alpha_c  =  1.    !shape parameter for cloud
-  real, parameter :: alpha_r  =  2.    !shape parameter for rain
+  real, parameter :: alpha_r  =  0.    !shape parameter for rain
   real, parameter :: alpha_i  =  0.    !shape parameter for ice
   real, parameter :: alpha_s  =  0.    !shape parameter for snow
   real, parameter :: alpha_g  =  0.    !shape parameter for graupel
-  real, parameter :: alpha_h  =  3.    !shape parameter for hail
+  real, parameter :: alpha_h  =  0.    !shape parameter for hail
   real, parameter :: No_s_max =  1.e+8 !max. allowable intercept for snow [m-4]
   real, parameter :: lamdas_min= 500.  !min. allowable LAMDA_s [m-1]
 
@@ -1727,16 +1301,16 @@ module my_dmom_mod
   ! NOTE: VxMAX below are the max.allowable mass-weighted fallspeeds for sedimentation.
   !       Thus, Vx corresponds to DxMAX (at sea-level) times the max. density factor, GAM.
   !       [GAMmax=sqrt(DEo/DEmin)=sqrt(1.25/0.4)~2.]  e.g. VrMAX = 2.*8.m/s = 16.m/s
-  real, parameter :: DrMax=  2.5e-3,   VrMax= 16.,   epsQr_sedi= 1.e-8
-  real, parameter :: DiMax=  5.0e-3,   ViMax=  4.,   epsQi_sedi= 1.e-10
-  real, parameter :: DsMax=  5.0e-3,   VsMax=  4.,   epsQs_sedi= 1.e-8
-  real, parameter :: DgMax=  5.0e-3,   VgMax=  8.,   epsQg_sedi= 1.e-8
-  real, parameter :: DhMax= 40.0e-3,   VhMax= 25.,   epsQh_sedi= 1.e-10
+  real, parameter :: DrMax=  5.e-3,   VrMax= 16.,   epsQr_sedi= 1.e-8
+  real, parameter :: DiMax=  5.e-3,   ViMax=  2.,   epsQi_sedi= 1.e-10
+  real, parameter :: DsMax=  5.e-3,   VsMax=  2.,   epsQs_sedi= 1.e-8
+  real, parameter :: DgMax= 50.e-3,   VgMax=  8.,   epsQg_sedi= 1.e-8
+  real, parameter :: DhMax= 80.e-3,   VhMax= 25.,   epsQh_sedi= 1.e-10
 
   real, parameter :: thrd    = 1./3.
   real, parameter :: sixth   = 0.5*thrd
-  real, parameter :: Ecg     = 1., Ers= 1., Eci= 1. !collection efficiencies, Exy, between categories x and y
-  real, parameter :: Eri     = 1., Erg= 1., Erh= 1.
+  real, parameter :: Ers     = 1., Eci= 1.        !collection efficiencies, Exy, between categories x and y
+  real, parameter :: Eri     = 1., Erh= 1.
   real, parameter :: Xdisp   = 0.25               !dispersion of the fall velocity of ice
   real, parameter :: aa11    = 9.44e15, aa22= 5.78e3, Rh= 41.e-6
   real, parameter :: Avx     = 0.78, Bvx= 0.30    !ventilation coefficients [F94 (B.36)]
@@ -1750,29 +1324,31 @@ module my_dmom_mod
   real, parameter :: KK1         = 3.03e3         !parameter in Long (1974) kernel
   real, parameter :: KK2         = 2.59e15        !parameter in Long (1974) kernel
   real, parameter :: Dhh         = 82.e-6         ![m] diameter that rain hump first appears
-  real, parameter :: gzMax_sedi  = 180000.        !GZ value below which sedimentation is computed
+  real, parameter :: gzMax_sedi  = 200000.        !GZ value below which sedimentation is computed
   real, parameter :: Dr_large    = 200.e-6        ![m] size threshold to distinguish rain/drizzle for precip rates
   real, parameter :: Ds_large    = 200.e-6        ![m] size threshold to distinguish snow/snow-grains for precip rates
   real, parameter :: Dh_large    = 1.0e-2         ![m] size threshold for "large" hail precipitation rate
   real, parameter :: Dh_min      = 5.0e-3         ![m] size threhsold for below which hail converts to graupel
   real, parameter :: Dr_3cmpThrs = 2.5e-3         ![m] size threshold for hail production from 3-comp freezing
   real, parameter :: w_CNgh      = 3.             ![m s-1] vertical motion  threshold for CNgh
-  real, parameter :: r_CNgh      = 0.01           !Dg/Dho ratio threshold for CNgh
+! real, parameter :: r_CNgh      = 0.05           !Dg/Dho ratio threshold for CNgh
+  real, parameter :: Ngh_crit    = 0.01           ![m-3] critical graupel concentration for CNgh
   real, parameter :: Tc_FZrh     = -10.           !temp-threshold (C) for FZrh
   real, parameter :: CNsgThres   = 1.0            !threshold for CLcs/VDvs ratio for CNsg
   real, parameter :: capFact_i   = 0.5            !capacitace factor for ice  (C= 0.5*D*capFact_i)
   real, parameter :: capFact_s   = 0.5            !capacitace factor for snow (C= 0.5*D*capFact_s)
-  real, parameter :: qReducFact  = 0.0            !reduction factor for supersaturation water vapor
   real, parameter :: noVal_h_XX  = -1.            !non-value indicator for h_CB, h_ML1, h_ML2, h_SN
   real, parameter :: minSnowSize = 1.e-4          ![m] snow size threshold to compute h_SN
   real, parameter :: Fv_Dsmin    = 125.e-6        ![m] min snow size to compute volume flux
   real, parameter :: Fv_Dsmax    = 0.008          ![m] max snow size to compute volume flux
   real, parameter :: Ni_max      = 1.e+7          ![m-3] max ice crystal concentration
 
-! #include "consphy.cdk"
-! #include "dintern.cdk"
-! #include "fintern.cdk"
-!***** Replace 3 #includes ***
+!-- For GEM:
+!#include "consphy.cdk"
+!#include "dintern.cdk"
+!#include "fintern.cdk"
+
+!-- For WRF:
 !------------------------------------------------------------------------------!
 !#include "consphy.cdk"
 ! real, parameter :: CPD      =.100546e+4         !J K-1 kg-1; specific heat of dry air
@@ -1916,7 +1492,6 @@ module my_dmom_mod
 !   FONCTION CALCULANT LA DERIVEE DE QSAT SELON T
       FODQA(QST,TTT)=DBLE(QST)*(1.D0+DBLE(DELTA)*DBLE(QST))*FODLA(TTT)
 !   FONCTION CALCULANT L'HUMIDITE RELATIVE
-
 #if (DWORDSIZE == 8 && RWORDSIZE == 8)
       FOHRA(QQQ,TTT,PRS)=MIN(     PRS ,FOEFQ(QQQ,PRS))/FOEWA(TTT)
 #elif (DWORDSIZE == 8 && RWORDSIZE == 4)
@@ -1947,8 +1522,8 @@ module my_dmom_mod
       FDQSMX(QSM,DLEMX) = DBLE(QSM ) *(1.D0 + DBLE(DELTA)* DBLE(QSM ) )    &
                            * DBLE(DLEMX )
 !
-!------------------------------------------------------------------------------!
-!***** END of Replace 3 #includes ***
+! ! !------------------------------------------------------------------------------!
+!***** END of Replace 3 #includes (for WRF) ***
 
   ! Constants used for contact ice nucleation:
   real, parameter :: LAMa0  = 6.6e-8     ![m] mean free path at T0 and p0 [W95_eqn58]
@@ -1977,10 +1552,11 @@ module my_dmom_mod
 ! logical, parameter :: initN         = .true.  !.true.  to initialize Nx of Qx>0 and Nx=0
 
   real, dimension(size(QC,dim=1),size(QC,dim=2)) :: DE,iDE,DP,QSS,QSW,QSI,WZ,DZ,RHOQX,FLIM,  &
-        VQQ,gamfact,gamfact_r,massFlux3D_r,massFlux3D_s,tmpA1,tmpA2
+        VQQ,gamfact,gamfact_r,massFlux3D_r,massFlux3D_s
   real, dimension(size(QC,dim=1))                :: fluxM_r,fluxM_i,fluxM_s,fluxM_g,fluxM_h, &
         HPS,dum
   integer, dimension(size(QC,dim=1))             :: activeColumn
+
 
   !==================================================================================!
 
@@ -1990,17 +1566,19 @@ module my_dmom_mod
 
 !-------------
 !Convert N from #/kg to #/m3:
-   do k= 1,nk
-      tmpA1(:,k)= S(:,k)*PSM(:)/(RGASD*TM(:,k))  !air density at time (t-1)
-      tmpA2(:,k)= S(:,k)*PS(:)/(RGASD*T(:,k))    !air density at time (*)
-   enddo
-   NCM= NCM*tmpA1;   NC= NC*tmpA2
-   NRM= NRM*tmpA1;   NR= NR*tmpA2
-   NYM= NYM*tmpA1;   NY= NY*tmpA2
-   NNM= NNM*tmpA1;   NN= NN*tmpA2
-   NGM= NGM*tmpA1;   NG= NG*tmpA2
-   NHM= NHM*tmpA1;   NH= NH*tmpA2
+  do k= 1,nk
+    do i= 1,ni
+      tmp1= S(i,k)*PSM(i)/(RGASD*TM(i,k))  !air density at time (t-1)
+      tmp2= S(i,k)*PS(i)/(RGASD*T(i,k))    !air density at time (*)
 
+      NCM(i,k)= NCM(i,k)*tmp1;   NC(i,k)= NC(i,k)*tmp2
+      NRM(i,k)= NRM(i,k)*tmp1;   NR(i,k)= NR(i,k)*tmp2
+      NYM(i,k)= NYM(i,k)*tmp1;   NY(i,k)= NY(i,k)*tmp2
+      NNM(i,k)= NNM(i,k)*tmp1;   NN(i,k)= NN(i,k)*tmp2
+      NGM(i,k)= NGM(i,k)*tmp1;   NG(i,k)= NG(i,k)*tmp2
+      NHM(i,k)= NHM(i,k)*tmp1;   NH(i,k)= NH(i,k)*tmp2
+    enddo
+  enddo
 !=============
 
   ! The SSxx arrays are for passed to the volatile bus for output as 3-D diagnostic
@@ -2068,8 +1646,8 @@ module my_dmom_mod
       cms = cms_D3
       dms = 3.
    else
-!     cms = 0.0690;  dms = 2.000   !Cox (1988, QJRMS)
-      cms = 0.1597;  dms = 2.078   !Brandes et al. (2007, JAMC)
+!     cms = 0.0690;  dms = 2.000   !Cox, 1988 (QJRMS)
+      cms = 0.1597;  dms = 2.078   !Brandes et al., 2007 (JAMC)
    endif
    icms   = 1./cms
    idms   = 1./dms
@@ -2105,8 +1683,7 @@ module my_dmom_mod
    if     (CCNtype==1) then
       N_c_SM =  0.8e+8          !maritime
    elseif (CCNtype==2) then
-!      N_c_SM =  2.0e+8          !continental 1
-      N_c_SM =  2.5e+8
+      N_c_SM =  2.0e+8          !continental 1
    elseif (CCNtype==3) then
       N_c_SM =  5.0e+8          !continental 2 (polluted)
    else
@@ -2171,10 +1748,10 @@ module my_dmom_mod
    iGS31  = 1./GS31
    GS32   = gamma(2.+alpha_s)
    GS33   = gamma(3.+alpha_s)
-   GS34   = gamma(4.+alpha_s)  !probably 1+dms, for generality
+   GS34   = gamma(4.+alpha_s)
    iGS34  = 1./GS34
-   GS35   = gamma(5.+alpha_s)  !probably 2+dms, for generality
-   GS36   = gamma(6.+alpha_s)  !probably 3+dms, for generality
+   GS35   = gamma(5.+alpha_s)
+   GS36   = gamma(6.+alpha_s)
    GS40   = gamma(1.+alpha_s+dms)
    iGS40  = 1./GS40
    iGS20  = 1./(GS40*iGS31*cms)
@@ -2199,7 +1776,7 @@ module my_dmom_mod
    GG36   = gamma(6.+alpha_g)
    GG40   = gamma(1.+alpha_g+dmg)
    iGG99  = 1./(GG40*iGG31*cmg)
-   GG50   = (No_g_SM*GG31)**0.75     !for SM only
+   GG50   = (No_g_SM*GG31)**0.75     !for 1-moment only
    ckQg1  = afg*gamma(1.+alpha_g+dmg+bfg)/GG40
    ckQg2  = afg*GG11*iGG31
    ckQg4  = 1./(cmg*GG40*iGG31)
@@ -2216,7 +1793,7 @@ module my_dmom_mod
    iGH34  = 1./gamma(4.+alpha_h)
    GH40   = gamma(1.+alpha_h+dmh)
    iGH99  = 1./(GH40*iGH31*cmh)
-   GH50   = (No_h_SM*GH31)**0.75     !for SM only
+   GH50   = (No_h_SM*GH31)**0.75     !for 1-moment only
    ckQh1  = afh*gamma(1.+alpha_h+dmh+bfh)/GH40
    ckQh2  = afh*GH11*iGH31
    ckQh4  = 1./(cmh*GH40*iGH31)
@@ -2241,7 +1818,7 @@ module my_dmom_mod
   NCTEND = NC;  NRTEND = NR;  NYTEND = NY;  NNTEND = NN;  NGTEND = NG;  NHTEND = NH
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
-! Initialize Nx if Qx>0 and Nx=0:  (for nesting from sngMom to dblMom):
+! Initialize Nx if Qx>0 and Nx=0:  (for nesting from 1-moment to 2-moment):
   IF (initN) THEN
      do k= 1,nk
         do i= 1,ni
@@ -2299,103 +1876,131 @@ module my_dmom_mod
 ! Clip all moments to zero if one or more corresponding category moments are less than
 !  the minimum allowable value:
 ! (Note: Clipped mass is added back to water vapor field to conserve total mass)
+  do k= 1,nk
+     do i= 1,ni
 
-   if (dblMom_c) then
-      where (QC<epsQ  .or. NC<epsN)
-         Q=  Q + QC;    QC= 0.;   NC= 0.
-      endwhere
-      where (QCM<epsQ .or. NCM<epsN)
-         QM= QM + QCM;  QCM= 0.;  NCM= 0.
-      endwhere
-   else
-      where (QC<epsQ)
-         Q=  Q + QC;    QC= 0.
-      endwhere
-      where (QCM<epsQ)
-         QM= QM + QCM;  QCM= 0.
-      endwhere
-   endif
+       IF (dblMom_c) THEN
+         if(QC(i,k)<epsQ .or. NC(i,k)<epsN)    then
+            Q(i,k) = Q(i,k) + QC(i,k)
+            QC(i,k)= 0.;   NC(i,k)= 0.
+         endif
+         if(QCM(i,k)<epsQ .or. NCM(i,k)<epsN)  then
+            QM(i,k) = QM(i,k) + QCM(i,k)
+            QCM(i,k)= 0.;  NCM(i,k)= 0.
+         endif
+       ELSE
+         if(QC(i,k)<epsQ)    then
+            Q(i,k) = Q(i,k) + QC(i,k)
+            QC(i,k)= 0.
+         endif
+         if(QCM(i,k)<epsQ)  then
+            QM(i,k) = QM(i,k) + QCM(i,k)
+            QCM(i,k)= 0.
+         endif
+       ENDIF
 
-   if (dblMom_r) then
-      where (QR<epsQ  .or. NR<epsN)
-         Q=  Q + QR;    QR= 0.;   NR= 0.
-      endwhere
-      where (QRM<epsQ .or. NRM<epsN)
-         QM= QM + QRM;  QRM= 0.;  NRM= 0.
-      endwhere
-   else
-      where (QR<epsQ)
-         Q=  Q + QR;    QR= 0.
-      endwhere
-      where (QRM<epsQ)
-         QM= QM + QRM;  QRM= 0.
-      endwhere
-   endif
+       IF (dblMom_r) THEN
+         if (QR(i,k)<epsQ .or. NR(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QR(i,k)
+            QR(i,k)= 0.;  NR(i,k)= 0.
+         endif
+         if (QRM(i,k)<epsQ .or. NRM(i,k)<epsN) then
+            QM(i,k) = QM(i,k) + QRM(i,k)
+            QRM(i,k)= 0.;  NRM(i,k)= 0.
+         endif
+       ELSE
+         if (QR(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QR(i,k)
+            QR(i,k)= 0.
+         endif
+         if (QRM(i,k)<epsQ) then
+            QM(i,k) = QM(i,k) + QRM(i,k)
+            QRM(i,k)= 0.
+         endif
+       ENDIF
 
-   if (dblMom_i) then
-      where (QI<epsQ  .or. NY<epsN)
-         Q=  Q + QI;    QI= 0.;   NY= 0.
-      endwhere
-      where (QIM<epsQ .or. NYM<epsN)
-         QM= QM + QIM;  QIM= 0.;  NYM= 0.
-      endwhere
-   else
-      where (QI<epsQ)
-         Q=  Q + QI;    QI= 0.
-      endwhere
-      where (QIM<epsQ)
-         QM= QM + QIM;  QIM= 0.
-      endwhere
-   endif
+       IF (dblMom_i) THEN
+         if (QI(i,k)<epsQ .or. NY(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QI(i,k)
+            QI(i,k)= 0.;  NY(i,k)= 0.
+         endif
+         if (QIM(i,k)<epsQ .or. NYM(i,k)<epsN) then
+            QM(i,k) = QM(i,k) + QIM(i,k)
+            QIM(i,k)= 0.;  NYM(i,k)= 0.
+         endif
+       ELSE
+         if (QI(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QI(i,k)
+            QI(i,k)= 0.
+         endif
+         if (QIM(i,k)<epsQ) then
+            QM(i,k) = QM(i,k) + QIM(i,k)
+            QIM(i,k)= 0.
+         endif
+       ENDIF
 
-   if (dblMom_s) then
-      where (QN<epsQ  .or. NN<epsN)
-         Q=  Q + QN;    QN= 0.;   NN= 0.
-      endwhere
-      where (QNM<epsQ .or. NNM<epsN)
-         QM= QM + QNM;  QNM= 0.;  NNM= 0.
-      endwhere
-   else
-      where (QN<epsQ)
-         Q=  Q + QN;    QN= 0.
-      endwhere
-      where (QNM<epsQ)
-         QM= QM + QNM;  QNM= 0.
-      endwhere
-   endif
+       IF (dblMom_s) THEN
+         if (QN(i,k)<epsQ .or. NN(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QN(i,k)
+            QN(i,k)= 0.;  NN(i,k)= 0.
+         endif
+         if (QNM(i,k)<epsQ .or. NNM(i,k)<epsN) then
+            QM(i,k) = QM(i,k) + QNM(i,k)
+            QNM(i,k)= 0.;  NNM(i,k)= 0.
+         endif
+       ELSE
+         if (QN(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QN(i,k)
+            QN(i,k)= 0.
+         endif
+         if (QNM(i,k)<epsQ) then
+            QM(i,k) = QM(i,k) + QNM(i,k)
+            QNM(i,k)= 0.
+         endif
+       ENDIF
 
-   if (dblMom_g) then
-      where (QG<epsQ  .or. NG<epsN)
-         Q=  Q + QG;    QG= 0.;   NG= 0.
-      endwhere
-      where (QGM<epsQ .or. NGM<epsN)
-         QM= QM + QGM;  QGM= 0.;  NGM= 0.
-      endwhere
-   else
-      where (QG<epsQ)
-         Q=  Q + QG;    QG= 0.
-      endwhere
-      where (QGM<epsQ)
-         QM= QM + QGM;  QGM= 0.
-      endwhere
-   endif
+       IF (dblMom_g) THEN
+         if (QG(i,k)<epsQ .or. NG(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QG(i,k)
+            QG(i,k)= 0.;  NG(i,k)= 0.
+         endif
+         if (QGM(i,k)<epsQ  .or. NGM(i,k)<epsN) then
+            QM(i,k) = QM(i,k) + QGM(i,k)
+            QGM(i,k)= 0.;  NGM(i,k)= 0.
+         endif
+       ELSE
+         if (QG(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QG(i,k)
+            QG(i,k)= 0.
+         endif
+         if (QGM(i,k)<epsQ) then
+            QM(i,k) = QM(i,k) + QGM(i,k)
+            QGM(i,k)= 0.
+         endif
+       ENDIF
 
-   if (dblMom_h) then
-      where (QH<epsQ  .or. NH<epsN)
-         Q=  Q + QH;    QH= 0.;   NH= 0.
-      endwhere
-      where (QHM<epsQ .or. NHM<epsN)
-         QM= QM + QHM;  QHM= 0.;  NHM= 0.
-      endwhere
-   else
-      where (QH<epsQ)
-         Q=  Q + QH;    QH= 0.
-      endwhere
-      where (QHM<epsQ)
-         QM= QM + QHM;  QHM= 0.
-      endwhere
-   endif
+       IF (dblMom_h) THEN
+         if (QH(i,k)<epsQ .or. NH(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QH(i,k)
+            QH(i,k)= 0.;  NH(i,k)= 0.
+         endif
+         if (QHM(i,k)<epsQ .or. NHM(i,k)<epsN) then
+            QM(i,k) = QM(i,k) + QHM(i,k)
+            QHM(i,k)= 0.;  NHM(i,k)= 0.
+         endif
+       ELSE
+         if (QH(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QH(i,k)
+            QH(i,k)= 0.
+         endif
+         if (QHM(i,k)<epsQ) then
+            QM(i,k) = QM(i,k) + QHM(i,k)
+            QHM(i,k)= 0.
+         endif
+       ENDIF
 
+    enddo  !i-loop
+  enddo    !k-loop;    (clipping)
   QM = max(QM,0.)
   Q  = max(Q ,0.)
 
@@ -2416,7 +2021,7 @@ module my_dmom_mod
 
   do k=1,nk
      do i=1,ni
-    ! Saturation mixing ratios:  [used in both Parts I and II]
+!WRF:
 #if (DWORDSIZE == 8 && RWORDSIZE == 8)
         QSW(i,k)=      FOQSA(TM(i,k),HPS(i)*S(i,k))       !wrt. liquid water at (t)
         QSS(i,k)=      FOQST( T(i,k), PS(i)*S(i,k))       !wrt. ice surface  at (*)
@@ -2426,20 +2031,20 @@ module my_dmom_mod
         QSS(i,k)= sngl(FOQST( T(i,k), PS(i)*S(i,k)))      !wrt. ice surface  at (*)
         QSI(i,k)= sngl(FOQST(TM(i,k),HPS(i)*S(i,k)))      !wrt. ice surface  at (t)
 #else
-     This is a temporary hack assuming double precision is 8 bytes.
+!!     This is a temporary hack assuming double precision is 8 bytes.
 #endif
-    ! Air density at time (t)
+      !Air density at time (t)
         DE(i,k) = S(i,k)*HPS(i)/(RGASD*TM(i,k))           !air density at time  (t)
         iDE(i,k)= 1./DE(i,k)
      enddo
   enddo
 
   do i= 1,ni
-! Air-density factor: (for fall velocity computations)
+    !Air-density factor: (for fall velocity computations)
      DEo           = DE(i,nk)
      gamfact(i,:)  = sqrt(DEo/(DE(i,:)))
      gamfact_r(i,:)= sqrt( 1./(DE(i,:)))
-! Convert 'W_omega' (on thermodynamic levels) to 'w' (on momentum):
+    !Convert 'W_omega' (on thermodynamic levels) to 'w' (on momentum):
      do k= 2,nk-1
         WZ(i,k)= -0.5/(DE(i,k)*GRAV)*(W_omega(i,k-1)+W_omega(i,k+1))
      enddo
@@ -2482,7 +2087,7 @@ module my_dmom_mod
 
        Tc= TM(i,k)-TRPL
        if (Tc<-120. .or. Tc>50.)   &
-        print*, '***WARNING*** -- In MULTIMOMENT --  Ambient Temp.(C):',Tc
+        print*, '***WARNING*** -- In MICROPHYSICS --  Ambient Temp.(C):',Tc
        Cdiff = (2.2157e-5+0.0155e-5*Tc)*1.e5/(S(i,k)*HPS(i))
        MUdyn = 1.72e-5*(393./(TM(i,k)+120.))*(TM(i,k)/TRPL)**1.5 !RYp.102
        MUkin = MUdyn*iDE(i,k)
@@ -2493,22 +2098,25 @@ module my_dmom_mod
        gam   = gamfact(i,k)
 
       !Collection efficiencies:
-       Eis   = min(0.05*exp(0.1*Tc),1.)     !F95 (Table 1)
+       Eis   = min(0.05*exp(0.1*Tc),1.)     !Ferrier, 1995 (Table 1)
        Eig   = min(0.01*exp(0.1*Tc),1.)     !dry (Eig=1.0 for wet growth)
        Eii   = 0.1*Eis
        Ess   = Eis;   Eih = Eig;   Esh = Eig
        iEih  = 1./Eih
        iEsh  = 1./Esh
-       !note:  Ecg=Eri=Ers=Erg=Erh=1. (constant parameters)
+       !note:  Eri=Ers=Erh=1. (constant parameters)
        !       - Ecs is computed in CLcs section
        !       - Ech is computed in CLch section
+       !       - Ecg is computed in CLcg section
+       !       - Erg is computed in CLrg section
 
+!WRF:
 #if (DWORDSIZE == 8 && RWORDSIZE == 8)
        qvs0  =      FOQSA(TRPL,HPS(i)*S(i,k))       !sat.mix.ratio at 0C
 #elif (DWORDSIZE == 8 && RWORDSIZE == 4)
        qvs0  = sngl(FOQSA(TRPL,HPS(i)*S(i,k)))      !sat.mix.ratio at 0C
 #else
-     This is a temporary hack assuming double precision is 8 bytes.
+!!     This is a temporary hack assuming double precision is 8 bytes.
 #endif
        DELqvs= qvs0-(QM(i,k))
 
@@ -2630,10 +2238,16 @@ module my_dmom_mod
           iLAMgB0= iLAMg**(bfg)
           iLAMgB1= iLAMg**(bfg+1.)
           iLAMgB2= iLAMg**(bfg+2.)
+          if (dblMom_g) then
+            !No_g = (NGM(i,k))*iGG31/iLAMg**(1.+alpha_g)
+             No_g= NGM(i,k)*iGG31/iLAMg     !optimized for alpha_g=0
+          else
+             No_g= No_g_SM
+          endif
           vg0    = gamfact(i,k)*ckQg1*iLAMgB0
           Dg     = Dm_x(DE(i,k),QGM(i,k),iNGM,icmg,thrd)
        else
-          iLAMg  = 0.;  vg0    = 0.;  Dg     = 0.
+          iLAMg  = 0.;  vg0    = 0.;  Dg     = 0.;  No_g   = 0.
           iLAMg2 = 0.;  iLAMgB0= 0.;  iLAMgB1= 0.;  iLAMgB1= 0.
        endif
 
@@ -2647,10 +2261,15 @@ module my_dmom_mod
           iLAMhB0= iLAMh**(bfh)
           iLAMhB1= iLAMh**(bfh+1.)
           iLAMhB2= iLAMh**(bfh+2.)
+          if (dblMom_h) then
+               No_h= NHM(i,k)*iGH31/iLAMh**(1.+alpha_h)
+          else
+               No_h= No_h_SM
+          endif
           vh0    = gamfact(i,k)*ckQh1*iLAMhB0
           Dh     = Dm_x(DE(i,k),QHM(i,k),iNHM,icmh,thrd)
        else
-          iLAMh  = 0.;  vh0    = 0.;  Dh     = 0.
+          iLAMh  = 0.;  vh0    = 0.;  Dh     = 0.;  No_h= 0.
           iLAMhB0= 0.;  iLAMhB1= 0.;  iLAMhB1= 0.
        endif
 !------
@@ -2658,21 +2277,21 @@ module my_dmom_mod
  !Calculating ice-phase source/sink terms:
 
  ! Initialize all source terms to zero:
-       QNUvi=0.;  QVDvi=0.;  QVDvs=0.;  QVDvg=0.;  QVDvh=0.;   QCNig=0.
+       QNUvi=0.;  QVDvi=0.;  QVDvs=0.;  QVDvg=0.;  QVDvh=0.
        QCLcs=0.;  QCLcg=0.;  QCLch=0.;  QFZci=0.;  QCLri=0.;   QMLsr=0.
        QCLrs=0.;  QCLrg=0.;  QMLgr=0.;  QCLrh=0.;  QMLhr=0.;   QFZrh=0.
        QMLir=0.;  QCLsr=0.;  QCLsh=0.;  QCLgr=0.;  QCNgh=0.
        QCNis=0.;  QCLir=0.;  QCLis=0.;  QCLih=0.
        QIMsi=0.;  QIMgi=0.;  QCNsg=0.;  QHwet=0.
 
-       NCLcs= 0.; NCLcg=0.;  NCLch=0.;  NFZci=0.;  NhMLhr=0.;  NCNig=0.
+       NCLcs= 0.; NCLcg=0.;  NCLch=0.;  NFZci=0.;  NMLhr=0.;   NhCNgh=0.
        NCLri= 0.; NCLrs=0.;  NCLrg=0.;  NCLrh=0.;  NMLsr=0.;   NMLgr=0.
        NMLir= 0.; NSHhr=0.;  NNUvi=0.;  NVDvi=0.;  NVDvh=0.;   QCLig=0.
        NCLir= 0.; NCLis=0.;  NCLig=0.;  NCLih=0.;  NIMsi=0.;   NIMgi=0.
        NiCNis=0.; NsCNis=0.; NVDvs=0.;  NCNsg=0.;  NCLgr=0.;   NCLsrh=0.
-       NCLss= 0.; NCLsr=0.;  NCLsh=0.;  NCLsrs=0.; NCLgrg=0.;  NCNgh=0.
+       NCLss= 0.; NCLsr=0.;  NCLsh=0.;  NCLsrs=0.; NCLgrg=0.;  NgCNgh=0.
        NVDvg= 0.; NCLirg=0.; NCLsrg=0.; NCLgrh=0.; NrFZrh=0.;  NhFZrh=0.
-       NCLirh=0.; NrMLhr=0.
+       NCLirh=0.
 
        Dirg=0.; Dirh=0.; Dsrs= 0.; Dsrg= 0.; Dsrh= 0.; Dgrg=0.; Dgrh=0.
 
@@ -2753,6 +2372,11 @@ module my_dmom_mod
           ! cloud:
           if (QCM(i,k)>epsQ) then
 
+            !(parameterization of Ecg based on Cober and List, 1993 [JAS])
+             Kstoke = dew*vg0*Dc*Dc/(9.*MUdyn*Dg)
+             Kstoke = max(1.5,min(10.,Kstoke))
+             Ecg    = 0.55*log10(2.51*Kstoke)
+
              QCLcg= dt*gam*afg*cmr*Ecg*PIov4*iDE(i,k)*(NCM(i,k)*NGM(i,k))*iGC5*iGG31*    &
                     (GC13*GG13*iLAMc3*iLAMgB2+ 2.*GC14*GG12*iLAMc4*iLAMgB1+GC15*GG11*    &
                     iLAMc5*iLAMgB0)
@@ -2792,7 +2416,7 @@ module my_dmom_mod
 
          ! cloud:
           if (QCM(i,k)>epsQ) then
-             Ech  = exp(-8.68e-7*Dc**(-1.6)*Dh)    !Z85_A24
+             Ech  = exp(-8.68e-7*Dc**(-1.6)*Dh)    !Ziegler (1985) A24
 
              QCLch= dt*gam*afh*cmr*Ech*PIov4*iDE(i,k)*(NCM(i,k)*NHM(i,k))*iGC5*iGH31*    &
                     (GC13*GH13*iLAMc3*iLAMhB2+2.*GC14*GH12*iLAMc4*iLAMhB1+GC15*GH11*     &
@@ -2847,11 +2471,11 @@ module my_dmom_mod
              tmp4 = iLAMs2*iLAMs2
 
              if (snowSpherical) then
-            !hardcoded for dms=3:
+               !hardcoded for dms=3:
                 QCLsh= dt*cms*iDE(i,k)*PI*6.*Esh*(NNM(i,k)*NHM(i,k))*tmp3*iGS31*iGH31*  &
                        (0.5*iLAMh2*iLAMs2*iLAMs+2.*iLAMh*tmp4+5.*tmp4*iLAMs)
              else
-            !hardcoded for dms=2:
+               !hardcoded for dms=2:
                 QCLsh= dt*cms*iDE(i,k)*PI*0.25*Esh*tmp3*NNM(i,k)*NHM(i,k)*iGS31*iGH31*  &
                        (GH33*GS33*iLAMh**2.*iLAMs**2. + 2.*GH32*GS34*iLAMh*iLAMs**3. +  &
                         GH31*GS35*iLAMs**4.)
@@ -2866,17 +2490,9 @@ module my_dmom_mod
              QCLsh= 0.;   NCLsh= 0.
           endif
 
-          ! wet growth:
-!         No_h  = NHM(i,k)*iGH31/iLAMh**(1.+alpha_h)
-!         VENTh= Avx*GH32*iLAMh**(2.+alpha_h) + Bvx*ScTHRD*sqrt(gam*afh*iMUkin)*GH09*    &
-!                iLAMh**(2.5+0.5*bfh+alpha_h)
-          if (dblMom_h) then
-               No_h= NHM(i,k)*iGH31/iLAMh   !optimized for alpha_h=0
-          else
-               No_h= No_h_SM
-          endif
-          VENTh= Avx*GH32*iLAMh*iLAMh + Bvx*ScTHRD*sqrt(gam*afh*iMUkin)*GH09*iLAMh**     &
-                 (2.5+0.5*bfh+alpha_h)
+         !wet growth:
+          VENTh= Avx*GH32*iLAMh**(2.+alpha_h) + Bvx*ScTHRD*sqrt(gam*afh*iMUkin)*GH09*    &
+                 iLAMh**(2.5+0.5*bfh+alpha_h)
           QHwet= max(0., dt*PI2*(DE(i,k)*CHLC*Cdiff*DELqvs-Ka*Tc)*No_h*iDE(i,k)/(CHLF+   &
                  CPW*Tc)*VENTh+(QCLih*iEih+QCLsh*iEsh)*(1.-CPI*Tc/(CHLF+CPW*Tc)) )
 
@@ -2908,15 +2524,6 @@ module my_dmom_mod
 
           !  GRAUPEL:
           if (QGM(i,k)>epsQ) then
-             !! generalized equations (any alpha_g):
-             ! No_g = (NGM(i,k))*iGG31/iLAMg**(1.+alpha_g)
-             ! VENTg= Avx*GG32*iLAMg**(2.+alpha_g)+Bvx*ScTHRD*sqrt(gam*afg*iMUkin)*      &
-             !!       GG09*iLAMg**(2.5+0.5*bfg+alpha_g)
-             if (dblMom_g) then
-                  No_g  = NGM(i,k)*iGG31/iLAMg     !optimized for alpha_g=0
-             else
-                  No_g= No_g_SM
-             endif
              VENTg= Avx*GG32*iLAMg*iLAMg+Bvx*ScTHRD*sqrt(gam*afg*iMUkin)*GG09*iLAMg**    &
                     (2.5+0.5*bfg+alpha_g)
              QMLgr= dt*(PI2*iDE(i,k)*iCHLF*No_g*VENTg*(Ka*Tc-CHLC*Cdiff*DELqvs) + CPW*   &
@@ -2929,37 +2536,27 @@ module my_dmom_mod
 
           !  HAIL:
           if (QHM(i,k)>epsQ.and.Tc>5.) then
-             !! generalized equations (any alpha_h):
-             ! No_h = NHM(i,k)*iGH31/iLAMh**(1.+alpha_h)
-             ! VENTh= Avx*GH32*iLAMh**(2.+alpha_h)+Bvx*ScTHRD*sqrt(gam*afh*iMUkin)*      &
-             !!       GH09*iLAMh**(2.5+0.5*bfh+alpha_h)
-             if (dblMom_h) then
-                   No_h= NHM(i,k)*iGH31/iLAMh   !optimized for alpha_h=0
-             else
-                   No_h= No_h_SM
-             endif
-             VENTh= Avx*GH32*iLAMh*iLAMh+Bvx*ScTHRD*sqrt(gam*afh*iMUkin)*GH09*iLAMh**    &
-                    (2.5+0.5*bfh+alpha_h)
+             VENTh= Avx*GH32*iLAMh**(2.+alpha_h) + Bvx*ScTHRD*sqrt(gam*afh*iMUkin)*GH09* &
+                    iLAMh**(2.5+0.5*bfh+alpha_h)
              QMLhr= dt*(PI2*iDE(i,k)*iCHLF*No_h*VENTh*(Ka*Tc-CHLC*Cdiff*DELqvs) + CPW/   &
                     CHLF*Tc*(QCLch+QCLrh)*idt)
              QMLhr= min(max(QMLhr,0.), QHM(i,k))
-             NhMLhr= NHM(i,k)*iQHM*QMLhr             !sink   for hail
-             NrMLhr= QMLhr*DE(i,k)/(cmr*Drshed**3.)  !source for rain
-             if(QCLrh>0.) NhMLhr= NhMLhr*0.1   !Prevents problems when hail is ML & CL
+             NMLhr= NHM(i,k)*iQHM*QMLhr
+             if(QCLrh>0.) NMLhr= NMLhr*0.1   !Prevents problems when hail is ML & CL
           else
-             QMLhr= 0.;   NhMLhr= 0.;   NrMLhr= 0.
+             QMLhr= 0.;   NMLhr= 0.
           endif
 
          ! Cold (sub-zero) source/sink terms:
           QNUvi= 0.;   QFZci= 0.;   QVDvi= 0.;   QVDvs= 0.;   QVDvg= 0.
-          QCLis= 0.;   QCNis1=0.;   QCNis2=0.;   QCNig= 0.
+          QCLis= 0.;   QCNis1=0.;   QCNis2=0.
           QCNgh= 0.;   QIMsi= 0.;   QIMgi= 0.;   QCLir= 0.;   QCLri= 0.
           QCLrs= 0.;   QCLgr= 0.;   QCLrg= 0.;   QCNis= 0.;   QVDvh= 0.
           QCNsg= 0.;   QCLsr= 0.
 
-          NNUvi= 0.;   NFZci= 0.;   NCLgr= 0.;   NCLrg= 0.;   NCNig= 0.
+          NNUvi= 0.;   NFZci= 0.;   NCLgr= 0.;   NCLrg= 0.;   NgCNgh= 0.
           NCLis= 0.;   NVDvi= 0.;   NVDvs= 0.;   NVDvg= 0.;   NVDvh= 0.
-          NCNsg= 0.;   NCNgh= 0.;   NiCNis=0.;   NsCNis=0.;   NCLrs= 0.
+          NCNsg= 0.;   NhCNgh= 0.;  NiCNis=0.;   NsCNis=0.;   NCLrs= 0.
           NIMsi= 0.;   NIMgi= 0.;   NCLir= 0.;   NCLri= 0.;   NCLsr= 0.
 
        ELSE
@@ -2969,11 +2566,11 @@ module my_dmom_mod
           tmp1  = 1./QSI(i,k)
           Si    = QM(i,k) *tmp1
           tmp2  = TM(i,k)*TM(i,k)
-          iABi  = 1./( CHLF*CHLF/(Ka*RGASV*tmp2) + 1./(DE(i,k)*(QSI(i,k))*Cdiff) )
+          iABi  = 1./( CHLS*CHLS/(Ka*RGASV*tmp2) + 1./(DE(i,k)*(QSI(i,k))*Cdiff) )
 
           ! Warm-air-only source/sink terms:
-          QMLir= 0.;   QMLsr= 0.;   QMLgr= 0.;   QMLhr = 0.;   NrMLhr= 0.
-          NMLir= 0.;   NMLsr= 0.;   NMLgr= 0.;   NhMLhr= 0.
+          QMLir= 0.;   QMLsr= 0.;   QMLgr= 0.;   QMLhr= 0.
+          NMLir= 0.;   NMLsr= 0.;   NMLgr= 0.;   NMLhr= 0.
 
           !Probabilistic freezing (Bigg) of rain:
           if (Tc<Tc_FZrh .and. QRM(i,k)>epsQ .and. hail_ON) then
@@ -2983,13 +2580,12 @@ module my_dmom_mod
              !        probabilistic freezing of small rain is effectively a source of graupel.
              NrFZrh= -dt*Bbigg*(exp(Abigg*Tc)-1.)*DE(i,k)*QRM(i,k)*idew
              Rz= 1.  !N and Z (and Q) are conserved for FZrh with triple-moment
-! ! !       if  (QHM(i,k)>epsQ .and. QRM(i,k)>epsQ .and. (scheme==2.or.scheme==3) )      &
-! ! !           Rz= (gamma(7.d0+alpha_h)*GH31*GR34*GR34)/(GR36(i,k)*GR31*   &
-! ! !                gamma(4.d0+alpha_h)*gamma(4.d0+alpha_h))
            ! The Rz factor serves to conserve reflectivity when a rain distribution
            !  converts to an distribution with a different shape parameter, alpha.
            !  (e.g. when rain freezes to hail)  The factor Rz non-conserves N while
            !  acting to conserve Z for double-moment.  See Ferrier, 1994 App. D)
+           ! Rz= (gamma(7.d0+alpha_h)*GH31*GR34*GR34)/(GR36(i,k)*GR31*   &
+           !      gamma(4.d0+alpha_h)*gamma(4.d0+alpha_h))
              NhFZrh= Rz*NrFZrh
              QFZrh = NrFZrh*(QRM(i,k)*iNRM)
           else
@@ -3051,7 +2647,7 @@ module my_dmom_mod
                   Kn     =  LAMa0*(TM(i,k))*p0/(T0*(HPS(i)*S(i,k))*Ra)         !W95_eqn59
                   PSIa   =  -kBoltz*Tcc/(6.*pi*Ra*MUdyn)*(1.+Kn)               !W95_eqn58
                   ft     =  0.4*(1.+1.45*Kn+0.4*Kn*exp(-1./Kn))*(Ka+2.5*Kn*KAPa)/          &
-                           (1.+3.*Kn)/(2.*Ka+5.*KAPa*Kn+KAPa)                 !W95_eqn57
+                           (1.+3.*Kn)/(2.*Ka+5.*KAPa*Kn+KAPa)                  !W95_eqn57
                   Dc     =  (DE(i,k)*(QCM(i,k)*iNCM)*icmr)**thrd
                   F1     =  PI2*Dc*Na*(NCM(i,k))                               !W95_eqn55
                   F2     =  Ka/(HPS(i)*S(i,k))*(Tc-Tcc)                        !W95_eqn56
@@ -3073,7 +2669,7 @@ module my_dmom_mod
                   QNUvi= min(mio*iDE(i,k)*NNUvi, Q(i,k))
                endif
            !elseif (primIceNucl==3) then
-           !! (for alternative ice nucleation parameterizations)
+           !! (for alternative [future] ice nucleation parameterizations)
            !   NNUvi=...
            !   QNUvi=...
             endif !if (primIceNucl==1)
@@ -3157,7 +2753,7 @@ module my_dmom_mod
                        iLAMi2)
 
                !note: For explicit eqns, both NCLri and NCLir are mathematically identical)
-                NCLir= min(QCLir*(NYM(i,k)*iQIM), NCLir)
+                NCLir= min(QCLir*(NYM(i,k)*iQIM), NCLri)
                 QCLri= min(QCLri, (QRM(i,k)));  QCLir= min(QCLir, (QIM(i,k)))
                 NCLri= min(NCLri, (NRM(i,k)));  NCLir= min(NCLir, (NYM(i,k)))
 
@@ -3187,9 +2783,9 @@ module my_dmom_mod
 
           ELSE
 
-             QVDvi= 0.;  QCNis= 0.;   QCNig= 0.
+             QVDvi= 0.;  QCNis= 0.
              QIMsi= 0.;  QIMgi= 0.;   QCLri= 0.;   QCLir= 0.
-             NVDvi= 0.;  NCLir= 0.;   NIMsi= 0.;   NCNig= 0.
+             NVDvi= 0.;  NCLir= 0.;   NIMsi= 0.
              NiCNis=0.;  NsCNis=0.;   NIMgi= 0.;   NCLri= 0.
 
           ENDIF
@@ -3257,8 +2853,8 @@ module my_dmom_mod
 
                !note: For explicit eqns, NCLsr = NCLrs
                 NCLsr= min(QCLsr*(NNM(i,k)*iQNM), NCLrs)
-                QCLrs= min(QCLrs, QRM(i,k));  QCLsr= min(QCLsr, QIM(i,k))
-                NCLrs= min(NCLrs, NRM(i,k));  NCLsr= min(NCLsr, NYM(i,k))
+                QCLrs= min(QCLrs, QRM(i,k));  QCLsr= min(QCLsr, QNM(i,k))
+                NCLrs= min(NCLrs, NRM(i,k));  NCLsr= min(NCLsr, NNM(i,k))
 
                 ! Determine destination of 3-comp.freezing:
                 Dsrs= 0.;   Dsrg= 0.;    Dsrh= 0.
@@ -3273,6 +2869,7 @@ module my_dmom_mod
                       Dsrg= 1.;   Dsrh= 0.                                !graupel
                    endif
                 endif
+                if (.not. grpl_ON) Dsrg=0.
              else
                 QCLrs= 0.;   QCLsr= 0.;   NCLrs= 0.;   NCLsr= 0.
              endif
@@ -3288,21 +2885,50 @@ module my_dmom_mod
           !------------!
           IF (QGM(i,k)>epsQ) THEN
 
-           !Conversion to hail:    (Dho given by S-L limit)
+           !Conversion to hail:    (D_sll given by S-L limit)
              if (WZ(i,k)>w_CNgh .and. hail_ON) then
-                Dho  = 0.01*(exp(min(20.,-Tc/(1.1e4*DE(i,k)*(QCM(i,k)+QRM(i,k))-1.3e3*   &
-                       DE(i,k)*(QIM(i,k))+1.)))-1.)
+                D_sll = 0.01*(exp(min(20.,-Tc/(1.1e4*DE(i,k)*(QCM(i,k)+QRM(i,k))-1.3e3*  &
+                        DE(i,k)*(QIM(i,k))+1.)))-1.)
                !Add correction factor: [to account error in equation of Ziegler (1985), as per Young (1993)]
-                Dho  = 2.0*Dho
-                Dho  = min(1., max(0.0001,Dho))    !smallest Dho=0.1mm; largest=1m
-                ratio= Dg/Dho
-                if (ratio>r_CNgh) then
-                   QCNgh= (0.5*ratio)*(QCLcg+QCLrg+QCLig)
-                   QCNgh= min(QCNgh,(QGM(i,k))+QCLcg+QCLrg+QCLig)
-                   NCNgh= DE(i,k)*QCNgh*icmh/(Dho*Dho*Dho)
+                D_sll = 2.0*D_sll
+                D_sll = min(1., max(0.0001,D_sll))    !smallest D_sll=0.1mm; largest=1m
+
+            !Old approach:  (pre-my-2.15.0)
+!                 ratio= Dg/D_sll
+!                 if (ratio>r_CNgh) then
+!                    QCNgh= (0.5*ratio)*(QCLcg+QCLrg+QCLig)
+!                    QCNgh= min(QCNgh,(QGM(i,k))+QCLcg+QCLrg+QCLig)
+!                    NCNgh= DE(i,k)*QCNgh*icmh/(D_sll*D_sll*D_sll)
+!                 else
+!                    QCNgh= 0.
+!                    NCNgh= 0.
+!                 endif
+            !New approach:
+                tmp1     = exp(-D_sll/iLAMg)
+                Ng_tail  = No_g*iLAMg*tmp1  !integral(Dsll,inf) of N(D)dD
+                if (Ng_tail > Ngh_crit) then
+                   QCNgh = idt*cmg*No_g*tmp1*(D_sll**3.*iLAMg + 3.*D_sll**2.*iLAMg**2.   &
+                           + 6.*D_sll*iLAMg**3. + 6.*iLAMg**4.)
+                   NgCNgh= idt*No_g*iLAMg*tmp1
+                   Rz= 1.
+                   !---
+                   ! The Rz factor (<>1) serves to conserve reflectivity when graupel
+                   ! converts to hail with a a different shape parameter, alpha.
+                   ! The factor Rz non-conserves N while acting to conserve Z for
+                   ! double-moment.  See Ferrier, 1994 App. D).  However, Rz=1 is
+                   ! used since it is deemed more important to conserve concentration
+                   ! than reflectivity (see Milbrandt and McTaggart-Cowan, 2010 JAS).
+                   !---
+                   ! Code to conserve total reflectivity:
+                   ! if  (QHM(i,k)>epsQ) then
+                   !    Rz= (gamma(7.+alpha_h)*GH31*GG34**2.)/(GG36*GG31*GH34**2.)
+                   ! else
+                   !    Rz= 1.
+                   ! endif
+                   !---
+                   NhCNgh= Rz*NgCNgh
                 else
-                   QCNgh= 0.
-                   NCNgh= 0.
+                   QCNgh  = 0.;   NgCNgh = 0.;   NhCNgh = 0.
                 endif
              endif
 
@@ -3313,6 +2939,11 @@ module my_dmom_mod
                 tmp8 = iLAMg2*iLAMg      ! iLAMg**3
                 tmp9 = tmp8*iLAMg        ! iLAMg**4
                 tmp10= tmp9*iLAMg        ! iLAMg**5
+
+               !(parameterization of Erg based on Cober and List, 1993 [JAS])
+                Kstoke = dew*abs(vg0-vr0)*Dr*Dr/(9.*MUdyn*Dg)
+                Kstoke = max(1.5,min(10.,Kstoke))
+                Erg    = 0.55*log10(2.51*Kstoke)
 
                 QCLrg= dt*cmr*Erg*PIov4*iDE(i,k)*(NGM(i,k)*NRM(i,k))*iGR31*iGG31*tmp2*   &
                        (GR36*GG31*iLAMr5+2.*GR35*GG32*iLAMr4*iLAMg+GR34*GG33*iLAMr3*     &
@@ -3344,8 +2975,8 @@ module my_dmom_mod
 
           ELSE
 
-             QVDvg= 0.;  QCNgh= 0.;  QCLgr= 0.;  QCLrg= 0.
-             NVDvg= 0.;  NCNgh= 0.;  NCLgr= 0.;  NCLrg= 0.
+             QVDvg= 0.;  QCNgh= 0.;  QCLgr= 0.;  QCLrg= 0.;  NgCNgh= 0.
+             NVDvg= 0.;  NhCNgh= 0.; NCLgr= 0.;  NCLrg= 0.
 
           ENDIF
           !---------!
@@ -3374,7 +3005,7 @@ module my_dmom_mod
 
      !------------  End of source/sink term calculation  -------------!
 
-     !Iterative adjustment of sink (and source) terms to prevent  overdepletion:
+     !-- Adjustment of source/sink terms to prevent  overdepletion: --!
        do niter= 1,2
 
           ! (1) Vapor:
@@ -3424,7 +3055,7 @@ module my_dmom_mod
 
           ! (4) Ice:
           source= QI(i,k)+QNUvi+dim(QVDvi,0.)+QFZci
-          sink  = QCNig+QCNis+QCLir+dim(-QVDvi,0.)+QCLis+QCLig+QCLih+QMLir
+          sink  = QCNis+QCLir+dim(-QVDvi,0.)+QCLis+QCLig+QCLih+QMLir
           sour  = max(source,0.)
           if(sink>sour) then
              ratio= sour/sink
@@ -3434,8 +3065,8 @@ module my_dmom_mod
              endif
              QCNis=  ratio*QCNis;   NiCNis= ratio*NiCNis;   NsCNis= ratio*NsCNis
              QCLir=  ratio*QCLir;   NCLir=  ratio*NCLir;    QCLig=  ratio*QCLig
-             QCLis=  ratio*QCLis;   NCLis=  ratio*NCLis;    QCNig=  ratio*QCNig
-             QCLih=  ratio*QCLih;   NCLih=  ratio*NCLih;    NCNig=  ratio*NCNig
+             QCLis=  ratio*QCLis;   NCLis=  ratio*NCLis
+             QCLih=  ratio*QCLih;   NCLih=  ratio*NCLih
              if (ratio==0.) then
                 Dirg= 0.; Dirh= 0.
              endif
@@ -3459,15 +3090,15 @@ module my_dmom_mod
           endif
 
           !  (6) Graupel:
-          source= QG(i,k)+QCNig+QCNsg+dim(QVDvg,0.)+Dirg*(QCLri+QCLir)+Dgrg*(QCLrg+      &
-                  QCLgr)+QCLcg+Dsrg*(QCLrs+QCLsr)+QCLig
+          source= QG(i,k)+QCNsg+dim(QVDvg,0.)+Dirg*(QCLri+QCLir)+Dgrg*(QCLrg+QCLgr)+     &
+                  QCLcg+Dsrg*(QCLrs+QCLsr)+QCLig
           sink  = dim(-QVDvg,0.)+QMLgr+QCNgh+QCLgr
           sour  = max(source,0.)
           if(sink>sour) then
              ratio= sour/sink
-             QVDvg= ratio*QVDvg;   NVDvg= ratio*NVDvg;   QMLgr= ratio*QMLgr
-             NMLgr= ratio*NMLgr;   QCNgh= ratio*QCNgh;   NCNgh= ratio*NCNgh
-             QCLgr= ratio*QCLgr;   NCLgr= ratio*NCLgr
+             QVDvg= ratio*QVDvg;   NVDvg= ratio*NVDvg;   QMLgr = ratio*QMLgr
+             NMLgr= ratio*NMLgr;   QCNgh= ratio*QCNgh;   NgCNgh= ratio*NgCNgh
+             QCLgr= ratio*QCLgr;   NCLgr= ratio*NCLgr;   NhCNgh= ratio*NhCNgh
              if (ratio==0.) then
                 Dgrg= 0.; Dgrh= 0.
              endif
@@ -3480,12 +3111,12 @@ module my_dmom_mod
           sour  = max(source,0.)
           if(sink>sour) then
              ratio= sour/sink
-             QVDvh= ratio*QVDvh;   NVDvh = ratio*NVDvh
-             QMLhr= ratio*QMLhr;   NhMLhr= ratio*NhMLhr;   NrMLhr= ratio*NrMLhr
+             QVDvh= ratio*QVDvh;   NVDvh= ratio*NVDvh
+             QMLhr= ratio*QMLhr;   NMLhr= ratio*NMLhr
           endif
 
        enddo
-       !---------------  End of iterative adjustment section.  ------------------!
+       !---------------  End of source/sink term adjustment  ------------------!
 
       !Compute N-tendencies for destination categories of 3-comp.freezing:
        NCLirg= 0.;  NCLirh= 0.;  NCLsrs= 0.;  NCLsrg= 0.
@@ -3517,16 +3148,16 @@ module my_dmom_mod
        !           Add all source/sink terms to all predicted moments:          !
        !========================================================================!
 
-   !Diagnostic S/S terms:  (to facilitate output of 3D variables for diagnostics)
-!      SS11(i,k)= QVDvs*idt  (e.g., for depositional growth rate of snow, kg kg-1 s-1)
+      !Diagnostic S/S terms:  (to facilitate output of 3D variables for diagnostics)
+      !SS01(i,k)= QVDvs*idt  (e.g., for depositional growth rate of snow, kg kg-1 s-1)
 
        ! Q-Source/Sink Terms:
        Q(i,k) = Q(i,k)  -QNUvi -QVDvi -QVDvs -QVDvg -QVDvh
        QC(i,k)= QC(i,k) -QCLcs -QCLcg -QCLch -QFZci
        QR(i,k)= QR(i,k) -QCLri +QMLsr -QCLrs -QCLrg +QMLgr -QCLrh +QMLhr -QFZrh +QMLir
        QI(i,k)= QI(i,k) +QNUvi +QVDvi +QFZci -QCNis -QCLir -QCLis -QCLig                 &
-                        -QMLir -QCLih +QIMsi +QIMgi -QCNig
-       QG(i,k)= QG(i,k) +QCNsg +QVDvg +QCLcg -QCLgr-QMLgr -QCNgh -QIMgi +QCLig +QCNig    &
+                        -QMLir -QCLih +QIMsi +QIMgi
+       QG(i,k)= QG(i,k) +QCNsg +QVDvg +QCLcg -QCLgr-QMLgr -QCNgh -QIMgi +QCLig           &
                         +Dirg*(QCLri+QCLir) +Dgrg*(QCLrg+QCLgr) +Dsrg*(QCLrs+QCLsr)
        QN(i,k)= QN(i,k) +QCNis +QVDvs +QCLcs -QCNsg -QMLsr -QIMsi -QCLsr +QCLis -QCLsh   &
                         +Dsrs*(QCLrs+QCLsr)
@@ -3535,121 +3166,118 @@ module my_dmom_mod
 
        ! N-Source/Sink Terms:
        if (dblMom_c) NC(i,k)= NC(i,k) -NCLcs -NCLcg -NCLch -NFZci
-       if (dblMom_r) NR(i,k)= NR(i,k) -NCLri -NCLrs -NCLrg -NCLrh +NMLsr +NMLgr +NrMLhr  &
+       if (dblMom_r) NR(i,k)= NR(i,k) -NCLri -NCLrs -NCLrg -NCLrh +NMLsr +NMLgr +NMLhr   &
                                       -NrFZrh +NMLir +NSHhr
        if (dblMom_i) NY(i,k)= NY(i,k) +NNUvi +NVDvi +NFZci -NCLir -NCLis -NCLig -NCLih   &
-                                      -NMLir +NIMsi +NIMgi -NCNig -NiCNis
+                                      -NMLir +NIMsi +NIMgi -NiCNis
        if (dblMom_s) NN(i,k)= NN(i,k) +NsCNis -NVDvs -NCNsg -NMLsr -NCLss -NCLsr -NCLsh  &
                                       +NCLsrs
-       if (dblMom_g) NG(i,k)= NG(i,k) +NCNig +NCNsg -NCLgr -NVDvg -NMLgr +NCLirg +NCLsrg &
-                                      +NCLgrg -NCNgh
-       if (dblMom_h) NH(i,k)= NH(i,k) +NhFZrh +NCNgh -NhMLhr -NVDvh +NCLirh +NCLsrh      &
+       if (dblMom_g) NG(i,k)= NG(i,k) +NCNsg -NCLgr -NVDvg -NMLgr +NCLirg +NCLsrg        &
+                                      +NCLgrg -NgCNgh
+       if (dblMom_h) NH(i,k)= NH(i,k) +NhFZrh +NhCNgh -NMLhr -NVDvh +NCLirh +NCLsrh       &
                                       +NCLgrh
 
        T(i,k)= T(i,k)   +LFP*(QCLri+QCLcs+QCLrs+QFZci-QMLsr+QCLcg+QCLrg-QMLir-QMLgr      &
                         -QMLhr+QCLch+QCLrh+QFZrh) +LSP*(QNUvi+QVDvi+QVDvs+QVDvg+QVDvh)
 
+     !Prevent overdepletion:
+       IF (dblMom_c) THEN
+         if(QC(i,k)<epsQ .or. NC(i,k)<epsN)    then
+            Q(i,k) = Q(i,k) + QC(i,k)
+            T(i,k) = T(i,k) - LCP*QC(i,k)
+            QC(i,k)= 0.;   NC(i,k)= 0.
+         endif
+       ELSE
+         if(QC(i,k)<epsQ)    then
+            Q(i,k) = Q(i,k) + QC(i,k)
+            T(i,k) = T(i,k) - LCP*QC(i,k)
+            QC(i,k)= 0.
+         endif
+       ENDIF
+
+       IF (dblMom_r) THEN
+         if (QR(i,k)<epsQ .or. NR(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QR(i,k)
+            T(i,k) = T(i,k) - LCP*QR(i,k)
+            QR(i,k)= 0.;  NR(i,k)= 0.
+         endif
+       ELSE
+         if (QR(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QR(i,k)
+            T(i,k) = T(i,k) - LCP*QR(i,k)
+           QR(i,k)= 0.
+         endif
+       ENDIF
+
+       IF (dblMom_i) THEN
+         if (QI(i,k)<epsQ .or. NY(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QI(i,k)
+            T(i,k) = T(i,k) - LSP*QI(i,k)
+            QI(i,k)= 0.;  NY(i,k)= 0.
+         endif
+       ELSE
+         if (QI(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QI(i,k)
+            T(i,k) = T(i,k) - LSP*QI(i,k)
+            QI(i,k)= 0.
+         endif
+       ENDIF
+
+       IF (dblMom_s) THEN
+         if (QN(i,k)<epsQ .or. NN(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QN(i,k)
+            T(i,k) = T(i,k) - LSP*QN(i,k)
+            QN(i,k)= 0.;  NN(i,k)= 0.
+         endif
+       ELSE
+         if (QN(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QN(i,k)
+            T(i,k) = T(i,k) - LSP*QN(i,k)
+            QN(i,k)= 0.
+         endif
+       ENDIF
+
+       IF (dblMom_g) THEN
+         if (QG(i,k)<epsQ .or. NG(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QG(i,k)
+            T(i,k) = T(i,k) - LSP*QG(i,k)
+            QG(i,k)= 0.;  NG(i,k)= 0.
+         endif
+       ELSE
+         if (QG(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QG(i,k)
+            T(i,k) = T(i,k) - LSP*QG(i,k)
+            QG(i,k)= 0.
+         endif
+       ENDIF
+
+       IF (dblMom_h) THEN
+         if (QH(i,k)<epsQ .or. NH(i,k)<epsN)   then
+            Q(i,k) = Q(i,k) + QH(i,k)
+            T(i,k) = T(i,k) - LSP*QH(i,k)
+            QH(i,k)= 0.;  NH(i,k)= 0.
+         else if (QH(i,k)>epsQ .and. NH(i,k)>epsN) then
+          !Conversion to graupel of hail is small:
+            Dh= (DE(i,k)*QH(i,k)/NH(i,k)*icmh)**thrd
+            if (Dh<Dh_min) then
+               QG(i,k)= QG(i,k) + QH(i,k)
+               NG(i,k)= NG(i,k) + NH(i,k)
+               QH(i,k)= 0.;  NH(i,k)= 0.
+            endif
+         endif
+       ELSE
+         if (QH(i,k)<epsQ)   then
+            Q(i,k) = Q(i,k) + QH(i,k)
+            T(i,k) = T(i,k) - LSP*QH(i,k)
+            QH(i,k)= 0.
+         endif
+       ENDIF
+       Q(i,k)= max(Q(i,k),0.)
+       NY(i,k)= min(NY(i,k), Ni_max)
+
       ENDIF  !if (activePoint)
     ENDDO
   ENDDO
-
- !Prevent overdepletion:
-   if (dblMom_c) then
-      where (activePoint .and. (QC<epsQ .or. NC<epsN))
-         Q = Q + QC
-         T = T - LCP*QC
-         QC= 0.;   NC= 0.
-      endwhere
-   else
-     where (activePoint .and. QC<epsQ)
-         Q = Q + QC
-         T = T - LCP*QC
-         QC= 0.
-      endwhere
-   endif
-
-   if (dblMom_r) then
-      where (activePoint .and. (QR<epsQ .or. NR<epsN))
-         Q = Q + QR
-         T = T - LCP*QR
-         QR= 0.;   NR= 0.
-      endwhere
-   else
-      where (activePoint .and. QR<epsQ)
-         Q = Q + QR
-         T = T - LCP*QR
-         QR= 0.
-      endwhere
-   endif
-
-   if (dblMom_i) then
-      where (activePoint .and. (QI<epsQ .or. NY<epsN))
-         Q = Q + QI
-         T = T - LSP*QI
-         QI= 0.;   NY= 0.
-      endwhere
-   else
-     where (activePoint .and. QI<epsQ)
-         Q = Q + QI
-         T = T - LSP*QI
-         QI= 0.
-      endwhere
-   endif
-
-   if (dblMom_s) then
-      where (activePoint .and. (QN<epsQ .or. NN<epsN))
-         Q = Q + QN
-         T = T - LSP*QN
-         QN= 0.;   NN= 0.
-      endwhere
-   else
-     where (activePoint .and. QN<epsQ)
-         Q = Q + QN
-         T = T - LSP*QN
-         QN= 0.
-      endwhere
-   endif
-
-   if (dblMom_g) then
-      where (activePoint .and. (QG<epsQ .or. NG<epsN))
-         Q = Q + QG
-         T = T - LSP*QG
-         QG= 0.;   NG= 0.
-      endwhere
-   else
-     where (activePoint .and. QG<epsQ)
-         Q = Q + QG
-         T = T - LSP*QG
-         QG= 0.
-      endwhere
-   endif
-
-   if (dblMom_h) then
-      where (activePoint .and. (QH<epsQ .or. NH<epsN))
-         Q = Q + QH
-         T = T - LSP*QH
-         QH= 0.;   NH= 0.
-      elsewhere (QH>epsQ .and. NH>epsN)
-         tmpA1= (DE*QH/NH*icmh)**thrd   !Dh
-        !converts hail to graupel if Dh < Dh_min:
-         where (tmpA1<Dh_min)
-            QG= QG + QH
-            NG= NG + NH
-            QH= 0.;  NH= 0.
-         endwhere
-      endwhere
-   else
-      where (activePoint .and. QH<epsQ)
-         Q = Q + QH
-         T = T - LSP*QH
-         QH= 0.
-      endwhere
-   endif
-
-   where (activePoint)
-      Q = max(Q,0.)
-      NY= min(NY, Ni_max)
-   endwhere
 
   !----------------------------------------------------------------------------------!
   !                    End of ice phase microphysics (Part 2)                        !
@@ -3658,9 +3286,9 @@ module my_dmom_mod
   !----------------------------------------------------------------------------------!
   !                       PART 3: Warm Microphysics Processes                        !
   !                                                                                  !
-  !  Equations for warm-rain coalescence based on Cohard and Pinty 2000a,b (QJRMS)   !
-  !  Condensation/evaportaion equation based on Kong and Yau 1997 (Atmos-Ocean)      !
-  !  Equations for rain reflectivity (ZR) based on Milbrandt and Yau 2005b (JAS)     !
+  !  Equations for warm-rain coalescence based on Cohard and Pinty (2000a,b; QJRMS)  !
+  !  Condensation/evaportaion equations based on Kong and Yau (1997; Atmos-Ocean)    !
+  !  Equations for rain reflectivity (ZR) based on Milbrandt and Yau (2005b; JAS)    !
   !----------------------------------------------------------------------------------!
 
   ! Part 3a - Warm-rain Coallescence:
@@ -3774,26 +3402,10 @@ module my_dmom_mod
               else
                  CRSCOR= KK2*tmp1*GR37*iGR31*iLAMr6                        !{CP00a eqn(25)}
               endif
-
-            !Raindrop breakup:
-             !Cohard and Pinty (2000a):   {CP00a eqn(26)}
-!               Ec = 1.
-!               if (Dr >=  600.e-6) Ec= exp(-2.5e3*(Dr-6.e-4))
-!               if (Dr >= 2000.e-6) Ec= 0.
-             !Verlinde and Cotton (1993):
-              tmp1 = iLAMr  !number-weighted mean D [m]
-              if (tmp1>=600.e-6) then
-                 Ec = 2.-exp(2300.*(tmp1-600.e-6))
-              else
-                 Ec = 1.
-              endif
-             !Seifert and Beheng (1996):
-!               if (Dr>=300.e-6) then
-!                  Ec = -1000.*(Dr-1100.e-6)
-!               else
-!                  Ec = 1.
-!               endif
-
+            !Raindrop breakup:                                             !{CP00a eqn(26)}
+              Ec= 1.
+              if (Dr >=  600.e-6) Ec= exp(-2.5e3*(Dr-6.e-4))
+              if (Dr >= 2000.e-6) Ec= 0.
               CRSCOR= min(Ec*CRSCOR,(0.5*NR(i,k))*idt) !0.5 prevents depletion of NR
            endif
 
@@ -3850,13 +3462,6 @@ module my_dmom_mod
 #else
      This is a temporary hack assuming double precision is 8 bytes.
 #endif
-       !----
-       !The following removes a fraction of the supersaturation water vapor.  The purpose of this
-       ! is to reduce the amount of condensed water, ultimately to reduct the total precipitation.
-       ! Note -- there is no physical justification for this within the context of the microphysics.
-       ! This adjustment is done entirely to reduce the precipitation bias in the GEM-LAM-2.5.
-        Q(i,k)= Q(i,k) - max(0., qReducFact*(Q(i,k)-QSS(i,k)))
-       !----
         ssat    = Q(i,k)/QSS(i,k)-1.
         Tc      = T(i,k)-TRPL
         Cdiff   = max(1.62e-5, (2.2157e-5 + 0.0155e-5*Tc)) *1.e5/(S(i,k)*PS(i))
@@ -3868,10 +3473,9 @@ module my_dmom_mod
 
         !Condensation/evaporation:
         ! Capacity of evap/cond in one time step is determined by saturation
-        ! adjustment technique [KY97 App.A].  Equation for rain evaporation rate
-        ! comes from CP00a.  Explicit condensation rate is not considered
-        ! (as it is in Z85), but rather complete removal of supersaturation
-        ! is assumed.
+        ! adjustment technique [Kong and Yau, 1997 App.A].  Equation for rain evaporation rate
+        ! comes from Cohard and Pinty, 2000a.  Explicit condensation rate is not considered
+        ! (as it is in Ziegler, 1985), but rather complete removal of supersaturation is assumed.
 
         X= Q(i,k)-QSS(i,k)
         if (dblMom_r) then
@@ -3903,7 +3507,7 @@ module my_dmom_mod
                     !note: There is an error in MY05a_eq(8) for VENTx (corrected in code)
                     VENTr= Avx*GR32*iLAMr**cexr5 + Bvx*ScTHRD*sqrt(gam*afr*iMUkin)*GR17* &
                            iLAMr**cexr6
-                    ABw  = CHLF*CHLF/(Ka*RGASV*T(i,k)*T(i,k))+1./(DE(i,k)*(QSS(i,k))*    &
+                    ABw  = CHLC*CHLC/(Ka*RGASV*T(i,k)*T(i,k))+1./(DE(i,k)*(QSS(i,k))*    &
                            Cdiff)
                     QREVP= -dt*(PI2*ssat*No_r*VENTr/ABw)
                 !!  QREVP= 0.  !to suppress evaporation of rain
@@ -3980,10 +3584,9 @@ module my_dmom_mod
   !----------------------------------------------------------------------------------!
 
   !----------------------------------------------------------------------------------!
-  ! Sedimentation is computed using a modified version of the box-Lagrangian         !
-  ! scheme (blg3sedi.ftn).  The modifications (from blg2.ftn) are hard-wired         !
-  ! for use with multimom_xx.ftn90.  Sedimentation is only computed for columns      !
-  ! containing non-zero hydrometeor quantities (at at least one level).              !
+  !  Sedimentation is computed using a modified version of the box-Lagrangian        !
+  !  scheme.  Sedimentation is only computed for columns containing non-zero         !
+  !  hydrometeor quantities (at at least one level).                                 !
   !----------------------------------------------------------------------------------!
 
  IF (sedi_ON) THEN
@@ -4160,6 +3763,7 @@ module my_dmom_mod
  !        - RT_peL [large hail] is a sub-set of RT_pe2 [hail] and is thus not added to the total
  !          solid precipitation.
 
+!   call tmg_start0(98,'mmCalcDIAG')
 
    IF (precipDiag_ON) THEN
       DO i= 1,ni
@@ -4213,8 +3817,10 @@ module my_dmom_mod
  !++++
 
  ELSE
+
     massFlux3D_r= 0.
     massFlux3D_s= 0.
+
  ENDIF  ! if (sedi_ON)
 
  where (Q<0.) Q= 0.
@@ -4234,7 +3840,7 @@ module my_dmom_mod
   IF (calcDiag) THEN
 
    !For reflectivity calculations:
-     ZEC= 0.;
+     ZEC= minZET
      cxr=            icmr*icmr   !for rain
      cxi= 1./fdielec*icmr*icmr   !for all frozen categories
      Gzr= (6.+alpha_r)*(5.+alpha_r)*(4.+alpha_r)/((3.+alpha_r)*(2.+alpha_r)*(1.+alpha_r))
@@ -4297,14 +3903,13 @@ module my_dmom_mod
            if (QN(i,k)>epsQ .and. N_s>epsN) tmp3 = cxi*Gzs*tmp9*QN(i,k)*QN(i,k)/N_s
            if (QG(i,k)>epsQ .and. N_g>epsN) tmp4 = cxi*Gzg*tmp9*QG(i,k)*QG(i,k)/N_g
            if (QH(i,k)>epsQ .and. N_h>epsN) tmp5 = cxi*Gzh*tmp9*QH(i,k)*QH(i,k)/N_h
-          !Modify dielectric constant for melting ice-phase categories:
-!! temporarily commented for direct comparison with Morrison scheme
-!            if ( T(i,k)>TRPL) then
-!              tmp2= tmp2*fdielec
-!              tmp3= tmp3*fdielec
-!              tmp4= tmp4*fdielec
-!              tmp5= tmp5*fdielec
-!            endif
+          !Modifiy dielectric constant for melting ice-phase categories:
+           if ( T(i,k)>TRPL) then
+             tmp2= tmp2*fdielec
+             tmp3= tmp3*fdielec
+             tmp4= tmp4*fdielec
+             tmp5= tmp5*fdielec
+           endif
            ZET(i,k) = tmp1 + tmp2 + tmp3 + tmp4 + tmp5   != Zr+Zi+Zs+Zg+Zh
            if (ZET(i,k)>0.) then
               ZET(i,k)= 10.*log10((ZET(i,k)*Zfact))      !convert to dBZ
@@ -4314,98 +3919,96 @@ module my_dmom_mod
            ZET(i,k)= max(ZET(i,k),minZET)
            ZEC(i)= max(ZEC(i),ZET(i,k))  !composite (max in column) of ZET
 
-!! temporarily commented for run speed-up
-!          !Mean-mass diameters:  (units of [m])
-!            Dm_c(i,k)= 0.;   Dm_r(i,k)= 0.;   Dm_i(i,k)= 0.
-!            Dm_s(i,k)= 0.;   Dm_g(i,k)= 0.;   Dm_h(i,k)= 0.
-!            if(QC(i,k)>epsQ.and.N_c>epsN) Dm_c(i,k)=Dm_x(DE(i,k),QC(i,k),1./N_c,icmr,thrd)
-!            if(QR(i,k)>epsQ.and.N_r>epsN) Dm_r(i,k)=Dm_x(DE(i,k),QR(i,k),1./N_r,icmr,thrd)
-!            if(QI(i,k)>epsQ.and.N_i>epsN) Dm_i(i,k)=Dm_x(DE(i,k),QI(i,k),1./N_i,icmi,thrd)
-!            if(QN(i,k)>epsQ.and.N_s>epsN) Dm_s(i,k)=Dm_x(DE(i,k),QN(i,k),1./N_s,icms,idms)
-!            if(QG(i,k)>epsQ.and.N_g>epsN) Dm_g(i,k)=Dm_x(DE(i,k),QG(i,k),1./N_g,icmg,thrd)
-!            if(QH(i,k)>epsQ.and.N_h>epsN) Dm_h(i,k)=Dm_x(DE(i,k),QH(i,k),1./N_h,icmh,thrd)
-!
-!          !Supercooled liquid water:
-!            SLW(i,k)= 0.
-!            if (T(i,k)<TRPL) SLW(i,k)= DE(i,k)*(QC(i,k)+QR(i,k))   !(units of [kg/m3])
-!
-!          !Visibility:
-!           !VIS1:  component through liquid cloud (fog) [m]
-!           ! (following parameterization of Gultepe and Milbrandt, 2007)
-!            tmp1= QC(i,k)*DE(i,k)*1.e+3             !LWC [g m-3]
-!            tmp2= N_c*1.e-6                         !Nc  [cm-3]
-!            if (tmp1>0.005 .and. tmp2>1.) then
-!               VIS1(i,k)= max(epsVIS,1000.*(1.13*(tmp1*tmp2)**(-0.51))) !based on FRAM [GM2007, eqn (4)
-!              !VIS1(i,k)= max(epsVIS,min(maxVIS, (tmp1*tmp2)**(-0.65))) !based on RACE [GM2007, eqn (3)
-!            else
-!               VIS1(i,k)= 3.*maxVIS  !gets set to maxVIS after calc. of VIS
-!            endif
-!
-!           !VIS2: component through rain  !based on Gultepe and Milbrandt, 2008, Table 2 eqn (1)
-!            tmp1= massFlux3D_r(i,k)*idew*3.6e+6                        !rain rate [mm h-1]
-!            if (tmp1>0.01) then
-!               VIS2(i,k)= max(epsVIS,1000.*(-4.12*tmp1**0.176+9.01))   ![m]
-!            else
-!               VIS2(i,k)= 3.*maxVIS
-!            endif
-!
-!           !VIS3: component through snow  !based on Gultepe and Milbrandt, 2008, Table 2 eqn (6)
-!            tmp1= massFlux3D_s(i,k)*idew*3.6e+6                        !snow rate, liq-eq [mm h-1]
-!            if (tmp1>0.01) then
-!               VIS3(i,k)= max(epsVIS,1000.*(1.10*tmp1**(-0.701)))      ![m]
-!            else
-!               VIS3(i,k)= 3.*maxVIS
-!            endif
-!
-!           !VIS:  visibility due to reduction from all components 1, 2, and 3
-!           !      (based on sum of extinction coefficients and Koschmieders's Law)
-!            VIS(i,k) = min(maxVIS, 1./(1./VIS1(i,k) + 1./VIS2(i,k) + 1./VIS3(i,k)))
-!            VIS1(i,k)= min(maxVIS, VIS1(i,k))
-!            VIS2(i,k)= min(maxVIS, VIS2(i,k))
-!            VIS3(i,k)= min(maxVIS, VIS3(i,k))
+         !Mean-mass diameters:  (units of [m])
+           Dm_c(i,k)= 0.;   Dm_r(i,k)= 0.;   Dm_i(i,k)= 0.
+           Dm_s(i,k)= 0.;   Dm_g(i,k)= 0.;   Dm_h(i,k)= 0.
+           if(QC(i,k)>epsQ.and.N_c>epsN) Dm_c(i,k)=Dm_x(DE(i,k),QC(i,k),1./N_c,icmr,thrd)
+           if(QR(i,k)>epsQ.and.N_r>epsN) Dm_r(i,k)=Dm_x(DE(i,k),QR(i,k),1./N_r,icmr,thrd)
+           if(QI(i,k)>epsQ.and.N_i>epsN) Dm_i(i,k)=Dm_x(DE(i,k),QI(i,k),1./N_i,icmi,thrd)
+           if(QN(i,k)>epsQ.and.N_s>epsN) Dm_s(i,k)=Dm_x(DE(i,k),QN(i,k),1./N_s,icms,idms)
+           if(QG(i,k)>epsQ.and.N_g>epsN) Dm_g(i,k)=Dm_x(DE(i,k),QG(i,k),1./N_g,icmg,thrd)
+           if(QH(i,k)>epsQ.and.N_h>epsN) Dm_h(i,k)=Dm_x(DE(i,k),QH(i,k),1./N_h,icmh,thrd)
+
+         !Supercooled liquid water:
+           SLW(i,k)= 0.
+           if (T(i,k)<TRPL) SLW(i,k)= DE(i,k)*(QC(i,k)+QR(i,k))   !(units of [kg/m3])
+
+         !Visibility:
+          !VIS1:  component through liquid cloud (fog) [m]
+          ! (following parameterization of Gultepe and Milbrandt, 2007)
+           tmp1= QC(i,k)*DE(i,k)*1.e+3             !LWC [g m-3]
+           tmp2= N_c*1.e-6                         !Nc  [cm-3]
+           if (tmp1>0.005 .and. tmp2>1.) then
+              VIS1(i,k)= max(epsVIS,1000.*(1.13*(tmp1*tmp2)**(-0.51))) !based on FRAM [GM2007, eqn (4)
+             !VIS1(i,k)= max(epsVIS,min(maxVIS, (tmp1*tmp2)**(-0.65))) !based on RACE [GM2007, eqn (3)
+           else
+              VIS1(i,k)= 3.*maxVIS  !gets set to maxVIS after calc. of VIS
+           endif
+
+          !VIS2: component through rain  !based on Gultepe and Milbrandt, 2008, Table 2 eqn (1)
+           tmp1= massFlux3D_r(i,k)*idew*3.6e+6                        !rain rate [mm h-1]
+           if (tmp1>0.01) then
+              VIS2(i,k)= max(epsVIS,1000.*(-4.12*tmp1**0.176+9.01))   ![m]
+           else
+              VIS2(i,k)= 3.*maxVIS
+           endif
+
+          !VIS3: component through snow  !based on Gultepe and Milbrandt, 2008, Table 2 eqn (6)
+           tmp1= massFlux3D_s(i,k)*idew*3.6e+6                        !snow rate, liq-eq [mm h-1]
+           if (tmp1>0.01) then
+              VIS3(i,k)= max(epsVIS,1000.*(1.10*tmp1**(-0.701)))      ![m]
+           else
+              VIS3(i,k)= 3.*maxVIS
+           endif
+
+          !VIS:  visibility due to reduction from all components 1, 2, and 3
+          !      (based on sum of extinction coefficients and Koschmieders's Law)
+           VIS(i,k) = min(maxVIS, 1./(1./VIS1(i,k) + 1./VIS2(i,k) + 1./VIS3(i,k)))
+           VIS1(i,k)= min(maxVIS, VIS1(i,k))
+           VIS2(i,k)= min(maxVIS, VIS2(i,k))
+           VIS3(i,k)= min(maxVIS, VIS3(i,k))
 
         enddo  !i-loop
      enddo     !k-loop
 
-!! temporarily commented for run speed-up
-!     !Diagnostic levels:
-!      h_CB = noVal_h_XX   !height (AGL) of cloud base
-!      h_SN = noVal_h_XX   !height (AGL) of snow level [conventional snow (not just QN>0.)]
-!      h_ML1= noVal_h_XX   !height (AGL) of melting level [first 0C isotherm from ground]
-!      h_ML2= noVal_h_XX   !height (AGL) of melting level [first 0C isotherm from top]
-!                          ! note: h_ML2 = h_ML1 implies only 1 melting level
-!      tmp1= 1./GRAV
-!      do i= 1,ni
-!         CB_found= .false.;   SN_found= .false.;   ML_found= .false.
-!         do k= nk,2,-1
-!           !cloud base:
-!            if ((QC(i,k)>epsQ2.or.QI(i,k)>epsQ2) .and. .not.CB_found)  then
-!               h_CB(i) = GZ(i,k)*tmp1
-!               CB_found= .true.
-!            endif
-!           !snow level:
-!            if ( ((QN(i,k)>epsQ2 .and. Dm_s(i,k)>minSnowSize)  .or.                      &
-!                  (QG(i,k)>epsQ2 .and. Dm_g(i,k)>minSnowSize)) .and. .not.SN_found) then
-!               h_SN(i) = GZ(i,k)*tmp1
-!               SN_found= .true.
-!            endif
-!           !melting level: (height of lowest 0C isotherm)
-!            if (T(i,k)>TRPL .and. T(i,k-1)<TRPL .and. .not.ML_found) then
-!               h_ML1(i) = GZ(i,k)*tmp1
-!               ML_found= .true.
-!            endif
-!         enddo
-!      enddo
-!      do i= 1,ni
-!         ML_found= .false.  !from top
-!         do k= 2,nk
-!           !melting level: (height of highest 0C isotherm)
-!            if (T(i,k)>TRPL .and. T(i,k-1)<TRPL .and. .not.ML_found) then
-!               h_ML2(i) = GZ(i,k)*tmp1
-!               ML_found= .true.
-!            endif
-!         enddo
-!      enddo
+    !Diagnostic levels:
+     h_CB = noVal_h_XX   !height (AGL) of cloud base
+     h_SN = noVal_h_XX   !height (AGL) of snow level [conventional snow (not just QN>0.)]
+     h_ML1= noVal_h_XX   !height (AGL) of melting level [first 0C isotherm from ground]
+     h_ML2= noVal_h_XX   !height (AGL) of melting level [first 0C isotherm from top]
+                         ! note: h_ML2 = h_ML1 implies only 1 melting level
+     tmp1= 1./GRAV
+     do i= 1,ni
+        CB_found= .false.;   SN_found= .false.;   ML_found= .false.
+        do k= nk,2,-1
+          !cloud base:
+           if ((QC(i,k)>epsQ2.or.QI(i,k)>epsQ2) .and. .not.CB_found)  then
+              h_CB(i) = GZ(i,k)*tmp1
+              CB_found= .true.
+           endif
+          !snow level:
+           if ( ((QN(i,k)>epsQ2 .and. Dm_s(i,k)>minSnowSize)  .or.                       &
+                 (QG(i,k)>epsQ2 .and. Dm_g(i,k)>minSnowSize)) .and. .not.SN_found) then
+              h_SN(i) = GZ(i,k)*tmp1
+              SN_found= .true.
+           endif
+          !melting level: (height of lowest 0C isotherm)
+           if (T(i,k)>TRPL .and. T(i,k-1)<TRPL .and. .not.ML_found) then
+              h_ML1(i) = GZ(i,k)*tmp1
+              ML_found= .true.
+           endif
+        enddo
+     enddo
+     do i= 1,ni
+        ML_found= .false.  !from top
+        do k= 2,nk
+          !melting level: (height of highest 0C isotherm)
+           if (T(i,k)>TRPL .and. T(i,k-1)<TRPL .and. .not.ML_found) then
+              h_ML2(i) = GZ(i,k)*tmp1
+              ML_found= .true.
+           endif
+        enddo
+     enddo
 
   ENDIF
  !                                                                                   !
@@ -4413,9 +4016,9 @@ module my_dmom_mod
 !-------------
 !Convert N from #/m3 to #/kg:
 ! note: - at this point, NX is updated NX (at t+1); NXTEND is NX before S/S (at t*)
-!       - NXM is no longer used (it does not need a unit conversion
+!       - NXM is no longer used (it does not need a unit conversion)
   do k= 1,nk
-     DE(:,k) = S(:,k)*PS(:)/(RGASD*T(:,k))     !air density at time  (t)
+     DE(:,k) = S(:,k)*PS(:)/(RGASD*T(:,k))     !air density at time (t)
      iDE(:,k)= 1./DE(:,k)
   enddo
   NC= NC*iDE;   NCTEND= NCTEND*iDE
@@ -4430,54 +4033,42 @@ module my_dmom_mod
  !   Compute the tendencies of  T, Q, QC, etc. (to be passed back to model dynamics) !
  !   and reset the fields to their initial (saved) values at time {*}:               !
 
-      tmpA1= T_TEND;   T_TEND=(T -tmpA1)*iDT;   T = tmpA1
-      tmpA1= Q_TEND;   Q_TEND=(Q -tmpA1)*iDT;   Q = tmpA1
-      tmpA1= QCTEND;   QCTEND=(QC-tmpA1)*iDT;   QC= tmpA1
-      tmpA1= QRTEND;   QRTEND=(QR-tmpA1)*iDT;   QR= tmpA1
-      tmpA1= QITEND;   QITEND=(QI-tmpA1)*iDT;   QI= tmpA1
-      tmpA1= QNTEND;   QNTEND=(QN-tmpA1)*iDT;   QN= tmpA1
-      tmpA1= QGTEND;   QGTEND=(QG-tmpA1)*iDT;   QG= tmpA1
-      tmpA1= QHTEND;   QHTEND=(QH-tmpA1)*iDT;   QH= tmpA1
+      do k= 1,nk
+         do i= 1,ni
 
-      if (DblMom_c) then
-         tmpA1= NCTEND;   NCTEND= (NC-tmpA1)*iDT;  NC= tmpA1
-      else
-         NC= 0.; NCTEND= 0.
-      endif
+            tmp1=T_TEND(i,k);  T_TEND(i,k)=(T(i,k) -T_TEND(i,k))*iDT;  T(i,k) = tmp1
+            tmp1=Q_TEND(i,k);  Q_TEND(i,k)=(Q(i,k) -Q_TEND(i,k))*iDT;  Q(i,k) = tmp1
+            tmp1=QCTEND(i,k);  QCTEND(i,k)=(QC(i,k)-QCTEND(i,k))*iDT;  QC(i,k)= tmp1
+            tmp1=QRTEND(i,k);  QRTEND(i,k)=(QR(i,k)-QRTEND(i,k))*iDT;  QR(i,k)= tmp1
+            tmp1=QITEND(i,k);  QITEND(i,k)=(QI(i,k)-QITEND(i,k))*iDT;  QI(i,k)= tmp1
+            tmp1=QNTEND(i,k);  QNTEND(i,k)=(QN(i,k)-QNTEND(i,k))*iDT;  QN(i,k)= tmp1
+            tmp1=QGTEND(i,k);  QGTEND(i,k)=(QG(i,k)-QGTEND(i,k))*iDT;  QG(i,k)= tmp1
+            tmp1=QHTEND(i,k);  QHTEND(i,k)=(QH(i,k)-QHTEND(i,k))*iDT;  QH(i,k)= tmp1
 
-      if (DblMom_r) then
-         tmpA1= NRTEND;   NRTEND= (NR-tmpA1)*iDT;  NR= tmpA1
-      else
-         NR= 0.; NRTEND= 0.
-      endif
+            if (DblMom_c) then
+             tmp1=NCTEND(i,k);  NCTEND(i,k)=(NC(i,k)-NCTEND(i,k))*iDT; NC(i,k)= tmp1
+            endif
+            if (DblMom_r) then
+             tmp1=NRTEND(i,k);  NRTEND(i,k)=(NR(i,k)-NRTEND(i,k))*iDT; NR(i,k)= tmp1
+            endif
+            if (DblMom_i) then
+             tmp1=NYTEND(i,k);  NYTEND(i,k)=(NY(i,k)-NYTEND(i,k))*iDT; NY(i,k)= tmp1
+            endif
+            if (DblMom_s) then
+             tmp1=NNTEND(i,k);  NNTEND(i,k)=(NN(i,k)-NNTEND(i,k))*iDT; NN(i,k)= tmp1
+            endif
+            if (DblMom_g) then
+             tmp1=NGTEND(i,k);  NGTEND(i,k)=(NG(i,k)-NGTEND(i,k))*iDT; NG(i,k)= tmp1
+            endif
+            if (DblMom_h) then
+             tmp1=NHTEND(i,k);  NHTEND(i,k)=(NH(i,k)-NHTEND(i,k))*iDT; NH(i,k)= tmp1
+            endif
 
-      if (DblMom_i) then
-         tmpA1= NYTEND;   NYTEND= (NY-tmpA1)*iDT;  NY= tmpA1
-      else
-         NY= 0.; NYTEND= 0.
-      endif
-
-      if (DblMom_s) then
-         tmpA1= NNTEND;   NNTEND= (NN-tmpA1)*iDT;  NN= tmpA1
-      else
-         NN= 0.; NNTEND= 0.
-      endif
-
-      if (DblMom_g) then
-         tmpA1= NGTEND;   NGTEND= (NG-tmpA1)*iDT;  NG= tmpA1
-      else
-         NG= 0.; NGTEND= 0.
-      endif
-
-      if (DblMom_h) then
-         tmpA1= NHTEND;   NHTEND= (NH-tmpA1)*iDT;  NH= tmpA1
-      else
-         NH= 0.; NHTEND= 0.
-      endif
-
+         enddo
+      enddo
  !                                                                                   !
  !-----------------------------------------------------------------------------------!
- END SUBROUTINE mp_milbrandt2mom_main
+END SUBROUTINE mp_milbrandt2mom_main
  !___________________________________________________________________________________!
 
    real function des_OF_Ds(Ds_local,desMax_local,eds_local,fds_local)
@@ -4499,7 +4090,7 @@ module my_dmom_mod
    real function iLAMDA_x(DE_local,QX_local,iNX_local,icex_local,idmx_local)
    !Computes 1/LAMDA ("slope" parameter):
       real :: DE_local,QX_local,iNX_local,icex_local,idmx_local
-     !iLAMDA_x = (DE_local*QX_local*iNX_local*icmx_local)**idmx_local
+     !iLAMDA_x = (DE_local*QX_local*iNX_local*icex_local)**idmx_local
       iLAMDA_x = exp(idmx_local*log(DE_local*QX_local*iNX_local*icex_local)) !IBM optimization
    end function
 
@@ -4520,7 +4111,7 @@ module my_dmom_mod
 
 !===================================================================================================!
 
-end module my_dmom_mod
+END MODULE my_dmom_mod
 
 !________________________________________________________________________________________!
 
@@ -4605,7 +4196,7 @@ end module my_dmom_mod
       logical :: precipDiag_ON,sedi_ON,warmphase_ON,autoconv_ON,icephase_ON,snow_ON,     &
                  initN,dblMom_c,dblMom_r,dblMom_i,dblMom_s,dblMom_g,dblMom_h
 
-      real, parameter :: ms2mmh = 3.6e+6   !CHECK  conversion factor for precipitation rates
+      real, parameter :: ms2mmh = 3.6e+6   !conversion factor for precipitation rates
       real, parameter :: R_d    = 287.04   !gas constant for dry air
       character*512   :: mp_debug
 !+---+
@@ -4661,7 +4252,7 @@ end module my_dmom_mod
 
          i2d = i-its+1  !index value for 2D arrays, to be passed to main micro scheme
 
-        !Approximate geopotential height:
+        !Approximate geopotential:
         ! (assumes lowest model level is at sea-level; acceptable for purposes of scheme)
          gz2d(i2d,kts)= 0.
          do k = kts+1, kte
@@ -4684,7 +4275,7 @@ end module my_dmom_mod
           !chen  rho(i2d,k2d)  = p2d(i2d,k2d)/(R_d*t2d(i2d,k2d))
           !chen  omega2d(i2d,k2d)= -w(i,k,j)*p2d(i2d,k2d)*9.81
             rho(i2d,k2d)  = p2d(i2d,k)/(R_d*t2d(i2d,k))
-            omega2d(i2d,k2d)= -w(i,k,j)*p2d(i2d,k)*9.81
+            omega2d(i2d,k2d)= -w(i,k,j)*rho(i2d,k2d)*9.81
             qc2d(i2d,k2d) = qc(i,k,j);   nc2d(i2d,k2d) = nc(i,k,j)
             qi2d(i2d,k2d) = qi(i,k,j);   ni2d(i2d,k2d) = ni(i,k,j)
             qr2d(i2d,k2d) = qr(i,k,j);   nr2d(i2d,k2d) = nr(i,k,j)

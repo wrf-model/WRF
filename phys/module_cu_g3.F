@@ -914,6 +914,7 @@ CONTAINS
   else
      do i=its,itf
          cap_max(i)=cap_maxs
+          cap_max3(i)=25.
          if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
        iresult=0
      enddo
@@ -925,6 +926,7 @@ CONTAINS
 #else
       do i=its,itf
           cap_max(i)=cap_maxs
+          cap_max3(i)=25.
           if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
         iresult=0
 
@@ -4566,7 +4568,6 @@ CONTAINS
      ENDDO
      ENDDO
 
-   ENDIF
      DO j=jts,jtf
      DO i=its,itf
         APR_GR(i,j)=0.
@@ -4579,6 +4580,8 @@ CONTAINS
         APR_CAPMI(i,j)=0.
      ENDDO
      ENDDO
+
+   ENDIF
 
    END SUBROUTINE g3init
 

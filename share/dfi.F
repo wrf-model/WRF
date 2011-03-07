@@ -1,4 +1,4 @@
-   SUBROUTINE dfi_accumulate ( grid )
+   SUBROUTINE dfi_accumulate( grid )
 
       USE module_domain, ONLY : domain
 !      USE module_configure
@@ -11,6 +11,7 @@
       IMPLICIT NONE
 
       REAL hn
+      CHARACTER*80 mess
 
       !  Input data.
 
@@ -59,27 +60,26 @@
 
 #if (NMM_CORE == 1)
       hn = grid%hcoeff(grid%ntsd+1)
-       grid%dfi_pd(:,:)    = grid%dfi_pd(:,:)    + grid%pd(:,:)    * hn
-       grid%dfi_pint(:,:,:)   = grid%dfi_pint(:,:,:)   + grid%pint(:,:,:)   * hn
-       grid%dfi_dwdt(:,:,:)   = grid%dfi_dwdt(:,:,:)   + grid%dwdt(:,:,:)   * hn
-       grid%dfi_t(:,:,:)   = grid%dfi_t(:,:,:)   + grid%t(:,:,:)   * hn
-       grid%dfi_q(:,:,:)   = grid%dfi_q(:,:,:)   + grid%q(:,:,:)   * hn
-       grid%dfi_q2(:,:,:)  = grid%dfi_q2(:,:,:)  + grid%q2(:,:,:)  * hn
-       grid%dfi_cwm(:,:,:) = grid%dfi_cwm(:,:,:) + grid%cwm(:,:,:) * hn
-       grid%dfi_u(:,:,:)   = grid%dfi_u(:,:,:)   + grid%u(:,:,:)   * hn
-       grid%dfi_v(:,:,:)   = grid%dfi_v(:,:,:)   + grid%v(:,:,:)   * hn
-       grid%dfi_moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  + grid%moist(:,:,:,:)  * hn
-       grid%dfi_scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) + grid%scalar(:,:,:,:) * hn
+      grid%dfi_pd(:,:)    = grid%dfi_pd(:,:)    + grid%pd(:,:)    * hn
+      grid%dfi_pint(:,:,:)   = grid%dfi_pint(:,:,:)   + grid%pint(:,:,:)   * hn
+      grid%dfi_dwdt(:,:,:)   = grid%dfi_dwdt(:,:,:)   + grid%dwdt(:,:,:)   * hn
+      grid%dfi_t(:,:,:)   = grid%dfi_t(:,:,:)   + grid%t(:,:,:)   * hn
+      grid%dfi_q(:,:,:)   = grid%dfi_q(:,:,:)   + grid%q(:,:,:)   * hn
+      grid%dfi_q2(:,:,:)  = grid%dfi_q2(:,:,:)  + grid%q2(:,:,:)  * hn
+      grid%dfi_cwm(:,:,:) = grid%dfi_cwm(:,:,:) + grid%cwm(:,:,:) * hn
+      grid%dfi_u(:,:,:)   = grid%dfi_u(:,:,:)   + grid%u(:,:,:)   * hn
+      grid%dfi_v(:,:,:)   = grid%dfi_v(:,:,:)   + grid%v(:,:,:)   * hn
+      grid%dfi_moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  + grid%moist(:,:,:,:)  * hn
+      grid%dfi_scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) + grid%scalar(:,:,:,:) * hn
       ! accumulate DFI coefficient
       grid%hcoeff_tot = grid%hcoeff_tot + hn
-	write(0,*) 'grid%hcoeff_tot: ', grid%hcoeff_tot
+      write(mess,*) 'grid%hcoeff_tot: ', grid%hcoeff_tot
+      call wrf_message(mess)
 #endif
-
 
    END SUBROUTINE dfi_accumulate
 
-
-   SUBROUTINE wrf_dfi_bck_init ( )
+   SUBROUTINE dfi_bck_init ( grid )
 
       USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
       USE module_utility
@@ -87,7 +87,9 @@
 
       IMPLICIT NONE
 
+      TYPE (domain) , POINTER                 :: grid
       INTEGER rc
+      CHARACTER*80 mess
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
@@ -117,54 +119,55 @@
          END SUBROUTINE start_domain
       END INTERFACE
 
-      head_grid%dfi_stage = DFI_BCK
+      grid%dfi_stage = DFI_BCK
 
       ! Negate time step
-      IF ( head_grid%time_step_dfi .gt. 0 ) THEN
-        CALL nl_set_time_step ( 1, -head_grid%time_step_dfi )
+      IF ( grid%time_step_dfi .gt. 0 ) THEN
+        CALL nl_set_time_step ( 1, -grid%time_step_dfi )
       ELSE
-        CALL nl_set_time_step ( 1, -head_grid%time_step )
-        CALL nl_set_time_step_fract_num ( 1, -head_grid%time_step_fract_num )
+        CALL nl_set_time_step ( 1, -grid%time_step )
+        CALL nl_set_time_step_fract_num ( 1, -grid%time_step_fract_num )
       ENDIF
 
-      CALL Setup_Timekeeping (head_grid)
+      CALL Setup_Timekeeping (grid)
 
       ! set physics options to zero
-      CALL nl_set_mp_physics( 1, 0 )
-      CALL nl_set_ra_lw_physics( 1, 0 )
-      CALL nl_set_ra_sw_physics( 1, 0 )
-      CALL nl_set_sf_surface_physics( 1, 0 )
-      CALL nl_set_sf_sfclay_physics( 1, 0 )
-      CALL nl_set_sf_urban_physics( 1, 0 )
-      CALL nl_set_bl_pbl_physics( 1, 0 )
-      CALL nl_set_cu_physics( 1, 0 )
-      CALL nl_set_damp_opt( 1, 0 )
-      CALL nl_set_sst_update( 1, 0 )
-      CALL nl_set_fractional_seaice( 1, 0 )
-      CALL nl_set_gwd_opt( 1, 0 )
+      CALL nl_set_mp_physics( grid%id, 0 )
+      CALL nl_set_ra_lw_physics( grid%id, 0 )
+      CALL nl_set_ra_sw_physics( grid%id, 0 )
+      CALL nl_set_sf_surface_physics( grid%id, 0 )
+      CALL nl_set_sf_sfclay_physics( grid%id, 0 )
+      CALL nl_set_sf_urban_physics( grid%id, 0 )
+      CALL nl_set_bl_pbl_physics( grid%id, 0 )
+      CALL nl_set_cu_physics( grid%id, 0 )
+      CALL nl_set_damp_opt( grid%id, 0 )
+      CALL nl_set_sst_update( grid%id, 0 )
+      CALL nl_set_fractional_seaice( grid%id, 0 )
+      CALL nl_set_gwd_opt( grid%id, 0 )
+      CALL nl_set_feedback( grid%id, 0 )
       ! set bc
 #if (EM_CORE == 1)
-      CALL nl_set_diff_6th_opt( 1, 0 )
-      CALL nl_set_constant_bc(1, head_grid%constant_bc)
-      CALL nl_set_use_adaptive_time_step( 1, .false. )
+      CALL nl_set_diff_6th_opt( grid%id, 0 )
+      CALL nl_set_constant_bc(1, grid%constant_bc)
+      CALL nl_set_use_adaptive_time_step( grid%id, .false. )
 #endif
 
 #ifdef WRF_CHEM
       ! set chemistry option to zero
-      CALL nl_set_chem_opt (1, 0)
-      CALL nl_set_aer_ra_feedback (1, 0)
-      CALL nl_set_io_form_auxinput5 (1, 0)
-      CALL nl_set_io_form_auxinput7 (1, 0)
-      CALL nl_set_io_form_auxinput8 (1, 0)
+      CALL nl_set_chem_opt (grid%id, 0)
+      CALL nl_set_aer_ra_feedback (grid%id, 0)
+      CALL nl_set_io_form_auxinput5 (grid%id, 0)
+      CALL nl_set_io_form_auxinput7 (grid%id, 0)
+      CALL nl_set_io_form_auxinput8 (grid%id, 0)
 #endif
 
       ! set diffusion to zero for backward integration
 
 #if (EM_CORE == 1)
-      CALL nl_set_km_opt( 1, head_grid%km_opt_dfi)
-!     CALL nl_set_moist_adv_dfi_opt( 1, head_grid%moist_adv_dfi_opt)
-      IF ( head_grid%moist_adv_opt == 2 ) THEN
-        CALL nl_set_moist_adv_opt ( 1, 0 )
+      CALL nl_set_km_opt( grid%id, grid%km_opt_dfi)
+      CALL nl_set_moist_adv_dfi_opt( grid%id, grid%moist_adv_dfi_opt)
+      IF ( grid%moist_adv_opt == 2 ) THEN
+         CALL nl_set_moist_adv_opt( grid%id, 0)
       ENDIF
 #endif
 
@@ -173,48 +176,48 @@
 !
 ! CHANGE (SIGN ONLY OF) IMPORTANT TIME CONSTANTS
 !
-      CALL nl_get_time_step( 1, head_grid%time_step )
-      if (head_grid%time_step .lt. 0) then
-!      DT   =-DT
+      CALL nl_get_time_step( grid%id, grid%time_step )
+      if (grid%time_step .lt. 0) then
+!       DT   =-DT
 
-        write(0,*) 'changing signs for backward integration'
-      head_grid%CPGFV = -head_grid%CPGFV
-      head_grid%EN    = -head_grid%EN
-      head_grid%ENT   = -head_grid%ENT
-      head_grid%F4D   = -head_grid%F4D
-      head_grid%F4Q   = -head_grid%F4Q
-      head_grid%EF4T  = -head_grid%EF4T
-
-      head_grid%EM(:) = -head_grid%EM(:)
-      head_grid%EMT(:) = -head_grid%EMT(:)
-      head_grid%F4Q2(:) = -head_grid%F4Q2(:)
-
-      head_grid%WPDAR(:,:)= -head_grid%WPDAR(:,:)
-      head_grid%CPGFU(:,:)= -head_grid%CPGFU(:,:)
-      head_grid%CURV(:,:)= -head_grid%CURV(:,:)
-      head_grid%FCP(:,:)= -head_grid%FCP(:,:)
-      head_grid%FAD(:,:)= -head_grid%FAD(:,:)
-      head_grid%F(:,:)= -head_grid%F(:,:)
-        endif
+        write(mess,*) 'changing signs for backward integration'
+        call wrf_message(mess)
+        grid%CPGFV = -grid%CPGFV
+        grid%EN    = -grid%EN
+        grid%ENT   = -grid%ENT
+        grid%F4D   = -grid%F4D
+        grid%F4Q   = -grid%F4Q
+        grid%EF4T  = -grid%EF4T
+  
+        grid%EM(:) = -grid%EM(:)
+        grid%EMT(:) = -grid%EMT(:)
+        grid%F4Q2(:) = -grid%F4Q2(:)
+  
+        grid%WPDAR(:,:)= -grid%WPDAR(:,:)
+        grid%CPGFU(:,:)= -grid%CPGFU(:,:)
+        grid%CURV(:,:)= -grid%CURV(:,:)
+        grid%FCP(:,:)= -grid%FCP(:,:)
+        grid%FAD(:,:)= -grid%FAD(:,:)
+        grid%F(:,:)= -grid%F(:,:)
+      endif
 #endif
 
+      grid%start_subtime = domain_get_start_time ( grid )
+      grid%stop_subtime = domain_get_stop_time ( grid )
 
-      head_grid%start_subtime = domain_get_start_time ( head_grid )
-      head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%start_subtime, rc=rc)
 
-      CALL WRFU_ClockSet(head_grid%domain_clock, currTime=head_grid%start_subtime, rc=rc)
- 
-      CALL dfi_save_arrays ( head_grid )
-      CALL dfi_clear_accumulation( head_grid )
-      CALL optfil_driver(head_grid)
+      CALL dfi_save_arrays ( grid )
+      CALL dfi_clear_accumulation( grid )
+      CALL optfil_driver(grid)
 
       !tgs need to call start_domain here to reset bc initialization for negative dt
-      CALL start_domain ( head_grid , .TRUE. )
+      CALL start_domain ( grid , .TRUE. )
 
-   END SUBROUTINE wrf_dfi_bck_init
+   END SUBROUTINE dfi_bck_init
 
 
-   SUBROUTINE wrf_dfi_fwd_init ( )
+   SUBROUTINE dfi_fwd_init ( grid )
 
       USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
       USE module_utility
@@ -222,7 +225,9 @@
 
       IMPLICIT NONE
 
-      INTEGER rc, julyr,julday,hr,min,sec
+      TYPE (domain) , POINTER                 :: grid
+      INTEGER rc
+      CHARACTER*80 mess
 
       INTERFACE
          SUBROUTINE Setup_Timekeeping(grid)
@@ -252,124 +257,120 @@
          END SUBROUTINE start_domain
       END INTERFACE
 
-      head_grid%dfi_stage = DFI_FWD
+      grid%dfi_stage = DFI_FWD
 
       ! for Setup_Timekeeping to use when setting the clock
-!mp      ! note that this ignores fractional parts of time step
 
-!     CALL nl_set_time_step( 1, head_grid%time_step_dfi )
-      IF ( head_grid%time_step_dfi .gt. 0 ) THEN
-        CALL nl_set_time_step ( 1, head_grid%time_step_dfi )
+      IF ( grid%time_step_dfi .gt. 0 ) THEN
+        CALL nl_set_time_step ( grid%id, grid%time_step_dfi )
       ELSE
-!        CALL nl_set_time_step ( 1, -head_grid%time_step )
 
-      CALL nl_get_time_step( 1, head_grid%time_step )
-      CALL nl_get_time_step_fract_num( 1, head_grid%time_step_fract_num )
+      CALL nl_get_time_step( grid%id, grid%time_step )
+        CALL nl_get_time_step_fract_num( grid%id, grid%time_step_fract_num )
 
-      head_grid%time_step = abs(head_grid%time_step)
-      CALL nl_set_time_step( 1, head_grid%time_step )
+      grid%time_step = abs(grid%time_step)
+      CALL nl_set_time_step( grid%id, grid%time_step )
 
-      head_grid%time_step_fract_num = abs(head_grid%time_step_fract_num)
-      CALL nl_set_time_step_fract_num( 1, head_grid%time_step_fract_num )
+        grid%time_step_fract_num = abs(grid%time_step_fract_num)
+        CALL nl_set_time_step_fract_num( grid%id, grid%time_step_fract_num )
 
       ENDIF
 
-      head_grid%itimestep=0
-      head_grid%xtime=0.
+      grid%itimestep=0
+      grid%xtime=0.
 
       ! reset physics options to normal
-      CALL nl_set_mp_physics( 1, head_grid%mp_physics)
-      CALL nl_set_ra_lw_physics( 1, head_grid%ra_lw_physics)
-      CALL nl_set_ra_sw_physics( 1, head_grid%ra_sw_physics)
-      CALL nl_set_sf_surface_physics( 1, head_grid%sf_surface_physics)
-      CALL nl_set_sf_sfclay_physics( 1, head_grid%sf_sfclay_physics)
-      CALL nl_set_sf_urban_physics( 1, head_grid%sf_urban_physics)
-      CALL nl_set_bl_pbl_physics( 1, head_grid%bl_pbl_physics)
-      CALL nl_set_cu_physics( 1, head_grid%cu_physics)
-      CALL nl_set_damp_opt( 1, head_grid%damp_opt)
-      CALL nl_set_sst_update( 1, 0 )
-      CALL nl_set_fractional_seaice( 1, head_grid%fractional_seaice)
-      CALL nl_set_gwd_opt( 1, head_grid%gwd_opt)
+      CALL nl_set_mp_physics( grid%id, grid%mp_physics)
+      CALL nl_set_ra_lw_physics( grid%id, grid%ra_lw_physics)
+      CALL nl_set_ra_sw_physics( grid%id, grid%ra_sw_physics)
+      CALL nl_set_sf_surface_physics( grid%id, grid%sf_surface_physics)
+      CALL nl_set_sf_sfclay_physics( grid%id, grid%sf_sfclay_physics)
+      CALL nl_set_sf_urban_physics( grid%id, grid%sf_urban_physics)
+      CALL nl_set_bl_pbl_physics( grid%id, grid%bl_pbl_physics)
+      CALL nl_set_cu_physics( grid%id, grid%cu_physics)
+      CALL nl_set_damp_opt( grid%id, grid%damp_opt)
+      CALL nl_set_sst_update( grid%id, 0)
+      CALL nl_set_fractional_seaice( grid%id, grid%fractional_seaice)
+      CALL nl_set_gwd_opt( grid%id, grid%gwd_opt)
+      CALL nl_set_feedback( grid%id, 0 )
 #if (EM_CORE == 1) 
-      CALL nl_set_diff_6th_opt( 1, head_grid%diff_6th_opt)
-      CALL nl_set_use_adaptive_time_step( 1, .false. )
+      CALL nl_set_diff_6th_opt( grid%id, grid%diff_6th_opt)
+      CALL nl_set_use_adaptive_time_step( grid%id, .false. )
       ! set bc
-      CALL nl_set_constant_bc(1, head_grid%constant_bc)
+      CALL nl_set_constant_bc(grid%id, grid%constant_bc)
 #endif
 
 #if (NMM_CORE == 1)
 !
 ! CHANGE (SIGN ONLY OF) IMPORTANT TIME CONSTANTS
 !
-!mptest      CALL nl_get_time_step( 1, head_grid%time_step )
+!mptest      CALL nl_get_time_step( grid%id, grid%time_step )
 
 
 !!! here need to key off something else being the "wrong" sign
-      if (head_grid%cpgfv .gt. 0) then
+      if (grid%cpgfv .gt. 0) then
 
-        write(0,*) 'changing signs for forward integration'
-      head_grid%CPGFV = -head_grid%CPGFV
-      head_grid%EN    = -head_grid%EN
-      head_grid%ENT   = -head_grid%ENT
-      head_grid%F4D   = -head_grid%F4D
-      head_grid%F4Q   = -head_grid%F4Q
-      head_grid%EF4T  = -head_grid%EF4T
-
-      head_grid%EM(:) = -head_grid%EM(:)
-      head_grid%EMT(:) = -head_grid%EMT(:)
-      head_grid%F4Q2(:) = -head_grid%F4Q2(:)
-
-      head_grid%WPDAR(:,:)= -head_grid%WPDAR(:,:)
-      head_grid%CPGFU(:,:)= -head_grid%CPGFU(:,:)
-      head_grid%CURV(:,:)= -head_grid%CURV(:,:)
-      head_grid%FCP(:,:)= -head_grid%FCP(:,:)
-      head_grid%FAD(:,:)= -head_grid%FAD(:,:)
-      head_grid%F(:,:)= -head_grid%F(:,:)
-        endif
+        write(mess,*) 'changing signs for forward integration'
+        call wrf_message(mess)
+        grid%CPGFV = -grid%CPGFV
+        grid%EN    = -grid%EN
+        grid%ENT   = -grid%ENT
+        grid%F4D   = -grid%F4D
+        grid%F4Q   = -grid%F4Q
+        grid%EF4T  = -grid%EF4T
+  
+        grid%EM(:) = -grid%EM(:)
+        grid%EMT(:) = -grid%EMT(:)
+        grid%F4Q2(:) = -grid%F4Q2(:)
+  
+        grid%WPDAR(:,:)= -grid%WPDAR(:,:)
+        grid%CPGFU(:,:)= -grid%CPGFU(:,:)
+        grid%CURV(:,:)= -grid%CURV(:,:)
+        grid%FCP(:,:)= -grid%FCP(:,:)
+        grid%FAD(:,:)= -grid%FAD(:,:)
+        grid%F(:,:)= -grid%F(:,:)
+      endif
 #endif
 
 
-!  #ifdef WRF_CHEM
+!#ifdef WRF_CHEM
 !      ! reset chem option to normal
-!      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
-!      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
-!  #endif
+!      CALL nl_set_chem_opt( grid%id, grid%chem_opt)
+!      CALL nl_set_aer_ra_feedback (grid%id, grid%aer_ra_feedback)
+!#endif
 
 #if (EM_CORE == 1)
       ! reset km_opt to norlmal
-      CALL nl_set_km_opt( 1, head_grid%km_opt)
-      CALL nl_set_moist_adv_opt( 1, head_grid%moist_adv_opt)
+      CALL nl_set_km_opt( grid%id, grid%km_opt)
+      CALL nl_set_moist_adv_opt( grid%id, grid%moist_adv_opt)
 #endif
 
 
-      CALL Setup_Timekeeping (head_grid)
-      head_grid%start_subtime = domain_get_start_time ( head_grid )
-      head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+      CALL Setup_Timekeeping (grid)
+      grid%start_subtime = domain_get_start_time ( head_grid )
+      grid%stop_subtime = domain_get_stop_time ( head_grid )
 
-!      CALL WRFU_ClockGet(head_grid%start_subtime,YY=julyr,dayOfYear=julday, &
-!                         H=hr, M=min, S=sec, rc=rc)
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%start_subtime, rc=rc)
 
-      CALL WRFU_ClockSet(head_grid%domain_clock, currTime=head_grid%start_subtime, rc=rc)
-
-      IF ( head_grid%dfi_opt .EQ. DFI_DFL ) THEN
-         CALL dfi_save_arrays ( head_grid )
+      IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN
+         CALL dfi_save_arrays ( grid )
       END IF
-      CALL dfi_clear_accumulation( head_grid )
-      CALL optfil_driver(head_grid)
+      CALL dfi_clear_accumulation( grid )
+      CALL optfil_driver(grid)
 
       !tgs need to call it here to reset bc initialization for positive time_step
-      CALL start_domain ( head_grid , .TRUE. )
+      CALL start_domain ( grid , .TRUE. )
 
-   END SUBROUTINE wrf_dfi_fwd_init
+   END SUBROUTINE dfi_fwd_init
 
+   SUBROUTINE dfi_fst_init ( grid )
 
-   SUBROUTINE wrf_dfi_fst_init ( )
-
-      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
+      USE module_domain, ONLY : domain, domain_get_stop_time, domain_get_start_time
       USE module_state_description
 
       IMPLICIT NONE
 
+      TYPE (domain) , POINTER :: grid
       CHARACTER (LEN=80)      :: wrf_error_message
 
       INTERFACE
@@ -400,49 +401,53 @@
          END SUBROUTINE start_domain
       END INTERFACE
 
-      head_grid%dfi_stage = DFI_FST 
+      grid%dfi_stage = DFI_FST 
 
      ! reset time_step to normal and adaptive_time_step
-      CALL nl_set_time_step( 1, head_grid%time_step )
+      CALL nl_set_time_step( grid%id, grid%time_step )
 
-      head_grid%itimestep=0
-      head_grid%xtime=0.         ! BUG: This will probably not work for all DFI options
+      grid%itimestep=0
+      grid%xtime=0.         ! BUG: This will probably not work for all DFI options
 ! only use adaptive time stepping for forecast
 #if (EM_CORE == 1)
-      CALL nl_set_use_adaptive_time_step( 1, head_grid%use_adaptive_time_step )
-!     CALL nl_set_sst_update( 1, head_grid%sst_update )
+      if (grid%id == 1) then
+         CALL nl_set_use_adaptive_time_step( 1, grid%use_adaptive_time_step )
+      endif
+      CALL nl_set_sst_update( grid%id, grid%sst_update)
       ! reset to normal bc
-      CALL nl_set_constant_bc(1, .false.)
+      CALL nl_set_constant_bc(grid%id, .false.)
 #endif
+      CALL nl_set_feedback( grid%id, grid%feedback )
 
 #ifdef WRF_CHEM
       ! reset chem option to normal
-      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
-      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
-      CALL nl_set_io_form_auxinput5 (1, head_grid%io_form_auxinput5)
-      CALL nl_set_io_form_auxinput7 (1, head_grid%io_form_auxinput7)
-      CALL nl_set_io_form_auxinput8 (1, head_grid%io_form_auxinput8)
+      CALL nl_set_chem_opt( grid%id, grid%chem_opt)
+      CALL nl_set_aer_ra_feedback (grid%id, grid%aer_ra_feedback)
+      CALL nl_set_io_form_auxinput5 (grid%id, grid%io_form_auxinput5)
+      CALL nl_set_io_form_auxinput7 (grid%id, grid%io_form_auxinput7)
+      CALL nl_set_io_form_auxinput8 (grid%id, grid%io_form_auxinput8)
 #endif
 
 
-      CALL Setup_Timekeeping (head_grid)
-      head_grid%start_subtime = domain_get_start_time ( head_grid )
-      head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+      CALL Setup_Timekeeping (grid)
+      grid%start_subtime = domain_get_start_time ( grid )
+      grid%stop_subtime = domain_get_stop_time ( grid )
 
-      CALL start_domain ( head_grid , .TRUE. )
+      CALL start_domain ( grid , .TRUE. )
 
-   END SUBROUTINE wrf_dfi_fst_init
+   END SUBROUTINE dfi_fst_init
 
 
-   SUBROUTINE wrf_dfi_write_initialized_state( )
+   SUBROUTINE dfi_write_initialized_state( grid )
 
       ! Driver layer
-      USE module_domain, ONLY : head_grid
+      USE module_domain, ONLY : domain, head_grid
       USE module_io_domain
       USE module_configure, ONLY : grid_config_rec_type, model_config_rec
 
       IMPLICIT NONE
 
+      TYPE (domain) , POINTER :: grid
       INTEGER             :: fid, ierr
       CHARACTER (LEN=80)  :: wrf_error_message
       CHARACTER (LEN=80)  :: rstname
@@ -450,42 +455,202 @@
 
       TYPE (grid_config_rec_type) :: config_flags
 
-      CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
+      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-      WRITE (wrf_err_message,'(A)') 'Writing out initialized model state'
+      WRITE (wrf_err_message,'(A,I4)') 'Writing out initialized model state'
       CALL wrf_message(TRIM(wrf_err_message))
 
-      rstname = 'wrfinput_initialized_d01'
-      CALL open_w_dataset ( fid, TRIM(rstname), head_grid, config_flags, output_input, "DATASET=INPUT", ierr )
+      WRITE (rstname,'(A,I2.2)')'wrfinput_initialized_d',grid%id
+      CALL open_w_dataset ( fid, TRIM(rstname), grid, config_flags, output_input, "DATASET=INPUT", ierr )
       IF ( ierr .NE. 0 ) THEN
          WRITE( message , '("program wrf: error opening ",A," for writing")') TRIM(rstname)
          CALL WRF_ERROR_FATAL ( message )
       END IF
-      CALL output_input ( fid,   head_grid, config_flags, ierr )
+      CALL output_input ( fid,   grid, config_flags, ierr )
       CALL close_dataset ( fid, config_flags, "DATASET=INPUT" )
 
-   END SUBROUTINE wrf_dfi_write_initialized_state
+   END SUBROUTINE dfi_write_initialized_state
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! DFI array reset group of functions
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE wrf_dfi_array_reset ( )
 
-      USE module_domain, ONLY : head_grid
+      USE module_domain, ONLY : domain, head_grid, set_current_grid_ptr
 
       IMPLICIT NONE
 
       INTERFACE
-         SUBROUTINE dfi_array_reset(grid)
+         RECURSIVE SUBROUTINE dfi_array_reset_recurse(grid)
             USE module_domain, ONLY : domain
             TYPE (domain), POINTER :: grid
-         END SUBROUTINE dfi_array_reset
+         END SUBROUTINE dfi_array_reset_recurse
       END INTERFACE
 
       ! Copy filtered arrays back into state arrays in grid structure, and 
       !   restore original land surface fields
-      CALL dfi_array_reset( head_grid )
+
+      CALL dfi_array_reset_recurse(head_grid)
+
+      CALL set_current_grid_ptr( head_grid )
 
    END SUBROUTINE wrf_dfi_array_reset
 
+   SUBROUTINE dfi_array_reset( grid )
+
+      USE module_domain, ONLY : domain
+!      USE module_configure
+!      USE module_driver_constants
+!      USE module_machine
+!      USE module_dm
+      USE module_model_constants
+      USE module_state_description
+
+      IMPLICIT NONE
+
+      INTEGER :: its, ite, jts, jte, kts, kte, &
+                 i, j, k
+
+      !  Input data.
+      TYPE(domain) , POINTER          :: grid
+
+      ! local
+!      real p1000mb,eps,svp1,svp2,svp3,svpt0
+      real eps
+!      parameter (p1000mb = 1.e+05, eps=0.622,svp1=0.6112,svp3=29.65,svpt0=273.15)
+      parameter (eps=0.622)
+      REAL es,qs,pol,tx,temp,pres,rslf             
+      CHARACTER*80 mess
+
+      IF ( grid%dfi_opt .EQ. DFI_NODFI ) RETURN
+
+
+      ! Set dynamic variables
+      ! divide by total DFI coefficient
+
+#if (EM_CORE == 1)
+      grid%mu_2(:,:)    = grid%dfi_mu(:,:)      / grid%hcoeff_tot
+      grid%u_2(:,:,:)   = grid%dfi_u(:,:,:)     / grid%hcoeff_tot
+      grid%v_2(:,:,:)   = grid%dfi_v(:,:,:)     / grid%hcoeff_tot
+      grid%w_2(:,:,:)   = grid%dfi_w(:,:,:)     / grid%hcoeff_tot
+      grid%ww(:,:,:)    = grid%dfi_ww(:,:,:)    / grid%hcoeff_tot
+      grid%t_2(:,:,:)   = grid%dfi_t(:,:,:)     / grid%hcoeff_tot
+      grid%phb(:,:,:)   = grid%dfi_phb(:,:,:)   / grid%hcoeff_tot
+      grid%ph0(:,:,:)   = grid%dfi_ph0(:,:,:)   / grid%hcoeff_tot
+      grid%php(:,:,:)   = grid%dfi_php(:,:,:)   / grid%hcoeff_tot
+      grid%p(:,:,:)     = grid%dfi_p(:,:,:)     / grid%hcoeff_tot
+      grid%ph_2(:,:,:)  = grid%dfi_ph(:,:,:)    / grid%hcoeff_tot
+      grid%tke_2(:,:,:) = grid%dfi_tke(:,:,:)   / grid%hcoeff_tot
+      grid%al(:,:,:)    = grid%dfi_al(:,:,:)    / grid%hcoeff_tot
+      grid%alt(:,:,:)   = grid%dfi_alt(:,:,:)   / grid%hcoeff_tot
+      grid%pb(:,:,:)    = grid%dfi_pb(:,:,:)    / grid%hcoeff_tot
+#if ( WRF_DFI_RADAR == 1 )
+    IF ( grid%dfi_radar .EQ. 0 ) then   ! tgs no radar assimilation
+      grid%moist(:,:,:,:)  = max(0.,grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot)
+    ELSE
+      grid%moist(:,:,:,P_QV)  = max(0.,grid%dfi_moist(:,:,:,P_QV)  / grid%hcoeff_tot)
+    ENDIF
+#else
+      grid%moist(:,:,:,:)  = max(0.,grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot)
+#endif
+      grid%scalar(:,:,:,:) = max(0.,grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot)
+
+      ! restore initial fields
+      grid%SNOW  (:,:) = grid%dfi_SNOW  (:,:)
+      grid%SNOWH (:,:) = grid%dfi_SNOWH (:,:)
+      grid%SNOWC (:,:) = grid%dfi_SNOWC (:,:)
+      grid%CANWAT(:,:) = grid%dfi_CANWAT(:,:)
+      grid%TSK   (:,:) = grid%dfi_TSK   (:,:)
+
+      grid%TSLB  (:,:,:)       = grid%dfi_TSLB   (:,:,:)
+      grid%SMOIS (:,:,:)       = grid%dfi_SMOIS  (:,:,:)
+      IF ( grid%sf_surface_physics .EQ. 3 ) then
+         grid%QVG   (:,:) = grid%dfi_QVG   (:,:)
+         grid%TSNAV (:,:) = grid%dfi_TSNAV (:,:)  
+         grid%SOILT1(:,:) = grid%dfi_SOILT1(:,:)   
+         grid%SMFR3D(:,:,:)       = grid%dfi_SMFR3D (:,:,:)
+         grid%KEEPFR3DFLAG(:,:,:) = grid%dfi_KEEPFR3DFLAG(:,:,:)
+      ENDIF
+
+      ! restore analized hydrometeor fileds 
+#if ( WRF_DFI_RADAR == 1 )
+    IF ( grid%dfi_radar .EQ. 1 ) then
+!      grid%moist(:,:,:,:)      = grid%dfi_moist(:,:,:,:)    !tgs
+      grid%moist(:,:,:,P_QC)      = grid%dfi_moist(:,:,:,P_QC)    !tgs
+      grid%moist(:,:,:,P_QR)      = grid%dfi_moist(:,:,:,P_QR)    !tgs
+      grid%moist(:,:,:,P_QI)      = grid%dfi_moist(:,:,:,P_QI)    !tgs
+      grid%moist(:,:,:,P_QS)      = grid%dfi_moist(:,:,:,P_QS)    !tgs
+      grid%moist(:,:,:,P_QG)      = grid%dfi_moist(:,:,:,P_QG)    !tgs
+
+       if(grid%dfi_stage .EQ. DFI_FWD) then
+!tgs change QV to restore initial RH field after the diabatic DFI
+            its = grid%sp31 ; ite = grid%ep31 ;  
+            kts = grid%sp32 ; kte = grid%ep32 ; 
+            jts = grid%sp33 ; jte = grid%ep33 ;
+   DO j=jts,jte
+      DO i=its,ite
+         do k = kts , kte
+          temp = (grid%t_2(i,k,j)+t0)*( (grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb )&
+                     ** (r_d / Cp)
+          pres = grid%p(i,k,j)+grid%pb(i,k,j)
+!tgs rslf - function to compute qs from Thompson microphysics
+          qs = rslf(pres, temp)
+
+!      if(i.eq. 178 .and. j.eq. 148 .and. k.eq.11) then
+!       print *,'temp,pres,qs-thomp',temp,pres,qs
+!      endif
+
+      IF(grid%moist(i,k,j,P_QC) .GT. 1.e-6 .or.                    &
+         grid%moist(i,k,j,P_QI) .GT. 1.e-6) THEN
+         grid%moist (i,k,j,P_QV) = MAX(0.,grid%dfi_rh(i,k,j)*QS)
+      ENDIF
+
+!      if(i.eq. 178 .and. j.eq. 148 .and. k.eq.11) then
+!       print *,'temp,pres,qs,grid%moist (i,k,j,P_QV)',temp,pres,qs,  &
+!                grid%moist(i,k,j,P_QV)
+!      endif
+         enddo
+      ENDDO
+   ENDDO
+       endif
+
+    ENDIF
+#endif
+#endif
+
+#if (NMM_CORE == 1)
+        write(mess,*) ' divide by grid%hcoeff_tot: ', grid%hcoeff_tot
+        call wrf_message(mess)
+	if (grid%hcoeff_tot .lt. 0.0001) then
+	call wrf_error_fatal("bad grid%hcoeff_tot")
+	endif
+       grid%pd(:,:)       = grid%dfi_pd(:,:)  / grid%hcoeff_tot
+       grid%pint(:,:,:)      = grid%dfi_pint(:,:,:) / grid%hcoeff_tot
+!       grid%dwdt(:,:,:)      = grid%dfi_dwdt(:,:,:) / grid%hcoeff_tot
+       grid%t(:,:,:)      = grid%dfi_t(:,:,:) / grid%hcoeff_tot
+       grid%q(:,:,:)      = grid%dfi_q(:,:,:) / grid%hcoeff_tot
+       grid%q2(:,:,:)     = grid%dfi_q2(:,:,:) / grid%hcoeff_tot
+       grid%cwm(:,:,:)    = grid%dfi_cwm(:,:,:) / grid%hcoeff_tot
+       grid%u(:,:,:)      = grid%dfi_u(:,:,:) / grid%hcoeff_tot
+       grid%v(:,:,:)      = grid%dfi_v(:,:,:) / grid%hcoeff_tot
+      grid%moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot
+      grid%scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot
+
+      ! restore initial fields
+      grid%SNOW(:,:)   = grid%dfi_SNOW(:,:)
+      grid%SNOWH(:,:)  = grid%dfi_SNOWH(:,:)
+!      grid%SNOWC(:,:)  = grid%dfi_SNOWC(:,:)
+      grid%CANWAT(:,:) = grid%dfi_CANWAT(:,:)
+      grid%NMM_TSK(:,:)    = grid%dfi_NMM_TSK(:,:)
+      ! save soil fields
+      grid%STC(:,:,:)         = grid%dfi_STC(:,:,:)
+      grid%SMC(:,:,:)        = grid%dfi_SMC(:,:,:)
+      grid%SH2O(:,:,:)       = grid%dfi_SH2O(:,:,:)
+#endif
+
+
+   END SUBROUTINE dfi_array_reset
 
    SUBROUTINE optfil_driver( grid )
 
@@ -642,11 +807,11 @@ call wrf_message(mess)
       grid%dfi_SMOIS(:,:,:)        = grid%SMOIS(:,:,:) 
       ! RUC LSM only, need conditional
       IF ( grid%sf_surface_physics .EQ. 3 ) then
-      grid%dfi_QVG(:,:)            = grid%QVG(:,:) 
-      grid%dfi_SOILT1(:,:)         = grid%SOILT1(:,:) 
-      grid%dfi_TSNAV(:,:)          = grid%TSNAV(:,:) 
-      grid%dfi_SMFR3D(:,:,:)       = grid%SMFR3D(:,:,:) 
-      grid%dfi_KEEPFR3DFLAG(:,:,:) = grid%KEEPFR3DFLAG(:,:,:) 
+         grid%dfi_QVG(:,:)            = grid%QVG(:,:) 
+         grid%dfi_SOILT1(:,:)         = grid%SOILT1(:,:) 
+         grid%dfi_TSNAV(:,:)          = grid%TSNAV(:,:) 
+         grid%dfi_SMFR3D(:,:,:)       = grid%SMFR3D(:,:,:) 
+         grid%dfi_KEEPFR3DFLAG(:,:,:) = grid%KEEPFR3DFLAG(:,:,:) 
       ENDIF
 #endif
 
@@ -707,159 +872,6 @@ call wrf_message(mess)
 #endif
 
    END SUBROUTINE dfi_save_arrays
-
-
-   SUBROUTINE dfi_array_reset( grid )
-
-      USE module_domain, ONLY : domain
-!      USE module_configure
-!      USE module_driver_constants
-!      USE module_machine
-!      USE module_dm
-      USE module_model_constants
-      USE module_state_description
-
-      IMPLICIT NONE
-
-      INTEGER :: its, ite, jts, jte, kts, kte, &
-                 i, j, k
-
-      !  Input data.
-      TYPE(domain) , POINTER          :: grid
-      ! local
-!      real p1000mb,eps,svp1,svp2,svp3,svpt0
-      real eps
-!      parameter (p1000mb = 1.e+05, eps=0.622,svp1=0.6112,svp3=29.65,svpt0=273.15)
-      parameter (eps=0.622)
-      REAL es,qs,pol,tx,temp,pres,rslf             
-
-      IF ( grid%dfi_opt .EQ. DFI_NODFI ) RETURN
-
-
-      ! Set dynamic variables
-      ! divide by total DFI coefficient
-
-#if (EM_CORE == 1)
-      grid%mu_2(:,:)    = grid%dfi_mu(:,:)      / grid%hcoeff_tot
-      grid%u_2(:,:,:)   = grid%dfi_u(:,:,:)     / grid%hcoeff_tot
-      grid%v_2(:,:,:)   = grid%dfi_v(:,:,:)     / grid%hcoeff_tot
-      grid%w_2(:,:,:)   = grid%dfi_w(:,:,:)     / grid%hcoeff_tot
-      grid%ww(:,:,:)    = grid%dfi_ww(:,:,:)    / grid%hcoeff_tot
-      grid%t_2(:,:,:)   = grid%dfi_t(:,:,:)     / grid%hcoeff_tot
-      grid%phb(:,:,:)   = grid%dfi_phb(:,:,:)   / grid%hcoeff_tot
-      grid%ph0(:,:,:)   = grid%dfi_ph0(:,:,:)   / grid%hcoeff_tot
-      grid%php(:,:,:)   = grid%dfi_php(:,:,:)   / grid%hcoeff_tot
-      grid%p(:,:,:)     = grid%dfi_p(:,:,:)     / grid%hcoeff_tot
-      grid%ph_2(:,:,:)  = grid%dfi_ph(:,:,:)    / grid%hcoeff_tot
-      grid%tke_2(:,:,:) = grid%dfi_tke(:,:,:)   / grid%hcoeff_tot
-      grid%al(:,:,:)    = grid%dfi_al(:,:,:)    / grid%hcoeff_tot
-      grid%alt(:,:,:)   = grid%dfi_alt(:,:,:)   / grid%hcoeff_tot
-      grid%pb(:,:,:)    = grid%dfi_pb(:,:,:)    / grid%hcoeff_tot
-#if ( WRF_DFI_RADAR == 1 )
-    IF ( grid%dfi_radar .EQ. 0 ) then   ! tgs no radar assimilation
-      grid%moist(:,:,:,:)  = max(0.,grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot)
-    ELSE
-      grid%moist(:,:,:,P_QV)  = max(0.,grid%dfi_moist(:,:,:,P_QV)  / grid%hcoeff_tot)
-    ENDIF
-#else
-      grid%moist(:,:,:,:)  = max(0.,grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot)
-#endif
-      grid%scalar(:,:,:,:) = max(0.,grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot)
-
-      ! restore initial fields
-      grid%SNOW  (:,:) = grid%dfi_SNOW  (:,:)
-      grid%SNOWH (:,:) = grid%dfi_SNOWH (:,:)
-      grid%SNOWC (:,:) = grid%dfi_SNOWC (:,:)
-      grid%CANWAT(:,:) = grid%dfi_CANWAT(:,:)
-      grid%TSK   (:,:) = grid%dfi_TSK   (:,:)
-
-      grid%TSLB  (:,:,:)       = grid%dfi_TSLB   (:,:,:)
-      grid%SMOIS (:,:,:)       = grid%dfi_SMOIS  (:,:,:)
-      IF ( grid%sf_surface_physics .EQ. 3 ) then
-      grid%QVG   (:,:)         = grid%dfi_QVG   (:,:)
-      grid%TSNAV (:,:)         = grid%dfi_TSNAV (:,:)  
-      grid%SOILT1(:,:)         = grid%dfi_SOILT1(:,:)   
-      grid%SMFR3D(:,:,:)       = grid%dfi_SMFR3D (:,:,:)
-      grid%KEEPFR3DFLAG(:,:,:) = grid%dfi_KEEPFR3DFLAG(:,:,:)
-      ENDIF
-
-      ! restore analized hydrometeor fileds 
-#if ( WRF_DFI_RADAR == 1 )
-    IF ( grid%dfi_radar .EQ. 1 ) then
-!      grid%moist(:,:,:,:)      = grid%dfi_moist(:,:,:,:)    !tgs
-      grid%moist(:,:,:,P_QC)      = grid%dfi_moist(:,:,:,P_QC)    !tgs
-      grid%moist(:,:,:,P_QR)      = grid%dfi_moist(:,:,:,P_QR)    !tgs
-      grid%moist(:,:,:,P_QI)      = grid%dfi_moist(:,:,:,P_QI)    !tgs
-      grid%moist(:,:,:,P_QS)      = grid%dfi_moist(:,:,:,P_QS)    !tgs
-      grid%moist(:,:,:,P_QG)      = grid%dfi_moist(:,:,:,P_QG)    !tgs
-
-       if(grid%dfi_stage .EQ. DFI_FWD) then
-!tgs change QV to restore initial RH field after the diabatic DFI
-            its = grid%sp31 ; ite = grid%ep31 ;  
-            kts = grid%sp32 ; kte = grid%ep32 ; 
-            jts = grid%sp33 ; jte = grid%ep33 ;
-   DO j=jts,jte
-      DO i=its,ite
-         do k = kts , kte
-          temp = (grid%t_2(i,k,j)+t0)*( (grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb )&
-                     ** (r_d / Cp)
-          pres = grid%p(i,k,j)+grid%pb(i,k,j)
-!tgs rslf - function to compute qs from Thompson microphysics
-          qs = rslf(pres, temp)
-
-!      if(i.eq. 178 .and. j.eq. 148 .and. k.eq.11) then
-!       print *,'temp,pres,qs-thomp',temp,pres,qs
-!      endif
-
-      IF(grid%moist(i,k,j,P_QC) .GT. 1.e-6 .or.                    &
-         grid%moist(i,k,j,P_QI) .GT. 1.e-6) THEN
-         grid%moist (i,k,j,P_QV) = MAX(0.,grid%dfi_rh(i,k,j)*QS)
-      ENDIF
-
-!      if(i.eq. 178 .and. j.eq. 148 .and. k.eq.11) then
-!       print *,'temp,pres,qs,grid%moist (i,k,j,P_QV)',temp,pres,qs,  &
-!                grid%moist(i,k,j,P_QV)
-!      endif
-         enddo
-      ENDDO
-   ENDDO
-       endif
-
-    ENDIF
-#endif
-#endif
-
-#if (NMM_CORE == 1)
-        write(0,*) ' divide by grid%hcoeff_tot: ', grid%hcoeff_tot
-	if (grid%hcoeff_tot .lt. 0.0001) then
-	call wrf_error_fatal("bad grid%hcoeff_tot")
-	endif
-       grid%pd(:,:)       = grid%dfi_pd(:,:)  / grid%hcoeff_tot
-       grid%pint(:,:,:)      = grid%dfi_pint(:,:,:) / grid%hcoeff_tot
-!       grid%dwdt(:,:,:)      = grid%dfi_dwdt(:,:,:) / grid%hcoeff_tot
-       grid%t(:,:,:)      = grid%dfi_t(:,:,:) / grid%hcoeff_tot
-       grid%q(:,:,:)      = grid%dfi_q(:,:,:) / grid%hcoeff_tot
-       grid%q2(:,:,:)     = grid%dfi_q2(:,:,:) / grid%hcoeff_tot
-       grid%cwm(:,:,:)    = grid%dfi_cwm(:,:,:) / grid%hcoeff_tot
-       grid%u(:,:,:)      = grid%dfi_u(:,:,:) / grid%hcoeff_tot
-       grid%v(:,:,:)      = grid%dfi_v(:,:,:) / grid%hcoeff_tot
-      grid%moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot
-      grid%scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot
-
-      ! restore initial fields
-      grid%SNOW(:,:)   = grid%dfi_SNOW(:,:)
-      grid%SNOWH(:,:)  = grid%dfi_SNOWH(:,:)
-!      grid%SNOWC(:,:)  = grid%dfi_SNOWC(:,:)
-      grid%CANWAT(:,:) = grid%dfi_CANWAT(:,:)
-      grid%NMM_TSK(:,:)    = grid%dfi_NMM_TSK(:,:)
-      ! save soil fields
-      grid%STC(:,:,:)         = grid%dfi_STC(:,:,:)
-      grid%SMC(:,:,:)        = grid%dfi_SMC(:,:,:)
-      grid%SH2O(:,:,:)       = grid%dfi_SH2O(:,:,:)
-#endif
-
-
-   END SUBROUTINE dfi_array_reset
 
 
    SUBROUTINE dfcoef (NSTEPS,DT,TAUC,NFILT,H)
@@ -1317,7 +1329,6 @@ call wrf_message(mess)
       NM1 = N-1
 
       THETAS = 2*PI*ABS(DELTAT/TAUS)
-	
       X0 = 1/COS(THETAS/2)
       TERM1 = (X0 + SQRT(X0**2-1))**(FLOAT(N-1))
       TERM2 = (X0 - SQRT(X0**2-1))**(FLOAT(N-1))
@@ -2364,5 +2375,529 @@ call wrf_message(mess)
 
       END FUNCTION RSLF
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! DFI startfwd group of functions
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! #endif
+   SUBROUTINE wrf_dfi_startfwd_init ( )
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time, set_current_grid_ptr
+     USE module_utility
+     
+     IMPLICIT NONE
+
+     INTERFACE
+        SUBROUTINE dfi_startfwd_init_recurse(grid)
+          USE module_domain, ONLY : domain
+          TYPE (domain), POINTER :: grid
+        END SUBROUTINE dfi_startfwd_init_recurse
+     END INTERFACE
+
+     ! Now, setup all nests
+
+     CALL dfi_startfwd_init_recurse(head_grid)
+     
+     CALL set_current_grid_ptr( head_grid )
+
+   END SUBROUTINE wrf_dfi_startfwd_init
+
+
+   RECURSIVE SUBROUTINE dfi_startfwd_init_recurse(grid)
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time, max_nests, set_current_grid_ptr
+
+     IMPLICIT NONE
+
+      INTERFACE
+         SUBROUTINE dfi_startfwd_init(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE dfi_startfwd_init
+      END INTERFACE
+
+     INTEGER :: kid
+     TYPE (domain), POINTER :: grid
+     TYPE (domain), POINTER :: grid_ptr
+    
+     grid_ptr => grid
+
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+        !
+        ! Assure that time-step is set back to positive
+        !   for this forward step.
+        !
+        grid_ptr%dt = abs(grid_ptr%dt)
+        grid_ptr%time_step = abs(grid_ptr%time_step)
+        CALL set_current_grid_ptr( grid_ptr )
+        CALL dfi_startfwd_init( grid_ptr )
+        DO kid = 1, max_nests
+           IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+              CALL dfi_startfwd_init_recurse(grid_ptr%nests(kid)%ptr)
+           ENDIF
+        END DO
+        grid_ptr => grid_ptr%sibling
+     END DO
+     
+   END SUBROUTINE dfi_startfwd_init_recurse
+
+
+   SUBROUTINE dfi_startfwd_init ( grid )
+
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
+      USE module_utility
+      USE module_state_description
+
+      IMPLICIT NONE
+
+      TYPE (domain) , POINTER                 :: grid
+      INTEGER rc
+
+      INTERFACE
+         SUBROUTINE Setup_Timekeeping(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE Setup_Timekeeping
+
+      END INTERFACE
+
+      grid%dfi_stage = DFI_STARTFWD
+
+#if (EM_CORE == 1)
+      ! No need for adaptive time-step
+      CALL nl_set_use_adaptive_time_step( grid%id, .false. )
+#endif
+
+      CALL Setup_Timekeeping (grid)
+      grid%start_subtime = domain_get_start_time ( head_grid )
+      grid%stop_subtime = domain_get_stop_time ( head_grid )
+
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%start_subtime, rc=rc)
+
+   END SUBROUTINE dfi_startfwd_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! DFI startbck group of functions
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE wrf_dfi_startbck_init ( )
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time, set_current_grid_ptr
+     USE module_utility
+     
+     IMPLICIT NONE
+
+     INTERFACE
+        SUBROUTINE dfi_startbck_init_recurse(grid)
+          USE module_domain, ONLY : domain
+          TYPE (domain), POINTER :: grid
+        END SUBROUTINE dfi_startbck_init_recurse
+     END INTERFACE
+
+     ! Now, setup all nests
+
+     CALL dfi_startbck_init_recurse(head_grid)
+     
+     CALL set_current_grid_ptr( head_grid )
+
+   END SUBROUTINE wrf_dfi_startbck_init
+
+
+   RECURSIVE SUBROUTINE dfi_startbck_init_recurse(grid)
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time, max_nests, set_current_grid_ptr
+
+     IMPLICIT NONE
+
+      INTERFACE
+         SUBROUTINE dfi_startbck_init(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE dfi_startbck_init
+      END INTERFACE
+
+     INTEGER :: kid
+     TYPE (domain), POINTER :: grid
+     TYPE (domain), POINTER :: grid_ptr
+    
+     grid_ptr => grid
+
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+        !
+        ! Assure that time-step is set back to positive
+        !   for this forward step.
+        !
+        grid_ptr%dt = abs(grid_ptr%dt)
+        grid_ptr%time_step = abs(grid_ptr%time_step)
+        CALL set_current_grid_ptr( grid_ptr )
+        CALL dfi_startbck_init( grid_ptr )
+        DO kid = 1, max_nests
+           IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+              CALL dfi_startbck_init_recurse(grid_ptr%nests(kid)%ptr)
+           ENDIF
+        END DO
+        grid_ptr => grid_ptr%sibling
+     END DO
+     
+   END SUBROUTINE dfi_startbck_init_recurse
+
+
+   SUBROUTINE dfi_startbck_init ( grid )
+
+      USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
+      USE module_utility
+      USE module_state_description
+
+      IMPLICIT NONE
+
+      TYPE (domain) , POINTER                 :: grid
+      INTEGER rc
+
+      INTERFACE
+         SUBROUTINE Setup_Timekeeping(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE Setup_Timekeeping
+
+      END INTERFACE
+
+      grid%dfi_stage = DFI_STARTBCK
+
+      ! set physics options to zero
+      CALL nl_set_mp_physics( grid%id, 0 )
+      CALL nl_set_ra_lw_physics( grid%id, 0 )
+      CALL nl_set_ra_sw_physics( grid%id, 0 )
+      CALL nl_set_sf_surface_physics( grid%id, 0 )
+      CALL nl_set_sf_sfclay_physics( grid%id, 0 )
+      CALL nl_set_sf_urban_physics( grid%id, 0 )
+      CALL nl_set_bl_pbl_physics( grid%id, 0 )
+      CALL nl_set_cu_physics( grid%id, 0 )
+      CALL nl_set_damp_opt( grid%id, 0 )
+      CALL nl_set_diff_6th_opt( grid%id, 0 )
+      CALL nl_set_sst_update( grid%id, 0 )
+      CALL nl_set_gwd_opt( grid%id, 0 )
+#if (EM_CORE == 1)
+      CALL nl_set_use_adaptive_time_step( grid%id, .false. )
+#endif
+      CALL nl_set_feedback( grid%id, 0 )
+#if (EM_CORE == 1)
+      ! set bc
+      CALL nl_set_constant_bc( grid%id, head_grid%constant_bc)
+#endif
+
+#ifdef WRF_CHEM
+      ! set chemistry option to zero
+      CALL nl_set_chem_opt (grid%id, 0)
+      CALL nl_set_aer_ra_feedback (grid%id, 0)
+      CALL nl_set_io_form_auxinput5 (grid%id, 0)
+      CALL nl_set_io_form_auxinput7 (grid%id, 0)
+      CALL nl_set_io_form_auxinput8 (grid%id, 0)
+#endif
+
+#if (EM_CORE == 1)
+      ! set diffusion to zero for backward integration
+      CALL nl_set_km_opt( grid%id, grid%km_opt_dfi)
+      CALL nl_set_moist_adv_dfi_opt( grid%id, grid%moist_adv_dfi_opt)
+      IF ( grid%moist_adv_opt == 2 ) THEN
+         CALL nl_set_moist_adv_opt( grid%id, 0)
+      ENDIF
+#endif
+
+      !tgs need to call start_domain here to reset bc initialization for 
+      !      negative dt, but only for outer domain.
+      if (grid%id == 1) then
+        CALL start_domain ( grid , .TRUE. )
+      endif
+
+      ! Call wrf_run to advance forward 1 step
+
+      ! Negate time step
+      CALL nl_set_time_step ( grid%id, -grid%time_step )
+
+      CALL Setup_Timekeeping (grid) 
+
+      grid%start_subtime = domain_get_start_time ( grid )
+      grid%stop_subtime = domain_get_stop_time ( grid )
+
+      CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%start_subtime, rc=rc)
+
+   END SUBROUTINE dfi_startbck_init
+
+
+   SUBROUTINE wrf_dfi_bck_init ( )
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
+     USE module_utility
+     USE module_state_description
+     
+     IMPLICIT NONE
+
+     INTERFACE
+        SUBROUTINE dfi_bck_init_recurse(grid)
+          USE module_domain, ONLY : domain
+          TYPE (domain), POINTER :: grid
+        END SUBROUTINE dfi_bck_init_recurse
+     END INTERFACE
+
+     ! We can only call dfi_bck_init for the head_grid
+     !    since nests have not been instantiated at this point,
+     !    so, dfi_bck_init will need to be called for each
+     !    nest from integrate.
+     CALL dfi_bck_init_recurse(head_grid)
+
+   END SUBROUTINE wrf_dfi_bck_init
+
+   RECURSIVE SUBROUTINE dfi_bck_init_recurse(grid)
+
+     USE module_domain, ONLY : domain, domain_get_stop_time, domain_get_start_time, max_nests, set_current_grid_ptr
+
+     IMPLICIT NONE
+
+      INTERFACE
+         SUBROUTINE dfi_bck_init(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE dfi_bck_init
+      END INTERFACE
+
+     INTEGER :: kid
+     TYPE (domain), POINTER :: grid
+     TYPE (domain), POINTER :: grid_ptr
+    
+     grid_ptr => grid
+
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+        !
+        ! Assure that time-step is set back to positive
+        !   for this forward step.
+        !
+        grid_ptr%dt = abs(grid_ptr%dt)
+        grid_ptr%time_step = abs(grid_ptr%time_step)
+        CALL set_current_grid_ptr( grid_ptr )
+        CALL dfi_bck_init( grid_ptr )
+        DO kid = 1, max_nests
+           IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+              CALL dfi_bck_init_recurse(grid_ptr%nests(kid)%ptr)
+           ENDIF
+        END DO
+        grid_ptr => grid_ptr%sibling
+     END DO
+     
+   END SUBROUTINE dfi_bck_init_recurse
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! DFI forward initialization group of functions
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE wrf_dfi_fwd_init ( )
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time, set_current_grid_ptr
+     USE module_utility
+     
+     IMPLICIT NONE
+
+     INTERFACE
+        SUBROUTINE dfi_fwd_init_recurse(grid)
+          USE module_domain, ONLY : domain
+          TYPE (domain), POINTER :: grid
+        END SUBROUTINE dfi_fwd_init_recurse
+     END INTERFACE
+
+     ! Now, setup all nests
+
+     CALL dfi_fwd_init_recurse(head_grid)
+     
+     CALL set_current_grid_ptr( head_grid )
+
+   END SUBROUTINE wrf_dfi_fwd_init
+
+   RECURSIVE SUBROUTINE dfi_fwd_init_recurse(grid)
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time, max_nests, set_current_grid_ptr
+
+     IMPLICIT NONE
+
+      INTERFACE
+         SUBROUTINE dfi_fwd_init(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE dfi_fwd_init
+      END INTERFACE
+
+     INTEGER :: kid
+     TYPE (domain), POINTER :: grid
+     TYPE (domain), POINTER :: grid_ptr
+    
+     grid_ptr => grid
+
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+        !
+        ! Assure that time-step is set back to positive
+        !   for this forward step.
+        !
+        grid_ptr%dt = abs(grid_ptr%dt)
+        grid_ptr%time_step = abs(grid_ptr%time_step)
+        CALL set_current_grid_ptr( grid_ptr )
+        CALL dfi_fwd_init( grid_ptr )
+        DO kid = 1, max_nests
+           IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+              CALL dfi_fwd_init_recurse(grid_ptr%nests(kid)%ptr)
+           ENDIF
+        END DO
+        grid_ptr => grid_ptr%sibling
+     END DO
+     
+   END SUBROUTINE dfi_fwd_init_recurse
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! DFI forecast initialization group of functions
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE wrf_dfi_fst_init ( )
+
+     USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time, set_current_grid_ptr
+     USE module_utility
+     
+     IMPLICIT NONE
+
+     INTERFACE
+        SUBROUTINE dfi_fst_init_recurse(grid)
+          USE module_domain, ONLY : domain
+          TYPE (domain), POINTER :: grid
+        END SUBROUTINE dfi_fst_init_recurse
+     END INTERFACE
+
+     ! Now, setup all nests
+
+     CALL dfi_fst_init_recurse(head_grid)
+     
+     CALL set_current_grid_ptr( head_grid )
+
+   END SUBROUTINE wrf_dfi_fst_init
+
+   RECURSIVE SUBROUTINE dfi_fst_init_recurse ( grid )
+
+     USE module_domain, ONLY : domain, domain_get_stop_time, domain_get_start_time, max_nests, set_current_grid_ptr
+
+     IMPLICIT NONE
+
+      INTERFACE
+         SUBROUTINE dfi_fst_init(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE dfi_fst_init
+      END INTERFACE
+
+     INTEGER :: kid
+     TYPE (domain), POINTER :: grid
+     TYPE (domain), POINTER :: grid_ptr
+    
+     grid_ptr => grid
+
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+        !
+        ! Assure that time-step is set back to positive
+        !   for this forward step.
+        !
+        grid_ptr%dt = abs(grid_ptr%dt)
+        grid_ptr%time_step = abs(grid_ptr%time_step)
+        CALL set_current_grid_ptr( grid_ptr )
+        CALL dfi_fst_init( grid_ptr )
+        DO kid = 1, max_nests
+           IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+              CALL dfi_fst_init_recurse(grid_ptr%nests(kid)%ptr)
+           ENDIF
+        END DO
+        grid_ptr => grid_ptr%sibling
+     END DO
+     
+   END SUBROUTINE dfi_fst_init_recurse
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! DFI write initialization group of functions
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE wrf_dfi_write_initialized_state( )
+
+     USE module_domain, ONLY : domain, head_grid
+
+     INTERFACE
+        SUBROUTINE dfi_write_initialized_state_recurse(grid)
+          USE module_domain, ONLY : domain
+          TYPE (domain), POINTER :: grid
+        END SUBROUTINE dfi_write_initialized_state_recurse
+     END INTERFACE
+
+     ! Now, setup all nests
+
+     CALL dfi_write_initialized_state_recurse(head_grid)
+     
+   END SUBROUTINE wrf_dfi_write_initialized_state
+
+   RECURSIVE SUBROUTINE dfi_write_initialized_state_recurse( grid )
+
+     USE module_domain, ONLY : domain, max_nests
+     
+     IMPLICIT NONE
+     
+     INTERFACE
+        SUBROUTINE dfi_write_initialized_state( grid )
+          USE module_domain, ONLY : domain
+          TYPE (domain), POINTER :: grid
+        END SUBROUTINE dfi_write_initialized_state
+     END INTERFACE
+     
+     INTEGER :: kid
+     TYPE (domain), POINTER :: grid
+     TYPE (domain), POINTER :: grid_ptr
+     
+     grid_ptr => grid
+     
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+        !
+        ! Assure that time-step is set back to positive
+        !   for this forward step.
+        !
+        CALL dfi_write_initialized_state( grid_ptr )
+        DO kid = 1, max_nests
+           IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+              CALL dfi_write_initialized_state_recurse(grid_ptr%nests(kid)%ptr)
+           ENDIF
+        END DO
+        grid_ptr => grid_ptr%sibling
+     END DO
+     
+   END SUBROUTINE dfi_write_initialized_state_recurse
+
+
+   RECURSIVE SUBROUTINE dfi_array_reset_recurse(grid)
+
+     USE module_domain, ONLY : domain, max_nests, set_current_grid_ptr
+
+     IMPLICIT NONE
+
+      INTERFACE
+         SUBROUTINE dfi_array_reset(grid)
+            USE module_domain, ONLY : domain
+            TYPE (domain), POINTER :: grid
+         END SUBROUTINE dfi_array_reset
+      END INTERFACE
+
+     INTEGER :: kid
+     TYPE (domain), POINTER :: grid
+     TYPE (domain), POINTER :: grid_ptr
+    
+     grid_ptr => grid
+
+     DO WHILE ( ASSOCIATED( grid_ptr ) )
+        CALL set_current_grid_ptr( grid_ptr )
+        CALL dfi_array_reset( grid_ptr )
+        DO kid = 1, max_nests
+           IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+              CALL dfi_array_reset_recurse(grid_ptr%nests(kid)%ptr)
+           ENDIF
+        END DO
+        grid_ptr => grid_ptr%sibling
+     END DO
+     
+   END SUBROUTINE dfi_array_reset_recurse
+

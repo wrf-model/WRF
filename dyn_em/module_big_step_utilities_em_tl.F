@@ -4547,40 +4547,41 @@ END SUBROUTINE g_calculate_full
  ENDDO
  ENDDO
 
-! boundary loops for coriolis not needed for open bdy  (commented out 20100611 XZ)
-! IF( (config_flags%open_xs) .and. (its == ids) ) THEN
+! boundary loops for perturbation coriolis is needed for open bdy  (20110307 XZ)
+ IF( (config_flags%open_xs) .and. (its == ids) ) THEN
 
-! DO k =kts,ktf
+ DO k =kts,ktf
 
-! g_ru_tend(its,k,j) =g_ru_tend(its,k,j) +(msfux(its,j)/msfuy(its,j)) &
-! *0.5 *(f(its,j)+f(its,j)) *0.25*(g_rv(its,k,j+1) +g_rv(its,k,j+1) &
-! +g_rv(its,k,j) +g_rv(its,k,j)) -0.5 *(e(its,j)+e(its,j)) *0.5 *(cosa(its,j) &
-!+cosa(its,j)) *0.25*(g_rw(its,k+1,j) +g_rw(its,k,j) +g_rw(its,k+1,j) &
-! +g_rw(its,k,j))
-! ru_tend(its,k,j) =ru_tend(its,k,j) +(msfux(its,j)/msfuy(its,j)) *0.5 *(f(its,j) &
-!+f(its,j)) *0.25*(rv(its,k,j+1) +rv(its,k,j+1) +rv(its,k,j) +rv(its,k,j)) &
-! -0.5 *(e(its,j)+e(its,j)) *0.5 *(cosa(its,j)+cosa(its,j)) *0.25*(rw(its,k+1,j) &
-! +rw(its,k,j) +rw(its,k+1,j) +rw(its,k,j))
+ g_ru_tend(its,k,j) =g_ru_tend(its,k,j) +(msfux(its,j)/msfuy(its,j)) &
+ *0.5 *(f(its,j)+f(its,j)) *0.25*(g_rv(its,k,j+1) +g_rv(its,k,j+1) &
+ +g_rv(its,k,j) +g_rv(its,k,j)) -0.5 *(e(its,j)+e(its,j)) *0.5 *(cosa(its,j) &
++cosa(its,j)) *0.25*(g_rw(its,k+1,j) +g_rw(its,k,j) +g_rw(its,k+1,j) &
+ +g_rw(its,k,j))
+ ru_tend(its,k,j) =ru_tend(its,k,j) +(msfux(its,j)/msfuy(its,j)) *0.5 *(f(its,j) &
++f(its,j)) *0.25*(rv(its,k,j+1) +rv(its,k,j+1) +rv(its,k,j) +rv(its,k,j)) &
+ -0.5 *(e(its,j)+e(its,j)) *0.5 *(cosa(its,j)+cosa(its,j)) *0.25*(rw(its,k+1,j) &
+ +rw(its,k,j) +rw(its,k+1,j) +rw(its,k,j))
 
-! ENDDO
-! ENDIF
+ ENDDO
+ ENDIF
 
-! IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
- 
-! DO k =kts,ktf
+ IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
 
-! g_ru_tend(ite,k,j) =g_ru_tend(ite,k,j) +(msfux(ite,j)/msfuy(ite,j)) &
-! *0.5 *(f(ite-1,j)+f(ite-1,j)) *0.25*(g_rv(ite-1,k,j+1) +g_rv(ite-1,k,j+1) &
-! +g_rv(ite-1,k,j) +g_rv(ite-1,k,j)) -0.5 *(e(ite-1,j)+e(ite-1,j)) &
-! *0.5 *(cosa(ite-1,j)+cosa(ite-1,j)) *0.25*(g_rw(ite-1,k+1,j) +g_rw(ite-1,k,j) &
-! +g_rw(ite-1,k+1,j) +g_rw(ite-1,k,j))
-! ru_tend(ite,k,j) =ru_tend(ite,k,j) +(msfux(ite,j)/msfuy(ite,j)) *0.5 *(f(ite-1,j) &
-!+f(ite-1,j)) *0.25*(rv(ite-1,k,j+1) +rv(ite-1,k,j+1) +rv(ite-1,k,j) +rv(ite-1,k,j)) &
-! -0.5 *(e(ite-1,j)+e(ite-1,j)) *0.5 *(cosa(ite-1,j)+cosa(ite-1,j)) *0.25*(rw(ite-1,k+ &
-! 1,j) +rw(ite-1,k,j) +rw(ite-1,k+1,j) +rw(ite-1,k,j))
- 
-! ENDDO
-! ENDIF
+ DO k =kts,ktf
+
+ g_ru_tend(ite,k,j) =g_ru_tend(ite,k,j) +(msfux(ite,j)/msfuy(ite,j)) &
+ *0.5 *(f(ite-1,j)+f(ite-1,j)) *0.25*(g_rv(ite-1,k,j+1) +g_rv(ite-1,k,j+1) &
+ +g_rv(ite-1,k,j) +g_rv(ite-1,k,j)) -0.5 *(e(ite-1,j)+e(ite-1,j)) &
+ *0.5 *(cosa(ite-1,j)+cosa(ite-1,j)) *0.25*(g_rw(ite-1,k+1,j) +g_rw(ite-1,k,j) &
+ +g_rw(ite-1,k+1,j) +g_rw(ite-1,k,j))
+ ru_tend(ite,k,j) =ru_tend(ite,k,j) +(msfux(ite,j)/msfuy(ite,j)) *0.5 *(f(ite-1,j) &
++f(ite-1,j)) *0.25*(rv(ite-1,k,j+1) +rv(ite-1,k,j+1) +rv(ite-1,k,j) +rv(ite-1,k,j)) &
+ -0.5 *(e(ite-1,j)+e(ite-1,j)) *0.5 *(cosa(ite-1,j)+cosa(ite-1,j)) *0.25*(rw(ite-1,k+ &
+ 1,j) +rw(ite-1,k,j) +rw(ite-1,k+1,j) +rw(ite-1,k,j))
+
+ ENDDO
+ ENDIF
+
  ENDDO
 
  j_start =jts
@@ -4687,25 +4688,25 @@ END SUBROUTINE g_calculate_full
  ENDDO
  ENDDO
 
-! boundary loops for coriolis not needed for open bdy  (commented out 20100611 XZ)
-! IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
+! boundary loops for perturbation coriolis is needed for open bdy  (20110301 XZ)
+ IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
 
-! DO k =kts,ktf
-! DO i =its,min(ide-1,ite)
+ DO k =kts,ktf
+ DO i =its,min(ide-1,ite)
 
-! g_rv_tend(i,k,jts) =g_rv_tend(i,k,jts) -(msfvy(i,jts)/msfvx(i,jts)) &
-! *0.5 *(f(i,jts)+f(i,jts)) *0.25*(g_ru(i,k,jts) +g_ru(i+1,k,jts) +g_ru(i,k, &
-! jts) +g_ru(i+1,k,jts)) +(msfvy(i,jts)/msfvx(i,jts)) *0.5 *(e(i,jts)+e(i,jts)) &
-! *0.5 *(sina(i,jts)+sina(i,jts)) *0.25*(g_rw(i,k+1,jts) +g_rw(i,k,jts) &
-! +g_rw(i,k+1,jts) +g_rw(i,k,jts))
-! rv_tend(i,k,jts) =rv_tend(i,k,jts) -(msfvy(i,jts)/msfvx(i,jts)) *0.5 *(f(i,jts) &
-!+f(i,jts)) *0.25*(ru(i,k,jts) +ru(i+1,k,jts) +ru(i,k,jts) +ru(i+1,k,jts)) &
-! +(msfvy(i,jts)/msfvx(i,jts)) *0.5 *(e(i,jts)+e(i,jts)) *0.5 *(sina(i,jts) &
-!+sina(i,jts)) *0.25*(rw(i,k+1,jts) +rw(i,k,jts) +rw(i,k+1,jts) +rw(i,k,jts))
+ g_rv_tend(i,k,jts) =g_rv_tend(i,k,jts) -(msfvy(i,jts)/msfvx(i,jts)) &
+ *0.5 *(f(i,jts)+f(i,jts)) *0.25*(g_ru(i,k,jts) +g_ru(i+1,k,jts) +g_ru(i,k, &
+ jts) +g_ru(i+1,k,jts)) +(msfvy(i,jts)/msfvx(i,jts)) *0.5 *(e(i,jts)+e(i,jts)) &
+ *0.5 *(sina(i,jts)+sina(i,jts)) *0.25*(g_rw(i,k+1,jts) +g_rw(i,k,jts) &
+ +g_rw(i,k+1,jts) +g_rw(i,k,jts))
+ rv_tend(i,k,jts) =rv_tend(i,k,jts) -(msfvy(i,jts)/msfvx(i,jts)) *0.5 *(f(i,jts) &
++f(i,jts)) *0.25*(ru(i,k,jts) +ru(i+1,k,jts) +ru(i,k,jts) +ru(i+1,k,jts)) &
+ +(msfvy(i,jts)/msfvx(i,jts)) *0.5 *(e(i,jts)+e(i,jts)) *0.5 *(sina(i,jts) &
++sina(i,jts)) *0.25*(rw(i,k+1,jts) +rw(i,k,jts) +rw(i,k+1,jts) +rw(i,k,jts))
 
-! ENDDO
-! ENDDO
-! ENDIF
+ ENDDO
+ ENDDO
+ ENDIF
 
  DO j =j_start,j_end
  DO k =kts,ktf
@@ -4724,25 +4725,25 @@ END SUBROUTINE g_calculate_full
  ENDDO
  ENDDO
 
-! boundary loops for coriolis not needed for open bdy  (commented out 20100611 XZ)
-! IF( (config_flags%open_ye) .and. (jte == jde) ) THEN
+! boundary loops for perturbation coriolis is needed for open bdy  (20110307 XZ)
+ IF( (config_flags%open_ye) .and. (jte == jde) ) THEN
 
-! DO k =kts,ktf
-! DO i =its,min(ide-1,ite)
+ DO k =kts,ktf
+ DO i =its,min(ide-1,ite)
 
-! g_rv_tend(i,k,jte) =g_rv_tend(i,k,jte) -(msfvy(i,jte)/msfvx(i,jte)) &
-! *0.5 *(f(i,jte-1)+f(i,jte-1)) *0.25*(g_ru(i,k,jte-1) +g_ru(i+1,k,jte-1) &
-! +g_ru(i,k,jte-1) +g_ru(i+1,k,jte-1)) +(msfvy(i,jte)/msfvx(i,jte)) &
-! *0.5 *(e(i,jte-1)+e(i,jte-1)) *0.5 *(sina(i,jte-1)+sina(i,jte-1)) *0.25*(g_rw(i, &
-! k+1,jte-1) +g_rw(i,k,jte-1) +g_rw(i,k+1,jte-1) +g_rw(i,k,jte-1))
-! rv_tend(i,k,jte) =rv_tend(i,k,jte) -(msfvy(i,jte)/msfvx(i,jte)) *0.5 *(f(i,jte-1) &
-!+f(i,jte-1)) *0.25*(ru(i,k,jte-1) +ru(i+1,k,jte-1) +ru(i,k,jte-1) +ru(i+1,k,jte-1)) &
-! +(msfvy(i,jte)/msfvx(i,jte)) *0.5 *(e(i,jte-1)+e(i,jte-1)) *0.5 *(sina(i,jte-1) &
-!+sina(i,jte-1)) *0.25*(rw(i,k+1,jte-1) +rw(i,k,jte-1) +rw(i,k+1,jte-1) +rw(i,k,jte-1))
+ g_rv_tend(i,k,jte) =g_rv_tend(i,k,jte) -(msfvy(i,jte)/msfvx(i,jte)) &
+ *0.5 *(f(i,jte-1)+f(i,jte-1)) *0.25*(g_ru(i,k,jte-1) +g_ru(i+1,k,jte-1) &
+ +g_ru(i,k,jte-1) +g_ru(i+1,k,jte-1)) +(msfvy(i,jte)/msfvx(i,jte)) &
+ *0.5 *(e(i,jte-1)+e(i,jte-1)) *0.5 *(sina(i,jte-1)+sina(i,jte-1)) *0.25*(g_rw(i, &
+ k+1,jte-1) +g_rw(i,k,jte-1) +g_rw(i,k+1,jte-1) +g_rw(i,k,jte-1))
+ rv_tend(i,k,jte) =rv_tend(i,k,jte) -(msfvy(i,jte)/msfvx(i,jte)) *0.5 *(f(i,jte-1) &
++f(i,jte-1)) *0.25*(ru(i,k,jte-1) +ru(i+1,k,jte-1) +ru(i,k,jte-1) +ru(i+1,k,jte-1)) &
+ +(msfvy(i,jte)/msfvx(i,jte)) *0.5 *(e(i,jte-1)+e(i,jte-1)) *0.5 *(sina(i,jte-1) &
++sina(i,jte-1)) *0.25*(rw(i,k+1,jte-1) +rw(i,k,jte-1) +rw(i,k+1,jte-1) +rw(i,k,jte-1))
 
-! ENDDO
-! ENDDO
-! ENDIF
+ ENDDO
+ ENDDO
+ ENDIF
 
  DO j =jts,min(jte,jde-1)
  DO k =kts+1,ktf

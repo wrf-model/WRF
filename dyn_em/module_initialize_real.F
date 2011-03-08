@@ -4201,13 +4201,13 @@ print *,'p target= ',target_x
              if ( p(i,k,j) .NE. 0. ) then
                t(i,k,j) = t(i,k,j) / ( ( p00 / p(i,k,j) ) ** (Rd / Cp) )
              else
-               WRITE(mess,FMT='(*)') 'Troubles in theta_to_t'
+               WRITE(mess,*) 'Troubles in theta_to_t'
                CALL wrf_debug(0,mess)
-               WRITE(mess,FMT='(*)') "i,j,k = ", i,j,k
+               WRITE(mess,*) "i,j,k = ", i,j,k
                CALL wrf_debug(0,mess)
-               WRITE(mess,FMT='(*)') "p(i,k,j) = ", p(i,k,j)
+               WRITE(mess,*) "p(i,k,j) = ", p(i,k,j)
                CALL wrf_debug(0,mess)
-               WRITE(mess,FMT='(*)') "t(i,k,j) = ", t(i,k,j)
+               WRITE(mess,*) "t(i,k,j) = ", t(i,k,j)
                CALL wrf_debug(0,mess)
              endif
             END DO
@@ -4477,14 +4477,14 @@ print *,'p sfc = ',psfc(i,j)
                      es=.01*rh(i,k,j)*svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
                      IF (es .ge. p(i,k,j)/100.)THEN
                        q(i,k,j)=0.0
-                       WRITE(mess,FMT='(*)') 'Warning: vapor pressure exceeds total pressure, setting Qv to 0'
+                       WRITE(mess,*) 'Warning: vapor pressure exceeds total pressure, setting Qv to 0'
                        CALL wrf_debug(0,mess)
                      ELSE
                        q(i,k,j)=eps*es/(p(i,k,j)/100.-es)
                      ENDIF
                   else
                      q(i,k,j)=0.0
-                     WRITE(mess,FMT='(*)') 't(i,j,k) was 0 at ', i,j,k,', setting Qv to 0'
+                     WRITE(mess,*) 't(i,j,k) was 0 at ', i,j,k,', setting Qv to 0'
                      CALL wrf_debug(0,mess)
                   endif
                END DO

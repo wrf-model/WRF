@@ -456,8 +456,9 @@ solve_em_tl.o:  module_small_step_em.o \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		../share/module_bc_tl.o \
-		../phys/module_microphysics_driver.o \
+		../phys/module_microphysics_driver_tl.o \
 		../phys/module_microphysics_zero_out.o \
+		../phys/module_microphysics_zero_out_tl.o \
 		../phys/module_physics_addtendc.o
 
 solve_em_ad.o:  module_small_step_em.o 		\
@@ -486,9 +487,11 @@ solve_em_ad.o:  module_small_step_em.o 		\
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		../share/module_bc_ad.o \
-                ../share/module_linked_lisk2.o        \
+		../share/module_linked_lisk2.o        \
 		../phys/module_microphysics_driver.o \
+		../phys/module_microphysics_driver_ad.o \
 		../phys/module_microphysics_zero_out.o \
+		../phys/module_microphysics_zero_out_ad.o \
 		../phys/module_physics_addtendc.o
 
 module_first_rk_step_part1.o : \

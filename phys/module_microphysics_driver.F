@@ -56,7 +56,7 @@ SUBROUTINE microphysics_driver(                                          &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
-                    ,MILBRANDT2MOM !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM, LSCONDSCHEME !,MILBRANDT3MOM
 #endif
 
 ! Model Layer
@@ -82,6 +82,8 @@ SUBROUTINE microphysics_driver(                                          &
 
    USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
+
+   USE module_mp_nconvp    !  added by Zhuxiao
 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
@@ -989,6 +991,31 @@ SUBROUTINE microphysics_driver(                                          &
                                                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
+             ENDIF
+
+!    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
+
+        CASE (LSCONDSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling lscond' )
+             IF ( PRESENT( QV_CURR ) .AND.                          &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )) THEN
+                                          
+               CALL lscond(                                         &
+                  TH=th                                              &
+                 ,P=p                                               & 
+                 ,QV=qv_curr                                        &
+                 ,RHO=rho, PII=pi_phy, XLV=xlv, CP=cp               &  
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0                             & 
+                 ,R_V= R_v                                          & ! added
+                 ,DZ8W=dz8w                                         &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling lscond' )
              ENDIF
 
       CASE DEFAULT

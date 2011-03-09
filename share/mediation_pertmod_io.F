@@ -278,7 +278,8 @@ SUBROUTINE xtraj_io_initialize
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, tsk, xlat, xlong, albbck, tmn, xland, znt, mub, psfc, snowc, hfx, qfx, ustm
-   bytes_xtraj = bytes_xtraj + n2d*37
+   !               rainnc, rainncv
+   bytes_xtraj = bytes_xtraj + n2d*39
 
    ! 1D K variables: znu, znw, fnm, fnp, rdnw, rdn, dnw, dn
    bytes_xtraj = bytes_xtraj + n1d*8
@@ -579,6 +580,8 @@ SUBROUTINE packup_xtraj (data)
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%hfx, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%qfx, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%ustm, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%rainnc, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%rainncv, (/n2d/))
 
    ! 1D K variables: znu, znw, fnm, fnp, rdnw, rdn, dnw, dn
    ns =    ne+1 ; ne = ne+n1d ; data(ns:ne) = head_grid%znu
@@ -782,6 +785,8 @@ SUBROUTINE restore_xtraj (data)
    ns =    ne+1 ; ne = ne+n2d ; head_grid%hfx = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%qfx = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%ustm = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%rainnc = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%rainncv = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
 
    ! 1D K variables: znu, znw, fnm, fnp, rdnw, rdn, dnw, dn
    ns =    ne+1 ; ne = ne+n1d ; head_grid%znu = data(ns:ne)

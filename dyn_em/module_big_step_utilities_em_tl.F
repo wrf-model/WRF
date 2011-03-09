@@ -5757,306 +5757,305 @@ END SUBROUTINE g_calculate_full
 
  END SUBROUTINE g_phy_prep
 
-! SUBROUTINE g_moist_physics_prep_em(t_new,g_t_new,t_old,g_t_old,t0,rho, &
-! g_rho,al,g_al,alb,p,g_p,p8w,g_p8w,p0,pb,ph,g_ph,phb,th_phy, &
-! g_th_phy,pii,g_pii,pf,g_pf,z,g_z,z_at_w,g_z_at_w,dz8w,g_dz8w,dt, &
-! h_diabatic,g_h_diabatic,config_flags,fzm,fzp,ids,ide,jds,jde,kds,kde,ims,ime,jms, &
-! jme,kms,kme,its,ite,jts,jte,kts,kte)
+ SUBROUTINE g_moist_physics_prep_em(t_new,g_t_new,t_old,g_t_old,t0,rho, &
+ g_rho,al,g_al,alb,p,g_p,p8w,g_p8w,p0,pb,ph,g_ph,phb,th_phy, &
+ g_th_phy,pii,g_pii,pf,g_pf,z,g_z,z_at_w,g_z_at_w,dz8w,g_dz8w,dt, &
+ h_diabatic,g_h_diabatic,config_flags,fzm,fzp,ids,ide,jds,jde,kds,kde,ims,ime,jms, &
+ jme,kms,kme,its,ite,jts,jte,kts,kte)
 
-! IMPLICIT NONE
+ IMPLICIT NONE
 
-! REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2
-! TYPE(grid_config_rec_type) :: config_flags
-! INTEGER :: ids,ide,jds,jde,kds,kde
-! INTEGER :: ims,ime,jms,jme,kms,kme
-! INTEGER :: its,ite,jts,jte,kts,kte
-! REAL :: dt
-! REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: al,g_al,alb,p,g_p,pb,ph,g_ph,phb
-! REAL,DIMENSION(kms:kme) :: fzm,fzp
-! REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho,g_rho,th_phy,g_th_phy,pii, &
-! g_pii,pf,g_pf,z,g_z,z_at_w,g_z_at_w,dz8w,g_dz8w,p8w,g_p8w
-! REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_diabatic,g_h_diabatic
-! REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,g_t_new,t_old,g_t_old
-! REAL :: t0,p0
-! REAL :: z0,g_z0,z1,g_z1,z2,g_z2,w1,g_w1,w2,g_w2
-! INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
-! INTEGER :: i,j,k
+ REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2
+ TYPE(grid_config_rec_type) :: config_flags
+ INTEGER :: ids,ide,jds,jde,kds,kde
+ INTEGER :: ims,ime,jms,jme,kms,kme
+ INTEGER :: its,ite,jts,jte,kts,kte
+ REAL :: dt
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: al,g_al,alb,p,g_p,pb,ph,g_ph,phb
+ REAL,DIMENSION(kms:kme) :: fzm,fzp
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho,g_rho,th_phy,g_th_phy,pii, &
+ g_pii,pf,g_pf,z,g_z,z_at_w,g_z_at_w,dz8w,g_dz8w,p8w,g_p8w
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_diabatic,g_h_diabatic
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,g_t_new,t_old,g_t_old
+ REAL :: t0,p0
+ REAL :: z0,g_z0,z1,g_z1,z2,g_z2,w1,g_w1,w2,g_w2
+ INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
+ INTEGER :: i,j,k
 
-! i_start =its
+ i_start =its
+ i_end =min(ite,ide-1)
+ j_start =jts
+ j_end =min(jte,jde-1)
+ k_start =kts
+ k_end =min(kte,kde-1)
 
-! i_end =min(ite,ide-1)
+ DO j =j_start,j_end
+ DO k =k_start,kte
+ DO i =i_start,i_end
 
-! j_start =jts
+ g_z_at_w(i,k,j) =(g_ph(i,k,j))/g
+ z_at_w(i,k,j) =(ph(i,k,j) +phb(i,k,j))/g
 
-! j_end =min(jte,jde-1)
+ ENDDO
+ ENDDO
+ ENDDO
 
-! k_start =kts
+ DO j =j_start,j_end
+ DO k =k_start,kte-1
+ DO i =i_start,i_end
 
-! k_end =min(kte,kde-1)
+ g_dz8w(i,k,j) =g_z_at_w(i,k+1,j) -g_z_at_w(i,k,j)
+ dz8w(i,k,j) =z_at_w(i,k+1,j) -z_at_w(i,k,j)
 
-! DO j =j_start,j_end
-! DO k =k_start,kte
-! DO i =i_start,i_end
+ ENDDO
+ ENDDO
+ ENDDO
 
-! g_z_at_w(i,k,j) =(g_ph(i,k,j))/g
-! z_at_w(i,k,j) =(ph(i,k,j) +phb(i,k,j))/g
+ DO j =j_start,j_end
+ DO i =i_start,i_end
 
-! ENDDO
-! ENDDO
-! ENDDO
+ g_dz8w(i,kte,j) =0.0
+ dz8w(i,kte,j) =0.
 
-! DO j =j_start,j_end
-! DO k =k_start,kte-1
-! DO i =i_start,i_end
+ ENDDO
+ ENDDO
 
-! g_dz8w(i,k,j) =g_z_at_w(i,k+1,j) -g_z_at_w(i,k,j)
-! dz8w(i,k,j) =z_at_w(i,k+1,j) -z_at_w(i,k,j)
+ DO j =j_start,j_end
+ DO k =k_start,k_end
+ DO i =i_start,i_end
+#ifdef REVERT
 
-! ENDDO
-! ENDDO
-! ENDDO
+ g_t_new(i,k,j) =g_t_new(i,k,j) -g_h_diabatic(i,k,j)*dt
+ t_new(i,k,j) =t_new(i,k,j) -h_diabatic(i,k,j)*dt
 
-! DO j =j_start,j_end
-! DO i =i_start,i_end
+#endif
 
-! g_dz8w(i,kte,j) =0.0
-! dz8w(i,kte,j) =0.
+ g_th_phy(i,k,j) =g_t_new(i,k,j)
+ th_phy(i,k,j) =t_new(i,k,j) +t0
 
-! ENDDO
-! ENDDO
+ g_h_diabatic(i,k,j) =g_th_phy(i,k,j)
+ h_diabatic(i,k,j) =th_phy(i,k,j)
 
-! DO j =j_start,j_end
-! DO k =k_start,k_end
-! DO i =i_start,i_end
-!#ifdef! REVERT
+ g_rho(i,k,j) =-1.*(g_al(i,k,j))/((al(i,k,j) +alb(i,k,j))*(al(i,k,j) +alb(i,k,j)))
+ rho(i,k,j) =1./(al(i,k,j) +alb(i,k,j))
 
-! g_t_new(i,k,j) =g_t_new(i,k,j) -g_h_diabatic(i,k,j)*dt
-! t_new(i,k,j) =t_new(i,k,j) -h_diabatic(i,k,j)*dt
+ g_pii(i,k,j) =rcp*((g_p(i,k,j))/p0)*((p(i,k,j) +pb(i,k,j))/p0)**(rcp -1.0)
+ pii(i,k,j) =((p(i,k,j) +pb(i,k,j))/p0)**rcp
 
-!#endif
+ g_z(i,k,j) =0.5*(g_z_at_w(i,k,j) +g_z_at_w(i,k+1,j))
+ z(i,k,j) =0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j))
 
-! g_th_phy(i,k,j) =g_t_new(i,k,j)
-! th_phy(i,k,j) =t_new(i,k,j) +t0
+ g_pf(i,k,j) =g_p(i,k,j)
+ pf(i,k,j) =p(i,k,j) +pb(i,k,j)
 
-! g_h_diabatic(i,k,j) =g_th_phy(i,k,j)
-! h_diabatic(i,k,j) =th_phy(i,k,j)
+ ENDDO
+ ENDDO
+ ENDDO
 
-! g_rho(i,k,j) =-1.*(g_al(i,k,j))/((al(i,k,j) +alb(i,k,j))*(al(i,k,j) +alb(i,k,j)))
-! rho(i,k,j) =1./(al(i,k,j) +alb(i,k,j))
+ DO j =j_start,j_end
+ DO k =2,k_end
+ DO i =i_start,i_end
 
-! g_pii(i,k,j) =rcp*((g_p(i,k,j))/p0)*((p(i,k,j) +pb(i,k,j))/p0)**(rcp -1.0)
-! pii(i,k,j) =((p(i,k,j) +pb(i,k,j))/p0)**rcp
+ g_p8w(i,k,j) =fzm(k)*g_pf(i,k,j) +fzp(k)*g_pf(i,k-1,j)
+ p8w(i,k,j) =fzm(k)*pf(i,k,j) +fzp(k)*pf(i,k-1,j)
 
-! g_z(i,k,j) =0.5*(g_z_at_w(i,k,j) +g_z_at_w(i,k+1,j))
-! z(i,k,j) =0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j))
+ ENDDO
+ ENDDO
+ ENDDO
 
-! g_pf(i,k,j) =g_p(i,k,j)
-! pf(i,k,j) =p(i,k,j) +pb(i,k,j)
+ DO j =j_start,j_end
+ DO i =i_start,i_end
 
-! ENDDO
-! ENDDO
-! ENDDO
+ g_z0 =g_z_at_w(i,1,j)
+ z0 =z_at_w(i,1,j)
 
-! DO j =j_start,j_end
-! DO k =2,k_end
-! DO i =i_start,i_end
+ g_z1 =g_z(i,1,j)
+ z1 =z(i,1,j)
 
-! g_p8w(i,k,j) =fzm(k)*g_pf(i,k,j) +fzp(k)*g_pf(i,k-1,j)
-! p8w(i,k,j) =fzm(k)*pf(i,k,j) +fzp(k)*pf(i,k-1,j)
+ g_z2 =g_z(i,2,j)
+ z2 =z(i,2,j)
 
-! ENDDO
-! ENDDO
-! ENDDO
+ g_Tmpv1 =((g_z0 -g_z2)*(z1 -z2) -(g_z1 -g_z2)*(z0 -z2))/((z1 -z2)*(z1 -z2)) 
+ Tmpv1 =(z0 -z2)/(z1 -z2)
 
-! DO j =j_start,j_end
-! DO i =i_start,i_end
+ g_w1 =g_Tmpv1
+ w1 =Tmpv1
 
-! g_z0 =g_z_at_w(i,1,j)
-! z0 =z_at_w(i,1,j)
+ g_w2 =-g_w1
+ w2 =1. -w1
 
-! g_z1 =g_z(i,1,j)
-! z1 =z(i,1,j)
+ g_Tmpv1 =w1*g_pf(i,1,j) +g_w1*pf(i,1,j) 
+ Tmpv1 =w1*pf(i,1,j)
 
-! g_z2 =g_z(i,2,j)
-! z2 =z(i,2,j)
+ g_Tmpv2 =w2*g_pf(i,2,j) +g_w2*pf(i,2,j) 
+ Tmpv2 =w2*pf(i,2,j)
 
-! g_Tmpv1 =((g_z0 -g_z2)*(z1 -z2) -(g_z1 -g_z2)*(z0 -z2))/((z1 -z2)*(z1 -z2)) 
-! Tmpv1 =(z0 -z2)/(z1 -z2)
+ g_p8w(i,1,j) =g_Tmpv1 +g_Tmpv2
+ p8w(i,1,j) =Tmpv1 +Tmpv2
 
-! g_w1 =g_Tmpv1
-! w1 =Tmpv1
+ g_z0 =g_z_at_w(i,kte,j)
+ z0 =z_at_w(i,kte,j)
 
-! g_w2 =-g_w1
-! w2 =1. -w1
+ g_z1 =g_z(i,k_end,j)
+ z1 =z(i,k_end,j)
 
-! g_Tmpv1 =w1*g_pf(i,1,j) +g_w1*pf(i,1,j) 
-! Tmpv1 =w1*pf(i,1,j)
+ g_z2 =g_z(i,k_end-1,j)
+ z2 =z(i,k_end-1,j)
 
-! g_Tmpv2 =w2*g_pf(i,2,j) +g_w2*pf(i,2,j) 
-! Tmpv2 =w2*pf(i,2,j)
+ g_Tmpv1 =((g_z0 -g_z2)*(z1 -z2) -(g_z1 -g_z2)*(z0 -z2))/((z1 -z2)*(z1 -z2)) 
+ Tmpv1 =(z0 -z2)/(z1 -z2)
 
-! g_p8w(i,1,j) =g_Tmpv1 +g_Tmpv2
-! p8w(i,1,j) =Tmpv1 +Tmpv2
+ g_w1 =g_Tmpv1
+ w1 =Tmpv1
 
-! g_z0 =g_z_at_w(i,kte,j)
-! z0 =z_at_w(i,kte,j)
+ g_w2 =-g_w1
+ w2 =1. -w1
 
-! g_z1 =g_z(i,k_end,j)
-! z1 =z(i,k_end,j)
+ g_Tmpv1 =w1*g_pf(i,kde-1,j)/pf(i,kde-1,j) +g_w1*log(pf(i,kde-1,j)) 
+ Tmpv1 =w1*log(pf(i,kde-1,j))
 
-! g_z2 =g_z(i,k_end-1,j)
-! z2 =z(i,k_end-1,j)
+ g_Tmpv2 =w2*g_pf(i,kde-2,j)/pf(i,kde-2,j) +g_w2*log(pf(i,kde-2,j)) 
+ Tmpv2 =w2*log(pf(i,kde-2,j))
 
-! g_Tmpv1 =((g_z0 -g_z2)*(z1 -z2) -(g_z1 -g_z2)*(z0 -z2))/((z1 -z2)*(z1 -z2)) 
-! Tmpv1 =(z0 -z2)/(z1 -z2)
+ g_p8w(i,kde,j) =(g_Tmpv1 +g_Tmpv2)*exp(Tmpv1 +Tmpv2)
+ p8w(i,kde,j) =exp(Tmpv1 +Tmpv2)
 
-! g_w1 =g_Tmpv1
-! w1 =Tmpv1
+ ENDDO
+ ENDDO
 
-! g_w2 =-g_w1
-! w2 =1. -w1
+ END SUBROUTINE g_moist_physics_prep_em
 
-! g_Tmpv1 =w1*g_pf(i,kde-1,j)/pf(i,kde-1,j) +g_w1*log(pf(i,kde-1,j)) 
-! Tmpv1 =w1*log(pf(i,kde-1,j))
+! corrected by zzma 01/04/2011, added WRF_DFI_RADAR option
 
-! g_Tmpv2 =w2*g_pf(i,kde-2,j)/pf(i,kde-2,j) +g_w2*log(pf(i,kde-2,j)) 
-! Tmpv2 =w2*log(pf(i,kde-2,j))
+ SUBROUTINE g_moist_physics_finish_em(t_new,g_t_new,t_old,g_t_old,t0,mut, &
+ g_mut,th_phy,g_th_phy,h_diabatic,g_h_diabatic,dt,config_flags,  &
+#if ( WRF_DFI_RADAR == 1 )
+ dfi_tten_rad, g_dfi_tten_rad,dfi_stage,  &
+#endif
+ ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
+ jts,jte,kts,kte)
 
-! g_p8w(i,kde,j) =(g_Tmpv1 +g_Tmpv2)*exp(Tmpv1 +Tmpv2)
-! p8w(i,kde,j) =exp(Tmpv1 +Tmpv2)
+ IMPLICIT NONE
 
-! ENDDO
-! ENDDO
+ REAL :: Tmpv1,g_Tmpv1
+ TYPE(grid_config_rec_type) :: config_flags
+ INTEGER :: ids,ide,jds,jde,kds,kde
+ INTEGER :: ims,ime,jms,jme,kms,kme
+ INTEGER :: its,ite,jts,jte,kts,kte
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,g_t_new,t_old,g_t_old,th_phy, &
+ g_th_phy,h_diabatic,g_h_diabatic
+#if ( WRF_DFI_RADAR == 1 )
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL :: dfi_tten_rad,g_dfi_tten_rad
+ INTEGER, OPTIONAL :: dfi_stage
+ REAL :: dfi_tten_max, old_max
+ REAL :: g_dfi_tten_max, g_old_max
 
-! END SUBROUTINE g_moist_physics_prep_em
+#endif
+ REAL mpten,g_mpten,mptenmax,g_mptenmax,mptenmin,g_mptenmin
+ REAL,DIMENSION(ims:ime,jms:jme) :: mut,g_mut
+ REAL :: t0,dt
+ INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
+ INTEGER :: i,j,k,imax,jmax,imin,jmin
 
-! SUBROUTINE g_moist_physics_finish_em(t_new,g_t_new,t_old,g_t_old,t0,mut, &
-! g_mut,th_phy,g_th_phy,h_diabatic,g_h_diabatic,dt,config_flags,dfi_tten_rad, &
-! g_dfi_tten_rad,dfi_stage,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
-! jts,jte,kts,kte)
+ i_start =its
 
-! IMPLICIT NONE
+ i_end =min(ite,ide-1)
 
-! REAL :: Tmpv1,g_Tmpv1
-! TYPE(grid_config_rec_type) :: config_flags
-! INTEGER :: ids,ide,jds,jde,kds,kde
-! INTEGER :: ims,ime,jms,jme,kms,kme
-! INTEGER :: its,ite,jts,jte,kts,kte
-! REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,g_t_new,t_old,g_t_old,th_phy, &
-! g_th_phy,h_diabatic,g_h_diabatic
-!#if! ( WRF_DFI_RADAR == 1 )
-! REAL,DIMENSION(ims:ime,kms:kme,jms:jme),OPTIONAL :: dfi_tten_rad,g_dfi_tten_rad
-! INTEGER,OPTIONAL :: dfi_stage
-!#endif
-! REAL mpten,mptenmax,g_mptenmax,mptenmin,g_mptenmin
-! REAL,DIMENSION(ims:ime,jms:jme) :: mut,g_mut
-! REAL :: t0,dt
-! INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
-! INTEGER :: i,j,k,imax,jmax,imin,jmin
+ j_start =jts
 
-! i_start =its
+ j_end =min(jte,jde-1)
 
-! i_end =min(ite,ide-1)
+ k_start =kts
 
-! j_start =jts
+ k_end =min(kte,kde-1)
+#if ( WRF_DFI_RADAR == 1 )
 
-! j_end =min(jte,jde-1)
+ IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD .and. PRESENT(dfi_tten_rad) ) THEN
 
-! k_start =kts
-
-! k_end =min(kte,kde-1)
-!#if! ( WRF_DFI_RADAR == 1 )
-
-! IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD    &
-! &
-!             .and. PRESENT(dfi_tten_rad) ) THEN
-
-! WRITE (wrf_err_message,*) 'Add radar tendency: i_start,j_start: ',i_start,j_start
+ WRITE (wrf_err_message,*) 'Add radar tendency: i_start,j_start: ',i_start,j_start
 !This! line is fail to be recognized
 !              CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
-! endif
+ endif
 
-! g_dfi_tten_max =0.0
-! dfi_tten_max =-999
+ g_dfi_tten_max =0.0
+ dfi_tten_max =-999
 
-! g_old_max =0.0
-! old_max =-999
+ g_old_max =0.0
+ old_max =-999
 
-!#endif
+#endif
 
-! IF( config_flags%no_mp_heating .eq. 0 ) THEN
+ IF( config_flags%no_mp_heating .eq. 0 ) THEN
 
-! DO j =j_start,j_end
-! DO k =k_start,k_end
-! DO i =i_start,i_end
+ DO j =j_start,j_end
+ DO k =k_start,k_end
+ DO i =i_start,i_end
 
-! g_mpten =g_th_phy(i,k,j) -g_h_diabatic(i,k,j)
-! mpten =th_phy(i,k,j) -h_diabatic(i,k,j)
+ g_mpten =g_th_phy(i,k,j) -g_h_diabatic(i,k,j)
+ mpten =th_phy(i,k,j) -h_diabatic(i,k,j)
 
-!#if! ( WRF_DFI_RADAR == 1 )
+#if ( WRF_DFI_RADAR == 1 )
 
-! g_mpten =(g_config_flags%mp_tend_lim*dt +g_mpten -(g_config_flags%mp_tend &
-!_lim*dt! -g_mpten)*sign(1.0, config_flags%mp_tend_lim*dt -(mpten)))*0.5
-! mpten =min(config_flags%mp_tend_lim*dt,mpten)
+! g_mpten =(g_config_flags%mp_tend_lim*dt +g_mpten -(g_config_flags%mp_tend_lim*dt -g_mpten)*sign(1.0, config_flags%mp_tend_lim*dt -(mpten)))*0.5
+ g_mpten =min(config_flags%mp_tend_lim*dt,g_mpten)
+ mpten =min(config_flags%mp_tend_lim*dt,mpten)
 
-! g_mpten =(-g_config_flags%mp_tend_lim*dt +g_mpten +(-g_config_flags%mp_te &
-! nd_lim*dt -g_mpten)*sign(1.0, -config_flags%mp_tend_lim*dt -(mpten)))*0.5
-! mpten =max(-config_flags%mp_tend_lim*dt,mpten)
+! g_mpten =(-g_config_flags%mp_tend_lim*dt +g_mpten +(-g_config_flags%mp_tend_lim*dt -g_mpten)*sign(1.0, -config_flags%mp_tend_lim*dt -(mpten)))*0.5
+ g_mpten =max(-config_flags%mp_tend_lim*dt,g_mpten)
+ mpten =max(-config_flags%mp_tend_lim*dt,mpten)
 
-! IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.    &
-!           dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.        &
-! &
-!           dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10.   &
-! &
-!           .and. k < k_end ) THEN
+ IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.    &
+           dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.        &
+  dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10.   &
+  .and. k < k_end ) THEN
 
-! IF(dfi_tten_rad(i,k,j) > mpten ) THEN
+ IF(dfi_tten_rad(i,k,j) > mpten ) THEN
 
-! g_t_new(i,k,j) =g_t_new(i,k,j) +(g_dfi_tten_rad(i,k,j))
-! t_new(i,k,j) =t_new(i,k,j) +(dfi_tten_rad(i,k,j))
+ g_t_new(i,k,j) =g_t_new(i,k,j) +(g_dfi_tten_rad(i,k,j))
+ t_new(i,k,j) =t_new(i,k,j) +(dfi_tten_rad(i,k,j))
 
-! else
+ else
 
-! g_t_new(i,k,j) =g_t_new(i,k,j) +g_mpten
-! t_new(i,k,j) =t_new(i,k,j) +mpten
+ g_t_new(i,k,j) =g_t_new(i,k,j) +g_mpten
+ t_new(i,k,j) =t_new(i,k,j) +mpten
 
-! endif
-! else
+ endif
+ else
 
-! g_t_new(i,k,j) =g_t_new(i,k,j) +g_mpten
-! t_new(i,k,j) =t_new(i,k,j) +mpten
+ g_t_new(i,k,j) =g_t_new(i,k,j) +g_mpten
+ t_new(i,k,j) =t_new(i,k,j) +mpten
 
-! endif
-!#else
+ endif
+#else
 
-! g_t_new(i,k,j) =g_t_new(i,k,j) +g_mpten
-! t_new(i,k,j) =t_new(i,k,j) +mpten
+ g_t_new(i,k,j) =g_t_new(i,k,j) +g_mpten
+ t_new(i,k,j) =t_new(i,k,j) +mpten
 
-!#endif
+#endif
 
-! g_h_diabatic(i,k,j) =(g_th_phy(i,k,j) -g_h_diabatic(i,k,j))/dt
-! h_diabatic(i,k,j) =(th_phy(i,k,j) -h_diabatic(i,k,j))/dt
+ g_h_diabatic(i,k,j) =(g_th_phy(i,k,j) -g_h_diabatic(i,k,j))/dt
+ h_diabatic(i,k,j) =(th_phy(i,k,j) -h_diabatic(i,k,j))/dt
 
-! ENDDO
-! ENDDO
-! ENDDO
-! ELSE
+ ENDDO
+ ENDDO
+ ENDDO
+ ELSE
 
-! DO j =j_start,j_end
-! DO k =k_start,k_end
-! DO i =i_start,i_end
+ DO j =j_start,j_end
+ DO k =k_start,k_end
+ DO i =i_start,i_end
 
-! g_h_diabatic(i,k,j) =0.0
-! h_diabatic(i,k,j) =0.
+ g_h_diabatic(i,k,j) =0.0
+ h_diabatic(i,k,j) =0.
 
-! ENDDO
-! ENDDO
-! ENDDO
-! ENDIF
+ ENDDO
+ ENDDO
+ ENDDO
+ ENDIF
 
-! END SUBROUTINE g_moist_physics_finish_em
+ END SUBROUTINE g_moist_physics_finish_em
 
- SUBROUTINE g_init_module_big_step
+SUBROUTINE g_init_module_big_step
 
  END SUBROUTINE g_init_module_big_step
 

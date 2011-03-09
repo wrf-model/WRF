@@ -15728,42 +15728,44 @@ END SUBROUTINE a_calculate_full
 
    END SUBROUTINE a_phy_prep
 
-!   SUBROUTINE a_moist_physics_prep_em(t_new,a_t_new,t_old,a_t_old,t0,rho,a_rho, &
-!   al,a_al,alb,p,a_p,p8w,a_p8w,p0,pb,ph,a_ph,phb,th_phy,a_th_phy,pii,a_pii, &
-!   pf,a_pf,z,a_z,z_at_w,a_z_at_w,dz8w,a_dz8w,dt,h_diabatic,a_h_diabatic, &
-!   config_flags,fzm,fzp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+!!! opened by zzma on 12/24/2010
+
+   SUBROUTINE a_moist_physics_prep_em(t_new,a_t_new,t_old,a_t_old,t0,rho,a_rho, &
+   al,a_al,alb,p,a_p,p8w,a_p8w,p0,pb,ph,a_ph,phb,th_phy,a_th_phy,pii,a_pii, &
+   pf,a_pf,z,a_z,z_at_w,a_z_at_w,dz8w,a_dz8w,dt,h_diabatic,a_h_diabatic, &
+   config_flags,fzm,fzp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !PART! I: DECLARATION OF VARIABLES
 
-!   IMPLICIT NONE
+   IMPLICIT NONE
 
-!   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-!   TYPE(grid_config_rec_type) :: config_flags
-!   INTEGER :: ids,ide,jds,jde,kds,kde
-!   INTEGER :: ims,ime,jms,jme,kms,kme
-!   INTEGER :: its,ite,jts,jte,kts,kte
-!   REAL :: dt
-!   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: al,a_al,alb,p,a_p,pb,ph,a_ph,phb
-!   REAL,DIMENSION(kms:kme) :: fzm,fzp
-!   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho,a_rho,th_phy,a_th_phy,pii,a_pii, &
-!   pf,a_pf,z,a_z,z_at_w,a_z_at_w,dz8w,a_dz8w,p8w,a_p8w
-!   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_diabatic,a_h_diabatic
-!   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,a_t_new,t_old,a_t_old
-!   REAL :: t0,p0
-!   REAL :: z0,a_z0,z1,a_z1,z2,a_z2,w1,a_w1,w2,a_w2
-!   INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
-!   INTEGER :: i,j,k
+   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
+   TYPE(grid_config_rec_type) :: config_flags
+   INTEGER :: ids,ide,jds,jde,kds,kde
+   INTEGER :: ims,ime,jms,jme,kms,kme
+   INTEGER :: its,ite,jts,jte,kts,kte
+   REAL :: dt
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: al,a_al,alb,p,a_p,pb,ph,a_ph,phb
+   REAL,DIMENSION(kms:kme) :: fzm,fzp
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho,a_rho,th_phy,a_th_phy,pii,a_pii, &
+   pf,a_pf,z,a_z,z_at_w,a_z_at_w,dz8w,a_dz8w,p8w,a_p8w
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_diabatic,a_h_diabatic
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,a_t_new,t_old,a_t_old
+   REAL :: t0,p0
+   REAL :: z0,a_z0,z1,a_z1,z2,a_z2,w1,a_w1,w2,a_w2
+   INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
+   INTEGER :: i,j,k
 
-!   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv200
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv201
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv202
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv203
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv204
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv205
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv206
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv207
-!   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv208
+   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv200
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv201
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv202
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv203
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv204
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv205
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv206
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv207
+   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv208
 
 !#ifdef! REVERT
 !#endif
@@ -15772,71 +15774,61 @@ END SUBROUTINE a_calculate_full
 
 !LPB[0]
 
-!       i_start = its    
-!       i_end   = min( ite,ide-1 )
-!       j_start = jts    
-!       j_end   = min( jte,jde-1 )
-!       k_start = kts
-!       k_end = min( kte, kde-1 )
+       i_start = its    
+       i_end   = min( ite,ide-1 )
+       j_start = jts    
+       j_end   = min( jte,jde-1 )
+       k_start = kts
+       k_end = min( kte, kde-1 )
 
 !LPB[1]
-!        DO j = j_start, j_end
-
-!        DO k = k_start, kte
-!        DO i = i_start, i_end
-!          z_at_w(i,k,j) = (ph(i,k,j)+phb(i,k,j))/g
-!        ENDDO
-!        ENDDO
-
-!        ENDDO
+!      DO j = j_start, j_end
+!      DO k = k_start, kte
+!      DO i = i_start, i_end
+!        z_at_w(i,k,j) = (ph(i,k,j)+phb(i,k,j))/g
+!      ENDDO
+!      ENDDO
+!      ENDDO
 
 !LPB[2]
-!       do j = j_start,j_end
-
-!       do k = k_start, kte-1
-!       do i = i_start, i_end
-!         dz8w(i,k,j) = z_at_w(i,k+1,j)-z_at_w(i,k,j)
-!       enddo
-!       enddo
-
-!       enddo
+!     do j = j_start,j_end
+!     do k = k_start, kte-1
+!     do i = i_start, i_end
+!       dz8w(i,k,j) = z_at_w(i,k+1,j)-z_at_w(i,k,j)
+!     enddo
+!     enddo
+!     enddo
 
 !LPB[3]
-!       do j = j_start,j_end
-
-!       do i = i_start, i_end
-!         dz8w(i,kte,j) = 0.
-!       enddo
-
-!       enddo
+!     do j = j_start,j_end
+!     do i = i_start, i_end
+!       dz8w(i,kte,j) = 0.
+!     enddo
+!     enddo
 
 !LPB[4]
-!        DO j = j_start, j_end
-
-!        DO k = k_start, k_end
-!        DO i = i_start, i_end
-!          t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
-!          th_phy(i,k,j) = t_new(i,k,j) + t0
-!          h_diabatic(i,k,j) = th_phy(i,k,j)
-!          rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
-!          pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
-!          z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
-!          pf(i,k,j) = p(i,k,j)+pb(i,k,j)
-!        ENDDO
-!        ENDDO
-
-!        ENDDO
+!      DO j = j_start, j_end
+!      DO k = k_start, k_end
+!      DO i = i_start, i_end
+!        t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
+!        th_phy(i,k,j) = t_new(i,k,j) + t0
+!        h_diabatic(i,k,j) = th_phy(i,k,j)
+!        rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
+!        pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
+!        z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
+!        pf(i,k,j) = p(i,k,j)+pb(i,k,j)
+!      ENDDO
+!      ENDDO
+!      ENDDO
 
 !LPB[5]
-!       do j = j_start,j_end
-
-!       do k = 2, k_end
-!       do i = i_start, i_end
-!         p8w(i,k,j) = fzm(k)*pf(i,k,j)+fzp(k)*pf(i,k-1,j)
-!       enddo
-!       enddo
-
-!       enddo
+!      do j = j_start,j_end
+!      do k = 2, k_end
+!      do i = i_start, i_end
+!        p8w(i,k,j) = fzm(k)*pf(i,k,j)+fzp(k)*pf(i,k-1,j)
+!      enddo
+!      enddo
+!      enddo
 
 !!LPB[6]
 !!       do j = j_start,j_end
@@ -15860,534 +15852,377 @@ END SUBROUTINE a_calculate_full
 
 !PART! III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
 
-!   a_z0 =0.0
-!   a_z1 =0.0
-!   a_z2 =0.0
-!   a_w1 =0.0
-!   a_w2 =0.0
+   a_z0 =0.0
+   a_z1 =0.0
+   a_z2 =0.0
+   a_w1 =0.0
+   a_w2 =0.0
 
 !PART! IV: REVERSE/BACKWARD ACCUMULATIONS
 
 !LPB[6]
-!   DO j =j_end, j_start, -1
+   DO j =j_end, j_start, -1
 
-!   DO i =i_start, i_end
-!   z0 =z_at_w(i,1,j)
+   DO i =i_start, i_end
+   z0 =z_at_w(i,1,j)
 
-!   z1 =z(i,1,j)
+   z1 =z(i,1,j)
 
-!   z2 =z(i,2,j)
+   z2 =z(i,2,j)
 
-!   Tmpv001 =z0 -z2
-!   Tmpv002 =z1 -z2
-!   Tmpv200(i) =Tmpv001
-!   Tmpv201(i) =Tmpv002
-!   Tmpv003 =Tmpv200(i)/Tmpv201(i)
-!   Tmpv202(i) =w1
-!   w1 =Tmpv003
+   Tmpv001 =z0 -z2
+   Tmpv002 =z1 -z2
+   Tmpv200(i) =Tmpv001
+   Tmpv201(i) =Tmpv002
+   Tmpv003 =Tmpv200(i)/Tmpv201(i)
+   Tmpv202(i) =w1
+   w1 =Tmpv003
 
-!   Tmpv203(i) =w2
-!   w2 =1. -w1
+   Tmpv203(i) =w2
+   w2 =1. -w1
 
-!   Tmpv001 =w1*pf(i,1,j)
-!   Tmpv002 =w2*pf(i,2,j)
-!   Tmpv003 =Tmpv001 +Tmpv002
-!!  p8w(i,1,j) =Tmpv003
+   Tmpv001 =w1*pf(i,1,j)
+   Tmpv002 =w2*pf(i,2,j)
+   Tmpv003 =Tmpv001 +Tmpv002
+  p8w(i,1,j) =Tmpv003
 
-!   z0 =z_at_w(i,kte,j)
+   z0 =z_at_w(i,kte,j)
 
-!   z1 =z(i,k_end,j)
+   z1 =z(i,k_end,j)
 
-!   z2 =z(i,k_end-1,j)
+   z2 =z(i,k_end-1,j)
 
-!   Tmpv001 =z0 -z2
-!   Tmpv002 =z1 -z2
-!   Tmpv204(i) =Tmpv001
-!   Tmpv205(i) =Tmpv002
-!   Tmpv003 =Tmpv204(i)/Tmpv205(i)
-!   Tmpv206(i) =w1
-!   w1 =Tmpv003
+   Tmpv001 =z0 -z2
+   Tmpv002 =z1 -z2
+   Tmpv204(i) =Tmpv001
+   Tmpv205(i) =Tmpv002
+   Tmpv003 =Tmpv204(i)/Tmpv205(i)
+   Tmpv206(i) =w1
+   w1 =Tmpv003
 
-!   Tmpv207(i) =w2
-!   w2 =1. -w1
+   Tmpv207(i) =w2
+   w2 =1. -w1
 
-!   Tmpv001 =w1*log(pf(i,kde-1,j))
-!   Tmpv002 =w2*log(pf(i,kde-2,j))
-!   Tmpv003 =Tmpv001 +Tmpv002
-!   Tmpv208(i) =Tmpv003
-!   Tmpv004 =exp(Tmpv208(i))
-!!  p8w(i,kde,j) =Tmpv004
+   Tmpv001 =w1*log(pf(i,kde-1,j))
+   Tmpv002 =w2*log(pf(i,kde-2,j))
+   Tmpv003 =Tmpv001 +Tmpv002
+   Tmpv208(i) =Tmpv003
+   Tmpv004 =exp(Tmpv208(i))
+  p8w(i,kde,j) =Tmpv004
 
-!   ENDDO
+   ENDDO
 
-!   DO i =i_end, i_start, -1
-!   a_Tmpv4 =a_p8w(i,kde,j)
-!   a_p8w(i,kde,j) =0.0
-!   a_Tmpv3 =exp(Tmpv208(i))*a_Tmpv4
-!   a_Tmpv1 =a_Tmpv3
-!   a_Tmpv2 =a_Tmpv3
-!   a_w2 =a_w2 +log(pf(i,kde-2,j))*a_Tmpv2
-!   a_pf(i,kde-2,j) =a_pf(i,kde-2,j) +1.0/pf(i,kde-2,j)*w2*a_Tmpv2
-!   a_w1 =a_w1 +log(pf(i,kde-1,j))*a_Tmpv1
-!   a_pf(i,kde-1,j) =a_pf(i,kde-1,j) +1.0/pf(i,kde-1,j)*w1*a_Tmpv1
+   DO i =i_end, i_start, -1
+   a_Tmpv4 =a_p8w(i,kde,j)
+   a_p8w(i,kde,j) =0.0
+   a_Tmpv3 =exp(Tmpv208(i))*a_Tmpv4
+   a_Tmpv1 =a_Tmpv3
+   a_Tmpv2 =a_Tmpv3
+   a_w2 =a_w2 +log(pf(i,kde-2,j))*a_Tmpv2
+   a_pf(i,kde-2,j) =a_pf(i,kde-2,j) +1.0/pf(i,kde-2,j)*w2*a_Tmpv2
+   a_w1 =a_w1 +log(pf(i,kde-1,j))*a_Tmpv1
+   a_pf(i,kde-1,j) =a_pf(i,kde-1,j) +1.0/pf(i,kde-1,j)*w1*a_Tmpv1
 
-!   w2 =Tmpv207(i)
+   w2 =Tmpv207(i)
 
-!   a_w1 =a_w1 -a_w2
-!   a_w2 =0.0
+   a_w1 =a_w1 -a_w2
+   a_w2 =0.0
 
-!   w1 =Tmpv206(i)
+   w1 =Tmpv206(i)
 
-!   a_Tmpv3 =a_w1
-!   a_w1 =0.0
-!   a_Tmpv1 =a_Tmpv3/Tmpv205(i)
-!   a_Tmpv2 =-Tmpv204(i)/(Tmpv205(i)*Tmpv205(i))*a_Tmpv3
-!   a_z1 =a_z1 +a_Tmpv2
-!   a_z2 =a_z2 -a_Tmpv2
-!   a_z0 =a_z0 +a_Tmpv1
-!   a_z2 =a_z2 -a_Tmpv1
-!   a_z(i,k_end-1,j) =a_z(i,k_end-1,j) +a_z2
-!   a_z2 =0.0
-!   a_z(i,k_end,j) =a_z(i,k_end,j) +a_z1
-!   a_z1 =0.0
-!   a_z_at_w(i,kte,j) =a_z_at_w(i,kte,j) +a_z0
-!   a_z0 =0.0
-!   a_Tmpv3 =a_p8w(i,1,j)
-!   a_p8w(i,1,j) =0.0
-!   a_Tmpv1 =a_Tmpv3
-!   a_Tmpv2 =a_Tmpv3
-!   a_w2 =a_w2 +pf(i,2,j)*a_Tmpv2
-!   a_pf(i,2,j) =a_pf(i,2,j) +w2*a_Tmpv2
-!   a_w1 =a_w1 +pf(i,1,j)*a_Tmpv1
-!   a_pf(i,1,j) =a_pf(i,1,j) +w1*a_Tmpv1
+   a_Tmpv3 =a_w1
+   a_w1 =0.0
+   a_Tmpv1 =a_Tmpv3/Tmpv205(i)
+   a_Tmpv2 =-Tmpv204(i)/(Tmpv205(i)*Tmpv205(i))*a_Tmpv3
+   a_z1 =a_z1 +a_Tmpv2
+   a_z2 =a_z2 -a_Tmpv2
+   a_z0 =a_z0 +a_Tmpv1
+   a_z2 =a_z2 -a_Tmpv1
+   a_z(i,k_end-1,j) =a_z(i,k_end-1,j) +a_z2
+   a_z2 =0.0
+   a_z(i,k_end,j) =a_z(i,k_end,j) +a_z1
+   a_z1 =0.0
+   a_z_at_w(i,kte,j) =a_z_at_w(i,kte,j) +a_z0
+   a_z0 =0.0
+   a_Tmpv3 =a_p8w(i,1,j)
+   a_p8w(i,1,j) =0.0
+   a_Tmpv1 =a_Tmpv3
+   a_Tmpv2 =a_Tmpv3
+   a_w2 =a_w2 +pf(i,2,j)*a_Tmpv2
+   a_pf(i,2,j) =a_pf(i,2,j) +w2*a_Tmpv2
+   a_w1 =a_w1 +pf(i,1,j)*a_Tmpv1
+   a_pf(i,1,j) =a_pf(i,1,j) +w1*a_Tmpv1
 
-!   w2 =Tmpv203(i)
+   w2 =Tmpv203(i)
 
-!   a_w1 =a_w1 -a_w2
-!   a_w2 =0.0
+   a_w1 =a_w1 -a_w2
+   a_w2 =0.0
 
-!   w1 =Tmpv202(i)
+   w1 =Tmpv202(i)
 
-!   a_Tmpv3 =a_w1
-!   a_w1 =0.0
-!   a_Tmpv1 =a_Tmpv3/Tmpv201(i)
-!   a_Tmpv2 =-Tmpv200(i)/(Tmpv201(i)*Tmpv201(i))*a_Tmpv3
-!   a_z1 =a_z1 +a_Tmpv2
-!   a_z2 =a_z2 -a_Tmpv2
-!   a_z0 =a_z0 +a_Tmpv1
-!   a_z2 =a_z2 -a_Tmpv1
-!   a_z(i,2,j) =a_z(i,2,j) +a_z2
-!   a_z2 =0.0
-!   a_z(i,1,j) =a_z(i,1,j) +a_z1
-!   a_z1 =0.0
-!   a_z_at_w(i,1,j) =a_z_at_w(i,1,j) +a_z0
-!   a_z0 =0.0
-!   ENDDO
+   a_Tmpv3 =a_w1
+   a_w1 =0.0
+   a_Tmpv1 =a_Tmpv3/Tmpv201(i)
+   a_Tmpv2 =-Tmpv200(i)/(Tmpv201(i)*Tmpv201(i))*a_Tmpv3
+   a_z1 =a_z1 +a_Tmpv2
+   a_z2 =a_z2 -a_Tmpv2
+   a_z0 =a_z0 +a_Tmpv1
+   a_z2 =a_z2 -a_Tmpv1
+   a_z(i,2,j) =a_z(i,2,j) +a_z2
+   a_z2 =0.0
+   a_z(i,1,j) =a_z(i,1,j) +a_z1
+   a_z1 =0.0
+   a_z_at_w(i,1,j) =a_z_at_w(i,1,j) +a_z0
+   a_z0 =0.0
+   ENDDO
 
-!   ENDDO
+   ENDDO
 
 !LPB[5]
-!   DO j =j_end, j_start, -1
-
-!!  DO k =2, k_end
-!!  DO i =i_start, i_end
-!!  Tmpv001 =fzm(k)*pf(i,k,j) +fzp(k)*pf(i,k-1,j)
-!!  p8w(i,k,j) =Tmpv001
-
-!!  ENDDO
-!!  ENDDO
-
-!   DO k =k_end, 2, -1
-!   DO i =i_end, i_start, -1
-!   a_Tmpv1 =a_p8w(i,k,j)
-!   a_p8w(i,k,j) =0.0
-!   a_pf(i,k,j) =a_pf(i,k,j) +fzm(k)*a_Tmpv1
-!   a_pf(i,k-1,j) =a_pf(i,k-1,j) +fzp(k)*a_Tmpv1
-!   ENDDO
-!   ENDDO
-
-!   ENDDO
+   DO j =j_end, j_start, -1
+   DO k =k_end, 2, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv1 =a_p8w(i,k,j)
+   a_p8w(i,k,j) =0.0
+   a_pf(i,k,j) =a_pf(i,k,j) +fzm(k)*a_Tmpv1
+   a_pf(i,k-1,j) =a_pf(i,k-1,j) +fzp(k)*a_Tmpv1
+   ENDDO
+   ENDDO
+   ENDDO
 
 !LPB[4]
-!   DO j =j_end, j_start, -1
+   DO j =j_end, j_start, -1
 
-!   DO k =k_start, k_end
-!   DO i =i_start, i_end
-!   Tmpv001 =t_new(i,k,j) -h_diabatic(i,k,j)*dt
-!!  t_new(i,k,j) =Tmpv001
+!  DO k =k_start, k_end
+!  DO i =i_start, i_end
+!  Tmpv001 =t_new(i,k,j) -h_diabatic(i,k,j)*dt
+!  t_new(i,k,j) =Tmpv001
 
-!!  th_phy(i,k,j) =t_new(i,k,j) +t0
+!  th_phy(i,k,j) =t_new(i,k,j) +t0
 
-!!  h_diabatic(i,k,j) =th_phy(i,k,j)
+!  h_diabatic(i,k,j) =th_phy(i,k,j)
 
-!!  rho(i,k,j) =1./(al(i,k,j) +alb(i,k,j))
+!  rho(i,k,j) =1./(al(i,k,j) +alb(i,k,j))
 
-!!  pii(i,k,j) =((p(i,k,j) +pb(i,k,j))/p0)**rcp
+!  pii(i,k,j) =((p(i,k,j) +pb(i,k,j))/p0)**rcp
 
-!   Tmpv001 =z_at_w(i,k,j) +z_at_w(i,k+1,j)
-!   Tmpv002 =0.5*Tmpv001
-!!  z(i,k,j) =Tmpv002
+!  Tmpv001 =z_at_w(i,k,j) +z_at_w(i,k+1,j)
+!  Tmpv002 =0.5*Tmpv001
+!  z(i,k,j) =Tmpv002
 
-!!  pf(i,k,j) =p(i,k,j) +pb(i,k,j)
+!  pf(i,k,j) =p(i,k,j) +pb(i,k,j)
 
-!   ENDDO
-!   ENDDO
+!  ENDDO
+!  ENDDO
 
-!   DO k =k_end, k_start, -1
-!   DO i =i_end, i_start, -1
-!   a_p(i,k,j) =a_p(i,k,j) +a_pf(i,k,j)
-!   a_pf(i,k,j) =0.0
-!   a_Tmpv2 =a_z(i,k,j)
-!   a_z(i,k,j) =0.0
-!   a_Tmpv1 =0.5*a_Tmpv2
-!   a_z_at_w(i,k,j) =a_z_at_w(i,k,j) +a_Tmpv1
-!   a_z_at_w(i,k+1,j) =a_z_at_w(i,k+1,j) +a_Tmpv1
-!   a_p(i,k,j) =a_p(i,k,j) +rcp*1.0/p0*((p(i,k,j) +pb(i,k,j))/p0)**(rcp -1)*a_pii(i,k,j)
-!   a_pii(i,k,j) =0.0
-!   a_al(i,k,j) =a_al(i,k,j) -1./((al(i,k,j) +alb(i,k,j))*(al(i,k,j) +alb(i,k,j)))  &
-!   *a_rho(i,k,j)
-!   a_rho(i,k,j) =0.0
-!   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_h_diabatic(i,k,j)
-!   a_h_diabatic(i,k,j) =0.0
-!   a_t_new(i,k,j) =a_t_new(i,k,j) +a_th_phy(i,k,j)
-!   a_th_phy(i,k,j) =0.0
-!   a_Tmpv1 =a_t_new(i,k,j)
-!   a_t_new(i,k,j) =0.0
-!   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-!   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -dt*a_Tmpv1
-!   ENDDO
-!   ENDDO
+   DO k =k_end, k_start, -1
+   DO i =i_end, i_start, -1
+   a_p(i,k,j) =a_p(i,k,j) +a_pf(i,k,j)
+   a_pf(i,k,j) =0.0
+   a_Tmpv2 =a_z(i,k,j)
+   a_z(i,k,j) =0.0
+   a_Tmpv1 =0.5*a_Tmpv2
+   a_z_at_w(i,k,j) =a_z_at_w(i,k,j) +a_Tmpv1
+   a_z_at_w(i,k+1,j) =a_z_at_w(i,k+1,j) +a_Tmpv1
+   a_p(i,k,j) =a_p(i,k,j) +rcp*1.0/p0*((p(i,k,j) +pb(i,k,j))/p0)**(rcp -1)*a_pii(i,k,j)
+   a_pii(i,k,j) =0.0
+   a_al(i,k,j) =a_al(i,k,j) -1./((al(i,k,j) +alb(i,k,j))*(al(i,k,j) +alb(i,k,j)))  &
+   *a_rho(i,k,j)
+   a_rho(i,k,j) =0.0
+   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_h_diabatic(i,k,j)
+   a_h_diabatic(i,k,j) =0.0
+   a_t_new(i,k,j) =a_t_new(i,k,j) +a_th_phy(i,k,j)
+   a_th_phy(i,k,j) =0.0
+   a_Tmpv1 =a_t_new(i,k,j)
+   a_t_new(i,k,j) =0.0
+   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
+   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -dt*a_Tmpv1
+   ENDDO
+   ENDDO
 
-!   ENDDO
+   ENDDO
 
 !LPB[3]
-!   DO j =j_end, j_start, -1
+   DO j =j_end, j_start, -1
 
-!!  DO i =i_start, i_end
-!!  dz8w(i,kte,j) =0.
+   DO i =i_end, i_start, -1
+   a_dz8w(i,kte,j) =0.0
+   ENDDO
 
-!!  ENDDO
-
-!   DO i =i_end, i_start, -1
-!   a_dz8w(i,kte,j) =0.0
-!   ENDDO
-
-!   ENDDO
+   ENDDO
 
 !LPB[2]
-!   DO j =j_end, j_start, -1
+   DO j =j_end, j_start, -1
 
-!!  DO k =k_start, kte-1
-!!  DO i =i_start, i_end
-!!  Tmpv001 =z_at_w(i,k+1,j) -z_at_w(i,k,j)
-!!  dz8w(i,k,j) =Tmpv001
+   DO k =kte-1, k_start, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv1 =a_dz8w(i,k,j)
+   a_dz8w(i,k,j) =0.0
+   a_z_at_w(i,k+1,j) =a_z_at_w(i,k+1,j) +a_Tmpv1
+   a_z_at_w(i,k,j) =a_z_at_w(i,k,j) -a_Tmpv1
+   ENDDO
+   ENDDO
 
-!!  ENDDO
-!!  ENDDO
-
-!   DO k =kte-1, k_start, -1
-!   DO i =i_end, i_start, -1
-!   a_Tmpv1 =a_dz8w(i,k,j)
-!   a_dz8w(i,k,j) =0.0
-!   a_z_at_w(i,k+1,j) =a_z_at_w(i,k+1,j) +a_Tmpv1
-!   a_z_at_w(i,k,j) =a_z_at_w(i,k,j) -a_Tmpv1
-!   ENDDO
-!   ENDDO
-
-!   ENDDO
+   ENDDO
 
 !LPB[1]
-!   DO j =j_end, j_start, -1
+   DO j =j_end, j_start, -1
+   DO k =kte, k_start, -1
+   DO i =i_end, i_start, -1
+   a_ph(i,k,j) =a_ph(i,k,j) +1.0/g*a_z_at_w(i,k,j)
+   a_z_at_w(i,k,j) =0.0
+   ENDDO
+   ENDDO
 
-!!  DO k =k_start, kte
-!!  DO i =i_start, i_end
-!!  z_at_w(i,k,j) =(ph(i,k,j) +phb(i,k,j))/g
+   ENDDO
 
-!!  ENDDO
-!!  ENDDO
+   END SUBROUTINE a_moist_physics_prep_em
 
-!   DO k =kte, k_start, -1
-!   DO i =i_end, i_start, -1
-!   a_ph(i,k,j) =a_ph(i,k,j) +1.0/g*a_z_at_w(i,k,j)
-!   a_z_at_w(i,k,j) =0.0
-!   ENDDO
-!   ENDDO
+! Corrected by zzma 01/04/2011 by adding WRF_DFI_RADAR option
 
-!   ENDDO
-
-!LPB[0]
-!!  i_start =its
-!!  i_end =min(ite, ide-1)
-!!  j_start =jts
-!!  j_end =min(jte, jde-1)
-!!  k_start =kts
-!!  k_end =min(kte, kde-1)
-
-!   END SUBROUTINE a_moist_physics_prep_em
-
-!   SUBROUTINE a_moist_physics_finish_em(t_new,a_t_new,t_old,a_t_old,t0,mut, &
-!   a_mut,th_phy,a_th_phy,h_diabatic,a_h_diabatic,dt,config_flags,dfi_tten_rad, &
-!   a_dfi_tten_rad,dfi_stage,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
-!   jts,jte,kts,kte)
+   SUBROUTINE a_moist_physics_finish_em(t_new,a_t_new,t_old,a_t_old,t0,mut, &
+   a_mut,th_phy,a_th_phy,h_diabatic,a_h_diabatic,dt,config_flags, &
+#if ( WRF_DFI_RADAR == 1 )
+   dfi_tten_rad, a_dfi_tten_rad,dfi_stage, &
+#endif
+   ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
+   jts,jte,kts,kte)
 
 !PART! I: DECLARATION OF VARIABLES
 
-!   IMPLICIT NONE
+   IMPLICIT NONE
 
-!   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-!   TYPE(grid_config_rec_type) :: config_flags
-!   INTEGER :: ids,ide,jds,jde,kds,kde
-!   INTEGER :: ims,ime,jms,jme,kms,kme
-!   INTEGER :: its,ite,jts,jte,kts,kte
-!   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,a_t_new,t_old,a_t_old,th_phy, &
-!   a_th_phy,h_diabatic,a_h_diabatic
-!   REAL,DIMENSION(ims:ime,kms:kme,jms:jme),OPTIONAL :: dfi_tten_rad,a_dfi_tten_rad
-!   INTEGER,OPTIONAL :: dfi_stage
-!   REAL mpten,a_mptenmax,mptenmax,a_mptenmin,mptenmin
-!   REAL,DIMENSION(ims:ime,jms:jme) :: mut,a_mut
-!   REAL :: t0,dt
-!   INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
-!   INTEGER :: i,j,k,imax,jmax,imin,jmin
+   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
+   TYPE(grid_config_rec_type) :: config_flags
+   INTEGER :: ids,ide,jds,jde,kds,kde
+   INTEGER :: ims,ime,jms,jme,kms,kme
+   INTEGER :: its,ite,jts,jte,kts,kte
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,a_t_new,t_old,a_t_old,th_phy, &
+   a_th_phy,h_diabatic,a_h_diabatic
+#if ( WRF_DFI_RADAR == 1 )
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme),OPTIONAL :: dfi_tten_rad,a_dfi_tten_rad
+   INTEGER,OPTIONAL :: dfi_stage
+#endif
+   REAL mpten,mptenmax,Diff_mptenmax,mptenmin,Diff_mptenmin
+   REAL a_mpten,a_mptenmax,a_mptenmin
+   REAL,DIMENSION(ims:ime,jms:jme) :: mut,a_mut
+   REAL :: t0,dt
+   INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
+   INTEGER :: i,j,k,imax,jmax,imin,jmin
+   REAL :: dfi_tten_max, old_max
+   REAL :: a_dfi_tten_max, a_old_max
 
-!   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002
-#if! ( WRF_DFI_RADAR == 1 )
-#endif
-#if! ( WRF_DFI_RADAR == 1 )
-!This! line is fail to be recognized
-!                CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
-#endif
-#if! ( WRF_DFI_RADAR == 1 )
-#else
-#endif
+   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002
 
 !PART! II: CALCULATIONS OF B. S. TRAJECTORY
 
 !LPB[0]
-!       i_start = its    
-!       i_end   = min( ite,ide-1 )
-!       j_start = jts    
-!       j_end   = min( jte,jde-1 )
-!       k_start = kts
-!       k_end = min( kte, kde-1 )
+       i_start = its    
+       i_end   = min( ite,ide-1 )
+       j_start = jts    
+       j_end   = min( jte,jde-1 )
+       k_start = kts
+       k_end = min( kte, kde-1 )
 
-!LPB[1]
-!         if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage == &
-! DFI_FWD                .and. PRESENT(dfi_tten_rad) ) then
+#if ( WRF_DFI_RADAR == 1 )
+   if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage == DFI_FWD &
+            .and. PRESENT(dfi_tten_rad) ) then
 
-!                WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ',  &
-!   i_start, j_start
-
-!   endif
-
-!LPB[2]
-
-!        dfi_tten_max=-999
-!        old_max=-999
-
-!!LPB[3]
-!!     IF ( config_flags%no_mp_heating .eq. 0 ) THEN
-
-!!        DO j = j_start, j_end
-!!        DO k = k_start, k_end
-!!        DO i = i_start, i_end
-!!           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
-!!           mpten=min(config_flags%mp_tend_lim*dt, mpten)
-!!           mpten=max(-config_flags%mp_tend_lim*dt, mpten)
-!!        if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.    &
-!!           dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.        &
-!!           dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10.   &
-!!           .and. k < k_end ) then
-
-!!         if(dfi_tten_rad(i,k,j) > mpten ) then
-
-!!               t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))
-!!            else
-!!               t_new(i,k,j) = t_new(i,k,j) + mpten
-!!            endif
-!!           else
-!!            t_new(i,k,j) = t_new(i,k,j) + mpten
-!!           endif
-!!            t_new(i,k,j) = t_new(i,k,j) + mpten
-!!            h_diabatic(i,k,j) =  (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
-!!        ENDDO
-!!        ENDDO
-!!        ENDDO
-!!        ELSE
-
-!!        DO j = j_start, j_end
-!!        DO k = k_start, k_end
-!!        DO i = i_start, i_end
-!!            h_diabatic(i,k,j) = 0.
-!!        ENDDO
-!!        ENDDO
-!!        ENDDO
-
-!!   ENDIF
+                WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
+                CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
+   endif
+        dfi_tten_max=-999
+        old_max=-999
+#endif
 
 !PART! III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
 
-!   a_mpten =0.0
-!   a_mptenmax =0.0
-!   a_mptenmin =0.0
-!   a_dfi_tten_max =0.0
-!   a_old_max =0.0
+   a_mpten =0.0
+   a_mptenmax =0.0
+   a_mptenmin =0.0
+   a_dfi_tten_max =0.0
+   a_old_max =0.0
 
 !PART! IV: REVERSE/BACKWARD ACCUMULATIONS
 
 !LPB[3]
 
-!!  IF( config_flags%no_mp_heating .eq. 0 ) THEN
-!!  DO j =j_start, j_end
-!!  DO k =k_start, k_end
-!!  DO i =i_start, i_end
-!!  Tmpv001 =th_phy(i,k,j) -h_diabatic(i,k,j)
-!!  mpten =Tmpv001
+   IF( config_flags%no_mp_heating .eq. 0 ) THEN
+       mptenmax = 0.
+       mptenmin = 999.
 
-!!  Tmpv001 =min(config_flags%mp_tend_lim*dt, mpten)
-!!  mpten =Tmpv001
+   DO j =j_end, j_start, -1
+   DO k =k_end, k_start, -1
+   DO i =i_end, i_start, -1
+   a_Tmpv2 =a_h_diabatic(i,k,j)
+   a_h_diabatic(i,k,j) =0.0
+   a_Tmpv1 =a_Tmpv2/dt
+   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_Tmpv1
+   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -a_Tmpv1
+   a_Tmpv1 =a_t_new(i,k,j)
+   a_t_new(i,k,j) =0.0
+   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
+   a_mpten =a_mpten +a_Tmpv1
 
-!!  Tmpv001 =max(-config_flags%mp_tend_lim*dt, mpten)
-!!  mpten =Tmpv001
+#if ( WRF_DFI_RADAR == 1 )
+   IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.     &
+              dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.         &
+              dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10.    &
+              .and. k < k_end ) THEN
 
-!!  IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.   	           dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.       	           dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10.  	           .and. k < k_end ) THEN
-!!  IF(dfi_tten_rad(i,k,j) > mpten ) THEN
-!!  Tmpv001 =t_new(i,k,j) +(dfi_tten_rad(i,k,j))
-!!  t_new(i,k,j) =Tmpv001
+   IF(dfi_tten_rad(i,k,j) > mpten ) THEN
 
-!!  else
-!!  Tmpv001 =t_new(i,k,j) +mpten
-!!  t_new(i,k,j) =Tmpv001
+   a_Tmpv1 =a_t_new(i,k,j)
+   a_t_new(i,k,j) =0.0
+   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
+   a_dfi_tten_rad(i,k,j) =a_dfi_tten_rad(i,k,j) +a_Tmpv1
 
-!!  endif
-!!  else
-!!  Tmpv001 =t_new(i,k,j) +mpten
-!!  t_new(i,k,j) =Tmpv001
+   else
 
-!!  endif
-!!  Tmpv001 =t_new(i,k,j) +mpten
-!!  t_new(i,k,j) =Tmpv001
+   a_Tmpv1 =a_t_new(i,k,j)
+   a_t_new(i,k,j) =0.0
+   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
+   a_mpten =a_mpten +a_Tmpv1
 
-!!  Tmpv001 =th_phy(i,k,j) -h_diabatic(i,k,j)
-!!  Tmpv002 =Tmpv001/dt
-!!  h_diabatic(i,k,j) =Tmpv002
+   endif
 
-!!  ENDDO
-!!  ENDDO
-!!  ENDDO
-!!  ELSE
-!!  DO j =j_start, j_end
-!!  DO k =k_start, k_end
-!!  DO i =i_start, i_end
-!!  h_diabatic(i,k,j) =0.
+   else
 
-!!  ENDDO
-!!  ENDDO
-!!  ENDDO
-!!  ENDIF
+   a_Tmpv1 =a_t_new(i,k,j)
+   a_t_new(i,k,j) =0.0
+   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
+   a_mpten =a_mpten +a_Tmpv1
 
-!   IF( config_flags%no_mp_heating .eq. 0 ) THEN
+   endif
+#else
 
-!   DO j =j_end, j_start, -1
-!   DO k =k_end, k_start, -1
-!   DO i =i_end, i_start, -1
-!   a_Tmpv2 =a_h_diabatic(i,k,j)
-!   a_h_diabatic(i,k,j) =0.0
-!   a_Tmpv1 =a_Tmpv2/dt
-!   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_Tmpv1
-!   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -a_Tmpv1
-!   a_Tmpv1 =a_t_new(i,k,j)
-!   a_t_new(i,k,j) =0.0
-!   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-!   a_mpten =a_mpten +a_Tmpv1
+   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_Tmpv1
+   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -a_Tmpv1
+#endif
+   ENDDO
+   ENDDO
+   ENDDO
 
-!   IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.     &
-!              dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.         &
-!              dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10.    &
-!              .and. k < k_end ) THEN
+   ELSE
 
-!   IF(dfi_tten_rad(i,k,j) > mpten ) THEN
+   DO j =j_end, j_start, -1
+   DO k =k_end, k_start, -1
+   DO i =i_end, i_start, -1
+   a_h_diabatic(i,k,j) =0.0
+   ENDDO
+   ENDDO
+   ENDDO
 
-!   a_Tmpv1 =a_t_new(i,k,j)
-!   a_t_new(i,k,j) =0.0
-!   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-!   a_dfi_tten_rad(i,k,j) =a_dfi_tten_rad(i,k,j) +a_Tmpv1
+   ENDIF
 
-!   else
+#if ( WRF_DFI_RADAR == 1 )
+   dfi_tten_max =-999
+   old_max =-999
+   a_old_max =0.0
+   a_dfi_tten_max =0.0
+#endif
 
-!   a_Tmpv1 =a_t_new(i,k,j)
-!   a_t_new(i,k,j) =0.0
-!   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-!   a_mpten =a_mpten +a_Tmpv1
-
-!   endif
-
-!   else
-
-!   a_Tmpv1 =a_t_new(i,k,j)
-!   a_t_new(i,k,j) =0.0
-!   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-!   a_mpten =a_mpten +a_Tmpv1
-
-!   endif
-!   a_Tmpv1 =a_mpten
-!   a_mpten =0.0
-!   a_config_flags%mp_tend_lim =a_config_flags%mp_tend_lim  -(1.0 +sign(1.0, -  &
-!   config_flags%mp_tend_lim*dt -mpten))*0.5*dt*a_Tmpv1
-!   a_mpten =a_mpten  +(1.0 -sign(1.0, -config_flags%mp_tend_lim*dt -mpten))  &
-!   *0.5*1.0*a_Tmpv1
-!   a_Tmpv1 =a_mpten
-!   a_mpten =0.0
-!   a_config_flags%mp_tend_lim =a_config_flags%mp_tend_lim  +(1.0 -sign(1.0,   &
-!   config_flags%mp_tend_lim*dt -mpten))*0.5*dt*a_Tmpv1
-!   a_mpten =a_mpten  +(1.0 +sign(1.0, config_flags%mp_tend_lim*dt -mpten))  &
-!   *0.5*1.0*a_Tmpv1
-!   a_Tmpv1 =a_mpten
-!   a_mpten =0.0
-!   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_Tmpv1
-!   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -a_Tmpv1
-!   ENDDO
-!   ENDDO
-!   ENDDO
-
-!   ELSE
-
-!   DO j =j_end, j_start, -1
-!   DO k =k_end, k_start, -1
-!   DO i =i_end, i_start, -1
-!   a_h_diabatic(i,k,j) =0.0
-!   ENDDO
-!   ENDDO
-!   ENDDO
-
-!   ENDIF
-
-!LPB[2]
-!!  dfi_tten_max =-999
-
-!!  old_max =-999
-
-!   a_old_max =0.0
-!   a_dfi_tten_max =0.0
-
-!LPB[1]
-
-!!  IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage ==DFI_FWD   	             .and. PRESENT(dfi_tten_rad) ) THEN
-!!  endif
-
-!   IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage   &
-!   ==DFI_FWD                .and. PRESENT(dfi_tten_rad) ) THEN
-
-!   endif
-
-!LPB[0]
-!!  i_start =its
-!!  i_end =min(ite, ide-1)
-!!  j_start =jts
-!!  j_end =min(jte, jde-1)
-!!  k_start =kts
-!!  k_end =min(kte, kde-1)
-
-!   END SUBROUTINE a_moist_physics_finish_em
+   END SUBROUTINE a_moist_physics_finish_em
 
    SUBROUTINE a_init_module_big_step
 

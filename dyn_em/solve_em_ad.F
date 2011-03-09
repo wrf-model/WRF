@@ -62,7 +62,9 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    USE module_diffusion_em
    USE module_polarfft
    USE module_microphysics_driver
+   USE a_module_microphysics_driver
    USE module_microphysics_zero_out
+   USE a_module_microphysics_zero_out
    USE module_fddaobs_driver
    USE module_diagnostics
 #ifdef WRF_CHEM
@@ -5277,6 +5279,20 @@ BENCH_END(advance_ppt_tim)
 !==[P4.2]=============================================================
    IF (config_flags%mp_physics /= 0)  then
 
+     CALL push4backup (grid%h_diabatic,"h_diabatic")
+     CALL push4backup (grid%z_at_w,"z_at_w")
+     CALL push4backup (grid%z,"z")
+     CALL push4backup (th_phy,"th_phy") 
+     CALL push4backup (p_phy,"p_phy")
+     CALL push4backup (pi_phy,"pi_phy") 
+     CALL push4backup (grid%ph_2,"ph_2")
+     CALL push4backup (dz8w,"dz8w")
+     CALL push4backup (grid%p,"p")
+     CALL push4backup (grid%phb,"phb")
+     CALL push4backup (grid%al,"al")
+     CALL push4backup (grid%t_2,"t")
+     CALL push4backup (rho,"rho")
+
 !====[P4.2.1]=========================================================
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, its, ite, jts, jte )
@@ -5335,6 +5351,16 @@ BENCH_START(micro_driver_tim)
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_driver{
 if (config_flags % sw_call_microphysics_driver) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_driver ' )
+
+     CALL push4backup (grid%rainncv,"grid%rainncv")
+     CALL push4backup (grid%rainnc,"grid%rainnc")
+     CALL push4backup (moist,"moist")
+     CALL push4backup (pi_phy,"pi_phy")
+     CALL push4backup (dz8w,"dz8w")
+     CALL push4backup (p8w,"p8w")
+     CALL push4backup (rho,"rho")
+     CALL push4backup (th_phy,"th_phy")
+     CALL push4backup (p_phy,"p_phy")
 
      CALL microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
@@ -6015,9 +6041,14 @@ BENCH_START(bc_2d_tim)
      CALL wrf_debug ( 200 , ' call set_phys_bc_dry_2' )
 
 
+!==[P7.1]===============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_phys_bc_dry_2{
 if (config_flags % sw_call_set_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_phys_bc_dry_2 ' )
+
+   CALL push4backup (grid%u_2,grid%v_2,grid%w_2, grid%t_2, "u, v, w,t ")
+   CALL push4backup (grid%ph_2, "ph")
+   CALL push4backup (grid%mu_2, "mu")
 
    !ZXOMP PARALLEL DO   &
    !ZXOMP PRIVATE ( ij )
@@ -6041,6 +6072,7 @@ end if
 
 
 
+!==[P7.2]===============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
@@ -6065,6 +6097,7 @@ end if
 
 
 
+!==[P7.3]===============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
@@ -6088,6 +6121,7 @@ end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
 
 
+!==[P7.4]===============================================================
      moisture_loop_bdy_2 : DO im = PARAM_FIRST_SCALAR , num_3d_m
 
 
@@ -6117,6 +6151,7 @@ end if
 
      END DO moisture_loop_bdy_2
 
+!==[P7.5]===============================================================
      chem_species_bdy_loop_2 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
 
@@ -6145,6 +6180,7 @@ end if
 
      END DO chem_species_bdy_loop_2
 
+!==[P7.6]===============================================================
      tracer_species_bdy_loop_2 : DO ic = PARAM_FIRST_SCALAR , num_tracer
 
 
@@ -6173,6 +6209,7 @@ end if
 
      END DO tracer_species_bdy_loop_2
 
+!==[P7.7]===============================================================
      scalar_species_bdy_loop_2 : DO is = PARAM_FIRST_SCALAR , num_3d_s
 
 
@@ -6434,6 +6471,8 @@ end if
   a_dz8w = 0. 
   a_p8w = 0. 
   a_t8w = 0. 
+  grid%a_h_diabatic = 0.0
+  grid%a_rainncv = 0.0
 
   a_w_save = 0. 
   a_ph_save = 0. 
@@ -6551,10 +6590,108 @@ BENCH_START(adj_bc_2d_tim)
 
      CALL wrf_debug ( 200 , ' call a_set_phys_bc_dry_2' )
 
+!==[adj_P7.7]===============================================================
+     adj_scalar_species_bdy_loop_2 : DO is = num_3d_s,PARAM_FIRST_SCALAR,-1 
 
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_phys_bc_dry_2{
+if (config_flags % sw_call_set_physical_bc3d) then
+   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+       CALL a_set_physical_bc3d( a_scalar(ims,kms,jms,is) , 'p', config_flags,  &
+                               ids, ide, jds, jde, kds, kde,            &
+                               ims, ime, jms, jme, kms, kme,            &
+                               ips, ipe, jps, jpe, kps, kpe,            &
+                               grid%i_start(ij), grid%i_end(ij),        &
+                               grid%j_start(ij), grid%j_end(ij),        &
+                               k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
+
+else
+   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
+end if
+
+     END DO adj_scalar_species_bdy_loop_2
+
+!==[adj_P7.4]===============================================================
+     adj_moisture_loop_bdy_2 : DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
+
+
+if (config_flags % sw_call_set_physical_bc3d) then
+   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+       CALL a_set_physical_bc3d( a_moist(ims,kms,jms,im), 'p',         &
+                               config_flags,                           &
+                               ids, ide, jds, jde, kds, kde,           &
+                               ims, ime, jms, jme, kms, kme,           &
+                               ips, ipe, jps, jpe, kps, kpe,           &
+                               grid%i_start(ij), grid%i_end(ij),       &
+                               grid%j_start(ij), grid%j_end(ij),       &
+                               k_start    , k_end                     )
+   END DO
+   !$OMP END PARALLEL DO
+
+else
+   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
+end if
+
+     END DO adj_moisture_loop_bdy_2
+
+!==[adj_P7.3]===============================================================
+if (config_flags % sw_call_set_physical_bc3d) then
+   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+     CALL a_set_physical_bc3d( grid%a_tke_2 , 'p', config_flags,      &
+                             ids, ide, jds, jde, kds, kde,            &
+                             ims, ime, jms, jme, kms, kme,            &
+                             ips, ipe, jps, jpe, kps, kpe,            &
+                             grid%i_start(ij), grid%i_end(ij),        &
+                             grid%j_start(ij), grid%j_end(ij),        &
+                             k_start    , k_end                      )
+   END DO
+   !$OMP END PARALLEL DO
+
+else
+   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
+end if
+
+!==[adj_P7.2]===============================================================
+if (config_flags % sw_call_set_physical_bc3d) then
+   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+     CALL a_set_physical_bc3d( grid%a_tke_1, 'p', config_flags,       &
+                             ids, ide, jds, jde, kds, kde,            &
+                             ims, ime, jms, jme, kms, kme,            &
+                             ips, ipe, jps, jpe, kps, kpe,            &
+                             grid%i_start(ij), grid%i_end(ij),        &
+                             grid%j_start(ij), grid%j_end(ij),        &
+                             k_start    , k_end-1                    )
+   END DO
+   !$OMP END PARALLEL DO
+
+else
+   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
+end if
+
+!==[adj_P7.1]===============================================================
 if (config_flags % sw_call_set_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_phys_bc_dry_2 ' )
+
+
+   CALL pop2restore (grid%mu_2, "mu")
+   CALL pop2restore (grid%ph_2, "ph")
+   CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, grid%t_2, "u, v, w,t ")
 
    !ZXOMP PARALLEL DO   &
    !ZXOMP PRIVATE ( ij )
@@ -6578,108 +6715,7 @@ if (config_flags % sw_call_set_phys_bc_dry_2) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_phys_bc_dry_2 ' )
 end if
-! CHECK NECESSARY SUBROUTINE: set_phys_bc_dry_2 }
 
-
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
-if (config_flags % sw_call_set_physical_bc3d) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
-
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
-   DO ij = grid%num_tiles,1,-1
-     CALL a_set_physical_bc3d( grid%a_tke_1, 'p', config_flags,       &
-                             ids, ide, jds, jde, kds, kde,            &
-                             ims, ime, jms, jme, kms, kme,            &
-                             ips, ipe, jps, jpe, kps, kpe,            &
-                             grid%i_start(ij), grid%i_end(ij),        &
-                             grid%j_start(ij), grid%j_end(ij),        &
-                             k_start    , k_end-1                    )
-   END DO
-   !$OMP END PARALLEL DO
-
-else
-   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
-end if
-! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
-
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
-if (config_flags % sw_call_set_physical_bc3d) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
-
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
-   DO ij = grid%num_tiles,1,-1
-     CALL a_set_physical_bc3d( grid%a_tke_2 , 'p', config_flags,      &
-                             ids, ide, jds, jde, kds, kde,            &
-                             ims, ime, jms, jme, kms, kme,            &
-                             ips, ipe, jps, jpe, kps, kpe,            &
-                             grid%i_start(ij), grid%i_end(ij),        &
-                             grid%j_start(ij), grid%j_end(ij),        &
-                             k_start    , k_end                      )
-   END DO
-   !$OMP END PARALLEL DO
-
-else
-   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
-end if
-! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
-
-     adj_moisture_loop_bdy_2 : DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
-
-
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
-if (config_flags % sw_call_set_physical_bc3d) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
-
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
-   DO ij = grid%num_tiles,1,-1
-       CALL a_set_physical_bc3d( a_moist(ims,kms,jms,im), 'p',         &
-                               config_flags,                           &
-                               ids, ide, jds, jde, kds, kde,           &
-                               ims, ime, jms, jme, kms, kme,           &
-                               ips, ipe, jps, jpe, kps, kpe,           &
-                               grid%i_start(ij), grid%i_end(ij),       &
-                               grid%j_start(ij), grid%j_end(ij),       &
-                               k_start    , k_end                     )
-   END DO
-   !$OMP END PARALLEL DO
-
-else
-   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
-end if
-! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
-     END DO adj_moisture_loop_bdy_2
-
-     adj_scalar_species_bdy_loop_2 : DO is = num_3d_s,PARAM_FIRST_SCALAR,-1 
-
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
-if (config_flags % sw_call_set_physical_bc3d) then
-   call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
-
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij )
-   DO ij = grid%num_tiles,1,-1
-       CALL a_set_physical_bc3d( a_scalar(ims,kms,jms,is) , 'p', config_flags,  &
-                               ids, ide, jds, jde, kds, kde,            &
-                               ims, ime, jms, jme, kms, kme,            &
-                               ips, ipe, jps, jpe, kps, kpe,            &
-                               grid%i_start(ij), grid%i_end(ij),        &
-                               grid%j_start(ij), grid%j_end(ij),        &
-                               k_start    , k_end                      )
-   END DO
-   !$OMP END PARALLEL DO
-
-else
-   call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
-end if
-! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
-     END DO adj_scalar_species_bdy_loop_2
 
 BENCH_END(adj_bc_2d_tim)
 
@@ -6799,15 +6835,17 @@ BENCH_START(adj_moist_phys_end_tim)
        jte = min(grid%j_end(ij),jde-1-sz)
 
 !======[adj_P4.2.5.5]=====================================================
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: moist_physics_finish_em{
 if (config_flags % sw_call_moist_physics_finish_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_moist_physics_finish_em ' )
 
-!!!!! REPLACE WITH a_moist_physics_finish_em WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-       CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
-                                      grid%h_diabatic, dtm, config_flags,    &
+       CALL a_moist_physics_finish_em( grid%t_2, grid%a_t_2, grid%t_1, grid%a_t_1, &
+                                      t0, grid%muts, grid%a_muts,           &
+                                      th_phy, a_th_phy,                     &
+                                      grid%h_diabatic,grid%a_h_diabatic,    &
+                                      dtm, config_flags,    &
 #if ( WRF_DFI_RADAR == 1 )
-                                      grid%dfi_tten_rad,grid%dfi_stage,        &
+                                      grid%dfi_tten_rad, a_grid%dfi_tten_rad,  &
+                                      grid%dfi_stage,                          &
 #endif
                                       ids, ide, jds, jde, kds, kde,     &
                                       ims, ime, jms, jme, kms, kme,     &
@@ -6817,18 +6855,15 @@ if (config_flags % sw_call_moist_physics_finish_em) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_moist_physics_finish_em ' )
 end if
-! CHECK NECESSARY SUBROUTINE: moist_physics_finish_em }
 
 !======[adj_P4.2.5.4]=====================================================
 !      Remove codes on chem and tracer from [P4.2.5.4]
 
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outa{
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_zero_outa ' )
 
-!!!!! REPLACE WITH a_microphysics_zero_outa WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-       CALL microphysics_zero_outa (                                    &
-                      scalar , num_scalar , config_flags ,              &
+       CALL a_microphysics_zero_outa (                                    &
+                      scalar ,a_scalar, num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
@@ -6837,15 +6872,12 @@ if (config_flags % sw_call_microphysics_zero_outa) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_zero_outa ' )
 end if
-! CHECK NECESSARY SUBROUTINE: microphysics_zero_outa }
 
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outa{
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_zero_outa ' )
 
-!!!!! REPLACE WITH a_microphysics_zero_outa WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-       CALL microphysics_zero_outa (                                    &
-                      moist , num_moist , config_flags ,                &
+       CALL a_microphysics_zero_outa (                                    &
+                      moist , a_moist, num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
@@ -6854,7 +6886,6 @@ if (config_flags % sw_call_microphysics_zero_outa) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_zero_outa ' )
 end if
-! CHECK NECESSARY SUBROUTINE: microphysics_zero_outa }
 
 !======[P4.2.5.1_adj]=====================================================
        its = max(grid%i_start(ij),ids)
@@ -6865,13 +6896,11 @@ end if
 !======[adj_P4.2.5.2]=====================================================
 !      Remove codes on chem and tracer from [P4.2.5.2]
 
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outb{
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outb ' )
 
-!!!!! REPLACE WITH a_microphysics_zero_outb WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-       CALL microphysics_zero_outb (                                    &
-                      scalar , num_scalar , config_flags ,              &
+       CALL a_microphysics_zero_outb (                                    &
+                      scalar , a_scalar, num_scalar , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
@@ -6880,15 +6909,12 @@ if (config_flags % sw_call_microphysics_zero_outb) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outb ' )
 end if
-! CHECK NECESSARY SUBROUTINE: microphysics_zero_outb }
 
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outb{
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_zero_outb ' )
 
-!!!!! REPLACE WITH a_microphysics_zero_outb WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-       CALL microphysics_zero_outb (                                    &
-                      moist , num_moist , config_flags ,                &
+       CALL a_microphysics_zero_outb (                                    &
+                      moist , a_moist,  num_moist , config_flags ,                &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
@@ -6897,7 +6923,6 @@ if (config_flags % sw_call_microphysics_zero_outb) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_zero_outb ' )
 end if
-! CHECK NECESSARY SUBROUTINE: microphysics_zero_outb }
 
      END DO
      !ZXOMP END PARALLEL DO
@@ -6907,6 +6932,8 @@ BENCH_END(adj_moist_phys_end_tim)
      CALL wrf_debug ( 200 , ' call a_microphysics_driver' )
 
      grid%sr = 0.
+     specified_bdy = config_flags%specified .OR. config_flags%nested
+     channel_bdy = config_flags%specified .AND. config_flags%periodic_x
 
 !====[adj_P4.2.3]=========================================================
 BENCH_START(adj_micro_driver_tim)
@@ -6915,30 +6942,64 @@ BENCH_START(adj_micro_driver_tim)
 if (config_flags % sw_call_microphysics_driver) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_driver ' )
 
-!!!!! REPLACE WITH a_microphysics_driver WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-     CALL microphysics_driver(                                            &
+!Variables need to be saved: th, p, qv_curr, rho, pi_phy, dz8w, rainnc, rainncv
+!!!! Need to replace the variables marked as "!zzma" if other scheme will be added in the furture. (comments from zzma 01/10/2011)
+
+     CALL pop2restore (p_phy,"p_phy")
+     CALL pop2restore (th_phy,"th_phy")
+     CALL pop2restore (rho,"rho")
+     CALL pop2restore (p8w,"p8w")
+     CALL pop2restore (dz8w,"dz8w")
+     CALL pop2restore (pi_phy,"pi_phy")
+     CALL pop2restore (moist,"moist")
+     CALL pop2restore (grid%rainnc,"grid%rainnc")
+     CALL pop2restore (grid%rainncv,"grid%rainncv")
+
+     CALL a_microphysics_driver(                                          &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
-      &        ,DZ8W=dz8w          ,F_ICE_PHY=grid%f_ice_phy              &
-      &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
-      &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
-      &        ,RHO=rho            ,SPEC_ZONE=grid%spec_zone              &
-      &        ,SR=grid%sr              ,TH=th_phy                        &
-      &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
+      &        ,DZ8W=dz8w          ,a_DZ8W=a_dz8w                         &
+!zzma      &        ,F_ICE_PHY=grid%f_ice_phy ,a_F_ICE_PHY=grid%a_f_ice_phy    &
+      &        ,F_ICE_PHY=grid%f_ice_phy ,a_F_ICE_PHY=grid%f_ice_phy    &
+      &        ,ITIMESTEP=grid%itimestep                                  &
+      &        ,LOWLYR=grid%lowlyr                     &
+      &        ,P8W=p8w   ,a_P8W=a_p8w                 &
+      &        ,P=p_phy   ,a_P=a_p_phy                 &
+      &        ,PI_PHY=pi_phy   ,a_PI_PHY=a_pi_phy     &
+      &        ,RHO=rho, a_RHO=a_rho                  &
+      &        ,SPEC_ZONE=grid%spec_zone              &
+      &        ,SR=grid%sr     ,a_SR=grid%a_sr        &
+      &        ,TH=th_phy      ,a_TH=a_th_phy                        &
+
+!zzma      &        ,refl_10cm=grid%refl_10cm, a_refl_10cm=grid%a_refl_10cm    & ! hm, 9/22/09 for refl
+      &        ,refl_10cm=grid%refl_10cm, a_refl_10cm=grid%refl_10cm    & ! hm, 9/22/09 for refl
       &        ,WARM_RAIN=grid%warm_rain                                  &
-      &        ,T8W=t8w                                                   &
-      &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
-      &        ,NSOURCE=grid%qndropsource                                 &
+      &        ,T8W=t8w , a_T8W=a_t8w                                     &
+!zzma      &        ,CLDFRA=grid%cldfra, a_CLDFRA= grid%a_cldfra               &
+!zzma      &        ,EXCH_H=grid%exch_h, a_EXCH_H=grid%a_exch_h                &
+!zzma      &        ,NSOURCE=grid%qndropsource ,a_NSOURCE=grid%a_qndropsource  &
+      &        ,CLDFRA=grid%cldfra, a_CLDFRA= grid%cldfra               &
+      &        ,EXCH_H=grid%exch_h, a_EXCH_H=grid%exch_h                &
+      &        ,NSOURCE=grid%qndropsource ,a_NSOURCE=grid%qndropsource  &
 #ifdef WRF_CHEM
-      &        ,QLSINK=grid%qlsink,CLDFRA_OLD=grid%cldfra_old             &
-      &        ,PRECR=grid%precr, PRECI=grid%preci, PRECS=grid%precs, PRECG=grid%precg &
-      &        ,CHEM_OPT=config_flags%chem_opt, PROGN=config_flags%progn  &
+      &        ,QLSINK=grid%qlsink  ,a_QLSINK=grid%a_qlsink                   &
+      &        ,CLDFRA_OLD=grid%cldfra_old ,a_CLDFRA_OLD=grid%a_cldfra_old    &
+      &        ,PRECR=grid%precr ,a_PRECR=grid%a_precr                   &
+      &        ,PRECI=grid%preci ,a_PRECI=grid%a_preci                   &
+      &        ,PRECS=grid%precs ,a_PRECS=grid%a_precs                   &
+      &        ,PRECG=grid%precg ,a_PRECG=grid%a_precg                    &
+      &        ,CHEM_OPT=config_flags%chem_opt                            &
+      &        , PROGN=config_flags%progn                                 &
 #endif
-      &        ,XLAND=grid%xland                                          &
+!zzma      &        ,XLAND=grid%xland ,a_XLAND=grid%a_xland                    &
+      &        ,XLAND=grid%xland                                        &
       &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy       &
-      &        ,F_RAIN_PHY=grid%f_rain_phy                                &
-      &        ,F_RIMEF_PHY=grid%f_rimef_phy                              &
+!zzma      &        ,F_RAIN_PHY=grid%f_rain_phy ,a_F_RAIN_PHY=grid%a_f_rain_phy       &
+!zzma      &        ,F_RIMEF_PHY=grid%f_rimef_phy ,a_F_RIMEF_PHY=grid%a_f_rimef_phy       &
+      &        ,F_RAIN_PHY=grid%f_rain_phy ,a_F_RAIN_PHY=grid%f_rain_phy       &
+      &        ,F_RIMEF_PHY=grid%f_rimef_phy ,a_F_RIMEF_PHY=grid%f_rimef_phy       &
       &        ,MP_PHYSICS=config_flags%mp_physics                        &
       &        ,ID=grid%id                                                &
+
       &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde         &
       &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme         &
 #ifdef RUN_ON_GPU
@@ -6950,41 +7011,76 @@ if (config_flags % sw_call_microphysics_driver) then
       &        ,NUM_TILES=grid%num_tiles                                  &
       &        ,NAER=grid%naer                                            &
                  ! Optional
-      &        , RAINNC=grid%rainnc, RAINNCV=grid%rainncv                 &
-      &        , SNOWNC=grid%snownc, SNOWNCV=grid%snowncv                 &
-      &        , GRAUPELNC=grid%graupelnc, GRAUPELNCV=grid%graupelncv     & ! for milbrandt2mom
-      &        , HAILNC=grid%hailnc, HAILNCV=grid%hailncv                 &
-      &        , W=grid%w_2, Z=grid%z, HT=grid%ht                         &
+      &        , RAINNC=grid%rainnc , a_RAINNC=grid%a_rainnc              &
+      &        , RAINNCV=grid%rainncv , a_RAINNCV=grid%a_rainncv          &
+!zzma      &        , SNOWNC=grid%snownc   , a_SNOWNC=grid%a_snownc            &
+!zzma      &        , SNOWNCV=grid%snowncv , a_SNOWNCV=grid%a_snowncv          &
+!zzma      &        , GRAUPELNC=grid%graupelnc , a_GRAUPELNC=grid%a_graupelnc    &
+!zzma      &        , GRAUPELNCV=grid%graupelncv , a_GRAUPELNCV=grid%a_graupelncv     & ! for milbrandt2mom
+!zzma      &        , HAILNC=grid%hailnc , a_HAILNC=grid%a_hailnc              &
+!zzma      &        , HAILNCV=grid%hailncv  , a_HAILNCV=grid%a_hailncv         &
+      &        , SNOWNC=grid%snownc   , a_SNOWNC=grid%snownc            &
+      &        , SNOWNCV=grid%snowncv , a_SNOWNCV=grid%snowncv          &
+      &        , GRAUPELNC=grid%graupelnc , a_GRAUPELNC=grid%graupelnc    &
+      &        , GRAUPELNCV=grid%graupelncv , a_GRAUPELNCV=grid%graupelncv     & ! for milbrandt2mom
+      &        , HAILNC=grid%hailnc , a_HAILNC=grid%hailnc              &
+      &        , HAILNCV=grid%hailncv  , a_HAILNCV=grid%hailncv         &
+      &        , W=grid%w_2 , a_W=grid%a_w_2                  &
+!zzma      &        , Z=grid%z  , a_Z=grid%a_z, HT=grid%ht  ,a_HT=grid%a_ht    &
+      &        , Z=grid%z  , a_Z=grid%a_z, HT=grid%ht  ,a_HT=grid%ht    &
       &        , MP_RESTART_STATE=grid%mp_restart_state                   &
       &        , TBPVS_STATE=grid%tbpvs_state                             & ! etampnew
       &        , TBPVS0_STATE=grid%tbpvs0_state                           & ! etampnew
-      &        , QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV               &
-      &        , QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC               &
-      &        , QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR               &
-      &        , QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI               &
-      &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS               &
-      &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
-      &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
-      &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
-      &        , QT_CURR=scalar(ims,kms,jms,P_QT), F_QT=F_QT              &
-      &        , QNN_CURR=scalar(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
-      &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI          &
-      &        , QNC_CURR=scalar(ims,kms,jms,P_QNC), F_QNC=F_QNC          &
-      &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR          &
-      &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS          &
-      &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG          &
-      &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom
+      &        , QV_CURR=moist(ims,kms,jms,P_QV) , a_QV_CURR=a_moist(ims,kms,jms,P_QV)   &
+      &        , F_QV=F_QV               &
+      &        , QC_CURR=moist(ims,kms,jms,P_QC) , a_QC_CURR=a_moist(ims,kms,jms,P_QC)   &
+      &        , F_QC=F_QC               &
+      &        , QR_CURR=moist(ims,kms,jms,P_QR) , a_QR_CURR=a_moist(ims,kms,jms,P_QR)   &
+      &        , F_QR=F_QR               &
+      &        , QI_CURR=moist(ims,kms,jms,P_QI) , a_QI_CURR=a_moist(ims,kms,jms,P_QI)   &
+      &        , F_QI=F_QI               &
+      &        , QS_CURR=moist(ims,kms,jms,P_QS) , a_QS_CURR=a_moist(ims,kms,jms,P_QS)   &
+      &        , F_QS=F_QS               &
+      &        , QG_CURR=moist(ims,kms,jms,P_QG) , a_QG_CURR=a_moist(ims,kms,jms,P_QG)   &
+      &        , F_QG=F_QG               &
+      &        , QH_CURR=moist(ims,kms,jms,P_QH) , a_QH_CURR=a_moist(ims,kms,jms,P_QH)   &
+      &        , F_QH=F_QH               & ! for milbrandt2mom
+      &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP) , a_QNDROP_CURR=a_scalar(ims,kms,jms,P_QNDROP)   &
+      &        , F_QNDROP=F_QNDROP       &
+      &        , QT_CURR=scalar(ims,kms,jms,P_QT) , a_QT_CURR=a_scalar(ims,kms,jms,P_QT)     &
+      &        , F_QT=F_QT              &
+      &        , QNN_CURR=scalar(ims,kms,jms,P_QNN) , a_QNN_CURR=a_scalar(ims,kms,jms,P_QNN)  &
+      &        , F_QNN=F_QNN          &
+      &        , QNI_CURR=scalar(ims,kms,jms,P_QNI) , a_QNI_CURR=a_scalar(ims,kms,jms,P_QNI)  &
+      &        , F_QNI=F_QNI          &
+      &        , QNC_CURR=scalar(ims,kms,jms,P_QNC) , a_QNC_CURR=a_scalar(ims,kms,jms,P_QNC)   &
+      &        , F_QNC=F_QNC          &
+      &        , QNR_CURR=scalar(ims,kms,jms,P_QNR) , a_QNR_CURR=a_scalar(ims,kms,jms,P_QNR)   &
+      &        , F_QNR=F_QNR          &
+      &        , QNS_CURR=scalar(ims,kms,jms,P_QNS) , a_QNS_CURR=a_scalar(ims,kms,jms,P_QNS)   &
+      &        , F_QNS=F_QNS          &
+      &        , QNG_CURR=scalar(ims,kms,jms,P_QNG) , a_QNG_CURR=a_scalar(ims,kms,jms,P_QNG)   &
+      &        , F_QNG=F_QNG          &
+      &        , QNH_CURR=scalar(ims,kms,jms,P_QNH) , a_QNH_CURR=a_scalar(ims,kms,jms,P_QNH)   &
+      &        , F_QNH=F_QNH          & ! for milbrandt2mom
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
 !       &        , QZG_CURR=scalar(ims,kms,jms,P_QZG), F_QZG=F_QZG          & ! "
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
-      &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
-      &        , qicuten=grid%rqicuten,mu=grid%mut                        &
+!zzma      &        , qrcuten=grid%rqrcuten , a_qrcuten=grid%a_rqrcuten          &
+!zzma      &        , qscuten=grid%rqscuten , a_qscuten=grid%a_rqscuten          &
+!zzma      &        , qicuten=grid%rqicuten , a_qicuten=grid%a_rqicuten          &
+      &        , qrcuten=grid%rqrcuten , a_qrcuten=grid%rqrcuten          &
+      &        , qscuten=grid%rqscuten , a_qscuten=grid%rqscuten          &
+      &        , qicuten=grid%rqicuten , a_qicuten=grid%rqicuten          &
+      &        ,mu=grid%mut ,a_mu=grid%a_mut                        &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)
+
                                                                           )
+
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_driver ' )
 end if
@@ -6998,6 +7094,20 @@ BENCH_END(adj_micro_driver_tim)
 !====[adj_P4.2.1]=========================================================
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij, its, ite, jts, jte )
+
+     CALL pop2restore (rho,"rho")
+     CALL pop2restore (grid%t_2,"t")
+     CALL pop2restore (grid%al,"al")
+     CALL pop2restore (grid%phb,"phb")
+     CALL pop2restore (grid%p,"p")
+     CALL pop2restore (dz8w,"dz8w")
+     CALL pop2restore (grid%ph_2,"ph_2")
+     CALL pop2restore (pi_phy,"pi_phy")
+     CALL pop2restore (p_phy,"p_phy")
+     CALL pop2restore (th_phy,"th_phy")
+     CALL pop2restore (grid%z,"z")
+     CALL pop2restore (grid%z_at_w,"z_at_w")
+     CALL pop2restore (grid%h_diabatic,"h_diabatic")
 
      adj_scalar_tile_loop_1a: DO ij = grid%num_tiles,1,-1
 
@@ -7016,16 +7126,20 @@ BENCH_END(adj_micro_driver_tim)
        CALL wrf_debug ( 200 , ' call a_moist_physics_prep' )
 BENCH_START(adj_moist_physics_prep_tim)
 
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: moist_physics_prep_em{
 if (config_flags % sw_call_moist_physics_prep_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_moist_physics_prep_em ' )
 
-!!!!! REPLACE WITH a_moist_physics_prep_em WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-       CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, rho,                &
-                                   grid%al, grid%alb, grid%p, p8w, p0, grid%pb,          &
-                                   grid%ph_2, grid%phb, th_phy, pi_phy, p_phy, &
-                                   grid%z, grid%z_at_w, dz8w,                  &
-                                   dtm, grid%h_diabatic,                  &
+       CALL a_moist_physics_prep_em( grid%t_2,grid%a_t_2, grid%t_1,grid%a_t_1,  &
+                                   t0, rho,a_rho,                               &
+                                   grid%al,grid%a_al, grid%alb,                 &
+                                   grid%p,grid%a_p, p8w,a_p8w,                 &
+                                   p0, grid%pb,                                &
+                                   grid%ph_2,grid%a_ph_2, grid%phb,            &
+                                   th_phy, a_th_phy, pi_phy, a_pi_phy,         &
+                                   p_phy, a_p_phy,                             &
+                                   grid%z, grid%a_z, grid%z_at_w, grid%a_z_at_w, &
+                                   dz8w, a_dz8w,                               &
+                                   dtm, grid%h_diabatic, grid%a_h_diabatic,    &
                                    config_flags,grid%fnm, grid%fnp,            &
                                    ids, ide, jds, jde, kds, kde,     &
                                    ims, ime, jms, jme, kms, kme,     &
@@ -7035,7 +7149,6 @@ if (config_flags % sw_call_moist_physics_prep_em) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_moist_physics_prep_em ' )
 end if
-! CHECK NECESSARY SUBROUTINE: moist_physics_prep_em }
 
 BENCH_END(adj_moist_physics_prep_tim)
      END DO adj_scalar_tile_loop_1a

@@ -290,9 +290,11 @@ module_ra_HWRF.o:   ../frame/module_dm.o module_mp_HWRF.o
 module_ra_rrtm.o: ../frame/module_wrf_error.o \
 		../frame/module_dm.o
 
-module_ra_cam_support.o: ../frame/module_wrf_error.o
+module_ra_cam_support.o: module_cam_support.o \
+                ../frame/module_wrf_error.o
 
 module_ra_cam.o: module_ra_cam_support.o \
+		 module_cam_support.o \
                 ../frame/module_wrf_error.o
 
 module_mp_lin.o : ../frame/module_wrf_error.o

@@ -1,4 +1,5 @@
 MODULE module_ra_cam_support
+  use module_cam_support, only: endrun
   implicit none
       integer, parameter :: r8 = 8
       real(r8), parameter:: inf = 1.e20 ! CAM sets this differently in infnan.F90
@@ -2019,7 +2020,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
          end do
 
          if (kount.gt.ncol) then
-!           call endrun ('VERT_INTERPOLATE: Bad data: non-monotonicity suspected in dependent variable')
+            call endrun ('VERT_INTERPOLATE: Bad data: non-monotonicity suspected in dependent variable')
          end if
       end if
    end do
@@ -2060,7 +2061,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
                write(6,*)'vert_interpolate: aerosol(k),(k+1)',AEROSOL(i,k,m),AEROSOL(i,k+1,m)
                write(6,*)'vert_interpolate: pint(k+1),(k)',pint(i,k+1),pint(i,k)
                write(6,*)'n,c',n,c
-!              call endrun()
+               call endrun()
             end if
          end do
       end do
@@ -2550,12 +2551,12 @@ subroutine getfactors (cycflag, np1, cdayminus, cdayplus, cday, &
    if (cycflag) then
       if ((cday < 1.) .or. (cday > (daysperyear+1.))) then
          write(6,*) 'GETFACTORS:', ' bad cday=',cday
-!        call endrun ()
+         call endrun ()
       end if
    else
       if (cday < 1.) then
          write(6,*) 'GETFACTORS:',  ' bad cday=',cday
-!        call endrun ()
+         call endrun ()
       end if
    end if
 !
@@ -2579,7 +2580,7 @@ subroutine getfactors (cycflag, np1, cdayminus, cdayplus, cday, &
 
    if (.not. validfactors (fact1, fact2)) then
       write(6,*) 'GETFACTORS: ', ' bad fact1 and/or fact2=', fact1, fact2
-!     call endrun ()
+      call endrun ()
    end if
 
    return
@@ -2859,7 +2860,7 @@ subroutine gestbl(tmn     ,tmx     ,trice   ,ip      ,epsil   , &
    lentbl = INT(tmax-tmin+2.000001)
    if (lentbl .gt. plenest) then
       write(6,9000) tmax, tmin, plenest
-!     call endrun ('GESTBL')    ! Abnormal termination
+      call endrun ('GESTBL')    ! Abnormal termination
    end if
 !
 ! Begin building es table.
@@ -2999,7 +3000,7 @@ subroutine gffgch(t       ,es      ,itype   )
    end if
    if (tr > 40.0) then
       write(6,900) tr
-!     call endrun ('GFFGCH')                ! Abnormal termination
+      call endrun ('GFFGCH')                ! Abnormal termination
    end if
 !
    if(t < (tmelt - tr) .and. itype == 1) go to 10

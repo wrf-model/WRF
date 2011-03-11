@@ -1,5 +1,7 @@
 MODULE module_ra_cam
   use module_ra_cam_support
+  use module_cam_support, only: endrun
+
   implicit none
 ! 
 ! A. Slingo's data for cloud particle radiative properties (from 'A GCM
@@ -1112,7 +1114,7 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
             if (AEROSOLt(i, k, m) < speciesmin(m)) then
                write(6,*) 'AEROSOL_INTERPOLATE: negative mass mixing ratio, exiting'
                write(6,*) 'm, column, pver',m, i, k ,AEROSOLt(i, k, m)
-!              call endrun ()
+               call endrun ()
             end if
          end do
       end do
@@ -6812,7 +6814,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                npasses = npasses + 1
                if (npasses >= 2 ) then
                   write(6,*)'RADCSWMX: Maximum overlap of column ','failed'
-!                 call endrun
+                  call endrun
                endif
                nmxrgn(i)=1
                pmxrgn(i,1)=1.0e30
@@ -7819,7 +7821,7 @@ subroutine radozn (lchnk, ncol, pcols, pver,pmid, pin, levsiz, ozmix, o3vmr)
       end do
 
       if (kount.gt.ncol) then
-!        call endrun ('RADOZN: Bad ozone data: non-monotonicity suspected')
+         call endrun ('RADOZN: Bad ozone data: non-monotonicity suspected')
       end if
 35    continue
    end do

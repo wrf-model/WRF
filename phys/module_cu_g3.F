@@ -3352,7 +3352,6 @@ CONTAINS
                       massfln(i,j,nall+8)=0.
                       xff_ens3(9) =0.
                       massfln(i,j,nall+9)=0.
-                      closure_n(i)=closure_n(i)-1.
                       xff_ens3(13) =0.
                       massfln(i,j,nall+13)=0.
                       xff_ens3(15) =0.

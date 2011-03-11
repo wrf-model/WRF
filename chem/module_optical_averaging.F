@@ -815,8 +815,9 @@
           ri_dum     = (swref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (swref_index_dust(ns) * mass_dust / dens_dust) +  &
+                       (swref_index_dust(ns) * mass_oin / dens_dust)  +  &
                        (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
                        (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
@@ -829,8 +830,9 @@
           ri_dum     = (swref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (swref_index_dust(ns)    * mass_dust / dens_dust) +  &
+                       (swref_index_dust(ns) * mass_oin / dens_dust)  +  &
                        (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (swref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
@@ -876,8 +878,9 @@
           ri_dum     = (lwref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (lwref_index_dust(ns)    * mass_dust / dens_dust) +  &
+                       (lwref_index_dust(ns) * mass_oin / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
@@ -890,8 +893,9 @@
           ri_dum     = (lwref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (lwref_index_dust(ns)    * mass_dust / dens_dust) +  &
+                       (lwref_index_dust(ns) * mass_oin / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (lwref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
@@ -1449,8 +1453,9 @@
           ri_dum     = (swref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (swref_index_dust(ns)   * mass_dust / dens_dust) +  &
+                       (swref_index_dust(ns)   * mass_oin / dens_dust)  +  &
                        (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
                        (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
@@ -1474,8 +1479,9 @@
             ri_dum   = (swref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (swref_index_dust(ns)   * mass_dust / dens_dust) +  &
+                       (swref_index_dust(ns)   * mass_oin / dens_dust)  +  &
                        (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (swref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
@@ -1511,8 +1517,9 @@
           ri_dum     = (lwref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (lwref_index_dust(ns)    * mass_dust / dens_dust) +  &
+                       (lwref_index_dust(ns)    * mass_oin / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
@@ -1536,8 +1543,9 @@
             ri_dum   = (lwref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
+!jdf                   (ref_index_oin    * mass_oin / dens_oin) +  &
 !jdfcz                 (lwref_index_dust(ns)    * mass_dust / dens_dust) +  &
+                       (lwref_index_dust(ns)    * mass_oin / dens_dust)  +  &
                        (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
                        (lwref_index_nacl(ns)   * mass_cl  / dens_cl) +   &

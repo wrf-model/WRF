@@ -145,6 +145,7 @@ PROGRAM convert_emissions
    CHARACTER (LEN=12)       :: dname2
    CHARACTER (LEN=256)      :: timestr
 
+   INTEGER            :: new_emiss
 
 ! Number of reference emission and LAI files to open
    INTEGER, PARAMETER :: numfil=19
@@ -1477,6 +1478,7 @@ PROGRAM convert_emissions
      IF (wrf_dm_on_monitor()) THEN
 #endif
 
+   new_emiss = 0
    time_loop = 1
    write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',start_date_char
    CALL  wrf_message ( message )
@@ -1563,6 +1565,8 @@ PROGRAM convert_emissions
      write(message, '(A,I8,A,I8)') ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
      call wrf_message( TRIM( message ) )
 
+     if( nv .GT. 30) new_emiss = 1
+
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
      write(message, FMT='(A)') ' read dumc0 '
@@ -1600,6 +1604,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( new_emiss .GT. 0) THEN
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -1610,6 +1615,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF   ! new_emiss
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -1817,6 +1823,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( new_emiss .GT. 0) THEN
 !!! naai and naaj for aqmeii
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -1836,7 +1843,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naaj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
-!
+     ENDIF   ! new_emiss
 !
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -2092,6 +2099,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( new_emiss .GT. 0) THEN
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2102,6 +2110,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF   ! new_emiss
 !
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -2348,6 +2357,7 @@ PROGRAM convert_emissions
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ecj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 !
+     IF( new_emiss .GT. 0) THEN
 !
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -2359,7 +2369,6 @@ PROGRAM convert_emissions
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naai)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 !
-!
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2369,6 +2378,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naaj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF  ! new_emiss
 !
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN

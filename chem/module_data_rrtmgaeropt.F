@@ -7,6 +7,14 @@ MODULE module_data_rrtmgaeropt
       
 !*************************************************************
 !czhao hard coding the refractive index of water and aerosols
+!
+! * Most of the wavelength refractive indices below are based on values
+!   used in the Community Atmosphere Model (CAM)
+! * For now, shortwave refractive index is not wavelength depenedent
+!   and set to 0.003 as described in Zhao et al. ACP (2010)
+! * Wavelength dependant shortwave refractive index used by CAM is 
+!   commented out for now
+!
       !water
       real,dimension(1:nswbands),save ::  refrwsw,refiwsw
       real,dimension(1:nlwbands),save ::  refrwlw,refiwlw

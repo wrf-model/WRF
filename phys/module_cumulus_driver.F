@@ -794,10 +794,6 @@ CONTAINS
 
         IF ( PRESENT ( QFX ) .AND. PRESENT( ZNU ) ) THEN
 
-          IF ( adapt_step_flag_pass ) THEN
-            WRITE( wrf_err_message , * ) 'The tiedtke cumulus option will not work properly with an adaptive time step'
-            CALL wrf_error_fatal ( wrf_err_message )
-          END IF
           CALL wrf_debug(100,'in cu_tiedtke')
           CALL CU_TIEDTKE(                                      &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &

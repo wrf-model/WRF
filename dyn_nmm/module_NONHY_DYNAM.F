@@ -197,15 +197,13 @@
       ENDDO
 
 
-#if !defined ( HWRF)
-      IF (DT > 0) THEN
+      IF (DT > 0 .and. WP .ge. 0.001) THEN
          DIFFW=.TRUE.
       ELSE
          DIFFW=.FALSE.
       ENDIF
 
       IF(DIFFW) THEN
-
 
         DO K=KTS,KTE
          DO J=MYJS_P1,MYJE1_P1
@@ -225,8 +223,8 @@
           ENDDO 
          ENDDO 
         ENDDO
+
        ENDIF
-#endif
 !
 !-----------------------------------------------------------------------
 !***
@@ -313,22 +311,12 @@
         DO J=MYJS3,MYJE3
         DO I=MYIS2,MYIE2
           DPDE=DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)
-#if defined ( HWRF )
-         DWDT(I,J,K)=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
-                       +WNS(I,J-1)           +WNS(I,J+1)                &
-                       +WNE(I+IHW(J),J-1)    +WNE(I,J)                  &
-                       +WSE(I,J)             +WSE(I+IHW(J),J+1))        &
-                       *FAD(I,J)*2.0*HBM3(I,J)/(DPDE*DT)                &
-                       +DWDT(I,J,K)
-#else
           ADVEC=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
                        +WNS(I,J-1)           +WNS(I,J+1)                &
                        +WNE(I+IHW(J),J-1)    +WNE(I,J)                  &
                        +WSE(I,J)             +WSE(I+IHW(J),J+1))        &
                        *FAD(I,J)*2.0*HBM3(I,J)/(DPDE*DT)
           DWDT(I,J,K)= ADVEC + DWDT(I,J,K)
-#endif
-
         ENDDO
         ENDDO
 
@@ -340,7 +328,7 @@
 !***
 !-----------------------------------------------------------------------
 
-#if !defined ( HWRF )
+      IF (WP .ge. 0.001) then
 !-----------------------------------------------------------------------
 !---taking external mode out--------------------------------------------
 !-----------------------------------------------------------------------
@@ -373,10 +361,7 @@
         ENDDO
        ENDDO
       ENDDO
-
-!
-!
-#endif
+     endif
 
 !$omp parallel do                                                       &
 !$omp& private(dwdtt,i,j,k)
@@ -392,10 +377,10 @@
       ENDDO
       ENDDO
 !-----------------------------------------------------------------------
-#if !defined ( HWRF )
-!-----------------------------------------------------------------------
 !---setting dwdt (epsilon at this point) on h points to 1. along bdy ---
 !-----------------------------------------------------------------------
+      IF (WP .ge. 0.001) THEN
+
         do K=KTS,KTE
           if (JDS .eq. JTS) then
             do J=jts,jts+1
@@ -430,8 +415,8 @@
           endif
         enddo
 
-!
-#endif
+        ENDIF
+ 
       GDT=G*DT
       GDT2=GDT*GDT
       FFC=-R_D/GDT2
@@ -863,7 +848,7 @@
       SUBROUTINE HADZ(NTSD,DT,HYDRO,HBM2,DETA1,DETA2,PDTOP              &
                      ,DX,DY,FAD                                         &
                      ,FEW,FNS,FNE,FSE                                   &
-                     ,PDSL,U,V,W,Z                                      &
+                     ,PDSL,U,V,W,Z,WP                                   &
                      ,IHE,IHW,IVE,IVW                                   &
                      ,IDS,IDE,JDS,JDE,KDS,KDE                           &
                      ,IMS,IME,JMS,JME,KMS,KME                           &
@@ -921,7 +906,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      REAL,INTENT(IN) :: DT,DY,PDTOP
+      REAL,INTENT(IN) :: DT,DY,PDTOP,WP
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: DETA1,DETA2
 !
@@ -1064,7 +1049,7 @@
 
       ENDDO main_integration
 
-#if !defined ( HWRF )
+      IF (WP .ge. 0.001) then
 !-----------------------------------------------------------------------
 !---taking external mode out--------------------------------------------
 !-----------------------------------------------------------------------
@@ -1097,7 +1082,7 @@
         ENDDO
        ENDDO
       ENDDO
-#endif
+      ENDIF
 !
 !-----------------------------------------------------------------------
 !

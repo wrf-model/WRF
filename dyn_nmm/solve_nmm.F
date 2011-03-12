@@ -1113,7 +1113,7 @@
       CALL HADZ(grid%ntsd,GRID%DT,grid%hydro,grid%hbm2,grid%deta1,grid%deta2,grid%pdtop               &
      &         ,grid%dx_nmm,grid%dy_nmm,grid%fad                                       &
      &         ,grid%few,grid%fns,grid%fne,grid%fse                                         &
-     &         ,grid%pdsl,grid%u,grid%v,grid%w,grid%z                                            &
+     &         ,grid%pdsl,grid%u,grid%v,grid%w,grid%z,WP                                    &
      &         ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                         &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &

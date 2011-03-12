@@ -300,6 +300,8 @@
           SWNETDN(I,J)=0.   ! Net (down - up) total (clear+cloudy sky) shortwave at the surface
           TOTLWDN(I,J)=0.   ! Total longwave down at the surface
           CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
+          HTOPR(I,J) =0.
+          HBOTR(I,J) =0.
 !
 !-- NOTE:  HBOTR, HTOPR are passed into radiation and set equal to HBOT, HTOP.  HBOT, HTOP are
 !          reset to clear sky values to be used by the ARW.  At the bottom of this subroutine,
@@ -2061,6 +2063,8 @@
          DO I=IMS,IME
            HTOP(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
+           CUTOP(I,J)=0.
+           CUBOT(I,J)=REAL(KTE+1)
            CUPPT(I,J)=0.
          ENDDO
          ENDDO

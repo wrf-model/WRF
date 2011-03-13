@@ -93,6 +93,7 @@ MODULE module_bl_camuwpbl_driver
   integer              :: ixcldice, ixcldliq           !! Constituent indices for cloud liquid and ice water
   integer              :: ixnumice, ixnumliq
   integer              :: wgustd_index
+  logical              :: vd_registered = .false.      !! Detect if vd_register called
   
   
 CONTAINS
@@ -897,7 +898,7 @@ CONTAINS
      pverp = pver + 1
 
      !Initialize flags and add constituents
-     if(grid_id.eq.1)call vd_register()  
+     call vd_register()  
  
      !! ----------------------------------------------------------------- !
      !! Get indices of cloud liquid and ice within the constituents array !
@@ -1038,6 +1039,7 @@ CONTAINS
     character(len=8), dimension(ncnstmax), parameter :: cnst_names = & 
          (/'CLDLIQ', 'CLDICE','NUMLIQ','NUMICE'/)         ! Constituent names
 
+    if(vd_registered) return
 
     !Set flags for the PBL scheme (these flags are obtained using phys_getopts in CAM) 
     microp_scheme  = 'MG'       !Used for adding constituents
@@ -1088,6 +1090,8 @@ CONTAINS
     !-------------------------------------------------------------------------------------!
 
     call esinti(epsilo, latvap, latice, rh2o, cpair, tmelt)
+
+    vd_registered = .true.
     
   end subroutine vd_register
   

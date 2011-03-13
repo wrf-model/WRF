@@ -11,7 +11,7 @@
 !  updates to the code (before the next offical WRF release) please contact     !
 !  Jason Milbrandt (Environment Canada) at jason.milbrandt@ec.gc.ca             !
 !                                                                               !
-!  Last modified:  2011-02-25                                                   !
+!  Last modified:  2011-03-02                                                   !
 !_______________________________________________________________________________!
 
 module my_fncs_mod
@@ -1049,7 +1049,7 @@ module my_dmom_mod
 !                              - double-moment version   -                              !
 !_______________________________________________________________________________________!
 !  Package version:   2.19.0      (internal bookkeeping)                                !
-!  Last modified  :   2011-02-25                                                        !
+!  Last modified  :   2011-03-02                                                        !
 !_______________________________________________________________________________________!
 !
 !  Author:

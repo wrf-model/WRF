@@ -246,32 +246,34 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
     ENDIF
 
 ! Compute VIF heights for each grid column (used for LML obs)
-   if(nudge_wind.EQ.1 .AND. NSTA.GT.0)  then
-     CALL compute_VIH( fdob%vif_uv, fdob%vif_max,                &
-                       fdob%vif_fullmin, fdob%vif_rampmin,       &
-                       regime, pblh,                             &
-                       ht, z, vih_uv,                            &
-                       ids,ide, jds,jde, kds,kde,                &
-                       ims,ime, jms,jme, kms,kme,                &
-                       its,ite, jts,jte, kts,kte )
-   endif
-   if(nudge_temp.EQ.1 .AND. NSTA.GT.0)  then
-     CALL compute_VIH( fdob%vif_t, fdob%vif_max,                 &
-                       fdob%vif_fullmin, fdob%vif_rampmin,       &
-                       regime, pblh,                             &
-                       ht, z, vih_t,                             &
-                       ids,ide, jds,jde, kds,kde,                &
-                       ims,ime, jms,jme, kms,kme,                &
-                       its,ite, jts,jte, kts,kte )
-   endif
-   if(nudge_mois.EQ.1 .AND. NSTA.GT.0)  then
-     CALL compute_VIH( fdob%vif_q, fdob%vif_max,                 &
-                       fdob%vif_fullmin, fdob%vif_rampmin,       &
-                       regime, pblh,                             &
-                       ht, z, vih_q,                             &
-                       ids,ide, jds,jde, kds,kde,                &
-                       ims,ime, jms,jme, kms,kme,                &
-                       its,ite, jts,jte, kts,kte )
+   if(fdob%sfc_scheme_vert.EQ.0) then
+     if(nudge_wind.EQ.1 .AND. NSTA.GT.0)  then
+       CALL compute_VIH( fdob%vif_uv, fdob%vif_max,                &
+                         fdob%vif_fullmin, fdob%vif_rampmin,       &
+                         regime, pblh,                             &
+                         ht, z, vih_uv,                            &
+                         ids,ide, jds,jde, kds,kde,                &
+                         ims,ime, jms,jme, kms,kme,                &
+                         its,ite, jts,jte, kts,kte )
+     endif
+     if(nudge_temp.EQ.1 .AND. NSTA.GT.0)  then
+       CALL compute_VIH( fdob%vif_t, fdob%vif_max,                 &
+                         fdob%vif_fullmin, fdob%vif_rampmin,       &
+                         regime, pblh,                             &
+                         ht, z, vih_t,                             &
+                         ids,ide, jds,jde, kds,kde,                &
+                         ims,ime, jms,jme, kms,kme,                &
+                         its,ite, jts,jte, kts,kte )
+     endif
+     if(nudge_mois.EQ.1 .AND. NSTA.GT.0)  then
+       CALL compute_VIH( fdob%vif_q, fdob%vif_max,                 &
+                         fdob%vif_fullmin, fdob%vif_rampmin,       &
+                         regime, pblh,                             &
+                         ht, z, vih_q,                             &
+                         ids,ide, jds,jde, kds,kde,                &
+                         ims,ime, jms,jme, kms,kme,                &
+                         its,ite, jts,jte, kts,kte )
+     endif
    endif
 !********************* END AJB MOVE TO SLAB ***************************
 
@@ -356,7 +358,11 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   fdob%sfcfact, fdob%sfcfacr,                        &
                   fdob%levidn,                                       &
                   parid, nstat,                                      &
-                  fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
+                  fdob%rinfmn, fdob%rinfmx, fdob%pfree,              &
+                  fdob%dcon, fdob%tfaci,                             &
+                  fdob%sfc_scheme_horiz, fdob%sfc_scheme_vert,       &
+                  fdob%max_sndng_gap,                                &
+                  fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,          &
                   parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,  &
                   fdob%rko, fdob%timeob, varobs, errf,               &
                   pbase(ims,kms,j), ptop, pp(ims,kms,j),             &
@@ -384,7 +390,11 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   fdob%sfcfact, fdob%sfcfacr,                        &
                   fdob%levidn,                                       &
                   parid, nstat,                                      &
-                  fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
+                  fdob%rinfmn, fdob%rinfmx, fdob%pfree,              &
+                  fdob%dcon, fdob%tfaci,                             &
+                  fdob%sfc_scheme_horiz, fdob%sfc_scheme_vert,       &
+                  fdob%max_sndng_gap,                                &
+                  fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,          &
                   parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,  &
                   fdob%rko, fdob%timeob, varobs, errf,               &
                   pbase(ims,kms,j), ptop, pp(ims,kms,j),             &
@@ -413,7 +423,11 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 fdob%sfcfact, fdob%sfcfacr,                          &
                 fdob%levidn,                                         &
                 parid, nstat,                                        &
-                fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &
+                fdob%rinfmn, fdob%rinfmx, fdob%pfree,                &
+                fdob%dcon, fdob%tfaci,                               &
+                fdob%sfc_scheme_horiz, fdob%sfc_scheme_vert,         &
+                fdob%max_sndng_gap,                                  &
+                fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,            &
                 parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,    &
                 fdob%rko, fdob%timeob, varobs, errf,                 &
                 pbase(ims,kms,j), ptop, pp(ims,kms,j),               &
@@ -438,7 +452,11 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 fdob%sfcfact, fdob%sfcfacr,                          &
                 fdob%levidn,                                         &
                 parid, nstat,                                        &
-                fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &
+                fdob%rinfmn, fdob%rinfmx, fdob%pfree,                &
+                fdob%dcon, fdob%tfaci,                               &
+                fdob%sfc_scheme_horiz, fdob%sfc_scheme_vert,         &
+                fdob%max_sndng_gap,                                  &
+                fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,            &
                 parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,    &
                 fdob%rko, fdob%timeob, varobs, errf,                 &
                 pbase(ims,kms,j), ptop, pp(ims,kms,j),               &

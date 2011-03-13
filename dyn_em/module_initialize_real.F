@@ -561,6 +561,21 @@ integer::oops1,oops2
                   END DO
                END DO
             END DO
+
+            !  For UM data, the "surface" and the "first hybrid" level for the theta-level data fields are the same.  
+            !  Average the surface (k=1) and the second hybrid level (k=num_metgrid_levels-1) to get the first hybrid
+            !  layer.  We only do this for the theta-level data: pressure, temperature, specific humidity, and
+            !  geopotential height (i.e. we do not modify u, v, or the rho-based pressure).
+
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%  p_gc(i,num_metgrid_levels,j) = ( grid%  p_gc(i,1,j) + grid%  p_gc(i,num_metgrid_levels-1,j) ) * 0.5
+                  grid%  t_gc(i,num_metgrid_levels,j) = ( grid%  t_gc(i,1,j) + grid%  t_gc(i,num_metgrid_levels-1,j) ) * 0.5
+                  grid% sh_gc(i,num_metgrid_levels,j) = ( grid% sh_gc(i,1,j) + grid% sh_gc(i,num_metgrid_levels-1,j) ) * 0.5
+                  grid%ght_gc(i,num_metgrid_levels,j) = ( grid%ght_gc(i,1,j) + grid%ght_gc(i,num_metgrid_levels-1,j) ) * 0.5
+               END DO
+            END DO
          END IF
 
          !  Check for and semi-fix missing surface fields.

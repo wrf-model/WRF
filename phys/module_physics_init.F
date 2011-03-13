@@ -125,7 +125,8 @@ CONTAINS
 
    INTEGER , INTENT(IN)        :: num_soil_layers
    INTEGER , INTENT(IN)        :: lagday
-   INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear, nday
+   INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear
+   REAL    , INTENT(OUT) ,OPTIONAL      :: nday
 
    LOGICAL,  INTENT(IN)        :: start_of_simulation
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
@@ -453,7 +454,7 @@ integer myproc
    IF(PRESENT(TMN_UPDATE))THEN
    if(tmn_update.eq.1) then
    nyear=1
-   nday=1
+   nday=1.
    DO j=jts,jtf
    DO i=its,itf
       TYR(i,j)=TMN(i,j)
@@ -660,6 +661,9 @@ integer myproc
                   model_config_rec%obs_no_pbl_nudge_uv,         &
                   model_config_rec%obs_no_pbl_nudge_t,          &
                   model_config_rec%obs_no_pbl_nudge_q,          &
+                  model_config_rec%obs_sfc_scheme_horiz,        &
+                  model_config_rec%obs_sfc_scheme_vert,         &
+                  model_config_rec%obs_max_sndng_gap,           &
                   model_config_rec%obs_sfcfact,                 &
                   model_config_rec%obs_sfcfacr,                 &
                   model_config_rec%obs_dpsmx,                   &
@@ -2382,6 +2386,8 @@ integer myproc
                         no_pbl_nudge_uv,                           &
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
+                        sfc_scheme_horiz, sfc_scheme_vert,         &
+                        maxsnd_gap,                                &
                         sfcfact, sfcfacr, dpsmx,                   &
                         nudge_wind, nudge_temp, nudge_mois,        &
                         nudgezfullr1_uv, nudgezrampr1_uv,          &
@@ -2428,6 +2434,9 @@ integer myproc
    INTEGER , INTENT(IN)    :: no_pbl_nudge_uv(maxdom)  ! flags for no wind nudging in pbl
    INTEGER , INTENT(IN)    :: no_pbl_nudge_t(maxdom)   ! flags for no temperature nudging in pbl
    INTEGER , INTENT(IN)    :: no_pbl_nudge_q(maxdom)   ! flags for no moisture nudging in pbl
+   INTEGER , INTENT(IN)    :: sfc_scheme_horiz ! horizontal spreading scheme for surf obs (wrf or orig mm5)
+   INTEGER , INTENT(IN)    :: sfc_scheme_vert  ! vertical   spreading scheme for surf obs (orig or regime vif)
+   REAL    , INTENT(IN)    :: maxsnd_gap       ! max allowed pressure gap in soundings for interp (centibars) 
    REAL    , INTENT(IN)    :: sfcfact      ! scale factor applied to time window for surface obs
    REAL    , INTENT(IN)    :: sfcfacr      ! scale fac applied to horiz rad of infl for sfc obs
    REAL    , INTENT(IN)    :: dpsmx        ! max pressure change allowed within horiz. infl. range
@@ -2485,6 +2494,8 @@ integer myproc
                         no_pbl_nudge_uv,                           &
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
+                        sfc_scheme_horiz, sfc_scheme_vert,         &
+                        maxsnd_gap,                                &
                         sfcfact, sfcfacr, dpsmx,                   &
                         nudge_wind, nudge_temp, nudge_mois,        &
                         nudgezfullr1_uv, nudgezrampr1_uv,          &

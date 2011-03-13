@@ -23,7 +23,7 @@ CONTAINS
      &           i_start,i_end,j_start,j_end
 
    INTEGER, INTENT(INOUT ) ::   NYEAR
-   INTEGER, INTENT(INOUT ) ::   NDAY
+   REAL   , INTENT(INOUT ) ::   NDAY
    INTEGER, INTENT(IN ) ::   YR
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   TSK
@@ -76,7 +76,7 @@ CONTAINS
         ENDDO
         ENDDO
       ENDDO
-      nday=0
+      nday=0.
 ! update tyr if it is the end of a year
       if((yrday-julian).le.1.) then
         DO ij = 1 , num_tiles
@@ -105,11 +105,11 @@ CONTAINS
       DO ij = 1 , num_tiles
         DO j=j_start(ij),j_end(ij)
         DO i=i_start(ij),i_end(ij)
-               tdly(i,j)=tdly(i,j)+tsk(i,j)
+               tdly(i,j)=tdly(i,j)+tsk(i,j)*dt
         ENDDO
         ENDDO
       ENDDO
-      nday=nday+1
+      nday=nday+dt
     ENDIF
 
 !

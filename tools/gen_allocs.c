@@ -417,6 +417,7 @@ if ( tag == 1 )
                       { sprintf( dimname[i] ,"%s_subgrid", dimnode->dim_data_name) ; }
                      else
                       { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                     fprintf(fp,"  grid%%tail_statevars%%subgrid_x = %s\n",(p->dims[i]->subgrid)?".TRUE.":".FALSE.") ;
                      break ;
                    case (COORD_Y) :
                      if ( ( ! sw_3dvar_iry_kludge && p->stag_y ) || ( sw_3dvar_iry_kludge && p->stag_x ) )
@@ -425,6 +426,7 @@ if ( tag == 1 )
                       { sprintf( dimname[i] ,"%s_subgrid", dimnode->dim_data_name) ; }
                      else
                       { strcpy( dimname[i], dimnode->dim_data_name) ; }
+                     fprintf(fp,"  grid%%tail_statevars%%subgrid_y = %s\n",(p->dims[i]->subgrid)?".TRUE.":".FALSE.") ;
                      break ;
                    case (COORD_Z) :
                      if ( p->stag_z )

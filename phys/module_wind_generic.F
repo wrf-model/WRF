@@ -68,7 +68,7 @@ CONTAINS
           ENDDO
  30       CONTINUE
           nwindturbines = n
-          ALLOCATE(windturbines(nwindturbines))
+          IF ( .NOT. ALLOCATED(windturbines) ) ALLOCATE(windturbines(nwindturbines))
           REWIND(19)
           i = 1 
           lineno = 0
@@ -113,7 +113,9 @@ CONTAINS
         RETURN
       ENDIF
       CALL wrf_dm_bcast_integer(nwindturbines,1) 
-      IF ( .NOT. wrf_dm_on_monitor() ) ALLOCATE(windturbines(nwindturbines))
+      IF ( .NOT. wrf_dm_on_monitor() ) THEN
+        IF ( .NOT. ALLOCATED(windturbines) ) ALLOCATE(windturbines(nwindturbines))
+      ENDIF
       DO i = 1, nwindturbines 
         CALL wrf_dm_bcast_integer(windturbines(i)%id,1) 
         CALL wrf_dm_bcast_real(windturbines(i)%lat,1) 

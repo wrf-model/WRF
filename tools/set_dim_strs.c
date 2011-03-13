@@ -69,11 +69,11 @@ set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELE
           }
 
         sprintf(ddim[i][0],"%s%cds",prepend,d) ;
-        sprintf(ddim[i][1],"%s%cde * %ssr_%c ",prepend,d,r1,d1) ;
+        sprintf(ddim[i][1],"MAX(1,%s%cde * %ssr_%c) ",prepend,d,r1,d1) ;
         sprintf(mdim[i][0],"(%s%cms-1)*%ssr_%c+1",prepend,d,r1,d1) ;
-        sprintf(mdim[i][1],"%s%cme*%ssr_%c",prepend,d,r1,d1) ;
+        sprintf(mdim[i][1],"MAX(1,%s%cme*%ssr_%c)",prepend,d,r1,d1) ;
         sprintf(pdim[i][0],"(%s%cps-1)*%ssr_%c+1",prepend,d,r1,d1) ;
-        sprintf(pdim[i][1],"%s%cpe*%ssr_%c",prepend,d,r1,d1) ;
+        sprintf(pdim[i][1],"MAX(1,%s%cpe*%ssr_%c)",prepend,d,r1,d1) ;
 
       } else {
         if ( sw_3dvar_iry_kludge ) {

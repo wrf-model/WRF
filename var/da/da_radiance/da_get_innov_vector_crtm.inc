@@ -46,6 +46,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                        ! used in calculating reff_water
    real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
    real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
+   character(len=19) :: date_char
 
    integer :: month, crtm_climat
 
@@ -283,7 +284,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          dym = iv%instid(inst)%info%dym(1,n)
 
          ! determine CRTM climatology based on latitude and month
-         read(unit=iv%instid(inst)%info%date_char(6:7), fmt='(i2.2)') month
+         date_char=iv%instid(inst)%info%date_char(n)
+         read(unit=date_char(6:7), fmt='(i2.2)') month
          call da_det_crtm_climat(iv%instid(inst)%info%lat(1,n), month, crtm_climat)
          iv%instid(inst)%crtm_climat(n) = crtm_climat
          Atmosphere(1)%Climatology = iv%instid(inst)%crtm_climat(n)

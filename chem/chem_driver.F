@@ -464,6 +464,18 @@
      CASE (CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'calling cbmz_mosaic_8bin_aq aerosols driver from chem_driver')
        haveaer = .true.
+     CASE (CBMZ_MOSAIC_DMS_4BIN)
+       CALL wrf_debug(15,'calling cbmz_mosaic_dms_4bin aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (CBMZ_MOSAIC_DMS_8BIN)
+       CALL wrf_debug(15,'calling cbmz_mosaic_dms_8bin aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (CBMZ_MOSAIC_DMS_4BIN_AQ)
+       CALL wrf_debug(15,'calling cbmz_mosaic_dms_4bin_aq aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (CBMZ_MOSAIC_DMS_8BIN_AQ)
+       CALL wrf_debug(15,'calling cbmz_mosaic_dms_8bin_aq aerosols driver from chem_driver')
+       haveaer = .true.
      CASE (MOZART_KPP)
        CALL wrf_debug(15,'calling mozart driver from chem_driver')
      CASE (MOZCART_KPP)

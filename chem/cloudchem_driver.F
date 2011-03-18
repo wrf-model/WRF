@@ -162,7 +162,9 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
+   CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+        CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ,            &
+        CBMZ_MOSAIC_DMS_8BIN_AQ )
 
        call wrf_debug(15, &
        'cloudchem_driver calling mosaic_cloudchem_driver')

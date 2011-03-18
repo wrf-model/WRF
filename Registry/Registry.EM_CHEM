@@ -237,7 +237,8 @@ state    real   tsk_force           -     dyn_em      1      -      i3rh     "TS
 state    real   hfx_force_tend      -     dyn_em      1      -      i3rh     "HFX_FORCE_TEND" "SCM ideal surface sensible heat flux tendency" "W m-2 s-1"
 state    real   lh_force_tend       -     dyn_em      1      -      i3rh     "LH_FORCE_TEND" "SCM ideal surface latent heat flux tendency" "W m-2 s-1"
 state    real   tsk_force_tend      -     dyn_em      1      -      i3rh     "TSK_FORCE_TEND" "SCM ideal surface skin temperature tendency" "W m-2 s-1"
-state    real   erod               i.j    dyn_em      1      -      i012rhdu "EROD" "Dust erosion" "Fraction"
+state    real   erod                ij.   dyn_em       1      -      i012rhdu "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
+
 
 # Mass
 state    real   mu              ijb     dyn_em      2         -     \

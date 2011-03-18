@@ -11597,7 +11597,7 @@ CONTAINS
 ! Added for top of model adjustment.  Steven Cavallo NCAR/MMM December 2010
     INTEGER, PARAMETER :: nproflevs = 60 ! Constant, from the table
     INTEGER :: L, LL, klev               ! Loop indices      
-    REAL, DIMENSION( kts:nlayers ) :: varint
+    REAL, DIMENSION( kts:nlayers+1 ) :: varint
     REAL :: wght,vark,vark1       
     REAL :: PPROF(nproflevs), TPROF(nproflevs)            
     ! Weighted mean pressure and temperature profiles from midlatitude 

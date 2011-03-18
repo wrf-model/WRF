@@ -246,6 +246,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    TYPE (grid_config_rec_type)                :: nest_config_flags
 
   ! Local
+   LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
    TYPE(WRFU_Time)        :: strt_time, cur_time
    CHARACTER * 80         :: rstname , timestr
    CHARACTER * 256        :: message
@@ -515,6 +516,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
   ELSE  ! restart
 
+     IF ( wrf_dm_on_monitor() ) CALL start_timing
+
      CALL domain_clock_get( nest, current_timestr=timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
 
@@ -528,6 +531,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      ENDIF
      CALL input_restart ( fid,   nest , nest_config_flags , ierr )
      CALL close_dataset ( fid , nest_config_flags , "DATASET=RESTART" )
+
+     IF ( wrf_dm_on_monitor() ) THEN
+       WRITE ( message , FMT = '("processing restart file for domain ",I8)' ) nest%id
+       CALL end_timing ( TRIM(message) )
+     ENDIF
 
      nest%imask_nostag = 1
      nest%imask_xstag = 1

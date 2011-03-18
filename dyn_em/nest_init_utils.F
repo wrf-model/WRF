@@ -3,7 +3,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    IMPLICIT NONE
    TYPE(domain)  :: parent , nest
 
-   INTEGER iswater , map_proj, julyr, julday
+   INTEGER iswater, islake, isice, isurban, isoilwater, map_proj, julyr, julday
    REAL    truelat1 , truelat2 , gmt , moad_cen_lat , stand_lon, pole_lat, pole_lon
    CHARACTER (LEN=256) :: char_junk
 
@@ -30,9 +30,14 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%isurban = parent%isurban
    nest%islake  = parent%islake
    nest%isoilwater = parent%isoilwater
+   nest%mminlu  = trim(parent%mminlu)
 
-   CALL nl_get_mminlu ( 1,char_junk(1:256) )
-   CALL nl_get_iswater (1, iswater )
+   CALL nl_get_mminlu ( 1, char_junk )
+   CALL nl_get_iswater( 1, iswater )
+   CALL nl_get_islake ( 1, islake )
+   CALL nl_get_isice  ( 1, isice )
+   CALL nl_get_isurban( 1, isurban )
+   CALL nl_get_isoilwater(1, isoilwater )
    CALL nl_get_truelat1 ( 1 , truelat1 )
    CALL nl_get_truelat2 ( 1 , truelat2 )
    CALL nl_get_moad_cen_lat ( 1 , moad_cen_lat )
@@ -47,7 +52,12 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
      CALL nl_set_gmt (nest%id, gmt)
      CALL nl_set_julyr (nest%id, julyr)
      CALL nl_set_julday (nest%id, julday)
-     CALL nl_set_iswater (nest%id, iswater )
+     CALL nl_set_iswater ( nest%id, iswater )
+     CALL nl_set_islake  ( nest%id, islake )
+     CALL nl_set_isice   ( nest%id, isice )
+     CALL nl_set_isurban ( nest%id, isurban )
+     CALL nl_set_isoilwater ( nest%id, isoilwater )
+     CALL nl_set_mminlu ( nest%id, char_junk )
      CALL nl_set_truelat1 ( nest%id , truelat1 )
      CALL nl_set_truelat2 ( nest%id , truelat2 )
      CALL nl_set_moad_cen_lat ( nest%id , moad_cen_lat )
@@ -60,6 +70,10 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%julday  = julday
    nest%julyr   = julyr
    nest%iswater = iswater
+   nest%islake  = islake
+   nest%isice   = isice
+   nest%isoilwater = isoilwater
+   nest%mminlu  = trim(char_junk)
    nest%truelat1= truelat1
    nest%truelat2= truelat2
    nest%moad_cen_lat= moad_cen_lat

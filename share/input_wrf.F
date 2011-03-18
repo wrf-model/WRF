@@ -424,6 +424,10 @@
     IF ( ( switch .EQ. auxinput1_only ) .AND. &
          ( first_date_nml .EQ. first_date_input ) )  THEN
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
+
+       IF ( itmp .LE. 1 ) THEN
+             call wrf_error_fatal("NUM_METGRID_SOIL_LEVELS must be greater than 1")
+       END IF
    
        IF ( ierr .EQ. 0 ) THEN
           WRITE(wrf_err_message,*)'input_wrf: global attribute NUM_METGRID_SOIL_LEVELS returns ', itmp
@@ -442,6 +446,27 @@
           END IF
        END IF
     END IF
+
+#if 0
+#ifdef WRF_CHEM
+    !  Dust erosion static data.
+
+    CALL wrf_get_dom_ti_integer ( fid, 'EROSION_DIM', itmp, 1, icnt, ierr )
+
+    IF ( ierr .EQ. 0 ) THEN
+       WRITE(wrf_err_message,*)'input_wrf: global attribute EROSION_DIM returns ', itmp
+       CALL wrf_debug ( 300 , wrf_err_message )
+       IF ( config_flags%erosion_dim /= itmp ) THEN
+          call wrf_message("----------------- ERROR -------------------")
+          WRITE(wrf_err_message,'("namelist    : erosion_dim = ",I10)') config_flags%erosion_dim
+          call wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,'("input files : EROSION_DIM = ",I10, " (from met_em files).")') itmp
+          call wrf_message(wrf_err_message)
+          call wrf_error_fatal("Mismatch between namelist and global attribute EROSION_DIM")
+       END IF
+    END IF
+#endif
+#endif
 
     ! Test here to check that config_flags%sf_surface_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files

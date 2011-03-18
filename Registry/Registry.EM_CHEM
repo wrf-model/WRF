@@ -237,6 +237,7 @@ state    real   tsk_force           -     dyn_em      1      -      i3rh     "TS
 state    real   hfx_force_tend      -     dyn_em      1      -      i3rh     "HFX_FORCE_TEND" "SCM ideal surface sensible heat flux tendency" "W m-2 s-1"
 state    real   lh_force_tend       -     dyn_em      1      -      i3rh     "LH_FORCE_TEND" "SCM ideal surface latent heat flux tendency" "W m-2 s-1"
 state    real   tsk_force_tend      -     dyn_em      1      -      i3rh     "TSK_FORCE_TEND" "SCM ideal surface skin temperature tendency" "W m-2 s-1"
+state    real   erod               i.j    dyn_em      1      -      i012rhdu "EROD" "Dust erosion" "Fraction"
 
 # Mass
 state    real   mu              ijb     dyn_em      2         -     \
@@ -1495,6 +1496,7 @@ rconfig   integer ICLOUD                  namelist,physics	1             1      
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
+rconfig   integer num_dust_layers         namelist,physics	1             3       irh    "num_dust_layers"               ""      ""
 rconfig   integer num_urban_layers        namelist,physics	1            400       irh    "num_urban_layers"               ""      ""
 rconfig   integer num_months              namelist,physics      1            12       irh    "num_months"               ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""

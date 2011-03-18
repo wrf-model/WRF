@@ -735,7 +735,7 @@ print *,'WATER CHANGE = ',change_water
 
       !  Initialize the soil depth, and the soil temperature and moisture.
    
-      IF      ( ( sf_surface_physics .EQ. 1 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      IF      ( ( sf_surface_physics .EQ. SLABSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_1 ( zs , dzs , num_soil_layers )
          CALL init_soil_1_real ( tsk , tmn , tslb , zs , dzs , num_soil_layers , real_data_init_type , &
                                  landmask , sst , flag_sst , &
@@ -743,7 +743,7 @@ print *,'WATER CHANGE = ',change_water
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
 
-      ELSE IF ( ( sf_surface_physics .EQ. 2 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. LSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
          CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
                                  st_input , sm_input , sw_input , landmask , sst , &
@@ -755,7 +755,7 @@ print *,'WATER CHANGE = ',change_water
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
-      ELSE IF ( ( sf_surface_physics .EQ. 3 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. RUCLSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
          CALL init_soil_3_real ( tsk , tmn , smois , tslb , &
                                  st_input , sm_input , landmask , sst , &
@@ -767,7 +767,7 @@ print *,'WATER CHANGE = ',change_water
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
-      ELSE IF ( ( sf_surface_physics .EQ. 7 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. PXLSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_7 ( zs , dzs , num_soil_layers )
          CALL init_soil_7_real ( tsk , tmn , smois , sh2o, tslb , &
                                  st_input , sm_input , sw_input, landmask , sst , &
@@ -815,14 +815,14 @@ print *,'WATER CHANGE = ',change_water
       itf=MIN(ite,ide-1)
       jtf=MIN(jte,jde-1)
 
-      IF      ( ( sf_surface_physics .EQ. 1 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      IF      ( ( sf_surface_physics .EQ. SLABSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_1 ( zs , dzs , num_soil_layers )
          CALL init_soil_1_ideal(tsk,tmn,tslb,xland,                      &
                                 ivgtyp,zs,dzs,num_soil_layers,           &
                                 ids,ide, jds,jde, kds,kde,               &
                                 ims,ime, jms,jme, kms,kme,               &
                                 its,ite, jts,jte, kts,kte                )
-      ELSE IF ( ( sf_surface_physics .EQ. 2 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. LSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
          CALL init_soil_2_ideal ( xland,xice,vegfra,snow,canwat,         &
                                   ivgtyp,isltyp,tslb,smois,tmn,          &
@@ -830,7 +830,7 @@ print *,'WATER CHANGE = ',change_water
                                   ids,ide, jds,jde, kds,kde,             &
                                   ims,ime, jms,jme, kms,kme,             &
                                   its,ite, jts,jte, kts,kte              )
-      ELSE IF ( ( sf_surface_physics .EQ. 3 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. RUCLSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
 
       END IF
@@ -2346,7 +2346,7 @@ endif
 
       !  Initialize the soil depth, and the soil temperature and moisture.
 
-      IF      ( ( sf_surface_physics .EQ. 1 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      IF      ( ( sf_surface_physics .EQ. SLABSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_1 ( zs , dzs , num_soil_layers )
          CALL init_soil_1_real ( tsk , tmn , tslb , zs , dzs , num_soil_layers , real_data_init_type , &
                                  landmask , sst , flag_sst , &
@@ -2354,7 +2354,7 @@ endif
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
 
-      ELSE IF ( ( sf_surface_physics .EQ. 2 .or. sf_surface_physics .eq. 88 ) .AND. &
+      ELSE IF ( ( sf_surface_physics .EQ. LSMSCHEME .or. sf_surface_physics .eq. 88 ) .AND. &
                 ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
          CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
@@ -2377,7 +2377,7 @@ endif
 !                             ids , ide , jds , jde , kds , kde , &
 !                             ims , ime , jms , jme , kms , kme , &
 !                             its , ite , jts , jte , kts , kte )
-      ELSE IF ( ( sf_surface_physics .EQ. 3 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. RUCLSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
          CALL init_soil_3_real ( tsk , tmn , smois , tslb , &
                                  st_input , sm_input , landmask , sst , &
@@ -2425,14 +2425,14 @@ endif
       itf=MIN(ite,ide-1)
       jtf=MIN(jte,jde-1)
 
-      IF      ( ( sf_surface_physics .EQ. 1 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      IF      ( ( sf_surface_physics .EQ. SLABSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_1 ( zs , dzs , num_soil_layers )
          CALL init_soil_1_ideal(tsk,tmn,tslb,xland,                      &
                                 ivgtyp,zs,dzs,num_soil_layers,           &
                                 ids,ide, jds,jde, kds,kde,               &
                                 ims,ime, jms,jme, kms,kme,               &
                                 its,ite, jts,jte, kts,kte                )
-      ELSE IF ( ( sf_surface_physics .EQ. 2 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. LSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
          CALL init_soil_2_ideal ( xland,xice,vegfra,snow,canwat,         &
                                   ivgtyp,isltyp,tslb,smois,tmn,          &
@@ -2440,7 +2440,7 @@ endif
                                   ids,ide, jds,jde, kds,kde,             &
                                   ims,ime, jms,jme, kms,kme,             &
                                   its,ite, jts,jte, kts,kte              )
-      ELSE IF ( ( sf_surface_physics .EQ. 3 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+      ELSE IF ( ( sf_surface_physics .EQ. RUCLSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
 
       END IF
@@ -2528,7 +2528,7 @@ cycle
 
                IF (landmask(i,j) .GT. 0.5 ) THEN
 
-                  IF ( sf_surface_physics .EQ. 1 .OR. sf_surface_physics .EQ. 7) THEN
+                  IF ( sf_surface_physics .EQ. SLABSCHEME .OR. sf_surface_physics .EQ. PXLSMSCHEME ) THEN
                      tmn(i,j) = tmn(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
                   END IF
 

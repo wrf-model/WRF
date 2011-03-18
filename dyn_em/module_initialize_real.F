@@ -3063,7 +3063,7 @@ end subroutine fillitup
          DO i = istart , iend
             ko_above_sfc(i) = -1
          END DO
-         DO ko = kstart+1 , kend
+         DO ko = kstart+1 , generic
             DO i = istart , iend
                IF ( ko_above_sfc(i) .EQ. -1 ) THEN
                   IF ( porig(i,1,j) .GT. porig(i,ko,j) ) THEN

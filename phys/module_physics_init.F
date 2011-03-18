@@ -454,7 +454,7 @@ integer myproc
    IF(PRESENT(TMN_UPDATE))THEN
    if(tmn_update.eq.1) then
    nyear=1
-   nday=1.
+   nday=0.
    DO j=jts,jtf
    DO i=its,itf
       TYR(i,j)=TMN(i,j)

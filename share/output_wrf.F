@@ -535,7 +535,14 @@ endif
       CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'OMLCALL',     config_flags%omlcall     , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
+
 #endif
+
+      CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'SF_URBAN_PHYSICS', config_flags%sf_urban_physics , 1 , ierr ) 
+
       ENDIF ! history_only
     ENDIF
 

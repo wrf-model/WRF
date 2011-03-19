@@ -335,6 +335,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                             ips , ipe , jps , jpe , kps , kpe
      END SUBROUTINE input_terrain_rsmas
 
+     SUBROUTINE wrf_tsin ( grid , ierr )
+        USE module_domain
+        TYPE ( domain ), INTENT(INOUT) :: grid
+        INTEGER, INTENT(INOUT) :: ierr
+     END SUBROUTINE wrf_tsin
+
    END INTERFACE
 
    CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
@@ -447,6 +453,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                      ' by horizontally interpolating parent domain #' ,parent%id, &
                                      '. ***'
        CALL wrf_debug ( 0 , message )
+
+#if (DA_CORE != 1)
+       ! For nests without an input file, we still need to read time series locations
+       !   from the tslist file
+       CALL wrf_tsin( nest , ierr )
+#endif
      END IF
 
 

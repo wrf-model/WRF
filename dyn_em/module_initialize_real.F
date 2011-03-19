@@ -2200,7 +2200,7 @@ endif
             DO i = its, min(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
-               grid%psfc(i,j)=p_surf + grid%p(i,1,j)
+!              grid%psfc(i,j)=p_surf + grid%p(i,1,j)
                grid%th2(i,j)=grid%t2(i,j)*(p00/(grid%p(i,1,j)+grid%pb(i,1,j)))**(r_d/cp)
             END DO
          END DO
@@ -5565,8 +5565,8 @@ FUNCTION skip_middle_points_t ( ids , ide , jds , jde , &
    IF ( subtleties_exist ) THEN
       skip_it = .FALSE.
    ELSE
-      IF ( ( i_in .GE. ids+width+slop ) .AND. ( i_in .LE. ide-1-slop )   .AND. &
-           ( j_in .GE. jds+width+slop ) .AND. ( j_in .LE. jde-1-slop ) ) THEN
+      IF ( ( i_in .GT. ids+width+slop ) .AND. ( i_in .LT. ide-1-width-slop )   .AND. &
+           ( j_in .GT. jds+width+slop ) .AND. ( j_in .LT. jde-1-width-slop ) ) THEN
          skip_it = .TRUE.
       ELSE
          skip_it = .FALSE.

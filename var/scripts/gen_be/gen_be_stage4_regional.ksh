@@ -82,9 +82,16 @@ for VARIABLE in $CONTROL_VARIABLES; do
 EOF
  
       if $LOCAL; then
-         echo "Submitting job for variable $VARIABLE and vertical index $VINDEX on local machine"
-         # (./gen_be_stage4_regional.exe > gen_be_stage4_regional_${VARIABLE}_${VINDEX}.out 2>&1) &
-         ./gen_be_stage4_regional.exe > gen_be_stage4_regional_${VARIABLE}_${VINDEX}.out 2>&1 &
+         if $SMPAR; then
+            echo "Submitting job for variable $VARIABLE and vertical index $VINDEX using SMPAR"
+            export OMP_NUM_THREADS=32
+            JJ=gen_be_stage4_regional_${VARIABLE}_${VINDEX}
+            # "-K" means "wait for job to complete":
+            bsub -e ${JJ}.err -J $JJ -K -n 1 -o ${JJ}.out -P 64000510 -q debug -R "span[ptile=${OMP_NUM_THREADS}]" -W 6:00 ./gen_be_stage4_regional.exe
+         else
+            echo "Submitting job for variable $VARIABLE and vertical index $VINDEX on local machine"
+            ./gen_be_stage4_regional.exe > gen_be_stage4_regional_${VARIABLE}_${VINDEX}.out 2>&1 &
+         fi
       else
          export MACHINE=${MACHINES[$JOB]}
          echo "Submitting job for variable $VARIABLE and vertical index $VINDEX on $MACHINE"

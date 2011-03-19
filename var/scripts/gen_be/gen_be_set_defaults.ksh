@@ -75,6 +75,7 @@ export LOCAL=${LOCAL:-true}                          # True if local machine.
 export NUM_JOBS=${NUM_JOBS:-1}                       # Number of jobs to run (stage4 regional)).
 export MACHINES=${MACHINES:-" node1 node1 node2 node2 node3 node3 node4 node4 "\
                             " node5 node5 node6 node6 node7 node7 node8 node8"}
+export SMPAR=${SMPAR:-false}                         # True to use shared-memory parallelism in stage4.
 export REGION=${REGION:-con200}
 export EXPT=${EXPT:-noobs}
 export ID=${ID:-gen_be}

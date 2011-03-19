@@ -37,10 +37,6 @@
    character :: s
    real*8    :: time_min, time_max 
    
-#ifdef DM_PARALLEL
-   integer                      :: wrf_done_unit
-#endif
-
    if (trace_use) call da_trace_entry("da_solve")
 
 #ifdef DM_PARALLEL

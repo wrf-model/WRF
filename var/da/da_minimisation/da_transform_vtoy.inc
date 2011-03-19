@@ -23,9 +23,6 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
    type(x_type) :: shuffle
    integer :: nobwin, jl_start, jl_end, time_step_seconds
-#ifdef DM_PARALLEL
-   integer :: wrf_done_unit
-#endif
 
    character(len=4) :: filnam
    character(len=256) :: timestr, timestr1

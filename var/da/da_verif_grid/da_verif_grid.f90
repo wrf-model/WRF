@@ -1573,7 +1573,7 @@ program da_verif_grid
 
 !  need to pull out some data to set up dimensions, etc.
       nf_status = nf_open (infile, nf_nowrite, ncid)
-      call handle_err('Error opening file',nf_status)
+      call handle_err('Error opening file: '//trim(infile),nf_status)
 !
         nf_status = nf_inq_dimid (ncid, 'west_east_stag', dimid)
         call handle_err('west_east_stag',nf_status)

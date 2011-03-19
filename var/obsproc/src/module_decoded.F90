@@ -222,7 +222,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 !  obs_num = 1
    obs_num = n_obs + 1
 
-   read_obs : DO                                 
+   read_obs : DO while ( io_error == 0 ) 
       !  This is an array that we are filling.  Are we beyond that limit yet?
 
       IF ((obs_num .GT. total_number_of_obs) .AND.  &

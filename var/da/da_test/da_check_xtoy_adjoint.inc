@@ -41,7 +41,7 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, xbx, be, grid, config_flags, iv, y
    integer :: nobwin, ndynopt, i, j, k, jl_start, jl_end
    character(len=4) :: filnam
    character(len=256) :: timestr
-   integer :: wrf_done_unit, time_step_seconds
+   integer :: time_step_seconds
    type(x_type) :: shuffle
    real             :: subarea, whole_area
 

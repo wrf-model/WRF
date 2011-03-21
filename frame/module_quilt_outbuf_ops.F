@@ -192,8 +192,8 @@ CONTAINS
           do_indep_write = .FALSE.
           count_buf(:) = 0
           min_count = outpatch_table(ii)%nActivePatch
-          WRITE(mess,*) 'ARPDBG: before gather, I have ',min_count,' patches.'
-          CALL wrf_message(mess)
+!          WRITE(mess,*) 'ARPDBG: before gather, I have ',min_count,' patches.'
+!          CALL wrf_message(mess)
 
           CALL MPI_AllGather(min_count, 1, MPI_INTEGER,      &
 	                     count_buf, 1, MPI_INTEGER, &
@@ -212,15 +212,15 @@ CONTAINS
 
           END DO
 
-          WRITE(mess,*) 'ARPDBG: Min. no. of patches is ', min_count
-          CALL wrf_message(mess)
-          WRITE(mess,*) 'ARPDBG: I have ',count_buf(mytask+1),' patches.'
-          CALL wrf_message(mess)
+!          WRITE(mess,*) 'ARPDBG: Min. no. of patches is ', min_count
+!          CALL wrf_message(mess)
+!          WRITE(mess,*) 'ARPDBG: I have ',count_buf(mytask+1),' patches.'
+!          CALL wrf_message(mess)
 
-          WRITE(mess,"('Field: ',I3, ' domain start = ',3I4)")  ii, outpatch_table(ii)%DomainStart(1:3)
-          CALL wrf_message(mess)
-          WRITE(mess,"(10x,' domain end   = ',3I4)")  outpatch_table(ii)%DomainEnd(1:3)
-          CALL wrf_message(mess)
+!          WRITE(mess,"('Field: ',I3, ' domain start = ',3I4)")  ii, outpatch_table(ii)%DomainStart(1:3)
+!          CALL wrf_message(mess)
+!          WRITE(mess,"(10x,' domain end   = ',3I4)")  outpatch_table(ii)%DomainEnd(1:3)
+!          CALL wrf_message(mess)
 
           IF ( outpatch_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
              
@@ -742,7 +742,8 @@ integer i,j
     NULLIFY(ibuffer)
     NULLIFY(rbuffer)
 
-    ! ARPDBG
+#if 0
+!    ! ARPDBG
     WRITE(mess,*) "--------------------------"
     CALL wrf_message(mess)
     WRITE(mess,"('Field ',I3,': domain end = ', 3I4)") &
@@ -773,6 +774,7 @@ integer i,j
     WRITE(mess,*) "--------------------------"
     CALL wrf_message(mess)
     ! ARPDBGend
+#endif
 
     ! Search through patches to find pairs that we can stitch together
     ipatch = 1
@@ -980,6 +982,7 @@ integer i,j
 
     END DO OUTER
 
+#if 0
     ! ARPDBG
     CALL wrf_message("--------------------------")
     CALL wrf_message("Final list of patches:")
@@ -1098,6 +1101,7 @@ integer i,j
     WRITE(mess,*) "--------------------------"
     CALL wrf_message(mess)
     ! ARPDBGend
+#endif
 
     ! Record how many patches we're left with
     outpatch_table(ibuf)%nPatch = npatches

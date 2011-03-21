@@ -23,7 +23,7 @@ CONTAINS
      &           i_start,i_end,j_start,j_end
 
    INTEGER, INTENT(INOUT ) ::   NYEAR
-   INTEGER, INTENT(INOUT ) ::   NDAY
+   REAL   , INTENT(INOUT ) ::   NDAY
    INTEGER, INTENT(IN ) ::   YR
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)::   TSK
@@ -50,10 +50,25 @@ CONTAINS
       if(mod(yr,4).eq.0) yrday=366.
 #endif
 
+! accumulate tsk of current day
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j )
+    DO ij = 1 , num_tiles
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+             tdly(i,j)=tdly(i,j)+tsk(i,j)*dt
+      ENDDO
+      ENDDO
+     ENDDO
+    nday=nday+1.*dt
+
+
 ! Update deep soil temperature
 ! if it is the end of a day, update variables
-    deltat=(julian_in-int(julian_in))*24.*3600.
-    IF(nint(deltat).lt.dt) THEN
+    !! deltat=(julian_in-int(julian_in))*24.*3600.
+    !! IF(nint(deltat).lt.dt) THEN
+    deltat=(julian_in-nint(julian_in))*24.*3600.
+    IF(abs(deltat).le.dt/2.) THEN
       julian=(julian_in-1.)+(dt/(60.*60.*24.))
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij, i, j, n )
@@ -76,7 +91,7 @@ CONTAINS
         ENDDO
         ENDDO
       ENDDO
-      nday=0
+      nday=0.
 ! update tyr if it is the end of a year
       if((yrday-julian).le.1.) then
         DO ij = 1 , num_tiles
@@ -98,18 +113,6 @@ CONTAINS
         ENDDO
         nyear=nyear+1
       endif
-    ELSE
-! accumulate tsk of current day
-      !$OMP PARALLEL DO   &
-      !$OMP PRIVATE ( ij, i, j )
-      DO ij = 1 , num_tiles
-        DO j=j_start(ij),j_end(ij)
-        DO i=i_start(ij),i_end(ij)
-               tdly(i,j)=tdly(i,j)+tsk(i,j)
-        ENDDO
-        ENDDO
-      ENDDO
-      nday=nday+1
     ENDIF
 
 !

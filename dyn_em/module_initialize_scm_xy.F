@@ -226,13 +226,13 @@ CONTAINS
       END DO
    END DO
 
-! for Noah LSM, additional variables need to be initialized
+! for LSM, additional variables need to be initialized
 
-   other_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+!  other_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-      CASE (SLABSCHEME)
+!     CASE (SLABSCHEME)
 
-      CASE (LSMSCHEME)
+!     CASE (LSMSCHEME)
 
 ! JPH free of snow and ice, and only valid over land
         DO j = jts , MIN(jde-1,jte)
@@ -246,13 +246,16 @@ CONTAINS
            END DO
         END DO
 
-      CASE (RUCLSMSCHEME)
+!     CASE (RUCLSMSCHEME)
 
-   END SELECT other_masked_fields
+!  END SELECT other_masked_fields
 
    grid%step_number = 0
 
    IF ( real_soil ) THEN ! from input file
+
+      IF (config_flags%sf_surface_physics .NE. 2) WRITE (6, *)   &
+         'If using LSM option other than Noah, must edit input_soil file in test/em_scm_xy/ directory'
     
       CALL read_soil(100,ns_input,tmn_input,tsk_input,zs_input,tslb_input,smois_input)
 

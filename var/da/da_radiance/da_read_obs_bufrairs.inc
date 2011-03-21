@@ -36,9 +36,6 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer(i_kind),parameter :: N_HSBCHAN  =   4
   integer(i_kind),parameter :: N_MAXCHAN  = 350
   integer(i_kind),parameter :: maxinfo    =  12
-  character(8),   parameter :: msgtype_airsc = 'NC021250' ! msg type of center FOV
-  character(8),   parameter :: msgtype_airse = 'NC021249' ! msg type of every FOV
-
 
 ! BUFR format for AQUASPOT (SPITSEQN)
   integer(i_kind),parameter :: N_AQUASPOT_LIST = 25
@@ -316,11 +313,7 @@ bufrfile:  do ibufr=1,numbufr
   
 !   3.2 Read AQUASPOT (SPITSEQN)
 !------------------------
-     if ( subset == msgtype_airsc ) then
-        call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'AQUASPOT')
-     else if ( subset == msgtype_airse ) then
-        call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
-     end if
+     call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
      aquaspot = aquaspot_list( aquaspot_list_array(1), &
                                aquaspot_list_array(2), &
                                aquaspot_list_array(3), &
@@ -333,11 +326,7 @@ bufrfile:  do ibufr=1,numbufr
 !   3.3 Read AIRSSPOT or AMSUSPOT or HSBSPOT
 !-------------------------------------------------
      if ( trim(senname) == 'AIRS' ) then
-        if ( subset == msgtype_airsc ) then
-           call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'AIRSSPOT')
-        else if ( subset == msgtype_airse ) then
-           call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'SITPSEQN')
-        end if
+        call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'SITPSEQN')
      else
         call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,spotname)
      end if
@@ -357,11 +346,7 @@ bufrfile:  do ibufr=1,numbufr
 !   3.4 Read AIRSCHAN or AMSUCHAN or HSBCHAN
 !-------------------------------------------
      if ( trim(senname) == 'AIRS' ) then
-        if ( subset == msgtype_airsc ) then
-           call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'AIRSCHAN')
-        else if ( subset == msgtype_airse ) then
-           call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'SCBTSEQN')
-        end if
+        call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'SCBTSEQN')
      else
         call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,channame)
      end if

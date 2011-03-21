@@ -142,8 +142,11 @@
        vcsulf_old(its:ite,kts:kte,jts:jte) = &
           max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
 
-     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN,  &
-                          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN,      &
+                 CBMZ_MOSAIC_4BIN_AQ,     CBMZ_MOSAIC_8BIN_AQ,     &
+                 CBMZ_MOSAIC_DMS_4BIN,    CBMZ_MOSAIC_DMS_8BIN,    &
+                 CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ  )
+
        CALL wrf_debug(15,'calling cbmz_driver from mechanism_driver')
        call cbmz_driver(id,curr_secs,ktau,dtstep,ktauc,dtstepc,        &
                config_flags,                                           &

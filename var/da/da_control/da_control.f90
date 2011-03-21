@@ -444,9 +444,6 @@ module da_control
    integer, parameter     :: root = 0             ! Number of root processor
    logical                :: rootproc             ! Am I the root processor
 
-   integer, parameter :: var4d_coupling_disk_linear = 1
-   integer, parameter :: var4d_coupling_disk_simul  = 2
-
    integer, parameter :: rtm_option_rttov = 1
    integer, parameter :: rtm_option_crtm = 2
 

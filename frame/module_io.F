@@ -987,6 +987,7 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
   LOGICAL                     :: for_out
 
   INTEGER io_form , Hndl
+  INTEGER                     :: str_length , str_count
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_inquire_filename' )
 
@@ -997,6 +998,10 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
+          str_length = LEN ( FileName )
+          DO str_count = 1 , str_length
+            FileName(str_count:str_count) = ' '
+          END DO
           IF (wrf_dm_on_monitor()) CALL ext_ncd_inquire_filename ( Hndl, FileName , FileStatus, Status )
           CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
           CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )

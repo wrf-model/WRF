@@ -467,7 +467,6 @@ anew=0.
 !
 !rizvi 
 
-    if( debug > 0  .and. mype==0)write(6,*)' calling choldc'       
     call choldc(biga8,nz,p88,ierror)
 
 !        get bigbhat, the pressure expansion coefs
@@ -481,7 +480,6 @@ anew=0.
 !        <psi_coeff,psi_coeff> * x8 = <psi_coef,ps>  No lat variation
 ! After solving x8-array holds reg_psi_coeff_ps coeffs
 !rizvi
-    if( debug > 0  .and. mype==0)write(6,*)' calling cholsl'       
     call cholsl(biga8,nz,p88,b8,x8)
 
 !rizvi
@@ -609,7 +607,7 @@ anew=0.
    integer                   :: ierror, npeloop, moop, loop 
    integer                   :: nz2,nz3,nz4,nz5,nz6
 
-   integer                   :: i,j,jb,l,lq,ld,lt,ll,m,n
+   integer                   :: i,j,jb,l,lq,ld,lt,ll,m,n, jj
    integer                   :: k,k1,k2,kb,km,kn,kp,kz,kv,kd,kt,kq,kq2,kvd,kvp,kvt,kvq
    real                      :: rncas, rnorm, a, b, c
    real                      :: xmax, xmin
@@ -623,6 +621,24 @@ anew=0.
    real*4, allocatable  :: vz(:,:),vd(:,:),vt(:,:),vq(:,:)
    real*4, allocatable  :: corz(:,:),cord(:,:),corh(:,:),corq(:,:),corq2(:,:)
    real*4, allocatable  :: hwll(:,:,:),hwllp(:),corp(:)
+!----------------------------------------------------------------------------
+   integer, parameter   :: len_vars_out = 5 
+   integer, parameter   :: nvars = 5
+   integer, allocatable :: nsig(:) 
+   real*4, allocatable  :: stds(:,:,:), vzs(:,:,:) 
+   character(len=len_vars_out), allocatable :: vars(:) 
+   
+
+!----------------------------------------------------------------------------
+
+     allocate(vars(1:nvars) )  
+     allocate(nsig(1:nvars) ) 
+
+   vars(1)='sf';vars(2)='vp'; vars(3)='t'; vars(4)='q'; vars(5)='ps'
+   nsig(1)= nz ; nsig(2)=nz ; nsig(3)=nz ; nsig(4)=nz ; nsig(5)=1
+   allocate( stds(4,ncat,nz) )
+   allocate( vzs(4,nz,0:ncat+1) )
+
 !----------------------------------------------------------------------------
 
     amp =0. ; qcount=0. ; hl=0. ; vorr=0. ; bms=0.
@@ -1092,14 +1108,44 @@ ENDDO   ! LOOP
     call statww4(bv ,(ncat+2)*nz)
     call statww4(wgv,(ncat+2)*nz)
 
-   open(333,file='wrf-arw-gsi_be',form='unformatted')
+   stds(1,:,:) = corz  ! 'sf'
+   stds(2,:,:) = cord  ! 'vp'
+   stds(3,:,:) = corh  ! 't'
+   stds(4,:,:) = corq  ! 'q'
+   vzs(1,:,:) = vz  ! 'sf'
+   vzs(2,:,:) = vd  ! 'vp'
+   vzs(3,:,:) = vt  ! 't'
+   vzs(4,:,:) = vq  ! 'q'
+
+   open(333,file='wrf-arw-gsi_be.gcv',form='unformatted')
      rewind 333
      write(333)nz,ncat
      write(333)rlat4,sigl4
-     write(333)corz,cord,corh,corq,corp,corq2
-     write(333)hwll,hwllp
-     write(333)vz,vd,vt,vq
      write(333)agv,bv,wgv
+
+   do jj = 1, 5                           
+      write(333)vars(jj),nsig(jj)
+
+      if ( trim(vars(jj)).eq.'q' ) then
+         write(333)corq,corq2
+      else if ( trim(vars(jj)).eq.'ps' ) then
+         write(333)corp
+      else
+         write(333)stds(jj,:,:) !corz,cord,corh,corp, ! needs to correspond with vars
+      endif
+
+      if ( nsig(jj) == 1 ) then
+         write(333)hwllp  
+      else
+         write(333)hwll(:,:,jj)  
+         write(333)vzs(jj,:,:)
+      endif
+   end do
+
+!     write(333)corz,cord,corh,corq,corp,corq2
+!     write(333)hwll,hwllp
+!     write(333)vz,vd,vt,vq
+
      close(333)
 
 !============================================================

@@ -101,8 +101,8 @@ CONTAINS
               INTEGER, ALLOCATABLE::  ITEMP(:,:)
               INTEGER :: my_e,my_n,my_s,my_w,my_ne,my_nw,my_se,my_sw,myi,myj,npe
               INTEGER :: istat,inpes,jnpes
-#else 
-	integer:: IHW(JDS:JDE-1),IHE(JDS:JDE-1)
+#else
+        integer, allocatable:: ihw(:),ihe(:)
 #endif
 
 
@@ -1058,6 +1058,7 @@ CONTAINS
 
 #else
 ! serial sea ice reprocessing
+        allocate(IHE(JDS:JDE-1),IHW(JDS:JDE-1))
 
        DO j = jts, MIN(jte,jde-1)
           IHE(J)=MOD(J+1,2)
@@ -1094,6 +1095,7 @@ CONTAINS
        ENDDO
       ENDDO
 
+        DEALLOCATE(IHE,IHW)
 #endif
 
 ! this block meant to guarantee land/sea agreement between sm and landmask
@@ -5195,8 +5197,8 @@ END SUBROUTINE EARTH_LATLON_hwrf
      ENDDO
 
 
-     DO J=JTS,MIN(JTE,JDE)  !-1)
-      DO I=ITS,MIN(ITE,IDE) !-1)
+     DO J=MAX(3,JTS),MIN(JTE,JDE)  !-1)
+      DO I=MAX(3,ITS),MIN(ITE,IDE) !-1)
             IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7
                 HRES_SM(I,J) = NBWGT(1,I,J)*SM(IIH(I,J),JJH(I,J)  )    &
                              + NBWGT(2,I,J)*SM(IIH(I,J)+1, JJH(I,J)  )    &
@@ -5217,6 +5219,17 @@ END SUBROUTINE EARTH_LATLON_hwrf
 
       ENDDO
      ENDDO
+!    Boundary treatment in J direction
+     DO J=MAX(3,JTS),MIN(JTE,JDE)
+       HRES_SM(2,J)=HRES_SM(3,J)
+       HRES_SM(1,J)=HRES_SM(2,J)
+     END DO
+!    Boundary treatment in J direction and 4 corners
+     DO I=ITS,MIN(ITE,IDE) 
+       HRES_SM(I,2)=HRES_SM(I,3)
+       HRES_SM(I,1)=HRES_SM(I,2)
+     END DO
+
 
   RETURN
   END SUBROUTINE G2T2H_hwrf

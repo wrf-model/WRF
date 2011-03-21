@@ -28,10 +28,6 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
    integer       :: i, j, k
    real          :: subarea, whole_area
 
-#ifdef DM_PARALLEL
-   integer :: wrf_done_unit
-#endif
-
    character(len=4) :: filnam
 
    call da_trace_entry("da_transform_vtoy_adj")

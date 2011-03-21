@@ -1,16 +1,26 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-!--- YLIN, 2010/11, the code based on Lin and Colle (A New Bulk Microphysical Scheme 
-!                   that Includes Riming Intensity and Temperature Dependent Ice Characteristics, 2010, MWR)
-!                   and Lin et al. (Parameterization of riming intensity and its impact on ice fall speed using ARM data, 2010, MWR)
-!--- NOTE: 1) prognose variables are: qi,PI(precipitating ice, qs, which includes snow, partially rimed snow and graupel),qw,qr
-!---       2) sedimentation flux is based on Prudue Lin scheme 
-!---       2) PI has varying properties depending on riming intensity (Ri, diagnosed currently following Lin et al. 2010, MWR) and T 
-!---       3) autoconverion is based on Liu and Daum (2004)         
+!--- The code is based on Lin and Colle (A New Bulk Microphysical Scheme 
+!             that Includes Riming Intensity and Temperature Dependent Ice Characteristics, 2011, MWR)
+!             and Lin et al. (Parameterization of riming intensity and its impact on ice fall speed using ARM data, 2011, MWR)
+!--- NOTE: 1) Prognose variables are: qi,PI(precipitating ice, qs, which includes snow, partially rimed snow and graupel),qw,qr
+!---       2) Sedimentation flux is based on Prudue Lin scheme 
+!---       2) PI has varying properties depending on riming intensity (Ri, diagnosed currently following Lin et al. (2011, MWR) and T 
+!---       3) Autoconverion is based on Liu and Daum (2004)         
 !---       4) PI size distribution assuming Gamma distribution, but mu_s=0 (Exponential) currently
 !---       5) No density dependent fall speed since the V-D is derived using Best number approach, which already includes density effect 
-!---       6) Add of RI output, need to modify solve_em.F, Registry.EM, module_microphysics_driver.F. Thanks to Andrew Molthan for going through this
-!---       7) future work will output radar equivalent reflectivity using the new PI property (A-D, M-D, N(D))
+!---       6) Future work will include radar equivalent reflectivity using the new PI property (A-D, M-D, N(D)). If you use RIP for reflectivity 
+!---          computation, please note that snow is (1-Ri)*qs and graupel is Ri*qs. Otherwise, reflectivity will be underestimated.      
+!---       7) The Liu and Daum autoconverion is quite sensitive on Nt_c. For mixed-phase cloud and marine environment, Nt_c of 10 or 20 is suggested.
+!---          default value is 10E.6. Change accordingly for your use.
+!---       8)   Eq.7 and 8 are not in SI units and need to be converted in the code. the
+!              paper treats the units in Eq.7 and 8 as cgs,  and so need 1e-2^(2-ba) in
+!              the code, and that would give the plots in the paper. However, there is
+!              large uncertainty with this parameter, and one could argue that the units
+!              for these equations could be mm-g-s instead, which would mean 1e-3^(2-ba)
+!              in the code. This increases the snow fallspeed and gives an even
+!              better comparison of aa and ba with obs in paper.
+
 
       MODULE module_mp_sbu_ylin
       USE    module_wrf_error
@@ -18,7 +28,7 @@
 !..Parameters user might change based on their need
       REAL, PARAMETER, PRIVATE :: RH = 1.0
       REAL, PARAMETER, PRIVATE :: xnor = 8.0e6
-      REAL, PARAMETER, PRIVATE :: Nt_c = 100.E6
+      REAL, PARAMETER, PRIVATE :: Nt_c = 10.E6
 !..Water vapor and air gas constants at constant pressure
       REAL, PARAMETER, PRIVATE :: Rvapor = 461.5
       REAL, PARAMETER, PRIVATE :: oRv    = 1./Rvapor
@@ -146,7 +156,7 @@ CONTAINS
        orhoz(k)=1./rhoz(k)
        prez(k)=p(i,k,j)
 !       sqrhoz(k)=sqrt(rhoe_s*orhoz(k))
-! no density dependence of fall speed as Note #5
+! no density dependence of fall speed as Note #5, you can turn it on to increase fall speed at low pressure.
        sqrhoz(k)=1.0
        tothz(k)=pii(i,k,j)
        zz(k)=z(i,k,j)
@@ -170,9 +180,9 @@ CONTAINS
 !
 ! unit is transferred from m to mm
 !
-      rain(i,j)=pptrain
-      snow(i,j)=pptsnow
-      ice(i,j) =pptice
+      rain(i,j)= pptrain
+      snow(i,j)= pptsnow
+      ice(i,j) = pptice
 !
       RAINNCV(i,j)= pptrain + pptsnow + pptice
       RAINNC(i,j) = RAINNC(i,j) + pptrain + pptsnow + pptice
@@ -529,7 +539,8 @@ CONTAINS
          am_s(k) =  10**(2*bm_s(k)-3.0)*am_s(k)
          aa_s(k) = aa_c1 + aa_c2*tc0 + aa_c3*Ri(k)
          ba_s(k) = ba_c1 + ba_c2*tc0 + ba_c3*Ri(k)
-         aa_s(k) = (1e-2)**(2.0-ba_s(k))*aa_s(k)
+!---  convert from mm.g.s to SI unit (this will give larger PI fall speed than in the paper)
+         aa_s(k) = (1e-3)**(2.0-ba_s(k))*aa_s(k)
 !---- get v from Mitchell 1996
          av_s(k) = best_a*viscmu(k)*(2*grav*am_s(k)/rho(k)/aa_s(k)/(viscmu(k)**2))**best_b
          bv_s(k) = best_b*(bm_s(k)-ba_s(k)+2)-1

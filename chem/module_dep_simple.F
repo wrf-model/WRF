@@ -253,14 +253,18 @@ tile_lon_loop : &
 ! now. Short lived species get a zero velocity since dry dep should be
 ! unimportant.  **ALSO**, treat p_sulf as h2so4 vapor, not aerosol sulfate
 !-----------------------------------------------------------
-      if ( (config_flags%chem_opt == CBMZ          ) .or.   &
-           (config_flags%chem_opt == CBMZ_BB       ) .or.   &
-           (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.   &
-           (config_flags%chem_opt == CBMZ_MOSAIC_KPP   ) .or.   &
-           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.   &
-           (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.   &
-           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.   &
-           (config_flags%chem_opt == CBMZ_MOSAIC_8BIN) ) then
+      if ( (config_flags%chem_opt == CBMZ          ) .or.          &
+           (config_flags%chem_opt == CBMZ_BB       ) .or.          &
+           (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.          &
+           (config_flags%chem_opt == CBMZ_MOSAIC_KPP   ) .or.      &
+           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.     &
+           (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.     &
+           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.        &
+           (config_flags%chem_opt == CBMZ_MOSAIC_8BIN) .or.        &
+           (config_flags%chem_opt == CBMZ_MOSAIC_DMS_4BIN_AQ) .or. &
+           (config_flags%chem_opt == CBMZ_MOSAIC_DMS_8BIN_AQ) .or. &
+           (config_flags%chem_opt == CBMZ_MOSAIC_DMS_4BIN) .or.    &
+           (config_flags%chem_opt == CBMZ_MOSAIC_DMS_8BIN) ) then
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_sulf)        = ddvel(i,j,p_hno3)
@@ -284,7 +288,11 @@ tile_lon_loop : &
                ddvel(i,j,p_isopp)       = 0
                ddvel(i,j,p_isopn)       = 0
                ddvel(i,j,p_isopo2)      = 0
-               if( config_flags%chem_opt == CBMZ ) then
+               if((config_flags%chem_opt == CBMZ ) .or.                   &
+                  (config_flags%chem_opt == CBMZ_MOSAIC_DMS_4BIN) .or.    &
+                  (config_flags%chem_opt == CBMZ_MOSAIC_DMS_8BIN) .or.    &
+                  (config_flags%chem_opt == CBMZ_MOSAIC_DMS_4BIN_AQ) .or. &
+                  (config_flags%chem_opt == CBMZ_MOSAIC_DMS_8BIN_AQ) ) then
                   ddvel(i,j,p_dms)         = 0
                   ddvel(i,j,p_msa)         = ddvel(i,j,p_hno3)
                   ddvel(i,j,p_dmso)        = 0

@@ -50,6 +50,7 @@ MODULE module_domain_type
       CHARACTER*80    :: MemberOf   ! only for 4+D tracer arrays
       INTEGER :: Ndim
       INTEGER :: Ntl                ! 0 single; 1, 2, ... if multi
+      LOGICAL                                             :: subgrid_x, subgrid_y  ! true if has a subgrid dimension
 
       INTEGER, POINTER :: num_table(:)
       INTEGER, POINTER :: index_table(:,:)

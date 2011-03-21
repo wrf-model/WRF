@@ -78,7 +78,7 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) ] ; then \
 	  (cd var/external/crtm; \
-	  . configure/$(SFC).setup; $(MAKE) $(J) ) ; \
+	   export ABI_CRTM="${ABI_CRTM}"; . configure/$(SFC_CRTM).setup; $(MAKE) $(J) ) ; \
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \

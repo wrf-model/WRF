@@ -24,7 +24,7 @@ program da_verif_obs
       if_plot_profiler, if_plot_polaramv, if_plot_qscat, if_plot_rmse, &
       if_plot_sound, if_plot_sonde_sfc, if_plot_synop, if_plot_surface, &
       if_plot_upr, if_plot_ships, if_plot_metar, interval, stdp, start_date, &
-      if_plot_geoamv, stdh
+      if_plot_geoamv, stdh, num_miss
    use da_verif_obs_init, only : initialize_surface_type, initialize_upr_type, &
       initialize_gpspw_type, initialize_gpsref_type, da_advance_cymdh , &
       initialize_t_tab      
@@ -299,11 +299,11 @@ program da_verif_obs
 
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                      call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                      call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                     call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
@@ -352,19 +352,19 @@ program da_verif_obs
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                      call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                      call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                     call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
-                   if( t_qc >=  0)  then
+                   if( t_qc >= 0 .and. npr > 0 )  then
                     call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
                     call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
                    endif
-                   if( q_qc >=  0)  then
+                   if( q_qc >= 0 .and. npr > 0 )  then
                     call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
                     call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
                    endif
@@ -389,15 +389,15 @@ program da_verif_obs
                      t_obs, t_inv, t_qc, t_error, t_inc    
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                     call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                     call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
-                   if( t_qc >=  0) then
+                   if( t_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
                     call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
                    endif
@@ -423,11 +423,11 @@ program da_verif_obs
                      v_obs, v_inv, v_qc, v_error, v_inc
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                        call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                        call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                        call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                        call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
@@ -561,11 +561,11 @@ program da_verif_obs
                      q_obs, q_inv, q_qc, q_error, q_inc
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( t_qc >=  0) then
+                   if( t_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
                     call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
                    endif
-                   if( q_qc >=  0) then
+                   if( q_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
                     call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
                    endif
@@ -639,11 +639,12 @@ subroutine get_std_pr_level(prs, npr, stdp, nstd)
    real             :: pr
    integer               :: k   
 
+   npr = num_miss  ! initialize as a missing value
    pr = prs/100.0
    if        ( pr >= stdp(1)    ) then
        npr = 1
        return
-   else if ( pr < stdp(nstd-1) ) then
+   else if ( pr < stdp(nstd-1) .and. pr >= stdp(nstd) ) then
       npr = nstd
       return
    else

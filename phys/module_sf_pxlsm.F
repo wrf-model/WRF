@@ -1324,8 +1324,6 @@ CONTAINS
     END SUBROUTINE smass
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
       SUBROUTINE SOILPROP (SOILCBOT,WEIGHT, ITIMESTEP, MAVAIL, &  ! IN
                            PXLSM_SMOIS_INIT,                   &  ! IN
@@ -1346,6 +1344,7 @@ CONTAINS
      !   2  LOAMY SAND .410 .150  .075  4.38  3.057    4  .404  3.7  .098
      !   3  SANDY LOAM .435 .195  .114  4.90  3.560    4  .219  1.8  .132
      !   4  SILT LOAM  .485 .255  .179  5.30  4.418    6  .105  0.8  .153
+     !   4  SILT       .485 .255  .179  5.30  4.418    6  .105  0.8  .153 NP89 does not have Silt so mapped to Silt Loam
      !   5  LOAM       .451 .240  .155  5.39  4.111    6  .148  0.8  .191
      !   6  SND CLY LM .420 .255  .175  7.12  3.670    6  .135  0.8  .213
      !   7  SLT CLY LM .477 .322  .218  7.75  3.593    8  .127  0.4  .385
@@ -1353,11 +1352,6 @@ CONTAINS
      !   9  SANDY CLAY .426 .310  .219 10.40  3.058    8  .139  0.3  .421
      !  10  SILTY CLAY .482 .370  .283 10.40  3.729   10  .075  0.3  .375
      !  11  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
-     !  12  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
-     !  13  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
-     !  14  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
-     !  15  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
-     !  16  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
      !------------------------------------------------------------------------
      !
      !.........Arguments
@@ -1484,7 +1478,7 @@ CONTAINS
       SUMCLY     = 0.0                                                               
       TFRACBOT   = 0.0                                                              
                                                                                 
-      DO S = 1,NSCAT                                                          
+      DO S = 1,12  !NSCAT                                                          
          TFRACBOT  = TFRACBOT  + SOILCBOT(S)
          SUMSND    = SUMSND    + SAND(S) * SOILCBOT(S)
          SUMCLY    = SUMCLY    + CLAY(S) * SOILCBOT(S)
@@ -1500,13 +1494,13 @@ CONTAINS
         AVC = SUMCLY / TFRACBOT                                           
         AVSLT = 100 - AVS - AVC                                   
         
-        IF(AVS.GT.85..AND.AVC.LT.100.-AVS) THEN                            
+        IF(AVS.GT.(85.+ 0.5*AVC)) THEN                            
           AVCLASS= 'Sand'                                                   
           ISTI = 1                                                          
-        ELSE IF(AVS.GT.70..AND.AVC.LT.100.-AVS) THEN                    
+        ELSE IF(AVS.GT.(70.+ AVC)) THEN                    
           AVCLASS= 'Lsan'                                             
           ISTI = 2                                                  
-        ELSE IF((AVC.LT.20..AND.AVS.GT.52..AND.AVC.GT.7.5) &        
+        ELSE IF((AVC.LT.20..AND.AVS.GT.52.) &        
                 .OR.(AVC.LE.7.5.AND.AVSLT.LT.50.)) THEN                
           AVCLASS= 'Sloa'                                             
           ISTI = 3                                                     
@@ -1543,7 +1537,6 @@ CONTAINS
         ISTI=5
         AVCLASS = TEXID(ISTI)  
       ENDIF
-  
      FWSAT =WSAT(ISTI)   
      FWFC  =WFC(ISTI)    
      FWWLT =WWLT(ISTI)   
@@ -1563,7 +1556,6 @@ CONTAINS
     ENDIF                                                                    
     
     END SUBROUTINE soilprop
-!------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
       SUBROUTINE PXSNOW (ITIMESTEP, ASNOW, CSNOW, SNOW,       &

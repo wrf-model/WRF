@@ -5,8 +5,10 @@ program gen_be_ep2
 !  flow-dependent perturbations in WRF-Var (alpha control variable, 
 !  alphacv_method = 2).
 !
-!  Owner: Dale Barker (NCAR/MMM)
-!  Please acknowledge author/institute in work that uses this code.
+!  Dale Barker (NCAR/MMM)      January 2007
+!  Arthur P. Mizzi (NCAR/MMM)  February 2011  Modified to use .vari extension for
+!                                             ensemble variance file output from
+!                                             gen_be_ensmean.f90
 !
 !----------------------------------------------------------------------
 
@@ -76,6 +78,7 @@ program gen_be_ep2
 
 !---------------------------------------------------------------------------------------------
    write(6,'(/a)')' [1] Initialize information.'
+   print *, 'apm in gen_be_ep2'
 !---------------------------------------------------------------------------------------------
 
    call da_get_unit(gen_be_iunit)
@@ -84,27 +87,32 @@ program gen_be_ep2
    remove_mean = .true.
 
    numarg = iargc()
-   if ( numarg /= 2 )then
+   if ( numarg /= 4 )then
       write(UNIT=6,FMT='(a)') &
-        "Usage: gen_be_ep2 ne <filename> Stop"
+        "Usage: gen_be_ep2 date ne <directory> <filename> Stop"
       stop
    end if
 
    ! Initialse to stop Cray compiler complaining
+   date=""
    cne=""
+   directory=""
    filename=""
 
-   call getarg( 1, cne )
+   call getarg( 1, date )
+   call getarg( 2, cne )
    read(cne,'(i3)')ne
-   call getarg( 2, filename )
+   call getarg( 3, directory )
+   call getarg( 4, filename )
 
    if ( remove_mean ) then
-      write(6,'(a,a)')' Computing gen_be ensemble perturbation files for date ' !, date
+      write(6,'(a,a)')' Computing gen_be ensemble perturbation files for date ', date
    else
-      write(6,'(a,a)')' Computing gen_be ensemble forecast files for date ' !, date
+      write(6,'(a,a)')' Computing gen_be ensemble forecast files for date ', date
    end if
    write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, qcloud, qrain, ps)'
    write(6,'(a,i4)')' Ensemble Size = ', ne
+   write(6,'(a,a)')' Directory = ', trim(directory)
    write(6,'(a,a)')' Filename = ', trim(filename)
 
 !---------------------------------------------------------------------------------------------
@@ -113,7 +121,7 @@ program gen_be_ep2
 
 !  Get grid dimensions from first T field:
    var = "T"
-   input_file = trim(filename)//'.e001'
+   input_file = trim(directory)//'/'//trim(filename)//'.e001'
    call da_stage0_initialize( input_file, var, dim1, dim2, dim3, ds )
    dim1s = dim1+1 ! u i dimension is 1 larger.
    dim2s = dim2+1 ! v j dimension is 1 larger.
@@ -168,7 +176,7 @@ program gen_be_ep2
    do member = 1, ne
 
       write(UNIT=ce,FMT='(i3.3)')member
-      input_file = trim(filename)//'.e'//trim(ce)
+      input_file = trim(directory)//'/'//trim(filename)//'.e'//trim(ce)
 
       do k = 1, dim3
 

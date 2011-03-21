@@ -760,7 +760,7 @@ call wrf_message("**************************************************************
    END SELECT aer_select
 
    progn_sanity_check : SELECT CASE(config_flags%chem_opt)
-   CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+   CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
       if( config_flags%progn /= 1 ) &
            call wrf_error_fatal( &
            "ERROR: When using a ..._AQ chemistry package, progn must be 1")

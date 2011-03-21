@@ -125,7 +125,8 @@ CONTAINS
 
    INTEGER , INTENT(IN)        :: num_soil_layers
    INTEGER , INTENT(IN)        :: lagday
-   INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear, nday
+   INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear
+   REAL    , INTENT(OUT) ,OPTIONAL      :: nday
 
    LOGICAL,  INTENT(IN)        :: start_of_simulation
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
@@ -453,7 +454,7 @@ integer myproc
    IF(PRESENT(TMN_UPDATE))THEN
    if(tmn_update.eq.1) then
    nyear=1
-   nday=1
+   nday=0.
    DO j=jts,jtf
    DO i=its,itf
       TYR(i,j)=TMN(i,j)
@@ -660,6 +661,9 @@ integer myproc
                   model_config_rec%obs_no_pbl_nudge_uv,         &
                   model_config_rec%obs_no_pbl_nudge_t,          &
                   model_config_rec%obs_no_pbl_nudge_q,          &
+                  model_config_rec%obs_sfc_scheme_horiz,        &
+                  model_config_rec%obs_sfc_scheme_vert,         &
+                  model_config_rec%obs_max_sndng_gap,           &
                   model_config_rec%obs_sfcfact,                 &
                   model_config_rec%obs_sfcfacr,                 &
                   model_config_rec%obs_dpsmx,                   &
@@ -1134,7 +1138,7 @@ integer myproc
 
         CASE (RRTMG_LWSCHEME)
              CALL rrtmg_lwinit(                             &
-                           allowed_to_read ,                &
+                           p_top, allowed_to_read ,         &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
@@ -1500,7 +1504,6 @@ integer myproc
 
 !-- calculate pbl time step
 
-   print *,config_flags%grid_id,'=config_flags%grid_id'
    STEPBL = nint(BLDT*60./DT)
    STEPBL = max(STEPBL,1)
 !-- initialization
@@ -1728,6 +1731,8 @@ integer myproc
       CASE (YSUSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL ysuinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1739,6 +1744,8 @@ integer myproc
       CASE (MRFSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL mrfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1750,6 +1757,8 @@ integer myproc
       CASE (ACMPBLSCHEME)
            if(isfc .ne. 1 .and. isfc .ne. 7)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay or pxsfc scheme for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL acminit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1761,6 +1770,8 @@ integer myproc
       CASE (GFSSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL gfsinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
@@ -1791,6 +1802,8 @@ integer myproc
       CASE (QNSEPBLSCHEME)
            if(isfc .ne. 4)CALL wrf_error_fatal &
             ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_PBL,EXCH_H,restart,               &
                         allowed_to_read ,                     &
@@ -1808,6 +1821,8 @@ integer myproc
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
         CASE (CAMUWPBLSCHEME)
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                 restart,TKE_PBL,config_flags%grid_id,           &
                 ids, ide, jds, jde, kds, kde,         &
@@ -1822,6 +1837,8 @@ integer myproc
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
            IF(isfc .NE. 5 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
                 ( 'module_physics_init: use mynnsfc or sfclay or myjsfc scheme for this pbl option')
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            
            SELECT CASE(config_flags%bl_pbl_physics)
 
@@ -1845,6 +1862,8 @@ integer myproc
       CASE (TEMFPBLSCHEME)
            ! if(isfc .ne. 0)CALL wrf_error_fatal &
            !  ( 'module_physics_init: use sfclay scheme = 0 for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
          IF ( PRESENT( te_temf ) .AND. PRESENT( cf3d_temf )) THEN
            CALL temfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
@@ -2367,6 +2386,8 @@ integer myproc
                         no_pbl_nudge_uv,                           &
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
+                        sfc_scheme_horiz, sfc_scheme_vert,         &
+                        maxsnd_gap,                                &
                         sfcfact, sfcfacr, dpsmx,                   &
                         nudge_wind, nudge_temp, nudge_mois,        &
                         nudgezfullr1_uv, nudgezrampr1_uv,          &
@@ -2413,6 +2434,9 @@ integer myproc
    INTEGER , INTENT(IN)    :: no_pbl_nudge_uv(maxdom)  ! flags for no wind nudging in pbl
    INTEGER , INTENT(IN)    :: no_pbl_nudge_t(maxdom)   ! flags for no temperature nudging in pbl
    INTEGER , INTENT(IN)    :: no_pbl_nudge_q(maxdom)   ! flags for no moisture nudging in pbl
+   INTEGER , INTENT(IN)    :: sfc_scheme_horiz ! horizontal spreading scheme for surf obs (wrf or orig mm5)
+   INTEGER , INTENT(IN)    :: sfc_scheme_vert  ! vertical   spreading scheme for surf obs (orig or regime vif)
+   REAL    , INTENT(IN)    :: maxsnd_gap       ! max allowed pressure gap in soundings for interp (centibars) 
    REAL    , INTENT(IN)    :: sfcfact      ! scale factor applied to time window for surface obs
    REAL    , INTENT(IN)    :: sfcfacr      ! scale fac applied to horiz rad of infl for sfc obs
    REAL    , INTENT(IN)    :: dpsmx        ! max pressure change allowed within horiz. infl. range
@@ -2470,6 +2494,8 @@ integer myproc
                         no_pbl_nudge_uv,                           &
                         no_pbl_nudge_t,                            &
                         no_pbl_nudge_q,                            &
+                        sfc_scheme_horiz, sfc_scheme_vert,         &
+                        maxsnd_gap,                                &
                         sfcfact, sfcfacr, dpsmx,                   &
                         nudge_wind, nudge_temp, nudge_mois,        &
                         nudgezfullr1_uv, nudgezrampr1_uv,          &

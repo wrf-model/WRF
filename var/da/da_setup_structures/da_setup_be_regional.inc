@@ -599,7 +599,7 @@ subroutine da_setup_be_regional(xb, be)
       do i = 1 , 5		! variables loop:
          read (be_unit,IOSTAT=k) variable
          if( k/=0 ) &
-            print'("Error ",I0," reading namv(",I0,")=",A,"/=",A,", do_normalize=",L)', &
+            print'("Error ",I0," reading namv(",I0,")=",A,"/=",A,", do_normalize=",L2)', &
                k,i,namv(i),variable,do_normalize
          select case( trim(adjustl(variable)) )
             case ('psi')

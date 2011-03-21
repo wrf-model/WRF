@@ -561,6 +561,21 @@ integer::oops1,oops2
                   END DO
                END DO
             END DO
+
+            !  For UM data, the "surface" and the "first hybrid" level for the theta-level data fields are the same.  
+            !  Average the surface (k=1) and the second hybrid level (k=num_metgrid_levels-1) to get the first hybrid
+            !  layer.  We only do this for the theta-level data: pressure, temperature, specific humidity, and
+            !  geopotential height (i.e. we do not modify u, v, or the rho-based pressure).
+
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%  p_gc(i,num_metgrid_levels,j) = ( grid%  p_gc(i,1,j) + grid%  p_gc(i,num_metgrid_levels-1,j) ) * 0.5
+                  grid%  t_gc(i,num_metgrid_levels,j) = ( grid%  t_gc(i,1,j) + grid%  t_gc(i,num_metgrid_levels-1,j) ) * 0.5
+                  grid% sh_gc(i,num_metgrid_levels,j) = ( grid% sh_gc(i,1,j) + grid% sh_gc(i,num_metgrid_levels-1,j) ) * 0.5
+                  grid%ght_gc(i,num_metgrid_levels,j) = ( grid%ght_gc(i,1,j) + grid%ght_gc(i,num_metgrid_levels-1,j) ) * 0.5
+               END DO
+            END DO
          END IF
 
          !  Check for and semi-fix missing surface fields.
@@ -2185,7 +2200,7 @@ endif
             DO i = its, min(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
-               grid%psfc(i,j)=p_surf + grid%p(i,1,j)
+!              grid%psfc(i,j)=p_surf + grid%p(i,1,j)
                grid%th2(i,j)=grid%t2(i,j)*(p00/(grid%p(i,1,j)+grid%pb(i,1,j)))**(r_d/cp)
             END DO
          END DO
@@ -3048,7 +3063,7 @@ end subroutine fillitup
          DO i = istart , iend
             ko_above_sfc(i) = -1
          END DO
-         DO ko = kstart+1 , kend
+         DO ko = kstart+1 , generic
             DO i = istart , iend
                IF ( ko_above_sfc(i) .EQ. -1 ) THEN
                   IF ( porig(i,1,j) .GT. porig(i,ko,j) ) THEN
@@ -5550,8 +5565,8 @@ FUNCTION skip_middle_points_t ( ids , ide , jds , jde , &
    IF ( subtleties_exist ) THEN
       skip_it = .FALSE.
    ELSE
-      IF ( ( i_in .GE. ids+width+slop ) .AND. ( i_in .LE. ide-1-slop )   .AND. &
-           ( j_in .GE. jds+width+slop ) .AND. ( j_in .LE. jde-1-slop ) ) THEN
+      IF ( ( i_in .GT. ids+width+slop ) .AND. ( i_in .LT. ide-1-width-slop )   .AND. &
+           ( j_in .GT. jds+width+slop ) .AND. ( j_in .LT. jde-1-width-slop ) ) THEN
          skip_it = .TRUE.
       ELSE
          skip_it = .FALSE.

@@ -172,7 +172,13 @@ bufrfile:  do ibufr=1,numbufr
          write(unit=message(1),fmt='(A,I5,A)') &
             "Error",iost," opening PREPBUFR obs file "//trim(filename)
          call da_warning(__FILE__,__LINE__,message(1:1))
-         cycle bufrfile
+         if ( num_fgat_time == 1 ) then
+            call da_free_unit(iunit)
+            if (trace_use) call da_trace_exit("da_read_obs_bufr")
+            return
+         else
+            cycle bufrfile
+         end if
       end if
    ! open observation error table if provided.
    call da_get_unit(junit)
@@ -261,6 +267,20 @@ bufrfile:  do ibufr=1,numbufr
       platform % info % elv        = hdr(6)
       platform % info % lon        = hdr(2)
       platform % info % lat        = hdr(3)
+
+      ! blacklisted stations should be handled through an external table.
+      ! For now, temporary fix is implemented here for known incorrect 
+      ! station info in NCEP PREPBUFR file
+      if ( trim(platform%info%id) == 'BGQQ' ) then
+         platform%info%elv = 19
+         platform%info%lon = -69.21
+         platform%info%lat = 77.46
+      end if
+      if ( trim(platform%info%id) == 'UWKE' ) then
+         platform%info%elv = 194
+         platform%info%lon = 52.09
+         platform%info%lat = 55.56
+      end if
 
       ! Put a check on Lon and Lat
       if ( platform%info%lon >= 180.0 ) platform%info%lon = platform%info%lon - 360.0

@@ -482,7 +482,8 @@ CONTAINS
          enddo
 
          mix_select: SELECT CASE(config_flags%chem_opt)
-         CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+         CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+              CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
                call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
                            zzfull,zz,ddvel(i,j,nv),kts,kte)
@@ -547,7 +548,7 @@ CONTAINS
 		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
-   CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+   CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
       CALL wrf_debug(15,'call mixactivate for mosaic aerosol')
       call mosaic_mixactivate (                        &
 		id, ktau, dtstep, config_flags, idrydep_onoff,   &

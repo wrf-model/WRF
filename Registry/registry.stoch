@@ -57,4 +57,4 @@ rconfig   real        tot_backscat_t      namelist,physics      max_domains    2
 
 # Package declarations
 package   no_stoch_force      stoch_force_opt==0                  -             -
-package   stoch_backscatter   stoch_force_opt==1                  -             state:ru_tendf_stoch_old,ru_tendf_stoch_ref,ru_tendf_stoch,rv_tendf_stoch_old,rv_tendf_stoch_ref,rv_tendf_stoch,rt_tendf_stoch_old,rt_tendf_stoch_ref,rt_tendf_stoch,rpsi_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL
+package   stoch_backscatter   stoch_force_opt==1                  -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL

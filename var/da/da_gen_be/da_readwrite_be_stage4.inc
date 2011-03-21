@@ -22,6 +22,8 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
    integer                  :: kdum                       ! Dummy vertical index.
    integer, save            :: lf1,nb1,nij1(0:1)          ! Test lf, nb & nij.
    integer                  :: max_wavenumber             ! Smallest scale required (ni/2 - 1).
+   integer                  :: stride                     ! Only for filename.
+   logical                  :: ex                         ! Test if input file exists.
    logical, save            :: do_normalize1              ! Test do_normalize.
    real                     :: ml                         ! Gradient (read from file but not used).
    real                     :: mean_scale                 ! Average scale between points.
@@ -108,7 +110,15 @@ subroutine da_readwrite_be_stage4(outunit, nk, uh_method, n_smth_sl, variable)
          allocate(nij(0:0,0:1,0:0))
          do k=1, nk
             write(ck,'(i0)')k
-            filename = trim(variable)//"/mom"//trim(ck)
+            ex=.false.
+            stride=1
+            do while( .not.ex )		! loop thus only because gen_be_stage4_regional uses stride:
+               write(filename,'("gen_be_stage4_regional.",i0)')stride
+               inquire(exist=ex,file=trim(filename))
+               if( .not.ex )print'(a,": ",a" does not exist.")',__FILE__,trim(filename)
+               stride=stride+1
+            enddo
+            filename = trim(filename)//"/dir."//trim(variable)//trim(ck)//"/mom"
             open(iunit,action="read",file=trim(filename),form="unformatted",status="old")
             read(iunit)do_normalize1
             if( do_normalize.neqv.do_normalize1 ) &

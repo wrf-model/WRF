@@ -3,6 +3,8 @@ subroutine da_write_obs_etkf(ob, iv, re)
    !-------------------------------------------------------------------------
    ! Purpose: Writes out components of iv=O-B structure.
    !-------------------------------------------------------------------------   
+   !
+   ! Arthur P. Mizzi (NCAR/MMM) February 2011 Modfied to output the extended ob.etkf file.  
 
    implicit none
 
@@ -13,6 +15,7 @@ subroutine da_write_obs_etkf(ob, iv, re)
    integer                       :: n, k, num_obs, ios
    integer                       :: ounit     ! Output unit           
    character(len=20)             :: filename
+   integer                       :: apm_index
 
    if (trace_use) call da_trace_entry("da_write_obs_etkf")
 
@@ -20,6 +23,8 @@ subroutine da_write_obs_etkf(ob, iv, re)
    ! Fix output unit
    !-------------------------------------------------------------------------
 
+   apm_index=0
+   
    call da_get_unit(ounit)
 
 #ifdef DM_PARALLEL
@@ -35,6 +40,10 @@ subroutine da_write_obs_etkf(ob, iv, re)
          (/"Cannot open ETKF observation file"//filename/))
    end if
 
+   ! [0] Format for extended ob.etkf files (APM 02-10-2011)
+ 
+1000 format(3f17.7,2x,a10,2x,2(f6.0,2x),4(f8.2,2x),i10)
+
    ! [1] Transfer surface obs:
 
    if (iv%info(synop)%nlocal > 0) then
@@ -47,20 +56,35 @@ subroutine da_write_obs_etkf(ob, iv, re)
          do n = 1, iv%info(synop)%nlocal
             if (iv%info(synop)%proc_domain(1,n)) then
                num_obs = num_obs + 1
-               if ( iv%synop(n)%u%qc >= 0 .and. ob%synop(n)%u /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%synop(n)%u, iv%synop(n)%u%inv, iv%synop(n)%u%error
+               if ( iv%synop(n)%u%qc >= 0 .and. ob%synop(n)%u /= missing_r ) then 
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%synop(n)%u, iv%synop(n)%u%inv, iv%synop(n)%u%error, &
+                  'WNU', -888.88, -888.88, iv%info(synop)%lat(1,n), iv%info(synop)%lon(1,n), &
+                  (ob%synop(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%synop(n)%v%qc >= 0 .and. ob%synop(n)%v /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%synop(n)%v, iv%synop(n)%v%inv, iv%synop(n)%v%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%synop(n)%v, iv%synop(n)%v%inv, iv%synop(n)%v%error, &
+                  'WNV', -888.88, -888.88, iv%info(synop)%lat(1,n), iv%info(synop)%lon(1,n), &
+                  (ob%synop(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%synop(n)%t%qc >= 0 .and. ob%synop(n)%t /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%synop(n)%t, iv%synop(n)%t%inv, iv%synop(n)%t%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%synop(n)%t, iv%synop(n)%t%inv, iv%synop(n)%t%error, &
+                  'TMP', -888.88, -888.88, iv%info(synop)%lat(1,n), iv%info(synop)%lon(1,n), &
+                  (ob%synop(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%synop(n)%p%qc >= 0 .and. ob%synop(n)%p /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%synop(n)%p, iv%synop(n)%p%inv, iv%synop(n)%p%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%synop(n)%p, iv%synop(n)%p%inv, iv%synop(n)%p%error, &
+                  'PRS', -888.88, -888.88, iv%info(synop)%lat(1,n), iv%info(synop)%lon(1,n), &
+                  (ob%synop(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%synop(n)%q%qc >= 0 .and. ob%synop(n)%q /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%synop(n)%q, iv%synop(n)%q%inv, iv%synop(n)%q%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%synop(n)%q, iv%synop(n)%q%inv, iv%synop(n)%q%error, &
+                  'QVP', -888.88, -888.88, iv%info(synop)%lat(1,n), iv%info(synop)%lon(1,n), &
+                  (ob%synop(n)%p)/100., -888.88, apm_index 
                end if
             end if
          end do
@@ -80,19 +104,34 @@ subroutine da_write_obs_etkf(ob, iv, re)
             if (iv%info(metar)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                if ( iv%metar(n)%u%qc >= 0 .and. ob%metar(n)%u /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%metar(n)%u, iv%metar(n)%u%inv, iv%metar(n)%u%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%metar(n)%u, iv%metar(n)%u%inv, iv%metar(n)%u%error, &
+                  'WNU', -888.88, -888.88, iv%info(metar)%lat(1,n), iv%info(metar)%lon(1,n), &
+                  (ob%metar(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%metar(n)%v%qc >= 0 .and. ob%metar(n)%v /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%metar(n)%v, iv%metar(n)%v%inv, iv%metar(n)%v%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%metar(n)%v, iv%metar(n)%v%inv, iv%metar(n)%v%error, &
+                  'WNV', -888.88, -888.88, iv%info(metar)%lat(1,n), iv%info(metar)%lon(1,n), &
+                  (ob%metar(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%metar(n)%t%qc >= 0 .and. ob%metar(n)%t /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%metar(n)%t, iv%metar(n)%t%inv, iv%metar(n)%t%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%metar(n)%t, iv%metar(n)%t%inv, iv%metar(n)%t%error, &
+                  'TMP', -888.88, -888.88, iv%info(metar)%lat(1,n), iv%info(metar)%lon(1,n), &
+                  (ob%metar(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%metar(n)%p%qc >= 0 .and. ob%metar(n)%p /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%metar(n)%p, iv%metar(n)%p%inv, iv%metar(n)%p%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%metar(n)%p, iv%metar(n)%p%inv, iv%metar(n)%p%error, &
+                  'PRS', -888.88, -888.88, iv%info(metar)%lat(1,n), iv%info(metar)%lon(1,n), &
+                  (ob%metar(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%metar(n)%q%qc >= 0 .and. ob%metar(n)%q /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%metar(n)%q, iv%metar(n)%q%inv, iv%metar(n)%q%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%metar(n)%q, iv%metar(n)%q%inv, iv%metar(n)%q%error, &
+                  'QVP', -888.88, -888.88, iv%info(metar)%lat(1,n), iv%info(metar)%lon(1,n), &
+                  (ob%metar(n)%p)/100., -888.88, apm_index 
                end if
             end if
          end do
@@ -112,19 +151,34 @@ subroutine da_write_obs_etkf(ob, iv, re)
             if (iv%info(ships)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                if ( iv%ships(n)%u%qc >= 0 .and. ob%ships(n)%u /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%ships(n)%u, iv%ships(n)%u%inv, iv%ships(n)%u%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%ships(n)%u, iv%ships(n)%u%inv, iv%ships(n)%u%error, &
+                  'WNU', -888.88, -888.88, iv%info(ships)%lat(1,n), iv%info(ships)%lon(1,n), &
+                  (ob%ships(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%ships(n)%v%qc >= 0 .and. ob%ships(n)%v /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%ships(n)%v, iv%ships(n)%v%inv, iv%ships(n)%v%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%ships(n)%v, iv%ships(n)%v%inv, iv%ships(n)%v%error, &
+                  'WNV', -888.88, -888.88, iv%info(ships)%lat(1,n), iv%info(ships)%lon(1,n), &
+                  (ob%ships(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%ships(n)%t%qc >= 0 .and. ob%ships(n)%t /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%ships(n)%t, iv%ships(n)%t%inv, iv%ships(n)%t%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%ships(n)%t, iv%ships(n)%t%inv, iv%ships(n)%t%error, &
+                  'TMP', -888.88, -888.88, iv%info(ships)%lat(1,n), iv%info(ships)%lon(1,n), &
+                  (ob%ships(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%ships(n)%p%qc >= 0 .and. ob%ships(n)%p /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%ships(n)%p, iv%ships(n)%p%inv, iv%ships(n)%p%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%ships(n)%p, iv%ships(n)%p%inv, iv%ships(n)%p%error, &
+                  'PRS', -888.88, -888.88, iv%info(ships)%lat(1,n), iv%info(ships)%lon(1,n), &
+                  (ob%ships(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%ships(n)%q%qc >= 0 .and. ob%ships(n)%q /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%ships(n)%q, iv%ships(n)%q%inv, iv%ships(n)%q%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%ships(n)%q, iv%ships(n)%q%inv, iv%ships(n)%q%error, &
+                  'QVP', -888.88, -888.88, iv%info(ships)%lat(1,n), iv%info(ships)%lon(1,n), &
+                  (ob%ships(n)%p)/100., -888.88, apm_index 
                end if
             end if
          end do
@@ -145,10 +199,16 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(geoamv)%levels(n)
                   if ( iv%geoamv(n)%u(k)%qc >= 0 .and. ob%geoamv(n)%u(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%geoamv(n)%u(k), iv%geoamv(n)%u(k)%inv, iv%geoamv(n)%u(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%geoamv(n)%u(k), iv%geoamv(n)%u(k)%inv, iv%geoamv(n)%u(k)%error, &
+                     'WNU', -888.88, -888.88, iv%info(geoamv)%lat(1,n), iv%info(geoamv)%lon(1,n), &
+                     (iv%geoamv(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%geoamv(n)%v(k)%qc >= 0 .and. ob%geoamv(n)%v(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%geoamv(n)%v(k), iv%geoamv(n)%v(k)%inv, iv%geoamv(n)%v(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%geoamv(n)%v(k), iv%geoamv(n)%v(k)%inv, iv%geoamv(n)%v(k)%error, &
+                     'WNV', -888.88, -888.88, iv%info(geoamv)%lat(1,n), iv%info(geoamv)%lon(1,n), &
+                     (iv%geoamv(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -170,10 +230,16 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(polaramv)%levels(n)
                   if ( iv%polaramv(n)%u(k)%qc >= 0 .and. ob%polaramv(n)%u(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%polaramv(n)%u(k), iv%polaramv(n)%u(k)%inv, iv%polaramv(n)%u(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%polaramv(n)%u(k), iv%polaramv(n)%u(k)%inv, iv%polaramv(n)%u(k)%error, &
+                     'WNU', -888.88, -888.88, iv%info(polaramv)%lat(1,n), iv%info(polaramv)%lon(1,n), &
+                     (iv%polaramv(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%polaramv(n)%v(k)%qc >= 0 .and. ob%polaramv(n)%v(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%polaramv(n)%v(k), iv%polaramv(n)%v(k)%inv, iv%polaramv(n)%v(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%polaramv(n)%v(k), iv%polaramv(n)%v(k)%inv, iv%polaramv(n)%v(k)%error, &
+                     'WNV', -888.88, -888.88, iv%info(polaramv)%lat(1,n), iv%info(polaramv)%lon(1,n), &
+                     (iv%polaramv(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -194,7 +260,10 @@ subroutine da_write_obs_etkf(ob, iv, re)
             if (iv%info(gpspw)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                if ( iv%gpspw(n)%tpw%qc >= 0 .and. ob%gpspw(n)%tpw /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%gpspw(n)%tpw, iv%gpspw(n)%tpw%inv, iv%gpspw(n)%tpw%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%gpspw(n)%tpw, iv%gpspw(n)%tpw%inv, iv%gpspw(n)%tpw%error, &
+                  'PWT', -888.88, -888.88, iv%info(gpspw)%lat(1,n), iv%info(gpspw)%lon(1,n), &
+                  -888.88, -888.88, apm_index 
                end if
             end if
          end do
@@ -215,16 +284,28 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(sound)%levels(n)
                   if ( iv%sound(n)%u(k)%qc >= 0 .and. ob%sound(n)%u(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sound(n)%u(k), iv%sound(n)%u(k)%inv, iv%sound(n)%u(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sound(n)%u(k), iv%sound(n)%u(k)%inv, iv%sound(n)%u(k)%error, &
+                     'WNU', -888.88, -888.88, iv%info(sound)%lat(1,n), iv%info(sound)%lon(1,n), &
+                     (iv%sound(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%sound(n)%v(k)%qc >= 0 .and. ob%sound(n)%v(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sound(n)%v(k), iv%sound(n)%v(k)%inv, iv%sound(n)%v(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sound(n)%v(k), iv%sound(n)%v(k)%inv, iv%sound(n)%v(k)%error, &
+                     'WNV', -888.88, -888.88, iv%info(sound)%lat(1,n), iv%info(sound)%lon(1,n), &
+                     (iv%sound(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%sound(n)%t(k)%qc >= 0 .and. ob%sound(n)%t(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sound(n)%t(k), iv%sound(n)%t(k)%inv, iv%sound(n)%t(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sound(n)%t(k), iv%sound(n)%t(k)%inv, iv%sound(n)%t(k)%error, &
+                     'TMP', -888.88, -888.88, iv%info(sound)%lat(1,n), iv%info(sound)%lon(1,n), &
+                     (iv%sound(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%sound(n)%q(k)%qc >= 0 .and. ob%sound(n)%q(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sound(n)%q(k), iv%sound(n)%q(k)%inv, iv%sound(n)%q(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sound(n)%q(k), iv%sound(n)%q(k)%inv, iv%sound(n)%q(k)%error, &
+                     'QVP', -888.88, -888.88, iv%info(sound)%lat(1,n), iv%info(sound)%lon(1,n), &
+                     (iv%sound(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -243,19 +324,34 @@ subroutine da_write_obs_etkf(ob, iv, re)
             if (iv%info(sonde_sfc)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                   if ( iv%sonde_sfc(n)%u%qc >= 0 .and. ob%sonde_sfc(n)%u /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sonde_sfc(n)%u, iv%sonde_sfc(n)%u%inv, iv%sonde_sfc(n)%u%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sonde_sfc(n)%u, iv%sonde_sfc(n)%u%inv, iv%sonde_sfc(n)%u%error, &
+                     'WNU', -888.88, -888.88, iv%info(sonde_sfc)%lat(1,n), iv%info(sonde_sfc)%lon(1,n), &
+                     (ob%sonde_sfc(n)%p)/100., -888.88, apm_index 
                   end if
                   if ( iv%sonde_sfc(n)%v%qc >= 0 .and. ob%sonde_sfc(n)%v /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sonde_sfc(n)%v, iv%sonde_sfc(n)%v%inv, iv%sonde_sfc(n)%v%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sonde_sfc(n)%v, iv%sonde_sfc(n)%v%inv, iv%sonde_sfc(n)%v%error, &
+                     'WNV', -888.88, -888.88, iv%info(sonde_sfc)%lat(1,n), iv%info(sonde_sfc)%lon(1,n), &
+                     (ob%sonde_sfc(n)%p)/100., -888.88, apm_index 
                   end if
                   if ( iv%sonde_sfc(n)%t%qc >= 0 .and. ob%sonde_sfc(n)%t /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sonde_sfc(n)%t, iv%sonde_sfc(n)%t%inv, iv%sonde_sfc(n)%t%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sonde_sfc(n)%t, iv%sonde_sfc(n)%t%inv, iv%sonde_sfc(n)%t%error, &
+                     'TMP', -888.88, -888.88, iv%info(sonde_sfc)%lat(1,n), iv%info(sonde_sfc)%lon(1,n), &
+                     (ob%sonde_sfc(n)%p)/100., -888.88, apm_index 
                   end if
                   if ( iv%sonde_sfc(n)%p%qc >= 0 .and. ob%sonde_sfc(n)%p /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sonde_sfc(n)%p, iv%sonde_sfc(n)%p%inv, iv%sonde_sfc(n)%p%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sonde_sfc(n)%p, iv%sonde_sfc(n)%p%inv, iv%sonde_sfc(n)%p%error, &
+                     'PRS', -888.88, -888.88, iv%info(sonde_sfc)%lat(1,n), iv%info(sonde_sfc)%lon(1,n), &
+                     (ob%sonde_sfc(n)%p)/100., -888.88, apm_index 
                   end if
                   if ( iv%sonde_sfc(n)%q%qc >= 0 .and. ob%sonde_sfc(n)%q /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%sonde_sfc(n)%q, iv%sonde_sfc(n)%q%inv, iv%sonde_sfc(n)%q%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%sonde_sfc(n)%q, iv%sonde_sfc(n)%q%inv, iv%sonde_sfc(n)%q%error, &
+                     'QVP', -888.88, -888.88, iv%info(sonde_sfc)%lat(1,n), iv%info(sonde_sfc)%lon(1,n), &
+                     (ob%sonde_sfc(n)%p)/100., -888.88, apm_index 
                   end if
             end if
          end do
@@ -276,13 +372,22 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(airep)%levels(n)
                   if ( iv%airep(n)%u(k)%qc >= 0 .and. ob%airep(n)%u(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%airep(n)%u(k), iv%airep(n)%u(k)%inv, iv%airep(n)%u(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%airep(n)%u(k), iv%airep(n)%u(k)%inv, iv%airep(n)%u(k)%error, &
+                     'WNU', -888.88, -888.88, iv%info(airep)%lat(1,n), iv%info(airep)%lon(1,n), &
+                     (iv%airep(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%airep(n)%v(k)%qc >= 0 .and. ob%airep(n)%v(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%airep(n)%v(k), iv%airep(n)%v(k)%inv, iv%airep(n)%v(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%airep(n)%v(k), iv%airep(n)%v(k)%inv, iv%airep(n)%v(k)%error, &
+                     'WNV', -888.88, -888.88, iv%info(airep)%lat(1,n), iv%info(airep)%lon(1,n), &
+                     (iv%airep(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%airep(n)%t(k)%qc >= 0 .and. ob%airep(n)%t(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%airep(n)%t(k), iv%airep(n)%t(k)%inv, iv%airep(n)%t(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%airep(n)%t(k), iv%airep(n)%t(k)%inv, iv%airep(n)%t(k)%error, &
+                     'TMP', -888.88, -888.88, iv%info(airep)%lat(1,n), iv%info(airep)%lon(1,n), &
+                     (iv%airep(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -304,10 +409,16 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(pilot)%levels(n)
                   if ( iv%pilot(n)%u(k)%qc >= 0 .and. ob%pilot(n)%u(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%pilot(n)%u(k), iv%pilot(n)%u(k)%inv, iv%pilot(n)%u(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%pilot(n)%u(k), iv%pilot(n)%u(k)%inv, iv%pilot(n)%u(k)%error, &
+                     'WNU', -888.88, -888.88, iv%info(pilot)%lat(1,n), iv%info(pilot)%lon(1,n), &
+                     (iv%pilot(n)%p(k))/100, -888.88, apm_index 
                   end if
                   if ( iv%pilot(n)%v(k)%qc >= 0 .and. ob%pilot(n)%v(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%pilot(n)%v(k), iv%pilot(n)%v(k)%inv, iv%pilot(n)%v(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%pilot(n)%v(k), iv%pilot(n)%v(k)%inv, iv%pilot(n)%v(k)%error, &
+                     'WNV', -888.88, -888.88, iv%info(pilot)%lat(1,n), iv%info(pilot)%lon(1,n), &
+                     (iv%pilot(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -328,12 +439,18 @@ subroutine da_write_obs_etkf(ob, iv, re)
             if (iv%info(ssmi_rv)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                if ( iv%ssmi_rv(n)%speed%qc >= 0 .and. ob%ssmi_rv(n)%speed /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%ssmi_rv(n)%speed, iv%ssmi_rv(n)%speed%inv, &
-                                          iv%ssmi_rv(n)%speed%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%ssmi_rv(n)%speed, iv%ssmi_rv(n)%speed%inv, &
+                                          iv%ssmi_rv(n)%speed%error, &
+                  'SPD', -888.88, -888.88, iv%info(ssmi_rv)%lat(1,n), iv%info(ssmi_rv)%lon(1,n), &
+                  -888.88, -888.88, apm_index 
                end if
                if ( iv%ssmi_rv(n)%tpw%qc >= 0 .and. ob%ssmi_rv(n)%tpw /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%ssmi_rv(n)%tpw, iv%ssmi_rv(n)%tpw%inv, &
-                                          iv%ssmi_rv(n)%tpw%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%ssmi_rv(n)%tpw, iv%ssmi_rv(n)%tpw%inv, &
+                                          iv%ssmi_rv(n)%tpw%error, &
+                  'PWT', -888.88, -888.88, iv%info(ssmi_rv)%lat(1,n), iv%info(ssmi_rv)%lon(1,n), &
+                  -888.88, -888.88, apm_index 
                end if
             end if
          end do
@@ -356,8 +473,11 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(satem)%levels(n)
                   if ( iv%satem(n)%thickness(k)%qc >= 0 .and. ob%satem(n)%thickness(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%satem(n)%thickness(k), iv%satem(n)%thickness(k)%inv, &
-                                             iv%satem(n)%thickness(k)%error
+                    apm_index = apm_index + 1 
+                    write(ounit,1000) ob%satem(n)%thickness(k), iv%satem(n)%thickness(k)%inv, &
+                                             iv%satem(n)%thickness(k)%error, &
+                     'TCK', -888.88, -888.88, iv%info(satem)%lat(1,n), iv%info(satem)%lon(1,n), &
+                     (iv%satem(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -380,10 +500,16 @@ subroutine da_write_obs_etkf(ob, iv, re)
             if (iv%info(qscat)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                if ( iv%qscat(n)%u%qc >= 0 .and. ob%qscat(n)%u /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%qscat(n)%u, iv%qscat(n)%u%inv, iv%qscat(n)%u%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%qscat(n)%u, iv%qscat(n)%u%inv, iv%qscat(n)%u%error, &
+                  'WNU', -888.88, -888.88, iv%info(qscat)%lat(1,n), iv%info(qscat)%lon(1,n), &
+                  -888.88, -888.88, apm_index 
                end if
                if ( iv%qscat(n)%v%qc >= 0 .and. ob%qscat(n)%v /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%qscat(n)%v, iv%qscat(n)%v%inv, iv%qscat(n)%v%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%qscat(n)%v, iv%qscat(n)%v%inv, iv%qscat(n)%v%error, &
+                  'WNV', -888.88, -888.88, iv%info(qscat)%lat(1,n), iv%info(qscat)%lon(1,n), &
+                  -888.88, -888.88, apm_index 
                end if
             end if
          end do
@@ -404,10 +530,16 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(profiler)%levels(n)
                   if ( iv%profiler(n)%u(k)%qc >= 0 .and. ob%profiler(n)%u(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%profiler(n)%u(k), iv%profiler(n)%u(k)%inv, iv%profiler(n)%u(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%profiler(n)%u(k), iv%profiler(n)%u(k)%inv, iv%profiler(n)%u(k)%error, &
+                     'WNU', -888.88, -888.88, iv%info(profiler)%lat(1,n), iv%info(profiler)%lon(1,n), &
+                     (iv%profiler(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%profiler(n)%v(k)%qc >= 0 .and. ob%profiler(n)%v(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%profiler(n)%v(k), iv%profiler(n)%v(k)%inv, iv%profiler(n)%v(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%profiler(n)%v(k), iv%profiler(n)%v(k)%inv, iv%profiler(n)%v(k)%error, &
+                     'WNV', -888.88, -888.88, iv%info(profiler)%lat(1,n), iv%info(profiler)%lon(1,n), &
+                     (iv%profiler(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -428,19 +560,34 @@ subroutine da_write_obs_etkf(ob, iv, re)
             if (iv%info(buoy)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                if ( iv%buoy(n)%u%qc >= 0 .and. ob%buoy(n)%u /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%buoy(n)%u, iv%buoy(n)%u%inv, iv%buoy(n)%u%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%buoy(n)%u, iv%buoy(n)%u%inv, iv%buoy(n)%u%error, &
+                  'WNU', -888.88, -888.88, iv%info(buoy)%lat(1,n), iv%info(buoy)%lon(1,n), &
+                  (ob%buoy(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%buoy(n)%v%qc >= 0 .and. ob%buoy(n)%v /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%buoy(n)%v, iv%buoy(n)%v%inv, iv%buoy(n)%v%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%buoy(n)%v, iv%buoy(n)%v%inv, iv%buoy(n)%v%error, &
+                  'WNV', -888.88, -888.88, iv%info(buoy)%lat(1,n), iv%info(buoy)%lon(1,n), &
+                  (ob%buoy(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%buoy(n)%t%qc >= 0 .and. ob%buoy(n)%t /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%buoy(n)%t, iv%buoy(n)%t%inv, iv%buoy(n)%t%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%buoy(n)%t, iv%buoy(n)%t%inv, iv%buoy(n)%t%error, &
+                  'TMP', -888.88, -888.88, iv%info(buoy)%lat(1,n), iv%info(buoy)%lon(1,n), &
+                  (ob%buoy(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%buoy(n)%p%qc >= 0 .and. ob%buoy(n)%p /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%buoy(n)%p, iv%buoy(n)%p%inv, iv%buoy(n)%p%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%buoy(n)%p, iv%buoy(n)%p%inv, iv%buoy(n)%p%error, &
+                  'PRS', -888.88, -888.88, iv%info(buoy)%lat(1,n), iv%info(buoy)%lon(1,n), &
+                  (ob%buoy(n)%p)/100., -888.88, apm_index 
                end if
                if ( iv%buoy(n)%q%qc >= 0 .and. ob%buoy(n)%q /= missing_r ) then
-                  write(ounit,'(3f17.7)') ob%buoy(n)%q, iv%buoy(n)%q%inv, iv%buoy(n)%q%error
+                  apm_index = apm_index + 1
+                  write(ounit,1000) ob%buoy(n)%q, iv%buoy(n)%q%inv, iv%buoy(n)%q%error, &
+                  'QVP', -888.88, -888.88, iv%info(buoy)%lat(1,n), iv%info(buoy)%lon(1,n), &
+                  (ob%buoy(n)%p)/100., -888.88, apm_index 
                end if
             end if
          end do
@@ -461,16 +608,28 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(bogus)%levels(n)
                   if ( iv%bogus(n)%u(k)%qc >= 0 .and. ob%bogus(n)%u(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%bogus(n)%u(k), iv%bogus(n)%u(k)%inv, iv%bogus(n)%u(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%bogus(n)%u(k), iv%bogus(n)%u(k)%inv, iv%bogus(n)%u(k)%error, &
+                     'WNU', -888.88, -888.88, iv%info(bogus)%lat(1,n), iv%info(bogus)%lon(1,n), &
+                     (iv%bogus(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%bogus(n)%v(k)%qc >= 0 .and. ob%bogus(n)%v(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%bogus(n)%v(k), iv%bogus(n)%v(k)%inv, iv%bogus(n)%v(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%bogus(n)%v(k), iv%bogus(n)%v(k)%inv, iv%bogus(n)%v(k)%error, &
+                     'WNV', -888.88, -888.88, iv%info(bogus)%lat(1,n), iv%info(bogus)%lon(1,n), &
+                     (iv%bogus(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%bogus(n)%t(k)%qc >= 0 .and.  ob%bogus(n)%t(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%bogus(n)%t(k), iv%bogus(n)%t(k)%inv, iv%bogus(n)%t(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%bogus(n)%t(k), iv%bogus(n)%t(k)%inv, iv%bogus(n)%t(k)%error, &
+                     'TMP', -888.88, -888.88, iv%info(bogus)%lat(1,n), iv%info(bogus)%lon(1,n), &
+                     (iv%bogus(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%bogus(n)%q(k)%qc >= 0 .and. ob%bogus(n)%q(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%bogus(n)%q(k), iv%bogus(n)%q(k)%inv, iv%bogus(n)%q(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%bogus(n)%q(k), iv%bogus(n)%q(k)%inv, iv%bogus(n)%q(k)%error, &
+                     'QVP', -888.88, -888.88, iv%info(bogus)%lat(1,n), iv%info(bogus)%lon(1,n), &
+                     (iv%bogus(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -492,10 +651,16 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(airsr)%levels(n)
                   if ( iv%airsr(n)%t(k)%qc >= 0 .and. ob%airsr(n)%t(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%airsr(n)%t(k), iv%airsr(n)%t(k)%inv, iv%airsr(n)%t(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%airsr(n)%t(k), iv%airsr(n)%t(k)%inv, iv%airsr(n)%t(k)%error, &
+                     'TMP', -888.88, -888.88, iv%info(airsr)%lat(1,n), iv%info(airsr)%lon(1,n), &
+                     (iv%airsr(n)%p(k))/100., -888.88, apm_index 
                   end if
                   if ( iv%airsr(n)%q(k)%qc >= 0 .and. ob%airsr(n)%q(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%airsr(n)%q(k), iv%airsr(n)%q(k)%inv, iv%airsr(n)%q(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%airsr(n)%q(k), iv%airsr(n)%q(k)%inv, iv%airsr(n)%q(k)%error, &
+                     'QVP', -888.88, -888.88, iv%info(airsr)%lat(1,n), iv%info(airsr)%lon(1,n), &
+                     (iv%airsr(n)%p(k))/100., -888.88, apm_index 
                   end if
                end do
             end if
@@ -517,7 +682,10 @@ subroutine da_write_obs_etkf(ob, iv, re)
                num_obs = num_obs + 1
                do k = 1, iv%info(gpsref)%levels(n)
                   if ( iv%gpsref(n)%ref(k)%qc >= 0 .and. ob%gpsref(n)%ref(k) /= missing_r ) then
-                     write(ounit,'(3f17.7)') ob%gpsref(n)%ref(k), iv%gpsref(n)%ref(k)%inv, iv%gpsref(n)%ref(k)%error
+                     apm_index = apm_index + 1
+                     write(ounit,1000) ob%gpsref(n)%ref(k), iv%gpsref(n)%ref(k)%inv, iv%gpsref(n)%ref(k)%error, &
+                     'REF', -888.88, -888.88, iv%info(gpsref)%lat(1,n), iv%info(gpsref)%lon(1,n), &
+                     -888.88, -888.88, apm_index 
                   end if
                end do
             end if

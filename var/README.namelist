@@ -7,8 +7,9 @@ Description of WRFDA namelist variables
 &wrfvar1
   write_increments        = .false. ; .true.: write out a binary analysis_increment file
   var4d                   = .false. ; .true.: 4D-VAR
+  var4d_bin               = 3600
+  var4d_lbc               = .true.
   multi_inc               = 0       ; >0: multi-incremental run
-  var4d_coupling          = 2       ; 1: var4d_coupling_disk_linear, 2: var4d_coupling_disk_simul
      ; print_detail_xxx: output extra (sometimes can be too many) diagnostics for debugging.
      ; not recommended to turn them on for production runs.
   print_detail_radar      = .false.
@@ -40,7 +41,7 @@ Description of WRFDA namelist variables
                                     ; 2: ob_format_ascii (output from obsproc), read in data from ob.ascii (default)
                                     ; 3: ob_format_madis (not tested)
   num_fgat_time           = 1       ; 1: 3DVAR
-                                    ; > 1: number of time slots for FGAT and 4DVAR (for ob_format=2 and radiance only)
+                                    ; > 1: number of time slots for FGAT (for ob_format=2 and radiance only)
 /
 &wrfvar4
   thin_conv                         = .true.  ; for ob_format=1 (NCEP PREPBUFR) only.
@@ -295,18 +296,17 @@ Description of WRFDA namelist variables
                                                  ;         AIRS Window channel #914 as criterion for GSI 
                                                  ;         thinning (with a higher amplitude than the distance 
                                                  ;         from the observation location to the nearest grid point).
-  crtm_atmosphere                     = 0        ; climatology reference profile used above model top for 
-                                                 ; CRTM Radiative Transfer Model (up to 0.01hPa).
-                                                 ; 0: Invalid (default, use U.S. Standard Atmosphere)
-                                                 ; 1: Tropical
-                                                 ; 2: Midlatitude summer
-                                                 ; 3: Midlatitude winter
-                                                 ; 4: Subarctic summer
-                                                 ; 5: Subarctic winter
-                                                 ; 6: U.S. Standard Atmosphere
   use_crtm_kmatrix                    = .false.  ; .true. use CRTM K matrix rather than calling CRTM TL
                                                  ;        and AD routines for gradient calculation, which
                                                  ;        reduces runtime noticeably. 
+  use_rttov_kmatrix                   = .false.  ; .true. use RTTOV K matrix rather than calling RTTOV TL
+                                                 ;        and AD routines for gradient calculation, which
+                                                 ;        reduces runtime noticeably. 
+  rttov_emis_atlas_ir                 = 0        ; 0: do not use IR emissivity atlas
+                                                 ; 1: use IR emissivity atlas (recommended)
+  rttov_emis_atlas_mw                 = 0        ; 0: do not use MW emissivity atlas
+                                                 ; 1: use TELSEM MW emissivity atlas (recommended)
+                                                 ; 2: use CNRM MW emissivity atlas
 /
 &wrfvar15   ; needs to be set together with &wrfvar19
   num_pseudo              = 0          ; set the number of pseudo ob, either 0 or 1 (single ob)
@@ -377,17 +377,10 @@ Description of WRFDA namelist variables
                                                         ; for ob_format=2 to double-check if the obs
                                                         ; are within the specified time window.
 /
-&wrfvar23   ; settings related to the 4D-Var penalty term option, which controls the
-            ; high-frequency gravity waves using a digital filter.
-  jcdfi_use               = .false.   ; .true.: include JcDF term in the cost function
-                                      ; .false.: ignore JcDF term in the cost function
-  jcdfi_io                = .false.   ; .true.: read JcDF output from WRF+, even when
-                                      ;         jcdfi_use=.false.. Used for diagnosis.
-                                      ; .false.: ignore JcDF output from WRF+.
-  jcdfi_tauc              = 10800.0   ; second, filter time window
-  jcdfi_gama              = 1.0       ; scaling number for tuning the weighting of JcDF term
-  jcdfi_error_wind        = 3.0       ; m/s,   wind error used in JcDF
-  jcdfi_error_t           = 1.0       ; K,     temperature error used in JcDF
-  jcdfi_error_q           = 0.001     ; kg/kg, specific humidity error used in JcDF
-  jcdfi_error_mu          = 1000.0    ; Pa,    perturbation pressure (mu) error used in JcDF
+&perturbation   ; settings related to the 4D-Var penalty term option, which controls the
+                ; high-frequency gravity waves using a digital filter.
+  jcdfi_use               = .true.   ; .true.: include JcDF term in the cost function
+                                     ; .false.: ignore JcDF term in the cost function
+  jcdfi_diag              = 1 
+  jcdfi_penalty           = 10
 /

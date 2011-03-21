@@ -424,6 +424,10 @@
     IF ( ( switch .EQ. auxinput1_only ) .AND. &
          ( first_date_nml .EQ. first_date_input ) )  THEN
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
+
+       IF ( itmp .LE. 1 ) THEN
+             call wrf_error_fatal("NUM_METGRID_SOIL_LEVELS must be greater than 1")
+       END IF
    
        IF ( ierr .EQ. 0 ) THEN
           WRITE(wrf_err_message,*)'input_wrf: global attribute NUM_METGRID_SOIL_LEVELS returns ', itmp
@@ -442,6 +446,27 @@
           END IF
        END IF
     END IF
+
+#if 0
+#ifdef WRF_CHEM
+    !  Dust erosion static data.
+
+    CALL wrf_get_dom_ti_integer ( fid, 'EROSION_DIM', itmp, 1, icnt, ierr )
+
+    IF ( ierr .EQ. 0 ) THEN
+       WRITE(wrf_err_message,*)'input_wrf: global attribute EROSION_DIM returns ', itmp
+       CALL wrf_debug ( 300 , wrf_err_message )
+       IF ( config_flags%erosion_dim /= itmp ) THEN
+          call wrf_message("----------------- ERROR -------------------")
+          WRITE(wrf_err_message,'("namelist    : erosion_dim = ",I10)') config_flags%erosion_dim
+          call wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,'("input files : EROSION_DIM = ",I10, " (from met_em files).")') itmp
+          call wrf_message(wrf_err_message)
+          call wrf_error_fatal("Mismatch between namelist and global attribute EROSION_DIM")
+       END IF
+    END IF
+#endif
+#endif
 
     ! Test here to check that config_flags%sf_surface_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files
@@ -925,7 +950,10 @@
             ENDIF
           ELSE IF ( p%Ndim .EQ. 2 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
-              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
                 IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                   dname = p%DataName
                   IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
@@ -1008,7 +1036,10 @@
             ENDIF
           ELSE IF ( p%Ndim .EQ. 3 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
-              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
                 IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                   dname = p%DataName
                   IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)

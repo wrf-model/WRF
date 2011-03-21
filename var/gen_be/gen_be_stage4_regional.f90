@@ -209,8 +209,9 @@ program gen_be_stage4_regional
       write(UNIT=6,FMT='(a)')' [3] Compute fit of correlation to a straight line.'
 !---------------------------------------------------------------------------------------------
       filename = 'sl_print.'//trim(variable)//'.'//ck
-      open( unit=ounit, file=trim(filename), form='formatted', &
+      open( unit=ounit, file=trim(filename), form='formatted', iostat=i, &
             action='write', access='sequential', status='replace')
+      if( i/=0 )print'("OPEN(FILE=",a,",IOSTAT=",i0,")")',trim(filename),i
       call make_scale_length( variable, ck, ounit, nn, nr, cov )
       close(unit=ounit, status='keep')
       deallocate(cov)

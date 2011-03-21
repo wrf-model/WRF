@@ -51,4 +51,5 @@ BENCH_INIT(bc_2d_tim)
 BENCH_INIT(microswap_1)
 BENCH_INIT(microswap_2)
 BENCH_INIT(fire_driver_tim)
+BENCH_INIT(tracer_adv_tim)
 SOLVE_START

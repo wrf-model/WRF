@@ -48,6 +48,7 @@ use module_io
    CHARACTER (LEN=80)     :: inpname , rstname, timestr
    CHARACTER (LEN=80)     :: message
    LOGICAL                :: restart
+   LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
 
    CALL nl_get_restart( 1, restart )
    IF ( .NOT. restart ) THEN
@@ -56,6 +57,8 @@ use module_io
      IF ( grid%input_from_file ) THEN
 
         CALL       wrf_debug ( 1 , 'wrf main: calling open_r_dataset for wrfinput' )
+
+        IF ( wrf_dm_on_monitor() ) CALL start_timing
 
 ! typically <date> will not be part of input_inname but allow for it
         CALL domain_clock_get( grid, current_timestr=timestr )
@@ -70,6 +73,10 @@ use module_io
 #include "fine_stream_input.inc"
 
         CALL close_dataset ( fid , config_flags , "DATASET=INPUT" )
+        IF ( wrf_dm_on_monitor() ) THEN
+          WRITE ( message , FMT = '("processing wrfinput file (stream 0) for domain ",I8)' ) grid%id
+          CALL end_timing ( TRIM(message) )
+        ENDIF
 #ifdef MOVE_NESTS
 #if ( EM_CORE == 1 )
         grid%nest_pos = grid%ht
@@ -86,6 +93,9 @@ use module_io
 #endif
      CALL start_domain ( grid , .TRUE. )
    ELSE
+
+     IF ( wrf_dm_on_monitor() ) CALL start_timing
+
      CALL domain_clock_get( grid, current_timestr=timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , grid%id , 2 , timestr )
 
@@ -98,6 +108,12 @@ use module_io
      ENDIF
      CALL input_restart ( fid,   grid , config_flags , ierr )
      CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
+
+     IF ( wrf_dm_on_monitor() ) THEN
+       WRITE ( message , FMT = '("processing restart file for domain ",I8)' ) grid%id
+       CALL end_timing ( TRIM(message) )
+     ENDIF
+
      grid%imask_nostag = 1
      grid%imask_xstag = 1
      grid%imask_ystag = 1

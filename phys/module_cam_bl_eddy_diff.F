@@ -228,12 +228,14 @@ module eddy_diff
     ! Set the square of the mixing lengths. Only for CAM3 HB PBL scheme.
     ! Not used for UW moist PBL. Used for free air eddy diffusivity.
 
+#if 0
     allocate(ml2(pver+1))
     ml2(1:ntop_turb) = 0._r8
     do k = ntop_turb + 1, nbot_turb
        ml2(k) = 30.0_r8**2
     end do
     ml2(nbot_turb+1:pver+1) = 0._r8
+#endif
     
     ! Initialize diffusion solver module
 
@@ -568,7 +570,7 @@ module eddy_diff
 
      ! Get free atmosphere exchange coefficients. This 'kvf' is not used in UW moist PBL scheme
 
-       call austausch_atm( pcols, pver, ncol, ri, s2, kvf )
+       if( use_kvf )call austausch_atm( pcols, pver, ncol, ri, s2, kvf )
 
      ! Initialize kvh/kvm to send to caleddy, depending on model timestep and iteration number
      ! This is necessary for 'wstar-based' entrainment closure.

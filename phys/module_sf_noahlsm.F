@@ -589,8 +589,11 @@ CONTAINS
 ! kmh 09/03/2006
 ! kmh 03/25/2008  change SNCOVR threshold to 0.97
 !
-            IF (  SNCOVR .GT. 0.97 ) THEN
-               DF1 = SNCOND
+! only apply (small) DF1 conductivity for permanent land ice
+            IF ( (ICE == -1) ) THEN
+               IF (  SNCOVR .GT. 0.97 ) THEN
+                  DF1 = SNCOND
+               ENDIF
             ENDIF
 !
          ELSE
@@ -2313,7 +2316,8 @@ CONTAINS
 ! Veg parameters
       INTEGER, INTENT(IN)    :: VEGTYP
       INTEGER, INTENT(OUT)   :: NROOT
-      REAL, INTENT(OUT)      :: HS,RSMIN,RGL,SHDFAC,SNUP,                   &
+      REAL, INTENT(INOUT)    :: SHDFAC
+      REAL, INTENT(OUT)      :: HS,RSMIN,RGL,SNUP,                          &
                                 CMCMAX,RSMAX,TOPT,                          &
                                 EMISSMIN,  EMISSMAX,                        &
                                 LAIMIN,    LAIMAX,                          &

@@ -535,7 +535,14 @@ endif
       CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'OMLCALL',     config_flags%omlcall     , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
+
 #endif
+
+      CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'SF_URBAN_PHYSICS', config_flags%sf_urban_physics , 1 , ierr ) 
+
       ENDIF ! history_only
     ENDIF
 
@@ -919,7 +926,10 @@ endif
             ENDIF
           ELSE IF ( p%Ndim .EQ. 2 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
-              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
                 IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                   dname = p%DataName
                   IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
@@ -1026,7 +1036,10 @@ endif
             ENDIF
           ELSE IF ( p%Ndim .EQ. 3 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
-              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
                 IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
                   dname = p%DataName
                   IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)

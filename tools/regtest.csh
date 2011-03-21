@@ -757,7 +757,7 @@ cat >! phys_real_2 << EOF
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
- sf_urban_physics                    = 0,     0,     0,
+ sf_urban_physics                    = 2,     2,     2,
  mp_zero_out                         = 0,
  levsiz                              = 59
  paerlev                             = 29
@@ -982,7 +982,6 @@ cat >! phys_real_7 << EOF
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
- sf_urban_physics                    = 2,     2,     2,
  mp_zero_out                         = 0,
 EOF
 
@@ -1973,7 +1972,7 @@ else if ( $ARCH[1] == Darwin ) then
 		set COMPOPTS	= (  1 2  3 )
 		set ZAP_OPENMP	= FALSE
 	else if ( $LINUX_COMP == G95 ) then
-		set COMPOPTS	= ( 13 0 14 )
+		set COMPOPTS	= ( 17 0 18 )
 		set ZAP_OPENMP	= TRUE
 	endif
 	set COMPOPTS_NO_NEST = 0

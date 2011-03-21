@@ -14,10 +14,15 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
    integer                        :: i, k     ! Index dimension.
    integer                        :: nlevelss ! Number of obs levels.
 
-   integer            :: ios, oma_radar_unit
-   character(len=filename_len)  :: filename
+   integer            :: ios, oma_radar_unit, omb_radar_unit, omb_radar_iter_unit 
+   character(len=filename_len)  :: filename , file 
    integer            :: ndomain
-
+   character(len=filename_len), allocatable     ::filename1(:) 
+   INTEGER :: it, m, kk, l 
+   REAL :: rv_obs, rv_inv, rv_error , rf_obs, rf_inv, rf_error, rf_inc, rv_inc 
+   INTEGER :: rv_qc, rf_qc, levels, num, error 
+   REAL :: lat,lon,press 
+   CHARACTER(len=5) :: stn_id 
 
     if (trace_use) call da_trace_entry("da_write_oa_radar_ascii")
 #ifdef DM_PARALLEL
@@ -25,7 +30,6 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
 #else
       write(unit=filename, fmt='(a)') 'radar_omb_oma.000'
 #endif
-
 
    call da_get_unit(oma_radar_unit)
    open(unit=oma_radar_unit,file=trim(filename),form='formatted',iostat=ios)
@@ -64,8 +68,87 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
       end if
    end if
 
-   close (oma_radar_unit)
-   call da_free_unit(oma_radar_unit)
+
+#ifdef DM_PARALLEL
+   ! Wait to ensure all temporary files have been written
+   call mpi_barrier(comm, ierr)
+#endif
+
+
+  close (oma_radar_unit)
+  call da_free_unit(oma_radar_unit)
+
+  
+  IF (rootproc) THEN
+  call da_get_unit(omb_radar_unit)
+  allocate (filename1(0:num_procs-1)) 
+      do k = 0,num_procs-1
+        write(unit=filename1(k),fmt ='(a,i3.3)')'radar_omb_oma.',k 
+      end do
+   call da_get_unit(omb_radar_iter_unit)
+   write(unit=file,fmt ='(a,i2.2)')'radar_omb_oma_',1
+   open(omb_radar_iter_unit,file=trim(file),form='formatted', status='replace', iostat=ios)
+     if (ios /= 0) call da_error(__FILE__,__LINE__, &
+         (/"Cannot open file "//file/))
+  ENDIF
+ 
+
+
+  num_obs = 0
+  IF (iv % info(radar)%nlocal  >0 ) then
+      do n = 1, iv% info(radar)%nlocal
+        if (iv%info(radar)%proc_domain(1,n)) num_obs=num_obs+1
+      end do
+  ENDIF
+   call da_proc_sum_int(num_obs)    
+    IF (num_obs > 0 .and. rootproc) then
+      write(omb_radar_iter_unit,'(a20,i8)')'radar', num_obs  
+      num_obs = 0
+      num = 0
+      do k = 0,num_procs-1
+
+        open(omb_radar_unit,file=trim(filename1(k)),status='old',iostat=error)
+          if (error /= 0) call da_error(__FILE__,__LINE__, &
+         (/"Cannot open file "//file/))
+
+      read(omb_radar_unit, '(20x,i8)', iostat=error)num_obs
+      IF(error /= 0)THEN
+      PRINT*, "Error reading for process " , k, "will cycle"
+      cycle
+      ENDIF   
+         if (num_obs > 0) then
+           do  n = 1, num_obs    
+               read(omb_radar_unit,'(i8)') levels
+                  write(omb_radar_iter_unit,'(i8)')levels
+                  num = num + 1 
+               do m = 1, levels
+                  read(omb_radar_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))')&
+                      kk,l, stn_id, &          ! Station
+                      lat, lon, press, &       ! Lat/lon, dummy    
+                      rv_obs, rv_inv, rv_qc, rv_error, rv_inc, & 
+                      rf_obs, rf_inv, rf_qc, rf_error, rf_inc
+                     write(omb_radar_iter_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))')&
+                        num,m,stn_id, &          ! Station
+                         lat, lon, press, &       ! Lat/lon, dummy    
+                     rv_obs, rv_inv, rv_qc, rv_error, rv_inc, & 
+                      rf_obs, rf_inv, rf_qc, rf_error, rf_inc
+               end do
+            enddo
+         endif                 
+      end do
+    ENDIF
+
+
+
+
+   if (rootproc) then
+      close(omb_radar_unit)
+      close(omb_radar_iter_unit)
+      call da_free_unit(omb_radar_unit)
+      call da_free_unit(omb_radar_iter_unit)
+      deallocate (filename1)
+   end if
+
 
    if (trace_use) call da_trace_exit("da_write_oa_radar_ascii")
 

@@ -8,27 +8,17 @@
 
 ! pjj/cray
   if(IO == 'write') then
-     if(di==1.and.ix==0.and.jx==0.and.kx==0) then
-        do k=k1,k2
-           do j=j1,j2
-              do i=i1,i2
-                 XField(1,(i-i1+1+(i2-i1+1)*((k-k1)+(j-j1)*(k2-k1+1)))) = Field(1,i,j,k)
-              enddo
-           enddo
-        enddo
-     else
 !dir$ concurrent
-        do k=k1,k2
-           do j=j1,j2
+     do k=k1,k2
+        do j=j1,j2
 !dir$ prefervector
 !dir$ concurrent
 !cdir select(vector)
-              do i=i1,i2
-                 DFIELD = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
-              enddo
+           do i=i1,i2
+              DFIELD = Field(1:di,abs(ix-i),abs(jx-j),abs(kx-k))
            enddo
         enddo
-     end if
+     enddo
   else
 
 !dir$ concurrent

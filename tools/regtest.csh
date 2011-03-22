@@ -1972,7 +1972,7 @@ else if ( $ARCH[1] == Darwin ) then
 		set COMPOPTS	= (  1 2  3 )
 		set ZAP_OPENMP	= FALSE
 	else if ( $LINUX_COMP == G95 ) then
-		set COMPOPTS	= ( 17 0 18 )
+		set COMPOPTS	= ( 13 0 14 )
 		set ZAP_OPENMP	= TRUE
 	endif
 	set COMPOPTS_NO_NEST = 0

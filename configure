@@ -553,9 +553,9 @@ if test -n $NETCDF ; then
 fi
 echo "  "
 
-if [ "$wrf_core" = "DA_CORE" ]; then
+if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "WRF_PLUS_CORE" ]; then
   if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" ]; then
-    echo "WRFDA using gfortran needs realsize=8"
+    echo "WRFDA/WRFPLUS using gfortran needs realsize=8"
     sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
     /bin/mv configure.wrf.edit configure.wrf
   fi

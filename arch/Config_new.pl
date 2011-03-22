@@ -488,6 +488,8 @@ while ( <CONFIGURE_DEFAULTS> )
           }
           if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" ) {
              $response = 1 ;
+          } elsif ( $sw_wrfplus_core eq "-DWRFPLUS=1" ) {
+             $response = 0 ;
           } elsif ( $ENV{HWRF} ) {
              printf "HWRF requires moving nests";
              $response = "2\n";

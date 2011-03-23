@@ -89,7 +89,6 @@ WRFVAR_OBJS = \
    module_model_constants.o \
    module_nesting.o \
    module_tiles.o \
-   module_quilt_outbuf_ops.o \
    module_get_file_names.o \
    module_bc_time_utilities.o \
    landread.o \
@@ -158,7 +157,7 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o $(WRFPLUS_DIR)/main/module_wrf_top.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} -L$(WRFPLUS_DIR)/main -lwrflib $(LIB) $(WAVELET_LIB) ; \
         else                                 \
-          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} $(LIB) $(WAVELET_LIB) ; \
+          $(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) module_quilt_outbuf_ops.o da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) ${MADIS_LIB} ${BUFR_LIB} $(LIB) $(WAVELET_LIB) ; \
         fi
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 

@@ -426,7 +426,7 @@
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
 
 #if (EM_CORE == 1)
-       IF ( itmp .LE. 1 ) THEN
+       IF ( itmp .EQ. 1 ) THEN
              call wrf_error_fatal("NUM_METGRID_SOIL_LEVELS must be greater than 1")
        END IF
 #endif

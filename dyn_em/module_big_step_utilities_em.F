@@ -1074,7 +1074,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             DO ispe=PARAM_FIRST_SCALAR,n_moist
               qtot = qtot + moist(i,k,j,ispe)
             ENDDO
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = - 0.5*(mu(i,j)+qf1*muts(i,j))/rdnw(k)/qf2
@@ -1091,7 +1091,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             DO ispe=PARAM_FIRST_SCALAR,n_moist
               qtot = qtot + 0.5*(  moist(i,k  ,j,ispe) + moist(i,k+1,j,ispe) )
             ENDDO
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = p(i,k+1,j) - (mu(i,j) + qf1*muts(i,j))/qf2/rdn(k+1)
@@ -1125,7 +1125,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
           DO i=its,itf
 
             qtot = 0.
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = - 0.5*(mu(i,j)+qf1*muts(i,j))/rdnw(k)/qf2
@@ -1139,7 +1139,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             DO i=its,itf
 
             qtot = 0.
-            qf2 = 1./(1.+qtot)
+            qf2 = 1.
             qf1 = qtot*qf2
 
             p(i,k,j) = p(i,k+1,j) - (mu(i,j) + qf1*muts(i,j))/qf2/rdn(k+1)

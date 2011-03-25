@@ -833,7 +833,7 @@ ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
 CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =
 # module load libfast to use Cray XT fast math library
-LIB_LOCAL       =       -lfast_mv
+#LIB_LOCAL       =       -lfast_mv
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 # PGI recommended

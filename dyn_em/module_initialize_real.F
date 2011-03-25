@@ -242,9 +242,6 @@ integer::oops1,oops2
             EXIT find_valid
          END DO 
       END DO find_valid
-      IF ( .NOT. any_valid_points ) THEN
-         RETURN
-      END IF
 
       !  Replace traditional seaice field with optional seaice (AFWA source)
 

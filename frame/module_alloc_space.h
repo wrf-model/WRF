@@ -127,7 +127,7 @@
       CALL model_to_grid_config_rec ( id , model_config_rec , config_flags )
 
       CALL nl_get_sr_x( id , sr_x )
-      CALL nl_get_sr_x( id , sr_y )
+      CALL nl_get_sr_y( id , sr_y )
 
       tl = tl_in
       inter_domain = inter_domain_in

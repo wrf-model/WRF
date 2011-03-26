@@ -13,7 +13,7 @@ begin
 
    region = getenv("REGION")
    dir    = getenv("BE_DIR")
-   nrow   = stringtointeger(getenv("BE_NROW"))
+   nrow   = stringtointeger(getenv("NUM_LEVELS"))
 
    ncol = 6
    y = new((/nrow/),float)

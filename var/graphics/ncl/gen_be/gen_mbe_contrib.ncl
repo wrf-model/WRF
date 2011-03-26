@@ -2,8 +2,9 @@
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"   
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"   
 ; ================================================;
-begin
 
+begin
+   setfileoption ("bin","Readbyteorder","BigEndian")
    works = getenv("GRAPHIC_WORKS")
    region = getenv("REGION")
    dir    = getenv("BE_DIR")
@@ -27,6 +28,8 @@ begin
    y = ispan(1,nk,1)
 
 ; Process chi-field
+   print("nk="+nk)
+   print("nij="+nij)
    chi = new((/nk/),float)
    filename = "psi.chi.bin"                       
    do k = 0, nk - 1
@@ -34,7 +37,7 @@ begin
    end do
    avg1 = dim_sum(data) / nij
    chi(:) = avg1
-
+   print("chi avge="+chi(:))
 ; Process t-field
    t = new((/3,nk/),float)
    filename = "psi.t.bin"                       
@@ -85,6 +88,7 @@ begin
 
    rh(4,:) = rh(0,:) + rh(1,:) + rh(2,:) + rh(3,:)
 
+
 ; Process ps-field
    ps = new((/3,nj/),float)
    xx = new((/nj/),float)
@@ -119,9 +123,9 @@ begin
    res@gsnDraw               = False            ; (a) do not draw
    res@gsnFrame              = False            ; (b) do not advance 'frame'
 
-;   res@tmXBMode = "Explicit"
-;   res@tmXBValues = (/10. , 20. , 30., 40., 50., 60., 70./)
-;   res@tmXBLabels = (/"10" , "20" , "30", "40", "50", "60", "70" /)
+   res@tmXBMode = "Explicit"
+   res@tmXBValues = (/.1 , .2 , .3, .4, .5, .6, .7/)
+   res@tmXBLabels = (/".1" , ".2" , ".3", ".4", ".5", ".6", ".7" /)
     res@tiXAxisFont     = "Times-roman"                ; Font for X axis label
     res@tiYAxisFont     = "Times-roman"                ; Font for Y axis label
     res@tiXAxisFontThicknessF  = 2.5
@@ -132,8 +136,8 @@ begin
     res@tiYAxisFontAspectF     = 1.5
 
 
-   res@trXMinF  =  0.                   ; min value on x-axis
-   res@trXMaxF  =  max(chi*100.) + 10.  ; max value on x-axis
+   res@trXMinF  =  0                    ; min value on x-axis
+   res@trXMaxF  =  max(chi) + .2          ; max value on x-axis
    res@trYMinF  =  1.0                  ; min value on y-axis
    res@trYMaxF  =  nk                   ; max value on y-axis
 
@@ -159,33 +163,34 @@ begin
    res@pmLegendParallelPosF   = 0.80                ; move units right
    res@pmLegendOrthogonalPosF = -.95                ; move units down
    res@pmLegendWidthF         = 0.1                 ; Change width and
-   res@tiXAxisString   = "% Contribution"           ; Label for the X axis
-   res@tiYAxisString   = "Model Levels"             ; Label for the Y axis
+   res@tiYAxisString   = "Model Levels"              ; Label for the Y axis
    res@trXMinF  =  0                    ; min value on x-axis
 
 
-   res@xyLineColors      = (/"black"," "," "," "," "/)          ; change line color
-   res@xyExplicitLegendLabels = (/"psi contr"," ", " "," "," "/)     ; create explicit labels
+   res@xyLineColors      = (/"black","red","green","blue","purple"/)          ; change line color
+
+   res@xyExplicitLegendLabels = (/"psi"," ", " "," "," "/)     ; create explicit labels
    res@lgLabelFontThicknessF  = 0.04
-   res@tiMainString    = "chi"                         ; Main title           
+   res@tiMainString    = "contribute to chi"                         ; Main title           
    res@tiMainFontColor = "black"                        ; Title color          
    res@tiMainFontHeightF = 0.04  
 
-   plts(0) = gsn_csm_xy (wks,chi*100.,y,res) ; create plot
+   plts(0) = gsn_csm_xy (wks,chi,y,res) ; create plot
 
-   res@trXMaxF  =  max(t*100.) + 10.        ; max value on x-axis
+   res@trXMaxF  =  max(t) + .2          ; max value on x-axis
 
-   res@xyLineColors      = (/"blue","red","black"," "," "/)          ; change line color
-   res@xyExplicitLegendLabels = (/"psi","chi_u", "total"," "," "/)     ; create explicit labels
-   res@tiMainString    = "t"                   ; Main title           
-   plts(1) = gsn_csm_xy (wks,t*100.,y,res) ; create plot
+  res@xyLineColors      = (/"blue","red","black","green","purple"/)          ; change line color
+   res@xyExplicitLegendLabels = (/"psi","chi_u", "blance"," "," "/)     ; create explicit labels
 
-   res@trXMaxF  =  max(rh*100.) + 10.          ; max value on x-axis
+   res@tiMainString    = "contribute to t"                   ; Main title           
+   plts(1) = gsn_csm_xy (wks,t,y,res) ; create plot
+
+   res@trXMaxF  =  max(rh) + .2          ; max value on x-axis
 
    res@xyLineColors      = (/"blue","red","green","purple","black"/)          ; change line color
-   res@xyExplicitLegendLabels = (/"psi","chi_u","t_u", "ps_u", "total"/)     ; create explicit labels
-   res@tiMainString    = "rh"                   ; Main title           
-   plts(2) = gsn_csm_xy (wks,rh*100.,y,res) ; create plot
+   res@xyExplicitLegendLabels = (/"psi","chi_u","t_u", "ps_u", "blance"/)     ; create explicit labels
+   res@tiMainString    = "contribut to rh"                   ; Main title           
+   plts(2) = gsn_csm_xy (wks,rh,y,res) ; create plot
 
 ;  plot ps diagnostics with latitudes
 
@@ -201,7 +206,7 @@ begin
    res1@trXMaxF  =  dimsizes(bar_val) + 1          ; max value on x-axis
 
     res1@tmXBMode         = "Explicit"
-    res1@tmXBLabels       = (/"psi","chi_u", "total"/)     ; create explicit labels
+    res1@tmXBLabels       = (/"psi","chi_u", "blance"/)     ; create explicit labels
     res1@tmXBValues       = bar_val 
 ;    res1@tmXBLabelAngleF  = 0.
     res1@tmXTBorderOn     = True                        ; set up the top border
@@ -218,11 +223,10 @@ begin
     res1@tiYAxisFontAspectF     = 1.5
 
 
-   res1@tiMainString    = "ps"                         ; Main title           
+   res1@tiMainString    = "contribut to ps"                         ; Main title           
    res1@tiMainFontColor = "black"                        ; Title color          
    res1@tiMainFontHeightF = 0.04  
-   res1@tiYAxisString   = "% Contribution"           ; Label for the X axis
-   plts(3) = gsn_csm_xy (wks,bar_val,ps(:,0)*100.,res1) ; create plot
+   plts(3) = gsn_csm_xy (wks,bar_val,ps(:,0),res1) ; create plot
 
    ;************************************************
    ; create panel: panel plots have their own set of resources

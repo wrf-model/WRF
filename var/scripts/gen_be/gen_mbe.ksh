@@ -203,13 +203,14 @@ fi
 #------------------------------------------------------------------------
 
 if $RUN_GEN_BE_STAGE4; then
-   export BEGIN_CPU=$(date)
-   echo "Beginning CPU time: ${BEGIN_CPU}"
 
    if $GLOBAL; then    
       echo "---------------------------------------------------------------"
       echo "Run Stage 4: Calculate horizontal covariances (global power spectra)."
       echo "---------------------------------------------------------------"
+
+      export BEGIN_CPU=$(date)
+      echo "Beginning CPU time: ${BEGIN_CPU}"
 
       ${SCRIPTS_DIR}/gen_be/gen_be_stage4_global.ksh > gen_be_stage4_global.log 2>&1
 
@@ -217,6 +218,9 @@ if $RUN_GEN_BE_STAGE4; then
       echo "---------------------------------------------------------------"
       echo "Run Stage 4: Calculate horizontal covariances (regional lengthscales)."
       echo "---------------------------------------------------------------"
+
+      export BEGIN_CPU=$(date)
+      echo "Beginning CPU time: ${BEGIN_CPU}"
 
       ${SCRIPTS_DIR}/gen_be/gen_be_stage4_regional.ksh > gen_be_stage4_regional.log 2>&1
       RC=$?
@@ -242,6 +246,7 @@ if $RUN_GEN_BE_DIAGS; then
 &gen_be_diags_nl
    cv_options = ${NL_CV_OPTIONS},
    uh_method = '${UH_METHOD}',
+   use_rf = ${USE_RF},
    n_smth_sl = ${N_SMTH_SL}, /
 EOF
 
@@ -253,13 +258,17 @@ EOF
       exit 1
    fi
 
-   export END_CPU=$(date)
-   echo "Ending CPU time: ${END_CPU}"
 #rizvi fi
 
 #------------------------------------------------------------------------
 #  Read BE file to check data packed correctly, and write plot diagnostics.
 #------------------------------------------------------------------------
+   cat > gen_be_diags_nl.nl << EOF
+&gen_be_diags_nl
+   cv_options = ${NL_CV_OPTIONS},
+   uh_method = '${UH_METHOD}',
+   n_smth_sl = ${N_SMTH_SL}, /
+EOF
 
    ln -sf ${BUILD_DIR}/gen_be_diags_read.exe .
    ./gen_be_diags_read.exe > gen_be_diags_read.log 2>&1

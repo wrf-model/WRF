@@ -13,8 +13,8 @@ begin
 
    region = getenv("REGION")
    dir    = getenv("BE_DIR")
-   nrow   = stringtointeger(getenv("BE_NROW"))
-   resolution = stringtofloat(getenv("RESOLUTION"))
+   nrow   = stringtointeger(getenv("NUM_LEVELS"))
+   resolution = stringtofloat(getenv("RESOLUTION_KM"))
 
    ncol = 2
 

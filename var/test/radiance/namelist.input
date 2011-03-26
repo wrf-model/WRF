@@ -40,7 +40,6 @@
  rtm_option=2,
  only_sea_rad=false,
  use_varbc=true,
- crtm_atmosphere=6,
 /
 &wrfvar15
 /
@@ -111,4 +110,6 @@
 &fire
 /
 &namelist_quilt
+/
+&perturbation
 /

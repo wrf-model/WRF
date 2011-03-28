@@ -156,6 +156,7 @@ How to compile and run?
       compile em_squall2d_x
       compile em_squall2d_y
       compile em_scm_xy
+      compile em_tropical_cyclone
 
 - If sucessful, this will create either real.exe or ideal.exe and wrf.exe
   in directory main/, and the appropriate executables will be linked into

@@ -182,7 +182,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd, xkhh,         &
                          diff_6th_opt, diff_6th_factor,                   &
-                         dampcoef,zdamp,damp_opt,                         &
+                         dampcoef,zdamp,damp_opt,rad_nudge,               &
                          cf1, cf2, cf3, cfn, cfn1, n_moist,               &
                          non_hydrostatic, top_lid,                        &
                          u_frame, v_frame,                                &
@@ -295,7 +295,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    INTEGER, INTENT( IN ) :: diff_6th_opt
    REAL,    INTENT( IN ) :: diff_6th_factor
 
-   INTEGER, INTENT( IN ) :: damp_opt
+   INTEGER, INTENT( IN ) :: damp_opt, rad_nudge
 
    REAL, INTENT( IN ) :: zdamp, dampcoef
 
@@ -647,6 +647,14 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                               mut, muu, muv, ph, phb,          &
                               u_base, v_base, t_base, z_base,  &
                               dampcoef, zdamp,                 &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts, kte   )
+
+    IF( rad_nudge .eq. 1 )                                     &
+       CALL theta_relaxation( t_tendf, t, t_init,              &
+                              mut, ph, phb,                    &
+                              t_base, z_base,                  &
                               ids, ide, jds, jde, kds, kde,    &
                               ims, ime, jms, jme, kms, kme,    &
                               its, ite, jts, jte, kts, kte   )

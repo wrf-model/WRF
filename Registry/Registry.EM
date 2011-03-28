@@ -1704,6 +1704,7 @@ rconfig   integer km_opt                  namelist,dynamics	1             1     
 # km_opt_dfi is needed for backward integration in dfi
 rconfig   integer km_opt_dfi              namelist,dynamics	1             1       irh    "km_opt_dfi"                ""      ""
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
+rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics     1             0       irh    "gwd_opt"              ""      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""

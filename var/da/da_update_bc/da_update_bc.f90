@@ -62,8 +62,10 @@ program da_update_bc
                                                    thisbdytime, nextbdytime
  
    integer :: east_end, north_end, io_status, cdfid, varid, domain_id, iswater
+   integer :: iostatus(4)
 
    logical :: debug, update_lateral_bdy, update_low_bdy, update_lsm, keep_tsk_wrf
+   logical :: keep_snow_wrf
 
    real :: bdyfrq
 
@@ -78,7 +80,7 @@ program da_update_bc
                             wrf_bdy_file, &
                             wrf_input, domain_id, &
                             debug, update_lateral_bdy, update_low_bdy, update_lsm, &
-                            keep_tsk_wrf, iswater, &
+                            keep_tsk_wrf, keep_snow_wrf, iswater, &
                             wrfvar_output_file, cycling, low_bdy_only
 
    da_file            = 'wrfvar_output'
@@ -91,6 +93,7 @@ program da_update_bc
    update_low_bdy     = .true.
    update_lsm         = .false.
    keep_tsk_wrf       = .true.
+   keep_snow_wrf      = .true.
    iswater            = 16      ! USGS water index: 16, MODIS water index: 17
 
    wrfvar_output_file = 'OBSOLETE'
@@ -149,6 +152,8 @@ program da_update_bc
            'update_lateral_bdy = ', update_lateral_bdy, &
            'update_low_bdy     = ', update_low_bdy
 
+      if ( update_lsm ) keep_snow_wrf = .false.
+
       close(unit=namelist_unit)
    end if
 
@@ -162,7 +167,7 @@ program da_update_bc
    var3d(6)='QVAPOR'
 
    ! 2D need update
-   num2d=21
+   num2d=22
    varsf(1)='MUB'
    varsf(2)='MU'
    varsf(3)='MAPFAC_U'
@@ -184,6 +189,7 @@ program da_update_bc
    varsf(19)='LANDMASK'
    varsf(20)='IVGTYP'
    varsf(21)='ISLTYP'
+   varsf(22)='SNOWC'
 
    if ( domain_id > 1 ) then
       write(unit=stdout, fmt='(a,i2)') 'Nested domain ID=',domain_id
@@ -250,7 +256,7 @@ program da_update_bc
       io_status = nf_inq_varid(cdfid, trim(varsf(n)), varid)
       if (io_status /= 0 ) then
          print '(/"N=",i2," io_status=",i5,5x,"VAR=",a,a)', &
-                   n, io_status, trim(varsf(n)), " not existed"
+                   n, io_status, trim(varsf(n)), " does not exist"
          cycle
       endif
 
@@ -351,7 +357,19 @@ program da_update_bc
                                       dims(1), dims(2), 1, debug)
             deallocate(full2dint)
 
-         case ('SNOW', 'CANWAT', 'RHOSN', 'SNOWH') ;
+         case ('SNOW', 'RHOSN', 'SNOWH', 'SNOWC') ;
+            if ( (.not. update_lsm) .and. (.not. update_low_bdy) ) cycle
+            if ( keep_snow_wrf ) cycle
+               allocate(full2d(dims(1), dims(2)))
+
+               call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), full2d, &
+                                      dims(1), dims(2), 1, debug )
+
+               call da_put_var_2d_real_cdf( da_file, trim(varsf(n)), full2d, &
+                                      dims(1), dims(2), 1, debug )
+               deallocate(full2d)
+
+         case ('CANWAT') ;
             if ( .not. update_lsm ) cycle
                allocate(full2d(dims(1), dims(2)))
 
@@ -381,40 +399,62 @@ program da_update_bc
    end do
 
    ! check for snow over water
-   allocate(snow(dims(1), dims(2)))
-   allocate(snowc(dims(1), dims(2)))
-   allocate(snowh(dims(1), dims(2)))
-   allocate(ivgtyp(dims(1), dims(2)))
-   call da_get_var_2d_int_cdf( da_file, 'IVGTYP', ivgtyp,    &
+   iostatus(1) = nf_inq_varid(cdfid, 'IVGTYP', varid)
+   iostatus(2) = nf_inq_varid(cdfid, 'SNOW',   varid)
+   iostatus(3) = nf_inq_varid(cdfid, 'SNOWC',  varid)
+   iostatus(4) = nf_inq_varid(cdfid, 'SNOWH',  varid)
+   if ( iostatus(1) == 0 ) then
+      allocate(snow(dims(1), dims(2)))
+      allocate(snowc(dims(1), dims(2)))
+      allocate(snowh(dims(1), dims(2)))
+      allocate(ivgtyp(dims(1), dims(2)))
+      if ( iostatus(1) == 0 ) then
+         call da_get_var_2d_int_cdf( da_file, 'IVGTYP', ivgtyp,    &
                                dims(1), dims(2), 1, debug)
-   call da_get_var_2d_real_cdf( da_file, 'SNOW',    snow,     &
+      end if
+      if ( iostatus(2) == 0 ) then
+         call da_get_var_2d_real_cdf( da_file, 'SNOW',    snow,     &
                                 dims(1), dims(2), 1, debug)
-   call da_get_var_2d_real_cdf( da_file, 'SNOWC',  snowc,     &
+      end if
+      if ( iostatus(3) == 0 ) then
+         call da_get_var_2d_real_cdf( da_file, 'SNOWC',  snowc,     &
                                 dims(1), dims(2), 1, debug)
-   call da_get_var_2d_real_cdf( da_file, 'SNOWH',  snowh,     &
+      end if
+      if ( iostatus(4) == 0 ) then
+         call da_get_var_2d_real_cdf( da_file, 'SNOWH',  snowh,     &
                                 dims(1), dims(2), 1, debug)
-   do j = 1, dims(2)
-      do i = 1, dims(1)
-         if (ivgtyp(i,j) == iswater)  then
-            if ( snow(i,j) > 0.0 ) then
-               write(unit=stdout,fmt=*) 'Remove snow over water at i, j = ', i, j
-               snow(i,j)  = 0.0
-               snowc(i,j) = 0.0
-               snowh(i,j) = 0.0
-            end if
-         end if
-      end do
-   end do
-   call da_put_var_2d_real_cdf( da_file, 'SNOW',   snow, &
+      end if
+      if ( iostatus(2) == 0 ) then
+         do j = 1, dims(2)
+            do i = 1, dims(1)
+               if (ivgtyp(i,j) == iswater)  then
+                  if ( snow(i,j) > 0.0 ) then
+                     write(unit=stdout,fmt=*) 'Remove snow over water at i, j = ', i, j
+                     if ( iostatus(2) == 0 ) snow(i,j)  = 0.0
+                     if ( iostatus(3) == 0 ) snowc(i,j) = 0.0
+                     if ( iostatus(4) == 0 ) snowh(i,j) = 0.0
+                  end if
+               end if
+            end do
+         end do
+      end if
+      if ( iostatus(2) == 0 ) then
+         call da_put_var_2d_real_cdf( da_file, 'SNOW',   snow, &
                                 dims(1), dims(2), 1, debug)
-   call da_put_var_2d_real_cdf( da_file, 'SNOWC',  snowc, &
+      end if
+      if ( iostatus(3) == 0 ) then
+         call da_put_var_2d_real_cdf( da_file, 'SNOWC',  snowc, &
                                 dims(1), dims(2), 1, debug)
-   call da_put_var_2d_real_cdf( da_file, 'SNOWH',  snowh, &
+      end if
+      if ( iostatus(4) == 0 ) then
+         call da_put_var_2d_real_cdf( da_file, 'SNOWH',  snowh, &
                                 dims(1), dims(2), 1, debug)
-   deallocate(snow)
-   deallocate(snowc)
-   deallocate(snowh)
-   deallocate(ivgtyp)
+      end if
+      deallocate(snow)
+      deallocate(snowc)
+      deallocate(snowh)
+      deallocate(ivgtyp)
+   end if
    
  if ( update_lateral_bdy ) then
 

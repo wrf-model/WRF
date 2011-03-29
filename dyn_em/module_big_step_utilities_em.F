@@ -5725,6 +5725,109 @@ END SUBROUTINE set_tend
 
 !==============================================================================
 !==============================================================================
+
+ SUBROUTINE theta_relaxation( t_tendf, t, t_init,              &
+                              mut, ph, phb,                    &
+                              t_base, z_base,                  &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts, kte   )
+
+! Purpose:  Newtonian relaxation on potential temperature.  Serves two 
+!           purposes:  1) to mimic atmospheric radiation in a simple 
+!           manner, and 2) to keep the vertical profile of temperature 
+!           close to the initial (base-state) profile, which is useful 
+!           for certain idealized applications. 
+
+! Reference:  Rotunno and Emanuel, 1987, JAS, p. 546
+
+!-----------------------------------------------------------------------
+! Begin declarations.
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT( IN )  &
+    :: ids, ide, jds, jde, kds, kde,  &
+       ims, ime, jms, jme, kms, kme,  &
+       its, ite, jts, jte, kts, kte
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
+    :: t_tendf
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )  &
+    :: t, t_init, ph, phb
+
+    REAL, DIMENSION( ims:ime, jms:jme ),  INTENT( IN )  &
+    :: mut
+
+    REAL, DIMENSION( kms:kme ) ,  INTENT(IN   )  &
+    :: t_base, z_base
+
+! Local variables.
+
+    INTEGER :: i, j, k, ktf, k2
+    REAL :: tau_r , rmax , rmin , inv_tau_r , inv_g , rterm
+    REAL, DIMENSION( kms:kme ) :: z00,t00
+
+! End declarations.
+!-----------------------------------------------------------------------
+
+    ! set tau_r to 12 h, following RE87
+    tau_r = 12.0*3600.0
+
+    ! limit rterm to +/- 2 K/day
+    rmax =  2.0/86400.0
+    rmin = -rmax
+
+    ktf = MIN( kte,   kde-1 )
+    inv_tau_r = 1.0/tau_r
+    inv_g = 1.0/g
+
+!-----------------------------------------------------------------------
+! Adjust potential temperature to base state.
+
+    DO j = jts, MIN( jte,   jde-1 )
+    DO i = its, MIN( ite,   ide-1 )
+
+      ! Get height of model levels:
+      DO k = kts, ktf
+        z00(k) = 0.5 * ( phb(i,k,j) + phb(i,k+1,j) +  &
+                          ph(i,k,j) +  ph(i,k+1,j) ) * inv_g
+      ENDDO
+
+      ! Get reference state:
+      DO k = kts, ktf
+        k2 = ktf
+        DO WHILE( z_base(k2) .gt. z00(k)  .and.  k2 .gt. 1 )
+          k2 = k2 - 1
+        ENDDO
+        if(k2+1.gt.ktf)then
+          t00(k) = t_base(k2) + ( t_base(k2) - t_base(k2-1) )   &
+                              * (     z00(k) - z_base(k2)   )   &
+                              / ( z_base(k2) - z_base(k2-1) )
+        else
+          t00(k) = t_base(k2) + ( t_base(k2+1) - t_base(k2) )   &
+                              * (       z00(k) - z_base(k2) )   &
+                              / ( z_base(k2+1) - z_base(k2) )
+        endif
+      ENDDO
+
+      ! Apply the RE87 R term:
+      DO k = kts, ktf
+        rterm = -( t(i,k,j) - t00(k) )*inv_tau_r
+        ! limit rterm:
+        rterm = min( rterm , rmax )
+        rterm = max( rterm , rmin )
+        t_tendf(i,k,j) = t_tendf(i,k,j) + mut(i,j)*rterm
+      END DO
+
+    END DO
+    END DO
+
+ END SUBROUTINE theta_relaxation
+
+!==============================================================================
+!==============================================================================
                                                                                 
       SUBROUTINE sixth_order_diffusion( name, field, tendency, mu, dt,  &
                                         config_flags,                   &

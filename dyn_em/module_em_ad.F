@@ -158,7 +158,7 @@ CONTAINS
 !   max_horiz_cfl,a_max_horiz_cfl)
    msfvy,msftx,msfty,xlat,f,e,sina,cosa,fnm,fnp,rdn,rdnw,dt,rdx,rdy,khdif, &
    kvdif,xkmhd,a_xkmhd,xkhh,a_xkhh,diff_6th_opt,diff_6th_factor, &
-   dampcoef,zdamp,damp_opt,cf1,cf2,cf3,cfn,cfn1,n_moist, &
+   dampcoef,zdamp,damp_opt,rad_nudge,cf1,cf2,cf3,cfn,cfn1,n_moist, &
    non_hydrostatic,top_lid,u_frame,v_frame,ids,ide,jds,jde,kds, &
    kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte,max_vert_cfl, &
    max_horiz_cfl)
@@ -197,7 +197,7 @@ CONTAINS
 ! Revised by Ning Pan, 2010-07-30
 !   REAL :: diff_6th_factor,a_diff_6th_factor
    REAL :: diff_6th_factor
-   INTEGER :: damp_opt
+   INTEGER :: damp_opt,rad_nudge
 ! Revised by Ning Pan, 2010-07-30
 !   REAL :: zdamp,a_zdamp,dampcoef,a_dampcoef
 !   REAL :: max_horiz_cfl,a_max_horiz_cfl
@@ -990,6 +990,14 @@ CONTAINS
 
 !! temp NING
    IF( rk_step == 1 ) THEN
+
+   IF( rad_nudge .eq. 1 )                                     &
+       CALL a_theta_relaxation( t_tendf, a_t_tendf, t, a_t, t_init,  &
+                              mut, a_mut, ph, a_ph, phb,       &
+                              t_base, z_base,                  &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts, kte   )
 
    IF( damp_opt .eq. 2 ) THEN
 

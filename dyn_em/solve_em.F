@@ -921,7 +921,7 @@ if (config_flags % sw_call_rk_tendency) then
                          ,grid%fnm, grid%fnp, grid%rdn, grid%rdnw                                              &
                          ,grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, grid%xkmh, grid%xkhh            &
                          ,grid%diff_6th_opt, grid%diff_6th_factor                                              &
-                         ,grid%dampcoef,grid%zdamp,config_flags%damp_opt                                       &
+                         ,grid%dampcoef,grid%zdamp,config_flags%damp_opt,config_flags%rad_nudge                &
                          ,grid%cf1, grid%cf2, grid%cf3, grid%cfn, grid%cfn1, num_3d_m                          &
                          ,config_flags%non_hydrostatic, config_flags%top_lid                                   &
                          ,grid%u_frame, grid%v_frame                                                           &

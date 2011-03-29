@@ -66,7 +66,9 @@ OBJS    =       \
                 wrf_shutdown.o             \
                 wrf_debug.o                \
                 libmassv.o                 \
-                collect_on_comm.o
+                collect_on_comm.o          \
+		adStack.o                  \
+		adBuffer.o
 
 #compile as a .o but do not link into the main library
 SPECIAL =       module_internal_header_util.o pack_utils.o
@@ -162,6 +164,17 @@ nl_get_7_routines.o : nl_access_routines.F module_configure.o
 
 wrf_num_bytes_between.o :
 	$(CC) -c $(CFLAGS) wrf_num_bytes_between.c
+
+adStack.o : adStack.c
+	$(CC) -c $(CFLAGS) adStack.c
+
+adBuffer.o : adBuffer.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) $(CPPFLAGS) -I../inc $*.b  > $*.f
+	$(RM) $*.b
+	$(RM) $@
+	$(SFC) -c $(FORMAT_FIXED) $(PROMOTION) $(FCNOOPT) $*.f
 
 pack_utils.o :
 	$(CC) -c $(CFLAGS) -DIWORDSIZE=$(IWORDSIZE) pack_utils.c

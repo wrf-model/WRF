@@ -90,7 +90,7 @@ CONTAINS
  z_base,msfux,msfuy,msfvx,msfvx_inv,msfvy,msftx,msfty,xlat,f,e,sina,cosa, &
  fnm,fnp,rdn,rdnw,dt,rdx,rdy,khdif,kvdif,xkmhd,g_xkmhd,xkhh,g_xkhh,diff_6th_opt, &
  diff_6th_factor,dampcoef,zdamp, &
- damp_opt,cf1,cf2,cf3,cfn,cfn1,n_moist,non_hydrostatic,top_lid,u_frame, &
+ damp_opt,rad_nudge,cf1,cf2,cf3,cfn,cfn1,n_moist,non_hydrostatic,top_lid,u_frame, &
  v_frame,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte, &
  kts,kte,max_vert_cfl,max_horiz_cfl)
 
@@ -127,7 +127,7 @@ CONTAINS
 ! Revised by Ning Pan, 2010-07-29
 ! REAL :: diff_6th_factor,g_diff_6th_factor
  REAL :: diff_6th_factor
- INTEGER :: damp_opt
+ INTEGER :: damp_opt,rad_nudge
 ! Revised by Ning Pan, 2010-07-29
 ! REAL :: zdamp,g_zdamp,dampcoef,g_dampcoef
 ! REAL :: max_horiz_cfl,g_max_horiz_cfl
@@ -347,6 +347,15 @@ CONTAINS
  t,g_t,t_init,mut,g_mut,muu,g_muu,muv,g_muv,ph,g_ph,phb, &
  u_base,v_base,t_base,z_base,dampcoef,zdamp,ids,ide,jds,jde, &
  kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+    IF( rad_nudge .eq. 1 )                                     &
+       CALL g_theta_relaxation( t_tendf, g_t_tendf, t, g_t, t_init, &
+                              mut, g_mut, ph, g_ph, phb,       &
+                              t_base, z_base,                  &
+                              ids, ide, jds, jde, kds, kde,    &
+                              ims, ime, jms, jme, kms, kme,    &
+                              its, ite, jts, jte, kts, kte   )
+
   END IF
 
  END SUBROUTINE g_rk_tendency

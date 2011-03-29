@@ -22,6 +22,30 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.3 Release Notes:
+-----------------------
+
+Version 3.3 is released on April 18, 2011.
+
+- RTTOV interfaces has been upgraded to version 10.0
+  Please download RTTOV v10.0 and install it in appropriate location 
+  if you want to use RTTOV to assimilate radiance observation with bufr format
+
+- crtm_atmosphere is removed from the namelist. 
+  Now the CRTM reference climatology is determined inside WRFDA based on 
+  latitude and month.
+
+- New WRF 4D-Var
+  The WRFPLUS (WRF adjoint and tangent linear model) has been upgraded to V3.3 
+  and it is consistent with the released WRFV version 3.3. However, only dry dynamic 
+  processes are included in WRFPLUS version 3.3 and only serial run is supported
+  at this release.
+  WRFDA is also upgraded to consistent with WRFPLUS version 3.3 and the new 4D-Var 
+  system is a single executable application. Please refer to Users' guide for the
+  details.
+
+- Lots of bug fixes.
+
 V3.2.1 Release Notes:
 -----------------------
 
@@ -143,7 +167,7 @@ How to compile and run?
         setenv NETCDF /usr/local/netcdf-pgi
         setenv BUFR 1 (optional, set to compile WRFDA with NCEP BUFR capability)
         setenv CRTM 1 (optional, set to compile WRFDA with CRTM capability)
-        setenv RTTOV /usr/local/rttov87 (optional, set to compile WRFDA with RTTOV capability)
+        setenv RTTOV /usr/local/rttov10 (optional, set to compile WRFDA with RTTOV capability)
 
 - Type 'compile all_wrfvar' when your are ready:
 

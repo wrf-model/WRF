@@ -865,8 +865,8 @@ END SUBROUTINE g_couple_momentum
 
  ENDDO
 
- g_qf2 =-1.*(g_qtot)/((1. +qtot)*(1. +qtot))
- qf2 =1./(1. +qtot)
+ g_qf2 = 0.0
+ qf2 =1.
 
  g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
  Tmpv1 =qtot*qf2
@@ -915,8 +915,8 @@ END SUBROUTINE g_couple_momentum
 
  ENDDO
 
- g_qf2 =-1.*(g_qtot)/((1. +qtot)*(1. +qtot))
- qf2 =1./(1. +qtot)
+ g_qf2 = 0.0
+ qf2 =1.
 
  g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
  Tmpv1 =qtot*qf2
@@ -972,8 +972,8 @@ END SUBROUTINE g_couple_momentum
  g_qtot =0.0
  qtot =0.
 
- g_qf2 =-1.*(g_qtot)/((1. +qtot)*(1. +qtot))
- qf2 =1./(1. +qtot)
+ g_qf2 = 0.0
+ qf2 =1.
 
  g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
  Tmpv1 =qtot*qf2
@@ -1015,8 +1015,8 @@ END SUBROUTINE g_couple_momentum
  g_qtot =0.0
  qtot =0.
 
- g_qf2 =-1.*(g_qtot)/((1. +qtot)*(1. +qtot))
- qf2 =1./(1. +qtot)
+ g_qf2 = 0.0
+ qf2 =1.
 
  g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
  Tmpv1 =qtot*qf2

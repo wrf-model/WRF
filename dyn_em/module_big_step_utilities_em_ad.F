@@ -1793,7 +1793,7 @@ END SUBROUTINE a_couple_momentum
 
    ENDDO
    Tmpv301(i,j) =qf2
-   qf2 =1./(1. +qtot)
+   qf2 =1.
 
    Tmpv001 =qtot*qf2
    Tmpv302(i,j) =qf1
@@ -1834,7 +1834,7 @@ END SUBROUTINE a_couple_momentum
 
    ENDDO
    Tmpv4012(i,k,j) =qf2
-   qf2 =1./(1. +qtot)
+   qf2 =1.
 
    Tmpv001 =qtot*qf2
    Tmpv4013(i,k,j) =qf1
@@ -1882,7 +1882,7 @@ END SUBROUTINE a_couple_momentum
    qtot =0.
 
    Tmpv309(i,j) =qf2
-   qf2 =1./(1. +qtot)
+   qf2 =1.
 
    Tmpv001 =qtot*qf2
    Tmpv3010(i,j) =qf1
@@ -1915,7 +1915,7 @@ END SUBROUTINE a_couple_momentum
    qtot =0.
 
    Tmpv4020(i,k,j) =qf2
-   qf2 =1./(1. +qtot)
+   qf2 =1.
 
    Tmpv001 =qtot*qf2
    Tmpv4021(i,k,j) =qf1
@@ -2101,7 +2101,6 @@ END SUBROUTINE a_couple_momentum
 
    qf2 =Tmpv4012(i,k,j)
 
-   a_qtot =a_qtot -1./((1. +qtot)*(1. +qtot))*a_qf2
    a_qf2 =0.0
    DO ispe =n_moist, PARAM_FIRST_SCALAR, -1
 
@@ -2161,7 +2160,6 @@ END SUBROUTINE a_couple_momentum
 
    qf2 =Tmpv301(i,j)
 
-   a_qtot =a_qtot -1./((1. +qtot)*(1. +qtot))*a_qf2
    a_qf2 =0.0
    DO ispe =n_moist, PARAM_FIRST_SCALAR, -1
 
@@ -2240,7 +2238,6 @@ END SUBROUTINE a_couple_momentum
 
    qf2 =Tmpv4020(i,k,j)
 
-   a_qtot =a_qtot -1./((1. +qtot)*(1. +qtot))*a_qf2
    a_qf2 =0.0
 
    qtot =Tmpv4019(i,k,j)
@@ -2290,7 +2287,6 @@ END SUBROUTINE a_couple_momentum
 
    qf2 =Tmpv309(i,j)
 
-   a_qtot =a_qtot -1./((1. +qtot)*(1. +qtot))*a_qf2
    a_qf2 =0.0
 
    qtot =Tmpv308(i,j)

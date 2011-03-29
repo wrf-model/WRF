@@ -1,4 +1,4 @@
-#! /bin/ksh -aeux
+#! /bin/ksh
 #-----------------------------------------------------------------------
 # Script gen_mbe_plot_wrapper.ksh
 #
@@ -7,18 +7,18 @@
 #
 #-----------------------------------------------------------------------
 
-export WRFVAR_DIR=/mmm/users/rizvi/code/trunk_mbe
-export SCRIPTS_DIR=/mmm/users/rizvi/code/WRFDA_scripts/var/scripts
-export GRAPHICS_DIR=/mmm/users/rizvi/code/WRFDA_scripts/var/graphics/ncl
+export WRFVAR_DIR=/kukui/users/xinzhang/code/WRFDA
+export SCRIPTS_DIR=${WRFVAR_DIR}/var/scripts
+export GRAPHICS_DIR=${WRFVAR_DIR}/var/graphics/ncl
 
 export GRAPHIC_WORKS=pdf
 
-export REGION=t8_45km
-export RESOLUTION_KM=45.
-export BE_DIR=/ptmp/rizvi/data/t8_45km/run_gen_mbe/gen_be5
-export NUM_WE=139       # 1 point less than WE stagger points
-export NUM_SN=93        # 1 point less than SN stagger points
-export NUM_LEVELS=56    # 1 point less than bottom_top stagger points
+export REGION=nari
+export RESOLUTION_KM=35.
+export BE_DIR=/kukui/users/xinzhang/code/tmp/GENBE/cv6/gen_be5
+export NUM_WE=74       # 1 point less than WE stagger points
+export NUM_SN=69        # 1 point less than SN stagger points
+export NUM_LEVELS=27    # 1 point less than bottom_top stagger points
 
 cd $BE_DIR
 #

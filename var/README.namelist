@@ -7,8 +7,8 @@ Description of WRFDA namelist variables
 &wrfvar1
   write_increments        = .false. ; .true.: write out a binary analysis_increment file
   var4d                   = .false. ; .true.: 4D-VAR
-  var4d_bin               = 3600
-  var4d_lbc               = .true.
+  var4d_bin               = 3600    ; second, Observation sub-window bin legnth for 4D-Var
+  var4d_lbc               = .true.  ; on/off switch for lateral boundary control in 4D-Var
   multi_inc               = 0       ; >0: multi-incremental run
      ; print_detail_xxx: output extra (sometimes can be too many) diagnostics for debugging.
      ; not recommended to turn them on for production runs.
@@ -381,6 +381,11 @@ Description of WRFDA namelist variables
                 ; high-frequency gravity waves using a digital filter.
   jcdfi_use               = .true.   ; .true.: include JcDF term in the cost function
                                      ; .false.: ignore JcDF term in the cost function
-  jcdfi_diag              = 1 
-  jcdfi_penalty           = 10
+  jcdfi_diag              = 1        ; 0: no diagnostic information for JcDF term in J
+                                     ; 1: print diagnostic information for JcDF term in J
+  jcdfi_penalty           = 10       ; The weight gived to JcDF term during minimization
+  enable_identity         = .false.  ; .true.: use identity adjoint and tangent linear model in 4D-Var
+                                     ; .false. use full adjoint and tangent linear model in 4D-Var
+  trajectory_io           = .true.   ; .true.: use memory I/O in 4D-Var for data exchange
+                                     ; .false.: use disk I/O in 4D-Var for data exchange
 /

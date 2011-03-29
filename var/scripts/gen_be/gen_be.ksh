@@ -236,13 +236,14 @@ fi
 #------------------------------------------------------------------------
 
 if $RUN_GEN_BE_STAGE4; then
-   export BEGIN_CPU=$(date)
-   echo "Beginning CPU time: ${BEGIN_CPU}"
 
    if $GLOBAL; then    
       echo "---------------------------------------------------------------"
       echo "Run Stage 4: Calculate horizontal covariances (global power spectra)."
       echo "---------------------------------------------------------------"
+
+      export BEGIN_CPU=$(date)
+      echo "Beginning CPU time: ${BEGIN_CPU}"
 
       ${SCRIPTS_DIR}/gen_be/gen_be_stage4_global.ksh > gen_be_stage4_global.log 2>&1
 
@@ -254,6 +255,9 @@ if $RUN_GEN_BE_STAGE4; then
          echo "Run Stage 4: Calculate horizontal covariances (" $WAVELET_NBAND$WAVELET_NAME$WAVELET_FILT_LEN "-wavelet variances)."
       fi
       echo "---------------------------------------------------------------"
+
+      export BEGIN_CPU=$(date)
+      echo "Beginning CPU time: ${BEGIN_CPU}"
 
       ${SCRIPTS_DIR}/gen_be/gen_be_stage4_regional.ksh > gen_be_stage4_regional.log 2>&1
       RC=$?
@@ -302,8 +306,7 @@ fi
 if $RUN_GEN_BE_DIAGS_READ; then
    cat > gen_be_diags_nl.nl << EOF
 &gen_be_diags_nl
-   uh_method = '${UH_METHOD}',
-   use_rf = ${USE_RF}, /
+   uh_method = '${UH_METHOD}', /
 EOF
 
    ln -sf ${BUILD_DIR}/gen_be_diags_read.exe .

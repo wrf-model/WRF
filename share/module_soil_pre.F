@@ -38,6 +38,13 @@ MODULE module_soil_pre
        280,  281,  282,  283,  284,  285,  286,  287,  288,  289, &
        290,  291,  292,  293,  294,  295,  296,  297,  298,  299, 300 /)
 
+   !  Excluded middle processing
+
+   LOGICAL , SAVE :: hold_ups
+   INTEGER , SAVE :: em_width
+
+   LOGICAL , EXTERNAL :: skip_middle_points_t
+
 CONTAINS
 
    SUBROUTINE adjust_for_seaice_pre ( xice , landmask , tsk , ivgtyp , vegcat , lu_index , &
@@ -86,6 +93,7 @@ CONTAINS
          CASE ( SLABSCHEME )
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( xice(i,j) .GT. 200.0 ) THEN
                      xice(i,j) = 0.
                      num_seaice_changes = num_seaice_changes + 1
@@ -101,6 +109,7 @@ CONTAINS
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( ( xice(i,j) .GE. xice_threshold ) .OR. &
                        ( ( landmask(i,j) .LT. 0.5 ) .AND. ( tsk(i,j) .LT. seaice_threshold ) ) ) THEN
                      IF ( FRACTIONAL_SEAICE == 0 ) THEN
@@ -143,6 +152,7 @@ CONTAINS
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( landmask(i,j) .GT. 0.5 ) THEN
                      if (xice(i,j).gt.0) num_seaice_changes = num_seaice_changes + 1
                      xice(i,j) = 0.
@@ -216,6 +226,7 @@ CONTAINS
          CASE ( LSMSCHEME )
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( xice(i,j) .GT. 200.0 ) THEN
                      xice(i,j) = 0.
                      num_seaice_changes = num_seaice_changes + 1
@@ -231,6 +242,7 @@ CONTAINS
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( ( ( tsk(i,j) .LT. 170 ) .OR. ( tsk(i,j) .GT. 400 ) ) .AND. &
                        ( ( tsk_old(i,j) .GT. 170 ) .AND. ( tsk_old(i,j) .LT. 400 ) ) )THEN
                      tsk(i,j) = tsk_old(i,j)
@@ -296,6 +308,7 @@ CONTAINS
         CASE ( RUCLSMSCHEME )
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( xice(i,j) .GT. 200.0 ) THEN
                      xice(i,j) = 0.
                      num_seaice_changes = num_seaice_changes + 1
@@ -311,6 +324,7 @@ CONTAINS
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( ( ( tsk(i,j) .LT. 170 ) .OR. ( tsk(i,j) .GT. 400 ) ) .AND. &
                        ( ( tsk_old(i,j) .GT. 170 ) .AND. ( tsk_old(i,j) .LT. 400 ) ) )THEN
                      tsk(i,j) = tsk_old(i,j)
@@ -433,6 +447,7 @@ change_land = 0
 
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             dominant_value = landuse_frac(i,iswater,j)
             IF ( dominant_value .EQ. lwthresh ) THEN
                DO l = 1 , num_veg_cat
@@ -455,6 +470,7 @@ change_land = 0
 
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             dominant_value = landuse_frac(i,1,j)
             dominant_index = 1
             DO l = 2 , num_veg_cat
@@ -514,6 +530,7 @@ endif
       iforce = 0
       DO i = its , MIN(ide-1,ite)
          DO j = jts , MIN(jde-1,jte)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             dominant_value = soil_top_cat(i,1,j)
             dominant_index = 1
             IF ( landmask(i,j) .GT. lwthresh ) THEN
@@ -614,6 +631,7 @@ print *,'WATER CHANGE = ',change_water
                CALL wrf_debug ( 0 , 'Using average surface temperature for tmn')
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      tmn(i,j) = tavgsfc(i,j)
                   END DO
                END DO
@@ -638,6 +656,7 @@ print *,'WATER CHANGE = ',change_water
                   CALL wrf_debug ( 0 , message )
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         tmn(i,j) = st_input(i,closest_layer+1,j)
                      END DO
                   END DO
@@ -655,6 +674,7 @@ print *,'WATER CHANGE = ',change_water
                CALL wrf_debug ( 0 , 'Using average surface temperature for tmn')
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      tmn(i,j) = tavgsfc(i,j)
                   END DO
                END DO
@@ -679,6 +699,7 @@ print *,'WATER CHANGE = ',change_water
                   CALL wrf_debug ( 0 , message )
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         tmn(i,j) = st_input(i,closest_layer+1,j)
                      END DO
                   END DO
@@ -703,6 +724,7 @@ print *,'WATER CHANGE = ',change_water
 
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   tmn(i,j) = 0.
                   DO k = 1, num_st_levels_input
                      tmn(i,j) = tmn(i,j) + depth(k) * st_input(i,k,j)
@@ -875,6 +897,7 @@ print *,'WATER CHANGE = ',change_water
          CASE (LSMSCHEME)
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF (landmask(i,j) .GT. 0.5 ) THEN
                      tmn(i,j) = tmn(i,j) - 0.0065 * ter(i,j)
                   END IF
@@ -884,6 +907,7 @@ print *,'WATER CHANGE = ',change_water
          CASE (RUCLSMSCHEME)
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF (landmask(i,j) .GT. 0.5 ) THEN
                      tmn(i,j) = tmn(i,j) - 0.0065 * ter(i,j)
                   END IF
@@ -900,6 +924,7 @@ print *,'WATER CHANGE = ',change_water
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
 
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                !  Is the toposoil field OK, or is it a subversive soil elevation field.  We can tell
                !  usually by looking at values.  Anything less than -1000 m (lower than the Dead Sea) is
                !  bad.  Anything larger than 10 km (taller than Everest) is toast.  Also, anything where
@@ -1141,6 +1166,7 @@ cycle
 
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             IF ( landmask(i,j) .GT. 0.5 ) THEN
                DO l = 1 , num_soil_layers
                   tslb(i,l,j)= ( tsk(i,j) * ( zs(num_soil_layers) - zs(l) )   + &
@@ -1194,6 +1220,7 @@ cycle
 
       IF (num_soil_layers.NE.1)THEN
          DO j=jts,jtf
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             DO l=1,num_soil_layers
                DO i=its,itf
                  tslb(i,l,j)=( tsk(i,j)*(zs(num_soil_layers)-zs(l)) + tmn(i,j)*(zs(l)-zs(1)) ) / &
@@ -1287,6 +1314,7 @@ cycle
                   st_levels_input(lin) = NINT(temp)
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         temp = st_input(i,lout+1,j)
                         st_input(i,lout+1,j) = st_input(i,lin+1,j)
                         st_input(i,lin+1,j) = temp
@@ -1299,6 +1327,7 @@ cycle
       IF ( flag_soil_layers == 1 ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                st_input(i,1,j) = tsk(i,j)
                st_input(i,num_st_levels_input+2,j) = tmn(i,j)
             END DO
@@ -1315,6 +1344,7 @@ cycle
                   sm_levels_input(lin) = NINT(temp)
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         temp = sm_input(i,lout+1,j)
                         sm_input(i,lout+1,j) = sm_input(i,lin+1,j)
                         sm_input(i,lin+1,j) = temp
@@ -1327,6 +1357,7 @@ cycle
       IF ( flag_soil_layers == 1 ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                sm_input(i,1,j) = sm_input(i,2,j)
                sm_input(i,num_sm_levels_input+2,j) = sm_input(i,num_sm_levels_input+1,j)
             END DO
@@ -1343,6 +1374,7 @@ cycle
                   sw_levels_input(lin) = NINT(temp)
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         temp = sw_input(i,lout+1,j)
                         sw_input(i,lout+1,j) = sw_input(i,lin+1,j)
                         sw_input(i,lin+1,j) = temp
@@ -1354,6 +1386,7 @@ cycle
          IF ( num_sw_levels_input .GT. 1 ) THEN
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   sw_input(i,1,j) = sw_input(i,2,j)
                   sw_input(i,num_sw_levels_input+2,j) = sw_input(i,num_sw_levels_input+1,j)
                END DO
@@ -1390,6 +1423,7 @@ cycle
                     ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         tslb(i,lwant,j)= ( st_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                            st_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                    ( zhave(lhave+1) - zhave(lhave) )
@@ -1419,6 +1453,7 @@ cycle
                     ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         tslb(i,lwant,j)= ( st_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                            st_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                    ( zhave(lhave+1) - zhave(lhave) )
@@ -1445,6 +1480,7 @@ cycle
                  ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      smois(i,lwant,j)= ( sm_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                          sm_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                  ( zhave(lhave+1) - zhave(lhave) )
@@ -1475,6 +1511,7 @@ cycle
                     ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         smois(i,lwant,j)= ( sm_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                             sm_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                     ( zhave(lhave+1) - zhave(lhave) )
@@ -1504,6 +1541,7 @@ cycle
                        ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                      DO j = jts , MIN(jde-1,jte)
                         DO i = its , MIN(ide-1,ite)
+                           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                            sh2o(i,lwant,j)= ( sw_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                                sw_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                        ( zhave(lhave+1) - zhave(lhave) )
@@ -1523,6 +1561,7 @@ cycle
          IF ( flag_sst .EQ. 1 ) THEN
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( landmask(i,j) .LT. 0.5 ) THEN
                      DO l = 1 , num_soil_layers
                         tslb(i,l,j)= sst(i,j)
@@ -1535,6 +1574,7 @@ cycle
          ELSE
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( landmask(i,j) .LT. 0.5 ) THEN
                      DO l = 1 , num_soil_layers
                         tslb(i,l,j)= tsk(i,j)
@@ -1586,6 +1626,7 @@ cycle
       DO j=jts,jtf
          DO l=1,num_soil_layers
             DO i=its,itf
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                if (xland(i,j) .lt. 1.5) then
                smois(i,1,j)=0.30
                smois(i,2,j)=0.30
@@ -1674,6 +1715,7 @@ cycle
                st_levels_input(lin) = NINT(temp)
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      temp = st_input(i,lout,j)
                      st_input(i,lout,j) = st_input(i,lin,j)
                      st_input(i,lin,j) = temp
@@ -1686,6 +1728,7 @@ cycle
       IF ( flag_soil_layers == 1 ) THEN
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             st_input(i,1,j) = tsk(i,j)
             st_input(i,num_st_levels_input+2,j) = tmn(i,j)
          END DO
@@ -1702,6 +1745,7 @@ cycle
                sm_levels_input(lin) = NINT(temp)
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      temp = sm_input(i,lout,j)
                      sm_input(i,lout,j) = sm_input(i,lin,j)
                      sm_input(i,lin,j) = temp
@@ -1714,6 +1758,7 @@ cycle
       IF ( flag_soil_layers == 1 ) THEN
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             sm_input(i,1,j) = (sm_input(i,2,j)-sm_input(i,3,j))/   &
                               (st_levels_input(2)-st_levels_input(1))*st_levels_input(1)+  &
                               sm_input(i,2,j)
@@ -1739,6 +1784,7 @@ cycle
                  ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      tslb(i,lwant,j)= ( st_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                         st_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                 ( zhave(lhave+1) - zhave(lhave) )
@@ -1765,6 +1811,7 @@ cycle
                  ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      tslb(i,lwant,j)= ( st_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                         st_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                 ( zhave(lhave+1) - zhave(lhave) )
@@ -1792,6 +1839,7 @@ cycle
                  ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      smois(i,lwant,j)= ( sm_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                          sm_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                  ( zhave(lhave+1) - zhave(lhave) )
@@ -1816,6 +1864,7 @@ cycle
                  ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                DO j = jts , MIN(jde-1,jte)
                   DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      smois(i,lwant,j)= ( sm_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                          sm_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                  ( zhave(lhave+1) - zhave(lhave) )
@@ -1833,6 +1882,7 @@ cycle
       IF ( flag_sst .EQ. 1 ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                IF ( landmask(i,j) .LT. 0.5 ) THEN
                   DO l = 1 , num_soil_layers
                      tslb(i,l,j) = sst(i,j)
@@ -1845,6 +1895,7 @@ cycle
       ELSE
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                IF ( landmask(i,j) .LT. 0.5 ) THEN
                   DO l = 1 , num_soil_layers
                      tslb(i,l,j)= tsk(i,j)
@@ -1924,6 +1975,7 @@ cycle
                   st_levels_input(lin) = NINT(temp)
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         temp = st_input(i,lout+1,j)
                         st_input(i,lout+1,j) = st_input(i,lin+1,j)
                         st_input(i,lin+1,j) = temp
@@ -1934,6 +1986,7 @@ cycle
          END DO outert
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                st_input(i,1,j) = tsk(i,j)
                st_input(i,num_st_levels_input+2,j) = tmn(i,j)
             END DO
@@ -1949,6 +2002,7 @@ cycle
                   sm_levels_input(lin) = NINT(temp)
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         temp = sm_input(i,lout+1,j)
                         sm_input(i,lout+1,j) = sm_input(i,lin+1,j)
                         sm_input(i,lin+1,j) = temp
@@ -1959,6 +2013,7 @@ cycle
          END DO outerm
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                sm_input(i,1,j) = sm_input(i,2,j)
                sm_input(i,num_sm_levels_input+2,j) = sm_input(i,num_sm_levels_input+1,j)
             END DO
@@ -1974,6 +2029,7 @@ cycle
                   sw_levels_input(lin) = NINT(temp)
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         temp = sw_input(i,lout+1,j)
                         sw_input(i,lout+1,j) = sw_input(i,lin+1,j)
                         sw_input(i,lin+1,j) = temp
@@ -1985,6 +2041,7 @@ cycle
         IF ( num_sw_levels_input .GT. 1 ) THEN
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   sw_input(i,1,j) = sw_input(i,2,j)
                   sw_input(i,num_sw_levels_input+2,j) = sw_input(i,num_sw_levels_input+1,j)
                END DO
@@ -2023,6 +2080,7 @@ cycle
                     ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         tslb(i,lwant,j)= ( st_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                            st_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                    ( zhave(lhave+1) - zhave(lhave) )
@@ -2052,6 +2110,7 @@ cycle
                     ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                   DO j = jts , MIN(jde-1,jte)
                      DO i = its , MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                         smois(i,lwant,j)= ( sm_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                             sm_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                     ( zhave(lhave+1) - zhave(lhave) )
@@ -2080,6 +2139,7 @@ cycle
                        ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                      DO j = jts , MIN(jde-1,jte)
                         DO i = its , MIN(ide-1,ite)
+                           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                            sh2o(i,lwant,j)= ( sw_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
                                                sw_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
                                                                        ( zhave(lhave+1) - zhave(lhave) )
@@ -2098,6 +2158,7 @@ cycle
 
      DO j = jts , MIN(jde-1,jte)
         DO i = its , MIN(ide-1,ite)
+             IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
              tslb(i,1,j)= tsk(i,j)
              tslb(i,2,j)= tmn(i,j)
         END DO
@@ -2106,6 +2167,7 @@ cycle
          IF ( flag_sst .EQ. 1 ) THEN
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( landmask(i,j) .LT. 0.5 ) THEN
                      DO l = 1 , num_soil_layers
                         tslb(i,l,j)= sst(i,j)
@@ -2118,6 +2180,7 @@ cycle
          ELSE
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( landmask(i,j) .LT. 0.5 ) THEN
                      DO l = 1 , num_soil_layers
                         tslb(i,l,j)= tsk(i,j)
@@ -2137,6 +2200,34 @@ cycle
 
 
 END MODULE module_soil_pre
+
+FUNCTION skip_middle_points_t ( ids , ide , jds , jde , &
+                                i_in , j_in , width ,   &
+                                subtleties_exist )      &
+                       RESULT ( skip_it )
+ 
+   IMPLICIT NONE
+
+   INTEGER , INTENT(IN) :: ids , ide , jds , jde
+   INTEGER , INTENT(IN) :: i_in , j_in , width
+   LOGICAL , INTENT(IN) :: subtleties_exist
+   
+   LOGICAL              :: skip_it
+
+   INTEGER , PARAMETER :: slop = 2
+
+   IF ( subtleties_exist ) THEN
+      skip_it = .FALSE.
+   ELSE
+      IF ( ( i_in .GT. ids+width+slop ) .AND. ( i_in .LT. ide-1-width-slop )   .AND. &
+           ( j_in .GT. jds+width+slop ) .AND. ( j_in .LT. jde-1-width-slop ) ) THEN
+         skip_it = .TRUE.
+      ELSE
+         skip_it = .FALSE.
+      END IF
+   END IF
+
+END FUNCTION skip_middle_points_t
 
 #else
 

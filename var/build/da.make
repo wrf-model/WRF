@@ -190,7 +190,7 @@ da_utils : \
            da_rad_diags.exe
 
 da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
-	$(SFC) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
+	$(SFC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_verif_grid.exe : da_verif_grid.o da_verif_grid_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
@@ -199,17 +199,17 @@ da_verif_grid.exe : da_verif_grid.o da_verif_grid_control.o da_netcdf_interface.
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_hollingsworth1.exe: da_tune_obs_hollingsworth1.o
-	$(SFC) -o $@ da_tune_obs_hollingsworth1.o da_control.o \
+	$(SFC) $(LDFLAGS) -o $@ da_tune_obs_hollingsworth1.o da_control.o \
 	   module_driver_constants.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_hollingsworth2.exe: da_tune_obs_hollingsworth2.o
-	$(SFC) -o $@ da_tune_obs_hollingsworth2.o da_control.o \
+	$(SFC) $(LDFLAGS) -o $@ da_tune_obs_hollingsworth2.o da_control.o \
 	    module_driver_constants.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_desroziers.exe: da_tune_obs_desroziers.o
-	$(SFC) -o $@ da_tune_obs_desroziers.o
+	$(SFC) $(LDFLAGS) -o $@ da_tune_obs_desroziers.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_update_bc.exe : da_update_bc.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
@@ -219,23 +219,23 @@ da_update_bc.exe : da_update_bc.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfi
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_airmass.exe : da_bias_airmass.o  rad_bias.o pythag.o tqli.o tred2.o regress_one.o
-	$(SFC) -o  $@ da_bias_airmass.o rad_bias.o pythag.o tqli.o tred2.o regress_one.o
+	$(SFC) $(LDFLAGS) -o  $@ da_bias_airmass.o rad_bias.o pythag.o tqli.o tred2.o regress_one.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_sele.exe : da_bias_sele.o rad_bias.o
-	$(SFC) -o $@ da_bias_sele.o rad_bias.o
+	$(SFC) $(LDFLAGS) -o $@ da_bias_sele.o rad_bias.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_scan.exe : da_bias_scan.o rad_bias.o
-	$(SFC) -o $@ da_bias_scan.o rad_bias.o
+	$(SFC) $(LDFLAGS) -o $@ da_bias_scan.o rad_bias.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_verif.exe : da_bias_verif.o rad_bias.o
-	$(SFC) -o $@ da_bias_verif.o rad_bias.o
+	$(SFC) $(LDFLAGS) -o $@ da_bias_verif.o rad_bias.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_rad_diags.exe : da_rad_diags.o 
-	$(SFC) -o $@ da_rad_diags.o $(LIB_EXTERNAL)
+	$(SFC) $(LDFLAGS) -o $@ da_rad_diags.o $(LIB_EXTERNAL)
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 wrf_num_bytes_between.o :

@@ -1326,7 +1326,6 @@ rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "va
 rconfig   integer   var4d_bin               namelist,wrfvar1  1  3600     -  "var4d_bin"               ""  ""
 rconfig   logical   var4d_lbc               namelist,wrfvar1  1  .true.   -  "var4d_lbc"               ""  ""
 rconfig   integer   multi_inc               namelist,wrfvar1  1  0        -  "multi_incremental flag"  ""  ""
-rconfig   integer   var4d_coupling          namelist,wrfvar1  1  2        -  "var4d_coupling"          ""  ""
 rconfig   logical   print_detail_radar      namelist,wrfvar1  1  .false.  -  "print_detail_radar"      ""  ""
 rconfig   logical   print_detail_rad        namelist,wrfvar1  1  .false.  -  "print_detail_rad"        ""  ""
 rconfig   logical   print_detail_xa         namelist,wrfvar1  1  .false.  -  "print_detail_xa"         ""  ""

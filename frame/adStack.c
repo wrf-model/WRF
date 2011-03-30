@@ -1,5 +1,26 @@
 static char adSid[]="$Id: adStack.c 3723 2011-02-24 13:34:42Z llh $";
 
+#ifndef CRAY
+# ifdef NOUNDERSCORE
+#      define PUSHINTEGER4ARRAY pushinteger4array
+#      define POPINTEGER4ARRAY popinteger4array
+#      define PUSHREAL8ARRAY pushreal8array
+#      define POPREAL8ARRAY popreal8array
+# else
+#   ifdef F2CSTYLE
+#      define PUSHINTEGER4ARRAY pushinteger4array__
+#      define POPINTEGER4ARRAY popinteger4array__
+#      define PUSHREAL8ARRAY pushreal8array__
+#      define POPREAL8ARRAY popreal8array__
+#   else
+#      define PUSHINTEGER4ARRAY pushinteger4array_
+#      define POPINTEGER4ARRAY popinteger4array_
+#      define PUSHREAL8ARRAY pushreal8array_
+#      define POPREAL8ARRAY popreal8array_
+#   endif
+# endif
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -185,10 +206,10 @@ void lookbooleanarray_(char *x, unsigned int *n) {
   lookNarray(x,(*n*4)) ;
 }
 
-void pushinteger4array_(char *x, unsigned int *n) {
+void PUSHINTEGER4ARRAY(char *x, unsigned int *n) {
   pushNarray(x,(*n*4)) ;
 }
-void popinteger4array_(char *x, unsigned int *n) {
+void POPINTEGER4ARRAY(char *x, unsigned int *n) {
   popNarray(x,(*n*4)) ;
 }
 void lookinteger4array_(char *x, unsigned int *n) {
@@ -225,10 +246,10 @@ void lookreal4array_(char *x, unsigned int *n) {
   lookNarray(x,(*n*4)) ;
 }
 
-void pushreal8array_(char *x, unsigned int *n) {
+void PUSHREAL8ARRAY(char *x, unsigned int *n) {
   pushNarray(x,(*n*8)) ;
 }
-void popreal8array_(char *x, unsigned int *n) {
+void POPREAL8ARRAY(char *x, unsigned int *n) {
   popNarray(x,(*n*8)) ;
 }
 void lookreal8array_(char *x, unsigned int *n) {

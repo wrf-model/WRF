@@ -439,6 +439,8 @@ CONTAINS
       INTEGER , PARAMETER :: iswater_soil = 14
       INTEGER :: iforce
       CHARACTER (LEN=132) :: message
+      CHARACTER(LEN=256) :: mminlu
+      LOGICAL :: aggregate_lu
 integer :: change_water , change_land
 change_water = 0
 change_land = 0
@@ -465,6 +467,22 @@ change_land = 0
             END IF
          END DO
       END DO
+
+      !  Compute the aggregate of the vegetation/land use categories.  Lump all of the grasses together,
+      !  all of the shrubs, all of the trees, etc.  Choose the correct set of available land use
+      !  categories.  Also, make sure that the user wants to actually avail themselves of aforementioned
+      !  opportunity, as mayhaps they don't.
+ 
+      CALL nl_get_mminlu       ( 1 , mminlu       )
+      CALL nl_get_aggregate_lu ( 1 , aggregate_lu )
+      IF ( aggregate_lu ) THEN
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               CALL aggregate_categories_part1 ( landuse_frac , iswater , num_veg_cat , mminlu(1:4) )
+            END DO
+         END DO
+      END IF
 
       !  Compute the dominant VEGETATION INDEX.
 
@@ -2198,6 +2216,188 @@ cycle
 
    END SUBROUTINE init_soil_7_real
 
+   SUBROUTINE aggregate_categories_part1  ( landuse_frac , iswater , num_veg_cat , mminlu )
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: iswater
+      INTEGER , INTENT(IN) :: num_veg_cat
+      CHARACTER (LEN=4) , INTENT(IN) :: mminlu
+      REAL , DIMENSION(1:num_veg_cat) , INTENT(INOUT):: landuse_frac
+
+      !  Local variables
+
+      INTEGER , PARAMETER :: num_special_bins =  3 ! grass, shrubs, trees; add a new line in the "cib" array if updating this
+      INTEGER , PARAMETER :: max_cats_per_bin =  8 ! larger than max num of cats inside each of the special bins
+                                                   ! So, no more than 8 total tree categories that we need to consider.
+      INTEGER , PARAMETER :: fl               = -1 ! Flag value so that we know this is not a valid category to consider.
+      INTEGER , DIMENSION ( max_cats_per_bin * num_special_bins ) :: cib_usgs = &
+      (/  2 ,  3 ,  4 ,  5 ,  6 ,  7 , 10 , fl , & ! grass
+          8 ,  9 , fl , fl , fl , fl , fl , fl , & ! shrubs 
+         11 , 12 , 13 , 14 , 15 , fl , fl , fl /)  ! trees
+      INTEGER , DIMENSION ( max_cats_per_bin * num_special_bins ) :: cib_modis = &
+      (/  9 , 10 , 12 , 14 , fl , fl , fl , fl , & ! grass
+          6 ,  7 ,  8 , fl , fl , fl , fl , fl , & ! shrubs 
+          1 ,  2 ,  3 ,  4 ,  5 , fl , fl , fl /)  ! trees
+ 
+      IF      ( mminlu(1:4) .EQ. 'USGS' ) THEN
+         CALL aggregate_categories_part2  ( landuse_frac , iswater , num_veg_cat , &
+                                            num_special_bins , max_cats_per_bin , fl , cib_usgs  )
+      ELSE IF ( mminlu(1:4) .EQ. 'MODI' ) THEN
+         CALL aggregate_categories_part2  ( landuse_frac , iswater , num_veg_cat , &
+                                            num_special_bins , max_cats_per_bin , fl , cib_modis )
+      END IF
+
+   END SUBROUTINE aggregate_categories_part1
+
+   SUBROUTINE aggregate_categories_part2  ( landuse_frac , iswater , num_veg_cat , &
+                                            num_special_bins , max_cats_per_bin , fl , cib )
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: iswater
+      INTEGER , INTENT(IN) :: num_veg_cat
+      REAL , DIMENSION(1:num_veg_cat) , INTENT(INOUT):: landuse_frac
+      INTEGER , INTENT(IN) :: num_special_bins , max_cats_per_bin , fl
+      INTEGER , DIMENSION ( max_cats_per_bin * num_special_bins ) , INTENT(IN) :: cib
+
+      !  Local variables
+
+      REAL , DIMENSION(1:num_veg_cat) :: landuse_frac_work ! copy of the input array, allows us to be wreckless
+      INTEGER , DIMENSION ( max_cats_per_bin , num_special_bins ) :: cats_in_bin
+      INTEGER :: ib , ic ! indexes for the bin and the category loops
+      REAL    , DIMENSION ( num_special_bins ) :: bin_max_val , bin_sum ! max category value in this bin, sum of all cats in this bin
+      INTEGER , DIMENSION ( num_special_bins ) :: bin_max_idx ! index of this maximum category in this bin
+      INTEGER :: bin_work , bin_orig ! the bin from whence the maximum hails, respectively for the aggregated and the original data
+      INTEGER :: max_cat_orig , max_cat_work
+      REAL    :: max_val_orig , max_val_work
+
+      !  Find the max in the original.  If it is >= 50%, no need to even be in here.
+
+      DO ic = 1 , num_veg_cat
+         IF ( landuse_frac(ic) .GE. 0.5 ) THEN
+            RETURN
+         END IF
+      END DO
+
+      !  Put the categories in the bin into a 2d array.
+
+      cats_in_bin = RESHAPE ( cib , (/  max_cats_per_bin , num_special_bins /) )
+
+      !  Make a copy of the incoming array so that we can eventually diff our working copy with
+      !  the original.
+
+      landuse_frac_work = landuse_frac
+
+      !  Loop over each of the special bins that we know about.  Find the max values and the locations of such.
+
+      DO ib = 1 , num_special_bins
+
+         !  For this bin, we know about specific categories.  We get the sum of all of those
+         !  categories that we know about for this bin, and we keep track of which category
+         !  is dominant.
+
+         bin_sum    (ib) =  0
+         bin_max_val(ib) = fl
+
+         cat_loop_accumulate : DO ic = 1 , max_cats_per_bin
+            
+            !  Have we run out of valid categories in this bin?  For example, we would not necessarily have
+            !  the same number of tree categories as there are grass categories.
+      
+            IF      ( cats_in_bin(ic,ib) .EQ. fl ) THEN
+               EXIT cat_loop_accumulate
+            END IF
+
+            bin_sum(ib) = bin_sum(ib) + landuse_frac(cats_in_bin(ic,ib))
+
+            IF ( landuse_frac(cats_in_bin(ic,ib)) .GT. bin_max_val(ib) ) THEN
+               bin_max_val(ib) = landuse_frac(cats_in_bin(ic,ib))
+               bin_max_idx(ib) = cats_in_bin(ic,ib)
+            END IF
+
+         END DO cat_loop_accumulate
+
+         cat_loop_assign : DO ic = 1 , max_cats_per_bin
+            
+            !  Plow through each cat in the bin.  If we find the dominant one, he gets the total sum.  If we land on
+            !  the other guys in the bin, they get set back to zero to maintain the original aggregate influence.
+      
+            IF      ( cats_in_bin(ic,ib) .EQ. fl ) THEN
+               EXIT cat_loop_assign
+            ELSE IF ( cats_in_bin(ic,ib) .EQ. bin_max_idx(ib) ) THEN
+               landuse_frac_work(cats_in_bin(ic,ib)) = bin_sum(ib)
+            ELSE
+               landuse_frac_work(cats_in_bin(ic,ib)) = 0
+            END IF
+
+         END DO cat_loop_assign
+
+      END DO
+
+      !  Now we loop through the categorical data, and get the max+location for the original input data and the
+      !  modified work data.  Water is not allowed to be a "max" category unless it is greater than 50%.  We hit 
+      !  that test up at the top already, so we can toss out water willy nilly here.
+
+      max_cat_orig = fl
+      max_val_orig =  0
+      max_cat_work = fl
+      max_val_work =  0
+
+      DO ic = 1 , num_veg_cat
+         IF ( ic .EQ. iswater ) THEN
+            CYCLE
+         END IF
+         IF ( landuse_frac(ic) .GT. max_val_orig ) THEN
+            max_val_orig = landuse_frac(ic)
+            max_cat_orig = ic
+         END IF
+         IF ( landuse_frac_work(ic) .GT. max_val_work ) THEN
+            max_val_work = landuse_frac_work(ic)
+            max_cat_work = ic
+         END IF
+      END DO
+
+      !  Find the bin for the maximimum value of the original data.
+
+      bin_orig = -1
+      bin_loop_orig : DO ib = 1 , num_special_bins
+         cat_loop_orig : DO ic = 1 , max_cats_per_bin
+            IF      ( cats_in_bin(ic,ib) .EQ. fl           ) THEN
+               EXIT cat_loop_orig
+            ELSE IF ( cats_in_bin(ic,ib) .EQ. max_cat_orig ) THEN
+               bin_orig = ib
+               EXIT bin_loop_orig
+            END IF
+         END DO cat_loop_orig
+      END DO bin_loop_orig
+
+      !  Find the bin for the maximimum value of the aggregated data.
+
+      bin_work = -1
+      bin_loop_work : DO ib = 1 , num_special_bins
+         cat_loop_work : DO ic = 1 , max_cats_per_bin
+            IF      ( cats_in_bin(ic,ib) .EQ. fl           ) THEN
+               EXIT cat_loop_work
+            ELSE IF ( cats_in_bin(ic,ib) .EQ. max_cat_work ) THEN
+               bin_work = ib
+               EXIT bin_loop_work
+            END IF
+         END DO cat_loop_work
+      END DO bin_loop_work
+
+      !  So the big question is, did the aggregation change the bin?  If the aggregation does not change the resulting
+      !  bin, then we leave everything alone.  However, if there would be a change in the eventual bin chosen by
+      !  the simple dominant-category method, then we become pro-active interventionists and rectify this heinous
+      !  injustice foisted upon the lowly flora.
+
+      IF ( bin_work .EQ. bin_orig ) THEN
+         !  No op, we do nothing.
+      ELSE
+         DO ic = 1 , max_cats_per_bin
+            landuse_frac(cats_in_bin(ic,bin_work)) = landuse_frac_work(cats_in_bin(ic,bin_work))
+         END DO
+      END IF
+            
+   END SUBROUTINE aggregate_categories_part2
 
 END MODULE module_soil_pre
 
@@ -2214,13 +2414,13 @@ FUNCTION skip_middle_points_t ( ids , ide , jds , jde , &
    
    LOGICAL              :: skip_it
 
-   INTEGER , PARAMETER :: slop = 2
+   INTEGER , PARAMETER :: slop = 0
 
    IF ( subtleties_exist ) THEN
       skip_it = .FALSE.
    ELSE
-      IF ( ( i_in .GT. ids+width+slop ) .AND. ( i_in .LT. ide-1-width-slop )   .AND. &
-           ( j_in .GT. jds+width+slop ) .AND. ( j_in .LT. jde-1-width-slop ) ) THEN
+      IF ( ( i_in .GE. ids+width+slop ) .AND. ( i_in .LE. ide-1-width-slop )   .AND. &
+           ( j_in .GE. jds+width+slop ) .AND. ( j_in .LE. jde-1-width-slop ) ) THEN
          skip_it = .TRUE.
       ELSE
          skip_it = .FALSE.

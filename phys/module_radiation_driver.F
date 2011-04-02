@@ -6,65 +6,106 @@ CONTAINS
 ! !IROUTINE: radiation_driver - interface to radiation physics options
 
 ! !INTERFACE:
-   SUBROUTINE radiation_driver (                                          &
-               itimestep,dt ,lw_physics,sw_physics ,NPHS                  &
-              ,RTHRATENLW ,RTHRATENSW ,RTHRATEN                           &
-              ,ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC                          & ! Optional
-              ,ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC                          & ! Optional
-              ,ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC                          & ! Optional
-              ,ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC                          & ! Optional
-              ,  SWUPT,  SWUPTC,  SWDNT,  SWDNTC                          & ! Optional
-              ,  SWUPB,  SWUPBC,  SWDNB,  SWDNBC                          & ! Optional
-              ,  LWUPT,  LWUPTC,  LWDNT,  LWDNTC                          & ! Optional
-              ,  LWUPB,  LWUPBC,  LWDNB,  LWDNBC                          & ! Optional
-              ,LWCF,SWCF,OLR                                              & ! Optional
+   SUBROUTINE radiation_driver (                                  &
+               ACFRCV ,ACFRST ,ALBEDO  &
+              ,CFRACH ,CFRACL ,CFRACM  &
+              ,CUPPT  ,CZMEAN ,DT      &
+              ,DZ8W   ,EMISS  ,GLW     &
+              ,GMT    ,GSW    ,HBOT    &
+              ,HTOP   ,HBOTR  ,HTOPR   &
+              ,ICLOUD                  &
+              ,ITIMESTEP,JULDAY, JULIAN &
+              ,JULYR  ,LW_PHYSICS       &
+              ,NCFRCV ,NCFRST ,NPHS     &
+              ,P8W    ,P ,PI            &
+              ,RADT   ,RA_CALL_OFFSET   &
+              ,RHO    ,RLWTOA           &
+              ,RSWTOA ,RTHRATEN         &
+              ,RTHRATENLW      ,RTHRATENSW    &
+              ,SNOW   ,STEPRA ,SWDOWN  &
+              ,SWDOWNC ,SW_PHYSICS     &
+              ,T8W     ,T ,TAUCLDC &
+              ,TAUCLDI ,TSK ,VEGFRA  &
+              ,WARM_RAIN ,XICE ,XLAND   &
+              ,XLAT ,XLONG ,YR          &
+!Optional solar variables
+              ,DECLINX ,SOLCONX ,COSZEN ,HRANG    &
+              , CEN_LAT                                      &
+              ,Z                                             &
+              ,LEVSIZ, N_OZMIXM                    &
+              ,N_AEROSOLC                                    &
+              ,PAERLEV                                       &
+              ,CAM_ABS_DIM1, CAM_ABS_DIM2 &
+              ,CAM_ABS_FREQ_S                         &
+              ,XTIME                                           &
+              ,CURR_SECS, ADAPT_STEP_FLAG       &
+            ! indexes
+              ,IDS,IDE, JDS,JDE, KDS,KDE          &
+              ,IMS,IME, JMS,JME, KMS,KME          &
+              ,i_start,i_end          &
+              ,j_start,j_end          &
+              ,kts, kte                          &
+              ,num_tiles                                   &
+            ! Optional
+              , TLWDN, TLWUP                        & ! goddard schemes
+              , SLWDN, SLWUP                        & ! goddard schemes
+              , TSWDN, TSWUP                        & ! goddard schemes
+              , SSWDN, SSWUP                        & ! goddard schemes
+              , CLDFRA                                        &
+              , PB                                                &
+              , F_ICE_PHY,F_RAIN_PHY       &
+              , QV, F_QV                     &
+              , QC, F_QC                     &
+              , QR, F_QR                     &
+              , QI, F_QI                     &
+              , QS, F_QS                     &
+              , QG, F_QG                     &
+              , QNDROP, F_QNDROP    &
+              ,ACSWUPT   ,ACSWUPTC            &
+              ,ACSWDNT   ,ACSWDNTC            &
+              ,ACSWUPB   ,ACSWUPBC            &
+              ,ACSWDNB   ,ACSWDNBC            &
+              ,ACLWUPT   ,ACLWUPTC            &
+              ,ACLWDNT   ,ACLWDNTC            &
+              ,ACLWUPB   ,ACLWUPBC            &
+              ,ACLWDNB   ,ACLWDNBC            &
+              ,SWUPT ,SWUPTC                  &
+              ,SWDNT ,SWDNTC                  &
+              ,SWUPB ,SWUPBC                  &
+              ,SWDNB ,SWDNBC                  &
+              ,LWUPT ,LWUPTC                  &
+              ,LWDNT ,LWDNTC                  &
+              ,LWUPB ,LWUPBC                  &
+              ,LWDNB ,LWDNBC                  &
+              ,LWCF                           &
+              ,SWCF                           &
+              ,OLR                            &
+              ,OZMIXM, PIN                    &
+              ,M_PS_1, M_PS_2, AEROSOLC_1     &
+              ,AEROSOLC_2, M_HYBI0            &
+              ,ABSTOT, ABSNXT, EMSTOT         &
+              ,CU_RAD_FEEDBACK                &
+              ,AER_RA_FEEDBACK                &
+              ,QC_ADJUST , QI_ADJUST          &
+              ,PM2_5_DRY, PM2_5_WATER         &
+              ,PM2_5_DRY_EC                   &
+              ,TAUAER300, TAUAER400 & ! jcb
+              ,TAUAER600, TAUAER999 & ! jcb
+              ,GAER300, GAER400, GAER600, GAER999 & ! jcb
+              ,WAER300, WAER400, WAER600, WAER999 & ! jcb
+              ,TAUAERlw1,  TAUAERlw2  &
+              ,TAUAERlw3,  TAUAERlw4  &
+              ,TAUAERlw5,  TAUAERlw6  &
+              ,TAUAERlw7,  TAUAERlw8  &
+              ,TAUAERlw9,  TAUAERlw10   &
+              ,TAUAERlw11, TAUAERlw12   &
+              ,TAUAERlw13, TAUAERlw14   &
+              ,TAUAERlw15, TAUAERlw16  &
+              ,progn                                            &
+              ,slope_rad,topo_shading     &
+              ,shadowmask,ht,dx,dy                 &
               ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
               ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
-!jdfcz        ,progn,prescribe                                            & ! Optional
-              ,progn                                                      & ! Optional
-              ,GLW, GSW, SWDOWN, XLAT, XLONG, ALBEDO                      &
-              ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
-              ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
-              ,julyr, JULDAY, julian, YR, xtime, RADT, STEPRA, ICLOUD, warm_rain     &
-              ,declinx,solconx,COSZEN, HRANG                              & !Optional 
-              ,cen_lat                                                    &
-              ,ra_call_offset,RSWTOA,RLWTOA, CZMEAN                       &
-              ,CFRACL, CFRACM, CFRACH                                     &
-              ,ACFRST,NCFRST,ACFRCV,NCFRCV,SWDOWNC                        &
-              ,z                                                          &
-              ,levsiz, n_ozmixm, n_aerosolc, paerlev                      &
-              ,cam_abs_dim1, cam_abs_dim2, cam_abs_freq_s                 &
-              ,ozmixm,pin                                                 & ! Optional
-              ,m_ps_1,m_ps_2,aerosolc_1,aerosolc_2,m_hybi0                & ! Optional
-              ,abstot, absnxt, emstot                                     & ! Optional
-              ,taucldi, taucldc                                           & ! Optional
-              ,ids, ide, jds, jde, kds, kde                               &
-              ,ims, ime, jms, jme, kms, kme                               &
-              ,i_start, i_end                                             &
-              ,j_start, j_end                                             &
-              ,kts, kte                                                   &
-              ,num_tiles, CURR_SECS, adapt_step_flag                      &
-              ,qv,qc,qr,qi,qs,qg,qndrop                                   &
-              ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop                     &
-              ,CLDFRA ,Pb                                                 &
-              ,f_ice_phy,f_rain_phy                                       &
-              ,pm2_5_dry, pm2_5_water, pm2_5_dry_ec                       &
-               !aerosol shortwave
-              ,tauaer300, tauaer400, tauaer600, tauaer999                 & ! jcb
-              ,gaer300, gaer400, gaer600, gaer999                         & ! jcb
-              ,waer300, waer400, waer600, waer999                         & ! jcb
-               !aerosol longwave
-              ,tauaerlw1, tauaerlw2, tauaerlw3, tauaerlw4                 & ! czhao 
-              ,tauaerlw5, tauaerlw6, tauaerlw7, tauaerlw8                 & ! czhao 
-              ,tauaerlw9, tauaerlw10, tauaerlw11, tauaerlw12                 & ! czhao 
-              ,tauaerlw13, tauaerlw14, tauaerlw15, tauaerlw16                 & ! czhao 
-              ,qc_adjust ,qi_adjust                                       & ! jm
-              ,cu_rad_feedback, aer_ra_feedback                           & ! jm
-              ,ht,dx,dy,shadowmask,slope_rad ,topo_shading                & ! slope-dependent radiation
-              ,tlwdn, tlwup      &  ! optional for Goddard schemes
-              ,slwdn, slwup      &  ! optional for Goddard schemes
-              ,tswdn, tswup      &  ! optional for Goddard schemes
-              ,sswdn, sswup      &  ! optional for Goddard schemes
                                                                           )
 
 

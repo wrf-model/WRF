@@ -227,7 +227,47 @@ integer::oops1,oops2
                  ( config_flags%smooth_cg_topo ) .OR. &
                  ( config_flags%map_proj .EQ. PROJ_CASSINI )
 
-      em_width = MAX ( config_flags%spec_bdy_width , config_flags%emw )
+      !  There are a few checks that we need to do when the input data comes in with the middle
+      !  excluded by WPS.
+
+      IF      ( flag_excluded_middle .NE. 0 ) THEN
+
+         !  If this time period of data from WPS has the middle excluded, it had better be OK for
+         !  us to have a hole.
+
+         IF ( hold_ups ) THEN
+            WRITE ( a_message,* ) 'None of the following are allowed to be TRUE : '
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) ' ( internal_time_loop .EQ. 1 )               ', ( internal_time_loop .EQ. 1 )
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) ' ( config_flags%grid_fdda .NE. 0 )           ', ( config_flags%grid_fdda .NE. 0 )
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) ' ( config_flags%sst_update .EQ. 1 )          ', ( config_flags%sst_update .EQ. 1 )
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) ' ( config_flags%all_ic_times )               ', ( config_flags%all_ic_times )
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) ' ( config_flags%smooth_cg_topo )             ', ( config_flags%smooth_cg_topo )
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) ' ( config_flags%map_proj .EQ. PROJ_CASSINI ) ', ( config_flags%map_proj .EQ. PROJ_CASSINI )
+            CALL wrf_message ( a_message ) 
+
+            WRITE ( a_message,* ) 'Problems, we cannot have excluded middle data from WPS'
+            CALL wrf_error_fatal ( a_message )
+         END IF
+
+         !  Make sure that the excluded middle data from metgrid is "wide enough".  We only have to check
+         !  when the excluded middle was actually used in WPS.
+
+         IF ( config_flags%spec_bdy_width .GT. flag_excluded_middle ) THEN
+            WRITE ( a_message,* ) 'The WRF &bdy_control namelist.input spec_bdy_width = ', config_flags%spec_bdy_width
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) 'The WPS &metgrid namelist.wps process_only_bdy width = ',flag_excluded_middle
+            CALL wrf_message ( a_message ) 
+            WRITE ( a_message,* ) 'WPS process_only_bdy must be >= WRF spec_bdy_width'
+            CALL wrf_error_fatal ( a_message )
+         END IF
+      END IF
+      em_width = config_flags%spec_bdy_width
 
       !  We need to find if there are any valid non-excluded-middle points in this
       !  tile.  If so, then we need to hang on to a valid i,j location.
@@ -661,15 +701,28 @@ integer::oops1,oops2
                k = num_metgrid_levels
             END IF
 
-            CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc ,         &
-                              config_flags%rh2qv_wrt_liquid ,                        &
-                              config_flags%qv_max_p_safe ,                           &
-                              config_flags%qv_max_flag , config_flags%qv_max_value , &
-                              config_flags%qv_min_p_safe ,                           &
-                              config_flags%qv_min_flag , config_flags%qv_min_value , &
-                              ids , ide , jds , jde , 1   , num_metgrid_levels ,     &
-                              ims , ime , jms , jme , 1   , num_metgrid_levels ,     &
-                              its , ite , jts , jte , 1   , num_metgrid_levels )
+            IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
+               CALL rh_to_mxrat1(grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc ,         &
+                                 config_flags%rh2qv_wrt_liquid ,                        &
+                                 config_flags%qv_max_p_safe ,                           &
+                                 config_flags%qv_max_flag , config_flags%qv_max_value , &
+                                 config_flags%qv_min_p_safe ,                           &
+                                 config_flags%qv_min_flag , config_flags%qv_min_value , &
+                                 ids , ide , jds , jde , 1   , num_metgrid_levels ,     &
+                                 ims , ime , jms , jme , 1   , num_metgrid_levels ,     &
+                                 its , ite , jts , jte , 1   , num_metgrid_levels )
+            ELSE IF ( config_flags%rh2qv_method .eq. 2 ) THEN
+               CALL rh_to_mxrat2(grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc ,         &
+                                 config_flags%rh2qv_wrt_liquid ,                        &
+                                 config_flags%qv_max_p_safe ,                           &
+                                 config_flags%qv_max_flag , config_flags%qv_max_value , &
+                                 config_flags%qv_min_p_safe ,                           &
+                                 config_flags%qv_min_flag , config_flags%qv_min_value , &
+                                 ids , ide , jds , jde , 1   , num_metgrid_levels ,     &
+                                 ims , ime , jms , jme , 1   , num_metgrid_levels ,     &
+                                 its , ite , jts , jte , 1   , num_metgrid_levels )
+            END IF
+
 
          ELSE IF ( flag_sh .EQ. 1 ) THEN
             IF ( grid%p_gc(i_valid,num_metgrid_levels,j_valid) .LT. grid%p_gc(i_valid,2,j_valid) ) THEN
@@ -1095,15 +1148,27 @@ integer::oops1,oops2
                            ims , ime , jms , jme , kms , kme , &
                            its , ite , jts , jte , kts , kte )
 
-         CALL rh_to_mxrat (grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
-                           config_flags%rh2qv_wrt_liquid ,                        &
-                           config_flags%qv_max_p_safe ,                           &
-                           config_flags%qv_max_flag , config_flags%qv_max_value , &
-                           config_flags%qv_min_p_safe ,                           &
-                           config_flags%qv_min_flag , config_flags%qv_min_value , &
-                           ids , ide , jds , jde , kds , kde ,                    &
-                           ims , ime , jms , jme , kms , kme ,                    &
-                           its , ite , jts , jte , kts , kte-1 )
+         IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
+            CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
+                              config_flags%rh2qv_wrt_liquid ,                        &
+                              config_flags%qv_max_p_safe ,                           &
+                              config_flags%qv_max_flag , config_flags%qv_max_value , &
+                              config_flags%qv_min_p_safe ,                           &
+                              config_flags%qv_min_flag , config_flags%qv_min_value , &
+                              ids , ide , jds , jde , kds , kde ,                    &
+                              ims , ime , jms , jme , kms , kme ,                    &
+                              its , ite , jts , jte , kts , kte-1 )
+         ELSE IF ( config_flags%rh2qv_method .eq. 2 ) THEN
+            CALL rh_to_mxrat2(grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
+                              config_flags%rh2qv_wrt_liquid ,                        &
+                              config_flags%qv_max_p_safe ,                           &
+                              config_flags%qv_max_flag , config_flags%qv_max_value , &
+                              config_flags%qv_min_p_safe ,                           &
+                              config_flags%qv_min_flag , config_flags%qv_min_value , &
+                              ids , ide , jds , jde , kds , kde ,                    &
+                              ims , ime , jms , jme , kms , kme ,                    &
+                              its , ite , jts , jte , kts , kte-1 )
+         END IF
 
          num_3d_m = num_moist
          num_3d_s = num_scalar
@@ -1509,6 +1574,7 @@ integer::oops1,oops2
             END IF
          END DO
       END DO
+
 
       !  Fix grid%tmn and grid%tsk.
 
@@ -3360,13 +3426,13 @@ end subroutine fillitup
             !  The polynomials are either in pressure or LOG(pressure).
 
             IF ( interp_type .EQ. 1 ) THEN
-               CALL lagrange_setup ( var_type , &
+               CALL lagrange_setup ( var_type , interp_type , &
                     ordered_porig(kinterp_start:kinterp_end) , &
                     ordered_forig(kinterp_start:kinterp_end) , &
                     count , lagrange_order , extrap_type , &
                     ordered_pnew(kstart:kend)  , ordered_fnew  , kend-kstart+1 ,i,j)
             ELSE
-               CALL lagrange_setup ( var_type , &
+               CALL lagrange_setup ( var_type , interp_type , &
                 LOG(ordered_porig(kinterp_start:kinterp_end)) , &
                     ordered_forig(kinterp_start:kinterp_end) , &
                     count , lagrange_order , extrap_type , &
@@ -3790,7 +3856,7 @@ print *,'VERT EXTRAP = ', vert_extrap
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE lagrange_setup ( var_type , all_x , all_y , all_dim , n , extrap_type , &
+   SUBROUTINE lagrange_setup ( var_type , interp_type , all_x , all_y , all_dim , n , extrap_type , &
                                target_x , target_y , target_dim ,i,j)
 
       !  We call a Lagrange polynomial interpolator.  The parallel concerns are put off as this
@@ -3805,7 +3871,7 @@ print *,'VERT EXTRAP = ', vert_extrap
       IMPLICIT NONE
 
       CHARACTER (LEN=1) :: var_type
-      INTEGER , INTENT(IN) :: all_dim , n , extrap_type , target_dim
+      INTEGER , INTENT(IN) :: interp_type , all_dim , n , extrap_type , target_dim
       REAL, DIMENSION(all_dim) , INTENT(IN) :: all_x , all_y
       REAL , DIMENSION(target_dim) , INTENT(IN) :: target_x
       REAL , DIMENSION(target_dim) , INTENT(OUT) :: target_y
@@ -3831,6 +3897,8 @@ print *,'VERT EXTRAP = ', vert_extrap
       REAL , PARAMETER :: CRC_const1 = 11880.516      ! m
       REAL , PARAMETER :: CRC_const2 =     0.1902632  !
       REAL , PARAMETER :: CRC_const3 =     0.0065     ! K/km
+      REAL, DIMENSION(all_dim) :: all_x_full
+      REAL , DIMENSION(target_dim) :: target_x_full
 
       IF ( all_dim .LT. n+1 ) THEN
 print *,'all_dim = ',all_dim
@@ -3873,24 +3941,33 @@ print *,'p target= ',target_x
 
          IF ( ( .NOT. found_loc ) .AND. ( target_x(target_loop) .GT. all_x(1) ) ) THEN
 
+            !  Get full pressure back so that our extrpolations make sense.
+
+            IF ( interp_type .EQ. 1 ) THEN
+               all_x_full    =       all_x
+               target_x_full =       target_x
+            ELSE
+               all_x_full    = EXP ( all_x )
+               target_x_full = EXP ( target_x )
+            END IF
             !  Isothermal extrapolation.
 
             IF      ( ( extrap_type .EQ. 1 ) .AND. ( var_type .EQ. 'T' ) ) THEN
 
-               temp_1 = all_y(1) * ( all_x(1) / 100000. ) ** RovCp
-               target_y(target_loop) = temp_1 * ( 100000. / target_x(target_loop) ) ** RovCp
+               temp_1 = all_y(1) * ( all_x_full(1) / 100000. ) ** RovCp
+               target_y(target_loop) = temp_1 * ( 100000. / target_x_full(target_loop) ) ** RovCp
 
             !  Standard atmosphere -6.5 K/km lapse rate for the extrapolation.
 
             ELSE IF ( ( extrap_type .EQ. 2 ) .AND. ( var_type .EQ. 'T' ) ) THEN
 
-               depth_of_extrap_in_p = target_x(target_loop) - all_x(1)
-               avg_of_extrap_p = ( target_x(target_loop) + all_x(1) ) * 0.5
-               temp_extrap_starting_point = all_y(1) * ( all_x(1) / 100000. ) ** RovCp
+               depth_of_extrap_in_p = target_x_full(target_loop) - all_x_full(1)
+               avg_of_extrap_p = ( target_x_full(target_loop) + all_x_full(1) ) * 0.5
+               temp_extrap_starting_point = all_y(1) * ( all_x_full(1) / 100000. ) ** RovCp
                dhdp = CRC_const1 * CRC_const2 * ( avg_of_extrap_p / 100. ) ** ( CRC_const2 - 1. )
                dh = dhdp * ( depth_of_extrap_in_p / 100. )
                dt = dh * CRC_const3
-               target_y(target_loop) = ( temp_extrap_starting_point + dt ) * ( 100000. / target_x(target_loop) ) ** RovCp
+               target_y(target_loop) = ( temp_extrap_starting_point + dt ) * ( 100000. / target_x_full(target_loop) ) ** RovCp
 
             !  Adiabatic extrapolation for theta.
 
@@ -4472,7 +4549,175 @@ print *,'p sfc = ',psfc(i,j)
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE rh_to_mxrat (rh, t, p, q , wrt_liquid , &
+   SUBROUTINE rh_to_mxrat2(rh, t, p, q , wrt_liquid , &
+                           qv_max_p_safe , &
+                           qv_max_flag , qv_max_value , &
+                           qv_min_p_safe , &
+                           qv_min_flag , qv_min_value , &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           its , ite , jts , jte , kts , kte )
+
+      !  This subroutine computes mixing ratio (q, kg/kg) from basic variables
+      !  pressure (p, Pa), temperature (t, K) and relative humidity (rh, 0-100%).
+      !  Phase transition, liquid water to ice, occurs over (0,-23) temperature range (Celcius). 
+      !  Formulation used here is based on:
+      !  WMO, General meteorological standards and recommended practices,
+      !   Appendix A, WMO Technical Regulations, WMO-No. 49, corrigendum,
+      !   August 2000.    --TKW 03/30/2011
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+
+      LOGICAL , INTENT(IN)        :: wrt_liquid
+
+      REAL , INTENT(IN)           :: qv_max_p_safe , qv_max_flag , qv_max_value
+      REAL , INTENT(IN)           :: qv_min_p_safe , qv_min_flag , qv_min_value
+
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: p , t
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT)  :: rh
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT)    :: q
+
+      !  Local vars
+
+      REAL,         PARAMETER     :: T0K = 273.16
+      REAL,         PARAMETER     :: Tice = T0K - 23.0
+
+      REAL,         PARAMETER     :: cfe = 1.0/(23.0*23.0)
+      REAL,         PARAMETER     :: eps = 0.622
+
+      ! Coefficients for esat over liquid water
+      REAL,         PARAMETER     :: cw1 = 10.79574
+      REAL,         PARAMETER     :: cw2 = -5.02800
+      REAL,         PARAMETER     :: cw3 = 1.50475E-4
+      REAL,         PARAMETER     :: cw4 = 0.42873E-3
+      REAL,         PARAMETER     :: cw5 = 0.78614
+
+      ! Coefficients for esat over ice 
+      REAL,         PARAMETER     :: ci1 = -9.09685
+      REAL,         PARAMETER     :: ci2 = -3.56654
+      REAL,         PARAMETER     :: ci3 = 0.87682
+      REAL,         PARAMETER     :: ci4 = 0.78614
+
+      REAL,         PARAMETER     :: Tn = 273.16
+
+      ! 1 ppm is a reasonable estimate for minimum QV even for stratospheric altitudes
+      REAL,         PARAMETER     :: QV_MIN = 1.e-6
+
+      ! Maximum allowed QV is computed under the extreme condition:
+      !            Saturated at 40 degree in Celcius and 1000 hPa
+      REAL,         PARAMETER     :: QV_MAX = 0.045 
+
+      ! Need to constrain WVP in the stratosphere where pressure 
+      ! is low but tempearure is hot (warm) 
+      ! Maximum ratio of e/p, = q/(0.622+q)
+      REAL,         PARAMETER     :: EP_MAX = QV_MAX/(eps+QV_MAX)
+
+      INTEGER                     :: i , j , k
+
+      REAL                        :: ew , q1 , t1
+      REAL                        :: ta, tb, pw3, pw4, pwr
+      REAL                        :: es, esw, esi, wvp, pmb, wvpmax
+
+      DO j = jts , MIN ( jde-1 , jte )
+         DO k = kts , kte
+            DO i = its , MIN (ide-1 , ite )
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )
+            END DO
+         END DO
+      END DO
+
+      IF ( wrt_liquid ) THEN
+         DO j = jts , MIN ( jde-1 , jte )
+            DO k = kts , kte
+               DO i = its , MIN (ide-1 , ite )
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  Ta=Tn/T(i,k,j)
+                  Tb=T(i,k,j)/Tn
+                  pw3 = -8.2969*(Tb-1.0)
+                  pw4 = 4.76955*(1.0-Ta)
+                  pwr = cw1*(1.0-Ta) + cw2*LOG10(Tb) + cw3*(1.0-10.0**pw3) + cw4*(10.0**pw4-1.0) + cw5
+                  es = 10.0**pwr             ! Saturation WVP
+                  wvp = 0.01*rh(i,k,j)*es    ! Actual WVP
+                  pmb = p(i,k,j)/100.
+                  wvpmax = EP_MAX*pmb        ! Prevents unrealistic QV in the stratosphere
+                  wvp = MIN(wvp,wvpmax)
+                  q(i,k,j) = eps*wvp/(pmb-wvp)
+               END DO
+            END DO
+         END DO
+
+      ELSE
+         DO j = jts , MIN ( jde-1 , jte )
+            DO k = kts , kte
+               DO i = its , MIN (ide-1 , ite )
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  Ta=Tn/T(i,k,j)
+                  Tb=T(i,k,j)/Tn
+                  IF (t(i,k,j) >= T0K) THEN         ! Over liquid water
+                     pw3 = -8.2969*(Tb-1.0)
+                     pw4 = 4.76955*(1.0-Ta)
+                     pwr = cw1*(1.0-Ta) + cw2*LOG10(Tb) + cw3*(1.0-10.0**pw3) + cw4*(10.0**pw4-1.0) + cw5
+                     es = 10.0**pwr
+                     wvp = 0.01*rh(i,k,j)*es
+                  ELSE IF (t(i,k,j) <= Tice) THEN   ! Over ice
+                     pwr = ci1*(Ta-1.0) + ci2*LOG10(Ta) + ci3*(1.0-Tb) + ci4
+                     es = 10.0**pwr
+                     wvp = 0.01*rh(i,k,j)*es
+                  ELSE                              ! Mixed
+                     pw3 = -8.2969*(Tb-1.0)
+                     pw4 = 4.76955*(1.0-Ta)
+                     pwr = cw1*(1.0-Ta) + cw2*LOG10(Tb) + cw3*(1.0-10.0**pw3) + cw4*(10.0**pw4-1.0) + cw5
+                     esw = 10.0**pwr      ! Over liquid water
+
+                     pwr = ci1*(Ta-1.0) + ci2*LOG10(Ta) + ci3*(1.0-Tb) + ci4
+                     esi = 10.0**pwr      ! Over ice
+
+                     es = esi + (esw-esi)*cfe*(T(i,k,j)-Tice)*(T(i,k,j)-Tice)
+                     wvp = 0.01*rh(i,k,j)*es
+                  END IF
+                  pmb = p(i,k,j)/100.
+                  wvpmax = EP_MAX*pmb     ! Prevents unrealistic QV in the stratosphere
+                  wvp = MIN(wvp,wvpmax)
+                  q(i,k,j) = eps*wvp/(pmb-wvp)
+               END DO
+            END DO
+         END DO
+      END IF
+
+      !  For pressures above a defined level, reasonable Qv values should be
+      !  a certain value or smaller.  If they are larger than this, the input data
+      !  probably had "missing" RH, and we filled in some values.  This is an
+      !  attempt to catch those.  Also, set the minimum value for the entire
+      !  domain that is above the selected pressure level.
+     
+      DO j = jts , MIN ( jde-1 , jte )
+         DO k = kts , kte
+            DO i = its , MIN (ide-1 , ite )
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               IF ( p(i,k,j) .LT. qv_max_p_safe ) THEN
+                  IF ( q(i,k,j) .GT. qv_max_flag ) THEN
+                     q(i,k,j) = qv_max_value
+                  END IF
+               END IF
+               IF ( p(i,k,j) .LT. qv_min_p_safe ) THEN
+                  IF ( q(i,k,j) .LT. qv_min_flag ) THEN
+                     q(i,k,j) = qv_min_value
+                  END IF
+               END IF
+            END DO
+         END DO
+      END DO
+
+   END SUBROUTINE rh_to_mxrat2
+
+!---------------------------------------------------------------------
+
+   SUBROUTINE rh_to_mxrat1(rh, t, p, q , wrt_liquid , &
                            qv_max_p_safe , &
                            qv_max_flag , qv_max_value , &
                            qv_min_p_safe , &
@@ -4649,7 +4894,7 @@ print *,'p sfc = ',psfc(i,j)
          END DO
       END DO
 
-   END SUBROUTINE rh_to_mxrat
+   END SUBROUTINE rh_to_mxrat1
 
 !---------------------------------------------------------------------
 

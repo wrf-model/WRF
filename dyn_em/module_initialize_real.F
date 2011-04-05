@@ -4835,13 +4835,19 @@ print *,'p sfc = ',psfc(i,j)
 
                      !  First compute the ambient vapor pressure of water
 
-                     IF ( ( t1 .GE. t_ref ) .AND. ( t1 .GE. -47.) ) THEN    ! liq phase ESLO
+                     !  Liquid phase t > 0 C
+
+                     IF ( t1 .GE. t_ref ) THEN
                         ew = a0 + t1 * (a1 + t1 * (a2 + t1 * (a3 + t1 * (a4 + t1 * (a5 + t1 * a6)))))
 
-                     ELSE IF ( ( t1 .GE. t_ref ) .AND. ( t1 .LT. -47. ) ) then !liq phas poor ES
+                     !  Mixed phase -47 C < t < 0 C
+
+                     ELSE IF ( ( t1 .LT. t_ref ) .AND. ( t1 .GE. -47. ) ) THEN
                         ew = es0 * exp(17.67 * t1 / ( t1 + 243.5))
 
-                     ELSE
+                     !  Ice phase t < -47 C
+
+                     ELSE IF ( t1 .LT. -47. ) THEN
                         tk = t(i,k,j)
                         rhs = -c1 * (tf / tk - 1.) - c2 * alog10(tf / tk) +  &
                                c3 * (1. - tk / tf) +      alog10(eis)

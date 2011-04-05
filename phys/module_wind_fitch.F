@@ -310,18 +310,19 @@ CONTAINS
   ELSE 
      powcof = power * 2.e+6 / (speed*speed*speed*area)
      IF (speed .LT. cispeed*2.) THEN ! dampen artificial max near cispeed
-        powcof = powcof * speed/(cispeed*2.)
+        powcof = powcof * exp(-((speed-cispeed*2.)**2./(cispeed*2.)))
      end if
      powcof = MIN(powcof,.55)
   ENDIF
 
   ! GENERIC Thrust coefficient calculation - USE AT YOUR OWN RISK
   IF (speed .LE. cispeed .OR. speed .GE. cospeed) THEN
-     thrcof = 0. !stdthrcoef
+     thrcof = stdthrcoef
   ELSE
      !thrcof= stdthrcoef+2.3/speed**.8
-     thrcof = powcof + powcof*MAX(0.8*(cospeed - speed)/(cospeed+cispeed), 0.2)
-     thrcof = MIN(thrcof,.8)
+     thrcof = powcof + powcof*0.75
+     thrcof = MIN(thrcof,.9)
+     thrcof = MAX(thrcof,stdthrcoef)
   ENDIF
 
   ! tke coefficient calculation 

@@ -62,11 +62,19 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 !   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
 ! #endif
      IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
-       !  no history output on the first time of the restart
+       !  output history at beginning of restart if alarm is ringing
+       CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      ELSE
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      END IF
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
+#if (EM_CORE == 1)
+   ELSE IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) .AND. &
+              ( config_flags%write_hist_at_0h_rst ) ) THEN
+     !  output history at beginning of restart even if alarm is not ringing
+     CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+     CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
+#endif
    ENDIF
 
    IF( WRFU_AlarmIsRinging( grid%alarms( INPUTOUT_ALARM ), rc=rc ) ) THEN

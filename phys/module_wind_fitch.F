@@ -284,41 +284,50 @@ CONTAINS
 
   SUBROUTINE dragcof(tkecof,powcof,thrcof,speed,cispeed,cospeed, &
                      tpower,tdiameter,stdthrcoef)
+
+!  DISCLAIMER: The following power curve, power coefficients, and thrust
+!  coefficients are meant for testing purposes only, and were formulated as 
+!  an approximation to a real curve.  The user is strongly encouraged to 
+!  incorporate their own curves for the particular turbine of interest 
+!  to them.
+
   REAL, PARAMETER :: pi=22./7.
   REAL, INTENT(IN):: speed, cispeed, cospeed, tpower,tdiameter,stdthrcoef
   REAL, INTENT(OUT):: tkecof,powcof,thrcof
-  REAL :: power,area
+  REAL :: power,area,mspeed,hspeed
 
   area=pi/4.*tdiameter*tdiameter          ! area swept by turbine blades
-! Thrust coefficient calculation
-  IF (speed .LE. cispeed .OR. speed .GE. cospeed) THEN
-     thrcof=stdthrcoef
-  ELSE IF(speed .GT. cispeed .AND. speed .LT. cispeed+2.) THEN
-     thrcof=stdthrcoef+(.9-stdthrcoef)*(speed-cispeed)/2.
-  ELSE
-     thrcof=stdthrcoef+2.3/speed**.8
-  ENDIF
-! power coefficient calculation
-  IF(speed .LE. cispeed .OR. speed .GE. cospeed+2.) THEN
+
+  ! GENERIC POWER CURVE - USE AT YOUR OWN RISK
+  mspeed=0.5*(cospeed+cispeed)  !average of cispeed & cospeed
+  hspeed=0.5*(cospeed-mspeed)   !this regulates the transition to full power
+  power =tpower*(.5*tanh((speed - (mspeed-hspeed))/(hspeed*0.60)) + .5)*.8
+  
+  ! GENERIC power coefficient calculation - USE AT YOUR OWN RISK
+  IF(speed .LE. cispeed .OR. speed .GE. cospeed) THEN
      power=0.
      powcof=0.
-
-  ELSE IF(speed .GT. cospeed  .AND. speed .LE. cospeed+2.) THEN
-     power = abs(tpower - tpower/2.*(speed-cospeed))
+  ELSE 
      powcof = power * 2.e+6 / (speed*speed*speed*area)
-
-  ELSE IF(speed .GT. cispeed  .AND. speed .LT. cospeed-12) THEN
-     power=tpower/(cospeed-12-cispeed)*(speed-cispeed)
-     powcof = power * 2.e+6 / (speed*speed*speed*area)
-
-  ELSE
-     power=tpower
-     powcof = power * 2.e+6 / (speed*speed*speed*area)
-
+     IF (speed .LT. cispeed*2.) THEN ! dampen artificial max near cispeed
+        powcof = powcof * exp(-((speed-cispeed*2.)**2./(cispeed*2.)))
+     end if
+     powcof = MIN(powcof,.55)
   ENDIF
-! tke coefficient calculation 
-   tkecof=thrcof-powcof
-   IF(tkecof .LT. 0.) tkecof=0.
+
+  ! GENERIC Thrust coefficient calculation - USE AT YOUR OWN RISK
+  IF (speed .LE. cispeed .OR. speed .GE. cospeed) THEN
+     thrcof = stdthrcoef
+  ELSE
+     !thrcof= stdthrcoef+2.3/speed**.8
+     thrcof = powcof + powcof*0.75
+     thrcof = MIN(thrcof,.9)
+     thrcof = MAX(thrcof,stdthrcoef)
+  ENDIF
+
+  ! tke coefficient calculation 
+  tkecof=thrcof-powcof
+  IF(tkecof .LT. 0.) tkecof=0.
 
   END SUBROUTINE dragcof
 

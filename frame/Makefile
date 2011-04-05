@@ -175,6 +175,7 @@ adBuffer.o : adBuffer.F
 	$(RM) $*.b
 	$(RM) $@
 	$(SFC) -c $(FORMAT_FIXED) $(PROMOTION) $(FCNOOPT) $*.f
+	$(RM) adBuffer.f
 
 pack_utils.o :
 	$(CC) -c $(CFLAGS) -DIWORDSIZE=$(IWORDSIZE) pack_utils.c

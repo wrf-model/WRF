@@ -726,8 +726,8 @@ SUBROUTINE g_rk_update_scalar ( scs, sce,                      &
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                &
          INTENT(IN)                                  :: advect_tend
 
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: advh_t,  advz_t ! accumulating for output
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: g_advh_t,  g_advz_t ! accumulating for output
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ), OPTIONAL :: advh_t,  advz_t ! accumulating for output
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ), OPTIONAL :: g_advh_t,  g_advz_t ! accumulating for output
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: h_tendency, z_tendency ! from rk_scalar_tend
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) :: g_h_tendency, g_z_tendency ! from rk_scalar_tend
 
@@ -903,19 +903,21 @@ SUBROUTINE g_rk_update_scalar ( scs, sce,                      &
       ENDDO
 
       ! This is separated from the k/i-loop above for better performance
-      IF(tenddec.and.rk_step.eq.config_flags%rk_ord) THEN
-      DO  k = kts, min(kte,kde-1)
-      DO  i = its, min(ite,ide-1)
+      IF ( PRESENT(advh_t) .AND. PRESENT(advz_t) .AND. PRESENT(g_advh_t) .AND. PRESENT(g_advz_t) ) THEN
+         IF (tenddec.and.rk_step.eq.config_flags%rk_ord) THEN
+            DO k = kts, min(kte,kde-1)
+            DO i = its, min(ite,ide-1)
 
-          g_advh_t(i,k,j) = g_advh_t(i,k,j) + (dt*g_h_tendency(i,k,j)* msfty(i,j))*r_munew(i) &
+               g_advh_t(i,k,j) = g_advh_t(i,k,j) + (dt*g_h_tendency(i,k,j)* msfty(i,j))*r_munew(i) &
                                             + (dt*h_tendency(i,k,j)* msfty(i,j))*g_r_munew(i)
-          advh_t(i,k,j) = advh_t(i,k,j) + (dt*h_tendency(i,k,j)* msfty(i,j))*r_munew(i)
-          g_advz_t(i,k,j) = g_advz_t(i,k,j) + (dt*g_z_tendency(i,k,j)* msfty(i,j))*r_munew(i) &
+               advh_t(i,k,j) = advh_t(i,k,j) + (dt*h_tendency(i,k,j)* msfty(i,j))*r_munew(i)
+               g_advz_t(i,k,j) = g_advz_t(i,k,j) + (dt*g_z_tendency(i,k,j)* msfty(i,j))*r_munew(i) &
                                             + (dt*z_tendency(i,k,j)* msfty(i,j))*g_r_munew(i)
-          advz_t(i,k,j) = advz_t(i,k,j) + (dt*z_tendency(i,k,j)* msfty(i,j))*r_munew(i)
+               advz_t(i,k,j) = advz_t(i,k,j) + (dt*z_tendency(i,k,j)* msfty(i,j))*r_munew(i)
 
-      ENDDO
-      ENDDO
+            ENDDO
+            ENDDO
+         END IF
       END IF
 
       ENDDO

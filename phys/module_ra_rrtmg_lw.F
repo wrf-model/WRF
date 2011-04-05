@@ -28,6 +28,7 @@
 !      integer, parameter :: kind_rm = selected_real_kind(6)  ! 4 byte real
 !      integer, parameter :: kind_rn = kind(1.0)              ! native real
 
+#if 0
 ! Modified for WRF:
 #if (RWORDSIZE == 8)
       integer, parameter :: kind_rb = selected_real_kind(12) ! 8 byte real
@@ -35,7 +36,9 @@
 #if (RWORDSIZE == 4)
       integer, parameter :: kind_rb = selected_real_kind(6)  ! 4 byte real
 #endif
-!      integer, parameter :: kind_rb = kind(1.0)              ! native real
+#else
+       integer, parameter :: kind_rb = kind(1.0)              ! native real
+#endif
 
       end module parkind
 

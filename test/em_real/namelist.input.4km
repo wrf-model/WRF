@@ -68,11 +68,6 @@
  surface_input_source                = 1,
  num_soil_layers                     = 4,
  sf_urban_physics                    = 0,     0,     0,
- maxiens                             = 1,
- maxens                              = 3,
- maxens2                             = 3,
- maxens3                             = 16,
- ensdim                              = 144,
  /
 
  &fdda

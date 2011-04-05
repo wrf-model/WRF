@@ -43,6 +43,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  stoch_vertstruc_opt                  = 0,      0,      0,
  tot_backscat_t                       = 2.0E-6, 2.0E-6, 2.0E-6
  tot_backscat_psi                     = 2.0,    2.0,    2.0
+ nens                                 = 1,
 
 
 ** Using DFI options (note this is a separate namelist record):
@@ -145,6 +146,36 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  obs_ipf_errob                       = .true.
  obs_ipf_nudob                       = .true.
  obs_ipf_in4dob                      = .true
+ obs_no_pbl_nudge_uv                 = 0
+ obs_no_pbl_nudge_t                  = 0
+ obs_no_pbl_nudge_q                  = 0
+ obs_sfc_scheme_horiz                = 0
+ obs_sfc_scheme_vert                 = 0
+ obs_max_sndng_gap                   = 20
+ obs_nudgezfullr1_uv                 = 50
+ obs_nudgezrampr1_uv                 = 50
+ obs_nudgezfullr2_uv                 = 50
+ obs_nudgezrampr2_uv                 = 50
+ obs_nudgezfullr4_uv                 = -5000
+ obs_nudgezrampr4_uv                 = 50  
+ obs_nudgezfullr1_t                  = 50 
+ obs_nudgezrampr1_t                  = 50
+ obs_nudgezfullr2_t                  = 50
+ obs_nudgezrampr2_t                  = 50
+ obs_nudgezfullr4_t                  = -5000
+ obs_nudgezrampr4_t                  = 50  
+ obs_nudgezfullr1_q                  = 50 
+ obs_nudgezrampr1_q                  = 50
+ obs_nudgezfullr2_q                  = 50
+ obs_nudgezrampr2_q                  = 50
+ obs_nudgezfullr4_q                  = -5000
+ obs_nudgezrampr4_q                  = 50
+ obs_nudgezfullmin                   = 50
+ obs_nudgezrampmin                   = 50
+ obs_nudgezmax                       = 3000
+ obs_sfcfact                         = 1.0
+ obs_sfcfacr                         = 1.0
+ obs_dpsmx                           = 7.5
  /
 
 ** Using spectral nudging option 
@@ -182,6 +213,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  use_adaptive_time_step              = .true.,
  step_to_output_time                 = .true.,
  target_cfl                          = 1.2, 1.2, 1.2,
+ target_hcfl                         = .84, .84, .84,
  max_step_increase_pct               = 5,   51,  51,
  starting_time_step                  = -1,  -1,  -1,
  max_time_step                       = 360, 120, 40,
@@ -220,17 +252,6 @@ Setting threashold value for defining seaice if seaice is not in the input file:
 Switching off latent heating from a microphysics scheme (must also set cu_physics = 0):
 
  no_mp_heating                       = 0,
-
-** Using CAM long and short wave radiation schemes: Since 3.2, these variables will be
-   set in the model automatically if either long- or short-wave CAM radiation option is
-   chosen
-
- cam_abs_freq_s                      = 21600
- levsiz                              = 59
- paerlev                             = 29
- cam_abs_dim1                        = 4
- cam_abs_dim2                        = 28
- (cam_abs_dim2 should be the same as e_vert)
 
 ** Using precipiatiion bucket in a time interval (minutes):
 

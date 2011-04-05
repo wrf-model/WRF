@@ -3393,7 +3393,7 @@ if (config_flags % sw_call_rk_update_scalar_moist) then
 !                              g_advh_t=g_advh_t(ims,kms,jms,1),                       & 
 !                              advz_t=advz_t(ims,kms,jms,1),                           & 
 !                              g_advz_t=g_advz_t(ims,kms,jms,1),                       & 
-                               advect_tend=advect_tend,g_advect_tend=g_advect_tend     &
+                               advect_tend=advect_tend,g_advect_tend=g_advect_tend,    &
                                h_tendency=h_tendency, g_h_tendency=g_h_tendency,       & 
                                z_tendency=z_tendency, g_z_tendency=g_z_tendency,       & 
                                msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -3520,7 +3520,7 @@ if (config_flags % sw_call_rk_update_scalar) then
            tenddec = .false.
           CALL g_rk_update_scalar( scs=1,  sce=1,                                         &
                                   scalar_1=grid%tke_1, g_scalar_1=grid%g_tke_1,           &
-                                  scalar_2=grid%tke_2, g_scalar_2=grid%g_tke_2            &
+                                  scalar_2=grid%tke_2, g_scalar_2=grid%g_tke_2,           &
                                   sc_tend=tke_tend(ims,kms,jms),                          &
                                   g_sc_tend=g_tke_tend(ims,kms,jms),                      &
 !                                 advh_t=advh_t(ims,kms,jms,1),                           &

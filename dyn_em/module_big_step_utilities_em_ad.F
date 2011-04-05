@@ -16382,7 +16382,7 @@ SUBROUTINE A_THETA_RELAXATION(t_tendf, t_tendfb, t, tb, t_init, mut, &
       END DO
 ! Apply the RE87 R term:
       DO k=kts,ktf
-        CALL PUSHREAL4(rterm)
+        CALL PUSHREAL8(rterm)
         rterm = -((t(i, k, j)-t00(k))*inv_tau_r)
         IF (rterm .GT. rmax) THEN
           rterm = rmax
@@ -16414,7 +16414,7 @@ SUBROUTINE A_THETA_RELAXATION(t_tendf, t_tendfb, t, tb, t_init, mut, &
         IF (branch .EQ. 0) rtermb = 0.0
         CALL POPCONTROL1B(branch)
         IF (branch .EQ. 0) rtermb = 0.0
-        CALL POPREAL4(rterm)
+        CALL POPREAL8(rterm)
         tb(i, k, j) = tb(i, k, j) - inv_tau_r*rtermb
         t00b(k) = t00b(k) + inv_tau_r*rtermb
       END DO

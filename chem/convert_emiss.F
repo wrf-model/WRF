@@ -405,9 +405,9 @@ PROGRAM convert_emissions
 #else
        read(19)tmp3(ids:ide  ,jds:jde  ,1:3)
 #endif
-      do i=1,3 
-       grid%erod(ips:ipe,jps:jpe,i)=tmp3(ips:ipe,jps:jpe,i)
-      enddo
+!     do i=1,3 
+!      grid%erod(ips:ipe,jps:jpe,i)=tmp3(ips:ipe,jps:jpe,i)
+!     enddo
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN

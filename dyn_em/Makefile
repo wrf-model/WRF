@@ -562,10 +562,10 @@ module_first_rk_step_part2.o : \
 		../share/module_bc.o \
 		../frame/module_comm_dm.o \
 		../phys/module_fddaobs_driver.o \
-		../phys/module_fddaobs_driver.o
+		../phys/module_physics_addtendc.o
 
 module_first_rk_step_part2_tl.o : \
-                module_em.o \
+                module_em_tl.o \
 		module_diffusion_em_tl.o  \
 		module_sfs_driver_tl.o \
 		../frame/module_domain.o \
@@ -575,10 +575,12 @@ module_first_rk_step_part2_tl.o : \
 		../frame/module_dm.o \
 		../share/module_bc_tl.o \
 		../frame/module_comm_dm.o \
-		../phys/module_fddaobs_driver.o
+		../phys/module_fddaobs_driver.o \
+		../phys/module_physics_addtendc_tl.o
 
 module_first_rk_step_part2_ad.o : \
                 module_em.o \
+                module_em_ad.o \
 		module_diffusion_em.o  \
 		module_diffusion_em_ad.o  \
 		module_sfs_driver.o \
@@ -591,7 +593,9 @@ module_first_rk_step_part2_ad.o : \
 		../share/module_bc.o \
 		../share/module_bc_ad.o \
 		../frame/module_comm_dm.o \
-		../phys/module_fddaobs_driver.o
+		../phys/module_fddaobs_driver.o \
+		../phys/module_physics_addtendc.o \
+		../phys/module_physics_addtendc_ad.o
 
 adapt_timestep_em.o: \
                 module_bc_em.o         \

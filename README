@@ -1,4 +1,4 @@
-WRF Model Version 3.2.1 (August 18, 2010)
+WRF Model Version 3.3 (April 6, 2011)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -25,6 +25,18 @@ infringement actions.
 
 ======================================
 This is the main directory for the WRF Version 3 source code release.
+======================================
+
+V3.3 Release Notes:
+-------------------
+
+Version 3.3 is released on April 6, 2011 (rev 4896).
+
+- For more information on WRF V3.3 release, visit WRF User's home pages
+  http://www.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
+
 ======================================
 
 V3.2.1 Release Notes (8/18/10):
@@ -127,6 +139,8 @@ WRF update history:
 - V3.1: April 9, 2009
 - V3.1.1: July 31, 2009
 - V3.2: March 31, 2010
+- V3.2.1: August 18, 2010
+- V3.3: April 6, 2011
 
 ======================================
 
@@ -210,6 +224,7 @@ What is in WRF V3?
   * hydrostatic option via namelist option
   * positive-definite and monotonic advection for moisture, scalar, tke and chemical tracers
   * global modeling capability on latitude-longitude grid
+  * digital filter initialization
 
 - Two-way nesting:
   * multiple domains and multiple nest levels
@@ -225,17 +240,22 @@ What is in WRF V3?
 
 - Physics options:
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./ Mibrandt 2-moment /
-    Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Moment 5 and 6 classes )
+    Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Moment 5 and 6 classes /
+    SBU-Lin 5-classes )
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
-    Betts-Miller-Janjic / Grell-Devenyi ensemble / New Grell (with shallow convection option) )
-  * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE / MYNN / BouLac )
-  * surface layer (similarity theory MM5 / Eta / QNSE / MYNN )
+    Betts-Miller-Janjic / Grell-Devenyi ensemble / New Grell (with shallow convection option) /
+    Tiedtke (with shallow conv and momentum transport) / NSAS (with shallow conv and momentum transport) /
+    SAS (with shallow conv for ARW) / Zhang-McFarlane (with momentum transport) )
+  * UW shallow convection
+  * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE / MYNN / BouLac /
+    UW / TEMF )
   * slab soil model (5-layer thermal diffusion / Noah land-surface model (4 levels) /
     RUC LSM (6 levels) / Pleim-Xu (2 levels)
   * Urban canopy model, BEP multi-layer and BEM  (works with Noah LSM, BEP and 
     BEM also requires MYJ or BouLac)
-  * longwave radiation (RRTM / CAM / RRTMG)
-  * shortwave radiation (simple MM5 scheme / Goddard / CAM / RRTMG ), terrain slope and shading effect
+  * longwave radiation (RRTM / CAM / RRTMG / new Goddard )
+  * shortwave radiation (simple MM5 scheme / old Goddard / CAM / RRTMG / new Goddard), 
+    terrain slope and shading effect
   * sub-grid turbulence (constant K diffusion/ 2-D Smagorinsky/ predicted TKE /
     2-D, 6th order diffusion / Nonlinear Backscatter Anisotropic (NBA) sub-grid turbulence stress for LES )
   * Rayleigh damping for w at the upper boundary layer

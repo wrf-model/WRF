@@ -8,7 +8,7 @@ controls the overall operation of the scheme.  If it's set to "none"
 (quotes included) the wind turbine scheme is off.  If it's set to
 "ideal",  the turbine drag scheme is in idealized mode and other namelist
 variables in the block control the geometry and characteristics of the
-wind farm.  If it's set to the name of a file iin the run directory --
+wind farm.  If it's set to the name of a file in the run directory --
 for example, "windspec.in" -- then the scheme is on and the location and
 characteristics of each turbine is set individually from the contents of
 that file.  Which scheme is active will be controlled by another variable

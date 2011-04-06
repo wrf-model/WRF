@@ -72,11 +72,6 @@
  num_soil_layers                     = 5,
  sf_urban_physics                    = 0,
  mp_zero_out                         = 0,
- maxiens                             = 1,
- maxens                              = 3,
- maxens2                             = 3,
- maxens3                             = 16,
- ensdim                              = 144,
  /
 
 

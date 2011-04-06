@@ -25,7 +25,7 @@ CONTAINS
                , pi_phy ,g_pi_phy, p_phy ,g_p_phy , t_phy ,g_t_phy , &
                  u_phy ,g_u_phy , v_phy,g_v_phy     &
                , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w, &
-                 rho_phy ,g_rho_phy , rho,g_rho    &
+                 rho_phy , rho,g_rho    &
                , nba_mij,g_nba_mij, n_nba_mij         &
                , nba_rij,g_nba_rij, n_nba_rij         &
                , ids, ide, jds, jde, kds, kde     &
@@ -55,10 +55,10 @@ CONTAINS
     USE g_module_diffusion_em, ONLY : g_phy_bc, g_cal_deform_and_div, &
             g_compute_diff_metrics, g_vertical_diffusion_2,              &
             g_horizontal_diffusion_2, g_calculate_km_kh, g_tke_rhs
-    USE module_em, ONLY : calculate_phy_tend
+    USE g_module_em, ONLY : g_calculate_phy_tend
     USE module_fddaobs_driver, ONLY : fddaobs_driver
     USE g_module_bc, ONLY : g_set_physical_bc3d, g_set_physical_bc2d
-    USE module_physics_addtendc, ONLY : update_phy_ten
+    USE g_module_physics_addtendc, ONLY : g_update_phy_ten
 
     USE g_module_sfs_driver
     USE module_stoch, ONLY : update_stoch_ten, update_stoch , update_stoch_ten_subdomains,  & 
@@ -108,7 +108,7 @@ CONTAINS
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w,g_dz8w
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w,g_p8w
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w,g_t8w
-    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy,g_rho_phy
+    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho,g_rho
 
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf,g_ru_tendf
@@ -316,18 +316,36 @@ BENCH_START(tl_cal_phy_tend)
       DO ij = 1 , grid%num_tiles
 
         CALL wrf_debug ( 200 , ' call g_calculate_phy_tend' )
-!!!!! REPLACE WITH g_calculate_phy_tend WHEN CONSTRUCTING TL OF PHYSICS. Ning Pan
-        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy, &
-                     grid%rthraten,                                    &
-                     grid%rublten,grid%rvblten,grid%rthblten,          &
-                     grid%rqvblten,grid%rqcblten,grid%rqiblten,        &
-                     grid%rucuten,grid%rvcuten,grid%rthcuten,          &
-                     grid%rqvcuten,grid%rqccuten,grid%rqrcuten,        &
-                     grid%rqicuten,grid%rqscuten,                      &
-                     grid%rushten,grid%rvshten,grid%rthshten,          &
-                     grid%rqvshten,grid%rqcshten,grid%rqrshten,        &
-                     grid%rqishten,grid%rqsshten,grid%rqgshten,        &
-                     grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
+        CALL g_calculate_phy_tend (config_flags,grid%mut,grid%g_mut,grid%muu,grid%g_muu, &
+                     grid%muv,grid%g_muv,pi_phy,                       &
+                     grid%rthraten, grid%g_rthraten,                   &
+                     grid%rublten, grid%g_rublten,                     &
+                     grid%rvblten, grid%g_rvblten,                     &
+                     grid%rthblten, grid%g_rthblten,                   &
+                     grid%rqvblten, grid%g_rqvblten,                   &
+                     grid%rqcblten, grid%g_rqcblten,                   &
+                     grid%rqiblten, grid%g_rqiblten,                   &
+                     grid%rucuten, grid%g_rucuten,                     &
+                     grid%rvcuten, grid%g_rvcuten,                     &
+                     grid%rthcuten, grid%g_rthcuten,                   &
+                     grid%rqvcuten, grid%g_rqvcuten,                   &
+                     grid%rqccuten, grid%g_rqccuten,                   &
+                     grid%rqrcuten, grid%g_rqrcuten,                   &
+                     grid%rqicuten, grid%g_rqicuten,                   &
+                     grid%rqscuten, grid%g_rqscuten,                   &
+                     grid%rushten, grid%g_rushten,                     &
+                     grid%rvshten, grid%g_rvshten,                     &
+                     grid%rthshten, grid%g_rthshten,                   &
+                     grid%rqvshten, grid%g_rqvshten,                   &
+                     grid%rqcshten, grid%g_rqcshten,                   &
+                     grid%rqrshten, grid%g_rqrshten,                   &
+                     grid%rqishten, grid%g_rqishten,                   &
+                     grid%rqsshten, grid%g_rqsshten,                   &
+                     grid%rqgshten, grid%g_rqgshten,                   &
+                     grid%RUNDGDTEN, grid%g_RUNDGDTEN,                 &
+                     grid%RVNDGDTEN, grid%g_RVNDGDTEN,                 &
+                     grid%RTHNDGDTEN, grid%g_RTHNDGDTEN,               &
+                     grid%RQVNDGDTEN, grid%g_RQVNDGDTEN,               &
                      grid%RMUNDGDTEN,                                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
@@ -634,13 +652,14 @@ BENCH_START(tl_update_phy_ten_tim)
            ENDDO
          ENDIF
 #endif
-!!!!! REPLACE WITH g_update_phy_ten WHEN CONSTRUCTING TL OF PHYSICS. Ning Pan
-         CALL update_phy_ten(ph_tendf,t_tendf, ru_tendf, rv_tendf,moist_tend ,&
+         CALL g_update_phy_ten(ph_tendf,t_tendf, t_tendf, ru_tendf, g_ru_tendf,      &
+                           rv_tendf,g_rv_tendf,moist_tend,g_moist_tend,    &
                            scalar_tend, mu_tendf,                           &
-                           grid%rthraten,grid%rthblten,grid%rthcuten,grid%rthshten, &
-                           grid%rublten,grid%rucuten,grid%rushten,          &
-                           grid%rvblten,grid%rvcuten,grid%rvshten,          &
-                           grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
+                           grid%rthraten,grid%rthblten,grid%g_rthblten,       &
+                           grid%rthcuten,grid%rthshten, &
+                           grid%rublten,grid%g_rublten,grid%rucuten,grid%rushten,          &
+                           grid%rvblten,grid%g_rvblten,grid%rvcuten,grid%rvshten,          &
+                           grid%rqvblten,grid%g_rqvblten,grid%rqcblten,grid%rqiblten,       &
                            grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
                            grid%rqicuten,grid%rqscuten,                     &
                            grid%rqvshten,grid%rqcshten,grid%rqrshten,       &

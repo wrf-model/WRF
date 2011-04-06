@@ -92,7 +92,7 @@
  sw_call_rk_phys_bc_dry_1                     = .true.
  sw_call_set_physical_bc3d                    = .true.
  sw_call_pole_point_bc                        = .true.
- sw_call_first_rk_step_part1                  = .false.
+ sw_call_first_rk_step_part1                  = .true.
  sw_call_first_rk_step_part2                  = .true.
  sw_call_rk_tendency                          = .true.
  sw_call_relax_bdy_dry                        = .true.

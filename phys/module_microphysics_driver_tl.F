@@ -6,7 +6,7 @@ CONTAINS
 
 SUBROUTINE g_microphysics_driver( th, g_th, rho, g_rho                   &
                       ,pi_phy, g_pi_phy,  p , g_p                        &
-                      ,ht,g_ht, dz8w,g_dz8w, p8w,g_p8w                   &
+                      ,ht, dz8w,g_dz8w, p8w,g_p8w                   &
                       ,dt,dx,dy                                          &
                       ,mp_physics, spec_zone                             &
                       ,specified, channel_switch                         &
@@ -355,7 +355,7 @@ SUBROUTINE g_microphysics_driver( th, g_th, rho, g_rho                   &
    INTEGER,OPTIONAL,INTENT(IN   )    ::                        id
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
-         INTENT(IN)   ::                                       ht, g_ht
+         INTENT(IN)   ::                                       ht
 
    REAL, DIMENSION (:), OPTIONAL, INTENT(INOUT) :: mp_restart_state &
                                          ,tbpvs_state,tbpvs0_state

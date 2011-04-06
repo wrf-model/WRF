@@ -31,6 +31,9 @@ MODULES = \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
+	module_bl_surface_drag.o \
+	module_bl_surface_drag_tl.o \
+	module_bl_surface_drag_ad.o \
 	module_bl_camuwpbl_driver.o \
 	module_cu_camuwshcu_driver.o \
 	module_cu_camuwshcu.o \
@@ -45,6 +48,7 @@ MODULES = \
 	module_cu_gd.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
+	module_cu_du.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
 	module_mp_sbu_ylin.o  \
@@ -97,12 +101,16 @@ MODULES = \
 	module_sf_temfsfclay.o \
 	module_sf_idealscmsfclay.o \
 	module_physics_addtendc.o \
+	module_physics_addtendc_tl.o \
+	module_physics_addtendc_ad.o \
 	module_physics_init.o \
 	module_gfs_machine.o \
 	module_gfs_funcphys.o \
 	module_gfs_physcons.o \
 	module_progtm.o \
 	module_pbl_driver.o \
+	module_pbl_driver_tl.o \
+	module_pbl_driver_ad.o \
 	module_data_gocart_dust.o \
 	module_cumulus_driver.o \
 	module_shallowcu_driver.o \
@@ -274,6 +282,8 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
 
+module_cu_du.o:  ../frame/module_wrf_error.o
+
 module_cu_nsas.o:
 
 module_gfs_physcons.o: module_gfs_machine.o
@@ -349,9 +359,20 @@ module_ra_rrtmg_lw.o: ../share/module_model_constants.o
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\
+		module_cu_du.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o
 
+module_physics_addtendc_tl.o: \
+		module_cu_kf.o			\
+		module_cu_kfeta.o		\
+		module_cu_du.o		\
+		../frame/module_state_description.o \
+		../frame/module_configure.o
+
+module_physics_addtendc_ad.o: \
+		../frame/module_state_description.o \
+		../frame/module_configure.o
 
 module_physics_init.o : \
 		module_ra_rrtm.o		\
@@ -388,6 +409,7 @@ module_physics_init.o : \
 		module_bl_boulac.o              \
 		module_bl_camuwpbl_driver.o     \
 		module_bl_temf.o              \
+		module_bl_surface_drag.o        \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
 		module_cu_kfeta.o		\
@@ -492,6 +514,7 @@ module_cumulus_driver.o: \
 		module_cu_gd.o \
 		module_cu_nsas.o \
 		module_cu_sas.o \
+		module_cu_du.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
 		../frame/module_state_description.o \
@@ -514,10 +537,35 @@ module_pbl_driver.o:  \
 		module_bl_gfs.o \
 		module_bl_mynn.o \
 		module_bl_gwdo.o \
+		module_bl_surface_drag.o \
 		module_wind_fitch.o \
 		module_bl_temf.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
+		../share/module_model_constants.o 
+
+module_pbl_driver_tl.o:  \
+		module_bl_myjpbl.o \
+		module_bl_myjurb.o \
+		module_bl_qnsepbl.o \
+		module_bl_acm.o \
+		module_bl_ysu.o \
+		module_bl_mrf.o \
+                module_bl_boulac.o \
+		module_bl_camuwpbl_driver.o \
+		module_bl_gfs.o \
+		module_bl_mynn.o \
+		module_bl_gwdo.o \
+		module_bl_surface_drag_tl.o \
+		module_wind_fitch.o \
+		module_bl_temf.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o 
+
+module_pbl_driver_ad.o:  \
+		module_bl_surface_drag_ad.o \
+		../frame/module_state_description.o \
 		../share/module_model_constants.o 
 
 module_data_gocart_dust.o: 

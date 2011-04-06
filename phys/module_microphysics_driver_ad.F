@@ -7,7 +7,7 @@ CONTAINS
 SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 & 
                       ,pi_phy, a_pi_phy,  p , a_p                        &
 
-                      ,ht,a_ht, dz8w,a_dz8w, p8w,a_p8w                   &
+                      ,ht, dz8w,a_dz8w, p8w,a_p8w                   &
                       ,dt,dx,dy                                          &
                       ,mp_physics, spec_zone                             &
                       ,specified, channel_switch                         &
@@ -361,7 +361,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
    INTEGER,OPTIONAL,INTENT(IN   )    ::                        id
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
-         INTENT(IN)   ::                                       ht, a_ht
+         INTENT(IN)   ::                                       ht
 
    REAL, DIMENSION (:), OPTIONAL, INTENT(INOUT) :: mp_restart_state &
                                          ,tbpvs_state,tbpvs0_state

@@ -25,7 +25,7 @@ CONTAINS
                , pi_phy ,a_pi_phy, p_phy ,a_p_phy , t_phy ,a_t_phy , &
                  u_phy ,a_u_phy , v_phy,a_v_phy                        &
                , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w,             &
-                 rho_phy ,a_rho_phy , rho,a_rho                        &
+                 rho_phy , rho,a_rho                        &
                , nba_mij,a_nba_mij, n_nba_mij                            &
                , nba_rij,a_nba_rij, n_nba_rij                            &
                , ids, ide, jds, jde, kds, kde     &
@@ -59,10 +59,12 @@ CONTAINS
             a_compute_diff_metrics, a_vertical_diffusion_2,              &
             a_horizontal_diffusion_2, a_calculate_km_kh, a_tke_rhs
     USE module_em, ONLY : calculate_phy_tend
+    USE a_module_em, ONLY : a_calculate_phy_tend
     USE module_fddaobs_driver, ONLY : fddaobs_driver
     USE module_bc, ONLY : set_physical_bc3d, set_physical_bc2d
     USE a_module_bc, ONLY : a_set_physical_bc3d, a_set_physical_bc2d
     USE module_physics_addtendc, ONLY : update_phy_ten
+    USE a_module_physics_addtendc, ONLY : a_update_phy_ten
 
     USE module_sfs_driver
     USE module_stoch, ONLY : update_stoch_ten, update_stoch , update_stoch_ten_subdomains,  & 
@@ -115,7 +117,7 @@ CONTAINS
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w,a_dz8w
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w,a_p8w
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w,a_t8w
-    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy,a_rho_phy
+    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho,a_rho
 
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf,a_ru_tendf
@@ -328,6 +330,10 @@ BENCH_START(cal_phy_tend)
       DO ij = 1 , grid%num_tiles
 
         CALL wrf_debug ( 200 , ' call calculate_phy_tend' )
+        CALL PUSHREAL8ARRAY ( grid%rublten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+        CALL PUSHREAL8ARRAY ( grid%rvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+        CALL PUSHREAL8ARRAY ( grid%rthblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+        CALL PUSHREAL8ARRAY ( grid%rqvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
         CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy, &
                      grid%rthraten,                                    &
                      grid%rublten,grid%rvblten,grid%rthblten,          &
@@ -964,13 +970,17 @@ BENCH_START(adj_update_phy_ten_tim)
        DO ij = grid%num_tiles,1,-1
 
          CALL wrf_debug ( 200 , ' call a_update_phy_ten' )
-!!!!! REPLACE WITH a_update_phy_ten WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan, 2010-08-13
-         CALL update_phy_ten(ph_tendf,t_tendf, ru_tendf, rv_tendf,moist_tend ,&
+         CALL a_update_phy_ten(ph_tendf,t_tendf, a_t_tendf, ru_tendf, a_ru_tendf,      &
+                           rv_tendf,a_rv_tendf, moist_tend ,a_moist_tend,    &
                            scalar_tend, mu_tendf,                           &
-                           grid%rthraten,grid%rthblten,grid%rthcuten,grid%rthshten, &
-                           grid%rublten,grid%rucuten,grid%rushten,          &
-                           grid%rvblten,grid%rvcuten,grid%rvshten,          &
-                           grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
+                           grid%rthraten,grid%rthblten,grid%a_rthblten,     &
+                           grid%rthcuten,grid%rthshten,                     &
+                           grid%rublten,grid%a_rublten,                     &
+                           grid%rucuten,grid%rushten,                       &
+                           grid%rvblten,grid%a_rvblten,                     &
+                           grid%rvcuten,grid%rvshten,                       &
+                           grid%rqvblten,grid%a_rqvblten,                   &
+                           grid%rqcblten,grid%rqiblten,                     &
                            grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
                            grid%rqicuten,grid%rqscuten,                     &
                            grid%rqvshten,grid%rqcshten,grid%rqrshten,       &
@@ -1208,18 +1218,40 @@ BENCH_START(adj_cal_phy_tend)
       DO ij = grid%num_tiles,1,-1
 
         CALL wrf_debug ( 200 , ' call a_calculate_phy_tend' )
-!!!!! REPLACE WITH a_calculate_phy_tend WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan, 2010-08-13
-        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy, &
-                     grid%rthraten,                                    &
-                     grid%rublten,grid%rvblten,grid%rthblten,          &
-                     grid%rqvblten,grid%rqcblten,grid%rqiblten,        &
-                     grid%rucuten,grid%rvcuten,grid%rthcuten,          &
-                     grid%rqvcuten,grid%rqccuten,grid%rqrcuten,        &
-                     grid%rqicuten,grid%rqscuten,                      &
-                     grid%rushten,grid%rvshten,grid%rthshten,          &
-                     grid%rqvshten,grid%rqcshten,grid%rqrshten,        &
-                     grid%rqishten,grid%rqsshten,grid%rqgshten,        &
-                     grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
+        CALL POPREAL8ARRAY ( grid%rqvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+        CALL POPREAL8ARRAY ( grid%rthblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+        CALL POPREAL8ARRAY ( grid%rvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+        CALL POPREAL8ARRAY ( grid%rublten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+        CALL a_calculate_phy_tend (config_flags,grid%mut,grid%a_mut,grid%muu,grid%a_muu, &
+                     grid%muv,grid%a_muv,pi_phy,                       &
+                     grid%rthraten, grid%a_rthraten,                   &
+                     grid%rublten, grid%a_rublten,                     &
+                     grid%rvblten, grid%a_rvblten,                     &
+                     grid%rthblten, grid%a_rthblten,                   &
+                     grid%rqvblten, grid%a_rqvblten,                   &
+                     grid%rqcblten, grid%a_rqcblten,                   &
+                     grid%rqiblten, grid%a_rqiblten,                   &
+                     grid%rucuten, grid%a_rucuten,                     &
+                     grid%rvcuten, grid%a_rvcuten,                     &
+                     grid%rthcuten, grid%a_rthcuten,                   &
+                     grid%rqvcuten, grid%a_rqvcuten,                   &
+                     grid%rqccuten, grid%a_rqccuten,                   &
+                     grid%rqrcuten, grid%a_rqrcuten,                   &
+                     grid%rqicuten, grid%a_rqicuten,                   &
+                     grid%rqscuten, grid%a_rqscuten,                   &
+                     grid%rushten, grid%a_rushten,                     &
+                     grid%rvshten, grid%a_rvshten,                     &
+                     grid%rthshten, grid%a_rthshten,                   &
+                     grid%rqvshten, grid%a_rqvshten,                   &
+                     grid%rqcshten, grid%a_rqcshten,                   &
+                     grid%rqrshten, grid%a_rqrshten,                   &
+                     grid%rqishten, grid%a_rqishten,                   &
+                     grid%rqsshten, grid%a_rqsshten,                   &
+                     grid%rqgshten, grid%a_rqgshten,                   &
+                     grid%RUNDGDTEN, grid%a_RUNDGDTEN,                 &
+                     grid%RVNDGDTEN, grid%a_RVNDGDTEN,                 &
+                     grid%RTHNDGDTEN, grid%a_RTHNDGDTEN,               &
+                     grid%RQVNDGDTEN, grid%a_RQVNDGDTEN,               &
                      grid%RMUNDGDTEN,                                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &

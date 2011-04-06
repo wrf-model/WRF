@@ -16,7 +16,7 @@
 !  add_a2a, add_a2c_u, and add_a2c_v
 
 
-MODULE module_physics_addtendc
+MODULE g_module_physics_addtendc
 
 #if ( EM_CORE == 1 )
 
@@ -25,12 +25,13 @@ MODULE module_physics_addtendc
 
 CONTAINS
 
-SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
+SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,         &
+                      rv_tendf,g_rv_tendf,moist_tendf,g_moist_tendf,        &
                       scalar_tendf,mu_tendf,                                &
-                      RTHRATEN,RTHBLTEN,RTHCUTEN,RTHSHTEN,                  &
-                      RUBLTEN,RUCUTEN,RUSHTEN,                              &
-                      RVBLTEN,RVCUTEN,RVSHTEN,                              &
-                      RQVBLTEN,RQCBLTEN,RQIBLTEN,                           &
+                      RTHRATEN,RTHBLTEN,g_RTHBLTEN,RTHCUTEN,RTHSHTEN,       &
+                      RUBLTEN,g_RUBLTEN,RUCUTEN,RUSHTEN,                    &
+                      RVBLTEN,g_RVBLTEN,RVCUTEN,RVSHTEN,                    &
+                      RQVBLTEN,g_RQVBLTEN,RQCBLTEN,RQIBLTEN,                &
                       RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,         &
                       RQVSHTEN,RQCSHTEN,RQRSHTEN,RQISHTEN,RQSSHTEN,RQGSHTEN,&
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,            &
@@ -55,14 +56,18 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
 
    REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(INOUT) ::   &
                                                          ru_tendf, &
+                                                       g_ru_tendf, &
                                                          rv_tendf, &
+                                                       g_rv_tendf, &
                                                          rt_tendf, &
+                                                       g_rt_tendf, &
                                                          rph_tendf
 
    REAL , DIMENSION(ims:ime , jms:jme),INTENT(INOUT) ::  mu_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),           &
-          INTENT(INOUT)     ::                        moist_tendf
+          INTENT(INOUT)     ::                        moist_tendf, &
+                                                    g_moist_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_scalar),           &
           INTENT(INOUT)     ::                        scalar_tendf
@@ -70,15 +75,19 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   &
                                                        RTHRATEN, &
                                                        RTHBLTEN, &
+                                                     g_RTHBLTEN, &
                                                        RTHCUTEN, &
                                                        RTHSHTEN, &
                                                         RUBLTEN, &
+                                                      g_RUBLTEN, &
                                                         RUCUTEN, &
                                                         RUSHTEN, &
                                                         RVBLTEN, &
+                                                      g_RVBLTEN, &
                                                         RVCUTEN, &
                                                         RVSHTEN, &
                                                        RQVBLTEN, &
+                                                     g_RQVBLTEN, &
                                                        RQCBLTEN, &
                                                        RQIBLTEN, &
                                                        RQVCUTEN, &
@@ -114,11 +123,16 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                       its, ite, jts, jte, kts, kte             )
 
    if (config_flags%bl_pbl_physics .gt. 0)                     &
-      CALL phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,   &
-                      rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
+      CALL g_phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,   &
+                      rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,   &
+                      rv_tendf,g_rv_tendf,                     &
+                      moist_tendf, g_moist_tendf,              &
                       scalar_tendf,adv_moist_cond,             &
-                      RTHBLTEN,RUBLTEN,RVBLTEN,                &
-                      RQVBLTEN,RQCBLTEN,RQIBLTEN,              &
+                      RTHBLTEN,g_RTHBLTEN,                     &
+                      RUBLTEN,g_RUBLTEN,                       &
+                      RVBLTEN,g_RVBLTEN,                       &
+                      RQVBLTEN,g_RQVBLTEN,                     &
+                      RQCBLTEN,RQIBLTEN,                       &
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
@@ -163,7 +177,7 @@ SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf, &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
 
-END SUBROUTINE update_phy_ten
+END SUBROUTINE g_update_phy_ten
 
 !=================================================================
 SUBROUTINE phy_ra_ten(config_flags,rt_tendf,RTHRATEN,            &
@@ -197,11 +211,15 @@ SUBROUTINE phy_ra_ten(config_flags,rt_tendf,RTHRATEN,            &
 END SUBROUTINE phy_ra_ten
 
 !=================================================================
-SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
-                      rt_tendf,ru_tendf,rv_tendf,moist_tendf,    &
+SUBROUTINE g_phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,   &
+                      rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,   &
+                      rv_tendf,g_rv_tendf,moist_tendf,g_moist_tendf, &
                       scalar_tendf,adv_moist_cond,               &
-                      RTHBLTEN,RUBLTEN,RVBLTEN,                  & 
-                      RQVBLTEN,RQCBLTEN,RQIBLTEN,                &
+                      RTHBLTEN,g_RTHBLTEN,                       &
+                      RUBLTEN,g_RUBLTEN,                         &
+                      RVBLTEN,g_RVBLTEN,                         & 
+                      RQVBLTEN,g_RQVBLTEN,                       &
+                      RQCBLTEN,RQIBLTEN,                         &
                       ids, ide, jds, jde, kds, kde,              &
                       ims, ime, jms, jme, kms, kme,              &
                       its, ite, jts, jte, kts, kte               )
@@ -218,23 +236,31 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
    LOGICAL , INTENT(IN)     :: adv_moist_cond
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),         &
-          INTENT(INOUT)     ::                      moist_tendf
+          INTENT(INOUT)     ::                      moist_tendf, &
+                                                  g_moist_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_scalar),         &
           INTENT(INOUT)     ::                      scalar_tendf
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   & 
                                                        RTHBLTEN, &
+                                                     g_RTHBLTEN, &
                                                         RUBLTEN, &
+                                                      g_RUBLTEN, &
                                                         RVBLTEN, &
+                                                      g_RVBLTEN, &
                                                        RQVBLTEN, &
+                                                     g_RQVBLTEN, &
                                                        RQCBLTEN, &
                                                        RQIBLTEN
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::   &
                                                        rt_tendf, &
+                                                     g_rt_tendf, &
                                                        ru_tendf, &
-                                                       rv_tendf
+                                                     g_ru_tendf, &
+                                                       rv_tendf, &
+                                                     g_rv_tendf
 ! LOCAL VARS
 
    INTEGER :: i,j,k,IBGN,IEND,JBGN,JEND
@@ -695,15 +721,32 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
       CASE (SURFDRAGSCHEME)
 
-           CALL add_a2c_u(ru_tendf,RUBLTEN,config_flags,         &
+           CALL g_add_a2a(rt_tendf,g_rt_tendf,                   &
+                RTHBLTEN,g_RTHBLTEN,config_flags,                &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
-           CALL add_a2c_v(rv_tendf,RVBLTEN,config_flags,         &
+           CALL g_add_a2c_u(ru_tendf,g_ru_tendf,                 &
+                RUBLTEN,g_RUBLTEN,config_flags,                  &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
+
+           CALL g_add_a2c_v(rv_tendf,g_rv_tendf,                 &
+                RVBLTEN,g_RVBLTEN,config_flags,                  &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           if (P_QV .ge. PARAM_FIRST_SCALAR)                                         &
+              CALL g_add_a2a(moist_tendf(ims,kms,jms,P_QV),      &
+                   g_moist_tendf(ims,kms,jms,P_QV),              &
+                   RQVBLTEN, g_RQVBLTEN,                         &
+                   config_flags,                                 &
+                   ids,ide, jds, jde, kds, kde,                  &
+                   ims, ime, jms, jme, kms, kme,                 &
+                   its, ite, jts, jte, kts, kte                  )
 
        CASE (CAMUWPBLSCHEME)
            CALL add_a2a(rt_tendf,RTHBLTEN,config_flags,          &
@@ -787,11 +830,11 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
       CASE DEFAULT
 
-       print*,'phy_bl_ten: The pbl scheme does not exist'
+       print*,'g_phy_bl_ten: The pbl scheme does not exist'
 
    END SELECT
 
-END SUBROUTINE phy_bl_ten
+END SUBROUTINE g_phy_bl_ten
 
 !=================================================================
 SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
@@ -1962,6 +2005,255 @@ SUBROUTINE add_a2c_v(lvar,rvar,config_flags,                &
 
 END SUBROUTINE add_a2c_v
 
+
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of add_a2a in forward (tangent) mode:
+!   variations   of useful results: lvar
+!   with respect to varying inputs: lvar rvar
+!   RW status of diff variables: lvar:in-out rvar:in
+SUBROUTINE G_ADD_A2A(lvar, lvard, rvar, rvard, config_flags, ids, ide, &
+&  jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, &
+&  kts, kte)
+  IMPLICIT NONE
+!------------------------------------------------------------
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rvar
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rvard
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: lvar
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: lvard
+! LOCAL VARS
+  INTEGER :: i, j, k, i_start, i_end, j_start, j_end, ktf
+  INTRINSIC MAX
+  INTRINSIC MIN
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (ids + 1 .LT. its) THEN
+      i_start = its
+    ELSE
+      i_start = ids + 1
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (ide - 2 .GT. ite) THEN
+      i_end = ite
+    ELSE
+      i_end = ide - 2
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (jds + 1 .LT. jts) THEN
+      j_start = jts
+    ELSE
+      j_start = jds + 1
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (jde - 2 .GT. jte) THEN
+      j_end = jte
+    ELSE
+      j_end = jde - 2
+    END IF
+  END IF
+  IF (config_flags%periodic_x) i_start = its
+  IF (config_flags%periodic_x) THEN
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+  END IF
+  DO j=j_start,j_end
+    DO k=kts,ktf
+      DO i=i_start,i_end
+        lvard(i, k, j) = lvard(i, k, j) + rvard(i, k, j)
+        lvar(i, k, j) = lvar(i, k, j) + rvar(i, k, j)
+      END DO
+    END DO
+  END DO
+END SUBROUTINE G_ADD_A2A
+
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of add_a2c_u in forward (tangent) mode:
+!   variations   of useful results: lvar
+!   with respect to varying inputs: lvar rvar
+!   RW status of diff variables: lvar:in-out rvar:in
+SUBROUTINE G_ADD_A2C_U(lvar, lvard, rvar, rvard, config_flags, ids, ide&
+&  , jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte&
+&  , kts, kte)
+  IMPLICIT NONE
+!------------------------------------------------------------
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rvar
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rvard
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: lvar
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: lvard
+! LOCAL VARS
+  INTEGER :: i, j, k, i_start, i_end, j_start, j_end, ktf
+  INTRINSIC MAX
+  INTRINSIC MIN
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  i_start = its
+  i_end = ite
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (ids + 1 .LT. its) THEN
+      i_start = its
+    ELSE
+      i_start = ids + 1
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (ide - 1 .GT. ite) THEN
+      i_end = ite
+    ELSE
+      i_end = ide - 1
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (jds + 1 .LT. jts) THEN
+      j_start = jts
+    ELSE
+      j_start = jds + 1
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (jde - 2 .GT. jte) THEN
+      j_end = jte
+    ELSE
+      j_end = jde - 2
+    END IF
+  END IF
+  IF (config_flags%periodic_x) i_start = its
+  IF (config_flags%periodic_x) i_end = ite
+  DO j=j_start,j_end
+    DO k=kts,ktf
+      DO i=i_start,i_end
+        lvard(i, k, j) = lvard(i, k, j) + 0.5*(rvard(i, k, j)+rvard(i-1&
+&          , k, j))
+        lvar(i, k, j) = lvar(i, k, j) + 0.5*(rvar(i, k, j)+rvar(i-1, k, &
+&          j))
+      END DO
+    END DO
+  END DO
+END SUBROUTINE G_ADD_A2C_U
+
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of add_a2c_v in forward (tangent) mode:
+!   variations   of useful results: lvar
+!   with respect to varying inputs: lvar rvar
+!   RW status of diff variables: lvar:in-out rvar:in
+SUBROUTINE G_ADD_A2C_V(lvar, lvard, rvar, rvard, config_flags, ids, ide&
+&  , jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte&
+&  , kts, kte)
+  IMPLICIT NONE
+!------------------------------------------------------------
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rvar
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rvard
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: lvar
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: lvard
+! LOCAL VARS
+  INTEGER :: i, j, k, i_start, i_end, j_start, j_end, ktf
+  INTRINSIC MAX
+  INTRINSIC MIN
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  j_end = jte
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (ids + 1 .LT. its) THEN
+      i_start = its
+    ELSE
+      i_start = ids + 1
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (ide - 2 .GT. ite) THEN
+      i_end = ite
+    ELSE
+      i_end = ide - 2
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (jds + 1 .LT. jts) THEN
+      j_start = jts
+    ELSE
+      j_start = jds + 1
+    END IF
+  END IF
+  IF (config_flags%specified .OR. config_flags%nested) THEN
+    IF (jde - 1 .GT. jte) THEN
+      j_end = jte
+    ELSE
+      j_end = jde - 1
+    END IF
+  END IF
+  IF (config_flags%periodic_x) i_start = its
+  IF (config_flags%periodic_x) THEN
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+  END IF
+  DO j=j_start,j_end
+    DO k=kts,kte
+      DO i=i_start,i_end
+        lvard(i, k, j) = lvard(i, k, j) + 0.5*(rvard(i, k, j)+rvard(i, k&
+&          , j-1))
+        lvar(i, k, j) = lvar(i, k, j) + 0.5*(rvar(i, k, j)+rvar(i, k, j-&
+&          1))
+      END DO
+    END DO
+  END DO
+END SUBROUTINE G_ADD_A2C_V
+
 !------------------------------------------------------------
 SUBROUTINE add_c2c_u(lvar,rvar,config_flags,                &
                    ids,ide, jds, jde, kds, kde,             &
@@ -2070,4 +2362,4 @@ END SUBROUTINE add_c2c_v
 
 #endif
 
-END MODULE module_physics_addtendc
+END MODULE g_module_physics_addtendc

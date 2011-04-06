@@ -5153,609 +5153,624 @@ END SUBROUTINE g_calculate_full
 
  END SUBROUTINE g_pole_point_bc
 
- SUBROUTINE g_phy_prep(config_flags,mu,g_mu,muu,g_muu,muv,g_muv,u,g_u, &
- v,g_v,p,g_p,pb,alt,g_alt,ph,g_ph,phb,t,g_t,tsk,g_tsk,moist, &
- g_moist,n_moist,rho,g_rho,th_phy,g_th_phy,p_phy,g_p_phy,pi_phy, &
- g_pi_phy,u_phy,g_u_phy,v_phy,g_v_phy,p8w,g_p8w,t_phy,g_t_phy,t8w, &
- g_t8w,z,g_z,z_at_w,g_z_at_w,dz8w,g_dz8w,p_hyd,g_p_hyd,p_hyd_w, &
-! Revised by Ning Pan, 2010-08-30
-! g_p_hyd_w,fzm,fzp,znw,p_top,g_p_top,RTHRATEN,RTHBLTEN,RUBLTEN,RVBLTEN,RQVBLTEN, &
- g_p_hyd_w,fzm,fzp,znw,p_top,RTHRATEN,RTHBLTEN,RUBLTEN,RVBLTEN,RQVBLTEN, &
- RQCBLTEN,RQIBLTEN,RUCUTEN,RVCUTEN,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN, &
- RUSHTEN,RVSHTEN,RTHSHTEN,RQVSHTEN,RQCSHTEN,RQRSHTEN,RQISHTEN,RQSSHTEN,RQGSHTEN,RTHFTEN,RQVFTEN, &
- RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,ids,ide,jds, &
- jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2
- TYPE(grid_config_rec_type) :: config_flags
- INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- INTEGER :: n_moist
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_moist) :: moist,g_moist
- REAL,DIMENSION(ims:ime,jms:jme) :: TSK,g_TSK,mu,g_mu,muu,g_muu,muv,g_muv
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: u_phy,g_u_phy,v_phy,g_v_phy,pi_phy, &
- g_pi_phy,p_phy,g_p_phy,p8w,g_p8w,t_phy,g_t_phy,th_phy,g_th_phy,t8w, &
- g_t8w,rho,g_rho,z,g_z,dz8w,g_dz8w,z_at_w,g_z_at_w
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: p_hyd,g_p_hyd,p_hyd_w,g_p_hyd_w
-! Revised by Ning Pan, 2010-08-30
-! REAL :: p_top,g_p_top
- REAL :: p_top
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: pb,p,g_p,u,g_u,v,g_v,alt, &
- g_alt,ph,g_ph,phb,t,g_t
- REAL,DIMENSION(kms:kme) :: fzm,fzp
- REAL,DIMENSION(kms:kme) :: znw
-   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ) :: RTHRATEN
-   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme )                    &
-                          ::                                RUCUTEN, &
-                                                            RVCUTEN, &
-                                                           RTHCUTEN, &
-                                                           RQVCUTEN, &
-                                                           RQCCUTEN, &
-                                                           RQRCUTEN, &
-                                                           RQICUTEN, &
-                                                           RQSCUTEN, &
-                                                            RUSHTEN, &
-                                                            RVSHTEN, &
-                                                           RTHSHTEN, &
-                                                           RQVSHTEN, &
-                                                           RQCSHTEN, &
-                                                           RQRSHTEN, &
-                                                           RQISHTEN, &
-                                                           RQSSHTEN, &
-                                                           RQGSHTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                     &
-                          ::                                RUBLTEN, &
-                                                            RVBLTEN, &
-                                                           RTHBLTEN, &
-                                                           RQVBLTEN, &
-                                                           RQCBLTEN, &
-                                                           RQIBLTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                     &
-                          ::                                RTHFTEN, &
-                                                            RQVFTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                     &
-                          ::                                RUNDGDTEN, &
-                                                            RVNDGDTEN, &
-                                                           RTHNDGDTEN, &
-                                                           RPHNDGDTEN, &
-                                                           RQVNDGDTEN
-
-   REAL,  DIMENSION( ims:ime, jms:jme )                              &
-                          ::                               RMUNDGDTEN
- INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end,i_startu,j_startv
- INTEGER :: i,j,k
- REAL :: w1,g_w1,w2,g_w2,z0,g_z0,z1,g_z1,z2,g_z2
- REAL :: e_vapor,g_e_vapor
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- k_start =kts
-
- k_end =min(kte,kde-1)
-
- DO j =j_start,j_end
- DO k =k_start,k_end
- DO i =i_start,i_end
-
- g_th_phy(i,k,j) =g_t(i,k,j)
- th_phy(i,k,j) =t(i,k,j) +t0
-
- g_p_phy(i,k,j) =g_p(i,k,j)
- p_phy(i,k,j) =p(i,k,j) +pb(i,k,j)
-
- g_pi_phy(i,k,j) =rcp*(g_p_phy(i,k,j)/p1000mb)*(p_phy(i,k,j)/p1000mb)**(rcp -1.0)
- pi_phy(i,k,j) =(p_phy(i,k,j)/p1000mb)**rcp
-
- g_Tmpv1 =th_phy(i,k,j)*g_pi_phy(i,k,j) +g_th_phy(i,k,j)*pi_phy(i,k,j) 
- Tmpv1 =th_phy(i,k,j)*pi_phy(i,k,j)
-
- g_t_phy(i,k,j) =g_Tmpv1
- t_phy(i,k,j) =Tmpv1
-
- g_Tmpv1 =1./alt(i,k,j)*(g_moist(i,k,j,P_QV)) +(-1.*g_alt(i,k,j)/(alt(i,k,j) &
- *alt(i,k,j)))*(1. +moist(i,k,j,P_QV)) 
- Tmpv1 =1./alt(i,k,j)*(1. +moist(i,k,j,P_QV))
-
- g_rho(i,k,j) =g_Tmpv1
- rho(i,k,j) =Tmpv1
-
- g_u_phy(i,k,j) =0.5*(g_u(i,k,j) +g_u(i+1,k,j))
- u_phy(i,k,j) =0.5*(u(i,k,j) +u(i+1,k,j))
-
- g_v_phy(i,k,j) =0.5*(g_v(i,k,j) +g_v(i,k,j+1))
- v_phy(i,k,j) =0.5*(v(i,k,j) +v(i,k,j+1))
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO k =k_start,kte
- DO i =i_start,i_end
-
- g_z_at_w(i,k,j) =(g_ph(i,k,j))/g
- z_at_w(i,k,j) =(phb(i,k,j) +ph(i,k,j))/g
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO k =k_start,kte-1
- DO i =i_start,i_end
-
- g_dz8w(i,k,j) =g_z_at_w(i,k+1,j) -g_z_at_w(i,k,j)
- dz8w(i,k,j) =z_at_w(i,k+1,j) -z_at_w(i,k,j)
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_dz8w(i,kte,j) =0.0
- dz8w(i,kte,j) =0.
-
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO k =k_start,k_end
- DO i =i_start,i_end
-
- g_z(i,k,j) =0.5*(g_z_at_w(i,k,j) +g_z_at_w(i,k+1,j))
- z(i,k,j) =0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j))
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO k =2,k_end
- DO i =i_start,i_end
-
- g_p8w(i,k,j) =fzm(k)*g_p_phy(i,k,j) +fzp(k)*g_p_phy(i,k-1,j)
- p8w(i,k,j) =fzm(k)*p_phy(i,k,j) +fzp(k)*p_phy(i,k-1,j)
-
- g_t8w(i,k,j) =fzm(k)*g_t_phy(i,k,j) +fzp(k)*g_t_phy(i,k-1,j)
- t8w(i,k,j) =fzm(k)*t_phy(i,k,j) +fzp(k)*t_phy(i,k-1,j)
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_z0 =g_z_at_w(i,1,j)
- z0 =z_at_w(i,1,j)
-
- g_z1 =g_z(i,1,j)
- z1 =z(i,1,j)
-
- g_z2 =g_z(i,2,j)
- z2 =z(i,2,j)
-
- g_Tmpv1 =((g_z0 -g_z2)*(z1 -z2) -(g_z1 -g_z2)*(z0 -z2))/((z1 -z2)*(z1 -z2)) 
- Tmpv1 =(z0 -z2)/(z1 -z2)
-
- g_w1 =g_Tmpv1
- w1 =Tmpv1
-
- g_w2 =-g_w1
- w2 =1. -w1
-
- g_Tmpv1 =w1*g_p_phy(i,1,j) +g_w1*p_phy(i,1,j) 
- Tmpv1 =w1*p_phy(i,1,j)
-
- g_Tmpv2 =w2*g_p_phy(i,2,j) +g_w2*p_phy(i,2,j) 
- Tmpv2 =w2*p_phy(i,2,j)
-
- g_p8w(i,1,j) =g_Tmpv1 +g_Tmpv2
- p8w(i,1,j) =Tmpv1 +Tmpv2
-
- g_Tmpv1 =w1*g_t_phy(i,1,j) +g_w1*t_phy(i,1,j) 
- Tmpv1 =w1*t_phy(i,1,j)
-
- g_Tmpv2 =w2*g_t_phy(i,2,j) +g_w2*t_phy(i,2,j) 
- Tmpv2 =w2*t_phy(i,2,j)
-
- g_t8w(i,1,j) =g_Tmpv1 +g_Tmpv2
- t8w(i,1,j) =Tmpv1 +Tmpv2
-
- g_z0 =g_z_at_w(i,kte,j)
- z0 =z_at_w(i,kte,j)
-
- g_z1 =g_z(i,k_end,j)
- z1 =z(i,k_end,j)
-
- g_z2 =g_z(i,k_end-1,j)
- z2 =z(i,k_end-1,j)
-
- g_Tmpv1 =((g_z0 -g_z2)*(z1 -z2) -(g_z1 -g_z2)*(z0 -z2))/((z1 -z2)*(z1 -z2)) 
- Tmpv1 =(z0 -z2)/(z1 -z2)
-
- g_w1 =g_Tmpv1
- w1 =Tmpv1
-
- g_w2 =-g_w1
- w2 =1. -w1
-
- g_Tmpv1 =w1*g_p_phy(i,kde-1,j)/p_phy(i,kde-1,j) +g_w1*log(p_phy(i,kde-1,j)) 
- Tmpv1 =w1*log(p_phy(i,kde-1,j))
-
- g_Tmpv2 =w2*g_p_phy(i,kde-2,j)/p_phy(i,kde-2,j) +g_w2*log(p_phy(i,kde-2,j)) 
- Tmpv2 =w2*log(p_phy(i,kde-2,j))
-
- g_p8w(i,kde,j) =(g_Tmpv1 +g_Tmpv2)*exp(Tmpv1 +Tmpv2)
- p8w(i,kde,j) =exp(Tmpv1 +Tmpv2)
-
- g_Tmpv1 =w1*g_t_phy(i,kde-1,j) +g_w1*t_phy(i,kde-1,j) 
- Tmpv1 =w1*t_phy(i,kde-1,j)
-
- g_Tmpv2 =w2*g_t_phy(i,kde-2,j) +g_w2*t_phy(i,kde-2,j) 
- Tmpv2 =w2*t_phy(i,kde-2,j)
-
- g_t8w(i,kde,j) =g_Tmpv1 +g_Tmpv2
- t8w(i,kde,j) =Tmpv1 +Tmpv2
-
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
-! Revised by Ning Pan, 2010-08-30
-! g_p_hyd_w(i,kte,j) =g_p_top
- g_p_hyd_w(i,kte,j) =0.0
- p_hyd_w(i,kte,j) =p_top
-
- ENDDO
- ENDDO
-
- g_e_vapor =0.0
- e_vapor =0.
-
- DO j =j_start,j_end
- DO k =kte-1,k_start,-1
- DO i =i_start,i_end
-
- g_Tmpv1 =1./alt(i,k,j)*(g_moist(i,k,j,P_QV)) +(-1.*g_alt(i,k,j)/(alt(i,k,j) &
- *alt(i,k,j)))*(1. +moist(i,k,j,P_QV)) 
- Tmpv1 =1./alt(i,k,j)*(1. +moist(i,k,j,P_QV))
-
- g_Tmpv2 =Tmpv1*g*g_dz8w(i,k,j) +g_Tmpv1*g*dz8w(i,k,j) 
- Tmpv2 =Tmpv1*g*dz8w(i,k,j)
-
- g_p_hyd_w(i,k,j) =g_p_hyd_w(i,k+1,j) +g_Tmpv2
- p_hyd_w(i,k,j) =p_hyd_w(i,k+1,j) +Tmpv2
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO k =k_start,k_end
- DO i =i_start,i_end
-
- g_p_hyd(i,k,j) =0.5*(g_p_hyd_w(i,k,j) +g_p_hyd_w(i,k+1,j))
- p_hyd(i,k,j) =0.5*(p_hyd_w(i,k,j) +p_hyd_w(i,k+1,j))
-
- ENDDO
- ENDDO
- ENDDO
-
-!!!!! Need to code TL of the following statements when construction TL of PHYSICS
- IF(config_flags%ra_lw_physics .gt. 0 .or. config_flags%ra_sw_physics .gt. 0) THEN
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RTHRATEN(I,K,J) =RTHRATEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- IF(config_flags%cu_physics .gt. 0) THEN
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RUCUTEN(I,K,J) =RUCUTEN(I,K,J)/mu(I,J)
- RVCUTEN(I,K,J) =RVCUTEN(I,K,J)/mu(I,J)
- RTHCUTEN(I,K,J) =RTHCUTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
-
- IF(P_QV .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RQVCUTEN(I,K,J) =RQVCUTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- IF(P_QC .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RQCCUTEN(I,K,J) =RQCCUTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- IF(P_QR .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RQRCUTEN(I,K,J) =RQRCUTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- IF(P_QI .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RQICUTEN(I,K,J) =RQICUTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- IF(P_QS .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RQSCUTEN(I,K,J) =RQSCUTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
- ENDIF
-
-   IF (config_flags%shcu_physics .gt. 0) THEN
-
-      DO J=j_start,j_end
-      DO I=i_start,i_end
-      DO K=k_start,k_end
-         RUSHTEN(I,K,J) =RUSHTEN(I,K,J)/mu(I,J)
-         RVSHTEN(I,K,J) =RVSHTEN(I,K,J)/mu(I,J)
-         RTHSHTEN(I,K,J)=RTHSHTEN(I,K,J)/mu(I,J)
-      ENDDO
-      ENDDO
-      ENDDO
-
-      IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
-         DO J=j_start,j_end
-         DO I=i_start,i_end
-         DO K=k_start,k_end
-            RQVSHTEN(I,K,J)=RQVSHTEN(I,K,J)/mu(I,J)
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-      IF (P_QC .ge. PARAM_FIRST_SCALAR)THEN
-         DO J=j_start,j_end
-         DO I=i_start,i_end
-         DO K=k_start,k_end
-            RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)/mu(I,J)
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-      IF (P_QR .ge. PARAM_FIRST_SCALAR)THEN
-         DO J=j_start,j_end
-         DO I=i_start,i_end
-         DO K=k_start,k_end
-            RQRSHTEN(I,K,J)=RQRSHTEN(I,K,J)/mu(I,J)
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-      IF (P_QI .ge. PARAM_FIRST_SCALAR)THEN
-         DO J=j_start,j_end
-         DO I=i_start,i_end
-         DO K=k_start,k_end
-            RQISHTEN(I,K,J)=RQISHTEN(I,K,J)/mu(I,J)
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-      IF(P_QS .ge. PARAM_FIRST_SCALAR)THEN
-         DO J=j_start,j_end
-         DO I=i_start,i_end
-         DO K=k_start,k_end
-            RQSSHTEN(I,K,J)=RQSSHTEN(I,K,J)/mu(I,J)
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-      IF(P_QG .ge. PARAM_FIRST_SCALAR)THEN
-         DO J=j_start,j_end
-         DO I=i_start,i_end
-         DO K=k_start,k_end
-            RQGSHTEN(I,K,J)=RQGSHTEN(I,K,J)/mu(I,J)
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-   ENDIF
-
- IF(config_flags%bl_pbl_physics .gt. 0) THEN
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RUBLTEN(I,K,J) =RUBLTEN(I,K,J)/mu(I,J)
-
- RVBLTEN(I,K,J) =RVBLTEN(I,K,J)/mu(I,J)
-
- RTHBLTEN(I,K,J) =RTHBLTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
-
- IF(P_QV .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RQVBLTEN(I,K,J) =RQVBLTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- IF(P_QC .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RQCBLTEN(I,K,J) =RQCBLTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- IF(P_QI .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RQIBLTEN(I,K,J) =RQIBLTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
- ENDIF
-
- IF(( config_flags%cu_physics == GDSCHEME ) .OR.      &
-    ( config_flags%cu_physics == G3SCHEME ) .OR.      &
-    ( config_flags%cu_physics == KFETASCHEME ) .OR. &
-      config_flags%cu_physics == TIEDTKESCHEME ) THEN  ! Tiedtke and NSAS
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RTHFTEN(I,K,J) =RTHFTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
-
- IF(P_QV .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO I =i_start,i_end
- DO K =k_start,k_end
-
- RQVFTEN(I,K,J) =RQVFTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
- END IF
-
- IF(config_flags%grid_fdda .gt. 0) THEN
-
- i_startu =max(its,ids+1)
-
- j_startv =max(jts,jds+1)
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_startu,i_end
-
- RUNDGDTEN(I,K,J) =RUNDGDTEN(I,K,J)/muu(I,J)
- ENDDO
- ENDDO
- ENDDO
-
- DO J =j_startv,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RVNDGDTEN(I,K,J) =RVNDGDTEN(I,K,J)/muv(I,J)
- ENDDO
- ENDDO
- ENDDO
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RTHNDGDTEN(I,K,J) =RTHNDGDTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
-
- IF(config_flags%grid_fdda .EQ. 2) THEN
-
- DO J =j_start,j_end
- DO K =k_start,kte
- DO I =i_start,i_end
-
- RPHNDGDTEN(I,K,J) =RPHNDGDTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(config_flags%grid_fdda .EQ. 1) THEN
-
- IF(P_QV .ge. PARAM_FIRST_SCALAR) THEN
-
- DO J =j_start,j_end
- DO K =k_start,k_end
- DO I =i_start,i_end
-
- RQVNDGDTEN(I,K,J) =RQVNDGDTEN(I,K,J)/mu(I,J)
- ENDDO
- ENDDO
- ENDDO
- ENDIF
- ENDIF
- ENDIF
-
- END SUBROUTINE g_phy_prep
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of phy_prep in forward (tangent) mode:
+!   variations   of useful results: rthndgdten rublten v_phy rqvndgdten
+!                rthraten rqccuten rthcuten rqicuten z th_phy rthften
+!                rvndgdten rqscuten t8w rqrshten rqvshten rucuten
+!                pi_phy rvshten rqvblten rvblten rphndgdten t_phy
+!                rqcshten rqvften rthshten rqgshten p_hyd_w rqishten
+!                p_phy rqcblten rthblten u_phy rqrcuten rqiblten
+!                rqsshten rqvcuten p8w z_at_w rho rvcuten p_hyd
+!                rushten rundgdten dz8w
+!   with respect to varying inputs: rthndgdten rublten v_phy rqvndgdten
+!                rthraten p rqccuten t rthcuten u v rqicuten z
+!                th_phy rthften rvndgdten rqscuten t8w rqrshten
+!                rqvshten rucuten pi_phy rvshten rqvblten rvblten
+!                rphndgdten t_phy rqcshten rqvften rthshten rqgshten
+!                p_hyd_w rqishten p_phy rqcblten moist ph rthblten
+!                u_phy rqrcuten rqiblten alt rqsshten rqvcuten
+!                p8w z_at_w rho rvcuten p_hyd rushten muu muv rundgdten
+!                mu dz8w
+!   RW status of diff variables: rthndgdten:in-out rublten:in-out
+!                v_phy:in-out rqvndgdten:in-out rthraten:in-out
+!                p:in rqccuten:in-out t:in rthcuten:in-out u:in
+!                v:in rqicuten:in-out z:in-out th_phy:in-out rthften:in-out
+!                rvndgdten:in-out rqscuten:in-out t8w:in-out rqrshten:in-out
+!                rqvshten:in-out rucuten:in-out pi_phy:in-out rvshten:in-out
+!                rqvblten:in-out rvblten:in-out rphndgdten:in-out
+!                t_phy:in-out rqcshten:in-out rqvften:in-out rthshten:in-out
+!                rqgshten:in-out p_hyd_w:in-out rqishten:in-out
+!                p_phy:in-out rqcblten:in-out moist:in ph:in rthblten:in-out
+!                u_phy:in-out rqrcuten:in-out rqiblten:in-out alt:in
+!                rqsshten:in-out rqvcuten:in-out p8w:in-out z_at_w:in-out
+!                rho:in-out rvcuten:in-out p_hyd:in-out rushten:in-out
+!                muu:in muv:in rundgdten:in-out mu:in dz8w:in-out
+! input
+! input
+! input
+! output
+! output
+! output
+! output
+! params
+SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
+&  , v, vd, p, pd, pb, alt, altd, ph, phd, phb, t, td, tsk, moist, moistd&
+&  , n_moist, rho, rhod, th_phy, th_phyd, p_phy, p_phyd, pi_phy, pi_phyd&
+&  , u_phy, u_phyd, v_phy, v_phyd, p8w, p8wd, t_phy, t_phyd, t8w, t8wd, z&
+&  , zd, z_at_w, z_at_wd, dz8w, dz8wd, p_hyd, p_hydd, p_hyd_w, p_hyd_wd, &
+&  fzm, fzp, znw, p_top, rthraten, rthratend, rthblten, rthbltend, &
+&  rublten, rubltend, rvblten, rvbltend, rqvblten, rqvbltend, rqcblten, &
+&  rqcbltend, rqiblten, rqibltend, rucuten, rucutend, rvcuten, rvcutend, &
+&  rthcuten, rthcutend, rqvcuten, rqvcutend, rqccuten, rqccutend, &
+&  rqrcuten, rqrcutend, rqicuten, rqicutend, rqscuten, rqscutend, rushten&
+&  , rushtend, rvshten, rvshtend, rthshten, rthshtend, rqvshten, &
+&  rqvshtend, rqcshten, rqcshtend, rqrshten, rqrshtend, rqishten, &
+&  rqishtend, rqsshten, rqsshtend, rqgshten, rqgshtend, rthften, rthftend&
+&  , rqvften, rqvftend, rundgdten, rundgdtend, rvndgdten, rvndgdtend, &
+&  rthndgdten, rthndgdtend, rphndgdten, rphndgdtend, rqvndgdten, &
+&  rqvndgdtend, rmundgdten, ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+!----------------------------------------------------------------------
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  INTEGER, INTENT(IN) :: n_moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
+&  moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
+&  moistd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: tsk, mu, muu, muv
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mud, muud, muvd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: u_phy, &
+&  v_phy, pi_phy, p_phy, p8w, t_phy, th_phy, t8w, rho, z, dz8w, z_at_w
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: u_phyd, &
+&  v_phyd, pi_phyd, p_phyd, p8wd, t_phyd, th_phyd, t8wd, rhod, zd, dz8wd&
+&  , z_at_wd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: p_hyd, &
+&  p_hyd_w
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: p_hydd, &
+&  p_hyd_wd
+  REAL, INTENT(IN) :: p_top
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: pb, p, u, v&
+&  , alt, ph, phb, t
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: pd, ud, vd, &
+&  altd, phd, td
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: znw
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthraten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthratend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucuten, &
+&  rvcuten, rthcuten, rqvcuten, rqccuten, rqrcuten, rqicuten, rqscuten, &
+&  rushten, rvshten, rthshten, rqvshten, rqcshten, rqrshten, rqishten, &
+&  rqsshten, rqgshten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucutend&
+&  , rvcutend, rthcutend, rqvcutend, rqccutend, rqrcutend, rqicutend, &
+&  rqscutend, rushtend, rvshtend, rthshtend, rqvshtend, rqcshtend, &
+&  rqrshtend, rqishtend, rqsshtend, rqgshtend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rublten, &
+&  rvblten, rthblten, rqvblten, rqcblten, rqiblten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rubltend&
+&  , rvbltend, rthbltend, rqvbltend, rqcbltend, rqibltend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthften, &
+&  rqvften
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthftend&
+&  , rqvftend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rundgdten&
+&  , rvndgdten, rthndgdten, rphndgdten, rqvndgdten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
+&  rundgdtend, rvndgdtend, rthndgdtend, rphndgdtend, rqvndgdtend
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: rmundgdten
+  INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, &
+&  j_startv
+  INTEGER :: i, j, k
+  REAL :: w1, w2, z0, z1, z2
+  REAL :: w1d, w2d, z0d, z1d, z2d
+  REAL :: e_vapor
+  REAL :: pwx1
+  REAL :: pwx1d
+  REAL :: arg1
+  REAL :: arg1d
+  INTRINSIC EXP
+  INTRINSIC MAX
+  INTRINSIC LOG
+  INTRINSIC MIN
+!-----------------------------------------------------------------------
+!<DESCRIPTION>
+!
+!  phys_prep calculates a number of diagnostic quantities needed by
+!  the physics routines.  It also decouples the physics tendencies from
+!  the column dry-air mass (the physics routines expect to see/update the
+!  uncoupled tendencies).
+!
+!</DESCRIPTION>
+!  set up loop bounds for this grid's boundary conditions
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  k_start = kts
+  IF (kte .GT. kde - 1) THEN
+    k_end = kde - 1
+  ELSE
+    k_end = kte
+  END IF
+!  compute thermodynamics and velocities at pressure points (or half levels)
+  DO j=j_start,j_end
+    DO k=k_start,k_end
+      DO i=i_start,i_end
+        th_phyd(i, k, j) = td(i, k, j)
+        th_phy(i, k, j) = t(i, k, j) + t0
+        p_phyd(i, k, j) = pd(i, k, j)
+        p_phy(i, k, j) = p(i, k, j) + pb(i, k, j)
+        pwx1d = p_phyd(i, k, j)/p1000mb
+        pwx1 = p_phy(i, k, j)/p1000mb
+        IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. rcp .EQ. INT(rcp))) &
+&        THEN
+          pi_phyd(i, k, j) = rcp*pwx1**(rcp-1)*pwx1d
+        ELSE IF (pwx1 .EQ. 0.0 .AND. rcp .EQ. 1.0) THEN
+          pi_phyd(i, k, j) = pwx1d
+        ELSE
+          pi_phyd(i, k, j) = 0.0
+        END IF
+        pi_phy(i, k, j) = pwx1**rcp
+        t_phyd(i, k, j) = th_phyd(i, k, j)*pi_phy(i, k, j) + th_phy(i, k&
+&          , j)*pi_phyd(i, k, j)
+        t_phy(i, k, j) = th_phy(i, k, j)*pi_phy(i, k, j)
+        rhod(i, k, j) = moistd(i, k, j, p_qv)/alt(i, k, j) - altd(i, k, &
+&          j)*(1.+moist(i, k, j, p_qv))/alt(i, k, j)**2
+        rho(i, k, j) = 1./alt(i, k, j)*(1.+moist(i, k, j, p_qv))
+        u_phyd(i, k, j) = 0.5*(ud(i, k, j)+ud(i+1, k, j))
+        u_phy(i, k, j) = 0.5*(u(i, k, j)+u(i+1, k, j))
+        v_phyd(i, k, j) = 0.5*(vd(i, k, j)+vd(i, k, j+1))
+        v_phy(i, k, j) = 0.5*(v(i, k, j)+v(i, k, j+1))
+      END DO
+    END DO
+  END DO
+!  compute z at w points
+  DO j=j_start,j_end
+    DO k=k_start,kte
+      DO i=i_start,i_end
+        z_at_wd(i, k, j) = phd(i, k, j)/g
+        z_at_w(i, k, j) = (phb(i, k, j)+ph(i, k, j))/g
+      END DO
+    END DO
+  END DO
+  DO j=j_start,j_end
+    DO k=k_start,kte-1
+      DO i=i_start,i_end
+        dz8wd(i, k, j) = z_at_wd(i, k+1, j) - z_at_wd(i, k, j)
+        dz8w(i, k, j) = z_at_w(i, k+1, j) - z_at_w(i, k, j)
+      END DO
+    END DO
+  END DO
+  DO j=j_start,j_end
+    DO i=i_start,i_end
+      dz8wd(i, kte, j) = 0.0
+      dz8w(i, kte, j) = 0.
+    END DO
+  END DO
+!  compute z at p points or half levels (average of z at full levels)
+  DO j=j_start,j_end
+    DO k=k_start,k_end
+      DO i=i_start,i_end
+        zd(i, k, j) = 0.5*(z_at_wd(i, k, j)+z_at_wd(i, k+1, j))
+        z(i, k, j) = 0.5*(z_at_w(i, k, j)+z_at_w(i, k+1, j))
+      END DO
+    END DO
+  END DO
+!  interp t and p to full levels
+  DO j=j_start,j_end
+    DO k=2,k_end
+      DO i=i_start,i_end
+        p8wd(i, k, j) = fzm(k)*p_phyd(i, k, j) + fzp(k)*p_phyd(i, k-1, j&
+&          )
+        p8w(i, k, j) = fzm(k)*p_phy(i, k, j) + fzp(k)*p_phy(i, k-1, j)
+        t8wd(i, k, j) = fzm(k)*t_phyd(i, k, j) + fzp(k)*t_phyd(i, k-1, j&
+&          )
+        t8w(i, k, j) = fzm(k)*t_phy(i, k, j) + fzp(k)*t_phy(i, k-1, j)
+      END DO
+    END DO
+  END DO
+!  extrapolate p and t to surface and top.
+!  we'll use an extrapolation in z for now
+  DO j=j_start,j_end
+    DO i=i_start,i_end
+! bottom
+      z0d = z_at_wd(i, 1, j)
+      z0 = z_at_w(i, 1, j)
+      z1d = zd(i, 1, j)
+      z1 = z(i, 1, j)
+      z2d = zd(i, 2, j)
+      z2 = z(i, 2, j)
+      w1d = ((z0d-z2d)*(z1-z2)-(z0-z2)*(z1d-z2d))/(z1-z2)**2
+      w1 = (z0-z2)/(z1-z2)
+      w2d = -w1d
+      w2 = 1. - w1
+      p8wd(i, 1, j) = w1d*p_phy(i, 1, j) + w1*p_phyd(i, 1, j) + w2d*&
+&        p_phy(i, 2, j) + w2*p_phyd(i, 2, j)
+      p8w(i, 1, j) = w1*p_phy(i, 1, j) + w2*p_phy(i, 2, j)
+      t8wd(i, 1, j) = w1d*t_phy(i, 1, j) + w1*t_phyd(i, 1, j) + w2d*&
+&        t_phy(i, 2, j) + w2*t_phyd(i, 2, j)
+      t8w(i, 1, j) = w1*t_phy(i, 1, j) + w2*t_phy(i, 2, j)
+! top
+      z0d = z_at_wd(i, kte, j)
+      z0 = z_at_w(i, kte, j)
+      z1d = zd(i, k_end, j)
+      z1 = z(i, k_end, j)
+      z2d = zd(i, k_end-1, j)
+      z2 = z(i, k_end-1, j)
+      w1d = ((z0d-z2d)*(z1-z2)-(z0-z2)*(z1d-z2d))/(z1-z2)**2
+      w1 = (z0-z2)/(z1-z2)
+      w2d = -w1d
+      w2 = 1. - w1
+!      p8w(i,kde,j) = w1*p_phy(i,kde-1,j)+w2*p_phy(i,kde-2,j)
+!!!  bug fix      extrapolate ln(p) so p is positive definite
+      arg1d = w1d*LOG(p_phy(i, kde-1, j)) + w1*p_phyd(i, kde-1, j)/p_phy&
+&        (i, kde-1, j) + w2d*LOG(p_phy(i, kde-2, j)) + w2*p_phyd(i, kde-2&
+&        , j)/p_phy(i, kde-2, j)
+      arg1 = w1*LOG(p_phy(i, kde-1, j)) + w2*LOG(p_phy(i, kde-2, j))
+      p8wd(i, kde, j) = arg1d*EXP(arg1)
+      p8w(i, kde, j) = EXP(arg1)
+      t8wd(i, kde, j) = w1d*t_phy(i, kde-1, j) + w1*t_phyd(i, kde-1, j) &
+&        + w2d*t_phy(i, kde-2, j) + w2*t_phyd(i, kde-2, j)
+      t8w(i, kde, j) = w1*t_phy(i, kde-1, j) + w2*t_phy(i, kde-2, j)
+    END DO
+  END DO
+! calculate hydrostatic pressure at both full and half levels
+! first, full level p: assuming dry over model top
+  DO j=j_start,j_end
+    DO i=i_start,i_end
+      p_hyd_wd(i, kte, j) = 0.0
+      p_hyd_w(i, kte, j) = p_top
+    END DO
+  END DO
+  e_vapor = 0.
+  DO j=j_start,j_end
+    DO k=kte-1,k_start,-1
+      DO i=i_start,i_end
+!      e_vapor = 1./alt(i,k,j)*moist(i,k,j,P_QV)*g*dz8w(i,k,j) 
+!      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+e_vapor
+        p_hyd_wd(i, k, j) = p_hyd_wd(i, k+1, j) + g*((moistd(i, k, j, &
+&          p_qv)*dz8w(i, k, j)+(1.+moist(i, k, j, p_qv))*dz8wd(i, k, j))/&
+&          alt(i, k, j)-altd(i, k, j)*(1.+moist(i, k, j, p_qv))*dz8w(i, k&
+&          , j)/alt(i, k, j)**2)
+        p_hyd_w(i, k, j) = p_hyd_w(i, k+1, j) + 1./alt(i, k, j)*(1.+&
+&          moist(i, k, j, p_qv))*g*dz8w(i, k, j)
+      END DO
+    END DO
+  END DO
+! now calculate hydrostatic pressure at half levels
+  DO j=j_start,j_end
+    DO k=k_start,k_end
+      DO i=i_start,i_end
+        p_hydd(i, k, j) = 0.5*(p_hyd_wd(i, k, j)+p_hyd_wd(i, k+1, j))
+        p_hyd(i, k, j) = 0.5*(p_hyd_w(i, k, j)+p_hyd_w(i, k+1, j))
+      END DO
+    END DO
+  END DO
+! decouple all physics tendencies
+  IF (config_flags%ra_lw_physics .GT. 0 .OR. config_flags%ra_sw_physics &
+&      .GT. 0) THEN
+    DO j=j_start,j_end
+      DO k=k_start,k_end
+        DO i=i_start,i_end
+          rthratend(i, k, j) = (rthratend(i, k, j)*mu(i, j)-rthraten(i, &
+&            k, j)*mud(i, j))/mu(i, j)**2
+          rthraten(i, k, j) = rthraten(i, k, j)/mu(i, j)
+        END DO
+      END DO
+    END DO
+  END IF
+  IF (config_flags%cu_physics .GT. 0) THEN
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        DO k=k_start,k_end
+          rucutend(i, k, j) = (rucutend(i, k, j)*mu(i, j)-rucuten(i, k, &
+&            j)*mud(i, j))/mu(i, j)**2
+          rucuten(i, k, j) = rucuten(i, k, j)/mu(i, j)
+          rvcutend(i, k, j) = (rvcutend(i, k, j)*mu(i, j)-rvcuten(i, k, &
+&            j)*mud(i, j))/mu(i, j)**2
+          rvcuten(i, k, j) = rvcuten(i, k, j)/mu(i, j)
+          rthcutend(i, k, j) = (rthcutend(i, k, j)*mu(i, j)-rthcuten(i, &
+&            k, j)*mud(i, j))/mu(i, j)**2
+          rthcuten(i, k, j) = rthcuten(i, k, j)/mu(i, j)
+        END DO
+      END DO
+    END DO
+    IF (p_qv .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqvcutend(i, k, j) = (rqvcutend(i, k, j)*mu(i, j)-rqvcuten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqvcuten(i, k, j) = rqvcuten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qc .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqccutend(i, k, j) = (rqccutend(i, k, j)*mu(i, j)-rqccuten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqccuten(i, k, j) = rqccuten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qr .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqrcutend(i, k, j) = (rqrcutend(i, k, j)*mu(i, j)-rqrcuten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqrcuten(i, k, j) = rqrcuten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qi .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqicutend(i, k, j) = (rqicutend(i, k, j)*mu(i, j)-rqicuten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqicuten(i, k, j) = rqicuten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qs .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqscutend(i, k, j) = (rqscutend(i, k, j)*mu(i, j)-rqscuten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqscuten(i, k, j) = rqscuten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+  END IF
+  IF (config_flags%shcu_physics .GT. 0) THEN
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        DO k=k_start,k_end
+          rushtend(i, k, j) = (rushtend(i, k, j)*mu(i, j)-rushten(i, k, &
+&            j)*mud(i, j))/mu(i, j)**2
+          rushten(i, k, j) = rushten(i, k, j)/mu(i, j)
+          rvshtend(i, k, j) = (rvshtend(i, k, j)*mu(i, j)-rvshten(i, k, &
+&            j)*mud(i, j))/mu(i, j)**2
+          rvshten(i, k, j) = rvshten(i, k, j)/mu(i, j)
+          rthshtend(i, k, j) = (rthshtend(i, k, j)*mu(i, j)-rthshten(i, &
+&            k, j)*mud(i, j))/mu(i, j)**2
+          rthshten(i, k, j) = rthshten(i, k, j)/mu(i, j)
+        END DO
+      END DO
+    END DO
+    IF (p_qv .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqvshtend(i, k, j) = (rqvshtend(i, k, j)*mu(i, j)-rqvshten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqvshten(i, k, j) = rqvshten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qc .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqcshtend(i, k, j) = (rqcshtend(i, k, j)*mu(i, j)-rqcshten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqcshten(i, k, j) = rqcshten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qr .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqrshtend(i, k, j) = (rqrshtend(i, k, j)*mu(i, j)-rqrshten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqrshten(i, k, j) = rqrshten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qi .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqishtend(i, k, j) = (rqishtend(i, k, j)*mu(i, j)-rqishten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqishten(i, k, j) = rqishten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qs .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqsshtend(i, k, j) = (rqsshtend(i, k, j)*mu(i, j)-rqsshten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqsshten(i, k, j) = rqsshten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qg .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqgshtend(i, k, j) = (rqgshtend(i, k, j)*mu(i, j)-rqgshten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqgshten(i, k, j) = rqgshten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+  END IF
+  IF (config_flags%bl_pbl_physics .GT. 0) THEN
+    DO j=j_start,j_end
+      DO k=k_start,k_end
+        DO i=i_start,i_end
+          rubltend(i, k, j) = (rubltend(i, k, j)*mu(i, j)-rublten(i, k, &
+&            j)*mud(i, j))/mu(i, j)**2
+          rublten(i, k, j) = rublten(i, k, j)/mu(i, j)
+          rvbltend(i, k, j) = (rvbltend(i, k, j)*mu(i, j)-rvblten(i, k, &
+&            j)*mud(i, j))/mu(i, j)**2
+          rvblten(i, k, j) = rvblten(i, k, j)/mu(i, j)
+          rthbltend(i, k, j) = (rthbltend(i, k, j)*mu(i, j)-rthblten(i, &
+&            k, j)*mud(i, j))/mu(i, j)**2
+          rthblten(i, k, j) = rthblten(i, k, j)/mu(i, j)
+        END DO
+      END DO
+    END DO
+    IF (p_qv .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO k=k_start,k_end
+          DO i=i_start,i_end
+            rqvbltend(i, k, j) = (rqvbltend(i, k, j)*mu(i, j)-rqvblten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqvblten(i, k, j) = rqvblten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qc .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO k=k_start,k_end
+          DO i=i_start,i_end
+            rqcbltend(i, k, j) = (rqcbltend(i, k, j)*mu(i, j)-rqcblten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqcblten(i, k, j) = rqcblten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+    IF (p_qi .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO k=k_start,k_end
+          DO i=i_start,i_end
+            rqibltend(i, k, j) = (rqibltend(i, k, j)*mu(i, j)-rqiblten(i&
+&              , k, j)*mud(i, j))/mu(i, j)**2
+            rqiblten(i, k, j) = rqiblten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+  END IF
+!  decouple advective forcing required by Grell-Devenyi scheme
+  IF (((config_flags%cu_physics .EQ. gdscheme .OR. config_flags%&
+&      cu_physics .EQ. g3scheme) .OR. config_flags%cu_physics .EQ. &
+&      kfetascheme) .OR. config_flags%cu_physics .EQ. tiedtkescheme) THEN
+! Tiedtke ZCX&YQW
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        DO k=k_start,k_end
+          rthftend(i, k, j) = (rthftend(i, k, j)*mu(i, j)-rthften(i, k, &
+&            j)*mud(i, j))/mu(i, j)**2
+          rthften(i, k, j) = rthften(i, k, j)/mu(i, j)
+        END DO
+      END DO
+    END DO
+    IF (p_qv .GE. param_first_scalar) THEN
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          DO k=k_start,k_end
+            rqvftend(i, k, j) = (rqvftend(i, k, j)*mu(i, j)-rqvften(i, k&
+&              , j)*mud(i, j))/mu(i, j)**2
+            rqvften(i, k, j) = rqvften(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    END IF
+  END IF
+! fdda
+! note fdda u and v tendencies are staggered, also only interior points have muu/muv,
+!   so only decouple those
+  IF (config_flags%grid_fdda .GT. 0) THEN
+    IF (its .LT. ids + 1) THEN
+      i_startu = ids + 1
+    ELSE
+      i_startu = its
+    END IF
+    IF (jts .LT. jds + 1) THEN
+      j_startv = jds + 1
+    ELSE
+      j_startv = jts
+    END IF
+    DO j=j_start,j_end
+      DO k=k_start,k_end
+        DO i=i_startu,i_end
+          rundgdtend(i, k, j) = (rundgdtend(i, k, j)*muu(i, j)-rundgdten&
+&            (i, k, j)*muud(i, j))/muu(i, j)**2
+          rundgdten(i, k, j) = rundgdten(i, k, j)/muu(i, j)
+        END DO
+      END DO
+    END DO
+    DO j=j_startv,j_end
+      DO k=k_start,k_end
+        DO i=i_start,i_end
+          rvndgdtend(i, k, j) = (rvndgdtend(i, k, j)*muv(i, j)-rvndgdten&
+&            (i, k, j)*muvd(i, j))/muv(i, j)**2
+          rvndgdten(i, k, j) = rvndgdten(i, k, j)/muv(i, j)
+        END DO
+      END DO
+    END DO
+    DO j=j_start,j_end
+      DO k=k_start,k_end
+        DO i=i_start,i_end
+          rthndgdtend(i, k, j) = (rthndgdtend(i, k, j)*mu(i, j)-&
+&            rthndgdten(i, k, j)*mud(i, j))/mu(i, j)**2
+          rthndgdten(i, k, j) = rthndgdten(i, k, j)/mu(i, j)
+        END DO
+      END DO
+    END DO
+!        RMUNDGDTEN(I,J) - no coupling
+    IF (config_flags%grid_fdda .EQ. 2) THEN
+      DO j=j_start,j_end
+        DO k=k_start,kte
+          DO i=i_start,i_end
+            rphndgdtend(i, k, j) = (rphndgdtend(i, k, j)*mu(i, j)-&
+&              rphndgdten(i, k, j)*mud(i, j))/mu(i, j)**2
+            rphndgdten(i, k, j) = rphndgdten(i, k, j)/mu(i, j)
+          END DO
+        END DO
+      END DO
+    ELSE IF (config_flags%grid_fdda .EQ. 1) THEN
+      IF (p_qv .GE. param_first_scalar) THEN
+        DO j=j_start,j_end
+          DO k=k_start,k_end
+            DO i=i_start,i_end
+              rqvndgdtend(i, k, j) = (rqvndgdtend(i, k, j)*mu(i, j)-&
+&                rqvndgdten(i, k, j)*mud(i, j))/mu(i, j)**2
+              rqvndgdten(i, k, j) = rqvndgdten(i, k, j)/mu(i, j)
+            END DO
+          END DO
+        END DO
+      END IF
+    END IF
+  END IF
+END SUBROUTINE G_PHY_PREP
 
  SUBROUTINE g_moist_physics_prep_em(t_new,g_t_new,t_old,g_t_old,t0,rho, &
  g_rho,al,g_al,alb,p,g_p,p8w,g_p8w,p0,pb,ph,g_ph,phb,th_phy, &

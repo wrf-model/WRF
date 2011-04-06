@@ -1,18 +1,19 @@
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 
-MODULE module_pbl_driver
+MODULE g_module_pbl_driver
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE pbl_driver(                                          &
+   SUBROUTINE g_pbl_driver(                                        &
                   itimestep,dt,u_frame,v_frame                     &
                  ,bldt,curr_secs,adapt_step_flag                   &
-                 ,rublten,rvblten,rthblten                         &
+                 ,rublten,g_rublten,rvblten,g_rvblten              &
+                 ,rthblten,g_rthblten                              &
                  ,tsk,xland,znt,ht                                 &
                  ,ust,pblh,hfx,qfx,grdflx                          &
-                 ,u_phy,v_phy,th_phy,rho                           &
-                 ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
+                 ,u_phy,g_u_phy,v_phy,g_v_phy,th_phy,rho           &
+                 ,p_phy,pi_phy,p8w,t_phy,dz8w,z,g_z                &
                  ,exch_h,exch_m,akhs,akms                          &
                  ,thz0,qz0,uz0,vz0,qsfc,f                          &
                  ,lowlyr,u10,v10,t2                                   &
@@ -46,7 +47,7 @@ CONTAINS
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
-                 ,rqvblten,rqcblten,rqiblten                       &
+                 ,rqvblten,g_rqvblten,rqcblten,rqiblten            &
                  ,rqrblten,rqsblten,rqgblten                       &
              !  Optional moisture tracer flags
                  ,f_qv,f_qc,f_qr                                   &
@@ -75,7 +76,7 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   SURFDRAGSCHEME, TEMFPBLSCHEME, &
+                   SURFDRAGSCHEME, TEMFPBLSCHEME, SURFDRAGSCHEME, &
                    p_qi,param_first_scalar 
    USE module_wind_generic, ONLY : windspec
 #else
@@ -99,7 +100,7 @@ CONTAINS
    USE module_bl_gwdo
    USE module_bl_myjurb
    USE module_bl_boulac
-   USE module_bl_surface_drag
+   USE g_module_bl_surface_drag
    USE module_bl_camuwpbl_driver, only:CAMUWPBL
    USE module_bl_temf
 #if (EM_CORE==1)
@@ -315,9 +316,12 @@ CONTAINS
                                                              rho, &
                                                            t_phy, &
                                                            u_phy, &
+                                                         g_u_phy, &
                                                            v_phy, &
+                                                         g_v_phy, &
                                                             dz8w, &
                                                                z, &
+                                                             g_z, &
                                                           th_phy                                                             
 !3D Variables for camuwpbl scheme
     REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
@@ -369,8 +373,11 @@ CONTAINS
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(INOUT)    ::                       RUBLTEN, &
+                                                       g_RUBLTEN, &
                                                          RVBLTEN, &
+                                                       g_RVBLTEN, &
                                                         RTHBLTEN, &
+                                                      g_RTHBLTEN, &
                                                   EXCH_H,EXCH_M,TKE_PBL
 #if (NMM_CORE != 1)
  REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -469,7 +476,7 @@ CONTAINS
                       ! 2 time levels; if only one then use CURR
                       qv_curr, qc_curr, qr_curr                  &
                      ,qi_curr, qs_curr, qg_curr                  &
-                     ,rqvblten,rqcblten,rqrblten                 &
+                     ,rqvblten,g_rqvblten,rqcblten,rqrblten      &
                      ,rqiblten,rqsblten,rqgblten
 
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
@@ -696,10 +703,14 @@ CONTAINS
 
          DO k=kts,min(kte+1,kde)
             RTHBLTEN(I,K,J)=0.
+            g_RTHBLTEN(I,K,J)=0.
             RUBLTEN(I,K,J)=0.
+            g_RUBLTEN(I,K,J)=0.
             RVBLTEN(I,K,J)=0.
+            g_RVBLTEN(I,K,J)=0.
             IF ( PRESENT( RQCBLTEN )) RQCBLTEN(I,K,J)=0.
             IF ( PRESENT( RQVBLTEN )) RQVBLTEN(I,K,J)=0.
+            IF ( PRESENT( g_RQVBLTEN )) g_RQVBLTEN(I,K,J)=0.
          ENDDO
 
          IF (flag_QI .AND. PRESENT(RQIBLTEN) ) THEN
@@ -1147,11 +1158,13 @@ CONTAINS
 
       CASE (SURFDRAGSCHEME)
  
-        CALL wrf_debug(100,'in SURFDRAG scheme')
+        CALL wrf_debug(100,'in g_SURFDRAG scheme')
 
-           CALL surface_drag(                                     &
+           CALL g_surface_drag(                                   &
              RUBLTEN=rublten,RVBLTEN=rvblten                      &  !
-            ,U_PHY=u_phy, V_PHY=v_phy, Z=z                                &  !
+            ,g_RUBLTEN=g_rublten,g_RVBLTEN=g_rvblten              &  !
+            ,U_PHY=u_phy, V_PHY=v_phy, Z=z                        &  !
+            ,g_U_PHY=g_u_phy, g_V_PHY=g_v_phy, g_Z=g_z            &  !
             ,XLAND=xland, HT=ht                                   &  !
             ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
             ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
@@ -1372,7 +1385,7 @@ CONTAINS
  
 
 
-   END SUBROUTINE pbl_driver
+   END SUBROUTINE g_pbl_driver
 
 !=============================================================================
           SUBROUTINE diff3d(DT,CP,DZ,TH ,QV,QC,T,U,V,RHO                              &
@@ -1705,4 +1718,4 @@ CONTAINS
 
 
 
-END MODULE module_pbl_driver
+END MODULE g_module_pbl_driver

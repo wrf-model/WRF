@@ -1927,8 +1927,8 @@ package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke;st
 package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke;state:tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
-package   surfdragscheme bl_pbl_physics==98          -             -
 package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,qpert2d,wpert2d,tke_pbl
+package   surfdragscheme bl_pbl_physics==98          -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qlup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 
@@ -1937,11 +1937,11 @@ package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
-package   ducuscheme     cu_physics==98             -             -
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,RAINCV_A,RAINCV_B,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
 package   nsasscheme     cu_physics==14              -             -
+package   ducuscheme     cu_physics==98              -             -
 package   kfscheme       cu_physics==99              -             -
 
 package   g3shcuscheme   shcu_physics==1             -             -

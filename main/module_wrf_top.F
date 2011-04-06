@@ -24,6 +24,9 @@ MODULE module_wrf_top
                                           copy_g_to_a_adjtest, inner_dot_a_b_adjtest 
    USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail, xtraj_io_initialize
    USE module_nesting
+#if (EM_CORE==1)
+   USE module_state_description, ONLY : SURFDRAGSCHEME
+#endif
 
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : wrf_dm_initialize, wrf_dm_sum_real
@@ -682,6 +685,13 @@ ENDIF
    ! Force to turn off history output in this case
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
 
+   IF ( config_flags%bl_pbl_physics .EQ. SURFDRAGSCHEME ) THEN
+      head_grid%rublten = 0.0
+      head_grid%rvblten = 0.0
+      head_grid%rthblten = 0.0
+      head_grid%rqvblten = 0.0
+   ENDIF
+
    IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
    head_grid%itimestep = 0
    CALL integrate ( head_grid )
@@ -831,14 +841,15 @@ ENDIF
 
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
    model_config_rec%dyn_opt = dyn_em
-   ! Forcing the sw_call_first_rk_step_part1 to be true for any NL run
-   ! and restore to its original value
-   save_part1 = config_flags % sw_call_first_rk_step_part1
-   config_flags % sw_call_first_rk_step_part1 = .true.
-   model_config_rec % sw_call_first_rk_step_part1 = .true.
+#if (WRFPLUS == 1)
+   IF ( config_flags%bl_pbl_physics .EQ. SURFDRAGSCHEME ) THEN
+      head_grid%rublten = 0.0
+      head_grid%rvblten = 0.0
+      head_grid%rthblten = 0.0
+      head_grid%rqvblten = 0.0
+   ENDIF
+#endif
    CALL integrate ( head_grid )
-   config_flags % sw_call_first_rk_step_part1 = save_part1
-   model_config_rec % sw_call_first_rk_step_part1 = save_part1
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 
    END SUBROUTINE wrf_run

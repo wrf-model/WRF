@@ -1,0 +1,526 @@
+!WRF:MEDIATION_LAYER:SOLVER
+
+#define BENCH_START(A)
+#define BENCH_END(A)
+
+MODULE a_module_first_rk_step_part1
+
+CONTAINS
+
+  SUBROUTINE a_first_rk_step_part1 (   grid , config_flags              &
+                             , moist , a_moist , moist_tend , a_moist_tend       &
+                             , chem  , chem_tend                &
+                             , tracer, tracer_tend              &
+                             , scalar , a_scalar , scalar_tend , a_scalar_tend   &
+                             , fdda3d, fdda2d                   &
+                             , ru_tendf, a_ru_tendf, rv_tendf, a_rv_tendf        &
+                             , rw_tendf, a_rw_tendf, t_tendf, a_t_tendf          &
+                             , ph_tendf, a_ph_tendf, mu_tendf, a_mu_tendf        &
+                             , tke_tend, a_tke_tend             &
+                             , adapt_step_flag , curr_secs      &
+                             , psim , psih , wspd , gz1oz0 , br , chklowq &
+                             , cu_act_flag , hol , th_phy , a_th_phy      &
+                             , pi_phy , a_pi_phy , p_phy , a_p_phy , t_phy , a_t_phy &
+                             , u_phy , a_u_phy , v_phy , a_v_phy     &
+                             , dz8w , a_dz8w , p8w , a_p8w , t8w , a_t8w , rho_phy , rho , a_rho   &
+                             , ids, ide, jds, jde, kds, kde     &
+                             , ims, ime, jms, jme, kms, kme     &
+                             , ips, ipe, jps, jpe, kps, kpe     &
+                             , imsx,imex,jmsx,jmex,kmsx,kmex    &
+                             , ipsx,ipex,jpsx,jpex,kpsx,kpex    &
+                             , imsy,imey,jmsy,jmey,kmsy,kmey    &
+                             , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
+                             , k_start , k_end                  &
+                             , f_flux                           &
+                            )
+    USE module_state_description
+    USE module_model_constants
+    USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_subgrid
+    USE module_configure, ONLY : grid_config_rec_type, model_config_rec
+!   USE module_radiation_driver, ONLY : pre_radiation_driver, radiation_driver
+!   USE module_surface_driver, ONLY : surface_driver
+!   USE module_cumulus_driver, ONLY : cumulus_driver
+!   USE module_shallowcu_driver, ONLY : shallowcu_driver
+    USE module_pbl_driver, ONLY : pbl_driver
+!   USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_step
+!   USE module_fddagd_driver, ONLY : fddagd_driver
+    USE module_em, ONLY : init_zero_tendency
+!   USE module_force_scm
+!   USE module_convtrans_prep
+    USE module_big_step_utilities_em, ONLY : phy_prep
+use module_scalar_tables
+#ifdef DM_PARALLEL
+    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub
+#endif
+    USE module_utility
+    USE a_module_em, ONLY : a_init_zero_tendency
+    USE a_module_big_step_utilities_em, ONLY : a_phy_prep
+    USE a_module_pbl_driver, ONLY : a_pbl_driver
+    IMPLICIT NONE
+
+    TYPE ( domain ), INTENT(INOUT) :: grid
+    TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
+    TYPE(WRFU_Time)                :: currentTime
+
+    INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde,     &
+                           ims, ime, jms, jme, kms, kme,     &
+                           ips, ipe, jps, jpe, kps, kpe,     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey
+
+
+    LOGICAL ,INTENT(IN)                        :: adapt_step_flag
+    REAL, INTENT(IN)                           :: curr_secs
+
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: a_moist
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: a_moist_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: a_scalar
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: a_scalar_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
+    REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_fdda2d),INTENT(INOUT)      :: fdda2d
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: br
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
+    LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: hol
+
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: th_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_th_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_pi_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_p_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_t_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: u_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_u_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: v_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_v_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_dz8w
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_p8w
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_t8w
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_rho
+
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_ru_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_rv_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rw_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_rw_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ph_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_ph_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_t_tendf
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: tke_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: a_tke_tend
+
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: mu_tendf
+    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: a_mu_tendf
+
+    INTEGER, INTENT(IN)                           ::  k_start, k_end
+    LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
+
+! Local
+    REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
+
+    REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
+    INTEGER                             :: ij
+    INTEGER  num_roof_layers
+    INTEGER  num_wall_layers
+    INTEGER  num_road_layers
+    INTEGER  iswater
+    LOGICAL  :: l_flux
+    INTEGER  :: isurban
+    INTEGER  rk_step
+    INTEGER                         :: yr, month, day, hr, minute, sec, rc
+    CHARACTER*80                    :: mesg
+
+   INTEGER                         :: sids , side , sjds , sjde , skds , skde , &
+                                      sims , sime , sjms , sjme , skms , skme , &
+                                      sips , sipe , sjps , sjpe , skps , skpe
+
+   CHARACTER (LEN=256) :: mminlu
+
+#if ( WRF_DFI_RADAR == 1 )
+    INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
+#endif
+
+  CALL get_ijk_from_subgrid (  grid ,                   &
+                            sids, side, sjds, sjde, skds, skde,    &
+                            sims, sime, sjms, sjme, skms, skme,    &
+                            sips, sipe, sjps, sjpe, skps, skpe    )
+
+ ! initialize all tendencies to zero in order to update physics
+ ! tendencies first (separate from dry dynamics).
+
+   l_flux=.FALSE.
+   if (present(f_flux)) l_flux=f_flux
+
+    rk_step = 1
+
+BENCH_START(init_zero_tend_tim)
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+
+       DO ij = 1 , grid%num_tiles
+
+         CALL wrf_debug ( 200 , ' call init_zero_tendency' )
+         CALL init_zero_tendency ( ru_tendf, rv_tendf, rw_tendf,     &
+                                   ph_tendf, t_tendf, tke_tend,      &
+                                   mu_tendf,                         &
+                                   moist_tend,chem_tend,scalar_tend, &
+                                   tracer_tend,num_tracer,           &
+                                   num_moist,num_chem,num_scalar,    &
+                                   rk_step,                          &
+                                   ids, ide, jds, jde, kds, kde,     &
+                                   ims, ime, jms, jme, kms, kme,     &
+                                   grid%i_start(ij), grid%i_end(ij), &
+                                   grid%j_start(ij), grid%j_end(ij), &
+                                   k_start, k_end                   )
+
+       END DO
+       !$OMP END PARALLEL DO
+BENCH_END(init_zero_tend_tim)
+
+#ifdef DM_PARALLEL
+#     include "HALO_EM_PHYS_A.inc"
+#endif
+
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij )
+      DO ij = 1 , grid%num_tiles
+
+        CALL wrf_debug ( 200 , ' call phy_prep' )
+        CALL phy_prep ( config_flags,                                    &
+                        grid%mut, grid%muu, grid%muv, grid%u_2,          &
+                        grid%v_2, grid%p, grid%pb, grid%alt,             &
+                        grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
+                        rho,th_phy, p_phy, pi_phy, u_phy, v_phy,         &
+                        p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
+                        grid%p_hyd, grid%p_hyd_w,                        &
+                        grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
+                        grid%rthraten,                                   &
+                        grid%rthblten, grid%rublten, grid%rvblten,       &
+                        grid%rqvblten, grid%rqcblten, grid%rqiblten,     &
+                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
+                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
+                        grid%rqicuten, grid%rqscuten,                    &
+                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
+                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
+                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
+                        grid%rthften,  grid%rqvften,                     &
+                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+                        ids, ide, jds, jde, kds, kde,                    &
+                        ims, ime, jms, jme, kms, kme,                    &
+                        grid%i_start(ij), grid%i_end(ij),                &
+                        grid%j_start(ij), grid%j_end(ij),                &
+                        k_start, k_end                                   )
+      ENDDO
+      !$OMP END PARALLEL DO
+
+BENCH_END(phy_prep_tim)
+
+!*********
+! pbl
+
+      CALL wrf_debug ( 200 , ' call pbl_driver' )
+BENCH_START(pbl_driver_tim)
+      CALL pbl_driver(                                                              &
+     &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
+     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
+     &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
+     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
+     &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
+     &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
+     &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
+     &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
+     &        ,ID=grid%id         ,ITIMESTEP=grid%itimestep     ,KPBL=grid%kpbl          &
+     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
+     &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
+     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
+     &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
+     &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
+     &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
+     &        ,RQVBLTEN=grid%rqvblten  ,RTHBLTEN=grid%rthblten  ,RUBLTEN=grid%rublten    &
+     &        ,RVBLTEN=grid%rvblten    ,SNOW=grid%snow          ,STEPBL=grid%stepbl      &
+     &        ,THZ0=grid%thz0          ,TH_PHY=th_phy                               &
+     &        ,TSK=grid%tsk            ,T_PHY=grid%t_phy        ,UST=grid%ust       &
+     &        ,U10=grid%u10 ,UZ0=grid%uz0      ,U_FRAME=grid%u_frame    ,U_PHY=u_phy        &
+     &        ,V10=grid%v10 ,VZ0=grid%vz0      ,V_FRAME=grid%v_frame    ,V_PHY=v_phy        &
+              ,T2=grid%t2 &
+     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
+     &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%z                &
+     &        ,ZNT=grid%znt                                                    &
+! variables added for BEP
+     &          ,FRC_URB2D=grid%frc_urb2d                                                  &
+     &          ,A_U_BEP=grid%a_u_bep,A_V_BEP=grid%a_v_bep,A_T_BEP=grid%a_t_bep          &
+     &          ,A_Q_BEP=grid%a_q_bep                                                    &
+     &          ,B_U_BEP=grid%b_u_bep,B_V_BEP=grid%b_v_bep,B_T_BEP=grid%b_t_bep          &
+     &          ,B_Q_BEP=grid%b_q_bep                                                    &
+     &          ,SF_BEP=grid%sf_bep,VL_BEP=grid%vl_bep                                   &
+     &          ,A_E_BEP=grid%a_e_bep,B_E_BEP=grid%b_e_bep,DLG_BEP=grid%dlg_bep          &
+     &          ,DL_U_BEP=grid%dl_u_bep                                                  &
+     &          ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                        &
+     &          ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics                          &
+! Bep changes end
+! add tke_pbl, and turbulent fluxes
+     &          ,TKE_PBL=grid%tke_pbl,EL_PBL=grid%el_pbl,WU_TUR=grid%wu_tur,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur   &
+! end add tke_pbl, and turbulent fluxes
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)          &
+     &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)          &
+     &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
+     &        ,NUM_TILES=grid%num_tiles                                   &
+          ! Variables Required by ACM PBL  - jp
+     &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,P_TOP=grid%p_top    &
+          ! Variables required by TEMF PBL - WA 9/9/08
+              ,te_temf=grid%te_temf                                 &
+              ,kh_temf=grid%kh_temf,km_temf=grid%km_temf            &
+              ,shf_temf=grid%shf_temf,qf_temf=grid%qf_temf          &
+              ,uw_temf=grid%uw_temf,vw_temf=grid%vw_temf            &
+              ,hd_temf=grid%hd_temf,lcl_temf=grid%lcl_temf          &
+              ,wupd_temf=grid%wupd_temf,mf_temf=grid%mf_temf          &
+              ,thup_temf=grid%thup_temf,qtup_temf=grid%qtup_temf          &
+              ,qlup_temf=grid%qlup_temf          &
+              ,cf3d_temf=grid%cf3d_temf,cfm_temf=grid%cfm_temf          &
+              ,hct_temf=grid%hct_temf                               &
+              ,flhc=grid%flhc,flqc=grid%flqc                        &
+              ,exch_temf=exch_temf                      &
+          ! optional
+     &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
+     &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
+     &        ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR                 &
+     &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
+     &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
+     &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
+     &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
+!mynn mp@
+     &        ,QKE=scalar(ims,kms,jms,P_qke), tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov     &
+     &        ,rmol=grid%rmol, ch=grid%ch                                 &
+     &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
+!    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+!GWD for ARW
+     &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
+     &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
+     &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
+     &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
+     &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
+! For Wind Turbine Drag Parameterizations
+     &        ,phb=grid%phb                                               &
+     &        ,XLAT_U=grid%xlat_u,XLONG_U=grid%xlong_u                    &
+!Variables required for camuwpbl scheme
+     &        ,Z_AT_W=grid%z_at_w,CLDFRA=grid%cldfra                      &
+     &        ,RTHRATENLW=grid%rthratenlw,TAURESX2D=grid%tauresx2d        &
+     &        ,TAURESY2D=grid%tauresy2d                                   &
+     &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
+     &        ,WPERT2D=grid%wpert2d                                       &
+     &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v                    &
+     &        )
+                                                         
+
+BENCH_END(pbl_driver_tim)
+
+!  Adjoint part begin
+
+!*********
+! pbl
+
+      CALL wrf_debug ( 200 , ' call a_pbl_driver' )
+BENCH_START(a_pbl_driver_tim)
+      CALL a_pbl_driver(                                                              &
+     &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
+     &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
+     &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
+     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
+     &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
+     &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
+     &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
+     &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx  ,HT=grid%ht                        &
+     &        ,ID=grid%id         ,ITIMESTEP=grid%itimestep     ,KPBL=grid%kpbl          &
+     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
+     &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
+     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
+     &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
+     &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
+     &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
+     &        ,RQVBLTEN=grid%rqvblten  ,a_RQVBLTEN=grid%a_rqvblten                  &
+     &        ,RTHBLTEN=grid%rthblten  ,a_RTHBLTEN=grid%a_rthblten                  &
+     &        ,RUBLTEN=grid%rublten, a_RUBLTEN=grid%a_rublten    &
+     &        ,RVBLTEN=grid%rvblten ,a_RVBLTEN=grid%a_rvblten   ,SNOW=grid%snow       ,STEPBL=grid%stepbl      &
+     &        ,THZ0=grid%thz0          ,TH_PHY=th_phy                               &
+     &        ,TSK=grid%tsk            ,T_PHY=grid%t_phy        ,UST=grid%ust       &
+     &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=u_phy ,a_U_PHY=a_u_phy &
+     &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=v_phy ,a_V_PHY=a_v_phy &
+              ,T2=grid%t2 &
+     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
+     &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,a_Z=grid%a_z      &
+     &        ,ZNT=grid%znt                                                    &
+! variables added for BEP
+     &          ,FRC_URB2D=grid%frc_urb2d                                                  &
+     &          ,A_U_BEP=grid%a_u_bep,A_V_BEP=grid%a_v_bep,A_T_BEP=grid%a_t_bep          &
+     &          ,A_Q_BEP=grid%a_q_bep                                                    &
+     &          ,B_U_BEP=grid%b_u_bep,B_V_BEP=grid%b_v_bep,B_T_BEP=grid%b_t_bep          &
+     &          ,B_Q_BEP=grid%b_q_bep                                                    &
+     &          ,SF_BEP=grid%sf_bep,VL_BEP=grid%vl_bep                                   &
+     &          ,A_E_BEP=grid%a_e_bep,B_E_BEP=grid%b_e_bep,DLG_BEP=grid%dlg_bep          &
+     &          ,DL_U_BEP=grid%dl_u_bep                                                  &
+     &          ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                        &
+     &          ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics                          &
+! Bep changes end
+! add tke_pbl, and turbulent fluxes
+     &          ,TKE_PBL=grid%tke_pbl,EL_PBL=grid%el_pbl,WU_TUR=grid%wu_tur,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur   &
+! end add tke_pbl, and turbulent fluxes
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)          &
+     &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)          &
+     &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
+     &        ,NUM_TILES=grid%num_tiles                                   &
+          ! Variables Required by ACM PBL  - jp
+     &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,P_TOP=grid%p_top    &
+          ! Variables required by TEMF PBL - WA 9/9/08
+              ,te_temf=grid%te_temf                                 &
+              ,kh_temf=grid%kh_temf,km_temf=grid%km_temf            &
+              ,shf_temf=grid%shf_temf,qf_temf=grid%qf_temf          &
+              ,uw_temf=grid%uw_temf,vw_temf=grid%vw_temf            &
+              ,hd_temf=grid%hd_temf,lcl_temf=grid%lcl_temf          &
+              ,wupd_temf=grid%wupd_temf,mf_temf=grid%mf_temf          &
+              ,thup_temf=grid%thup_temf,qtup_temf=grid%qtup_temf          &
+              ,qlup_temf=grid%qlup_temf          &
+              ,cf3d_temf=grid%cf3d_temf,cfm_temf=grid%cfm_temf          &
+              ,hct_temf=grid%hct_temf                               &
+              ,flhc=grid%flhc,flqc=grid%flqc                        &
+              ,exch_temf=exch_temf                      &
+          ! optional
+     &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
+     &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
+     &        ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR                 &
+     &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
+     &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
+     &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
+     &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
+!mynn mp@
+     &        ,QKE=scalar(ims,kms,jms,P_qke), tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov     &
+     &        ,rmol=grid%rmol, ch=grid%ch                                 &
+     &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
+!    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+!GWD for ARW
+     &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
+     &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
+     &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
+     &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
+     &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
+! For Wind Turbine Drag Parameterizations
+     &        ,phb=grid%phb                                               &
+     &        ,XLAT_U=grid%xlat_u,XLONG_U=grid%xlong_u                    &
+!Variables required for camuwpbl scheme
+     &        ,Z_AT_W=grid%z_at_w,CLDFRA=grid%cldfra                      &
+     &        ,RTHRATENLW=grid%rthratenlw,TAURESX2D=grid%tauresx2d        &
+     &        ,TAURESY2D=grid%tauresy2d                                   &
+     &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
+     &        ,WPERT2D=grid%wpert2d                                       &
+     &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v                    &
+     &        )
+
+
+BENCH_END(a_pbl_driver_tim)
+
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij )
+      DO ij = 1 , grid%num_tiles
+
+        CALL wrf_debug ( 200 , ' call a_phy_prep' )
+        CALL a_phy_prep ( config_flags,                           &
+                        grid%mut,grid%a_mut, grid%muu, grid%a_muu, grid%muv, grid%a_muv, &
+                        grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2,             &
+                        grid%p,grid%a_p, grid%pb, grid%alt,grid%a_alt,        &
+                        grid%ph_2,grid%a_ph_2, grid%phb, grid%t_2,grid%a_t_2, &
+                        grid%tsk, moist,a_moist, num_moist,        &
+                        rho,a_rho, th_phy,a_th_phy, p_phy,a_p_phy, pi_phy,a_pi_phy, &
+                        u_phy,a_u_phy, v_phy,a_v_phy,                         &
+                        p8w,a_p8w, grid%t_phy,grid%a_t_phy, t8w,a_t8w, grid%z,grid%a_z, &
+                        grid%z_at_w,grid%a_z_at_w, dz8w,a_dz8w,               &
+                        grid%p_hyd,grid%a_p_hyd, grid%p_hyd_w,grid%a_p_hyd_w, &
+                        grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
+                        grid%rthraten, grid%a_rthraten,                       &
+                        grid%rthblten, grid%a_rthblten,                       &
+                        grid%rublten, grid%a_rublten, grid%rvblten, grid%a_rvblten,            &
+                        grid%rqvblten, grid%a_rqvblten, grid%rqcblten, grid%a_rqcblten, grid%rqiblten, grid%a_rqiblten,         &
+                        grid%rucuten,  grid%a_rucuten , grid%rvcuten, grid%a_rvcuten,  grid%rthcuten, grid%a_rthcuten,    &
+                        grid%rqvcuten, grid%a_rqvcuten, grid%rqccuten, grid%a_rqccuten, grid%rqrcuten, grid%a_rqrcuten,    &
+                        grid%rqicuten, grid%a_rqicuten, grid%rqscuten, grid%a_rqscuten,                    &
+                        grid%rushten,  grid%a_rushten, grid%rvshten,  grid%a_rvshten, grid%rthshten, grid%a_rthshten,    &
+                        grid%rqvshten, grid%a_rqvshten, grid%rqcshten, grid%a_rqcshten, grid%rqrshten, grid%a_rqrshten,    &
+                        grid%rqishten, grid%g_rqishten, grid%rqsshten, grid%a_rqsshten, grid%rqgshten, grid%a_rqgshten,    &
+                        grid%rthften,  grid%a_rthften, grid%rqvften, grid%a_rqvften,                    &
+                        grid%RUNDGDTEN, grid%a_RUNDGDTEN, grid%RVNDGDTEN, grid%a_RVNDGDTEN, grid%RTHNDGDTEN, grid%a_RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%a_RPHNDGDTEN,grid%RQVNDGDTEN, grid%a_RQVNDGDTEN,grid%RMUNDGDTEN,&
+                        ids, ide, jds, jde, kds, kde,           &
+                        ims, ime, jms, jme, kms, kme,           &
+                        grid%i_start(ij), grid%i_end(ij),       &
+                        grid%j_start(ij), grid%j_end(ij),       &
+                        k_start, k_end                         )
+      ENDDO
+      !$OMP END PARALLEL DO
+
+BENCH_END(a_phy_prep_tim)
+
+#ifdef DM_PARALLEL
+#     include "HALO_EM_PHYS_A.inc"
+#endif
+
+BENCH_START(a_init_zero_tend_tim)
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+
+       DO ij = 1 , grid%num_tiles
+
+         CALL wrf_debug ( 200 , ' call init_zero_tendency' )
+         CALL a_init_zero_tendency(a_ru_tendf, &
+                                   a_rv_tendf, &
+                                   a_rw_tendf, &
+                                   a_ph_tendf, &
+                                   a_t_tendf,  &
+                                   a_tke_tend, &
+                                   a_mu_tendf,  &
+                                   a_moist_tend,  &
+                                   a_scalar_tend, &
+                                   num_tracer,                   &
+                                   num_moist,num_chem,num_scalar, &
+                                   rk_step,                          &
+                                   ids, ide, jds, jde, kds, kde,     &
+                                   ims, ime, jms, jme, kms, kme,     &
+                                   grid%i_start(ij), grid%i_end(ij), &
+                                   grid%j_start(ij), grid%j_end(ij), &
+                                   k_start, k_end                   )
+
+       END DO
+       !$OMP END PARALLEL DO
+BENCH_END(a_init_zero_tend_tim)
+
+  END SUBROUTINE a_first_rk_step_part1
+
+END MODULE a_module_first_rk_step_part1

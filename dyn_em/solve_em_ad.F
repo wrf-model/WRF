@@ -82,6 +82,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    USE a_module_big_step_utilities_em
    USE a_module_bc
    USE a_module_bc_em
+   USE a_module_first_rk_step_part1
    USE a_module_first_rk_step_part2
    USE module_linked_list2
  
@@ -298,9 +299,10 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
 
-   grid%itimestep = grid%itimestep - 1
-
-   IF (config_flags%enable_identity) RETURN
+   IF (config_flags%enable_identity) THEN 
+     grid%itimestep = grid%itimestep - 1
+     RETURN
+   ENDIF
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
 
@@ -809,6 +811,11 @@ BENCH_END(set_phys_bc_tim)
 if (config_flags % sw_call_first_rk_step_part1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call first_rk_step_part1 ' )
 
+       CALL push4backup (u_phy,v_phy, "u_phy,v_phy")
+       CALL push4backup (grid%z, "z")
+       CALL push4backup (grid%rublten, grid%rvblten, grid%rthblten, grid%rqvblten,&
+                         "rublten, rvblten, rthblten, rqvblten")
+
        CALL first_rk_step_part1 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
@@ -916,7 +923,10 @@ if (config_flags % sw_call_first_rk_step_part2) then
        ENDIF
 #endif
 
-       CALL push4backup (grid%mut,grid%hfx,grid%qfx,grid%ustm, "mut,hfx,qfx,ustm") 
+       CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
+       CALL push4backup (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,&
+                         "rublten,rvblten,rthblten,rqvblten") 
+       CALL push4backup (grid%hfx,grid%qfx,grid%ustm, "hfx,qfx,ustm") 
        CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2,grid%tke_2, &
                          "u,v,w,t,ph,tke") 
        CALL push4backup (rho,grid%t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
@@ -7029,8 +7039,8 @@ if (config_flags % sw_call_microphysics_driver) then
       &        , HAILNC=grid%hailnc , a_HAILNC=grid%hailnc              &
       &        , HAILNCV=grid%hailncv  , a_HAILNCV=grid%hailncv         &
       &        , W=grid%w_2 , a_W=grid%a_w_2                  &
-!zzma      &        , Z=grid%z  , a_Z=grid%a_z, HT=grid%ht  ,a_HT=grid%a_ht    &
-      &        , Z=grid%z  , a_Z=grid%a_z, HT=grid%ht  ,a_HT=grid%ht    &
+!zzma      &        , Z=grid%z  , a_Z=grid%a_z, HT=grid%ht                     &
+      &        , Z=grid%z  , a_Z=grid%a_z, HT=grid%ht                   &
       &        , MP_RESTART_STATE=grid%mp_restart_state                   &
       &        , TBPVS_STATE=grid%tbpvs_state                             & ! etampnew
       &        , TBPVS0_STATE=grid%tbpvs0_state                           & ! etampnew
@@ -10149,7 +10159,6 @@ if (config_flags % sw_call_rk_tendency) then
      END DO
      !ZXOMP END PARALLEL DO
 
-     !print*,(j,grid%a_t_2(:,5,j),j=1,15)
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_tendency ' )
 
@@ -10264,7 +10273,10 @@ if (config_flags % sw_call_first_rk_step_part2) then
        CALL pop2restore (rho,grid%t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
        CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2,grid%tke_2, &
                          "u,v,w,t,ph,tke") 
-       CALL pop2restore (grid%mut,grid%hfx,grid%qfx,grid%ustm, "mut,hfx,qfx,ustm") 
+       CALL pop2restore (grid%hfx,grid%qfx,grid%ustm, "hfx,qfx,ustm") 
+       CALL pop2restore (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,&
+                         "rublten,rvblten,rthblten,rqvblten") 
+       CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
        CALL a_first_rk_step_part2 (   grid , config_flags   &
               , moist ,a_moist , moist_tend ,a_moist_tend   &
 !!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
@@ -10294,7 +10306,7 @@ if (config_flags % sw_call_first_rk_step_part2) then
               , pi_phy ,a_pi_phy, p_phy ,a_p_phy , grid%t_phy ,grid%a_t_phy , &
                 u_phy ,a_u_phy , v_phy,a_v_phy                      &
               , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w,             &
-                rho_phy ,a_rho_phy , rho,a_rho   &
+                rho_phy , rho,a_rho   &
               , nba_mij,a_nba_mij, num_nba_mij   &
               , nba_rij,a_nba_rij, num_nba_rij   &
               , ids, ide, jds, jde, kds, kde     &
@@ -10310,30 +10322,32 @@ if (config_flags % sw_call_first_rk_step_part2) then
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_first_rk_step_part2 ' )
 end if
-! CHECK NECESSARY SUBROUTINE: first_rk_step_part2 }
 
-! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: first_rk_step_part1{
 if (config_flags % sw_call_first_rk_step_part1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_first_rk_step_part1 ' )
 
-!!!!! REPLACE WITH a_first_rk_step_part1 WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-       CALL first_rk_step_part1 (    grid, config_flags         &
-                             , moist , moist_tend               &
+       CALL pop2restore (grid%rublten, grid%rvblten, grid%rthblten, grid%rqvblten, &
+                         "rublten, rvblten, rthblten, rqvblten")
+       CALL pop2restore (grid%z, "z")
+       CALL pop2restore (u_phy,v_phy, "u_phy,v_phy")
+
+       CALL a_first_rk_step_part1 (    grid, config_flags         &
+                             , moist , a_moist, moist_tend, a_moist_tend  &
                              , chem  , chem_tend                &
                              , tracer, tracer_tend              &
-                             , scalar , scalar_tend             &
+                             , scalar , a_scalar, scalar_tend , a_scalar_tend  &
                              , fdda3d, fdda2d                   &
-                             , ru_tendf, rv_tendf               &
-                             , rw_tendf, t_tendf                &
-                             , ph_tendf, mu_tendf               &
-                             , tke_tend                         &
+                             , ru_tendf, a_ru_tendf, rv_tendf , a_rv_tendf  &
+                             , rw_tendf, a_rw_tendf, t_tendf , a_t_tendf    &
+                             , ph_tendf, a_ph_tendf, mu_tendf , a_mu_tendf  &
+                             , tke_tend, a_tke_tend             &
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
-                             , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , grid%t_phy      &
-                             , u_phy , v_phy                    &
-                             , dz8w , p8w , t8w , rho_phy , rho &
+                             , cu_act_flag , hol , th_phy , a_th_phy      &
+                             , pi_phy , a_pi_phy, p_phy , a_p_phy, grid%t_phy , grid%a_t_phy     &
+                             , u_phy , a_u_phy , v_phy , a_v_phy     &
+                             , dz8w , a_dz8w, p8w , a_p8w, t8w , a_t8w, rho_phy , rho , a_rho &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -10355,29 +10369,30 @@ else
       !$OMP PRIVATE ( ij )
       DO ij = grid%num_tiles,1,-1
         CALL a_phy_prep ( config_flags,                           &
-                        grid%mut,grid%a_mut, grid%muu,grid%a_muu, grid%muv,grid%a_muv, &
+                        grid%mut,grid%a_mut, grid%muu, grid%a_muu, grid%muv, grid%a_muv, &
                         grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2,             &
                         grid%p,grid%a_p, grid%pb, grid%alt,grid%a_alt,        &
                         grid%ph_2,grid%a_ph_2, grid%phb, grid%t_2,grid%a_t_2, &
-                        grid%tsk,grid%tsk, moist,a_moist, num_moist,        &
+                        grid%tsk, moist,a_moist, num_moist,        &
                         rho,a_rho, th_phy,a_th_phy, p_phy,a_p_phy, pi_phy,a_pi_phy, &
                         u_phy,a_u_phy, v_phy,a_v_phy,                         &
                         p8w,a_p8w, grid%t_phy,grid%a_t_phy, t8w,a_t8w, grid%z,grid%a_z, &
                         grid%z_at_w,grid%a_z_at_w, dz8w,a_dz8w,               &
                         grid%p_hyd,grid%a_p_hyd, grid%p_hyd_w,grid%a_p_hyd_w, &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
-                        grid%rthraten,                                        &
-                        grid%rthblten, grid%rublten, grid%rvblten,            &
-                        grid%rqvblten, grid%rqcblten, grid%rqiblten,          &
-                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
-                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
-                        grid%rqicuten, grid%rqscuten,                    &
-                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
-                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
-                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
-                        grid%rthften,  grid%rqvften,                     &
-                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+                        grid%rthraten, grid%a_rthraten,                       &
+                        grid%rthblten, grid%a_rthblten,                       &
+                        grid%rublten, grid%a_rublten, grid%rvblten, grid%a_rvblten,            &
+                        grid%rqvblten, grid%a_rqvblten, grid%rqcblten, grid%a_rqcblten, grid%rqiblten, grid%a_rqiblten,         &
+                        grid%rucuten,  grid%a_rucuten , grid%rvcuten, grid%a_rvcuten,  grid%rthcuten, grid%a_rthcuten,    &
+                        grid%rqvcuten, grid%a_rqvcuten, grid%rqccuten, grid%a_rqccuten, grid%rqrcuten, grid%a_rqrcuten,    &
+                        grid%rqicuten, grid%a_rqicuten, grid%rqscuten, grid%a_rqscuten,                    &
+                        grid%rushten,  grid%a_rushten, grid%rvshten,  grid%a_rvshten, grid%rthshten, grid%a_rthshten,    &
+                        grid%rqvshten, grid%a_rqvshten, grid%rqcshten, grid%a_rqcshten, grid%rqrshten, grid%a_rqrshten,    &
+                        grid%rqishten, grid%g_rqishten, grid%rqsshten, grid%a_rqsshten, grid%rqgshten, grid%a_rqgshten,    &
+                        grid%rthften,  grid%a_rthften, grid%rqvften, grid%a_rqvften,                    &
+                        grid%RUNDGDTEN, grid%a_RUNDGDTEN, grid%RVNDGDTEN, grid%a_RVNDGDTEN, grid%RTHNDGDTEN, grid%a_RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%a_RPHNDGDTEN,grid%RQVNDGDTEN, grid%a_RQVNDGDTEN,grid%RMUNDGDTEN,&
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &
@@ -10703,6 +10718,8 @@ end if
 #endif
 !==[P12_adj]==============================================================
 !  Max values of CFL for adaptive time step scheme
+
+   grid%itimestep = grid%itimestep - 1
 
    DEALLOCATE(max_vert_cfl_tmp)
    DEALLOCATE(max_horiz_cfl_tmp)

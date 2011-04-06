@@ -87,8 +87,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    USE module_input_tracer
    USE module_chem_utilities
 #endif
-   USE module_first_rk_step_part1
-!   USE module_first_rk_step_part2
+   USE g_module_first_rk_step_part1 
    USE g_module_first_rk_step_part2
    USE module_llxy, ONLY : proj_cassini
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
@@ -790,34 +789,34 @@ BENCH_END(g_set_phys_bc_tim)
 if (config_flags % sw_call_first_rk_step_part1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call g_first_rk_step_part1 ' )
 
-!!!!! REPLACE WITH g_first_rk_step_part1 WHEN CODING TL OF PHYSICS. Ning Pan
-       CALL first_rk_step_part1 (    grid, config_flags         &
-                             , moist , moist_tend               &
-                             , chem  , chem_tend                &
-                             , tracer, tracer_tend              &
-                             , scalar , scalar_tend             &
-                             , fdda3d, fdda2d                   &
-                             , ru_tendf, rv_tendf               &
-                             , rw_tendf, t_tendf                &
-                             , ph_tendf, mu_tendf               &
-                             , tke_tend                         &
-                             , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0      &
-                             , br , chklowq                     &
-                             , cu_act_flag , hol , th_phy       &
-                             , pi_phy , p_phy , grid%t_phy           &
-                             , u_phy , v_phy                    &
-                             , dz8w , p8w , t8w , rho_phy , rho &
+  CALL g_first_rk_step_part1 (   grid , config_flags                   &
+                             , moist , g_moist, moist_tend, g_moist_tend   &
+                             , chem  , chem_tend     &
+                             , tracer, tracer_tend   &
+                             , scalar , g_scalar, scalar_tend, g_scalar_tend &
+                             , fdda3d, fdda2d           &
+                             , ru_tendf,g_ru_tendf,rv_tendf,g_rv_tendf    &
+                             , rw_tendf,g_rw_tendf, t_tendf ,g_t_tendf     &
+                             , ph_tendf,g_ph_tendf, mu_tendf,g_mu_tendf    &
+                             , tke_tend,g_tke_tend                         &
+                             , adapt_step_flag , curr_secs                 &
+                             , psim ,psih ,wspd  &
+                             , gz1oz0 ,br, chklowq           &
+                             , cu_act_flag , hol , th_phy ,g_th_phy                 &
+                             , pi_phy ,g_pi_phy, p_phy ,g_p_phy, grid%t_phy ,grid%g_t_phy         &
+                             , u_phy ,g_u_phy , v_phy,g_v_phy                            &
+                             , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w                   &
+                             , rho_phy ,rho ,g_rho                           &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
-                             , imsx, imex, jmsx, jmex, kmsx, kmex    &
-                             , ipsx, ipex, jpsx, jpex, kpsx, kpex    &
-                             , imsy, imey, jmsy, jmey, kmsy, kmey    &
-                             , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
+                             , imsx,imex,jmsx,jmex,kmsx,kmex    &
+                             , ipsx,ipex,jpsx,jpex,kpsx,kpex    &
+                             , imsy,imey,jmsy,jmey,kmsy,kmey    &
+                             , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
-                            )
+                             )
 
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call g_first_rk_step_part1 ' )
@@ -865,29 +864,30 @@ BENCH_END(tl_init_zero_tend_tim)
 
         CALL wrf_debug ( 200 , ' call g_phy_prep' )
         CALL g_phy_prep ( config_flags,                           &
-                        grid%mut,grid%g_mut, grid%muu,grid%g_muu, grid%muv,grid%g_muv, &
+                        grid%mut,grid%g_mut, grid%muu, grid%g_muu, grid%muv, grid%g_muv, &
                         grid%u_2,grid%g_u_2, grid%v_2,grid%g_v_2,             &
                         grid%p,grid%g_p, grid%pb, grid%alt,grid%g_alt,        &
                         grid%ph_2,grid%g_ph_2, grid%phb, grid%t_2,grid%g_t_2, &
-                        grid%tsk,grid%tsk, moist,g_moist, num_moist,        &
+                        grid%tsk, moist,g_moist, num_moist,        &
                         rho,g_rho, th_phy,g_th_phy, p_phy,g_p_phy, pi_phy,g_pi_phy, &
                         u_phy,g_u_phy, v_phy,g_v_phy,                         &
                         p8w,g_p8w, grid%t_phy,grid%g_t_phy, t8w,g_t8w, grid%z,grid%g_z, &
                         grid%z_at_w,grid%g_z_at_w, dz8w,g_dz8w,               &
                         grid%p_hyd,grid%g_p_hyd, grid%p_hyd_w,grid%g_p_hyd_w, &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
-                        grid%rthraten,                                        &
-                        grid%rthblten, grid%rublten, grid%rvblten,            &
-                        grid%rqvblten, grid%rqcblten, grid%rqiblten,          &
-                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
-                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
-                        grid%rqicuten, grid%rqscuten,                    &
-                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
-                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
-                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
-                        grid%rthften,  grid%rqvften,                     &
-                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+                        grid%rthraten, grid%g_rthraten,                       &
+                        grid%rthblten, grid%g_rthblten,                       &
+                        grid%rublten, grid%g_rublten, grid%rvblten, grid%g_rvblten,            &
+                        grid%rqvblten, grid%g_rqvblten, grid%rqcblten, grid%g_rqcblten, grid%rqiblten, grid%g_rqiblten,         &
+                        grid%rucuten,  grid%g_rucuten , grid%rvcuten, grid%g_rvcuten,  grid%rthcuten, grid%g_rthcuten,    &
+                        grid%rqvcuten, grid%g_rqvcuten, grid%rqccuten, grid%g_rqccuten, grid%rqrcuten, grid%g_rqrcuten,    &
+                        grid%rqicuten, grid%g_rqicuten, grid%rqscuten, grid%g_rqscuten,                    &
+                        grid%rushten,  grid%g_rushten, grid%rvshten,  grid%g_rvshten, grid%rthshten, grid%g_rthshten,    &
+                        grid%rqvshten, grid%g_rqvshten, grid%rqcshten, grid%g_rqcshten, grid%rqrshten, grid%g_rqrshten,    &
+                        grid%rqishten, grid%g_rqishten, grid%rqsshten, grid%g_rqsshten, grid%rqgshten, grid%g_rqgshten,    &
+                        grid%rthften,  grid%g_rthften, grid%rqvften, grid%g_rqvften,                    &
+                        grid%RUNDGDTEN, grid%g_RUNDGDTEN, grid%RVNDGDTEN, grid%g_RVNDGDTEN, grid%RTHNDGDTEN, grid%g_RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%g_RPHNDGDTEN,grid%RQVNDGDTEN, grid%g_RQVNDGDTEN,grid%RMUNDGDTEN,&
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &
@@ -941,7 +941,7 @@ if (config_flags % sw_call_first_rk_step_part2) then
                , pi_phy ,g_pi_phy, p_phy ,g_p_phy , grid%t_phy ,grid%g_t_phy , &
                  u_phy ,g_u_phy , v_phy,g_v_phy                      &
                , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w,             &
-                 rho_phy ,g_rho_phy , rho,g_rho   &
+                 rho_phy , rho,g_rho   &
                , nba_mij,g_nba_mij, num_nba_mij   &
                , nba_rij,g_nba_rij, num_nba_rij   &
                , ids, ide, jds, jde, kds, kde     &
@@ -5169,7 +5169,7 @@ if (config_flags % sw_call_microphysics_driver) then
               , HAILNCV=grid%hailncv  , g_HAILNCV=grid%hailncv         &
               , W=grid%w_2 , g_W=grid%g_w_2                  &
 !zzma              , Z=grid%z  , g_Z=grid%g_z, HT=grid%ht  ,g_HT=grid%g_ht    &
-              , Z=grid%z  , g_Z=grid%g_z, HT=grid%ht  ,g_HT=grid%ht    &
+              , Z=grid%z  , g_Z=grid%g_z, HT=grid%ht                   &
               , MP_RESTART_STATE=grid%mp_restart_state                   &
               , TBPVS_STATE=grid%tbpvs_state                             & ! etampnew
               , TBPVS0_STATE=grid%tbpvs0_state                           & ! etampnew

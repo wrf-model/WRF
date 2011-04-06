@@ -30,6 +30,8 @@ MODULES =                 		\
 	module_polarfft.o		\
         module_force_scm.o              \
         module_first_rk_step_part1.o    \
+        module_first_rk_step_part1_tl.o    \
+        module_first_rk_step_part1_ad.o    \
         module_first_rk_step_part2.o    \
         module_first_rk_step_part2_tl.o    \
         module_first_rk_step_part2_ad.o    \
@@ -452,9 +454,9 @@ solve_em_tl.o:  module_small_step_em.o \
 		module_diffusion_em.o  \
 		module_big_step_utilities_em.o \
 		module_big_step_utilities_em_tl.o \
-                module_first_rk_step_part1.o \
-                module_first_rk_step_part2_tl.o \
-                module_avgflx_em.o              \
+		module_first_rk_step_part1_tl.o \
+		module_first_rk_step_part2_tl.o \
+		module_avgflx_em.o              \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_driver_constants.o \
@@ -483,6 +485,7 @@ solve_em_ad.o:  module_small_step_em.o 		\
 		module_big_step_utilities_em.o    \
 		module_big_step_utilities_em_ad.o \
                 module_first_rk_step_part1.o \
+                module_first_rk_step_part1_ad.o \
                 module_first_rk_step_part2.o \
                 module_first_rk_step_part2_ad.o \
                 module_avgflx_em.o           \
@@ -515,6 +518,32 @@ module_first_rk_step_part1.o : \
 		../phys/module_cumulus_driver.o \
 		../phys/module_shallowcu_driver.o \
 		../phys/module_pbl_driver.o \
+		../frame/module_comm_dm.o \
+		../phys/module_fddagd_driver.o
+
+module_first_rk_step_part1_tl.o : \
+                module_force_scm.o \
+		module_big_step_utilities_em.o \
+                module_convtrans_prep.o \
+                module_em_tl.o \
+		../phys/module_radiation_driver.o \
+		../phys/module_surface_driver.o \
+		../phys/module_cumulus_driver.o \
+		../phys/module_pbl_driver_tl.o \
+		../frame/module_comm_dm.o \
+		../phys/module_fddagd_driver.o
+
+module_first_rk_step_part1_ad.o : \
+                module_force_scm.o \
+		module_big_step_utilities_em.o \
+                module_convtrans_prep.o \
+                module_em.o \
+                module_em_ad.o \
+		../phys/module_radiation_driver.o \
+		../phys/module_surface_driver.o \
+		../phys/module_cumulus_driver.o \
+		../phys/module_pbl_driver.o \
+		../phys/module_pbl_driver_ad.o \
 		../frame/module_comm_dm.o \
 		../phys/module_fddagd_driver.o
 

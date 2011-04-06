@@ -273,7 +273,8 @@ SUBROUTINE xtraj_io_initialize
    nbd = head_grid%spec_bdy_width
 
    ! 3D variables: u_2, v_2, w_2, t_2, ph_2, p, al, alt, alb, phb, pb, h_diabatic, tke_2
-   bytes_xtraj = n3d*13
+   !               rublten,rvblten,rthblten,rqvblten
+   bytes_xtraj = n3d*17
 
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
@@ -526,6 +527,7 @@ SUBROUTINE packup_xtraj (data)
    INTEGER :: ns, ne, n, ntmp
 
    ! 3D variables: u_2, v_2, w_2, t_2, ph_2, p, al, alt, alb, phb, pb, h_diabatic
+   !               rublten, rvblten, rthblten, rqvblten
    ns =       1 ; ne =    n3d ; data(ns:ne) = RESHAPE( head_grid%u_2, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%v_2, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%w_2, (/n3d/))
@@ -539,10 +541,15 @@ SUBROUTINE packup_xtraj (data)
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%pb, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%h_diabatic, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%tke_2, (/n3d/))
+   ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%rublten, (/n3d/))
+   ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%rvblten, (/n3d/))
+   ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%rthblten, (/n3d/))
+   ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%rqvblten, (/n3d/))
 
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, tsk, xlat, xlong, albbck, tmn, xland, znt, mub, psfc, snowc, hfx, qfx, ustm
+   !               rainnc, rainncv
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%mu_2, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%lu_index, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%q2, (/n2d/))
@@ -731,6 +738,7 @@ SUBROUTINE restore_xtraj (data)
    INTEGER :: ns, ne, n, ntmp
 
    ! 3D variables: u_2, v_2, w_2, t_2, ph_2, p, al, alt, alb, phb, pb, h_diabatic
+   !               rublten, rvblten, rthblten, rqvblten
    ns =       1 ; ne =    n3d ; head_grid%u_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%v_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%w_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
@@ -744,10 +752,15 @@ SUBROUTINE restore_xtraj (data)
    ns =    ne+1 ; ne = ne+n3d ; head_grid%pb = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%h_diabatic = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%tke_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n3d ; head_grid%rublten = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n3d ; head_grid%rvblten = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n3d ; head_grid%rthblten = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n3d ; head_grid%rqvblten = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
 
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, tsk, xlat, xlong, albbck, tmn, xland, znt, mub, psfc, snowc, hfx, qfx, ustm
+   !               rainnc, rainncv
    ns =    ne+1 ; ne = ne+n2d ; head_grid%mu_2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%lu_index = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%q2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))

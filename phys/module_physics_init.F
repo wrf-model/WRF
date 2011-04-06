@@ -1334,6 +1334,7 @@ integer myproc
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
+   USE module_bl_surface_drag
    USE module_sf_temfsfclay
    USE module_sf_mynn
 #endif
@@ -1832,6 +1833,12 @@ integer myproc
 
 #if ( EM_CORE == 1 )
 
+        CASE (SURFDRAGSCHEME)
+           CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
+                        RQVBLTEN,restart,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)

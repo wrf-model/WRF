@@ -44,7 +44,6 @@ SUBROUTINE A_LSCOND(th, a_th, p, a_p, qv, a_qv, rho, a_rho, pii, a_pii, r_v, &
   REAL :: ttemp, es1, qs1, dqv, cond, r1
   REAL :: ttempb, es1b, qs1b, a_dqv, condb, r1b
   INTEGER :: i, j, k
-  INTEGER, DIMENSION(its:ite, kts:kte, jts:jte) :: branch
   REAL :: temp1
   REAL :: temp0
   INTRINSIC EXP
@@ -57,56 +56,41 @@ SUBROUTINE A_LSCOND(th, a_th, p, a_p, qv, a_qv, rho, a_rho, pii, a_pii, r_v, &
   REAL :: temp
   REAL :: temp1b0
 
-  REAL, DIMENSION(its:ite, kts:kte, jts:jte) :: save1, save2, save3, save4, save5
+  INTEGER :: branch
 !----------------------------------------------------------------
-  branch = 0
 
   DO j=jts,jte
     DO k=kts,kte
       DO i=its,ite
-        !CALL PUSHREAL4(ttemp)
+        CALL PUSHREAL8(ttemp)
         ttemp = pii(i, k, j)*th(i, k, j)
-        save1(i,k,j) = ttemp
-        !CALL PUSHREAL4(es1)
+        CALL PUSHREAL8(es1)
         es1 = 1000.*svp1*EXP(svp2*(ttemp-svpt0)/(ttemp-svp3))
-        save2(i,k,j) = es1
         qs1 = ep2*es1/(p(i, k, j)-es1)
-        !CALL PUSHREAL4(dqv)
+        CALL PUSHREAL8(dqv)
         dqv = qv(i, k, j) - qs1
-        save3(i,k,j) = dqv
         IF (dqv .GT. 0.0) THEN
-          !CALL PUSHREAL4(r1)
+          CALL PUSHREAL8(r1)
           r1 = 1. + xlv*xlv/(r_v*cp)*qs1/(ttemp*ttemp)
-          save4(i,k,j) = r1
           cond = dqv/r1
-          !CALL PUSHREAL4(ttemp)
+          CALL PUSHREAL8(ttemp)
           ttemp = ttemp + xlv/cp*cond
-          save5(i,k,j) = ttemp
-          ! CALL PUSHCONTROL1B(1)
-          branch(i,k,j) = 1
+          CALL PUSHCONTROL1B(1)
         ELSE
-          ! CALL PUSHCONTROL1B(0)
-          branch(i,k,j) = 0
+          CALL PUSHCONTROL1B(0)
         END IF
       END DO
     END DO
   END DO
-  a_p = 0.0
-  a_rho = 0.0
-  a_pii = 0.0
-  a_dz8w = 0.0
   DO j=jte,jts,-1
     DO k=kte,kts,-1
       DO i=ite,its,-1
-        dqv = save3(i,k,j)
-        es1 = save2(i,k,j)
-        !CALL POPCONTROL1B(branch)
-        IF (branch(i,k,j) .EQ. 0) THEN
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
           qs1b = 0.0
           a_dqv = 0.0
           ttempb = 0.0
         ELSE
-          r1 = save4(i,k,j)
           temp2b1 = a_th(i, k, j)/pii(i, k, j)
           ttempb = temp2b1
           temp2b0 = dz8w(i, k, j)*a_rainncv(i, j)
@@ -118,21 +102,19 @@ SUBROUTINE A_LSCOND(th, a_th, p, a_p, qv, a_qv, rho, a_rho, pii, a_pii, r_v, &
           a_dz8w(i, k, j) = a_dz8w(i, k, j) + rho(i, k, j)*cond*a_rainncv(i&
             , j) + rho(i, k, j)*cond*a_rainnc(i, j)
           a_rainncv(i, j) = 0.0
-          ttemp = save5(i,k,j)
           a_pii(i, k, j) = a_pii(i, k, j) - ttemp*temp2b1/pii(i, k, j)
           a_th(i, k, j) = 0.0
           qs1 = ep2*es1/(p(i, k, j)-es1)
-          !CALL POPREAL4(ttemp)
-          ttemp = save1(i,k,j)
+          CALL POPREAL8(ttemp)
           a_dqv = condb/r1
           r1b = -(dqv*condb/r1**2)
-          !CALL POPREAL4(r1)
+          CALL POPREAL8(r1)
           temp1 = r_v*cp*ttemp**2
           temp1b0 = xlv**2*r1b/temp1
           qs1b = temp1b0
           ttempb = ttempb - r_v*cp*qs1*2*ttemp*temp1b0/temp1
         END IF
-        !CALL POPREAL4(dqv)
+        CALL POPREAL8(dqv)
         a_qv(i, k, j) = a_qv(i, k, j) + a_dqv
         qs1b = qs1b - a_dqv
         temp0 = p(i, k, j) - es1
@@ -140,16 +122,17 @@ SUBROUTINE A_LSCOND(th, a_th, p, a_p, qv, a_qv, rho, a_rho, pii, a_pii, r_v, &
         temp0b = -(es1*temp1b/temp0)
         es1b = temp1b - temp0b
         a_p(i, k, j) = a_p(i, k, j) + temp0b
-        !CALL POPREAL4(es1)
+        CALL POPREAL8(es1)
         temp = (ttemp-svpt0)/(ttemp-svp3)
         tempb = svp2*EXP(svp2*temp)*svp1*1000.*es1b/(ttemp-svp3)
         ttempb = ttempb + (1.0-temp)*tempb
-        !CALL POPREAL4(ttemp)
+        CALL POPREAL8(ttemp)
         a_pii(i, k, j) = a_pii(i, k, j) + th(i, k, j)*ttempb
         a_th(i, k, j) = a_th(i, k, j) + pii(i, k, j)*ttempb
       END DO
     END DO
   END DO
+
   RETURN
 END SUBROUTINE A_LSCOND
 

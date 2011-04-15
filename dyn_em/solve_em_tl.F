@@ -5060,8 +5060,8 @@ BENCH_START(g_moist_physics_prep_tim)
 if (config_flags % sw_call_moist_physics_prep_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call g_moist_physics_prep_em ' )
 
-       CALL g_moist_physics_prep_em( grid%t_2,grid%g_t_2, grid%t_1,grid%g_t_1,  &
-                                   t0, rho,g_rho,                               &
+       CALL g_moist_physics_prep_em( grid%t_2,grid%g_t_2, grid%t_1,            &
+                                   t0, rho,g_rho,                              &
                                    grid%al,grid%g_al, grid%alb,                &
                                    grid%p,grid%g_p, p8w,g_p8w,                 &
                                    p0, grid%pb,                                &
@@ -5404,15 +5404,11 @@ end if
 if (config_flags % sw_call_moist_physics_finish_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call g_moist_physics_finish_em ' )
 
-       CALL g_moist_physics_finish_em( grid%t_2, grid%g_t_2, grid%t_1, grid%g_t_1, &
-                                      t0, grid%muts, grid%g_muts,           &
+       CALL g_moist_physics_finish_em( grid%t_2, grid%g_t_2, grid%t_1,      &
+                                      t0, grid%muts,                        &
                                       th_phy, g_th_phy,                     &
                                       grid%h_diabatic,grid%g_h_diabatic,    &
                                       dtm, config_flags,    &
-#if ( WRF_DFI_RADAR == 1 )
-                                      grid%dfi_tten_rad, grid%g_dfi_tten_rad,   &
-                                      grid%dfi_stage,        &
-#endif
                                       ids, ide, jds, jde, kds, kde,     &
                                       ims, ime, jms, jme, kms, kme,     &
                                       its, ite, jts, jte,               &

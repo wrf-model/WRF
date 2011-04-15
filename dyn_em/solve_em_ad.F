@@ -5301,7 +5301,6 @@ BENCH_END(advance_ppt_tim)
      CALL push4backup (grid%ph_2,"ph_2")
      CALL push4backup (dz8w,"dz8w")
      CALL push4backup (grid%p,"p")
-     CALL push4backup (grid%phb,"phb")
      CALL push4backup (grid%al,"al")
      CALL push4backup (grid%t_2,"t")
      CALL push4backup (rho,"rho")
@@ -5365,8 +5364,6 @@ BENCH_START(micro_driver_tim)
 if (config_flags % sw_call_microphysics_driver) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_driver ' )
 
-     CALL push4backup (grid%rainncv,"grid%rainncv")
-     CALL push4backup (grid%rainnc,"grid%rainnc")
      CALL push4backup (moist,"moist")
      CALL push4backup (pi_phy,"pi_phy")
      CALL push4backup (dz8w,"dz8w")
@@ -6485,7 +6482,6 @@ end if
   a_p8w = 0. 
   a_t8w = 0. 
   grid%a_h_diabatic = 0.0
-  grid%a_rainncv = 0.0
 
   a_w_save = 0. 
   a_ph_save = 0. 
@@ -6851,8 +6847,8 @@ BENCH_START(adj_moist_phys_end_tim)
 if (config_flags % sw_call_moist_physics_finish_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_moist_physics_finish_em ' )
 
-       CALL a_moist_physics_finish_em( grid%t_2, grid%a_t_2, grid%t_1, grid%a_t_1, &
-                                      t0, grid%muts, grid%a_muts,           &
+       CALL a_moist_physics_finish_em( grid%t_2, grid%a_t_2, grid%t_1,      &
+                                      t0, grid%muts,                        &
                                       th_phy, a_th_phy,                     &
                                       grid%h_diabatic,grid%a_h_diabatic,    &
                                       dtm, config_flags,    &
@@ -6965,8 +6961,6 @@ if (config_flags % sw_call_microphysics_driver) then
      CALL pop2restore (dz8w,"dz8w")
      CALL pop2restore (pi_phy,"pi_phy")
      CALL pop2restore (moist,"moist")
-     CALL pop2restore (grid%rainnc,"grid%rainnc")
-     CALL pop2restore (grid%rainncv,"grid%rainncv")
 
      CALL a_microphysics_driver(                                          &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
@@ -7111,7 +7105,6 @@ BENCH_END(adj_micro_driver_tim)
      CALL pop2restore (rho,"rho")
      CALL pop2restore (grid%t_2,"t")
      CALL pop2restore (grid%al,"al")
-     CALL pop2restore (grid%phb,"phb")
      CALL pop2restore (grid%p,"p")
      CALL pop2restore (dz8w,"dz8w")
      CALL pop2restore (grid%ph_2,"ph_2")
@@ -7142,9 +7135,9 @@ BENCH_START(adj_moist_physics_prep_tim)
 if (config_flags % sw_call_moist_physics_prep_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_moist_physics_prep_em ' )
 
-       CALL a_moist_physics_prep_em( grid%t_2,grid%a_t_2, grid%t_1,grid%a_t_1,  &
-                                   t0, rho,a_rho,                               &
-                                   grid%al,grid%a_al, grid%alb,                 &
+       CALL a_moist_physics_prep_em( grid%t_2,grid%a_t_2, grid%t_1,            &
+                                   t0, rho,a_rho,                              &
+                                   grid%al,grid%a_al, grid%alb,                &
                                    grid%p,grid%a_p, p8w,a_p8w,                 &
                                    p0, grid%pb,                                &
                                    grid%ph_2,grid%a_ph_2, grid%phb,            &

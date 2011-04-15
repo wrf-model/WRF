@@ -32,8 +32,6 @@ REAL, ALLOCATABLE :: s_moist_btxs(:,:,:,:), s_moist_btxe(:,:,:,:), s_moist_btys(
 REAL, ALLOCATABLE :: s_scalar_bxs(:,:,:,:), s_scalar_bxe(:,:,:,:), s_scalar_bys(:,:,:,:), s_scalar_bye(:,:,:,:)
 REAL, ALLOCATABLE :: s_scalar_btxs(:,:,:,:), s_scalar_btxe(:,:,:,:), s_scalar_btys(:,:,:,:), s_scalar_btye(:,:,:,:)
 
-REAL, ALLOCATABLE :: s_rainnc(:,:)
-
 REAL, ALLOCATABLE :: b_u_2(:,:,:), b_v_2(:,:,:), b_w_2(:,:,:)
 REAL, ALLOCATABLE :: b_ph_2(:,:,:), b_t_2(:,:,:), b_mu_2(:,:)
 REAL, ALLOCATABLE :: b_moist(:,:,:,:), b_scalar(:,:,:,:)
@@ -59,7 +57,7 @@ REAL, ALLOCATABLE :: b_moist_btxs(:,:,:,:), b_moist_btxe(:,:,:,:), b_moist_btys(
 REAL, ALLOCATABLE :: b_scalar_bxs(:,:,:,:), b_scalar_bxe(:,:,:,:), b_scalar_bys(:,:,:,:), b_scalar_bye(:,:,:,:)
 REAL, ALLOCATABLE :: b_scalar_btxs(:,:,:,:), b_scalar_btxe(:,:,:,:), b_scalar_btys(:,:,:,:), b_scalar_btye(:,:,:,:)
 
-REAL, ALLOCATABLE :: b_rainnc(:,:)
+REAL, ALLOCATABLE :: b_rainnc(:,:), b_rainncv(:,:)
 
 INTEGER :: sm31, em31, sm32, em32, sm33, em33, spec_bdy_width, kts, kte
 
@@ -515,11 +513,6 @@ CONTAINS
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_moist_btye(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
    ENDIF
-   ALLOCATE(s_rainnc(sm31:em31,sm33:em33),STAT=ierr) 
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to allocate s_rainnc(sm31:em31,sm33:em33). ')
-   ENDIF
 
    ALLOCATE ( b_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar), STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -940,6 +933,11 @@ CONTAINS
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_rainnc(sm31:em31,sm33:em33). ')
    ENDIF
+   ALLOCATE(b_rainncv(sm31:em31,sm33:em33),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_rainncv(sm31:em31,sm33:em33). ')
+   ENDIF
 
    RETURN
   END SUBROUTINE allocate_grid
@@ -981,8 +979,6 @@ CONTAINS
    s_scalar_bxs = grid%scalar_bxs; s_scalar_bxe = grid%scalar_bxe; s_scalar_bys = grid%scalar_bys; s_scalar_bye = grid%scalar_bye
    s_scalar_btxs = grid%scalar_btxs; s_scalar_btxe = grid%scalar_btxe; s_scalar_btys = grid%scalar_btys; s_scalar_btye = grid%scalar_btye
    
-   s_rainnc = grid%rainnc
-
    RETURN
   END SUBROUTINE copy_grid_to_s
 
@@ -998,6 +994,8 @@ CONTAINS
    b_moist = grid%moist
 
    b_rainnc = grid%rainnc
+   b_rainncv = grid%rainncv
+
 !   b_scalar = grid%scalar
 !   b_tke_2 = grid%tke_2
 
@@ -1152,6 +1150,7 @@ CONTAINS
    grid%g_ww_m = 0.0
    
    grid%g_rainnc = 0.0
+   grid%g_rainncv = 0.0
 
   END SUBROUTINE copy_s_to_g_adjtest
 
@@ -1194,8 +1193,6 @@ CONTAINS
 
    b_scalar_bxs = grid%g_scalar_bxs; b_scalar_bxe = grid%g_scalar_bxe; b_scalar_bys = grid%g_scalar_bys; b_scalar_bye = grid%g_scalar_bye
    b_scalar_btxs = grid%g_scalar_btxs; b_scalar_btxe = grid%g_scalar_btxe; b_scalar_btys = grid%g_scalar_btys; b_scalar_btye = grid%g_scalar_btye
-
-   b_rainnc = grid%g_rainnc
 
    RETURN
   END SUBROUTINE copy_g_to_b_adjtest
@@ -1285,8 +1282,8 @@ END IF
 
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
-     save  = save &
-                  + grid%g_rainnc(i,j) * grid%g_rainnc(i,j)
+     save  = save + grid%g_rainnc(i,j) * grid%g_rainnc(i,j) &
+                  + grid%g_rainncv(i,j) * grid%g_rainncv(i,j)
    ENDDO
    ENDDO
 
@@ -1390,7 +1387,8 @@ END IF
   
    DO j = js,je
    DO i = is,ie
-     save  = save + grid%g_rainnc(i,j) * grid%g_rainnc(i,j)
+     save  = save + grid%g_rainnc(i,j) * grid%g_rainnc(i,j) &
+                  + grid%g_rainncv(i,j) * grid%g_rainncv(i,j)
    ENDDO
    ENDDO
 
@@ -1444,8 +1442,6 @@ END IF
    grid%scalar_bxs = factor*s_scalar_bxs; grid%scalar_bxe = factor*s_scalar_bxe; grid%scalar_bys = factor*s_scalar_bys; grid%scalar_bye = factor*s_scalar_bye
    grid%scalar_btxs = factor*s_scalar_btxs; grid%scalar_btxe = factor*s_scalar_btxe; grid%scalar_btys = factor*s_scalar_btys; grid%scalar_btye = factor*s_scalar_btye
 
-   grid%rainnc = factor*s_rainnc
-   
    RETURN
   END SUBROUTINE add_grid
 
@@ -1533,8 +1529,8 @@ END IF
 
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
-     save  = save &
-                  + (grid%rainnc(i,j)-b_rainnc(i,j)) * (grid%rainnc(i,j)-b_rainnc(i,j))
+     save  = save + (grid%rainnc(i,j)-b_rainnc(i,j)) * (grid%rainnc(i,j)-b_rainnc(i,j)) &
+                  + (grid%rainncv(i,j)-b_rainncv(i,j)) * (grid%rainncv(i,j)-b_rainncv(i,j))
    ENDDO
    ENDDO
 
@@ -1592,8 +1588,8 @@ END IF
       grid%a_moist = 0.0
    END IF
    
-   grid%a_rainnc = grid%g_rainnc
-   grid%a_rainncv = 0.0
+   grid%a_rainnc  = grid%g_rainnc
+   grid%a_rainncv = grid%g_rainncv
 
 ! I&O variables
    grid%a_scalar = 0.0
@@ -1957,12 +1953,6 @@ END IF
 !  ENDDO
 !  ENDDO
 !  ENDDO
-
-   DO j = js,je
-   DO i = is,ie
-     save  = save + grid%a_rainnc(i,j) * b_rainnc(i,j)
-   ENDDO
-   ENDDO
 
    RETURN
   END SUBROUTINE inner_dot_a_b_adjtest
@@ -2384,11 +2374,6 @@ END IF
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_moist_btye. ')
    ENDIF
-   DEALLOCATE ( s_rainnc, STAT=ierr )
-   IF (ierr.NE.0) THEN
-     CALL wrf_error_fatal ( &
-     'share/module_adtl_grid_utilities.f: Failed to deallocate s_rainnc. ')
-   ENDIF
 
    DEALLOCATE ( b_scalar, STAT=ierr )
    IF (ierr.NE.0) THEN
@@ -2514,6 +2499,11 @@ END IF
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_rainnc. ')
+   ENDIF
+   DEALLOCATE ( b_rainncv, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_rainncv. ')
    ENDIF
 
    RETURN

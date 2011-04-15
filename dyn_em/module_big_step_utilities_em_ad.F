@@ -15190,499 +15190,288 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   END DO
 END SUBROUTINE A_PHY_PREP
 
-   SUBROUTINE a_moist_physics_prep_em(t_new,a_t_new,t_old,a_t_old,t0,rho,a_rho, &
-   al,a_al,alb,p,a_p,p8w,a_p8w,p0,pb,ph,a_ph,phb,th_phy,a_th_phy,pii,a_pii, &
-   pf,a_pf,z,a_z,z_at_w,a_z_at_w,dz8w,a_dz8w,dt,h_diabatic,a_h_diabatic, &
-   config_flags,fzm,fzp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
-!PART! I: DECLARATION OF VARIABLES
-
-   IMPLICIT NONE
-
-   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-   TYPE(grid_config_rec_type) :: config_flags
-   INTEGER :: ids,ide,jds,jde,kds,kde
-   INTEGER :: ims,ime,jms,jme,kms,kme
-   INTEGER :: its,ite,jts,jte,kts,kte
-   REAL :: dt
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: al,a_al,alb,p,a_p,pb,ph,a_ph,phb
-   REAL,DIMENSION(kms:kme) :: fzm,fzp
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rho,a_rho,th_phy,a_th_phy,pii,a_pii, &
-   pf,a_pf,z,a_z,z_at_w,a_z_at_w,dz8w,a_dz8w,p8w,a_p8w
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_diabatic,a_h_diabatic
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,a_t_new,t_old,a_t_old
-   REAL :: t0,p0
-   REAL :: z0,a_z0,z1,a_z1,z2,a_z2,w1,a_w1,w2,a_w2
-   INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
-   INTEGER :: i,j,k
-
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv200
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv201
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv202
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv203
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv204
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv205
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv206
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv207
-   REAL,DIMENSION(its:min(ite,ide-1)) :: Tmpv208
-
-!#ifdef! REVERT
-!#endif
-
-!PART! II: CALCULATIONS OF B. S. TRAJECTORY
-
-!LPB[0]
-
-       i_start = its    
-       i_end   = min( ite,ide-1 )
-       j_start = jts    
-       j_end   = min( jte,jde-1 )
-       k_start = kts
-       k_end = min( kte, kde-1 )
-
-!LPB[1]
-!      DO j = j_start, j_end
-!      DO k = k_start, kte
-!      DO i = i_start, i_end
-!        z_at_w(i,k,j) = (ph(i,k,j)+phb(i,k,j))/g
-!      ENDDO
-!      ENDDO
-!      ENDDO
-
-!LPB[2]
-!     do j = j_start,j_end
-!     do k = k_start, kte-1
-!     do i = i_start, i_end
-!       dz8w(i,k,j) = z_at_w(i,k+1,j)-z_at_w(i,k,j)
-!     enddo
-!     enddo
-!     enddo
-
-!LPB[3]
-!     do j = j_start,j_end
-!     do i = i_start, i_end
-!       dz8w(i,kte,j) = 0.
-!     enddo
-!     enddo
-
-!LPB[4]
-!      DO j = j_start, j_end
-!      DO k = k_start, k_end
-!      DO i = i_start, i_end
-!        t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
-!        th_phy(i,k,j) = t_new(i,k,j) + t0
-!        h_diabatic(i,k,j) = th_phy(i,k,j)
-!        rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
-!        pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
-!        z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
-!        pf(i,k,j) = p(i,k,j)+pb(i,k,j)
-!      ENDDO
-!      ENDDO
-!      ENDDO
-
-!LPB[5]
-!      do j = j_start,j_end
-!      do k = 2, k_end
-!      do i = i_start, i_end
-!        p8w(i,k,j) = fzm(k)*pf(i,k,j)+fzp(k)*pf(i,k-1,j)
-!      enddo
-!      enddo
-!      enddo
-
-!!LPB[6]
-!!       do j = j_start,j_end
-
-!!       do i = i_start, i_end
-!!         z0 = z_at_w(i,1,j)
-!!         z1 = z(i,1,j)
-!!         z2 = z(i,2,j)
-!!         w1 = (z0 - z2)/(z1 - z2)
-!!         w2 = 1. - w1
-!!         p8w(i,1,j) = w1*pf(i,1,j)+w2*pf(i,2,j)
-!!         z0 = z_at_w(i,kte,j)
-!!         z1 = z(i,k_end,j)
-!!         z2 = z(i,k_end-1,j)
-!!         w1 = (z0 - z2)/(z1 - z2)
-!!         w2 = 1. - w1
-!!         p8w(i,kde,j) = exp(w1*log(pf(i,kde-1,j))+w2*log(pf(i,kde-2,j)))
-!!       enddo
-
-!!       enddo
-
-!PART! III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
-
-   a_z0 =0.0
-   a_z1 =0.0
-   a_z2 =0.0
-   a_w1 =0.0
-   a_w2 =0.0
-
-!PART! IV: REVERSE/BACKWARD ACCUMULATIONS
-
-!LPB[6]
-   DO j =j_end, j_start, -1
-
-   DO i =i_start, i_end
-   z0 =z_at_w(i,1,j)
-
-   z1 =z(i,1,j)
-
-   z2 =z(i,2,j)
-
-   Tmpv001 =z0 -z2
-   Tmpv002 =z1 -z2
-   Tmpv200(i) =Tmpv001
-   Tmpv201(i) =Tmpv002
-   Tmpv003 =Tmpv200(i)/Tmpv201(i)
-   Tmpv202(i) =w1
-   w1 =Tmpv003
-
-   Tmpv203(i) =w2
-   w2 =1. -w1
-
-   Tmpv001 =w1*pf(i,1,j)
-   Tmpv002 =w2*pf(i,2,j)
-   Tmpv003 =Tmpv001 +Tmpv002
-  p8w(i,1,j) =Tmpv003
-
-   z0 =z_at_w(i,kte,j)
-
-   z1 =z(i,k_end,j)
-
-   z2 =z(i,k_end-1,j)
-
-   Tmpv001 =z0 -z2
-   Tmpv002 =z1 -z2
-   Tmpv204(i) =Tmpv001
-   Tmpv205(i) =Tmpv002
-   Tmpv003 =Tmpv204(i)/Tmpv205(i)
-   Tmpv206(i) =w1
-   w1 =Tmpv003
-
-   Tmpv207(i) =w2
-   w2 =1. -w1
-
-   Tmpv001 =w1*log(pf(i,kde-1,j))
-   Tmpv002 =w2*log(pf(i,kde-2,j))
-   Tmpv003 =Tmpv001 +Tmpv002
-   Tmpv208(i) =Tmpv003
-   Tmpv004 =exp(Tmpv208(i))
-  p8w(i,kde,j) =Tmpv004
-
-   ENDDO
-
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_p8w(i,kde,j)
-   a_p8w(i,kde,j) =0.0
-   a_Tmpv3 =exp(Tmpv208(i))*a_Tmpv4
-   a_Tmpv1 =a_Tmpv3
-   a_Tmpv2 =a_Tmpv3
-   a_w2 =a_w2 +log(pf(i,kde-2,j))*a_Tmpv2
-   a_pf(i,kde-2,j) =a_pf(i,kde-2,j) +1.0/pf(i,kde-2,j)*w2*a_Tmpv2
-   a_w1 =a_w1 +log(pf(i,kde-1,j))*a_Tmpv1
-   a_pf(i,kde-1,j) =a_pf(i,kde-1,j) +1.0/pf(i,kde-1,j)*w1*a_Tmpv1
-
-   w2 =Tmpv207(i)
-
-   a_w1 =a_w1 -a_w2
-   a_w2 =0.0
-
-   w1 =Tmpv206(i)
-
-   a_Tmpv3 =a_w1
-   a_w1 =0.0
-   a_Tmpv1 =a_Tmpv3/Tmpv205(i)
-   a_Tmpv2 =-Tmpv204(i)/(Tmpv205(i)*Tmpv205(i))*a_Tmpv3
-   a_z1 =a_z1 +a_Tmpv2
-   a_z2 =a_z2 -a_Tmpv2
-   a_z0 =a_z0 +a_Tmpv1
-   a_z2 =a_z2 -a_Tmpv1
-   a_z(i,k_end-1,j) =a_z(i,k_end-1,j) +a_z2
-   a_z2 =0.0
-   a_z(i,k_end,j) =a_z(i,k_end,j) +a_z1
-   a_z1 =0.0
-   a_z_at_w(i,kte,j) =a_z_at_w(i,kte,j) +a_z0
-   a_z0 =0.0
-   a_Tmpv3 =a_p8w(i,1,j)
-   a_p8w(i,1,j) =0.0
-   a_Tmpv1 =a_Tmpv3
-   a_Tmpv2 =a_Tmpv3
-   a_w2 =a_w2 +pf(i,2,j)*a_Tmpv2
-   a_pf(i,2,j) =a_pf(i,2,j) +w2*a_Tmpv2
-   a_w1 =a_w1 +pf(i,1,j)*a_Tmpv1
-   a_pf(i,1,j) =a_pf(i,1,j) +w1*a_Tmpv1
-
-   w2 =Tmpv203(i)
-
-   a_w1 =a_w1 -a_w2
-   a_w2 =0.0
-
-   w1 =Tmpv202(i)
-
-   a_Tmpv3 =a_w1
-   a_w1 =0.0
-   a_Tmpv1 =a_Tmpv3/Tmpv201(i)
-   a_Tmpv2 =-Tmpv200(i)/(Tmpv201(i)*Tmpv201(i))*a_Tmpv3
-   a_z1 =a_z1 +a_Tmpv2
-   a_z2 =a_z2 -a_Tmpv2
-   a_z0 =a_z0 +a_Tmpv1
-   a_z2 =a_z2 -a_Tmpv1
-   a_z(i,2,j) =a_z(i,2,j) +a_z2
-   a_z2 =0.0
-   a_z(i,1,j) =a_z(i,1,j) +a_z1
-   a_z1 =0.0
-   a_z_at_w(i,1,j) =a_z_at_w(i,1,j) +a_z0
-   a_z0 =0.0
-   ENDDO
-
-   ENDDO
-
-!LPB[5]
-   DO j =j_end, j_start, -1
-   DO k =k_end, 2, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv1 =a_p8w(i,k,j)
-   a_p8w(i,k,j) =0.0
-   a_pf(i,k,j) =a_pf(i,k,j) +fzm(k)*a_Tmpv1
-   a_pf(i,k-1,j) =a_pf(i,k-1,j) +fzp(k)*a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-!LPB[4]
-   DO j =j_end, j_start, -1
-
-!  DO k =k_start, k_end
-!  DO i =i_start, i_end
-!  Tmpv001 =t_new(i,k,j) -h_diabatic(i,k,j)*dt
-!  t_new(i,k,j) =Tmpv001
-
-!  th_phy(i,k,j) =t_new(i,k,j) +t0
-
-!  h_diabatic(i,k,j) =th_phy(i,k,j)
-
-!  rho(i,k,j) =1./(al(i,k,j) +alb(i,k,j))
-
-!  pii(i,k,j) =((p(i,k,j) +pb(i,k,j))/p0)**rcp
-
-!  Tmpv001 =z_at_w(i,k,j) +z_at_w(i,k+1,j)
-!  Tmpv002 =0.5*Tmpv001
-!  z(i,k,j) =Tmpv002
-
-!  pf(i,k,j) =p(i,k,j) +pb(i,k,j)
-
-!  ENDDO
-!  ENDDO
-
-   DO k =k_end, k_start, -1
-   DO i =i_end, i_start, -1
-   a_p(i,k,j) =a_p(i,k,j) +a_pf(i,k,j)
-   a_pf(i,k,j) =0.0
-   a_Tmpv2 =a_z(i,k,j)
-   a_z(i,k,j) =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_z_at_w(i,k,j) =a_z_at_w(i,k,j) +a_Tmpv1
-   a_z_at_w(i,k+1,j) =a_z_at_w(i,k+1,j) +a_Tmpv1
-   a_p(i,k,j) =a_p(i,k,j) +rcp*1.0/p0*((p(i,k,j) +pb(i,k,j))/p0)**(rcp -1)*a_pii(i,k,j)
-   a_pii(i,k,j) =0.0
-   a_al(i,k,j) =a_al(i,k,j) -1./((al(i,k,j) +alb(i,k,j))*(al(i,k,j) +alb(i,k,j)))  &
-   *a_rho(i,k,j)
-   a_rho(i,k,j) =0.0
-   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_h_diabatic(i,k,j)
-   a_h_diabatic(i,k,j) =0.0
-   a_t_new(i,k,j) =a_t_new(i,k,j) +a_th_phy(i,k,j)
-   a_th_phy(i,k,j) =0.0
-   a_Tmpv1 =a_t_new(i,k,j)
-   a_t_new(i,k,j) =0.0
-   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -dt*a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[3]
-   DO j =j_end, j_start, -1
-
-   DO i =i_end, i_start, -1
-   a_dz8w(i,kte,j) =0.0
-   ENDDO
-
-   ENDDO
-
-!LPB[2]
-   DO j =j_end, j_start, -1
-
-   DO k =kte-1, k_start, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv1 =a_dz8w(i,k,j)
-   a_dz8w(i,k,j) =0.0
-   a_z_at_w(i,k+1,j) =a_z_at_w(i,k+1,j) +a_Tmpv1
-   a_z_at_w(i,k,j) =a_z_at_w(i,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[1]
-   DO j =j_end, j_start, -1
-   DO k =kte, k_start, -1
-   DO i =i_end, i_start, -1
-   a_ph(i,k,j) =a_ph(i,k,j) +1.0/g*a_z_at_w(i,k,j)
-   a_z_at_w(i,k,j) =0.0
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-   END SUBROUTINE a_moist_physics_prep_em
-
-! Corrected by zzma 01/04/2011 by adding WRF_DFI_RADAR option
-
-   SUBROUTINE a_moist_physics_finish_em(t_new,a_t_new,t_old,a_t_old,t0,mut, &
-   a_mut,th_phy,a_th_phy,h_diabatic,a_h_diabatic,dt,config_flags, &
-#if ( WRF_DFI_RADAR == 1 )
-   dfi_tten_rad, a_dfi_tten_rad,dfi_stage, &
-#endif
-   ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
-   jts,jte,kts,kte)
-
-!PART! I: DECLARATION OF VARIABLES
-
-   IMPLICIT NONE
-
-   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-   TYPE(grid_config_rec_type) :: config_flags
-   INTEGER :: ids,ide,jds,jde,kds,kde
-   INTEGER :: ims,ime,jms,jme,kms,kme
-   INTEGER :: its,ite,jts,jte,kts,kte
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: t_new,a_t_new,t_old,a_t_old,th_phy, &
-   a_th_phy,h_diabatic,a_h_diabatic
-#if ( WRF_DFI_RADAR == 1 )
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme),OPTIONAL :: dfi_tten_rad,a_dfi_tten_rad
-   INTEGER,OPTIONAL :: dfi_stage
-#endif
-   REAL mpten,mptenmax,Diff_mptenmax,mptenmin,Diff_mptenmin
-   REAL a_mpten,a_mptenmax,a_mptenmin
-   REAL,DIMENSION(ims:ime,jms:jme) :: mut,a_mut
-   REAL :: t0,dt
-   INTEGER :: i_start,i_end,j_start,j_end,k_start,k_end
-   INTEGER :: i,j,k,imax,jmax,imin,jmin
-   REAL :: dfi_tten_max, old_max
-   REAL :: a_dfi_tten_max, a_old_max
-
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002
-
-!PART! II: CALCULATIONS OF B. S. TRAJECTORY
-
-!LPB[0]
-       i_start = its    
-       i_end   = min( ite,ide-1 )
-       j_start = jts    
-       j_end   = min( jte,jde-1 )
-       k_start = kts
-       k_end = min( kte, kde-1 )
-
-#if ( WRF_DFI_RADAR == 1 )
-   if (config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.  dfi_stage == DFI_FWD &
-            .and. PRESENT(dfi_tten_rad) ) then
-
-                WRITE(wrf_err_message,*)'Add radar tendency: i_start,j_start: ', i_start, j_start
-                CALL wrf_debug ( 50 , TRIM(wrf_err_message) )
-   endif
-        dfi_tten_max=-999
-        old_max=-999
-#endif
-
-!PART! III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
-
-   a_mpten =0.0
-   a_mptenmax =0.0
-   a_mptenmin =0.0
-   a_dfi_tten_max =0.0
-   a_old_max =0.0
-
-!PART! IV: REVERSE/BACKWARD ACCUMULATIONS
-
-!LPB[3]
-
-   IF( config_flags%no_mp_heating .eq. 0 ) THEN
-       mptenmax = 0.
-       mptenmin = 999.
-
-   DO j =j_end, j_start, -1
-   DO k =k_end, k_start, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv2 =a_h_diabatic(i,k,j)
-   a_h_diabatic(i,k,j) =0.0
-   a_Tmpv1 =a_Tmpv2/dt
-   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_Tmpv1
-   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -a_Tmpv1
-   a_Tmpv1 =a_t_new(i,k,j)
-   a_t_new(i,k,j) =0.0
-   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-   a_mpten =a_mpten +a_Tmpv1
-
-#if ( WRF_DFI_RADAR == 1 )
-   IF(config_flags%dfi_radar == 1 .and. PRESENT(dfi_stage) .and.     &
-              dfi_stage == DFI_FWD .and. PRESENT(dfi_tten_rad) .and.         &
-              dfi_tten_rad(i,k,j) >= 1.0e-7 .and. dfi_tten_rad(i,k,j) <= 10.    &
-              .and. k < k_end ) THEN
-
-   IF(dfi_tten_rad(i,k,j) > mpten ) THEN
-
-   a_Tmpv1 =a_t_new(i,k,j)
-   a_t_new(i,k,j) =0.0
-   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-   a_dfi_tten_rad(i,k,j) =a_dfi_tten_rad(i,k,j) +a_Tmpv1
-
-   else
-
-   a_Tmpv1 =a_t_new(i,k,j)
-   a_t_new(i,k,j) =0.0
-   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-   a_mpten =a_mpten +a_Tmpv1
-
-   endif
-
-   else
-
-   a_Tmpv1 =a_t_new(i,k,j)
-   a_t_new(i,k,j) =0.0
-   a_t_new(i,k,j) =a_t_new(i,k,j) +a_Tmpv1
-   a_mpten =a_mpten +a_Tmpv1
-
-   endif
-#else
-
-   a_th_phy(i,k,j) =a_th_phy(i,k,j) +a_Tmpv1
-   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) -a_Tmpv1
-#endif
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   DO j =j_end, j_start, -1
-   DO k =k_end, k_start, -1
-   DO i =i_end, i_start, -1
-   a_h_diabatic(i,k,j) =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-#if ( WRF_DFI_RADAR == 1 )
-   dfi_tten_max =-999
-   old_max =-999
-   a_old_max =0.0
-   a_dfi_tten_max =0.0
-#endif
-
-   END SUBROUTINE a_moist_physics_finish_em
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of moist_physics_prep_em in reverse (adjoint) mode:
+!   gradient     of useful results: p al z th_phy h_diabatic t_new
+!                pf ph p8w z_at_w rho pii dz8w
+!   with respect to varying inputs: p al z th_phy h_diabatic t_new
+!                pf ph p8w z_at_w rho pii dz8w
+!   RW status of diff variables: p:incr al:incr z:in-out th_phy:in-out
+!                h_diabatic:in-out t_new:incr pf:in-out ph:incr
+!                p8w:in-out z_at_w:in-out rho:in-out pii:in-out
+!                dz8w:in-out
+SUBROUTINE A_MOIST_PHYSICS_PREP_EM(t_new, t_newb, t_old, t0, rho, rhob, &
+&  al, alb0, alb, p, pb0, p8w, p8wb, p0, pb, ph, phb0, phb, th_phy, &
+&  th_phyb, pii, piib, pf, pfb, z, zb, z_at_w, z_at_wb, dz8w, dz8wb, dt, &
+&  h_diabatic, h_diabaticb, config_flags, fzm, fzp, ids, ide, jds, jde, &
+&  kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+! Here we construct full fields
+! needed by the microphysics
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde
+  INTEGER, INTENT(IN) :: ims, ime, jms, jme, kms, kme
+  INTEGER, INTENT(IN) :: its, ite, jts, jte, kts, kte
+  REAL, INTENT(IN) :: dt
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: al, alb, p, &
+&  pb, ph, phb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: alb0, pb0, phb0
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: rho, th_phy, pii, pf, z&
+&  , z_at_w, dz8w, p8w
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: rhob, th_phyb, piib, pfb&
+&  , zb, z_at_wb, dz8wb, p8wb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
+&  h_diabatic
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: h_diabaticb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: t_new, &
+&  t_old
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: t_newb
+  REAL, INTENT(IN) :: t0, p0
+  REAL :: z0, z1, z2, w1, w2
+  REAL :: z0b, z1b, z2b, w1b, w2b
+  INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
+  INTEGER :: i, j, k
+  REAL :: temp1
+  REAL :: temp0
+  REAL :: temp0b
+  REAL :: temp0b3
+  REAL :: temp0b2
+  REAL :: temp0b1
+  REAL :: temp0b0
+  REAL :: temp
+!--------------------------------------------------------------------
+!<DESCRIPTION>
+!
+!  moist_phys_prep_em calculates a number of diagnostic quantities needed by
+!  the microphysics routines.
+!
+!</DESCRIPTION>
+!  set up loop bounds for this grid's boundary conditions
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  k_start = kts
+  IF (kte .GT. kde - 1) THEN
+    k_end = kde - 1
+  ELSE
+    k_end = kte
+  END IF
+  DO j=j_start,j_end
+    DO k=k_start,kte
+      DO i=i_start,i_end
+        z_at_w(i, k, j) = (ph(i, k, j)+phb(i, k, j))/g
+      END DO
+    END DO
+  END DO
+!  compute full pii, rho, and z at the new time-level
+!  (needed for physics).
+!  convert perturbation theta to full theta (th_phy)
+!  use h_diabatic to temporarily save pre-microphysics full theta
+  DO j=j_start,j_end
+    DO k=k_start,k_end
+      DO i=i_start,i_end
+        z(i, k, j) = 0.5*(z_at_w(i, k, j)+z_at_w(i, k+1, j))
+        pf(i, k, j) = p(i, k, j) + pb(i, k, j)
+      END DO
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO i=i_end,i_start,-1
+      z0 = z_at_w(i, kte, j)
+      z1 = z(i, k_end, j)
+      z2 = z(i, k_end-1, j)
+      w1 = (z0-z2)/(z1-z2)
+      w2 = 1. - w1
+      temp1 = LOG(pf(i, kde-2, j))
+      temp0 = LOG(pf(i, kde-1, j))
+      temp0b = EXP(w1*temp0+w2*temp1)*p8wb(i, kde, j)
+      pfb(i, kde-1, j) = pfb(i, kde-1, j) + w1*temp0b/pf(i, kde-1, j)
+      w2b = temp1*temp0b
+      w1b = temp0*temp0b - w2b
+      pfb(i, kde-2, j) = pfb(i, kde-2, j) + w2*temp0b/pf(i, kde-2, j)
+      p8wb(i, kde, j) = 0.0
+      temp0b0 = w1b/(z1-z2)
+      temp0b1 = -((z0-z2)*temp0b0/(z1-z2))
+      z0b = temp0b0
+      z2b = -temp0b1 - temp0b0
+      z1b = temp0b1
+      zb(i, k_end-1, j) = zb(i, k_end-1, j) + z2b
+      zb(i, k_end, j) = zb(i, k_end, j) + z1b
+      z_at_wb(i, kte, j) = z_at_wb(i, kte, j) + z0b
+      z0 = z_at_w(i, 1, j)
+      z1 = z(i, 1, j)
+      z2 = z(i, 2, j)
+      w1 = (z0-z2)/(z1-z2)
+      w2 = 1. - w1
+      pfb(i, 1, j) = pfb(i, 1, j) + w1*p8wb(i, 1, j)
+      w2b = pf(i, 2, j)*p8wb(i, 1, j)
+      w1b = pf(i, 1, j)*p8wb(i, 1, j) - w2b
+      pfb(i, 2, j) = pfb(i, 2, j) + w2*p8wb(i, 1, j)
+      p8wb(i, 1, j) = 0.0
+      temp0b2 = w1b/(z1-z2)
+      temp0b3 = -((z0-z2)*temp0b2/(z1-z2))
+      z0b = temp0b2
+      z2b = -temp0b3 - temp0b2
+      z1b = temp0b3
+      zb(i, 2, j) = zb(i, 2, j) + z2b
+      zb(i, 1, j) = zb(i, 1, j) + z1b
+      z_at_wb(i, 1, j) = z_at_wb(i, 1, j) + z0b
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=k_end,2,-1
+      DO i=i_end,i_start,-1
+        pfb(i, k, j) = pfb(i, k, j) + fzm(k)*p8wb(i, k, j)
+        pfb(i, k-1, j) = pfb(i, k-1, j) + fzp(k)*p8wb(i, k, j)
+        p8wb(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=k_end,k_start,-1
+      DO i=i_end,i_start,-1
+        IF ((pb(i, k, j)+p(i, k, j))/p0 .LE. 0.0 .AND. (rcp .EQ. 0.0 &
+&            .OR. rcp .NE. INT(rcp))) THEN
+          pb0(i, k, j) = pb0(i, k, j) + pfb(i, k, j)
+        ELSE
+          pb0(i, k, j) = pb0(i, k, j) + rcp*((pb(i, k, j)+p(i, k, j))/p0&
+&            )**(rcp-1)*piib(i, k, j)/p0 + pfb(i, k, j)
+        END IF
+        pfb(i, k, j) = 0.0
+        z_at_wb(i, k, j) = z_at_wb(i, k, j) + 0.5*zb(i, k, j)
+        z_at_wb(i, k+1, j) = z_at_wb(i, k+1, j) + 0.5*zb(i, k, j)
+        zb(i, k, j) = 0.0
+        piib(i, k, j) = 0.0
+        temp = alb(i, k, j) + al(i, k, j)
+        alb0(i, k, j) = alb0(i, k, j) - rhob(i, k, j)/temp**2
+        rhob(i, k, j) = 0.0
+        th_phyb(i, k, j) = th_phyb(i, k, j) + h_diabaticb(i, k, j)
+        h_diabaticb(i, k, j) = 0.0
+        t_newb(i, k, j) = t_newb(i, k, j) + th_phyb(i, k, j)
+        th_phyb(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO i=i_end,i_start,-1
+      dz8wb(i, kte, j) = 0.0
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=kte-1,k_start,-1
+      DO i=i_end,i_start,-1
+        z_at_wb(i, k+1, j) = z_at_wb(i, k+1, j) + dz8wb(i, k, j)
+        z_at_wb(i, k, j) = z_at_wb(i, k, j) - dz8wb(i, k, j)
+        dz8wb(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=kte,k_start,-1
+      DO i=i_end,i_start,-1
+        phb0(i, k, j) = phb0(i, k, j) + z_at_wb(i, k, j)/g
+        z_at_wb(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+END SUBROUTINE A_MOIST_PHYSICS_PREP_EM
+
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of moist_physics_finish_em in reverse (adjoint) mode:
+!   gradient     of useful results: th_phy h_diabatic t_new
+!   with respect to varying inputs: th_phy h_diabatic t_new
+!   RW status of diff variables: th_phy:incr h_diabatic:in-out
+!                t_new:in-out
+SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
+&  th_phy, th_phyb, h_diabatic, h_diabaticb, dt, config_flags, ids, ide, &
+&  jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, &
+&  kts, kte)
+  IMPLICIT NONE
+! Here we construct full fields
+! needed by the microphysics
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde
+  INTEGER, INTENT(IN) :: ims, ime, jms, jme, kms, kme
+  INTEGER, INTENT(IN) :: its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: t_new, &
+&  t_old, th_phy, h_diabatic
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: t_newb, th_phyb, &
+&  h_diabaticb
+  REAL :: mpten, mptenmax, mptenmin
+  REAL :: mptenb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mut
+  REAL, INTENT(IN) :: t0, dt
+  INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
+  INTEGER :: i, j, k, imax, jmax, imin, jmin
+  INTRINSIC MIN
+!--------------------------------------------------------------------
+!<DESCRIPTION>
+!
+!  moist_phys_finish_em resets theta to its perturbation value and
+!  computes and stores the microphysics diabatic heating term.
+!
+!</DESCRIPTION>
+!  set up loop bounds for this grid's boundary conditions
+
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+!      i_start=max(its,ids+4)
+!      i_end=min(ite,ide-5)
+!      j_start=max(jts,jds+4)
+!      j_end=min(jte,jde-5)
+  k_start = kts
+  IF (kte .GT. kde - 1) THEN
+    k_end = kde - 1
+  ELSE
+    k_end = kte
+  END IF
+!  add microphysics theta diff to perturbation theta, set h_diabatic
+  IF (config_flags%no_mp_heating .EQ. 0) THEN
+    th_phyb = 0.0
+    DO j=j_end,j_start,-1
+      DO k=k_end,k_start,-1
+        DO i=i_end,i_start,-1
+          mptenb = t_newb(i, k, j) + h_diabaticb(i, k, j)/dt
+          h_diabaticb(i, k, j) = -mptenb
+          th_phyb(i, k, j) = th_phyb(i, k, j) + mptenb
+        END DO
+      END DO
+    END DO
+  ELSE
+    DO j=j_end,j_start,-1
+      DO k=k_end,k_start,-1
+        DO i=i_end,i_start,-1
+          h_diabaticb(i, k, j) = 0.0
+        END DO
+      END DO
+    END DO
+    th_phyb = 0.0
+  END IF
+END SUBROUTINE A_MOIST_PHYSICS_FINISH_EM
 
    SUBROUTINE a_init_module_big_step
 

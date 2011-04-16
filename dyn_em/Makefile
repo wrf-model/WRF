@@ -534,18 +534,10 @@ module_first_rk_step_part1_tl.o : \
 		../phys/module_fddagd_driver.o
 
 module_first_rk_step_part1_ad.o : \
-                module_force_scm.o \
 		module_big_step_utilities_em.o \
-                module_convtrans_prep.o \
-                module_em.o \
+		module_big_step_utilities_em_ad.o \
                 module_em_ad.o \
-		../phys/module_radiation_driver.o \
-		../phys/module_surface_driver.o \
-		../phys/module_cumulus_driver.o \
-		../phys/module_pbl_driver.o \
-		../phys/module_pbl_driver_ad.o \
-		../frame/module_comm_dm.o \
-		../phys/module_fddagd_driver.o
+		../phys/module_pbl_driver_ad.o
 
 module_first_rk_step_part2.o : \
                 module_em.o \
@@ -579,22 +571,16 @@ module_first_rk_step_part2_tl.o : \
 		../phys/module_physics_addtendc_tl.o
 
 module_first_rk_step_part2_ad.o : \
-                module_em.o \
                 module_em_ad.o \
-		module_diffusion_em.o  \
 		module_diffusion_em_ad.o  \
-		module_sfs_driver.o \
 		module_sfs_driver_ad.o \
 		../frame/module_domain.o \
 		../frame/module_state_description.o \
 		../frame/module_driver_constants.o \
 		../frame/module_configure.o \
 		../frame/module_dm.o \
-		../share/module_bc.o \
 		../share/module_bc_ad.o \
 		../frame/module_comm_dm.o \
-		../phys/module_fddaobs_driver.o \
-		../phys/module_physics_addtendc.o \
 		../phys/module_physics_addtendc_ad.o
 
 adapt_timestep_em.o: \

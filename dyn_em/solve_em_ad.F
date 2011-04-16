@@ -811,11 +811,6 @@ BENCH_END(set_phys_bc_tim)
 if (config_flags % sw_call_first_rk_step_part1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call first_rk_step_part1 ' )
 
-       CALL push4backup (u_phy,v_phy, "u_phy,v_phy")
-       CALL push4backup (grid%z, "z")
-       CALL push4backup (grid%rublten, grid%rvblten, grid%rthblten, grid%rqvblten,&
-                         "rublten, rvblten, rthblten, rqvblten")
-
        CALL first_rk_step_part1 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
@@ -923,18 +918,9 @@ if (config_flags % sw_call_first_rk_step_part2) then
        ENDIF
 #endif
 
-       CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
        CALL push4backup (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,&
                          "rublten,rvblten,rthblten,rqvblten") 
-       CALL push4backup (grid%hfx,grid%qfx,grid%ustm, "hfx,qfx,ustm") 
-       CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2,grid%tke_2, &
-                         "u,v,w,t,ph,tke") 
-       CALL push4backup (rho,grid%t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
-       CALL push4backup (moist, "moist") 
-!!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
-!       CALL push4backup (chem, "chem") 
-!       CALL push4backup (tracer, "tracer") 
-       CALL push4backup (scalar, "scalar") 
+
        CALL first_rk_step_part2 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
@@ -10258,18 +10244,8 @@ BENCH_END(adj_rk_tend_tim)
 if (config_flags % sw_call_first_rk_step_part2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_first_rk_step_part2 ' )
 
-       CALL pop2restore (scalar, "scalar") 
-!!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
-!       CALL pop2restore (tracer, "tracer") 
-!       CALL pop2restore (chem, "chem") 
-       CALL pop2restore (moist, "moist") 
-       CALL pop2restore (rho,grid%t_phy,p_phy,th_phy,T8w,p8w, "rho,t_phy,p_phy,th_phy,T8w,p8w") 
-       CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2,grid%tke_2, &
-                         "u,v,w,t,ph,tke") 
-       CALL pop2restore (grid%hfx,grid%qfx,grid%ustm, "hfx,qfx,ustm") 
        CALL pop2restore (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,&
                          "rublten,rvblten,rthblten,rqvblten") 
-       CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
        CALL a_first_rk_step_part2 (   grid , config_flags   &
               , moist ,a_moist , moist_tend ,a_moist_tend   &
 !!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
@@ -10318,11 +10294,6 @@ end if
 
 if (config_flags % sw_call_first_rk_step_part1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_first_rk_step_part1 ' )
-
-       CALL pop2restore (grid%rublten, grid%rvblten, grid%rthblten, grid%rqvblten, &
-                         "rublten, rvblten, rthblten, rqvblten")
-       CALL pop2restore (grid%z, "z")
-       CALL pop2restore (u_phy,v_phy, "u_phy,v_phy")
 
        CALL a_first_rk_step_part1 (    grid, config_flags         &
                              , moist , a_moist, moist_tend, a_moist_tend  &

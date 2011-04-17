@@ -362,83 +362,70 @@ CONTAINS
 
 !-------------------------------------------------------------------------------
 
-SUBROUTINE g_rk_addtend_dry ( ru_tend, g_ru_tend, rv_tend, g_rv_tend,                         &
-                            rw_tend, g_rw_tend, ph_tend, g_ph_tend, t_tend, g_t_tend,         &
-                            ru_tendf, g_ru_tendf, rv_tendf, g_rv_tendf, rw_tendf, g_rw_tendf, & 
-                            ph_tendf, g_ph_tendf, t_tendf, g_t_tendf,               &
-                            u_save, g_u_save, v_save, g_v_save, w_save, g_w_save,   & 
-                            ph_save, g_ph_save, t_save, g_t_save,                   & 
-                            mu_tend, g_mu_tend, mu_tendf, g_mu_tendf, rk_step,      &
-                            h_diabatic, g_h_diabatic, mut, g_mut, msftx, msfty, msfux, msfuy,     &
-                            msfvx, msfvx_inv, msfvy,                         &
-                            ids,ide, jds,jde, kds,kde,                       &
-                            ims,ime, jms,jme, kms,kme,                       &
-                            ips,ipe, jps,jpe, kps,kpe,                       &
-                            its,ite, jts,jte, kts,kte                       )
-
-   IMPLICIT NONE
-
-   !  Input data.
-
-   INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
-                                            ims, ime, jms, jme, kms, kme, &
-                                            ips, ipe, jps, jpe, kps, kpe, &
-                                            its, ite, jts, jte, kts, kte
-   INTEGER ,               INTENT(IN   ) :: rk_step
-
-   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) :: g_ru_tend, &
-                                                                      g_rv_tend, &
-                                                                      g_rw_tend, &
-                                                                      g_ph_tend, &
-                                                                      g_t_tend,  &
-                                                                      g_ru_tendf, &
-                                                                      g_rv_tendf, &
-                                                                      g_rw_tendf, &
-                                                                      g_ph_tendf, &
-                                                                      g_t_tendf
-   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) :: ru_tend, &
-                                                                      rv_tend, &
-                                                                      rw_tend, &
-                                                                      ph_tend, &
-                                                                      t_tend,  &
-                                                                      ru_tendf, &
-                                                                      rv_tendf, &
-                                                                      rw_tendf, &
-                                                                      ph_tendf, &
-                                                                      t_tendf
-
-   REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT) :: g_mu_tend, &
-                                                             g_mu_tendf
-   REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT) :: mu_tend, &
-                                                             mu_tendf
-
-   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(IN   ) ::  g_u_save,  &
-                                                                       g_v_save,  &
-                                                                       g_w_save,  &
-                                                                      g_ph_save,  &
-                                                                       g_t_save,  &
-                                                                      g_h_diabatic
-   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(IN   ) ::  u_save,  &
-                                                                       v_save,  &
-                                                                       w_save,  &
-                                                                      ph_save,  &
-                                                                       t_save,  &
-                                                                      h_diabatic
-
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: g_mut
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: mut,       &
-                                                                    msftx,     &
-                                                                    msfty,     &
-                                                                    msfux,     &
-                                                                    msfuy,     &
-                                                                    msfvx,     &
-                                                                    msfvx_inv, &
-                                                                    msfvy
-
-
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of rk_addtend_dry in forward (tangent) mode:
+!   variations   of useful results: ph_tendf rw_tendf mu_tend rv_tendf
+!                ru_tend rw_tend ru_tendf t_tend rv_tend t_tendf
+!                ph_tend
+!   with respect to varying inputs: ph_tendf rw_tendf u_save ph_save
+!                w_save mu_tend rv_tendf ru_tend rw_tend h_diabatic
+!                ru_tendf t_tend mu_tendf t_save v_save rv_tend
+!                t_tendf mut ph_tend
+!   RW status of diff variables: ph_tendf:in-out rw_tendf:in-out
+!                u_save:in ph_save:in w_save:in mu_tend:in-out
+!                rv_tendf:in-out ru_tend:in-out rw_tend:in-out
+!                h_diabatic:in ru_tendf:in-out t_tend:in-out mu_tendf:in
+!                t_save:in v_save:in rv_tend:in-out t_tendf:in-out
+!                mut:in ph_tend:in-out
+SUBROUTINE G_RK_ADDTEND_DRY(ru_tend, ru_tendd, rv_tend, rv_tendd, &
+&  rw_tend, rw_tendd, ph_tend, ph_tendd, t_tend, t_tendd, ru_tendf, &
+&  ru_tendfd, rv_tendf, rv_tendfd, rw_tendf, rw_tendfd, ph_tendf, &
+&  ph_tendfd, t_tendf, t_tendfd, u_save, u_saved, v_save, v_saved, w_save&
+&  , w_saved, ph_save, ph_saved, t_save, t_saved, mu_tend, mu_tendd, &
+&  mu_tendf, mu_tendfd, rk_step, h_diabatic, h_diabaticd, mut, mutd, &
+&  msftx, msfty, msfux, msfuy, msfvx, msfvx_inv, msfvy, ids, ide, jds, &
+&  jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, &
+&  kpe, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+!  Input data.
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, its, ite, jts, jte, kts, &
+&  kte
+  INTEGER, INTENT(IN) :: rk_step
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: ru_tend, &
+&  rv_tend, rw_tend, ph_tend, t_tend, ru_tendf, rv_tendf, rw_tendf, &
+&  ph_tendf, t_tendf
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: ru_tendd&
+&  , rv_tendd, rw_tendd, ph_tendd, t_tendd, ru_tendfd, rv_tendfd, &
+&  rw_tendfd, ph_tendfd, t_tendfd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mu_tend, mu_tendf
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mu_tendd, &
+&  mu_tendfd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: u_save, &
+&  v_save, w_save, ph_save, t_save, h_diabatic
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: u_saved, &
+&  v_saved, w_saved, ph_saved, t_saved, h_diabaticd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mut, msftx, msfty, &
+&  msfux, msfuy, msfvx, msfvx_inv, msfvy
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mutd
 ! Local
-   INTEGER :: i, j, k
-
+  INTEGER :: i, j, k
+  INTEGER :: min8
+  INTEGER :: min7
+  INTEGER :: min6
+  INTEGER :: min5
+  INTEGER :: min4
+  INTEGER :: min3
+  INTEGER :: min2
+  INTEGER :: min1
+  INTRINSIC MIN
+  IF (jte .GT. jde - 1) THEN
+    min1 = jde - 1
+  ELSE
+    min1 = jte
+  END IF
 !<DESCRIPTION>
 !
 ! rk_addtend_dry constructs the full large-timestep tendency terms for
@@ -449,95 +436,137 @@ SUBROUTINE g_rk_addtend_dry ( ru_tend, g_ru_tend, rv_tend, g_rv_tend,           
 ! these change each rk substep).  Output is in *tend.
 !
 !</DESCRIPTION>
-
 !  Finally, add the forward-step tendency to the rk_tendency
-
 ! u/v/w/save contain bc tendency that needs to be multiplied by msf
 ! (u by msfuy, v by msfvx)
 !  before adding it to physics tendency (*tendf)
 ! For momentum we need the final tendency to include an inverse msf
 ! physics/bc tendency needs to be divided, advection tendency already has it
-
 ! For scalars we need the final tendency to include an inverse msf (msfty)
 ! advection tendency is OK, physics/bc tendency needs to be divided by msf
-
-   DO j = jts,MIN(jte,jde-1)
-   DO k = kts,kte-1
-   DO i = its,ite
-     ! multiply by my to uncouple u
-     IF(rk_step == 1)g_ru_tendf(i,k,j) = g_ru_tendf(i,k,j) +  g_u_save(i,k,j)*msfuy(i,j)
-     IF(rk_step == 1)ru_tendf(i,k,j) = ru_tendf(i,k,j) +  u_save(i,k,j)*msfuy(i,j)
-     ! divide by my to couple u
-     g_ru_tend(i,k,j) = g_ru_tend(i,k,j) + g_ru_tendf(i,k,j)/msfuy(i,j)
-     ru_tend(i,k,j) = ru_tend(i,k,j) + ru_tendf(i,k,j)/msfuy(i,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = jts,jte
-   DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
-     ! multiply by mx to uncouple v
-     IF(rk_step == 1)g_rv_tendf(i,k,j) = g_rv_tendf(i,k,j) +  g_v_save(i,k,j)*msfvx(i,j)
-     IF(rk_step == 1)rv_tendf(i,k,j) = rv_tendf(i,k,j) +  v_save(i,k,j)*msfvx(i,j)
-     ! divide by mx to couple v
-     g_rv_tend(i,k,j) = g_rv_tend(i,k,j) + g_rv_tendf(i,k,j)*msfvx_inv(i,j)
-     rv_tend(i,k,j) = rv_tend(i,k,j) + rv_tendf(i,k,j)*msfvx_inv(i,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = jts,MIN(jte,jde-1)
-   DO k = kts,kte
-   DO i = its,MIN(ite,ide-1)
-     ! multiply by my to uncouple w
-     IF(rk_step == 1)g_rw_tendf(i,k,j) = g_rw_tendf(i,k,j) +  g_w_save(i,k,j)*msfty(i,j)
-     IF(rk_step == 1)rw_tendf(i,k,j) = rw_tendf(i,k,j) +  w_save(i,k,j)*msfty(i,j)
-     ! divide by my to couple w
-     g_rw_tend(i,k,j) = g_rw_tend(i,k,j) + g_rw_tendf(i,k,j)/msfty(i,j)
-     rw_tend(i,k,j) = rw_tend(i,k,j) + rw_tendf(i,k,j)/msfty(i,j)
-
-     IF(rk_step == 1)g_ph_tendf(i,k,j) = g_ph_tendf(i,k,j) +  g_ph_save(i,k,j)
-     IF(rk_step == 1)ph_tendf(i,k,j) = ph_tendf(i,k,j) +  ph_save(i,k,j)
-     ! divide by my to couple scalar
-     g_ph_tend(i,k,j) = g_ph_tend(i,k,j) + g_ph_tendf(i,k,j)/msfty(i,j)
-     ph_tend(i,k,j) = ph_tend(i,k,j) + ph_tendf(i,k,j)/msfty(i,j)
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = jts,MIN(jte,jde-1)
-   DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
-     IF(rk_step == 1)g_t_tendf(i,k,j) = g_t_tendf(i,k,j) +  g_t_save(i,k,j)
-     IF(rk_step == 1)t_tendf(i,k,j) = t_tendf(i,k,j) +  t_save(i,k,j)
-     ! divide by my to couple theta
-! NPan 05/27/10 {
-! If h_diabatic is an active variable, the statement for computing g_t_tend 
-! should be replaced with the commentted statement.
-      g_t_tend(i,k,j) =  g_t_tend(i,k,j) +  g_t_tendf(i,k,j)/msfty(i,j)  &
-                                         +  g_mut(i,j)*h_diabatic(i,k,j)/msfty(i,j) &
-                                         +  mut(i,j)*g_h_diabatic(i,k,j)/msfty(i,j) 
-!      g_t_tend(i,k,j) =  g_t_tend(i,k,j) +  g_t_tendf(i,k,j)/msfty(i,j)  &
-!                                         +  g_mut(i,j)*h_diabatic(i,k,j)/msfty(i,j)
-! NPan }
-      t_tend(i,k,j) =  t_tend(i,k,j) +  t_tendf(i,k,j)/msfty(i,j)  &
-                                     +  mut(i,j)*h_diabatic(i,k,j)/msfty(i,j)
-     ! divide by my to couple heating
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j = jts,MIN(jte,jde-1)
-   DO i = its,MIN(ite,ide-1)
+  DO j=jts,min1
+    DO k=kts,kte-1
+      DO i=its,ite
+! multiply by my to uncouple u
+        IF (rk_step .EQ. 1) THEN
+          ru_tendfd(i, k, j) = ru_tendfd(i, k, j) + msfuy(i, j)*u_saved(&
+&            i, k, j)
+          ru_tendf(i, k, j) = ru_tendf(i, k, j) + u_save(i, k, j)*msfuy(&
+&            i, j)
+        END IF
+! divide by my to couple u
+        ru_tendd(i, k, j) = ru_tendd(i, k, j) + ru_tendfd(i, k, j)/msfuy&
+&          (i, j)
+        ru_tend(i, k, j) = ru_tend(i, k, j) + ru_tendf(i, k, j)/msfuy(i&
+&          , j)
+      END DO
+    END DO
+  END DO
+  DO j=jts,jte
+    DO k=kts,kte-1
+      IF (ite .GT. ide - 1) THEN
+        min2 = ide - 1
+      ELSE
+        min2 = ite
+      END IF
+      DO i=its,min2
+! multiply by mx to uncouple v
+        IF (rk_step .EQ. 1) THEN
+          rv_tendfd(i, k, j) = rv_tendfd(i, k, j) + msfvx(i, j)*v_saved(&
+&            i, k, j)
+          rv_tendf(i, k, j) = rv_tendf(i, k, j) + v_save(i, k, j)*msfvx(&
+&            i, j)
+        END IF
+! divide by mx to couple v
+        rv_tendd(i, k, j) = rv_tendd(i, k, j) + msfvx_inv(i, j)*&
+&          rv_tendfd(i, k, j)
+        rv_tend(i, k, j) = rv_tend(i, k, j) + rv_tendf(i, k, j)*&
+&          msfvx_inv(i, j)
+      END DO
+    END DO
+  END DO
+  IF (jte .GT. jde - 1) THEN
+    min3 = jde - 1
+  ELSE
+    min3 = jte
+  END IF
+  DO j=jts,min3
+    DO k=kts,kte
+      IF (ite .GT. ide - 1) THEN
+        min4 = ide - 1
+      ELSE
+        min4 = ite
+      END IF
+      DO i=its,min4
+! multiply by my to uncouple w
+        IF (rk_step .EQ. 1) THEN
+          rw_tendfd(i, k, j) = rw_tendfd(i, k, j) + msfty(i, j)*w_saved(&
+&            i, k, j)
+          rw_tendf(i, k, j) = rw_tendf(i, k, j) + w_save(i, k, j)*msfty(&
+&            i, j)
+        END IF
+! divide by my to couple w
+        rw_tendd(i, k, j) = rw_tendd(i, k, j) + rw_tendfd(i, k, j)/msfty&
+&          (i, j)
+        rw_tend(i, k, j) = rw_tend(i, k, j) + rw_tendf(i, k, j)/msfty(i&
+&          , j)
+        IF (rk_step .EQ. 1) THEN
+          ph_tendfd(i, k, j) = ph_tendfd(i, k, j) + ph_saved(i, k, j)
+          ph_tendf(i, k, j) = ph_tendf(i, k, j) + ph_save(i, k, j)
+        END IF
+! divide by my to couple scalar
+        ph_tendd(i, k, j) = ph_tendd(i, k, j) + ph_tendfd(i, k, j)/msfty&
+&          (i, j)
+        ph_tend(i, k, j) = ph_tend(i, k, j) + ph_tendf(i, k, j)/msfty(i&
+&          , j)
+      END DO
+    END DO
+  END DO
+  IF (jte .GT. jde - 1) THEN
+    min5 = jde - 1
+  ELSE
+    min5 = jte
+  END IF
+  DO j=jts,min5
+    DO k=kts,kte-1
+      IF (ite .GT. ide - 1) THEN
+        min6 = ide - 1
+      ELSE
+        min6 = ite
+      END IF
+      DO i=its,min6
+        IF (rk_step .EQ. 1) THEN
+          t_tendfd(i, k, j) = t_tendfd(i, k, j) + t_saved(i, k, j)
+          t_tendf(i, k, j) = t_tendf(i, k, j) + t_save(i, k, j)
+        END IF
+! divide by my to couple theta
+        t_tendd(i, k, j) = t_tendd(i, k, j) + t_tendfd(i, k, j)/msfty(i&
+&          , j) + (mutd(i, j)*h_diabatic(i, k, j)+mut(i, j)*h_diabaticd(i&
+&          , k, j))/msfty(i, j)
+        t_tend(i, k, j) = t_tend(i, k, j) + t_tendf(i, k, j)/msfty(i, j)&
+&          + mut(i, j)*h_diabatic(i, k, j)/msfty(i, j)
+      END DO
+    END DO
+  END DO
+  IF (jte .GT. jde - 1) THEN
+    min7 = jde - 1
+  ELSE
+    min7 = jte
+  END IF
+! divide by my to couple heating
+  DO j=jts,min7
+    IF (ite .GT. ide - 1) THEN
+      min8 = ide - 1
+    ELSE
+      min8 = ite
+    END IF
+    DO i=its,min8
 ! mu tendencies not coupled with 1/msf
-      g_mu_tend(i,j) =  g_mu_tend(i,j) +  g_mu_tendf(i,j)
-      mu_tend(i,j) =  mu_tend(i,j) +  mu_tendf(i,j)
-   ENDDO
-   ENDDO
-
-END SUBROUTINE g_rk_addtend_dry
-
+      mu_tendd(i, j) = mu_tendd(i, j) + mu_tendfd(i, j)
+      mu_tend(i, j) = mu_tend(i, j) + mu_tendf(i, j)
+    END DO
+  END DO
+END SUBROUTINE G_RK_ADDTEND_DRY
 !-------------------------------------------------------------------------------
 
 ! Revised by Ning Pan, 2010-08-02

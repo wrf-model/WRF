@@ -1092,455 +1092,171 @@ END SUBROUTINE a_restore_ph_mu
 
    END SUBROUTINE a_small_step_prep
 
-   SUBROUTINE a_small_step_finish(u_2,a_u_2,u_1,a_u_1,v_2,a_v_2,v_1, &
-   a_v_1,w_2,a_w_2,w_1,a_w_1,t_2,a_t_2,t_1,a_t_1,ph_2,a_ph_2,ph_1, &
-   a_ph_1,ww,a_ww,ww1,a_ww1,mu_2,a_mu_2,mu_1,a_mu_1,mut,a_mut,muts, &
-   a_muts,muu,a_muu,muus,a_muus,muv,a_muv,muvs,a_muvs,u_save,a_u_save, &
-   v_save,a_v_save,w_save,a_w_save,t_save,a_t_save,ph_save,a_ph_save, &
-   mu_save,a_mu_save,msfux,msfuy,msfvx,msfvy,msftx,msfty,h_diabatic,a_h_diabatic, &
-   number_of_small_timesteps,dts,rk_step,rk_order,ids,ide,jds,jde,kds,kde,ims,ime,jms, &
-   jme,kms,kme,its,ite,jts,jte,kts,kte)
-
-!PART I: DECLARATION OF VARIABLES
-
-   IMPLICIT NONE
-
-   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-   INTEGER :: ids,ide,jds,jde,kds,kde
-   INTEGER :: ims,ime,jms,jme,kms,kme
-   INTEGER :: its,ite,jts,jte,kts,kte
-   INTEGER :: number_of_small_timesteps
-   INTEGER :: rk_step,rk_order
-   REAL :: dts
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: a_u_1,u_1,a_v_1,v_1,a_w_1,w_1, &
-   a_t_1,t_1,a_ww1,ww1,a_ph_1,ph_1
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: a_u_2,u_2,a_v_2,v_2,a_w_2,w_2, &
-   a_t_2,t_2,a_ww,ww,a_ph_2,ph_2
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: a_u_save,u_save,a_v_save,v_save, &
-   a_w_save,w_save,a_t_save,t_save,a_ph_save,ph_save,a_h_diabatic,h_diabatic
-   REAL,DIMENSION(ims:ime,jms:jme) :: a_muus,muus,a_muvs,muvs
-   REAL,DIMENSION(ims:ime,jms:jme) :: a_mu_2,mu_2,a_mu_1,mu_1
-   REAL,DIMENSION(ims:ime,jms:jme) :: a_mut,mut,a_muts,muts,a_muu,muu,a_muv,muv, &
-   a_mu_save,mu_save
-   REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
-   INTEGER :: i,j,k
-   INTEGER :: i_start,i_end,j_start,j_end,i_endu,j_endv
-
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: Keep_Lpb1_v_2
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: Keep_Lpb2_u_2
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: Keep_Lpb3_w_2
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: Keep_Lpb4_t_2
-!  REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: Keep_Lpb6_t_2
-   INTEGER :: IX1,IX2,IX3
-
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004, &
-   a_Tmpv5,Tmpv005
-   REAL,DIMENSION(its:max0(min(ite,ide-1),ite),kds:max0(kde-1,kde)) :: Tmpv300
-   REAL,DIMENSION(its:min(ite,ide-1),kds:kde-1,jts:min(jte,jde-1)) :: Tmpv400
-   REAL,DIMENSION(its:min(ite,ide-1),kds:kde-1,jts:min(jte,jde-1)) :: Tmpv401
-
-!REVISED BY WALLS
-!#ifdef REVERT
-!#else
-!#endif
-
-!PART II: CALCULATIONS OF B. S. TRAJECTORY
-
-!LPB[0]
-     i_start = its
-     i_end   = min(ite,ide-1)
-     j_start = jts
-     j_end   = min(jte,jde-1)
-     i_endu = ite
-     j_endv = jte
-
-!LPB[1]
-     DO j = j_start, j_endv
-
-       DO k=kds, kde-1
-       DO i=i_start, i_end
-       Keep_Lpb1_v_2(i,k,j) =v_2(i,k,j)
-       END DO
-       END DO
-
-     DO k = kds, kde-1
-     DO i = i_start, i_end
-       v_2(i,k,j) = (msfvx(i,j)*v_2(i,k,j) + v_save(i,k,j)*muv(i,j))/muvs(i,j)
-     ENDDO
-     ENDDO
-
-     ENDDO
-
-!LPB[2]
-     DO j = j_start, j_end
-
-       DO k=kds, kde-1
-       DO i=i_start, i_endu
-       Keep_Lpb2_u_2(i,k,j) =u_2(i,k,j)
-       END DO
-       END DO
-
-     DO k = kds, kde-1
-     DO i = i_start, i_endu
-       u_2(i,k,j) = (msfuy(i,j)*u_2(i,k,j) + u_save(i,k,j)*muu(i,j))/muus(i,j)
-     ENDDO
-     ENDDO
-
-     ENDDO
-
-!LPB[3]
-     DO j = j_start, j_end
-
-       DO k=kds, kde
-       DO i=i_start, i_end
-       Keep_Lpb3_w_2(i,k,j) =w_2(i,k,j)
-       END DO
-       END DO
-
-     DO k = kds, kde
-     DO i = i_start, i_end
-       w_2(i,k,j) = (msfty(i,j)*w_2(i,k,j) + w_save(i,k,j)*mut(i,j))/muts(i,j)
-       ph_2(i,k,j) = ph_2(i,k,j) + ph_save(i,k,j)
-       ww(i,k,j) = ww(i,k,j) + ww1(i,k,j)
-     ENDDO
-     ENDDO
-
-     ENDDO
-
-!LPB[4]
-#ifdef REVERT
-     DO j = j_start, j_end
-
-       DO k=kds, kde-1
-       DO i=i_start, i_end
-       Keep_Lpb4_t_2(i,k,j) =t_2(i,k,j)
-       END DO
-       END DO
-
-     DO k = kds, kde-1
-     DO i = i_start, i_end
-       t_2(i,k,j) = (t_2(i,k,j) + t_save(i,k,j)*mut(i,j))/muts(i,j)
-     ENDDO
-     ENDDO
-
-     ENDDO
-
-#else
-!LPB[5]
-
-!!LPB[6]
-!!  DO IX3=jms,jme
-!!  DO IX2=kms,kme
-!!  DO IX1=ims,ime
-!    !  Keep_Lpb6_t_2(IX1,IX2,IX3) =t_2(IX1,IX2,IX3)
-!!  END DO
-!!  END DO
-!!  END DO
-
-!  IF ( rk_step < rk_order ) THEN
-
-!       DO j = j_start, j_end
-!       DO k = kds, kde-1
-!       DO i = i_start, i_end
-!         t_2(i,k,j) = (t_2(i,k,j) + t_save(i,k,j)*mut(i,j))/muts(i,j)
-!       ENDDO
-!       ENDDO
-!       ENDDO
-!     ELSE
-
-!       DO j = j_start, j_end
-!       DO k = kds, kde-1
-!       DO i = i_start, i_end
-!         t_2(i,k,j) = (t_2(i,k,j) - dts*number_of_small_timesteps*mut(i,j) &
-!   *h_diabatic(i,k,j)   &
-!                       + t_save(i,k,j)*mut(i,j))/muts(i,j)
-!       ENDDO
-!       ENDDO
-!       ENDDO
-
-!   ENDIF
-#endif
-
-!!LPB[7]
-!     DO j = j_start, j_end
-
-!   
-!     DO i = i_start, i_end
-!       mu_2(i,j) = mu_2(i,j) + mu_save(i,j)
-!     ENDDO
-
-!     ENDDO
-
-!PART IV: REVERSE/BACKWARD ACCUMULATIONS
-
-!LPB[7]
-   DO j =j_end, j_start, -1
-
-!  DO i =i_start, i_end
-!  Tmpv001 =mu_2(i,j) +mu_save(i,j)
-!  mu_2(i,j) =Tmpv001
-
-!  ENDDO
-
-   DO i =i_end, i_start, -1
-   a_Tmpv1 =a_mu_2(i,j)
-   a_mu_2(i,j) =0.0
-   a_mu_2(i,j) =a_mu_2(i,j) +a_Tmpv1
-   a_mu_save(i,j) =a_mu_save(i,j) +a_Tmpv1
-   ENDDO
-
-   ENDDO
-
-!THE FOLLOWING LINES WERE REVISED BY WALLS
-#ifdef REVERT
-!LPB[4]
-   DO j =j_end, j_start, -1
-
-   DO k=kds, kde-1
-   DO i=i_start, i_end
-   t_2(i,k,j) =Keep_Lpb4_t_2(i,k,j)
-   END DO
-   END DO
-
-   DO k =kds, kde-1
-   DO i =i_start, i_end
-   Tmpv001 =t_save(i,k,j)*mut(i,j)
-   Tmpv002 =t_2(i,k,j) +Tmpv001
-   Tmpv300(i,k) =Tmpv002
-   Tmpv003 =Tmpv300(i,k)/muts(i,j)
-   t_2(i,k,j) =Tmpv003
-
-   ENDDO
-   ENDDO
-
-   DO k =kde-1, kds, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv3 =a_t_2(i,k,j)
-   a_t_2(i,k,j) =0.0
-   a_Tmpv2 =a_Tmpv3/muts(i,j)
-   a_muts(i,j) =a_muts(i,j) -Tmpv300(i,k)/(muts(i,j)*muts(i,j))*a_Tmpv3
-   a_t_2(i,k,j) =a_t_2(i,k,j) +a_Tmpv2
-   a_Tmpv1 =a_Tmpv2
-   a_t_save(i,k,j) =a_t_save(i,k,j) +mut(i,j)*a_Tmpv1
-   a_mut(i,j) =a_mut(i,j) +t_save(i,k,j)*a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-#else
-!LPB[6]
-!  DO IX3=jms,jme
-!  DO IX2=kms,kme
-!  DO IX1=ims,ime
-!  t_2(IX1,IX2,IX3) =Keep_Lpb6_t_2(IX1,IX2,IX3)
-!  END DO
-!  END DO
-!  END DO
-
-   IF( rk_step < rk_order ) THEN
-   DO j =j_start, j_end
-   DO k =kds, kde-1
-   DO i =i_start, i_end
-   Tmpv001 =t_save(i,k,j)*mut(i,j)
-   Tmpv002 =t_2(i,k,j) +Tmpv001
-   Tmpv400(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv400(i,k,j)/muts(i,j)
-   t_2(i,k,j) =Tmpv003
-
-   ENDDO
-   ENDDO
-   ENDDO
-   ELSE
-   DO j =j_start, j_end
-   DO k =kds, kde-1
-   DO i =i_start, i_end
-   Tmpv001 =dts*number_of_small_timesteps*mut(i,j)*h_diabatic(i,k,j)
-   Tmpv002 =t_2(i,k,j) -Tmpv001
-   Tmpv003 =t_save(i,k,j)*mut(i,j)
-   Tmpv004 =Tmpv002 +Tmpv003
-   Tmpv401(i,k,j) =Tmpv004
-   Tmpv005 =Tmpv401(i,k,j)/muts(i,j)
-   t_2(i,k,j) =Tmpv005
-
-   ENDDO
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( rk_step < rk_order ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =kde-1, kds, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv3 =a_t_2(i,k,j)
-   a_t_2(i,k,j) =0.0
-   a_Tmpv2 =a_Tmpv3/muts(i,j)
-   a_muts(i,j) =a_muts(i,j) -Tmpv400(i,k,j)/(muts(i,j)*muts(i,j))*a_Tmpv3
-   a_t_2(i,k,j) =a_t_2(i,k,j) +a_Tmpv2
-   a_Tmpv1 =a_Tmpv2
-   a_t_save(i,k,j) =a_t_save(i,k,j) +mut(i,j)*a_Tmpv1
-   a_mut(i,j) =a_mut(i,j) +t_save(i,k,j)*a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   DO j =j_end, j_start, -1
-   DO k =kde-1, kds, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv5 =a_t_2(i,k,j)
-   a_t_2(i,k,j) =0.0
-   a_Tmpv4 =a_Tmpv5/muts(i,j)
-   a_muts(i,j) =a_muts(i,j) -Tmpv401(i,k,j)/(muts(i,j)*muts(i,j))*a_Tmpv5
-   a_Tmpv2 =a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_t_save(i,k,j) =a_t_save(i,k,j) +mut(i,j)*a_Tmpv3
-   a_mut(i,j) =a_mut(i,j) +t_save(i,k,j)*a_Tmpv3
-   a_t_2(i,k,j) =a_t_2(i,k,j) +a_Tmpv2
-   a_Tmpv1 =-a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +dts*number_of_small_timesteps*h_diabatic(i,k,j)*a_Tmpv1
-   a_h_diabatic(i,k,j) =a_h_diabatic(i,k,j) +dts*number_of_small_timesteps*mut(i,  &
-   j)*a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ENDIF
-#endif
-!THE ABOVE LINES WERE REVISED BY WALLS
-
-!LPB[5]
-
-!LPB[3]
-   DO j =j_end, j_start, -1
-
-   DO k=kds, kde
-   DO i=i_start, i_end
-   w_2(i,k,j) =Keep_Lpb3_w_2(i,k,j)
-   END DO
-   END DO
-
-   DO k =kds, kde
-   DO i =i_start, i_end
-   Tmpv001 =w_save(i,k,j)*mut(i,j)
-   Tmpv002 =msfty(i,j)*w_2(i,k,j) +Tmpv001
-   Tmpv300(i,k) =Tmpv002
-   Tmpv003 =Tmpv300(i,k)/muts(i,j)
-   w_2(i,k,j) =Tmpv003
-
-   Tmpv001 =ph_2(i,k,j) +ph_save(i,k,j)
-!  ph_2(i,k,j) =Tmpv001
-
-   Tmpv001 =ww(i,k,j) +ww1(i,k,j)
-!  ww(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-
-   DO k =kde, kds, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv1 =a_ww(i,k,j)
-   a_ww(i,k,j) =0.0
-   a_ww(i,k,j) =a_ww(i,k,j) +a_Tmpv1
-   a_ww1(i,k,j) =a_ww1(i,k,j) +a_Tmpv1
-   a_Tmpv1 =a_ph_2(i,k,j)
-   a_ph_2(i,k,j) =0.0
-   a_ph_2(i,k,j) =a_ph_2(i,k,j) +a_Tmpv1
-   a_ph_save(i,k,j) =a_ph_save(i,k,j) +a_Tmpv1
-   a_Tmpv3 =a_w_2(i,k,j)
-   a_w_2(i,k,j) =0.0
-   a_Tmpv2 =a_Tmpv3/muts(i,j)
-   a_muts(i,j) =a_muts(i,j) -Tmpv300(i,k)/(muts(i,j)*muts(i,j))*a_Tmpv3
-   a_w_2(i,k,j) =a_w_2(i,k,j) +msfty(i,j)*a_Tmpv2
-   a_Tmpv1 =a_Tmpv2
-   a_w_save(i,k,j) =a_w_save(i,k,j) +mut(i,j)*a_Tmpv1
-   a_mut(i,j) =a_mut(i,j) +w_save(i,k,j)*a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[2]
-   DO j =j_end, j_start, -1
-
-   DO k=kds, kde-1
-   DO i=i_start, i_endu
-   u_2(i,k,j) =Keep_Lpb2_u_2(i,k,j)
-   END DO
-   END DO
-
-   DO k =kds, kde-1
-   DO i =i_start, i_endu
-   Tmpv001 =u_save(i,k,j)*muu(i,j)
-   Tmpv002 =msfuy(i,j)*u_2(i,k,j) +Tmpv001
-   Tmpv300(i,k) =Tmpv002
-   Tmpv003 =Tmpv300(i,k)/muus(i,j)
-   u_2(i,k,j) =Tmpv003
-
-   ENDDO
-   ENDDO
-
-   DO k =kde-1, kds, -1
-   DO i =i_endu, i_start, -1
-   a_Tmpv3 =a_u_2(i,k,j)
-   a_u_2(i,k,j) =0.0
-   a_Tmpv2 =a_Tmpv3/muus(i,j)
-   a_muus(i,j) =a_muus(i,j) -Tmpv300(i,k)/(muus(i,j)*muus(i,j))*a_Tmpv3
-   a_u_2(i,k,j) =a_u_2(i,k,j) +msfuy(i,j)*a_Tmpv2
-   a_Tmpv1 =a_Tmpv2
-   a_u_save(i,k,j) =a_u_save(i,k,j) +muu(i,j)*a_Tmpv1
-   a_muu(i,j) =a_muu(i,j) +u_save(i,k,j)*a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[1]
-   DO j =j_endv, j_start, -1
-
-   DO k=kds, kde-1
-   DO i=i_start, i_end
-   v_2(i,k,j) =Keep_Lpb1_v_2(i,k,j)
-   END DO
-   END DO
-
-   DO k =kds, kde-1
-   DO i =i_start, i_end
-   Tmpv001 =v_save(i,k,j)*muv(i,j)
-   Tmpv002 =msfvx(i,j)*v_2(i,k,j) +Tmpv001
-   Tmpv300(i,k) =Tmpv002
-   Tmpv003 =Tmpv300(i,k)/muvs(i,j)
-   v_2(i,k,j) =Tmpv003
-
-   ENDDO
-   ENDDO
-
-   DO k =kde-1, kds, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv3 =a_v_2(i,k,j)
-   a_v_2(i,k,j) =0.0
-   a_Tmpv2 =a_Tmpv3/muvs(i,j)
-   a_muvs(i,j) =a_muvs(i,j) -Tmpv300(i,k)/(muvs(i,j)*muvs(i,j))*a_Tmpv3
-   a_v_2(i,k,j) =a_v_2(i,k,j) +msfvx(i,j)*a_Tmpv2
-   a_Tmpv1 =a_Tmpv2
-   a_v_save(i,k,j) =a_v_save(i,k,j) +muv(i,j)*a_Tmpv1
-   a_muv(i,j) =a_muv(i,j) +v_save(i,k,j)*a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[0]
-!  i_start =its
-!  i_end =min(ite, ide-1)
-!  j_start =jts
-!  j_end =min(jte, jde-1)
-!  i_endu =ite
-!  j_endv =jte
-
-   END SUBROUTINE a_small_step_finish
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of small_step_finish in reverse (adjoint) mode:
+!   gradient     of useful results: u_save ph_save ww w_save mu_save
+!                muvs ph_2 u_2 h_diabatic mu_2 w_2 t_save v_save
+!                muts t_2 mut muu v_2 muv ww1 muus
+!   with respect to varying inputs: u_save ph_save ww w_save mu_save
+!                muvs ph_2 u_2 h_diabatic mu_2 w_2 t_save v_save
+!                muts t_2 mut muu v_2 muv ww1 muus
+!   RW status of diff variables: u_save:incr ph_save:incr ww:in-out
+!                w_save:incr mu_save:incr muvs:incr ph_2:in-out
+!                u_2:in-out h_diabatic:incr mu_2:in-out w_2:in-out
+!                t_save:incr v_save:incr muts:incr t_2:in-out mut:incr
+!                muu:incr v_2:in-out muv:incr ww1:incr muus:incr
+SUBROUTINE A_SMALL_STEP_FINISH(u_2, u_2b, u_1, v_2, v_2b, v_1, w_2, w_2b&
+&  , w_1, t_2, t_2b, t_1, ph_2, ph_2b, ph_1, ww, wwb, ww1, ww1b, mu_2, &
+&  mu_2b, mu_1, mut, mutb, muts, mutsb, muu, muub, muus, muusb, muv, muvb&
+&  , muvs, muvsb, u_save, u_saveb, v_save, v_saveb, w_save, w_saveb, &
+&  t_save, t_saveb, ph_save, ph_saveb, mu_save, mu_saveb, msfux, msfuy, &
+&  msfvx, msfvy, msftx, msfty, h_diabatic, h_diabaticb, &
+&  number_of_small_timesteps, dts, rk_step, rk_order, ids, ide, jds, jde&
+&  , kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte&
+&)
+  IMPLICIT NONE
+! religion first
+!  stuff passed in
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde
+  INTEGER, INTENT(IN) :: ims, ime, jms, jme, kms, kme
+  INTEGER, INTENT(IN) :: its, ite, jts, jte, kts, kte
+  INTEGER, INTENT(IN) :: number_of_small_timesteps
+  INTEGER, INTENT(IN) :: rk_step, rk_order
+  REAL, INTENT(IN) :: dts
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: u_1, v_1, &
+&  w_1, t_1, ww1, ph_1
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: ww1b
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: u_2, v_2&
+&  , w_2, t_2, ww, ph_2
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_2b, v_2b, w_2b, t_2b, &
+&  wwb, ph_2b
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: u_save, &
+&  v_save, w_save, t_save, ph_save, h_diabatic
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_saveb, v_saveb, &
+&  w_saveb, t_saveb, ph_saveb, h_diabaticb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: muus, muvs
+  REAL, DIMENSION(ims:ime, jms:jme) :: muusb, muvsb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mu_2, mu_1
+  REAL, DIMENSION(ims:ime, jms:jme) :: mu_2b
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mut, muts, muu, &
+&  muv, mu_save
+  REAL, DIMENSION(ims:ime, jms:jme) :: mutb, mutsb, muub, muvb, mu_saveb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: msfux, msfuy, msfvx, &
+&  msfvy, msftx, msfty
+! local stuff
+  INTEGER :: i, j, k
+  INTEGER :: i_start, i_end, j_start, j_end, i_endu, j_endv
+  INTEGER :: branch
+  REAL :: tempb4
+  REAL :: tempb3
+  REAL :: tempb2
+  REAL :: tempb1
+  REAL :: tempb0
+  REAL :: tempb
+  INTRINSIC MIN
+!<DESCRIPTION>
+!
+!  small_step_finish reconstructs the full uncoupled prognostic variables
+!  from the coupled perturbation variables used in the small timesteps.
+!
+!</DESCRIPTION>
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  i_endu = ite
+  j_endv = jte
+  IF (rk_step .LT. rk_order) THEN
+    CALL PUSHCONTROL1B(1)
+  ELSE
+    CALL PUSHCONTROL1B(0)
+  END IF
+  DO j=j_end,j_start,-1
+    DO i=i_end,i_start,-1
+      mu_saveb(i, j) = mu_saveb(i, j) + mu_2b(i, j)
+    END DO
+  END DO
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    DO j=j_end,j_start,-1
+      DO k=kde-1,kds,-1
+        DO i=i_end,i_start,-1
+          tempb3 = t_2b(i, k, j)/muts(i, j)
+          tempb4 = -(dts*number_of_small_timesteps*tempb3)
+          mutb(i, j) = mutb(i, j) + t_save(i, k, j)*tempb3 + h_diabatic(&
+&            i, k, j)*tempb4
+          h_diabaticb(i, k, j) = h_diabaticb(i, k, j) + mut(i, j)*tempb4
+          t_saveb(i, k, j) = t_saveb(i, k, j) + mut(i, j)*tempb3
+          mutsb(i, j) = mutsb(i, j) - (t_2(i, k, j)-dts*&
+&            number_of_small_timesteps*(mut(i, j)*h_diabatic(i, k, j))+&
+&            t_save(i, k, j)*mut(i, j))*tempb3/muts(i, j)
+          t_2b(i, k, j) = tempb3
+        END DO
+      END DO
+    END DO
+  ELSE
+    DO j=j_end,j_start,-1
+      DO k=kde-1,kds,-1
+        DO i=i_end,i_start,-1
+          tempb2 = t_2b(i, k, j)/muts(i, j)
+          t_saveb(i, k, j) = t_saveb(i, k, j) + mut(i, j)*tempb2
+          mutb(i, j) = mutb(i, j) + t_save(i, k, j)*tempb2
+          mutsb(i, j) = mutsb(i, j) - (t_2(i, k, j)+t_save(i, k, j)*mut(&
+&            i, j))*tempb2/muts(i, j)
+          t_2b(i, k, j) = tempb2
+        END DO
+      END DO
+    END DO
+  END IF
+  DO j=j_end,j_start,-1
+    DO k=kde,kds,-1
+      DO i=i_end,i_start,-1
+        ww1b(i, k, j) = ww1b(i, k, j) + wwb(i, k, j)
+        ph_saveb(i, k, j) = ph_saveb(i, k, j) + ph_2b(i, k, j)
+        tempb1 = w_2b(i, k, j)/muts(i, j)
+        w_saveb(i, k, j) = w_saveb(i, k, j) + mut(i, j)*tempb1
+        mutb(i, j) = mutb(i, j) + w_save(i, k, j)*tempb1
+        mutsb(i, j) = mutsb(i, j) - (msfty(i, j)*w_2(i, k, j)+w_save(i, &
+&          k, j)*mut(i, j))*tempb1/muts(i, j)
+        w_2b(i, k, j) = msfty(i, j)*tempb1
+      END DO
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=kde-1,kds,-1
+      DO i=i_endu,i_start,-1
+        tempb0 = u_2b(i, k, j)/muus(i, j)
+        u_saveb(i, k, j) = u_saveb(i, k, j) + muu(i, j)*tempb0
+        muub(i, j) = muub(i, j) + u_save(i, k, j)*tempb0
+        muusb(i, j) = muusb(i, j) - (msfuy(i, j)*u_2(i, k, j)+u_save(i, &
+&          k, j)*muu(i, j))*tempb0/muus(i, j)
+        u_2b(i, k, j) = msfuy(i, j)*tempb0
+      END DO
+    END DO
+  END DO
+  DO j=j_endv,j_start,-1
+    DO k=kde-1,kds,-1
+      DO i=i_end,i_start,-1
+        tempb = v_2b(i, k, j)/muvs(i, j)
+        v_saveb(i, k, j) = v_saveb(i, k, j) + muv(i, j)*tempb
+        muvb(i, j) = muvb(i, j) + v_save(i, k, j)*tempb
+        muvsb(i, j) = muvsb(i, j) - (msfvx(i, j)*v_2(i, k, j)+v_save(i, &
+&          k, j)*muv(i, j))*tempb/muvs(i, j)
+        v_2b(i, k, j) = msfvx(i, j)*tempb
+      END DO
+    END DO
+  END DO
+END SUBROUTINE A_SMALL_STEP_FINISH
 
    SUBROUTINE a_calc_p_rho(al,a_al,p,a_p,ph,a_ph,alt,a_alt,t_2,a_t_2, &
    t_1,a_t_1,c2a,a_c2a,pm1,a_pm1,mu,a_mu,muts,a_muts,znu,t0,rdnw,dnw, &

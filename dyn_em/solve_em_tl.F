@@ -2591,19 +2591,19 @@ BENCH_START(g_small_step_finish_tim)
 if (config_flags % sw_call_small_step_finish) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call g_small_step_finish ' )
 
-       CALL g_small_step_finish( grid%u_2, grid%g_u_2, grid%u_1, grid%g_u_1, &
-                                 grid%v_2, grid%g_v_2, grid%v_1, grid%g_v_1, &
-                                 grid%w_2, grid%g_w_2, grid%w_1, grid%g_w_1, &
-                                 grid%t_2, grid%g_t_2, grid%t_1, grid%g_t_1, &
-                                 grid%ph_2, grid%g_ph_2, grid%ph_1, grid%g_ph_1, &
+       CALL g_small_step_finish( grid%u_2, grid%g_u_2, grid%u_1, &
+                                 grid%v_2, grid%g_v_2, grid%v_1, &
+                                 grid%w_2, grid%g_w_2, grid%w_1, &
+                                 grid%t_2, grid%g_t_2, grid%t_1, &
+                                 grid%ph_2, grid%g_ph_2, grid%ph_1, &
                                  grid%ww, grid%g_ww, ww1, g_ww1,    &
-                                 grid%mu_2, grid%g_mu_2, grid%mu_1, grid%g_mu_1, &
+                                 grid%mu_2, grid%g_mu_2, grid%mu_1, &
                                  grid%mut, grid%g_mut, grid%muts, grid%g_muts, &
                                  grid%muu, grid%g_muu, muus, g_muus, &
                                  grid%muv, grid%g_muv, muvs, g_muvs, &
                                  grid%u_save, grid%g_u_save, grid%v_save, grid%g_v_save, w_save, g_w_save, &
                                  grid%t_save, grid%g_t_save, ph_save, g_ph_save, mu_save, g_mu_save,       &
-                                 grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,grid%msfty, &
+                                 grid%msfux,grid%msfuy,grid%msfvx,grid%msfvy,grid%msftx,grid%msfty, &
                                  grid%h_diabatic, grid%g_h_diabatic, &
                                  number_of_small_timesteps,dts_rk, &
                                  rk_step, rk_order,                &

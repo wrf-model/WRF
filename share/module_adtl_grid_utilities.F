@@ -993,6 +993,8 @@ CONTAINS
    b_mu_2 = grid%mu_2
    b_moist = grid%moist
 
+   b_h_diabatic = grid%h_diabatic
+
    b_rainnc = grid%rainnc
    b_rainncv = grid%rainncv
 
@@ -1001,7 +1003,6 @@ CONTAINS
 
 !   b_p = grid%p
 !   b_al = grid%al
-!   b_h_diabatic = grid%h_diabatic
    
    RETURN
   END SUBROUTINE copy_grid_to_b
@@ -1281,6 +1282,14 @@ IF (grid%check_moist) THEN
 END IF
 
    DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_h_diabatic(i,k,j) * grid%g_h_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_rainnc(i,j) * grid%g_rainnc(i,j) &
                   + grid%g_rainncv(i,j) * grid%g_rainncv(i,j)
@@ -1385,6 +1394,14 @@ IF (grid%check_moist) THEN
    ENDDO
 END IF
   
+   DO j = js,je
+   DO k = kts,kte-1
+   DO i = is,ie
+     save  = save + grid%g_h_diabatic(i,k,j) * grid%g_h_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
    DO j = js,je
    DO i = is,ie
      save  = save + grid%g_rainnc(i,j) * grid%g_rainnc(i,j) &
@@ -1528,6 +1545,15 @@ IF (grid%check_moist) THEN
 END IF
 
    DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save &
+                  + (grid%h_diabatic(i,k,j)-b_h_diabatic(i,k,j)) * (grid%h_diabatic(i,k,j)-b_h_diabatic(i,k,j))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save + (grid%rainnc(i,j)-b_rainnc(i,j)) * (grid%rainnc(i,j)-b_rainnc(i,j)) &
                   + (grid%rainncv(i,j)-b_rainncv(i,j)) * (grid%rainncv(i,j)-b_rainncv(i,j))
@@ -1588,6 +1614,8 @@ END IF
       grid%a_moist = 0.0
    END IF
    
+   grid%a_h_diabatic  = grid%g_h_diabatic
+
    grid%a_rainnc  = grid%g_rainnc
    grid%a_rainncv = grid%g_rainncv
 
@@ -1648,7 +1676,6 @@ END IF
    grid%a_ustm=0.0
    grid%a_hfx=0.0
    grid%a_qfx=0.0
-   grid%a_h_diabatic=0.0
 
    grid%a_u_bxs = 0.0; grid%a_u_bxe = 0.0; grid%a_u_bys = 0.0; grid%a_u_bye = 0.0
    grid%a_v_bxs = 0.0; grid%a_v_bxe = 0.0; grid%a_v_bys = 0.0; grid%a_v_bye = 0.0

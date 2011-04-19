@@ -6446,6 +6446,10 @@ end if
   a_t_tendf = 0. 
   a_mu_tendf = 0. 
 
+  a_ph_tend = 0.
+  a_rw_tend = 0.
+  a_mu_tend = 0.
+  a_t_tend = 0.
   a_moist_tend = 0. 
   a_scalar_tend = 0. 
   a_tke_tend = 0. 

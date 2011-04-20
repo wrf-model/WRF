@@ -14,2084 +14,1749 @@
 
  CONTAINS
 
- SUBROUTINE g_advect_u(u,g_u,u_old,g_u_old,tendency,g_tendency,ru,g_ru, &
- rv,g_rv,rom,g_rom,mut,g_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy, &
- msftx,msfty,fzm,fzp,rdx,rdy,rdzw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its, &
- ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2,Tmpv3,g_Tmpv3
-
- REAL g_FuncVal1,FuncVal1
- TYPE(grid_config_rec_type) :: config_flags
- INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: u,g_u,u_old,g_u_old,ru,g_ru,rv, &
- g_rv,rom,g_rom
- REAL,DIMENSION(ims:ime,jms:jme) :: mut,g_mut
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,g_tendency
- REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
- REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
- REAL :: rdx,rdy
- INTEGER :: time_step
-
- INTEGER :: i,j,k,itf,jtf,ktf
- INTEGER :: i_start,i_end,j_start,j_end
- INTEGER :: i_start_f,i_end_f,j_start_f,j_end_f
- INTEGER :: jmin,jmax,jp,jm,imin,imax,im,ip
- INTEGER :: jp1,jp0,jtmp
- INTEGER :: horz_order,vert_order
- REAL :: mrdx,g_mrdx,mrdy,g_mrdy,ub,g_ub,vb,g_vb,uw,g_uw,vw,g_vw, &
- dvm,g_dvm,dvp,g_dvp
- REAL,DIMENSION(its:ite,kts:kte) :: vflux,g_vflux
- REAL,DIMENSION(its-1:ite+1,kts:kte) :: fqx,g_fqx
- REAL,DIMENSION(its:ite,kts:kte,2) :: fqy,g_fqy
- LOGICAL :: degrade_xs,degrade_ys
- LOGICAL :: degrade_xe,degrade_ye
- REAL :: flux3,g_flux3,flux4,g_flux4,flux5,g_flux5,flux6,g_flux6
- REAL :: q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua,vel,g_vel
-
- g_flux4(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,ua, &
- g_ua) =(7.*(g_q_i +g_q_im1) -(g_q_ip1 +g_q_im2))/12.0
- flux4(q_im2,q_im1,q_i,q_ip1,ua) =(7.*(q_i +q_im1) -(q_ip1 +q_im2))/12.0
-
- g_flux3(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,ua, &
- g_ua) =g_flux4(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1, &
- ua,g_ua) +(sign(1, time_step) *sign(1., ua)*((g_q_ip1 -g_q_im2) &
- -3.*(g_q_i -g_q_im1))/12.0)
- flux3(q_im2,q_im1,q_i,q_ip1,ua) =flux4(q_im2,q_im1,q_i,q_ip1,ua) +sign(1, time_step) &
- *sign(1., ua)*((q_ip1 -q_im2) -3.*(q_i -q_im1))/12.0
-
- g_flux6(q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua) =(37.*(g_q_i +g_q_im1) -8.*( &
- g_q_ip1 +g_q_im2) +(g_q_ip2 +g_q_im3))/60.0
- flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =(37.*(q_i +q_im1) -8.*(q_ip1 +q_im2) &
- +(q_ip2 +q_im3))/60.0
-
- g_flux5(q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua) =g_flux6(q_im3,g_q_im3,q_im2, &
- g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,q_ip2,g_q_ip2,ua, &
- g_ua) -(sign(1, time_step) *sign(1., ua)*((g_q_ip2 -g_q_im3) -5.*( &
- g_q_ip1 -g_q_im2) +10.*(g_q_i -g_q_im1))/60.0)
- flux5(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2, &
- ua) -sign(1, time_step) *sign(1., ua)*((q_ip2 -q_im3) -5.*(q_ip1 -q_im2) &
- +10.*(q_i -q_im1))/60.0
-
- LOGICAL :: specified
-
- specified =.false.
-
- if(config_flags%specified .or. config_flags%nested) specified =.true.
-
- horz_order =config_flags%h_mom_adv_order
-
- vert_order =config_flags%v_mom_adv_order
-
- ktf =min(kte,kde-1)
-
- IF( horz_order == 6 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye =.false.
-
- i_start =its
-
- i_end =ite
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-1,ite)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =max(jts,jds+1)
-
- j_start_f =jds+3
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte,jde-2)
-
- j_end_f =jde-3
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux6(u(i,k,j-3),g_u(i,k,j-3),u(i,k,j-2),g_u(i,k,j-2) &
-,u(i,k,j-1),g_u(i,k,j-1),u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1) &
-,u(i,k,j+2),g_u(i,k,j+2),vel,g_vel)
- FuncVal1 =flux6(u(i,k,j-3),u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),u(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(g_u(i,k,j) +g_u(i,k,j-1)) &
- +0.25*(g_rv(i,k,j) +g_rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i,k,j-2),g_u(i,k,j-2),u(i,k,j-1),g_u(i,k,j-1) &
-,u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(g_u(i,k,j) +g_u(i,k,j-1)) &
- +0.25*(g_rv(i,k,j) +g_rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i,k,j-2),g_u(i,k,j-2),u(i,k,j-1),g_u(i,k,j-1) &
-,u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- END IF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF(j > j_start) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- ENDIF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
-
- i_start =its
-
- i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its)
-
- i_start_f =ids+3
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-1,ite)
-
- i_end_f =ide-2
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux6(u(i-3,k,j),g_u(i-3,k,j),u(i-2,k,j),g_u(i-2,k,j) &
-,u(i-1,k,j),g_u(i-1,k,j),u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j) &
-,u(i+2,k,j),g_u(i+2,k,j),vel,g_vel)
- FuncVal1 =flux6(u(i-3,k,j),u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),u(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- IF( i_start == ids+1 ) THEN
-
- i =ids+1
-
- DO k =kts,ktf
-
- g_ub =g_u(i-1,k,j)
- ub =u(i-1,k,j)
-
- IF(specified .AND. u(i,k,j) .LT. 0.) g_ub =g_u(i,k,j)
- IF(specified .AND. u(i,k,j) .LT. 0.) ub =u(i,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i,k,j) +g_ub) +0.25*(g_ru(i, &
- k,j) +g_ru(i-1,k,j))*(u(i,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- END IF
-
- i =ids+2
-
- DO k =kts,ktf
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i-2,k,j),g_u(i-2,k,j),u(i-1,k,j),g_u(i-1,k,j) &
-,u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- IF( i_end == ide-1 ) THEN
-
- i =ide
-
- DO k =kts,ktf
-
- g_ub =g_u(i,k,j)
- ub =u(i,k,j)
-
- IF(specified .AND. u(i-1,k,j) .GT. 0.) g_ub =g_u(i-1,k,j)
- IF(specified .AND. u(i-1,k,j) .GT. 0.) ub =u(i-1,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i-1,k,j) +g_ub) +0.25*(g_ru( &
- i,k,j) +g_ru(i-1,k,j))*(u(i-1,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i-1,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- DO k =kts,ktf
-
- i =ide-1
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i-2,k,j),g_u(i-2,k,j),u(i-1,k,j),g_u(i-1,k,j) &
-,u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msfux(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF( horz_order == 5 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye =.false.
-
- i_start =its
-
- i_end =ite
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-1,ite)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =max(jts,jds+1)
-
- j_start_f =jds+3
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte,jde-2)
-
- j_end_f =jde-3
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux5(u(i,k,j-3),g_u(i,k,j-3),u(i,k,j-2),g_u(i,k,j-2) &
-,u(i,k,j-1),g_u(i,k,j-1),u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1) &
-,u(i,k,j+2),g_u(i,k,j+2),vel,g_vel)
- FuncVal1 =flux5(u(i,k,j-3),u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),u(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(g_u(i,k,j) +g_u(i,k,j-1)) &
- +0.25*(g_rv(i,k,j) +g_rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i,k,j-2),g_u(i,k,j-2),u(i,k,j-1),g_u(i,k,j-1) &
-,u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(g_u(i,k,j) +g_u(i,k,j-1)) &
- +0.25*(g_rv(i,k,j) +g_rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i,k,j-2),g_u(i,k,j-2),u(i,k,j-1),g_u(i,k,j-1) &
-,u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- END IF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF(j > j_start) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- ENDIF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
-
- i_start =its
-
- i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its)
-
- i_start_f =ids+3
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-1,ite)
-
- i_end_f =ide-2
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux5(u(i-3,k,j),g_u(i-3,k,j),u(i-2,k,j),g_u(i-2,k,j) &
-,u(i-1,k,j),g_u(i-1,k,j),u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j) &
-,u(i+2,k,j),g_u(i+2,k,j),vel,g_vel)
- FuncVal1 =flux5(u(i-3,k,j),u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),u(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- IF( i_start == ids+1 ) THEN
-
- i =ids+1
-
- DO k =kts,ktf
-
- g_ub =g_u(i-1,k,j)
- ub =u(i-1,k,j)
-
- IF(specified .AND. u(i,k,j) .LT. 0.) g_ub =g_u(i,k,j)
- IF(specified .AND. u(i,k,j) .LT. 0.) ub =u(i,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i,k,j) +g_ub) +0.25*(g_ru(i, &
- k,j) +g_ru(i-1,k,j))*(u(i,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- END IF
-
- i =ids+2
-
- DO k =kts,ktf
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i-2,k,j),g_u(i-2,k,j),u(i-1,k,j),g_u(i-1,k,j) &
-,u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- IF( i_end == ide-1 ) THEN
-
- i =ide
-
- DO k =kts,ktf
-
- g_ub =g_u(i,k,j)
- ub =u(i,k,j)
-
- IF(specified .AND. u(i-1,k,j) .GT. 0.) g_ub =g_u(i-1,k,j)
- IF(specified .AND. u(i-1,k,j) .GT. 0.) ub =u(i-1,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i-1,k,j) +g_ub) +0.25*(g_ru( &
- i,k,j) +g_ru(i-1,k,j))*(u(i-1,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i-1,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- DO k =kts,ktf
-
- i =ide-1
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i-2,k,j),g_u(i-2,k,j),u(i-1,k,j),g_u(i-1,k,j) &
-,u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msfux(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF( horz_order == 4 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+2)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-1)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+2)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-3)                ) degrade_ye =.false.
-
- i_start =its
-
- i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =ids+1
-
- i_start_f =i_start+1
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =ide-1
-
- i_end_f =ide-1
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i-2,k,j),g_u(i-2,k,j),u(i-1,k,j),g_u(i-1,k,j) &
-,u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- i =i_start
-
- DO k =kts,ktf
-
- g_ub =g_u(i-1,k,j)
- ub =u(i-1,k,j)
-
- IF(specified .AND. u(i,k,j) .LT. 0.) g_ub =g_u(i,k,j)
- IF(specified .AND. u(i,k,j) .LT. 0.) ub =u(i,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i,k,j) +g_ub) +0.25*(g_ru(i, &
- k,j) +g_ru(i-1,k,j))*(u(i,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- i =i_end+1
-
- DO k =kts,ktf
-
- g_ub =g_u(i,k,j)
- ub =u(i,k,j)
-
- IF(specified .AND. u(i-1,k,j) .GT. 0.) g_ub =g_u(i-1,k,j)
- IF(specified .AND. u(i-1,k,j) .GT. 0.) ub =u(i-1,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i-1,k,j) +g_ub) +0.25*(g_ru( &
- i,k,j) +g_ru(i-1,k,j))*(u(i-1,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i-1,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msfux(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
-
- i_start =its
-
- i_end =ite
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-1,ite)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =jds+1
-
- j_start_f =j_start+1
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =jde-2
-
- j_end_f =jde-2
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF( (j < j_start_f) .and. degrade_ys) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j_start) +rv(i-1,k,j_start))*(g_u(i,k,j_start) &
- +g_u(i,k,j_start-1)) +0.25*(g_rv(i,k,j_start) +g_rv(i-1,k,j_start)) &
-*(u(i,k,j_start) +u(i,k,j_start-1)) 
- Tmpv1 =0.25*(rv(i,k,j_start) +rv(i-1,k,j_start))*(u(i,k,j_start) +u(i,k,j_start-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- ELSE IF((j > j_end_f) .and. degrade_ye) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(g_u(i,k,j) +g_u(i,k,j-1)) &
- +0.25*(g_rv(i,k,j) +g_rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- ELSE
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i,k,j-2),g_u(i,k,j-2),u(i,k,j-1),g_u(i,k,j-1) &
-,u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- END IF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF(j > j_start) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- END IF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
- ELSE IF( horz_order == 3 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+2)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-1)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+2)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-3)                ) degrade_ye =.false.
-
- i_start =its
-
- i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =ids+1
-
- i_start_f =i_start+1
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =ide-1
-
- i_end_f =ide-1
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =0.5*(g_ru(i,k,j) +g_ru(i-1,k,j))
- vel =0.5*(ru(i,k,j) +ru(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i-2,k,j),g_u(i-2,k,j),u(i-1,k,j),g_u(i-1,k,j) &
-,u(i,k,j),g_u(i,k,j),u(i+1,k,j),g_u(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(u(i-2,k,j),u(i-1,k,j),u(i,k,j),u(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- i =i_start
-
- DO k =kts,ktf
-
- g_ub =g_u(i-1,k,j)
- ub =u(i-1,k,j)
-
- IF(specified .AND. u(i,k,j) .LT. 0.) g_ub =g_u(i,k,j)
- IF(specified .AND. u(i,k,j) .LT. 0.) ub =u(i,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i,k,j) +g_ub) +0.25*(g_ru(i, &
- k,j) +g_ru(i-1,k,j))*(u(i,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- i =i_end+1
-
- DO k =kts,ktf
-
- g_ub =g_u(i,k,j)
- ub =u(i,k,j)
-
- IF(specified .AND. u(i-1,k,j) .GT. 0.) g_ub =g_u(i-1,k,j)
- IF(specified .AND. u(i-1,k,j) .GT. 0.) ub =u(i-1,k,j)
-
- g_Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(g_u(i-1,k,j) +g_ub) +0.25*(g_ru( &
- i,k,j) +g_ru(i-1,k,j))*(u(i-1,k,j) +ub) 
- Tmpv1 =0.25*(ru(i,k,j) +ru(i-1,k,j))*(u(i-1,k,j) +ub)
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDIF
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msfux(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
-
- i_start =its
-
- i_end =ite
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-1,ite)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =jds+1
-
- j_start_f =j_start+1
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =jde-2
-
- j_end_f =jde-2
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF( (j < j_start_f) .and. degrade_ys) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j_start) +rv(i-1,k,j_start))*(g_u(i,k,j_start) &
- +g_u(i,k,j_start-1)) +0.25*(g_rv(i,k,j_start) +g_rv(i-1,k,j_start)) &
-*(u(i,k,j_start) +u(i,k,j_start-1)) 
- Tmpv1 =0.25*(rv(i,k,j_start) +rv(i-1,k,j_start))*(u(i,k,j_start) +u(i,k,j_start-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- ELSE IF((j > j_end_f) .and. degrade_ye) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(g_u(i,k,j) +g_u(i,k,j-1)) &
- +0.25*(g_rv(i,k,j) +g_rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv1 =0.25*(rv(i,k,j) +rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- ELSE
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rv(i,k,j) +g_rv(i-1,k,j))
- vel =0.5*(rv(i,k,j) +rv(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i,k,j-2),g_u(i,k,j-2),u(i,k,j-1),g_u(i,k,j-1) &
-,u(i,k,j),g_u(i,k,j),u(i,k,j+1),g_u(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(u(i,k,j-2),u(i,k,j-1),u(i,k,j),u(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
- END IF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF(j > j_start) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- END IF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
- ELSE IF( horz_order == 2 ) THEN
-
- i_start =its
-
- i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( config_flags%open_xs ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe ) i_end =min(ide-1,ite)
-
- IF( specified ) i_start =max(ids+2,its)
-
- IF( specified ) i_end =min(ide-2,ite)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =ite
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msfux(i,j) *rdx
-
- g_Tmpv1 =(ru(i+1,k,j) +ru(i,k,j))*(g_u(i+1,k,j) +g_u(i,k,j)) +(g_ru(i+1, &
- k,j) +g_ru(i,k,j))*(u(i+1,k,j) +u(i,k,j)) 
- Tmpv1 =(ru(i+1,k,j) +ru(i,k,j))*(u(i+1,k,j) +u(i,k,j))
-
- g_Tmpv2 =(ru(i,k,j) +ru(i-1,k,j))*(g_u(i,k,j) +g_u(i-1,k,j)) +(g_ru(i,k, &
- j) +g_ru(i-1,k,j))*(u(i,k,j) +u(i-1,k,j)) 
- Tmpv2 =(ru(i,k,j) +ru(i-1,k,j))*(u(i,k,j) +u(i-1,k,j))
-
- g_Tmpv3 =mrdx*0.25*(g_Tmpv1 -g_Tmpv2) +g_mrdx*0.25*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdx*0.25*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDDO
- ENDDO
- ENDDO
-
- IF( specified .AND. its .LE. ids+1 .AND. .NOT. config_flags%periodic_x ) THEN
-
- DO j =j_start,j_end
- DO k =kts,ktf
-
- i =ids+1
-
- g_mrdx =0.0
- mrdx =msfux(i,j) *rdx
-
- g_ub =g_u(i-1,k,j)
- ub =u(i-1,k,j)
-
- IF(u(i,k,j) .LT. 0.) g_ub =g_u(i,k,j)
- IF(u(i,k,j) .LT. 0.) ub =u(i,k,j)
-
- g_Tmpv1 =(ru(i+1,k,j) +ru(i,k,j))*(g_u(i+1,k,j) +g_u(i,k,j)) +(g_ru(i+1, &
- k,j) +g_ru(i,k,j))*(u(i+1,k,j) +u(i,k,j)) 
- Tmpv1 =(ru(i+1,k,j) +ru(i,k,j))*(u(i+1,k,j) +u(i,k,j))
-
- g_Tmpv2 =(ru(i,k,j) +ru(i-1,k,j))*(g_u(i,k,j) +g_ub) +(g_ru(i,k,j) &
- +g_ru(i-1,k,j))*(u(i,k,j) +ub) 
- Tmpv2 =(ru(i,k,j) +ru(i-1,k,j))*(u(i,k,j) +ub)
-
- g_Tmpv3 =mrdx*0.25*(g_Tmpv1 -g_Tmpv2) +g_mrdx*0.25*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdx*0.25*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDDO
- ENDDO
- ENDIF
-
- IF( specified .AND. ite .GE. ide-1 .AND. .NOT. config_flags%periodic_x ) THEN
-
- DO j =j_start,j_end
- DO k =kts,ktf
-
- i =ide-1
-
- g_mrdx =0.0
- mrdx =msfux(i,j) *rdx
-
- g_ub =g_u(i+1,k,j)
- ub =u(i+1,k,j)
-
- IF(u(i,k,j) .GT. 0.) g_ub =g_u(i,k,j)
- IF(u(i,k,j) .GT. 0.) ub =u(i,k,j)
-
- g_Tmpv1 =(ru(i+1,k,j) +ru(i,k,j))*(g_ub +g_u(i,k,j)) +(g_ru(i+1,k,j) &
- +g_ru(i,k,j))*(ub +u(i,k,j)) 
- Tmpv1 =(ru(i+1,k,j) +ru(i,k,j))*(ub +u(i,k,j))
-
- g_Tmpv2 =(ru(i,k,j) +ru(i-1,k,j))*(g_u(i,k,j) +g_u(i-1,k,j)) +(g_ru(i,k, &
- j) +g_ru(i-1,k,j))*(u(i,k,j) +u(i-1,k,j)) 
- Tmpv2 =(ru(i,k,j) +ru(i-1,k,j))*(u(i,k,j) +u(i-1,k,j))
-
- g_Tmpv3 =mrdx*0.25*(g_Tmpv1 -g_Tmpv2) +g_mrdx*0.25*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdx*0.25*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDDO
- ENDDO
- ENDIF
-
- IF( config_flags%open_ys .or. specified ) j_start =max(jds+1,jts)
-
- IF( config_flags%open_ye .or. specified ) j_end =min(jde-2,jte)
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,j) *rdy
-
- IF( (config_flags%polar) .AND. (j == jds) ) THEN
-
- g_Tmpv1 =mrdy*0.25*(g_rv(i,k,j+1) +g_rv(i-1,k,j+1)) +g_mrdy*0.25*(rv(i, &
- k,j+1) +rv(i-1,k,j+1)) 
- Tmpv1 =mrdy*0.25*(rv(i,k,j+1) +rv(i-1,k,j+1))
-
- g_Tmpv2 =Tmpv1*(g_u(i,k,j+1) +g_u(i,k,j)) +g_Tmpv1*(u(i,k,j+1) +u(i,k,j)) 
- Tmpv2 =Tmpv1*(u(i,k,j+1) +u(i,k,j))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv2
- tendency(i,k,j) =tendency(i,k,j) -Tmpv2
-
- ELSE IF( (config_flags%polar) .AND. (j == jde-1) ) THEN
-
- g_Tmpv1 =mrdy*0.25*(g_rv(i,k,j) +g_rv(i-1,k,j)) +g_mrdy*0.25*(rv(i,k,j) &
- +rv(i-1,k,j)) 
- Tmpv1 =mrdy*0.25*(rv(i,k,j) +rv(i-1,k,j))
-
- g_Tmpv2 =Tmpv1*(g_u(i,k,j) +g_u(i,k,j-1)) +g_Tmpv1*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv2 =Tmpv1*(u(i,k,j) +u(i,k,j-1))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +g_Tmpv2
- tendency(i,k,j) =tendency(i,k,j) +Tmpv2
-
- ELSE
-
- g_Tmpv1 =(rv(i,k,j+1) +rv(i-1,k,j+1))*(g_u(i,k,j+1) +g_u(i,k,j)) &
- +(g_rv(i,k,j+1) +g_rv(i-1,k,j+1))*(u(i,k,j+1) +u(i,k,j)) 
- Tmpv1 =(rv(i,k,j+1) +rv(i-1,k,j+1))*(u(i,k,j+1) +u(i,k,j))
-
- g_Tmpv2 =(rv(i,k,j) +rv(i-1,k,j))*(g_u(i,k,j) +g_u(i,k,j-1)) +(g_rv(i,k, &
- j) +g_rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1)) 
- Tmpv2 =(rv(i,k,j) +rv(i-1,k,j))*(u(i,k,j) +u(i,k,j-1))
-
- g_Tmpv3 =mrdy*0.25*(g_Tmpv1 -g_Tmpv2) +g_mrdy*0.25*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdy*0.25*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDIF
- ENDDO
- ENDDO
- ENDDO
- ELSE IF( horz_order == 0 ) THEN
-
- ELSE
-
- WRITE (wrf_err_message,*) 'module_advect: advect_u_6a:  h_order not known ',horz_order
-
-!REVISED BY WALLS
- CALL wrf_error_fatal(Trim(wrf_err_message))
- ENDIF
-
- IF( (config_flags%open_xs) .and. its == ids ) THEN
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- DO j =j_start,j_end
- DO k =kts,ktf
-
- g_ub =(g_ru(its,k,j) -cb*g_mut(its,j) +0.0 -(g_ru(its,k,j) -cb*g_mut( &
- its,j) -0.0)*sign(1.0, ru(its,k,j) -cb*mut(its,j) -(0.)))*0.5
- ub =min(ru(its,k,j) -cb*mut(its,j),0.)
-
- g_Tmpv1 =rdx*ub*(g_u_old(its+1,k,j) -g_u_old(its,k,j)) +rdx*g_ub*(u_old( &
- its+1,k,j) -u_old(its,k,j)) 
- Tmpv1 =rdx*ub*(u_old(its+1,k,j) -u_old(its,k,j))
-
- g_tendency(its,k,j) =g_tendency(its,k,j) -g_Tmpv1
- tendency(its,k,j) =tendency(its,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDIF
-
- IF( (config_flags%open_xe) .and. ite == ide ) THEN
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- DO j =j_start,j_end
- DO k =kts,ktf
-
- g_ub =(g_ru(ite,k,j) +cb*g_mut(ite-1,j) +0.0 +(g_ru(ite,k,j) &
- +cb*g_mut(ite-1,j) -0.0)*sign(1.0, ru(ite,k,j) +cb*mut(ite-1,j) -(0.)))*0.5
- ub =max(ru(ite,k,j) +cb*mut(ite-1,j),0.)
-
- g_Tmpv1 =rdx*ub*(g_u_old(ite,k,j) -g_u_old(ite-1,k,j)) +rdx*g_ub*(u_old( &
- ite,k,j) -u_old(ite-1,k,j)) 
- Tmpv1 =rdx*ub*(u_old(ite,k,j) -u_old(ite-1,k,j))
-
- g_tendency(ite,k,j) =g_tendency(ite,k,j) -g_Tmpv1
- tendency(ite,k,j) =tendency(ite,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDIF
-
- i_start =its
-
- i_end =min(ite,ide)
-
- imin =ids
-
- imax =ide-1
-
- IF(config_flags%open_xs) THEN
-
- i_start =max(ids+1,its)
-
- imin =ids
- ENDIF
-
- IF(config_flags%open_xe) THEN
-
- i_end =min(ite,ide-1)
-
- imax =ide-1
- ENDIF
-
- IF( (config_flags%open_ys) .and. (jts == jds)) THEN
-
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,jts) *rdy
-
- ip =min(imax,i)
-
- im =max(imin,i-1)
-
- DO k =kts,ktf
-
- g_vw =0.5*(g_rv(ip,k,jts) +g_rv(im,k,jts))
- vw =0.5*(rv(ip,k,jts) +rv(im,k,jts))
-
- g_vb =(g_vw +0.0 -(g_vw -0.0)*sign(1.0, vw -(0.)))*0.5
- vb =min(vw,0.)
-
- g_dvm =g_rv(ip,k,jts+1) -g_rv(ip,k,jts)
- dvm =rv(ip,k,jts+1) -rv(ip,k,jts)
-
- g_dvp =g_rv(im,k,jts+1) -g_rv(im,k,jts)
- dvp =rv(im,k,jts+1) -rv(im,k,jts)
-
- g_Tmpv1 =vb*(g_u_old(i,k,jts+1) -g_u_old(i,k,jts)) +g_vb*(u_old(i,k,jts+ &
- 1) -u_old(i,k,jts)) 
- Tmpv1 =vb*(u_old(i,k,jts+1) -u_old(i,k,jts))
-
- g_Tmpv2 =0.5*u(i,k,jts)*(g_dvm +g_dvp) +0.5*g_u(i,k,jts)*(dvm +dvp) 
- Tmpv2 =0.5*u(i,k,jts)*(dvm +dvp)
-
- g_Tmpv3 =mrdy*(g_Tmpv1 +g_Tmpv2) +g_mrdy*(Tmpv1 +Tmpv2) 
- Tmpv3 =mrdy*(Tmpv1 +Tmpv2)
-
- g_tendency(i,k,jts) =g_tendency(i,k,jts) -g_Tmpv3
- tendency(i,k,jts) =tendency(i,k,jts) -Tmpv3
-
- ENDDO
- ENDDO
- ENDIF
-
- IF( (config_flags%open_ye) .and. (jte == jde)) THEN
-
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msfux(i,jte-1) *rdy
-
- ip =min(imax,i)
-
- im =max(imin,i-1)
-
- DO k =kts,ktf
-
- g_vw =0.5*(g_rv(ip,k,jte) +g_rv(im,k,jte))
- vw =0.5*(rv(ip,k,jte) +rv(im,k,jte))
-
- g_vb =(g_vw +0.0 +(g_vw -0.0)*sign(1.0, vw -(0.)))*0.5
- vb =max(vw,0.)
-
- g_dvm =g_rv(ip,k,jte) -g_rv(ip,k,jte-1)
- dvm =rv(ip,k,jte) -rv(ip,k,jte-1)
-
- g_dvp =g_rv(im,k,jte) -g_rv(im,k,jte-1)
- dvp =rv(im,k,jte) -rv(im,k,jte-1)
-
- g_Tmpv1 =vb*(g_u_old(i,k,jte-1) -g_u_old(i,k,jte-2)) +g_vb*(u_old(i,k, &
- jte-1) -u_old(i,k,jte-2)) 
- Tmpv1 =vb*(u_old(i,k,jte-1) -u_old(i,k,jte-2))
-
- g_Tmpv2 =0.5*u(i,k,jte-1)*(g_dvm +g_dvp) +0.5*g_u(i,k,jte-1)*(dvm +dvp) 
- Tmpv2 =0.5*u(i,k,jte-1)*(dvm +dvp)
-
- g_Tmpv3 =mrdy*(g_Tmpv1 +g_Tmpv2) +g_mrdy*(Tmpv1 +Tmpv2) 
- Tmpv3 =mrdy*(Tmpv1 +Tmpv2)
-
- g_tendency(i,k,jte-1) =g_tendency(i,k,jte-1) -g_Tmpv3
- tendency(i,k,jte-1) =tendency(i,k,jte-1) -Tmpv3
-
- ENDDO
- ENDDO
- ENDIF
-
- i_start =its
-
- i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( config_flags%open_ys .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_ye .or. specified ) i_end =min(ide-1,ite)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =ite
-
- DO i =i_start,i_end
-
- g_vflux(i,kts) =0.0
- vflux(i,kts) =0.
-
- g_vflux(i,kte) =0.0
- vflux(i,kte) =0.
-
- ENDDO
-
- IF(vert_order == 6) THEN
-
- DO j =j_start,j_end
- DO k =kts+3,ktf-2
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i-1,k,j) +g_rom(i,k,j))
- vel =0.5*(rom(i-1,k,j) +rom(i,k,j))
-
- g_FuncVal1=g_flux6(u(i,k-3,j),g_u(i,k-3,j),u(i,k-2,j),g_u(i,k-2,j) &
-,u(i,k-1,j),g_u(i,k-1,j),u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j) &
-,u(i,k+2,j),g_u(i,k+2,j),-vel,-g_vel)
- FuncVal1 =flux6(u(i,k-3,j),u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),u(i,k+2,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =kts+2
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))
- vel =0.5*(rom(i,k,j) +rom(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i,k-2,j),g_u(i,k-2,j),u(i,k-1,j),g_u(i,k-1,j) &
-,u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux4(u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf-1
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))
- vel =0.5*(rom(i,k,j) +rom(i-1,k,j))
-
- g_FuncVal1=g_flux4(u(i,k-2,j),g_u(i,k-2,j),u(i,k-1,j),g_u(i,k-1,j) &
-,u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux4(u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzw(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzw(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(vert_order == 5) THEN
-
- DO j =j_start,j_end
- DO k =kts+3,ktf-2
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i-1,k,j) +g_rom(i,k,j))
- vel =0.5*(rom(i-1,k,j) +rom(i,k,j))
-
- g_FuncVal1=g_flux5(u(i,k-3,j),g_u(i,k-3,j),u(i,k-2,j),g_u(i,k-2,j) &
-,u(i,k-1,j),g_u(i,k-1,j),u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j) &
-,u(i,k+2,j),g_u(i,k+2,j),-vel,-g_vel)
- FuncVal1 =flux5(u(i,k-3,j),u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),u(i,k+2,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =kts+2
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))
- vel =0.5*(rom(i,k,j) +rom(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i,k-2,j),g_u(i,k-2,j),u(i,k-1,j),g_u(i,k-1,j) &
-,u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux3(u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf-1
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))
- vel =0.5*(rom(i,k,j) +rom(i-1,k,j))
-
- g_FuncVal1=g_flux3(u(i,k-2,j),g_u(i,k-2,j),u(i,k-1,j),g_u(i,k-1,j) &
-,u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux3(u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzw(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzw(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(vert_order == 4) THEN
-
- DO j =j_start,j_end
- DO k =kts+2,ktf-1
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i-1,k,j) +g_rom(i,k,j))
- vel =0.5*(rom(i-1,k,j) +rom(i,k,j))
-
- g_FuncVal1=g_flux4(u(i,k-2,j),g_u(i,k-2,j),u(i,k-1,j),g_u(i,k-1,j) &
-,u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux4(u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzw(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzw(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(vert_order == 3) THEN
-
- DO j =j_start,j_end
- DO k =kts+2,ktf-1
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i-1,k,j) +g_rom(i,k,j))
- vel =0.5*(rom(i-1,k,j) +rom(i,k,j))
-
- g_FuncVal1=g_flux3(u(i,k-2,j),g_u(i,k-2,j),u(i,k-1,j),g_u(i,k-1,j) &
-,u(i,k,j),g_u(i,k,j),u(i,k+1,j),g_u(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux3(u(i,k-2,j),u(i,k-1,j),u(i,k,j),u(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzw(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzw(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(vert_order == 2) THEN
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*g_u(i,k,j) +fzp(k) &
-*g_u(i,k-1,j)) +0.5*(g_rom(i,k,j) +g_rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k) &
-*u(i,k-1,j)) 
- Tmpv1 =0.5*(rom(i,k,j) +rom(i-1,k,j))*(fzm(k)*u(i,k,j) +fzp(k)*u(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzw(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzw(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
- ENDDO
- ELSE
-
- WRITE (wrf_err_message,*) 'module_advect: advect_u_6a: v_order not known ',vert_order
-
- CALL wrf_error_fatal(Trim(wrf_err_message))
- ENDIF
-
- END SUBROUTINE g_advect_u
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of advect_u in forward (tangent) mode:
+!   variations   of useful results: tendency
+!   with respect to varying inputs: rom u tendency u_old ru rv
+!                mut
+!   RW status of diff variables: rom:in u:in tendency:in-out u_old:in
+!                ru:in rv:in mut:in
+SUBROUTINE G_ADVECT_U(u, ud, u_old, u_oldd, tendency, tendencyd, ru, rud&
+&  , rv, rvd, rom, romd, mut, mutd, time_step, config_flags, msfux, msfuy&
+&  , msfvx, msfvy, msftx, msfty, fzm, fzp, rdx, rdy, rdzw, ids, ide, jds&
+&  , jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts&
+&  , kte)
+  IMPLICIT NONE
+! Input data
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: u, u_old, ru&
+&  , rv, rom
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ud, u_oldd, &
+&  rud, rvd, romd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mut
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mutd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendencyd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: msfux, msfuy, msfvx, &
+&  msfvy, msftx, msfty
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp, rdzw
+  REAL, INTENT(IN) :: rdx, rdy
+  INTEGER, INTENT(IN) :: time_step
+! Local data
+  INTEGER :: i, j, k, itf, jtf, ktf
+  INTEGER :: i_start, i_end, j_start, j_end
+  INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
+  INTEGER :: jmin, jmax, jp, jm, imin, imax, im, ip
+  INTEGER :: jp1, jp0, jtmp
+  INTEGER :: horz_order, vert_order
+  REAL :: mrdx, mrdy, ub, vb, uw, vw, dvm, dvp
+  REAL :: ubd, vbd, vwd, dvmd, dvpd
+  REAL, DIMENSION(its:ite, kts:kte) :: vflux
+  REAL, DIMENSION(its:ite, kts:kte) :: vfluxd
+  REAL, DIMENSION(its - 1:ite + 1, kts:kte) :: fqx
+  REAL, DIMENSION(its-1:ite+1, kts:kte) :: fqxd
+  REAL, DIMENSION(its:ite, kts:kte, 2) :: fqy
+  REAL, DIMENSION(its:ite, kts:kte, 2) :: fqyd
+  LOGICAL :: degrade_xs, degrade_ys
+  LOGICAL :: degrade_xe, degrade_ye
+! definition of flux operators, 3rd, 4th, 5th or 6th order
+  REAL :: flux3, flux4, flux5, flux6
+  REAL :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
+  REAL :: veld
+  LOGICAL :: specified
+
+
+  specified = .false.
+  IF (config_flags%specified .OR. config_flags%nested) specified = &
+&      .true.
+!  set order for vertical and horzontal flux operators
+  horz_order = config_flags%h_mom_adv_order
+  vert_order = config_flags%v_mom_adv_order
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+!  begin with horizontal flux divergence
+  IF (horz_order .EQ. 6) THEN
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+!--------------- y - advection first
+    i_start = its
+    i_end = ite
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 3
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+!  compute fluxes, 5th or 6th order
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+j_loop_y_flux_6:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*(37.*(u(i, k, j)+u(i, k, j-1))-8.*(u(&
+&              i, k, j+1)+u(i, k, j-2))+(u(i, k, j+2)+u(i, k, j-3)))/60.0&
+&              + vel*(37.*(ud(i, k, j)+ud(i, k, j-1))-8.*(ud(i, k, j+1)+&
+&              ud(i, k, j-2))+ud(i, k, j+2)+ud(i, k, j-3))/60.0
+            fqy(i, k, jp1) = vel*((37.*(u(i, k, j)+u(i, k, j-1))-8.*(u(i&
+&              , k, j+1)+u(i, k, j-2))+(u(i, k, j+2)+u(i, k, j-3)))/60.0)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+!  we must be close to some boundary where we need to reduce the order of the stencil
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j)+rvd(i-1, k, j))*(u(i, &
+&              k, j)+u(i, k, j-1))+(rv(i, k, j)+rv(i-1, k, j))*(ud(i, k, &
+&              j)+ud(i, k, j-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j)+rv(i-1, k, j))*(u(i, k, j&
+&              )+u(i, k, j-1))
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*(7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i, k&
+&              , j-1))-ud(i, k, j+1)-ud(i, k, j-2))/12.0
+            fqy(i, k, jp1) = vel*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j)+rvd(i-1, k, j))*(u(i, &
+&              k, j)+u(i, k, j-1))+(rv(i, k, j)+rv(i-1, k, j))*(ud(i, k, &
+&              j)+ud(i, k, j-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j)+rv(i-1, k, j))*(u(i, k, j&
+&              )+u(i, k, j-1))
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd order flux 2 in from north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*(7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i, k&
+&              , j-1))-ud(i, k, j+1)-ud(i, k, j-2))/12.0
+            fqy(i, k, jp1) = vel*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0)
+          END DO
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! (j > j_start) will miss the u(,,jds) tendency
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+! This would be seen by (j > j_start) but we need to zero out the NP tendency
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO j_loop_y_flux_6
+!  next, x - flux divergence
+    i_start = its
+    i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = ids + 3
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+      i_end_f = ide - 2
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  5th or 6th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*(37.*(u(i, k, j)+u(i-1, k, j))-8.*(u(i+1, k&
+&            , j)+u(i-2, k, j))+(u(i+2, k, j)+u(i-3, k, j)))/60.0 + vel*(&
+&            37.*(ud(i, k, j)+ud(i-1, k, j))-8.*(ud(i+1, k, j)+ud(i-2, k&
+&            , j))+ud(i+2, k, j)+ud(i-3, k, j))/60.0
+          fqx(i, k) = vel*((37.*(u(i, k, j)+u(i-1, k, j))-8.*(u(i+1, k, &
+&            j)+u(i-2, k, j))+(u(i+2, k, j)+u(i-3, k, j)))/60.0)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+!  specified uses upstream normal wind at boundaries
+      IF (degrade_xs) THEN
+        IF (i_start .EQ. ids + 1) THEN
+! second order flux next to the boundary
+          i = ids + 1
+          DO k=kts,ktf
+            ubd = ud(i-1, k, j)
+            ub = u(i-1, k, j)
+            IF (specified .AND. u(i, k, j) .LT. 0.) THEN
+              ubd = ud(i, k, j)
+              ub = u(i, k, j)
+            END IF
+            fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i, k, j)&
+&              +ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i, k, j)+ubd))
+            fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i, k, j)+ub)
+          END DO
+        END IF
+        i = ids + 2
+        DO k=kts,ktf
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*(7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+&
+&            u(i-2, k, j)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i-1, k, j))-ud&
+&            (i+1, k, j)-ud(i-2, k, j))/12.0
+          fqx(i, k) = vel*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+u&
+&            (i-2, k, j)))/12.0)
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        IF (i_end .EQ. ide - 1) THEN
+! second order flux next to the boundary
+          i = ide
+          DO k=kts,ktf
+            ubd = ud(i, k, j)
+            ub = u(i, k, j)
+            IF (specified .AND. u(i-1, k, j) .GT. 0.) THEN
+              ubd = ud(i-1, k, j)
+              ub = u(i-1, k, j)
+            END IF
+            fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i-1, k, &
+&              j)+ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i-1, k, j)+ubd))
+            fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i-1, k, j)+&
+&              ub)
+          END DO
+        END IF
+        DO k=kts,ktf
+          i = ide - 1
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*(7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+&
+&            u(i-2, k, j)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i-1, k, j))-ud&
+&            (i+1, k, j)-ud(i-2, k, j))/12.0
+          fqx(i, k) = vel*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+u&
+&            (i-2, k, j)))/12.0)
+        END DO
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! ADT eqn 44, 1st term on RHS
+          mrdx = msfux(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (horz_order .EQ. 5) THEN
+!  5th order horizontal flux calculation
+!  This code is EXACTLY the same as the 6th order code
+!  EXCEPT the 5th order and 3rd operators are used in
+!  place of the 6th and 4th order operators
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+!--------------- y - advection first
+    i_start = its
+    i_end = ite
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 3
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+!  compute fluxes, 5th or 6th order
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+j_loop_y_flux_5:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*((37.*(u(i, k, j)+u(i, k, j-1))-8.*(u&
+&              (i, k, j+1)+u(i, k, j-2))+(u(i, k, j+2)+u(i, k, j-3)))/&
+&              60.0-SIGN(1, time_step)*SIGN(1., vel)*(u(i, k, j+2)-u(i, k&
+&              , j-3)-5.*(u(i, k, j+1)-u(i, k, j-2))+10.*(u(i, k, j)-u(i&
+&              , k, j-1)))/60.0) + vel*((37.*(ud(i, k, j)+ud(i, k, j-1))-&
+&              8.*(ud(i, k, j+1)+ud(i, k, j-2))+ud(i, k, j+2)+ud(i, k, j-&
+&              3))/60.0-SIGN(1, time_step)*SIGN(1., vel)*(ud(i, k, j+2)-&
+&              ud(i, k, j-3)-5.*(ud(i, k, j+1)-ud(i, k, j-2))+10.*(ud(i, &
+&              k, j)-ud(i, k, j-1)))/60.0)
+            fqy(i, k, jp1) = vel*((37.*(u(i, k, j)+u(i, k, j-1))-8.*(u(i&
+&              , k, j+1)+u(i, k, j-2))+(u(i, k, j+2)+u(i, k, j-3)))/60.0-&
+&              SIGN(1, time_step)*SIGN(1., vel)*(u(i, k, j+2)-u(i, k, j-3&
+&              )-5.*(u(i, k, j+1)-u(i, k, j-2))+10.*(u(i, k, j)-u(i, k, j&
+&              -1)))/60.0)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+!  we must be close to some boundary where we need to reduce the order of the stencil
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j)+rvd(i-1, k, j))*(u(i, &
+&              k, j)+u(i, k, j-1))+(rv(i, k, j)+rv(i-1, k, j))*(ud(i, k, &
+&              j)+ud(i, k, j-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j)+rv(i-1, k, j))*(u(i, k, j&
+&              )+u(i, k, j-1))
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, &
+&              k, j+1)+u(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., &
+&              vel)*(u(i, k, j+1)-u(i, k, j-2)-3.*(u(i, k, j)-u(i, k, j-1&
+&              )))/12.0) + vel*((7.*(ud(i, k, j)+ud(i, k, j-1))-ud(i, k, &
+&              j+1)-ud(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&              (ud(i, k, j+1)-ud(i, k, j-2)-3.*(ud(i, k, j)-ud(i, k, j-1)&
+&              ))/12.0)
+            fqy(i, k, jp1) = vel*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(u(i, k, j+1)-u(i, k, j-2)-3.*(u(i, k, j)-u(i, k, j-1)))&
+&              /12.0)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j)+rvd(i-1, k, j))*(u(i, &
+&              k, j)+u(i, k, j-1))+(rv(i, k, j)+rv(i-1, k, j))*(ud(i, k, &
+&              j)+ud(i, k, j-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j)+rv(i-1, k, j))*(u(i, k, j&
+&              )+u(i, k, j-1))
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd order flux 2 in from north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, &
+&              k, j+1)+u(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., &
+&              vel)*(u(i, k, j+1)-u(i, k, j-2)-3.*(u(i, k, j)-u(i, k, j-1&
+&              )))/12.0) + vel*((7.*(ud(i, k, j)+ud(i, k, j-1))-ud(i, k, &
+&              j+1)-ud(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&              (ud(i, k, j+1)-ud(i, k, j-2)-3.*(ud(i, k, j)-ud(i, k, j-1)&
+&              ))/12.0)
+            fqy(i, k, jp1) = vel*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(u(i, k, j+1)-u(i, k, j-2)-3.*(u(i, k, j)-u(i, k, j-1)))&
+&              /12.0)
+          END DO
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! (j > j_start) will miss the u(,,jds) tendency
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+! This would be seen by (j > j_start) but we need to zero out the NP tendency
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO j_loop_y_flux_5
+!  next, x - flux divergence
+    i_start = its
+    i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = ids + 3
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+      i_end_f = ide - 2
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  5th or 6th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*((37.*(u(i, k, j)+u(i-1, k, j))-8.*(u(i+1, k&
+&            , j)+u(i-2, k, j))+(u(i+2, k, j)+u(i-3, k, j)))/60.0-SIGN(1&
+&            , time_step)*SIGN(1., vel)*(u(i+2, k, j)-u(i-3, k, j)-5.*(u(&
+&            i+1, k, j)-u(i-2, k, j))+10.*(u(i, k, j)-u(i-1, k, j)))/60.0&
+&            ) + vel*((37.*(ud(i, k, j)+ud(i-1, k, j))-8.*(ud(i+1, k, j)+&
+&            ud(i-2, k, j))+ud(i+2, k, j)+ud(i-3, k, j))/60.0-SIGN(1, &
+&            time_step)*SIGN(1., vel)*(ud(i+2, k, j)-ud(i-3, k, j)-5.*(ud&
+&            (i+1, k, j)-ud(i-2, k, j))+10.*(ud(i, k, j)-ud(i-1, k, j)))/&
+&            60.0)
+          fqx(i, k) = vel*((37.*(u(i, k, j)+u(i-1, k, j))-8.*(u(i+1, k, &
+&            j)+u(i-2, k, j))+(u(i+2, k, j)+u(i-3, k, j)))/60.0-SIGN(1, &
+&            time_step)*SIGN(1., vel)*(u(i+2, k, j)-u(i-3, k, j)-5.*(u(i+&
+&            1, k, j)-u(i-2, k, j))+10.*(u(i, k, j)-u(i-1, k, j)))/60.0)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+!  specified uses upstream normal wind at boundaries
+      IF (degrade_xs) THEN
+        IF (i_start .EQ. ids + 1) THEN
+! second order flux next to the boundary
+          i = ids + 1
+          DO k=kts,ktf
+            ubd = ud(i-1, k, j)
+            ub = u(i-1, k, j)
+            IF (specified .AND. u(i, k, j) .LT. 0.) THEN
+              ubd = ud(i, k, j)
+              ub = u(i, k, j)
+            END IF
+            fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i, k, j)&
+&              +ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i, k, j)+ubd))
+            fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i, k, j)+ub)
+          END DO
+        END IF
+        i = ids + 2
+        DO k=kts,ktf
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)&
+&            +u(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(u(i+1&
+&            , k, j)-u(i-2, k, j)-3.*(u(i, k, j)-u(i-1, k, j)))/12.0) + &
+&            vel*((7.*(ud(i, k, j)+ud(i-1, k, j))-ud(i+1, k, j)-ud(i-2, k&
+&            , j))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(ud(i+1, k, j)-&
+&            ud(i-2, k, j)-3.*(ud(i, k, j)-ud(i-1, k, j)))/12.0)
+          fqx(i, k) = vel*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+u&
+&            (i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(u(i+1, &
+&            k, j)-u(i-2, k, j)-3.*(u(i, k, j)-u(i-1, k, j)))/12.0)
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        IF (i_end .EQ. ide - 1) THEN
+! second order flux next to the boundary
+          i = ide
+          DO k=kts,ktf
+            ubd = ud(i, k, j)
+            ub = u(i, k, j)
+            IF (specified .AND. u(i-1, k, j) .GT. 0.) THEN
+              ubd = ud(i-1, k, j)
+              ub = u(i-1, k, j)
+            END IF
+            fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i-1, k, &
+&              j)+ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i-1, k, j)+ubd))
+            fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i-1, k, j)+&
+&              ub)
+          END DO
+        END IF
+        DO k=kts,ktf
+          i = ide - 1
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)&
+&            +u(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(u(i+1&
+&            , k, j)-u(i-2, k, j)-3.*(u(i, k, j)-u(i-1, k, j)))/12.0) + &
+&            vel*((7.*(ud(i, k, j)+ud(i-1, k, j))-ud(i+1, k, j)-ud(i-2, k&
+&            , j))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(ud(i+1, k, j)-&
+&            ud(i-2, k, j)-3.*(ud(i, k, j)-ud(i-1, k, j)))/12.0)
+          fqx(i, k) = vel*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+u&
+&            (i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(u(i+1, &
+&            k, j)-u(i-2, k, j)-3.*(u(i, k, j)-u(i-1, k, j)))/12.0)
+        END DO
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! ADT eqn 44, 1st term on RHS
+          mrdx = msfux(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (horz_order .EQ. 4) THEN
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 1) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 3) degrade_ye = .false.
+!--------------- x - advection first
+    i_start = its
+    i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      i_start = ids + 1
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      i_end = ide - 1
+      i_end_f = ide - 1
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*(7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+&
+&            u(i-2, k, j)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i-1, k, j))-ud&
+&            (i+1, k, j)-ud(i-2, k, j))/12.0
+          fqx(i, k) = vel*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+u&
+&            (i-2, k, j)))/12.0)
+        END DO
+      END DO
+!  second order flux close to boundaries (if not periodic or symmetric)
+!  specified uses upstream normal wind at boundaries
+      IF (degrade_xs) THEN
+        i = i_start
+        DO k=kts,ktf
+          ubd = ud(i-1, k, j)
+          ub = u(i-1, k, j)
+          IF (specified .AND. u(i, k, j) .LT. 0.) THEN
+            ubd = ud(i, k, j)
+            ub = u(i, k, j)
+          END IF
+          fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i, k, j)+&
+&            ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i, k, j)+ubd))
+          fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i, k, j)+ub)
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        i = i_end + 1
+        DO k=kts,ktf
+          ubd = ud(i, k, j)
+          ub = u(i, k, j)
+          IF (specified .AND. u(i-1, k, j) .GT. 0.) THEN
+            ubd = ud(i-1, k, j)
+            ub = u(i-1, k, j)
+          END IF
+          fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i-1, k, j)&
+&            +ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i-1, k, j)+ubd))
+          fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i-1, k, j)+ub)
+        END DO
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! ADT eqn 44, 1st term on RHS
+          mrdx = msfux(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+!  y flux divergence
+    i_start = its
+    i_end = ite
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!CJM these may not work with tiling because they define j_start and end in terms of domain dim
+    IF (degrade_ys) THEN
+      j_start = jds + 1
+      j_start_f = j_start + 1
+    END IF
+    IF (degrade_ye) THEN
+      j_end = jde - 2
+      j_end_f = jde - 2
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+!  j flux loop for v flux of u momentum
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+    DO j=j_start,j_end+1
+      IF (j .LT. j_start_f .AND. degrade_ys) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j_start)+rvd(i-1, k, &
+&              j_start))*(u(i, k, j_start)+u(i, k, j_start-1))+(rv(i, k, &
+&              j_start)+rv(i-1, k, j_start))*(ud(i, k, j_start)+ud(i, k, &
+&              j_start-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j_start)+rv(i-1, k, j_start)&
+&              )*(u(i, k, j_start)+u(i, k, j_start-1))
+          END DO
+        END DO
+      ELSE IF (j .GT. j_end_f .AND. degrade_ye) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! Assumes j>j_end_f is ONLY j_end+1 ...
+!         fqy(i, k, jp1) = 0.25*(rv(i,k,j_end+1)+rv(i-1,k,j_end+1))    &
+!                *(u(i,k,j_end+1)+u(i,k,j_end))
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j)+rvd(i-1, k, j))*(u(i, &
+&              k, j)+u(i, k, j-1))+(rv(i, k, j)+rv(i-1, k, j))*(ud(i, k, &
+&              j)+ud(i, k, j-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j)+rv(i-1, k, j))*(u(i, k, j&
+&              )+u(i, k, j-1))
+          END DO
+        END DO
+      ELSE
+!  3rd or 4th order flux
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*(7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i, k&
+&              , j-1))-ud(i, k, j+1)-ud(i, k, j-2))/12.0
+            fqy(i, k, jp1) = vel*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0)
+          END DO
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! (j > j_start) will miss the u(,,jds) tendency
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+! This would be seen by (j > j_start) but we need to zero out the NP tendency
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO
+  ELSE IF (horz_order .EQ. 3) THEN
+!  As with the 5th and 6th order flux chioces, the 3rd and 4th order
+!  code is EXACTLY the same EXCEPT for the flux operator.
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 1) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 3) degrade_ye = .false.
+!--------------- x - advection first
+    i_start = its
+    i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      i_start = ids + 1
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      i_end = ide - 1
+      i_end_f = ide - 1
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+          veld = 0.5*(rud(i, k, j)+rud(i-1, k, j))
+          vel = 0.5*(ru(i, k, j)+ru(i-1, k, j))
+          fqxd(i, k) = veld*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)&
+&            +u(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(u(i+1&
+&            , k, j)-u(i-2, k, j)-3.*(u(i, k, j)-u(i-1, k, j)))/12.0) + &
+&            vel*((7.*(ud(i, k, j)+ud(i-1, k, j))-ud(i+1, k, j)-ud(i-2, k&
+&            , j))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(ud(i+1, k, j)-&
+&            ud(i-2, k, j)-3.*(ud(i, k, j)-ud(i-1, k, j)))/12.0)
+          fqx(i, k) = vel*((7.*(u(i, k, j)+u(i-1, k, j))-(u(i+1, k, j)+u&
+&            (i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(u(i+1, &
+&            k, j)-u(i-2, k, j)-3.*(u(i, k, j)-u(i-1, k, j)))/12.0)
+        END DO
+      END DO
+!  second order flux close to boundaries (if not periodic or symmetric)
+!  specified uses upstream normal wind at boundaries
+      IF (degrade_xs) THEN
+        i = i_start
+        DO k=kts,ktf
+          ubd = ud(i-1, k, j)
+          ub = u(i-1, k, j)
+          IF (specified .AND. u(i, k, j) .LT. 0.) THEN
+            ubd = ud(i, k, j)
+            ub = u(i, k, j)
+          END IF
+          fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i, k, j)+&
+&            ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i, k, j)+ubd))
+          fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i, k, j)+ub)
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        i = i_end + 1
+        DO k=kts,ktf
+          ubd = ud(i, k, j)
+          ub = u(i, k, j)
+          IF (specified .AND. u(i-1, k, j) .GT. 0.) THEN
+            ubd = ud(i-1, k, j)
+            ub = u(i-1, k, j)
+          END IF
+          fqxd(i, k) = 0.25*((rud(i, k, j)+rud(i-1, k, j))*(u(i-1, k, j)&
+&            +ub)+(ru(i, k, j)+ru(i-1, k, j))*(ud(i-1, k, j)+ubd))
+          fqx(i, k) = 0.25*(ru(i, k, j)+ru(i-1, k, j))*(u(i-1, k, j)+ub)
+        END DO
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! ADT eqn 44, 1st term on RHS
+          mrdx = msfux(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+!  y flux divergence
+    i_start = its
+    i_end = ite
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!CJM these may not work with tiling because they define j_start and end in terms of domain dim
+    IF (degrade_ys) THEN
+      j_start = jds + 1
+      j_start_f = j_start + 1
+    END IF
+    IF (degrade_ye) THEN
+      j_end = jde - 2
+      j_end_f = jde - 2
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+!  j flux loop for v flux of u momentum
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+    DO j=j_start,j_end+1
+      IF (j .LT. j_start_f .AND. degrade_ys) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j_start)+rvd(i-1, k, &
+&              j_start))*(u(i, k, j_start)+u(i, k, j_start-1))+(rv(i, k, &
+&              j_start)+rv(i-1, k, j_start))*(ud(i, k, j_start)+ud(i, k, &
+&              j_start-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j_start)+rv(i-1, k, j_start)&
+&              )*(u(i, k, j_start)+u(i, k, j_start-1))
+          END DO
+        END DO
+      ELSE IF (j .GT. j_end_f .AND. degrade_ye) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! Assumes j>j_end_f is ONLY j_end+1 ...
+!         fqy(i, k, jp1) = 0.25*(rv(i,k,j_end+1)+rv(i-1,k,j_end+1))    &
+!                *(u(i,k,j_end+1)+u(i,k,j_end))
+            fqyd(i, k, jp1) = 0.25*((rvd(i, k, j)+rvd(i-1, k, j))*(u(i, &
+&              k, j)+u(i, k, j-1))+(rv(i, k, j)+rv(i-1, k, j))*(ud(i, k, &
+&              j)+ud(i, k, j-1)))
+            fqy(i, k, jp1) = 0.25*(rv(i, k, j)+rv(i-1, k, j))*(u(i, k, j&
+&              )+u(i, k, j-1))
+          END DO
+        END DO
+      ELSE
+!  3rd or 4th order flux
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            veld = 0.5*(rvd(i, k, j)+rvd(i-1, k, j))
+            vel = 0.5*(rv(i, k, j)+rv(i-1, k, j))
+            fqyd(i, k, jp1) = veld*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, &
+&              k, j+1)+u(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., &
+&              vel)*(u(i, k, j+1)-u(i, k, j-2)-3.*(u(i, k, j)-u(i, k, j-1&
+&              )))/12.0) + vel*((7.*(ud(i, k, j)+ud(i, k, j-1))-ud(i, k, &
+&              j+1)-ud(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&              (ud(i, k, j+1)-ud(i, k, j-2)-3.*(ud(i, k, j)-ud(i, k, j-1)&
+&              ))/12.0)
+            fqy(i, k, jp1) = vel*((7.*(u(i, k, j)+u(i, k, j-1))-(u(i, k&
+&              , j+1)+u(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(u(i, k, j+1)-u(i, k, j-2)-3.*(u(i, k, j)-u(i, k, j-1)))&
+&              /12.0)
+          END DO
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! (j > j_start) will miss the u(,,jds) tendency
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+! This would be seen by (j > j_start) but we need to zero out the NP tendency
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+            mrdy = msfux(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO
+  ELSE IF (horz_order .EQ. 2) THEN
+    i_start = its
+    i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    IF (config_flags%open_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+    END IF
+    IF (specified) THEN
+      IF (ids + 2 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 2
+      END IF
+    END IF
+    IF (specified) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) i_end = ite
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! ADT eqn 44, 1st term on RHS
+          mrdx = msfux(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*0.25*((rud(i+1&
+&            , k, j)+rud(i, k, j))*(u(i+1, k, j)+u(i, k, j))+(ru(i+1, k, &
+&            j)+ru(i, k, j))*(ud(i+1, k, j)+ud(i, k, j))-(rud(i, k, j)+&
+&            rud(i-1, k, j))*(u(i, k, j)+u(i-1, k, j))-(ru(i, k, j)+ru(i-&
+&            1, k, j))*(ud(i, k, j)+ud(i-1, k, j)))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*0.25*((ru(i+1, k&
+&            , j)+ru(i, k, j))*(u(i+1, k, j)+u(i, k, j))-(ru(i, k, j)+ru(&
+&            i-1, k, j))*(u(i, k, j)+u(i-1, k, j)))
+        END DO
+      END DO
+    END DO
+    IF (specified .AND. its .LE. ids + 1 .AND. (.NOT.config_flags%&
+&        periodic_x)) THEN
+      DO j=j_start,j_end
+        DO k=kts,ktf
+          i = ids + 1
+! ADT eqn 44, 1st term on RHS
+          mrdx = msfux(i, j)*rdx
+          ubd = ud(i-1, k, j)
+          ub = u(i-1, k, j)
+          IF (u(i, k, j) .LT. 0.) THEN
+            ubd = ud(i, k, j)
+            ub = u(i, k, j)
+          END IF
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*0.25*((rud(i+1&
+&            , k, j)+rud(i, k, j))*(u(i+1, k, j)+u(i, k, j))+(ru(i+1, k, &
+&            j)+ru(i, k, j))*(ud(i+1, k, j)+ud(i, k, j))-(rud(i, k, j)+&
+&            rud(i-1, k, j))*(u(i, k, j)+ub)-(ru(i, k, j)+ru(i-1, k, j))*&
+&            (ud(i, k, j)+ubd))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*0.25*((ru(i+1, k&
+&            , j)+ru(i, k, j))*(u(i+1, k, j)+u(i, k, j))-(ru(i, k, j)+ru(&
+&            i-1, k, j))*(u(i, k, j)+ub))
+        END DO
+      END DO
+    END IF
+    IF (specified .AND. ite .GE. ide - 1 .AND. (.NOT.config_flags%&
+&        periodic_x)) THEN
+      DO j=j_start,j_end
+        DO k=kts,ktf
+          i = ide - 1
+! ADT eqn 44, 1st term on RHS
+          mrdx = msfux(i, j)*rdx
+          ubd = ud(i+1, k, j)
+          ub = u(i+1, k, j)
+          IF (u(i, k, j) .GT. 0.) THEN
+            ubd = ud(i, k, j)
+            ub = u(i, k, j)
+          END IF
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*0.25*((rud(i+1&
+&            , k, j)+rud(i, k, j))*(ub+u(i, k, j))+(ru(i+1, k, j)+ru(i, k&
+&            , j))*(ubd+ud(i, k, j))-(rud(i, k, j)+rud(i-1, k, j))*(u(i, &
+&            k, j)+u(i-1, k, j))-(ru(i, k, j)+ru(i-1, k, j))*(ud(i, k, j)&
+&            +ud(i-1, k, j)))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*0.25*((ru(i+1, k&
+&            , j)+ru(i, k, j))*(ub+u(i, k, j))-(ru(i, k, j)+ru(i-1, k, j)&
+&            )*(u(i, k, j)+u(i-1, k, j)))
+        END DO
+      END DO
+    END IF
+    IF (config_flags%open_ys .OR. specified) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%open_ye .OR. specified) THEN
+      IF (jde - 2 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 2
+      END IF
+    END IF
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! ADT eqn 44, 1st term on RHS
+          mrdy = msfux(i, j)*rdy
+! Comments for polar boundary condition
+! Flow is only from one side for points next to poles
+          IF (config_flags%polar .AND. j .EQ. jds) THEN
+            tendencyd(i, k, j) = tendencyd(i, k, j) - mrdy*0.25*((rvd(i&
+&              , k, j+1)+rvd(i-1, k, j+1))*(u(i, k, j+1)+u(i, k, j))+(rv(&
+&              i, k, j+1)+rv(i-1, k, j+1))*(ud(i, k, j+1)+ud(i, k, j)))
+            tendency(i, k, j) = tendency(i, k, j) - mrdy*0.25*(rv(i, k, &
+&              j+1)+rv(i-1, k, j+1))*(u(i, k, j+1)+u(i, k, j))
+          ELSE IF (config_flags%polar .AND. j .EQ. jde - 1) THEN
+            tendencyd(i, k, j) = tendencyd(i, k, j) + mrdy*0.25*((rvd(i&
+&              , k, j)+rvd(i-1, k, j))*(u(i, k, j)+u(i, k, j-1))+(rv(i, k&
+&              , j)+rv(i-1, k, j))*(ud(i, k, j)+ud(i, k, j-1)))
+            tendency(i, k, j) = tendency(i, k, j) + mrdy*0.25*(rv(i, k, &
+&              j)+rv(i-1, k, j))*(u(i, k, j)+u(i, k, j-1))
+          ELSE
+! Normal code
+            tendencyd(i, k, j) = tendencyd(i, k, j) - mrdy*0.25*((rvd(i&
+&              , k, j+1)+rvd(i-1, k, j+1))*(u(i, k, j+1)+u(i, k, j))+(rv(&
+&              i, k, j+1)+rv(i-1, k, j+1))*(ud(i, k, j+1)+ud(i, k, j))-(&
+&              rvd(i, k, j)+rvd(i-1, k, j))*(u(i, k, j)+u(i, k, j-1))-(rv&
+&              (i, k, j)+rv(i-1, k, j))*(ud(i, k, j)+ud(i, k, j-1)))
+            tendency(i, k, j) = tendency(i, k, j) - mrdy*0.25*((rv(i, k&
+&              , j+1)+rv(i-1, k, j+1))*(u(i, k, j+1)+u(i, k, j))-(rv(i, k&
+&              , j)+rv(i-1, k, j))*(u(i, k, j)+u(i, k, j-1)))
+          END IF
+        END DO
+      END DO
+    END DO
+  ELSE IF (horz_order .NE. 0) THEN
+! Just in case we want to turn horizontal advection off, we can do it
+    WRITE(wrf_err_message, *) &
+&    'module_advect: advect_u_6a:  h_order not known ', horz_order
+    CALL WRF_ERROR_FATAL(TRIM(wrf_err_message))
+  END IF
+!  radiative lateral boundary condition in x for normal velocity (u)
+  IF (config_flags%open_xs .AND. its .EQ. ids) THEN
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        IF (ru(its, k, j) - cb*mut(its, j) .GT. 0.) THEN
+          ub = 0.
+          ubd = 0.0
+        ELSE
+          ubd = rud(its, k, j) - cb*mutd(its, j)
+          ub = ru(its, k, j) - cb*mut(its, j)
+        END IF
+        tendencyd(its, k, j) = tendencyd(its, k, j) - rdx*(ubd*(u_old(&
+&          its+1, k, j)-u_old(its, k, j))+ub*(u_oldd(its+1, k, j)-u_oldd(&
+&          its, k, j)))
+        tendency(its, k, j) = tendency(its, k, j) - rdx*ub*(u_old(its+1&
+&          , k, j)-u_old(its, k, j))
+      END DO
+    END DO
+  END IF
+  IF (config_flags%open_xe .AND. ite .EQ. ide) THEN
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        IF (ru(ite, k, j) + cb*mut(ite-1, j) .LT. 0.) THEN
+          ub = 0.
+          ubd = 0.0
+        ELSE
+          ubd = rud(ite, k, j) + cb*mutd(ite-1, j)
+          ub = ru(ite, k, j) + cb*mut(ite-1, j)
+        END IF
+        tendencyd(ite, k, j) = tendencyd(ite, k, j) - rdx*(ubd*(u_old(&
+&          ite, k, j)-u_old(ite-1, k, j))+ub*(u_oldd(ite, k, j)-u_oldd(&
+&          ite-1, k, j)))
+        tendency(ite, k, j) = tendency(ite, k, j) - rdx*ub*(u_old(ite, k&
+&          , j)-u_old(ite-1, k, j))
+      END DO
+    END DO
+  END IF
+!  pick up the rest of the horizontal radiation boundary conditions.
+!  (these are the computations that don't require 'cb')
+!  first, set to index ranges
+  i_start = its
+  IF (ite .GT. ide) THEN
+    i_end = ide
+  ELSE
+    i_end = ite
+  END IF
+  imin = ids
+  imax = ide - 1
+  IF (config_flags%open_xs) THEN
+    IF (ids + 1 .LT. its) THEN
+      i_start = its
+    ELSE
+      i_start = ids + 1
+    END IF
+    imin = ids
+  END IF
+  IF (config_flags%open_xe) THEN
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    imax = ide - 1
+  END IF
+  IF (config_flags%open_ys .AND. jts .EQ. jds) THEN
+    DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+      mrdy = msfux(i, jts)*rdy
+      IF (imax .GT. i) THEN
+        ip = i
+      ELSE
+        ip = imax
+      END IF
+      IF (imin .LT. i - 1) THEN
+        im = i - 1
+      ELSE
+        im = imin
+      END IF
+      DO k=kts,ktf
+        vwd = 0.5*(rvd(ip, k, jts)+rvd(im, k, jts))
+        vw = 0.5*(rv(ip, k, jts)+rv(im, k, jts))
+        IF (vw .GT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = vwd
+          vb = vw
+        END IF
+        dvmd = rvd(ip, k, jts+1) - rvd(ip, k, jts)
+        dvm = rv(ip, k, jts+1) - rv(ip, k, jts)
+        dvpd = rvd(im, k, jts+1) - rvd(im, k, jts)
+        dvp = rv(im, k, jts+1) - rv(im, k, jts)
+        tendencyd(i, k, jts) = tendencyd(i, k, jts) - mrdy*(vbd*(u_old(i&
+&          , k, jts+1)-u_old(i, k, jts))+vb*(u_oldd(i, k, jts+1)-u_oldd(i&
+&          , k, jts))+0.5*(ud(i, k, jts)*(dvm+dvp)+u(i, k, jts)*(dvmd+&
+&          dvpd)))
+        tendency(i, k, jts) = tendency(i, k, jts) - mrdy*(vb*(u_old(i, k&
+&          , jts+1)-u_old(i, k, jts))+0.5*u(i, k, jts)*(dvm+dvp))
+      END DO
+    END DO
+  END IF
+  IF (config_flags%open_ye .AND. jte .EQ. jde) THEN
+    DO i=i_start,i_end
+! ADT eqn 44, 2nd term on RHS
+      mrdy = msfux(i, jte-1)*rdy
+      IF (imax .GT. i) THEN
+        ip = i
+      ELSE
+        ip = imax
+      END IF
+      IF (imin .LT. i - 1) THEN
+        im = i - 1
+      ELSE
+        im = imin
+      END IF
+      DO k=kts,ktf
+        vwd = 0.5*(rvd(ip, k, jte)+rvd(im, k, jte))
+        vw = 0.5*(rv(ip, k, jte)+rv(im, k, jte))
+        IF (vw .LT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = vwd
+          vb = vw
+        END IF
+        dvmd = rvd(ip, k, jte) - rvd(ip, k, jte-1)
+        dvm = rv(ip, k, jte) - rv(ip, k, jte-1)
+        dvpd = rvd(im, k, jte) - rvd(im, k, jte-1)
+        dvp = rv(im, k, jte) - rv(im, k, jte-1)
+        tendencyd(i, k, jte-1) = tendencyd(i, k, jte-1) - mrdy*(vbd*(&
+&          u_old(i, k, jte-1)-u_old(i, k, jte-2))+vb*(u_oldd(i, k, jte-1)&
+&          -u_oldd(i, k, jte-2))+0.5*(ud(i, k, jte-1)*(dvm+dvp)+u(i, k, &
+&          jte-1)*(dvmd+dvpd)))
+        tendency(i, k, jte-1) = tendency(i, k, jte-1) - mrdy*(vb*(u_old(&
+&          i, k, jte-1)-u_old(i, k, jte-2))+0.5*u(i, k, jte-1)*(dvm+dvp))
+      END DO
+    END DO
+  END IF
+!-------------------- vertical advection
+!  ADT eqn 44 has 3rd term on RHS = -(1/my) partial d/dz (rho u w)
+!  Here we have:  - partial d/dz (u*rom) = - partial d/dz (u rho w / my)
+!  Since 'my' (map scale factor in y-direction) isn't a function of z,
+!  this is what we need, so leave unchanged in advect_u
+  i_start = its
+  i_end = ite
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+!   IF ( config_flags%open_xs ) i_start = MAX(ids+1,its)
+!   IF ( config_flags%open_xe ) i_end   = MIN(ide-1,ite)
+  IF (config_flags%open_ys .OR. specified) THEN
+    IF (ids + 1 .LT. its) THEN
+      i_start = its
+    ELSE
+      i_start = ids + 1
+    END IF
+  END IF
+  IF (config_flags%open_ye .OR. specified) THEN
+    IF (ide - 1 .GT. ite) THEN
+      i_end = ite
+    ELSE
+      i_end = ide - 1
+    END IF
+  END IF
+  IF (config_flags%periodic_x) i_start = its
+  IF (config_flags%periodic_x) i_end = ite
+  DO i=i_start,i_end
+    vfluxd(i, kts) = 0.0
+    vflux(i, kts) = 0.
+    vfluxd(i, kte) = 0.0
+    vflux(i, kte) = 0.
+  END DO
+  IF (vert_order .EQ. 6) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+3,ktf-2
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i-1, k, j)+romd(i, k, j))
+          vel = 0.5*(rom(i-1, k, j)+rom(i, k, j))
+          vfluxd(i, k) = veld*(37.*(u(i, k, j)+u(i, k-1, j))-8.*(u(i, k+&
+&            1, j)+u(i, k-2, j))+(u(i, k+2, j)+u(i, k-3, j)))/60.0 + vel*&
+&            (37.*(ud(i, k, j)+ud(i, k-1, j))-8.*(ud(i, k+1, j)+ud(i, k-2&
+&            , j))+ud(i, k+2, j)+ud(i, k-3, j))/60.0
+          vflux(i, k) = vel*((37.*(u(i, k, j)+u(i, k-1, j))-8.*(u(i, k+1&
+&            , j)+u(i, k-2, j))+(u(i, k+2, j)+u(i, k-3, j)))/60.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+        k = kts + 2
+        veld = 0.5*(romd(i, k, j)+romd(i-1, k, j))
+        vel = 0.5*(rom(i, k, j)+rom(i-1, k, j))
+        vfluxd(i, k) = veld*(7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)+&
+&          u(i, k-2, j)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i, k-1, j))-ud(i&
+&          , k+1, j)-ud(i, k-2, j))/12.0
+        vflux(i, k) = vel*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)+u&
+&          (i, k-2, j)))/12.0)
+        k = ktf - 1
+        veld = 0.5*(romd(i, k, j)+romd(i-1, k, j))
+        vel = 0.5*(rom(i, k, j)+rom(i-1, k, j))
+        vfluxd(i, k) = veld*(7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)+&
+&          u(i, k-2, j)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i, k-1, j))-ud(i&
+&          , k+1, j)-ud(i, k-2, j))/12.0
+        vflux(i, k) = vel*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)+u&
+&          (i, k-2, j)))/12.0)
+        k = ktf
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+      END DO
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzw(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzw(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 5) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+3,ktf-2
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i-1, k, j)+romd(i, k, j))
+          vel = 0.5*(rom(i-1, k, j)+rom(i, k, j))
+          vfluxd(i, k) = veld*((37.*(u(i, k, j)+u(i, k-1, j))-8.*(u(i, k&
+&            +1, j)+u(i, k-2, j))+(u(i, k+2, j)+u(i, k-3, j)))/60.0-SIGN(&
+&            1, time_step)*SIGN(1., -vel)*(u(i, k+2, j)-u(i, k-3, j)-5.*(&
+&            u(i, k+1, j)-u(i, k-2, j))+10.*(u(i, k, j)-u(i, k-1, j)))/&
+&            60.0) + vel*((37.*(ud(i, k, j)+ud(i, k-1, j))-8.*(ud(i, k+1&
+&            , j)+ud(i, k-2, j))+ud(i, k+2, j)+ud(i, k-3, j))/60.0-SIGN(1&
+&            , time_step)*SIGN(1., -vel)*(ud(i, k+2, j)-ud(i, k-3, j)-5.*&
+&            (ud(i, k+1, j)-ud(i, k-2, j))+10.*(ud(i, k, j)-ud(i, k-1, j)&
+&            ))/60.0)
+          vflux(i, k) = vel*((37.*(u(i, k, j)+u(i, k-1, j))-8.*(u(i, k+1&
+&            , j)+u(i, k-2, j))+(u(i, k+2, j)+u(i, k-3, j)))/60.0-SIGN(1&
+&            , time_step)*SIGN(1., -vel)*(u(i, k+2, j)-u(i, k-3, j)-5.*(u&
+&            (i, k+1, j)-u(i, k-2, j))+10.*(u(i, k, j)-u(i, k-1, j)))/&
+&            60.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+        k = kts + 2
+        veld = 0.5*(romd(i, k, j)+romd(i-1, k, j))
+        vel = 0.5*(rom(i, k, j)+rom(i-1, k, j))
+        vfluxd(i, k) = veld*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)&
+&          +u(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(u(i, k&
+&          +1, j)-u(i, k-2, j)-3.*(u(i, k, j)-u(i, k-1, j)))/12.0) + vel*&
+&          ((7.*(ud(i, k, j)+ud(i, k-1, j))-ud(i, k+1, j)-ud(i, k-2, j))/&
+&          12.0+SIGN(1, time_step)*SIGN(1., -vel)*(ud(i, k+1, j)-ud(i, k-&
+&          2, j)-3.*(ud(i, k, j)-ud(i, k-1, j)))/12.0)
+        vflux(i, k) = vel*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)+u&
+&          (i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(u(i, k+1&
+&          , j)-u(i, k-2, j)-3.*(u(i, k, j)-u(i, k-1, j)))/12.0)
+        k = ktf - 1
+        veld = 0.5*(romd(i, k, j)+romd(i-1, k, j))
+        vel = 0.5*(rom(i, k, j)+rom(i-1, k, j))
+        vfluxd(i, k) = veld*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)&
+&          +u(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(u(i, k&
+&          +1, j)-u(i, k-2, j)-3.*(u(i, k, j)-u(i, k-1, j)))/12.0) + vel*&
+&          ((7.*(ud(i, k, j)+ud(i, k-1, j))-ud(i, k+1, j)-ud(i, k-2, j))/&
+&          12.0+SIGN(1, time_step)*SIGN(1., -vel)*(ud(i, k+1, j)-ud(i, k-&
+&          2, j)-3.*(ud(i, k, j)-ud(i, k-1, j)))/12.0)
+        vflux(i, k) = vel*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)+u&
+&          (i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(u(i, k+1&
+&          , j)-u(i, k-2, j)-3.*(u(i, k, j)-u(i, k-1, j)))/12.0)
+        k = ktf
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+      END DO
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzw(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzw(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 4) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+2,ktf-1
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i-1, k, j)+romd(i, k, j))
+          vel = 0.5*(rom(i-1, k, j)+rom(i, k, j))
+          vfluxd(i, k) = veld*(7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j&
+&            )+u(i, k-2, j)))/12.0 + vel*(7.*(ud(i, k, j)+ud(i, k-1, j))-&
+&            ud(i, k+1, j)-ud(i, k-2, j))/12.0
+          vflux(i, k) = vel*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)&
+&            +u(i, k-2, j)))/12.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+        k = ktf
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+      END DO
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzw(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzw(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 3) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+2,ktf-1
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i-1, k, j)+romd(i, k, j))
+          vel = 0.5*(rom(i-1, k, j)+rom(i, k, j))
+          vfluxd(i, k) = veld*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, &
+&            j)+u(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(u(&
+&            i, k+1, j)-u(i, k-2, j)-3.*(u(i, k, j)-u(i, k-1, j)))/12.0) &
+&            + vel*((7.*(ud(i, k, j)+ud(i, k-1, j))-ud(i, k+1, j)-ud(i, k&
+&            -2, j))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(ud(i, k+1, j&
+&            )-ud(i, k-2, j)-3.*(ud(i, k, j)-ud(i, k-1, j)))/12.0)
+          vflux(i, k) = vel*((7.*(u(i, k, j)+u(i, k-1, j))-(u(i, k+1, j)&
+&            +u(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(u(i&
+&            , k+1, j)-u(i, k-2, j)-3.*(u(i, k, j)-u(i, k-1, j)))/12.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+        k = ktf
+        vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(i&
+&          , k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*(&
+&          fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+        vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k, &
+&          j)+fzp(k)*u(i, k-1, j))
+      END DO
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzw(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzw(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 2) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          vfluxd(i, k) = 0.5*((romd(i, k, j)+romd(i-1, k, j))*(fzm(k)*u(&
+&            i, k, j)+fzp(k)*u(i, k-1, j))+(rom(i, k, j)+rom(i-1, k, j))*&
+&            (fzm(k)*ud(i, k, j)+fzp(k)*ud(i, k-1, j)))
+          vflux(i, k) = 0.5*(rom(i, k, j)+rom(i-1, k, j))*(fzm(k)*u(i, k&
+&            , j)+fzp(k)*u(i, k-1, j))
+        END DO
+      END DO
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzw(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzw(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+    END DO
+  ELSE
+    WRITE(wrf_err_message, *) &
+&    'module_advect: advect_u_6a: v_order not known ', vert_order
+    CALL WRF_ERROR_FATAL(TRIM(wrf_err_message))
+  END IF
+END SUBROUTINE G_ADVECT_U
 
  SUBROUTINE g_advect_v(v,g_v,v_old,g_v_old,tendency,g_tendency,ru,g_ru, &
  rv,g_rv,rom,g_rom,mut,g_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy, &
@@ -6046,2670 +5711,2149 @@
 
  END SUBROUTINE g_advect_scalar
 
- SUBROUTINE g_advect_w(w,g_w,w_old,g_w_old,tendency,g_tendency,ru,g_ru, &
- rv,g_rv,rom,g_rom,mut,g_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy, &
- msftx,msfty,fzm,fzp,rdx,rdy,rdzu,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its, &
- ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2,Tmpv3,g_Tmpv3,Tmpv4,g_Tmpv4,Tmpv5, &
- g_Tmpv5,Tmpv6,g_Tmpv6,Tmpv7,g_Tmpv7
-
- REAL g_FuncVal1,FuncVal1
- TYPE(grid_config_rec_type) :: config_flags
- INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: w,g_w,w_old,g_w_old,ru,g_ru,rv, &
- g_rv,rom,g_rom
- REAL,DIMENSION(ims:ime,jms:jme) :: mut,g_mut
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,g_tendency
- REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
- REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzu
- REAL :: rdx,rdy
- INTEGER :: time_step
-
- INTEGER :: i,j,k,itf,jtf,ktf
- INTEGER :: i_start,i_end,j_start,j_end
- INTEGER :: i_start_f,i_end_f,j_start_f,j_end_f
- INTEGER :: jmin,jmax,jp,jm,imin,imax
- REAL :: mrdx,g_mrdx,mrdy,g_mrdy,ub,g_ub,vb,g_vb,uw,g_uw,vw,g_vw
- REAL,DIMENSION(its:ite,kts:kte) :: vflux,g_vflux
- INTEGER :: horz_order,vert_order
- REAL,DIMENSION(its:ite+1,kts:kte) :: fqx,g_fqx
- REAL,DIMENSION(its:ite,kts:kte,2) :: fqy,g_fqy
- LOGICAL :: degrade_xs,degrade_ys
- LOGICAL :: degrade_xe,degrade_ye
- INTEGER :: jp1,jp0,jtmp
- REAL :: flux3,g_flux3,flux4,g_flux4,flux5,g_flux5,flux6,g_flux6
- REAL :: q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua,vel,g_vel
-
- g_flux4(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,ua, &
- g_ua) =(7.*(g_q_i +g_q_im1) -(g_q_ip1 +g_q_im2))/12.0
- flux4(q_im2,q_im1,q_i,q_ip1,ua) =(7.*(q_i +q_im1) -(q_ip1 +q_im2))/12.0
-
- g_flux3(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,ua, &
- g_ua) =g_flux4(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1, &
- ua,g_ua) +(sign(1, time_step) *sign(1., ua)*((g_q_ip1 -g_q_im2) &
- -3.*(g_q_i -g_q_im1))/12.0)
- flux3(q_im2,q_im1,q_i,q_ip1,ua) =flux4(q_im2,q_im1,q_i,q_ip1,ua) +sign(1, time_step) &
- *sign(1., ua)*((q_ip1 -q_im2) -3.*(q_i -q_im1))/12.0
-
- g_flux6(q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua) =(37.*(g_q_i +g_q_im1) -8.*( &
- g_q_ip1 +g_q_im2) +(g_q_ip2 +g_q_im3))/60.0
- flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =(37.*(q_i +q_im1) -8.*(q_ip1 +q_im2) &
- +(q_ip2 +q_im3))/60.0
-
- g_flux5(q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua) =g_flux6(q_im3,g_q_im3,q_im2, &
- g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,q_ip2,g_q_ip2,ua, &
- g_ua) -(sign(1, time_step) *sign(1., ua)*((g_q_ip2 -g_q_im3) -5.*( &
- g_q_ip1 -g_q_im2) +10.*(g_q_i -g_q_im1))/60.0)
- flux5(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2, &
- ua) -sign(1, time_step) *sign(1., ua)*((q_ip2 -q_im3) -5.*(q_ip1 -q_im2) &
- +10.*(q_i -q_im1))/60.0
-
- LOGICAL :: specified
-
- specified =.false.
-
- if(config_flags%specified .or. config_flags%nested) specified =.true.
-
- ktf =min(kte,kde-1)
-
- horz_order =config_flags%h_sca_adv_order
-
- vert_order =config_flags%v_sca_adv_order
-
-!LPB[3]
- IF( horz_order == 6 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-3)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye =.false.
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =max(jts,jds+1)
-
- j_start_f =jds+3
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte,jde-2)
-
- j_end_f =jde-3
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux6(w(i,k,j-3),g_w(i,k,j-3),w(i,k,j-2),g_w(i,k,j-2) &
-,w(i,k,j-1),g_w(i,k,j-1),w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1) &
-,w(i,k,j+2),g_w(i,k,j+2),vel,g_vel)
- FuncVal1 =flux6(w(i,k,j-3),w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),w(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux6(w(i,k,j-3),g_w(i,k,j-3),w(i,k,j-2),g_w(i,k,j-2) &
-,w(i,k,j-1),g_w(i,k,j-1),w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1) &
-,w(i,k,j+2),g_w(i,k,j+2),vel,g_vel)
- FuncVal1 =flux6(w(i,k,j-3),w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),w(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(g_w(i,k,j) +g_w(i,k,j- &
- 1)) +0.5*(fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i,k,j-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)) &
-*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jds+2 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux4(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux4(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(g_w(i,k,j) +g_w(i,k,j- &
- 1)) +0.5*(fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i,k,j-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)) &
-*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jde-2 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux4(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux4(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDIF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF(j > j_start) THEN
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- ENDIF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its)
-
- i_start_f =min(i_start+2,ids+3)
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-2,ite)
-
- i_end_f =ide-3
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux6(w(i-3,k,j),g_w(i-3,k,j),w(i-2,k,j),g_w(i-2,k,j) &
-,w(i-1,k,j),g_w(i-1,k,j),w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j) &
-,w(i+2,k,j),g_w(i+2,k,j),vel,g_vel)
- FuncVal1 =flux6(w(i-3,k,j),w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),w(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start_f,i_end_f
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux6(w(i-3,k,j),g_w(i-3,k,j),w(i-2,k,j),g_w(i-2,k,j) &
-,w(i-1,k,j),g_w(i-1,k,j),w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j) &
-,w(i+2,k,j),g_w(i+2,k,j),vel,g_vel)
- FuncVal1 =flux6(w(i-3,k,j),w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),w(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- IF( degrade_xs ) THEN
-
- DO i =i_start,i_start_f-1
-
- IF(i == ids+1) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(g_w(i,k,j) +g_w(i-1,k, &
- j)) +0.5*(fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i-1,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)) &
-*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDIF
-
- IF(i == ids+2) THEN
-
- DO k =kts+1,ktf
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux4(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux4(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- END IF
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- DO i =i_end_f+1,i_end+1
-
- IF( i == ide-1 ) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(g_w(i,k,j) +g_w(i-1,k, &
- j)) +0.5*(fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i-1,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)) &
-*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDIF
-
- IF( i == ide-2 ) THEN
-
- DO k =kts+1,ktf
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux4(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux4(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDIF
- ENDDO
- ENDIF
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msftx(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(horz_order == 5 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-3)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye =.false.
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =max(jts,jds+1)
-
- j_start_f =jds+3
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte,jde-2)
-
- j_end_f =jde-3
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux5(w(i,k,j-3),g_w(i,k,j-3),w(i,k,j-2),g_w(i,k,j-2) &
-,w(i,k,j-1),g_w(i,k,j-1),w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1) &
-,w(i,k,j+2),g_w(i,k,j+2),vel,g_vel)
- FuncVal1 =flux5(w(i,k,j-3),w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),w(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux5(w(i,k,j-3),g_w(i,k,j-3),w(i,k,j-2),g_w(i,k,j-2) &
-,w(i,k,j-1),g_w(i,k,j-1),w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1) &
-,w(i,k,j+2),g_w(i,k,j+2),vel,g_vel)
- FuncVal1 =flux5(w(i,k,j-3),w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),w(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(g_w(i,k,j) +g_w(i,k,j- &
- 1)) +0.5*(fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i,k,j-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)) &
-*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jds+2 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux3(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux3(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(g_w(i,k,j) +g_w(i,k,j- &
- 1)) +0.5*(fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i,k,j-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)) &
-*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
-
- ELSE IF( j == jde-2 ) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux3(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux3(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDIF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF(j > j_start) THEN
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- ENDIF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its)
-
- i_start_f =min(i_start+2,ids+3)
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-2,ite)
-
- i_end_f =ide-3
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux5(w(i-3,k,j),g_w(i-3,k,j),w(i-2,k,j),g_w(i-2,k,j) &
-,w(i-1,k,j),g_w(i-1,k,j),w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j) &
-,w(i+2,k,j),g_w(i+2,k,j),vel,g_vel)
- FuncVal1 =flux5(w(i-3,k,j),w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),w(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start_f,i_end_f
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux5(w(i-3,k,j),g_w(i-3,k,j),w(i-2,k,j),g_w(i-2,k,j) &
-,w(i-1,k,j),g_w(i-1,k,j),w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j) &
-,w(i+2,k,j),g_w(i+2,k,j),vel,g_vel)
- FuncVal1 =flux5(w(i-3,k,j),w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),w(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- IF( degrade_xs ) THEN
-
- DO i =i_start,i_start_f-1
-
- IF(i == ids+1) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(g_w(i,k,j) +g_w(i-1,k, &
- j)) +0.5*(fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i-1,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)) &
-*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDIF
-
- IF(i == ids+2) THEN
-
- DO k =kts+1,ktf
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux3(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux3(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- END IF
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- DO i =i_end_f+1,i_end+1
-
- IF( i == ide-1 ) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(g_w(i,k,j) +g_w(i-1,k, &
- j)) +0.5*(fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i-1,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)) &
-*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDIF
-
- IF( i == ide-2 ) THEN
-
- DO k =kts+1,ktf
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux3(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux3(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDIF
- ENDDO
- ENDIF
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msftx(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
-
- ELSE IF( horz_order == 4 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+2)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+2)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-3)                ) degrade_ye =.false.
-
- ktf =min(kte,kde-1)
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =ids+1
-
- i_start_f =i_start+1
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =ide-2
-
- i_end_f =ide-2
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux4(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start_f,i_end_f
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux4(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux4(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- IF( degrade_xs ) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i_start,k,j) +fzp(k)*ru(i_start,k-1,j))*(g_w(i_start, &
- k,j) +g_w(i_start-1,k,j)) +0.5*(fzm(k)*g_ru(i_start,k,j) +fzp(k)*g_ru( &
- i_start,k-1,j))*(w(i_start,k,j) +w(i_start-1,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i_start,k,j) +fzp(k)*ru(i_start,k-1,j))*(w(i_start,k,j) &
- +w(i_start-1,k,j))
-
- g_fqx(i_start,k) =g_Tmpv1
- fqx(i_start,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_start,k-1,j) -fzp(k-1)*ru(i_start,k-2,j)) &
-*(g_w(i_start,k,j) +g_w(i_start-1,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i_start,k- &
- 1,j) -fzp(k-1)*g_ru(i_start,k-2,j))*(w(i_start,k,j) +w(i_start-1,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_start,k-1,j) -fzp(k-1)*ru(i_start,k-2,j)) &
-*(w(i_start,k,j) +w(i_start-1,k,j))
-
- g_fqx(i_start,k) =g_Tmpv1
- fqx(i_start,k) =Tmpv1
-
- ENDIF
-
- IF( degrade_xe ) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i_end+1,k,j) +fzp(k)*ru(i_end+1,k-1,j))*(g_w(i_end+1, &
- k,j) +g_w(i_end,k,j)) +0.5*(fzm(k)*g_ru(i_end+1,k,j) +fzp(k)*g_ru(i_end+1,k- &
- 1,j))*(w(i_end+1,k,j) +w(i_end,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i_end+1,k,j) +fzp(k)*ru(i_end+1,k-1,j))*(w(i_end+1,k,j) &
- +w(i_end,k,j))
-
- g_fqx(i_end+1,k) =g_Tmpv1
- fqx(i_end+1,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_end+1,k-1,j) -fzp(k-1)*ru(i_end+1,k-2,j)) &
-*(g_w(i_end+1,k,j) +g_w(i_end,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i_end+1,k-1,j) &
- -fzp(k-1)*g_ru(i_end+1,k-2,j))*(w(i_end+1,k,j) +w(i_end,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_end+1,k-1,j) -fzp(k-1)*ru(i_end+1,k-2,j)) &
-*(w(i_end+1,k,j) +w(i_end,k,j))
-
- g_fqx(i_end+1,k) =g_Tmpv1
- fqx(i_end+1,k) =Tmpv1
-
- ENDIF
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msftx(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =jds+1
-
- j_start_f =j_start+1
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =jde-2
-
- j_end_f =jde-2
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF((j < j_start_f) .and. degrade_ys) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j_start) +fzp(k)*rv(i,k-1,j_start))*(g_w(i,k, &
- j_start) +g_w(i,k,j_start-1)) +0.5*(fzm(k)*g_rv(i,k,j_start) +fzp(k) &
-*g_rv(i,k-1,j_start))*(w(i,k,j_start) +w(i,k,j_start-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j_start) +fzp(k)*rv(i,k-1,j_start))*(w(i,k,j_start) &
- +w(i,k,j_start-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j_start) -fzp(k-1)*rv(i,k-2,j_start)) &
-*(g_w(i,k,j_start) +g_w(i,k,j_start-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1, &
- j_start) -fzp(k-1)*g_rv(i,k-2,j_start))*(w(i,k,j_start) +w(i,k,j_start-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j_start) -fzp(k-1)*rv(i,k-2,j_start)) &
-*(w(i,k,j_start) +w(i,k,j_start-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ELSE IF((j > j_end_f) .and. degrade_ye) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(g_w(i,k,j) +g_w(i,k,j- &
- 1)) +0.5*(fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i,k,j-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)) &
-*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ELSE
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux4(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux4(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux4(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- END IF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF( j > j_start ) THEN
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- END IF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
- ELSE IF( horz_order == 3 ) THEN
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+2)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+2)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-3)                ) degrade_ye =.false.
-
- ktf =min(kte,kde-1)
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- IF(degrade_xs) THEN
-
- i_start =ids+1
-
- i_start_f =i_start+1
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =ide-2
-
- i_end_f =ide-2
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start_f,i_end_f
-
- g_vel =fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j)
- vel =fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j)
-
- g_FuncVal1=g_flux3(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start_f,i_end_f
-
- g_vel =(2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)
- vel =(2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j)
-
- g_FuncVal1=g_flux3(w(i-2,k,j),g_w(i-2,k,j),w(i-1,k,j),g_w(i-1,k,j) &
-,w(i,k,j),g_w(i,k,j),w(i+1,k,j),g_w(i+1,k,j),vel,g_vel)
- FuncVal1 =flux3(w(i-2,k,j),w(i-1,k,j),w(i,k,j),w(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k) =g_Tmpv1
- fqx(i,k) =Tmpv1
-
- ENDDO
-
- IF( degrade_xs ) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i_start,k,j) +fzp(k)*ru(i_start,k-1,j))*(g_w(i_start, &
- k,j) +g_w(i_start-1,k,j)) +0.5*(fzm(k)*g_ru(i_start,k,j) +fzp(k)*g_ru( &
- i_start,k-1,j))*(w(i_start,k,j) +w(i_start-1,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i_start,k,j) +fzp(k)*ru(i_start,k-1,j))*(w(i_start,k,j) &
- +w(i_start-1,k,j))
-
- g_fqx(i_start,k) =g_Tmpv1
- fqx(i_start,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_start,k-1,j) -fzp(k-1)*ru(i_start,k-2,j)) &
-*(g_w(i_start,k,j) +g_w(i_start-1,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i_start,k- &
- 1,j) -fzp(k-1)*g_ru(i_start,k-2,j))*(w(i_start,k,j) +w(i_start-1,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_start,k-1,j) -fzp(k-1)*ru(i_start,k-2,j)) &
-*(w(i_start,k,j) +w(i_start-1,k,j))
-
- g_fqx(i_start,k) =g_Tmpv1
- fqx(i_start,k) =Tmpv1
-
- ENDIF
-
- IF( degrade_xe ) THEN
-
- DO k =kts+1,ktf
-
- g_Tmpv1 =0.5*(fzm(k)*ru(i_end+1,k,j) +fzp(k)*ru(i_end+1,k-1,j))*(g_w(i_end+1, &
- k,j) +g_w(i_end,k,j)) +0.5*(fzm(k)*g_ru(i_end+1,k,j) +fzp(k)*g_ru(i_end+1,k- &
- 1,j))*(w(i_end+1,k,j) +w(i_end,k,j)) 
- Tmpv1 =0.5*(fzm(k)*ru(i_end+1,k,j) +fzp(k)*ru(i_end+1,k-1,j))*(w(i_end+1,k,j) &
- +w(i_end,k,j))
-
- g_fqx(i_end+1,k) =g_Tmpv1
- fqx(i_end+1,k) =Tmpv1
-
- ENDDO
-
- k =ktf+1
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_end+1,k-1,j) -fzp(k-1)*ru(i_end+1,k-2,j)) &
-*(g_w(i_end+1,k,j) +g_w(i_end,k,j)) +0.5*((2.-fzm(k-1))*g_ru(i_end+1,k-1,j) &
- -fzp(k-1)*g_ru(i_end+1,k-2,j))*(w(i_end+1,k,j) +w(i_end,k,j)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*ru(i_end+1,k-1,j) -fzp(k-1)*ru(i_end+1,k-2,j)) &
-*(w(i_end+1,k,j) +w(i_end,k,j))
-
- g_fqx(i_end+1,k) =g_Tmpv1
- fqx(i_end+1,k) =Tmpv1
-
- ENDIF
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msftx(i,j) *rdx
-
- g_Tmpv1 =mrdx*(g_fqx(i+1,k) -g_fqx(i,k)) +g_mrdx*(fqx(i+1,k) -fqx(i,k)) 
- Tmpv1 =mrdx*(fqx(i+1,k) -fqx(i,k))
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv1
- tendency(i,k,j) =tendency(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_ys) THEN
-
- j_start =jds+1
-
- j_start_f =j_start+1
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =jde-2
-
- j_end_f =jde-2
- ENDIF
-
- IF(config_flags%polar) j_end =min(jte,jde-1)
-
- jp1 =2
-
- jp0 =1
-
- DO j =j_start,j_end+1
-
- IF((j < j_start_f) .and. degrade_ys) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j_start) +fzp(k)*rv(i,k-1,j_start))*(g_w(i,k, &
- j_start) +g_w(i,k,j_start-1)) +0.5*(fzm(k)*g_rv(i,k,j_start) +fzp(k) &
-*g_rv(i,k-1,j_start))*(w(i,k,j_start) +w(i,k,j_start-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j_start) +fzp(k)*rv(i,k-1,j_start))*(w(i,k,j_start) &
- +w(i,k,j_start-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j_start) -fzp(k-1)*rv(i,k-2,j_start)) &
-*(g_w(i,k,j_start) +g_w(i,k,j_start-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1, &
- j_start) -fzp(k-1)*g_rv(i,k-2,j_start))*(w(i,k,j_start) +w(i,k,j_start-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j_start) -fzp(k-1)*rv(i,k-2,j_start)) &
-*(w(i,k,j_start) +w(i,k,j_start-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ELSE IF((j > j_end_f) .and. degrade_ye) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(g_w(i,k,j) +g_w(i,k,j- &
- 1)) +0.5*(fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i,k,j-1)) +0.5*((2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)) &
-*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv1 =0.5*((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ELSE
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_vel =fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j)
- vel =fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j)
-
- g_FuncVal1=g_flux3(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vel =(2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)
- vel =(2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j)
-
- g_FuncVal1=g_flux3(w(i,k,j-2),g_w(i,k,j-2),w(i,k,j-1),g_w(i,k,j-1) &
-,w(i,k,j),g_w(i,k,j),w(i,k,j+1),g_w(i,k,j+1),vel,g_vel)
- FuncVal1 =flux3(w(i,k,j-2),w(i,k,j-1),w(i,k,j),w(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,jp1) =g_Tmpv1
- fqy(i,k,jp1) =Tmpv1
-
- ENDDO
- END IF
-
- IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp1) +g_mrdy*fqy(i,k,jp1) 
- Tmpv1 =mrdy*fqy(i,k,jp1)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*g_fqy(i,k,jp0) +g_mrdy*fqy(i,k,jp0) 
- Tmpv1 =mrdy*fqy(i,k,jp0)
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) +g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) +Tmpv1
-
- ENDDO
- ENDDO
-
- ELSE
-
- IF( j > j_start ) THEN
-
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j-1) *rdy
-
- g_Tmpv1 =mrdy*(g_fqy(i,k,jp1) -g_fqy(i,k,jp0)) +g_mrdy*(fqy(i,k,jp1) &
- -fqy(i,k,jp0)) 
- Tmpv1 =mrdy*(fqy(i,k,jp1) -fqy(i,k,jp0))
-
- g_tendency(i,k,j-1) =g_tendency(i,k,j-1) -g_Tmpv1
- tendency(i,k,j-1) =tendency(i,k,j-1) -Tmpv1
-
- ENDDO
- ENDDO
- END IF
- END IF
-
- jtmp =jp1
-
- jp1 =jp0
-
- jp0 =jtmp
- ENDDO
- ELSE IF(horz_order == 2 ) THEN
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( .NOT. config_flags%periodic_x ) THEN
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-2,ite)
-  ENDIF
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msftx(i,j) *rdx
-
- g_Tmpv1 =(fzm(k)*ru(i+1,k,j) +fzp(k)*ru(i+1,k-1,j))*(g_w(i+1,k,j) &
- +g_w(i,k,j)) +(fzm(k)*g_ru(i+1,k,j) +fzp(k)*g_ru(i+1,k-1,j))*(w(i+1,k,j) +w(i,k,j)) 
- Tmpv1 =(fzm(k)*ru(i+1,k,j) +fzp(k)*ru(i+1,k-1,j))*(w(i+1,k,j) +w(i,k,j))
-
- g_Tmpv2 =(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(g_w(i,k,j) +g_w(i-1,k,j)) &
- +(fzm(k)*g_ru(i,k,j) +fzp(k)*g_ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv2 =(fzm(k)*ru(i,k,j) +fzp(k)*ru(i,k-1,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_Tmpv3 =mrdx*0.5*(g_Tmpv1 -g_Tmpv2) +g_mrdx*0.5*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdx*0.5*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_mrdx =0.0
- mrdx =msftx(i,j) *rdx
-
- g_Tmpv1 =((2.-fzm(k-1))*ru(i+1,k-1,j) -fzp(k-1)*ru(i+1,k-2,j))*(g_w(i+1,k,j) &
- +g_w(i,k,j)) +((2.-fzm(k-1))*g_ru(i+1,k-1,j) -fzp(k-1)*g_ru(i+1,k-2,j)) &
-*(w(i+1,k,j) +w(i,k,j)) 
- Tmpv1 =((2.-fzm(k-1))*ru(i+1,k-1,j) -fzp(k-1)*ru(i+1,k-2,j))*(w(i+1,k,j) +w(i,k,j))
-
- g_Tmpv2 =((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i-1,k,j)) +((2.-fzm(k-1))*g_ru(i,k-1,j) -fzp(k-1)*g_ru(i,k-2,j)) &
-*(w(i,k,j) +w(i-1,k,j)) 
- Tmpv2 =((2.-fzm(k-1))*ru(i,k-1,j) -fzp(k-1)*ru(i,k-2,j))*(w(i,k,j) +w(i-1,k,j))
-
- g_Tmpv3 =mrdx*0.5*(g_Tmpv1 -g_Tmpv2) +g_mrdx*0.5*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdx*0.5*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDDO
- ENDDO
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- IF( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start =max(jds+1,jts)
-
- IF( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end =min(jde-2,jte)
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j) *rdy
-
- g_Tmpv1 =(fzm(k)*rv(i,k,j+1) +fzp(k)*rv(i,k-1,j+1))*(g_w(i,k,j+1) &
- +g_w(i,k,j)) +(fzm(k)*g_rv(i,k,j+1) +fzp(k)*g_rv(i,k-1,j+1))*(w(i,k,j+1) +w(i,k,j)) 
- Tmpv1 =(fzm(k)*rv(i,k,j+1) +fzp(k)*rv(i,k-1,j+1))*(w(i,k,j+1) +w(i,k,j))
-
- g_Tmpv2 =(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(g_w(i,k,j) +g_w(i,k,j-1)) &
- +(fzm(k)*g_rv(i,k,j) +fzp(k)*g_rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv2 =(fzm(k)*rv(i,k,j) +fzp(k)*rv(i,k-1,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_Tmpv3 =mrdy*0.5*(g_Tmpv1 -g_Tmpv2) +g_mrdy*0.5*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdy*0.5*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,j) *rdy
-
- g_Tmpv1 =((2.-fzm(k-1))*rv(i,k-1,j+1) -fzp(k-1)*rv(i,k-2,j+1))*(g_w(i,k,j+1) &
- +g_w(i,k,j)) +((2.-fzm(k-1))*g_rv(i,k-1,j+1) -fzp(k-1)*g_rv(i,k-2,j+1)) &
-*(w(i,k,j+1) +w(i,k,j)) 
- Tmpv1 =((2.-fzm(k-1))*rv(i,k-1,j+1) -fzp(k-1)*rv(i,k-2,j+1))*(w(i,k,j+1) +w(i,k,j))
-
- g_Tmpv2 =((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(g_w(i,k,j) &
- +g_w(i,k,j-1)) +((2.-fzm(k-1))*g_rv(i,k-1,j) -fzp(k-1)*g_rv(i,k-2,j)) &
-*(w(i,k,j) +w(i,k,j-1)) 
- Tmpv2 =((2.-fzm(k-1))*rv(i,k-1,j) -fzp(k-1)*rv(i,k-2,j))*(w(i,k,j) +w(i,k,j-1))
-
- g_Tmpv3 =mrdy*0.5*(g_Tmpv1 -g_Tmpv2) +g_mrdy*0.5*(Tmpv1 -Tmpv2) 
- Tmpv3 =mrdy*0.5*(Tmpv1 -Tmpv2)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -g_Tmpv3
- tendency(i,k,j) =tendency(i,k,j) -Tmpv3
-
- ENDDO
- ENDDO
-
- IF(config_flags%polar) THEN
-
- IF(jts == jds) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,jds) *rdy
-
- g_Tmpv1 =(fzm(k)*rv(i,k,jds+1) +fzp(k)*rv(i,k-1,jds+1))*(g_w(i,k,jds+1) &
- +g_w(i,k,jds)) +(fzm(k)*g_rv(i,k,jds+1) +fzp(k)*g_rv(i,k-1,jds+1)) &
-*(w(i,k,jds+1) +w(i,k,jds)) 
- Tmpv1 =(fzm(k)*rv(i,k,jds+1) +fzp(k)*rv(i,k-1,jds+1))*(w(i,k,jds+1) +w(i,k,jds))
-
- g_Tmpv2 =mrdy*0.5*(g_Tmpv1) +g_mrdy*0.5*(Tmpv1) 
- Tmpv2 =mrdy*0.5*(Tmpv1)
-
- g_tendency(i,k,jds) =g_tendency(i,k,jds) -g_Tmpv2
- tendency(i,k,jds) =tendency(i,k,jds) -Tmpv2
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,jds) *rdy
-
- g_Tmpv1 =mrdy*0.5*((2.-fzm(k-1))*g_rv(i,k-1,jds+1) -fzp(k-1)*g_rv(i,k-2, &
- jds+1)) +g_mrdy*0.5*((2.-fzm(k-1))*rv(i,k-1,jds+1) -fzp(k-1)*rv(i,k-2,jds+1)) 
- Tmpv1 =mrdy*0.5*((2.-fzm(k-1))*rv(i,k-1,jds+1) -fzp(k-1)*rv(i,k-2,jds+1))
-
- g_Tmpv2 =Tmpv1*(g_w(i,k,jds+1) +g_w(i,k,jds)) +g_Tmpv1*(w(i,k,jds+1) +w(i,k,jds)) 
- Tmpv2 =Tmpv1*(w(i,k,jds+1) +w(i,k,jds))
-
- g_tendency(i,k,jds) =g_tendency(i,k,jds) -g_Tmpv2
- tendency(i,k,jds) =tendency(i,k,jds) -Tmpv2
-
- ENDDO
- END IF
-
- IF(jte == jde) THEN
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,jde-1) *rdy
-
- g_Tmpv1 =(fzm(k)*rv(i,k,jde-1) +fzp(k)*rv(i,k-1,jde-1))*(g_w(i,k,jde-1) &
- +g_w(i,k,jde-2)) +(fzm(k)*g_rv(i,k,jde-1) +fzp(k)*g_rv(i,k-1,jde-1)) &
-*(w(i,k,jde-1) +w(i,k,jde-2)) 
- Tmpv1 =(fzm(k)*rv(i,k,jde-1) +fzp(k)*rv(i,k-1,jde-1))*(w(i,k,jde-1) +w(i,k,jde-2))
-
- g_Tmpv2 =mrdy*0.5*(g_Tmpv1) +g_mrdy*0.5*(Tmpv1) 
- Tmpv2 =mrdy*0.5*(Tmpv1)
-
- g_tendency(i,k,jde-1) =g_tendency(i,k,jde-1) +g_Tmpv2
- tendency(i,k,jde-1) =tendency(i,k,jde-1) +Tmpv2
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_mrdy =0.0
- mrdy =msftx(i,jde-1) *rdy
-
- g_Tmpv1 =mrdy*0.5*((2.-fzm(k-1))*g_rv(i,k-1,jde-1) -fzp(k-1)*g_rv(i,k-2, &
- jde-1)) +g_mrdy*0.5*((2.-fzm(k-1))*rv(i,k-1,jde-1) -fzp(k-1)*rv(i,k-2,jde-1)) 
- Tmpv1 =mrdy*0.5*((2.-fzm(k-1))*rv(i,k-1,jde-1) -fzp(k-1)*rv(i,k-2,jde-1))
-
- g_Tmpv2 =Tmpv1*(g_w(i,k,jde-1) +g_w(i,k,jde-2)) +g_Tmpv1*(w(i,k,jde-1) &
- +w(i,k,jde-2)) 
- Tmpv2 =Tmpv1*(w(i,k,jde-1) +w(i,k,jde-2))
-
- g_tendency(i,k,jde-1) =g_tendency(i,k,jde-1) +g_Tmpv2
- tendency(i,k,jde-1) =tendency(i,k,jde-1) +Tmpv2
-
- ENDDO
- END IF
- END IF
- ELSE IF( horz_order == 0 ) THEN
-
- ELSE
-
- WRITE (wrf_err_message,*) ' advect_w_6a, h_order not known ',horz_order
-
-!REVISED BY WALLS
- CALL wrf_error_fatal(wrf_err_message)
- ENDIF
-
-!LPB[4]
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( (config_flags%open_xs) .and. (its == ids)) THEN
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
-
- g_uw =0.5*(fzm(k)*(g_ru(its,k,j) +g_ru(its+1,k,j)) +fzp(k)*(g_ru(its,k-1, &
- j) +g_ru(its+1,k-1,j)))
- uw =0.5*(fzm(k)*(ru(its,k,j) +ru(its+1,k,j)) +fzp(k)*(ru(its,k-1,j) +ru(its+1,k-1,j)))
-
- g_ub =(g_uw +0.0 -(g_uw -0.0)*sign(1.0, uw -(0.)))*0.5
- ub =min(uw,0.)
-
- g_Tmpv1 =ub*(g_w_old(its+1,k,j) -g_w_old(its,k,j)) +g_ub*(w_old(its+1,k, &
- j) -w_old(its,k,j)) 
- Tmpv1 =ub*(w_old(its+1,k,j) -w_old(its,k,j))
-
- g_Tmpv2 =w(its,k,j)*(fzm(k)*(g_ru(its+1,k,j) -g_ru(its,k,j)) +fzp(k) &
-*(g_ru(its+1,k-1,j) -g_ru(its,k-1,j))) +g_w(its,k,j)*(fzm(k)*(ru(its+1,k,j) &
- -ru(its,k,j)) +fzp(k)*(ru(its+1,k-1,j) -ru(its,k-1,j))) 
- Tmpv2 =w(its,k,j)*(fzm(k)*(ru(its+1,k,j) -ru(its,k,j)) +fzp(k)*(ru(its+1,k-1,j) &
- -ru(its,k-1,j)))
-
- g_tendency(its,k,j) =g_tendency(its,k,j) -rdx*(g_Tmpv1 +g_Tmpv2)
- tendency(its,k,j) =tendency(its,k,j) -rdx*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO j =j_start,j_end
-
- g_uw =0.5*((2.-fzm(k-1))*(g_ru(its,k-1,j) +g_ru(its+1,k-1,j)) -fzp(k-1) &
-*(g_ru(its,k-2,j) +g_ru(its+1,k-2,j)))
- uw =0.5*((2.-fzm(k-1))*(ru(its,k-1,j) +ru(its+1,k-1,j)) -fzp(k-1)*(ru(its,k-2,j) &
- +ru(its+1,k-2,j)))
-
- g_ub =(g_uw +0.0 -(g_uw -0.0)*sign(1.0, uw -(0.)))*0.5
- ub =min(uw,0.)
-
- g_Tmpv1 =ub*(g_w_old(its+1,k,j) -g_w_old(its,k,j)) +g_ub*(w_old(its+1,k, &
- j) -w_old(its,k,j)) 
- Tmpv1 =ub*(w_old(its+1,k,j) -w_old(its,k,j))
-
- g_Tmpv2 =w(its,k,j)*((2.-fzm(k-1))*(g_ru(its+1,k-1,j) -g_ru(its,k-1,j)) &
- -fzp(k-1)*(g_ru(its+1,k-2,j) -g_ru(its,k-2,j))) +g_w(its,k,j) &
-*((2.-fzm(k-1))*(ru(its+1,k-1,j) -ru(its,k-1,j)) -fzp(k-1)*(ru(its+1,k-2,j) -ru(its,k-2,j))) 
- Tmpv2 =w(its,k,j)*((2.-fzm(k-1))*(ru(its+1,k-1,j) -ru(its,k-1,j)) -fzp(k-1) &
-*(ru(its+1,k-2,j) -ru(its,k-2,j)))
-
- g_tendency(its,k,j) =g_tendency(its,k,j) -rdx*(g_Tmpv1 +g_Tmpv2)
- tendency(its,k,j) =tendency(its,k,j) -rdx*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDIF
-
- IF( (config_flags%open_xe) .and. (ite == ide)) THEN
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
-
- g_uw =0.5*(fzm(k)*(g_ru(ite-1,k,j) +g_ru(ite,k,j)) +fzp(k)*(g_ru(ite-1,k- &
- 1,j) +g_ru(ite,k-1,j)))
- uw =0.5*(fzm(k)*(ru(ite-1,k,j) +ru(ite,k,j)) +fzp(k)*(ru(ite-1,k-1,j) +ru(ite,k-1,j)))
-
- g_ub =(g_uw +0.0 +(g_uw -0.0)*sign(1.0, uw -(0.)))*0.5
- ub =max(uw,0.)
-
- g_Tmpv1 =ub*(g_w_old(i_end,k,j) -g_w_old(i_end-1,k,j)) +g_ub*(w_old( &
- i_end,k,j) -w_old(i_end-1,k,j)) 
- Tmpv1 =ub*(w_old(i_end,k,j) -w_old(i_end-1,k,j))
-
- g_Tmpv2 =w(i_end,k,j)*(fzm(k)*(g_ru(ite,k,j) -g_ru(ite-1,k,j)) +fzp(k) &
-*(g_ru(ite,k-1,j) -g_ru(ite-1,k-1,j))) +g_w(i_end,k,j)*(fzm(k)*(ru(ite,k,j) &
- -ru(ite-1,k,j)) +fzp(k)*(ru(ite,k-1,j) -ru(ite-1,k-1,j))) 
- Tmpv2 =w(i_end,k,j)*(fzm(k)*(ru(ite,k,j) -ru(ite-1,k,j)) +fzp(k)*(ru(ite,k-1,j) &
- -ru(ite-1,k-1,j)))
-
- g_tendency(i_end,k,j) =g_tendency(i_end,k,j) -rdx*(g_Tmpv1 +g_Tmpv2)
- tendency(i_end,k,j) =tendency(i_end,k,j) -rdx*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO j =j_start,j_end
-
- g_uw =0.5*((2.-fzm(k-1))*(g_ru(ite-1,k-1,j) +g_ru(ite,k-1,j)) -fzp(k-1) &
-*(g_ru(ite-1,k-2,j) +g_ru(ite,k-2,j)))
- uw =0.5*((2.-fzm(k-1))*(ru(ite-1,k-1,j) +ru(ite,k-1,j)) -fzp(k-1)*(ru(ite-1,k-2,j) &
- +ru(ite,k-2,j)))
-
- g_ub =(g_uw +0.0 +(g_uw -0.0)*sign(1.0, uw -(0.)))*0.5
- ub =max(uw,0.)
-
- g_Tmpv1 =ub*(g_w_old(i_end,k,j) -g_w_old(i_end-1,k,j)) +g_ub*(w_old( &
- i_end,k,j) -w_old(i_end-1,k,j)) 
- Tmpv1 =ub*(w_old(i_end,k,j) -w_old(i_end-1,k,j))
-
- g_Tmpv2 =w(i_end,k,j)*((2.-fzm(k-1))*(g_ru(ite,k-1,j) -g_ru(ite-1,k-1,j)) &
- -fzp(k-1)*(g_ru(ite,k-2,j) -g_ru(ite-1,k-2,j))) +g_w(i_end,k,j) &
-*((2.-fzm(k-1))*(ru(ite,k-1,j) -ru(ite-1,k-1,j)) -fzp(k-1)*(ru(ite,k-2,j) -ru(ite-1,k-2,j))) 
- Tmpv2 =w(i_end,k,j)*((2.-fzm(k-1))*(ru(ite,k-1,j) -ru(ite-1,k-1,j)) -fzp(k-1) &
-*(ru(ite,k-2,j) -ru(ite-1,k-2,j)))
-
- g_tendency(i_end,k,j) =g_tendency(i_end,k,j) -rdx*(g_Tmpv1 +g_Tmpv2)
- tendency(i_end,k,j) =tendency(i_end,k,j) -rdx*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDIF
-
- IF( (config_flags%open_ys) .and. (jts == jds)) THEN
-
- DO i =i_start,i_end
- DO k =kts+1,ktf
-
- g_vw =0.5*(fzm(k)*(g_rv(i,k,jts) +g_rv(i,k,jts+1)) +fzp(k)*(g_rv(i,k-1, &
- jts) +g_rv(i,k-1,jts+1)))
- vw =0.5*(fzm(k)*(rv(i,k,jts) +rv(i,k,jts+1)) +fzp(k)*(rv(i,k-1,jts) +rv(i,k-1,jts+1)))
-
- g_vb =(g_vw +0.0 -(g_vw -0.0)*sign(1.0, vw -(0.)))*0.5
- vb =min(vw,0.)
-
- g_Tmpv1 =vb*(g_w_old(i,k,jts+1) -g_w_old(i,k,jts)) +g_vb*(w_old(i,k,jts+ &
- 1) -w_old(i,k,jts)) 
- Tmpv1 =vb*(w_old(i,k,jts+1) -w_old(i,k,jts))
-
- g_Tmpv2 =w(i,k,jts)*(fzm(k)*(g_rv(i,k,jts+1) -g_rv(i,k,jts)) +fzp(k) &
-*(g_rv(i,k-1,jts+1) -g_rv(i,k-1,jts))) +g_w(i,k,jts)*(fzm(k)*(rv(i,k,jts+1) &
- -rv(i,k,jts)) +fzp(k)*(rv(i,k-1,jts+1) -rv(i,k-1,jts))) 
- Tmpv2 =w(i,k,jts)*(fzm(k)*(rv(i,k,jts+1) -rv(i,k,jts)) +fzp(k)*(rv(i,k-1,jts+1) &
- -rv(i,k-1,jts)))
-
- g_tendency(i,k,jts) =g_tendency(i,k,jts) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,jts) =tendency(i,k,jts) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vw =0.5*((2.-fzm(k-1))*(g_rv(i,k-1,jts) +g_rv(i,k-1,jts+1)) -fzp(k-1) &
-*(g_rv(i,k-2,jts) +g_rv(i,k-2,jts+1)))
- vw =0.5*((2.-fzm(k-1))*(rv(i,k-1,jts) +rv(i,k-1,jts+1)) -fzp(k-1)*(rv(i,k-2,jts) &
- +rv(i,k-2,jts+1)))
-
- g_vb =(g_vw +0.0 -(g_vw -0.0)*sign(1.0, vw -(0.)))*0.5
- vb =min(vw,0.)
-
- g_Tmpv1 =vb*(g_w_old(i,k,jts+1) -g_w_old(i,k,jts)) +g_vb*(w_old(i,k,jts+ &
- 1) -w_old(i,k,jts)) 
- Tmpv1 =vb*(w_old(i,k,jts+1) -w_old(i,k,jts))
-
- g_Tmpv2 =w(i,k,jts)*((2.-fzm(k-1))*(g_rv(i,k-1,jts+1) -g_rv(i,k-1,jts)) &
- -fzp(k-1)*(g_rv(i,k-2,jts+1) -g_rv(i,k-2,jts))) +g_w(i,k,jts) &
-*((2.-fzm(k-1))*(rv(i,k-1,jts+1) -rv(i,k-1,jts)) -fzp(k-1)*(rv(i,k-2,jts+1) -rv(i,k-2,jts))) 
- Tmpv2 =w(i,k,jts)*((2.-fzm(k-1))*(rv(i,k-1,jts+1) -rv(i,k-1,jts)) -fzp(k-1) &
-*(rv(i,k-2,jts+1) -rv(i,k-2,jts)))
-
- g_tendency(i,k,jts) =g_tendency(i,k,jts) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,jts) =tendency(i,k,jts) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDIF
-
- IF( (config_flags%open_ye) .and. (jte == jde) ) THEN
-
- DO i =i_start,i_end
- DO k =kts+1,ktf
-
- g_vw =0.5*(fzm(k)*(g_rv(i,k,jte-1) +g_rv(i,k,jte)) +fzp(k)*(g_rv(i,k-1, &
- jte-1) +g_rv(i,k-1,jte)))
- vw =0.5*(fzm(k)*(rv(i,k,jte-1) +rv(i,k,jte)) +fzp(k)*(rv(i,k-1,jte-1) +rv(i,k-1,jte)))
-
- g_vb =(g_vw +0.0 +(g_vw -0.0)*sign(1.0, vw -(0.)))*0.5
- vb =max(vw,0.)
-
- g_Tmpv1 =vb*(g_w_old(i,k,j_end) -g_w_old(i,k,j_end-1)) +g_vb*(w_old(i,k, &
- j_end) -w_old(i,k,j_end-1)) 
- Tmpv1 =vb*(w_old(i,k,j_end) -w_old(i,k,j_end-1))
-
- g_Tmpv2 =w(i,k,j_end)*(fzm(k)*(g_rv(i,k,jte) -g_rv(i,k,jte-1)) +fzp(k) &
-*(g_rv(i,k-1,jte) -g_rv(i,k-1,jte-1))) +g_w(i,k,j_end)*(fzm(k)*(rv(i,k,jte) &
- -rv(i,k,jte-1)) +fzp(k)*(rv(i,k-1,jte) -rv(i,k-1,jte-1))) 
- Tmpv2 =w(i,k,j_end)*(fzm(k)*(rv(i,k,jte) -rv(i,k,jte-1)) +fzp(k)*(rv(i,k-1,jte) &
- -rv(i,k-1,jte-1)))
-
- g_tendency(i,k,j_end) =g_tendency(i,k,j_end) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,j_end) =tendency(i,k,j_end) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_vw =0.5*((2.-fzm(k-1))*(g_rv(i,k-1,jte-1) +g_rv(i,k-1,jte)) -fzp(k-1) &
-*(g_rv(i,k-2,jte-1) +g_rv(i,k-2,jte)))
- vw =0.5*((2.-fzm(k-1))*(rv(i,k-1,jte-1) +rv(i,k-1,jte)) -fzp(k-1)*(rv(i,k-2,jte-1) &
- +rv(i,k-2,jte)))
-
- g_vb =(g_vw +0.0 +(g_vw -0.0)*sign(1.0, vw -(0.)))*0.5
- vb =max(vw,0.)
-
- g_Tmpv1 =vb*(g_w_old(i,k,j_end) -g_w_old(i,k,j_end-1)) +g_vb*(w_old(i,k, &
- j_end) -w_old(i,k,j_end-1)) 
- Tmpv1 =vb*(w_old(i,k,j_end) -w_old(i,k,j_end-1))
-
- g_Tmpv2 =w(i,k,j_end)*((2.-fzm(k-1))*(g_rv(i,k-1,jte) -g_rv(i,k-1,jte-1)) &
- -fzp(k-1)*(g_rv(i,k-2,jte) -g_rv(i,k-2,jte-1))) +g_w(i,k,j_end) &
-*((2.-fzm(k-1))*(rv(i,k-1,jte) -rv(i,k-1,jte-1)) -fzp(k-1)*(rv(i,k-2,jte) -rv(i,k-2,jte-1))) 
- Tmpv2 =w(i,k,j_end)*((2.-fzm(k-1))*(rv(i,k-1,jte) -rv(i,k-1,jte-1)) -fzp(k-1) &
-*(rv(i,k-2,jte) -rv(i,k-2,jte-1)))
-
- g_tendency(i,k,j_end) =g_tendency(i,k,j_end) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,j_end) =tendency(i,k,j_end) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDIF
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- DO i =i_start,i_end
-
- g_vflux(i,kts) =0.0
- vflux(i,kts) =0.
-
- g_vflux(i,kte) =0.0
- vflux(i,kte) =0.
-
- ENDDO
-
- IF(vert_order == 6) THEN
-
- DO j =j_start,j_end
- DO k =kts+3,ktf-1
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux6(w(i,k-3,j),g_w(i,k-3,j),w(i,k-2,j),g_w(i,k-2,j) &
-,w(i,k-1,j),g_w(i,k-1,j),w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j) &
-,w(i,k+2,j),g_w(i,k+2,j),-vel,-g_vel)
- FuncVal1 =flux6(w(i,k-3,j),w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),w(i,k+2,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =kts+2
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux4(w(i,k-2,j),g_w(i,k-2,j),w(i,k-1,j),g_w(i,k-1,j) &
-,w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux4(w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux4(w(i,k-2,j),g_w(i,k-2,j),w(i,k-1,j),g_w(i,k-1,j) &
-,w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux4(w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzu(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzu(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +2. *rdzu(k-1)*(g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) +2. *rdzu(k-1)*(vflux(i,k))
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 5) THEN
-
- DO j =j_start,j_end
- DO k =kts+3,ktf-1
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux5(w(i,k-3,j),g_w(i,k-3,j),w(i,k-2,j),g_w(i,k-2,j) &
-,w(i,k-1,j),g_w(i,k-1,j),w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j) &
-,w(i,k+2,j),g_w(i,k+2,j),-vel,-g_vel)
- FuncVal1 =flux5(w(i,k-3,j),w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),w(i,k+2,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =kts+2
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux3(w(i,k-2,j),g_w(i,k-2,j),w(i,k-1,j),g_w(i,k-1,j) &
-,w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux3(w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux3(w(i,k-2,j),g_w(i,k-2,j),w(i,k-1,j),g_w(i,k-1,j) &
-,w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux3(w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzu(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzu(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +2. *rdzu(k-1)*(g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) +2. *rdzu(k-1)*(vflux(i,k))
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 4) THEN
-
- DO j =j_start,j_end
- DO k =kts+2,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux4(w(i,k-2,j),g_w(i,k-2,j),w(i,k-1,j),g_w(i,k-1,j) &
-,w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux4(w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzu(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzu(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +2. *rdzu(k-1)*(g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) +2. *rdzu(k-1)*(vflux(i,k))
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 3) THEN
-
- DO j =j_start,j_end
- DO k =kts+2,ktf
- DO i =i_start,i_end
-
- g_vel =0.5*(g_rom(i,k,j) +g_rom(i,k-1,j))
- vel =0.5*(rom(i,k,j) +rom(i,k-1,j))
-
- g_FuncVal1=g_flux3(w(i,k-2,j),g_w(i,k-2,j),w(i,k-1,j),g_w(i,k-1,j) &
-,w(i,k,j),g_w(i,k,j),w(i,k+1,j),g_w(i,k+1,j),-vel,-g_vel)
- FuncVal1 =flux3(w(i,k-2,j),w(i,k-1,j),w(i,k,j),w(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- k =ktf+1
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzu(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzu(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +2. *rdzu(k-1)*(g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) +2. *rdzu(k-1)*(vflux(i,k))
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 2) THEN
-
- DO j =j_start,j_end
- DO k =kts+1,ktf+1
- DO i =i_start,i_end
-
- g_Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(g_w(i,k,j) +g_w(i,k-1,j)) &
- +0.25*(g_rom(i,k,j) +g_rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j)) 
- Tmpv1 =0.25*(rom(i,k,j) +rom(i,k-1,j))*(w(i,k,j) +w(i,k-1,j))
-
- g_vflux(i,k) =g_Tmpv1
- vflux(i,k) =Tmpv1
-
- ENDDO
- ENDDO
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzu(k)*(g_vflux(i,k+1) -g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) -rdzu(k)*(vflux(i,k+1) -vflux(i,k))
-
- ENDDO
- ENDDO
-
- k =ktf+1
-
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +2. *rdzu(k-1)*(g_vflux(i,k))
- tendency(i,k,j) =tendency(i,k,j) +2. *rdzu(k-1)*(vflux(i,k))
-
- ENDDO
- ENDDO
- ELSE
-
- WRITE (wrf_err_message,*) ' advect_w, v_order not known ',vert_order
-
-!REVISED BY WALLS
- CALL wrf_error_fatal(wrf_err_message)
- ENDIF
-
- END SUBROUTINE g_advect_w
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of advect_w in forward (tangent) mode:
+!   variations   of useful results: tendency
+!   with respect to varying inputs: rom tendency w ru rv w_old
+!   RW status of diff variables: rom:in tendency:in-out w:in ru:in
+!                rv:in w_old:in
+SUBROUTINE G_ADVECT_W(w, wd, w_old, w_oldd, tendency, tendencyd, ru, rud&
+&  , rv, rvd, rom, romd, mut, time_step, config_flags, msfux, msfuy, &
+&  msfvx, msfvy, msftx, msfty, fzm, fzp, rdx, rdy, rdzu, ids, ide, jds, &
+&  jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, &
+&  kte)
+  IMPLICIT NONE
+! Input data
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: w, w_old, ru&
+&  , rv, rom
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: wd, w_oldd, &
+&  rud, rvd, romd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mut
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendencyd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: msfux, msfuy, msfvx, &
+&  msfvy, msftx, msfty
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp, rdzu
+  REAL, INTENT(IN) :: rdx, rdy
+  INTEGER, INTENT(IN) :: time_step
+! Local data
+  INTEGER :: i, j, k, itf, jtf, ktf
+  INTEGER :: i_start, i_end, j_start, j_end
+  INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
+  INTEGER :: jmin, jmax, jp, jm, imin, imax
+  REAL :: mrdx, mrdy, ub, vb, uw, vw
+  REAL :: ubd, vbd, uwd, vwd
+  REAL, DIMENSION(its:ite, kts:kte) :: vflux
+  REAL, DIMENSION(its:ite, kts:kte) :: vfluxd
+  INTEGER :: horz_order, vert_order
+  REAL, DIMENSION(its:ite + 1, kts:kte) :: fqx
+  REAL, DIMENSION(its:ite+1, kts:kte) :: fqxd
+  REAL, DIMENSION(its:ite, kts:kte, 2) :: fqy
+  REAL, DIMENSION(its:ite, kts:kte, 2) :: fqyd
+  LOGICAL :: degrade_xs, degrade_ys
+  LOGICAL :: degrade_xe, degrade_ye
+  INTEGER :: jp1, jp0, jtmp
+! definition of flux operators, 3rd, 4th, 5th or 6th order
+  REAL :: flux3, flux4, flux5, flux6
+  REAL :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
+  REAL :: veld
+  LOGICAL :: specified
+
+
+
+
+  specified = .false.
+  IF (config_flags%specified .OR. config_flags%nested) specified = &
+&      .true.
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  horz_order = config_flags%h_sca_adv_order
+  vert_order = config_flags%v_sca_adv_order
+!  here is the choice of flux operators
+!  begin with horizontal flux divergence
+  IF (horz_order .EQ. 6) THEN
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 3) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+!--------------- y - advection first
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 3
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+!  compute fluxes, 5th or 6th order
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+j_loop_y_flux_6:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*(37.*(w(i, k, j)+w(i, k, j-1))-8.*(w(&
+&              i, k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/60.0&
+&              + vel*(37.*(wd(i, k, j)+wd(i, k, j-1))-8.*(wd(i, k, j+1)+&
+&              wd(i, k, j-2))+wd(i, k, j+2)+wd(i, k, j-3))/60.0
+            fqy(i, k, jp1) = vel*((37.*(w(i, k, j)+w(i, k, j-1))-8.*(w(i&
+&              , k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/60.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*(37.*(w(i, k, j)+w(i, k, j-1))-8.*(w(i&
+&            , k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/60.0 + &
+&            vel*(37.*(wd(i, k, j)+wd(i, k, j-1))-8.*(wd(i, k, j+1)+wd(i&
+&            , k, j-2))+wd(i, k, j+2)+wd(i, k, j-3))/60.0
+          fqy(i, k, jp1) = vel*((37.*(w(i, k, j)+w(i, k, j-1))-8.*(w(i, &
+&            k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/60.0)
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j)+fzp(k)*rvd(i, k-&
+&              1, j))*(w(i, k, j)+w(i, k, j-1))+(fzm(k)*rv(i, k, j)+fzp(k&
+&              )*rv(i, k-1, j))*(wd(i, k, j)+wd(i, k, j-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j)+fzp(k)*rv(i, k-1, j&
+&              ))*(w(i, k, j)+w(i, k, j-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j)-fzp(k-1)*&
+&            rvd(i, k-2, j))*(w(i, k, j)+w(i, k, j-1))+((2.-fzm(k-1))*rv(&
+&            i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(wd(i, k, j)+wd(i, k, j-1&
+&            )))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j)-fzp(k-1)*rv(&
+&            i, k-2, j))*(w(i, k, j)+w(i, k, j-1))
+        END DO
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*(7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k&
+&              , j-1))-wd(i, k, j+1)-wd(i, k, j-2))/12.0
+            fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*(7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, &
+&            j+1)+w(i, k, j-2)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k, j-1&
+&            ))-wd(i, k, j+1)-wd(i, k, j-2))/12.0
+          fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, j&
+&            +1)+w(i, k, j-2)))/12.0)
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j)+fzp(k)*rvd(i, k-&
+&              1, j))*(w(i, k, j)+w(i, k, j-1))+(fzm(k)*rv(i, k, j)+fzp(k&
+&              )*rv(i, k-1, j))*(wd(i, k, j)+wd(i, k, j-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j)+fzp(k)*rv(i, k-1, j&
+&              ))*(w(i, k, j)+w(i, k, j-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j)-fzp(k-1)*&
+&            rvd(i, k-2, j))*(w(i, k, j)+w(i, k, j-1))+((2.-fzm(k-1))*rv(&
+&            i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(wd(i, k, j)+wd(i, k, j-1&
+&            )))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j)-fzp(k-1)*rv(&
+&            i, k-2, j))*(w(i, k, j)+w(i, k, j-1))
+        END DO
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*(7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k&
+&              , j-1))-wd(i, k, j+1)-wd(i, k, j-2))/12.0
+            fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*(7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, &
+&            j+1)+w(i, k, j-2)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k, j-1&
+&            ))-wd(i, k, j+1)-wd(i, k, j-2))/12.0
+          fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, j&
+&            +1)+w(i, k, j-2)))/12.0)
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! Comments for polar boundary conditions
+! Same process as for advect_u - tendencies run from jds to jde-1 
+! (latitudes are as for u grid, longitudes are displaced)
+! Therefore: flow is only from one side for points next to poles
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts+1,ktf+1
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO j_loop_y_flux_6
+!  next, x - flux divergence
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      IF (i_start + 2 .GT. ids + 3) THEN
+        i_start_f = ids + 3
+      ELSE
+        i_start_f = i_start + 2
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  5th or 6th order flux
+      DO k=kts+1,ktf
+        DO i=i_start_f,i_end_f
+          veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+          vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+          fqxd(i, k) = veld*(37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k&
+&            , j)+w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0 + vel*(&
+&            37.*(wd(i, k, j)+wd(i-1, k, j))-8.*(wd(i+1, k, j)+wd(i-2, k&
+&            , j))+wd(i+2, k, j)+wd(i-3, k, j))/60.0
+          fqx(i, k) = vel*((37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k, &
+&            j)+w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0)
+        END DO
+      END DO
+      k = ktf + 1
+      DO i=i_start_f,i_end_f
+        veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j)
+        vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+        fqxd(i, k) = veld*(37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k, j&
+&          )+w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0 + vel*(37.*(&
+&          wd(i, k, j)+wd(i-1, k, j))-8.*(wd(i+1, k, j)+wd(i-2, k, j))+wd&
+&          (i+2, k, j)+wd(i-3, k, j))/60.0
+        fqx(i, k) = vel*((37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k, j)&
+&          +w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0)
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        DO i=i_start,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+! second order
+            DO k=kts+1,ktf
+              fqxd(i, k) = 0.5*((fzm(k)*rud(i, k, j)+fzp(k)*rud(i, k-1, &
+&                j))*(w(i, k, j)+w(i-1, k, j))+(fzm(k)*ru(i, k, j)+fzp(k)&
+&                *ru(i, k-1, j))*(wd(i, k, j)+wd(i-1, k, j)))
+              fqx(i, k) = 0.5*(fzm(k)*ru(i, k, j)+fzp(k)*ru(i, k-1, j))*&
+&                (w(i, k, j)+w(i-1, k, j))
+            END DO
+            k = ktf + 1
+            fqxd(i, k) = 0.5*(((2.-fzm(k-1))*rud(i, k-1, j)-fzp(k-1)*rud&
+&              (i, k-2, j))*(w(i, k, j)+w(i-1, k, j))+((2.-fzm(k-1))*ru(i&
+&              , k-1, j)-fzp(k-1)*ru(i, k-2, j))*(wd(i, k, j)+wd(i-1, k, &
+&              j)))
+            fqx(i, k) = 0.5*((2.-fzm(k-1))*ru(i, k-1, j)-fzp(k-1)*ru(i, &
+&              k-2, j))*(w(i, k, j)+w(i-1, k, j))
+          END IF
+          IF (i .EQ. ids + 2) THEN
+! third order
+            DO k=kts+1,ktf
+              veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+              vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+              fqxd(i, k) = veld*(7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k&
+&                , j)+w(i-2, k, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i-1, &
+&                k, j))-wd(i+1, k, j)-wd(i-2, k, j))/12.0
+              fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, &
+&                j)+w(i-2, k, j)))/12.0)
+            END DO
+            k = ktf + 1
+            veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j&
+&              )
+            vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+            fqxd(i, k) = veld*(7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j&
+&              )+w(i-2, k, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i-1, k, j)&
+&              )-wd(i+1, k, j)-wd(i-2, k, j))/12.0
+            fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)&
+&              +w(i-2, k, j)))/12.0)
+          END IF
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+! second order flux next to the boundary
+            DO k=kts+1,ktf
+              fqxd(i, k) = 0.5*((fzm(k)*rud(i, k, j)+fzp(k)*rud(i, k-1, &
+&                j))*(w(i, k, j)+w(i-1, k, j))+(fzm(k)*ru(i, k, j)+fzp(k)&
+&                *ru(i, k-1, j))*(wd(i, k, j)+wd(i-1, k, j)))
+              fqx(i, k) = 0.5*(fzm(k)*ru(i, k, j)+fzp(k)*ru(i, k-1, j))*&
+&                (w(i, k, j)+w(i-1, k, j))
+            END DO
+            k = ktf + 1
+            fqxd(i, k) = 0.5*(((2.-fzm(k-1))*rud(i, k-1, j)-fzp(k-1)*rud&
+&              (i, k-2, j))*(w(i, k, j)+w(i-1, k, j))+((2.-fzm(k-1))*ru(i&
+&              , k-1, j)-fzp(k-1)*ru(i, k-2, j))*(wd(i, k, j)+wd(i-1, k, &
+&              j)))
+            fqx(i, k) = 0.5*((2.-fzm(k-1))*ru(i, k-1, j)-fzp(k-1)*ru(i, &
+&              k-2, j))*(w(i, k, j)+w(i-1, k, j))
+          END IF
+          IF (i .EQ. ide - 2) THEN
+! third order flux one in from the boundary
+            DO k=kts+1,ktf
+              veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+              vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+              fqxd(i, k) = veld*(7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k&
+&                , j)+w(i-2, k, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i-1, &
+&                k, j))-wd(i+1, k, j)-wd(i-2, k, j))/12.0
+              fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, &
+&                j)+w(i-2, k, j)))/12.0)
+            END DO
+            k = ktf + 1
+            veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j&
+&              )
+            vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+            fqxd(i, k) = veld*(7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j&
+&              )+w(i-2, k, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i-1, k, j)&
+&              )-wd(i+1, k, j)-wd(i-2, k, j))/12.0
+            fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)&
+&              +w(i-2, k, j)))/12.0)
+          END IF
+        END DO
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts+1,ktf+1
+        DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 1st term RHS
+          mrdx = msftx(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (horz_order .EQ. 5) THEN
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 3) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+!--------------- y - advection first
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 3
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+!  compute fluxes, 5th or 6th order
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+j_loop_y_flux_5:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*((37.*(w(i, k, j)+w(i, k, j-1))-8.*(w&
+&              (i, k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/&
+&              60.0-SIGN(1, time_step)*SIGN(1., vel)*(w(i, k, j+2)-w(i, k&
+&              , j-3)-5.*(w(i, k, j+1)-w(i, k, j-2))+10.*(w(i, k, j)-w(i&
+&              , k, j-1)))/60.0) + vel*((37.*(wd(i, k, j)+wd(i, k, j-1))-&
+&              8.*(wd(i, k, j+1)+wd(i, k, j-2))+wd(i, k, j+2)+wd(i, k, j-&
+&              3))/60.0-SIGN(1, time_step)*SIGN(1., vel)*(wd(i, k, j+2)-&
+&              wd(i, k, j-3)-5.*(wd(i, k, j+1)-wd(i, k, j-2))+10.*(wd(i, &
+&              k, j)-wd(i, k, j-1)))/60.0)
+            fqy(i, k, jp1) = vel*((37.*(w(i, k, j)+w(i, k, j-1))-8.*(w(i&
+&              , k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/60.0-&
+&              SIGN(1, time_step)*SIGN(1., vel)*(w(i, k, j+2)-w(i, k, j-3&
+&              )-5.*(w(i, k, j+1)-w(i, k, j-2))+10.*(w(i, k, j)-w(i, k, j&
+&              -1)))/60.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*((37.*(w(i, k, j)+w(i, k, j-1))-8.*(w(i&
+&            , k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/60.0-&
+&            SIGN(1, time_step)*SIGN(1., vel)*(w(i, k, j+2)-w(i, k, j-3)-&
+&            5.*(w(i, k, j+1)-w(i, k, j-2))+10.*(w(i, k, j)-w(i, k, j-1))&
+&            )/60.0) + vel*((37.*(wd(i, k, j)+wd(i, k, j-1))-8.*(wd(i, k&
+&            , j+1)+wd(i, k, j-2))+wd(i, k, j+2)+wd(i, k, j-3))/60.0-SIGN&
+&            (1, time_step)*SIGN(1., vel)*(wd(i, k, j+2)-wd(i, k, j-3)-5.&
+&            *(wd(i, k, j+1)-wd(i, k, j-2))+10.*(wd(i, k, j)-wd(i, k, j-1&
+&            )))/60.0)
+          fqy(i, k, jp1) = vel*((37.*(w(i, k, j)+w(i, k, j-1))-8.*(w(i, &
+&            k, j+1)+w(i, k, j-2))+(w(i, k, j+2)+w(i, k, j-3)))/60.0-SIGN&
+&            (1, time_step)*SIGN(1., vel)*(w(i, k, j+2)-w(i, k, j-3)-5.*(&
+&            w(i, k, j+1)-w(i, k, j-2))+10.*(w(i, k, j)-w(i, k, j-1)))/&
+&            60.0)
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j)+fzp(k)*rvd(i, k-&
+&              1, j))*(w(i, k, j)+w(i, k, j-1))+(fzm(k)*rv(i, k, j)+fzp(k&
+&              )*rv(i, k-1, j))*(wd(i, k, j)+wd(i, k, j-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j)+fzp(k)*rv(i, k-1, j&
+&              ))*(w(i, k, j)+w(i, k, j-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j)-fzp(k-1)*&
+&            rvd(i, k-2, j))*(w(i, k, j)+w(i, k, j-1))+((2.-fzm(k-1))*rv(&
+&            i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(wd(i, k, j)+wd(i, k, j-1&
+&            )))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j)-fzp(k-1)*rv(&
+&            i, k-2, j))*(w(i, k, j)+w(i, k, j-1))
+        END DO
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, &
+&              k, j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., &
+&              vel)*(w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1&
+&              )))/12.0) + vel*((7.*(wd(i, k, j)+wd(i, k, j-1))-wd(i, k, &
+&              j+1)-wd(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&              (wd(i, k, j+1)-wd(i, k, j-2)-3.*(wd(i, k, j)-wd(i, k, j-1)&
+&              ))/12.0)
+            fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))&
+&              /12.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&            , j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&            (w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))/&
+&            12.0) + vel*((7.*(wd(i, k, j)+wd(i, k, j-1))-wd(i, k, j+1)-&
+&            wd(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(wd(i, &
+&            k, j+1)-wd(i, k, j-2)-3.*(wd(i, k, j)-wd(i, k, j-1)))/12.0)
+          fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, j&
+&            +1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(&
+&            i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))/12.0)
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j)+fzp(k)*rvd(i, k-&
+&              1, j))*(w(i, k, j)+w(i, k, j-1))+(fzm(k)*rv(i, k, j)+fzp(k&
+&              )*rv(i, k-1, j))*(wd(i, k, j)+wd(i, k, j-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j)+fzp(k)*rv(i, k-1, j&
+&              ))*(w(i, k, j)+w(i, k, j-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j)-fzp(k-1)*&
+&            rvd(i, k-2, j))*(w(i, k, j)+w(i, k, j-1))+((2.-fzm(k-1))*rv(&
+&            i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(wd(i, k, j)+wd(i, k, j-1&
+&            )))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j)-fzp(k-1)*rv(&
+&            i, k-2, j))*(w(i, k, j)+w(i, k, j-1))
+        END DO
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, &
+&              k, j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., &
+&              vel)*(w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1&
+&              )))/12.0) + vel*((7.*(wd(i, k, j)+wd(i, k, j-1))-wd(i, k, &
+&              j+1)-wd(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&              (wd(i, k, j+1)-wd(i, k, j-2)-3.*(wd(i, k, j)-wd(i, k, j-1)&
+&              ))/12.0)
+            fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))&
+&              /12.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&            , j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&            (w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))/&
+&            12.0) + vel*((7.*(wd(i, k, j)+wd(i, k, j-1))-wd(i, k, j+1)-&
+&            wd(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(wd(i, &
+&            k, j+1)-wd(i, k, j-2)-3.*(wd(i, k, j)-wd(i, k, j-1)))/12.0)
+          fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, j&
+&            +1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(&
+&            i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))/12.0)
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! Comments for polar boundary conditions
+! Same process as for advect_u - tendencies run from jds to jde-1 
+! (latitudes are as for u grid, longitudes are displaced)
+! Therefore: flow is only from one side for points next to poles
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts+1,ktf+1
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO j_loop_y_flux_5
+!  next, x - flux divergence
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      IF (i_start + 2 .GT. ids + 3) THEN
+        i_start_f = ids + 3
+      ELSE
+        i_start_f = i_start + 2
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  5th or 6th order flux
+      DO k=kts+1,ktf
+        DO i=i_start_f,i_end_f
+          veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+          vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+          fqxd(i, k) = veld*((37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k&
+&            , j)+w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0-SIGN(1&
+&            , time_step)*SIGN(1., vel)*(w(i+2, k, j)-w(i-3, k, j)-5.*(w(&
+&            i+1, k, j)-w(i-2, k, j))+10.*(w(i, k, j)-w(i-1, k, j)))/60.0&
+&            ) + vel*((37.*(wd(i, k, j)+wd(i-1, k, j))-8.*(wd(i+1, k, j)+&
+&            wd(i-2, k, j))+wd(i+2, k, j)+wd(i-3, k, j))/60.0-SIGN(1, &
+&            time_step)*SIGN(1., vel)*(wd(i+2, k, j)-wd(i-3, k, j)-5.*(wd&
+&            (i+1, k, j)-wd(i-2, k, j))+10.*(wd(i, k, j)-wd(i-1, k, j)))/&
+&            60.0)
+          fqx(i, k) = vel*((37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k, &
+&            j)+w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0-SIGN(1, &
+&            time_step)*SIGN(1., vel)*(w(i+2, k, j)-w(i-3, k, j)-5.*(w(i+&
+&            1, k, j)-w(i-2, k, j))+10.*(w(i, k, j)-w(i-1, k, j)))/60.0)
+        END DO
+      END DO
+      k = ktf + 1
+      DO i=i_start_f,i_end_f
+        veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j)
+        vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+        fqxd(i, k) = veld*((37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k, &
+&          j)+w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0-SIGN(1, &
+&          time_step)*SIGN(1., vel)*(w(i+2, k, j)-w(i-3, k, j)-5.*(w(i+1&
+&          , k, j)-w(i-2, k, j))+10.*(w(i, k, j)-w(i-1, k, j)))/60.0) + &
+&          vel*((37.*(wd(i, k, j)+wd(i-1, k, j))-8.*(wd(i+1, k, j)+wd(i-2&
+&          , k, j))+wd(i+2, k, j)+wd(i-3, k, j))/60.0-SIGN(1, time_step)*&
+&          SIGN(1., vel)*(wd(i+2, k, j)-wd(i-3, k, j)-5.*(wd(i+1, k, j)-&
+&          wd(i-2, k, j))+10.*(wd(i, k, j)-wd(i-1, k, j)))/60.0)
+        fqx(i, k) = vel*((37.*(w(i, k, j)+w(i-1, k, j))-8.*(w(i+1, k, j)&
+&          +w(i-2, k, j))+(w(i+2, k, j)+w(i-3, k, j)))/60.0-SIGN(1, &
+&          time_step)*SIGN(1., vel)*(w(i+2, k, j)-w(i-3, k, j)-5.*(w(i+1&
+&          , k, j)-w(i-2, k, j))+10.*(w(i, k, j)-w(i-1, k, j)))/60.0)
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        DO i=i_start,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+! second order
+            DO k=kts+1,ktf
+              fqxd(i, k) = 0.5*((fzm(k)*rud(i, k, j)+fzp(k)*rud(i, k-1, &
+&                j))*(w(i, k, j)+w(i-1, k, j))+(fzm(k)*ru(i, k, j)+fzp(k)&
+&                *ru(i, k-1, j))*(wd(i, k, j)+wd(i-1, k, j)))
+              fqx(i, k) = 0.5*(fzm(k)*ru(i, k, j)+fzp(k)*ru(i, k-1, j))*&
+&                (w(i, k, j)+w(i-1, k, j))
+            END DO
+            k = ktf + 1
+            fqxd(i, k) = 0.5*(((2.-fzm(k-1))*rud(i, k-1, j)-fzp(k-1)*rud&
+&              (i, k-2, j))*(w(i, k, j)+w(i-1, k, j))+((2.-fzm(k-1))*ru(i&
+&              , k-1, j)-fzp(k-1)*ru(i, k-2, j))*(wd(i, k, j)+wd(i-1, k, &
+&              j)))
+            fqx(i, k) = 0.5*((2.-fzm(k-1))*ru(i, k-1, j)-fzp(k-1)*ru(i, &
+&              k-2, j))*(w(i, k, j)+w(i-1, k, j))
+          END IF
+          IF (i .EQ. ids + 2) THEN
+! third order
+            DO k=kts+1,ktf
+              veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+              vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+              fqxd(i, k) = veld*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k&
+&                , j)+w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&                )*(w(i+1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)&
+&                ))/12.0) + vel*((7.*(wd(i, k, j)+wd(i-1, k, j))-wd(i+1, &
+&                k, j)-wd(i-2, k, j))/12.0+SIGN(1, time_step)*SIGN(1., &
+&                vel)*(wd(i+1, k, j)-wd(i-2, k, j)-3.*(wd(i, k, j)-wd(i-1&
+&                , k, j)))/12.0)
+              fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, &
+&                j)+w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&                (w(i+1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))&
+&                /12.0)
+            END DO
+            k = ktf + 1
+            veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j&
+&              )
+            vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+            fqxd(i, k) = veld*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, &
+&              j)+w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w&
+&              (i+1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/&
+&              12.0) + vel*((7.*(wd(i, k, j)+wd(i-1, k, j))-wd(i+1, k, j)&
+&              -wd(i-2, k, j))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(wd(&
+&              i+1, k, j)-wd(i-2, k, j)-3.*(wd(i, k, j)-wd(i-1, k, j)))/&
+&              12.0)
+            fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)&
+&              +w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(i&
+&              +1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/12.0)
+          END IF
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+! second order flux next to the boundary
+            DO k=kts+1,ktf
+              fqxd(i, k) = 0.5*((fzm(k)*rud(i, k, j)+fzp(k)*rud(i, k-1, &
+&                j))*(w(i, k, j)+w(i-1, k, j))+(fzm(k)*ru(i, k, j)+fzp(k)&
+&                *ru(i, k-1, j))*(wd(i, k, j)+wd(i-1, k, j)))
+              fqx(i, k) = 0.5*(fzm(k)*ru(i, k, j)+fzp(k)*ru(i, k-1, j))*&
+&                (w(i, k, j)+w(i-1, k, j))
+            END DO
+            k = ktf + 1
+            fqxd(i, k) = 0.5*(((2.-fzm(k-1))*rud(i, k-1, j)-fzp(k-1)*rud&
+&              (i, k-2, j))*(w(i, k, j)+w(i-1, k, j))+((2.-fzm(k-1))*ru(i&
+&              , k-1, j)-fzp(k-1)*ru(i, k-2, j))*(wd(i, k, j)+wd(i-1, k, &
+&              j)))
+            fqx(i, k) = 0.5*((2.-fzm(k-1))*ru(i, k-1, j)-fzp(k-1)*ru(i, &
+&              k-2, j))*(w(i, k, j)+w(i-1, k, j))
+          END IF
+          IF (i .EQ. ide - 2) THEN
+! third order flux one in from the boundary
+            DO k=kts+1,ktf
+              veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+              vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+              fqxd(i, k) = veld*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k&
+&                , j)+w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&                )*(w(i+1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)&
+&                ))/12.0) + vel*((7.*(wd(i, k, j)+wd(i-1, k, j))-wd(i+1, &
+&                k, j)-wd(i-2, k, j))/12.0+SIGN(1, time_step)*SIGN(1., &
+&                vel)*(wd(i+1, k, j)-wd(i-2, k, j)-3.*(wd(i, k, j)-wd(i-1&
+&                , k, j)))/12.0)
+              fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, &
+&                j)+w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&                (w(i+1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))&
+&                /12.0)
+            END DO
+            k = ktf + 1
+            veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j&
+&              )
+            vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+            fqxd(i, k) = veld*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, &
+&              j)+w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w&
+&              (i+1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/&
+&              12.0) + vel*((7.*(wd(i, k, j)+wd(i-1, k, j))-wd(i+1, k, j)&
+&              -wd(i-2, k, j))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(wd(&
+&              i+1, k, j)-wd(i-2, k, j)-3.*(wd(i, k, j)-wd(i-1, k, j)))/&
+&              12.0)
+            fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)&
+&              +w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(i&
+&              +1, k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/12.0)
+          END IF
+        END DO
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts+1,ktf+1
+        DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 1st term RHS
+          mrdx = msftx(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+  ELSE IF (horz_order .EQ. 4) THEN
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 3) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      i_start = ids + 1
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      i_end = ide - 2
+      i_end_f = ide - 2
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        DO i=i_start_f,i_end_f
+          veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+          vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+          fqxd(i, k) = veld*(7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)+&
+&            w(i-2, k, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i-1, k, j))-wd&
+&            (i+1, k, j)-wd(i-2, k, j))/12.0
+          fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)+w&
+&            (i-2, k, j)))/12.0)
+        END DO
+      END DO
+      k = ktf + 1
+      DO i=i_start_f,i_end_f
+        veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j)
+        vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+        fqxd(i, k) = veld*(7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)+w(&
+&          i-2, k, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i-1, k, j))-wd(i+1&
+&          , k, j)-wd(i-2, k, j))/12.0
+        fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)+w(i&
+&          -2, k, j)))/12.0)
+      END DO
+!  second order flux close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        DO k=kts+1,ktf
+          fqxd(i_start, k) = 0.5*((fzm(k)*rud(i_start, k, j)+fzp(k)*rud(&
+&            i_start, k-1, j))*(w(i_start, k, j)+w(i_start-1, k, j))+(fzm&
+&            (k)*ru(i_start, k, j)+fzp(k)*ru(i_start, k-1, j))*(wd(&
+&            i_start, k, j)+wd(i_start-1, k, j)))
+          fqx(i_start, k) = 0.5*(fzm(k)*ru(i_start, k, j)+fzp(k)*ru(&
+&            i_start, k-1, j))*(w(i_start, k, j)+w(i_start-1, k, j))
+        END DO
+        k = ktf + 1
+        fqxd(i_start, k) = 0.5*(((2.-fzm(k-1))*rud(i_start, k-1, j)-fzp(&
+&          k-1)*rud(i_start, k-2, j))*(w(i_start, k, j)+w(i_start-1, k, j&
+&          ))+((2.-fzm(k-1))*ru(i_start, k-1, j)-fzp(k-1)*ru(i_start, k-2&
+&          , j))*(wd(i_start, k, j)+wd(i_start-1, k, j)))
+        fqx(i_start, k) = 0.5*((2.-fzm(k-1))*ru(i_start, k-1, j)-fzp(k-1&
+&          )*ru(i_start, k-2, j))*(w(i_start, k, j)+w(i_start-1, k, j))
+      END IF
+      IF (degrade_xe) THEN
+        DO k=kts+1,ktf
+          fqxd(i_end+1, k) = 0.5*((fzm(k)*rud(i_end+1, k, j)+fzp(k)*rud(&
+&            i_end+1, k-1, j))*(w(i_end+1, k, j)+w(i_end, k, j))+(fzm(k)*&
+&            ru(i_end+1, k, j)+fzp(k)*ru(i_end+1, k-1, j))*(wd(i_end+1, k&
+&            , j)+wd(i_end, k, j)))
+          fqx(i_end+1, k) = 0.5*(fzm(k)*ru(i_end+1, k, j)+fzp(k)*ru(&
+&            i_end+1, k-1, j))*(w(i_end+1, k, j)+w(i_end, k, j))
+        END DO
+        k = ktf + 1
+        fqxd(i_end+1, k) = 0.5*(((2.-fzm(k-1))*rud(i_end+1, k-1, j)-fzp(&
+&          k-1)*rud(i_end+1, k-2, j))*(w(i_end+1, k, j)+w(i_end, k, j))+(&
+&          (2.-fzm(k-1))*ru(i_end+1, k-1, j)-fzp(k-1)*ru(i_end+1, k-2, j)&
+&          )*(wd(i_end+1, k, j)+wd(i_end, k, j)))
+        fqx(i_end+1, k) = 0.5*((2.-fzm(k-1))*ru(i_end+1, k-1, j)-fzp(k-1&
+&          )*ru(i_end+1, k-2, j))*(w(i_end+1, k, j)+w(i_end, k, j))
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts+1,ktf+1
+        DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 1st term RHS
+          mrdx = msftx(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+!  next -> y flux divergence calculation
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      j_start = jds + 1
+      j_start_f = j_start + 1
+    END IF
+    IF (degrade_ye) THEN
+      j_end = jde - 2
+      j_end_f = jde - 2
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+    DO j=j_start,j_end+1
+      IF (j .LT. j_start_f .AND. degrade_ys) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j_start)+fzp(k)*rvd&
+&              (i, k-1, j_start))*(w(i, k, j_start)+w(i, k, j_start-1))+(&
+&              fzm(k)*rv(i, k, j_start)+fzp(k)*rv(i, k-1, j_start))*(wd(i&
+&              , k, j_start)+wd(i, k, j_start-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j_start)+fzp(k)*rv(i, &
+&              k-1, j_start))*(w(i, k, j_start)+w(i, k, j_start-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j_start)-fzp&
+&            (k-1)*rvd(i, k-2, j_start))*(w(i, k, j_start)+w(i, k, &
+&            j_start-1))+((2.-fzm(k-1))*rv(i, k-1, j_start)-fzp(k-1)*rv(i&
+&            , k-2, j_start))*(wd(i, k, j_start)+wd(i, k, j_start-1)))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j_start)-fzp(k-&
+&            1)*rv(i, k-2, j_start))*(w(i, k, j_start)+w(i, k, j_start-1)&
+&            )
+        END DO
+      ELSE IF (j .GT. j_end_f .AND. degrade_ye) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                             &
+!               0.5*(fzm(k)*rv(i,k,j_end+1)+fzp(k)*rv(i,k-1,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j)+fzp(k)*rvd(i, k-&
+&              1, j))*(w(i, k, j)+w(i, k, j-1))+(fzm(k)*rv(i, k, j)+fzp(k&
+&              )*rv(i, k-1, j))*(wd(i, k, j)+wd(i, k, j-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j)+fzp(k)*rv(i, k-1, j&
+&              ))*(w(i, k, j)+w(i, k, j-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                                         &
+!               0.5*((2.-fzm(k-1))*rv(i,k-1,j_end+1)-fzp(k-1)*rv(i,k-2,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j)-fzp(k-1)*&
+&            rvd(i, k-2, j))*(w(i, k, j)+w(i, k, j-1))+((2.-fzm(k-1))*rv(&
+&            i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(wd(i, k, j)+wd(i, k, j-1&
+&            )))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j)-fzp(k-1)*rv(&
+&            i, k-2, j))*(w(i, k, j)+w(i, k, j-1))
+        END DO
+      ELSE
+!  3rd or 4th order flux
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*(7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k&
+&              , j-1))-wd(i, k, j+1)-wd(i, k, j-2))/12.0
+            fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*(7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, &
+&            j+1)+w(i, k, j-2)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k, j-1&
+&            ))-wd(i, k, j+1)-wd(i, k, j-2))/12.0
+          fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, j&
+&            +1)+w(i, k, j-2)))/12.0)
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! Comments for polar boundary conditions
+! Same process as for advect_u - tendencies run from jds to jde-1 
+! (latitudes are as for u grid, longitudes are displaced)
+! Therefore: flow is only from one side for points next to poles
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts+1,ktf+1
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO
+  ELSE IF (horz_order .EQ. 3) THEN
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 3) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      i_start = ids + 1
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      i_end = ide - 2
+      i_end_f = ide - 2
+      fqxd = 0.0
+    ELSE
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        DO i=i_start_f,i_end_f
+          veld = fzm(k)*rud(i, k, j) + fzp(k)*rud(i, k-1, j)
+          vel = fzm(k)*ru(i, k, j) + fzp(k)*ru(i, k-1, j)
+          fqxd(i, k) = veld*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)&
+&            +w(i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(i+1&
+&            , k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/12.0) + &
+&            vel*((7.*(wd(i, k, j)+wd(i-1, k, j))-wd(i+1, k, j)-wd(i-2, k&
+&            , j))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(wd(i+1, k, j)-&
+&            wd(i-2, k, j)-3.*(wd(i, k, j)-wd(i-1, k, j)))/12.0)
+          fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)+w&
+&            (i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(i+1, &
+&            k, j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/12.0)
+        END DO
+      END DO
+      k = ktf + 1
+      DO i=i_start_f,i_end_f
+        veld = (2.-fzm(k-1))*rud(i, k-1, j) - fzp(k-1)*rud(i, k-2, j)
+        vel = (2.-fzm(k-1))*ru(i, k-1, j) - fzp(k-1)*ru(i, k-2, j)
+        fqxd(i, k) = veld*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)+w&
+&          (i-2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(i+1, k&
+&          , j)-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/12.0) + vel*((&
+&          7.*(wd(i, k, j)+wd(i-1, k, j))-wd(i+1, k, j)-wd(i-2, k, j))/&
+&          12.0+SIGN(1, time_step)*SIGN(1., vel)*(wd(i+1, k, j)-wd(i-2, k&
+&          , j)-3.*(wd(i, k, j)-wd(i-1, k, j)))/12.0)
+        fqx(i, k) = vel*((7.*(w(i, k, j)+w(i-1, k, j))-(w(i+1, k, j)+w(i&
+&          -2, k, j)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(i+1, k, j&
+&          )-w(i-2, k, j)-3.*(w(i, k, j)-w(i-1, k, j)))/12.0)
+      END DO
+!  second order flux close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        DO k=kts+1,ktf
+          fqxd(i_start, k) = 0.5*((fzm(k)*rud(i_start, k, j)+fzp(k)*rud(&
+&            i_start, k-1, j))*(w(i_start, k, j)+w(i_start-1, k, j))+(fzm&
+&            (k)*ru(i_start, k, j)+fzp(k)*ru(i_start, k-1, j))*(wd(&
+&            i_start, k, j)+wd(i_start-1, k, j)))
+          fqx(i_start, k) = 0.5*(fzm(k)*ru(i_start, k, j)+fzp(k)*ru(&
+&            i_start, k-1, j))*(w(i_start, k, j)+w(i_start-1, k, j))
+        END DO
+        k = ktf + 1
+        fqxd(i_start, k) = 0.5*(((2.-fzm(k-1))*rud(i_start, k-1, j)-fzp(&
+&          k-1)*rud(i_start, k-2, j))*(w(i_start, k, j)+w(i_start-1, k, j&
+&          ))+((2.-fzm(k-1))*ru(i_start, k-1, j)-fzp(k-1)*ru(i_start, k-2&
+&          , j))*(wd(i_start, k, j)+wd(i_start-1, k, j)))
+        fqx(i_start, k) = 0.5*((2.-fzm(k-1))*ru(i_start, k-1, j)-fzp(k-1&
+&          )*ru(i_start, k-2, j))*(w(i_start, k, j)+w(i_start-1, k, j))
+      END IF
+      IF (degrade_xe) THEN
+        DO k=kts+1,ktf
+          fqxd(i_end+1, k) = 0.5*((fzm(k)*rud(i_end+1, k, j)+fzp(k)*rud(&
+&            i_end+1, k-1, j))*(w(i_end+1, k, j)+w(i_end, k, j))+(fzm(k)*&
+&            ru(i_end+1, k, j)+fzp(k)*ru(i_end+1, k-1, j))*(wd(i_end+1, k&
+&            , j)+wd(i_end, k, j)))
+          fqx(i_end+1, k) = 0.5*(fzm(k)*ru(i_end+1, k, j)+fzp(k)*ru(&
+&            i_end+1, k-1, j))*(w(i_end+1, k, j)+w(i_end, k, j))
+        END DO
+        k = ktf + 1
+        fqxd(i_end+1, k) = 0.5*(((2.-fzm(k-1))*rud(i_end+1, k-1, j)-fzp(&
+&          k-1)*rud(i_end+1, k-2, j))*(w(i_end+1, k, j)+w(i_end, k, j))+(&
+&          (2.-fzm(k-1))*ru(i_end+1, k-1, j)-fzp(k-1)*ru(i_end+1, k-2, j)&
+&          )*(wd(i_end+1, k, j)+wd(i_end, k, j)))
+        fqx(i_end+1, k) = 0.5*((2.-fzm(k-1))*ru(i_end+1, k-1, j)-fzp(k-1&
+&          )*ru(i_end+1, k-2, j))*(w(i_end+1, k, j)+w(i_end, k, j))
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts+1,ktf+1
+        DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 1st term RHS
+          mrdx = msftx(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*(fqxd(i+1, k)-&
+&            fqxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*(fqx(i+1, k)-fqx(&
+&            i, k))
+        END DO
+      END DO
+    END DO
+!  next -> y flux divergence calculation
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      j_start = jds + 1
+      j_start_f = j_start + 1
+    END IF
+    IF (degrade_ye) THEN
+      j_end = jde - 2
+      j_end_f = jde - 2
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+    jp1 = 2
+    jp0 = 1
+    fqyd = 0.0
+    DO j=j_start,j_end+1
+      IF (j .LT. j_start_f .AND. degrade_ys) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j_start)+fzp(k)*rvd&
+&              (i, k-1, j_start))*(w(i, k, j_start)+w(i, k, j_start-1))+(&
+&              fzm(k)*rv(i, k, j_start)+fzp(k)*rv(i, k-1, j_start))*(wd(i&
+&              , k, j_start)+wd(i, k, j_start-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j_start)+fzp(k)*rv(i, &
+&              k-1, j_start))*(w(i, k, j_start)+w(i, k, j_start-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j_start)-fzp&
+&            (k-1)*rvd(i, k-2, j_start))*(w(i, k, j_start)+w(i, k, &
+&            j_start-1))+((2.-fzm(k-1))*rv(i, k-1, j_start)-fzp(k-1)*rv(i&
+&            , k-2, j_start))*(wd(i, k, j_start)+wd(i, k, j_start-1)))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j_start)-fzp(k-&
+&            1)*rv(i, k-2, j_start))*(w(i, k, j_start)+w(i, k, j_start-1)&
+&            )
+        END DO
+      ELSE IF (j .GT. j_end_f .AND. degrade_ye) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                             &
+!               0.5*(fzm(k)*rv(i,k,j_end+1)+fzp(k)*rv(i,k-1,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
+            fqyd(i, k, jp1) = 0.5*((fzm(k)*rvd(i, k, j)+fzp(k)*rvd(i, k-&
+&              1, j))*(w(i, k, j)+w(i, k, j-1))+(fzm(k)*rv(i, k, j)+fzp(k&
+&              )*rv(i, k-1, j))*(wd(i, k, j)+wd(i, k, j-1)))
+            fqy(i, k, jp1) = 0.5*(fzm(k)*rv(i, k, j)+fzp(k)*rv(i, k-1, j&
+&              ))*(w(i, k, j)+w(i, k, j-1))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                             &
+!               0.5*((2.-fzm(k-1))*rv(i,k-1,j_end+1)-fzp(k-1)*rv(i,k-2,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
+          fqyd(i, k, jp1) = 0.5*(((2.-fzm(k-1))*rvd(i, k-1, j)-fzp(k-1)*&
+&            rvd(i, k-2, j))*(w(i, k, j)+w(i, k, j-1))+((2.-fzm(k-1))*rv(&
+&            i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(wd(i, k, j)+wd(i, k, j-1&
+&            )))
+          fqy(i, k, jp1) = 0.5*((2.-fzm(k-1))*rv(i, k-1, j)-fzp(k-1)*rv(&
+&            i, k-2, j))*(w(i, k, j)+w(i, k, j-1))
+        END DO
+      ELSE
+!  3rd or 4th order flux
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+            veld = fzm(k)*rvd(i, k, j) + fzp(k)*rvd(i, k-1, j)
+            vel = fzm(k)*rv(i, k, j) + fzp(k)*rv(i, k-1, j)
+            fqyd(i, k, jp1) = veld*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, &
+&              k, j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., &
+&              vel)*(w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1&
+&              )))/12.0) + vel*((7.*(wd(i, k, j)+wd(i, k, j-1))-wd(i, k, &
+&              j+1)-wd(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&              (wd(i, k, j+1)-wd(i, k, j-2)-3.*(wd(i, k, j)-wd(i, k, j-1)&
+&              ))/12.0)
+            fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&              , j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))&
+&              /12.0)
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+          veld = (2.-fzm(k-1))*rvd(i, k-1, j) - fzp(k-1)*rvd(i, k-2, j)
+          vel = (2.-fzm(k-1))*rv(i, k-1, j) - fzp(k-1)*rv(i, k-2, j)
+          fqyd(i, k, jp1) = veld*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k&
+&            , j+1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*&
+&            (w(i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))/&
+&            12.0) + vel*((7.*(wd(i, k, j)+wd(i, k, j-1))-wd(i, k, j+1)-&
+&            wd(i, k, j-2))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(wd(i, &
+&            k, j+1)-wd(i, k, j-2)-3.*(wd(i, k, j)-wd(i, k, j-1)))/12.0)
+          fqy(i, k, jp1) = vel*((7.*(w(i, k, j)+w(i, k, j-1))-(w(i, k, j&
+&            +1)+w(i, k, j-2)))/12.0+SIGN(1, time_step)*SIGN(1., vel)*(w(&
+&            i, k, j+1)-w(i, k, j-2)-3.*(w(i, k, j)-w(i, k, j-1)))/12.0)
+        END DO
+      END IF
+!  y flux-divergence into tendency
+! Comments for polar boundary conditions
+! Same process as for advect_u - tendencies run from jds to jde-1 
+! (latitudes are as for u grid, longitudes are displaced)
+! Therefore: flow is only from one side for points next to poles
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*fqyd(i, k&
+&              , jp1)
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*fqy(i, k, &
+&              jp1)
+          END DO
+        END DO
+      ELSE IF (config_flags%polar .AND. j .EQ. jde) THEN
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) + mrdy*fqyd(i, k&
+&              , jp0)
+            tendency(i, k, j-1) = tendency(i, k, j-1) + mrdy*fqy(i, k, &
+&              jp0)
+          END DO
+        END DO
+      ELSE IF (j .GT. j_start) THEN
+! normal code
+        DO k=kts+1,ktf+1
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, j-1)*rdy
+            tendencyd(i, k, j-1) = tendencyd(i, k, j-1) - mrdy*(fqyd(i, &
+&              k, jp1)-fqyd(i, k, jp0))
+            tendency(i, k, j-1) = tendency(i, k, j-1) - mrdy*(fqy(i, k, &
+&              jp1)-fqy(i, k, jp0))
+          END DO
+        END DO
+      END IF
+      jtmp = jp1
+      jp1 = jp0
+      jp0 = jtmp
+    END DO
+  ELSE IF (horz_order .EQ. 2) THEN
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    IF (.NOT.config_flags%periodic_x) THEN
+      IF (config_flags%open_xs .OR. specified) THEN
+        IF (ids + 1 .LT. its) THEN
+          i_start = its
+        ELSE
+          i_start = ids + 1
+        END IF
+      END IF
+      IF (config_flags%open_xe .OR. specified) THEN
+        IF (ide - 2 .GT. ite) THEN
+          i_end = ite
+        ELSE
+          i_end = ide - 2
+        END IF
+      END IF
+    END IF
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 1st term RHS
+          mrdx = msftx(i, j)*rdx
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*0.5*((fzm(k)*&
+&            rud(i+1, k, j)+fzp(k)*rud(i+1, k-1, j))*(w(i+1, k, j)+w(i, k&
+&            , j))+(fzm(k)*ru(i+1, k, j)+fzp(k)*ru(i+1, k-1, j))*(wd(i+1&
+&            , k, j)+wd(i, k, j))-(fzm(k)*rud(i, k, j)+fzp(k)*rud(i, k-1&
+&            , j))*(w(i, k, j)+w(i-1, k, j))-(fzm(k)*ru(i, k, j)+fzp(k)*&
+&            ru(i, k-1, j))*(wd(i, k, j)+wd(i-1, k, j)))
+          tendency(i, k, j) = tendency(i, k, j) - mrdx*0.5*((fzm(k)*ru(i&
+&            +1, k, j)+fzp(k)*ru(i+1, k-1, j))*(w(i+1, k, j)+w(i, k, j))-&
+&            (fzm(k)*ru(i, k, j)+fzp(k)*ru(i, k-1, j))*(w(i, k, j)+w(i-1&
+&            , k, j)))
+        END DO
+      END DO
+      k = ktf + 1
+      DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 1st term RHS
+        mrdx = msftx(i, j)*rdx
+        tendencyd(i, k, j) = tendencyd(i, k, j) - mrdx*0.5*(((2.-fzm(k-1&
+&          ))*rud(i+1, k-1, j)-fzp(k-1)*rud(i+1, k-2, j))*(w(i+1, k, j)+w&
+&          (i, k, j))+((2.-fzm(k-1))*ru(i+1, k-1, j)-fzp(k-1)*ru(i+1, k-2&
+&          , j))*(wd(i+1, k, j)+wd(i, k, j))-((2.-fzm(k-1))*rud(i, k-1, j&
+&          )-fzp(k-1)*rud(i, k-2, j))*(w(i, k, j)+w(i-1, k, j))-((2.-fzm(&
+&          k-1))*ru(i, k-1, j)-fzp(k-1)*ru(i, k-2, j))*(wd(i, k, j)+wd(i-&
+&          1, k, j)))
+        tendency(i, k, j) = tendency(i, k, j) - mrdx*0.5*(((2.-fzm(k-1))&
+&          *ru(i+1, k-1, j)-fzp(k-1)*ru(i+1, k-2, j))*(w(i+1, k, j)+w(i, &
+&          k, j))-((2.-fzm(k-1))*ru(i, k-1, j)-fzp(k-1)*ru(i, k-2, j))*(w&
+&          (i, k, j)+w(i-1, k, j)))
+      END DO
+    END DO
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+! Polar boundary conditions are like open or specified
+    IF ((config_flags%open_ys .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF ((config_flags%open_ye .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jde - 2 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 2
+      END IF
+    END IF
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+!  see ADT eqn 46 dividing by my, 2nd term RHS
+          mrdy = msftx(i, j)*rdy
+          tendencyd(i, k, j) = tendencyd(i, k, j) - mrdy*0.5*((fzm(k)*&
+&            rvd(i, k, j+1)+fzp(k)*rvd(i, k-1, j+1))*(w(i, k, j+1)+w(i, k&
+&            , j))+(fzm(k)*rv(i, k, j+1)+fzp(k)*rv(i, k-1, j+1))*(wd(i, k&
+&            , j+1)+wd(i, k, j))-(fzm(k)*rvd(i, k, j)+fzp(k)*rvd(i, k-1, &
+&            j))*(w(i, k, j)+w(i, k, j-1))-(fzm(k)*rv(i, k, j)+fzp(k)*rv(&
+&            i, k-1, j))*(wd(i, k, j)+wd(i, k, j-1)))
+          tendency(i, k, j) = tendency(i, k, j) - mrdy*0.5*((fzm(k)*rv(i&
+&            , k, j+1)+fzp(k)*rv(i, k-1, j+1))*(w(i, k, j+1)+w(i, k, j))-&
+&            (fzm(k)*rv(i, k, j)+fzp(k)*rv(i, k-1, j))*(w(i, k, j)+w(i, k&
+&            , j-1)))
+        END DO
+      END DO
+      k = ktf + 1
+      DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+        mrdy = msftx(i, j)*rdy
+        tendencyd(i, k, j) = tendencyd(i, k, j) - mrdy*0.5*(((2.-fzm(k-1&
+&          ))*rvd(i, k-1, j+1)-fzp(k-1)*rvd(i, k-2, j+1))*(w(i, k, j+1)+w&
+&          (i, k, j))+((2.-fzm(k-1))*rv(i, k-1, j+1)-fzp(k-1)*rv(i, k-2, &
+&          j+1))*(wd(i, k, j+1)+wd(i, k, j))-((2.-fzm(k-1))*rvd(i, k-1, j&
+&          )-fzp(k-1)*rvd(i, k-2, j))*(w(i, k, j)+w(i, k, j-1))-((2.-fzm(&
+&          k-1))*rv(i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(wd(i, k, j)+wd(i&
+&          , k, j-1)))
+        tendency(i, k, j) = tendency(i, k, j) - mrdy*0.5*(((2.-fzm(k-1))&
+&          *rv(i, k-1, j+1)-fzp(k-1)*rv(i, k-2, j+1))*(w(i, k, j+1)+w(i, &
+&          k, j))-((2.-fzm(k-1))*rv(i, k-1, j)-fzp(k-1)*rv(i, k-2, j))*(w&
+&          (i, k, j)+w(i, k, j-1)))
+      END DO
+    END DO
+! Polar boundary condition ... not covered in above j-loop
+    IF (config_flags%polar) THEN
+      IF (jts .EQ. jds) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, jds)*rdy
+            tendencyd(i, k, jds) = tendencyd(i, k, jds) - mrdy*0.5*((fzm&
+&              (k)*rvd(i, k, jds+1)+fzp(k)*rvd(i, k-1, jds+1))*(w(i, k, &
+&              jds+1)+w(i, k, jds))+(fzm(k)*rv(i, k, jds+1)+fzp(k)*rv(i, &
+&              k-1, jds+1))*(wd(i, k, jds+1)+wd(i, k, jds)))
+            tendency(i, k, jds) = tendency(i, k, jds) - mrdy*0.5*((fzm(k&
+&              )*rv(i, k, jds+1)+fzp(k)*rv(i, k-1, jds+1))*(w(i, k, jds+1&
+&              )+w(i, k, jds)))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+          mrdy = msftx(i, jds)*rdy
+          tendencyd(i, k, jds) = tendencyd(i, k, jds) - mrdy*0.5*(((2.-&
+&            fzm(k-1))*rvd(i, k-1, jds+1)-fzp(k-1)*rvd(i, k-2, jds+1))*(w&
+&            (i, k, jds+1)+w(i, k, jds))+((2.-fzm(k-1))*rv(i, k-1, jds+1)&
+&            -fzp(k-1)*rv(i, k-2, jds+1))*(wd(i, k, jds+1)+wd(i, k, jds))&
+&            )
+          tendency(i, k, jds) = tendency(i, k, jds) - mrdy*0.5*((2.-fzm(&
+&            k-1))*rv(i, k-1, jds+1)-fzp(k-1)*rv(i, k-2, jds+1))*(w(i, k&
+&            , jds+1)+w(i, k, jds))
+        END DO
+      END IF
+      IF (jte .EQ. jde) THEN
+        DO k=kts+1,ktf
+          DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+            mrdy = msftx(i, jde-1)*rdy
+            tendencyd(i, k, jde-1) = tendencyd(i, k, jde-1) + mrdy*0.5*(&
+&              (fzm(k)*rvd(i, k, jde-1)+fzp(k)*rvd(i, k-1, jde-1))*(w(i, &
+&              k, jde-1)+w(i, k, jde-2))+(fzm(k)*rv(i, k, jde-1)+fzp(k)*&
+&              rv(i, k-1, jde-1))*(wd(i, k, jde-1)+wd(i, k, jde-2)))
+            tendency(i, k, jde-1) = tendency(i, k, jde-1) + mrdy*0.5*((&
+&              fzm(k)*rv(i, k, jde-1)+fzp(k)*rv(i, k-1, jde-1))*(w(i, k, &
+&              jde-1)+w(i, k, jde-2)))
+          END DO
+        END DO
+        k = ktf + 1
+        DO i=i_start,i_end
+! see ADT eqn 46 dividing by my, 2nd term RHS
+          mrdy = msftx(i, jde-1)*rdy
+          tendencyd(i, k, jde-1) = tendencyd(i, k, jde-1) + mrdy*0.5*(((&
+&            2.-fzm(k-1))*rvd(i, k-1, jde-1)-fzp(k-1)*rvd(i, k-2, jde-1))&
+&            *(w(i, k, jde-1)+w(i, k, jde-2))+((2.-fzm(k-1))*rv(i, k-1, &
+&            jde-1)-fzp(k-1)*rv(i, k-2, jde-1))*(wd(i, k, jde-1)+wd(i, k&
+&            , jde-2)))
+          tendency(i, k, jde-1) = tendency(i, k, jde-1) + mrdy*0.5*((2.-&
+&            fzm(k-1))*rv(i, k-1, jde-1)-fzp(k-1)*rv(i, k-2, jde-1))*(w(i&
+&            , k, jde-1)+w(i, k, jde-2))
+        END DO
+      END IF
+    END IF
+  ELSE IF (horz_order .NE. 0) THEN
+! Just in case we want to turn horizontal advection off, we can do it
+    WRITE(wrf_err_message, *) ' advect_w_6a, h_order not known ', &
+&    horz_order
+    CALL WRF_ERROR_FATAL(wrf_err_message)
+  END IF
+!  pick up the the horizontal radiation boundary conditions.
+!  (these are the computations that don't require 'cb'.
+!  first, set to index ranges
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  IF (config_flags%open_xs .AND. its .EQ. ids) THEN
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        uwd = 0.5*(fzm(k)*(rud(its, k, j)+rud(its+1, k, j))+fzp(k)*(rud(&
+&          its, k-1, j)+rud(its+1, k-1, j)))
+        uw = 0.5*(fzm(k)*(ru(its, k, j)+ru(its+1, k, j))+fzp(k)*(ru(its&
+&          , k-1, j)+ru(its+1, k-1, j)))
+        IF (uw .GT. 0.) THEN
+          ub = 0.
+          ubd = 0.0
+        ELSE
+          ubd = uwd
+          ub = uw
+        END IF
+        tendencyd(its, k, j) = tendencyd(its, k, j) - rdx*(ubd*(w_old(&
+&          its+1, k, j)-w_old(its, k, j))+ub*(w_oldd(its+1, k, j)-w_oldd(&
+&          its, k, j))+wd(its, k, j)*(fzm(k)*(ru(its+1, k, j)-ru(its, k, &
+&          j))+fzp(k)*(ru(its+1, k-1, j)-ru(its, k-1, j)))+w(its, k, j)*(&
+&          fzm(k)*(rud(its+1, k, j)-rud(its, k, j))+fzp(k)*(rud(its+1, k-&
+&          1, j)-rud(its, k-1, j))))
+        tendency(its, k, j) = tendency(its, k, j) - rdx*(ub*(w_old(its+1&
+&          , k, j)-w_old(its, k, j))+w(its, k, j)*(fzm(k)*(ru(its+1, k, j&
+&          )-ru(its, k, j))+fzp(k)*(ru(its+1, k-1, j)-ru(its, k-1, j))))
+      END DO
+    END DO
+    k = ktf + 1
+    DO j=j_start,j_end
+      uwd = 0.5*((2.-fzm(k-1))*(rud(its, k-1, j)+rud(its+1, k-1, j))-fzp&
+&        (k-1)*(rud(its, k-2, j)+rud(its+1, k-2, j)))
+      uw = 0.5*((2.-fzm(k-1))*(ru(its, k-1, j)+ru(its+1, k-1, j))-fzp(k-&
+&        1)*(ru(its, k-2, j)+ru(its+1, k-2, j)))
+      IF (uw .GT. 0.) THEN
+        ub = 0.
+        ubd = 0.0
+      ELSE
+        ubd = uwd
+        ub = uw
+      END IF
+      tendencyd(its, k, j) = tendencyd(its, k, j) - rdx*(ubd*(w_old(its+&
+&        1, k, j)-w_old(its, k, j))+ub*(w_oldd(its+1, k, j)-w_oldd(its, k&
+&        , j))+wd(its, k, j)*((2.-fzm(k-1))*(ru(its+1, k-1, j)-ru(its, k-&
+&        1, j))-fzp(k-1)*(ru(its+1, k-2, j)-ru(its, k-2, j)))+w(its, k, j&
+&        )*((2.-fzm(k-1))*(rud(its+1, k-1, j)-rud(its, k-1, j))-fzp(k-1)*&
+&        (rud(its+1, k-2, j)-rud(its, k-2, j))))
+      tendency(its, k, j) = tendency(its, k, j) - rdx*(ub*(w_old(its+1, &
+&        k, j)-w_old(its, k, j))+w(its, k, j)*((2.-fzm(k-1))*(ru(its+1, k&
+&        -1, j)-ru(its, k-1, j))-fzp(k-1)*(ru(its+1, k-2, j)-ru(its, k-2&
+&        , j))))
+    END DO
+  END IF
+  IF (config_flags%open_xe .AND. ite .EQ. ide) THEN
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        uwd = 0.5*(fzm(k)*(rud(ite-1, k, j)+rud(ite, k, j))+fzp(k)*(rud(&
+&          ite-1, k-1, j)+rud(ite, k-1, j)))
+        uw = 0.5*(fzm(k)*(ru(ite-1, k, j)+ru(ite, k, j))+fzp(k)*(ru(ite-&
+&          1, k-1, j)+ru(ite, k-1, j)))
+        IF (uw .LT. 0.) THEN
+          ub = 0.
+          ubd = 0.0
+        ELSE
+          ubd = uwd
+          ub = uw
+        END IF
+        tendencyd(i_end, k, j) = tendencyd(i_end, k, j) - rdx*(ubd*(&
+&          w_old(i_end, k, j)-w_old(i_end-1, k, j))+ub*(w_oldd(i_end, k, &
+&          j)-w_oldd(i_end-1, k, j))+wd(i_end, k, j)*(fzm(k)*(ru(ite, k, &
+&          j)-ru(ite-1, k, j))+fzp(k)*(ru(ite, k-1, j)-ru(ite-1, k-1, j))&
+&          )+w(i_end, k, j)*(fzm(k)*(rud(ite, k, j)-rud(ite-1, k, j))+fzp&
+&          (k)*(rud(ite, k-1, j)-rud(ite-1, k-1, j))))
+        tendency(i_end, k, j) = tendency(i_end, k, j) - rdx*(ub*(w_old(&
+&          i_end, k, j)-w_old(i_end-1, k, j))+w(i_end, k, j)*(fzm(k)*(ru(&
+&          ite, k, j)-ru(ite-1, k, j))+fzp(k)*(ru(ite, k-1, j)-ru(ite-1, &
+&          k-1, j))))
+      END DO
+    END DO
+    k = ktf + 1
+    DO j=j_start,j_end
+      uwd = 0.5*((2.-fzm(k-1))*(rud(ite-1, k-1, j)+rud(ite, k-1, j))-fzp&
+&        (k-1)*(rud(ite-1, k-2, j)+rud(ite, k-2, j)))
+      uw = 0.5*((2.-fzm(k-1))*(ru(ite-1, k-1, j)+ru(ite, k-1, j))-fzp(k-&
+&        1)*(ru(ite-1, k-2, j)+ru(ite, k-2, j)))
+      IF (uw .LT. 0.) THEN
+        ub = 0.
+        ubd = 0.0
+      ELSE
+        ubd = uwd
+        ub = uw
+      END IF
+      tendencyd(i_end, k, j) = tendencyd(i_end, k, j) - rdx*(ubd*(w_old(&
+&        i_end, k, j)-w_old(i_end-1, k, j))+ub*(w_oldd(i_end, k, j)-&
+&        w_oldd(i_end-1, k, j))+wd(i_end, k, j)*((2.-fzm(k-1))*(ru(ite, k&
+&        -1, j)-ru(ite-1, k-1, j))-fzp(k-1)*(ru(ite, k-2, j)-ru(ite-1, k-&
+&        2, j)))+w(i_end, k, j)*((2.-fzm(k-1))*(rud(ite, k-1, j)-rud(ite-&
+&        1, k-1, j))-fzp(k-1)*(rud(ite, k-2, j)-rud(ite-1, k-2, j))))
+      tendency(i_end, k, j) = tendency(i_end, k, j) - rdx*(ub*(w_old(&
+&        i_end, k, j)-w_old(i_end-1, k, j))+w(i_end, k, j)*((2.-fzm(k-1))&
+&        *(ru(ite, k-1, j)-ru(ite-1, k-1, j))-fzp(k-1)*(ru(ite, k-2, j)-&
+&        ru(ite-1, k-2, j))))
+    END DO
+  END IF
+  IF (config_flags%open_ys .AND. jts .EQ. jds) THEN
+    DO i=i_start,i_end
+      DO k=kts+1,ktf
+        vwd = 0.5*(fzm(k)*(rvd(i, k, jts)+rvd(i, k, jts+1))+fzp(k)*(rvd(&
+&          i, k-1, jts)+rvd(i, k-1, jts+1)))
+        vw = 0.5*(fzm(k)*(rv(i, k, jts)+rv(i, k, jts+1))+fzp(k)*(rv(i, k&
+&          -1, jts)+rv(i, k-1, jts+1)))
+        IF (vw .GT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = vwd
+          vb = vw
+        END IF
+        tendencyd(i, k, jts) = tendencyd(i, k, jts) - rdy*(vbd*(w_old(i&
+&          , k, jts+1)-w_old(i, k, jts))+vb*(w_oldd(i, k, jts+1)-w_oldd(i&
+&          , k, jts))+wd(i, k, jts)*(fzm(k)*(rv(i, k, jts+1)-rv(i, k, jts&
+&          ))+fzp(k)*(rv(i, k-1, jts+1)-rv(i, k-1, jts)))+w(i, k, jts)*(&
+&          fzm(k)*(rvd(i, k, jts+1)-rvd(i, k, jts))+fzp(k)*(rvd(i, k-1, &
+&          jts+1)-rvd(i, k-1, jts))))
+        tendency(i, k, jts) = tendency(i, k, jts) - rdy*(vb*(w_old(i, k&
+&          , jts+1)-w_old(i, k, jts))+w(i, k, jts)*(fzm(k)*(rv(i, k, jts+&
+&          1)-rv(i, k, jts))+fzp(k)*(rv(i, k-1, jts+1)-rv(i, k-1, jts))))
+      END DO
+    END DO
+    k = ktf + 1
+    DO i=i_start,i_end
+      vwd = 0.5*((2.-fzm(k-1))*(rvd(i, k-1, jts)+rvd(i, k-1, jts+1))-fzp&
+&        (k-1)*(rvd(i, k-2, jts)+rvd(i, k-2, jts+1)))
+      vw = 0.5*((2.-fzm(k-1))*(rv(i, k-1, jts)+rv(i, k-1, jts+1))-fzp(k-&
+&        1)*(rv(i, k-2, jts)+rv(i, k-2, jts+1)))
+      IF (vw .GT. 0.) THEN
+        vb = 0.
+        vbd = 0.0
+      ELSE
+        vbd = vwd
+        vb = vw
+      END IF
+      tendencyd(i, k, jts) = tendencyd(i, k, jts) - rdy*(vbd*(w_old(i, k&
+&        , jts+1)-w_old(i, k, jts))+vb*(w_oldd(i, k, jts+1)-w_oldd(i, k, &
+&        jts))+wd(i, k, jts)*((2.-fzm(k-1))*(rv(i, k-1, jts+1)-rv(i, k-1&
+&        , jts))-fzp(k-1)*(rv(i, k-2, jts+1)-rv(i, k-2, jts)))+w(i, k, &
+&        jts)*((2.-fzm(k-1))*(rvd(i, k-1, jts+1)-rvd(i, k-1, jts))-fzp(k-&
+&        1)*(rvd(i, k-2, jts+1)-rvd(i, k-2, jts))))
+      tendency(i, k, jts) = tendency(i, k, jts) - rdy*(vb*(w_old(i, k, &
+&        jts+1)-w_old(i, k, jts))+w(i, k, jts)*((2.-fzm(k-1))*(rv(i, k-1&
+&        , jts+1)-rv(i, k-1, jts))-fzp(k-1)*(rv(i, k-2, jts+1)-rv(i, k-2&
+&        , jts))))
+    END DO
+  END IF
+  IF (config_flags%open_ye .AND. jte .EQ. jde) THEN
+    DO i=i_start,i_end
+      DO k=kts+1,ktf
+        vwd = 0.5*(fzm(k)*(rvd(i, k, jte-1)+rvd(i, k, jte))+fzp(k)*(rvd(&
+&          i, k-1, jte-1)+rvd(i, k-1, jte)))
+        vw = 0.5*(fzm(k)*(rv(i, k, jte-1)+rv(i, k, jte))+fzp(k)*(rv(i, k&
+&          -1, jte-1)+rv(i, k-1, jte)))
+        IF (vw .LT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = vwd
+          vb = vw
+        END IF
+        tendencyd(i, k, j_end) = tendencyd(i, k, j_end) - rdy*(vbd*(&
+&          w_old(i, k, j_end)-w_old(i, k, j_end-1))+vb*(w_oldd(i, k, &
+&          j_end)-w_oldd(i, k, j_end-1))+wd(i, k, j_end)*(fzm(k)*(rv(i, k&
+&          , jte)-rv(i, k, jte-1))+fzp(k)*(rv(i, k-1, jte)-rv(i, k-1, jte&
+&          -1)))+w(i, k, j_end)*(fzm(k)*(rvd(i, k, jte)-rvd(i, k, jte-1))&
+&          +fzp(k)*(rvd(i, k-1, jte)-rvd(i, k-1, jte-1))))
+        tendency(i, k, j_end) = tendency(i, k, j_end) - rdy*(vb*(w_old(i&
+&          , k, j_end)-w_old(i, k, j_end-1))+w(i, k, j_end)*(fzm(k)*(rv(i&
+&          , k, jte)-rv(i, k, jte-1))+fzp(k)*(rv(i, k-1, jte)-rv(i, k-1, &
+&          jte-1))))
+      END DO
+    END DO
+    k = ktf + 1
+    DO i=i_start,i_end
+      vwd = 0.5*((2.-fzm(k-1))*(rvd(i, k-1, jte-1)+rvd(i, k-1, jte))-fzp&
+&        (k-1)*(rvd(i, k-2, jte-1)+rvd(i, k-2, jte)))
+      vw = 0.5*((2.-fzm(k-1))*(rv(i, k-1, jte-1)+rv(i, k-1, jte))-fzp(k-&
+&        1)*(rv(i, k-2, jte-1)+rv(i, k-2, jte)))
+      IF (vw .LT. 0.) THEN
+        vb = 0.
+        vbd = 0.0
+      ELSE
+        vbd = vwd
+        vb = vw
+      END IF
+      tendencyd(i, k, j_end) = tendencyd(i, k, j_end) - rdy*(vbd*(w_old(&
+&        i, k, j_end)-w_old(i, k, j_end-1))+vb*(w_oldd(i, k, j_end)-&
+&        w_oldd(i, k, j_end-1))+wd(i, k, j_end)*((2.-fzm(k-1))*(rv(i, k-1&
+&        , jte)-rv(i, k-1, jte-1))-fzp(k-1)*(rv(i, k-2, jte)-rv(i, k-2, &
+&        jte-1)))+w(i, k, j_end)*((2.-fzm(k-1))*(rvd(i, k-1, jte)-rvd(i, &
+&        k-1, jte-1))-fzp(k-1)*(rvd(i, k-2, jte)-rvd(i, k-2, jte-1))))
+      tendency(i, k, j_end) = tendency(i, k, j_end) - rdy*(vb*(w_old(i, &
+&        k, j_end)-w_old(i, k, j_end-1))+w(i, k, j_end)*((2.-fzm(k-1))*(&
+&        rv(i, k-1, jte)-rv(i, k-1, jte-1))-fzp(k-1)*(rv(i, k-2, jte)-rv(&
+&        i, k-2, jte-1))))
+    END DO
+  END IF
+!-------------------- vertical advection
+!     ADT eqn 46 has 3rd term on RHS (dividing through by my) = - partial d/dz (w rho w /my)
+!     Here we have:  - partial d/dz (w*rom) = - partial d/dz (w rho w / my)
+!     Therefore we don't need to make a correction for advect_w
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  DO i=i_start,i_end
+    vfluxd(i, kts) = 0.0
+    vflux(i, kts) = 0.
+    vfluxd(i, kte) = 0.0
+    vflux(i, kte) = 0.
+  END DO
+  IF (vert_order .EQ. 6) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+3,ktf-1
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+          vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+          vfluxd(i, k) = veld*(37.*(w(i, k, j)+w(i, k-1, j))-8.*(w(i, k+&
+&            1, j)+w(i, k-2, j))+(w(i, k+2, j)+w(i, k-3, j)))/60.0 + vel*&
+&            (37.*(wd(i, k, j)+wd(i, k-1, j))-8.*(wd(i, k+1, j)+wd(i, k-2&
+&            , j))+wd(i, k+2, j)+wd(i, k-3, j))/60.0
+          vflux(i, k) = vel*((37.*(w(i, k, j)+w(i, k-1, j))-8.*(w(i, k+1&
+&            , j)+w(i, k-2, j))+(w(i, k+2, j)+w(i, k-3, j)))/60.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+        k = kts + 2
+        veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+        vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+        vfluxd(i, k) = veld*(7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)+&
+&          w(i, k-2, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k-1, j))-wd(i&
+&          , k+1, j)-wd(i, k-2, j))/12.0
+        vflux(i, k) = vel*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)+w&
+&          (i, k-2, j)))/12.0)
+        k = ktf
+        veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+        vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+        vfluxd(i, k) = veld*(7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)+&
+&          w(i, k-2, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k-1, j))-wd(i&
+&          , k+1, j)-wd(i, k-2, j))/12.0
+        vflux(i, k) = vel*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)+w&
+&          (i, k-2, j)))/12.0)
+        k = ktf + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+      END DO
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzu(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzu(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+! pick up flux contribution for w at the lid. wcs, 13 march 2004
+      k = ktf + 1
+      DO i=i_start,i_end
+        tendencyd(i, k, j) = tendencyd(i, k, j) + 2.*rdzu(k-1)*vfluxd(i&
+&          , k)
+        tendency(i, k, j) = tendency(i, k, j) + 2.*rdzu(k-1)*vflux(i, k)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 5) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+3,ktf-1
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+          vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+          vfluxd(i, k) = veld*((37.*(w(i, k, j)+w(i, k-1, j))-8.*(w(i, k&
+&            +1, j)+w(i, k-2, j))+(w(i, k+2, j)+w(i, k-3, j)))/60.0-SIGN(&
+&            1, time_step)*SIGN(1., -vel)*(w(i, k+2, j)-w(i, k-3, j)-5.*(&
+&            w(i, k+1, j)-w(i, k-2, j))+10.*(w(i, k, j)-w(i, k-1, j)))/&
+&            60.0) + vel*((37.*(wd(i, k, j)+wd(i, k-1, j))-8.*(wd(i, k+1&
+&            , j)+wd(i, k-2, j))+wd(i, k+2, j)+wd(i, k-3, j))/60.0-SIGN(1&
+&            , time_step)*SIGN(1., -vel)*(wd(i, k+2, j)-wd(i, k-3, j)-5.*&
+&            (wd(i, k+1, j)-wd(i, k-2, j))+10.*(wd(i, k, j)-wd(i, k-1, j)&
+&            ))/60.0)
+          vflux(i, k) = vel*((37.*(w(i, k, j)+w(i, k-1, j))-8.*(w(i, k+1&
+&            , j)+w(i, k-2, j))+(w(i, k+2, j)+w(i, k-3, j)))/60.0-SIGN(1&
+&            , time_step)*SIGN(1., -vel)*(w(i, k+2, j)-w(i, k-3, j)-5.*(w&
+&            (i, k+1, j)-w(i, k-2, j))+10.*(w(i, k, j)-w(i, k-1, j)))/&
+&            60.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+        k = kts + 2
+        veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+        vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+        vfluxd(i, k) = veld*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)&
+&          +w(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(w(i, k&
+&          +1, j)-w(i, k-2, j)-3.*(w(i, k, j)-w(i, k-1, j)))/12.0) + vel*&
+&          ((7.*(wd(i, k, j)+wd(i, k-1, j))-wd(i, k+1, j)-wd(i, k-2, j))/&
+&          12.0+SIGN(1, time_step)*SIGN(1., -vel)*(wd(i, k+1, j)-wd(i, k-&
+&          2, j)-3.*(wd(i, k, j)-wd(i, k-1, j)))/12.0)
+        vflux(i, k) = vel*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)+w&
+&          (i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(w(i, k+1&
+&          , j)-w(i, k-2, j)-3.*(w(i, k, j)-w(i, k-1, j)))/12.0)
+        k = ktf
+        veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+        vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+        vfluxd(i, k) = veld*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)&
+&          +w(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(w(i, k&
+&          +1, j)-w(i, k-2, j)-3.*(w(i, k, j)-w(i, k-1, j)))/12.0) + vel*&
+&          ((7.*(wd(i, k, j)+wd(i, k-1, j))-wd(i, k+1, j)-wd(i, k-2, j))/&
+&          12.0+SIGN(1, time_step)*SIGN(1., -vel)*(wd(i, k+1, j)-wd(i, k-&
+&          2, j)-3.*(wd(i, k, j)-wd(i, k-1, j)))/12.0)
+        vflux(i, k) = vel*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)+w&
+&          (i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(w(i, k+1&
+&          , j)-w(i, k-2, j)-3.*(w(i, k, j)-w(i, k-1, j)))/12.0)
+        k = ktf + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+      END DO
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzu(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzu(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+! pick up flux contribution for w at the lid, wcs. 13 march 2004
+      k = ktf + 1
+      DO i=i_start,i_end
+        tendencyd(i, k, j) = tendencyd(i, k, j) + 2.*rdzu(k-1)*vfluxd(i&
+&          , k)
+        tendency(i, k, j) = tendency(i, k, j) + 2.*rdzu(k-1)*vflux(i, k)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 4) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+2,ktf
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+          vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+          vfluxd(i, k) = veld*(7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j&
+&            )+w(i, k-2, j)))/12.0 + vel*(7.*(wd(i, k, j)+wd(i, k-1, j))-&
+&            wd(i, k+1, j)-wd(i, k-2, j))/12.0
+          vflux(i, k) = vel*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)&
+&            +w(i, k-2, j)))/12.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+        k = ktf + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+      END DO
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzu(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzu(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+! pick up flux contribution for w at the lid, wcs. 13 march 2004
+      k = ktf + 1
+      DO i=i_start,i_end
+        tendencyd(i, k, j) = tendencyd(i, k, j) + 2.*rdzu(k-1)*vfluxd(i&
+&          , k)
+        tendency(i, k, j) = tendency(i, k, j) + 2.*rdzu(k-1)*vflux(i, k)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 3) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+2,ktf
+        DO i=i_start,i_end
+          veld = 0.5*(romd(i, k, j)+romd(i, k-1, j))
+          vel = 0.5*(rom(i, k, j)+rom(i, k-1, j))
+          vfluxd(i, k) = veld*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, &
+&            j)+w(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(w(&
+&            i, k+1, j)-w(i, k-2, j)-3.*(w(i, k, j)-w(i, k-1, j)))/12.0) &
+&            + vel*((7.*(wd(i, k, j)+wd(i, k-1, j))-wd(i, k+1, j)-wd(i, k&
+&            -2, j))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(wd(i, k+1, j&
+&            )-wd(i, k-2, j)-3.*(wd(i, k, j)-wd(i, k-1, j)))/12.0)
+          vflux(i, k) = vel*((7.*(w(i, k, j)+w(i, k-1, j))-(w(i, k+1, j)&
+&            +w(i, k-2, j)))/12.0+SIGN(1, time_step)*SIGN(1., -vel)*(w(i&
+&            , k+1, j)-w(i, k-2, j)-3.*(w(i, k, j)-w(i, k-1, j)))/12.0)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+        k = ktf + 1
+        vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, j)&
+&          +w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+wd(i&
+&          , k-1, j)))
+        vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w(i&
+&          , k-1, j))
+      END DO
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzu(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzu(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+! pick up flux contribution for w at the lid, wcs. 13 march 2004
+      k = ktf + 1
+      DO i=i_start,i_end
+        tendencyd(i, k, j) = tendencyd(i, k, j) + 2.*rdzu(k-1)*vfluxd(i&
+&          , k)
+        tendency(i, k, j) = tendency(i, k, j) + 2.*rdzu(k-1)*vflux(i, k)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 2) THEN
+    vfluxd = 0.0
+    DO j=j_start,j_end
+      DO k=kts+1,ktf+1
+        DO i=i_start,i_end
+          vfluxd(i, k) = 0.25*((romd(i, k, j)+romd(i, k-1, j))*(w(i, k, &
+&            j)+w(i, k-1, j))+(rom(i, k, j)+rom(i, k-1, j))*(wd(i, k, j)+&
+&            wd(i, k-1, j)))
+          vflux(i, k) = 0.25*(rom(i, k, j)+rom(i, k-1, j))*(w(i, k, j)+w&
+&            (i, k-1, j))
+        END DO
+      END DO
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          tendencyd(i, k, j) = tendencyd(i, k, j) - rdzu(k)*(vfluxd(i, k&
+&            +1)-vfluxd(i, k))
+          tendency(i, k, j) = tendency(i, k, j) - rdzu(k)*(vflux(i, k+1)&
+&            -vflux(i, k))
+        END DO
+      END DO
+! pick up flux contribution for w at the lid, wcs. 13 march 2004
+      k = ktf + 1
+      DO i=i_start,i_end
+        tendencyd(i, k, j) = tendencyd(i, k, j) + 2.*rdzu(k-1)*vfluxd(i&
+&          , k)
+        tendency(i, k, j) = tendency(i, k, j) + 2.*rdzu(k-1)*vflux(i, k)
+      END DO
+    END DO
+  ELSE
+    WRITE(wrf_err_message, *) ' advect_w, v_order not known ', &
+&    vert_order
+    CALL WRF_ERROR_FATAL(wrf_err_message)
+  END IF
+END SUBROUTINE G_ADVECT_W
 
  SUBROUTINE g_advect_scalar_pd(field,g_field,field_old,g_field_old,tendency, &
  g_tendency,h_tendency,g_h_tendency,z_tendency,g_z_tendency,ru,g_ru,rv,g_rv,rom,g_rom,mut,g_mut,mub,mu_old,g_mu_old, &

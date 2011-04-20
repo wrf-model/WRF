@@ -189,7 +189,7 @@ CONTAINS
  fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
  IF(non_hydrostatic) CALL g_advect_w(w,g_w,w,g_w,rw_tend,g_rw_tend,ru, &
- g_ru,rv,g_rv,ww,g_ww,mut,g_mut,time_step,config_flags,msfux,msfuy,msfvx, &
+ g_ru,rv,g_rv,ww,g_ww,mut,time_step,config_flags,msfux,msfuy,msfvx, &
  msfvy,msftx,msfty,fnm,fnp,rdx,rdy,rdn,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms, &
  kme,its,ite,jts,jte,kts,kte)
 

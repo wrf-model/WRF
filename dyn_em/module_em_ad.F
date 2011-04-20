@@ -1954,7 +1954,7 @@ CONTAINS
 !!   END DO
 
    CALL a_advect_w(w,a_w,w,a_w,rw_tend,a_rw_tend,ru,a_ru,rv,a_rv,ww,  &
-   a_ww,mut,a_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
+   a_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
    fnp,rdx,rdy,rdn,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
    END IF

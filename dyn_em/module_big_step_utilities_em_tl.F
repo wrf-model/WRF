@@ -734,337 +734,305 @@ END SUBROUTINE g_couple_momentum
 
  END SUBROUTINE g_calc_alt
 
- SUBROUTINE g_calc_p_rho_phi(moist,g_moist,n_moist,al,g_al,alb,mu,g_mu, &
- muts,g_muts,ph,g_ph,p,g_p,pb,t,g_t,p0,t0,znu,dnw,rdnw,rdn,non_hydrostatic &
-,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2,Tmpv3,g_Tmpv3
- LOGICAL :: non_hydrostatic
- INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- INTEGER :: n_moist
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: alb,pb,t,g_t
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_moist) :: moist,g_moist
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: al,g_al,p,g_p
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: ph,g_ph
- REAL,DIMENSION(ims:ime,jms:jme) :: mu,g_mu,muts,g_muts
- REAL,DIMENSION(kms:kme) :: znu,dnw,rdnw,rdn
- REAL :: t0,p0
-
- INTEGER :: i,j,k,itf,jtf,ktf,ispe
- REAL :: qvf,g_qvf,qtot,g_qtot,qf1,g_qf1,qf2,g_qf2
- REAL,DIMENSION(its:ite) :: temp,g_temp,cpovcv_v,g_cpovcv_v
-
- itf =min(ite,ide-1)
-
- jtf =min(jte,jde-1)
-
- ktf =min(kte,kde-1)
-!#ifndef INTELMKL  ! Remarked by Ning Pan
-
- g_cpovcv_v =0.0
- cpovcv_v =cpovcv
-
-!#endif  ! Remarked by Ning Pan
-
- IF(non_hydrostatic) THEN
-
- IF(n_moist >= PARAM_FIRST_SCALAR ) THEN
-
- DO j =jts,jtf
- DO k =kts,ktf
- DO i =its,itf
-
- g_qvf =rvovrd*g_moist(i,k,j,P_QV)
- qvf =1. +rvovrd*moist(i,k,j,P_QV)
-
- g_Tmpv1 =-1./muts(i,j)*(alb(i,k,j)*g_mu(i,j) +rdnw(k)*(g_ph(i,k+1,j) &
- -g_ph(i,k,j))) +(-(-1.)*g_muts(i,j)/(muts(i,j)*muts(i,j)))*(alb(i,k,j)*mu(i,j) &
- +rdnw(k)*(ph(i,k+1,j) -ph(i,k,j))) 
- Tmpv1 =-1./muts(i,j)*(alb(i,k,j)*mu(i,j) +rdnw(k)*(ph(i,k+1,j) -ph(i,k,j)))
-
- g_al(i,k,j) =g_Tmpv1
- al(i,k,j) =Tmpv1
-
- g_Tmpv1 =r_d*(t0 +t(i,k,j))*g_qvf +r_d*(g_t(i,k,j))*qvf 
- Tmpv1 =r_d*(t0 +t(i,k,j))*qvf
-
- g_Tmpv2 =((g_Tmpv1)*(p0*(al(i,k,j) +alb(i,k,j))) -(p0*(g_al(i,k,j))) &
-*(Tmpv1))/((p0*(al(i,k,j) +alb(i,k,j)))*(p0*(al(i,k,j) +alb(i,k,j)))) 
- Tmpv2 =(Tmpv1)/(p0*(al(i,k,j) +alb(i,k,j)))
-
- g_temp(i) =g_Tmpv2
- temp(i) =Tmpv2
-
- ENDDO
-! Added by Ning Pan
-         CALL g_vpow_local( p(its,k,j),g_p(its,k,j), temp(its), g_temp(its), cpovcv_v(its), g_cpovcv_v(its), itf-its+1 )
-
-#ifdef INTELMKL
-!This line is fail to be recognized
-         CALL VPOWX ( itf-its+1, temp(its), cpovcv, p(its,k,j) )
-#else
-!This line is fail to be recognized
-!REVISED AND ADDED BY WALLS
-!        CALL VPOW  ( p(its,k,j), temp(its), cpovcv_v(its), itf-its+1 )
-!         CALL g_vpow_local( p(its,k,j),g_p(its,k,j), temp(its), g_temp(its), cpovcv_v(its), g_cpovcv_v(its), itf-its+1 )  ! Remarked by Ning Pan
-         CALL VPOW  ( p(its,k,j), temp(its), cpovcv_v(its), itf-its+1 )  ! Added by Ning Pan
-#endif
-
- DO i =its,itf
-
- g_p(i,k,j) =g_p(i,k,j)*p0
- p(i,k,j) =p(i,k,j)*p0 -pb(i,k,j)
-
- ENDDO
- ENDDO
- ENDDO
- ELSE
-
- DO j =jts,jtf
- DO k =kts,ktf
- DO i =its,itf
-
- g_Tmpv1 =-1./muts(i,j)*(alb(i,k,j)*g_mu(i,j) +rdnw(k)*(g_ph(i,k+1,j) &
- -g_ph(i,k,j))) +(-(-1.)*g_muts(i,j)/(muts(i,j)*muts(i,j)))*(alb(i,k,j)*mu(i,j) &
- +rdnw(k)*(ph(i,k+1,j) -ph(i,k,j))) 
- Tmpv1 =-1./muts(i,j)*(alb(i,k,j)*mu(i,j) +rdnw(k)*(ph(i,k+1,j) -ph(i,k,j)))
-
- g_al(i,k,j) =g_Tmpv1
- al(i,k,j) =Tmpv1
-
- g_Tmpv1 =((r_d*(g_t(i,k,j)))*(p0*(al(i,k,j) +alb(i,k,j))) -(p0*(g_al(i,k, &
- j)))*(r_d*(t0 +t(i,k,j))))/((p0*(al(i,k,j) +alb(i,k,j)))*(p0*(al(i,k,j) +alb(i,k,j)))) 
- Tmpv1 =(r_d*(t0 +t(i,k,j)))/(p0*(al(i,k,j) +alb(i,k,j)))
-
- g_p(i,k,j) =p0*cpovcv*(g_Tmpv1)*(Tmpv1)**(cpovcv -1.0)
- p(i,k,j) =p0*(Tmpv1)**cpovcv -pb(i,k,j)
-
- ENDDO
- ENDDO
- ENDDO
- END IF
- ELSE
-
- IF(n_moist >= PARAM_FIRST_SCALAR ) THEN
-
- DO j =jts,jtf
-
- k =ktf
-
- DO i =its,itf
-
- g_qtot =0.0
- qtot =0.
-
- DO ispe =PARAM_FIRST_SCALAR,n_moist
-
- g_qtot =g_qtot +g_moist(i,k,j,ispe)
- qtot =qtot +moist(i,k,j,ispe)
-
- ENDDO
-
- g_qf2 = 0.0
- qf2 =1.
-
- g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
- Tmpv1 =qtot*qf2
-
- g_qf1 =g_Tmpv1
- qf1 =Tmpv1
-
- g_Tmpv1 =qf1*g_muts(i,j) +g_qf1*muts(i,j) 
- Tmpv1 =qf1*muts(i,j)
-
-!REVISED BY WALLS
-!g_Tmpv2 =(((-0.5*(g_mu(i,j) +g_Tmpv1))/rdnw(k))*qf2 -g_qf2*-0.5*(mu(i,j) &
-!+Tmpv1)/rdnw(k))/(qf2*qf2) 
- g_Tmpv2 =(((-0.5*(g_mu(i,j) +g_Tmpv1))/rdnw(k))*qf2 -g_qf2*(-0.5)*(mu(i,j) &
- +Tmpv1)/rdnw(k))/(qf2*qf2) 
- Tmpv2 =-0.5*(mu(i,j) +Tmpv1)/rdnw(k)/qf2
-
- g_p(i,k,j) =g_Tmpv2
- p(i,k,j) =Tmpv2
-
- g_qvf =rvovrd*g_moist(i,k,j,P_QV)
- qvf =1. +rvovrd*moist(i,k,j,P_QV)
-
- g_Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*g_qvf +(r_d/p1000mb)*(g_t(i,k,j))*qvf 
- Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*qvf
-
- g_Tmpv2 =Tmpv1*(cvpm*((g_p(i,k,j))/p1000mb)*((p(i,k,j) +pb(i,k,j))/p1000mb) &
-**(cvpm -1.0)) +g_Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm) 
- Tmpv2 =Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm)
-
- g_al(i,k,j) =g_Tmpv2
- al(i,k,j) =Tmpv2 -alb(i,k,j)
-
- ENDDO
-
- DO k =ktf-1,kts,-1
- DO i =its,itf
-
- g_qtot =0.0
- qtot =0.
-
- DO ispe =PARAM_FIRST_SCALAR,n_moist
-
- g_qtot =g_qtot +0.5*(g_moist(i,k,j,ispe) +g_moist(i,k+1,j,ispe))
- qtot =qtot +0.5*(moist(i,k,j,ispe) +moist(i,k+1,j,ispe))
-
- ENDDO
-
- g_qf2 = 0.0
- qf2 =1.
-
- g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
- Tmpv1 =qtot*qf2
-
- g_qf1 =g_Tmpv1
- qf1 =Tmpv1
-
- g_Tmpv1 =qf1*g_muts(i,j) +g_qf1*muts(i,j) 
- Tmpv1 =qf1*muts(i,j)
-
- g_Tmpv2 =((g_mu(i,j) +g_Tmpv1)*qf2 -g_qf2*(mu(i,j) +Tmpv1))/(qf2*qf2) 
- Tmpv2 =(mu(i,j) +Tmpv1)/qf2
-
- g_p(i,k,j) =g_p(i,k+1,j) -(g_Tmpv2/rdn(k+1))
- p(i,k,j) =p(i,k+1,j) -Tmpv2/rdn(k+1)
-
- g_qvf =rvovrd*g_moist(i,k,j,P_QV)
- qvf =1. +rvovrd*moist(i,k,j,P_QV)
-
- g_Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*g_qvf +(r_d/p1000mb)*(g_t(i,k,j))*qvf 
- Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*qvf
-
- g_Tmpv2 =Tmpv1*(cvpm*((g_p(i,k,j))/p1000mb)*((p(i,k,j) +pb(i,k,j))/p1000mb) &
-**(cvpm -1.0)) +g_Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm) 
- Tmpv2 =Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm)
-
- g_al(i,k,j) =g_Tmpv2
- al(i,k,j) =Tmpv2 -alb(i,k,j)
-
- ENDDO
- ENDDO
-
- DO k =2,ktf+1
- DO i =its,itf
-
- g_Tmpv1 =(muts(i,j))*g_al(i,k-1,j) +(g_muts(i,j))*al(i,k-1,j) 
- Tmpv1 =(muts(i,j))*al(i,k-1,j)
-
- g_ph(i,k,j) =g_ph(i,k-1,j) -(dnw(k-1))*(g_Tmpv1 +g_mu(i,j)*alb(i,k-1,j))
- ph(i,k,j) =ph(i,k-1,j) -(dnw(k-1))*(Tmpv1 +mu(i,j)*alb(i,k-1,j))
-
- ENDDO
- ENDDO
- ENDDO
- ELSE
-
- DO j =jts,jtf
-
- k =ktf
-
- DO i =its,itf
-
- g_qtot =0.0
- qtot =0.
-
- g_qf2 = 0.0
- qf2 =1.
-
- g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
- Tmpv1 =qtot*qf2
-
- g_qf1 =g_Tmpv1
- qf1 =Tmpv1
-
- g_Tmpv1 =qf1*g_muts(i,j) +g_qf1*muts(i,j) 
- Tmpv1 =qf1*muts(i,j)
-
-!REVISED BY WALLS'
-!g_Tmpv2 =(((-0.5*(g_mu(i,j) +g_Tmpv1))/rdnw(k))*qf2 -g_qf2*-0.5*(mu(i,j) &
-!+Tmpv1)/rdnw(k))/(qf2*qf2) 
- g_Tmpv2 =(((-0.5*(g_mu(i,j) +g_Tmpv1))/rdnw(k))*qf2 -g_qf2*(-0.5)*(mu(i,j) &
- +Tmpv1)/rdnw(k))/(qf2*qf2) 
- Tmpv2 =-0.5*(mu(i,j) +Tmpv1)/rdnw(k)/qf2
-
- g_p(i,k,j) =g_Tmpv2
- p(i,k,j) =Tmpv2
-
- g_qvf =0.0
- qvf =1.
-
- g_Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*g_qvf +(r_d/p1000mb)*(g_t(i,k,j))*qvf 
- Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*qvf
-
- g_Tmpv2 =Tmpv1*(cvpm*((g_p(i,k,j))/p1000mb)*((p(i,k,j) +pb(i,k,j))/p1000mb) &
-**(cvpm -1.0)) +g_Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm) 
- Tmpv2 =Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm)
-
- g_al(i,k,j) =g_Tmpv2
- al(i,k,j) =Tmpv2 -alb(i,k,j)
-
- ENDDO
-
- DO k =ktf-1,kts,-1
- DO i =its,itf
-
- g_qtot =0.0
- qtot =0.
-
- g_qf2 = 0.0
- qf2 =1.
-
- g_Tmpv1 =qtot*g_qf2 +g_qtot*qf2 
- Tmpv1 =qtot*qf2
-
- g_qf1 =g_Tmpv1
- qf1 =Tmpv1
-
- g_Tmpv1 =qf1*g_muts(i,j) +g_qf1*muts(i,j) 
- Tmpv1 =qf1*muts(i,j)
-
- g_Tmpv2 =((g_mu(i,j) +g_Tmpv1)*qf2 -g_qf2*(mu(i,j) +Tmpv1))/(qf2*qf2) 
- Tmpv2 =(mu(i,j) +Tmpv1)/qf2
-
- g_p(i,k,j) =g_p(i,k+1,j) -(g_Tmpv2/rdn(k+1))
- p(i,k,j) =p(i,k+1,j) -Tmpv2/rdn(k+1)
-
- g_qvf =0.0
- qvf =1.
-
- g_Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*g_qvf +(r_d/p1000mb)*(g_t(i,k,j))*qvf 
- Tmpv1 =(r_d/p1000mb)*(t(i,k,j) +t0)*qvf
-
- g_Tmpv2 =Tmpv1*(cvpm*((g_p(i,k,j))/p1000mb)*((p(i,k,j) +pb(i,k,j))/p1000mb) &
-**(cvpm -1.0)) +g_Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm) 
- Tmpv2 =Tmpv1*(((p(i,k,j) +pb(i,k,j))/p1000mb)**cvpm)
-
- g_al(i,k,j) =g_Tmpv2
- al(i,k,j) =Tmpv2 -alb(i,k,j)
-
- ENDDO
- ENDDO
-
- DO k =2,ktf+1
- DO i =its,itf
-
- g_Tmpv1 =(muts(i,j))*g_al(i,k-1,j) +(g_muts(i,j))*al(i,k-1,j) 
- Tmpv1 =(muts(i,j))*al(i,k-1,j)
-
- g_ph(i,k,j) =g_ph(i,k-1,j) -(dnw(k-1))*(g_Tmpv1 +g_mu(i,j)*alb(i,k-1,j))
- ph(i,k,j) =ph(i,k-1,j) -(dnw(k-1))*(Tmpv1 +mu(i,j)*alb(i,k-1,j))
-
- ENDDO
- ENDDO
- ENDDO
- END IF
- END IF
-
- END SUBROUTINE g_calc_p_rho_phi
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of calc_p_rho_phi in forward (tangent) mode:
+!   variations   of useful results: p al ph
+!   with respect to varying inputs: p al t muts ph moist mu
+!   RW status of diff variables: p:in-out al:in-out t:in muts:in
+!                ph:in-out moist:in mu:in
+SUBROUTINE G_CALC_P_RHO_PHI(moist, moistd, n_moist, al, ald, alb, mu, &
+&  mud, muts, mutsd, ph, phd, p, pd, pb, t, td, p0, t0, znu, dnw, rdnw, &
+&  rdn, non_hydrostatic, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme&
+&  , kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+! Input data
+  LOGICAL, INTENT(IN) :: non_hydrostatic
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  INTEGER, INTENT(IN) :: n_moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: alb, pb, t
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: td
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
+&  moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
+&  moistd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: al, p
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: ald, pd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: ph
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: phd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mu, muts
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mud, mutsd
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: znu, dnw, rdnw, rdn
+  REAL, INTENT(IN) :: t0, p0
+! Local stuff
+  INTEGER :: i, j, k, itf, jtf, ktf, ispe
+  REAL :: qvf, qtot, qf1, qf2
+  REAL :: qvfd, qtotd, qf1d
+  REAL, DIMENSION(its:ite) :: temp, cpovcv_v
+  REAL, DIMENSION(its:ite) :: tempd
+  REAL :: pwx1
+  REAL :: pwx1d
+  REAL :: pwr1
+  REAL :: pwr1d
+  INTRINSIC MIN
+  IF (ite .GT. ide - 1) THEN
+    itf = ide - 1
+  ELSE
+    itf = ite
+  END IF
+  IF (jte .GT. jde - 1) THEN
+    jtf = jde - 1
+  ELSE
+    jtf = jte
+  END IF
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  cpovcv_v = cpovcv
+  IF (non_hydrostatic) THEN
+    IF (n_moist .GE. param_first_scalar) THEN
+      tempd = 0.0
+      DO j=jts,jtf
+        DO k=kts,ktf
+          DO i=its,itf
+            qvfd = rvovrd*moistd(i, k, j, p_qv)
+            qvf = 1. + rvovrd*moist(i, k, j, p_qv)
+            ald(i, k, j) = -((alb(i, k, j)*mud(i, j)+rdnw(k)*(phd(i, k+1&
+&              , j)-phd(i, k, j)))/muts(i, j)-mutsd(i, j)*(alb(i, k, j)*&
+&              mu(i, j)+rdnw(k)*(ph(i, k+1, j)-ph(i, k, j)))/muts(i, j)**&
+&              2)
+            al(i, k, j) = -(1./muts(i, j)*(alb(i, k, j)*mu(i, j)+rdnw(k)&
+&              *(ph(i, k+1, j)-ph(i, k, j))))
+            tempd(i) = (r_d*(td(i, k, j)*qvf+(t0+t(i, k, j))*qvfd)*p0*(&
+&              al(i, k, j)+alb(i, k, j))-r_d*(t0+t(i, k, j))*qvf*p0*ald(i&
+&              , k, j))/(p0*(al(i, k, j)+alb(i, k, j)))**2
+            temp(i) = r_d*(t0+t(i, k, j))*qvf/(p0*(al(i, k, j)+alb(i, k&
+&              , j)))
+          END DO
+! use vector version from libmassv or from compat lib in frame/libmassv.F
+          CALL G_VPOW(p(its, k, j), pd(its, k, j), temp(its), tempd(its)&
+&                , cpovcv_v(its), itf - its + 1)
+          DO i=its,itf
+            pd(i, k, j) = p0*pd(i, k, j)
+            p(i, k, j) = p(i, k, j)*p0 - pb(i, k, j)
+          END DO
+        END DO
+      END DO
+    ELSE
+      DO j=jts,jtf
+        DO k=kts,ktf
+          DO i=its,itf
+            ald(i, k, j) = -((alb(i, k, j)*mud(i, j)+rdnw(k)*(phd(i, k+1&
+&              , j)-phd(i, k, j)))/muts(i, j)-mutsd(i, j)*(alb(i, k, j)*&
+&              mu(i, j)+rdnw(k)*(ph(i, k+1, j)-ph(i, k, j)))/muts(i, j)**&
+&              2)
+            al(i, k, j) = -(1./muts(i, j)*(alb(i, k, j)*mu(i, j)+rdnw(k)&
+&              *(ph(i, k+1, j)-ph(i, k, j))))
+            pwx1d = (r_d*td(i, k, j)*p0*(al(i, k, j)+alb(i, k, j))-r_d*(&
+&              t0+t(i, k, j))*p0*ald(i, k, j))/(p0*(al(i, k, j)+alb(i, k&
+&              , j)))**2
+            pwx1 = r_d*(t0+t(i, k, j))/(p0*(al(i, k, j)+alb(i, k, j)))
+            IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. cpovcv .EQ. INT(&
+&                cpovcv))) THEN
+              pwr1d = cpovcv*pwx1**(cpovcv-1)*pwx1d
+            ELSE IF (pwx1 .EQ. 0.0 .AND. cpovcv .EQ. 1.0) THEN
+              pwr1d = pwx1d
+            ELSE
+              pwr1d = 0.0
+            END IF
+            pwr1 = pwx1**cpovcv
+            pd(i, k, j) = p0*pwr1d
+            p(i, k, j) = p0*pwr1 - pb(i, k, j)
+          END DO
+        END DO
+      END DO
+    END IF
+  ELSE IF (n_moist .GE. param_first_scalar) THEN
+!  hydrostatic pressure, al, and ph1 calc; WCS, 5 sept 2001
+    DO j=jts,jtf
+! top layer
+      k = ktf
+      DO i=its,itf
+        qtot = 0.
+        qtotd = 0.0
+        DO ispe=param_first_scalar,n_moist
+          qtotd = qtotd + moistd(i, k, j, ispe)
+          qtot = qtot + moist(i, k, j, ispe)
+        END DO
+        qf2 = 1.
+        qf1d = qf2*qtotd
+        qf1 = qtot*qf2
+        pd(i, k, j) = -(0.5*(mud(i, j)+qf1d*muts(i, j)+qf1*mutsd(i, j))/&
+&          rdnw(k)/qf2)
+        p(i, k, j) = -(0.5*(mu(i, j)+qf1*muts(i, j))/rdnw(k)/qf2)
+        qvfd = rvovrd*moistd(i, k, j, p_qv)
+        qvf = 1. + rvovrd*moist(i, k, j, p_qv)
+        pwx1d = pd(i, k, j)/p1000mb
+        pwx1 = (p(i, k, j)+pb(i, k, j))/p1000mb
+        IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. cvpm .EQ. INT(cvpm))&
+&        ) THEN
+          pwr1d = cvpm*pwx1**(cvpm-1)*pwx1d
+        ELSE IF (pwx1 .EQ. 0.0 .AND. cvpm .EQ. 1.0) THEN
+          pwr1d = pwx1d
+        ELSE
+          pwr1d = 0.0
+        END IF
+        pwr1 = pwx1**cvpm
+        ald(i, k, j) = r_d*(td(i, k, j)*qvf*pwr1+(t(i, k, j)+t0)*(qvfd*&
+&          pwr1+qvf*pwr1d))/p1000mb
+        al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*pwr1 - alb(i, k, j&
+&          )
+      END DO
+! remaining layers, integrate down
+      DO k=ktf-1,kts,-1
+        DO i=its,itf
+          qtot = 0.
+          qtotd = 0.0
+          DO ispe=param_first_scalar,n_moist
+            qtotd = qtotd + 0.5*(moistd(i, k, j, ispe)+moistd(i, k+1, j&
+&              , ispe))
+            qtot = qtot + 0.5*(moist(i, k, j, ispe)+moist(i, k+1, j, &
+&              ispe))
+          END DO
+          qf2 = 1.
+          qf1d = qf2*qtotd
+          qf1 = qtot*qf2
+          pd(i, k, j) = pd(i, k+1, j) - (mud(i, j)+qf1d*muts(i, j)+qf1*&
+&            mutsd(i, j))/qf2/rdn(k+1)
+          p(i, k, j) = p(i, k+1, j) - (mu(i, j)+qf1*muts(i, j))/qf2/rdn(&
+&            k+1)
+          qvfd = rvovrd*moistd(i, k, j, p_qv)
+          qvf = 1. + rvovrd*moist(i, k, j, p_qv)
+          pwx1d = pd(i, k, j)/p1000mb
+          pwx1 = (p(i, k, j)+pb(i, k, j))/p1000mb
+          IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. cvpm .EQ. INT(cvpm&
+&              ))) THEN
+            pwr1d = cvpm*pwx1**(cvpm-1)*pwx1d
+          ELSE IF (pwx1 .EQ. 0.0 .AND. cvpm .EQ. 1.0) THEN
+            pwr1d = pwx1d
+          ELSE
+            pwr1d = 0.0
+          END IF
+          pwr1 = pwx1**cvpm
+          ald(i, k, j) = r_d*(td(i, k, j)*qvf*pwr1+(t(i, k, j)+t0)*(qvfd&
+&            *pwr1+qvf*pwr1d))/p1000mb
+          al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*pwr1 - alb(i, k&
+&            , j)
+        END DO
+      END DO
+! integrate hydrostatic equation for geopotential
+      DO k=2,ktf+1
+        DO i=its,itf
+!              ph(i,k,j) = ph(i,k-1,j) - (1./rdnw(k-1))*(       &
+!                           (muts(i,j)+mu(i,j))*al(i,k-1,j)+    &
+!                            mu(i,j)*alb(i,k-1,j)  )
+          phd(i, k, j) = phd(i, k-1, j) - dnw(k-1)*(mutsd(i, j)*al(i, k-&
+&            1, j)+muts(i, j)*ald(i, k-1, j)+alb(i, k-1, j)*mud(i, j))
+          ph(i, k, j) = ph(i, k-1, j) - dnw(k-1)*(muts(i, j)*al(i, k-1, &
+&            j)+mu(i, j)*alb(i, k-1, j))
+        END DO
+      END DO
+    END DO
+  ELSE
+    DO j=jts,jtf
+! top layer
+      k = ktf
+      DO i=its,itf
+        qtot = 0.
+        qf2 = 1.
+        qf1 = qtot*qf2
+        pd(i, k, j) = -(0.5*(mud(i, j)+qf1*mutsd(i, j))/rdnw(k)/qf2)
+        p(i, k, j) = -(0.5*(mu(i, j)+qf1*muts(i, j))/rdnw(k)/qf2)
+        qvf = 1.
+        pwx1d = pd(i, k, j)/p1000mb
+        pwx1 = (p(i, k, j)+pb(i, k, j))/p1000mb
+        IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. cvpm .EQ. INT(cvpm))&
+&        ) THEN
+          pwr1d = cvpm*pwx1**(cvpm-1)*pwx1d
+        ELSE IF (pwx1 .EQ. 0.0 .AND. cvpm .EQ. 1.0) THEN
+          pwr1d = pwx1d
+        ELSE
+          pwr1d = 0.0
+        END IF
+        pwr1 = pwx1**cvpm
+        ald(i, k, j) = r_d*qvf*(td(i, k, j)*pwr1+(t(i, k, j)+t0)*pwr1d)/&
+&          p1000mb
+        al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*pwr1 - alb(i, k, j&
+&          )
+      END DO
+! remaining layers, integrate down
+      DO k=ktf-1,kts,-1
+        DO i=its,itf
+          qtot = 0.
+          qf2 = 1.
+          qf1 = qtot*qf2
+          pd(i, k, j) = pd(i, k+1, j) - (mud(i, j)+qf1*mutsd(i, j))/qf2/&
+&            rdn(k+1)
+          p(i, k, j) = p(i, k+1, j) - (mu(i, j)+qf1*muts(i, j))/qf2/rdn(&
+&            k+1)
+          qvf = 1.
+          pwx1d = pd(i, k, j)/p1000mb
+          pwx1 = (p(i, k, j)+pb(i, k, j))/p1000mb
+          IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. cvpm .EQ. INT(cvpm&
+&              ))) THEN
+            pwr1d = cvpm*pwx1**(cvpm-1)*pwx1d
+          ELSE IF (pwx1 .EQ. 0.0 .AND. cvpm .EQ. 1.0) THEN
+            pwr1d = pwx1d
+          ELSE
+            pwr1d = 0.0
+          END IF
+          pwr1 = pwx1**cvpm
+          ald(i, k, j) = r_d*qvf*(td(i, k, j)*pwr1+(t(i, k, j)+t0)*pwr1d&
+&            )/p1000mb
+          al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*pwr1 - alb(i, k&
+&            , j)
+        END DO
+      END DO
+! integrate hydrostatic equation for geopotential
+      DO k=2,ktf+1
+        DO i=its,itf
+!              ph(i,k,j) = ph(i,k-1,j) - (1./rdnw(k-1))*(       &
+!                           (muts(i,j)+mu(i,j))*al(i,k-1,j)+    &
+!                            mu(i,j)*alb(i,k-1,j)  )
+          phd(i, k, j) = phd(i, k-1, j) - dnw(k-1)*(mutsd(i, j)*al(i, k-&
+&            1, j)+muts(i, j)*ald(i, k-1, j)+alb(i, k-1, j)*mud(i, j))
+          ph(i, k, j) = ph(i, k-1, j) - dnw(k-1)*(muts(i, j)*al(i, k-1, &
+&            j)+mu(i, j)*alb(i, k-1, j))
+        END DO
+      END DO
+    END DO
+  END IF
+END SUBROUTINE G_CALC_P_RHO_PHI
+
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of vpow in forward (tangent) mode:
+!   variations   of useful results: z
+!   with respect to varying inputs: y z
+SUBROUTINE G_VPOW(z, zd, y, yd, x, n)
+  IMPLICIT NONE
+  REAL*8 :: x(*), y(*), z(*)
+  REAL*8 :: yd(*), zd(*)
+  INTEGER :: j
+  INTEGER :: n
+  DO j=1,n
+    IF (y(j) .GT. 0.0 .OR. (y(j) .LT. 0.0 .AND. x(j) .EQ. INT(x(j)))) &
+&    THEN
+      zd(j) = x(j)*y(j)**(x(j)-1)*yd(j)
+    ELSE IF (y(j) .EQ. 0.0 .AND. x(j) .EQ. 1.0) THEN
+      zd(j) = yd(j)
+    ELSE
+      zd(j) = 0.0
+    END IF
+    z(j) = y(j)**x(j)
+  END DO
+  RETURN
+END SUBROUTINE G_VPOW
 
  SUBROUTINE g_calc_php(php,g_php,ph,g_ph,phb,ids,ide,jds,jde,kds,kde,ims,ime, &
  jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
@@ -2470,286 +2438,269 @@ END SUBROUTINE g_couple_momentum
 
  END SUBROUTINE g_rhs_ph
 
- SUBROUTINE g_horizontal_pressure_gradient(ru_tend,g_ru_tend,rv_tend, &
- g_rv_tend,ph,g_ph,alt,g_alt,p,g_p,pb,al,g_al,php,g_php,cqu, &
- g_cqu,cqv,g_cqv,muu,g_muu,muv,g_muv,mu,g_mu,fnm,fnp,rdnw,cf1,cf2,cf3, &
- rdx,rdy,msfux,msfuy,msfvx,msfvy,msftx,msfty,config_flags,non_hydrostatic,top_lid,ids, &
- ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2,Tmpv3,g_Tmpv3,Tmpv4,g_Tmpv4,Tmpv5, &
- g_Tmpv5,Tmpv6,g_Tmpv6
- TYPE(grid_config_rec_type) :: config_flags
- LOGICAL :: non_hydrostatic,top_lid
- INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: ph,g_ph,alt,g_alt,al,g_al,p, &
- g_p,pb,php,g_php,cqu,g_cqu,cqv,g_cqv
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: ru_tend,g_ru_tend,rv_tend,g_rv_tend
- REAL,DIMENSION(ims:ime,jms:jme) :: muu,g_muu,muv,g_muv,mu,g_mu,msfux,msfuy, &
- msfvx,msfvy,msftx,msfty
- REAL,DIMENSION(kms:kme) :: rdnw,fnm,fnp
- REAL :: rdx,rdy,cf1,cf2,cf3
- INTEGER :: i,j,k,itf,jtf,ktf,i_start,j_start
- REAL,DIMENSION(ims:ime,kms:kme) :: dpn,g_dpn
- REAL :: dpx,g_dpx,dpy,g_dpy
- LOGICAL :: specified
-
- specified =.false.
-
- if(config_flags%specified .or. config_flags%nested) specified =.true.
-
- itf =min(ite,ide-1)
-
- jtf =jte
-
- ktf =min(kte,kde-1)
-
- i_start =its
-
- j_start =jts
-
- IF( (config_flags%open_ys .or. specified .or.   &
-         config_flags%nested .or. config_flags%polar ) .and. jts == jds ) j_start =jts+1
-
- IF( (config_flags%open_ye .or. specified .or.   &
-         config_flags%nested .or. config_flags%polar ) .and. jte == jde ) jtf =jtf-1
-
- DO j =j_start,jtf
-
- IF( non_hydrostatic ) THEN
-
- k =1
-
- DO i =i_start,itf
-
- g_dpn(i,k) =.5*(cf1*(g_p(i,k,j-1) +g_p(i,k,j)) +cf2*(g_p(i,k+1,j-1) &
- +g_p(i,k+1,j)) +cf3*(g_p(i,k+2,j-1) +g_p(i,k+2,j)))
- dpn(i,k) =.5*(cf1*(p(i,k,j-1) +p(i,k,j)) +cf2*(p(i,k+1,j-1) +p(i,k+1,j)) &
- +cf3*(p(i,k+2,j-1) +p(i,k+2,j)))
-
- g_dpn(i,kde) =0.0
- dpn(i,kde) =0.
-
- ENDDO
-
- IF(top_lid) THEN
-
- DO i =i_start,itf
-
- g_dpn(i,kde) =.5*(cf1*(g_p(i,kde-1,j-1) +g_p(i,kde-1,j)) +cf2*(g_p(i,kde- &
- 2,j-1) +g_p(i,kde-2,j)) +cf3*(g_p(i,kde-3,j-1) +g_p(i,kde-3,j)))
- dpn(i,kde) =.5*(cf1*(p(i,kde-1,j-1) +p(i,kde-1,j)) +cf2*(p(i,kde-2,j-1) &
- +p(i,kde-2,j)) +cf3*(p(i,kde-3,j-1) +p(i,kde-3,j)))
-
- ENDDO
- ENDIF
-
- DO k =2,ktf
- DO i =i_start,itf
-
- g_dpn(i,k) =.5*(fnm(k)*(g_p(i,k,j-1) +g_p(i,k,j)) +fnp(k)*(g_p(i,k-1,j-1) &
- +g_p(i,k-1,j)))
- dpn(i,k) =.5*(fnm(k)*(p(i,k,j-1) +p(i,k,j)) +fnp(k)*(p(i,k-1,j-1) +p(i,k-1,j)))
-
- ENDDO
- ENDDO
-
- DO K =1,ktf
- DO i =i_start,itf
-
- g_Tmpv1 =(alt(i,k,j) +alt(i,k,j-1))*(g_p(i,k,j) -g_p(i,k,j-1)) &
- +(g_alt(i,k,j) +g_alt(i,k,j-1))*(p(i,k,j) -p(i,k,j-1)) 
- Tmpv1 =(alt(i,k,j) +alt(i,k,j-1))*(p(i,k,j) -p(i,k,j-1))
-
- g_Tmpv2 =(msfvy(i,j)/msfvx(i,j)) *.5 *rdy*muv(i,j)*((g_ph(i,k+1,j) &
- -g_ph(i,k+1,j-1) +g_ph(i,k,j) -g_ph(i,k,j-1)) +g_Tmpv1 +(g_al(i,k,j) &
- +g_al(i,k,j-1))*(pb(i,k,j)-pb(i,k,j-1))) +(msfvy(i,j)/msfvx(i,j)) *.5 *rdy* &
- g_muv(i,j)*((ph(i,k+1,j) -ph(i,k+1,j-1) +ph(i,k,j) -ph(i,k,j-1)) +Tmpv1 +(al(i,k, &
- j) +al(i,k,j-1))*(pb(i,k,j)-pb(i,k,j-1))) 
- Tmpv2 =(msfvy(i,j)/msfvx(i,j)) *.5 *rdy*muv(i,j)*((ph(i,k+1,j) -ph(i,k+1,j-1) &
- +ph(i,k,j) -ph(i,k,j-1)) +Tmpv1 +(al(i,k,j) +al(i,k,j-1))*(pb(i,k,j)-pb(i,k,j-1)))
-
- g_dpy =g_Tmpv2
- dpy =Tmpv2
-
- g_Tmpv1 =(msfvy(i,j)/msfvx(i,j)) *rdy*(php(i,k,j) -php(i,k,j-1))*(rdnw(k) &
-*(g_dpn(i,k+1) -g_dpn(i,k)) -.5*(g_mu(i,j-1) +g_mu(i,j))) +(msfvy(i,j) &
-/msfvx(i,j)) *rdy*(g_php(i,k,j) -g_php(i,k,j-1))*(rdnw(k)*(dpn(i,k+1) &
- -dpn(i,k)) -.5*(mu(i,j-1) +mu(i,j))) 
- Tmpv1 =(msfvy(i,j)/msfvx(i,j)) *rdy*(php(i,k,j) -php(i,k,j-1))*(rdnw(k)*(dpn(i,k+1) &
- -dpn(i,k)) -.5*(mu(i,j-1) +mu(i,j)))
-
- g_dpy =g_dpy +g_Tmpv1
- dpy =dpy +Tmpv1
-
- g_Tmpv1 =cqv(i,k,j)*g_dpy +g_cqv(i,k,j)*dpy 
- Tmpv1 =cqv(i,k,j)*dpy
-
- g_rv_tend(i,k,j) =g_rv_tend(i,k,j) -g_Tmpv1
- rv_tend(i,k,j) =rv_tend(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ELSE
-
- DO K =1,ktf
- DO i =i_start,itf
-
- g_Tmpv1 =(alt(i,k,j) +alt(i,k,j-1))*(g_p(i,k,j) -g_p(i,k,j-1)) &
- +(g_alt(i,k,j) +g_alt(i,k,j-1))*(p(i,k,j) -p(i,k,j-1)) 
- Tmpv1 =(alt(i,k,j) +alt(i,k,j-1))*(p(i,k,j) -p(i,k,j-1))
-
- g_Tmpv2 =(msfvy(i,j)/msfvx(i,j)) *.5 *rdy*muv(i,j)*((g_ph(i,k+1,j) &
- -g_ph(i,k+1,j-1) +g_ph(i,k,j) -g_ph(i,k,j-1)) +g_Tmpv1 +(g_al(i,k,j) &
- +g_al(i,k,j-1))*(pb(i,k,j)-pb(i,k,j-1))) +(msfvy(i,j)/msfvx(i,j)) *.5 *rdy* &
- g_muv(i,j)*((ph(i,k+1,j) -ph(i,k+1,j-1) +ph(i,k,j) -ph(i,k,j-1)) +Tmpv1 +(al(i,k, &
- j) +al(i,k,j-1))*(pb(i,k,j)-pb(i,k,j-1))) 
- Tmpv2 =(msfvy(i,j)/msfvx(i,j)) *.5 *rdy*muv(i,j)*((ph(i,k+1,j) -ph(i,k+1,j-1) &
- +ph(i,k,j) -ph(i,k,j-1)) +Tmpv1 +(al(i,k,j) +al(i,k,j-1))*(pb(i,k,j)-pb(i,k,j-1)))
-
- g_dpy =g_Tmpv2
- dpy =Tmpv2
-
- g_Tmpv1 =cqv(i,k,j)*g_dpy +g_cqv(i,k,j)*dpy 
- Tmpv1 =cqv(i,k,j)*dpy
-
- g_rv_tend(i,k,j) =g_rv_tend(i,k,j) -g_Tmpv1
- rv_tend(i,k,j) =rv_tend(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- END IF
- ENDDO
-
- itf =ite
-
- jtf =min(jte,jde-1)
-
- ktf =min(kte,kde-1)
-
- i_start =its
-
- j_start =jts
-
- IF( (config_flags%open_xs .or. specified .or.   &
-           config_flags%nested ) .and. its == ids ) i_start =its+1
-
- IF( (config_flags%open_xe .or. specified .or.   &
-           config_flags%nested ) .and. ite == ide ) itf =itf-1
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) itf =ite
-
- DO j =j_start,jtf
-
- IF( non_hydrostatic ) THEN
-
- k =1
-
- DO i =i_start,itf
-
- g_dpn(i,k) =.5*(cf1*(g_p(i-1,k,j) +g_p(i,k,j)) +cf2*(g_p(i-1,k+1,j) &
- +g_p(i,k+1,j)) +cf3*(g_p(i-1,k+2,j) +g_p(i,k+2,j)))
- dpn(i,k) =.5*(cf1*(p(i-1,k,j) +p(i,k,j)) +cf2*(p(i-1,k+1,j) +p(i,k+1,j)) &
- +cf3*(p(i-1,k+2,j) +p(i,k+2,j)))
-
- g_dpn(i,kde) =0.0
- dpn(i,kde) =0.
-
- ENDDO
-
- IF(top_lid) THEN
-
- DO i =i_start,itf
-
- g_dpn(i,kde) =.5*(cf1*(g_p(i-1,kde-1,j) +g_p(i,kde-1,j)) +cf2*(g_p(i-1, &
- kde-2,j) +g_p(i,kde-2,j)) +cf3*(g_p(i-1,kde-3,j) +g_p(i,kde-3,j)))
- dpn(i,kde) =.5*(cf1*(p(i-1,kde-1,j) +p(i,kde-1,j)) +cf2*(p(i-1,kde-2,j) &
- +p(i,kde-2,j)) +cf3*(p(i-1,kde-3,j) +p(i,kde-3,j)))
-
- ENDDO
- ENDIF
-
- DO k =2,ktf
- DO i =i_start,itf
-
- g_dpn(i,k) =.5*(fnm(k)*(g_p(i-1,k,j) +g_p(i,k,j)) +fnp(k)*(g_p(i-1,k-1,j) &
- +g_p(i,k-1,j)))
- dpn(i,k) =.5*(fnm(k)*(p(i-1,k,j) +p(i,k,j)) +fnp(k)*(p(i-1,k-1,j) +p(i,k-1,j)))
-
- ENDDO
- ENDDO
-
- DO K =1,ktf
- DO i =i_start,itf
-
- g_Tmpv1 =(alt(i,k,j) +alt(i-1,k,j))*(g_p(i,k,j) -g_p(i-1,k,j)) &
- +(g_alt(i,k,j) +g_alt(i-1,k,j))*(p(i,k,j) -p(i-1,k,j)) 
- Tmpv1 =(alt(i,k,j) +alt(i-1,k,j))*(p(i,k,j) -p(i-1,k,j))
-
- g_Tmpv2 =(msfux(i,j)/msfuy(i,j)) *.5 *rdx*muu(i,j)*((g_ph(i,k+1,j) &
- -g_ph(i-1,k+1,j) +g_ph(i,k,j) -g_ph(i-1,k,j)) +g_Tmpv1 +(g_al(i,k,j) &
- +g_al(i-1,k,j))*(pb(i,k,j)-pb(i-1,k,j))) +(msfux(i,j)/msfuy(i,j)) *.5 *rdx* &
- g_muu(i,j)*((ph(i,k+1,j) -ph(i-1,k+1,j) +ph(i,k,j) -ph(i-1,k,j)) +Tmpv1 +(al(i,k, &
- j) +al(i-1,k,j))*(pb(i,k,j)-pb(i-1,k,j))) 
- Tmpv2 =(msfux(i,j)/msfuy(i,j)) *.5 *rdx*muu(i,j)*((ph(i,k+1,j) -ph(i-1,k+1,j) &
- +ph(i,k,j) -ph(i-1,k,j)) +Tmpv1 +(al(i,k,j) +al(i-1,k,j))*(pb(i,k,j)-pb(i-1,k,j)))
-
- g_dpx =g_Tmpv2
- dpx =Tmpv2
-
- g_Tmpv1 =(msfux(i,j)/msfuy(i,j)) *rdx*(php(i,k,j) -php(i-1,k,j))*(rdnw(k) &
-*(g_dpn(i,k+1) -g_dpn(i,k)) -.5*(g_mu(i-1,j) +g_mu(i,j))) +(msfux(i,j) &
-/msfuy(i,j)) *rdx*(g_php(i,k,j) -g_php(i-1,k,j))*(rdnw(k)*(dpn(i,k+1) &
- -dpn(i,k)) -.5*(mu(i-1,j) +mu(i,j))) 
- Tmpv1 =(msfux(i,j)/msfuy(i,j)) *rdx*(php(i,k,j) -php(i-1,k,j))*(rdnw(k)*(dpn(i,k+1) &
- -dpn(i,k)) -.5*(mu(i-1,j) +mu(i,j)))
-
- g_dpx =g_dpx +g_Tmpv1
- dpx =dpx +Tmpv1
-
- g_Tmpv1 =cqu(i,k,j)*g_dpx +g_cqu(i,k,j)*dpx 
- Tmpv1 =cqu(i,k,j)*dpx
-
- g_ru_tend(i,k,j) =g_ru_tend(i,k,j) -g_Tmpv1
- ru_tend(i,k,j) =ru_tend(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- ELSE
-
- DO K =1,ktf
- DO i =i_start,itf
-
- g_Tmpv1 =(alt(i,k,j) +alt(i-1,k,j))*(g_p(i,k,j) -g_p(i-1,k,j)) &
- +(g_alt(i,k,j) +g_alt(i-1,k,j))*(p(i,k,j) -p(i-1,k,j)) 
- Tmpv1 =(alt(i,k,j) +alt(i-1,k,j))*(p(i,k,j) -p(i-1,k,j))
-
- g_Tmpv2 =(msfux(i,j)/msfuy(i,j)) *.5 *rdx*muu(i,j)*((g_ph(i,k+1,j) &
- -g_ph(i-1,k+1,j) +g_ph(i,k,j) -g_ph(i-1,k,j)) +g_Tmpv1 +(g_al(i,k,j) &
- +g_al(i-1,k,j))*(pb(i,k,j)-pb(i-1,k,j))) +(msfux(i,j)/msfuy(i,j)) *.5 *rdx* &
- g_muu(i,j)*((ph(i,k+1,j) -ph(i-1,k+1,j) +ph(i,k,j) -ph(i-1,k,j)) +Tmpv1 +(al(i,k, &
- j) +al(i-1,k,j))*(pb(i,k,j)-pb(i-1,k,j))) 
- Tmpv2 =(msfux(i,j)/msfuy(i,j)) *.5 *rdx*muu(i,j)*((ph(i,k+1,j) -ph(i-1,k+1,j) &
- +ph(i,k,j) -ph(i-1,k,j)) +Tmpv1 +(al(i,k,j) +al(i-1,k,j))*(pb(i,k,j)-pb(i-1,k,j)))
-
- g_dpx =g_Tmpv2
- dpx =Tmpv2
-
- g_Tmpv1 =cqu(i,k,j)*g_dpx +g_cqu(i,k,j)*dpx 
- Tmpv1 =cqu(i,k,j)*dpx
-
- g_ru_tend(i,k,j) =g_ru_tend(i,k,j) -g_Tmpv1
- ru_tend(i,k,j) =ru_tend(i,k,j) -Tmpv1
-
- ENDDO
- ENDDO
- END IF
- ENDDO
-
- END SUBROUTINE g_horizontal_pressure_gradient
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of horizontal_pressure_gradient in forward (tangent) mode:
+!   variations   of useful results: ru_tend rv_tend
+!   with respect to varying inputs: p al ru_tend cqu cqv php rv_tend
+!                ph alt muu muv mu
+!   RW status of diff variables: p:in al:in ru_tend:in-out cqu:in
+!                cqv:in php:in rv_tend:in-out ph:in alt:in muu:in
+!                muv:in mu:in
+SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT(ru_tend, ru_tendd, rv_tend, &
+&  rv_tendd, ph, phd, alt, altd, p, pd, pb, al, ald, php, phpd, cqu, cqud&
+&  , cqv, cqvd, muu, muud, muv, muvd, mu, mud, fnm, fnp, rdnw, cf1, cf2, &
+&  cf3, rdx, rdy, msfux, msfuy, msfvx, msfvy, msftx, msfty, config_flags&
+&  , non_hydrostatic, top_lid, ids, ide, jds, jde, kds, kde, ims, ime, &
+&  jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+! Input data
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  LOGICAL, INTENT(IN) :: non_hydrostatic, top_lid
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ph, alt, al&
+&  , p, pb, php, cqu, cqv
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: phd, altd, &
+&  ald, pd, phpd, cqud, cqvd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: ru_tend, &
+&  rv_tend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: ru_tendd&
+&  , rv_tendd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: muu, muv, mu, msfux, &
+&  msfuy, msfvx, msfvy, msftx, msfty
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: muud, muvd, mud
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: rdnw, fnm, fnp
+  REAL, INTENT(IN) :: rdx, rdy, cf1, cf2, cf3
+  INTEGER :: i, j, k, itf, jtf, ktf, i_start, j_start
+  REAL, DIMENSION(ims:ime, kms:kme) :: dpn
+  REAL, DIMENSION(ims:ime, kms:kme) :: dpnd
+  REAL :: dpx, dpy
+  REAL :: dpxd, dpyd
+  LOGICAL :: specified
+  INTRINSIC MIN
+!<DESCRIPTION>
+!
+!  horizontal_pressure_gradient calculates the 
+!  horizontal pressure gradient terms for the large-timestep tendency 
+!  in the horizontal momentum equations (u,v).
+!
+!</DESCRIPTION>
+  specified = .false.
+  IF (config_flags%specified .OR. config_flags%nested) specified = &
+&      .true.
+  IF (ite .GT. ide - 1) THEN
+    itf = ide - 1
+  ELSE
+    itf = ite
+  END IF
+  jtf = jte
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  i_start = its
+  j_start = jts
+  IF ((((config_flags%open_ys .OR. specified) .OR. config_flags%nested) &
+&      .OR. config_flags%polar) .AND. jts .EQ. jds) j_start = jts + 1
+  IF ((((config_flags%open_ye .OR. specified) .OR. config_flags%nested) &
+&      .OR. config_flags%polar) .AND. jte .EQ. jde) THEN
+    jtf = jtf - 1
+    dpnd = 0.0
+  ELSE
+    dpnd = 0.0
+  END IF
+  DO j=j_start,jtf
+    IF (non_hydrostatic) THEN
+      k = 1
+      DO i=i_start,itf
+        dpnd(i, k) = .5*(cf1*(pd(i, k, j-1)+pd(i, k, j))+cf2*(pd(i, k+1&
+&          , j-1)+pd(i, k+1, j))+cf3*(pd(i, k+2, j-1)+pd(i, k+2, j)))
+        dpn(i, k) = .5*(cf1*(p(i, k, j-1)+p(i, k, j))+cf2*(p(i, k+1, j-1&
+&          )+p(i, k+1, j))+cf3*(p(i, k+2, j-1)+p(i, k+2, j)))
+        dpnd(i, kde) = 0.0
+        dpn(i, kde) = 0.
+      END DO
+      IF (top_lid) THEN
+        DO i=i_start,itf
+          dpnd(i, kde) = .5*(cf1*(pd(i, kde-1, j-1)+pd(i, kde-1, j))+cf2&
+&            *(pd(i, kde-2, j-1)+pd(i, kde-2, j))+cf3*(pd(i, kde-3, j-1)+&
+&            pd(i, kde-3, j)))
+          dpn(i, kde) = .5*(cf1*(p(i, kde-1, j-1)+p(i, kde-1, j))+cf2*(p&
+&            (i, kde-2, j-1)+p(i, kde-2, j))+cf3*(p(i, kde-3, j-1)+p(i, &
+&            kde-3, j)))
+        END DO
+      END IF
+      DO k=2,ktf
+        DO i=i_start,itf
+          dpnd(i, k) = .5*(fnm(k)*(pd(i, k, j-1)+pd(i, k, j))+fnp(k)*(pd&
+&            (i, k-1, j-1)+pd(i, k-1, j)))
+          dpn(i, k) = .5*(fnm(k)*(p(i, k, j-1)+p(i, k, j))+fnp(k)*(p(i, &
+&            k-1, j-1)+p(i, k-1, j)))
+        END DO
+      END DO
+!       ADT eqn 45: -mu*(my/mx)*(1/rho)*partial dp/dy
+!       [alt, al are 1/rho terms; muv, mu are NOT coupled]
+      DO k=1,ktf
+        DO i=i_start,itf
+! Here are mu dp/dy terms 1-3 
+          dpyd = msfvy(i, j)*.5*rdy*(muvd(i, j)*(ph(i, k+1, j)-ph(i, k+1&
+&            , j-1)+ph(i, k, j)-ph(i, k, j-1)+(alt(i, k, j)+alt(i, k, j-1&
+&            ))*(p(i, k, j)-p(i, k, j-1))+(al(i, k, j)+al(i, k, j-1))*(pb&
+&            (i, k, j)-pb(i, k, j-1)))+muv(i, j)*(phd(i, k+1, j)-phd(i, k&
+&            +1, j-1)+phd(i, k, j)-phd(i, k, j-1)+(altd(i, k, j)+altd(i, &
+&            k, j-1))*(p(i, k, j)-p(i, k, j-1))+(alt(i, k, j)+alt(i, k, j&
+&            -1))*(pd(i, k, j)-pd(i, k, j-1))+(pb(i, k, j)-pb(i, k, j-1))&
+&            *(ald(i, k, j)+ald(i, k, j-1))))/msfvx(i, j)
+          dpy = msfvy(i, j)/msfvx(i, j)*.5*rdy*muv(i, j)*(ph(i, k+1, j)-&
+&            ph(i, k+1, j-1)+ph(i, k, j)-ph(i, k, j-1)+(alt(i, k, j)+alt(&
+&            i, k, j-1))*(p(i, k, j)-p(i, k, j-1))+(al(i, k, j)+al(i, k, &
+&            j-1))*(pb(i, k, j)-pb(i, k, j-1)))
+! Here is mu dp/dy term 4 
+          dpyd = dpyd + msfvy(i, j)*rdy*((phpd(i, k, j)-phpd(i, k, j-1))&
+&            *(rdnw(k)*(dpn(i, k+1)-dpn(i, k))-.5*(mu(i, j-1)+mu(i, j)))+&
+&            (php(i, k, j)-php(i, k, j-1))*(rdnw(k)*(dpnd(i, k+1)-dpnd(i&
+&            , k))-.5*(mud(i, j-1)+mud(i, j))))/msfvx(i, j)
+          dpy = dpy + msfvy(i, j)/msfvx(i, j)*rdy*(php(i, k, j)-php(i, k&
+&            , j-1))*(rdnw(k)*(dpn(i, k+1)-dpn(i, k))-.5*(mu(i, j-1)+mu(i&
+&            , j)))
+          rv_tendd(i, k, j) = rv_tendd(i, k, j) - cqvd(i, k, j)*dpy - &
+&            cqv(i, k, j)*dpyd
+          rv_tend(i, k, j) = rv_tend(i, k, j) - cqv(i, k, j)*dpy
+        END DO
+      END DO
+    ELSE
+!       ADT eqn 45: -mu*(my/mx)*(1/rho)*partial dp/dy
+!       [alt, al are 1/rho terms; muv, mu are NOT coupled]
+      DO k=1,ktf
+        DO i=i_start,itf
+! Here are mu dp/dy terms 1-3; term 4 not needed if hydrostatic
+          dpyd = msfvy(i, j)*.5*rdy*(muvd(i, j)*(ph(i, k+1, j)-ph(i, k+1&
+&            , j-1)+ph(i, k, j)-ph(i, k, j-1)+(alt(i, k, j)+alt(i, k, j-1&
+&            ))*(p(i, k, j)-p(i, k, j-1))+(al(i, k, j)+al(i, k, j-1))*(pb&
+&            (i, k, j)-pb(i, k, j-1)))+muv(i, j)*(phd(i, k+1, j)-phd(i, k&
+&            +1, j-1)+phd(i, k, j)-phd(i, k, j-1)+(altd(i, k, j)+altd(i, &
+&            k, j-1))*(p(i, k, j)-p(i, k, j-1))+(alt(i, k, j)+alt(i, k, j&
+&            -1))*(pd(i, k, j)-pd(i, k, j-1))+(pb(i, k, j)-pb(i, k, j-1))&
+&            *(ald(i, k, j)+ald(i, k, j-1))))/msfvx(i, j)
+          dpy = msfvy(i, j)/msfvx(i, j)*.5*rdy*muv(i, j)*(ph(i, k+1, j)-&
+&            ph(i, k+1, j-1)+ph(i, k, j)-ph(i, k, j-1)+(alt(i, k, j)+alt(&
+&            i, k, j-1))*(p(i, k, j)-p(i, k, j-1))+(al(i, k, j)+al(i, k, &
+&            j-1))*(pb(i, k, j)-pb(i, k, j-1)))
+          rv_tendd(i, k, j) = rv_tendd(i, k, j) - cqvd(i, k, j)*dpy - &
+&            cqv(i, k, j)*dpyd
+          rv_tend(i, k, j) = rv_tend(i, k, j) - cqv(i, k, j)*dpy
+        END DO
+      END DO
+    END IF
+  END DO
+!  now the east-west (x) pressure gradient
+  itf = ite
+  IF (jte .GT. jde - 1) THEN
+    jtf = jde - 1
+  ELSE
+    jtf = jte
+  END IF
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  i_start = its
+  j_start = jts
+  IF (((config_flags%open_xs .OR. specified) .OR. config_flags%nested) &
+&      .AND. its .EQ. ids) i_start = its + 1
+  IF (((config_flags%open_xe .OR. specified) .OR. config_flags%nested) &
+&      .AND. ite .EQ. ide) itf = itf - 1
+  IF (config_flags%periodic_x) i_start = its
+  IF (config_flags%periodic_x) itf = ite
+  DO j=j_start,jtf
+    IF (non_hydrostatic) THEN
+      k = 1
+      DO i=i_start,itf
+        dpnd(i, k) = .5*(cf1*(pd(i-1, k, j)+pd(i, k, j))+cf2*(pd(i-1, k+&
+&          1, j)+pd(i, k+1, j))+cf3*(pd(i-1, k+2, j)+pd(i, k+2, j)))
+        dpn(i, k) = .5*(cf1*(p(i-1, k, j)+p(i, k, j))+cf2*(p(i-1, k+1, j&
+&          )+p(i, k+1, j))+cf3*(p(i-1, k+2, j)+p(i, k+2, j)))
+        dpnd(i, kde) = 0.0
+        dpn(i, kde) = 0.
+      END DO
+      IF (top_lid) THEN
+        DO i=i_start,itf
+          dpnd(i, kde) = .5*(cf1*(pd(i-1, kde-1, j)+pd(i, kde-1, j))+cf2&
+&            *(pd(i-1, kde-2, j)+pd(i, kde-2, j))+cf3*(pd(i-1, kde-3, j)+&
+&            pd(i, kde-3, j)))
+          dpn(i, kde) = .5*(cf1*(p(i-1, kde-1, j)+p(i, kde-1, j))+cf2*(p&
+&            (i-1, kde-2, j)+p(i, kde-2, j))+cf3*(p(i-1, kde-3, j)+p(i, &
+&            kde-3, j)))
+        END DO
+      END IF
+      DO k=2,ktf
+        DO i=i_start,itf
+          dpnd(i, k) = .5*(fnm(k)*(pd(i-1, k, j)+pd(i, k, j))+fnp(k)*(pd&
+&            (i-1, k-1, j)+pd(i, k-1, j)))
+          dpn(i, k) = .5*(fnm(k)*(p(i-1, k, j)+p(i, k, j))+fnp(k)*(p(i-1&
+&            , k-1, j)+p(i, k-1, j)))
+        END DO
+      END DO
+! ADT eqn 44: -mu*(mx/my)*(1/rho)*partial dp/dx
+! [alt, al are 1/rho terms; muu, mu are NOT coupled]
+      DO k=1,ktf
+        DO i=i_start,itf
+! Here are mu dp/dy terms 1-3
+          dpxd = msfux(i, j)*.5*rdx*(muud(i, j)*(ph(i, k+1, j)-ph(i-1, k&
+&            +1, j)+ph(i, k, j)-ph(i-1, k, j)+(alt(i, k, j)+alt(i-1, k, j&
+&            ))*(p(i, k, j)-p(i-1, k, j))+(al(i, k, j)+al(i-1, k, j))*(pb&
+&            (i, k, j)-pb(i-1, k, j)))+muu(i, j)*(phd(i, k+1, j)-phd(i-1&
+&            , k+1, j)+phd(i, k, j)-phd(i-1, k, j)+(altd(i, k, j)+altd(i-&
+&            1, k, j))*(p(i, k, j)-p(i-1, k, j))+(alt(i, k, j)+alt(i-1, k&
+&            , j))*(pd(i, k, j)-pd(i-1, k, j))+(pb(i, k, j)-pb(i-1, k, j)&
+&            )*(ald(i, k, j)+ald(i-1, k, j))))/msfuy(i, j)
+          dpx = msfux(i, j)/msfuy(i, j)*.5*rdx*muu(i, j)*(ph(i, k+1, j)-&
+&            ph(i-1, k+1, j)+ph(i, k, j)-ph(i-1, k, j)+(alt(i, k, j)+alt(&
+&            i-1, k, j))*(p(i, k, j)-p(i-1, k, j))+(al(i, k, j)+al(i-1, k&
+&            , j))*(pb(i, k, j)-pb(i-1, k, j)))
+! Here is mu dp/dy term 4
+          dpxd = dpxd + msfux(i, j)*rdx*((phpd(i, k, j)-phpd(i-1, k, j))&
+&            *(rdnw(k)*(dpn(i, k+1)-dpn(i, k))-.5*(mu(i-1, j)+mu(i, j)))+&
+&            (php(i, k, j)-php(i-1, k, j))*(rdnw(k)*(dpnd(i, k+1)-dpnd(i&
+&            , k))-.5*(mud(i-1, j)+mud(i, j))))/msfuy(i, j)
+          dpx = dpx + msfux(i, j)/msfuy(i, j)*rdx*(php(i, k, j)-php(i-1&
+&            , k, j))*(rdnw(k)*(dpn(i, k+1)-dpn(i, k))-.5*(mu(i-1, j)+mu(&
+&            i, j)))
+          ru_tendd(i, k, j) = ru_tendd(i, k, j) - cqud(i, k, j)*dpx - &
+&            cqu(i, k, j)*dpxd
+          ru_tend(i, k, j) = ru_tend(i, k, j) - cqu(i, k, j)*dpx
+        END DO
+      END DO
+    ELSE
+!       ADT eqn 44: -mu*(mx/my)*(1/rho)*partial dp/dx
+!       [alt, al are 1/rho terms; muu, mu are NOT coupled]
+      DO k=1,ktf
+        DO i=i_start,itf
+! Here are mu dp/dy terms 1-3; term 4 not needed if hydrostatic
+          dpxd = msfux(i, j)*.5*rdx*(muud(i, j)*(ph(i, k+1, j)-ph(i-1, k&
+&            +1, j)+ph(i, k, j)-ph(i-1, k, j)+(alt(i, k, j)+alt(i-1, k, j&
+&            ))*(p(i, k, j)-p(i-1, k, j))+(al(i, k, j)+al(i-1, k, j))*(pb&
+&            (i, k, j)-pb(i-1, k, j)))+muu(i, j)*(phd(i, k+1, j)-phd(i-1&
+&            , k+1, j)+phd(i, k, j)-phd(i-1, k, j)+(altd(i, k, j)+altd(i-&
+&            1, k, j))*(p(i, k, j)-p(i-1, k, j))+(alt(i, k, j)+alt(i-1, k&
+&            , j))*(pd(i, k, j)-pd(i-1, k, j))+(pb(i, k, j)-pb(i-1, k, j)&
+&            )*(ald(i, k, j)+ald(i-1, k, j))))/msfuy(i, j)
+          dpx = msfux(i, j)/msfuy(i, j)*.5*rdx*muu(i, j)*(ph(i, k+1, j)-&
+&            ph(i-1, k+1, j)+ph(i, k, j)-ph(i-1, k, j)+(alt(i, k, j)+alt(&
+&            i-1, k, j))*(p(i, k, j)-p(i-1, k, j))+(al(i, k, j)+al(i-1, k&
+&            , j))*(pb(i, k, j)-pb(i-1, k, j)))
+          ru_tendd(i, k, j) = ru_tendd(i, k, j) - cqud(i, k, j)*dpx - &
+&            cqu(i, k, j)*dpxd
+          ru_tend(i, k, j) = ru_tend(i, k, j) - cqu(i, k, j)*dpx
+        END DO
+      END DO
+    END IF
+  END DO
+END SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT
 
  SUBROUTINE g_pg_buoy_w(rw_tend,g_rw_tend,p,g_p,cqw,g_cqw,mu,g_mu,mub, &
  rdnw,rdn,g,msftx,msfty,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts, &
@@ -6888,19 +6839,6 @@ END SUBROUTINE G_THETA_RELAXATION
  ENDDO
 
  END SUBROUTINE g_sixth_order_diffusion
-
- SUBROUTINE g_vpow_local(z,g_z,y,g_y,x,g_x,n)
-
- REAL x(*),g_x(*),y(*),g_y(*),z(*),g_z(*)
-
- DO j =1,n
-
- g_z(j) =(y(j)*log(y(j))*g_x(j) +x(j)*g_y(j))*y(j)**(x(j) -1.0)
-! z(j) =y(j)**x(j)  ! Remarked by Ning Pan
-
- ENDDO
-
- END SUBROUTINE g_vpow_local
 
  END MODULE g_module_big_step_utilities_em
 

@@ -409,10 +409,11 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 !          .AND. config_flags%constant_bc .AND. (grid%dfi_stage .EQ. DFI_BCK .OR. grid%dfi_stage .EQ. DFI_FWD) ) THEN
        IF( config_flags%specified .AND. config_flags%constant_bc ) THEN
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: zero_bdytend{
 if (config_flags % sw_call_zero_bdytend) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call zero_bdytend ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -435,10 +436,12 @@ if (config_flags % sw_call_zero_bdytend) then
      ENDDO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call zero_bdytend ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: zero_bdytend }
+#endif
 
 
        ENDIF
@@ -521,9 +524,11 @@ end if
 !  Ensure that polar meridional velocity is zero
      IF (config_flags%polar) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: zero_pole{
 if (config_flags % sw_call_zero_pole) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call zero_pole ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -537,15 +542,18 @@ if (config_flags % sw_call_zero_pole) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call zero_pole ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: zero_pole }
+#endif
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: zero_pole{
 if (config_flags % sw_call_zero_pole) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call zero_pole ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -559,10 +567,12 @@ if (config_flags % sw_call_zero_pole) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call zero_pole ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: zero_pole }
+#endif
 
      END IF
 !
@@ -575,9 +585,11 @@ end if
 
 BENCH_START(step_prep_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_step_prep{
 if (config_flags % sw_call_rk_step_prep) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_step_prep ' )
+#endif
         CALL push4backup (grid%mu_2, "mu")
         CALL push4backup (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
         CALL push4backup (moist, "moist")
@@ -603,10 +615,12 @@ if (config_flags % sw_call_rk_step_prep) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_step_prep ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_step_prep }
+#endif
 
 
 BENCH_END(step_prep_tim)
@@ -658,9 +672,11 @@ BENCH_START(set_phys_bc_tim)
        CALL wrf_debug ( 200 , ' call rk_phys_bc_dry_1' )
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_1{
 if (config_flags % sw_call_rk_phys_bc_dry_1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_phys_bc_dry_1 ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -676,15 +692,19 @@ if (config_flags % sw_call_rk_phys_bc_dry_1) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_phys_bc_dry_1 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_1 }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -699,15 +719,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -722,10 +746,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
        IF (config_flags%polar) THEN
@@ -735,9 +761,11 @@ end if
 !-------------------------------------------------------
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pole_point_bc{
 if (config_flags % sw_call_pole_point_bc) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pole_point_bc ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -751,16 +779,18 @@ if (config_flags % sw_call_pole_point_bc) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pole_point_bc ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pole_point_bc }
+#endif
 
-
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pole_point_bc{
 if (config_flags % sw_call_pole_point_bc) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pole_point_bc ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -774,11 +804,12 @@ if (config_flags % sw_call_pole_point_bc) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pole_point_bc ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pole_point_bc }
-
+#endif
 
 !-------------------------------------------------------
 ! end lat-lon grid pole-point (v) specification
@@ -807,9 +838,11 @@ BENCH_END(set_phys_bc_tim)
 !</DESCRIPTION>
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: first_rk_step_part1{
 if (config_flags % sw_call_first_rk_step_part1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call first_rk_step_part1 ' )
+#endif
 
        CALL first_rk_step_part1 (    grid, config_flags         &
                              , moist , moist_tend               &
@@ -839,6 +872,7 @@ if (config_flags % sw_call_first_rk_step_part1) then
                              , f_flux                           &
                             )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call first_rk_step_part1 ' )
 
@@ -904,12 +938,15 @@ BENCH_END(init_zero_tend_tim)
  
 end if
 ! CHECK NECESSARY SUBROUTINE: first_rk_step_part1 }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: first_rk_step_part2{
 if (config_flags % sw_call_first_rk_step_part2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call first_rk_step_part2 ' )
+#endif
 
 #ifdef DM_PARALLEL
        IF ( config_flags%bl_pbl_physics == MYNNPBLSCHEME2 .OR. &
@@ -950,10 +987,12 @@ if (config_flags % sw_call_first_rk_step_part2) then
                              , k_start , k_end                  &
                             )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call first_rk_step_part2 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: first_rk_step_part2 }
+#endif
 
 
      END IF rk_step_is_one
@@ -962,10 +1001,12 @@ end if
 BENCH_START(rk_tend_tim)
 
        CALL wrf_debug ( 200 , ' call rk_tendency' )
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_rk_tendency) then
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_tendency{
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_tendency ' )
+#endif
 
      CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
      CALL push4backup (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
@@ -1007,6 +1048,7 @@ if (config_flags % sw_call_rk_tendency) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_tendency ' )
 
@@ -1102,6 +1144,7 @@ else
 
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_tendency }
+#endif
 
 BENCH_END(rk_tend_tim)
 
@@ -1128,8 +1171,10 @@ BENCH_END(rk_tend_tim)
 BENCH_START(relax_bdy_dry_tim)
 
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_relax_bdy_dry) then
      call wrf_debug ( -100 , ' SWITCH ON ==> call relax_bdy_dry ' )
+#endif
      CALL push4backup (grid%mut, "mut") 
      CALL push4backup (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
 
@@ -1167,18 +1212,22 @@ if (config_flags % sw_call_relax_bdy_dry) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call relax_bdy_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_dry }
+#endif
 
      ENDIF
 
 
+#ifdef DEBUG_PLUS
 !======[P1.8.2]=======================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_addtend_dry{
 if (config_flags % sw_call_rk_addtend_dry) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_addtend_dry ' )
+#endif
 
      CALL push4backup (grid%mut, "mut") 
      CALL push4backup (grid%h_diabatic, "h_diabatic") 
@@ -1202,18 +1251,22 @@ if (config_flags % sw_call_rk_addtend_dry) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_addtend_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_addtend_dry }
+#endif
 
 
 !======[P1.8.3]=======================================================
 
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_dry{
      IF( config_flags%specified .or. config_flags%nested ) THEN
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_spec_bdy_dry) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdy_dry ' )
+#endif
 
      !$OMP PARALLEL DO &
      !$OMP PRIVATE (ij)
@@ -1242,10 +1295,12 @@ if (config_flags % sw_call_spec_bdy_dry) then
                              k_start, k_end                                  )
      END DO
      !$OMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdy_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_dry }
+#endif
 
        ENDIF
 
@@ -1258,6 +1313,7 @@ BENCH_END(relax_bdy_dry_tim)
 
           ! [recalc_P5.1_debug_bdy]
           ! ---------------- 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_all{
 if (config_flags % sw_call_advance_all) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_all ' )
@@ -1291,9 +1347,11 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call advance_all ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_all }
+#endif
 
   ! [recalc_P5.2_debug_bdy]
   ! ----------------
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate_all{
 if (config_flags % sw_call_spec_bdyupdate_all) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate_all ' )
@@ -1474,9 +1532,11 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate_all ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate_all }
+#endif
 
   ! [recalc_P5.3_debug_bdy]
   ! ----------------
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_all{
 if (config_flags % sw_call_advance_all) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_all ' )
@@ -1492,6 +1552,7 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call advance_all ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_all }
+#endif
 
      END DO
 
@@ -1531,9 +1592,11 @@ BENCH_START(small_step_prep_tim)
 !======[P1.9.1]=======================================================
        CALL wrf_debug ( 200 , ' call small_step_prep ' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: small_step_prep{
 if (config_flags % sw_call_small_step_prep) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call small_step_prep ' )
+#endif
 
        CALL push4backup (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
        IF ( rk_step == 1 ) THEN
@@ -1570,16 +1633,20 @@ if (config_flags % sw_call_small_step_prep) then
     ENDDO
     !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call small_step_prep ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: small_step_prep }
+#endif
 
 
+#ifdef DEBUG_PLUS
 !======[P1.9.2]=======================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho{
 if (config_flags % sw_call_calc_p_rho) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call calc_p_rho ' )
+#endif
 
        CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
        CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
@@ -1600,17 +1667,21 @@ if (config_flags % sw_call_calc_p_rho) then
     ENDDO
     !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_p_rho ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho }
+#endif
 
 !======[P1.9.3]=======================================================
        IF (config_flags%non_hydrostatic) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_coef_w{
 if (config_flags % sw_call_calc_coef_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call calc_coef_w ' )
+#endif
 
          CALL push4backup (c2a,cqw, "c2a,cqw") 
          CALL push4backup (grid%mut, "mut") 
@@ -1631,10 +1702,12 @@ if (config_flags % sw_call_calc_coef_w) then
       ENDDO
       !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_coef_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_coef_w }
+#endif
 
        ENDIF
 
@@ -1682,9 +1755,11 @@ BENCH_END(small_step_prep_tim)
 BENCH_START(set_phys_bc2_tim)
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1699,16 +1774,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1723,16 +1802,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1747,16 +1829,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1771,16 +1856,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1795,16 +1884,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1819,16 +1911,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1843,16 +1938,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1866,16 +1964,20 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1889,16 +1991,20 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -1912,10 +2018,12 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
 
 BENCH_END(set_phys_bc2_tim)
@@ -1929,10 +2037,14 @@ BENCH_END(set_phys_bc2_tim)
 #      include "PERIOD_BDY_EM_B.inc"
 #endif
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_advance_uv) then
+#endif
        CALL push4backup (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
        CALL push4backup (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
+#ifdef DEBUG_PLUS
 endif
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -1940,9 +2052,11 @@ endif
 
 BENCH_START(advance_uv_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_uv{
 if (config_flags % sw_call_advance_uv) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_uv ' )
+#endif
 
          CALL advance_uv ( grid%u_2, grid%ru_tend, grid%v_2, grid%rv_tend,        &
                            grid%p, grid%pb,                                       &
@@ -1962,10 +2076,12 @@ if (config_flags % sw_call_advance_uv) then
                            grid%j_start(ij), grid%j_end(ij),                      &
                            k_start    , k_end                                     )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call advance_uv ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_uv }
+#endif
 
 BENCH_END(advance_uv_tim)
 
@@ -1980,9 +2096,11 @@ BENCH_END(advance_uv_tim)
        IF (config_flags%polar) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
          CALL pxft ( grid=grid                                              &
                ,lineno=__LINE__                                             &
@@ -2007,11 +2125,12 @@ if (config_flags % sw_call_pxft) then
                ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
-
+#endif
 
        END IF
 
@@ -2027,9 +2146,11 @@ end if
 BENCH_START(spec_bdy_uv_tim)
          IF( config_flags%specified .or. config_flags%nested ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
+#endif
 
            CALL spec_bdyupdate(grid%u_2, grid%ru_tend, dts_rk,      &
                                'u'         , config_flags,  &
@@ -2041,14 +2162,18 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                 grid%j_start(ij), grid%j_end(ij),         &
                                 k_start    , k_end             )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
+#endif
 
            CALL spec_bdyupdate(grid%v_2, grid%rv_tend, dts_rk,      &
                                 'v'         , config_flags, &
@@ -2060,10 +2185,12 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                 grid%j_start(ij), grid%j_end(ij),         &
                                 k_start    , k_end             )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
 
          ENDIF
@@ -2087,11 +2214,15 @@ BENCH_END(spec_bdy_uv_tim)
 #     include "HALO_EM_C.inc"
 #endif
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_advance_mu_t) then
+#endif
          CALL push4backup (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
          CALL push4backup (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
                            "ww,ww_1,u,u_1,v,v_1,t_1") 
+#ifdef DEBUG_PLUS
 endif
+#endif
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
@@ -2100,9 +2231,11 @@ endif
 
 BENCH_START(advance_mu_t_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_mu_t{
 if (config_flags % sw_call_advance_mu_t) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_mu_t ' )
+#endif
 
          CALL advance_mu_t( grid%ww, ww1, grid%u_2, grid%u_save, grid%v_2, grid%v_save, &
                           grid%mu_2, grid%mut, muave, grid%muts, grid%muu, grid%muv,    &
@@ -2120,10 +2253,12 @@ if (config_flags % sw_call_advance_mu_t) then
                           grid%j_start(ij), grid%j_end(ij),  &
                           k_start    , k_end                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call advance_mu_t ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_mu_t }
+#endif
 
 BENCH_END(advance_mu_t_tim)
        ENDDO
@@ -2137,9 +2272,11 @@ BENCH_END(advance_mu_t_tim)
        IF ( (config_flags%polar) ) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
          CALL pxft ( grid=grid                                               &
                 ,lineno=__LINE__                                             &
@@ -2164,11 +2301,12 @@ if (config_flags % sw_call_pxft) then
                 ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                 ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
-
+#endif
 
          grid%muts = grid%mut + grid%mu_2  ! reset muts using filtered mu_2
 
@@ -2185,9 +2323,11 @@ BENCH_START(spec_bdy_t_tim)
          IF( config_flags%specified .or. config_flags%nested ) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -2204,15 +2344,18 @@ if (config_flags % sw_call_spec_bdyupdate) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -2229,15 +2372,19 @@ if (config_flags % sw_call_spec_bdyupdate) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -2254,10 +2401,12 @@ if (config_flags % sw_call_spec_bdyupdate) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
          ENDIF
 BENCH_END(spec_bdy_t_tim)
@@ -2270,9 +2419,11 @@ BENCH_END(spec_bdy_t_tim)
 BENCH_START(advance_w_tim)
          IF ( config_flags%non_hydrostatic ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_w{
 if (config_flags % sw_call_advance_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_w ' )
+#endif
 
            CALL push4backup (grid%mut,muave,grid%muts, "mut,muave,muts") 
            CALL push4backup (grid%u_2,grid%v_2,grid%w_2,rw_tend,grid%ww,w_save,t_2save,grid%t_2,grid%t_save, &
@@ -2302,10 +2453,12 @@ if (config_flags % sw_call_advance_w) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call advance_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_w }
+#endif
 
          ENDIF
 BENCH_END(advance_w_tim)
@@ -2318,10 +2471,11 @@ BENCH_END(advance_w_tim)
 
        IF ( (config_flags%polar) .AND. (config_flags%non_hydrostatic) ) THEN
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
          CALL pxft ( grid=grid                                               &
                 ,lineno=__LINE__                                             &
@@ -2346,11 +2500,12 @@ if (config_flags % sw_call_pxft) then
                 ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                 ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
-
+#endif
 
        END IF
 
@@ -2363,9 +2518,11 @@ end if
 !========[P1.11.8.1]==================================================
 BENCH_START(sumflux_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: sumflux{
 if (config_flags % sw_call_sumflux) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call sumflux ' )
+#endif
 
          CALL push4backup (grid%muu,grid%muv, "muu,muv") 
          CALL push4backup (grid%u_save,grid%v_save, "u_lin,v_lin") 
@@ -2387,10 +2544,12 @@ if (config_flags % sw_call_sumflux) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call sumflux ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: sumflux }
+#endif
 
 BENCH_END(sumflux_tim)
 
@@ -2400,9 +2559,11 @@ BENCH_END(sumflux_tim)
 BENCH_START(spec_bdynhyd_tim)
            IF (config_flags%non_hydrostatic)  THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate_ph{
 if (config_flags % sw_call_spec_bdyupdate_ph) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate_ph ' )
+#endif
 
              CALL push4backup (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
              CALL push4backup (mu_tend,grid%muts, "mu_tend,muts") 
@@ -2422,16 +2583,20 @@ if (config_flags % sw_call_spec_bdyupdate_ph) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate_ph ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate_ph }
+#endif
 
              IF( config_flags%specified ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: zero_grad_bdy{
 if (config_flags % sw_call_zero_grad_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call zero_grad_bdy ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -2448,16 +2613,20 @@ if (config_flags % sw_call_zero_grad_bdy) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call zero_grad_bdy ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: zero_grad_bdy }
+#endif
 
              ELSE
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -2474,10 +2643,12 @@ if (config_flags % sw_call_spec_bdyupdate) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
              ENDIF
            ENDIF
@@ -2487,9 +2658,11 @@ BENCH_END(spec_bdynhyd_tim)
 !========[P1.11.8.3]==================================================
  BENCH_START(cald_p_rho_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho{
 if (config_flags % sw_call_calc_p_rho) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call calc_p_rho ' )
+#endif
  
           CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
           CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
@@ -2509,10 +2682,12 @@ if (config_flags % sw_call_calc_p_rho) then
        ENDDO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_p_rho ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho }
+#endif
 
 BENCH_END(cald_p_rho_tim)
 
@@ -2548,9 +2723,11 @@ BENCH_START(phys_bc_tim)
        ! boundary condition set for next small timestep
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
          CALL set_physical_bc3d( grid%ph_2, 'w', config_flags,     &
                                  ids, ide, jds, jde, kds, kde,     &
@@ -2560,16 +2737,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
          CALL set_physical_bc3d( grid%al, 'p', config_flags,       &
                                  ids, ide, jds, jde, kds, kde,     &
@@ -2579,16 +2760,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
          CALL set_physical_bc3d( grid%p, 'p', config_flags,        &
                                  ids, ide, jds, jde, kds, kde,     &
@@ -2598,16 +2783,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
          CALL set_physical_bc2d( grid%muts, 't', config_flags,     &
                                  ids, ide, jds, jde,               &
@@ -2616,16 +2804,19 @@ if (config_flags % sw_call_set_physical_bc2d) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij) )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
          CALL set_physical_bc2d( grid%mu_2, 't', config_flags,     &
                                  ids, ide, jds, jde,               &
@@ -2634,16 +2825,19 @@ if (config_flags % sw_call_set_physical_bc2d) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij) )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
          CALL set_physical_bc2d( grid%mudf, 't', config_flags,     &
                                  ids, ide, jds, jde,               &
@@ -2652,11 +2846,12 @@ if (config_flags % sw_call_set_physical_bc2d) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij) )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
-
+#endif
 
        END DO
        !$OMP END PARALLEL DO
@@ -2675,9 +2870,11 @@ BENCH_END(phys_bc_tim)
 !======[P1.12.1]======================================================
 BENCH_START(calc_mu_uv_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_mu_uv_1{
 if (config_flags % sw_call_calc_mu_uv_1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call calc_mu_uv_1 ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -2692,19 +2889,23 @@ if (config_flags % sw_call_calc_mu_uv_1) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_mu_uv_1 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_mu_uv_1 }
+#endif
 
 BENCH_END(calc_mu_uv_tim)
 !======[P1.12.2]======================================================
 BENCH_START(small_step_finish_tim)
 
+#ifdef DEBUG_PLUS
 !======[P1.12.2.1]====================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: small_step_finish{
 if (config_flags % sw_call_small_step_finish) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call small_step_finish ' )
+#endif
 
        CALL push4backup (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
        CALL push4backup (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
@@ -2730,10 +2931,12 @@ if (config_flags % sw_call_small_step_finish) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call small_step_finish ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: small_step_finish }
+#endif
 
 !======[P1.12.2.2]====================================================
 !  call  to set ru_m, rv_m and ww_m b.c's for PD advection
@@ -2741,9 +2944,11 @@ end if
        IF (rk_step == rk_order) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -2758,16 +2963,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -2782,16 +2991,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -2806,16 +3019,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -2829,16 +3046,19 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -2852,11 +3072,12 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
-
+#endif
 
        END IF
 
@@ -2871,9 +3092,11 @@ BENCH_END(small_step_finish_tim)
      IF (config_flags%polar) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
        CALL pxft ( grid=grid                                                   &
                   ,lineno=__LINE__                                             &
@@ -2898,11 +3121,12 @@ if (config_flags % sw_call_pxft) then
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
-
+#endif
 
      END IF
 
@@ -2923,9 +3147,11 @@ end if
 !======[P1.14.1]:moist================================================
          CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar_pd moist' )
+#endif
 
        DO im = PARAM_FIRST_SCALAR, num_3d_m
            CALL push4backup (grid%mu_1, "mu_1")
@@ -2949,10 +3175,12 @@ if (config_flags % sw_call_rk_update_scalar_pd_moist) then
        !$OMP END PARALLEL DO
        ENDDO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd moist' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
+#endif
 
 
 !======[P1.14.2]:moist================================================
@@ -2981,9 +3209,11 @@ end if
          IF (num_3d_m >= PARAM_FIRST_SCALAR) THEN
            DO im = PARAM_FIRST_SCALAR , num_3d_m
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
              CALL set_physical_bc3d( moist_old(ims,kms,jms,im), 'p', config_flags,  &
                                      ids, ide, jds, jde, kds, kde,                  &
@@ -2993,10 +3223,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                      grid%j_start(ij), grid%j_end(ij),              &
                                      k_start    , k_end                            )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
            END DO
          ENDIF
@@ -3013,9 +3245,11 @@ end if
 !======[P1.14.1]:scalar===============================================
          CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar_pd ' )
+#endif
 
        DO im = PARAM_FIRST_SCALAR, num_3d_s
            CALL push4backup (grid%mu_1, "mu_1")
@@ -3038,10 +3272,12 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
        ENDDO
        !$OMP END PARALLEL DO
        ENDDO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
+#endif
 
 
 !======[P1.14.2]:scalar===============================================
@@ -3075,9 +3311,11 @@ end if
            IF (num_3d_s >= PARAM_FIRST_SCALAR) THEN
              DO im = PARAM_FIRST_SCALAR , num_3d_s
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
                CALL set_physical_bc3d(  scalar_old(ims,kms,jms,im), 'p', config_flags,   &
                                         ids, ide, jds, jde, kds, kde,                    &
@@ -3087,10 +3325,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                         grid%j_start(ij), grid%j_end(ij),                &
                                         k_start    , k_end                              )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
              END DO
            ENDIF
@@ -3110,9 +3350,11 @@ end if
            CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
            DO im = PARAM_FIRST_SCALAR, num_3d_c
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar_pd ' )
+#endif
 
              CALL rk_update_scalar_pd( im, im,                                  &
                                        chem_old(ims,kms,jms,im),                &
@@ -3126,10 +3368,12 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                        grid%j_start(ij), grid%j_end(ij),        &
                                        k_start    , k_end                      )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
+#endif
 
            ENDDO
          END DO
@@ -3159,9 +3403,11 @@ end if
            IF (num_3d_c >= PARAM_FIRST_SCALAR) THEN
              DO im = PARAM_FIRST_SCALAR , num_3d_c
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
                CALL set_physical_bc3d(  chem_old(ims,kms,jms,im), 'p', config_flags,     &
                                         ids, ide, jds, jde, kds, kde,                    &
@@ -3171,10 +3417,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                         grid%j_start(ij), grid%j_end(ij),                &
                                         k_start    , k_end                              )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
              END DO
            ENDIF
@@ -3194,9 +3442,11 @@ end if
            CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar_pd ' )
+#endif
 
              CALL rk_update_scalar_pd( im, im,                                  &
                                        tracer_old(ims,kms,jms,im),              &
@@ -3210,10 +3460,12 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                        grid%j_start(ij), grid%j_end(ij),        &
                                        k_start    , k_end                      )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
+#endif
 
            ENDDO
          END DO
@@ -3243,9 +3495,11 @@ end if
            IF (num_tracer >= PARAM_FIRST_SCALAR) THEN
              DO im = PARAM_FIRST_SCALAR , num_tracer
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
                CALL set_physical_bc3d(  tracer_old(ims,kms,jms,im), 'p', config_flags,   &
                                         ids, ide, jds, jde, kds, kde,                    &
@@ -3255,10 +3509,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                         grid%j_start(ij), grid%j_end(ij),                &
                                         k_start    , k_end                              )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
              END DO
            ENDIF
@@ -3276,9 +3532,11 @@ end if
 !========[P1.14.1]:tke================================================
            CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar_pd ' )
+#endif
 
            CALL push4backup (grid%mu_1, "mu_1")
            CALL push4backup (grid%tke_1,tke_tend, &
@@ -3299,10 +3557,12 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                      k_start    , k_end                       )
          ENDDO
          !$OMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
+#endif
 
 
 !========[P1.14.2]:tke================================================
@@ -3329,9 +3589,11 @@ end if
          !$OMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
            CALL set_physical_bc3d(  grid%tke_1, 'p', config_flags,     &
                                     ids, ide, jds, jde, kds, kde,      &
@@ -3341,10 +3603,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                     grid%j_start(ij), grid%j_end(ij),  &
                                     k_start    , k_end                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
          END DO
          !$OMP END PARALLEL DO
@@ -3408,9 +3672,11 @@ end if
 
 BENCH_START(rk_scalar_tend_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_scalar_tend{
 if (config_flags % sw_call_rk_scalar_tend_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_scalar_tend ' )
+#endif
 
                IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
                CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
@@ -3444,6 +3710,7 @@ if (config_flags % sw_call_rk_scalar_tend_moist) then
              ENDDO moist_tile_loop_1
              !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_scalar_tend ' )
 
@@ -3460,6 +3727,7 @@ else
    !$OMP END PARALLEL DO
  end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
+#endif
 
 BENCH_END(rk_scalar_tend_tim)
 
@@ -3468,9 +3736,11 @@ BENCH_START(rlx_bdy_scalar_tim)
                IF( ( config_flags%specified .or. config_flags%nested ) .and. rk_step == 1 ) THEN
                  IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: relax_bdy_scalar{
 if (config_flags % sw_call_relax_bdy_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call relax_bdy_scalar ' )
+#endif
 
                    CALL push4backup (grid%mut, "mut") 
                    CALL push4backup (moist(:,:,:,im), "moist") 
@@ -3495,16 +3765,19 @@ if (config_flags % sw_call_relax_bdy_scalar_moist) then
              ENDDO
              !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call relax_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_scalar }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_scalar{
 if (config_flags % sw_call_spec_bdy_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdy_scalar ' )
+#endif
 
              !$OMP PARALLEL DO   &
              !$OMP PRIVATE ( ij )
@@ -3525,10 +3798,12 @@ if (config_flags % sw_call_spec_bdy_scalar_moist) then
              ENDDO
              !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_scalar }
+#endif
 
                  ENDIF
                ENDIF
@@ -3543,9 +3818,11 @@ BENCH_END(rlx_bdy_scalar_tim)
 
 BENCH_START(update_scal_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar{
 if (config_flags % sw_call_rk_update_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar ' )
+#endif
 
                CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
                IF ( rk_step == 1 ) THEN
@@ -3578,10 +3855,12 @@ if (config_flags % sw_call_rk_update_scalar_moist) then
              ENDDO moist_tile_loop_2
              !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
+#endif
 
 BENCH_END(update_scal_tim)
 
@@ -3590,9 +3869,11 @@ BENCH_START(flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: flow_dep_bdy{
 if (config_flags % sw_call_flow_dep_bdy_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call flow_dep_bdy ' )
+#endif
 
                    CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
              !$OMP PARALLEL DO   &
@@ -3610,10 +3891,12 @@ if (config_flags % sw_call_flow_dep_bdy_moist) then
              ENDDO
              !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call flow_dep_bdy ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: flow_dep_bdy }
+#endif
 
                  ENDIF
                ENDIF
@@ -3644,9 +3927,11 @@ BENCH_START(tke_adv_tim)
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_scalar_tend{
 if (config_flags % sw_call_rk_scalar_tend) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_scalar_tend ' )
+#endif
 
            IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
            CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
@@ -3680,10 +3965,12 @@ if (config_flags % sw_call_rk_scalar_tend) then
          ENDDO tke_tile_loop_1
          !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_scalar_tend ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
+#endif
 
 
 !======[P1.17.2]======================================================
@@ -3691,9 +3978,11 @@ end if
 !========[P1.17.2.1]==================================================
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar{
 if (config_flags % sw_call_rk_update_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar ' )
+#endif
 
            CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
            IF ( rk_step == 1 ) THEN
@@ -3727,17 +4016,21 @@ if (config_flags % sw_call_rk_update_scalar) then
          ENDDO tke_tile_loop_2
          !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
+#endif
 
 !========[P1.17.2.2]==================================================
 ! bound the tke (greater than 0, less than tke_upper_bound)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: bound_tke{
 if (config_flags % sw_call_bound_tke) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call bound_tke ' )
+#endif
 
            CALL push4backup (grid%tke_2, "tke")
          !$OMP PARALLEL DO   &
@@ -3752,17 +4045,21 @@ if (config_flags % sw_call_bound_tke) then
          ENDDO
          !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call bound_tke ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: bound_tke }
+#endif
 
 !========[P1.17.2.3]==================================================
            IF( config_flags%specified .or. config_flags%nested ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: flow_dep_bdy{
 if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call flow_dep_bdy ' )
+#endif
 
               CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
          !$OMP PARALLEL DO   &
@@ -3780,10 +4077,12 @@ if (config_flags % sw_call_flow_dep_bdy) then
          ENDDO
          !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call flow_dep_bdy ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: flow_dep_bdy }
+#endif
 
            ENDIF
 
@@ -3985,9 +4284,11 @@ BENCH_START(tracer_adv_tim)
 
              CALL wrf_debug ( 15 , ' call rk_scalar_tend in tracer_tile_loop_1' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_scalar_tend{
 if (config_flags % sw_call_rk_scalar_tend) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_scalar_tend ' )
+#endif
              tenddec = .false.
              CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                &
                               rk_step, dt_rk,                                    &
@@ -4011,10 +4312,12 @@ if (config_flags % sw_call_rk_scalar_tend) then
                               grid%j_start(ij), grid%j_end(ij),                  &
                               k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_scalar_tend ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
+#endif
 
 !
 ! Currently, chemistry species with specified boundaries (i.e. the mother
@@ -4025,9 +4328,11 @@ end if
            IF( ( config_flags%nested ) .and. rk_step == 1 ) THEN
              IF(ic.eq.1)CALL wrf_debug ( 10 , ' have_bcs_tracer' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: relax_bdy_scalar{
 if (config_flags % sw_call_relax_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call relax_bdy_scalar ' )
+#endif
 
              CALL relax_bdy_scalar ( tracer_tend(ims,kms,jms,ic),                                    &
                                      tracer(ims,kms,jms,ic),  grid%mut,                              &
@@ -4045,15 +4350,19 @@ if (config_flags % sw_call_relax_bdy_scalar) then
                                      grid%j_start(ij), grid%j_end(ij),                             &
                                      k_start, k_end                                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call relax_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_scalar }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_scalar{
 if (config_flags % sw_call_spec_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdy_scalar ' )
+#endif
 
              CALL spec_bdy_scalar  ( tracer_tend(ims,kms,jms,ic),                 &
                                      tracer_bxs(jms,kms,1,ic),tracer_bxe(jms,kms,1,ic),                &
@@ -4069,10 +4378,12 @@ if (config_flags % sw_call_spec_bdy_scalar) then
                                      grid%j_start(ij), grid%j_end(ij),                             &
                                      k_start, k_end                                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_scalar }
+#endif
 
            ENDIF
 
@@ -4085,9 +4396,11 @@ end if
 
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar{
 if (config_flags % sw_call_rk_update_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar ' )
+#endif
            tenddec = .false.
            CALL rk_update_scalar( scs=ic, sce=ic,                                         &
                                   scalar_1=tracer_old(ims,kms,jms,ic),                    &
@@ -4106,10 +4419,12 @@ if (config_flags % sw_call_rk_update_scalar) then
                                   its=grid%i_start(ij), ite=grid%i_end(ij),               &
                                   jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                   kts=k_start    , kte=k_end                              )
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
+#endif
 
 
            IF( config_flags%specified  ) THEN
@@ -4171,9 +4486,11 @@ BENCH_END(tracer_adv_tim)
 !==========[P1.20.1.1]================================================
            CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_scalar_tend{
 if (config_flags % sw_call_rk_scalar_tend) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_scalar_tend ' )
+#endif
 
            IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
            CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
@@ -4208,19 +4525,23 @@ if (config_flags % sw_call_rk_scalar_tend) then
          ENDDO scalar_tile_loop_1
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_scalar_tend ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
+#endif
 
 
 !==========[P1.20.1.2]================================================
            IF( config_flags%nested .and. (rk_step == 1) ) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: relax_bdy_scalar{
 if (config_flags % sw_call_relax_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call relax_bdy_scalar ' )
+#endif
 
                CALL push4backup (grid%mut, "mut") 
                CALL push4backup (scalar(:,:,:,is), "scalar") 
@@ -4245,16 +4566,20 @@ if (config_flags % sw_call_relax_bdy_scalar) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call relax_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_scalar }
+#endif
 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_scalar{
 if (config_flags % sw_call_spec_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdy_scalar ' )
+#endif
 
          !ZXOMP PARALLEL DO   &
          !ZXOMP PRIVATE ( ij )
@@ -4275,10 +4600,12 @@ if (config_flags % sw_call_spec_bdy_scalar) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call spec_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_scalar }
+#endif
 
            ENDIF ! b.c test for chem nested boundary condition
 
@@ -4288,9 +4615,11 @@ end if
 !==========[P1.20.2.1]================================================
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar{
 if (config_flags % sw_call_rk_update_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_update_scalar ' )
+#endif
 
            CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
            IF ( rk_step == 1 ) THEN
@@ -4324,10 +4653,12 @@ if (config_flags % sw_call_rk_update_scalar) then
          ENDDO scalar_tile_loop_2
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_update_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
+#endif
 
 
 
@@ -4335,9 +4666,11 @@ end if
            IF( config_flags%specified ) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: flow_dep_bdy{
 if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call flow_dep_bdy ' )
+#endif
 
              CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
          !ZXOMP PARALLEL DO   &
@@ -4355,10 +4688,12 @@ if (config_flags % sw_call_flow_dep_bdy) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call flow_dep_bdy ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: flow_dep_bdy }
+#endif
 
            ENDIF
 
@@ -4374,9 +4709,11 @@ end if
 BENCH_START(calc_p_rho_tim)
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho_phi{
 if (config_flags % sw_call_calc_p_rho_phi) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call calc_p_rho_phi ' )
+#endif
 
        CALL push4backup (grid%mu_2,grid%muts, "mu,muts")
        CALL push4backup (grid%ph_2,grid%t_2, "ph,t")
@@ -4397,10 +4734,12 @@ if (config_flags % sw_call_calc_p_rho_phi) then
      ENDDO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_p_rho_phi ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho_phi }
+#endif
 
 
 BENCH_END(calc_p_rho_tim)
@@ -4423,9 +4762,11 @@ BENCH_END(calc_p_rho_tim)
            CALL wrf_debug ( 200 , ' call filter moist ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_m
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter{
 if (config_flags % sw_call_couple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call couple_scalars_for_filter ' )
+#endif
 
              CALL couple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)              &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4433,15 +4774,19 @@ if (config_flags % sw_call_couple_scalars_for_filter) then
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call couple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
              CALL pxft ( grid=grid                                               &
                     ,lineno=__LINE__                                             &
@@ -4466,15 +4811,19 @@ if (config_flags % sw_call_pxft) then
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter{
 if (config_flags % sw_call_uncouple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call uncouple_scalars_for_filter ' )
+#endif
 
              CALL uncouple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)            &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4482,10 +4831,12 @@ if (config_flags % sw_call_uncouple_scalars_for_filter) then
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call uncouple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter }
+#endif
 
            END DO
          END IF
@@ -4494,9 +4845,11 @@ end if
            CALL wrf_debug ( 200 , ' call filter chem ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_c
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter{
 if (config_flags % sw_call_couple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call couple_scalars_for_filter ' )
+#endif
 
              CALL couple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)               &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4504,15 +4857,19 @@ if (config_flags % sw_call_couple_scalars_for_filter) then
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe           )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call couple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
              CALL pxft ( grid=grid                                               &
                     ,lineno=__LINE__                                             &
@@ -4537,15 +4894,19 @@ if (config_flags % sw_call_pxft) then
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter{
 if (config_flags % sw_call_uncouple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call uncouple_scalars_for_filter ' )
+#endif
 
              CALL uncouple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)             &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4553,10 +4914,12 @@ if (config_flags % sw_call_uncouple_scalars_for_filter) then
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call uncouple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter }
+#endif
 
            END DO
          END IF
@@ -4564,9 +4927,11 @@ end if
            CALL wrf_debug ( 200 , ' call filter tracer ' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter{
 if (config_flags % sw_call_couple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call couple_scalars_for_filter ' )
+#endif
 
              CALL couple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)               &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4574,15 +4939,19 @@ if (config_flags % sw_call_couple_scalars_for_filter) then
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe           )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call couple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
              CALL pxft ( grid=grid                                               &
                     ,lineno=__LINE__                                             &
@@ -4607,15 +4976,19 @@ if (config_flags % sw_call_pxft) then
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter{
 if (config_flags % sw_call_uncouple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call uncouple_scalars_for_filter ' )
+#endif
 
              CALL uncouple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)             &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4623,10 +4996,12 @@ if (config_flags % sw_call_uncouple_scalars_for_filter) then
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call uncouple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter }
+#endif
 
            END DO
          END IF
@@ -4635,9 +5010,11 @@ end if
            CALL wrf_debug ( 200 , ' call filter scalar ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_s
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter{
 if (config_flags % sw_call_couple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call couple_scalars_for_filter ' )
+#endif
 
              CALL couple_scalars_for_filter ( FIELD=scalar(ims,kms,jms,im)           &
                   ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4645,15 +5022,19 @@ if (config_flags % sw_call_couple_scalars_for_filter) then
                   ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call couple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: couple_scalars_for_filter }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
              CALL pxft ( grid=grid                                             &
                   ,lineno=__LINE__                                             &
@@ -4678,15 +5059,19 @@ if (config_flags % sw_call_pxft) then
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter{
 if (config_flags % sw_call_uncouple_scalars_for_filter) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call uncouple_scalars_for_filter ' )
+#endif
 
              CALL uncouple_scalars_for_filter ( FIELD=scalar(ims,kms,jms,im)   &
                   ,MU=grid%mu_2 , MUB=grid%mub                                 &
@@ -4694,10 +5079,12 @@ if (config_flags % sw_call_uncouple_scalars_for_filter) then
                   ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call uncouple_scalars_for_filter ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: uncouple_scalars_for_filter }
+#endif
 
            END DO
          END IF
@@ -4768,9 +5155,11 @@ BENCH_START(bc_end_tim)
 !========[P1.22.2.1]==================================================
          CALL wrf_debug ( 200 , ' call rk_phys_bc_dry_2' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_2{
 if (config_flags % sw_call_rk_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call rk_phys_bc_dry_2 ' )
+#endif
 
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -4787,19 +5176,23 @@ if (config_flags % sw_call_rk_phys_bc_dry_2) then
        END DO
        !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call rk_phys_bc_dry_2 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_2 }
+#endif
 
 
 !========[P1.22.2.2]==================================================
 BENCH_START(diag_w_tim)
          IF (.not. config_flags%non_hydrostatic) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
 if (config_flags % sw_call_diagnose_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call diagnose_w ' )
+#endif
 
            CALL push4backup (grid%muts, "muts")
            CALL push4backup (ph_tend, "ph_tend")
@@ -4817,10 +5210,12 @@ if (config_flags % sw_call_diagnose_w) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call diagnose_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
+#endif
 
          ENDIF
 BENCH_END(diag_w_tim)
@@ -4831,9 +5226,11 @@ BENCH_END(diag_w_tim)
            moisture_loop_bdy_1 : DO im = PARAM_FIRST_SCALAR , num_3d_m
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -4848,10 +5245,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
            END DO moisture_loop_bdy_1
 
@@ -4863,9 +5262,11 @@ end if
            chem_species_bdy_loop_1 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -4880,10 +5281,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
            END DO chem_species_bdy_loop_1
@@ -4896,9 +5299,11 @@ end if
            tracer_species_bdy_loop_1 : DO ic = PARAM_FIRST_SCALAR , num_tracer
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -4913,10 +5318,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
            END DO tracer_species_bdy_loop_1
@@ -4929,9 +5336,11 @@ end if
            scalar_species_bdy_loop_1 : DO is = PARAM_FIRST_SCALAR , num_3d_s
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -4946,10 +5355,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
            END DO scalar_species_bdy_loop_1
@@ -4960,9 +5371,11 @@ end if
          IF (config_flags%km_opt .eq. 2) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -4977,10 +5390,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
          END IF
 
@@ -5110,29 +5525,36 @@ BENCH_END(bc_end_tim)
    IF (config_flags%do_avgflx_em .EQ. 1) THEN
 ! Reinitialize time-averaged fluxes if history output was written after the previous time step:
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: WRFU_ALARMGET{
 if (config_flags % sw_call_WRFU_ALARMGET) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call WRFU_ALARMGET ' )
+#endif
 
       CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),prevringtime=temp_time)
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call WRFU_ALARMGET ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: WRFU_ALARMGET }
+#endif
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: domain_clock_get{
 if (config_flags % sw_call_domain_clock_get) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call domain_clock_get ' )
+#endif
 
       CALL domain_clock_get ( grid, current_time=CurrTime, &
            current_timestr=message2 )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call domain_clock_get ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: domain_clock_get }
+#endif
 
 ! use overloaded -, .LT. operator to check whether to initialize avgflx:
 ! reinitialize after each history output (detect this here by comparing current time
@@ -5144,16 +5566,20 @@ end if
       num = INT(old_dt * precision)
       den = precision
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: WRFU_TimeIntervalSet{
 if (config_flags % sw_call_WRFU_TimeIntervalSet) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call WRFU_TimeIntervalSet ' )
+#endif
 
       CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call WRFU_TimeIntervalSet ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: WRFU_TimeIntervalSet }
+#endif
 
       IF (CurrTime .lt. temp_time + dtInterval) THEN
          WRITE ( message , FMT = '("solve_em: initializing avgflx at time ",A," on domain ",I3)' ) &
@@ -5166,9 +5592,11 @@ end if
          DO ij = 1 , grid%num_tiles
             CALL wrf_debug(200,'In solve_em, before zero_avgflx call')
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: zero_avgflx{
 if (config_flags % sw_call_zero_avgflx) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call zero_avgflx ' )
+#endif
 
             CALL zero_avgflx(grid%avgflx_rum,grid%avgflx_rvm,grid%avgflx_wwm, &
                  &   ids, ide, jds, jde, kds, kde,           &
@@ -5178,10 +5606,12 @@ if (config_flags % sw_call_zero_avgflx) then
                  &   grid%avgflx_cfu1,grid%avgflx_cfd1,grid%avgflx_dfu1, &
                  &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call zero_avgflx ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: zero_avgflx }
+#endif
 
             CALL wrf_debug(200,'In solve_em, after zero_avgflx call')
          ENDDO
@@ -5195,9 +5625,11 @@ end if
       DO ij = 1 , grid%num_tiles
          CALL wrf_debug(200,'In solve_em, before upd_avgflx call')
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: upd_avgflx{
 if (config_flags % sw_call_upd_avgflx) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call upd_avgflx ' )
+#endif
 
          CALL upd_avgflx(grid%avgflx_count,grid%avgflx_rum,grid%avgflx_rvm,grid%avgflx_wwm, &
               &   grid%ru_m, grid%rv_m, grid%ww_m, &
@@ -5209,10 +5641,12 @@ if (config_flags % sw_call_upd_avgflx) then
               &   grid%avgflx_cfu1,grid%avgflx_cfd1,grid%avgflx_dfu1, &
               &   grid%avgflx_efu1,grid%avgflx_dfd1,grid%avgflx_efd1 )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call upd_avgflx ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: upd_avgflx }
+#endif
 
          CALL wrf_debug(200,'In solve_em, after upd_avgflx call')
 
@@ -5229,9 +5663,12 @@ end if
 BENCH_START(advance_ppt_tim)
      CALL wrf_debug ( 200 , ' call advance_ppt' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_ppt{
 if (config_flags % sw_call_advance_ppt) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call advance_ppt ' )
+#endif
+
      CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
                       grid%rqicuten,grid%rqscuten,           &
                       grid%rainc,grid%raincv,grid%rainsh,grid%pratec,grid%pratesh, &
@@ -5243,10 +5680,12 @@ if (config_flags % sw_call_advance_ppt) then
                       grid%j_start(ij), grid%j_end(ij),      &
                       k_start    , k_end                    )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call advance_ppt ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_ppt }
+#endif
 
 BENCH_END(advance_ppt_tim)
 
@@ -5311,9 +5750,11 @@ BENCH_END(advance_ppt_tim)
        CALL wrf_debug ( 200 , ' call moist_physics_prep' )
 BENCH_START(moist_physics_prep_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: moist_physics_prep_em{
 if (config_flags % sw_call_moist_physics_prep_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call moist_physics_prep_em ' )
+#endif
 
        CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, rho,                &
                                    grid%al, grid%alb, grid%p, p8w, p0, grid%pb,          &
@@ -5326,10 +5767,12 @@ if (config_flags % sw_call_moist_physics_prep_em) then
                                    its, ite, jts, jte,               &
                                    k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call moist_physics_prep_em ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: moist_physics_prep_em }
+#endif
 
 BENCH_END(moist_physics_prep_tim)
      END DO scalar_tile_loop_1a
@@ -5346,9 +5789,11 @@ BENCH_END(moist_physics_prep_tim)
 BENCH_START(micro_driver_tim)
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_driver{
 if (config_flags % sw_call_microphysics_driver) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_driver ' )
+#endif
 
      CALL push4backup (moist,"moist")
      CALL push4backup (pi_phy,"pi_phy")
@@ -5431,10 +5876,12 @@ if (config_flags % sw_call_microphysics_driver) then
       &        , RI_CURR=grid%rimi                                          &
                                                                           )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_driver ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_driver }
+#endif
 
 BENCH_END(micro_driver_tim)
 
@@ -5464,10 +5911,12 @@ BENCH_START(moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds)
        jte = min(grid%j_end(ij),jde-1)
 
+#ifdef DEBUG_PLUS
 !======[P4.2.5.2]=========================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outb{
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outb ' )
+#endif
 
        CALL microphysics_zero_outb (                                    &
                       moist , num_moist , config_flags ,                &
@@ -5476,15 +5925,18 @@ if (config_flags % sw_call_microphysics_zero_outb) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outb ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outb }
+#endif
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outb{
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outb ' )
+#endif
 
        CALL microphysics_zero_outb (                                    &
                       scalar , num_scalar , config_flags ,              &
@@ -5493,15 +5945,18 @@ if (config_flags % sw_call_microphysics_zero_outb) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outb ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outb }
+#endif
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outb{
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outb ' )
+#endif
 
        CALL microphysics_zero_outb (                                    &
                       chem , num_chem , config_flags ,              &
@@ -5510,15 +5965,19 @@ if (config_flags % sw_call_microphysics_zero_outb) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outb ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outb }
+#endif
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outb{
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outb ' )
+#endif
 
        CALL microphysics_zero_outb (                                    &
                       tracer , num_tracer , config_flags ,              &
@@ -5527,10 +5986,12 @@ if (config_flags % sw_call_microphysics_zero_outb) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outb ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outb }
+#endif
 
 
 !======[P4.2.5.3]=========================================================
@@ -5545,10 +6006,12 @@ end if
        jte = min(grid%j_end(ij),jde-1-sz)
 
 
+#ifdef DEBUG_PLUS
 !======[P4.2.5.4]=========================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outa{
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outa ' )
+#endif
 
        CALL microphysics_zero_outa (                                    &
                       moist , num_moist , config_flags ,                &
@@ -5557,16 +6020,19 @@ if (config_flags % sw_call_microphysics_zero_outa) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outa ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outa }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outa{
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outa ' )
+#endif
 
        CALL microphysics_zero_outa (                                    &
                       scalar , num_scalar , config_flags ,              &
@@ -5575,16 +6041,19 @@ if (config_flags % sw_call_microphysics_zero_outa) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outa ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outa }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outa{
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outa ' )
+#endif
 
        CALL microphysics_zero_outa (                                    &
                       chem , num_chem , config_flags ,                  &
@@ -5593,16 +6062,19 @@ if (config_flags % sw_call_microphysics_zero_outa) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outa ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outa }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_zero_outa{
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outa ' )
+#endif
 
        CALL microphysics_zero_outa (                                    &
                       tracer , num_tracer , config_flags ,              &
@@ -5611,16 +6083,20 @@ if (config_flags % sw_call_microphysics_zero_outa) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outa ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_zero_outa }
+#endif
 
 
+#ifdef DEBUG_PLUS
 !======[P4.2.5.5]=========================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: moist_physics_finish_em{
 if (config_flags % sw_call_moist_physics_finish_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call moist_physics_finish_em ' )
+#endif
 
        CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
                                       grid%h_diabatic, dtm, config_flags,    &
@@ -5632,11 +6108,12 @@ if (config_flags % sw_call_moist_physics_finish_em) then
                                       its, ite, jts, jte,               &
                                       k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call moist_physics_finish_em ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: moist_physics_finish_em }
-
+#endif
 
      END DO
      !$OMP END PARALLEL DO
@@ -5662,9 +6139,11 @@ BENCH_END(moist_phys_end_tim)
          ENDDO
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -5689,10 +6168,12 @@ if (config_flags % sw_call_pxft) then
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
+#endif
 
 
          DO jj = jps, MIN(jpe,jde-1)
@@ -5710,10 +6191,12 @@ end if
 !  end filter for moist variables post-microphysics and end of timestep
 !-----------------------------------------------------------
 
+#ifdef DEBUG_PLUS
 !==[P4.4]=============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho_phi{
 if (config_flags % sw_call_calc_p_rho_phi) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call calc_p_rho_phi ' )
+#endif
 
      CALL push4backup (grid%mu_2,grid%muts, "mu,muts")
      CALL push4backup (grid%ph_2,grid%t_2, "ph,t")
@@ -5745,10 +6228,12 @@ if (config_flags % sw_call_calc_p_rho_phi) then
    END DO scalar_tile_loop_1ba
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call calc_p_rho_phi ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho_phi }
+#endif
 
 
 !BENCH_END(moist_phys_end_tim)
@@ -5760,9 +6245,11 @@ end if
 #    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
 if (config_flags % sw_call_diagnose_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call diagnose_w ' )
+#endif
 
        CALL push4backup (grid%muts, "muts")
        CALL push4backup (ph_tend, "ph_tend")
@@ -5780,11 +6267,12 @@ if (config_flags % sw_call_diagnose_w) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call diagnose_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
-
+#endif
 
 
    END IF
@@ -5809,9 +6297,11 @@ end if
          ENDDO
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -5836,11 +6326,12 @@ if (config_flags % sw_call_pxft) then
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
-
+#endif
 
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
@@ -5862,9 +6353,11 @@ end if
          ENDDO
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -5889,11 +6382,12 @@ if (config_flags % sw_call_pxft) then
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
-
+#endif
 
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
@@ -5916,9 +6410,11 @@ end if
          ENDDO
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: pxft{
 if (config_flags % sw_call_pxft) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call pxft ' )
+#endif
 
          CALL pxft ( grid=grid                                                 &
                   ,lineno=__LINE__                                             &
@@ -5943,11 +6439,12 @@ if (config_flags % sw_call_pxft) then
                   ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                   ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call pxft ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: pxft }
-
+#endif
 
          DO jj = jps, MIN(jpe,jde-1)
            DO kk = kps, MIN(kpe,kde-1)
@@ -6037,10 +6534,12 @@ BENCH_START(bc_2d_tim)
      CALL wrf_debug ( 200 , ' call set_phys_bc_dry_2' )
 
 
+#ifdef DEBUG_PLUS
 !==[P7.1]===============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_phys_bc_dry_2{
 if (config_flags % sw_call_set_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_phys_bc_dry_2 ' )
+#endif
 
    CALL push4backup (grid%u_2,grid%v_2,grid%w_2, grid%t_2, "u, v, w,t ")
    CALL push4backup (grid%ph_2, "ph")
@@ -6061,17 +6560,20 @@ if (config_flags % sw_call_set_phys_bc_dry_2) then
    END DO
    !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_phys_bc_dry_2 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_phys_bc_dry_2 }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 !==[P7.2]===============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6086,17 +6588,20 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 !==[P7.3]===============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6111,19 +6616,23 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
 !==[P7.4]===============================================================
      moisture_loop_bdy_2 : DO im = PARAM_FIRST_SCALAR , num_3d_m
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6139,11 +6648,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
+#endif
 
      END DO moisture_loop_bdy_2
 
@@ -6151,9 +6661,11 @@ end if
      chem_species_bdy_loop_2 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6168,11 +6680,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
+#endif
 
      END DO chem_species_bdy_loop_2
 
@@ -6180,9 +6693,11 @@ end if
      tracer_species_bdy_loop_2 : DO ic = PARAM_FIRST_SCALAR , num_tracer
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6197,21 +6712,23 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
+#endif
 
      END DO tracer_species_bdy_loop_2
 
 !==[P7.7]===============================================================
      scalar_species_bdy_loop_2 : DO is = PARAM_FIRST_SCALAR , num_3d_s
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6226,10 +6743,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
      END DO scalar_species_bdy_loop_2
@@ -6254,9 +6773,11 @@ BENCH_END(bc_2d_tim)
    fill_w_flag = .false.
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_w_surface{
 if (config_flags % sw_call_set_w_surface) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call set_w_surface ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6273,12 +6794,12 @@ if (config_flags % sw_call_set_w_surface) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call set_w_surface ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_w_surface }
-
-!                          its, ite, jts, jte, k_start, min(k_end,kde-1),   &
+#endif
 
 
 !==[P10]==============================================================
@@ -6287,6 +6808,7 @@ end if
    CALL wrf_debug ( 200 , ' call diagnostic_driver' )
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnostic_output_calc{
 if (config_flags % sw_call_diagnostic_output_calc) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call diagnostic_output_calc ' )
@@ -6341,7 +6863,7 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call diagnostic_output_calc ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: diagnostic_output_calc }
-
+#endif
 
 !==[P11]==============================================================
 #ifdef DM_PARALLEL
@@ -6500,9 +7022,11 @@ end if
    fill_w_flag = .false.
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_w_surface{
 if (config_flags % sw_call_set_w_surface) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_w_surface ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6520,11 +7044,12 @@ if (config_flags % sw_call_set_w_surface) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_w_surface ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_w_surface }
-
+#endif
 
 !==[adj_P7]===============================================================
 !-----------------------------------------------------------
@@ -6587,8 +7112,10 @@ BENCH_START(adj_bc_2d_tim)
 !==[adj_P7.7]===============================================================
      adj_scalar_species_bdy_loop_2 : DO is = num_3d_s,PARAM_FIRST_SCALAR,-1 
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6603,9 +7130,11 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
+#endif
 
      END DO adj_scalar_species_bdy_loop_2
 
@@ -6613,8 +7142,10 @@ end if
      adj_moisture_loop_bdy_2 : DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
 
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6630,15 +7161,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
+#endif
 
      END DO adj_moisture_loop_bdy_2
 
+#ifdef DEBUG_PLUS
 !==[adj_P7.3]===============================================================
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6653,13 +7188,17 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
+#endif
 
+#ifdef DEBUG_PLUS
 !==[adj_P7.2]===============================================================
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -6674,14 +7213,17 @@ if (config_flags % sw_call_set_physical_bc3d) then
    END DO
    !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
+#endif
 
+#ifdef DEBUG_PLUS
 !==[adj_P7.1]===============================================================
 if (config_flags % sw_call_set_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_phys_bc_dry_2 ' )
-
+#endif
 
    CALL pop2restore (grid%mu_2, "mu")
    CALL pop2restore (grid%ph_2, "ph")
@@ -6706,10 +7248,11 @@ if (config_flags % sw_call_set_phys_bc_dry_2) then
    END DO
    !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_phys_bc_dry_2 ' )
 end if
-
+#endif
 
 BENCH_END(adj_bc_2d_tim)
 
@@ -6720,9 +7263,11 @@ BENCH_END(adj_bc_2d_tim)
 #    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
 if (config_flags % sw_call_diagnose_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_diagnose_w ' )
+#endif
 
        CALL pop2restore (ph_tend, "ph_tend")
        CALL pop2restore (grid%muts, "muts")
@@ -6741,21 +7286,24 @@ if (config_flags % sw_call_diagnose_w) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_diagnose_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
-
+#endif
 
    END IF
 
 !==[adj_P4]===============================================================
 !  Adjoint of time-split physics
 
+#ifdef DEBUG_PLUS
 !==[adj_P4.4]=============================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho_phi{
 if (config_flags % sw_call_calc_p_rho_phi) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_calc_p_rho_phi ' )
+#endif
 
      CALL pop2restore (moist, "moist")
      CALL pop2restore (grid%ph_2,grid%t_2, "ph,t")
@@ -6787,10 +7335,12 @@ if (config_flags % sw_call_calc_p_rho_phi) then
    END DO adj_scalar_tile_loop_1ba
    !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_p_rho_phi ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho_phi }
+#endif
 
 
 !==[adj_P4.2]=============================================================
@@ -6828,9 +7378,11 @@ BENCH_START(adj_moist_phys_end_tim)
        jts = max(grid%j_start(ij),jds+sz)
        jte = min(grid%j_end(ij),jde-1-sz)
 
+#ifdef DEBUG_PLUS
 !======[adj_P4.2.5.5]=====================================================
 if (config_flags % sw_call_moist_physics_finish_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_moist_physics_finish_em ' )
+#endif
 
        CALL a_moist_physics_finish_em( grid%t_2, grid%a_t_2, grid%t_1,      &
                                       t0, grid%muts,                        &
@@ -6846,15 +7398,19 @@ if (config_flags % sw_call_moist_physics_finish_em) then
                                       its, ite, jts, jte,               &
                                       k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_moist_physics_finish_em ' )
 end if
+#endif
 
 !======[adj_P4.2.5.4]=====================================================
 !      Remove codes on chem and tracer from [P4.2.5.4]
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_zero_outa ' )
+#endif
 
        CALL a_microphysics_zero_outa (                                    &
                       scalar ,a_scalar, num_scalar , config_flags ,              &
@@ -6863,12 +7419,16 @@ if (config_flags % sw_call_microphysics_zero_outa) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_zero_outa ' )
 end if
+#endif
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_microphysics_zero_outa) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_zero_outa ' )
+#endif
 
        CALL a_microphysics_zero_outa (                                    &
                       moist , a_moist, num_moist , config_flags ,                &
@@ -6877,9 +7437,11 @@ if (config_flags % sw_call_microphysics_zero_outa) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_zero_outa ' )
 end if
+#endif
 
 !======[P4.2.5.1_adj]=====================================================
        its = max(grid%i_start(ij),ids)
@@ -6890,8 +7452,10 @@ end if
 !======[adj_P4.2.5.2]=====================================================
 !      Remove codes on chem and tracer from [P4.2.5.2]
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call microphysics_zero_outb ' )
+#endif
 
        CALL a_microphysics_zero_outb (                                    &
                       scalar , a_scalar, num_scalar , config_flags ,              &
@@ -6900,12 +7464,14 @@ if (config_flags % sw_call_microphysics_zero_outb) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call microphysics_zero_outb ' )
 end if
 
 if (config_flags % sw_call_microphysics_zero_outb) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_zero_outb ' )
+#endif
 
        CALL a_microphysics_zero_outb (                                    &
                       moist , a_moist,  num_moist , config_flags ,                &
@@ -6914,9 +7480,11 @@ if (config_flags % sw_call_microphysics_zero_outb) then
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_zero_outb ' )
 end if
+#endif
 
      END DO
      !ZXOMP END PARALLEL DO
@@ -6932,9 +7500,11 @@ BENCH_END(adj_moist_phys_end_tim)
 !====[adj_P4.2.3]=========================================================
 BENCH_START(adj_micro_driver_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: microphysics_driver{
 if (config_flags % sw_call_microphysics_driver) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_microphysics_driver ' )
+#endif
 
 !Variables need to be saved: th, p, qv_curr, rho, pi_phy, dz8w, rainnc, rainncv
 !!!! Need to replace the variables marked as "!zzma" if other scheme will be added in the furture. (comments from zzma 01/10/2011)
@@ -7073,10 +7643,12 @@ if (config_flags % sw_call_microphysics_driver) then
 
                                                                           )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_microphysics_driver ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: microphysics_driver }
+#endif
 
 BENCH_END(adj_micro_driver_tim)
 
@@ -7117,8 +7689,10 @@ BENCH_END(adj_micro_driver_tim)
        CALL wrf_debug ( 200 , ' call a_moist_physics_prep' )
 BENCH_START(adj_moist_physics_prep_tim)
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_moist_physics_prep_em) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_moist_physics_prep_em ' )
+#endif
 
        CALL a_moist_physics_prep_em( grid%t_2,grid%a_t_2, grid%t_1,            &
                                    t0, rho,a_rho,                              &
@@ -7137,9 +7711,11 @@ if (config_flags % sw_call_moist_physics_prep_em) then
                                    its, ite, jts, jte,               &
                                    k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_moist_physics_prep_em ' )
 end if
+#endif
 
 BENCH_END(adj_moist_physics_prep_tim)
      END DO adj_scalar_tile_loop_1a
@@ -7155,9 +7731,11 @@ BENCH_END(adj_moist_physics_prep_tim)
 BENCH_START(adj_advance_ppt_tim)
      CALL wrf_debug ( 200 , ' call a_advance_ppt' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_ppt{
 if (config_flags % sw_call_advance_ppt) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_ppt ' )
+#endif
 
 !!!!! REPLACE WITH a_advance_ppt WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
      CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
@@ -7171,10 +7749,12 @@ if (config_flags % sw_call_advance_ppt) then
                       grid%j_start(ij), grid%j_end(ij),      &
                       k_start    , k_end                    )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_advance_ppt ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_ppt }
+#endif
 
 BENCH_END(adj_advance_ppt_tim)
 
@@ -7366,9 +7946,11 @@ BENCH_START(adj_bc_end_tim)
 !========[adj_P1.22.2.7]==================================================
          IF (config_flags%km_opt .eq. 2) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -7383,10 +7965,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
          END IF
 
@@ -7396,9 +7980,11 @@ end if
            adj_scalar_species_bdy_loop_1 : DO is = num_3d_s,PARAM_FIRST_SCALAR,-1 
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -7413,11 +7999,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
-
+#endif
 
            END DO adj_scalar_species_bdy_loop_1
 
@@ -7428,9 +8015,11 @@ end if
 
            adj_moisture_loop_bdy_1 : DO im = num_3d_m,PARAM_FIRST_SCALAR,-1 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -7445,10 +8034,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
            END DO adj_moisture_loop_bdy_1
 
@@ -7458,9 +8049,11 @@ end if
 BENCH_START(adj_diag_w_tim)
          IF (.not. config_flags%non_hydrostatic) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
 if (config_flags % sw_call_diagnose_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_diagnose_w ' )
+#endif
 
            CALL pop2restore (ph_tend, "ph_tend")
            CALL pop2restore (grid%muts, "muts")
@@ -7479,19 +8072,23 @@ if (config_flags % sw_call_diagnose_w) then
        END DO
        !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_diagnose_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
+#endif
 
          ENDIF
 BENCH_END(adj_diag_w_tim)
 
+#ifdef DEBUG_PLUS
 !========[adj_P1.22.2.1]==================================================
          CALL wrf_debug ( 200 , ' call a_rk_phys_bc_dry_2' )
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_2{
 if (config_flags % sw_call_rk_phys_bc_dry_2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_phys_bc_dry_2 ' )
+#endif
 
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -7508,10 +8105,12 @@ if (config_flags % sw_call_rk_phys_bc_dry_2) then
        END DO
        !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_phys_bc_dry_2 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_2 }
+#endif
 
 BENCH_END(adj_bc_end_tim)
 
@@ -7523,9 +8122,11 @@ BENCH_END(adj_bc_end_tim)
 
 BENCH_START(adj_calc_p_rho_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho_phi{
 if (config_flags % sw_call_calc_p_rho_phi) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_calc_p_rho_phi ' )
+#endif
 
        CALL pop2restore (moist, "moist")
        CALL pop2restore (grid%ph_2,grid%t_2, "ph,t")
@@ -7546,10 +8147,12 @@ if (config_flags % sw_call_calc_p_rho_phi) then
      ENDDO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_p_rho_phi ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho_phi }
+#endif
 
 BENCH_END(adj_calc_p_rho_tim)
 
@@ -7587,9 +8190,11 @@ BENCH_END(adj_calc_p_rho_tim)
 !==========[adj_P1.20.2.2]================================================
            IF( config_flags%specified ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: flow_dep_bdy{
 if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_flow_dep_bdy ' )
+#endif
 
              CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
          !ZXOMP PARALLEL DO   &
@@ -7607,19 +8212,23 @@ if (config_flags % sw_call_flow_dep_bdy) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_flow_dep_bdy ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: flow_dep_bdy }
+#endif
 
            ENDIF
 
 !==========[adj_P1.20.2.1]================================================
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar scalar ' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar{
 if (config_flags % sw_call_rk_update_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar scalar' )
+#endif
 
            IF ( rk_step == 1 ) THEN
              CALL pop2restore ( scalar(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
@@ -7660,10 +8269,12 @@ if (config_flags % sw_call_rk_update_scalar) then
          ENDDO adj_scalar_tile_loop_2
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
+#endif
 
 
 !========[adj_P1.20.1]====================================================
@@ -7672,9 +8283,11 @@ end if
            IF( config_flags%nested .and. (rk_step == 1) ) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_scalar{
 if (config_flags % sw_call_spec_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdy_scalar scalar' )
+#endif
 
          !ZXOMP PARALLEL DO   &
          !ZXOMP PRIVATE ( ij )
@@ -7693,6 +8306,7 @@ if (config_flags % sw_call_spec_bdy_scalar) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdy_scalar scalar' )
 end if
@@ -7701,6 +8315,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: relax_bdy_scalar{
 if (config_flags % sw_call_relax_bdy_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_relax_bdy_scalar scalar' )
+#endif
 
                CALL pop2restore (scalar(:,:,:,is), "scalar") 
                CALL pop2restore (grid%mut, "mut") 
@@ -7726,19 +8341,23 @@ if (config_flags % sw_call_relax_bdy_scalar) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_relax_bdy_scalar scalar' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_scalar }
+#endif
 
            ENDIF ! b.c test for chem nested boundary condition
 
 !==========[adj_P1.20.1.1]================================================
            CALL wrf_debug ( 200 , ' call a_rk_scalar_tend scalar ' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_scalar_tend{
 if (config_flags % sw_call_rk_scalar_tend) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_scalar_tend scalar' )
+#endif
 
            CALL pop2restore (scalar(:,:,:,is),scalar_old(:,:,:,is), &
                              "scalar,scalar_old")
@@ -7776,11 +8395,12 @@ if (config_flags % sw_call_rk_scalar_tend) then
          ENDDO adj_scalar_tile_loop_1
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_scalar_tend scalar' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
-
+#endif
 
        ENDDO adj_scalar_variable_loop
 
@@ -7805,9 +8425,11 @@ BENCH_START(adj_tke_adv_tim)
 !========[adj_P1.17.2.3]==================================================
            IF( config_flags%specified .or. config_flags%nested ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: flow_dep_bdy{
 if (config_flags % sw_call_flow_dep_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_flow_dep_bdy tke' )
+#endif
 
               CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
          !ZXOMP PARALLEL DO   &
@@ -7825,17 +8447,21 @@ if (config_flags % sw_call_flow_dep_bdy) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_flow_dep_bdy tke' )
 end if
 ! CHECK NECESSARY SUBROUTINE: flow_dep_bdy }
+#endif
 
            ENDIF
 
+#ifdef DEBUG_PLUS
 !========[adj_P1.17.2.2]==================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: bound_tke{
 if (config_flags % sw_call_bound_tke) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_bound_tke ' )
+#endif
 
            CALL pop2restore (grid%tke_2, "tke")
          !ZXOMP PARALLEL DO   &
@@ -7850,17 +8476,21 @@ if (config_flags % sw_call_bound_tke) then
          ENDDO
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_bound_tke ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: bound_tke }
+#endif
 
 !========[adj_P1.17.2.1]==================================================
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar tke' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar{
 if (config_flags % sw_call_rk_update_scalar) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar tke' )
+#endif
 
            IF ( rk_step == 1 ) THEN
              CALL pop2restore ( grid%tke_2,tke_tend,advect_tend, &
@@ -7900,19 +8530,23 @@ if (config_flags % sw_call_rk_update_scalar) then
          ENDDO adj_tke_tile_loop_2
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar tke' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
+#endif
 
 
 !======[adj_P1.17.1]======================================================
 
            CALL wrf_debug ( 200 , ' call a_rk_scalar_tend for tke' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_scalar_tend{
 if (config_flags % sw_call_rk_scalar_tend) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_scalar_tend tke' )
+#endif
 
            CALL pop2restore (grid%tke_2,grid%tke_1, "tke_2,tke_1")
            CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
@@ -7947,10 +8581,12 @@ if (config_flags % sw_call_rk_scalar_tend) then
          ENDDO adj_tke_tile_loop_1
          !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_scalar_tend tke' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
+#endif
 
 
         ENDIF adj_TKE_advance
@@ -7974,9 +8610,11 @@ BENCH_START(adj_flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: flow_dep_bdy{
 if (config_flags % sw_call_flow_dep_bdy_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_flow_dep_bdy ' )
+#endif
 
                    CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
              !ZXOMP PARALLEL DO   &
@@ -7994,10 +8632,12 @@ if (config_flags % sw_call_flow_dep_bdy_moist) then
              ENDDO adj_moist_tile_loop_2
              !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_flow_dep_bdy ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: flow_dep_bdy }
+#endif
 
                  ENDIF
                ENDIF
@@ -8010,9 +8650,11 @@ BENCH_END(adj_flow_depbdy_tim)
 
 BENCH_START(adj_update_scal_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar{
 if (config_flags % sw_call_rk_update_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar ' )
+#endif
 
                IF ( rk_step == 1 ) THEN
                  CALL pop2restore ( moist(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
@@ -8052,10 +8694,12 @@ if (config_flags % sw_call_rk_update_scalar_moist) then
              ENDDO
              !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar }
+#endif
 
 BENCH_END(adj_update_scal_tim)
 
@@ -8068,9 +8712,11 @@ BENCH_START(adj_rlx_bdy_scalar_tim)
                IF( ( config_flags%specified .or. config_flags%nested ) .and. rk_step == 1 ) THEN
                  IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdy_scalar{
 if (config_flags % sw_call_spec_bdy_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdy_scalar ' )
+#endif
 
              !ZXOMP PARALLEL DO   &
              !ZXOMP PRIVATE ( ij )
@@ -8089,14 +8735,18 @@ if (config_flags % sw_call_spec_bdy_scalar_moist) then
              ENDDO
              !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_scalar }
+#endif
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: relax_bdy_scalar{
 if (config_flags % sw_call_relax_bdy_scalar_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_relax_bdy_scalar ' )
+#endif
 
                    CALL pop2restore (moist(:,:,:,im), "moist") 
                    CALL pop2restore (grid%mut, "mut") 
@@ -8122,10 +8772,12 @@ if (config_flags % sw_call_relax_bdy_scalar_moist) then
              ENDDO
              !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_relax_bdy_scalar ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_scalar }
+#endif
 
                  ENDIF
                ENDIF
@@ -8138,10 +8790,11 @@ BENCH_END(adj_rlx_bdy_scalar_tim)
 
 BENCH_START(adj_rk_scalar_tend_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_scalar_tend{
 if (config_flags % sw_call_rk_scalar_tend_moist) then
-
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_scalar_tend moist' )
+#endif
                CALL pop2restore (moist(:,:,:,im),moist_old(:,:,:,im), &
                                  "moist,moist_old")
                CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
@@ -8177,6 +8830,7 @@ if (config_flags % sw_call_rk_scalar_tend_moist) then
              ENDDO adj_moist_tile_loop_1
              !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
  else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_scalar_tend moist' )
 
@@ -8194,6 +8848,7 @@ if (config_flags % sw_call_rk_scalar_tend_moist) then
 
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
+#endif
 
 BENCH_END(adj_rk_scalar_tend_tim)
 
@@ -8233,9 +8888,11 @@ BENCH_END(adj_rk_scalar_tend_tim)
          !ZXOMP PRIVATE ( ij )
          DO ij = grid%num_tiles,1,-1
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
            CALL a_set_physical_bc3d(  grid%a_tke_1, 'p', config_flags,  &
                                     ids, ide, jds, jde, kds, kde,      &
@@ -8245,10 +8902,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                     grid%j_start(ij), grid%j_end(ij),  &
                                     k_start    , k_end                )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
          END DO
          !ZXOMP END PARALLEL DO
@@ -8256,9 +8915,11 @@ end if
 !========[adj_P1.14.1]:tke================================================
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar_pd tke' )
+#endif
 
            CALL pop2restore (grid%tke_1,tke_tend, &
                              "tke_1,tke_tend")
@@ -8279,10 +8940,12 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
                                      k_start    , k_end                       )
          ENDDO
          !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar_pd tke' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
+#endif
 
        END IF  ! end if for tke_adv_opt
 
@@ -8322,9 +8985,11 @@ end if
            IF (num_3d_s >= PARAM_FIRST_SCALAR) THEN
              DO im = num_3d_s,PARAM_FIRST_SCALAR,-1 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
                CALL a_set_physical_bc3d(  a_scalar_old(ims,kms,jms,im), 'p', config_flags, &
                                         ids, ide, jds, jde, kds, kde,                    &
@@ -8334,10 +8999,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                         grid%j_start(ij), grid%j_end(ij),                &
                                         k_start    , k_end                              )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
              END DO
            ENDIF
@@ -8347,9 +9014,11 @@ end if
 !======[adj_P1.14.1]:scalar===============================================
 
          CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar_pd ' )
+#endif
 
        DO im = num_3d_s,PARAM_FIRST_SCALAR,-1 
            CALL pop2restore (scalar_old(:,:,:,im),scalar_tend(:,:,:,im), &
@@ -8372,10 +9041,12 @@ if (config_flags % sw_call_rk_update_scalar_pd) then
        ENDDO
        !ZXOMP END PARALLEL DO
        ENDDO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar_pd ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
+#endif
 
        END IF  ! end if for scalar_adv_opt
 
@@ -8409,9 +9080,11 @@ end if
          IF (num_3d_m >= PARAM_FIRST_SCALAR) THEN
            DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
              CALL a_set_physical_bc3d( a_moist_old(ims,kms,jms,im), 'p', config_flags,   &
                                      ids, ide, jds, jde, kds, kde,                  &
@@ -8421,10 +9094,12 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                      grid%j_start(ij), grid%j_end(ij),              &
                                      k_start    , k_end                            )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
            END DO
          ENDIF
@@ -8434,9 +9109,11 @@ end if
 !======[adj_P1.14.1]:moist================================================
 
          CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd{
 if (config_flags % sw_call_rk_update_scalar_pd_moist) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_update_scalar_pd moist' )
+#endif
 
        DO im = num_3d_m,PARAM_FIRST_SCALAR,-1
            CALL pop2restore (moist_old(:,:,:,im),moist_tend(:,:,:,im), &
@@ -8461,11 +9138,12 @@ if (config_flags % sw_call_rk_update_scalar_pd_moist) then
        !ZXOMP END PARALLEL DO
        ENDDO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_update_scalar_pd moist' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_update_scalar_pd }
-
+#endif
 
      END IF  ! end if for moist_adv_opt
 
@@ -8479,9 +9157,11 @@ BENCH_START(adj_small_step_finish_tim)
 !======[adj_P1.12.2.2]====================================================
        IF (rk_step == rk_order) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
@@ -8496,16 +9176,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
@@ -8520,16 +9203,19 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
+#endif
 
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
@@ -8544,16 +9230,16 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
 
-
-
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
@@ -8567,16 +9253,16 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
 
-
-
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
@@ -8590,17 +9276,21 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
        END IF
 
+#ifdef DEBUG_PLUS
 !======[adj_P1.12.2.1]====================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: small_step_finish{
 if (config_flags % sw_call_small_step_finish) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_small_step_finish ' )
+#endif
 
         CALL pop2restore (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
                           grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
@@ -8631,19 +9321,23 @@ if (config_flags % sw_call_small_step_finish) then
                                  k_start, k_end )
      END DO
      !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_small_step_finish ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: small_step_finish }
+#endif
 
 BENCH_END(adj_small_step_finish_tim)
 
 !======[adj_P1.12.1]======================================================
 BENCH_START(adj_calc_mu_uv_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_mu_uv_1{
 if (config_flags % sw_call_calc_mu_uv_1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_calc_mu_uv_1 ' )
+#endif
 
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
@@ -8657,10 +9351,12 @@ if (config_flags % sw_call_calc_mu_uv_1) then
                              k_start, k_end )
      END DO
      !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_mu_uv_1 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_mu_uv_1 }
+#endif
 
 BENCH_END(adj_calc_mu_uv_tim)
 
@@ -8700,10 +9396,11 @@ BENCH_START(adj_phys_bc_tim)
 
        ! boundary condition set for next small timestep
 
-
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
          CALL a_set_physical_bc3d( grid%a_ph_2, 'w', config_flags,          &
                                  ids, ide, jds, jde, kds, kde,     &
@@ -8713,16 +9410,17 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc3d }
 
 
-
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
          CALL a_set_physical_bc3d( grid%a_al, 'p', config_flags,            &
                                  ids, ide, jds, jde, kds, kde,     &
@@ -8732,6 +9430,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -8742,6 +9441,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
          CALL a_set_physical_bc3d( grid%a_p, 'p', config_flags,             &
                                  ids, ide, jds, jde, kds, kde,     &
@@ -8751,6 +9451,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -8761,6 +9462,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
          CALL a_set_physical_bc2d( grid%a_muts, 't', config_flags,          &
                                  ids, ide, jds, jde,               &
@@ -8769,6 +9471,7 @@ if (config_flags % sw_call_set_physical_bc2d) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij) )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
@@ -8779,6 +9482,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
          CALL a_set_physical_bc2d( grid%a_mu_2, 't', config_flags,          &
                                  ids, ide, jds, jde,               &
@@ -8787,6 +9491,7 @@ if (config_flags % sw_call_set_physical_bc2d) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij) )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
@@ -8797,6 +9502,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
          CALL a_set_physical_bc2d( grid%a_mudf, 't', config_flags,          &
                                  ids, ide, jds, jde,               &
@@ -8805,11 +9511,12 @@ if (config_flags % sw_call_set_physical_bc2d) then
                                  grid%i_start(ij), grid%i_end(ij), &
                                  grid%j_start(ij), grid%j_end(ij) )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
-
+#endif
 
        END DO
        !$OMP END PARALLEL DO
@@ -8819,9 +9526,11 @@ BENCH_END(adj_phys_bc_tim)
 !========[adj_P1.11.8.3]================================================
  BENCH_START(adj_cald_p_rho_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho{
 if (config_flags % sw_call_calc_p_rho) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_calc_p_rho ' )
+#endif
 
          CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
          CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
@@ -8841,10 +9550,12 @@ if (config_flags % sw_call_calc_p_rho) then
                             k_start, k_end )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_p_rho ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho }
+#endif
 
 BENCH_END(adj_cald_p_rho_tim)
 
@@ -8857,9 +9568,11 @@ BENCH_START(adj_spec_bdynhyd_tim)
 
              IF( config_flags%specified ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: zero_grad_bdy{
 if (config_flags % sw_call_zero_grad_bdy) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_zero_grad_bdy ' )
+#endif
 
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -8875,16 +9588,20 @@ if (config_flags % sw_call_zero_grad_bdy) then
                                        k_start, k_end )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_zero_grad_bdy ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: zero_grad_bdy }
+#endif
 
              ELSE
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
+#endif
 
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -8901,16 +9618,20 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                         k_start, k_end )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
              ENDIF
 
+#ifdef DEBUG_PLUS
  ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate_ph{
 if (config_flags % sw_call_spec_bdyupdate_ph) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate_ph ' )
+#endif
 
              CALL pop2restore (mu_tend,grid%muts, "mu_tend,muts") 
              CALL pop2restore (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
@@ -8930,10 +9651,12 @@ if (config_flags % sw_call_spec_bdyupdate_ph) then
                                        k_start, k_end )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate_ph ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate_ph }
+#endif
 
            ENDIF
 
@@ -8943,9 +9666,11 @@ BENCH_END(adj_spec_bdynhyd_tim)
 !========[adj_P1.11.8.1]==================================================
 BENCH_START(adj_sumflux_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: sumflux{
 if (config_flags % sw_call_sumflux) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_sumflux ' )
+#endif
 
          CALL pop2restore (grid%u_save,grid%v_save, "u_lin,v_lin") 
          CALL pop2restore (grid%muu,grid%muv, "muu,muv") 
@@ -8967,10 +9692,12 @@ if (config_flags % sw_call_sumflux) then
                           k_start, k_end )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_sumflux ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: sumflux }
+#endif
 
 BENCH_END(adj_sumflux_tim)
 
@@ -8982,9 +9709,11 @@ BENCH_END(adj_sumflux_tim)
 BENCH_START(adj_advance_w_tim)
          IF ( config_flags%non_hydrostatic ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_w{
 if (config_flags % sw_call_advance_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_w ' )
+#endif
 
            CALL pop2restore (grid%ph_2,ph_save,ph_tend,c2a,cqw,grid%alt,a,alpha,gamma,     &
                              "ph,ph_1,ph_tend,c2a,cqw,alt,a,alpha,gamma")
@@ -9014,10 +9743,12 @@ if (config_flags % sw_call_advance_w) then
                              k_start, k_end )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_advance_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_w }
+#endif
 
          ENDIF
 BENCH_END(adj_advance_w_tim)
@@ -9027,9 +9758,11 @@ BENCH_END(adj_advance_w_tim)
 BENCH_START(adj_spec_bdy_t_tim)
          IF( config_flags%specified .or. config_flags%nested ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call spec_bdyupdate ' )
+#endif
 
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -9046,14 +9779,18 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    1, 1 )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
+#endif
 
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -9070,6 +9807,7 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    1, 1 )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
@@ -9078,6 +9816,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
+#endif
 
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -9094,10 +9833,12 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    k_start, k_end )
        ENDDO
        !ZXOMP END PARALLEL DO
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
          ENDIF
 BENCH_END(adj_spec_bdy_t_tim)
@@ -9119,11 +9860,15 @@ BENCH_END(adj_spec_bdy_t_tim)
 #     include "HALO_EM_C.inc"
 #endif
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_advance_mu_t) then
+#endif
        CALL pop2restore (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
                            "ww,ww_1,u,u_1,v,v_1,t_1") 
        CALL pop2restore (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
+#ifdef DEBUG_PLUS
 endif
+#endif
 
        !DDD PARALLEL DO   &
        !DDD PRIVATE ( ij )
@@ -9131,9 +9876,11 @@ endif
 
 BENCH_START(adj_advance_mu_t_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_mu_t{
 if (config_flags % sw_call_advance_mu_t) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_mu_t ' )
+#endif
 
          CALL a_advance_mu_t( grid%ww,grid%a_ww, ww1,a_ww1, &
                               grid%u_2,grid%a_u_2, grid%u_save,grid%a_u_save, &
@@ -9155,10 +9902,12 @@ if (config_flags % sw_call_advance_mu_t) then
                               grid%i_start(ij), grid%i_end(ij),  &
                               grid%j_start(ij), grid%j_end(ij),  &
                               k_start, k_end )
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_advance_mu_t ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_mu_t }
+#endif
 
 BENCH_END(adj_advance_mu_t_tim)
        ENDDO
@@ -9172,9 +9921,11 @@ BENCH_END(adj_advance_mu_t_tim)
 
 BENCH_START(adj_spec_bdy_uv_tim)
          IF( config_flags%specified .or. config_flags%nested ) THEN
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
+#endif
 
            CALL a_spec_bdyupdate ( grid%a_v_2,       &
                                    grid%a_rv_tend, dts_rk, &
@@ -9186,6 +9937,7 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    grid%i_start(ij), grid%i_end(ij), &
                                    grid%j_start(ij), grid%j_end(ij), &
                                    k_start, k_end )
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
@@ -9194,6 +9946,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate{
 if (config_flags % sw_call_spec_bdyupdate) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate ' )
+#endif
 
            CALL a_spec_bdyupdate ( grid%a_u_2,       &
                                    grid%a_ru_tend, dts_rk, &
@@ -9205,10 +9958,12 @@ if (config_flags % sw_call_spec_bdyupdate) then
                                    grid%i_start(ij), grid%i_end(ij), &
                                    grid%j_start(ij), grid%j_end(ij), &
                                    k_start, k_end )
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate }
+#endif
 
          ENDIF
 BENCH_END(adj_spec_bdy_uv_tim)
@@ -9222,19 +9977,25 @@ BENCH_END(adj_spec_bdy_uv_tim)
 #      include "PERIOD_BDY_EM_B.inc"
 #endif
 
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_advance_uv) then
+#endif
        CALL pop2restore (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
        CALL pop2restore (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
+#ifdef DEBUG_PLUS
 endif
+#endif
        !DDD PARALLEL DO   &
        !DDD PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
 
 BENCH_START(adj_advance_uv_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_uv{
 if (config_flags % sw_call_advance_uv) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_uv ' )
+#endif
 
          CALL a_advance_uv( grid%u_2,grid%a_u_2, grid%ru_tend,grid%a_ru_tend, &
                             grid%v_2,grid%a_v_2, grid%rv_tend,grid%a_rv_tend, &
@@ -9257,10 +10018,12 @@ if (config_flags % sw_call_advance_uv) then
                             grid%j_start(ij), grid%j_end(ij),                      &
                             k_start, k_end )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_advance_uv ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_uv }
+#endif
 
 BENCH_END(adj_advance_uv_tim)
 
@@ -9311,9 +10074,11 @@ BENCH_END(adj_advance_uv_tim)
 BENCH_START(adj_set_phys_bc2_tim)
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9328,6 +10093,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -9338,6 +10104,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9352,6 +10119,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -9362,6 +10130,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9376,6 +10145,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -9386,6 +10156,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9400,6 +10171,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -9410,6 +10182,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9424,6 +10197,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -9434,6 +10208,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9448,6 +10223,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -9458,6 +10234,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9472,6 +10249,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -9482,6 +10260,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9495,6 +10274,7 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
@@ -9505,6 +10285,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9518,6 +10299,7 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
@@ -9528,6 +10310,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc2d{
 if (config_flags % sw_call_set_physical_bc2d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc2d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -9541,10 +10324,12 @@ if (config_flags % sw_call_set_physical_bc2d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc2d ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_physical_bc2d }
+#endif
 
 
 BENCH_END(adj_set_phys_bc2_tim)
@@ -9555,9 +10340,11 @@ BENCH_START(adj_small_step_prep_tim)
 !======[adj_P1.9.3]=======================================================
        IF (config_flags%non_hydrostatic) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_coef_w{
 if (config_flags % sw_call_calc_coef_w) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_calc_coef_w ' )
+#endif
 
          CALL pop2restore (grid%mut, "mut") 
          CALL pop2restore (c2a,cqw, "c2a,cqw") 
@@ -9578,17 +10365,21 @@ if (config_flags % sw_call_calc_coef_w) then
      ENDDO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_coef_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_coef_w }
+#endif
 
        ENDIF
 
+#ifdef DEBUG_PLUS
 !======[adj_P1.9.2]=======================================================
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: calc_p_rho{
 if (config_flags % sw_call_calc_p_rho) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_calc_p_rho ' )
+#endif
 
        CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
        CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
@@ -9610,17 +10401,21 @@ if (config_flags % sw_call_calc_p_rho) then
      ENDDO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_calc_p_rho ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: calc_p_rho }
+#endif
 
 !======[adj_P1.9.1]=======================================================
        CALL wrf_debug ( 200 , ' call a_small_step_prep ' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: small_step_prep{
 if (config_flags % sw_call_small_step_prep) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_small_step_prep ' )
+#endif
 
        IF ( rk_step == 1 ) THEN
          CALL pop2restore (grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
@@ -9659,10 +10454,12 @@ if (config_flags % sw_call_small_step_prep) then
      ENDDO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_small_step_prep ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: small_step_prep }
+#endif
 
 BENCH_END(adj_small_step_prep_tim)
 
@@ -9671,6 +10468,7 @@ BENCH_END(adj_small_step_prep_tim)
      adj_update_model_variables_debug_bdy: &
      DO ij = 1 , grid%num_tiles
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_all{
 if (config_flags % sw_call_advance_all) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_all ' )
@@ -9686,10 +10484,12 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_advance_all ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_all }
+#endif
 
 !    [adj_P5.2_debug_bdy] Adjoint of updating model variables of grid points in spec zone 
 !    ------------------------------------------------------------------------------------
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: spec_bdyupdate_all{
 if (config_flags % sw_call_spec_bdyupdate_all) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdyupdate_all ' )
@@ -9882,9 +10682,11 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdyupdate_all ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdyupdate_all }
+#endif
 
 !    [adj_P5.1_debug_bdy] Adjoint of updating model variables of grid points export for those in spec zone 
 !    -----------------------------------------------------------------------------------------------------
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: advance_all{
 if (config_flags % sw_call_advance_all) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_all ' )
@@ -9923,6 +10725,7 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_advance_all ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: advance_all }
+#endif
 
      END DO adj_update_model_variables_debug_bdy
 
@@ -9930,8 +10733,10 @@ end if
 !    Adjoint of calculating tendencies of grid points
 BENCH_START(adj_relax_bdy_dry_tim)
      IF( config_flags%specified .or. config_flags%nested ) THEN
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_spec_bdy_dry) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_spec_bdy_dry ' )
+#endif
 
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij )
@@ -9963,17 +10768,21 @@ if (config_flags % sw_call_spec_bdy_dry) then
      END DO adj_calc_tendency
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_spec_bdy_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: spec_bdy_dry }
+#endif
      ENDIF
 
 !======[adj_P1.8.2]=======================================================
 !      Adjoint of adding tendencies of grid points except for those in spec zone 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_addtend_dry{
 if (config_flags % sw_call_rk_addtend_dry) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_addtend_dry ' )
+#endif
 
      CALL pop2restore (grid%h_diabatic, "h_diabatic") 
      CALL pop2restore (grid%mut, "mut") 
@@ -10003,10 +10812,12 @@ if (config_flags % sw_call_rk_addtend_dry) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_addtend_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_addtend_dry }
+#endif
 
 #ifdef DM_PARALLEL
 #      include "HALO_EM_SAVE_AD.inc"
@@ -10015,9 +10826,11 @@ end if
 !      Adjoint of calculating tendencies for grid points in relax zone
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: relax_bdy_dry{
 if (config_flags % sw_call_relax_bdy_dry) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_relax_bdy_dry ' )
+#endif
 
        CALL pop2restore (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
        CALL pop2restore (grid%mut, "mut") 
@@ -10067,10 +10880,12 @@ if (config_flags % sw_call_relax_bdy_dry) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_relax_bdy_dry ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: relax_bdy_dry }
+#endif
 
      ENDIF
 
@@ -10082,9 +10897,12 @@ BENCH_END(adj_relax_bdy_dry_tim)
 BENCH_START(adj_rk_tend_tim)
 
        CALL wrf_debug ( 200 , ' call a_rk_tendency' )
+#ifdef DEBUG_PLUS
 if (config_flags % sw_call_rk_tendency) then
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_tendency{
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_tendency ' )
+#endif
+
      CALL pop2restore (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
      CALL pop2restore (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
                        "al,alt,p,php,cqu,cqv,cqw") 
@@ -10138,6 +10956,7 @@ if (config_flags % sw_call_rk_tendency) then
      END DO
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_tendency ' )
 
@@ -10233,6 +11052,7 @@ else
 
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_tendency }
+#endif
 
 BENCH_END(adj_rk_tend_tim)
 
@@ -10240,9 +11060,11 @@ BENCH_END(adj_rk_tend_tim)
 !    Adjoint of initializing diffusion tendencies of grid points 
      adj_rk_step_is_one : IF (rk_step == 1) THEN ! only need to initialize diffusion tendencies
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: first_rk_step_part2{
 if (config_flags % sw_call_first_rk_step_part2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_first_rk_step_part2 ' )
+#endif
 
        CALL pop2restore (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,&
                          "rublten,rvblten,rthblten,rqvblten") 
@@ -10288,12 +11110,14 @@ if (config_flags % sw_call_first_rk_step_part2) then
               , k_start , k_end                  &
              )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_first_rk_step_part2 ' )
 end if
 
 if (config_flags % sw_call_first_rk_step_part1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_first_rk_step_part1 ' )
+#endif
 
        CALL a_first_rk_step_part1 (    grid, config_flags         &
                              , moist , a_moist, moist_tend, a_moist_tend  &
@@ -10323,6 +11147,7 @@ if (config_flags % sw_call_first_rk_step_part1) then
                              , f_flux                           &
                             )
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_first_rk_step_part1 ' )
 
@@ -10403,6 +11228,7 @@ BENCH_END(adj_init_zero_tend_tim)
  
 end if
 ! CHECK NECESSARY SUBROUTINE: first_rk_step_part1 }
+#endif
 
      END IF adj_rk_step_is_one
 
@@ -10452,9 +11278,11 @@ BENCH_START(adj_set_phys_bc_tim)
 
        CALL wrf_debug ( 200 , ' call a_rk_phys_bc_dry_1' )
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -10469,6 +11297,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -10477,6 +11306,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: set_physical_bc3d{
 if (config_flags % sw_call_set_physical_bc3d) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_set_physical_bc3d ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -10491,6 +11321,7 @@ if (config_flags % sw_call_set_physical_bc3d) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_physical_bc3d ' )
 end if
@@ -10499,6 +11330,7 @@ end if
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_1{
 if (config_flags % sw_call_rk_phys_bc_dry_1) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_phys_bc_dry_1 ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -10516,10 +11348,12 @@ if (config_flags % sw_call_rk_phys_bc_dry_1) then
      END DO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_phys_bc_dry_1 ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_1 }
+#endif
 
 #ifdef DM_PARALLEL
 ! a_ru, a_rv
@@ -10533,9 +11367,11 @@ BENCH_END(adj_set_phys_bc_tim)
 
 BENCH_START(adj_step_prep_tim)
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: rk_step_prep{
 if (config_flags % sw_call_rk_step_prep) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_rk_step_prep ' )
+#endif
 
         CALL pop2restore (moist, "moist")
         CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
@@ -10567,10 +11403,12 @@ if (config_flags % sw_call_rk_step_prep) then
      END DO adj_rk_step_prep
      !ZXOMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_rk_step_prep ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: rk_step_prep }
+#endif
 
 BENCH_END(adj_step_prep_tim)
 
@@ -10583,9 +11421,11 @@ BENCH_END(adj_step_prep_tim)
        IF( config_flags%specified .AND. config_flags%constant_bc ) THEN
 
 
+#ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: zero_bdytend{
 if (config_flags % sw_call_zero_bdytend) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_zero_bdytend ' )
+#endif
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -10614,10 +11454,12 @@ if (config_flags % sw_call_zero_bdytend) then
      ENDDO
      !$OMP END PARALLEL DO
 
+#ifdef DEBUG_PLUS
 else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_zero_bdytend ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: zero_bdytend }
+#endif
 
        ENDIF
 

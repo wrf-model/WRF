@@ -6,7 +6,7 @@ MODULE module_cu_du
    REAL    , PARAMETER :: capemin = 10.
    REAL    , PARAMETER :: dpthmin = 1000.
    REAL    , PARAMETER :: alpha = 0.001*0.1      !tested by Zhuxiao
-   REAL    , PARAMETER :: eps = 0.5      ! tested by Zhuxiao
+   REAL    , PARAMETER :: eps = 0.5
    REAL    , PARAMETER :: Vfall = 5.
 
 !--------------------------------------------------------------------
@@ -111,7 +111,7 @@ CONTAINS
                                                       DQVDT, &
                                                       DTHDT
 
-   REAL    :: PPRATE,TST,tv,PRS,RHOE,W0,SCR1,DXSQ,tmp,RTHCUMAX
+   REAL    :: PPRATE,TST,tv,PRS,RHOE,W0,SCR1,DXSQ,RTHCUMAX
 
    INTEGER :: i,j,k,i_start,i_end,j_start,j_end,sz,NTST,ICLDCK
 !

@@ -960,6 +960,7 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%a_moist = grid%a_moist + grid%g_moist
    grid%a_rainnc = grid%a_rainnc + grid%g_rainnc
    grid%a_rainncv = grid%a_rainncv + grid%g_rainncv
+   grid%a_h_diabatic = grid%a_h_diabatic + grid%g_h_diabatic
 
    ! Reset forcings for ZERO
    grid%g_u_2  = 0.0
@@ -971,6 +972,7 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%g_moist = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
+   grid%g_h_diabatic = 0.0
 
 END SUBROUTINE add_forcing_to_ad
 

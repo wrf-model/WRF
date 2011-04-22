@@ -1918,6 +1918,7 @@ integer myproc
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
    USE module_cu_tiedtke
+   USE module_cu_du, ONLY : ducuinit
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -2070,6 +2071,16 @@ integer myproc
           CALL tiedtkeinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,   &
                       RUCUTEN,RVCUTEN,                            & 
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
+     CASE (DUCUSCHEME)
+          CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
+                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,      &
+                      SVP1,SVP2,SVP3,SVPT0,                       &
+                      PARAM_FIRST_SCALAR,restart,                 &
                       allowed_to_read ,                           &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &

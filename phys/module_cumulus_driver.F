@@ -22,7 +22,7 @@ CONTAINS
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
                      ,hfx,qfx,cldfra,tpert2d,htop,hbot,kpbl,ht&
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
-!                     ,periodic_x,periodic_y                          &  ! move below follow part1
+                     ,periodic_x,periodic_y                           &
                  ! Package selection variables
                      ,cu_physics, bl_pbl_physics, sf_sfclay_physics   &
                  ! Optional moisture tracers 
@@ -34,8 +34,7 @@ CONTAINS
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
                      ,apr_capme,apr_capmi,edt_out,clos_choice         &
                      ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
-                     ,ishallow                               &
-                     ,cugd_tten,cugd_qvten,cugd_qcten        &
+                     ,ishallow,cugd_tten,cugd_qvten,cugd_qcten        &
                      ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2                              &
                  ! Optional output arguments for CAMZM scheme
@@ -47,7 +46,6 @@ CONTAINS
                      ,zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd    &
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
-                     ,periodic_x,periodic_y                           &
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -89,7 +87,6 @@ CONTAINS
    USE module_cu_bmj    ,  ONLY : bmjdrv
 #ifdef DM_PARALLEL
    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks 
-
 # if (EM_CORE == 1)
    USE module_comm_dm   ,  ONLY : halo_cup_g3_in_sub, halo_cup_g3_out_sub
 # endif
@@ -99,7 +96,7 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
-   USE module_cu_du     , ONLY : DUCU   ! ? DUCU use DUCU1D
+   USE module_cu_du     , ONLY : DUCU   
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_nsas   , ONLY : cu_nsas
@@ -197,8 +194,6 @@ CONTAINS
 !-- z             height above sea level at middle of layers (m)
 !-- z_at_w        height above sea level at layer interfaces (m)
 !-- dz8w          dz between full levels (m)
-!-- z             added by zhuxiao
-!-- p8w           pressure at full levels (Pa)  
 !-- pblh          planetary boundary layer height (m)
 !-- mavail        soil moisture availability
 !-- p8w           pressure at full levels (Pa)
@@ -514,8 +509,6 @@ CONTAINS
       ENDIF
 #endif
 
-    print *, "using cumulus_driver.F is o.k!!!"
-
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
 
@@ -657,7 +650,7 @@ CONTAINS
                ,CFU1=CFU1,CFD1=CFD1,DFU1=DFU1,EFU1=EFU1         &
                ,DFD1=DFD1,EFD1=EFD1,f_flux=l_flux               )
           CALL wrf_debug(200,'back from grelldrv')
- 
+
      CASE (SASSCHEME)
                                                                                                                                            
           IF ( adapt_step_flag_pass ) THEN

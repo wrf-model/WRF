@@ -581,7 +581,8 @@ package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi
 
 ### 8. Edit the Registry file and create a halo-exchange for x_1.
 
-halo      HALO_EM_AD_RK_TEND0 dyn_em 120:u_2,v_2,w_2,t_2,ph_2,ru,rv,rw,a_ru_tend,a_rv_tend,a_rw_tend,a_ph_tend,a_t_tend,a_mu_tend
+#halo      HALO_EM_AD_RK_TEND0 dyn_em 120:u_2,v_2,w_2,t_2,ph_2,ru,rv,rw,a_ru_tend,a_rv_tend,a_rw_tend,a_ph_tend,a_t_tend,a_mu_tend
+halo      HALO_EM_AD_RK_TEND0 dyn_em 120:u_2,v_2,w_2,t_2,ph_2,ru,rv,rw,a_ru_tend,a_rv_tend
 halo      HALO_EM_A_TL dyn_em  8:g_ru,g_rv,g_rw,g_ww,g_php,g_alt,g_al,g_p,g_muu,g_muv,g_mut
 halo      HALO_EM_B_TL dyn_em  4:g_ph_2,g_al,g_p,g_t_1,g_t_save,g_u_save,g_v_save,g_mu_1,g_mu_2,g_mudf,g_php,g_alt
 halo      HALO_EM_C_TL dyn_em  4:g_u_2,g_v_2

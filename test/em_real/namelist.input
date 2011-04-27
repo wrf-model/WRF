@@ -16,16 +16,16 @@
  end_minute                          = 00,   06,   00,
  end_second                          = 00,   00,   00,
  history_interval                    = 9999,   30,   30,
- interval_seconds                    = 10800
+ interval_seconds                    = 21600,
  frames_per_outfile                  = 1,    1,    100,
  restart                             = .false.,
  input_from_file                     = .true., .true., .true., 
  restart_interval_h                  = 1120,
- io_form_history                     = 2
- io_form_restart                     = 2
- io_form_input                       = 2
- io_form_boundary                    = 2
- debug_level                         = -300
+ io_form_history                     = 2,
+ io_form_restart                     = 2,
+ io_form_input                       = 2,
+ io_form_boundary                    = 2,
+ debug_level                         = 0,
  /
  iofields_filename                   = "plus.io_config",
  ignore_iofields_warning             = .true.,

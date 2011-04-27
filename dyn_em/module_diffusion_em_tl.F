@@ -1500,382 +1500,333 @@
 
  END SUBROUTINE g_cal_dampkm
 
- SUBROUTINE g_calculate_N2(config_flags,BN2,g_BN2,moist,g_moist,theta, &
- g_theta,t,g_t,p,g_p,p8w,g_p8w,t8w,g_t8w,dnw,dn,rdz,g_rdz,rdzw, &
- g_rdzw,n_moist,cf1,cf2,cf3,warm_rain,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms, &
- kme,its,ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2,Tmpv3,g_Tmpv3,Tmpv4,g_Tmpv4,Tmpv5,g_Tmpv5
- TYPE(grid_config_rec_type) :: config_flags
- INTEGER :: n_moist,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- LOGICAL :: warm_rain
- REAL :: cf1,cf2,cf3
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: BN2,g_BN2
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rdz,g_rdz,rdzw,g_rdzw,theta, &
- g_theta,t,g_t,p,g_p,p8w,g_p8w,t8w,g_t8w
- REAL,DIMENSION(kms:kme) :: dnw,dn
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_moist) :: moist,g_moist
- INTEGER :: i,j,k,ktf,ispe,ktes1,ktes2,i_start,i_end,j_start,j_end
- REAL :: coefa,g_coefa,thetaep1,g_thetaep1,thetaem1,g_thetaem1,qc_cr, &
- g_qc_cr,es,g_es,tc,g_tc,qlpqi,g_qlpqi,qsw,g_qsw,qsi,g_qsi,tmpdz, &
- g_tmpdz,xlvqv,g_xlvqv,thetaesfc,g_thetaesfc,thetasfc,g_thetasfc,qvtop, &
- g_qvtop,qvsfc,g_qvsfc,thetatop,g_thetatop,thetaetop,g_thetaetop
- REAL,DIMENSION(its:ite,jts:jte) :: tmp1sfc,g_tmp1sfc,tmp1top,g_tmp1top
- REAL,DIMENSION(its:ite,kts:kte,jts:jte) :: tmp1,g_tmp1,qvs,g_qvs,qctmp,g_qctmp
-
- g_qc_cr =0.0
- qc_cr =0.00001
-
- ktf =min(kte,kde-1)
-
- ktes1 =kte-1
-
- ktes2 =kte-2
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( config_flags%open_xs .OR. config_flags%specified .OR.   &
-         config_flags%nested) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .OR. config_flags%specified .OR.   &
-         config_flags%nested) i_end =min(ide-2,ite)
-
- IF( config_flags%open_ys .OR. config_flags%specified .OR.   &
-         config_flags%nested) j_start =max(jds+1,jts)
-
- IF( config_flags%open_ye .OR. config_flags%specified .OR.   &
-         config_flags%nested) j_end =min(jde-2,jte)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =min(ite,ide-1)
-
- IF( P_QC .GT. PARAM_FIRST_SCALAR) THEN
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_qctmp(i,k,j) =g_moist(i,k,j,P_QC)
- qctmp(i,k,j) =moist(i,k,j,P_QC)
-
- ENDDO
- ENDDO
- ENDDO
- ELSE
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_qctmp(i,k,j) =0.0
- qctmp(i,k,j) =0.0
-
- ENDDO
- ENDDO
- ENDDO
- END IF
-
- DO j =jts,jte
- DO k =kts,kte
- DO i =its,ite
-
- g_tmp1(i,k,j) =0.0
- tmp1(i,k,j) =0.0
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =jts,jte
- DO i =its,ite
-
- g_tmp1sfc(i,j) =0.0
- tmp1sfc(i,j) =0.0
-
- g_tmp1top(i,j) =0.0
- tmp1top(i,j) =0.0
-
- ENDDO
- ENDDO
-
- DO ispe =PARAM_FIRST_SCALAR,n_moist
-
- IF( ispe .EQ. P_QV .OR. ispe .EQ. P_QC .OR. ispe .EQ. P_QI) THEN
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tmp1(i,k,j) =g_tmp1(i,k,j) +g_moist(i,k,j,ispe)
- tmp1(i,k,j) =tmp1(i,k,j) +moist(i,k,j,ispe)
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_tmp1sfc(i,j) =g_tmp1sfc(i,j) +cf1*g_moist(i,1,j,ispe) +cf2*g_moist(i,2, &
- j,ispe) +cf3*g_moist(i,3,j,ispe)
- tmp1sfc(i,j) =tmp1sfc(i,j) +cf1*moist(i,1,j,ispe) +cf2*moist(i,2,j,ispe) &
- +cf3*moist(i,3,j,ispe)
-
- g_tmp1top(i,j) =g_tmp1top(i,j) +g_moist(i,ktes1,j,ispe) +((g_moist(i, &
- ktes1,j,ispe) -g_moist(i,ktes2,j,ispe))*0.5*dnw(ktes1)/dn(ktes1))
- tmp1top(i,j) =tmp1top(i,j) +moist(i,ktes1,j,ispe) +(moist(i,ktes1,j,ispe) &
- -moist(i,ktes2,j,ispe))*0.5*dnw(ktes1)/dn(ktes1)
-
- ENDDO
- ENDDO
- END IF
- ENDDO
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tc =g_t(i,k,j)
- tc =t(i,k,j) -SVPT0
-
- g_Tmpv1 =(SVP2*g_tc*(t(i,k,j) -SVP3) -(g_t(i,k,j))*SVP2*tc)/((t(i,k,j) &
- -SVP3)*(t(i,k,j) -SVP3))
- Tmpv1 =SVP2*tc/(t(i,k,j) -SVP3)
-
- g_es =1000.0 *SVP1*g_Tmpv1*exp(Tmpv1)
- es =1000.0 *SVP1*exp(Tmpv1)
-
- g_Tmpv1 =(EP_2*g_es*(p(i,k,j) -es) -(g_p(i,k,j) -g_es)*EP_2*es) &
-/((p(i,k,j) -es)*(p(i,k,j) -es))
- Tmpv1 =EP_2*es/(p(i,k,j) -es)
-
- g_qvs(i,k,j) =g_Tmpv1
- qvs(i,k,j) =Tmpv1
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO k =kts+1,ktf-1
- DO i =i_start,i_end
-
- g_tmpdz =-1.0*g_rdz(i,k,j)/(rdz(i,k,j)*rdz(i,k,j)) +(-1.0*g_rdz(i,k+1,j) &
-/(rdz(i,k+1,j)*rdz(i,k+1,j)))
- tmpdz =1.0/rdz(i,k,j) +1.0/rdz(i,k+1,j)
-
- IF( moist(i,k,j,P_QV) .GE. qvs(i,k,j) .OR. qctmp(i,k,j) .GE. qc_cr) THEN
-
- g_xlvqv =XLV*g_moist(i,k,j,P_QV)
- xlvqv =XLV*moist(i,k,j,P_QV)
-
- g_Tmpv1 =((g_xlvqv/R_d)*t(i,k,j) -g_t(i,k,j)*xlvqv/R_d)/(t(i,k,j)*t(i,k,j))
- Tmpv1 =xlvqv/R_d/t(i,k,j)
-
- g_Tmpv2 =(((XLV*g_xlvqv/Cp)/R_v)*t(i,k,j) -g_t(i,k,j)*XLV*xlvqv/Cp/R_v) &
-/(t(i,k,j)*t(i,k,j))
- Tmpv2 =XLV*xlvqv/Cp/R_v/t(i,k,j)
-
- g_Tmpv3 =(g_Tmpv2*t(i,k,j) -g_t(i,k,j)*Tmpv2)/(t(i,k,j)*t(i,k,j))
- Tmpv3 =Tmpv2/t(i,k,j)
-
- g_Tmpv4 =((g_Tmpv1)*(1.0 +Tmpv3) -(g_Tmpv3)*(1.0 +Tmpv1))/((1.0 +Tmpv3) &
-*(1.0 +Tmpv3))
- Tmpv4 =(1.0 +Tmpv1)/(1.0 +Tmpv3)
-
- g_Tmpv5 =(g_Tmpv4*theta(i,k,j) -g_theta(i,k,j)*Tmpv4)/(theta(i,k,j)*theta(i,k,j))
- Tmpv5 =Tmpv4/theta(i,k,j)
-
- g_coefa =g_Tmpv5
- coefa =Tmpv5
-
- g_Tmpv1 =((XLV*g_qvs(i,k+1,j)/Cp)*t(i,k+1,j) -g_t(i,k+1,j)*XLV*qvs(i,k+1,j) &
-/Cp)/(t(i,k+1,j)*t(i,k+1,j))
- Tmpv1 =XLV*qvs(i,k+1,j)/Cp/t(i,k+1,j)
-
- g_Tmpv2 =theta(i,k+1,j)*(g_Tmpv1) +g_theta(i,k+1,j)*(1.0 +Tmpv1)
- Tmpv2 =theta(i,k+1,j)*(1.0 +Tmpv1)
-
- g_thetaep1 =g_Tmpv2
- thetaep1 =Tmpv2
-
- g_Tmpv1 =((XLV*g_qvs(i,k-1,j)/Cp)*t(i,k-1,j) -g_t(i,k-1,j)*XLV*qvs(i,k-1,j) &
-/Cp)/(t(i,k-1,j)*t(i,k-1,j))
- Tmpv1 =XLV*qvs(i,k-1,j)/Cp/t(i,k-1,j)
-
- g_Tmpv2 =theta(i,k-1,j)*(g_Tmpv1) +g_theta(i,k-1,j)*(1.0 +Tmpv1)
- Tmpv2 =theta(i,k-1,j)*(1.0 +Tmpv1)
-
- g_thetaem1 =g_Tmpv2
- thetaem1 =Tmpv2
-
- g_Tmpv1 =coefa*(g_thetaep1 -g_thetaem1) +g_coefa*(thetaep1 -thetaem1)
- Tmpv1 =coefa*(thetaep1 -thetaem1)
-
- g_Tmpv2 =(g_Tmpv1*tmpdz -g_tmpdz*Tmpv1)/(tmpdz*tmpdz)
- Tmpv2 =Tmpv1/tmpdz
-
- g_Tmpv3 =((g_tmp1(i,k+1,j) -g_tmp1(i,k-1,j))*tmpdz -g_tmpdz*(tmp1(i,k+1, &
- j) -tmp1(i,k-1,j)))/(tmpdz*tmpdz)
- Tmpv3 =(tmp1(i,k+1,j) -tmp1(i,k-1,j))/tmpdz
-
- g_BN2(i,k,j) =g*(g_Tmpv2 -g_Tmpv3)
- BN2(i,k,j) =g*(Tmpv2 -Tmpv3)
-
- ELSE
-
- g_Tmpv1 =((g_theta(i,k+1,j) -g_theta(i,k-1,j))*theta(i,k,j) -g_theta(i, &
- k,j)*(theta(i,k+1,j) -theta(i,k-1,j)))/(theta(i,k,j)*theta(i,k,j))
- Tmpv1 =(theta(i,k+1,j) -theta(i,k-1,j))/theta(i,k,j)
-
- g_Tmpv2 =(g_Tmpv1*tmpdz -g_tmpdz*Tmpv1)/(tmpdz*tmpdz)
- Tmpv2 =Tmpv1/tmpdz
-
- g_Tmpv3 =(1.61*(g_moist(i,k+1,j,P_QV) -g_moist(i,k-1,j,P_QV)) &
-*tmpdz -g_tmpdz*1.61*(moist(i,k+1,j,P_QV) -moist(i,k-1,j,P_QV)))/(tmpdz*tmpdz)
- Tmpv3 =1.61*(moist(i,k+1,j,P_QV) -moist(i,k-1,j,P_QV))/tmpdz
-
- g_Tmpv4 =((g_tmp1(i,k+1,j) -g_tmp1(i,k-1,j))*tmpdz -g_tmpdz*(tmp1(i,k+1, &
- j) -tmp1(i,k-1,j)))/(tmpdz*tmpdz)
- Tmpv4 =(tmp1(i,k+1,j) -tmp1(i,k-1,j))/tmpdz
-
- g_BN2(i,k,j) =g*(g_Tmpv2 +g_Tmpv3 -g_Tmpv4)
- BN2(i,k,j) =g*(Tmpv2 +Tmpv3 -Tmpv4)
-
- ENDIF
- ENDDO
- ENDDO
- ENDDO
-
- k =kts
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_tmpdz =-1.0*g_rdz(i,k+1,j)/(rdz(i,k+1,j)*rdz(i,k+1,j)) +(-0.5*g_rdzw(i,k, &
- j)/(rdzw(i,k,j)*rdzw(i,k,j)))
- tmpdz =1.0/rdz(i,k+1,j) +0.5/rdzw(i,k,j)
-
- g_Tmpv1 =(g_T8w(i,kts,j)*(p8w(i,k,j)/p1000mb)**(R_d/Cp) -(R_d/Cp) &
-*(g_p8w(i,k,j)/p1000mb)*(p8w(i,k,j)/p1000mb)**((R_d/Cp) -1.0)*T8w(i,kts,j)) &
-/((p8w(i,k,j)/p1000mb)**(R_d/Cp)*(p8w(i,k,j)/p1000mb)**(R_d/Cp))
- Tmpv1 =T8w(i,kts,j)/(p8w(i,k,j)/p1000mb)**(R_d/Cp)
-
- g_thetasfc =g_Tmpv1
- thetasfc =Tmpv1
-
- IF( moist(i,k,j,P_QV) .GE. qvs(i,k,j) .OR. qctmp(i,k,j) .GE. qc_cr) THEN
-
- g_qvsfc =cf1*g_qvs(i,1,j) +cf2*g_qvs(i,2,j) +cf3*g_qvs(i,3,j)
- qvsfc =cf1*qvs(i,1,j) +cf2*qvs(i,2,j) +cf3*qvs(i,3,j)
-
- g_xlvqv =XLV*g_moist(i,k,j,P_QV)
- xlvqv =XLV*moist(i,k,j,P_QV)
-
- g_Tmpv1 =((g_xlvqv/R_d)*t(i,k,j) -g_t(i,k,j)*xlvqv/R_d)/(t(i,k,j)*t(i,k,j))
- Tmpv1 =xlvqv/R_d/t(i,k,j)
-
- g_Tmpv2 =(((XLV*g_xlvqv/Cp)/R_v)*t(i,k,j) -g_t(i,k,j)*XLV*xlvqv/Cp/R_v) &
-/(t(i,k,j)*t(i,k,j))
- Tmpv2 =XLV*xlvqv/Cp/R_v/t(i,k,j)
-
- g_Tmpv3 =(g_Tmpv2*t(i,k,j) -g_t(i,k,j)*Tmpv2)/(t(i,k,j)*t(i,k,j))
- Tmpv3 =Tmpv2/t(i,k,j)
-
- g_Tmpv4 =((g_Tmpv1)*(1.0 +Tmpv3) -(g_Tmpv3)*(1.0 +Tmpv1))/((1.0 +Tmpv3) &
-*(1.0 +Tmpv3))
- Tmpv4 =(1.0 +Tmpv1)/(1.0 +Tmpv3)
-
- g_Tmpv5 =(g_Tmpv4*theta(i,k,j) -g_theta(i,k,j)*Tmpv4)/(theta(i,k,j)*theta(i,k,j))
- Tmpv5 =Tmpv4/theta(i,k,j)
-
- g_coefa =g_Tmpv5
- coefa =Tmpv5
-
- g_Tmpv1 =((XLV*g_qvs(i,k+1,j)/Cp)*t(i,k+1,j) -g_t(i,k+1,j)*XLV*qvs(i,k+1,j) &
-/Cp)/(t(i,k+1,j)*t(i,k+1,j))
- Tmpv1 =XLV*qvs(i,k+1,j)/Cp/t(i,k+1,j)
-
- g_Tmpv2 =theta(i,k+1,j)*(g_Tmpv1) +g_theta(i,k+1,j)*(1.0 +Tmpv1)
- Tmpv2 =theta(i,k+1,j)*(1.0 +Tmpv1)
-
- g_thetaep1 =g_Tmpv2
- thetaep1 =Tmpv2
-
- g_Tmpv1 =((XLV*g_qvsfc/Cp)*t8w(i,kts,j) -g_t8w(i,kts,j)*XLV*qvsfc/Cp) &
-/(t8w(i,kts,j)*t8w(i,kts,j))
- Tmpv1 =XLV*qvsfc/Cp/t8w(i,kts,j)
-
- g_Tmpv2 =thetasfc*(g_Tmpv1) +g_thetasfc*(1.0 +Tmpv1)
- Tmpv2 =thetasfc*(1.0 +Tmpv1)
-
- g_thetaesfc =g_Tmpv2
- thetaesfc =Tmpv2
-
- g_Tmpv1 =coefa*(g_thetaep1 -g_thetaesfc) +g_coefa*(thetaep1 -thetaesfc)
- Tmpv1 =coefa*(thetaep1 -thetaesfc)
-
- g_Tmpv2 =(g_Tmpv1*tmpdz -g_tmpdz*Tmpv1)/(tmpdz*tmpdz)
- Tmpv2 =Tmpv1/tmpdz
-
- g_Tmpv3 =((g_tmp1(i,k+1,j) -g_tmp1sfc(i,j))*tmpdz -g_tmpdz*(tmp1(i,k+1, &
- j) -tmp1sfc(i,j)))/(tmpdz*tmpdz)
- Tmpv3 =(tmp1(i,k+1,j) -tmp1sfc(i,j))/tmpdz
-
- g_BN2(i,k,j) =g*(g_Tmpv2 -g_Tmpv3)
- BN2(i,k,j) =g*(Tmpv2 -Tmpv3)
-
- ELSE
-
- g_qvsfc =cf1*g_moist(i,1,j,P_QV) +cf2*g_moist(i,2,j,P_QV) +cf3*g_moist(i, &
- 3,j,P_QV)
- qvsfc =cf1*moist(i,1,j,P_QV) +cf2*moist(i,2,j,P_QV) +cf3*moist(i,3,j,P_QV)
-
- g_tmpdz =-1.*g_rdzw(i,k,j)/(rdzw(i,k,j)*rdzw(i,k,j))
- tmpdz =1./rdzw(i,k,j)
-
- g_Tmpv1 =((g_theta(i,k+1,j) -g_theta(i,k,j))*theta(i,k,j) -g_theta(i,k, &
- j)*(theta(i,k+1,j) -theta(i,k,j)))/(theta(i,k,j)*theta(i,k,j))
- Tmpv1 =(theta(i,k+1,j) -theta(i,k,j))/theta(i,k,j)
-
- g_Tmpv2 =(g_Tmpv1*tmpdz -g_tmpdz*Tmpv1)/(tmpdz*tmpdz)
- Tmpv2 =Tmpv1/tmpdz
-
- g_Tmpv3 =(1.61*(g_moist(i,k+1,j,P_QV) -g_qvsfc)*tmpdz -g_tmpdz*1.61*( &
- moist(i,k+1,j,P_QV) -qvsfc))/(tmpdz*tmpdz)
- Tmpv3 =1.61*(moist(i,k+1,j,P_QV) -qvsfc)/tmpdz
-
- g_Tmpv4 =((g_tmp1(i,k+1,j) -g_tmp1sfc(i,j))*tmpdz -g_tmpdz*(tmp1(i,k+1, &
- j) -tmp1sfc(i,j)))/(tmpdz*tmpdz)
- Tmpv4 =(tmp1(i,k+1,j) -tmp1sfc(i,j))/tmpdz
-
- g_BN2(i,k,j) =g*(g_Tmpv2 +g_Tmpv3 -g_Tmpv4)
- BN2(i,k,j) =g*(Tmpv2 +Tmpv3 -Tmpv4)
-
- ENDIF
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_BN2(i,ktf,j) =g_BN2(i,ktf-1,j)
- BN2(i,ktf,j) =BN2(i,ktf-1,j)
-
- ENDDO
- ENDDO
-
- END SUBROUTINE g_calculate_N2
-
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of calculate_n2 in forward (tangent) mode:
+!   variations   of useful results: bn2
+!   with respect to varying inputs: p t t8w bn2 theta rdzw rdz
+!                moist p8w
+!   RW status of diff variables: p:in t:in t8w:in bn2:in-out theta:in
+!                rdzw:in rdz:in moist:in p8w:in
+SUBROUTINE G_CALCULATE_N2(config_flags, bn2, bn2d, moist, moistd, theta&
+&  , thetad, t, td, p, pd, p8w, p8wd, t8w, t8wd, dnw, dn, rdz, rdzd, rdzw&
+&  , rdzwd, n_moist, cf1, cf2, cf3, warm_rain, ids, ide, jds, jde, kds, &
+&  kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+! end of MARTA/WCS change
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: n_moist, ids, ide, jds, jde, kds, kde, ims, ime&
+&  , jms, jme, kms, kme, its, ite, jts, jte, kts, kte
+  LOGICAL, INTENT(IN) :: warm_rain
+  REAL, INTENT(IN) :: cf1, cf2, cf3
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: bn2
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: bn2d
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rdz, rdzw, &
+&  theta, t, p, p8w, t8w
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: rdzd, rdzwd&
+&  , thetad, td, pd, p8wd, t8wd
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: dnw, dn
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(INOUT) :: &
+&  moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(INOUT) :: &
+&  moistd
+! Local variables.
+  INTEGER :: i, j, k, ktf, ispe, ktes1, ktes2, i_start, i_end, j_start, &
+&  j_end
+  REAL :: coefa, thetaep1, thetaem1, qc_cr, es, tc, qlpqi, qsw, qsi, &
+&  tmpdz, xlvqv, thetaesfc, thetasfc, qvtop, qvsfc, thetatop, thetaetop
+  REAL :: coefad, thetaep1d, thetaem1d, esd, tcd, tmpdzd, xlvqvd, &
+&  thetaesfcd, thetasfcd, qvsfcd
+  REAL, DIMENSION(its:ite, jts:jte) :: tmp1sfc, tmp1top
+  REAL, DIMENSION(its:ite, jts:jte) :: tmp1sfcd
+  REAL, DIMENSION(its:ite, kts:kte, jts:jte) :: tmp1, qvs, qctmp
+  REAL, DIMENSION(its:ite, kts:kte, jts:jte) :: tmp1d, qvsd
+  REAL :: arg1
+  REAL :: arg1d
+  REAL :: pwx1
+  REAL :: pwx1d
+  REAL :: pwy1
+  REAL :: pwr1
+  REAL :: pwr1d
+! End declarations.
+!-----------------------------------------------------------------------
+! in Kg/Kg
+  qc_cr = 0.00001
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  ktes1 = kte - 1
+  ktes2 = kte - 2
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  IF ((config_flags%open_xs .OR. config_flags%specified) .OR. &
+&      config_flags%nested) THEN
+    IF (ids + 1 .LT. its) THEN
+      i_start = its
+    ELSE
+      i_start = ids + 1
+    END IF
+  END IF
+  IF ((config_flags%open_xe .OR. config_flags%specified) .OR. &
+&      config_flags%nested) THEN
+    IF (ide - 2 .GT. ite) THEN
+      i_end = ite
+    ELSE
+      i_end = ide - 2
+    END IF
+  END IF
+  IF ((config_flags%open_ys .OR. config_flags%specified) .OR. &
+&      config_flags%nested) THEN
+    IF (jds + 1 .LT. jts) THEN
+      j_start = jts
+    ELSE
+      j_start = jds + 1
+    END IF
+  END IF
+  IF ((config_flags%open_ye .OR. config_flags%specified) .OR. &
+&      config_flags%nested) THEN
+    IF (jde - 2 .GT. jte) THEN
+      j_end = jte
+    ELSE
+      j_end = jde - 2
+    END IF
+  END IF
+  IF (config_flags%periodic_x) i_start = its
+  IF (config_flags%periodic_x) THEN
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+  END IF
+  IF (p_qc .GT. param_first_scalar) THEN
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          qctmp(i, k, j) = moist(i, k, j, p_qc)
+        END DO
+      END DO
+    END DO
+  ELSE
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          qctmp(i, k, j) = 0.0
+        END DO
+      END DO
+    END DO
+  END IF
+  DO j=jts,jte
+    DO k=kts,kte
+      DO i=its,ite
+        tmp1d(i, k, j) = 0.0
+        tmp1(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+  DO j=jts,jte
+    DO i=its,ite
+      tmp1sfcd(i, j) = 0.0
+      tmp1sfc(i, j) = 0.0
+      tmp1top(i, j) = 0.0
+    END DO
+  END DO
+  tmp1d = 0.0
+  tmp1sfcd = 0.0
+  DO ispe=param_first_scalar,n_moist
+    IF ((ispe .EQ. p_qv .OR. ispe .EQ. p_qc) .OR. ispe .EQ. p_qi) THEN
+      DO j=j_start,j_end
+        DO k=kts,ktf
+          DO i=i_start,i_end
+            tmp1d(i, k, j) = tmp1d(i, k, j) + moistd(i, k, j, ispe)
+            tmp1(i, k, j) = tmp1(i, k, j) + moist(i, k, j, ispe)
+          END DO
+        END DO
+      END DO
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          tmp1sfcd(i, j) = tmp1sfcd(i, j) + cf1*moistd(i, 1, j, ispe) + &
+&            cf2*moistd(i, 2, j, ispe) + cf3*moistd(i, 3, j, ispe)
+          tmp1sfc(i, j) = tmp1sfc(i, j) + cf1*moist(i, 1, j, ispe) + cf2&
+&            *moist(i, 2, j, ispe) + cf3*moist(i, 3, j, ispe)
+          tmp1top(i, j) = tmp1top(i, j) + moist(i, ktes1, j, ispe) + (&
+&            moist(i, ktes1, j, ispe)-moist(i, ktes2, j, ispe))*0.5*dnw(&
+&            ktes1)/dn(ktes1)
+        END DO
+      END DO
+    END IF
+  END DO
+  qvsd = 0.0
+! Calculate saturation mixing ratio.
+  DO j=j_start,j_end
+    DO k=kts,ktf
+      DO i=i_start,i_end
+        tcd = td(i, k, j)
+        tc = t(i, k, j) - svpt0
+        arg1d = (svp2*tcd*(t(i, k, j)-svp3)-svp2*tc*td(i, k, j))/(t(i, k&
+&          , j)-svp3)**2
+        arg1 = svp2*tc/(t(i, k, j)-svp3)
+        esd = 1000.0*svp1*arg1d*EXP(arg1)
+        es = 1000.0*svp1*EXP(arg1)
+        qvsd(i, k, j) = (ep_2*esd*(p(i, k, j)-es)-ep_2*es*(pd(i, k, j)-&
+&          esd))/(p(i, k, j)-es)**2
+        qvs(i, k, j) = ep_2*es/(p(i, k, j)-es)
+      END DO
+    END DO
+  END DO
+  DO j=j_start,j_end
+    DO k=kts+1,ktf-1
+      DO i=i_start,i_end
+        tmpdzd = -(rdzd(i, k, j)/rdz(i, k, j)**2) - rdzd(i, k+1, j)/rdz(&
+&          i, k+1, j)**2
+        tmpdz = 1.0/rdz(i, k, j) + 1.0/rdz(i, k+1, j)
+        IF (moist(i, k, j, p_qv) .GE. qvs(i, k, j) .OR. qctmp(i, k, j) &
+&            .GE. qc_cr) THEN
+          xlvqvd = xlv*moistd(i, k, j, p_qv)
+          xlvqv = xlv*moist(i, k, j, p_qv)
+          coefad = (((xlvqvd*t(i, k, j)/r_d-xlvqv*td(i, k, j)/r_d)*(1.0+&
+&            xlv*xlvqv/cp/r_v/t(i, k, j)/t(i, k, j))/t(i, k, j)**2-(1.0+&
+&            xlvqv/r_d/t(i, k, j))*((xlv*xlvqvd*t(i, k, j)/(cp*r_v)-xlv*&
+&            xlvqv*td(i, k, j)/(cp*r_v))/t(i, k, j)-xlv*xlvqv*td(i, k, j)&
+&            /(cp*r_v*t(i, k, j)))/t(i, k, j)**2)*theta(i, k, j)/(1.0+xlv&
+&            *xlvqv/cp/r_v/t(i, k, j)/t(i, k, j))**2-(1.0+xlvqv/r_d/t(i, &
+&            k, j))*thetad(i, k, j)/(1.0+xlv*xlvqv/cp/r_v/t(i, k, j)/t(i&
+&            , k, j)))/theta(i, k, j)**2
+          coefa = (1.0+xlvqv/r_d/t(i, k, j))/(1.0+xlv*xlvqv/cp/r_v/t(i, &
+&            k, j)/t(i, k, j))/theta(i, k, j)
+          thetaep1d = thetad(i, k+1, j)*(1.0+xlv*qvs(i, k+1, j)/cp/t(i, &
+&            k+1, j)) + theta(i, k+1, j)*(xlv*qvsd(i, k+1, j)*t(i, k+1, j&
+&            )/cp-xlv*qvs(i, k+1, j)*td(i, k+1, j)/cp)/t(i, k+1, j)**2
+          thetaep1 = theta(i, k+1, j)*(1.0+xlv*qvs(i, k+1, j)/cp/t(i, k+&
+&            1, j))
+          thetaem1d = thetad(i, k-1, j)*(1.0+xlv*qvs(i, k-1, j)/cp/t(i, &
+&            k-1, j)) + theta(i, k-1, j)*(xlv*qvsd(i, k-1, j)*t(i, k-1, j&
+&            )/cp-xlv*qvs(i, k-1, j)*td(i, k-1, j)/cp)/t(i, k-1, j)**2
+          thetaem1 = theta(i, k-1, j)*(1.0+xlv*qvs(i, k-1, j)/cp/t(i, k-&
+&            1, j))
+          bn2d(i, k, j) = g*(((coefad*(thetaep1-thetaem1)+coefa*(&
+&            thetaep1d-thetaem1d))*tmpdz-coefa*(thetaep1-thetaem1)*tmpdzd&
+&            )/tmpdz**2-((tmp1d(i, k+1, j)-tmp1d(i, k-1, j))*tmpdz-(tmp1(&
+&            i, k+1, j)-tmp1(i, k-1, j))*tmpdzd)/tmpdz**2)
+          bn2(i, k, j) = g*(coefa*(thetaep1-thetaem1)/tmpdz-(tmp1(i, k+1&
+&            , j)-tmp1(i, k-1, j))/tmpdz)
+        ELSE
+          bn2d(i, k, j) = g*((((thetad(i, k+1, j)-thetad(i, k-1, j))*&
+&            theta(i, k, j)-(theta(i, k+1, j)-theta(i, k-1, j))*thetad(i&
+&            , k, j))*tmpdz/theta(i, k, j)**2-(theta(i, k+1, j)-theta(i, &
+&            k-1, j))*tmpdzd/theta(i, k, j))/tmpdz**2+(1.61*(moistd(i, k+&
+&            1, j, p_qv)-moistd(i, k-1, j, p_qv))*tmpdz-1.61*(moist(i, k+&
+&            1, j, p_qv)-moist(i, k-1, j, p_qv))*tmpdzd)/tmpdz**2-((tmp1d&
+&            (i, k+1, j)-tmp1d(i, k-1, j))*tmpdz-(tmp1(i, k+1, j)-tmp1(i&
+&            , k-1, j))*tmpdzd)/tmpdz**2)
+          bn2(i, k, j) = g*((theta(i, k+1, j)-theta(i, k-1, j))/theta(i&
+&            , k, j)/tmpdz+1.61*(moist(i, k+1, j, p_qv)-moist(i, k-1, j, &
+&            p_qv))/tmpdz-(tmp1(i, k+1, j)-tmp1(i, k-1, j))/tmpdz)
+        END IF
+      END DO
+    END DO
+  END DO
+  k = kts
+  DO j=j_start,j_end
+    DO i=i_start,i_end
+      tmpdzd = -(rdzd(i, k+1, j)/rdz(i, k+1, j)**2) - 0.5*rdzwd(i, k, j)&
+&        /rdzw(i, k, j)**2
+      tmpdz = 1.0/rdz(i, k+1, j) + 0.5/rdzw(i, k, j)
+      pwx1d = p8wd(i, k, j)/p1000mb
+      pwx1 = p8w(i, k, j)/p1000mb
+      pwy1 = r_d/cp
+      IF (pwx1 .GT. 0.0 .OR. (pwx1 .LT. 0.0 .AND. pwy1 .EQ. INT(pwy1))) &
+&      THEN
+        pwr1d = pwy1*pwx1**(pwy1-1)*pwx1d
+      ELSE IF (pwx1 .EQ. 0.0 .AND. pwy1 .EQ. 1.0) THEN
+        pwr1d = pwx1d
+      ELSE
+        pwr1d = 0.0
+      END IF
+      pwr1 = pwx1**pwy1
+      thetasfcd = (t8wd(i, kts, j)*pwr1-t8w(i, kts, j)*pwr1d)/pwr1**2
+      thetasfc = t8w(i, kts, j)/pwr1
+      IF (moist(i, k, j, p_qv) .GE. qvs(i, k, j) .OR. qctmp(i, k, j) &
+&          .GE. qc_cr) THEN
+        qvsfcd = cf1*qvsd(i, 1, j) + cf2*qvsd(i, 2, j) + cf3*qvsd(i, 3, &
+&          j)
+        qvsfc = cf1*qvs(i, 1, j) + cf2*qvs(i, 2, j) + cf3*qvs(i, 3, j)
+        xlvqvd = xlv*moistd(i, k, j, p_qv)
+        xlvqv = xlv*moist(i, k, j, p_qv)
+        coefad = (((xlvqvd*t(i, k, j)/r_d-xlvqv*td(i, k, j)/r_d)*(1.0+&
+&          xlv*xlvqv/cp/r_v/t(i, k, j)/t(i, k, j))/t(i, k, j)**2-(1.0+&
+&          xlvqv/r_d/t(i, k, j))*((xlv*xlvqvd*t(i, k, j)/(cp*r_v)-xlv*&
+&          xlvqv*td(i, k, j)/(cp*r_v))/t(i, k, j)-xlv*xlvqv*td(i, k, j)/(&
+&          cp*r_v*t(i, k, j)))/t(i, k, j)**2)*theta(i, k, j)/(1.0+xlv*&
+&          xlvqv/cp/r_v/t(i, k, j)/t(i, k, j))**2-(1.0+xlvqv/r_d/t(i, k, &
+&          j))*thetad(i, k, j)/(1.0+xlv*xlvqv/cp/r_v/t(i, k, j)/t(i, k, j&
+&          )))/theta(i, k, j)**2
+        coefa = (1.0+xlvqv/r_d/t(i, k, j))/(1.0+xlv*xlvqv/cp/r_v/t(i, k&
+&          , j)/t(i, k, j))/theta(i, k, j)
+        thetaep1d = thetad(i, k+1, j)*(1.0+xlv*qvs(i, k+1, j)/cp/t(i, k+&
+&          1, j)) + theta(i, k+1, j)*(xlv*qvsd(i, k+1, j)*t(i, k+1, j)/cp&
+&          -xlv*qvs(i, k+1, j)*td(i, k+1, j)/cp)/t(i, k+1, j)**2
+        thetaep1 = theta(i, k+1, j)*(1.0+xlv*qvs(i, k+1, j)/cp/t(i, k+1&
+&          , j))
+        thetaesfcd = thetasfcd*(1.0+xlv*qvsfc/cp/t8w(i, kts, j)) + &
+&          thetasfc*(xlv*qvsfcd*t8w(i, kts, j)/cp-xlv*qvsfc*t8wd(i, kts, &
+&          j)/cp)/t8w(i, kts, j)**2
+        thetaesfc = thetasfc*(1.0+xlv*qvsfc/cp/t8w(i, kts, j))
+        bn2d(i, k, j) = g*(((coefad*(thetaep1-thetaesfc)+coefa*(&
+&          thetaep1d-thetaesfcd))*tmpdz-coefa*(thetaep1-thetaesfc)*tmpdzd&
+&          )/tmpdz**2-((tmp1d(i, k+1, j)-tmp1sfcd(i, j))*tmpdz-(tmp1(i, k&
+&          +1, j)-tmp1sfc(i, j))*tmpdzd)/tmpdz**2)
+        bn2(i, k, j) = g*(coefa*(thetaep1-thetaesfc)/tmpdz-(tmp1(i, k+1&
+&          , j)-tmp1sfc(i, j))/tmpdz)
+      ELSE
+        qvsfcd = cf1*moistd(i, 1, j, p_qv) + cf2*moistd(i, 2, j, p_qv) +&
+&          cf3*moistd(i, 3, j, p_qv)
+        qvsfc = cf1*moist(i, 1, j, p_qv) + cf2*moist(i, 2, j, p_qv) + &
+&          cf3*moist(i, 3, j, p_qv)
+!        BN2(i,k,j) = g * ( ( theta(i,k+1,j) - thetasfc ) /  &
+!                     theta(i,k,j) / tmpdz +  &
+!                     1.61 * ( moist(i,k+1,j,P_QV) - qvsfc ) /  &
+!                     tmpdz -  &
+!                     ( tmp1(i,k+1,j) - tmp1sfc(i,j) ) / tmpdz  )
+!...... MARTA: change in computation of BN2 at the surface, WCS 040331
+! controlare come calcola rdzw
+        tmpdzd = -(rdzwd(i, k, j)/rdzw(i, k, j)**2)
+        tmpdz = 1./rdzw(i, k, j)
+        bn2d(i, k, j) = g*((((thetad(i, k+1, j)-thetad(i, k, j))*theta(i&
+&          , k, j)-(theta(i, k+1, j)-theta(i, k, j))*thetad(i, k, j))*&
+&          tmpdz/theta(i, k, j)**2-(theta(i, k+1, j)-theta(i, k, j))*&
+&          tmpdzd/theta(i, k, j))/tmpdz**2+(1.61*(moistd(i, k+1, j, p_qv)&
+&          -qvsfcd)*tmpdz-1.61*(moist(i, k+1, j, p_qv)-qvsfc)*tmpdzd)/&
+&          tmpdz**2-((tmp1d(i, k+1, j)-tmp1sfcd(i, j))*tmpdz-(tmp1(i, k+1&
+&          , j)-tmp1sfc(i, j))*tmpdzd)/tmpdz**2)
+        bn2(i, k, j) = g*((theta(i, k+1, j)-theta(i, k, j))/theta(i, k, &
+&          j)/tmpdz+1.61*(moist(i, k+1, j, p_qv)-qvsfc)/tmpdz-(tmp1(i, k+&
+&          1, j)-tmp1sfc(i, j))/tmpdz)
+! end of MARTA/WCS change
+      END IF
+    END DO
+  END DO
+!...... MARTA: change in computation of BN2 at the top, WCS 040331
+  DO j=j_start,j_end
+    DO i=i_start,i_end
+      bn2d(i, ktf, j) = bn2d(i, ktf-1, j)
+      bn2(i, ktf, j) = bn2(i, ktf-1, j)
+    END DO
+  END DO
+END SUBROUTINE G_CALCULATE_N2
 
  SUBROUTINE g_isotropic_km(config_flags,xkmh,g_xkmh,xkmv,g_xkmv,xkhh, &
  g_xkhh,xkhv,g_xkhv,khdif,kvdif,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme, &

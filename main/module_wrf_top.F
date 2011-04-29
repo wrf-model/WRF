@@ -692,6 +692,7 @@ ENDIF
       head_grid%rqvblten = 0.0
    ENDIF
    IF ( config_flags%mp_physics .EQ. LSCONDSCHEME ) THEN
+      head_grid%h_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF

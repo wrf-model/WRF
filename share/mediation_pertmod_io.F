@@ -42,8 +42,8 @@ SUBROUTINE adtl_initialize
 
    ! 3D variables: a_u, a_v, a_w, a_t, a_ph
    bytes_ad_forcing = n3d*5
-   ! 2D variables: a_mu
-   bytes_ad_forcing = bytes_ad_forcing + n2d
+   ! 2D variables: a_mu, a_rainnc, a_rainncv
+   bytes_ad_forcing = bytes_ad_forcing + 3*n2d
    ! Moist variables
    DO i = PARAM_FIRST_SCALAR, num_moist
       bytes_ad_forcing = bytes_ad_forcing + n3d
@@ -481,6 +481,8 @@ SUBROUTINE packup_ad_forcing (data)
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_t_2, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_ph_2, (/n3d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_mu_2, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_rainnc, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_rainncv, (/n2d/))
 
    DO i = PARAM_FIRST_SCALAR, num_moist
       ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_moist(:,:,:,i), (/n3d/))
@@ -508,6 +510,8 @@ SUBROUTINE restore_ad_forcing (data)
    ns =    ne+1 ; ne = ne+n3d ; head_grid%g_t_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%g_ph_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%g_mu_2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%g_rainnc = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%g_rainncv = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
 
    DO i = PARAM_FIRST_SCALAR, num_moist
       ns =    ne+1 ; ne = ne+n3d ; head_grid%g_moist(:,:,:,i) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
@@ -960,7 +964,6 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%a_moist = grid%a_moist + grid%g_moist
    grid%a_rainnc = grid%a_rainnc + grid%g_rainnc
    grid%a_rainncv = grid%a_rainncv + grid%g_rainncv
-   grid%a_h_diabatic = grid%a_h_diabatic + grid%g_h_diabatic
 
    ! Reset forcings for ZERO
    grid%g_u_2  = 0.0
@@ -972,7 +975,6 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%g_moist = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
-   grid%g_h_diabatic = 0.0
 
 END SUBROUTINE add_forcing_to_ad
 

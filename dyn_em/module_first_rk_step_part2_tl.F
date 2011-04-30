@@ -652,7 +652,7 @@ BENCH_START(tl_update_phy_ten_tim)
            ENDDO
          ENDIF
 #endif
-         CALL g_update_phy_ten(ph_tendf,t_tendf, t_tendf, ru_tendf, g_ru_tendf,      &
+         CALL g_update_phy_ten(ph_tendf,t_tendf, g_t_tendf, ru_tendf, g_ru_tendf,      &
                            rv_tendf,g_rv_tendf,moist_tend,g_moist_tend,    &
                            scalar_tend, mu_tendf,                           &
                            grid%rthraten,grid%rthblten,grid%g_rthblten,       &

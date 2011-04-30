@@ -10910,9 +10910,10 @@ if (config_flags % sw_call_rk_tendency) then
      CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
      CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
 
-#ifdef DM_PARALLEL
-#    include "HALO_EM_AD_RK_TEND0.inc"
-#endif
+! comment out as it might allocate huge memory sometimes, needs investigation
+!#ifdef DM_PARALLEL
+!#    include "HALO_EM_AD_RK_TEND0.inc"
+!#endif
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij ) &
      DO ij = grid%num_tiles,1,-1
@@ -11178,7 +11179,7 @@ else
                         grid%rqicuten, grid%a_rqicuten, grid%rqscuten, grid%a_rqscuten,                    &
                         grid%rushten,  grid%a_rushten, grid%rvshten,  grid%a_rvshten, grid%rthshten, grid%a_rthshten,    &
                         grid%rqvshten, grid%a_rqvshten, grid%rqcshten, grid%a_rqcshten, grid%rqrshten, grid%a_rqrshten,    &
-                        grid%rqishten, grid%g_rqishten, grid%rqsshten, grid%a_rqsshten, grid%rqgshten, grid%a_rqgshten,    &
+                        grid%rqishten, grid%a_rqishten, grid%rqsshten, grid%a_rqsshten, grid%rqgshten, grid%a_rqgshten,    &
                         grid%rthften,  grid%a_rthften, grid%rqvften, grid%a_rqvften,                    &
                         grid%RUNDGDTEN, grid%a_RUNDGDTEN, grid%RVNDGDTEN, grid%a_RVNDGDTEN, grid%RTHNDGDTEN, grid%a_RTHNDGDTEN, &
                         grid%RPHNDGDTEN,grid%a_RPHNDGDTEN,grid%RQVNDGDTEN, grid%a_RQVNDGDTEN,grid%RMUNDGDTEN,&

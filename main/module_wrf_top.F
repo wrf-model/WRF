@@ -696,6 +696,12 @@ ENDIF
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF
+   IF ( config_flags%cu_physics .EQ. DUCUSCHEME ) THEN
+      head_grid%rthcuten = 0.0
+      head_grid%rqvcuten = 0.0
+      head_grid%rainc = 0.0
+      head_grid%raincv = 0.0
+   ENDIF
 
    IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
    head_grid%itimestep = 0
@@ -854,8 +860,15 @@ ENDIF
       head_grid%rqvblten = 0.0
    ENDIF
    IF ( config_flags%mp_physics .EQ. LSCONDSCHEME ) THEN
+      head_grid%h_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
+   ENDIF
+   IF ( config_flags%cu_physics .EQ. DUCUSCHEME ) THEN
+      head_grid%rthcuten = 0.0
+      head_grid%rqvcuten = 0.0
+      head_grid%rainc = 0.0
+      head_grid%raincv = 0.0
    ENDIF
 #endif
    CALL integrate ( head_grid )

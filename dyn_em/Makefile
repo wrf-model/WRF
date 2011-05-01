@@ -472,7 +472,7 @@ solve_em_tl.o:  module_small_step_em.o \
 		../phys/module_microphysics_driver_tl.o \
 		../phys/module_microphysics_zero_out.o \
 		../phys/module_microphysics_zero_out_tl.o \
-		../phys/module_physics_addtendc.o
+		../phys/module_physics_addtendc_tl.o
 
 solve_em_ad.o:  module_small_step_em.o 		\
 		module_small_step_em_ad.o       \
@@ -506,7 +506,8 @@ solve_em_ad.o:  module_small_step_em.o 		\
 		../phys/module_microphysics_driver_ad.o \
 		../phys/module_microphysics_zero_out.o \
 		../phys/module_microphysics_zero_out_ad.o \
-		../phys/module_physics_addtendc.o
+		../phys/module_physics_addtendc.o \
+		../phys/module_physics_addtendc_ad.o
 
 module_first_rk_step_part1.o : \
                 module_force_scm.o \
@@ -526,17 +527,15 @@ module_first_rk_step_part1_tl.o : \
 		module_big_step_utilities_em.o \
                 module_convtrans_prep.o \
                 module_em_tl.o \
-		../phys/module_radiation_driver.o \
-		../phys/module_surface_driver.o \
-		../phys/module_cumulus_driver.o \
+		../phys/module_cumulus_driver_tl.o \
 		../phys/module_pbl_driver_tl.o \
-		../frame/module_comm_dm.o \
-		../phys/module_fddagd_driver.o
+		../frame/module_comm_dm.o
 
 module_first_rk_step_part1_ad.o : \
 		module_big_step_utilities_em.o \
 		module_big_step_utilities_em_ad.o \
                 module_em_ad.o \
+		../phys/module_cumulus_driver_ad.o \
 		../phys/module_pbl_driver_ad.o
 
 module_first_rk_step_part2.o : \

@@ -69,7 +69,7 @@
  sf_surface_physics                  = 1,     1,     1,
  bl_pbl_physics                      = 98,     1,     1,
  bldt                                = 0,     0,     0,
- cu_physics                          = 0,     1,     0,
+ cu_physics                          = 98,     1,     0,
  cudt                                = 5,     5,     5,
  isfflx                              = 1,
  ifsnow                              = 0,

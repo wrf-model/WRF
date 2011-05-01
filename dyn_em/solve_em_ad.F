@@ -59,6 +59,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    USE module_bc_em
    USE module_solvedebug_em
    USE module_physics_addtendc
+   USE a_module_physics_addtendc
    USE module_diffusion_em
    USE module_polarfft
    USE module_microphysics_driver
@@ -955,8 +956,8 @@ if (config_flags % sw_call_first_rk_step_part2) then
        ENDIF
 #endif
 
-       CALL push4backup (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,&
-                         "rublten,rvblten,rthblten,rqvblten") 
+       CALL push4backup (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,grid%rthcuten,grid%rqvcuten,&
+                         "rublten,rvblten,rthblten,rqvblten,rthcuten,rqvcuten") 
 
        CALL first_rk_step_part2 (    grid, config_flags         &
                              , moist , moist_tend               &
@@ -7737,12 +7738,14 @@ if (config_flags % sw_call_advance_ppt) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_advance_ppt ' )
 #endif
 
-!!!!! REPLACE WITH a_advance_ppt WHEN CONSTRUCTING AD OF PHYSICS. Ning Pan
-     CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
-                      grid%rqicuten,grid%rqscuten,           &
-                      grid%rainc,grid%raincv,grid%rainsh,grid%pratec,grid%pratesh, &
-                      grid%nca,grid%htop,grid%hbot,grid%cutop,grid%cubot,  &
-                      grid%cuppt, grid%dt, config_flags,                   &
+     CALL a_advance_ppt(grid%rthcuten,grid%a_rthcuten,grid%rqvcuten,grid%a_rqvcuten, &
+                      grid%rqccuten,grid%a_rqccuten,grid%rqrcuten,grid%a_rqrcuten, &
+                      grid%rqicuten,grid%a_rqicuten,grid%rqscuten,grid%a_rqscuten, &
+                      grid%rainc,grid%a_rainc,grid%raincv,grid%rainsh,grid%a_rainsh,&
+                      grid%pratec,grid%a_pratec,grid%pratesh,grid%a_pratesh, &
+                      grid%nca,grid%a_nca,grid%htop,grid%a_htop,grid%hbot,grid%a_hbot,&
+                      grid%cutop,grid%a_cutop,grid%cubot,grid%a_cubot,  &
+                      grid%cuppt, grid%a_cuppt, grid%dt, config_flags,                &
                       ids,ide, jds,jde, kds,kde,             &
                       ims,ime, jms,jme, kms,kme,             &
                       grid%i_start(ij), grid%i_end(ij),      &
@@ -11067,8 +11070,8 @@ if (config_flags % sw_call_first_rk_step_part2) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call a_first_rk_step_part2 ' )
 #endif
 
-       CALL pop2restore (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,&
-                         "rublten,rvblten,rthblten,rqvblten") 
+       CALL pop2restore (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,grid%rthcuten,grid%rqvcuten,&
+                         "rublten,rvblten,rthblten,rqvblten,rthcuten,rqvcuten") 
        CALL a_first_rk_step_part2 (   grid , config_flags   &
               , moist ,a_moist , moist_tend ,a_moist_tend   &
 !!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20

@@ -656,11 +656,11 @@ BENCH_START(tl_update_phy_ten_tim)
                            rv_tendf,g_rv_tendf,moist_tend,g_moist_tend,    &
                            scalar_tend, mu_tendf,                           &
                            grid%rthraten,grid%rthblten,grid%g_rthblten,       &
-                           grid%rthcuten,grid%rthshten, &
+                           grid%rthcuten,grid%g_rthcuten,grid%rthshten, &
                            grid%rublten,grid%g_rublten,grid%rucuten,grid%rushten,          &
                            grid%rvblten,grid%g_rvblten,grid%rvcuten,grid%rvshten,          &
                            grid%rqvblten,grid%g_rqvblten,grid%rqcblten,grid%rqiblten,       &
-                           grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
+                           grid%rqvcuten,grid%g_rqvcuten,grid%rqccuten,grid%rqrcuten,       &
                            grid%rqicuten,grid%rqscuten,                     &
                            grid%rqvshten,grid%rqcshten,grid%rqrshten,       &
                            grid%rqishten,grid%rqsshten,grid%rqgshten,       &

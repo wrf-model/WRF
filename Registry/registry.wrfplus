@@ -242,6 +242,18 @@ state    real   g_rainnc         ij      misc        1         -      rhdu     "
 state    real   a_rainnc         ij      misc        1         -      rhdu     "A_RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"
 state    real   g_rainncv        ij      misc        1         -      r        "G_RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 state    real   a_rainncv        ij      misc        1         -      r        "A_RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
+state    real   g_PRATEC         ij      misc        1         -      r        "G_PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
+state    real   a_PRATEC         ij      misc        1         -      r        "A_PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
+state    real   g_PRATESH        ij      misc        1         -      r        "G_PRATESH"               "PRECIP RATE FROM SHALLOW CUMULUS SCHEME"                 "mm s-1"
+state    real   a_PRATESH        ij      misc        1         -      r        "A_PRATESH"               "PRECIP RATE FROM SHALLOW CUMULUS SCHEME"                 "mm s-1"
+state    real   g_RAINC          ij      misc        1         -      rhdu     "G_RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"
+state    real   a_RAINC          ij      misc        1         -      rhdu     "A_RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"
+state    real   g_RAINCV         ij      misc        1         -      r        "G_RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real   a_RAINCV         ij      misc        1         -      r        "A_RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real   g_RAINSH         ij      misc        1         -      rhdu     "G_RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
+state    real   a_RAINSH         ij      misc        1         -      rhdu     "A_RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
+state    real   g_NCA            ij      misc        1         -      r        "G_NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""
+state    real   a_NCA            ij      misc        1         -      r        "A_NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""
 
 # Pressure and Density
 state    real   a_p              ikj     dyn_em      1         -      irh       "a_p"           "perturbation pressure"         "Pa"
@@ -561,6 +573,19 @@ state   real  a_advh_qv       ikjf      a_advh_t      1         -     -         
 
 state   real  -               ikjf      a_advz_t      1         -     -         -
 state   real  a_advz_qv       ikjf      a_advz_t      1         -     -         "a_advz_qv"    "ACCUMULATED VERTICAL TENDENCY FOR WATER VAPOR"          "kg kg-1"
+
+# gfdl (eta) radiation State Variables
+state    real    g_HTOP            ij     misc        1         -      r        "g_HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    a_HTOP            ij     misc        1         -      r        "a_HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    g_HBOT            ij     misc        1         -      r        "g_HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    a_HBOT            ij     misc        1         -      r        "a_HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    g_CUTOP           ij     misc        1         -      r        "g_CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    a_CUTOP           ij     misc        1         -      r        "a_CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    g_CUBOT           ij     misc        1         -      r        "g_CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    a_CUBOT           ij     misc        1         -      r        "a_CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    REAL    g_CUPPT           ij     misc        1         -      r        "g_CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
+state    REAL    a_CUPPT           ij     misc        1         -      r        "a_CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations

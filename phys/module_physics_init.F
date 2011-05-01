@@ -2078,7 +2078,7 @@ integer myproc
 
      CASE (DUCUSCHEME)
           CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
-                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,      &
+                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &
                       SVP1,SVP2,SVP3,SVPT0,                       &
                       PARAM_FIRST_SCALAR,restart,                 &
                       allowed_to_read ,                           &

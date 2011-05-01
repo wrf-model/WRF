@@ -57,6 +57,7 @@ use module_scalar_tables
     USE a_module_em, ONLY : a_init_zero_tendency
     USE a_module_big_step_utilities_em, ONLY : a_phy_prep
     USE a_module_pbl_driver, ONLY : a_pbl_driver
+    USE a_module_cumulus_driver, ONLY : a_cumulus_driver
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
@@ -218,6 +219,104 @@ BENCH_END(phy_prep_tim)
 
 
 !  Adjoint part begin
+
+! cumulus para.
+
+      CALL wrf_debug ( 200 , ' call a_cumulus_driver' )
+
+BENCH_START(a_cu_driver_tim)
+      CALL a_cumulus_driver(grid                                             &
+                 ! Prognostic variables
+     &             ,U=u_phy, V=v_phy, TH=th_phy, a_TH=a_th_phy, T=grid%t_phy, a_T=grid%a_t_phy  &
+     &             ,W=grid%w_2, P=grid%p_hyd, a_P=grid%a_p_hyd, PI=pi_phy, RHO=rho, a_RHO=a_rho &
+                 ! Other arguments
+     &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
+     &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
+     &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
+     &                         ,a_RAINCV=grid%a_raincv   ,a_PRATEC=grid%a_pratec       &
+     &             ,NCA=grid%nca                                                       &
+     &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl         &
+     &             ,a_HTOP=grid%a_cutop     ,a_HBOT=grid%a_cubot                       &
+     &             ,Z=grid%z ,Z_AT_W=grid%z_at_w ,MAVAIL=grid%mavail ,PBLH=grid%pblh   &
+     &             ,DZ8W=dz8w     ,P8W=grid%p_hyd_w, PSFC=grid%psfc, TSK=grid%tsk      &
+     &             ,a_Z=grid%a_z, a_DZ8W=a_dz8w                                        &
+     &             ,TKE_PBL=grid%tke_pbl, UST=grid%ust                                 &
+     &             ,W0AVG=grid%w0avg   ,STEPCU=grid%stepcu                             &
+     &             ,CLDEFI=grid%cldefi ,LOWLYR=grid%lowlyr ,XLAND=grid%xland           &
+     &             ,APR_GR=grid%apr_gr ,APR_W=grid%apr_w   ,APR_MC=grid%apr_mc         &
+     &             ,APR_ST=grid%apr_st ,APR_AS=grid%apr_as ,APR_CAPMA=grid%apr_capma   &
+     &             ,APR_CAPME=grid%apr_capme          ,APR_CAPMI=grid%apr_capmi     &
+     &             ,MASS_FLUX=grid%mass_flux          ,XF_ENS=grid%xf_ens           &
+     &             ,PR_ENS=grid%pr_ens ,HT=grid%ht,EDT_OUT=grid%edt_out             &
+     &             ,imomentum=grid%imomentum,clos_choice=grid%clos_choice           &
+     &             ,ishallow=config_flags%ishallow                                  &
+     &             ,cugd_tten=grid%cugd_tten,cugd_qvten=grid%cugd_qvten,cugd_qcten=grid%cugd_qcten   &
+     &             ,cugd_ttens=grid%cugd_ttens,cugd_qvtens=grid%cugd_qvtens   &
+     &             ,ENSDIM=config_flags%ensdim ,MAXIENS=config_flags%maxiens ,MAXENS=config_flags%maxens         &
+     &             ,MAXENS2=config_flags%maxens2 ,MAXENS3=config_flags%maxens3       &
+     &             ,CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=grid%warm_rain   &
+     &             ,HFX=grid%hfx, QFX=grid%qfx                            &
+     &             ,CLDFRA=grid%cldfra, TPERT2D=grid%tpert2d              &
+     &             ,GSW=grid%gsw,cugd_avedx=config_flags%cugd_avedx       &
+     &             ,k22_shallow=grid%k22_shallow,kbcon_shallow=grid%kbcon_shallow &
+     &             ,ktop_shallow=grid%ktop_shallow,xmb_shallow=grid%xmb_shallow   &
+     &             ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
+     &             ,PERIODIC_Y=config_flags%periodic_y                    &
+                 ! Zhang-McFarlane outputs
+     &             ,CAPE=grid%cape ,ZMMU=grid%zmmu ,ZMMD=grid%zmmd        &
+     &             ,ZMDT=grid%zmdt ,ZMDQ=grid%zmdq                        &
+     &             ,DLF=grid%dlf, RLIQ=grid%rliq                          &
+     &             ,PCONVB=grid%pconvb, PCONVT=grid%pconvt                &
+     &             ,EVAPTZM=grid%evaptzm, FZSNTZM=grid%fzsntzm, EVSNTZM=grid%evsntzm     &
+     &             ,EVAPQZM=grid%evapqzm, ZMFLXPRC=grid%zmflxprc          &
+     &             ,ZMFLXSNW=grid%zmflxsnw, ZMNTPRPD=grid%zmntprpd        &
+     &             ,ZMNTSNPD=grid%zmntsnpd, ZMEIHEAT=grid%zmeiheat        &
+     &             ,CMFMC=grid%cmfmc, CMFMCDZM=grid%cmfmcdzm              &
+     &             ,PRECCDZM=grid%preccdzm, PRECZ=grid%precz              &
+     &             ,ZMMTU=grid%zmmtu, ZMMTV=grid%zmmtv  &
+     &             ,ZMUPGU=grid%zmupgu, ZMUPGD=grid%zmupgd                &
+     &             ,ZMVPGU=grid%zmvpgu, ZMVPGD=grid%zmvpgd                &
+     &             ,ZMICUU=grid%zmicuu, ZMICUD=grid%zmicud                &
+     &             ,ZMICVU=grid%zmicvu, ZMICVD=grid%zmicvd                &
+     &             ,ZMDICE=grid%zmdice, ZMDLIQ=grid%zmdliq                &
+                 ! Selection flag
+     &             ,CU_PHYSICS=config_flags%cu_physics                    &
+     &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
+     &             ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics      &
+     &             ,KFETA_TRIGGER=config_flags%kfeta_trigger              &
+                 ! Dimension arguments
+     &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+     &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+     &             ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
+     &             ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+     &             ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+     &             ,KTS=k_start, KTE=min(k_end,kde-1)                     &
+     &             ,NUM_TILES=grid%num_tiles                              &
+                 ! Moisture tendency arguments
+     &             ,RQVCUTEN=grid%rqvcuten , RQCCUTEN=grid%rqccuten       &
+     &             ,a_RQVCUTEN=grid%a_rqvcuten                            &
+     &             ,RQSCUTEN=grid%rqscuten , RQICUTEN=grid%rqicuten       &
+     &             ,RQRCUTEN=grid%rqrcuten                                &
+     &             ,RQVBLTEN=grid%rqvblten , RQVFTEN=grid%rqvften         &
+                 ! Other tendency arguments
+     &             ,RTHRATEN=grid%rthraten , RTHBLTEN=grid%rthblten       &
+     &             ,RUCUTEN=grid%rucuten   , RVCUTEN=grid%rvcuten         &
+     &             ,RTHCUTEN=grid%rthcuten , RTHFTEN=grid%rthften         &
+     &             ,a_RTHCUTEN=grid%a_rthcuten                            &
+                 ! Moisture tracer arguments
+     &             ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV            &
+     &             ,a_QV_CURR=a_moist(ims,kms,jms,P_QV)                   &
+     &             ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC            &
+     &             ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR            &
+     &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &
+     &             ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS            &
+     &             ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG            &
+! Variables for Tiedtke and NSAS schemes
+     &             ,ZNU=grid%znu                                          &
+     &             ,MP_PHYSICS=config_flags%mp_physics                    &
+     &             ,cfu1=grid%cfu1,cfd1=grid%cfd1,dfu1=grid%dfu1,efu1=grid%efu1,dfd1=grid%dfd1,efd1=grid%efd1,f_flux=l_flux)
+BENCH_END(a_cu_driver_tim)
+!
 
 !*********
 ! pbl

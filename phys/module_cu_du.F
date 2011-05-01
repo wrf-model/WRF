@@ -115,7 +115,6 @@ CONTAINS
 
    INTEGER :: i,j,k,i_start,i_end,j_start,j_end,sz,NTST,ICLDCK
 !
-
    DXSQ=DX*DX
 
    NTST=STEPCU
@@ -385,7 +384,7 @@ CONTAINS
 ! ***********************************************************************
 !====================================================================
    SUBROUTINE ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,         &
-                     RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QI,P_QS,         &
+                     RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,         &
                      SVP1,SVP2,SVP3,SVPT0,                          &
                      P_FIRST_SCALAR,restart,allowed_to_read,        &
                      ids, ide, jds, jde, kds, kde,                  &
@@ -398,7 +397,7 @@ CONTAINS
    INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte
-   INTEGER , INTENT(IN)           ::  P_QI,P_QS,P_FIRST_SCALAR
+   INTEGER , INTENT(IN)           ::  P_QC,P_QR,P_FIRST_SCALAR
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
                                                           RTHCUTEN, &
@@ -426,27 +425,15 @@ CONTAINS
       DO i=its,itf
          RTHCUTEN(i,k,j)=0.
          RQVCUTEN(i,k,j)=0.
-         RQCCUTEN(i,k,j)=0.
-         RQRCUTEN(i,k,j)=0.
       ENDDO
       ENDDO
       ENDDO
 
-      IF (P_QI .ge. P_FIRST_SCALAR) THEN
+      IF (P_QC .ge. P_FIRST_SCALAR) THEN
          DO j=jts,jtf
          DO k=kts,ktf
          DO i=its,itf
-            RQICUTEN(i,k,j)=0.
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-
-      IF (P_QS .ge. P_FIRST_SCALAR) THEN
-         DO j=jts,jtf
-         DO k=kts,ktf
-         DO i=its,itf
-            RQSCUTEN(i,k,j)=0.
+            RQCCUTEN(i,k,j)=0.
          ENDDO
          ENDDO
          ENDDO

@@ -28,11 +28,11 @@ CONTAINS
 SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,         &
                       rv_tendf,g_rv_tendf,moist_tendf,g_moist_tendf,        &
                       scalar_tendf,mu_tendf,                                &
-                      RTHRATEN,RTHBLTEN,g_RTHBLTEN,RTHCUTEN,RTHSHTEN,       &
+                      RTHRATEN,RTHBLTEN,g_RTHBLTEN,RTHCUTEN,g_RTHCUTEN,RTHSHTEN,       &
                       RUBLTEN,g_RUBLTEN,RUCUTEN,RUSHTEN,                    &
                       RVBLTEN,g_RVBLTEN,RVCUTEN,RVSHTEN,                    &
                       RQVBLTEN,g_RQVBLTEN,RQCBLTEN,RQIBLTEN,                &
-                      RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,         &
+                      RQVCUTEN,g_RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,         &
                       RQVSHTEN,RQCSHTEN,RQRSHTEN,RQISHTEN,RQSSHTEN,RQGSHTEN,&
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,            &
                       RQVNDGDTEN,RMUNDGDTEN,                                &
@@ -77,6 +77,7 @@ SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,  
                                                        RTHBLTEN, &
                                                      g_RTHBLTEN, &
                                                        RTHCUTEN, &
+                                                     g_RTHCUTEN, &
                                                        RTHSHTEN, &
                                                         RUBLTEN, &
                                                       g_RUBLTEN, &
@@ -91,6 +92,7 @@ SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,  
                                                        RQCBLTEN, &
                                                        RQIBLTEN, &
                                                        RQVCUTEN, &
+                                                     g_RQVCUTEN, &
                                                        RQCCUTEN, &
                                                        RQRCUTEN, &
                                                        RQICUTEN, &
@@ -138,11 +140,11 @@ SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,  
                       its, ite, jts, jte, kts, kte             )
 
    if (config_flags%cu_physics .gt. 0)                         &
-      CALL phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,   &
-                      rt_tendf,ru_tendf,rv_tendf,              &
-                      RUCUTEN,RVCUTEN,RTHCUTEN,                &
-                      RQVCUTEN,RQCCUTEN,RQRCUTEN,              &
-                      RQICUTEN,RQSCUTEN,moist_tendf,           &
+      CALL g_phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,   &
+                      rt_tendf,g_rt_tendf,ru_tendf,rv_tendf,   &
+                      RUCUTEN,RVCUTEN,RTHCUTEN,g_RTHCUTEN,     &
+                      RQVCUTEN,g_RQVCUTEN,RQCCUTEN,RQRCUTEN,   &
+                      RQICUTEN,RQSCUTEN,moist_tendf,g_moist_tendf,&
                       scalar_tendf,adv_moist_cond,             &
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
@@ -837,11 +839,11 @@ SUBROUTINE g_phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,   &
 END SUBROUTINE g_phy_bl_ten
 
 !=================================================================
-SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
-                      rt_tendf,ru_tendf,rv_tendf,                &
-                      RUCUTEN,RVCUTEN,RTHCUTEN,                  &
-                      RQVCUTEN,RQCCUTEN,RQRCUTEN,                &
-                      RQICUTEN,RQSCUTEN,moist_tendf,             &
+SUBROUTINE g_phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
+                      rt_tendf,g_rt_tendf,ru_tendf,rv_tendf,     &
+                      RUCUTEN,RVCUTEN,RTHCUTEN,g_RTHCUTEN,       &
+                      RQVCUTEN,g_RQVCUTEN,RQCCUTEN,RQRCUTEN,     &
+                      RQICUTEN,RQSCUTEN,moist_tendf,g_moist_tendf,&
                       scalar_tendf,adv_moist_cond,               &
                       ids, ide, jds, jde, kds, kde,              &
                       ims, ime, jms, jme, kms, kme,              &
@@ -859,7 +861,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
    LOGICAL , INTENT(IN)     :: adv_moist_cond
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),         &
-          INTENT(INOUT)     ::                      moist_tendf
+          INTENT(INOUT)     ::                      moist_tendf, g_moist_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_scalar),         &
           INTENT(INOUT)     ::                      scalar_tendf
@@ -868,7 +870,9 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                                                         RUCUTEN, &
                                                         RVCUTEN, &
                                                        RTHCUTEN, &
+                                                     g_RTHCUTEN, &
                                                        RQVCUTEN, &
+                                                     g_RQVCUTEN, &
                                                        RQCCUTEN, &
                                                        RQRCUTEN, &
                                                        RQICUTEN, &
@@ -876,6 +880,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::  &
                                                        rt_tendf, &
+                                                     g_rt_tendf, &
                                                        ru_tendf, &
                                                        rv_tendf
 
@@ -1173,35 +1178,20 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 its, ite, jts, jte, kts, kte                     )
 
    CASE (DUCUSCHEME)
-        CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
+        CALL g_add_a2a(rt_tendf, g_rt_tendf,                     &
+                RTHCUTEN, g_RTHCUTEN, config_flags,              &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
         if (P_QV .ge. PARAM_FIRST_SCALAR)                                         &
-        CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),RQVCUTEN,     &
+        CALL g_add_a2a(moist_tendf(ims,kms,jms,P_QV),            &
+                g_moist_tendf(ims,kms,jms,P_QV), RQVCUTEN,       &
+                g_RQVCUTEN,                                      &
                 config_flags,                                    &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
-
-       IF(.not. adv_moist_cond)THEN
-
-        if (P_QT .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQCCUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-        if (P_QT .ge. PARAM_FIRST_SCALAR)                        &
-           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQICUTEN, &
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-       ENDIF
 
    CASE (CAMZMSCHEME)
         CALL add_a2c_u(ru_tendf,RUCUTEN,config_flags,            &
@@ -1316,7 +1306,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
    END SELECT
 
-END SUBROUTINE phy_cu_ten
+END SUBROUTINE g_phy_cu_ten
 
 !=================================================================
 SUBROUTINE phy_shcu_ten(config_flags,rk_step,n_moist,            &
@@ -1597,67 +1587,62 @@ SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
 END SUBROUTINE phy_fr_ten
 
 !--------------------------------------------------- -------------------
-SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
-                     RQICUTEN,RQSCUTEN,                               &
-                     RAINC,RAINCV,RAINSH,PRATEC,PRATESH,  &
-                     NCA, HTOP,HBOT,CUTOP,CUBOT,                      &
-                     CUPPT, DT, config_flags,                         &
-                     ids,ide, jds,jde, kds,kde,                       &
-                     ims,ime, jms,jme, kms,kme,                       &
-                     its,ite, jts,jte, kts,kte                        )     
-!----------------------------------------------------------------------
-   USE module_state_description
-   USE module_cu_kf
-   USE module_cu_kfeta
-   USE module_cu_du              !  Added by Zhuxiao
-!----------------------------------------------------------------------
-   IMPLICIT NONE
-!----------------------------------------------------------------------
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
-   INTEGER,      INTENT(IN   )    ::                             &
-                                      ids,ide, jds,jde, kds,kde, &
-                                      ims,ime, jms,jme, kms,kme, &
-                                      its,ite, jts,jte, kts,kte
-
-
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-         INTENT(INOUT)  ::                             RTHCUTEN, &
-                                                       RQVCUTEN, &
-                                                       RQCCUTEN, &
-                                                       RQRCUTEN, &
-                                                       RQICUTEN, &
-                                                       RQSCUTEN
-
-   REAL, DIMENSION( ims:ime , jms:jme ),                         &
-          INTENT(INOUT) ::                                RAINC, &
-                                                         RAINSH, &
-                                                         RAINCV, &
-                                                         PRATEC, &
-                                                        PRATESH, &
-                                                            NCA, &
-                                                           HTOP, &
-                                                           HBOT, &
-                                                          CUTOP, &
-                                                          CUBOT, &
-                                                          CUPPT
-   REAL, INTENT(IN) ::                                       DT
-
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of advance_ppt in forward (tangent) mode:
+!   variations   of useful results: rqccuten rthcuten rqicuten
+!                rqscuten rainc cuppt nca rqrcuten rqvcuten rainsh
+!                htop hbot
+!   with respect to varying inputs: pratesh rqccuten rthcuten rqicuten
+!                rqscuten rainc pratec cuppt cutop cubot nca rqrcuten
+!                rqvcuten rainsh htop hbot
+!   RW status of diff variables: pratesh:in rqccuten:in-out rthcuten:in-out
+!                rqicuten:in-out rqscuten:in-out rainc:in-out pratec:in
+!                cuppt:in-out cutop:in cubot:in nca:in-out rqrcuten:in-out
+!                rqvcuten:in-out rainsh:in-out htop:in-out hbot:in-out
+SUBROUTINE G_ADVANCE_PPT(rthcuten, rthcutend, rqvcuten, rqvcutend, &
+&  rqccuten, rqccutend, rqrcuten, rqrcutend, rqicuten, rqicutend, &
+&  rqscuten, rqscutend, rainc, raincd, raincv, rainsh, rainshd, pratec, &
+&  pratecd, pratesh, prateshd, nca, ncad, htop, htopd, hbot, hbotd, cutop&
+&  , cutopd, cubot, cubotd, cuppt, cupptd, dt, config_flags, ids, ide, &
+&  jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, &
+&  kts, kte)
+  IMPLICIT NONE
+!
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthcuten&
+&  , rqvcuten, rqccuten, rqrcuten, rqicuten, rqscuten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthcutend&
+&  , rqvcutend, rqccutend, rqrcutend, rqicutend, rqscutend
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: rainc, rainsh, &
+&  raincv, pratec, pratesh, nca, htop, hbot, cutop, cubot, cuppt
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: raincd, rainshd, &
+&  pratecd, prateshd, ncad, htopd, hbotd, cutopd, cubotd, cupptd
+  REAL, INTENT(IN) :: dt
 ! LOCAL  VAR
-
-   INTEGER :: i,j,k,i_start,i_end,j_start,j_end,k_start,k_end
-   INTEGER :: NCUTOP, NCUBOT
-
+  INTEGER :: i, j, k, i_start, i_end, j_start, j_end, k_start, k_end
+  INTEGER :: ncutop, ncubot
 !-----------------------------------------------------------------
-
-   IF (config_flags%cu_physics .eq. 0) return
-
+  IF (config_flags%cu_physics .EQ. 0) THEN
+    RETURN
+  ELSE
 ! SET START AND END POINTS FOR TILES
-
-   i_start = its
-   i_end   = min( ite,ide-1 )
-   j_start = jts
-   j_end   = min( jte,jde-1 )
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
 !
 !  IF( config_flags%nested .or. config_flags%specified ) THEN
 !    i_start = max( its,ids+1 )
@@ -1666,141 +1651,160 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
 !    j_end   = min( jte,jde-2 )
 !  ENDIF
 !
-   k_start = kts
-   k_end = min( kte, kde-1 )
-
+    k_start = kts
+    IF (kte .GT. kde - 1) THEN
+      k_end = kde - 1
+    ELSE
+      k_end = kte
+    END IF
 ! Update total cumulus scheme precipitation
-
 ! in mm  
-
-   DO J = j_start,j_end
-   DO i = i_start,i_end
-      RAINC(I,J)  = RAINC(I,J) + PRATEC(I,J)*DT
-      RAINSH(I,J) = RAINSH(I,J) + PRATESH(I,J)*DT
-      CUPPT(I,J)  = CUPPT(I,J) + (PRATEC(I,J)+PRATESH(I,J))*DT/1000.
-   ENDDO
-   ENDDO
-
-   SELECT CASE (config_flags%cu_physics)
-
-   CASE (KFSCHEME)
-
-        DO J = j_start,j_end
-        DO i = i_start,i_end
-
-           IF ( NCA(I,J) .GT. 0 ) THEN
-
-              IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
-
-              ! set tendency to zero
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        raincd(i, j) = raincd(i, j) + dt*pratecd(i, j)
+        rainc(i, j) = rainc(i, j) + pratec(i, j)*dt
+        rainshd(i, j) = rainshd(i, j) + dt*prateshd(i, j)
+        rainsh(i, j) = rainsh(i, j) + pratesh(i, j)*dt
+        cupptd(i, j) = cupptd(i, j) + dt*(pratecd(i, j)+prateshd(i, j))/&
+&          1000.
+        cuppt(i, j) = cuppt(i, j) + (pratec(i, j)+pratesh(i, j))*dt/&
+&          1000.
+      END DO
+    END DO
+    SELECT CASE  (config_flags%cu_physics) 
+    CASE (kfscheme) 
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          IF (nca(i, j) .GT. 0) THEN
+            IF (NINT(nca(i, j)/dt) .LE. 0) THEN
+! set tendency to zero
 !                PRATEC(I,J)=0.
 !                RAINCV(I,J)=0.
-                 DO k = k_start,k_end
-                    RTHCUTEN(i,k,j)=0.
-                    RQVCUTEN(i,k,j)=0.
-                    RQCCUTEN(i,k,j)=0.
-                    RQRCUTEN(i,k,j)=0.
-                    if (P_QI .ge. PARAM_FIRST_SCALAR) RQICUTEN(i,k,j)=0.
-                    if (P_QS .ge. PARAM_FIRST_SCALAR) RQSCUTEN(i,k,j)=0.
-                 ENDDO
-              ENDIF
-
-              NCA(I,J)=NCA(I,J)-DT ! Decrease NCA
-
-           ENDIF
+              DO k=k_start,k_end
+                rthcutend(i, k, j) = 0.0
+                rthcuten(i, k, j) = 0.
+                rqvcutend(i, k, j) = 0.0
+                rqvcuten(i, k, j) = 0.
+                rqccutend(i, k, j) = 0.0
+                rqccuten(i, k, j) = 0.
+                rqrcutend(i, k, j) = 0.0
+                rqrcuten(i, k, j) = 0.
+                IF (p_qi .GE. param_first_scalar) THEN
+                  rqicutend(i, k, j) = 0.0
+                  rqicuten(i, k, j) = 0.
+                END IF
+                IF (p_qs .GE. param_first_scalar) THEN
+                  rqscutend(i, k, j) = 0.0
+                  rqscuten(i, k, j) = 0.
+                END IF
+              END DO
+            END IF
+! Decrease NCA
+            nca(i, j) = nca(i, j) - dt
+          END IF
+        END DO
+      END DO
+    CASE (ducuscheme) 
 !
-        ENDDO
-        ENDDO
-
-   CASE (DUCUSCHEME)
-
-        DO J = j_start,j_end
-        DO i = i_start,i_end
-
-           IF ( NCA(I,J) .GT. 0 ) THEN
-
-              IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
-
-              ! set tendency to zero
+      DO j=j_start,j_end
+        DO i=i_start,i_end
+          IF (nca(i, j) .GT. 0) THEN
+            IF (NINT(nca(i, j)/dt) .LE. 0) THEN
+! set tendency to zero
 !!                PRATEC(I,J)=0.
 !!                RAINCV(I,J)=0.
-                 DO k = k_start,k_end
-                    RTHCUTEN(i,k,j)=0.
-                    RQVCUTEN(i,k,j)=0.
-                 ENDDO
-               ENDIF
-
-              NCA(I,J)=NCA(I,J)-DT ! Decrease NCA
-
-           ENDIF
+              DO k=k_start,k_end
+                rthcutend(i, k, j) = 0.0
+                rthcuten(i, k, j) = 0.
+                rqvcutend(i, k, j) = 0.0
+                rqvcuten(i, k, j) = 0.
+              END DO
+            END IF
+! Decrease NCA
+            nca(i, j) = nca(i, j) - dt
+          END IF
+        END DO
+      END DO
+    CASE (bmjscheme, camzmscheme) 
 !
-        ENDDO
-        ENDDO
-
-   CASE (BMJSCHEME, CAMZMSCHEME)
- 
-        DO J = j_start,j_end
-        DO i = i_start,i_end
-
+      DO j=j_start,j_end
+        DO i=i_start,i_end
 ! HTOP, HBOT FOR GFDL RADIATION
-           NCUTOP=NINT(CUTOP(I,J))
-           NCUBOT=NINT(CUBOT(I,J))
-           IF(NCUTOP>1.AND.NCUTOP<KDE)THEN
-             HTOP(I,J)=MAX(CUTOP(I,J),HTOP(I,J))
-           ENDIF
-           IF(NCUBOT>0.AND.NCUBOT<KDE)THEN
-             HBOT(I,J)=MIN(CUBOT(I,J),HBOT(I,J))
-           ENDIF
-
-        ENDDO
-        ENDDO
-
-   CASE (KFETASCHEME)
-
-        DO J = j_start,j_end
-        DO i = i_start,i_end
-
+          ncutop = NINT(cutop(i, j))
+          ncubot = NINT(cubot(i, j))
+          IF (ncutop .GT. 1 .AND. ncutop .LT. kde) THEN
+            IF (cutop(i, j) .LT. htop(i, j)) THEN
+              htop(i, j) = htop(i, j)
+            ELSE
+              htopd(i, j) = cutopd(i, j)
+              htop(i, j) = cutop(i, j)
+            END IF
+          END IF
+          IF (ncubot .GT. 0 .AND. ncubot .LT. kde) THEN
+            IF (cubot(i, j) .GT. hbot(i, j)) THEN
+              hbot(i, j) = hbot(i, j)
+            ELSE
+              hbotd(i, j) = cubotd(i, j)
+              hbot(i, j) = cubot(i, j)
+            END IF
+          END IF
+        END DO
+      END DO
+    CASE (kfetascheme) 
+      DO j=j_start,j_end
+        DO i=i_start,i_end
 ! HTOP, HBOT FOR GFDL RADIATION
-           NCUTOP=NINT(CUTOP(I,J))
-           NCUBOT=NINT(CUBOT(I,J))
-           IF(NCUTOP>1.AND.NCUTOP<KDE)THEN
-             HTOP(I,J)=MAX(CUTOP(I,J),HTOP(I,J))
-           ENDIF
-           IF(NCUBOT>0.AND.NCUBOT<KDE)THEN
-             HBOT(I,J)=MIN(CUBOT(I,J),HBOT(I,J))
-           ENDIF
-
-           IF ( NCA(I,J) .GT. 0 ) THEN
-
-
-              IF ( NINT(NCA(I,J) / DT) .LE. 1 ) THEN
-
-              ! set tendency to zero
+          ncutop = NINT(cutop(i, j))
+          ncubot = NINT(cubot(i, j))
+          IF (ncutop .GT. 1 .AND. ncutop .LT. kde) THEN
+            IF (cutop(i, j) .LT. htop(i, j)) THEN
+              htop(i, j) = htop(i, j)
+            ELSE
+              htopd(i, j) = cutopd(i, j)
+              htop(i, j) = cutop(i, j)
+            END IF
+          END IF
+          IF (ncubot .GT. 0 .AND. ncubot .LT. kde) THEN
+            IF (cubot(i, j) .GT. hbot(i, j)) THEN
+              hbot(i, j) = hbot(i, j)
+            ELSE
+              hbotd(i, j) = cubotd(i, j)
+              hbot(i, j) = cubot(i, j)
+            END IF
+          END IF
+          IF (nca(i, j) .GT. 0) THEN
+            IF (NINT(nca(i, j)/dt) .LE. 1) THEN
+! set tendency to zero
 !                PRATEC(I,J)=0.
 !                RAINCV(I,J)=0.
-                 DO k = k_start,k_end
-                    RTHCUTEN(i,k,j)=0.
-                    RQVCUTEN(i,k,j)=0.
-                    RQCCUTEN(i,k,j)=0.
-                    RQRCUTEN(i,k,j)=0.
-                    if (P_QI .ge. PARAM_FIRST_SCALAR) RQICUTEN(i,k,j)=0.
-                    if (P_QS .ge. PARAM_FIRST_SCALAR) RQSCUTEN(i,k,j)=0.
-                 ENDDO
-              ENDIF
-
-              NCA(I,J)=NCA(I,J)-DT ! Decrease NCA
+              DO k=k_start,k_end
+                rthcutend(i, k, j) = 0.0
+                rthcuten(i, k, j) = 0.
+                rqvcutend(i, k, j) = 0.0
+                rqvcuten(i, k, j) = 0.
+                rqccutend(i, k, j) = 0.0
+                rqccuten(i, k, j) = 0.
+                rqrcutend(i, k, j) = 0.0
+                rqrcuten(i, k, j) = 0.
+                IF (p_qi .GE. param_first_scalar) THEN
+                  rqicutend(i, k, j) = 0.0
+                  rqicuten(i, k, j) = 0.
+                END IF
+                IF (p_qs .GE. param_first_scalar) THEN
+                  rqscutend(i, k, j) = 0.0
+                  rqscuten(i, k, j) = 0.
+                END IF
+              END DO
+            END IF
+! Decrease NCA
+            nca(i, j) = nca(i, j) - dt
 !              NCA(I,J)=NCA(I,J)-1. ! Decrease NCA
-
-           ENDIF
-!
-        ENDDO
-        ENDDO
-
-   CASE DEFAULT
-
-   END SELECT
-
-END SUBROUTINE advance_ppt
+          END IF
+        END DO
+      END DO
+    END SELECT
+  END IF
+END SUBROUTINE G_ADVANCE_PPT
 
 SUBROUTINE add_a2a(lvar,rvar,config_flags,                  &
                    ids,ide, jds, jde, kds, kde,             &

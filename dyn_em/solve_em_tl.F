@@ -74,7 +74,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    USE g_module_bc_em
    USE module_bc_em
    USE module_solvedebug_em
-   USE module_physics_addtendc
+   USE g_module_physics_addtendc
    USE g_module_diffusion_em
    USE module_polarfft
    USE g_module_microphysics_driver
@@ -5380,12 +5380,14 @@ if (config_flags % sw_call_advance_ppt) then
    call wrf_debug ( -100 , ' SWITCH ON ==> call g_advance_ppt ' )
 #endif
 
-!!!!! REPLACE WITH g_advance_ppt WHEN CODING TL OF PHYSICS. Ning Pan
-     CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
-                      grid%rqicuten,grid%rqscuten,           &
-                      grid%rainc,grid%raincv,grid%rainsh,grid%pratec,grid%pratesh, &
-                      grid%nca,grid%htop,grid%hbot,grid%cutop,grid%cubot,  &
-                      grid%cuppt, grid%dt, config_flags,                   &
+     CALL g_advance_ppt(grid%rthcuten,grid%g_rthcuten,grid%rqvcuten,grid%g_rqvcuten, &
+                      grid%rqccuten,grid%g_rqccuten,grid%rqrcuten,grid%g_rqrcuten, &
+                      grid%rqicuten,grid%g_rqicuten,grid%rqscuten,grid%g_rqscuten, &
+                      grid%rainc,grid%g_rainc,grid%raincv,grid%rainsh,grid%g_rainsh,&
+                      grid%pratec,grid%g_pratec,grid%pratesh,grid%g_pratesh, &
+                      grid%nca,grid%g_nca,grid%htop,grid%g_htop,grid%hbot,grid%g_hbot,&
+                      grid%cutop,grid%g_cutop,grid%cubot,grid%g_cubot,  &
+                      grid%cuppt, grid%g_cuppt, grid%dt, config_flags,                &
                       ids,ide, jds,jde, kds,kde,             &
                       ims,ime, jms,jme, kms,kme,             &
                       grid%i_start(ij), grid%i_end(ij),      &

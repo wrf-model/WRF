@@ -58,6 +58,7 @@ REAL, ALLOCATABLE :: b_scalar_bxs(:,:,:,:), b_scalar_bxe(:,:,:,:), b_scalar_bys(
 REAL, ALLOCATABLE :: b_scalar_btxs(:,:,:,:), b_scalar_btxe(:,:,:,:), b_scalar_btys(:,:,:,:), b_scalar_btye(:,:,:,:)
 
 REAL, ALLOCATABLE :: b_rainnc(:,:), b_rainncv(:,:)
+REAL, ALLOCATABLE :: b_rainc(:,:), b_raincv(:,:)
 
 INTEGER :: sm31, em31, sm32, em32, sm33, em33, spec_bdy_width, kts, kte
 
@@ -938,6 +939,16 @@ CONTAINS
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_rainncv(sm31:em31,sm33:em33). ')
    ENDIF
+   ALLOCATE(b_rainc(sm31:em31,sm33:em33),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_rainc(sm31:em31,sm33:em33). ')
+   ENDIF
+   ALLOCATE(b_raincv(sm31:em31,sm33:em33),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_raincv(sm31:em31,sm33:em33). ')
+   ENDIF
 
    RETURN
   END SUBROUTINE allocate_grid
@@ -997,6 +1008,8 @@ CONTAINS
 
    b_rainnc = grid%rainnc
    b_rainncv = grid%rainncv
+   b_rainc = grid%rainc
+   b_raincv = grid%raincv
 
 !   b_scalar = grid%scalar
 !   b_tke_2 = grid%tke_2
@@ -1152,6 +1165,8 @@ CONTAINS
    
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
+   grid%g_rainc = 0.0
+   grid%g_raincv = 0.0
 
   END SUBROUTINE copy_s_to_g_adjtest
 
@@ -1296,6 +1311,13 @@ END IF
    ENDDO
    ENDDO
 
+   DO j = jts,MIN(jte,jde-1)
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_rainc(i,j) * grid%g_rainc(i,j) &
+                  + grid%g_raincv(i,j) * grid%g_raincv(i,j)
+   ENDDO
+   ENDDO
+
    RETURN
   END SUBROUTINE inner_dot_g
 
@@ -1406,6 +1428,13 @@ END IF
    DO i = is,ie
      save  = save + grid%g_rainnc(i,j) * grid%g_rainnc(i,j) &
                   + grid%g_rainncv(i,j) * grid%g_rainncv(i,j)
+   ENDDO
+   ENDDO
+
+   DO j = js,je
+   DO i = is,ie
+     save  = save + grid%g_rainc(i,j) * grid%g_rainc(i,j) &
+                  + grid%g_raincv(i,j) * grid%g_raincv(i,j)
    ENDDO
    ENDDO
 
@@ -1560,6 +1589,13 @@ END IF
    ENDDO
    ENDDO
 
+   DO j = jts,MIN(jte,jde-1)
+   DO i = its,MIN(ite,ide-1)
+     save  = save + (grid%rainc(i,j)-b_rainc(i,j)) * (grid%rainc(i,j)-b_rainc(i,j)) &
+                  + (grid%raincv(i,j)-b_raincv(i,j)) * (grid%raincv(i,j)-b_raincv(i,j))
+   ENDDO
+   ENDDO
+
    RETURN
   END SUBROUTINE inner_dot
 
@@ -1618,6 +1654,9 @@ END IF
 
    grid%a_rainnc  = grid%g_rainnc
    grid%a_rainncv = grid%g_rainncv
+
+   grid%a_rainc  = grid%g_rainc
+   grid%a_raincv = grid%g_raincv
 
 ! I&O variables
    grid%a_scalar = 0.0
@@ -2531,6 +2570,16 @@ END IF
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_rainncv. ')
+   ENDIF
+   DEALLOCATE ( b_rainc, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_rainc. ')
+   ENDIF
+   DEALLOCATE ( b_raincv, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_raincv. ')
    ENDIF
 
    RETURN

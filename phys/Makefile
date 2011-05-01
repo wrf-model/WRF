@@ -49,6 +49,8 @@ MODULES = \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_du.o \
+	module_cu_du_tl.o \
+	module_cu_du_ad.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
 	module_mp_sbu_ylin.o  \
@@ -113,6 +115,8 @@ MODULES = \
 	module_pbl_driver_ad.o \
 	module_data_gocart_dust.o \
 	module_cumulus_driver.o \
+	module_cumulus_driver_tl.o \
+	module_cumulus_driver_ad.o \
 	module_shallowcu_driver.o \
 	module_microphysics_driver.o \
 	module_microphysics_driver_tl.o \
@@ -283,6 +287,10 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 module_cu_gd.o:
 
 module_cu_du.o:  ../frame/module_wrf_error.o
+
+module_cu_du_tl.o:  ../frame/module_wrf_error.o
+
+module_cu_du_ad.o:  ../frame/module_wrf_error.o
 
 module_cu_nsas.o:
 
@@ -517,6 +525,26 @@ module_cumulus_driver.o: \
 		module_cu_du.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_domain.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_cumulus_driver_tl.o: \
+		module_cu_du_tl.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_domain.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_cumulus_driver_ad.o: \
+		module_cu_du_ad.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_domain.o \

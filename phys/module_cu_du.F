@@ -5,7 +5,7 @@ MODULE module_cu_du
    REAL    , PARAMETER :: cincap = -10.
    REAL    , PARAMETER :: capemin = 10.
    REAL    , PARAMETER :: dpthmin = 1000.
-   REAL    , PARAMETER :: alpha = 0.001*0.1      !tested by Zhuxiao
+   REAL    , PARAMETER :: alpha = 0.001
    REAL    , PARAMETER :: eps = 0.5
    REAL    , PARAMETER :: Vfall = 5.
 
@@ -267,6 +267,8 @@ CONTAINS
         ipos=0
         kt=0
         kb=0
+        zt=0.
+        zb=0.
         cond=0.
 !
 !...LIFT PARCEL

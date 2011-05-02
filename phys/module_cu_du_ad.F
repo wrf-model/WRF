@@ -5,7 +5,7 @@ MODULE a_module_cu_du
    REAL    , PARAMETER :: cincap = -10.
    REAL    , PARAMETER :: capemin = 10.
    REAL    , PARAMETER :: dpthmin = 1000.
-   REAL    , PARAMETER :: alpha = 0.001*0.1      !tested by Zhuxiao
+   REAL    , PARAMETER :: alpha = 0.001
    REAL    , PARAMETER :: eps = 0.5
    REAL    , PARAMETER :: Vfall = 5.
 
@@ -317,6 +317,8 @@ loop_origin:DO ki=kts,kte
     CALL PUSHINTEGER4(kt)
     kt = 0
     kb = 0
+    zt = 0.
+    zb = 0.
     cond = 0.
     CALL PUSHINTEGER4(k)
     ad_count = 1

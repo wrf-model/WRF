@@ -42,8 +42,8 @@ SUBROUTINE adtl_initialize
 
    ! 3D variables: a_u, a_v, a_w, a_t, a_ph
    bytes_ad_forcing = n3d*5
-   ! 2D variables: a_mu, a_rainnc, a_rainncv
-   bytes_ad_forcing = bytes_ad_forcing + 3*n2d
+   ! 2D variables: a_mu, a_rainnc, a_rainncv, a_rainc, a_raincv
+   bytes_ad_forcing = bytes_ad_forcing + 5*n2d
    ! Moist variables
    DO i = PARAM_FIRST_SCALAR, num_moist
       bytes_ad_forcing = bytes_ad_forcing + n3d
@@ -279,8 +279,8 @@ SUBROUTINE xtraj_io_initialize
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, tsk, xlat, xlong, albbck, tmn, xland, znt, mub, psfc, snowc, hfx, qfx, ustm
-   !               rainnc, rainncv
-   bytes_xtraj = bytes_xtraj + n2d*39
+   !               rainnc, rainncv, rainc, raincv
+   bytes_xtraj = bytes_xtraj + n2d*41
 
    ! 1D K variables: znu, znw, fnm, fnp, rdnw, rdn, dnw, dn
    bytes_xtraj = bytes_xtraj + n1d*8
@@ -483,6 +483,8 @@ SUBROUTINE packup_ad_forcing (data)
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_mu_2, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_rainnc, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_rainncv, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_rainc, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_raincv, (/n2d/))
 
    DO i = PARAM_FIRST_SCALAR, num_moist
       ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_moist(:,:,:,i), (/n3d/))
@@ -512,6 +514,8 @@ SUBROUTINE restore_ad_forcing (data)
    ns =    ne+1 ; ne = ne+n2d ; head_grid%g_mu_2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%g_rainnc = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%g_rainncv = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%g_rainc = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%g_raincv = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
 
    DO i = PARAM_FIRST_SCALAR, num_moist
       ns =    ne+1 ; ne = ne+n3d ; head_grid%g_moist(:,:,:,i) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
@@ -553,7 +557,7 @@ SUBROUTINE packup_xtraj (data)
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, tsk, xlat, xlong, albbck, tmn, xland, znt, mub, psfc, snowc, hfx, qfx, ustm
-   !               rainnc, rainncv
+   !               rainnc, rainncv, rainc, raincv
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%mu_2, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%lu_index, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%q2, (/n2d/))
@@ -593,6 +597,8 @@ SUBROUTINE packup_xtraj (data)
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%ustm, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%rainnc, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%rainncv, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%rainc, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%raincv, (/n2d/))
 
    ! 1D K variables: znu, znw, fnm, fnp, rdnw, rdn, dnw, dn
    ns =    ne+1 ; ne = ne+n1d ; data(ns:ne) = head_grid%znu
@@ -764,7 +770,7 @@ SUBROUTINE restore_xtraj (data)
    ! 2D variables: mu_2, lu_index, q2, t2, th2, u10, v10, landmask, xice, ivgtyp, isltyp,
    !               vegfra, snow, snowh, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, tsk, xlat, xlong, albbck, tmn, xland, znt, mub, psfc, snowc, hfx, qfx, ustm
-   !               rainnc, rainncv
+   !               rainnc, rainncv, rainc, raincv
    ns =    ne+1 ; ne = ne+n2d ; head_grid%mu_2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%lu_index = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%q2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
@@ -804,6 +810,8 @@ SUBROUTINE restore_xtraj (data)
    ns =    ne+1 ; ne = ne+n2d ; head_grid%ustm = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%rainnc = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%rainncv = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%rainc = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%raincv = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
 
    ! 1D K variables: znu, znw, fnm, fnp, rdnw, rdn, dnw, dn
    ns =    ne+1 ; ne = ne+n1d ; head_grid%znu = data(ns:ne)
@@ -964,6 +972,8 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%a_moist = grid%a_moist + grid%g_moist
    grid%a_rainnc = grid%a_rainnc + grid%g_rainnc
    grid%a_rainncv = grid%a_rainncv + grid%g_rainncv
+   grid%a_rainc = grid%a_rainc + grid%g_rainc
+   grid%a_raincv = grid%a_raincv + grid%g_raincv
 
    ! Reset forcings for ZERO
    grid%g_u_2  = 0.0
@@ -975,6 +985,8 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%g_moist = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
+   grid%g_rainc = 0.0
+   grid%g_raincv = 0.0
 
 END SUBROUTINE add_forcing_to_ad
 

@@ -147,6 +147,10 @@ SUBROUTINE G_DUCU(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
           rho1d(k) = rho(i, k, j)
           qv1dd(k) = g_qv(i, k, j)
           qv1d(k) = qv(i, k, j)
+          IF (qv1d(k) .LT. 1.e-08) THEN
+            qv1dd(k) = 0.0
+            qv1d(k) = 1.e-08
+          END IF
           p1dd(k) = g_pcps(i, k, j)
           p1d(k) = pcps(i, k, j)
           w0avg1d(k) = w0avg(i, k, j)

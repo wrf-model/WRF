@@ -149,6 +149,7 @@ CONTAINS
                TH1D(K) =TH(I,K,J)
                RHO1D(K) =rho(I,K,J)
                QV1D(K)=QV(I,K,J)
+               IF ( QV1D(K) .LT. 1.E-08 ) QV1D(K) = 1.E-08
                P1D(K) =Pcps(I,K,J)
                W0AVG1D(K) =W0AVG(I,K,J)
                DZ1D(k)=dz8w(I,K,J)

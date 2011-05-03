@@ -122,6 +122,12 @@ SUBROUTINE A_DUCU(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
           rho1d(k) = rho(i, k, j)
           CALL PUSHREAL8(qv1d(k))
           qv1d(k) = qv(i, k, j)
+          IF (qv1d(k) .LT. 1.e-08) THEN
+            qv1d(k) = 1.e-08
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
           CALL PUSHREAL8(p1d(k))
           p1d(k) = pcps(i, k, j)
           CALL PUSHREAL8(dz1d(k))
@@ -180,6 +186,8 @@ SUBROUTINE A_DUCU(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
           CALL POPREAL8(p1d(k))
           a_pcps(i, k, j) = a_pcps(i, k, j) + p1db(k)
           p1db(k) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) qv1db(k) = 0.0
           CALL POPREAL8(qv1d(k))
           a_qv(i, k, j) = a_qv(i, k, j) + qv1db(k)
           qv1db(k) = 0.0

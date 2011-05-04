@@ -2247,6 +2247,8 @@ integer myproc
 
      CASE (KESSLERSCHEME)
           warm_rain = .true.
+     CASE (MKESSLERSCHEME)
+          warm_rain = .true.
      CASE (WSM3SCHEME)
           CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM5SCHEME)

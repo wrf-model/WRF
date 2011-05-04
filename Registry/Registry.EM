@@ -1866,6 +1866,7 @@ package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;scalar:qnn,qnc,qnr;g_scalar:g_qnn,g_qnc,g_qnr;a_scalar:a_qnn,a_qnc,a_qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qnn,qnc,qnr;g_scalar:g_qnn,g_qnc,g_qnr;a_scalar:a_qnn,a_qnc,a_qnr
 package   lscondscheme  mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
+package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv

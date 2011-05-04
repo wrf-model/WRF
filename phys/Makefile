@@ -52,6 +52,9 @@ MODULES = \
 	module_cu_du_tl.o \
 	module_cu_du_ad.o \
 	module_mp_kessler.o \
+	module_mp_mkessler.o \
+	module_mp_mkessler_tl.o \
+	module_mp_mkessler_ad.o \
 	module_mp_lin.o  \
 	module_mp_sbu_ylin.o  \
 	module_mp_wsm3.o \
@@ -455,7 +458,7 @@ module_physics_init.o : \
 
 module_microphysics_driver.o: \
 		module_mixactivate.o \
-		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
+		module_mp_kessler.o module_mp_sbu_ylin.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_HWRF.o  \
@@ -465,6 +468,7 @@ module_microphysics_driver.o: \
                 module_mp_milbrandt2mom.o     \
 		module_mp_wdm5.o module_mp_wdm6.o \
 		module_mp_nconvp.o                      \
+		module_mp_mkessler.o                      \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
@@ -478,7 +482,7 @@ module_shallowcu_driver.o: \
 
 module_microphysics_driver_tl.o: \
 		module_mixactivate.o \
-		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
+		module_mp_kessler.o module_mp_sbu_ylin.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_HWRF.o  \
@@ -488,6 +492,8 @@ module_microphysics_driver_tl.o: \
                 module_mp_milbrandt2mom.o     \
 		module_mp_wdm5.o module_mp_wdm6.o \
 		module_mp_nconvp_tl.o                      \
+		module_mp_mkessler.o                      \
+		module_mp_mkessler_tl.o                      \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
@@ -496,7 +502,7 @@ module_microphysics_driver_tl.o: \
 
 module_microphysics_driver_ad.o: \
 		module_mixactivate.o \
-		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
+		module_mp_kessler.o module_mp_sbu_ylin.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_HWRF.o  \
@@ -507,12 +513,19 @@ module_microphysics_driver_ad.o: \
 		module_mp_wdm5.o module_mp_wdm6.o \
 		module_mp_nconvp.o                      \
 		module_mp_nconvp_ad.o                      \
+		module_mp_mkessler.o                      \
+		module_mp_mkessler_ad.o                      \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
 
+module_mp_mkessler_tl.o: \
+		module_mp_mkessler.o
+
+module_mp_mkessler_ad.o: \
+		module_mp_mkessler.o
 
 module_cumulus_driver.o: \
 		module_cu_kf.o \

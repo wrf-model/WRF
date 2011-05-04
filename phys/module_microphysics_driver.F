@@ -56,7 +56,7 @@ SUBROUTINE microphysics_driver(                                          &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
-                    ,MILBRANDT2MOM, LSCONDSCHEME !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME !,MILBRANDT3MOM
 #endif
 
 ! Model Layer
@@ -66,6 +66,7 @@ SUBROUTINE microphysics_driver(                                          &
 ! *** add new modules of schemes here
 
    USE module_mp_kessler
+   USE module_mp_mkessler
    USE module_mp_lin
    USE module_mp_sbu_ylin
    USE module_mp_wsm3
@@ -450,6 +451,33 @@ SUBROUTINE microphysics_driver(                                          &
                                                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling kessler' )
+             ENDIF
+
+        CASE (MKESSLERSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling mkessler' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
+                                           PRESENT( QR_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                                           PRESENT( Z       ))  THEN
+               CALL mkessler(                                        &
+                  T=th                                              &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+!whl P is not recomputed in the HL' Kessler; need be added here
+                 ,P=p                                               &
+!end whl
+                 ,RHO=rho, PII=pi_phy,DT_IN=dt, Z=z, XLV=xlv, CP=cp &
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0,RHOWATER=rhowater           &
+                 ,DZ8W=dz8w                                         &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling mkessler' )
              ENDIF
 
 !

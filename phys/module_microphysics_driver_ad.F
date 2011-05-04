@@ -12,71 +12,57 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
                       ,mp_physics, spec_zone                             &
                       ,specified, channel_switch                         &
                       ,warm_rain                                         &
-                      ,t8w, a_t8w                                        &
+                      ,t8w                                               &
                       ,chem_opt, progn                                   &
-                      ,cldfra, a_cldfra, cldfra_old, a_cldfra_old        &
-                      ,exch_h, a_exch_h, nsource, a_nsource              &
-                      ,qlsink, a_qlsink                                  &
-                      ,precr, a_precr, preci, a_preci                    & 
-                      ,precs, a_precs, precg, a_precg                    &
-                      ,xland                                             & 
-                      ,itimestep                                         &
-                      ,f_ice_phy, a_f_ice_phy, f_rain_phy, a_f_rain_phy  &
-                      ,f_rimef_phy ,a_f_rimef_phy                        &
-                      ,lowlyr,           sr, a_sr                        &
-                      , id                                               &
-
+                      ,cldfra, cldfra_old, exch_h, nsource               &
+                      ,qlsink, precr, preci, precs, precg                &
+                      ,xland,itimestep                                   &
+                      ,f_ice_phy,f_rain_phy,f_rimef_phy                  &
+                      ,lowlyr,sr, id                                     &
                       ,ids,ide, jds,jde, kds,kde                         &
                       ,ims,ime, jms,jme, kms,kme                         &
                       ,ips,ipe, jps,jpe, kps,kpe                         &
                       ,i_start,i_end,j_start,j_end,kts,kte               &
-
                       ,num_tiles, naer                                   &
-                      ,qv_curr, a_qv_curr, qc_curr, a_qc_curr            &
-                      ,qr_curr, a_qr_curr, qi_curr, a_qi_curr            &
-                      ,qs_curr, a_qs_curr, qg_curr, a_qg_curr            &
-                      ,qndrop_curr, a_qndrop_curr                        &
-                      ,qni_curr,    a_qni_curr                           &
-                      ,qh_curr, a_qh_curr, qnh_curr ,a_qnh_curr          &
-                      ,qzr_curr ,a_qzr_curr ,qzi_curr ,a_qzi_curr        &
-                      ,qzs_curr, a_qzs_curr ,qzg_curr ,a_qzg_curr        &
-                      ,qzh_curr ,a_qzh_curr                              &
-                      ,qns_curr, a_qns_curr, qnr_curr, a_qnr_curr        &
-                      ,qng_curr, a_qng_curr, qnn_curr, a_qnn_curr        &
-                      ,qnc_curr, a_qnc_curr                              &
+                      ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
+                      ,a_qv_curr,a_qc_curr,a_qr_curr,a_qi_curr,a_qs_curr,a_qg_curr   &
+                      ,qndrop_curr,qni_curr,qh_curr,a_qh_curr, qnh_curr             &
+                      ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr      &
+                      ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr      &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
                       ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
-                      ,qrcuten, a_qrcuten, qscuten, a_qscuten            &
-                      ,qicuten, a_qicuten, mu     , a_mu                 &
-                      ,qt_curr, a_qt_curr, f_qt                                      &
+                      ,qrcuten, qscuten, qicuten, mu                     &
+                      ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew
                       ,hail,ice2                                         & ! for mp_gsfcgce
 !                     ,ccntype                                           & ! for mp_milbrandt2mom
-                      ,w ,a_w,  z, a_z                                   &
-                      ,rainnc, a_rainnc, rainncv, a_rainncv              &
-                      ,snownc, a_snownc, snowncv, a_snowncv              &
-                      ,hailnc, a_hailnc, hailncv, a_hailncv              &
-                      ,graupelnc, a_graupelnc, graupelncv, a_graupelncv  &
-                      ,refl_10cm, a_refl_10cm                            & ! HM, 9/22/09, add for refl
-                                                                         )
-
-
+                      ,w ,z                                              &
+                      ,a_w, a_z                                          &
+                      ,rainnc,    rainncv                                &
+                      ,a_rainnc,  a_rainncv                              &
+                      ,snownc,    snowncv                                &
+                      ,hailnc,    hailncv                                &
+                      ,graupelnc, graupelncv                             &
+                      ,refl_10cm                                         & ! HM, 9/22/09, add for refl
+! YLIN
+! Added the RI_CURR array to the call
+                      ,ri_curr                                           &
+                                                   )
 ! Framework
 #if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
-                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME  &
-                    ,MILBRANDT2MOM, LSCONDSCHEME !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM !,MILBRANDT3MOM
 #else
    USE module_state_description, ONLY :                                  &
-                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME  &
-                    ,MILBRANDT2MOM, LSCONDSCHEME !,MILBRANDT3MOM
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
+                    ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME !,MILBRANDT3MOM
 #endif
-
 
 ! Model Layer
    USE module_model_constants
@@ -84,8 +70,10 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 
 ! *** add new modules of schemes here
 
-   USE module_mp_kessler
+   USE module_mp_mkessler
+   USE a_module_mp_mkessler
    USE module_mp_lin
+   USE module_mp_sbu_ylin
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE module_mp_wsm6
@@ -101,9 +89,8 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
    USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
-   USE module_mp_nconvp    !  added by Zhuxiao
-   USE a_module_mp_nconvp    !  added by Zhuxiao, 12/10
-
+   USE module_mp_nconvp 
+   USE a_module_mp_nconvp 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
    !
@@ -270,42 +257,39 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 !
-
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
          INTENT(INOUT) ::                                    th, a_th
 !
 
 !
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                     &
-         INTENT(IN   ) ::                                              &
-                                                            rho,a_rho, &
-                                                         dz8w, a_dz8w, &
-                                                          p8w, a_p8w,  &
-                                                     pi_phy, a_pi_phy, &
-                                                               p, a_p
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
+         INTENT(IN   ) ::                                             &
+                                                           rho,a_rho, &
+                                                          dz8w,a_dz8w,&
+                                                            p8w,a_p8w,&
+                                                     pi_phy,a_pi_phy, &
+                                                               p,a_p
 
 
    REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
-                                     F_ICE_PHY, a_F_ICE_PHY,          &
-                                     F_RAIN_PHY, a_F_RAIN_PHY,        &
-                                     F_RIMEF_PHY, a_F_RIMEF_PHY
+                                     F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
 !!$#ifdef WRF_CHEM
 !  REAL, INTENT(OUT), DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
    REAL, OPTIONAL, INTENT(OUT), DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
 !!$#else
 !!$  REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
 !!$#endif
-         qlsink, a_qlsink, & ! cloud water sink (/s)
-         precr, a_precr, & ! rain precipitation rate at all levels (kg/m2/s)
-         preci, a_preci, & ! ice precipitation rate at all levels (kg/m2/s)
-         precs, a_precs, & ! snow precipitation rate at all levels (kg/m2/s)
-         precg, a_precg    ! graupel precipitation rate at all levels (kg/m2/s)
+         qlsink, & ! cloud water sink (/s)
+         precr, & ! rain precipitation rate at all levels (kg/m2/s)
+         preci, & ! ice precipitation rate at all levels (kg/m2/s)
+         precs, & ! snow precipitation rate at all levels (kg/m2/s)
+         precg    ! graupel precipitation rate at all levels (kg/m2/s)
 
 !
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
 
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR, a_SR
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR
 
    REAL, INTENT(IN   ) :: dt,dx,dy
 
@@ -314,50 +298,52 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 !
 ! Optional
 !
-   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm, a_refl_10cm
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm
 
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
-   REAL, OPTIONAL,  INTENT(INOUT   ) :: naer    ! aerosol number concentration (/kg)
+   REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
-                  w,a_w, z,a_z, t8w, a_t8w                        &
-                 ,cldfra,a_cldfra, cldfra_old,a_cldfra_old, exch_h ,a_exch_h      &
-                 ,qv_curr,a_qv_curr,qc_curr,a_qc_curr,qr_curr, a_qr_curr          &
-                 ,qi_curr,a_qi_curr,qs_curr,a_qs_curr,qg_curr, a_qg_curr          &
-                 ,qt_curr,a_qt_curr,qndrop_curr, a_qndrop_curr                    &
-                 ,qh_curr,a_qh_curr,qnh_curr,a_qnh_curr,qni_curr,a_qni_curr       &
-                 ,qns_curr,a_qns_curr,qnr_curr, a_qnr_curr                        &
-                 ,qng_curr,a_qng_curr,qnn_curr, a_qnn_curr,qnc_curr,a_qnc_curr    &
-                 ,qzr_curr,a_qzr_curr,qzi_curr, a_qzi_curr                        &
-                 ,qzs_curr,a_qzs_curr,qzg_curr,a_qzg_curr,qzh_curr, a_qzh_curr    
+                  w, z, t8w                                       &
+                 ,a_w,a_z                                         &
+                 ,cldfra, cldfra_old, exch_h                      &
+                 ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
+                 ,a_qv_curr,a_qc_curr,a_qr_curr,a_qi_curr,a_qs_curr,a_qg_curr &
+                 ,qt_curr,qndrop_curr,qni_curr,qh_curr,a_qh_curr,qnh_curr   &
+                 ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr    &
+                 ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(IN) :: qrcuten,a_qrcuten, qscuten, a_qscuten, qicuten, a_qicuten
+         INTENT(IN) :: qrcuten, qscuten, qicuten
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
-         INTENT(IN) :: mu, a_mu
+         INTENT(IN) :: mu
+! YLIN
+! Added RI_CURR similar to microphysics fields above
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: ri_curr
 
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                   &
          OPTIONAL,                                                &
          INTENT(OUT ) ::                                          &
-                  nsource, a_nsource
+                  nsource
 
 !
-! make the TL avariable, Zhuxiao Li
    REAL, DIMENSION( ims:ime , jms:jme ),                          &
          INTENT(INOUT),                                           &
          OPTIONAL   ::                                            &
-                                               RAINNC, a_RAINNC   &
-                                             ,RAINNCV, a_RAINNCV  &
-                                             ,SNOWNC, a_SNOWNC    &
-                                             ,SNOWNCV,a_SNOWNCV   &
-                                        ,GRAUPELNC ,a_GRAUPELNC   &
-                                        ,GRAUPELNCV ,a_GRAUPELNCV &
-                                        ,HAILNC     ,a_HAILNC     &
-                                        ,HAILNCV    ,a_HAILNCV
+                                                  RAINNC,a_RAINNC &
+                                               ,RAINNCV,a_RAINNCV &
+                                                          ,SNOWNC &
+                                                         ,SNOWNCV &
+                                                       ,GRAUPELNC &
+                                                      ,GRAUPELNCV &
+                                                          ,HAILNC &
+                                                         ,HAILNCV
    INTEGER,OPTIONAL,INTENT(IN   )    ::                        id
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
@@ -375,9 +361,6 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,sz,n
    LOGICAL :: channel
-
-
-!test by zzma 01/03/2011
 
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
@@ -421,6 +404,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
        jte = min(jpe,jde-1-sz)
 #endif
 
+
 ! 2009-06009 rce - zero all these for safety
        IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.
        IF( PRESENT(precr ) ) precr(its:ite,kts:kte,jts:jte)  = 0.
@@ -429,34 +413,61 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
        IF( PRESENT(precg ) ) precg(its:ite,kts:kte,jts:jte)  = 0.
 
 !-----------
+
      adj_micro_select: SELECT CASE(mp_physics)
 
-!    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
-
-        CASE (LSCONDSCHEME)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling lscond' )
-             IF ( PRESENT( QV_CURR ) .AND.                          &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )) THEN
-                                          
-               CALL a_lscond(                                        &
-                  TH=th,  a_TH=a_th                                  &
-                 ,P=p, a_P=a_p                                        & 
-                 ,QV=qv_curr, a_QV=a_qv_curr                          &
-                 ,RHO=rho,a_RHO=a_rho,  PII=pi_phy, a_PII=a_pi_phy        &  
-                 ,XLV=xlv, CP=cp                                    &  
+        CASE (MKESSLERSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling a_mkessler' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
+                                           PRESENT( QR_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                                           PRESENT( Z       ))  THEN
+               CALL a_mkessler(                                        &
+                  T=th,TB=a_th                                              &
+                 ,QV=qv_curr,QVB=a_qv_curr                                        &
+                 ,QC=qc_curr,QCB=a_qc_curr                                        &
+                 ,QR=qr_curr,QRB=a_qr_curr                                        &
+!whl P is not recomputed in the HL' Kessler; need be added here
+                 ,P=p,PB=a_p                                               &
+!end whl
+                 ,RHO=rho, RHOB=a_rho, PII=pi_phy,PIIB=a_pi_phy, DT_IN=dt, Z=z, XLV=xlv, CP=cp &
                  ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
-                 ,SVP3=svp3,SVPT0=svpt0                             & 
-                 ,R_V= R_v                                          & ! added
-
-                 ,DZ8W=dz8w,a_DZ8W=a_dz8w                           &
-                 ,RAINNC=rainnc,a_RAINNC=a_rainnc                   &
-                 ,RAINNCV=rainncv, a_RAINNCV=a_rainncv                &
+                 ,SVP3=svp3,SVPT0=svpt0,RHOWATER=rhowater           &
+                 ,DZ8W=dz8w                                         &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,RAINNCB=a_rainnc,RAINNCVB=a_rainncv                     &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
              ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling lscond' )
+                CALL wrf_error_fatal ( 'arguments not present for calling a_mkessler' )
+             ENDIF
+
+        CASE (LSCONDSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling a_lscond' )
+             IF ( PRESENT( QV_CURR ) .AND.                          &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )) THEN
+
+               CALL a_lscond(                                         &
+                  TH=th,  A_TH=a_th                                  &
+                 ,P=p, A_P=a_p                                            &
+                 ,QV=qv_curr, A_QV=a_qv_curr                              &
+                 ,RHO=rho,A_RHO=a_rho, PII=pi_phy, A_PII=a_pi_phy   &
+                 , XLV=xlv, CP=cp                                   &
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0                             &
+                 ,R_V= R_v                                          & ! added
+                 ,DZ8W=dz8w,A_DZ8W=a_dz8w                             &
+                 ,RAINNC=rainnc, A_RAINNC=a_rainnc                    &
+                 ,RAINNCV=rainncv,A_RAINNCV=a_rainncv                 &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+                                          
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling a_lscond' )
              ENDIF
 
       CASE DEFAULT

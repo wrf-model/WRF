@@ -50,7 +50,7 @@ CONTAINS
 use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_em_phys_a_bl_surf_sub
 #endif
     USE module_utility
 
@@ -253,6 +253,12 @@ BENCH_END(g_phy_prep_tim)
 
 !*********
 ! pbl
+
+#ifdef DM_PARALLEL
+      IF ( config_flags%bl_pbl_physics .EQ. 98 ) THEN
+#     include "HALO_EM_PHYS_A_BL_SURF.inc"
+      ENDIF
+#endif
 
       CALL wrf_debug ( 200 , ' call g_pbl_driver' )
 BENCH_START(g_pbl_driver_tim)

@@ -48,7 +48,7 @@ CONTAINS
             ,halo_em_phys_pbl_sub,halo_em_phys_shcu_sub &
             ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
-            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub
+            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub,halo_em_phys_pbl_tl_sub
 #endif
 
     USE module_driver_constants
@@ -594,6 +594,7 @@ ENDIF
 !-----------------------------------------------------------------------
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
+#      include "HALO_EM_PHYS_PBL_TL.inc"
        ENDIF
        IF ( config_flags%shcu_physics .gt. 1 ) THEN
 #      include "HALO_EM_PHYS_SHCU.inc"

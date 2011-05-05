@@ -230,7 +230,7 @@ CONTAINS
       CALL PUSHREAL8(arg1)
       arg1 = rhok(1)/rhok(k)
       vtden(k) = SQRT(arg1)
-      IF (qrr .GE. 1d-5) THEN
+      IF (qrr/(0.001*rhok(k)) .GE. 1d-5) THEN
         vt(k) = 36.34*qrr**0.1364*vtden(k)
         CALL PUSHINTEGER4(1)
       ELSE

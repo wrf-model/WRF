@@ -182,7 +182,7 @@ CONTAINS
         vtdend(k) = arg1d/(2.0*SQRT(arg1))
       END IF
       vtden(k) = SQRT(arg1)
-      IF (qrr .GE. 1d-5) THEN
+      IF (qrr/(0.001*rhok(k)) .GE. 1d-5) THEN
         vtd(k) = 36.34*(0.1364*qrr**(-0.8636)*qrrd*vtden(k)+qrr**0.1364*&
 &          vtdend(k))
         vt(k) = 36.34*qrr**0.1364*vtden(k)

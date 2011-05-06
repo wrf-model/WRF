@@ -37,7 +37,7 @@
  frames_per_auxhist7                 = 1,
 
  &domains
- time_step                           = 720
+ time_step                           = 600
  time_step_fract_num                 = 0
  time_step_fract_den                 = 11
  max_dom                             = 1,

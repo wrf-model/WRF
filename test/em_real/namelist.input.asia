@@ -25,10 +25,10 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = -300
+ debug_level                         = 0
+ /
  iofields_filename                   ="plus.io_config",
  ignore_iofields_warning             =.true.,
- /
 
  &domains
  time_step                           = 540,
@@ -54,13 +54,13 @@
  /
 
  &physics
- mp_physics                          = 0,     3,     3,
+ mp_physics                          = 98,     3,     3,
  ra_lw_physics                       = 0,     1,     1,
  ra_sw_physics                       = 0,     1,     1,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 0,     1,     1,
  sf_surface_physics                  = 1,     2,     2,
- bl_pbl_physics                      = 0,     1,     1,
+ bl_pbl_physics                      = 98,     1,     1,
  bldt                                = 0,     0,     0,
  cu_physics                          = 0,     1,     0,
  cudt                                = 5,     5,     5,
@@ -116,7 +116,7 @@
  /
 
  &perturbation
- check_TL = .true.
+ check_TL = .false.
  check_AD = .true.
  check_u = .true.
  check_v = .true.

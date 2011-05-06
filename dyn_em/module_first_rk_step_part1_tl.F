@@ -50,7 +50,7 @@ CONTAINS
 use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_em_phys_a_bl_surf_sub
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_em_phys_a_bl_surf_sub,halo_em_phys_a_tl_sub
 #endif
     USE module_utility
 
@@ -209,6 +209,7 @@ BENCH_END(g_init_zero_tend_tim)
 
 #ifdef DM_PARALLEL
 #     include "HALO_EM_PHYS_A.inc"
+#     include "HALO_EM_PHYS_A_TL.inc"
 #endif
 
       !$OMP PARALLEL DO   &

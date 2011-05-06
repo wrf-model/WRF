@@ -606,8 +606,12 @@ package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi
 
 ### 8. Edit the Registry file and create a halo-exchange for x_1.
 
+halo      HALO_EM_TKE_C_TL dyn_em 8:g_u_2,g_v_2,g_z,g_zx,g_zy,g_rdz,g_rdzw,g_ustm
+halo      HALO_EM_TKE_D_TL dyn_em 8:g_defor11,g_defor22,g_defor33,g_defor12,g_defor13,g_defor23,g_div
+halo      HALO_EM_TKE_E_TL dyn_em 8:g_xkmv,g_xkmh,g_xkhv,g_xkhh,g_BN2,g_moist
+halo      HALO_EM_PHYS_DIFFUSION_TL dyn_em  4:g_defor11,g_defor22,g_defor12,g_defor13,g_defor23,g_div,g_xkmv,g_xkmh,g_xkhv,g_xkhh,g_tke_1,g_tke_2
 halo      HALO_EM_PHYS_PBL_TL dyn_em        4:g_rublten,g_rvblten
-halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
+halo      HALO_EM_PHYS_A_TL  dyn_em 4:g_u_2,g_v_2
 #halo      HALO_EM_AD_RK_TEND0 dyn_em 120:u_2,v_2,w_2,t_2,ph_2,ru,rv,rw,a_ru_tend,a_rv_tend,a_rw_tend,a_ph_tend,a_t_tend,a_mu_tend
 halo      HALO_EM_AD_RK_TEND0 dyn_em 120:u_2,v_2,w_2,t_2,ph_2,ru,rv,rw,a_ru_tend,a_rv_tend
 halo      HALO_EM_A_TL dyn_em  8:g_ru,g_rv,g_rw,g_ww,g_php,g_alt,g_al,g_p,g_muu,g_muv,g_mut
@@ -647,6 +651,8 @@ period    PERIOD_BDY_EM_D3_TL dyn_em 3:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1
 period    PERIOD_BDY_EM_MOIST_TL dyn_em 4:g_moist
 period    PERIOD_EM_HYDRO_UV_TL dyn_em 1:g_u_2,g_v_2
 period    PERIOD_BDY_EM_MOIST_OLD_TL dyn_em 4:g_moist_old
+period    PERIOD_BDY_EM_A1_TL  dyn_em 3:g_rdzw,g_rdz,g_z,g_zx,g_zy,g_ustm
+period    PERIOD_BDY_EM_PHY_BC_TL dyn_em 2:g_rublten,g_rvblten,g_rucuten,g_rvcuten,g_xkmh,g_xkmv,g_xkhh,g_xkhv,g_div,g_defor11,g_defor22,g_defor12,g_defor13,g_defor23,g_defor33,g_tke_2
 
 halo      HALO_EM_MU_AD dyn_em  4:a_muu,a_muv,a_mu_2,a_ru,a_rv
 halo      HALO_EM_SAVE_AD dyn_em  4:a_ph_save,a_t_save,a_u_save,a_v_save

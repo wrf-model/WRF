@@ -2022,6 +2022,7 @@ halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten
 halo      HALO_EM_PHYS_SHCU dyn_em       4:rushten,rvshten
+halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
 halo      HALO_EM_FDDA_SFC dyn_em 48:z,z_at_w,pblh,regime,znt,odis_ndg_old,odis_ndg_new
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2

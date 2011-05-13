@@ -8,25 +8,34 @@ subroutine da_convert_zk (info)
    implicit none
 
    type(infa_type), intent(inout) :: info
+   integer :: k, n
 
    if (trace_use) call da_trace_entry("da_convert_zk")
 
-   where ( (info%zk(:,info%n1:info%n2) > 0.0 .or. anal_type_verify) &
-            .and. info%zk(:,info%n1:info%n2) .ne. missing_r) 
+   do n = info%n1, info%n2
 
+      do k = 1, info%levels(n)
 
-      info%k(:,info%n1:info%n2) = int ( info%zk(:,info%n1:info%n2))
+         if ( (info%zk(k,n) > 0.0 .or. anal_type_verify) &
+               .and. info%zk(k,n) .ne. missing_r) then 
 
-      where(info%k(:,info%n1:info%n2) < kts)  info%k(:,info%n1:info%n2) = kts
-      where(info%k(:,info%n1:info%n2) >= kte) info%k(:,info%n1:info%n2) = kte-1
+            info%k(k,n) = int ( info%zk(k,n))
+  
+            if (info%k(k,n) < kts)  info%k(k,n) = kts
+            if (info%k(k,n) >= kte) info%k(k,n) = kte-1
 
-      info%dz(:,info%n1:info%n2) = info%zk(:,info%n1:info%n2) - real(info%k(:,info%n1:info%n2))
-      info%dzm(:,info%n1:info%n2)= 1.0 - info%dz(:,info%n1:info%n2)
-   elsewhere 
-      info%k(:,info%n1:info%n2) = 0
-      info%dz(:,info%n1:info%n2) = 0.0
-      info%dzm(:,info%n1:info%n2) = 0.0
-   end where
+            info%dz(k,n) = info%zk(k,n) - real(info%k(k,n))
+            info%dzm(k,n)= 1.0 - info%dz(k,n)
+
+         else
+            info%k(k,n) = 0
+            info%dz(k,n) = 0.0
+            info%dzm(k,n) = 0.0
+         endif
+
+      enddo
+
+   enddo
 
    if (trace_use) call da_trace_exit("da_convert_zk")
 

@@ -356,7 +356,7 @@
             model_grid%moist_btys = grid%moist_btys
             model_grid%moist_btye = grid%moist_btye
 
-            ! Turn off model boundary reading ad we already provide a new one.
+            ! Turn off model boundary reading as we already provide a new one.
             call da_model_lbc_off
          endif
 

@@ -35,7 +35,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
       call domain_clock_get( grid, start_timestr=timestr )
       call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
-      if ( var4d_lbc ) then
+      if ( var4d_lbc ) then 
          call da_get_2nd_firstguess ( grid )
          call da_setup_firstguess( xbx, grid, config_flags)
 
@@ -50,6 +50,8 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
          call domain_clock_get( grid, start_timestr=timestr )
          call da_read_basicstates ( xbx, grid, config_flags, timestr )
+      else
+         call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
       endif
 
       call da_tl_model

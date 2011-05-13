@@ -30,6 +30,13 @@ subroutine da_ad_model ()
 
    ! Set all perturbation to ZERO
 
+   head_grid%a_h_diabatic = 0.0
+
+   head_grid%a_rainnc  = 0.0
+   head_grid%a_rainncv = 0.0
+   head_grid%a_rainc  = 0.0
+   head_grid%a_raincv = 0.0
+
 ! I&O variables
    head_grid%a_scalar = 0.0
    head_grid%a_tke_2 = 0.0
@@ -87,7 +94,6 @@ subroutine da_ad_model ()
    head_grid%a_ustm=0.0
    head_grid%a_hfx=0.0
    head_grid%a_qfx=0.0
-   head_grid%a_h_diabatic=0.0
 
    head_grid%a_u_1 = 0.0
    head_grid%a_v_1 = 0.0
@@ -95,7 +101,6 @@ subroutine da_ad_model ()
    head_grid%a_t_1 = 0.0
    head_grid%a_ph_1 = 0.0
    head_grid%a_mu_1 = 0.0
-   head_grid%a_moist = 0.0
 
    head_grid%a_u_2 = 0.0
    head_grid%a_v_2 = 0.0
@@ -103,6 +108,7 @@ subroutine da_ad_model ()
    head_grid%a_t_2 = 0.0
    head_grid%a_ph_2 = 0.0
    head_grid%a_mu_2 = 0.0
+
    head_grid%a_moist = 0.0
 
    head_grid%a_u_bxs = 0.0; head_grid%a_u_bxe = 0.0; head_grid%a_u_bys = 0.0; head_grid%a_u_bye = 0.0
@@ -137,15 +143,22 @@ subroutine da_ad_model ()
 
    head_grid%g_moist = 0.0
 
+   head_grid%g_rainnc  = 0.0
+   head_grid%g_rainncv = 0.0
+   head_grid%g_rainc  = 0.0
+   head_grid%g_raincv = 0.0
+
    ! Set the physics options to what they are in TL and AD
-   call nl_set_mp_physics (head_grid%id, 0) 
+   if ( original_mp_physics .gt. 0 ) &
+      call nl_set_mp_physics (head_grid%id, 98) 
    call nl_set_ra_lw_physics (head_grid%id, 0)
    call nl_set_ra_sw_physics (head_grid%id, 0)
    call nl_set_sf_sfclay_physics (head_grid%id, 0)
-   call nl_set_bl_pbl_physics (head_grid%id, 0)
+   if ( original_bl_pbl_physics .gt. 0 ) &
+      call nl_set_bl_pbl_physics (head_grid%id, 98)
    call nl_set_cu_physics (head_grid%id, 0)
    call nl_set_mp_zero_out (head_grid%id, 0)
-   call nl_set_sf_surface_physics (head_grid%id, 1)
+   !call nl_set_sf_surface_physics (head_grid%id, 1)
    call nl_set_ifsnow (head_grid%id, 1)
    call nl_set_icloud (head_grid%id, 0)
    call nl_set_isfflx (head_grid%id, 0)
@@ -161,7 +174,7 @@ subroutine da_ad_model ()
    call nl_set_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
    call nl_set_cu_physics (head_grid%id, original_cu_physics)
    call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
-   call nl_set_sf_surface_physics (head_grid%id, original_sf_surface_physics)
+   !call nl_set_sf_surface_physics (head_grid%id, original_sf_surface_physics)
    call nl_set_ifsnow (head_grid%id, original_ifsnow)
    call nl_set_icloud (head_grid%id, original_icloud)
    call nl_set_isfflx (head_grid%id, original_isfflx)

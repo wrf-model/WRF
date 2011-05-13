@@ -53,6 +53,10 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
    call kj_swap_reverse (model_grid%g_ph_2, grid%g_ph_2, &
                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    grid%g_mu_2 = model_grid%g_mu_2
+   grid%g_rainnc = model_grid%g_rainnc
+   grid%g_rainncv = model_grid%g_rainncv
+   grid%g_rainc = model_grid%g_rainc
+   grid%g_raincv = model_grid%g_raincv
 
    do i = PARAM_FIRST_SCALAR, num_moist
       call kj_swap_reverse (model_grid%g_moist(:,:,:,i), grid%g_moist(:,:,:,i), &

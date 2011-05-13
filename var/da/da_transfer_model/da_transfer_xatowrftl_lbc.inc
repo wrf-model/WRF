@@ -52,13 +52,16 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    qbdy3dtemp2 = 0.0
    mbdy2dtemp2 = 0.0
 
+   spec_bdy_width =  grid%spec_bdy_width
+
+   IF ( var4d_lbc ) THEN 
+
    is=grid%xp%its
    ie=grid%xp%ite
    js=grid%xp%jts
    je=grid%xp%jte
    ks=grid%xp%kts
    ke=grid%xp%kte
-   spec_bdy_width =  grid%spec_bdy_width
 
    allocate (g_press(ims:ime,jms:jme,kms:kme))
    allocate (g_moist(ims:ime,jms:jme,kms:kme))
@@ -102,6 +105,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                    grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
+   ENDIF
 
    CALL g_stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , REAL(interval_seconds) ,                 &
                                         model_grid%g_moist_btxs(:,:,:,P_G_QV), model_grid%g_moist_btxe(:,:,:,P_G_QV), &
@@ -116,11 +120,15 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    ! [2.0] COMPUTE tendency of increments of dry-column air mass
    !---------------------------------------------------------------------------
 
+   IF ( var4d_lbc ) THEN
+
    DO j = grid%sp32 , MIN(grid%ed32-1,grid%ep32)
       DO i = grid%sp31 , MIN(grid%ed31-1,grid%ep31)
           mbdy2dtemp2(i,1,j) = g_mu(i,j)
       END DO
    END DO
+
+   ENDIF
 
    CALL g_stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , REAL(interval_seconds) ,                 &
                                    model_grid%g_mu_btxs, model_grid%g_mu_btxe,   &
@@ -134,6 +142,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    !---------------------------------------------------------------------------
    ! [3.0] compute pressure increments (for computing theta increments)
    !---------------------------------------------------------------------------
+
+   IF ( var4d_lbc ) THEN
 
    do j=js,je
       do i=is,ie
@@ -167,6 +177,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                    grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
+   ENDIF
+
    CALL g_stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , REAL(interval_seconds) ,                 &
                                       model_grid%g_t_btxs, model_grid%g_t_btxe,     &
                                       model_grid%g_t_btys, model_grid%g_t_btye,     &
@@ -176,6 +188,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                                       grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                                       grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
+   IF ( var4d_lbc ) THEN
 
    allocate ( g_ph(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
 
@@ -199,6 +212,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                    grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                    grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+   ENDIF
 
    CALL g_stuff_bdytend ( pbdy3dtemp2 , pbdy3dtemp1 , REAL(interval_seconds) ,                 &
                                       model_grid%g_ph_btxs, model_grid%g_ph_btxe,   &
@@ -208,6 +222,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                                       grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                                       grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                                       grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+
+   IF ( var4d_lbc ) THEN
 
    deallocate (g_press)
    deallocate (g_ph)
@@ -315,6 +331,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                    grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
+   ENDIF
+
    CALL g_stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , REAL(interval_seconds) ,                 &
                                       model_grid%g_u_btxs, model_grid%g_u_btxe,     &
                                       model_grid%g_u_btys, model_grid%g_u_btye,     &
@@ -334,6 +352,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                                       grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
 
+   IF ( var4d_lbc ) THEN
+
    !---------------------------------------------------------------------------
    ! [7.0] tidy up
    !---------------------------------------------------------------------------
@@ -342,6 +362,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    deallocate (g_mu)
    deallocate (g_moist)
    deallocate (g_t)
+
+   ENDIF
 
    DEALLOCATE ( ubdy3dtemp2 )
    DEALLOCATE ( vbdy3dtemp2 )

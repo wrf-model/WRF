@@ -66,7 +66,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          do j = jms, jme
             do i = ims, ime
                model_grid%jcdfi_mu(i,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j) * gas_constant * &
-                     280.0/(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                     280.0/(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area
             enddo
          enddo
 

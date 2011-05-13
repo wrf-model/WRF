@@ -265,6 +265,11 @@ bufrfile:  do ibufr=1,numbufr
   if (iost /= 0) then
      call da_warning(__FILE__,__LINE__, &
         (/"Cannot open file "//infile/))
+     close(lnbufr)
+     if (airstab) then
+        close(airs_table_unit)
+        call da_free_unit(airs_table_unit)
+     end if
      return
   end if
   if ( airstab ) then

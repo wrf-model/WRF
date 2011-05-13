@@ -203,7 +203,16 @@
    !---------------------------------------------------------------------------
    ! [5.1] Set up background errors (be):
    !---------------------------------------------------------------------------
-   if (use_background_errors) call da_setup_background_errors (grid, be)
+   if (use_background_errors) then
+      call da_setup_background_errors (grid, be)
+   else
+      be % ne = ensdim_alpha
+      be % v1 % mz = 0
+      be % v2 % mz = 0
+      be % v3 % mz = 0
+      be % v4 % mz = 0
+      be % v5 % mz = 0
+   end if
 
    !---------------------------------------------------------------------------
    ! [5.2] Set up observation bias correction (VarBC):

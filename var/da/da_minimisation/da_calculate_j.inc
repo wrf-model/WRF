@@ -142,6 +142,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    ! [2.0] calculate jb:
    !-------------------------------------------------------------------------
 
+   j % jb = 0.0
    if (cv_size_jb > 0) then
       cv_xhat_jb(1:cv_size_jb) = cv(1:cv_size_jb) + xhat(1:cv_size_jb)
       j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, mz)

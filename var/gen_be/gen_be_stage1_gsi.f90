@@ -16,6 +16,7 @@ program gen_be_stage1_gsi
    use da_control, only : stderr, stdout, filename_len
    use da_tools_serial, only : da_get_unit,da_advance_cymdh
    use da_gen_be, only : da_create_bins
+   use aero_mod
 
    implicit none
 
@@ -43,12 +44,14 @@ program gen_be_stage1_gsi
    real, allocatable   :: chi_prime(:,:,:)           ! Velocity Potential perturbation.
    real, allocatable   :: rh_prime(:,:,:)            ! Relative Humidity Perturbation.
    real, allocatable   :: rhm_prime(:,:,:)           ! Mean Relative Humidity Perturbation.
+   real, allocatable   :: aero_prime(:,:,:,:)        ! Aerosol Perturbation.
 
    real, allocatable   :: psi_mean(:,:,:)            ! Mean field.
    real, allocatable   :: chi_mean(:,:,:)            ! Mean field.
    real, allocatable   :: t_mean(:,:,:)              ! Mean field.
    real, allocatable   :: rh_mean(:,:,:)             ! Mean field.
    real, allocatable   :: ps_mean(:,:)               ! Mean field.
+   real, allocatable   :: aero_mean(:,:,:,:)         ! Mean field.
 
    real, allocatable   :: xlat(:,:)                  ! Latitude  of mass points.
    real, allocatable   :: xlon(:,:)                  ! Longitude of mass points.
@@ -63,6 +66,11 @@ program gen_be_stage1_gsi
 
    namelist / gen_be_stage1_gsi_nl / start_date, end_date, interval, &
                                  be_method, ne, stage0_gsi_dir, stage1_gsi_dir
+
+   integer             :: num_aeros, kk
+   integer, parameter  :: num_aeros_max = 200
+   character (len=40)  :: aeros_to_process(1:num_aeros_max)
+   logical             :: process_aero
 
    integer :: ounit,iunit,namelist_unit
 
@@ -81,6 +89,8 @@ program gen_be_stage1_gsi
    ne = 1
    stage0_gsi_dir = '/ptmp/rizvi/data/con200/run_gen_be_gsi/stage0_gsi'                 
    stage1_gsi_dir = '/ptmp/rizvi/data/con200/run_gen_be_gsi/stage1_gsi'                 
+
+   call get_aero_info(process_aero,aeros_to_process,num_aeros)
 
 !---------------------------------------------------------------------------------------------
    write(6,'(a)')' [1] Read Namelist (gen_be_stage1_gsi_nl.nl)'
@@ -154,6 +164,12 @@ program gen_be_stage1_gsi
             rh_mean(:,:,:) = 0.0
             ps_mean(:,:) = 0.0
 
+            if ( process_aero ) then
+               allocate( aero_prime(1:num_aeros,1:ni,1:nj,1:nk) )
+               allocate( aero_mean(1:num_aeros,1:ni,1:nj,1:nk) )
+               aero_mean(:,:,:,:) = 0.0
+            end if
+
          end if
 
          read(iunit)znu 
@@ -168,6 +184,7 @@ program gen_be_stage1_gsi
          read(iunit)rh_prime
          read(iunit)rhm_prime
          read(iunit)ps_prime
+         if ( process_aero ) read(iunit) aero_prime
 
          close(iunit)
 
@@ -180,6 +197,11 @@ program gen_be_stage1_gsi
          t_mean = ( real( count-1 ) * t_mean + t_prime ) * count_inv
          rh_mean = ( real( count-1 ) * rh_mean + rh_prime ) * count_inv
          ps_mean = ( real( count-1 ) * ps_mean + ps_prime ) * count_inv
+         if ( process_aero ) then
+            do kk = 1,num_aeros
+               aero_mean(kk,:,:,:) = ( real( count-1 ) * aero_mean(kk,:,:,:) + aero_prime(kk,:,:,:) ) * count_inv
+            end do
+         end if
 
       end do  ! End loop over ensemble members.
 
@@ -226,6 +248,7 @@ program gen_be_stage1_gsi
          read(iunit)rh_prime
          read(iunit)rhm_prime
          read(iunit)ps_prime
+         if ( process_aero ) read(iunit) aero_prime
 
          close(iunit)
 
@@ -240,6 +263,11 @@ program gen_be_stage1_gsi
          t_prime = t_prime - t_mean
          rh_prime = rh_prime - rh_mean
          ps_prime = ps_prime - ps_mean
+         if ( process_aero ) then
+            do kk = 1,num_aeros
+               aero_prime(kk,:,:,:) = aero_prime(kk,:,:,:) - aero_mean(kk,:,:,:)
+            end do
+         end if
 
 !      
 !---------------------------------------------------------------------------------------------
@@ -262,6 +290,7 @@ program gen_be_stage1_gsi
          write(ounit)rh_prime
          write(ounit)rhm_prime
          write(ounit)ps_prime
+         if ( process_aero ) write(ounit) aero_prime
          close(ounit)
 
       end do  ! End loop over ensemble members.
@@ -290,12 +319,14 @@ program gen_be_stage1_gsi
          deallocate( chi_prime)
          deallocate( rh_prime)
          deallocate( rhm_prime)
+         if ( process_aero ) deallocate ( aero_prime )
 
          deallocate( psi_mean )
          deallocate( chi_mean )
          deallocate( t_mean )
          deallocate( rh_mean )
          deallocate( ps_mean )
+         if ( process_aero ) deallocate ( aero_mean )
 
          deallocate( xlat)  
          deallocate( xlon)     

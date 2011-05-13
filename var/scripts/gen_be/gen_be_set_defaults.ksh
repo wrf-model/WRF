@@ -82,15 +82,18 @@ export ID=${ID:-gen_be}
 export ID1=${ID1:-${BE_METHOD}.bin_type${BIN_TYPE}}
 export VARIABLE1=${VARIABLE1:-chi_u}              # For cov3d
 export VARIABLE2=${VARIABLE2:-chi}                # For cov3d
-export CLEAN=false
+export CLEAN=${CLEAN:-false}
 export FILE_TYPE=${FILE_TYPE:-wrfout}
 export RESOLUTION_KM=${RESOLUTION_KM:-200.}
 export NL_CV_OPTIONS=${NL_CV_OPTIONS:-5}
+export NUM_PROCS=${NUM_PROCS:-1}
+export PROCESS_AERO=${PROCESS_AERO:-false}
+export AEROS_TO_PROCESS=${AEROS_TO_PROCESS:-" "}
 
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/trunk}            # Directory containing codes.
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}  # WRF-Var code directory.
-export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da} # WRF-Var code build directory.
+export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/build} # WRF-Var code build directory.
 export DAT_DIR=${DAT_DIR:-${HOME}/data}           # Top-level data directory.
 export REG_DIR=${REG_DIR:-$DAT_DIR/$REGION}       # Region-specific data dir.
 export EXP_DIR=${EXP_DIR:-$REG_DIR/$EXPT}         # Experiment-specific data dir.
@@ -98,8 +101,8 @@ export FC_DIR=${FC_DIR:-$EXP_DIR/fc}              # Forecast directory
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/gen_be$BIN_TYPE} # Run dir.
 export WORK_DIR=${WORK_DIR:-$RUN_DIR/working}     # Working directory
 export STAGE0_DIR=${STAGE0_DIR:-$WORK_DIR/stage0} # Output for stage0.
-export STAGE0_GSI_DIR=${STAGE0_GSI_DIR:-$EXP_DIR/stage0_gsi} # Output for GSI stage0.
-export STAGE1_GSI_DIR=${STAGE1_GSI_DIR:-$EXP_DIR/stage1_gsi} # Output for GSI stage0.
+export STAGE0_GSI_DIR=${STAGE0_GSI_DIR:-$WORK_DIR/stage0_gsi} # Output for GSI stage0.
+export STAGE1_GSI_DIR=${STAGE1_GSI_DIR:-$WORK_DIR/stage1_gsi} # Output for GSI stage0.
 export LESS_Q_FROM_TOP=${LESS_Q_FROM_TOP:-0}
 export LAT_BINS_IN_DEG=${LAT_BINS_IN_DEG:-1.0}
 

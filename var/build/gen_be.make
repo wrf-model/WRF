@@ -51,6 +51,7 @@ be : \
 
 GEN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
 GEN_BE_LIB = $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack $(WAVELET_LIB) $(ESMF_IO_LIB)
+AERO_MOD = aero_mod.o
 
 gen_be_stage0_wrf.exe : gen_be_stage0_wrf.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(RM) $@
@@ -91,7 +92,7 @@ gen_be_stage0_gsi.exe : gen_be_stage0_gsi.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
 	  $(SFC) -c $(FCFLAGS) $(PROMOTION) gen_be_stage0_gsi.f ; \
         fi
-	$(SFC) -o $@ $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage0_gsi.o $(GEN_BE_LIB)
+	$(SFC) -o $@ $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage0_gsi.o $(GEN_BE_LIB) $(AERO_MOD)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 gen_be_ep1.exe     : gen_be_ep1.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
@@ -118,7 +119,7 @@ gen_be_stage1.exe : gen_be_stage1.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 gen_be_stage1_gsi.exe : gen_be_stage1_gsi.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
-	$(SFC) -o gen_be_stage1_gsi.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage1_gsi.o $(GEN_BE_LIB)
+	$(SFC) -o gen_be_stage1_gsi.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage1_gsi.o $(GEN_BE_LIB) $(AERO_MOD)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 gen_be_stage1_1dvar.exe : gen_be_stage1_1dvar.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
@@ -131,9 +132,9 @@ gen_be_stage2.exe : gen_be_stage2.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 
 gen_be_stage2_gsi.exe : gen_be_stage2_gsi.o  
 	if [ -n "$(DMPARALLEL)" ] ;   then \
-	$(DM_FC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o $(LIB_LOCAL) ;\
+	$(DM_FC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o $(LIB_LOCAL) $(AERO_MOD) ;\
 	else \
-	$(SFC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o	;\
+	$(SFC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o	$(AERO_MOD) ;\
 	fi	
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 

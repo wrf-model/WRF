@@ -1,12 +1,12 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 0
- run_minutes                         = 12
+ run_hours                           = 12,
+ run_minutes                         = 0,
  run_seconds                         = 0,
  start_year                          = 2000, 2000, 2000,
  start_month                         = 01,   01,   01,
  start_day                           = 24,   24,   24,
- start_hour                          = 15,   15,   12,
+ start_hour                          = 12,   12,   12,
  start_minute                        = 00,   00,   00,
  start_second                        = 00,   00,   00,
  end_year                            = 2000, 2000, 2000,
@@ -15,30 +15,26 @@
  end_hour                            = 12,   12,   12,
  end_minute                          = 00,   00,   00,
  end_second                          = 00,   00,   00,
- interval_seconds                    = 10800
+ interval_seconds                    = 21600
  input_from_file                     = .true.,.true.,.true.,
- history_interval                    = 12,   12,   60,
- frames_per_outfile                  = 1,    1,    1000,
- restart                             = .true.,
- restart_interval                    = 180
+ history_interval                    = 180,  60,   60,
+ frames_per_outfile                  = 1000, 1000, 1000,
+ restart                             = .false.,
+ restart_interval                    = 5000,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
  debug_level                         = 0
- auxinput4_inname                    = "wrflowinp_d<domain>"
- auxinput4_interval                  = 180, 
- io_form_auxinput4                   = 2
- write_hist_at_0h_rst                = .false.
  /
 
  &domains
- time_step                           = 240
+ time_step                           = 180,
  time_step_fract_num                 = 0,
  time_step_fract_den                 = 1,
- max_dom                             = 2
- e_we                                = 74,    31,    94,
- e_sn                                = 61,    31,    91,
+ max_dom                             = 1,
+ e_we                                = 74,    112,   94,
+ e_sn                                = 61,    97,    91,
  e_vert                              = 28,    28,    28,
  p_top_requested                     = 5000,
  num_metgrid_levels                  = 27,
@@ -56,7 +52,6 @@
  /
 
  &physics
- sst_update                          = 1
  mp_physics                          = 3,     3,     3,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
@@ -76,26 +71,6 @@
  /
 
  &fdda
- grid_fdda                           = 1,     1,     1,
- gfdda_inname                        = "wrffdda_d<domain>",
- gfdda_end_h                         = 24,    24,    24,
- gfdda_interval_m                    = 180,   180,   180,
- fgdt                                = 0,     0,     0,
- if_no_pbl_nudging_uv                = 0,     0,     0,
- if_no_pbl_nudging_t                 = 1,     1,     1,
- if_no_pbl_nudging_q                 = 1,     1,     1,
- if_zfac_uv                          = 0,     0,     0,
-  k_zfac_uv                          = 10,   10,    10,
- if_zfac_t                           = 0,     0,     0,
-  k_zfac_t                           = 10,   10,    10,
- if_zfac_q                           = 0,     0,     0,
-  k_zfac_q                           = 10,   10,    10,
- guv                                 = 0.0003,     0.0003,     0.0003,
- gt                                  = 0.0003,     0.0003,     0.0003,
- gq                                  = 0.0003,     0.0003,     0.0003,
- if_ramping                          = 1,
- dtramp_min                          = 60.0,
- io_form_gfdda                       = 2,
  /
 
  &dynamics

@@ -99,6 +99,12 @@ For SST updating (used only with sst_update=1):
  auxinput4_interval                  = 360      ; minutes generally matches time given by interval_seconds
  io_form_auxinput4                   = 2        ; IO format, required in V3.2
 
+For observation nudging:
+ auxinput11_interval                 = 10       ; interval in minutes for observation data. It should be 
+                                                  set as or more frequently as obs_ionf (with unit of 
+                                                  coarse domain time step).
+ auxinput11_end_h                    = 6        ; end of observation time in hours.
+
 Options for run-time IO:
 
  iofields_filename (max_dom)         = "my_iofields_list.txt",
@@ -348,7 +354,6 @@ Namelist variables for controlling the adaptive time step option:
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
-                                     = 98, Thompson scheme (version from V3.0)
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
  fields .LT. a critcal value to zero

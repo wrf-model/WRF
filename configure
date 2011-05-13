@@ -572,7 +572,7 @@ if [ $os = "Linux" -o $os = "Darwin" ]; then
     CCOMP_MULTI_ABI=0
     CROSS_COMPILING=0
 
-    foo=`mktemp foo_$$`
+    foo=foo_$$
 
     echo
     echo Testing for NetCDF, C and Fortran compiler
@@ -592,30 +592,30 @@ cat > ${foo}.f <<EOF
           end program test_exit
 EOF
 
-    ar p $NETCDF/lib/libnetcdf.a netcdf.o > ${foo}.o
+    ar p $NETCDF/lib/libnetcdf.a nc.o > ${foo}.o
     netcdf_arch="`file ${foo}.o | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo}.o
 
     $SFC -o ${foo} ${foo}.f > /dev/null 2>&1 
     SFC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
-    rm ${foo} 2> /dev/null
+    rm ${foo} ${foo}.o 2> /dev/null
 
     $SCC -o ${foo} ${foo}.c > /dev/null 2>&1
     SCC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
     CCOMP_arch=$SCC_arch
-    rm ${foo} 2> /dev/null
+    rm ${foo} ${foo}.o 2> /dev/null
 
     if [ "$SCC" != "$CCOMP" ]; then
       $CCOMP -o ${foo} ${foo}.c > /dev/null 2>&1
       CCOMP_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
-      rm ${foo} 2> /dev/null
+      rm ${foo} ${foo}.o 2> /dev/null
     fi
 
     if [ "$SFC_arch" = "" -o "$SCC_arch" = "" -o "$CCOMP_arch" = "" ]; then
       echo "  One of compilers testing failed!"
       echo "  Please check your compiler"
       echo 
-      rm ${foo}* 2> /dev/null
+      rm -f ${foo} ${foo}.[cfo] 2> /dev/null
       exit
     else
       cp configure.wrf configure.wrf.edit
@@ -736,7 +736,7 @@ EOF
       mv configure.wrf.edit configure.wrf
     fi
 
-    rm ${foo}* 2> /dev/null
+    rm -f ${foo} ${foo}.[cfo] 2> /dev/null
 
     if [ $CROSS_COMPILING -eq 0 ] ; then
       echo This installation NetCDF is $netcdf_arch

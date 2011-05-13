@@ -973,11 +973,11 @@ OMPCPP		=	# -D_OPENMP
 OMP		=	# -qsmp=noauto
 OMPCC		=	# -qsmp=noauto
 # these have to be the same as DM_FC on surveyor or it fails with weird errors in time manager
-SFC             =       time mpixlf90_r
-SCC             =       time mpixlc_r
-CCOMP           =       time mpixlc_r
-DM_FC           =       time mpixlf90_r
-DM_CC           =       time mpixlc_r -DMPI2_SUPPORT
+SFC             =       mpixlf90_r
+SCC             =       mpixlc_r
+CCOMP           =       mpixlc_r
+DM_FC           =       mpixlf90_r
+DM_CC           =       mpixlc_r -DMPI2_SUPPORT
 FC              =        $(DM_FC)
 CC              =       $(DM_CC) -DFSEEKO64_OK
 LD              =       $(FC)

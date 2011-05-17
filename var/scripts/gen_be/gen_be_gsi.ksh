@@ -32,6 +32,16 @@ mkdir -p $WORK_DIR
 if [[ ! -d $STAGE0_GSI_DIR ]]; then mkdir -p $STAGE0_GSI_DIR; fi
 cd $WORK_DIR
 
+if [[ -e be_for_aero.nl ]]; then rm -f be_for_aero.nl; fi
+if $PROCESS_AERO ; then
+   cat > be_for_aero.nl << EOF
+&be_for_aero_nl
+process_aero = ${PROCESS_AERO},
+aeros_to_process = $AEROS_TO_PROCESS
+/
+EOF
+fi
+
 #------------------------------------------------------------------------
 # Run GSI Stage 0: Calculate ensemble perturbations from model forecasts.
 #------------------------------------------------------------------------
@@ -122,15 +132,20 @@ if $RUN_GEN_BE_GSI_STAGE2; then
     debug  = ${DEBUG} /
 EOF
 
-    export JJ=gen_be_stage2_gsi
-    bsub -a poe -R "span[ptile=16]" -n ${NUM_PROCS} -o ${JJ}.out -e ${JJ}.err -J ${JJ} -q ${QUEUE} -W ${WALL_CLOCK} -P ${PROJECT} mpirun.lsf gen_be_stage2_gsi.exe
+    #export JJ=gen_be_stage2_gsi
+    #bsub -a poe -R "span[ptile=16]" -n ${NUM_PROCS} -o ${JJ}.out -e ${JJ}.err -J ${JJ} -q ${QUEUE} -W ${WALL_CLOCK} -P ${PROJECT} mpirun.lsf gen_be_stage2_gsi.exe
   
-   
-   GSI_BE_FILE=${WORK_DIR}/wrf-arw-gsi_be            
-   while [[ ! -s ${GSI_BE_FILE} ]] ; do
-   echo "Waiting for file: " ${GSI_BE_FILE}
-   sleep 60
-   done
+   #GSI_BE_FILE=${WORK_DIR}/wrf-arw-gsi_be            
+   #while [[ ! -s ${GSI_BE_FILE} ]] ; do
+   #echo "Waiting for file: " ${GSI_BE_FILE}
+   #sleep 60
+   #done
+
+   if [[ $NUM_PROCS == 1 ]]; then
+      ./gen_be_stage2_gsi.exe > gen_be_stage2_gsi.log 2>&1
+   else
+      mpirun -np $NUM_PROCS ./gen_be_stage2_gsi.exe > gen_be_stage2_gsi.log 2>&1
+   fi
 
    RC=$?
    if [[ $RC != 0 ]]; then
@@ -143,8 +158,7 @@ EOF
    echo "Ending CPU time: ${END_CPU}"
 fi
 
-
-cp $WORK_DIR/wrf-arw-gsi_be $RUN_DIR
+cp $WORK_DIR/wrf-arw-gsi_be* $RUN_DIR
 cp $WORK_DIR/*.dat   $RUN_DIR
 cp $WORK_DIR/fort.*  $RUN_DIR
 

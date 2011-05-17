@@ -112,7 +112,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
       do n = 1, iv%info(synop)%nlocal
          if (.not.iv%info(synop)%proc_domain(1,n)) cycle
          ! Guo .. not write out the data below the lowest model level:
-         if (iv%info(synop)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(synop)%zk(1,n) == missing_r) cycle
 
          nlevels = iv%info(synop)%levels(n)
          if (iv%info(synop)%levels(n) > 1) then
@@ -214,7 +215,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
       do n = 1, iv%info(metar)%nlocal
          if (.not. iv%info(metar)%proc_domain(1,n)) cycle
          ! Do not write out the data below the lowest model level:
-         if (iv%info(metar)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(metar)%zk(1,n) == missing_r) cycle
 
          nlevels = iv%info(metar)%levels(n)
          if (iv%info(metar)%levels(n)> 1) then
@@ -314,7 +316,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
 
       do n = 1, iv%info(ships)%nlocal
          if (.not. iv%info(ships)%proc_domain(1,n)) cycle
-         if (iv%info(ships)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(ships)%zk(1,n) == missing_r) cycle
                
          nlevels = iv%info(ships)%levels(n)
          if (iv%info(ships)%levels(n) > 1) then
@@ -412,7 +415,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
 
       do n = 1, iv%info(buoy)%nlocal
          if (.not. iv%info(buoy)%proc_domain(1,n)) cycle
-         if (iv%info(buoy)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(buoy)%zk(1,n) == missing_r) cycle
                 
          nlevels = iv%info(buoy)%levels(n)
          if (iv%info(buoy)%levels(n) > 1) then
@@ -657,7 +661,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
                (/"Mismatch for Sound surface and upper air report"/))
          end if
          nz = 0
-         if (iv%info(sonde_sfc)%zk(1,n) == missing_r) then
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(sonde_sfc)%zk(1,n) == missing_r) then
             nz = nz + 1
          end if
 
@@ -698,7 +703,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
          j  = 0
 
          ! Not below the first model level
-         if (iv%info(sonde_sfc)%zk(1,n) == missing_r) then
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(sonde_sfc)%zk(1,n) == missing_r) then
             nz = nz + 1
          else
             j = j + 1

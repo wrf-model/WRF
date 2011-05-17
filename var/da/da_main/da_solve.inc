@@ -203,7 +203,16 @@
    !---------------------------------------------------------------------------
    ! [5.1] Set up background errors (be):
    !---------------------------------------------------------------------------
-   if (use_background_errors) call da_setup_background_errors (grid, be)
+   if (use_background_errors) then
+      call da_setup_background_errors (grid, be)
+   else
+      be % ne = ensdim_alpha
+      be % v1 % mz = 0
+      be % v2 % mz = 0
+      be % v3 % mz = 0
+      be % v4 % mz = 0
+      be % v5 % mz = 0
+   end if
 
    !---------------------------------------------------------------------------
    ! [5.2] Set up observation bias correction (VarBC):
@@ -356,7 +365,7 @@
             model_grid%moist_btys = grid%moist_btys
             model_grid%moist_btye = grid%moist_btye
 
-            ! Turn off model boundary reading ad we already provide a new one.
+            ! Turn off model boundary reading as we already provide a new one.
             call da_model_lbc_off
          endif
 

@@ -51,6 +51,10 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
 
    grid%a_mu_2 = model_grid%a_mu_2
+   grid%a_rainnc  = model_grid%a_rainnc
+   grid%a_rainncv = model_grid%a_rainncv
+   grid%a_rainc  = model_grid%a_rainc
+   grid%a_raincv = model_grid%a_raincv
 
    do i = PARAM_FIRST_SCALAR, num_moist
       call kj_swap_reverse (model_grid%a_moist(:,:,:,i), grid%a_moist(:,:,:,i), &
@@ -315,6 +319,11 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    end if
 
    grid%a_moist = 0.0
+
+   grid%a_rainnc = 0.0
+   grid%a_rainncv = 0.0
+   grid%a_rainc = 0.0
+   grid%a_raincv = 0.0
 
    if (trace_use) call da_trace_exit("da_transfer_xatowrftl_adj")
 

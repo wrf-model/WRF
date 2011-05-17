@@ -249,23 +249,31 @@
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
-   CASE (GOCART_SIMPLE, GOCARTRACM_KPP, GOCARTRADM2_KPP, GOCARTRADM2   )
+   CASE (GOCART_SIMPLE, GOCARTRACM_KPP, GOCARTRADM2_KPP, GOCARTRADM2,  &
+         MOZCART_KPP                                                   )
      call optical_prep_gocart(nbin_o, chem, alt,relhum,                &
-                        refindx0, radius_wet, number_bin,               &
-          radius_core, refindx_core0, refindx_shell0,                    &
+          radius_core,radius_wet, number_bin,                          &
+          swrefindx,swrefindx_core, swrefindx_shell,                   &
+          lwrefindx,lwrefindx_core, lwrefindx_shell,                   &
           ids,ide, jds,jde, kds,kde,                                   &
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
-          !gocart is not wavelength dependent for now --czhao 
-          !and only for shortwave
-          do ns=1,nspint
-          swrefindx(:,:,:,:,ns)=refindx0
-          swrefindx_core(:,:,:,:,ns)=refindx_core0
-          swrefindx_shell(:,:,:,:,ns)=refindx_shell0
-          lwrefindx=0.0
-          lwrefindx_core=0.0
-          lwrefindx_shell=0.0
-          enddo
+!gocart is now wavelength dependent --SAM  4/25/11
+!and for shortwave and longwave - similar to modal --SAM  4/25/11
+!    call optical_prep_gocart(nbin_o, chem, alt,relhum,                &
+!                       refindx0, radius_wet, number_bin,               &
+!         radius_core, refindx_core0, refindx_shell0,                    &
+!         ids,ide, jds,jde, kds,kde,                                   &
+!         ims,ime, jms,jme, kms,kme,                                   &
+!         its,ite, jts,jte, kts,kte                                    )
+!         do ns=1,nspint
+!         swrefindx(:,:,:,:,ns)=refindx0
+!         swrefindx_core(:,:,:,:,ns)=refindx_core0
+!         swrefindx_shell(:,:,:,:,ns)=refindx_shell0
+!         lwrefindx=0.0
+!         lwrefindx_core=0.0
+!         lwrefindx_shell=0.0
+!         enddo
    END SELECT chem_select
      do jclm = jts, jte
      do iclm = its, ite
@@ -1588,6 +1596,8 @@
 
 !
 !----------------------------------------------------------------------------------
+! 4/26/11, SAM, added wavelength dependent refractive indexes for shortwave and longwave,
+! 4/26/11, similar to what is done for modal CASE
 ! 9/21/09, SAM a modification of optical_prep_modal subroutine for GOCART aerosol model -
 ! SAM 7/18/09 - Modal parameters for OC1 (hydrophobic) OC2 (hydrophylic), BC1,BC2,
 ! and sulfate - just use dginia (meters) and sginia from module_data_sorgam.
@@ -1597,12 +1607,13 @@
 ! by the mie calculations. Aerosol number is also passed into the mie calculations
 ! in terms of other units.
 !
-      subroutine optical_prep_gocart(nbin_o, chem, alt,relhum,   &
-        refindx, radius_wet, number_bin,                         &
-        radius_core, refindx_core, refindx_shell,                &
-        ids,ide, jds,jde, kds,kde,                               &
-        ims,ime, jms,jme, kms,kme,                               &
-        its,ite, jts,jte, kts,kte                                )
+     subroutine optical_prep_gocart(nbin_o, chem, alt,relhum,          &
+          radius_core,radius_wet, number_bin,                          &
+          swrefindx,swrefindx_core, swrefindx_shell,                   &
+          lwrefindx,lwrefindx_core, lwrefindx_shell,                   &
+          ids,ide, jds,jde, kds,kde,                                   &
+          ims,ime, jms,jme, kms,kme,                                   &
+          its,ite, jts,jte, kts,kte                                    )
 !
    USE module_configure
    USE module_model_constants
@@ -1630,54 +1641,64 @@
    REAL, DIMENSION( its:ite, kts:kte, jts:jte, 1:nbin_o),              &
          INTENT(OUT ) ::                                               &
            radius_wet, number_bin, radius_core
-   COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte, 1:nbin_o),           &
-         INTENT(OUT ) ::                                               &
-           refindx, refindx_core, refindx_shell
+!  COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte, 1:nbin_o),           &
+!        INTENT(OUT ) ::                                               &
+!          refindx, refindx_core, refindx_shell
+   COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte,1:nbin_o,nswbands),   &
+         INTENT(OUT ) :: swrefindx, swrefindx_core, swrefindx_shell
+   COMPLEX, DIMENSION( its:ite, kts:kte, jts:jte,1:nbin_o,nlwbands),   &
+         INTENT(OUT ) :: lwrefindx, lwrefindx_core, lwrefindx_shell
 !
 ! local variables
 !
    integer i, j, k, l, m, n, isize, itype, iphase
-   complex  ref_index_nh4so4 , ref_index_lvcite  , ref_index_nh4hso4, &
+   complex  ref_index_lvcite  , ref_index_nh4hso4, &
             ref_index_nh4msa , ref_index_nh4no3  , ref_index_nh4cl , &
-            ref_index_nacl   , ref_index_nano3   , ref_index_na2so4, &
+            ref_index_nano3   , ref_index_na2so4, &
             ref_index_na3hso4, ref_index_nahso4  , ref_index_namsa,  &
             ref_index_caso4  , ref_index_camsa2  , ref_index_cano3,  &
             ref_index_cacl2  , ref_index_caco3   , ref_index_h2so4,  &
             ref_index_hhso4  , ref_index_hno3    , ref_index_hcl,    &
-            ref_index_msa    , ref_index_oc      , ref_index_bc,     &
+            ref_index_msa    , ref_index_bc,     &
             ref_index_oin    , ref_index_aro1    , ref_index_aro2,   &
             ref_index_alk1   , ref_index_ole1    , ref_index_api1,   &
-            ref_index_api2   , ref_index_im1     , ref_index_im2,    &
-            ref_index_h2o    , ri_dum            , ri_ave_a
+            ref_index_api2   , ref_index_lim1     , ref_index_lim2,  &
+            ri_dum            , ri_ave_a
+   COMPLEX, DIMENSION(nswbands) ::     & ! now only 5 aerosols have wave-dependent refr 
+    swref_index_oc , swref_index_dust , swref_index_nh4so4, swref_index_nacl,swref_index_h2o
+   COMPLEX, DIMENSION(nlwbands) ::     & ! now only 5 aerosols have wave-dependent refr 
+    lwref_index_oc , lwref_index_dust , lwref_index_nh4so4, lwref_index_nacl,lwref_index_h2o
    real  dens_so4  , dens_no3  , dens_cl   , dens_msa  , dens_co3 ,  &
          dens_nh4  , dens_na   , dens_ca   , dens_oin  , dens_oc  ,  &
          dens_bc   , dens_aro1 , dens_aro2 , dens_alk1 , dens_ole1,  &
-         dens_api1 , dens_api2 , dens_lim1 , dens_lim2 , dens_h2o
+         dens_api1 , dens_api2 , dens_lim1 , dens_lim2 , dens_h2o ,  &
+         dens_dust
    real  mass_so4  , mass_no3  , mass_cl   , mass_msa  , mass_co3 ,  &
          mass_nh4  , mass_na   , mass_ca   , mass_oin  , mass_oc  ,  &
          mass_bc   , mass_aro1 , mass_aro2 , mass_alk1 , mass_ole1,  &
-         mass_api1 , mass_api2 , mass_lim1 , mass_lim2 , mass_h2o
+         mass_api1 , mass_api2 , mass_lim1 , mass_lim2 , mass_h2o,   &
+         mass_dust
    real  mass_so4i , mass_no3i , mass_cli  , mass_msai , mass_co3i,  &
          mass_nh4i , mass_nai  , mass_cai  , mass_oini , mass_oci ,  &
          mass_bci  , mass_aro1i, mass_aro2i, mass_alk1i, mass_ole1i, &
          mass_ba1i , mass_ba2i,  mass_ba3i , mass_ba4i , mass_pai,   &
-         mass_h2oi
+         mass_h2oi , mass_dusti
    real  mass_so4j , mass_no3j , mass_clj  , mass_msaj , mass_co3j,  &
          mass_nh4j , mass_naj  , mass_caj  , mass_oinj , mass_ocj ,  &
          mass_bcj  , mass_aro1j, mass_aro2j, mass_alk1j, mass_ole1j, &
          mass_ba1j , mass_ba2j,  mass_ba3j , mass_ba4j , mass_paj,   &
-         mass_h2oj
+         mass_h2oj , mass_dustj
    real  mass_antha, mass_seas, mass_soil
-   real  num_ai, num_aj, num_ac,  vol_ai, vol_aj, vol_ac
    real  vol_so4   , vol_no3   , vol_cl    , vol_msa   , vol_co3  ,  &
          vol_nh4   , vol_na    , vol_ca    , vol_oin   , vol_oc   ,  &
          vol_bc    , vol_aro1  , vol_aro2  , vol_alk1  , vol_ole1 ,  &
-         vol_api1  , vol_api2  , vol_lim1  , vol_lim2  , vol_h2o
+         vol_api1  , vol_api2  , vol_lim1  , vol_lim2  , vol_h2o  ,  & 
+         vol_dust
    real  conv1a, conv1b, conv1sulf
    real  mass_dry_a, mass_wet_a, vol_dry_a , vol_wet_a , vol_shell,  &
          dp_dry_a  , dp_wet_a  , num_a     , dp_bc_a
    real  ifac, jfac, cfac
-   real  refr
+   integer ns
    real  dgnum_um,drydens,duma,dlo_um,dhi_um,dgmin,sixpi,ss1,ss2,ss3,dtemp
    integer  iflag
    real, dimension(1:nbin_o) :: xnum_secti,xnum_sectj,xnum_sectc
@@ -1789,13 +1810,27 @@
 !   so4, no3, nh4, na, cl, msa, ca, co3 among various componds
 !   as was done previously in module_mosaic_therm.F
 !
-      ref_index_nh4so4 = cmplx(1.52,0.)
+      do ns = 1, nswbands
+      swref_index_nh4so4(ns) = cmplx(refrsw_sulf(ns),refisw_sulf(ns))
+      swref_index_oc(ns) = cmplx(refrsw_oc(ns),refisw_oc(ns))
+      swref_index_dust(ns) = cmplx(refrsw_dust(ns),refisw_dust(ns))
+      swref_index_nacl(ns) = cmplx(refrsw_seas(ns),refisw_seas(ns))
+      swref_index_h2o(ns) = cmplx(refrwsw(ns),refiwsw(ns))
+      enddo
+      do ns = 1, nlwbands
+      lwref_index_nh4so4(ns) = cmplx(refrlw_sulf(ns),refilw_sulf(ns))
+      lwref_index_oc(ns) = cmplx(refrlw_oc(ns),refilw_oc(ns))
+      lwref_index_dust(ns) = cmplx(refrlw_dust(ns),refilw_dust(ns))
+      lwref_index_nacl(ns) = cmplx(refrlw_seas(ns),refilw_seas(ns))
+      lwref_index_h2o(ns) = cmplx(refrwlw(ns),refiwlw(ns))
+      enddo
+!     ref_index_nh4so4 = cmplx(1.52,0.)
       ref_index_lvcite = cmplx(1.50,0.)
       ref_index_nh4hso4= cmplx(1.47,0.)
       ref_index_nh4msa = cmplx(1.50,0.)     ! assumed
       ref_index_nh4no3 = cmplx(1.50,0.)
       ref_index_nh4cl  = cmplx(1.50,0.)
-      ref_index_nacl   = cmplx(1.45,0.)
+!     ref_index_nacl   = cmplx(1.45,0.)
       ref_index_nano3  = cmplx(1.50,0.)
       ref_index_na2so4 = cmplx(1.50,0.)
       ref_index_na3hso4= cmplx(1.50,0.)
@@ -1811,23 +1846,23 @@
       ref_index_hno3   = cmplx(1.50,0.)
       ref_index_hcl    = cmplx(1.50,0.)
       ref_index_msa    = cmplx(1.43,0.)     ! assumed
-      ref_index_oc     = cmplx(1.45,0.)  ! JCB, Feb. 20, 2008: no complex part?
+!     ref_index_oc     = cmplx(1.45,0.)  ! JCB, Feb. 20, 2008: no complex part?
 ! JCB, Feb. 20, 2008:  set the refractive index of BC equal to the
 ! midpoint of ranges given in Bond and Bergstrom, Light absorption by
 ! carboneceous particles: an investigative review 2006, Aerosol Sci.
 ! and Tech., 40:27-67.
 !     ref_index_bc     = cmplx(1.82,0.74) old value
       ref_index_bc     = cmplx(1.85,0.71)
-      ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: if  "other inorganics" includes dust, then this refractive index should be wavelength depedent
+      ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008:  "other inorganics"
       ref_index_aro1   = cmplx(1.45,0.)
       ref_index_aro2   = cmplx(1.45,0.)
       ref_index_alk1   = cmplx(1.45,0.)
       ref_index_ole1   = cmplx(1.45,0.)
       ref_index_api1   = cmplx(1.45,0.)
       ref_index_api2   = cmplx(1.45,0.)
-      ref_index_im1   = cmplx(1.45,0.)
-      ref_index_im2   = cmplx(1.45,0.)
-      ref_index_h2o    = cmplx(1.33,0.)
+      ref_index_lim1   = cmplx(1.45,0.)
+      ref_index_lim2   = cmplx(1.45,0.)
+!     ref_index_h2o    = cmplx(1.33,0.)
 !
 ! densities in g/cc
 !
@@ -1840,6 +1875,7 @@
       dens_na    = 2.2        ! used
       dens_ca    = 2.6        ! used
       dens_oin   = 2.6        ! used
+      dens_dust  = 2.6        ! used
       dens_oc    = 1.0        ! used
 ! JCB, Feb. 20, 2008:  the density of BC is updated to reflect values
 ! published by Bond and Bergstrom, Light absorption by carboneceous
@@ -1856,20 +1892,15 @@
       dens_lim2  = 1.0
       dens_h2o   = 1.0
 !
-      do isize = 1, nbin_o
-      do j = jts, jte
-      do k = kts, kte
-      do i = its, ite
-        refindx(i,k,j,isize)=0.0
-        radius_wet(i,k,j,isize)=0.0
-        number_bin(i,k,j,isize)=0.0
-        radius_core(i,k,j,isize)=0.0
-        refindx_core(i,k,j,isize)=0.0
-        refindx_shell(i,k,j,isize)=0.0
-      enddo
-      enddo
-      enddo
-      enddo
+      swrefindx=0.0
+      lwrefindx=0.0
+      radius_wet=0.0
+      number_bin=0.0
+      radius_core=0.0
+      swrefindx_core=0.0
+      swrefindx_shell=0.0
+      lwrefindx_core=0.0
+      lwrefindx_shell=0.0
 !
 ! units:
 ! * mass     - g/cc(air)
@@ -1888,6 +1919,8 @@
         mass_nh4j = 0.0
         mass_oini = 0.0
         mass_oinj = 0.0
+        mass_dusti = 0.0
+        mass_dustj = 0.0
         mass_aro1i = 0.0
         mass_aro1j = 0.0
         mass_aro2i = 0.0
@@ -1936,12 +1969,6 @@
         mass_cl = 0.0
         mass_na = 0.0
         mass_msa = 0.0
-        vol_aj = 0.0
-        vol_ai = 0.0
-        vol_ac = 0.0
-        num_aj = 0.0
-        num_ai = 0.0
-        num_ac = 0.0
 
 ! convert ug / kg dry air to g / cc  air
         conv1a = (1.0/alt(i,k,j)) * 1.0e-12
@@ -1974,24 +2001,6 @@
         mass_bci= mass_bc1i + mass_bc2i
         mass_msai= FRAC2Aitken*chem(i,k,j,p_msa)*conv1sulf
 
-        vol_ai = (mass_so4i/dens_so4)+(mass_no3i/dens_no3)+ &
-                 (mass_nh4i/dens_nh4)+(mass_oini/dens_oin)+ &
-                 (mass_aro1i/dens_oc)+(mass_alk1i/dens_oc)+ &
-                 (mass_ole1i/dens_oc)+(mass_ba1i/dens_oc)+  &
-                 (mass_ba2i/dens_oc)+(mass_ba3i/dens_oc)+   &
-                 (mass_ba4i/dens_oc)+(mass_pai/dens_oc)+    &
-                 (mass_aro2i/dens_oc)+(mass_bci/dens_bc)+   &
-                 (mass_nai/dens_na)+(mass_cli/dens_cl)+     &
-                 (mass_msai/dens_msa)
-        vol_aj = (mass_so4j/dens_so4)+(mass_no3j/dens_no3)+ &
-                 (mass_nh4j/dens_nh4)+(mass_oinj/dens_oin)+ &
-                 (mass_aro1j/dens_oc)+(mass_alk1j/dens_oc)+ &
-                 (mass_ole1j/dens_oc)+(mass_ba1j/dens_oc)+  &
-                 (mass_ba2j/dens_oc)+(mass_ba3j/dens_oc)+   &
-                 (mass_ba4j/dens_oc)+(mass_paj/dens_oc)+    &
-                 (mass_aro2j/dens_oc)+(mass_bcj/dens_bc)+   &
-                 (mass_naj/dens_na)+(mass_clj/dens_cl)+     &
-                 (mass_msaj/dens_msa)
 !
 ! Now divide mass into sections which is done by sect02:
 ! * xmas_secti is for aiken mode
@@ -2063,7 +2072,7 @@
           vol_bc2 = mass_bc2 / dens_bc
           vol_na  = mass_na  / dens_na
           vol_cl  = mass_cl  / dens_cl
-          vol_soil  = mass_soil  / dens_oin
+          vol_soil  = mass_soil  / dens_dust
 !         vol_h2o = mass_h2o / dens_h2o
 ! 7/23/09 SAM calculate vol_h2o from kappas in Petters and Kreidenweis ACP, 2007, vol. 7, 1961-1971.
 !  Their kappas are the hygroscopicities used in Abdul-Razzak and Ghan, 2004, JGR, V105, p. 6837-6844. 
@@ -2088,26 +2097,29 @@
           vol_wet_a  = vol_dry_a + vol_h2o
           vol_shell  = vol_wet_a - vol_bc
           num_a      = vol_wet_a / (0.52359877*xdia_cm(isize)*xdia_cm(isize)*xdia_cm(isize))
+
+          !shortwave 
+          do ns=1,nswbands
           ri_dum     = (0.0,0.0)
-          ri_dum     = (ref_index_nh4so4 * mass_so4 / dens_so4) +  &
+          ri_dum     = (swref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
                        (ref_index_oin    * mass_oin / dens_oin) +  &
-                       (ref_index_oin    * mass_soil / dens_oin) + &
-                       (ref_index_oc     * mass_oc  / dens_oc) +   &
+                       (swref_index_dust(ns) * mass_soil / dens_dust) + &
+                       (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
-                       (ref_index_nacl   * mass_na  / dens_na) +   &
-                       (ref_index_nacl   * mass_cl  / dens_cl) +   &
+                       (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
+                       (swref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
                        (ref_index_msa    * mass_msa / dens_msa) +  &
-                       (ref_index_h2o    * mass_h2o / dens_h2o) 
+                       (swref_index_h2o(ns) * mass_h2o / dens_h2o) 
 !
 ! for some reason MADE/SORGAM occasionally produces zero aerosols so
 ! need to add a check here to avoid divide by zero
 !
           IF(num_a .lt. 1.0e-20 .or. vol_wet_a .lt. 1.0e-20) then
-            dp_dry_a   = 0.0
-            dp_wet_a   = 0.0
-            dp_bc_a    = 0.0
+            dp_dry_a   = xdia_cm(isize)
+            dp_wet_a   = xdia_cm(isize)
+            dp_bc_a    = xdia_cm(isize)
             ri_ave_a   = 0.0
             ri_dum     = 0.0
           else
@@ -2115,45 +2127,108 @@
             dp_wet_a   = (1.90985*vol_wet_a/num_a)**0.3333333
             dp_bc_a    = (1.90985*vol_bc/num_a)**0.3333333
             ri_ave_a   = ri_dum/vol_wet_a
-            ri_dum   = (ref_index_nh4so4 * mass_so4 / dens_so4) +  &
+            ri_dum   = (swref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
                        (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
-                       (ref_index_oin    * mass_oin / dens_oin) +  &
-                       (ref_index_oin    * mass_soil / dens_oin) + &
-                       (ref_index_oc     * mass_oc  / dens_oc) +   &
-                       (ref_index_nacl   * mass_na  / dens_na) +   &
-                       (ref_index_nacl   * mass_cl  / dens_cl) +   &
                        (ref_index_msa    * mass_msa / dens_msa) +  &
-                       (ref_index_h2o    * mass_h2o / dens_h2o) 
+                       (ref_index_oin    * mass_oin / dens_oin) +  &
+                       (swref_index_dust(ns)    * mass_soil / dens_dust) + &
+                       (swref_index_oc(ns)     * mass_oc  / dens_oc) +   &
+                       (swref_index_nacl(ns)   * mass_na  / dens_na) +   &
+                       (swref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
+                       (swref_index_h2o(ns)    * mass_h2o / dens_h2o) 
           endif
           if(dp_wet_a/2.0 .lt. dlo_um*1.0e-4/2.0) then
-            refindx(i,k,j,isize)    = (1.5,0.0)
+            swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
             radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
             number_bin(i,k,j,isize) =num_a
             radius_core(i,k,j,isize) =0.0
-            refindx_core(i,k,j,isize) = ref_index_bc
-            refindx_shell(i,k,j,isize) = ref_index_oin
+            swrefindx_core(i,k,j,isize,ns) = ref_index_bc
+            swrefindx_shell(i,k,j,isize,ns) = ref_index_oin
           elseif(vol_shell .lt. 1.0e-20) then
-            refindx(i,k,j,isize)    = (1.5,0.0)
+            swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
             radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
             number_bin(i,k,j,isize) =num_a
             radius_core(i,k,j,isize) =0.0
-            refindx_core(i,k,j,isize) = ref_index_bc
-            refindx_shell(i,k,j,isize) = ref_index_oin
+            swrefindx_core(i,k,j,isize,ns) = ref_index_bc
+            swrefindx_shell(i,k,j,isize,ns) = ref_index_oin
           else
-            refindx(i,k,j,isize)    =ri_ave_a
+            swrefindx(i,k,j,isize,ns)    =ri_ave_a
             radius_wet(i,k,j,isize) =dp_wet_a/2.0
             number_bin(i,k,j,isize) =num_a
             radius_core(i,k,j,isize) =dp_bc_a/2.0
-            refindx_core(i,k,j,isize) =ref_index_bc
-            refindx_shell(i,k,j,isize) =ri_dum/vol_shell
+            swrefindx_core(i,k,j,isize,ns) =ref_index_bc
+            swrefindx_shell(i,k,j,isize,ns) =ri_dum/vol_shell
           endif
+        enddo  ! ns shortwave
+
+          !longwave 
+          do ns=1,nlwbands
+          ri_dum     = (0.0,0.0)
+          ri_dum     = (lwref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
+                       (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
+                       (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
+                       (ref_index_oin    * mass_oin / dens_oin) +  &
+                       (lwref_index_dust(ns) * mass_soil / dens_dust) + &
+                       (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
+                       (ref_index_bc     * mass_bc  / dens_bc) +   &
+                       (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
+                       (lwref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
+                       (ref_index_msa    * mass_msa / dens_msa) +  &
+                       (lwref_index_h2o(ns) * mass_h2o / dens_h2o) 
 !
-          refr=real(refindx(i,k,j,isize))
-        enddo
-      enddo
-      enddo
-      enddo
+! for some reason MADE/SORGAM occasionally produces zero aerosols so
+! need to add a check here to avoid divide by zero
+!
+          IF(num_a .lt. 1.0e-20 .or. vol_wet_a .lt. 1.0e-20) then
+            dp_dry_a   = xdia_cm(isize) 
+            dp_wet_a   = xdia_cm(isize) 
+            dp_bc_a    = xdia_cm(isize)
+            ri_ave_a   = 0.0
+            ri_dum     = 0.0
+          else
+            dp_dry_a   = (1.90985*vol_dry_a/num_a)**0.3333333
+            dp_wet_a   = (1.90985*vol_wet_a/num_a)**0.3333333
+            dp_bc_a    = (1.90985*vol_bc/num_a)**0.3333333
+            ri_ave_a   = ri_dum/vol_wet_a
+            ri_dum   = (lwref_index_nh4so4(ns) * mass_so4 / dens_so4) +  &
+                       (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
+                       (ref_index_nh4no3 * mass_nh4 / dens_nh4) +  &
+                       (ref_index_oin    * mass_oin / dens_oin) +  &
+                       (lwref_index_dust(ns)    * mass_oin / dens_dust)  +  &
+                       (lwref_index_oc(ns)     * mass_oc  / dens_oc) +   &
+                       (lwref_index_nacl(ns)   * mass_na  / dens_na) +   &
+                       (lwref_index_nacl(ns)   * mass_cl  / dens_cl) +   &
+                       (lwref_index_h2o(ns)    * mass_h2o / dens_h2o)
+          endif
+          if(dp_wet_a/2.0 .lt. dlo_um*1.0e-4/2.0) then
+            lwrefindx(i,k,j,isize,ns)    = (1.5,0.0)
+            radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
+            number_bin(i,k,j,isize) =num_a
+            radius_core(i,k,j,isize) =0.0
+            lwrefindx_core(i,k,j,isize,ns) = ref_index_bc
+            lwrefindx_shell(i,k,j,isize,ns) = ref_index_oin
+          elseif(vol_shell .lt. 1.0e-20) then
+            lwrefindx(i,k,j,isize,ns)    = (1.5,0.0)
+            radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
+            number_bin(i,k,j,isize) =num_a
+            radius_core(i,k,j,isize) =0.0
+            lwrefindx_core(i,k,j,isize,ns) = ref_index_bc
+            lwrefindx_shell(i,k,j,isize,ns) = ref_index_oin
+          else
+            lwrefindx(i,k,j,isize,ns)    =ri_ave_a
+            radius_wet(i,k,j,isize) =dp_wet_a/2.0
+            number_bin(i,k,j,isize) =num_a
+            radius_core(i,k,j,isize) =dp_bc_a/2.0
+            lwrefindx_core(i,k,j,isize,ns) =ref_index_bc
+            lwrefindx_shell(i,k,j,isize,ns) =ri_dum/vol_shell
+          endif
+        enddo  ! ns longwave
+!  refr=real(refindx(i,k,j,isize))
+        enddo  !isize
+      enddo  !i
+      enddo  !j
+      enddo  !k
 
       return
 

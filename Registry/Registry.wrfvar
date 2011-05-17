@@ -41,6 +41,15 @@
 
 include registry.dimspec
 
+dimspec    o       3     namelist=ne_area                  z     bio_emissions_dimension
+dimspec    +       2     namelist=kemit                    z     emissions_zdim
+dimspec    nm      2     namelist=nmegan                   z     megan_species
+dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
+dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
+dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
+dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
+dimspec    .       3     namelist=errosion_dim             z     dust_errosion_dimension
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -469,7 +478,103 @@ state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL
 include registry.cam
 
 # Chem Scalars
-#state   real    -              ijkftb   chem        1         -     -    -                                       
+# GOCART Aerosols
+state   real    -              ikjftb   chem        1         -     -    -
+state   real   so2         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so2"           "SO2 concentration"         "ppmv"
+state   real   sulf        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "sulf"          "SULF concentration"        "ppmv"
+state   real   no2         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "no2"           "NO2 concentration"         "ppmv"
+state   real   no          ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "no"            "NO concentration"          "ppmv"
+state   real   o3          ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "o3"            "O3 concentration"          "ppmv"
+state   real   hno3        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hno3"          "HNO3 concentration"        "ppmv"
+state   real   h2o2        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "h2o2"          "H2O2 concentration"        "ppmv"
+state   real   ald         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ald"           "ALD concentration"         "ppmv"
+state   real   hcho        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hcho"          "HCHO concentration"        "ppmv"
+state   real   op1         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "op1"           "OP1 concentration"         "ppmv"
+state   real   op2         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "op2"           "OP2 concentration"         "ppmv"
+state   real   paa         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "paa"           "PAA concentration"         "ppmv"
+state   real   ora1        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ora1"          "ORA1 concentration"        "ppmv"
+state   real   ora2        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ora2"          "ORA2 concentration"        "ppmv"
+state   real   nh3         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh3"           "NH3 concentration"         "ppmv"
+state   real   n2o5        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "n2o5"          "N2O5 concentration"        "ppmv"
+state   real   no3         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "no3"           "NO3 concentration"         "ppmv"
+state   real   pan         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "pan"           "PAN concentration"         "ppmv"
+state   real   hc3         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hc3"           "HC3 concentration"         "ppmv"
+state   real   hc5         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hc5"           "HC5 concentration"         "ppmv"
+state   real   hc8         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hc8"           "HC8 concentration"         "ppmv"
+state   real   eth         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "eth"           "ETH concentration"         "ppmv"
+state   real   co          ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "co"            "CO concentration"          "ppmv"
+
+#Additional CBMZ gas variables inside the chem array...
+
+state   real   hcl         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hcl"           "HCL concentration"         "ppmv"
+state   real   dms         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dms"           "DMS concentration"         "ppmv"
+state   real   msa         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "msa"           "MSA concentration"         "ppmv"
+state   real   olt         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "olt"           "OLT concentration"         "ppmv"
+state   real   oli         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "oli"           "OLI concentration"         "ppmv"
+state   real   tol         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "tol"           "TOL concentration"         "ppmv"
+state   real   xyl         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "xyl"           "XYL concentration"         "ppmv"
+state   real   aco3        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "aco3"          "ACO3 concentration"        "ppmv"
+state   real   tpan        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "tpan"          "TPAN concentration"        "ppmv"
+state   real   hono        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hono"          "HONO concentration"        "ppmv"
+state   real   hno4        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "hno4"          "HNO4 concentration"        "ppmv"
+state   real   ket         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ket"           "KET concentration"         "ppmv"
+state   real   gly         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "gly"           "GLY concentration"         "ppmv"
+state   real   mgly        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "mgly"          "MGLY concentration"        "ppmv"
+state   real   dcb         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dcb"           "DCB concentration"         "ppmv"
+state   real   onit        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "onit"          "ONIT concentration"        "ppmv"
+state   real   csl         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "csl"           "CSL concentration"         "ppmv"
+state   real   iso         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "iso"           "ISO concentration"         "ppmv"
+state   real   ho          ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ho"            "HO concentration"          "ppmv"
+state   real   ho2         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ho2"           "HO2 concentration"         "ppmv"
+
+state   real   bc1          ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "BC1"       "Hydrophobic Black Carbon"     "ug/kg-dryair"
+state   real   bc2          ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "BC2"       "Hydrophilic Black Carbon"     "ug/kg-dryair"
+state   real   oc1          ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "OC1"       "Hydrophobic Black Carbon"     "ug/kg-dryair"
+state   real   oc2          ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "OC2"       "Hydrophilic Black Carbon"     "ug/kg-dryair"
+state   real   p25        ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "P25"       "other gocart primary pm25"     "ug/kg-dryair"
+state   real   p10        ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "P10"       "other gocart primary pm10"     "ug/kg-dryair"
+state   real   dust_1       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_1"    "dust size bin 1: 0.5um effective radius"     "ug/kg-dryair"
+state   real   dust_2       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_2"    "dust size bin 2: 1.4um effective radius"     "ug/kg-dryair "
+state   real   dust_3       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_3"    "dust size bin 3: 2.4um effective radius"     "ug/kg-dryair "
+state   real   dust_4       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_4"    "dust size bin 4: 4.5um effective radius"     "ug/kg-dryair "
+state   real   dust_5       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_5"    "dust size bin 5: 8.0um effective radius"     "ug/kg-dryair"
+state   real   seas_1       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "SEAS_1"    "sea-salt size bin 1: 0.3um effective radius"     "ug/kg-dryair"
+state   real   seas_2       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "SEAS_2"    "sea-salt size bin 2: 1.0um effective radius"     "ug/kg-dryair"
+state   real   seas_3       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "SEAS_3"    "sea-salt size bin 3: 3.2um effective radius"     "ug/kg-dryair"
+state   real   seas_4       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "SEAS_4"    "sea-salt size bin 4: 7.5um effective radius"     "ug/kg-dryair"
+
+#RACM has a few more variables to those of RADM2 (ETE is equivilant to OL2 from RADM2)
+
+state   real   ete         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "ete"           "ETE concentration"         "ppmv"
+state   real   co2         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "co2"           "CO2 concentration"         "ppmv"
+state   real   ch4         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "ch4"           "CH4 concentration"         "ppmv"
+state   real   udd         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "udd"           "UDD concentration"         "ppmv"
+state   real   hket        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "hket"          "HKET concentration"        "ppmv"
+state   real   api         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "api"           "API concentration"         "ppmv"
+state   real   lim         ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "lim"           "LIM concentration"         "ppmv"
+state   real   dien        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "dien"          "DIEN concentration"        "ppmv"
+state   real   macr        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)   "macr"          "MACR concentration"        "ppmv"
+
+state    real  sebio_iso      ij      misc        1         -      i06r     "sebio_iso"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_oli      ij      misc        1         -      i06r     "sebio_oli"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_api      ij      misc        1         -      i06r     "sebio_api"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_lim      ij      misc        1         -      i06r     "sebio_lim"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_xyl      ij      misc        1         -      i06r     "sebio_xyl"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_hc3      ij      misc        1         -      i06r     "sebio_hc3"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ete      ij      misc        1         -      i06r     "sebio_ete"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_olt      ij      misc        1         -      i06r     "sebio_olt"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ket      ij      misc        1         -      i06r     "sebio_ket"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ald      ij      misc        1         -      i06r     "sebio_ald"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_hcho     ij      misc        1         -      i06r     "sebio_hcho"        "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_eth      ij      misc        1         -      i06r     "sebio_eth"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ora2     ij      misc        1         -      i06r     "sebio_ora2"        "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_co       ij      misc        1         -      i06r     "sebio_co"          "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_nr       ij      misc        1         -      i06r     "sebio_nr"          "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  noag_grow      ij      misc        1         -      i06r     "noag_grow"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  noag_nongrow   ij      misc        1         -      i06r     "noag_nongrow"      "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  nononag        ij      misc        1         -      i06r     "nononag"           "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  slai           ij      misc        1         -      i06r     "slai"              "Leaf area index isop"  ""
+
 #
 # Tracer Scalars: If you want full resolved and non-resolved dispersion, compile WRF-Chem
 #
@@ -482,6 +587,25 @@ include registry.cam
 #state   real    tr17_6     ijkftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_6"         "tr17_6"          -
 #state   real    tr17_7     ijkftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_7"         "tr17_7"          -
 #state   real    tr17_8     ijkftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_8"         "tr17_8"
+
+# Input for biogenic emissions model MEGAN v2
+state    real  msebio_isop    ij      misc        1         -      i06r     "msebio_isop"      "MEGAN2 isoprone emis fac"  "mol km^-2 hr^-1"
+state    real  mlai           ijm     misc        1         Z      i06r     "mlai"             "Monthly Leaf area index for MEGAN2"  ""
+state    real  pftp_bt        ij      misc        1         -      i06r     "pftp_bt"          "MEGAN2 PFT Broadleaf %"  "%"
+state    real  pftp_nt        ij      misc        1         -      i06r     "pftp_nt"          "MEGAN2 PFT Needleleaf %"  "%"
+state    real  pftp_sb        ij      misc        1         -      i06r     "pftp_sb"          "MEGAN2 PFT Shrub and Bush %"  "%"
+state    real  pftp_hb        ij      misc        1         -      i06r     "pftp_hb"          "MEGAN2 PFT Herbs %"  "%"
+state    real  mtsa           ijm     misc        1         Z      i06r     "mtsa"             "Monthly surface air temp"  "K"
+state    real  mswdown        ijm     misc        1         Z      i06r     "mswdown"          "Monthly SWdown"  "W/m2"
+state    real  EFmegan        ij{nm}     misc        1         -      -        "EFmegan"          "MEGAN2 Emis Factor"       "ug m^-2 hr^-1"
+
+# Input for GOCART: Background chemistry, erodible surface emissions map
+state    real  erod           ij.     misc        1         -      i08rh    "EROD"          "fraction of erodible surface in each grid cell (0-1)"       "none"
+state    real  backg_oh       ikj     misc        1         -      i08rh    "BACKG_OH"       "Background OH for Aerosol-GOcart option"       "ppmv"
+state    real  backg_h2o2     ikj     misc        1         -      i08rh    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"       "ppmv"
+state    real  backg_no3      ikj     misc        1         -      i08rh    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"       "ppmv"
+state    real  dms_0          ij      misc        1         -      i08rh    "DMS_0 "         "dms reference concentrations"                   "?"
+
 
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -   -
@@ -920,6 +1044,8 @@ state    real    qndropsource  ijk    misc        1         -      -        "qnd
 
 # Other Misc State Variables                                            
 state   real    h_diabatic     ijk     misc         1         -      rdu      "h_diabatic"            "MICROPHYSICS LATENT HEATING"         "K s-1"      
+state   real    g_h_diabatic   ijk     misc         1         -      rdu      "g_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
+state   real    a_h_diabatic   ijk     misc         1         -      rdu      "a_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
 state   real    msft           ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_M"         "Map scale factor on mass grid" ""
 state   real    msfu           ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_U"         "Map scale factor on u-grid" ""
 state   real    msfv           ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_V"         "Map scale factor on v-grid" ""
@@ -1003,15 +1129,23 @@ state    real  RQICUTEN        ijk      misc        1         -      r        "R
 state    real  W0AVG           ijk      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
                                                 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
+state    real  G_RAINC          ij      misc        1         -      rhdu     "G_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
+state    real  A_RAINC          ij      misc        1         -      rhdu     "A_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  RAINSH           ij      misc        1         -      rhdu     "RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
 state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  G_RAINNC         ij      misc        1         -      rhdu     "G_RAINNC"              "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  A_RAINNC         ij      misc        1         -      rhdu     "A_RAINNC"              "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
 state  integer I_RAINC          ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINC"            "BUCKET FOR RAINC"                    ""
 state  integer I_RAINNC         ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINNC"           "BUCKET FOR RAINNC"                   ""
 state    real  PRATEC           ij      misc        1         -      r        "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
 state    real  PRATESH          ij      misc        1         -      r        "PRATESH"               "PRECIP RATE FROM SHALLOW CUMULUS SCHEME"                 "mm s-1"
 state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
+state    real  G_RAINCV         ij      misc        1         -      r        "G_RAINCV"              "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
+state    real  A_RAINCV         ij      misc        1         -      r        "A_RAINCV"              "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
 state    real  RAINSHV          ij      misc        1         -      r        "RAINSHV"               "TIME-STEP SHALLOW CUMULUS PRECIPITATION"                 "mm"
 state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
+state    real  G_RAINNCV        ij      misc        1         -      r        "G_RAINNCV"             "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
+state    real  A_RAINNCV        ij      misc        1         -      r        "A_RAINNCV"             "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 state    real  RAINBL           ij      misc        1         -      r        "RAINBL"                "PBL TIME-STEP TOTAL PRECIPITATION"                       "mm"      
 state    real  SNOWNC           ij      misc        1         -      rhdu     "SNOWNC"                "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"               "mm"
 state    real  GRAUPELNC        ij      misc        1         -      rhdu     "GRAUPELNC"             "ACCUMULATED TOTAL GRID SCALE GRAUPEL"                    "mm"
@@ -1309,6 +1443,21 @@ state   real    H0ML           ij      misc         1         -     i012rhd=(int
 state   real    HUML           ij      misc         1         -     rhd=(interp_mask_water_field:lu_index,iswater)u=(copy_fcnm)    "HUML"   "OCEAN MIXED-LAYER DEPTH * U-CURRENT"  " m2s-1 "
 state   real    HVML           ij      misc         1         -     rhd=(interp_mask_water_field:lu_index,iswater)u=(copy_fcnm)    "HVML"   "OCEAN MIXED-LAYER DEPTH * V-CURRENT"  " m2s-1 " 
 state   real    TMOML          ij      misc         1         -     i012rhd=(interp_mask_water_field:lu_index,iswater)u=(copy_fcnm) "TMOML"  "OCEAN LAYER MEAN TEMPERATURE   "   "K"
+
+state   real     -            ikjf     ext_coef     -         -      -       -                       "Extinction coefficients"         ""
+state   real  extcof3         ikjf     ext_coef     1         Z     i01h     "EXTCOF3"                 "Extinction coefficients for .3um"  "km^-1"
+state   real  extcof55        ikjf     ext_coef     1         Z     i01h   "EXTCOF55"                "Extinction coefficients for .55um"  "km^-1"
+state   real  extcof106       ikjf     ext_coef     1         Z     i01h   "EXTCOF106"               "Extinction coefficients for 1.06um"  "km^-1"
+state   real  extcof3_5       ikjf     ext_coef     1         Z     i01h   "EXTCOF3_5"               "Band averaged extinction coefficients for 3-5um"  "km^-1"
+state   real  extcof8_12      ikjf     ext_coef     1         Z     i01h   "EXTCOF8_12"              "Band averaged extinction coefficients for 8-12um"  "km^-1"
+state   real     -            ikjf     bscat_coef   -         -      -       -                       "Scatter coefficients"         ""
+state   real  bscof3          ikjf     bscat_coef   1         Z     i01h   "BSCOF3"                  "Scatter coefficients for .3um"  "km^-1"
+state   real  bscof55         ikjf     bscat_coef   1         Z     i01h   "BSCOF5"                  "Scatter coefficients for .5um"  "km^-1"
+state   real  bscof106        ikjf     bscat_coef   1         Z     i01h   "BSCOF106"                "Scatter coefficients for 1.06um"  "km^-1"
+state   real     -            ikjf     asym_par     -         -      -       -                       "assymetry parameter"         ""
+state   real  asympar3        ikjf     asym_par     1         Z     i01h   "ASYMPAR3"                "assymetry parameter for .3um"  "?"
+state   real  asympar55       ikjf     asym_par     1         Z     i01h   "ASYMPAR55"               "assymetry parameter for .55um"  "?"
+state   real  asympar106      ikjf     asym_par     1         Z     i01h   "ASYMPAR106"              "assymetry parameter for 1.06um"  "?"
 
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
@@ -1848,7 +1997,16 @@ rconfig   integer cugd_avedx              namelist,physics      1            1  
 rconfig   integer clos_choice             namelist,physics      1             0       rh    "clos_choice"                    ""      ""
 rconfig   integer imomentum               namelist,physics      1             0       rh    "imomentum"                    "momentum transport in G3 scheme"      ""
 rconfig   integer ishallow                namelist,physics      1             0       rh    "ishallow"  "shallow convection in G3 scheme"      ""
-rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
+rconfig   integer chem_opt                namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
+rconfig   integer opt_pars_out            namelist,physics      1             0       h    "opt_pars_out"          ""      ""
+rconfig   integer ne_area                 namelist,physics      1             41      irh     "ne_area"               ""      ""
+rconfig   integer kemit                   namelist,physics      1             9       irh     "kemit"                 ""      ""
+rconfig   integer nmegan                  namelist,physics      1             138     irh     "nmegan"                ""      ""
+rconfig   integer kfuture                 namelist,physics      1             1       -       "kfuture"                ""      ""
+rconfig   integer kfire                   namelist,physics      1             1       -       "kfire"                ""      ""
+rconfig   integer kemit_aircraft          namelist,physics      1             1       -       "kemit_aircraft"                ""      ""
+rconfig   integer kdvel                   namelist,physics      1             1       -       "kdvel"                ""      ""
+rconfig   integer errosion_dim            namelist,physics      1             3       -       "errosion_dim"            ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
@@ -2170,7 +2328,17 @@ package   dyn_em_ad    dyn_opt==302                 -             -
 package   dyn_em_tst   dyn_opt==402                 -             -
 package   dyn_em_var   dyn_opt==502                 -             -
 
+package   opt_out      opt_pars_out==1             -          ext_coef:extcof3,extcof55,extcof106,extcof3_5,extcof8_12;bscat_coef:bscof3,bscof55,bscof106;asym_par:asympar3,asympar55,asympar106
 package   passivec1     chem_opt==0                  -             
+# GOCART Packages (no Ozone chemistry in this choice)
+package   gocart_simple     chem_opt==300                   -             chem:so2,sulf,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
+
+package   gocartracm_kpp     chem_opt==301                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
+
+package   gocartradm2_kpp     chem_opt==302                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
+
+package   gocartradm2     chem_opt==303                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
+
 package   passiveqv     mp_physics==0                -             moist:qv;g_moist:g_qv;a_moist:a_qv
 package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
@@ -2186,6 +2354,8 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qnn,qnc,qnr
+package   lscondscheme  mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
+package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
@@ -2264,6 +2434,7 @@ package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke;st
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,qpert2d,wpert2d,tke_pbl
+package   surfdragscheme bl_pbl_physics==98          -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==88          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qlup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 
@@ -2275,6 +2446,7 @@ package   g3scheme       cu_physics==5               -             state:cugd_qv
 package   tiedtkescheme  cu_physics==6
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd
 package   nsasscheme     cu_physics==14              -             -
+package   ducuscheme     cu_physics==98              -             -
 package   kfscheme       cu_physics==99              -             -
 
 package   g3shcuscheme   shcu_physics==1             -             -

@@ -321,6 +321,10 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
    call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    model_grid%g_mu_2 = grid%g_mu_2
+   model_grid%g_rainnc  = 0.0
+   model_grid%g_rainncv = 0.0
+   model_grid%g_rainc  = 0.0
+   model_grid%g_raincv = 0.0
 
    do i = PARAM_FIRST_SCALAR, num_moist
       call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &

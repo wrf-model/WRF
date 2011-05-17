@@ -107,48 +107,15 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
                                     grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                                     grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   if ( .not. var4d_lbc ) then
-      DEALLOCATE ( ubdy3dtemp1 )
-      DEALLOCATE ( vbdy3dtemp1 )
-      DEALLOCATE ( tbdy3dtemp1 )
-      DEALLOCATE ( pbdy3dtemp1 )
-      DEALLOCATE ( qbdy3dtemp1 )
-      DEALLOCATE ( mbdy2dtemp1 )
-   endif
-
    model_grid%g_w_bxs = 0.0
    model_grid%g_w_bxe = 0.0
    model_grid%g_w_bys = 0.0
    model_grid%g_w_bye = 0.0
 
-   model_grid%g_u_btxs = 0.0
-   model_grid%g_u_btxe = 0.0
-   model_grid%g_u_btys = 0.0
-   model_grid%g_u_btye = 0.0
-   model_grid%g_v_btxs = 0.0
-   model_grid%g_v_btxe = 0.0
-   model_grid%g_v_btys = 0.0
-   model_grid%g_v_btye = 0.0
    model_grid%g_w_btxs = 0.0
    model_grid%g_w_btxe = 0.0
    model_grid%g_w_btys = 0.0
    model_grid%g_w_btye = 0.0
-   model_grid%g_t_btxs = 0.0
-   model_grid%g_t_btxe = 0.0
-   model_grid%g_t_btys = 0.0
-   model_grid%g_t_btye = 0.0
-   model_grid%g_ph_btxs = 0.0
-   model_grid%g_ph_btxe = 0.0
-   model_grid%g_ph_btys = 0.0
-   model_grid%g_ph_btye = 0.0
-   model_grid%g_mu_btxs = 0.0
-   model_grid%g_mu_btxe = 0.0
-   model_grid%g_mu_btys = 0.0
-   model_grid%g_mu_btye = 0.0
-   model_grid%g_moist_btxs = 0.0
-   model_grid%g_moist_btxe = 0.0
-   model_grid%g_moist_btys = 0.0
-   model_grid%g_moist_btye = 0.0
 
    if (trace_use) call da_trace_exit("da_transfer_wrftl_lbc_t0")
 

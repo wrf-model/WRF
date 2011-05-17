@@ -203,17 +203,23 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%wetscav_onoff == 1 ) then
-      if ( config_flags%chem_opt >= 13 .OR. config_flags%chem_opt <= 8) then
-        call wrf_error_fatal("ERROR: wet scavaging option requires chem_opt = 9 through 12 to function.")
+      if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
+           ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) ) then
+           call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
+      else
+        call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 9 through 12 or 31 to 35 to function.")
       endif
       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10) then
-        call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
+        call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
       endif
    endif
 
    if ( config_flags%cldchem_onoff == 1 ) then
-      if ( config_flags%chem_opt >= 13 .OR. config_flags%chem_opt <= 8) then
-        call wrf_error_fatal("ERROR:  cloud chemistry option requires chem_opt = 9 through 12 to function.")
+      if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
+           ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) ) then
+           call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
+      else
+        call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 9 through 12 or 31 to 35 to function.")
       endif
       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 ) then
         call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")

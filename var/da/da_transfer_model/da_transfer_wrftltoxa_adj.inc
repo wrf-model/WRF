@@ -42,6 +42,10 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    grid%g_moist   = 0.0
    grid%g_mu_2 = 0.0
    grid%g_ph_2 = 0.0
+   grid%g_rainnc = 0.0
+   grid%g_rainncv = 0.0
+   grid%g_rainc = 0.0
+   grid%g_raincv = 0.0
    !---------------------------------------------------------------------------
    ! [6.0] ALL THE SIMPLE ONES
    !---------------------------------------------------------------------------
@@ -256,6 +260,10 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    model_grid%g_mu_2 = grid%g_mu_2
+   model_grid%g_rainnc = grid%g_rainnc
+   model_grid%g_rainncv = grid%g_rainncv
+   model_grid%g_rainc = grid%g_rainc
+   model_grid%g_raincv = grid%g_raincv
 
    do i = PARAM_FIRST_SCALAR, num_moist
       call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &

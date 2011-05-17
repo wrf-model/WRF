@@ -19,6 +19,7 @@ program gen_be_stage0_gsi
    use da_tools_serial, only : da_get_unit, da_free_unit,da_find_fft_factors, &
       da_find_fft_trig_funcs
    use module_ffts, only : fft551, fft661
+   use aero_mod
 
    implicit none
 
@@ -78,6 +79,8 @@ program gen_be_stage0_gsi
    real, allocatable     :: temp2d(:,:)               ! Temperature.
    real, allocatable     :: rh2d(:,:)                 ! Relative humidity.
 
+   real, allocatable     :: aero2d(:,:)               ! Aerosols 
+
    real, allocatable     :: trigs1(:)                 ! FFT trig functions.
    real, allocatable     :: trigs2(:)                 ! FFT trig functions.
    real, allocatable     :: fft_coeffs(:,:)           ! FFT coefficients.
@@ -99,10 +102,16 @@ program gen_be_stage0_gsi
    real, allocatable     :: rhm_mean(:,:,:)           ! Mean Relative humidity.
    real, allocatable     :: psfc_mean(:,:)            ! Surface pressure.
    real, allocatable     :: tmp2d(:,:)                ! Scratch 2d-array  
-!rizvi
-!   integer  :: i
-!rizvi
 
+   real, allocatable     :: aero(:,:,:,:)             ! Aerosols
+   real, allocatable     :: aero_mean(:,:,:,:)        ! Aerosols
+
+   integer               :: jj, num_aeros
+   integer, parameter    :: num_aeros_max = 200
+   character (len=40)    :: aeros_to_process(1:num_aeros_max)
+   logical               :: process_aero
+
+   call get_aero_info(process_aero,aeros_to_process,num_aeros)
 
    stderr = 0
    stdout = 6
@@ -175,6 +184,12 @@ program gen_be_stage0_gsi
    allocate( rhm_mean(1:dim1,1:dim2,1:dim3) )
    allocate( psfc_mean(1:dim1,1:dim2) )
 
+   if ( process_aero ) then
+      allocate( aero(1:num_aeros,1:dim1,1:dim2,1:dim3) )
+      allocate( aero_mean(1:num_aeros,1:dim1,1:dim2,1:dim3) )
+      aero_mean = 0.0
+   end if
+
    psi_mean = 0.0
    chi_mean = 0.0
    temp_mean = 0.0
@@ -240,6 +255,8 @@ program gen_be_stage0_gsi
    allocate( temp2d(1:dim1,1:dim2) )
    allocate( rh2d(1:dim1,1:dim2) )
 
+   if ( process_aero ) allocate( aero2d( 1:dim1,1:dim2) ) 
+
    do member = 1, ne
 
       write(UNIT=ce,FMT='(i3.3)')member
@@ -297,7 +314,20 @@ program gen_be_stage0_gsi
          temp(:,:,k) = temp2d(:,:)
          rh(:,:,k) = 0.01 * rh2d(:,:) ! *0.01 to conform with WRF-Var units.
 
-      end do
+         if ( process_aero ) then
+             do jj = 1,num_aeros
+                !write(unit=stdout,fmt='(a)') trim(aeros_to_process(jj))
+                var = trim( adjustl(aeros_to_process(jj) ) )
+                call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, aero2d)
+                aero(jj,:,:,k) = aero2d
+                if ( var.eq.'SULF' .or. var.eq.'sulf') then
+                   !write(unit=stdout,fmt='(a)') 'converting SULF from ppmv to micro-gram/kg'
+                   aero(jj,:,:,k) = aero2d*(96.06/28.964)*1000.0
+                end if
+             end do
+         end if
+
+      end do  ! end loop over dim3 (loop over "k")
 
 !     Finally, extract surface pressure:
       var = "PSFC"
@@ -314,6 +344,7 @@ program gen_be_stage0_gsi
       write(gen_be_ounit)temp
       write(gen_be_ounit)rh
       write(gen_be_ounit)psfc
+      if ( process_aero ) write(gen_be_ounit) aero
       close(gen_be_ounit)
 
    if ( be_method == "ENS" ) then
@@ -338,6 +369,7 @@ program gen_be_stage0_gsi
    deallocate( chi2d )
    deallocate( temp2d )
    deallocate( rh2d )
+   if ( process_aero ) deallocate(aero2d)
 
 !---------------------------------------------------------------------------------------------
    write(6,'(/a)')' [4] Compute perturbations and output' 
@@ -355,6 +387,7 @@ program gen_be_stage0_gsi
       read(gen_be_iunit)temp
       read(gen_be_iunit)rh
       read(gen_be_iunit)psfc
+      if ( process_aero ) read(gen_be_iunit) aero
       close(gen_be_iunit)
       call da_free_unit(gen_be_iunit)
 
@@ -366,6 +399,7 @@ program gen_be_stage0_gsi
       read(gen_be_iunit)temp_mean
       read(gen_be_iunit)rh_mean
       read(gen_be_iunit)psfc_mean
+      if ( process_aero ) read(gen_be_iunit) aero_mean
       close(gen_be_iunit)
 
       psi = psi - psi_mean
@@ -374,6 +408,7 @@ program gen_be_stage0_gsi
       rhm = (rh + rh_mean)*0.5
       rh  = rh - rh_mean
       psfc = psfc - psfc_mean
+      if ( process_aero ) aero = aero - aero_mean
 
 !     Write out NMC-method standard perturbations:
       output_file = 'pert.'//date(1:10)//'.e001'
@@ -390,6 +425,7 @@ program gen_be_stage0_gsi
       write(gen_be_ounit)rh
       write(gen_be_ounit)rhm
       write(gen_be_ounit)psfc
+      if ( process_aero ) write(gen_be_ounit) aero
       close(gen_be_ounit)
 
    else ! be_method = "ENS"
@@ -455,6 +491,10 @@ program gen_be_stage0_gsi
    deallocate( mapfac_my )
    deallocate( mapfac_mx )
    deallocate( znu )       
+   if ( process_aero ) then 
+      deallocate(aero)
+      deallocate(aero_mean)
+   endif
 
 CONTAINS
 

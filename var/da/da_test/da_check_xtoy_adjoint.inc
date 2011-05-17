@@ -158,7 +158,8 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 
          call domain_clock_get( grid, start_timestr=timestr )
          call da_read_basicstates ( xbx, grid, config_flags, timestr )
-
+      else
+         call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
       endif
 
       call da_tl_model
@@ -183,7 +184,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
          do j = jms, jme
             do i = ims, ime  
                pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j)**2 * gas_constant * &
-                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area
             enddo
          enddo
 
@@ -333,7 +334,6 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       !----------------------------------------------------------------------
       call da_zero_x (grid%xa)
 
-
       call da_transform_xtoy_adj (cv_size, cv, grid, iv, y, grid%xa)
 
 
@@ -409,6 +409,10 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          grid%g_ph_2 = 0.0
          grid%g_mu_2 = 0.0
          grid%g_moist = 0.0
+         grid%g_rainnc = 0.0
+         grid%g_rainncv = 0.0
+         grid%g_rainc = 0.0
+         grid%g_raincv = 0.0
 
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
 
@@ -447,7 +451,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          do j = jms, jme
             do i = ims, ime
                model_grid%jcdfi_mu(i,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j) * gas_constant * &
-                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area
             enddo
          enddo
       endif

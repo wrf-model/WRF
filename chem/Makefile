@@ -152,7 +152,7 @@ module_data_cbmz.o:
 
 module_peg_util.o: 
 
-module_cbmz.o: module_data_sorgam.o
+module_cbmz.o: module_data_sorgam.o module_cbmz_rodas_prep.o
 
 module_chem_plumerise_scalar.o: module_zero_plumegen_coms.o
 
@@ -168,7 +168,7 @@ module_cbmz_addemiss.o: module_aerosols_sorgam.o
 
 module_cbm4_addemiss.o: module_aerosols_sorgam.o
 
-module_cbmz_rodas_prep.o: 
+module_cbmz_rodas_prep.o: module_cbmz_rodas3_solver.o
 
 module_cbmz_initmixrats.o: module_input_chem_data.o
 
@@ -216,7 +216,7 @@ module_data_sorgam.o: module_data_radm2.o
 
 module_cbmz_lsodes_solver.o: 
 
-module_cbmz_rodas3_solver.o: 
+module_cbmz_rodas3_solver.o: module_peg_util.o
 
 module_mosaic_csuesat.o:
 
@@ -270,7 +270,7 @@ module_aer_drydep.o: module_aerosols_sorgam.o module_mosaic_drydep.o
 
 chem_driver.o: module_radm.o module_convtrans_prep.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o module_wetscav_driver.o dry_dep_driver.o emissions_driver.o module_input_tracer.o module_input_tracer_data.o
 
-chemics_init.o: module_cbm4_initmixrats.o module_cbmz_initmixrats.o module_data_gocart_dust.o module_data_gocart_seas.o module_data_gocartchem.o module_gocart_chem.o module_dep_simple.o module_ftuv_driver.o module_phot_mad.o module_gocart_chem.o module_aerosols_sorgam.o module_mixactivate_wrappers.o
+chemics_init.o: module_cbm4_initmixrats.o module_cbmz_initmixrats.o module_gocart_aerosols.o module_data_gocart_dust.o module_data_gocart_seas.o module_data_gocartchem.o module_gocart_chem.o module_dep_simple.o module_ftuv_driver.o module_phot_mad.o module_gocart_chem.o module_aerosols_sorgam.o module_mixactivate_wrappers.o module_mosaic_driver.o module_input_chem_data.o
 
 aerosol_driver.o: module_data_sorgam.o module_aerosols_sorgam.o module_mosaic_driver.o
 
@@ -288,30 +288,6 @@ dry_dep_driver.o: module_data_radm2.o module_aer_drydep.o module_dep_simple.o mo
 
 module_wetscav_driver.o: module_mosaic_wetscav.o module_aerosols_sorgam.o
 
-convert_gocart : convert_gocart.o
-	$(RANLIB) ../main/$(LIBWRFLIB)
-	$(FC) -o convert_gocart.exe $(LDFLAGS) convert_gocart.o ../main/$(LIBWRFLIB) $(LIB)
-
-convert_dms : convert_dms.o
-	$(RANLIB) ../main/$(LIBWRFLIB)
-	$(FC) -o convert_dms.exe $(LDFLAGS) convert_dms.o ../main/$(LIBWRFLIB) $(LIB)
-
-convert_dust : convert_dust.o
-	$(RANLIB) ../main/$(LIBWRFLIB)
-	$(FC) -o convert_dust.exe $(LDFLAGS) convert_dust.o ../main/$(LIBWRFLIB) $(LIB)
-
-convert_bioemiss : convert_bioemiss.o
-	$(RANLIB) ../main/$(LIBWRFLIB)
-	$(FC) -o convert_bioemiss.exe $(LDFLAGS) convert_bioemiss.o ../main/$(LIBWRFLIB) $(LIB)
-
-convert_bioemiss_megan2 : convert_bioemiss_megan2.o module_input_chem_bioemiss.o 
-	$(RANLIB) ../main/$(LIBWRFLIB)
-	$(FC) -o convert_bioemiss_megan2.exe $(LDFLAGS) convert_bioemiss_megan2.o ../main/$(LIBWRFLIB) $(LIB)
-
 convert_emiss : convert_emiss.o
 	$(RANLIB) ../main/$(LIBWRFLIB)
 	$(FC) -o convert_emiss.exe $(LDFLAGS) convert_emiss.o ../main/$(LIBWRFLIB) $(LIB)
-
-convert_fireemiss : convert_fireemiss.o
-	$(RANLIB) ../main/$(LIBWRFLIB)
-	$(FC) -o convert_fireemiss.exe $(LDFLAGS) convert_fireemiss.o ../main/$(LIBWRFLIB) $(LIB)

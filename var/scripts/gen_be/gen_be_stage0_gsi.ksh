@@ -65,6 +65,10 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
       done
    fi
 
+   if $PROCESS_AERO; then
+      ln -sf ${WORK_DIR}/be_for_aero.nl .
+   fi
+
    ln -fs ${BUILD_DIR}/gen_be_stage0_gsi.exe .
    ./gen_be_stage0_gsi.exe ${BE_METHOD} ${FCST_TIME} $NE $FILE1 > gen_be_stage0_gsi.${FCST_TIME}.log 2>&1
 
@@ -72,7 +76,7 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    mv pert.${FCST_TIME}* ${STAGE0_GSI_DIR}
    mv gen_be_stage0_gsi.${FCST_TIME}.log ${STAGE0_GSI_DIR}
    cd ${WORK_DIR}
-   rm -rf ${WORK_DIR}/${DATE}  2> /dev/null
+   #hcl rm -rf ${WORK_DIR}/${DATE}  2> /dev/null
 
    echo $DATE $FILE ${FC_DIR}/${NEXT_DATE}/wrfout_d${DOMAIN}_${FILE_DATE}
    export DATE=$(${BUILD_DIR}/da_advance_time.exe $DATE $INTERVAL)

@@ -127,7 +127,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       do jj = jms, jme
          do i = ims, ime 
             j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,jj)**2 * gas_constant * &
-                  280.0/(1.0e5**2)*grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
+                  280.0/(1.0e5**2)*grid%xb%grid_box_area(i,jj)/whole_area
          enddo
       enddo
 
@@ -142,6 +142,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    ! [2.0] calculate jb:
    !-------------------------------------------------------------------------
 
+   j % jb = 0.0
    if (cv_size_jb > 0) then
       cv_xhat_jb(1:cv_size_jb) = cv(1:cv_size_jb) + xhat(1:cv_size_jb)
       j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, mz)

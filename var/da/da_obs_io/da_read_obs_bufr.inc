@@ -1625,7 +1625,8 @@ end if
 
                if (plink%nlevels_BUFR > 0) then
 
-                  if ( ilocal(sound) == nlocal(sound) ) then
+                  if ( ilocal(sound) == nlocal(sound) .or. &
+                       .not. associated(iv%sound(ilocal(sound))%h) ) then
                      allocate (iv%sound(ilocal(sound))%h(1:iv%info(sound)%max_lev))
                      allocate (iv%sound(ilocal(sound))%p(1:iv%info(sound)%max_lev))
                      allocate (iv%sound(ilocal(sound))%u(1:iv%info(sound)%max_lev))

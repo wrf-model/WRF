@@ -631,6 +631,7 @@ integer::oops1,oops2
             END DO
          END IF
 
+         IF ( any_valid_points ) THEN
          !  Check for and semi-fix missing surface fields.
 
          IF ( grid%p_gc(i_valid,num_metgrid_levels,j_valid) .LT. grid%p_gc(i_valid,2,j_valid) ) THEN
@@ -690,7 +691,6 @@ integer::oops1,oops2
             WRITE ( a_message , * ) 'Missing surface v wind, replaced with closest level, use_surface set to false.'
             CALL wrf_message ( a_message ) 
          END IF
-
 
          !  Compute the mixing ratio from the input relative humidity.
 
@@ -771,6 +771,14 @@ integer::oops1,oops2
                   END DO
                END DO
             END DO
+         END IF
+
+         !  If the pressure levels in the middle of the atmosphere are upside down, then
+         !  this is hybrid data.  Computing the new surface pressure should use sfcprs2.
+
+         IF ( grid%p_gc(i_valid,num_metgrid_levels/2,j_valid) .LT. grid%p_gc(i_valid,num_metgrid_levels/2+1,j_valid) ) THEN
+            config_flags%sfcp_to_sfcp = .TRUE.
+         END IF
          END IF
 
          !  Assign surface fields with original input values.  If this is hybrid data,
@@ -909,13 +917,6 @@ integer::oops1,oops2
                END IF
             END DO
          END DO
-
-         !  If the pressure levels in the middle of the atmosphere are upside down, then
-         !  this is hybrid data.  Computing the new surface pressure should use sfcprs2.
-
-         IF ( grid%p_gc(i_valid,num_metgrid_levels/2,j_valid) .LT. grid%p_gc(i_valid,num_metgrid_levels/2+1,j_valid) ) THEN
-            config_flags%sfcp_to_sfcp = .TRUE.
-         END IF
 
          !  Two ways to get the surface pressure.  1) If we have the low-res input surface
          !  pressure and the low-res topography, then we can do a simple hydrostatic
@@ -1455,6 +1456,7 @@ integer::oops1,oops2
       !  surface_input_source=2 => use data from grib file (dominant category as input)
       !  surface_input_source=3 => use dominant data from static file (dominant category as input)
 
+      IF ( any_valid_points ) THEN
       IF ( config_flags%surface_input_source .EQ. 1 ) THEN
 
       !  Generate the vegetation and soil category information from the fractional input
@@ -1536,6 +1538,7 @@ integer::oops1,oops2
             CALL wrf_error_fatal ( a_message ) 
          END IF
 
+      END IF
       END IF
 
       !  Adjustments for the seaice field PRIOR to the grid%tslb computations.  This is

@@ -19,7 +19,10 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
    !
    !------------------------------------------------------------------------------
 
-  implicit none
+
+
+
+ implicit none
 
   character(9)      ,  intent (in)  :: obstype
   character(100)    ,  intent (in)  :: infile
@@ -33,9 +36,6 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer(i_kind),parameter :: N_HSBCHAN  =   4
   integer(i_kind),parameter :: N_MAXCHAN  = 350
   integer(i_kind),parameter :: maxinfo    =  12
-  character(8),   parameter :: msgtype_airsc = 'NC021250' ! msg type of center FOV
-  character(8),   parameter :: msgtype_airse = 'NC021249' ! msg type of every FOV
-
 
 ! BUFR format for AQUASPOT (SPITSEQN)
   integer(i_kind),parameter :: N_AQUASPOT_LIST = 25
@@ -109,7 +109,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   character(len=10) :: date
   integer(i_kind)   :: nmind
   integer(i_kind)   :: iy, im, idd, ihh
-  real              :: obs_time
+  real*8            :: obs_time
 
 
 ! Other work variables
@@ -125,8 +125,10 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer(i_kind)  :: i, l, n, error, airs_table_unit
   integer          :: iost, lnbufr
   real(r_kind),allocatable,dimension(:,:):: airdata_all
-  real(r_kind)  :: tocc(1,1)
-
+  real(kind=8)     :: tocc(1,1)
+  integer          ::num_bufr(7),numbufr,ibufr
+  character(20)    ::filename
+  
 ! Set standard parameters
   real(r_kind)     :: POinT001 =   0.001_r_kind
   real(r_kind)     :: POinT01  =   0.01_r_kind
@@ -150,7 +152,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   type(model_loc_type)       :: loc
   type (datalink_type), pointer   :: head, p, current, prev
 
-   if (trace_use_dull) call da_trace_entry("da_read_obs_bufrairs")
+  call da_trace_entry("da_read_obs_bufrairs")
 
 !  0.0  Initialize variables
 !-----------------------------------
@@ -201,6 +203,9 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
           .or. satellite_id /= rtminit_satid(inst) &
           .or. sensor_id /= rtminit_sensor(inst)  ) return
 
+  size = 0     !
+  iobs = 0     ! for thinning, argument is inout
+
 !    1.0  Open BUFR table and BUFR file
 !--------------------------------------------------------------
   table_file = 'gmao_airs_bufr.tbl'      ! make table file name
@@ -220,11 +225,51 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   end if
 
 ! Open BUFR file
-  call da_get_unit(lnbufr)
-  open(unit=lnbufr,file=trim(infile),form='unformatted',iostat = iost)
+!  call da_get_unit(lnbufr)
+
+   num_bufr(:)=0
+   numbufr=0
+   if (num_fgat_time>1) then
+      do i=1,7
+         call da_get_unit(lnbufr)
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.bufr'
+         open(unit   = lnbufr, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+         if (iost == 0) then
+            numbufr=numbufr+1
+	    num_bufr(numbufr)=i
+         else
+            close (lnbufr)
+         end if
+         call da_free_unit(lnbufr)
+      end do
+   else
+     numbufr=1
+   end if
+
+   if (numbufr==0) numbufr=1
+
+bufrfile:  do ibufr=1,numbufr   
+   if (num_fgat_time==1) then
+      filename=trim(infile)//'.bufr'
+   else
+      if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+         filename=trim(infile)//'.bufr'
+      else
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.bufr'   
+      end if
+   end if
+
+  lnbufr=97
+
+  open(unit=lnbufr,file=trim(filename),form='unformatted',iostat = iost, status = 'old')
   if (iost /= 0) then
      call da_warning(__FILE__,__LINE__, &
         (/"Cannot open file "//infile/))
+     close(lnbufr)
+     if (airstab) then
+        close(airs_table_unit)
+        call da_free_unit(airs_table_unit)
+     end if
      return
   end if
   if ( airstab ) then
@@ -247,21 +292,17 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
   write(unit=date,fmt='( i10)') idate
   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-   if (print_detail_rad) then
-      write(unit=message(1),fmt=*) 'Bufr file date is ', &
-         iy,im,idd,ihh
-      call da_message(message(1:1))
-   end if
+  write(unit=stdout,fmt=*) &
+      'Bufr file date is ',iy,im,idd,ihh,infile
   
 !   3.0 Loop over observations
 !----------------------------
-
-  allocate ( head )
-!  allocate ( head % tb (1:nchan) )
-  nullify  ( head % next )
-  p => head
-  size = 0
-  iobs = 0
+     if ( ibufr == 1 ) then
+        allocate ( head )
+      ! allocate ( head % tb (1:nchan) )
+        nullify  ( head % next )
+        p => head
+     endif  
 
   loop_obspoints: do
 
@@ -277,11 +318,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   
 !   3.2 Read AQUASPOT (SPITSEQN)
 !------------------------
-     if ( subset == msgtype_airsc ) then
-        call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'AQUASPOT')
-     else if ( subset == msgtype_airse ) then
-        call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
-     end if
+     call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
      aquaspot = aquaspot_list( aquaspot_list_array(1), &
                                aquaspot_list_array(2), &
                                aquaspot_list_array(3), &
@@ -294,11 +331,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 !   3.3 Read AIRSSPOT or AMSUSPOT or HSBSPOT
 !-------------------------------------------------
      if ( trim(senname) == 'AIRS' ) then
-        if ( subset == msgtype_airsc ) then
-           call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'AIRSSPOT')
-        else if ( subset == msgtype_airse ) then
-           call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'SITPSEQN')
-        end if
+        call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'SITPSEQN')
      else
         call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,spotname)
      end if
@@ -318,11 +351,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 !   3.4 Read AIRSCHAN or AMSUCHAN or HSBCHAN
 !-------------------------------------------
      if ( trim(senname) == 'AIRS' ) then
-        if ( subset == msgtype_airsc ) then
-           call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'AIRSCHAN')
-        else if ( subset == msgtype_airse ) then
-           call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'SCBTSEQN')
-        end if
+        call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'SCBTSEQN')
      else
         call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,channame)
      end if
@@ -428,7 +457,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
           crit = 1.0 ! 0.01_r_kind+terrain + timedif !+ 10.0_r_kind*float(iskip)
 	  if (airs_warmest_fov) &
 	     crit = 1E10 * exp(-(airschan(129)%tmbrst-220.0)/2)   ! warmest bt for window channel (10.36 micron)
-          call map2grids(inst,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,luse)
+          call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,luse)
           if (.not. luse) cycle loop_obspoints
        end if
 
@@ -509,24 +538,33 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 
   end do loop_obspoints
 
+  call closbf(lnbufr)
+  close(lnbufr)
+
+end do bufrfile
+
    if (thinning) then
 
 #ifdef DM_PARALLEL
          
       ! Get minimum crit and associated processor index.
       j = 0
-      do n = 1, iv%num_inst
-         j = j + thinning_grid(n)%itxmax
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            j = j + thinning_grid(n,ifgat)%itxmax
+         end do
       end do
          
       allocate ( in  (j) )
       allocate ( out (j) ) 
                
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            in(j) = thinning_grid(n)%score_crit(i)
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               in(j) = thinning_grid(n,ifgat)%score_crit(i)
+            end do
          end do             
       end do
       call mpi_reduce(in, out, j, true_mpi_real, mpi_min, root, comm, ierr)
@@ -534,10 +572,12 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
       call wrf_dm_bcast_real (out, j)
 
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            if ( ABS(out(j)-thinning_grid(n)%score_crit(i)) > 1.0E-10 ) thinning_grid(n)%ibest_obs(i)  = 0
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               if ( ABS(out(j)-thinning_grid(n,ifgat)%score_crit(i)) > 1.0E-10 ) thinning_grid(n,ifgat)%ibest_obs(i)  = 0
+            end do
          end do
       end do
 
@@ -554,10 +594,11 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
          size_tmp = size
          do j = 1, size_tmp
             n = p%sensor_index
+            ifgat = p%ifgat
             found = .false.
 
-            do i = 1, thinning_grid(n)%itxmax
-               if ( thinning_grid(n)%ibest_obs(i) == j .and. thinning_grid(n)%score_crit(i) < 9.99e6_r_kind ) then
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               if ( thinning_grid(n,ifgat)%ibest_obs(i) == j .and. thinning_grid(n,ifgat)%score_crit(i) < 9.99e6_r_kind ) then
                   found = .true.
                   exit
                endif
@@ -616,22 +657,11 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
       write(UNIT=stdout,FMT='(a,i3,2x,a,3x,i10)') &
         'Allocating space for radiance innov structure', &
          inst, iv%instid(inst)%rttovid_string, iv%instid(inst)%num_rad
-      if (rtm_option == rtm_option_crtm) then
-         iv%instid(inst)%nlevels = kme-kms+1
-         iv%instid(inst)%nchannels=nchan
-      end if
    end if
 !  end do
 
 !   6.0 assign sequential structure to innovation structure
 !-------------------------------------------------------------
-#ifdef RTTOV
-      if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(1, nchan, coefs(inst), &   ! in
-            iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &
-            iv%instid(inst)%nbtout)      ! out
-      end if
-#endif
 
   n = 0
   p => head
@@ -657,13 +687,13 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 1000 continue
    call closbf(lnbufr)
    close(lnbufr)
-   call da_free_unit(lnbufr)
+!   call da_free_unit(lnbufr)
    if (airstab) then
       close(airs_table_unit)
       call da_free_unit(airs_table_unit)
    end if
 
-   if (trace_use_dull) call da_trace_exit("da_read_obs_bufrairs")
+   call da_trace_exit("da_read_obs_bufrairs")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/))
 #endif

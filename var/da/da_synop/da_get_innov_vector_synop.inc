@@ -43,6 +43,16 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
    allocate (model_p  (1,iv%info(synop)%n1:iv%info(synop)%n2))
    allocate (model_hsm(1,iv%info(synop)%n1:iv%info(synop)%n2))
 
+   if ( it > 1 ) then
+      do n=iv%info(synop)%n1,iv%info(synop)%n2
+         if (iv%synop(n)%u%qc == fails_error_max) iv%synop(n)%u%qc = 0
+         if (iv%synop(n)%v%qc == fails_error_max) iv%synop(n)%v%qc = 0
+         if (iv%synop(n)%t%qc == fails_error_max) iv%synop(n)%t%qc = 0
+         if (iv%synop(n)%p%qc == fails_error_max) iv%synop(n)%p%qc = 0
+         if (iv%synop(n)%q%qc == fails_error_max) iv%synop(n)%q%qc = 0
+      end do
+   end if
+
    if (sfc_assi_options == sfc_assi_options_1) then
 
       do n=iv%info(synop)%n1,iv%info(synop)%n2
@@ -200,7 +210,8 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !--------------------------------------------------------------------
 
-   call da_check_max_iv_synop(iv,ob, it,num_qcstat_conv)
+   if ( check_max_iv ) &
+      call da_check_max_iv_synop(iv,ob, it,num_qcstat_conv)
 
    if (check_buddy) call da_check_buddy_synop(iv, ob, grid%dx, it)
  !

@@ -21,10 +21,12 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #if (NMM_CORE == 1)
 #    include "start_domain_nmm.int"
 #endif
+#if (DA_CORE != 1)
       SUBROUTINE calc_ts_locations( grid )
          USE module_domain
          TYPE (domain) :: grid
       END SUBROUTINE calc_ts_locations
+#endif
    END INTERFACE
 
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
@@ -39,19 +41,21 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #if (NMM_CORE == 1) 
    CALL start_domain_nmm( grid, allowed_to_read   &
 !
-# include <actual_args.inc>
+# include <actual_new_args.inc>
 !
                          )
 #endif
 #if (COAMPS_CORE == 1)
    CALL start_domain_coamps( grid, allowed_to_read   &
 !
-# include <actual_args.inc>
+# include <actual_new_args.inc>
 !
                          )
 #endif
 
+#if (DA_CORE != 1)
    CALL calc_ts_locations( grid )
+#endif
 
 END SUBROUTINE start_domain
 

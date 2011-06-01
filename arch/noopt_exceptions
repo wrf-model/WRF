@@ -9,11 +9,25 @@ mediation_force_domain.o : mediation_force_domain.F
 mediation_integrate.o : mediation_integrate.F
 mediation_interp_domain.o : mediation_interp_domain.F
 module_comm_dm.o : module_comm_dm.F
+module_comm_dm_0.o : module_comm_dm_0.F
+module_comm_dm_1.o : module_comm_dm_1.F
+module_comm_dm_2.o : module_comm_dm_2.F
+module_comm_dm_3.o : module_comm_dm_3.F
+module_comm_nesting_dm.o : module_comm_nesting_dm.F
 module_configure.o : module_configure.F
 module_dm.o : module_dm.F
 module_domain.o : module_domain.F
 module_domain_type.o : module_domain_type.F
-module_alloc_space.o : module_alloc_space.F
+module_alloc_space_0.o : module_alloc_space_0.F
+module_alloc_space_1.o : module_alloc_space_1.F
+module_alloc_space_2.o : module_alloc_space_2.F
+module_alloc_space_3.o : module_alloc_space_3.F
+module_alloc_space_4.o : module_alloc_space_4.F
+module_alloc_space_5.o : module_alloc_space_5.F
+module_alloc_space_6.o : module_alloc_space_6.F
+module_alloc_space_7.o : module_alloc_space_7.F
+module_alloc_space_8.o : module_alloc_space_8.F
+module_alloc_space_9.o : module_alloc_space_9.F
 module_tiles.o : module_tiles.F
 module_fddaobs_rtfdda.o : module_fddaobs_rtfdda.F
 module_initialize.o : module_initialize.F
@@ -31,15 +45,11 @@ module_io_wrf.o : module_io_wrf.F
 module_si_io.o : module_si_io.F
 module_state_description.o : module_state_description.F 
 output_wrf.o : output_wrf.F
-NMM_NEST_UTILS1.o : NMM_NEST_UTILS1.F
-module_radiation_driver.o: module_radiation_driver.F
 shift_domain_em.o : shift_domain_em.F
-shift_domain_nmm.o : shift_domain_nmm.F
 solve_em.o : solve_em.F
 solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
 start_domain_nmm.o : start_domain_nmm.F
-mediation_nest_move.o : mediation_nest_move.F
 start_em.o : start_em.F
 wrf_auxhist10in.o : wrf_auxhist10in.F
 wrf_auxhist10out.o : wrf_auxhist10out.F
@@ -123,14 +133,10 @@ module_io_wrf.o \
 module_si_io.o \
 module_tiles.o \
 output_wrf.o \
-NMM_NEST_UTILS1.o \
-module_radiation_driver.o \
 shift_domain_em.o \
-shift_domain_nmm.o \
 solve_interface.o \
 start_domain.o \
 start_domain_nmm.o \
-mediation_nest_move.o \
 start_em.o \
 wrf_fddaobs_in.o \
 wrf_tsin.o :
@@ -138,6 +144,11 @@ wrf_tsin.o :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
 	$(RM) $*.b $*.bb
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
 	if $(FGREP) '!$$OMP' $*.f90 ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90 ; \
@@ -229,15 +240,31 @@ wrf_inputout.o \
 wrf_restartin.o \
 wrf_restartout.o \
 module_state_description.o \
-nl_set_0_routines.o \
-nl_set_1_routines.o \
-nl_get_0_routines.o \
-nl_get_1_routines.o \
 module_alloc_space.o \
+module_alloc_space_0.o \
+module_alloc_space_1.o \
+module_alloc_space_2.o \
+module_alloc_space_3.o \
+module_alloc_space_4.o \
+module_alloc_space_5.o \
+module_alloc_space_6.o \
+module_alloc_space_7.o \
+module_alloc_space_8.o \
+module_alloc_space_9.o \
 module_comm_dm.o \
+module_comm_dm_0.o \
+module_comm_dm_1.o \
+module_comm_dm_2.o \
+module_comm_dm_3.o \
+module_comm_nesting_dm.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
 	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

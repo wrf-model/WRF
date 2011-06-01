@@ -552,8 +552,8 @@ subroutine da_get_be_inverse( testing_eofs, nk, be, be_inv )
    real                   :: total_var_inv           ! 1 / Total variance of matrix.
    real                   :: cumul_variance          ! Cumulative variance of matrix.
 
-   real                   :: evec(1:nk,1:nk)         ! Eigenvectors.
-   real                   :: eval(1:nk)              ! Eigenvalues.
+   real*8                 :: evec(1:nk,1:nk)         ! Eigenvectors.
+   real*8                 :: eval(1:nk)              ! Eigenvalues.
    real                   :: eval_inv(1:nk)          ! 1 / Eigenvalues.
    real                   :: LamInvET(1:nk,1:nk)     ! ET/sqrt(Eigenvalue).
 

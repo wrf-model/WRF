@@ -6,7 +6,7 @@
 MODULE MODULE_RA_HWRF
       USE MODULE_MODEL_CONSTANTS
 !GFDL      USE MODULE_MP_ETANEW, ONLY : RHGRD,FPVS
-      USE MODULE_MP_ETANEW_HWRF, ONLY : RHGRD_in,RHGRD_out,FPVS   !GFDL
+      USE MODULE_MP_HWRF, ONLY : RHGRD_in,RHGRD_out,FPVS   !GFDL
       INTEGER,PARAMETER :: NL=81
       INTEGER,PARAMETER :: NBLY=15
       REAL,PARAMETER :: RTHRESH=1.E-15
@@ -8754,7 +8754,7 @@ CONTAINS
 	do J=109,1,-6
 !mp	write(6,697)(TRANSA(I,J),I=5,105,10)
 	enddo
- 697	format(11(f5.3,x))
+ 697	format(11(f5.3,1x))
 !mp
 !NOV89
       DO 4 I=1,IAP
@@ -9828,7 +9828,6 @@ CONTAINS
 !----------------------------------------------------------------------
       IF ( wrf_dm_on_monitor() ) THEN
         DO i = 14,99
-      write(0,*)' in CONRAD i=',i,' opened=',opened
           INQUIRE ( i , OPENED = opened )
           IF ( .NOT. opened ) THEN
             nunit_co2 = i
@@ -9841,9 +9840,10 @@ CONTAINS
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(nunit_co2,FILE='co2_trans',                  &
                FORM='UNFORMATTED',STATUS='OLD',ERR=9014,IOSTAT=IERROR)
+          REWIND NUNIT_CO2
         ENDIF
 
-      REWIND NUNIT_CO2
+
 !----------------------------------------------------------------------
 !
 !***  READ IN PRE-COMPUTED CO2 TRANSMISSION DATA.

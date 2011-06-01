@@ -1,4 +1,4 @@
-Description of WRF-Var namelist variables
+Description of WRFDA namelist variables
 -----------------------------------------
 
  Note: variables followed by (...) indicate that this variable can or needs to
@@ -7,8 +7,9 @@ Description of WRF-Var namelist variables
 &wrfvar1
   write_increments        = .false. ; .true.: write out a binary analysis_increment file
   var4d                   = .false. ; .true.: 4D-VAR
+  var4d_bin               = 3600    ; second, Observation sub-window bin legnth for 4D-Var
+  var4d_lbc               = .true.  ; on/off switch for lateral boundary control in 4D-Var
   multi_inc               = 0       ; >0: multi-incremental run
-  var4d_coupling          = 2       ; 1: var4d_coupling_disk_linear, 2: var4d_coupling_disk_simul
      ; print_detail_xxx: output extra (sometimes can be too many) diagnostics for debugging.
      ; not recommended to turn them on for production runs.
   print_detail_radar      = .false.
@@ -16,23 +17,20 @@ Description of WRF-Var namelist variables
   print_detail_xb         = .false.
   print_detail_obs        = .false.
   print_detail_map        = .false.
-  print_detail_grad       = .false. ; the purpose of print_detail_grad is changed in V3.1
-                                    ; .true.: to print out detailed gradient of each observation type at
-                                    ;         each iteration and write out detailed cost function and 
-                                    ;         gradient into files called cost_fn and grad_fn.
+  print_detail_grad       = .false. ; .true.: to print out detailed gradient of each observation type at
+                                    ;         the first and final iterations.
   check_max_iv_print      = .true.  ; obsolete (only used by Radar)
 /
 &wrfvar2
   analysis_accu           = 900     ; second, if time difference between namelist setting
                                     ; (analysis_date) and date info read in from first guess
-                                    ; is larger than analysis_accu, WRF-Var will issue a
+                                    ; is larger than analysis_accu, WRFr will issue a
                                     ; warning message ("=======> Wrong xb time found???"), 
                                     ; but won't abort.
   calc_w_increment        = .false. ; .true.: the increment of the vertical velocity w will be 
                                     ;         diagnosed based on the increments of other fields.
                                     ;         If use_radarobs=.true., the w increments are always
                                     ;         calculated.
-  dt_cloud_model          = .false. ;
 /
 &wrfvar3
   fg_format               = 1       ; 1: fg_format_wrf_arw_regional (default)
@@ -43,7 +41,7 @@ Description of WRF-Var namelist variables
                                     ; 2: ob_format_ascii (output from obsproc), read in data from ob.ascii (default)
                                     ; 3: ob_format_madis (not tested)
   num_fgat_time           = 1       ; 1: 3DVAR
-                                    ; > 1: number of time slots for FGAT and 4DVAR (for ob_format=2 and radiance only)
+                                    ; > 1: number of time slots for FGAT (for ob_format=2 and radiance only)
 /
 &wrfvar4
   thin_conv                         = .true.  ; for ob_format=1 (NCEP PREPBUFR) only.
@@ -79,7 +77,7 @@ Description of WRF-Var namelist variables
      ; use_msuobs, use_amsuaobs, use_amsubobs, use_airsobs,
      ; use_eos_amsuaobs, use_hsbobs, use_ssmisobs are 
      ; radiance-related variables that only control if reading
-     ; in corresponding BUFR files into WRF-Var or not, but
+     ; in corresponding BUFR files into WRFDA or not, but
      ; do not control if assimilate the data or not.
      ; Some more variables have to be set in &wrfvar14 in order
      ; to assimilate radiance data.
@@ -122,10 +120,18 @@ Description of WRF-Var namelist variables
                                          ; function gradient is reduced by a factor of eps.
                                          ; inner minimization stops either when the criterion is met or 
                                          ; when inner iterations reach ntmax.
+  orthonorm_gradient         = .false.   ; .true.: the gradient vectors are stored during 
+                                         ;         the Conjugate Gradient for each iteration and 
+                                         ;         used to re-orthogonalize the new gradient. 
+                                         ;         This requires extra storage of large vectors 
+                                         ;         (each one being the size of the control variable)
+                                         ;         but results in a better convergence of the 
+                                         ;         Conjugate Gradient after around 20 iterations.
 /
 &wrfvar7
   cv_options              = 5         ; 3: NCEP Background Error model
                                       ; 5: NCAR Background Error model (default)
+  ; as1 - as5 are for cv_options=3 only
   as1 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 1 = stream function. For cv_options=3 only.
                                       ; the actual default valuse are 0.25, 1.0, 1.5.
@@ -142,21 +148,22 @@ Description of WRF-Var namelist variables
                                       ; control variable 5 - unbalanced surface pressure. For cv_options=3 only.
                                       ; the actual default valuse are 0.25, 1.0, 1.5.
   rf_passes               = 6         ; number of passes of recursive filter.
-  var_scaling1            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 1 - stream function. For cv_options=5 only.
-  var_scaling2            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 2 - unbalanced velocity potential. For cv_options=5 only.
-  var_scaling3            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 3 - unbalanced temperature. For cv_options=5 only.
-  var_scaling4            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 4 - pseudo relative humidity. For cv_options=5 only.
-  var_scaling5            = 1.0       ; tuning factor of background error covariance for
-                                      ; control variable 5 - unbalanced surface pressure. For cv_options=5 only.
-  len_scaling1            = 1.0       ; tuning factor of scale-length for stream function. For cv_options=5 only.
-  len_scaling2            = 1.0       ; tuning factor of scale-length for unbalanced velocity potential. For cv_options=5 only.
-  len_scaling3            = 1.0       ; tuning factor of scale-length for unbalanced temperature. For cv_options=5 only.
-  len_scaling4            = 1.0       ; tuning factor of scale-length for pseudo relative humidity. For cv_options=5 only.
-  len_scaling5            = 1.0       ; tuning factor of scale-length for unbalanced surface pressure. For cv_options=5 only.
+  ; var_scaling1-5 and len_scaling1-5 are for cv_options=5 only
+  var_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 1 - stream function. For cv_options=5 only.
+  var_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 2 - unbalanced velocity potential. For cv_options=5 only.
+  var_scaling3 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 3 - unbalanced temperature. For cv_options=5 only.
+  var_scaling4 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 4 - pseudo relative humidity. For cv_options=5 only.
+  var_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
+                                               ; control variable 5 - unbalanced surface pressure. For cv_options=5 only.
+  len_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for stream function. For cv_options=5 only.
+  len_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for unbalanced velocity potential. For cv_options=5 only.
+  len_scaling3 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for unbalanced temperature. For cv_options=5 only.
+  len_scaling4 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for pseudo relative humidity. For cv_options=5 only.
+  len_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for unbalanced surface pressure. For cv_options=5 only.
   je_factor               = 1.0       ; ensemble covariance weighting factor
 /
 &wrfvar8   ; not used
@@ -195,7 +202,7 @@ Description of WRF-Var namelist variables
 /
 &wrfvar11
   cv_options_hum          = 1       ; do not change
-  check_rh                = 2       ; 0: no supersaturation check after minimization
+  check_rh                = 0       ; 0: no supersaturation check after minimization
                                     ; 1: supersaturation (rh> 100%) and minimum rh (rh<10%) check, 
                                     ;    and make the local adjustment of q.
                                     ; 2: supersaturation (rh> 95%) and minimum rh (rh<11%) check, 
@@ -208,14 +215,8 @@ Description of WRF-Var namelist variables
                                     ; 2: surface observations will be assimilated based on surface 
                                     ;    similarity theory in PBL. Innovations are computed based 
                                     ;    on 10-m wind, 2-m temperature and 2-m moisture. 
-  calculate_cg_cost_fn    = .false. ; the purpose of calculate_cg_cost_fn is changed in V3.1.
-                                    ; use print_detail_grad=.true. to dump cost function and gradient
-                                    ; of each iteration to cost_fn and grad_fn.
-                                    ; conjugate gradient algorithm does not require the computation of 
-                                    ; cost function at every iteration during minimization.
-                                    ; .true.: cost function is printed out and is directly derived 
-                                    ;         from the gradient using the fully linear properties 
-                                    ;         inside the inner-loop.
+  calculate_cg_cost_fn    = .false. ; .true.: Compute and write out cost function and gradient of
+                                    ;         each iteration into files called cost_fn and grad_fn.
                                     ; .false.: Only the initial and final cost functions are computed 
                                     ;          and output.
   lat_stats_option        = .false. ; do not change
@@ -239,8 +240,9 @@ Description of WRF-Var namelist variables
   max_vert_var4           = 99.0   ; speficy the maximum truncation value (in percentage)
                                    ; to explain the variance of pseudo relative humidity
                                    ; in eigenvector decomposition
-  max_vert_var5           = 99.0   ; for unbalanced surface pressure
-                                   ; no effect except for max_vert_var5=0.0
+  max_vert_var5           = 99.0   ; for unbalanced surface pressure, it should be a non-zero
+                                   ; positive number.
+                                   ; set max_vert_var5=0.0 only for offline VarBC applications.
 /
 &wrfvar14
      ; the following 4 variables (rtminit_nsensor, rtminit_platform,
@@ -272,8 +274,8 @@ Description of WRF-Var namelist variables
                                                  ;         tuning method (Desroziers and Ivanov, 2001)
   use_antcorr (max_instruments)       = .false.  ; .true.: perform Antenna Correction in CRTM
   rtm_option                          = 1        ; what RTM (Radiative Transfer Model) to use
-                                                 ; 1: RTTOV (WRF-Var needs to compile with RTTOV)
-                                                 ; 2: CRTM  (WRF-Var needs to compile with CRTM)
+                                                 ; 1: RTTOV (WRFDA needs to compile with RTTOV)
+                                                 ; 2: CRTM  (WRFDA needs to compile with CRTM)
   only_sea_rad                        = .false.  ; .true.: assimilate radiance over water only
   use_varbc                           = .false.  ; .true.: perform Variational Bias Correction.
                                                  ;         A parameter file in ASCII format called VARBC.in
@@ -294,15 +296,17 @@ Description of WRF-Var namelist variables
                                                  ;         AIRS Window channel #914 as criterion for GSI 
                                                  ;         thinning (with a higher amplitude than the distance 
                                                  ;         from the observation location to the nearest grid point).
-  crtm_atmosphere                     = 0        ; climatology reference profile used above model top for 
-                                                 ; CRTM Radiative Transfer Model (up to 0.01hPa).
-                                                 ; 0: Invalid (default, use U.S. Standard Atmosphere)
-                                                 ; 1: Tropical
-                                                 ; 2: Midlatitude summer
-                                                 ; 3: Midlatitude winter
-                                                 ; 4: Subarctic summer
-                                                 ; 5: Subarctic winter
-                                                 ; 6: U.S. Standard Atmosphere
+  use_crtm_kmatrix                    = .false.  ; .true. use CRTM K matrix rather than calling CRTM TL
+                                                 ;        and AD routines for gradient calculation, which
+                                                 ;        reduces runtime noticeably. 
+  use_rttov_kmatrix                   = .false.  ; .true. use RTTOV K matrix rather than calling RTTOV TL
+                                                 ;        and AD routines for gradient calculation, which
+                                                 ;        reduces runtime noticeably. 
+  rttov_emis_atlas_ir                 = 0        ; 0: do not use IR emissivity atlas
+                                                 ; 1: use IR emissivity atlas (recommended)
+  rttov_emis_atlas_mw                 = 0        ; 0: do not use MW emissivity atlas
+                                                 ; 1: use TELSEM MW emissivity atlas (recommended)
+                                                 ; 2: use CNRM MW emissivity atlas
 /
 &wrfvar15   ; needs to be set together with &wrfvar19
   num_pseudo              = 0          ; set the number of pseudo ob, either 0 or 1 (single ob)
@@ -328,7 +332,7 @@ Description of WRF-Var namelist variables
 /
 &wrfvar17
   analysis_type           = "3D-VAR"   ; "3D-VAR": 3D-VAR mode (default)
-                                       ; "QC_OBS": 3D-VAR mode plus extra filtered_obs output
+                                       ; "QC-OBS": 3D-VAR mode plus extra filtered_obs output
                                        ; "VERIFY": verification mode. 
                                        ;           WRF-Var resets check_max_iv=.false. and ntmax=0
                                        ; "RANDOMCV": for creating ensemble perturbations
@@ -373,17 +377,15 @@ Description of WRF-Var namelist variables
                                                         ; for ob_format=2 to double-check if the obs
                                                         ; are within the specified time window.
 /
-&wrfvar23   ; settings related to the 4D-Var penalty term option, which controls the
-            ; high-frequency gravity waves using a digital filter.
-  jcdfi_use               = .false.   ; .true.: include JcDF term in the cost function
-                                      ; .false.: ignore JcDF term in the cost function
-  jcdfi_io                = .false.   ; .true.: read JcDF output from WRF+, even when
-                                      ;         jcdfi_use=.false.. Used for diagnosis.
-                                      ; .false.: ignore JcDF output from WRF+.
-  jcdfi_tauc              = 10800.0   ; second, filter time window
-  jcdfi_gama              = 1.0       ; scaling number for tuning the weighting of JcDF term
-  jcdfi_error_wind        = 3.0       ; m/s,   wind error used in JcDF
-  jcdfi_error_t           = 1.0       ; K,     temperature error used in JcDF
-  jcdfi_error_q           = 0.001     ; kg/kg, specific humidity error used in JcDF
-  jcdfi_error_mu          = 1000.0    ; Pa,    perturbation pressure (mu) error used in JcDF
+&perturbation   ; settings related to the 4D-Var penalty term option, which controls the
+                ; high-frequency gravity waves using a digital filter.
+  jcdfi_use               = .true.   ; .true.: include JcDF term in the cost function
+                                     ; .false.: ignore JcDF term in the cost function
+  jcdfi_diag              = 1        ; 0: no diagnostic information for JcDF term in J
+                                     ; 1: print diagnostic information for JcDF term in J
+  jcdfi_penalty           = 10       ; The weight gived to JcDF term during minimization
+  enable_identity         = .false.  ; .true.: use identity adjoint and tangent linear model in 4D-Var
+                                     ; .false. use full adjoint and tangent linear model in 4D-Var
+  trajectory_io           = .true.   ; .true.: use memory I/O in 4D-Var for data exchange
+                                     ; .false.: use disk I/O in 4D-Var for data exchange
 /

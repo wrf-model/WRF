@@ -1,4 +1,4 @@
-subroutine da_transform_through_rf_adj(grid, mz,rf_alpha, val, field)
+subroutine da_transform_through_rf_adj(grid, mz,rf_alpha, val, field, scaling)
 
    !---------------------------------------------------------------------------
    ! Purpose: Control variable transform through the recursive filter.
@@ -14,15 +14,17 @@ subroutine da_transform_through_rf_adj(grid, mz,rf_alpha, val, field)
 
    type(domain),     intent(inout) :: grid
    integer,          intent(in)    :: mz                             ! Vertical truncation.
-   real,             intent(in)    :: rf_alpha(mz)                   ! RF scale parameter. 
-   real,             intent(in)    :: val(jds:jde,mz)                ! Error standard deviation.
+   real*8,           intent(in)    :: rf_alpha(mz)                   ! RF scale parameter. 
+   real*8,           intent(in)    :: val(jds:jde,mz)                ! Error standard deviation.
    real,             intent(inout) :: field(ims:ime,jms:jme,kms:kme) ! Field to be transformed. 
       
    integer :: rf_passes_over_two    ! rf_passes / 2
    integer :: i, j, m, n, pass, ij  ! Loop counters.
    real    :: p_x(ims:ime,jms:jme)  ! sqrt(Grid box area).
-   real    :: val_j(grid%xp%jtsy:grid%xp%jtey)
-   real    :: val_i(grid%xp%itsx:grid%xp%itex)
+   real*8  :: val_j(grid%xp%jtsy:grid%xp%jtey)
+   real*8  :: val_i(grid%xp%itsx:grid%xp%itex)
+
+   logical, optional, intent(in) :: scaling
 
    !-------------------------------------------------------------------------
    ! [1.0]: Initialise:
@@ -49,17 +51,18 @@ subroutine da_transform_through_rf_adj(grid, mz,rf_alpha, val, field)
    !-------------------------------------------------------------------------
    
    ! [4.3] Optionally scale by background error:
-
    ! be_s % val = Gridpoint standard deviation - only required for
    ! vert_corr = vert_corr_1 as scaling is performed in vertical transform
    ! for vert_corr = vert_corr_2:
 
-   if (vert_corr == vert_corr_1) then
-      do m = 1, mz
-         do i = its, ite
-            field(i,jts:jte,m) = field(i,jts:jte,m) * val(jts:jte,m)
+   if (vert_corr == vert_corr_1 .or. (present(scaling))) then
+      if (scaling .or. vert_corr == vert_corr_1) then
+         do m = 1, mz
+            do i = its, ite
+               field(i,jts:jte,m) = field(i,jts:jte,m) * val(jts:jte,m)
+            end do
          end do
-      end do
+      end if
    end if
 
    ! [4.2] Transform filtered field to dimensional space:

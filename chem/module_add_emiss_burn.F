@@ -1,9 +1,9 @@
 Module module_add_emiss_burn
 CONTAINS
-       subroutine add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,    &
+       subroutine add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,       &
             julday,gmt,xlat,xlong,t_phy,p_phy,                          &
-            ebu,chem_opt,biomass_burn_opt,                              &
-            ids,ide, jds,jde, kds,kde,                                  &
+            ebu,chem_opt,tracer_opt,biomass_burn_opt,                   &
+            num_c,ids,ide, jds,jde, kds,kde,                            &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
   USE module_configure, only: grid_config_rec_type
@@ -14,12 +14,12 @@ CONTAINS
 !  TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    INTEGER,      INTENT(IN   ) :: id,julday,chem_opt,biomass_burn_opt,     &
-                                  ids,ide, jds,jde, kds,kde,               &
+                                  num_c,ids,ide, jds,jde, kds,kde,      &
                                   ims,ime, jms,jme, kms,kme,               &
-                                  its,ite, jts,jte, kts,kte
+                                  its,ite, jts,jte, kts,kte,tracer_opt
    INTEGER,      INTENT(IN   ) ::                                          &
                                   ktau
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_c ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_ebu ),                 &
          INTENT(IN    ) ::                           ebu
@@ -59,6 +59,8 @@ CONTAINS
 
     !-------------biomass burning diurnal cycle --------------------
     !number of days of simulation
+    itime1=0
+    time=0.
     idays = int(( float(itime1)/100. + time/3600.)/24.+.00001)
     tign  = real(idays)*24.*3600.
     ! Modulacao da queimada media durante o ciclo diurno(unidade: 1/s)
@@ -79,6 +81,34 @@ CONTAINS
     !- weekly + diurnal cycle
     r_q=r_q*86400.
     r_q=1. ! no diurnal cycle
+!
+!tracer_opt has to come in as zero, if chem_opt is not =0!
+      temiss_select:  SELECT CASE(tracer_opt)
+         CASE (TRACER_SMOKE)
+!
+! for smoke only
+!
+          do j=jts,jte
+          do i=its,ite
+          do k=kts,kte
+             conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+             chem(i,k,j,p_smoke)  =  chem(i,k,j,p_smoke)+ebu(i,k,j,p_ebu_co)*conv_rho
+          enddo
+          enddo
+          enddo
+         CASE (TRACER_TEST2)
+          do j=jts,jte
+          do i=its,ite
+          do k=kts,kte
+             conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+             chem(i,k,j,p_tr17_3)  =  chem(i,k,j,p_tr17_3)+ebu(i,k,j,p_ebu_co)*conv_rho
+             chem(i,k,j,p_tr17_4)  =  chem(i,k,j,p_tr17_4)+ebu(i,k,j,p_ebu_co)*conv_rho
+          enddo
+          enddo
+          enddo
+         CASE DEFAULT
+             call wrf_debug(15,'nothing done with burn emissions for tracers here')
+      END SELECT temiss_select
       emiss_select:  SELECT CASE(chem_opt)
       CASE (RACMPM_KPP)
           do j=jts,jte
@@ -126,9 +156,9 @@ CONTAINS
         chem(i,k,j,p_pm_10)  =  chem(i,k,j,p_pm_10)                        &
                          +r_q*ebu(i,k,j,p_ebu_pm10)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
- ;       enddo
         enddo
-      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RACMSORG_AQ)
+        enddo
+      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RACM_ESRLSORG_KPP, RADM2SORG_AQ, RACMSORG_AQ)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte
@@ -200,7 +230,7 @@ CONTAINS
         chem(i,k,j,p_sulf)  =  chem(i,k,j,p_sulf)                        &
                          +ebu(i,k,j,p_ebu_sulf)*conv_rho
         chem(i,k,j,p_dms)  =  chem(i,k,j,p_dms)                        &
-                         +r_q*ebu(i,k,j,p_ebu_dms)/rho_phy(i,k,j)*dtstep
+                         +ebu(i,k,j,p_ebu_dms)*conv_rho
         chem(i,k,j,p_oc1)  =  chem(i,k,j,p_oc1)                        &
                          +r_q*ebu(i,k,j,p_ebu_oc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_bc1)  =  chem(i,k,j,p_bc1)                        &
@@ -265,7 +295,7 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (RADM2,RACM_KPP,RACM_MIM_KPP)
+      CASE (RADM2,RACM_KPP,RACM_MIM_KPP,SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte
@@ -306,9 +336,10 @@ CONTAINS
         enddo
         enddo
       CASE (MOZCART_KPP)
+        if( biomass_burn_opt == BIOMASSB_MOZC ) then
           do j=jts,jte
-          do i=its,ite
           do k=kts,kte
+          do i=its,ite
             conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60./dz8w(i,k,j)
         chem(i,k,j,p_co)  = chem(i,k,j,p_co)   +ebu(i,k,j,p_ebu_co)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)  +ebu(i,k,j,p_ebu_no)*conv_rho
@@ -319,24 +350,29 @@ CONTAINS
         chem(i,k,j,p_c2h6) = chem(i,k,j,p_c2h6) + ebu(i,k,j,p_ebu_c2h6)*conv_rho
         chem(i,k,j,p_c3h6) = chem(i,k,j,p_c3h6) + ebu(i,k,j,p_ebu_c3h6)*conv_rho
         chem(i,k,j,p_c3h8)  = chem(i,k,j,p_c3h8) + ebu(i,k,j,p_ebu_c3h8)*conv_rho
-        chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho) +ebu(i,k,j,p_ebu_hcho)*conv_rho
-        chem(i,k,j,p_ald)  = chem(i,k,j,p_ald) +ebu(i,k,j,p_ebu_ald)*conv_rho
-
+        chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho) +ebu(i,k,j,p_ebu_ch2o)*conv_rho
+        chem(i,k,j,p_ald)  = chem(i,k,j,p_ald) +ebu(i,k,j,p_ebu_ch3cho)*conv_rho
         chem(i,k,j,p_acet)  = chem(i,k,j,p_acet) + ebu(i,k,j,p_ebu_ch3coch3)*conv_rho
         chem(i,k,j,p_ch3oh)  = chem(i,k,j,p_ch3oh) + ebu(i,k,j,p_ebu_ch3oh)*conv_rho
         chem(i,k,j,p_mek)  = chem(i,k,j,p_mek) + ebu(i,k,j,p_ebu_mek)*conv_rho
         chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2) +ebu(i,k,j,p_ebu_so2)*conv_rho
-        chem(i,k,j,p_tol)  = chem(i,k,j,p_tol) +ebu(i,k,j,p_ebu_tol)*conv_rho
+        chem(i,k,j,p_so4)  =  chem(i,k,j,p_so4) +ebu(i,k,j,p_ebu_sulf)*conv_rho
+        chem(i,k,j,p_tol)  = chem(i,k,j,p_tol) +ebu(i,k,j,p_ebu_toluene)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3) + ebu(i,k,j,p_ebu_nh3)*conv_rho
         chem(i,k,j,p_oc1)  =  chem(i,k,j,p_oc1)                        &   
                          +r_q*ebu(i,k,j,p_ebu_oc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)                                                   
         chem(i,k,j,p_bc1)  =  chem(i,k,j,p_bc1)                        &   
                          +r_q*ebu(i,k,j,p_ebu_bc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_p10)  =  chem(i,k,j,p_p10)                        &   
+                         +r_q*ebu(i,k,j,p_ebu_pm10)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_p25)  =  chem(i,k,j,p_p25)                        &   
                          +r_q*ebu(i,k,j,p_ebu_pm25)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_dms)  =  chem(i,k,j,p_dms)                        &
+                         +r_q*ebu(i,k,j,p_ebu_dms)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
         enddo
         enddo
+        endif
       CASE (CHEM_TRACE2)
           do j=jts,jte
           do i=its,ite
@@ -352,7 +388,7 @@ CONTAINS
         enddo
         enddo
     CASE DEFAULT
-       call wrf_debug(15,'nothing done with burn emissions')
+       call wrf_debug(15,'nothing done with burn emissions for chem array')
     END SELECT emiss_select
 
 

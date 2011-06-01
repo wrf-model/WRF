@@ -25,6 +25,18 @@ subroutine da_get_innov_vector_ssmi_tb (it, grid, ob, iv)
 
    if (trace_use) call da_trace_entry("da_get_innov_vector_ssmi_tb")
 
+   if ( it > 1 ) then
+      do n=iv%info(ssmi_tb)%n1,iv%info(ssmi_tb)%n2
+         if(iv % ssmi_tb(n) % tb19v % qc == fails_error_max ) iv % ssmi_tb(n) % tb19v % qc = 0
+         if(iv % ssmi_tb(n) % tb19h % qc == fails_error_max ) iv % ssmi_tb(n) % tb19h % qc = 0
+         if(iv % ssmi_tb(n) % tb22v % qc == fails_error_max ) iv % ssmi_tb(n) % tb22v % qc = 0
+         if(iv % ssmi_tb(n) % tb37v % qc == fails_error_max ) iv % ssmi_tb(n) % tb37v % qc = 0
+         if(iv % ssmi_tb(n) % tb37h % qc == fails_error_max ) iv % ssmi_tb(n) % tb37h % qc = 0
+         if(iv % ssmi_tb(n) % tb85v % qc == fails_error_max ) iv % ssmi_tb(n) % tb85v % qc = 0
+         if(iv % ssmi_tb(n) % tb85h % qc == fails_error_max ) iv % ssmi_tb(n) % tb85h % qc = 0
+      end do
+   end if
+
    do n=iv%info(ssmi_tb)%n1,iv%info(ssmi_tb)%n2
       ! compute innovation vector
       ! =========================

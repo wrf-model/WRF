@@ -17,10 +17,7 @@ CONTAINS
                     RADFRQ,ICLOUD,DEGRAD,warm_rain,               &
                     ids,ide, jds,jde, kds,kde,                    & 
                     ims,ime, jms,jme, kms,kme,                    &
-                    its,ite, jts,jte, kts,kte,                    &
-                    slope_rad,topo_shading,ht,                    & ! Optional
-                    dx,dy,sina,cosa,shadowmask,                   & ! Optional
-                    cosz_urb2d,omg_urb2d                          & !Optional urban
+                    its,ite, jts,jte, kts,kte                     &
                     )
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -67,10 +64,6 @@ CONTAINS
 !
 ! Optional
 !
-   REAL, OPTIONAL, INTENT(IN) ::       dx,dy
-
-   REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         OPTIONAL, INTENT(IN) ::       sina,cosa,ht
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(IN    ) ::                                        &
@@ -81,13 +74,8 @@ CONTAINS
                                                             QS3D, &
                                                             QG3D
 
-   INTEGER, OPTIONAL, INTENT(IN) ::   slope_rad,topo_shading
-
-   INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: shadowmask
-
    LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
  
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZ_URB2D, OMG_URB2D !Optional urban
 ! LOCAL VARS
  
    REAL, DIMENSION( kts:kte ) ::                                  &
@@ -105,18 +93,12 @@ CONTAINS
 !
    REAL::      XLAT0,XLONG0,ALB0,GSW0
 
-   REAL :: COSZ, OMG   !urban
 !
    INTEGER :: i,j,K,NK
    LOGICAL :: predicate , do_topo_shading
    real :: aer_dry1(kts:kte),aer_water1(kts:kte)
 
-  real :: sinalpha,cosalpha,hx,hy,slope,slp_azi,pi
-  integer :: shadow
-
 !------------------------------------------------------------------
-
-pi = 4.*atan(1.)
 
    j_loop: DO J=jts,jte
    i_loop: DO I=its,ite
@@ -233,81 +215,13 @@ pi = 4.*atan(1.)
          XLAT0=XLAT(I,J)
          XLONG0=XLONG(I,J)
          ALB0=ALBEDO(I,J)
-
-         IF (PRESENT(topo_shading)) THEN
-           IF (topo_shading.eq.1) THEN
-             do_topo_shading = .TRUE.
-           ELSE
-             do_topo_shading = .FALSE.
-           END IF
-         ELSE
-           do_topo_shading = .FALSE.
-         END IF
-
-         shadow = 0
-         IF (do_topo_shading) THEN
-           IF(PRESENT(slope_rad) .AND. PRESENT(shadowmask))THEN
-! Computations for slope-dependent radiation
-
-             sinalpha = sina(i,j)
-             cosalpha = cosa(i,j)
-
-! Compute slope and slope azimuth of local grid point
-
-             if ((i.ge.ids+1).and.(i.le.ide-2)) then
-               hx = (ht(i+1,j)-ht(i-1,j))/(2.*dx)
-             else if (i.eq.ids) then
-               hx = (ht(i+1,j)-ht(i,j))/dx
-             else if (i.eq.ide-1) then
-               hx = (ht(i,j)-ht(i-1,j))/dx
-             endif
-             if ((j.ge.jds+1).and.(j.le.jde-2)) then
-               hy = (ht(i,j+1)-ht(i,j-1))/(2.*dy)
-             else if (j.eq.jds) then
-               hy = (ht(i,j+1)-ht(i,j))/dy
-             else if (j.eq.jde-1) then
-               hy = (ht(i,j)-ht(i,j-1))/dy
-             endif
-
-             slope = atan((hx**2+hy**2)**.5) 	
-             if (slope.lt.1.e-4) then
-               slope = 0.
-               slp_azi = 0.
-             else
-               slp_azi = atan2(hx,hy)+pi  
-! Rotate slope azimuth to lat-lon grid
-               if (cosalpha.ge.0) then
-                 slp_azi = slp_azi - asin(sinalpha) 
-               else
-                 slp_azi = slp_azi - (pi - asin(sinalpha))
-               endif
-             endif
-
-             shadow = shadowmask(i,j)
-           ENDIF
-
+! slope code removed - factor now done in surface driver
            CALL SWPARA(TTEN1D,GSW0,XLAT0,XLONG0,ALB0,              &
                        T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
                        XTIME,GMT,RHO01D,DZ,                        &
                        R,CP,G,DECLIN,SOLCON,                       &
-                       COSZ, OMG,                                  & !urban
-                       RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
-                       kts,kte,slope_rad,shadow,slp_azi,slope      )
-         ELSE
-           CALL SWPARA(TTEN1D,GSW0,XLAT0,XLONG0,ALB0,              &
-                       T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
-                       XTIME,GMT,RHO01D,DZ,                        &
-                       R,CP,G,DECLIN,SOLCON,                       &
-                       COSZ, OMG,                                  & !urban
                        RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
                        kts,kte      )
-         ENDIF
-
-         IF (PRESENT(COSZ_URB2D) .AND.  PRESENT(OMG_URB2D)) THEN   
-           COSZ_URB2D(I,J)=COSZ !urban
-           OMG_URB2D(I,J)=OMG !urban
-         ENDIF
-
          GSW(I,J)=GSW0
          DO K=kts,kte          
             NK=kme-1-K+kms
@@ -324,7 +238,6 @@ pi = 4.*atan(1.)
                      T,QV,QC,QR,QI,QS,QG,P,            		  &
                      XTIME, GMT, RHO0, DZ,             		  &
                      R,CP,G,DECLIN,SOLCON,             		  &
-                     COSZ, OMG,                                   & !urban
                      RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,    &
                      kts,kte,slope_rad,shadow,slp_azi,slope       )
 !------------------------------------------------------------------
@@ -380,9 +293,6 @@ pi = 4.*atan(1.)
 
    REAL, DIMENSION( 4    ) ::                             XMUVAL
 
-   REAL, INTENT(OUT)    ::                                  COSZ   !urban
-   REAL, INTENT(OUT)    ::                                  OMG    !urban
-
    REAL :: beta
 
 !------------------------------------------------------------------
@@ -422,9 +332,6 @@ pi = 4.*atan(1.)
       HRANG=15.*(TLOCTM-12.)*DEGRAD
       XXLAT=XLAT*DEGRAD
       CSZA=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
-
-      COSZ = CSZA  !urban
-      OMG  = HRANG !urban
 
 !     RETURN IF NIGHT        
       IF(CSZA.LE.1.E-9)GOTO 7

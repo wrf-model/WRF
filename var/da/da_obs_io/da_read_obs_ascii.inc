@@ -57,7 +57,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
    integer                      :: ndup, n, report, obs_index
 
-   real                  :: obs_time
+   real*8                :: obs_time
    integer               :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_read_obs_ascii")
@@ -478,18 +478,20 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
             do i = 1, nlevels
                ! if (elevation and height are the same, it is surface.)
-               if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
-                  surface_level = i
+               if (platform%info%elv.ne.missing_r.and.platform%each(i)%height.ne.missing_r)then
+                  if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
+                     surface_level = i
 
-                  ! Save surface pressure.
-                  iv%sonde_sfc(nlocal(sonde_sfc))%h = platform%each(i)%height
-                  iv%sonde_sfc(nlocal(sonde_sfc))%u = platform%each(i)%u
-                  iv%sonde_sfc(nlocal(sonde_sfc))%v = platform%each(i)%v
-                  iv%sonde_sfc(nlocal(sonde_sfc))%t = platform%each(i)%t
-                  iv%sonde_sfc(nlocal(sonde_sfc))%q = platform%each(i)%q
-                  iv%sonde_sfc(nlocal(sonde_sfc))%p = platform%each(i)%p
+                     ! Save surface pressure.
+                     iv%sonde_sfc(nlocal(sonde_sfc))%h = platform%each(i)%height
+                     iv%sonde_sfc(nlocal(sonde_sfc))%u = platform%each(i)%u
+                     iv%sonde_sfc(nlocal(sonde_sfc))%v = platform%each(i)%v
+                     iv%sonde_sfc(nlocal(sonde_sfc))%t = platform%each(i)%t
+                     iv%sonde_sfc(nlocal(sonde_sfc))%q = platform%each(i)%q
+                     iv%sonde_sfc(nlocal(sonde_sfc))%p = platform%each(i)%p
 
-                  exit
+                     exit
+                  end if
                end if
             end do
 
@@ -550,17 +552,19 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
             do i = 1, nlevels
                ! if (elevation and height are the same, it is surface.)
-               if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
-                  surface_level = i
+               if (platform%info%elv.ne.missing_r.and.platform%each(i)%height.ne.missing_r)then
+                  if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
+                     surface_level = i
 
-                  ! Save surface pressure.
-                  iv%tamdar_sfc(nlocal(tamdar_sfc))%h = platform%each(i)%height
-                  iv%tamdar_sfc(nlocal(tamdar_sfc))%u = platform%each(i)%u
-                  iv%tamdar_sfc(nlocal(tamdar_sfc))%v = platform%each(i)%v
-                  iv%tamdar_sfc(nlocal(tamdar_sfc))%t = platform%each(i)%t
-                  iv%tamdar_sfc(nlocal(tamdar_sfc))%q = platform%each(i)%q
-                  iv%tamdar_sfc(nlocal(tamdar_sfc))%p = platform%each(i)%p
-                  exit
+                     ! Save surface pressure.
+                     iv%tamdar_sfc(nlocal(tamdar_sfc))%h = platform%each(i)%height
+                     iv%tamdar_sfc(nlocal(tamdar_sfc))%u = platform%each(i)%u
+                     iv%tamdar_sfc(nlocal(tamdar_sfc))%v = platform%each(i)%v
+                     iv%tamdar_sfc(nlocal(tamdar_sfc))%t = platform%each(i)%t
+                     iv%tamdar_sfc(nlocal(tamdar_sfc))%q = platform%each(i)%q
+                     iv%tamdar_sfc(nlocal(tamdar_sfc))%p = platform%each(i)%p
+                     exit
+                  end if
                end if
             end do
             ! processing the tamdar_sfc data:
@@ -797,7 +801,16 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
             if (outside) cycle reports
             nlocal(gpsref) = nlocal(gpsref) + 1
             if (nlocal(gpsref) > iv%info(gpsref)%nlocal) cycle reports
-
+!
+! discarded the GPSRO data above 30-km (refere to GSI, Lidia Cucurull, Nov. 2009). 
+! YRG, 02/01/2010.
+            do i = 1, nlevels
+               if ( platform%each(i)%height> 30000.0 ) then
+                  nlevels = i-1
+                  exit
+               endif
+            enddo
+!           
             allocate (iv%gpsref(nlocal(gpsref))%h (1:nlevels))
             allocate (iv%gpsref(nlocal(gpsref))%ref(1:nlevels))
             allocate (iv%gpsref(nlocal(gpsref))%  p(1:nlevels))

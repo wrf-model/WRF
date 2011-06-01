@@ -70,8 +70,8 @@ C                                                                               
 
       if (abs(TRUELAT1-TRUELAT2)==0.0) then
          TRUELAT0 = TRUELAT1
-         TRUELAT1 = TRUELAT0 - 1.e-5
-         TRUELAT2 = TRUELAT0 + 1.e-5
+         TRUELAT1 = TRUELAT0 - 1.e-2
+         TRUELAT2 = TRUELAT0 + 1.e-2
       endif
 
       XN = ALOG10(COS(TRUELAT1 / CONV)) -                                        SETUP.164

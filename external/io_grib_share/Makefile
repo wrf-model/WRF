@@ -71,7 +71,7 @@ SUB_DIRS = $(LIB_DIRS) $(EXE_DIRS)
 #  Clean up old build files
 #
 superclean:
-	/bin/rm -f *.o > /dev/null 2>&1
+	/bin/rm -f *.o *.obj > /dev/null 2>&1
 	/bin/rm -f *.f90 > /dev/null 2>&1
 	/bin/rm -f *.mod > /dev/null 2>&1
 	/bin/rm -f *.a > /dev/null 2>&1

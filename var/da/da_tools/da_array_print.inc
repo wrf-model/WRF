@@ -7,7 +7,7 @@ subroutine da_array_print(direction, a, ch)
    implicit none
 
    integer, intent(in)            :: direction
-   real, intent(in)               :: a(:,:)
+   real*8, intent(in)             :: a(:,:)
    character (len=*), intent(in)  :: ch
 
    real                           :: amax

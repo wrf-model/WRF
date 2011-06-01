@@ -24,13 +24,28 @@ MODULE module_sf_urban
    REAL, ALLOCATABLE, DIMENSION(:) :: BETG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: FRC_URB_TBL
 
+   REAL, ALLOCATABLE, DIMENSION(:) :: COP_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: PWIN_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: BETA_TBL
+   INTEGER, ALLOCATABLE, DIMENSION(:) :: SW_COND_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TIME_ON_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TIME_OFF_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TARGTEMP_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: GAPTEMP_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TARGHUM_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: GAPHUM_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: PERFLO_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: HSESF_TBL
+
    REAL, ALLOCATABLE, DIMENSION(:) :: CAPR_TBL, CAPB_TBL, CAPG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: AKSR_TBL, AKSB_TBL, AKSG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: ALBR_TBL, ALBB_TBL, ALBG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: EPSR_TBL, EPSB_TBL, EPSG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: Z0R_TBL,  Z0B_TBL,  Z0G_TBL
-   REAL, ALLOCATABLE, DIMENSION(:) :: Z0HR_TBL, Z0HB_TBL, Z0HG_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: SIGMA_ZED_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: Z0HB_TBL, Z0HG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: TRLEND_TBL, TBLEND_TBL, TGLEND_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: AKANDA_URBAN_TBL
 !for BEP
 
    ! MAXDIRS :: The maximum number of street directions we're allowed to define
@@ -50,6 +65,7 @@ MODULE module_sf_urban
    INTEGER                         :: CH_SCHEME_DATA, TS_SCHEME_DATA
    INTEGER                         :: ahoption        ! Miao, 2007/01/17, cal. ah
    REAL, DIMENSION(1:24)           :: ahdiuprf        ! ah diurnal profile, tloc: 1-24
+   REAL, DIMENSION(1:24)           :: hsequip_tbl
 
    INTEGER                         :: allocate_status 
 
@@ -153,6 +169,7 @@ MODULE module_sf_urban
 ! These parameters assigned in the URBPARM.TBL
 !
 !    ZR  [m]             : roof level (building height)
+!    SIGMA_ZED [m]       : Standard Deviation of roof height
 !    ROOF_WIDTH [m]      : roof (i.e., building) width
 !    ROAD_WIDTH [m]      : road width
 !
@@ -182,10 +199,8 @@ MODULE module_sf_urban
 !  EPSR [-]               : surface emissivity of roof
 !  EPSB [-]               : surface emissivity of building wall
 !  EPSG [-]               : surface emissivity of road
-!  Z0R [m]                : roughness length for momentum of roof
 !  Z0B [m]                : roughness length for momentum of building wall (only for CH_SCHEME = 1)
 !  Z0G [m]                : roughness length for momentum of road (only for CH_SCHEME = 1)
-!  Z0HR [m]               : roughness length for heat of roof
 !  Z0HB [m]               : roughness length for heat of building wall (only for CH_SCHEME = 1)
 !  Z0HG [m]               : roughness length for heat of road
 !  num_roof_layers        : number of layers within roof
@@ -220,7 +235,7 @@ MODULE module_sf_urban
 !  BETR [-]            : minimum moisture availability of roof
 !  BETB [-]            : minimum moisture availability of building wall
 !  BETG [-]            : minimum moisture availability of road
-!  Z0HR [m]               : roughness length for heat of roof
+!  Z0R [m]                : roughness length for momentum of roof
 !  Z0HB [m]               : roughness length for heat of building wall (only for CH_SCHEME = 1)
 !  Z0HG [m]               : roughness length for heat of road
 !  num_roof_layers        : number of layers within roof
@@ -258,6 +273,7 @@ MODULE module_sf_urban
                     TS,QS,SH,LH,LH_KINEMATIC,                         & ! O
                     SW,ALB,LW,G,RN,PSIM,PSIH,                         & ! O
                     GZ1OZ0,                                           & ! O
+                    CMR_URB,CHR_URB,CMC_URB,CHC_URB,                  & ! I/O
                     U10,V10,TH2,Q2,UST                                & ! O
                     )
 
@@ -324,6 +340,10 @@ MODULE module_sf_urban
 
    REAL, INTENT(INOUT) :: SSGD ! downward direct short wave radiation   [W/m/m]
    REAL, INTENT(INOUT) :: SSGQ ! downward diffuse short wave radiation  [W/m/m]
+   REAL, INTENT(INOUT) :: CMR_URB
+   REAL, INTENT(INOUT) :: CHR_URB
+   REAL, INTENT(INOUT) :: CMC_URB
+   REAL, INTENT(INOUT) :: CHC_URB
 
 !-------------------------------------------------------------------------------
 ! O: output variables from Urban to LSM 
@@ -380,9 +400,13 @@ MODULE module_sf_urban
 !-------------------------------------------------------------------------------
 
    REAL :: ZR, Z0C, Z0HC, ZDC, SVF, R, RW, HGT, AH
+   REAL :: SIGMA_ZED
    REAL :: CAPR, CAPB, CAPG, AKSR, AKSB, AKSG, ALBR, ALBB, ALBG 
-   REAL :: EPSR, EPSB, EPSG, Z0R,  Z0B,  Z0G,  Z0HR, Z0HB, Z0HG
+   REAL :: EPSR, EPSB, EPSG, Z0R,  Z0B,  Z0G,  Z0HB, Z0HG
    REAL :: TRLEND,TBLEND,TGLEND
+   REAL :: T1VR, T1VC,TH2V
+   REAL :: RLMO_URB
+   REAL :: AKANDA_URBAN
    
    REAL :: TH2X                                                !m
    
@@ -407,7 +431,7 @@ MODULE module_sf_urban
    REAL :: BETR, BETB, BETG
    REAL :: SX, SD, SQ, RX
    REAL :: UR, ZC, XLB, BB
-   REAL :: Z, RIBR, RIBB, RIBG, RIBC, BHR, BHB, BHG, BHC
+   REAL :: Z, RIBB, RIBG, RIBC, BHR, BHB, BHG, BHC
    REAL :: TSC, LNET, SNET, FLXUV, THG, FLXTH, FLXHUM, FLXG
    REAL :: W, VFGS, VFGW, VFWG, VFWS, VFWW
    REAL :: HOUI1, HOUI2, HOUI3, HOUI4, HOUI5, HOUI6, HOUI7, HOUI8
@@ -463,24 +487,24 @@ MODULE module_sf_urban
      if(tloc==0) tloc=24
    endif
 
-   CALL read_param(UTYPE,ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,         &
-                   CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG,  &
-                   EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HR,Z0HB,Z0HG,     &
+   CALL read_param(UTYPE,ZR,SIGMA_ZED,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,  &
+                   AH,CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,    &
+                   ALBG,EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,     &
                    BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,           &
 !for BEP
                    NUMDIR, STREET_DIRECTION, STREET_WIDTH,        & 
                    BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,            & 
                    HPERCENT_BIN,                                  & 
 !end BEP
-                   BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME)
+                   BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,      &
+                   AKANDA_URBAN)
 
 ! Miao, 2007/01/17, cal. ah
    if(ahoption==1) AH=AH*ahdiuprf(tloc)
 
    IF( ZDC+Z0C+2. >= ZA) THEN
-    PRINT *, 'ZDC + Z0C + 2m is larger than the 1st WRF level' 
-    PRINT *, 'Stop in the subroutine urban - change ZDC and Z0C'
-    STOP
+    CALL wrf_error_fatal ("ZDC + Z0C + 2m is larger than the 1st WRF level "// &
+                           "Stop in subroutine urban - change ZDC and Z0C" ) 
    END IF
 
    IF(.NOT.LSOLAR) THEN
@@ -529,7 +553,7 @@ MODULE module_sf_urban
      BB = 0.4 * ZR / ( XLB * alog( ( ZR - ZDC ) / Z0C ) )
      UC=UR*EXP(-BB*(1.-ZC/ZR))
    ELSE
-     PRINT *, 'Warning ZR + 2m  is larger than the 1st WRF level' 
+     ! PRINT *, 'Warning ZR + 2m  is larger than the 1st WRF level' 
      ZC=ZA/2.
      UC=UA/2.
    END IF
@@ -621,12 +645,20 @@ MODULE module_sf_urban
 ! CHR, CDR, BETR
 !-------------------------------------------------------------------------------
 
-   Z=ZA-ZDC
-   BHR=LOG(Z0R/Z0HR)/0.4
-   RIBR=(9.8*2./(TA+TRP))*(TA-TRP)*(Z+Z0R)/(UA*UA)
+   ! Z=ZA-ZDC
+   ! BHR=LOG(Z0R/Z0HR)/0.4
+   ! RIBR=(9.8*2./(TA+TRP))*(TA-TRP)*(Z+Z0R)/(UA*UA)
+   ! CALL mos(XXXR,ALPHAR,CDR,BHR,RIBR,Z,Z0R,UA,TA,TRP,RHO)
 
-   CALL mos(XXXR,ALPHAR,CDR,BHR,RIBR,Z,Z0R,UA,TA,TRP,RHO)
-
+   ! Alternative option for MOST using SFCDIF routine from Noah
+   ! Virtual temperatures needed by SFCDIF
+   T1VR = TRP* (1.0+ 0.61 * QA) 
+   TH2V = (TA + ( 0.0098 * ZA)) * (1.0+ 0.61 * QA)
+  
+   ! note that CHR_URB contains UA (=CHR_MOS*UA)
+   RLMO_URB=0.0
+   CALL SFCDIF_URB (ZA,Z0R,T1VR,TH2V,UA,AKANDA_URBAN,CMR_URB,CHR_URB,RLMO_URB,CDR)
+   ALPHAR =  RHO*CP*CHR_URB
    CHR=ALPHAR/RHO/CP/UA
 
    IF(RAIN > 1.) BETR=0.7  
@@ -710,11 +742,17 @@ MODULE module_sf_urban
 !  CHC, CHB, CDB, BETB, CHG, CDG, BETG
 !-------------------------------------------------------------------------------
 
-   Z=ZA-ZDC
-   BHC=LOG(Z0C/Z0HC)/0.4
-   RIBC=(9.8*2./(TA+TCP))*(TA-TCP)*(Z+Z0C)/(UA*UA)
+   ! Z=ZA-ZDC
+   ! BHC=LOG(Z0C/Z0HC)/0.4
+   ! RIBC=(9.8*2./(TA+TCP))*(TA-TCP)*(Z+Z0C)/(UA*UA)
+   !
+   ! CALL mos(XXXC,ALPHAC,CDC,BHC,RIBC,Z,Z0C,UA,TA,TCP,RHO)
+   ! Virtual temperatures needed by SFCDIF routine from Noah
 
-   CALL mos(XXXC,ALPHAC,CDC,BHC,RIBC,Z,Z0C,UA,TA,TCP,RHO)
+   T1VC = TCP* (1.0+ 0.61 * QA) 
+   RLMO_URB=0.0
+   CALL SFCDIF_URB(ZA,Z0C,T1VC,TH2V,UA,AKANDA_URBAN,CMC_URB,CHC_URB,RLMO_URB,CDC)
+   ALPHAC =  RHO*CP*CHC_URB
 
    IF (CH_SCHEME == 1) THEN 
 
@@ -1310,23 +1348,26 @@ MODULE module_sf_urban
 !
 !===============================================================================
    SUBROUTINE read_param(UTYPE,                                        & ! in
-                         ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,              & ! out
+                         ZR,SIGMA_ZED,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,    & ! out
                          CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, & ! out
-                         EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HR,Z0HB,Z0HG,    & ! out
+                         EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         & ! out
                          BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,          & ! out
 !for BEP
                          NUMDIR, STREET_DIRECTION, STREET_WIDTH,       & ! out
                          BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,           & ! out
                          HPERCENT_BIN,                                 & ! out
 !end BEP
-                         BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME)       ! out
+                         BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,     & ! out
+                         AKANDA_URBAN)                                   ! out
 
    INTEGER, INTENT(IN)  :: UTYPE 
 
    REAL, INTENT(OUT)    :: ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,              &
                            CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, &
-                           EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HR,Z0HB,Z0HG,    &
+                           SIGMA_ZED,                                    &
+                           EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HB,Z0HG,         &
                            BETR,BETB,BETG,TRLEND,TBLEND,TGLEND
+   REAL, INTENT(OUT)    :: AKANDA_URBAN
 !for BEP
    INTEGER,                     INTENT(OUT) :: NUMDIR
    REAL,    DIMENSION(MAXDIRS), INTENT(OUT) :: STREET_DIRECTION
@@ -1335,11 +1376,13 @@ MODULE module_sf_urban
    INTEGER,                     INTENT(OUT) :: NUMHGT
    REAL,    DIMENSION(MAXHGTS), INTENT(OUT) :: HEIGHT_BIN
    REAL,    DIMENSION(MAXHGTS), INTENT(OUT) :: HPERCENT_BIN
+   
 !end BEP
 
    INTEGER, INTENT(OUT) :: BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME
 
    ZR =     ZR_TBL(UTYPE)
+   SIGMA_ZED = SIGMA_ZED_TBL(UTYPE)
    Z0C=     Z0C_TBL(UTYPE)
    Z0HC=    Z0HC_TBL(UTYPE)
    ZDC=     ZDC_TBL(UTYPE)
@@ -1369,7 +1412,6 @@ MODULE module_sf_urban
    Z0R=     Z0R_TBL(UTYPE)
    Z0B=     Z0B_TBL(UTYPE)
    Z0G=     Z0G_TBL(UTYPE)
-   Z0HR=    Z0HR_TBL(UTYPE)
    Z0HB=    Z0HB_TBL(UTYPE)
    Z0HG=    Z0HG_TBL(UTYPE)
    TRLEND=  TRLEND_TBL(UTYPE)
@@ -1380,6 +1422,7 @@ MODULE module_sf_urban
    BOUNDG=  BOUNDG_DATA
    CH_SCHEME = CH_SCHEME_DATA
    TS_SCHEME = TS_SCHEME_DATA
+   AKANDA_URBAN = AKANDA_URBAN_TBL(UTYPE)
 
 !for BEP
 
@@ -1404,8 +1447,8 @@ MODULE module_sf_urban
 ! subroutine urban_param_init: Read parameters from URBPARM.TBL
 !
 !===============================================================================
-   SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers &
-                               )
+   SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers, &
+                               sf_urban_physics)
 !                              num_roof_layers,num_wall_layers,num_road_layers)
 
    IMPLICIT NONE
@@ -1418,6 +1461,7 @@ MODULE module_sf_urban
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZR
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZB
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZG
+   INTEGER,                            INTENT(IN)    :: SF_URBAN_PHYSICS
 
    INTEGER :: LC, K
    INTEGER :: IOSTATUS, ALLOCATE_STATUS
@@ -1440,6 +1484,7 @@ MODULE module_sf_urban
    real :: Cd
    real :: alpha_macd
    real :: beta_macd
+   real :: lambda_fr
 
 
 !for BEP
@@ -1462,7 +1507,9 @@ MODULE module_sf_urban
          POSITION='REWIND',      &
          IOSTAT=IOSTATUS)
 
-   IF (IOSTATUS > 0) STOP 'ERROR OPEN URBPARM.TBL'
+   IF (IOSTATUS > 0) THEN
+   CALL wrf_error_fatal('ERROR OPEN URBPARM.TBL')
+   ENDIF
 
    READLOOP : do 
       read(11,'(A512)', iostat=iostatus) string
@@ -1478,92 +1525,118 @@ MODULE module_sf_urban
          read(string(indx+1:),*) icate
          IF (.not. ALLOCATED(ZR_TBL)) then
             ALLOCATE( ZR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating ZR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ZR_TBL in urban_param_init')
+            ALLOCATE( SIGMA_ZED_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0)CALL wrf_error_fatal('Error allocating SIGMA_ZED_TBL in urban_param_init')
             ALLOCATE( Z0C_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating Z0C_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating Z0C_TBL in urban_param_init')
             ALLOCATE( Z0HC_TBL(ICATE), stat=allocate_status ) 
-            if(allocate_status /= 0) stop 'Error allocating Z0HC_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating Z0HC_TBL in urban_param_init')
             ALLOCATE( ZDC_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating ZDC_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ZDC_TBL in urban_param_init')
             ALLOCATE( SVF_TBL(ICATE), stat=allocate_status ) 
-            if(allocate_status /= 0) stop 'Error allocating SVF_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating SVF_TBL in urban_param_init')
             ALLOCATE( R_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating R_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating R_TBL in urban_param_init')
             ALLOCATE( RW_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating RW_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating RW_TBL in urban_param_init')
             ALLOCATE( HGT_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating HGT_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating HGT_TBL in urban_param_init')
             ALLOCATE( AH_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating AH_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating AH_TBL in urban_param_init')
             ALLOCATE( BETR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating BETR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating BETR_TBL in urban_param_init')
             ALLOCATE( BETB_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating BETB_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating BETB_TBL in urban_param_init')
             ALLOCATE( BETG_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating BETG_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating BETG_TBL in urban_param_init')
             ALLOCATE( CAPR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating CAPR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating CAPR_TBL in urban_param_init')
             ALLOCATE( CAPB_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating CAPB_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating CAPB_TBL in urban_param_init')
             ALLOCATE( CAPG_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating CAPG_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating CAPG_TBL in urban_param_init')
             ALLOCATE( AKSR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating AKSR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating AKSR_TBL in urban_param_init')
             ALLOCATE( AKSB_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating AKSB_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating AKSB_TBL in urban_param_init')
             ALLOCATE( AKSG_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating AKSG_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating AKSG_TBL in urban_param_init')
             ALLOCATE( ALBR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating ALBR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ALBR_TBL in urban_param_init')
             ALLOCATE( ALBB_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating ALBB_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ALBB_TBL in urban_param_init')
             ALLOCATE( ALBG_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating ALBG_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ALBG_TBL in urban_param_init')
             ALLOCATE( EPSR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating EPSR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating EPSR_TBL in urban_param_init')
             ALLOCATE( EPSB_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating EPSB_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating EPSB_TBL in urban_param_init')
             ALLOCATE( EPSG_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating EPSG_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating EPSG_TBL in urban_param_init')
             ALLOCATE( Z0R_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating Z0R_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating Z0R_TBL in urban_param_init')
             ALLOCATE( Z0B_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating Z0B_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating Z0B_TBL in urban_param_init')
             ALLOCATE( Z0G_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating Z0G_TBL in urban_param_init'
-            ALLOCATE( Z0HR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating Z0HR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating Z0G_TBL in urban_param_init')
+            ALLOCATE( AKANDA_URBAN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating AKANDA_URBAN_TBL in urban_param_init')
             ALLOCATE( Z0HB_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating Z0HB_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating Z0HB_TBL in urban_param_init')
             ALLOCATE( Z0HG_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating Z0HG_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating Z0HG_TBL in urban_param_init')
             ALLOCATE( TRLEND_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating TRLEND_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating TRLEND_TBL in urban_param_init')
             ALLOCATE( TBLEND_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating TBLEND_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating TBLEND_TBL in urban_param_init')
             ALLOCATE( TGLEND_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating TGLEND_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating TGLEND_TBL in urban_param_init')
             ALLOCATE( FRC_URB_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating FRC_URB_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating FRC_URB_TBL in urban_param_init')
             ! ALLOCATE( ROOF_WIDTH(ICATE), stat=allocate_status )
-            ! if(allocate_status /= 0) stop 'Error allocating ROOF_WIDTH in urban_param_init'
+            ! if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ROOF_WIDTH in urban_param_init')
             ! ALLOCATE( ROAD_WIDTH(ICATE), stat=allocate_status )
-            ! if(allocate_status /= 0) stop 'Error allocating ROAD_WIDTH in urban_param_init'
+            ! if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ROAD_WIDTH in urban_param_init')
             !for BEP
             ALLOCATE( NUMDIR_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating NUMDIR_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating NUMDIR_TBL in urban_param_init')
             ALLOCATE( STREET_DIRECTION_TBL(MAXDIRS , ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating STREET_DIRECTION_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating STREET_DIRECTION_TBL in urban_param_init')
             ALLOCATE( STREET_WIDTH_TBL(MAXDIRS , ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating STREET_WIDTH_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating STREET_WIDTH_TBL in urban_param_init')
             ALLOCATE( BUILDING_WIDTH_TBL(MAXDIRS , ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating BUILDING_WIDTH_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating BUILDING_WIDTH_TBL in urban_param_init')
             ALLOCATE( NUMHGT_TBL(ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating NUMHGT_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating NUMHGT_TBL in urban_param_init')
             ALLOCATE( HEIGHT_BIN_TBL(MAXHGTS , ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating HEIGHT_BIN_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating HEIGHT_BIN_TBL in urban_param_init')
             ALLOCATE( HPERCENT_BIN_TBL(MAXHGTS , ICATE), stat=allocate_status )
-            if(allocate_status /= 0) stop 'Error allocating HPERCENT_BIN_TBL in urban_param_init'
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating HPERCENT_BIN_TBL in urban_param_init')
+            ALLOCATE( COP_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating COP_TBL in urban_param_init')
+            ALLOCATE( PWIN_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating PWIN_TBL in urban_param_init')
+            ALLOCATE( BETA_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating BETA_TBL in urban_param_init')
+            ALLOCATE( SW_COND_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating SW_COND_TBL in urban_param_init')
+            ALLOCATE( TIME_ON_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating TIME_ON_TBL in urban_param_init')
+            ALLOCATE( TIME_OFF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating TIME_OFF_TBL in urban_param_init')
+            ALLOCATE( TARGTEMP_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating TARGTEMP_TBL in urban_param_init')
+            ALLOCATE( GAPTEMP_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating GAPTEMP_TBL in urban_param_init')
+            ALLOCATE( TARGHUM_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating TARGHUM_TBL in urban_param_init')
+            ALLOCATE( GAPHUM_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating GAPHUM_TBL in urban_param_init')
+            ALLOCATE( PERFLO_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating PERFLO_TBL in urban_param_init')
+            ALLOCATE( HSESF_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating HSESF_TBL in urban_param_init')
          endif
          numdir_tbl = 0
          street_direction_tbl = -1.E36
@@ -1576,15 +1649,16 @@ MODULE module_sf_urban
 
       else if (name == "ZR") then
          read(string(indx+1:),*) zr_tbl(1:icate)
-!         print*, 'zr_tbl = ', zr_tbl(1:icate)
+      else if (name == "SIGMA_ZED") then
+         read(string(indx+1:),*) sigma_zed_tbl(1:icate)
       else if (name == "ROOF_WIDTH") then
          ALLOCATE( ROOF_WIDTH(ICATE), stat=allocate_status )
-         if(allocate_status /= 0) stop 'Error allocating ROOF_WIDTH in urban_param_init'
+         if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ROOF_WIDTH in urban_param_init')
 
          read(string(indx+1:),*) roof_width(1:icate)
       else if (name == "ROAD_WIDTH") then
          ALLOCATE( ROAD_WIDTH(ICATE), stat=allocate_status )
-         if(allocate_status /= 0) stop 'Error allocating ROAD_WIDTH in urban_param_init'
+         if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating ROAD_WIDTH in urban_param_init')
          read(string(indx+1:),*) road_width(1:icate)
       else if (name == "AH") then
          read(string(indx+1:),*) ah_tbl(1:icate)
@@ -1626,8 +1700,8 @@ MODULE module_sf_urban
          read(string(indx+1:),*) epsb_tbl(1:icate)
       else if (name == "EPSG") then
          read(string(indx+1:),*) epsg_tbl(1:icate)
-      else if (name == "Z0R") then
-         read(string(indx+1:),*) z0r_tbl(1:icate)
+      else if (name == "AKANDA_URBAN") then
+         read(string(indx+1:),*) akanda_urban_tbl(1:icate)
       else if (name == "Z0B") then
          read(string(indx+1:),*) z0b_tbl(1:icate)
       else if (name == "Z0G") then
@@ -1697,12 +1771,39 @@ MODULE module_sf_urban
          if ( pctsum /= 100.) then
             write (*,'(//,"Building height percentages for category ", I2, " must sum to 100.0")') k
             write (*,'("Currently, they sum to ", F6.2,/)') pctsum
-            stop
+            CALL wrf_error_fatal('pctsum is not equal to 100.') 
          endif
+      else if ( name == "Z0R") then
+         read(string(indx+1:),*) Z0R_tbl(1:icate)
+      else if ( name == "COP") then
+         read(string(indx+1:),*) cop_tbl(1:icate)
+      else if ( name == "PWIN") then
+         read(string(indx+1:),*) pwin_tbl(1:icate)
+      else if ( name == "BETA") then
+         read(string(indx+1:),*) beta_tbl(1:icate)
+      else if ( name == "SW_COND") then
+         read(string(indx+1:),*) sw_cond_tbl(1:icate)
+      else if ( name == "TIME_ON") then
+         read(string(indx+1:),*) time_on_tbl(1:icate)
+      else if ( name == "TIME_OFF") then
+         read(string(indx+1:),*) time_off_tbl(1:icate)
+      else if ( name == "TARGTEMP") then
+         read(string(indx+1:),*) targtemp_tbl(1:icate)
+      else if ( name == "GAPTEMP") then
+         read(string(indx+1:),*) gaptemp_tbl(1:icate)
+      else if ( name == "TARGHUM") then
+         read(string(indx+1:),*) targhum_tbl(1:icate)
+      else if ( name == "GAPHUM") then
+         read(string(indx+1:),*) gaphum_tbl(1:icate)
+      else if ( name == "PERFLO") then
+         read(string(indx+1:),*) perflo_tbl(1:icate)
+      else if (name == "HSEQUIP") then
+         read(string(indx+1:),*) hsequip_tbl(1:24)
+      else if (name == "HSEQUIP_SCALE_FACTOR") then
+         read(string(indx+1:),*) hsesf_tbl(1:icate)
 !end BEP         
       else
-         print*, 'name = "'//trim(name)//'"'
-         stop
+         CALL wrf_error_fatal('URBPARM.TBL: Unrecognized NAME = "'//trim(name)//'" in Subr URBAN_PARAM_INIT')
       endif
    enddo READLOOP
 
@@ -1710,7 +1811,6 @@ MODULE module_sf_urban
 
    ! Assign a few table values that do not need to come from URBPARM.TBL
 
-   Z0HR_TBL = 0.1 * Z0R_TBL
    Z0HB_TBL = 0.1 * Z0B_TBL
    Z0HG_TBL = 0.1 * Z0G_TBL
 
@@ -1746,6 +1846,15 @@ MODULE module_sf_urban
 
       Z0C_TBL(LC) = ZR_TBL(LC) * ( 1.0 - ZDC_TBL(LC)/ZR_TBL(LC) ) * &
            exp (-(0.5 * beta_macd * Cd / (VonK**2) * ( 1.0-ZDC_TBL(LC)/ZR_TBL(LC) ) * Lambda_F )**(-0.5))
+
+      IF (SF_URBAN_PHYSICS == 1) THEN
+         ! Include roof height variability in Macdonald
+         ! to parameterize Z0R as a function of ZR_SD (Standard Deviation)
+         Lambda_FR  = SIGMA_ZED_TBL(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )
+         Z0R_TBL(LC) = ZR_TBL(LC) * ( 1.0 - ZDC_TBL(LC)/ZR_TBL(LC) ) &
+              * exp ( -(0.5 * beta_macd * Cd / (VonK**2) &
+              * ( 1.0-ZDC_TBL(LC)/ZR_TBL(LC) ) * Lambda_FR )**(-0.5))
+      ENDIF
 
       !
       ! Z0HC still one-tenth of Z0C, as before ?
@@ -1792,6 +1901,12 @@ MODULE module_sf_urban
                              TS_URB2D,                                     & ! inout
                              num_urban_layers,                             & ! in
                              TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,      & ! inout
+                             TLEV_URB3D,QLEV_URB3D,                        & ! inout
+                             TW1LEV_URB3D,TW2LEV_URB3D,                    & ! inout
+                             TGLEV_URB3D,TFLEV_URB3D,                      & ! inout
+                             SF_AC_URB3D,LF_AC_URB3D,CM_AC_URB3D,          & ! inout
+                             SFVENT_URB3D,LFVENT_URB3D,                    & ! inout
+                             SFWIN1_URB3D,SFWIN2_URB3D,                    & ! inout
                              SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,    & ! inout
                              A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,              & ! inout multi-layer urban
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
@@ -1839,6 +1954,19 @@ MODULE module_sf_urban
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TGB_URB4D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TLEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: QLEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1LEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2LEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TGLEV_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TFLEV_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LF_AC_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SF_AC_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CM_AC_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SFVENT_URB3D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LFVENT_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN1_URB3D
+   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN2_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D
@@ -1879,7 +2007,7 @@ MODULE module_sf_urban
       
 !m
       FRC_URB2D(I,J)=0.
-      UTYPE_URB2D(I,J)=0.
+      UTYPE_URB2D(I,J)=0
 
             IF( IVGTYP(I,J) == ISURBAN)  THEN
                UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
@@ -1953,22 +2081,61 @@ MODULE module_sf_urban
       END DO
       
 ! multi-layer urban
-!       write(*,*)i,j,TSURFACE0_URB(i,j),TLAYER0_URB(i,1,j),TLAYER0_URB(i,4,j)
-      IF( sf_urban_physics .EQ. 2)THEN
+!      IF( sf_urban_physics .EQ. 2)THEN
+       IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
       DO k=1,num_urban_layers
 !        TRB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW1_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW2_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TGB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
-        TRB_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        TW1_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        TW2_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        TGB_URB4D(I,k,J)=tlayer0_urb(I,1,J)
-        SFW1_URB3D(I,k,J)=0.
-        SFW2_URB3D(I,k,J)=0.
-        SFR_URB3D(I,k,J)=0.
-        SFG_URB3D(I,k,J)=0.
+!MT        TRB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+!MT        TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+!MT        TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        IF (UTYPE_URB2D(I,J) > 0) THEN
+           TRB_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+           TW1_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+           TW2_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+        ELSE
+           TRB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+           TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+           TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        ENDIF
+        TGB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+        SFW1_URB3D(I,K,J)=0.
+        SFW2_URB3D(I,K,J)=0.
+        SFR_URB3D(I,K,J)=0.
+        SFG_URB3D(I,K,J)=0.
       ENDDO
+       
+       ENDIF 
+              
+      if (SF_URBAN_PHYSICS.EQ.3) then
+         LF_AC_URB3D(I,J)=0.
+         SF_AC_URB3D(I,J)=0.
+         CM_AC_URB3D(I,J)=0.
+         SFVENT_URB3D(I,J)=0.
+         LFVENT_URB3D(I,J)=0.
+
+         DO K=1,num_urban_layers
+            TLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TW1LEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TW2LEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TGLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            TFLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
+            QLEV_URB3D(I,K,J)=0.01
+            SFWIN1_URB3D(I,K,J)=0.
+            SFWIN2_URB3D(I,K,J)=0.
+!rm         LF_AC_URB3D(I,J)=0.
+!rm         SF_AC_URB3D(I,J)=0.
+!rm         CM_AC_URB3D(I,J)=0.
+!rm         SFVENT_URB3D(I,J)=0.
+!rm         LFVENT_URB3D(I,J)=0.
+         ENDDO
+
+      endif
+
+!      IF( sf_urban_physics .EQ. 2 )THEN
+      IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
       DO K= KMS,KME
           SF_BEP(I,K,J)=1.
           VL_BEP(I,K,J)=1.
@@ -1976,10 +2143,12 @@ MODULE module_sf_urban
           A_V_BEP(I,K,J)=0.
           A_T_BEP(I,K,J)=0.
           A_E_BEP(I,K,J)=0.
+          A_Q_BEP(I,K,J)=0.
           B_U_BEP(I,K,J)=0.
           B_V_BEP(I,K,J)=0.
           B_T_BEP(I,K,J)=0.
           B_E_BEP(I,K,J)=0.
+          B_Q_BEP(I,K,J)=0.
           DLG_BEP(I,K,J)=0.
           DL_U_BEP(I,K,J)=0.
       END DO
@@ -2050,5 +2219,203 @@ MODULE module_sf_urban
 
      RETURN
 END SUBROUTINE bisection
+!===========================================================================
+
+SUBROUTINE SFCDIF_URB (ZLM,Z0,THZ0,THLM,SFCSPD,AKANDA,AKMS,AKHS,RLMO,CD)
+
+! ----------------------------------------------------------------------
+! SUBROUTINE SFCDIF_URB (Urban version of SFCDIF_off)
+! ----------------------------------------------------------------------
+! CALCULATE SURFACE LAYER EXCHANGE COEFFICIENTS VIA ITERATIVE PROCESS.
+! SEE CHEN ET AL (1997, BLM)
+! ----------------------------------------------------------------------
+
+      IMPLICIT NONE
+      REAL     WWST, WWST2, G, VKRM, EXCM, BETA, BTG, ELFC, WOLD, WNEW
+      REAL     PIHF, EPSU2, EPSUST, EPSIT, EPSA, ZTMIN, ZTMAX, HPBL,     &
+     & SQVISC
+      REAL     RIC, RRIC, FHNEU, RFC,RLMO_THR, RFAC, ZZ, PSLMU, PSLMS, PSLHU,     &
+     & PSLHS
+      REAL     XX, PSPMU, YY, PSPMS, PSPHU, PSPHS, ZLM, Z0, THZ0, THLM
+      REAL     SFCSPD, AKANDA, AKMS, AKHS, ZU, ZT, RDZ, CXCH
+      REAL     DTHV, DU2, BTGH, WSTAR2, USTAR, ZSLU, ZSLT, RLOGU, RLOGT
+      REAL     RLMO, ZETALT, ZETALU, ZETAU, ZETAT, XLU4, XLT4, XU4, XT4
+!CC   ......REAL ZTFC
+
+      REAL     XLU, XLT, XU, XT, PSMZ, SIMM, PSHZ, SIMH, USTARK, RLMN,  &
+     &         RLMA
+
+      INTEGER  ITRMX, ILECH, ITR
+      REAL,    INTENT(OUT) :: CD
+      PARAMETER                                                         &
+     &        (WWST = 1.2,WWST2 = WWST * WWST,G = 9.8,VKRM = 0.40,      &
+     &         EXCM = 0.001                                             &
+     &        ,BETA = 1./270.,BTG = BETA * G,ELFC = VKRM * BTG          &
+     &                  ,WOLD =.15,WNEW = 1. - WOLD,ITRMX = 05,         &
+     &                   PIHF = 3.14159265/2.)
+      PARAMETER                                                         &
+     &         (EPSU2 = 1.E-4,EPSUST = 0.07,EPSIT = 1.E-4,EPSA = 1.E-8  &
+     &         ,ZTMIN = -5.,ZTMAX = 1.,HPBL = 1000.0                    &
+     &          ,SQVISC = 258.2)
+      PARAMETER                                                         &
+     &       (RIC = 0.183,RRIC = 1.0/ RIC,FHNEU = 0.8,RFC = 0.191       &
+     &        ,RLMO_THR = 0.001,RFAC = RIC / (FHNEU * RFC * RFC))
+
+! ----------------------------------------------------------------------
+! NOTE: THE TWO CODE BLOCKS BELOW DEFINE FUNCTIONS
+! ----------------------------------------------------------------------
+! LECH'S SURFACE FUNCTIONS
+! ----------------------------------------------------------------------
+      PSLMU (ZZ)= -0.96* log (1.0-4.5* ZZ)
+      PSLMS (ZZ)= ZZ * RRIC -2.076* (1. -1./ (ZZ +1.))
+      PSLHU (ZZ)= -0.96* log (1.0-4.5* ZZ)
+
+! ----------------------------------------------------------------------
+! PAULSON'S SURFACE FUNCTIONS
+! ----------------------------------------------------------------------
+      PSLHS (ZZ)= ZZ * RFAC -2.076* (1. -1./ (ZZ +1.))
+      PSPMU (XX)= -2.* log ( (XX +1.)*0.5) - log ( (XX * XX +1.)*0.5)   &
+     &        +2.* ATAN (XX)                                            &
+     &- PIHF
+      PSPMS (YY)= 5.* YY
+      PSPHU (XX)= -2.* log ( (XX * XX +1.)*0.5)
+
+! ----------------------------------------------------------------------
+! THIS ROUTINE SFCDIF CAN HANDLE BOTH OVER OPEN WATER (SEA, OCEAN) AND
+! OVER SOLID SURFACE (LAND, SEA-ICE).
+! ----------------------------------------------------------------------
+      PSPHS (YY)= 5.* YY
+
+! ----------------------------------------------------------------------
+!     ZTFC: RATIO OF ZOH/ZOM  LESS OR EQUAL THAN 1
+!     C......ZTFC=0.1
+!     CZIL: CONSTANT C IN Zilitinkevich, S. S.1995,:NOTE ABOUT ZT
+! ----------------------------------------------------------------------
+      ILECH = 0
+
+! ----------------------------------------------------------------------
+!      ZILFC = - CZIL * VKRM * SQVISC
+!     C.......ZT=Z0*ZTFC
+      ZU = Z0
+      RDZ = 1./ ZLM
+      CXCH = EXCM * RDZ
+      DTHV = THLM - THZ0
+
+! ----------------------------------------------------------------------
+! BELJARS CORRECTION OF USTAR
+! ----------------------------------------------------------------------
+      DU2 = MAX (SFCSPD * SFCSPD,EPSU2)
+!cc   If statements to avoid TANGENT LINEAR problems near zero
+      BTGH = BTG * HPBL
+      IF (BTGH * AKHS * DTHV .ne. 0.0) THEN
+         WSTAR2 = WWST2* ABS (BTGH * AKHS * DTHV)** (2./3.)
+      ELSE
+         WSTAR2 = 0.0
+      END IF
+
+! ----------------------------------------------------------------------
+! ZILITINKEVITCH APPROACH FOR ZT
+! ----------------------------------------------------------------------
+      USTAR = MAX (SQRT (AKMS * SQRT (DU2+ WSTAR2)),EPSUST)
+
+! ----------------------------------------------------------------------
+! KCL/TL Try Kanda approach instead (Kanda et al. 2007, JAMC)
+!      ZT = EXP (ZILFC * SQRT (USTAR * Z0))* Z0
+      ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
+      
+      ZSLU = ZLM + ZU
+
+      ZSLT = ZLM + ZT
+      RLOGU = log (ZSLU / ZU)
+
+      RLOGT = log (ZSLT / ZT)
+
+      RLMO = ELFC * AKHS * DTHV / USTAR **3
+! ----------------------------------------------------------------------
+! 1./MONIN-OBUKKHOV LENGTH-SCALE
+! ----------------------------------------------------------------------
+      DO ITR = 1,ITRMX
+         ZETALT = MAX (ZSLT * RLMO,ZTMIN)
+         RLMO = ZETALT / ZSLT
+         ZETALU = ZSLU * RLMO
+         ZETAU = ZU * RLMO
+
+         ZETAT = ZT * RLMO
+         IF (ILECH .eq. 0) THEN
+            IF (RLMO .lt. 0.0)THEN 
+               XLU4 = 1. -16.* ZETALU
+               XLT4 = 1. -16.* ZETALT
+               XU4 = 1. -16.* ZETAU
+
+               XT4 = 1. -16.* ZETAT
+               XLU = SQRT (SQRT (XLU4))
+               XLT = SQRT (SQRT (XLT4))
+               XU = SQRT (SQRT (XU4))
+
+               XT = SQRT (SQRT (XT4))
+
+               PSMZ = PSPMU (XU)
+               SIMM = PSPMU (XLU) - PSMZ + RLOGU
+               PSHZ = PSPHU (XT)
+               SIMH = PSPHU (XLT) - PSHZ + RLOGT
+            ELSE
+               ZETALU = MIN (ZETALU,ZTMAX)
+               ZETALT = MIN (ZETALT,ZTMAX)
+               PSMZ = PSPMS (ZETAU)
+               SIMM = PSPMS (ZETALU) - PSMZ + RLOGU
+               PSHZ = PSPHS (ZETAT)
+               SIMH = PSPHS (ZETALT) - PSHZ + RLOGT
+            END IF
+! ----------------------------------------------------------------------
+! LECH'S FUNCTIONS
+! ----------------------------------------------------------------------
+         ELSE
+            IF (RLMO .lt. 0.)THEN
+               PSMZ = PSLMU (ZETAU)
+               SIMM = PSLMU (ZETALU) - PSMZ + RLOGU
+               PSHZ = PSLHU (ZETAT)
+               SIMH = PSLHU (ZETALT) - PSHZ + RLOGT
+            ELSE
+               ZETALU = MIN (ZETALU,ZTMAX)
+               ZETALT = MIN (ZETALT,ZTMAX)
+               PSMZ = PSLMS (ZETAU)
+               SIMM = PSLMS (ZETALU) - PSMZ + RLOGU
+               PSHZ = PSLHS (ZETAT)
+               SIMH = PSLHS (ZETALT) - PSHZ + RLOGT
+            END IF
+! ----------------------------------------------------------------------
+! BELJAARS CORRECTION FOR USTAR
+! ----------------------------------------------------------------------
+         END IF
+            USTAR = MAX (SQRT (AKMS * SQRT (DU2+ WSTAR2)),EPSUST)
+            !KCL/TL
+            !ZT = EXP (ZILFC * SQRT (USTAR * Z0))* Z0
+            ZT = EXP (2.0-AKANDA*(SQVISC**2 * USTAR * Z0)**0.25)* Z0
+            ZSLT = ZLM + ZT
+            RLOGT = log (ZSLT / ZT)
+            USTARK = USTAR * VKRM
+            AKMS = MAX (USTARK / SIMM,CXCH)
+            AKHS = MAX (USTARK / SIMH,CXCH)
+!
+         IF (BTGH * AKHS * DTHV .ne. 0.0) THEN
+            WSTAR2 = WWST2* ABS (BTGH * AKHS * DTHV)** (2./3.)
+         ELSE
+            WSTAR2 = 0.0
+         END IF
+!-----------------------------------------------------------------------
+         RLMN = ELFC * AKHS * DTHV / USTAR **3
+!-----------------------------------------------------------------------
+!     IF(ABS((RLMN-RLMO)/RLMA).LT.EPSIT)    GO TO 110
+!-----------------------------------------------------------------------
+         RLMA = RLMO * WOLD+ RLMN * WNEW
+!-----------------------------------------------------------------------
+         RLMO = RLMA
+
+      END DO
+
+      CD = USTAR*USTAR/SFCSPD**2
+! ----------------------------------------------------------------------
+  END SUBROUTINE SFCDIF_URB
+! ----------------------------------------------------------------------
 !===========================================================================
 END MODULE module_sf_urban

@@ -2,6 +2,9 @@ subroutine da_check_max_iv_pilot(iv, it, num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -23,13 +26,11 @@ subroutine da_check_max_iv_pilot(iv, it, num_qcstat_conv)
       do k = 1, iv%info(pilot)%levels(n)
          call da_get_print_lvl(iv%pilot(n)%p(k),ipr)
 
-         if( iv%pilot(n)%u(k)%qc == fails_error_max .and. it > 1 )iv%pilot(n)%u(k)%qc =0
-         if( iv%pilot(n)%u(k)%qc >= obs_qc_pointer ) then
          failed=.false.
-         if( check_max_iv) &
+         if( iv%pilot(n)%u(k)%qc >= obs_qc_pointer )  then
          call da_max_error_qc (it,iv%info(pilot), n, iv%pilot(n)%u(k), max_error_uv,failed)
          if( iv%info(pilot)%proc_domain(k,n) ) then
-                    num_qcstat_conv(1,pilot,1,ipr) = num_qcstat_conv(1,pilot,1,ipr) + 1
+             num_qcstat_conv(1,pilot,1,ipr) = num_qcstat_conv(1,pilot,1,ipr) + 1
          if(failed) then
           num_qcstat_conv(2,pilot,1,ipr) = num_qcstat_conv(2,pilot,1,ipr) + 1
           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
@@ -38,13 +39,11 @@ subroutine da_check_max_iv_pilot(iv, it, num_qcstat_conv)
          end if
          end if
 
-         if( iv%pilot(n)%v(k)%qc == fails_error_max .and. it > 1 )iv%pilot(n)%v(k)%qc =0
-         if( iv%pilot(n)%v(k)%qc >= obs_qc_pointer ) then
          failed=.false.
-         if( check_max_iv) &
+         if( iv%pilot(n)%v(k)%qc >= obs_qc_pointer )  then
          call da_max_error_qc (it,iv%info(pilot), n, iv%pilot(n)%v(k), max_error_uv,failed)
          if( iv%info(pilot)%proc_domain(k,n) ) then
-                    num_qcstat_conv(1,pilot,2,ipr) = num_qcstat_conv(1,pilot,2,ipr) + 1
+             num_qcstat_conv(1,pilot,2,ipr) = num_qcstat_conv(1,pilot,2,ipr) + 1
          if(failed)then
           num_qcstat_conv(2,pilot,2,ipr) = num_qcstat_conv(2,pilot,2,ipr) + 1
           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&

@@ -43,7 +43,11 @@ subroutine da_proc_stats_combine(proc_ave, proc_err, proc_min, proc_max, &
    ! Get minimum value and associated processor index.
    in(1) = proc_min
    in(2) = myproc
+#if ( RWORDSIZE == 4 )
+   call mpi_reduce(in, out, 1, mpi_2real, mpi_minloc, root, comm, ierr)
+#else
    call mpi_reduce(in, out, 1, mpi_2double_precision, mpi_minloc, root, comm, ierr)
+#endif
 
    if (myproc == root) then
       proc_min = out(1)
@@ -69,7 +73,11 @@ subroutine da_proc_stats_combine(proc_ave, proc_err, proc_min, proc_max, &
    in(1) = proc_max
    in(2) = myproc
 
+#if ( RWORDSIZE == 4 )
+   call mpi_reduce(in, out, 1, mpi_2real, mpi_maxloc, root, comm, ierr)
+#else
    call mpi_reduce(in, out, 1, mpi_2double_precision, mpi_maxloc, root, comm, ierr)
+#endif
 
    if (rootproc) then
       proc_max = out(1)

@@ -1,7 +1,4 @@
 !
-!*** Jan Mandel August-October 2007 email: jmandel@ucar.edu or Jan.Mandel@gmail.com
-!
-! With contributions by Minjeong Kim.
 #define DEBUG_OUT
 #define DEBUG_PRINT
 !#define FUEL_LEFT
@@ -9,7 +6,7 @@
 
 module module_fr_sfire_core
 
-use module_fr_sfire_phys
+use module_fr_sfire_phys, only: fire_params , fire_ros
 use module_fr_sfire_util
 
 ! The mathematical core of the fire spread model. No physical constants here.
@@ -17,6 +14,22 @@ use module_fr_sfire_util
 ! subroutine sfire_core: only this routine should be called from the outside.
 ! subroutine fuel_left:  compute remaining fuel from time of ignition.
 ! subroutine prop_ls: propagation of curve in normal direction.
+
+! describe one ignition line
+type ignition_line_type
+  REAL  ros, &          ! subscale rate of spread during the ignition process
+        stop_time, &    ! when the ignition process stops from ignition start (s)
+        wind_red,  &    ! wind reduction factor at the ignition line
+        wrdist,   &     ! distance from the ignition line when the wind reduction stops
+        wrupwind, &     ! use distance interpolated between 0. = nearest 1. = upwind
+        start_x, &      ! x coordinate of the ignition line start point (m, or long/lat)
+        start_y, &      ! y coordinate of the ignition line start point
+        end_x, &        ! x coordinate of the ignition line end point
+        end_y, &        ! y coordinate of the ignition line end point
+        start_time, &   ! ignition time for the start point from simulation start (s)
+        end_time, &     ! ignition time for the end poin from simulation start (s)
+        radius          ! all within this radius ignites immediately
+end type ignition_line_type
 
 contains
 
@@ -60,7 +73,7 @@ do j=jfts,jfte
         lfn(i,j) = lfn_init        ! no fire 
     enddo
 enddo
-call message('init_model_no_fire: state set to no fire')
+call message('init_no_fire: state set to no fire')
 
 end subroutine init_no_fire
 
@@ -72,7 +85,8 @@ end subroutine init_no_fire
 subroutine ignite_fire( ifds,ifde,jfds,jfde,                    & ! fire domain dims - the whole domain
                         ifms,ifme,jfms,jfme,                      &
                         ifts,ifte,jfts,jfte,                      &
-                        sx,sy,ex,ey,r,time_ign,           &
+                        ignition_line,                            &
+                        start_ts,end_ts,                    &
                         coord_xf,coord_yf,                &     
                         unit_xf,unit_yf,                  &
                         lfn,tign,ignited)
@@ -80,14 +94,22 @@ implicit none
 
 !*** purpose: ignite a circular/line fire 
 
+!*** description
+! ignite fire in the region within radius r from the line (sx,sy) to (ex,ey).
+! the coordinates of nodes are given as the arrays coord_xf and coord_yf
+! r is given in m
+! one unit of coord_xf is unit_xf m 
+! one unit of coord_yf is unit_yf m 
+! so a node (i,j) will be ignited iff for some (x,y) on the line
+! || ( (coord_xf(i,j) - x)*unit_xf , (coord_yf(i,j) - y)*unit_yf ) || <= r 
+
+
 !*** arguments
 integer, intent(in):: ifds,ifde,jfds,jfde   ! fire domain bounds
 integer, intent(in):: ifts,ifte,jfts,jfte   ! fire tile bounds
 integer, intent(in):: ifms,ifme,jfms,jfme   ! array bounds
-real, intent(in):: time_ign                 ! the ignition time of the fire
-real, intent(in):: sx,sy                    ! start of ignition line, from lower left corner
-real, intent(in):: ex,ey                    ! end of ignition line, or zero
-real, intent(in):: r                        ! all within the radius of the line will ignite
+type(ignition_line_type), intent(in):: ignition_line    ! description of the ignition line
+real, intent(in):: start_ts,end_ts          ! the time step start and end 
 real, dimension(ifms:ifme, jfms:jfme), intent(in):: & 
     coord_xf,coord_yf                       !  node coordinates  
 real, intent(in):: unit_xf,unit_yf          !  coordinate units in m
@@ -97,32 +119,166 @@ integer, intent(out):: ignited              ! number of nodes newly ignited
                         
 !*** local
 integer:: i,j
-real::mx,my,ax,ay,dam2,d,dames,des2,am_es,cos2,lfn_new,dmc2
+real::lfn_new,time_ign,ax,ay,rels,rele,d
+real:: sx,sy                    ! start of ignition line, from lower left corner
+real:: ex,ey                    ! end of ignition line, or zero
+real:: st,et                    ! start and end of time of the ignition line
 character(len=128):: msg
-real::cx2,cy2,dmax
+real::cx2,cy2,dmax,axmin,axmax,aymin,aymax,dmin
+real:: start_x,start_y          ! start of ignition line, from lower left corner
+real:: end_x,end_y              ! end of ignition line, or zero
+real:: radius                   ! all within the radius of the line will ignite
+real:: start_time,end_time      ! the ignition time for the start and the end of the line
+real:: ros,tos                  ! ignition rate and time of spread
+
+!*** executable
+
+! copy ignition line fields to local variables
+start_x    = ignition_line%start_x ! x coordinate of the ignition line start point (m, or long/lat)
+start_y    = ignition_line%start_y ! y coordinate of the ignition line start point
+end_x      = ignition_line%end_x   ! x coordinate of the ignition line end point
+end_y      = ignition_line%end_y   ! y coordinate of the ignition line end point
+start_time = ignition_line%start_time ! ignition time for the start point from simulation start (s)
+end_time   = ignition_line%end_time! ignition time for the end poin from simulation start (s)
+radius     = ignition_line%radius  ! all within this radius ignites immediately
+ros        = ignition_line%ros     ! rate of spread
+
+
+tos        = radius/ros            ! time of spread to the given radius
+st         = start_time            ! the start time of ignition considered in this time step
+et         = min(end_ts,end_time)  ! the end time of the ignition segment in this time step
+
+! this should be called whenever (start_ts, end_ts) \subset (start_time, end_time + tos) 
+if(start_ts>et+tos .or. end_ts<st)return   ! too late or too early, nothing to do
+
+if(start_time < end_time)then  ! we really want to test start_time .ne. end_time, but avoiding test of floats on equality
+        ! segment of nonzero length
+        !rels =  (st - start_time) / (end_time - start_time)  ! relative position of st in the segment (start,end)
+	!sx = start_x + rels * (end_x - start_x)
+	!sy = start_y + rels * (end_y - start_y)
+        rels = 0.
+        sx = start_x
+        sy = start_y
+        rele =  (et - start_time) / (end_time - start_time)    ! relative position of et in the segment (start,end)
+	ex = start_x + rele * (end_x - start_x)
+	ey = start_y + rele * (end_y - start_y)
+else
+        ! just a point
+        rels = 0.
+        rele = 1.
+	sx = start_x
+	sy = start_y
+	ex = end_x
+	ey = end_y
+endif
+
 
 cx2=unit_xf*unit_xf
 cy2=unit_yf*unit_yf
 
+axmin=coord_xf(ifts,jfts)
+aymin=coord_yf(ifts,jfts)
+axmax=coord_xf(ifte,jfte)
+aymax=coord_yf(ifte,jfte)
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+write(msg,'(a,2f11.6,a,2f11.6)')'IGN from ',sx,sy,' to ',ex,ey
+call message(msg)
+write(msg,'(a,2f10.2,a,2f10.2,a)')'IGN timestep [',start_ts,end_ts,'] in [',start_time,end_time,']'
+call message(msg)
+write(msg,'(a,2g13.6,a,2g13.6)')'IGN tile coord from  ',axmin,aymin,' to ',axmax,aymax
+call message(msg)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
 ignited=0
 dmax=0
-! midpoint m = (mx,my)
-mx = (sx + ex)/2
-my = (sy + ey)/2
+dmin=huge(dmax)
+11      format('IGN ',6(a,g17.7,1x)) 
+12      format('IGN ',4(a,2g13.7,1x))
 do j=jfts,jfte   
     do i=ifts,ifte
-        ! coordinates of the node (i,j), the lower left corner of the domain is (0 0)
-        ! ax = fdx*(i - ifds + 0.5)
-        ! ay = fdy*(j - jfds + 0.5)
         ax=coord_xf(i,j)
         ay=coord_yf(i,j)
-        ! the following computation of distance is also for the case
-        ! when s=e exactly or approximately 
-        dam2=(ax-mx)*(ax-mx)*cx2+(ay-my)*(ay-my)*cy2      ! |a-m|^2
-        ! compute distance of a=(ax,ay) and the nearest point on the segment
-        ! [(sx,sy), (ex,ey)] as the distance of (ax,ay) from the midpoint (mx,my)
+
+        ! get d= distance from the nearest point on the ignition segment
+        ! and time_ign = the ignition time there
+        call nearest(d,time_ign,ax,ay,sx,sy,st,ex,ey,et,cx2,cy2)
+        dmax=max(d,dmax)
+        dmin=min(d,dmin)
+
+        lfn_new=d - min( radius, ros*(end_ts - time_ign) )  ! lft at end_ts
+        if(fire_print_msg.ge.3)then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+            write(msg,*)'IGN1 i,j=',i,j,' lfn(i,j)=',lfn(i,j),' tign(i,j)=',tign(i,j)
+            call message(msg)
+            write(msg,*)'IGN2 i,j=',i,j,' lfn_new= ',lfn_new, ' time_ign= ',time_ign,' d=',d
+            call message(msg)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
+        endif
+        if(.not.lfn_new>0.) then
+            ignited=ignited+1   ! count
+        endif
+        if(lfn(i,j)>0. .and. .not. lfn_new > 0.) then
+            tign(i,j)=time_ign + d/ros  ! newly ignited now
+            if(fire_print_msg.ge.3)then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+                write(msg,'(a,2i6,a,2g13.6,a,f10.2,a,2f10.2,a)')'IGN ignited cell ',i,j,' at',ax,ay, &
+                    ' time',tign(i,j),' in [',start_ts,end_ts,']'
+                call message(msg)
+                write(msg,'(a,g10.3,a,f10.2,a,2f10.2,a)')'IGN distance',d,' from ignition line at',time_ign,' in [',st,et,']'
+                call message(msg)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
+            endif
+            if(tign(i,j) < start_ts .or. tign(i,j) > end_ts )then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+                write(msg,'(a,2i6,a,f11.6,a,2f11.6,a)')'WARNING ',i,j, &
+                ' fixing ignition time ',tign(i,j),' outside of the time step [',start_ts,end_ts,']'
+                call message (msg)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
+                tign(i,j) = min(max(tign(i,j),start_ts),end_ts)
+            endif
+        endif
+        lfn(i,j)=min(lfn(i,j),lfn_new)  ! update the level set function
+        if(fire_print_msg.ge.3)then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+            write(msg,*)'IGN3 i,j=',i,j,' lfn(i,j)=',lfn(i,j),' tign(i,j)=',tign(i,j)
+            call message(msg)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
+        endif
+    enddo
+enddo
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+write(msg,'(a,2g13.2,a,g10.2,a,g10.2)')'IGN units ',unit_xf,unit_yf,' m max dist ',dmax,' min',dmin
+call message(msg)
+write(msg,'(a,f6.1,a,f8.1,a,i10)')'IGN radius ',radius,' time of spread',tos,' ignited nodes',ignited
+call message(msg)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
+
+return
+99 continue
+
+end subroutine ignite_fire
+
+! called from the inside of a loop, inline if possible
+!DEC$ ATTRIBUTES FORCEINLINE
+SUBROUTINE nearest(d,t,ax,ay,sx,sy,st,ex,ey,et,cx2,cy2)
+        implicit none
+!***    arguments
+        real, intent(out):: d,t
+        real, intent(in):: ax,ay,sx,sy,st,ex,ey,et,cx2,cy2
+        ! input:
+        ! ax, ay       coordinates of point a
+        ! sx,sy,ex,ey  coordinates of endpoints of segment [x,y]
+        ! st,et        values at the endpoints x,y
+        ! cx2,cy2      x and y unit squared for computing distance 
+
+        ! output
+        ! d            the distance of a and the nearest point z on the segment [x,y]
+        ! t            linear interpolation from the values st,et to the point z
+        !
+        ! method: compute d as the distance (ax,ay) from the midpoint (mx,my)
         ! minus a correction (because of rounding errors): |a-c|^2 = |a-m|^2 - |m-c|^2
         ! when |m-c| >= |s-e|/2 the nearest point is one of the endpoints
+        ! the computation work also for the case when s=e exactly or approximately 
+        !
         !
         !           a    
         !          /| \
@@ -130,6 +286,18 @@ do j=jfts,jfte
         !
         ! |m-c| = |a-m| cos (a-m,e-s) 
         !       = |a-m| (a-m).(e-s))/(|a-m|*|e-s|)
+!***    local
+        real:: mx,my,dam2,dames,am_es,cos2,dmc2,mcrel,mid_t,dif_t,des2,cx,cy
+        character(len=128):: msg
+!***    executable
+
+11      format('IGN ',6(a,g17.7,1x))
+12      format('IGN ',4(a,2g13.7,1x))
+
+        ! midpoint m = (mx,my)
+        mx = (sx + ex)*0.5
+        my = (sy + ey)*0.5
+        dam2=(ax-mx)*(ax-mx)*cx2+(ay-my)*(ay-my)*cy2      ! |a-m|^2
         des2 = (ex-sx)*(ex-sx)*cx2+(ey-sy)*(ey-sy)*cy2          ! des2 = |e-s|^2
         dames = dam2*des2
         am_es=(ax-mx)*(ex-sx)*cx2+(ay-my)*(ey-sy)*cy2       ! am_es = (a-m).(e-s)
@@ -139,39 +307,36 @@ do j=jfts,jfte
             cos2 = 0.
         endif
         dmc2 = dam2*cos2                                ! dmc2 = |m-c|^2
-        if(4.*dmc2 <= des2)then                         ! if |m-c|<=|e-s|/2
-            d = sqrt(max(dam2 - dmc2,0.))               ! d=|a-m|^2 - |m-c|^2, guard rounding
+        if(4.*dmc2 < des2)then                          ! if |m-c|<=|e-s|/2
+            ! d = sqrt(max(dam2 - dmc2,0.))               ! d=|a-m|^2 - |m-c|^2, guard rounding
+            mcrel = sign(sqrt(4.*dmc2/des2),am_es)      ! relative distance of c from m 
         elseif(am_es>0)then                             ! if cos > 0, closest is e
-            d = sqrt((ax-ex)*(ax-ex)*cx2+(ay-ey)*(ay-ey)*cy2)   ! |a-e|
-        else
-            d = sqrt((ax-sx)*(ax-sx)*cx2+(ay-sy)*(ay-sy)*cy2)   ! |a-s|
+            mcrel = 1.0 
+        else                                            ! closest is s
+            mcrel = -1.0
         endif
-        dmax=max(d,dmax)
-        lfn_new=d-r
-        if(lfn(i,j)>0 .and. lfn_new<=0) then
-            tign(i,j)=time_ign  ! newly ignited now
-            ignited=ignited+1   ! count
+	cx = (ex + sx)*0.5 + mcrel*(ex - sx)*0.5     ! interpolate to c by going from m
+	cy = (ey + sy)*0.5 + mcrel*(ey - sy)*0.5     ! interpolate to c by going from m
+        d=sqrt((ax-cx)*(ax-cx)*cx2+(ay-cy)*(ay-cy)*cy2) ! |a-c|^2
+	t = (et + st)*0.5 + mcrel*(et - st)*0.5     ! interpolate to c by going from m
+        if(fire_print_msg.ge.3)then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+            write(msg,12)'find nearest to [',ax,ay,'] from [',sx,sy,'] [',ex,ey,']' ! DEB
+            call message(msg)
+            write(msg,12)'end times',st,et,' scale squared',cx2,cy2 ! DEB
+            call message(msg)
+            write(msg,11)'nearest at mcrel=',mcrel,'from the midpoint, t=',t ! DEB
+            call message(msg)
+            write(msg,12)'nearest is [',cx,cy,'] d=',d ! DEB
+            call message(msg)
+            write(msg,11)'dam2=',dam2,'des2=',des2,'dames=',dames
+            call message(msg)
+            write(msg,11)'am_es=',am_es,'cos2=',cos2,'dmc2=',dmc2 ! DEB
+            call message(msg)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
         endif
-        lfn(i,j)=min(lfn(i,j),lfn_new)  ! update the level set function
+END SUBROUTINE nearest
 
-        ! debug
-        ! write(msg,'(2i4,10f12.6)')i,j,d,sx,ex,sy,ey
-        ! call message(msg)
-        ! write(msg,'(10f12.6)')ax,ay,dmc2,des2,cos2
-        ! call message(msg)
-        ! write(msg,'(10f16.6)')unit_xf,unit_yf,cx2,cy2,dam2
-        ! call message(msg)
-        ! write(msg,'(10f16.6)')des2,dames,am_es,mx,my
-        ! call message(msg)
-    enddo
-enddo
-write(msg,'(a,2f11.6,a,2f11.6)')'ignite_fire: from',sx,sy,' to ',ex,ey
-call message(msg)
-write(msg,'(a,2f11.2,a,f8.1,a)')'units ',unit_xf,unit_yf,' m max dist ',dmax,' m'
-call message(msg)
-write(msg,'(a,f4.1,a,f8.1,a,i10)')' radius ',r,' time',time_ign,' ignited nodes',ignited
-call message(msg)
-end subroutine ignite_fire
 
 !
 !**********************
@@ -186,8 +351,6 @@ implicit none
 
 !*** purpose: determine fraction of fuel remaining
 !*** NOTE: because variables are cell centered, need halo/sync width 1 before
-
-!*** Jan Mandel August 2007 email: jmandel@ucar.edu or Jan.Mandel@gmail.com
 
 !*** arguments
 
@@ -209,12 +372,12 @@ real, intent(out), dimension(ims:ime,jms:jme):: fire_area
 
 !*** local
 
-integer::i,j,iccell,jccell,ir,jr
-real::xfcell,yfcell,fmax,frat
-#define IFCELLS (ite-its+1)*fuel_left_irl
+integer::i,j,ir,jr,icl,jcl,isubcl,jsubcl,i2,j2,ii,jj
+real::fmax,frat,helpsum1,helpsum2,fuel_left_ff,fire_area_ff,rx,ry,tignf(2,2)
+! help variables instead of arrays fuel_left_f and fire_area_f 
+real::lffij,lffi1j,lffij1,lffi1j1,tifij,tifi1j,tifij1,tifi1j1,tx,ty,txx,tyy
+! variables for calculation instead of lff(i,j) and tif(i,j)is lffij,tifij etc..#define IFCELLS (ite-its+1)*fuel_left_irl
 #define JFCELLS (jte-jts+1)*fuel_left_jrl
-real,dimension(1:IFCELLS+1,1:JFCELLS+1)::lff,tif
-real,dimension(1:IFCELLS,1:JFCELLS)::fuel_left_f, fire_area_f
 character(len=128)::msg
 integer::m,omp_get_thread_num
      
@@ -226,27 +389,14 @@ call check_mesh_2dim(its,ite,jts,jte,ifs,ife,jfs,jfe)
 ir=fuel_left_irl
 jr=fuel_left_jrl
 
+if ((ir.ne.2).or.(jr.ne.2)) then 
+   call crash('fuel_left: ir.ne.2 or jr.ne.2 ')
+endif
+
+rx=1./ir 
+ry=1./jr
+
 ! interpolate level set function to finer grid
-call interpolate_2d(  &
-    ims,ime,jms,jme,         & ! array coarse grid
-    its-1,ite+1,jts-1,jte+1, & ! dimensions coarse grid used
-    1,IFCELLS+1,1,JFCELLS+1,     & ! array fine grid dims
-    1,IFCELLS+1,1,JFCELLS+1,     & ! dimensions fine grid used
-    ir,jr,                   & ! refinement ratio
-    real(its),real(jts),1+ir/2.,1+jr/2.,  & ! (ip2,jp2) on coarse lines up with (ip1,jp1) on fine grid 
-    lfn, &                     ! in coarse grid  
-    lff  )                     ! out fine grid
-
-call interpolate_2d(  &
-    ims,ime,jms,jme,         & ! array coarse grid
-    its-1,ite+1,jts-1,jte+1, & ! dimensions coarse grid used
-    1,IFCELLS+1,1,JFCELLS+1,     & ! array fine grid dims
-    1,IFCELLS+1,1,JFCELLS+1,     & ! dimensions fine grid used
-    ir,jr,                   & ! refinement ratio
-    real(its),real(jts),1+ir/2.,1+jr/2.,  & ! (ip2,jp2) on coarse lines up with (ip1,jp1) on fine grid 
-    tign, &                     ! in coarse grid  
-    tif  )                     ! out fine grid
-
 #ifdef DEBUG_OUT_FUEL_LEFT    
     call write_array_m(1,IFCELLS+1,1,JFCELLS+1,1,IFCELLS+1,1,JFCELLS+1,lff,'lff',0)
     call write_array_m(1,IFCELLS+1,1,JFCELLS+1,1,IFCELLS+1,1,JFCELLS+1,tif,'tif',0)
@@ -261,56 +411,139 @@ call interpolate_2d(  &
 !           fine node 1           2           3                   2*(ite-its+1) 
 !                fine cell  1           2                             cell 2*(ite-its+1)
 
-do j=1,JFCELLS
-    do i=1,IFCELLS
-        iccell=its+(i-1)/ir ! the nearest coarse node
-        jccell=jts+(j-1)/jr ! use fuel_time of the coarse cell the fine cell is in
-        if(fuel_left_method.eq.1)then
-            call fuel_left_cell_1( fuel_left_f(i,j), fire_area_f(i,j), &
-                 lff(i,j),lff(i,j+1),lff(i+1,j),lff(i+1,j+1),&
-                 tif(i,j),tif(i,j+1),tif(i+1,j),tif(i+1,j+1),&
-                 time_now, fuel_time(iccell,jccell))
-        elseif(fuel_left_method.eq.2)then
-             fire_area_f(i,j)=0  ! initialize to something until computed in fuel_left_f(i,j)
-             fuel_left_f(i,j)=fuel_left_cell_2( &
-                 lff(i,j),lff(i,j+1),lff(i+1,j),lff(i+1,j+1),&
-                 tif(i,j),tif(i,j+1),tif(i+1,j),tif(i+1,j+1),&
-                 time_now, fuel_time(iccell,jccell)) 
+
+
+!  Loop over cells in Tile 
+!  Changes made by Volodymyr Kondratenko 09/24/2009
+do icl=its,ite
+  do jcl=jts,jte
+    helpsum1=0
+    helpsum2=0
+!   Loop over subcells in cell #(icl,jcl)
+    do isubcl=1,ir
+      do jsubcl=1,jr 
+        i=(icl-its)*ir+isubcl
+        j=(jcl-jts)*jr+jsubcl
+
+!       Direct calculation tif and lff, avoiding arrays, just for case ir=jr=2
+        if ((isubcl.eq.1).and.(jsubcl.eq.1)) then
+           i2=icl-1
+           j2=jcl-1
+           ty=0.5
+           tx=0.5
+           tyy=1.0
+           txx=1.0
+        else if ((isubcl.eq.2).and.(jsubcl.eq.1)) then
+           i2=icl
+           j2=jcl-1
+           ty=0.5
+           tx=0
+           tyy=1.0
+           txx=0.5
+        else if ((isubcl.eq.1).and.(jsubcl.eq.2)) then
+           i2=icl-1
+           j2=jcl
+           tx=0.5
+           ty=0
+           txx=1.0
+           tyy=0.5
+        else if ((isubcl.eq.2).and.(jsubcl.eq.2)) then
+           i2=icl
+           j2=jcl
+           tx=0
+           ty=0
+           txx=0.5
+           tyy=0.5
         else
-             call crash('fuel_left: unknown fuel_left_method')
+           call crash('fuel_left: isubcl,jsubcl should be only 1 or 2')
+        endif 
+
+! calculation lff and tif in 4 endpoints of subcell                    
+        lffij=                             &    
+                  (1-tx)*(1-ty)*lfn(i2,j2)      &
+             +    (1-tx)*ty  *lfn(i2,j2+1)      &
+             +     tx*(1-ty)*lfn(i2+1,j2)       &
+             +       tx*ty  *lfn(i2+1,j2+1)
+        lffi1j=                            &
+                    (1-txx)*(1-ty)*lfn(i2,j2)   &
+             +      (1-txx)*ty  *lfn(i2,j2+1)   &
+             +      (txx)*(1-ty)*lfn(i2+1,j2)   &
+             +      (txx)*ty  *lfn(i2+1,j2+1)
+        lffij1=                            &
+                    (1-tx)*(1-tyy)*lfn(i2,j2)   &
+             +      (1-tx)*(tyy)  *lfn(i2,j2+1) &
+             +      tx*(1-tyy)*lfn(i2+1,j2)     &
+             +      tx*(tyy)  *lfn(i2+1,j2+1)
+        lffi1j1 =                               &
+                      (1-txx)*(1-tyy)*lfn(i2,j2)     &
+             +      (1-txx)*(tyy)  *lfn(i2,j2+1)   &        
+             +      (txx)*(1-tyy)*lfn(i2+1,j2)     &
+             +      (txx)*(tyy)  *lfn(i2+1,j2+1)
+
+        ! get ready to fix up tign values to be interpolated
+        do ii=1,2
+          do jj=1,2
+            tignf(ii,jj)=tign(i2+ii-1,j2+jj-1)
+          enddo
+        enddo
+        tifij=                                 &
+                   (1-tx)*(1-ty)*tignf(1,1)        &
+             +     (1-tx)*ty*tignf(1,1+1)          &
+             +     tx*(1-ty)*tignf(1+1,1)          &
+             +     tx*ty*tignf(1+1,1+1)
+        tifi1j=                               &
+                   (1-txx)*(1-ty)*tignf(1,1)      &
+             +     (1-txx)*ty*tignf(1,1+1)        &
+             +     (txx)*(1-ty)*tignf(1+1,1)      &
+             +     (txx)*(ty)*tignf(1+1,1+1)            
+        tifij1=                               &
+                   (1-tx)*(1-tyy)*tignf(1,1)      &
+             +     (1-tx)*(tyy)*tignf(1,1+1)      &
+             +      tx*(1-tyy)*tignf(1+1,1)       &
+             +      tx*(tyy)*tignf(1+1,1+1)
+        tifi1j1=                               &
+                   (1-txx)*(1-tyy)*tignf(1,1)     &
+             +     (1-txx)*(tyy)*tignf(1,1+1)     &
+             +     (txx)*(1-tyy)*tignf(1+1,1)     &
+             +     (txx)*(tyy)*tignf(1+1,1+1) 
+
+         
+        if(fuel_left_method.eq.1)then
+          call fuel_left_cell_1( fuel_left_ff, fire_area_ff, &
+             lffij,lffij1,lffi1j,lffi1j1,&
+             tifij,tifij1,tifi1j,tifi1j1,&
+             time_now, fuel_time(icl,jcl))
+        elseif(fuel_left_method.eq.2)then
+          fire_area_ff=0  ! initialize to something until computed in fuel_left_f(i,j)
+          fuel_left_ff=fuel_left_cell_2( &
+             lffij,lffij1,lffi1j,lffi1j1,&
+             tifij,tifij1,tifi1j,tifi1j1,&
+             time_now, fuel_time(icl,jcl)) 
+        else
+          call crash('fuel_left: unknown fuel_left_method')
         endif
 
         ! consistency check
-        if(fire_area_f(i,j).eq.0.)then
-           if(fuel_left_f(i,j).lt.1.)then
-               write(msg,'(a,2i6,2(a,f11.8))')'fuel_left: at node',i,j, &
-                    ' of refined mesh fuel burnt',1-fuel_left_f(i,j),' but fire area',fire_area_f(i,j)
-               call crash(msg)
-           endif
+        if(fire_area_ff.lt.-1e-6 .or.  &
+          (fire_area_ff.eq.0. .and. fuel_left_ff.lt.1.-1e-6))then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+           write(msg,'(a,2i6,2(a,f11.8))')'fuel_left: at node',i,j, &
+              ' of refined mesh fuel burnt',1-fuel_left_ff,' fire area',fire_area_ff
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
+           call crash(msg)
         endif
-        fuel_left_f(i,j) = fuel_left_f(i,j) /(ir*jr) ! premultiply by weight for averaging over coarse cell
-        fire_area_f(i,j) = fire_area_f(i,j) /(ir*jr) ! 
+
+        helpsum1=helpsum1+fuel_left_ff
+        helpsum2=helpsum2+fire_area_ff
+      enddo
     enddo
+    fuel_frac(icl,jcl)=helpsum1 
+    fire_area(icl,jcl)=helpsum2
+  enddo 
 enddo
-
-! sum up over subcells
-
-call sum_2d_cells(       &
-       1,IFCELLS,1,JFCELLS,    &
-       1,IFCELLS,1,JFCELLS,    &
-       fuel_left_f,            &  ! input       
-       ifs,ife,jfs,jfe,        &
-       its,ite,jts,jte,        &
-       fuel_frac)                 ! output
+  
 
 
-call sum_2d_cells(       &
-       1,IFCELLS,1,JFCELLS,    &
-       1,IFCELLS,1,JFCELLS,    &
-       fire_area_f,            &  ! input       
-       ims,ime,jms,jme,        &
-       its,ite,jts,jte,        &
-       fire_area)                 ! output
 
 #ifdef DEBUG_OUT_FUEL_LEFT
     call write_array_m(its,ite,jts,jte,ims,ime,jms,jme,fire_area,'fire_area',0)
@@ -319,14 +552,24 @@ call sum_2d_cells(       &
     call write_array_m(1,IFCELLS,1,JFCELLS,1,IFCELLS,1,JFCELLS,fire_area_f,'fire_area_f',0)
 #endif
 
+! finish the averaging
+do j=jts,jte
+    do i=its,ite        
+        fuel_frac(i,j) = fuel_frac(i,j) /(ir*jr) ! multiply by weight for averaging over coarse cell
+        fire_area(i,j) = fire_area(i,j) /(ir*jr) ! 
+    enddo
+enddo
+
 ! consistency check after sum
 fmax=0
 do j=jts,jte
     do i=its,ite        
        if(fire_area(i,j).eq.0.)then
-           if(fuel_frac(i,j).lt.1.)then
+           if(fuel_frac(i,j).lt.1.-1e-6)then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
                write(msg,'(a,2i6,2(a,f11.8))')'fuel_left: at node',i,j, &
                    ' fuel burnt',1-fuel_frac(i,j),' but fire area',fire_area(i,j)
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
                call crash(msg)
            endif
        else
@@ -335,7 +578,9 @@ do j=jts,jte
        endif
     enddo
 enddo
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
 write(msg,'(a,4i6,a,f10.7)')'fuel_left: tile',its,ite,jts,jte,' max fuel burnt/area',fmax 
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
 call message(msg)
 return
 
@@ -459,16 +704,31 @@ if(lfn11>0. .or. t11>0.)t11=0.
 ps = lfn00+lfn01+lfn10+lfn11   
 aps = abs(lfn00)+abs(lfn01)+abs(lfn10)+abs(lfn11)
 aps=max(aps,safe)
-area =(-ps/aps+1.)*.5
+area =(-ps/aps+1.)/2.
+area = max(area,0.) ! make sure area is between 0 and 1
+area = min(area,1.)
     
 ! average negative time since ignition
 ta=0.25*(t00+t01+t10+t11)
 
 ! exp decay in the burning area
 out=1.
+!if(area>0.)out=1. - area*(1. - exp(ta/fuel_time_cell))
 if(area>0)out=area*exp(ta/fuel_time_cell) + (1. - area)
 
-if(out>1.)call crash('fuel_left_cell_1: fuel fraction > 1')
+if(out>1.)then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+    write(msg,*)'out=',out,'>1 area=',area,' ta=',ta
+    call message(msg)
+    write(msg,*)'tign=',tign00,tign01,tign10,tign11,' time_now=',time_now
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
+    call message(msg)
+    !call message('WARNING: fuel_left_cell_1: fuel fraction > 1')
+    call crash('fuel_left_cell_1: fuel fraction > 1')
+endif
+
+!out = max(out,0.) ! make sure out is between 0 and 1
+!out = min(out,1.)
 
 fuel_frac_left = out
 fire_frac_area = area
@@ -503,7 +763,7 @@ real, intent(in)::fuel_time_cell            ! time to burns off to 1/e
 !
 !                                  /\
 !                                  |              
-! fuel_frac_left  =      1   -     | 1 -  exp(-T(x,y)*fuel_speed)) dxdy
+! fuel_frac_left  =      1   -     | 1 -  exp(-T(x,y)/fuel_time_cell)) dxdy
 !                                  |            
 !                                 \/
 !                                0<x<1
@@ -900,6 +1160,7 @@ else
                 a0=(1./2.)*(xt1-xt2)*(xt1+xt2)
                 s3=a0+a1*ae+a2*ae**2; ! approximate the integral
                             end if
+
             s3=ah*s3                                                
             out=out+s1+s2+s3
             out=1-out !fuel_left
@@ -1019,18 +1280,12 @@ subroutine prop_ls( id, &                                ! for debug
                 its,ite,jts,jte, &                       ! tile dims
                 ts,dt,dx,dy,     &                       ! scalars in
                 tbound,          &                       ! scalars out
-                lfn_in,lfn_out,tign         &                     ! arrays inout                   
-#ifdef SPEED_VARS_ARGS      /* extra arguments for speed_func */
-#include SPEED_VARS_ARGS
-#else
-#include "fr_sfire_params_args.h"
-#endif
+                lfn_in,lfn_out,tign,ros,  &              ! arrays inout          
+                fp               &
                    )
 implicit none
 
 !*** purpose: advance level function in time
-
-! Jan Mandel August 2007 - February 2008
 
 !*** description
 !
@@ -1097,14 +1352,10 @@ implicit none
 
 integer,intent(in)::id,ims,ime,jms,jme,ids,ide,jds,jde,its,ite,jts,jte,ips,ipe,jps,jpe 
 real,dimension(ims:ime,jms:jme),intent(inout)::lfn_in,tign
-real,dimension(ims:ime,jms:jme),intent(out)::lfn_out
+real,dimension(ims:ime,jms:jme),intent(out)::lfn_out,ros
 real,intent(in)::dx,dy,ts,dt
 real,intent(out)::tbound
-#ifdef SPEED_VARS_DECL      /* extra arguments for speed_func */
-#include SPEED_VARS_DECL
-#else
-#include "fr_sfire_params_decl.h"
-#endif
+type(fire_params),intent(in)::fp
 
 !*** local 
 ! arrays
@@ -1118,8 +1369,9 @@ real::grad2,rr,tbound2,a,a1 ! a=0 euler, a=0.5 heun
 
 real::gradx,grady,aspeed,err,aerr,time_now
 integer::ihs,ihe,jhs,jhe
+integer::ihs2,ihe2,jhs2,jhe2
 integer::i,j,its1,ite1,jts1,jte1,k,kk,id1
-character(len=128)msg
+character(len=128)::msg
 integer::nfirenodes,nfireline
 real::sum_err,min_err,max_err,sum_aerr,min_aerr,max_aerr   
 
@@ -1134,13 +1386,20 @@ intrinsic max,min,sqrt,nint,epsilon,tiny,huge
   
 !*** executable
 
-write(msg,'(5(a,i5))')'prop_ls:',id,' tile  ',its,':',ite,',',jts,':',jte
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
+write(msg,'(a8,i5,a6,i5,3(a1,i5))')'prop_ls:',id,' tile ',its,':',ite,',',jts,':',jte
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
 call message(msg)
 
     a=fire_back_weight ! from module_fr_sfire_util
     a1=1. - a
     
     ! tend = F(lfn)
+
+    ihs2=max(its-2,ids)   ! need lfn two beyond the tile but not outside the domain 
+    ihe2=min(ite+2,ide)
+    jhs2=max(jts-2,jds) 
+    jhe2=min(jte+2,jde)
 
     ihs=max(its-1,ids)   ! compute tend one beyond the tile but not outside the domain 
     ihe=min(ite+1,ide)
@@ -1150,6 +1409,11 @@ call message(msg)
 #ifdef DEBUG_OUT    
     call write_array_m(ihs,ihe,jhs,jhe,ims,ime,jms,jme,lfn_in,'lfn_in',id)
 #endif
+
+    ! check array dimensions
+    call check_mesh_2dim(ihs2,ihe2,jhs2,jhe2,ims,ime,jms,jme)
+    call print_2d_stats(ihs2,ihe2,jhs2,jhe2,ims,ime,jms,jme, &
+                   lfn_in,'prop_ls: lfn in')
     
     ! NOTE: tend_ls will extrapolate to one node strip at domain boundaries
     ! so that it can compute gradient at domain boundaries.
@@ -1162,17 +1426,15 @@ call message(msg)
     ims,ime,jms,jme, &                       ! memory dims for lfn_in
     IMTS,IMTE,JMTS,JMTE, &                   ! memory dims for tend 
     ids,ide,jds,jde, &                       ! domain dims - where lfn exists
-    ips,ipe,jps,jpe, &                ! patch - nodes owned by this process 
+    ips,ipe,jps,jpe, &                       ! patch - nodes owned by this process 
     ihs,ihe,jhs,jhe, &                       ! where tend computed
-    ts,dt,dx,dy,      &                          ! scalars in
-    lfn_in, &                                   ! arrays in
+    ims,ime,jms,jme, &                       ! memory dims for ros 
+    its,ite,jts,jte, &                       ! tile dims - where to set ros
+    ts,dt,dx,dy,      &                      ! scalars in
+    lfn_in, &                                ! arrays in
     tbound, &                                ! scalars out 
-    tend &                                   ! arrays out        
-#ifdef SPEED_VARS_ARGS      /* extra arguments for speed_func */
-#include SPEED_VARS_ARGS
-#else
-#include "fr_sfire_params_args.h"
-#endif
+    tend, ros, &                              ! arrays out        
+    fp         &                             ! params
 )
 
 #ifdef DEBUG_OUT    
@@ -1186,6 +1448,8 @@ call message(msg)
         enddo
     enddo
     
+    call print_2d_stats(ihs,ihe,jhs,jhe,IMTS,IMTE,JMTS,JMTE, &
+                   lfn1,'prop_ls: lfn1')
     ! tend = F(lfn1) on the tile (not beyond)
 
     if(id1.ne.0)id1=id1+1000
@@ -1193,33 +1457,35 @@ call message(msg)
     IMTS,IMTE,JMTS,JMTE, &                   ! memory dims for lfn
     IMTS,IMTE,JMTS,JMTE, &                   ! memory dims for tend 
     ids,ide,jds,jde,     &                   ! domain dims - where lfn exists
-    ips,ipe,jps,jpe, &                ! patch - nodes owned by this process 
+    ips,ipe,jps,jpe, &                       ! patch - nodes owned by this process 
     its,ite,jts,jte, &                       ! tile dims - where is tend computed
-    ts+dt,dt,dx,dy,      &                          ! scalars in
-    lfn1, &                                   ! arrays in
-    tbound2, &                                ! scalars out 
-    tend &                                  ! arrays out        
-#ifdef SPEED_VARS_ARGS      /* extra arguments for speed_func */
-#include SPEED_VARS_ARGS
-#else
-#include "fr_sfire_params_args.h"
-#endif
+    ims,ime,jms,jme, &                       ! memory dims for ros 
+    its,ite,jts,jte, &                       ! tile dims - where is ros set
+    ts+dt,dt,dx,dy,      &                   ! scalars in
+    lfn1, &                                  ! arrays in
+    tbound2, &                               ! scalars out 
+    tend,ros, &                               ! arrays out        
+    fp &
 )
 
 #ifdef DEBUG_OUT    
-    call write_array_m(ihs,ihe,jhs,jhe,IMTS,IMTE,JMTS,JMTE,tend,'tend2',id)
+    call write_array_m(its,ite,jts,jte,IMTS,IMTE,JMTS,JMTE,tend,'tend2',id)
 #endif
 
-    call print_2d_stats(its,ite,jts,jte,IMTS,IMTE,JMTS,JMTE,tend,'prop_ls:lvl fcn tend(1/s)')
+    call print_2d_stats(its,ite,jts,jte,IMTS,IMTE,JMTS,JMTE,tend,'prop_ls: tend2')
         
     tbound=min(tbound,tbound2)
 
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
     write(msg,'(a,f10.2,4(a,f7.2))')'prop_ls: time',ts,' dt=',dt,' bound',min(tbound,999.99), &
         ' dx=',dx,' dy=',dy
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
     call message(msg)
     if(dt>tbound)then
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
         write(msg,'(2(a,f10.2))')'prop_ls: WARNING: time step ',dt, &
         ' > bound =',tbound
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
         call message(msg)
     endif
     
@@ -1228,12 +1494,10 @@ call message(msg)
     do j=jts,jte
         do i=its,ite
             lfn_out(i,j) = a1*lfn1(i,j) + a*(lfn_in(i,j) + dt*tend(i,j))
+            lfn_out(i,j) = min(lfn_out(i,j),lfn_in(i,j)) ! fire area can only increase
         enddo
     enddo      
 
-    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme, &
-                   lfn_out,'prop_ls: lfn out')
-    
     ! compute ignition time by interpolation
     ! the node was not burning at start but it is burning at end
     ! interpolate from the level functions at start and at end
@@ -1286,9 +1550,7 @@ call message(msg)
                    grady=(lfn_out(i,j+1)-lfn_out(i,j-1))/(2.0*dy)
                    grad2=sqrt(gradx*gradx+grady*grady)
                    aspeed = (lfn_in(i,j)-lfn_out(i,j))/(dt*max(grad2,rmin))                   
-                    rr = speed_func(gradx,grady,dx,dy,i,j  &
-#                   include "fr_sfire_params_args.h"
-                    )
+                    rr = speed_func(gradx,grady,dx,dy,i,j,fp)
                    err=aspeed-rr
                    sum_err=sum_err+err
                    min_err=min(min_err,err)
@@ -1304,8 +1566,10 @@ call message(msg)
             endif
         enddo
     enddo
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
     write(msg,'(2(a,i6,f8.4))')'prop_ls: nodes burning',nfirenodes, &
         (100.*nfirenodes)/((ite1-its1+1)*(jte1-jts1+1)),'% next to fireline',nfireline
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
     call message(msg)
     if(nfireline>0)then
         call print_stat_line('speed error',its1,ite1,jts1,jte1,min_err,max_err,sum_err/nfireline)
@@ -1335,11 +1599,16 @@ call message(msg)
     enddo
     goto 10
 9   continue
+!$OMP CRITICAL(SFIRE_CORE_CRIT)
     write(msg,'(a,i2,a,2i8)')'prop_ls: fire',boundary_guard, &
         ' cells from domain boundary at node ',i,j
+!$OMP END CRITICAL(SFIRE_CORE_CRIT)
     call message(msg)     
     call crash('prop_ls: increase the fire region')
 10  continue
+
+    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme, &
+                   lfn_out,'prop_ls: lfn out')
 
 end subroutine prop_ls
 
@@ -1350,18 +1619,16 @@ end subroutine prop_ls
 subroutine tend_ls( id, &
     lims,lime,ljms,ljme, &                   ! memory dims for lfn
     tims,time,tjms,tjme, &                   ! memory dims for tend 
-    ids,ide,jds,jde, &                   ! domain - nodes where lfn defined
-    ips,ipe,jps,jpe, &                ! patch - nodes owned by this process 
+    ids,ide,jds,jde, &                       ! domain - nodes where lfn defined
+    ips,ipe,jps,jpe, &                       ! patch - nodes owned by this process 
     ints,inte,jnts,jnte, &                   ! region - nodes where tend computed
-    t,dt,dx,dy,      &                          ! scalars in
+    ims,ime,jms,jme, &                       ! memory dims for ros 
+    its,ite,jts,jte, &                       ! tile dims - where is ros set
+    t,dt,dx,dy,      &                       ! scalars in
     lfn, &                                   ! arrays in
     tbound, &                                ! scalars out 
-    tend &                                  ! arrays out
-#ifdef SPEED_VARS_ARGS      /* extra arguments for speed_func */
-#include SPEED_VARS_ARGS
-#else
-#include "fr_sfire_params_args.h"
-#endif
+    tend, ros,  &                              ! arrays out
+    fp &
 )
 
 implicit none
@@ -1370,24 +1637,22 @@ implicit none
 
 !*** arguments
 integer,intent(in)::id,lims,lime,ljms,ljme,tims,time,tjms,tjme
+integer,intent(in)::ims,ime,jms,jme,its,ite,jts,jte
 integer, intent(in)::ids,ide,jds,jde,ints,inte,jnts,jnte,ips,ipe,jps,jpe 
 real,intent(in)::t                                     ! time
 real,intent(in)::dt,dx,dy                                 ! mesh step
 real,dimension(lims:lime,ljms:ljme),intent(inout)::lfn ! level set function
 real,intent(out)::tbound                               ! max allowed time step
 real,dimension(tims:time,tjms:tjme),intent(out)::tend  ! tendency (rhs of the level set pde)
-#ifdef SPEED_VARS_DECL      /* extra arguments for speed_func */
-#include SPEED_VARS_DECL
-#else
-#include "fr_sfire_params_decl.h"
-#endif
+real,dimension(ims:ime,jms:jme),intent(out)::ros  ! rate of spread 
+type(fire_params),intent(in)::fp
 
 !*** local 
 real:: te,diffLx,diffLy,diffRx,diffRy, & 
    diffCx,diffCy,diff2x,diff2y,grad,rr, &
-   ros_back,ros_wind,ros_slope,advx,advy,scale,nvx,nvy,speed,tanphi, &
-   dzdx,dzdy
-integer::i,j
+   ros_base,ros_wind,ros_slope,ros_back,advx,advy,scale,nvx,nvy, &
+   speed,tanphi
+integer::i,j,itso,iteo,jtso,jteo
 character(len=128)msg
 
 ! constants
@@ -1414,13 +1679,15 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
     
     call continue_at_boundary(1,1,fire_lfn_ext_up, &   !extend by extrapolation but never down 
     lims,lime,ljms,ljme, &                ! memory dims
-    ids,ide,jds,jde, &                ! domain - nodes where lfn defined
-    ips,ipe,jps,jpe, &                ! patch - nodes owned by this process 
-    ints,inte,jnts,jnte, &                ! tile - nodes 
+    ids,ide,jds,jde, &                    ! domain - nodes where lfn defined
+    ips,ipe,jps,jpe, &                    ! patch - nodes owned by this process 
+    ints,inte,jnts,jnte, &                ! tile - nodes update by this thread
+    itso,iteo,jtso,jteo, &                ! where set now
     lfn)                                  ! array
 
-    call print_2d_stats(ints-1,inte+1,jnts-1,jnte+1,lims,lime,ljms,ljme, &
-                   lfn,'tend_ls: lfn in /w halo')
+    call print_2d_stats(itso,iteo,jtso,jteo,lims,lime,ljms,ljme, &
+                   lfn,'tend_ls: lfn cont')
+
 #ifdef DEBUG_OUT
     call write_array_m(ints-1,inte+1,jnts-1,jnte+1,lims,lime,ljms,ljme,lfn,'tend_lfn_in',id)
 #endif
@@ -1465,22 +1732,19 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
             nvy=diffCy/scale
                       
             ! wind speed in direction of spread
-            speed =  vx(i,j)*nvx + vy(i,j)*nvy
+            ! speed =  vx(i,j)*nvx + vy(i,j)*nvy
         
-            ! slope in direction of spread
-            dzdx = (zsf(i+1,j)-zsf(i-1,j))/(2.*dx)
-            dzdy = (zsf(i,j+1)-zsf(i,j-1))/(2.*dy)
-            tanphi =  dzdx*nvx + dzdy*nvy
     
             ! get rate of spread from wind speed and slope
 
-            call fire_ros(ros_back,ros_wind,ros_slope, &
-            speed,tanphi,i,j &
-#           include "fr_sfire_params_args.h"
-            )
+            call fire_ros(ros_base,ros_wind,ros_slope, &
+            nvx,nvy,i,j,fp)
 
-            rr=ros_back + ros_wind + ros_slope
+            rr=ros_base + ros_wind + ros_slope
             if(fire_grows_only.gt.0)rr=max(rr,0.)
+
+            ! set ros for output
+            if(i.ge.its.and.i.le.ite.and.j.ge.jts.and.j.le.jte)ros(i,j)=rr
 
             if(fire_upwind_split.eq.0)then
 
@@ -1490,21 +1754,22 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
             else
 
                 ! normal direction backing rate only
-                te = - ros_back*grad
+                te = - ros_base*grad
 
 		! advection in wind direction 
                 if (abs(speed)> eps) then
-                    advx=vx(i,j)*ros_wind/speed
-                    advy=vy(i,j)*ros_wind/speed
+                    advx=fp%vx(i,j)*ros_wind/speed
+                    advy=fp%vy(i,j)*ros_wind/speed
                 else 
                     advx=0
                     advy=0
                 endif
 
+                ! tanphi =  dzdxf*nvx + dzdyf*nvy
 		! advection from slope direction 
                 if(abs(tanphi)>eps) then
-                    advx=advx+dzdx*ros_slope/tanphi
-                    advy=advy+dzdy*ros_slope/tanphi
+                    advx=advx+fp%dzdxf(i,j)*ros_slope/tanphi
+                    advy=advy+fp%dzdyf(i,j)*ros_slope/tanphi
                 endif
 
                 if(fire_upwind_split.eq.1)then   
@@ -1641,13 +1906,7 @@ end function select_eno
 !**************************
 !
 
-real function speed_func(diffCx,diffCy,dx,dy,i,j &
-#ifdef SPEED_VARS_ARGS      /* extra arguments for speed_func */
-#include SPEED_VARS_ARGS
-#else
-#include "fr_sfire_params_args.h"
-#endif
-)
+real function speed_func(diffCx,diffCy,dx,dy,i,j,fp)
 !*** purpose
 !    the level set method speed function
 implicit none
@@ -1655,14 +1914,10 @@ implicit none
 real, intent(in)::diffCx,diffCy  ! x and y coordinates of the direction of propagation
 real, intent(in)::dx,dy  ! x and y coordinates of the direction of propagation
 integer, intent(in)::i,j         ! indices of the node to compute the speed at
-#ifdef SPEED_VARS_DECL      /* extra arguments for fire_ros */
-#include SPEED_VARS_DECL
-#else
-#include "fr_sfire_params_decl.h"
-#endif
+type(fire_params),intent(in)::fp
 !*** local
-real::scale,nvx,nvy,speed,tanphi,r,dzdx,dzdy
-real::ros_back , ros_wind , ros_slope
+real::scale,nvx,nvy,r
+real::ros_base , ros_wind , ros_slope
 real, parameter:: eps=epsilon(0.0)
 !*** executable
             ! normal direction, from central differences
@@ -1670,24 +1925,13 @@ real, parameter:: eps=epsilon(0.0)
             nvx=diffCx/scale
             nvy=diffCy/scale
                       
-            ! wind speed in direction of spread
-            speed =  vx(i,j)*nvx + vy(i,j)*nvy
-        
-            ! slope in direction of spread
-            dzdx = (zsf(i+1,j)-zsf(i-1,j))/(2.*dx)
-            dzdy = (zsf(i,j+1)-zsf(i,j-1))/(2.*dy)
-            tanphi =  dzdx*nvx + dzdy*nvy
-    
             ! get rate of spread from wind speed and slope
 
-            call fire_ros(ros_back,ros_wind,ros_slope, &
-            speed,tanphi,i,j &
-#           include "fr_sfire_params_args.h"
-            )
+            call fire_ros(ros_base,ros_wind,ros_slope, &
+            nvx,nvy,i,j,fp)
 
-            r=ros_back + ros_wind + ros_slope
+            r=ros_base + ros_wind + ros_slope
             if(fire_grows_only.gt.0)r=max(r,0.)
-            ! write(10,*),i,j,nvx,nvy,speed,tanphi,r
             speed_func=r
 
 end function speed_func

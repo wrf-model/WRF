@@ -4,6 +4,11 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
    ! Purpose: Transforms analysis to control variables (Vp-type)
    !    Updated for Analysis on Arakawa-C grid
    !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   !
+   ! Updates:
+   !
+   !       Implementation of multi-variate BE
+   !       Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 02/01/2010
    !---------------------------------------------------------------------------
 
    implicit none
@@ -20,7 +25,7 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
 
    real    :: one_over_m2(ims:ime,jms:jme) !   Multiplicative coeff.
 
-   integer :: i, j, k                      ! Loop counters.
+   integer :: i, j, k , k1                 ! Loop counters.
 
    if (trace_use) call da_trace_entry("da_transform_xtovp")
 
@@ -131,34 +136,44 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
    do k=kts,kte
       do j=jts,jte
          vp%v2(its:ite,j,k) = vp%v2(its:ite,j,k) - &
-            be%reg_chi(j,k)*vp%v1(its:ite,j,k)
+            be%reg_psi_chi(j,k)*vp%v1(its:ite,j,k)
       end do
    end do
 
+   ! [2.5] Compute t_u:
    call da_message((/' calculating t_u'/))
-   ! [2.4] Compute t_u:
-   do k=kts,kte
+   do k1=kts,kte
+    do k=kts,kte
       do j=jts,jte
-         do i=its,ite
-            vp%v3(i,j,k) = xa%t(i,j,k) - &
-               sum(be%reg_t(j,k,kts:kte)*vp%v1(i,j,kts:kte))
+            vp%v3(its:ite,j,k) = vp%v3(its:ite,j,k) - &
+            be%reg_psi_t(j,k,k1)*vp%v1(its:ite,j,k1) + be%reg_chi_u_t(j,k,k1)*vp%v2(its:ite,j,k1)
+      end do
+    end do
+   end do
+
+   ! [2.6] Choice of moisture control variable:
+   call da_message((/' calculating psudo rh'/))
+   vp % v4(its:ite,jts:jte,kts:kte) = xa % q  (its:ite,jts:jte,kts:kte) /   &
+      xb % qs (its:ite,jts:jte,kts:kte)
+
+   do k1 = kts, kte
+      do k = kts, kte
+         do j = jts, jte
+            vp%v4(its:ite,j,k)   = vp%v4(its:ite,j,k)    - &
+            be%reg_psi_rh(j,k,k1)*vp%v1(its:ite,j,k1)    + &
+            be%reg_chi_u_rh(j,k,k1)*vp%v2(its:ite,j,k1)  + &
+            be%reg_t_u_rh(j,k,k1)*vp%v3(its:ite,j,k1) + &
+            be%reg_ps_u_rh(j,k1)*vp%v5(its:ite,j,1)
          end do
       end do
    end do
 
-   ! [2.6] Choice of moisture control variable: 
-   
-   call da_message((/' calculating psudo rh'/))
-   vp % v4(its:ite,jts:jte,kts:kte) = xa % q  (its:ite,jts:jte,kts:kte) /   &
-      xb % qs (its:ite,jts:jte,kts:kte) 
-
-   ! [2.7] Choice of surface pressure control variable: 
-      
    ! [2.7] compute psfc_u:
    call da_message((/' calculating psfc_u '/))
    do j=jts,jte
       do i=its,ite
-         vp % v5(i,j,1) = xa%psfc(i,j) - sum(be%reg_ps(j,kts:kte)*vp%v1(i,j,kts:kte))
+         vp % v5(i,j,1) = xa%psfc(i,j) - &
+         be%reg_psi_ps(j,k)*vp%v1(i,j,k) + be%reg_chi_u_ps(j,k)*vp%v2(i,j,k)
       end do
    end do
 

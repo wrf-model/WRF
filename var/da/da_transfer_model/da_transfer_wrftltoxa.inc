@@ -1,4 +1,4 @@
-subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
+subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
 
    !---------------------------------------------------------------------------
    ! Purpose: Convert WRFTL variables to analysis increments
@@ -11,12 +11,15 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    type(grid_config_rec_type), intent(inout) :: config_flags
 
    character*4,                intent(in)    :: filnam
+   character*256,              intent(in)    :: timestr
+
+#ifdef VAR4D
 
    integer :: i, j, k
    integer :: is, ie, js, je, ks, ke
 
    real :: sdmd, s1md
-   real, allocatable, dimension(:,:,:) :: g_press, utmp, vtmp
+   real, allocatable, dimension(:,:,:) :: g_press
    real, allocatable, dimension(:,:) :: ptmp
 
    integer ndynopt
@@ -36,14 +39,29 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
 
    allocate (g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
 
-   ndynopt      = grid%dyn_opt
-   grid%dyn_opt = DYN_EM_TL
-   call nl_set_dyn_opt (1 , DYN_EM_TL)
 
-   call da_med_initialdata_input(grid , config_flags, filnam)
+   call pop_tl_pert (timestr)
 
-   grid%dyn_opt = ndynopt
-   call nl_set_dyn_opt (1 , DYN_EM)
+   call kj_swap_reverse (model_grid%g_u_2, grid%g_u_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%g_v_2, grid%g_v_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%g_w_2, grid%g_w_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%g_t_2, grid%g_t_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%g_ph_2, grid%g_ph_2, &
+                grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   grid%g_mu_2 = model_grid%g_mu_2
+   grid%g_rainnc = model_grid%g_rainnc
+   grid%g_rainncv = model_grid%g_rainncv
+   grid%g_rainc = model_grid%g_rainc
+   grid%g_raincv = model_grid%g_raincv
+
+   do i = PARAM_FIRST_SCALAR, num_moist
+      call kj_swap_reverse (model_grid%g_moist(:,:,:,i), grid%g_moist(:,:,:,i), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   enddo
 
    !---------------------------------------------------------------------------
    ! [1.0] Get the specific humidity increments from mixing ratio increments
@@ -114,26 +132,7 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    !-------------------------------------------------------------------------
 
 #ifdef DM_PARALLEL
-   allocate (utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
-   allocate (vtmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
-   allocate (ptmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme))
-
-   ! fill the halo region for g_u and g_v.
-   utmp=grid%xa%u
-   vtmp=grid%xa%v
-   ptmp=grid%xa%psfc
-   grid%xa%u=grid%g_u_2
-   grid%xa%v=grid%g_v_2
-#include "HALO_PSICHI_UV_ADJ.inc"
-   grid%g_u_2=grid%xa%u
-   grid%g_v_2=grid%xa%v
-   grid%xa%u=utmp
-   grid%xa%v=vtmp
-   grid%xa%psfc=ptmp
-
-   deallocate (utmp)
-   deallocate (vtmp)
-   deallocate (ptmp)
+#include "HALO_EM_C_TL.inc"
 #endif
 
    do k=ks,ke
@@ -149,13 +148,26 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    ! [6.0] all the simple ones
    !---------------------------------------------------------------------------
 
-   do j=js,je
-      do k=ks,ke+1
+   do k=ks,ke+1
+      do j=js,je
          do i=is,ie
             grid%xa%w(i,j,k)=grid%g_w_2(i,j,k)
          end do
       end do
    end do
+
+   if(var4d)then
+    if (size(grid%g_moist,dim=4) >= 4) then
+      do k=ks,ke
+         do j=js,je
+            do i=is,ie
+               grid%xa%qcw(i,j,k)=grid%g_moist(i,j,k,p_g_qc)
+               grid%xa%qrn(i,j,k)=grid%g_moist(i,j,k,p_g_qr)
+            end do
+         end do
+      end do
+    end if
+   endif
 
 #ifdef VAR4D_MICROPHYSICS
    ! New code needed once we introduce the microphysics to 4dvar in 2008
@@ -198,6 +210,7 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
 
    if (trace_use) call da_trace_exit("da_transfer_wrftltoxa")
 
+#endif
 end subroutine da_transfer_wrftltoxa
 
 

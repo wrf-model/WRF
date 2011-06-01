@@ -1,6 +1,6 @@
 subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp, &
-                           xbx, be, iv, xhat, cv, &
-                           re, y, j, grid, config_flags                     )
+                           cv_size_jl, xbx, be, iv, xhat, cv, &
+                           re, y, j, grad, grid, config_flags                     )
 
    !---------------------------------------------------------------------------
    ! Purpose: Initialises the Y-array
@@ -14,7 +14,8 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    integer, intent(in)                :: cv_size_jb ! Jb cv size.
    integer, intent(in)                :: cv_size_je ! Je cv size.
    integer, intent(in)                :: cv_size_jp ! Jp cv size.
-   type (xbx_type),intent(in)         :: xbx    ! For header & non-grid arrays.
+   integer, intent(in)                :: cv_size_jl ! Jl cv size.
+   type (xbx_type),intent(inout)      :: xbx    ! For header & non-grid arrays.
    type (be_type), intent(in)         :: be     ! background error structure.
    type (iv_type), intent(inout)      :: iv     ! innovation vector (o-b).
    real, intent(in)                   :: xhat(1:cv_size) ! control variables.
@@ -22,23 +23,28 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    type (y_type) , intent(inout)      :: re     ! residual vector (o-a).
    type (y_type) , intent(inout)      :: y      ! y = H(x_inc).
    type (j_type) , intent(out)        :: j      ! cost function j
+   real, intent(out)                  :: grad(cv_size)        ! gradient of cost function
 
    type(domain), intent(inout)  :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
 
    integer          :: je_start, je_end             ! Start/end indices of Je.
+   integer          :: jl_start, jl_end             ! Start/end indices of Je.
    real             :: jo_partial                   ! jo for this processor
    type (y_type)    :: jo_grad_y ! Grad_y(jo)
-   real             :: cv_jb(1:cv_size_jb)          ! Jb control variable.
-   real             :: xhat_jb(1:cv_size_jb)        ! Jb control variable.
-   real             :: cv_je(1:cv_size_je)          ! Je control variable.
-   real             :: xhat_je(1:cv_size_je)        ! Je control variable.
-   real, allocatable, dimension(:) :: cv_xhat_jb, cv_xhat_je
-   integer          :: ndynopt, is, ie, js, je, ks, ke
+   real             :: cv_xhat_jb(cv_size_jb), cv_xhat_je(cv_size_je), cv_xhat_jl(cv_size_jl)
+#ifdef CLOUD_CV
+   integer          :: mz(10)
+#else
+   integer          :: mz(7)
+#endif
+   integer          :: ndynopt
    real             :: dtemp1x
+   integer          :: i, jj, k
+   real             :: subarea, whole_area
 
    ! Variables for VarBC background constraint
-   real , allocatable, dimension(:)  :: cv_xhat_jp ! Jp control variable.
+   real                              :: cv_xhat_jp(cv_size_jp) ! Jp control variable.
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
    integer                           :: inst, ichan, npred, ipred, id
    real                              :: bgerr, gnorm_jp  
@@ -49,13 +55,21 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    
    if (trace_use) call da_trace_entry("da_calculate_j")
 
-   allocate(cv_xhat_jb(cv_size_jb))
-   allocate(cv_xhat_je(cv_size_je))
-   allocate(cv_xhat_jp(cv_size_jp))
-
-
+   !-------------------------------------------------------------------------
+   ! [0.0] initialization:
+   !-------------------------------------------------------------------------
+#ifdef CLOUD_CV
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%alpha%mz, be % ne /)
+#else
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
+#endif
    je_start = cv_size_jb + 1
-   je_end = cv_size_jb + cv_size_je
+   je_end   = cv_size_jb + cv_size_je
+   jl_start = cv_size_jb + cv_size_je + 1
+   jl_end = cv_size_jb + cv_size_je + cv_size_jl
+
+   jp_start = cv_size_jb + cv_size_je + 1
+   jp_end   = cv_size_jb + cv_size_je + cv_size_jp
 
    call da_allocate_y(iv, jo_grad_y)
 
@@ -67,7 +81,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    if (iter > 0) &
       call da_transform_vtoy(cv_size, be, grid%ep, xhat, iv, grid%vp, grid%vv,&
-                              xbx, y, &
+                              grid%vp6, grid%vv6, xbx, y, &
                               grid, config_flags                      )
 
    ! [1.2] compute residual (o-a) = (o-b) - h x~
@@ -89,52 +103,50 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    j % jc = 0.0
 
-   if ( var4d .and. grid%jcdfi_io .and. iter > 0 ) then
+   if ( var4d .and. (grid%jcdfi_use .or. grid%jcdfi_diag == 1) .and. iter > 0 ) then
 
-      ndynopt      = grid%dyn_opt
-      grid%dyn_opt = DYN_EM_TL
-      call nl_set_dyn_opt (1 , DYN_EM_TL)
+#ifdef VAR4D
 
-      call da_med_initialdata_input(grid , config_flags, 'tldf')
+      subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
+      whole_area = wrf_dm_sum_real(subarea)
 
-      grid%dyn_opt = ndynopt
-      call nl_set_dyn_opt (1 , DYN_EM)
+      ! Multipled by -1.0 because the calulated gradient of Jo will be multiplied by -1.0
 
-      is = grid%xp%ips
-      ie = grid%xp%ipe
-      if ( ie == grid%xp%ide ) ie = ie + 1
-      js = grid%xp%jps
-      je = grid%xp%jpe
-      if ( je == grid%xp%jde ) je = je + 1
-      ks = grid%xp%kps
-      ke = grid%xp%kpe
-      
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_u_2(is:ie,js:je,ks:ke), grid%g_u_2(is:ie,js:je,ks:ke) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_v_2(is:ie,js:je,ks:ke), grid%g_v_2(is:ie,js:je,ks:ke) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_t_2(is:ie,js:je,ks:ke), grid%g_t_2(is:ie,js:je,ks:ke) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1), grid%g_mu_2(is:ie,js:je), grid%g_mu_2(is:ie,js:je) )
-      j % jc = j % jc + 0.5*grid%jcdfi_gama*da_dot( (ie-is+1)*(je-js+1)*(ke-ks+1), grid%g_moist(is:ie,js:je,ks:ke,P_G_QV), grid%g_moist(is:ie,js:je,ks:ke,P_G_QV) )
+      do jj = jms, jme
+         do k = kms, kme
+            do i = ims, ime
+               j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_u(i,k,jj)**2 * &
+                     grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
+               j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,jj)**2 * &
+                     grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
+               j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,jj)**2 * &
+                     cp/280.0*grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
+            enddo
+         enddo
+      enddo
+      do jj = jms, jme
+         do i = ims, ime 
+            j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,jj)**2 * gas_constant * &
+                  280.0/(1.0e5**2)*grid%xb%grid_box_area(i,jj)/whole_area
+         enddo
+      enddo
 
       dtemp1x = j % jc
       ! summation across processors:
       j % jc  = wrf_dm_sum_real(dtemp1x)
 
+#endif
    end if
 
    !-------------------------------------------------------------------------
    ! [2.0] calculate jb:
    !-------------------------------------------------------------------------
 
-   cv_jb(1:cv_size_jb) = cv (1:cv_size_jb)
-   xhat_jb(1:cv_size_jb) = xhat (1:cv_size_jb)
-
-   cv_xhat_jb(1:cv_size_jb) = cv_jb(1:cv_size_jb) + xhat_jb(1:cv_size_jb)
-
-   j % jb = 0.5 * da_dot_cv(cv_size_jb, cv_size_domain_jb, &
-       cv_xhat_jb, cv_xhat_jb, grid, &
-       (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /))
-
-   j % jb = jb_factor * j % jb
+   j % jb = 0.0
+   if (cv_size_jb > 0) then
+      cv_xhat_jb(1:cv_size_jb) = cv(1:cv_size_jb) + xhat(1:cv_size_jb)
+      j % jb = jb_factor * 0.5 * da_dot_cv(cv_size_jb,  cv_xhat_jb, cv_xhat_jb, grid, mz)
+   end if
 
    !-------------------------------------------------------------------------
    ! [3.0] calculate je:
@@ -142,23 +154,28 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 
    j % je = 0.0
    if (be % ne > 0) then
-      cv_je(1:cv_size_je) = cv(je_start:je_end)
-      xhat_je(1:cv_size_je) = xhat(je_start:je_end)
-      cv_xhat_je(1:cv_size_je) = cv_je(1:cv_size_je) + xhat_je(1:cv_size_je)
-      j % je = 0.5 * da_dot_cv(cv_size_je, cv_size_domain_je, &
-          cv_xhat_je, cv_xhat_je, grid, &
-          (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /))
+      cv_xhat_je(1:cv_size_je) = cv(je_start:je_end) + xhat(je_start:je_end)
+      j % je = je_factor * 0.5 * da_dot_cv(cv_size_je, cv_xhat_je, cv_xhat_je, grid, mz)
    end if
-   j % je = je_factor * j % je
 
    !-------------------------------------------------------------------------
-   ! [4.0] calculate jp:
+   ! [4.0] calculate jl:
+   !-------------------------------------------------------------------------
+   j % jl = 0.0
+   if ( var4d ) then
+      cv_xhat_jl(1:cv_size_jl) = cv (jl_start:jl_end) + xhat(jl_start:jl_end)
+
+      j % jl = 0.5 * da_dot_cv(cv_size_jl, cv_xhat_jl, cv_xhat_jl, grid, mz)
+
+   endif
+
+   !-------------------------------------------------------------------------
+   ! [5.0] calculate jp:
    !-------------------------------------------------------------------------
    j % jp = 0.0
-   if (use_varbc) then
-      jp_start                 = cv_size_jb + cv_size_je + 1
-      jp_end                   = cv_size_jb + cv_size_je + cv_size_jp
-      cv_xhat_jp(1:cv_size_jp) = 0.0
+#if defined(RTTOV) || defined(CRTM)
+   if (use_varbc .and. cv_size_jp > 0) then
+      cv_xhat_jp = 0.0
       do inst = 1, iv % num_inst   
          do ichan = 1, iv%instid(inst)%nchan
             npred    = iv%instid(inst)%varbc(ichan)%npred
@@ -168,16 +185,16 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 	       bgerr  = iv%instid(inst)%varbc(ichan)%bgerr(ipred)
 	       if (bgerr > 0.0) &
     	          cv_xhat_jp(id-jp_start+1) = (1/sqrt(bgerr)) * &
-	             SUM( (cv(id)+xhat(id)) * &
-		     iv%instid(inst)%varbc(ichan)%vtox(ipred,1:npred))            
+	             SUM((cv(id)+xhat(id)) * iv%instid(inst)%varbc(ichan)%vtox(ipred,1:npred))            
 	    end do
          end do
       end do
       j % jp = 0.5 * da_dot(cv_size_jp, cv_xhat_jp, cv_xhat_jp)
    end if
+#endif
 
    !-------------------------------------------------------------------------
-   ! [5.0] calculate js:
+   ! [6.0] calculate js:
    !-------------------------------------------------------------------------
    j % js = 0.0
    if (ANY(use_satcv)) then
@@ -186,7 +203,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
          ! Skin Temperature
          !-----------------
 	    if (use_satcv(1)) then
-!               j % js = j % js + 0.5 * xhat(iv%instid(inst)%cv_index(n)%ts) **2
+               j % js = j % js + 0.5 * xhat(iv%instid(inst)%cv_index(n)%ts) **2
 	       
 !	       !!! Super-TMP dump of Tskin increment for plotting purposes
 !               if (iter > 0) iv%instid(inst)%tb_xb(1,n)  = xhat(iv%instid(inst)%cv_index(n)%ts) 
@@ -249,31 +266,35 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    end if
 
    !-------------------------------------------------------------------------
-   ! [6.0] calculate total cost function j = jo + jb + jc + je + jp + js:
+   ! [7.0] calculate total cost function j = jo + jb + jc + je + jp + js:
    !-------------------------------------------------------------------------
 
    j % total = j % jb + j % jo % total + j % je + j % jp + j % js
    if (grid%jcdfi_use) j % total = j % total  + j % jc
+   if (var4d) j % total = j % total  + j % jl
 
    !-------------------------------------------------------------------------
-   ! [7.0] write cost function:
+   ! [8.0] write cost function:
    !-------------------------------------------------------------------------
-   if (it == 1 .and. iter == 0 .and. rootproc) then
-      write(unit=cost_unit,fmt='(a)')'Outer    EPS     Inner      J           Jb       Jo           Jc         Je         Jp         Js'
-      write(unit=cost_unit,fmt='(a)')'Iter             Iter                            '
-   end if
-
    if (rootproc) then
-      write(unit=cost_unit,fmt='(2x,i2,1x,e10.3,2x,i4,7(1x,f10.3))') &
-         it, EPS(it), iter, j % total, j % jb, j % jo % total, j % jc, j % je, j % jp, j%js
+      if (it == 1 .and. iter == 0) then
+         write(unit=cost_unit,fmt='(a)')'Outer    EPS     Inner      J           Jb       Jo           Jc         Je         Jp         Js        jl'
+         write(unit=cost_unit,fmt='(a)')'Iter             Iter                            '
+         write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge           Gp           Gs        Gl'
+         write(unit=grad_unit,fmt='(a)')'Iter             Iter                            '
+      end if
+
+      write(unit=cost_unit,fmt='(2x,i2,1x,e10.3,2x,i4,8(1x,f10.3))') &
+         it, EPS(it), iter, j % total, j % jb, j % jo % total, j % jc, j % je, j % jp, j%js, j%jl
    end if
+         
+   !-------------------------------------------------------------------------
+   ! [8.0] Calculate Gradient:
+   !-------------------------------------------------------------------------
+   call da_calculate_gradj(it,iter,cv_size,cv_size_jb,cv_size_je,cv_size_jp, &
+                           cv_size_jl,xbx, be, iv, xhat+cv, y, grad, grid, config_flags, re)
 
-   deallocate(cv_xhat_jb)
-   deallocate(cv_xhat_je)
-   deallocate(cv_xhat_jp)
-
-   if (trace_use) call da_trace_exit("da_calculate_j")
+if (trace_use) call da_trace_exit("da_calculate_j")
 
 end subroutine da_calculate_j
-
 

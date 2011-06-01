@@ -41,10 +41,10 @@ analysis_date="2008-02-05_12:00:00.0000",
 &wrfvar20
 /
 &wrfvar21
-time_window_min="2008-02-05_12:00:00.0000",
+time_window_min="2008-02-05_11:00:00.0000",
 /
 &wrfvar22
-time_window_max="2008-02-05_18:00:00.0000",
+time_window_max="2008-02-05_13:00:00.0000",
 /
 &wrfvar23
 /
@@ -96,4 +96,6 @@ co2tf=0,
 &fire
 /
 &namelist_quilt
+/
+&perturbation
 /

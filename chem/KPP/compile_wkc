@@ -43,9 +43,9 @@ cd $KPP_HOME; make; cd $WRFC_ROOT
 echo "-----------------------------------------"
 
 
-( cd $WKC_HOME/util/wkc; linker.csh unlink )
+( cd $WKC_HOME/util/wkc; ./linker.csh unlink )
 
-( cd $WKC_HOME/util/wkc; linker.csh link )
+( cd $WKC_HOME/util/wkc; ./linker.csh link )
 
 #compile the coupler
 echo compile the coupler
@@ -111,7 +111,7 @@ echo $kdir
 
 # direct addressing in the decomp subroutine (similar to a code by
 #  Edwin Spee, CWI, Amsterdam)
- ( cd ${WKC_HOME}/util/write_decomp; write_decom.csh ${model} ../../.. )
+ ( cd ${WKC_HOME}/util/write_decomp; ./write_decom.csh ${model} ../../.. )
 
 end
 
@@ -142,7 +142,7 @@ if ( -e util/run_wkc ) then
 
    cd $WRFC_ROOT
 
-    chem/KPP/util/wkc/registry_kpp Registry/Registry.EM_CHEM
+    chem/KPP/util/wkc/registry_kpp -DDA_CORE=0 -DEM_CORE=1 -DBUILD_CHEM=1 Registry/Registry.EM_CHEM
    
    cd $WKC_HOME
 

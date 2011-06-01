@@ -12,17 +12,17 @@ module da_test
       ntasks_x, ntasks_y, data_order_xyz, mytask, &
       ntasks, data_order_xy
    use module_comm_dm, only : halo_psichi_uv_adj_sub, halo_xa_sub, &
-      halo_sfc_xa_sub, halo_ssmi_xa_sub
+      halo_sfc_xa_sub, halo_ssmi_xa_sub, halo_radar_xa_w_sub
 !  use mpi, only : mpi_sum
 #endif
 
-   use da_control, only : num_procs                                
+   use da_control, only : num_procs, var4d_bin, var4d_lbc                                
    use module_domain, only : vp_type, xb_type, x_type, ep_type, &
-      domain
+      domain, domain_clock_get, domain_clock_set, domain_clockprint, domain_clockadvance
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_a_qv
 
    use da_control, only : trace_use,ierr, trace_use_dull, comm,global,stdout,rootproc, &
-      sfc_assi_options,typical_qrn_rms, &
+      sfc_assi_options,typical_qrn_rms,typical_qci_rms,jcdfi_use, jcdfi_diag, &
       typical_u_rms,typical_v_rms,typical_w_rms,typical_t_rms, typical_p_rms, &
       typical_q_rms,typical_qcw_rms,print_detail_testing,typical_rh_rms, &
       fg_format, fg_format_wrf_arw_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
@@ -38,16 +38,18 @@ module da_test
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar,&
       bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs, &
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
-      use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, &
+      use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
-      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size, &
+      cloud_cv_options, cp, gas_constant
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type
    use da_dynamics, only : da_uv_to_divergence,da_uv_to_vorticity, &
       da_psichi_to_uv, da_psichi_to_uv_adj
    use da_ffts, only : da_solve_poissoneqn_fct
-   use da_minimisation, only : da_transform_vtoy_adj,da_transform_vtoy
+   use da_minimisation, only : da_transform_vtoy_adj,da_transform_vtoy, da_swap_xtraj, &
+       da_read_basicstates
    use da_obs, only : da_transform_xtoy,da_transform_xtoy_adj
    use da_par_util, only : da_patch_to_global, da_system
 #ifdef DM_PARALLEL
@@ -56,7 +58,8 @@ module da_test
    use da_physics, only : da_transform_xtopsfc,da_transform_xtopsfc_adj, &
       da_pt_to_rho_lin,da_transform_xtotpw,da_transform_xtogpsref_lin, &
       da_transform_xtowtq, da_transform_xtowtq_adj,da_pt_to_rho_adj, &
-      da_transform_xtotpw_adj, da_transform_xtoztd_lin, da_transform_xtoztd_adj
+      da_transform_xtotpw_adj, da_transform_xtoztd_lin, da_transform_xtoztd_adj, &
+      da_moist_phys_lin, da_moist_phys_adj, da_uvprho_to_w_lin, da_uvprho_to_w_adj
    use da_reporting, only : da_error, message, da_message
    use da_spectral, only : da_test_spectral
    use da_ssmi, only : da_transform_xtoseasfcwind_lin, &
@@ -65,7 +68,7 @@ module da_test
    use da_tools_serial, only : da_get_unit,da_free_unit
    use da_tracing, only : da_trace_entry,da_trace_exit
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
-      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj
+      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj, da_setup_firstguess
    ! Don't use, as we pass a 3D array into a 1D one
    ! use da_wrf_interfaces, only : wrf_dm_bcast_real
    use da_wrf_interfaces, only : wrf_debug, wrf_shutdown
@@ -77,6 +80,10 @@ module da_test
       da_transform_vtovv_global_adj, da_transform_vtovv_adj, da_transform_xtoxa, &
       da_transform_xtoxa_adj, da_apply_be, da_apply_be_adj, da_transform_bal, &
       da_transform_bal_adj
+#ifdef VAR4D
+   use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, da_get_2nd_firstguess
+   use da_4dvar, only : model_grid, da_tl_model, da_ad_model, input_nl_xtraj, upsidedown_ad_forcing
+#endif
 
    implicit none
 

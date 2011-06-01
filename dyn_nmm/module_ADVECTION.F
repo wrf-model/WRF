@@ -1038,7 +1038,6 @@
      &       ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                           &
      &       ,Q00,Q4P,QP,QP0                                            &
      &       ,rdpdn,rdpup,sfacek,sfacqk,sfacwk,RFC,RR                   &
-     &       ,rfacqk,rfacwk,rfacek,top,bot,dpdn,dpup                    &
      &       ,SUMNE,SUMNQ,SUMNW,SUMPE,SUMPQ,SUMPW                       &
      &       ,W00,W4P,WP,WP0
 !
@@ -2942,9 +2941,868 @@
       END SUBROUTINE HAD2_SCAL
 !
 !-----------------------------------------------------------------------
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        subroutine adv2 &
+(UPSTRM &
+,mype,kss,kse &
+,ids,ide,jds,jde,kds,kde &
+,ims,ime,jms,jme,kms,kme &
+,its,ite,jts,jte,kts,kte &
+,N_IUP_H &
+,N_IUP_ADH &
+,IUP_H,IUP_ADH &
+,ENT &
+,idtad &
+,dt,pdtop &
+,ihe,ihw,ive,ivw &
+,deta1,deta2 &
+,EMT_LOC &
+,fad,hbm2,pdsl,pdslo &
+,petdt &
+,UOLD,VOLD &
+,s,sp &
+!---temporary arguments-------------------------------------------------
+,fne,fse,few,fns,s1,tcs)
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+implicit none
+!-----------------------------------------------------------------------
+real,parameter:: &
+ cfc=1.533 &                 ! adams-bashforth positioning in time
+,bfc=1.-cfc &                ! adams bashforth positioning in time
+,cflc=9.005 &                !
+,epsq=1.e-20 &               ! floor value for specific humidity
+,epsq2=0.2 &                 ! floor value for 2tke
+,epscm=2.e-6 &               ! a floor value (not used)
+,w1=1.0 &                    ! crank-nicholson uncentering
+!,w1=-1.00 &                  ! crank-nicholson uncentering
+,w2=2.-w1                    ! crank-nicholson uncentering
+
+logical,intent(in):: &
+ upstrm
+
+integer,intent(in):: &
+ idtad &                     ! time step multiplier
+,kse &                       ! terminal species index
+,kss &                       ! initial species index
+,mype &                      !
+,ids,ide,jds,jde,kds,kde &
+,ims,ime,jms,jme,kms,kme &
+,its,ite,jts,jte,kts,kte
+
+real,intent(in):: &
+ ent &                       !
+,dt &                        ! dynamics time step
+,pdtop                       !
+
+real,dimension(kts:kte),intent(in):: &
+ deta1 &                     ! delta sigmas
+,deta2                       ! delta pressures
+
+integer,dimension(jms:jme),intent(in):: &
+ ihe,ihw,ive,ivw &
+,n_iup_adh,n_iup_h
+
+integer,dimension(ims:ime,jms:jme),intent(in):: &
+ iup_h,iup_adh
+
+real,dimension(2600),intent(in):: & !!!zj see nmm_max_dim in adve !!!zj
+ emt_loc
+
+real,dimension(ims:ime,jms:jme),intent(in):: &
+ fad &                       !
+,hbm2 &                      !
+,pdsl &                      ! sigma range pressure difference
+,pdslo                       ! sigma range pressure difference
+
+real,dimension(ims:ime,jms:jme,kms:kme),intent(in):: &
+ petdt &                     ! vertical mass flux
+,uold,vold
+
+real,dimension(ims:ime,jms:jme,kms:kme,kss:kse),intent(inout):: &
+ s                           ! tracers
+
+real,dimension(ims:ime,jms:jme,kms:kme,kss:kse),intent(inout):: &
+ sp                          ! s at previous time level
+
+!---temporary arguments-------------------------------------------------
+real,dimension(ims:ime,jms:jme,kms:kme),intent(in):: &
+ fne &                       ! mass flux, ne direction
+,fse &                       ! mass flux, se direction
+,few &                       ! mass flux, x direction
+,fns                         ! mass flux, y direction
+
+real,dimension(ims:ime,jms:jme,kms:kme,kss:kse),intent(inout):: &
+ s1 &                        ! intermediate value of s
+,tcs                         ! timechange of s
+
+!--local variables------------------------------------------------------
+integer:: &
+ i &                         !
+,j &                         !
+,k &                         !
+,ks                          !
+
+      INTEGER :: IEND,IFP,IFQ,II,IPQ,ISP,ISQ,ISTART &
+     &          ,IUP_ADH_J &
+     &          ,J1,JA,JAK,JEND,JGLOBAL,JJ,JKNT,JP2,JSTART &
+     &          ,KNTI_ADH,KSTART,KSTOP &
+     &          ,N,N_IUPH_J,N_IUPADH_J,N_IUPADV_J
+
+      INTEGER :: MY_IS_GLB,MY_IE_GLB,MY_JS_GLB,MY_JE_GLB
+
+real:: &
+ cf &                        ! temporary
+,cms &                       ! temporary
+,dtq &                       ! dt/4
+,fahp &                      ! temporary grid factor
+,sn &                        !
+,rdp &                       ! 1/deltap
+,vvlo &                      ! vertical velocity, lower interface
+,vvup &                      ! vertical velocity, upper interface
+,pvvup                       ! vertical mass flux, upper interface
+
+      REAL :: ARRAY3_X &
+     &       ,F0,F1,F2,F3 &
+     &       ,PP &
+     &       ,QP &
+     &       ,TEMPA,TEMPB,TTA,TTB
+
+real,dimension(kts:kte):: &
+ deta1_pdtop                 !
+
+      INTEGER,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: ISPA,ISQA
+
+real,dimension(its-5:ite+5,jts-5:jte+5):: &
+ pdop &                      ! hydrostatic pressure difference at h points
+,pvvlo &                     ! vertical mass flux, lower interface
+,ss1 &                       ! extrapolated species between time levels
+,ssne &                      ! flux, ne direction
+,ssse &                      ! flux, nw direction
+,ssx &                       ! flux, x direction
+,ssy                         ! flux, y direction
+
+      REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: ARRAY0,ARRAY1 &
+     &                                          ,ARRAY2,ARRAY3
+
+real,dimension(its-5:ite+5,jts-5:jte+5,kts:kte):: &
+ crs &                       ! vertical advection temporary
+,rcms                        ! vertical advection temporary
+
+real,dimension(its-5:ite+5,jts-5:jte+5,kts:kte,kss:kse):: &
+ rsts                        ! vertical advection temporary
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      DO J=JTS-5,JTE+5
+        DO I=ITS-5,ITE+5
+          pdop (i,j)=0.
+          pvvlo(i,j)=0.
+          ss1  (i,j)=0.
+          ssne (i,j)=0.
+          ssse (i,j)=0.
+        enddo
+      enddo
+!
+      DO K=KTS,KTE
+        DO J=JTS-5,JTE+5
+          DO I=ITS-5,ITE+5
+            crs (i,j,k)=0.
+            rcms(i,j,k)=0.
+          enddo
+        enddo
+      enddo
+!
+      do ks=kss,kse
+        DO K=KTS,KTE
+          DO J=JTS-5,JTE+5
+            DO I=ITS-5,ITE+5
+              rsts(i,j,k,ks)=0.
+              s1  (i,j,k,ks)=0.
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      do ks=kss,kse
+        DO K=KMS,KME
+          DO J=JMS,JME
+            DO I=IMS,IME
+              s1 (i,j,k,ks)=0.
+              tcs(i,j,k,ks)=0.
+            enddo
+          enddo
+        enddo
+      enddo
+!-----------------------------------------------------------------------
+      do k=kts,kte
+        deta1_pdtop(k)=deta1(k)*pdtop
+      enddo
+!-----------------------------------------------------------------------
+      do ks=kss,kse ! loop by species
+!-----------------------------------------------------------------------
+        DO K=KTS,KTE
+          DO J=MYJS_P4,MYJE_P4
+            DO I=MYIS_P4,MYIE_P4
+              s1(i,j,k,ks)=sqrt(s(i,j,k,ks))
+            enddo
+          enddo
+        enddo
+!-----------------------------------------------------------------------
+      enddo ! end of the loop by species
+!-----------------------------------------------------------------------
+      DO J=MYJS_P4,MYJE_P4
+        DO I=MYIS_P4,MYIE_P4
+          pdop(i,j)=(pdslo(i,j)+pdsl(i,j))*0.5
+        enddo
+      enddo
+!---crank-nicholson vertical advection----------------------------------
+      dtq=dt*idtad*0.25
+
+      DO J=MYJS2,MYJE2
+        DO I=MYIS1,MYIE1
+          pvvlo(i,j)=petdt(i,j,kte-1)*dtq
+          vvlo=pvvlo(i,j)/(deta2(kte)*pdop(i,j)+deta1_pdtop(kte))
+!
+          cms=-vvlo*w2+1.
+          rcms(i,j,kte)=1./cms
+          crs(i,j,kte)=vvlo*w2
+!
+          do ks=kss,kse
+            rsts(i,j,kte,ks)=(-vvlo*w1) &
+                            *(s1(i,j,kte-1,ks)-s1(i,j,kte,ks)) &
+                            +s1(i,j,kte,ks)
+          enddo
+        enddo
+      enddo
+      DO K=KTE-1,KTS+1,-1
+        DO J=MYJS2,MYJE2
+          DO I=MYIS1,MYIE1
+            rdp=1./(deta2(k)*pdop(i,j)+deta1_pdtop(k))
+            pvvup=pvvlo(i,j)
+            pvvlo(i,j)=petdt(i,j,k-1)*dtq
+!
+            vvup=pvvup*rdp
+            vvlo=pvvlo(i,j)*rdp
+!
+!            if(abs(vvlo).gt.cflc) then
+!              if(vvlo.lt.0.) then
+!                vvlo=-cflc
+!              else
+!                vvlo= cflc
+!              endif
+!            endif
+!
+            cf=-vvup*w2*rcms(i,j,k+1)
+            cms=-crs(i,j,k+1)*cf+((vvup-vvlo)*w2+1.)
+            rcms(i,j,k)=1./cms
+            crs(i,j,k)=vvlo*w2
+!
+            do ks=kss,kse
+              rsts(i,j,k,ks)=-rsts(i,j,k+1,ks)*cf+s1(i,j,k,ks) &
+                             -(s1(i,j,k  ,ks)-s1(i,j,k+1,ks))*vvup*w1 &
+                             -(s1(i,j,k-1,ks)-s1(i,j,k  ,ks))*vvlo*w1
+            enddo
+          enddo
+        enddo
+      enddo
+      DO J=MYJS2,MYJE2
+        DO I=MYIS1,MYIE1
+          pvvup=pvvlo(i,j)
+          vvup=pvvup/(deta2(kts)*pdop(i,j)+deta1_pdtop(kts))
+!
+          cf=-vvup*w2*rcms(i,j,kts+1)
+          cms=-crs(i,j,kts+1)*cf+(vvup*w2+1.)
+          rcms(i,j,kts)=1./cms
+          crs(i,j,kts)=0.
+!
+          do ks=kss,kse
+            rsts(i,j,kts,ks)=-rsts(i,j,kts+1,ks)*cf+s1(i,j,kts,ks) &
+                             -(s1(i,j,kts,ks)-s1(i,j,kts+1,ks))*vvup*w1
+!
+            tcs(i,j,kts,ks)=rsts(i,j,kts,ks)*rcms(i,j,kts)-s1(i,j,kts,ks)
+          enddo
+        enddo
+      enddo
+      do ks=kss,kse
+        DO K=KTS+1,KTE
+          DO J=MYJS2,MYJE2
+            DO I=MYIS1,MYIE1
+              tcs(i,j,k,ks)=(-crs(i,j,k)*(s1(i,j,k-1,ks)+tcs(i,j,k-1,ks)) &
+                             +rsts(i,j,k,ks)) &
+                           *rcms(i,j,k)-s1(i,j,k,ks)
+            enddo
+          enddo
+        enddo
+      enddo
+!-----------------------------------------------------------------------
+      do ks=kss,kse ! loop by species
+!-----------------------------------------------------------------------
+        DO K=KTS,KTE
+          DO J=MYJS_P5,MYJE_P5
+            DO I=MYIS_P5,MYIE_P5
+              ss1(i,j)=s1(i,j,k,ks)*cfc+sp(i,j,k,ks)*bfc
+              sp(i,j,k,ks)=s1(i,j,k,ks)
+            enddo
+          enddo
+!---fluxes--------------------------------------------------------------
+          DO J=MYJS1_P2,MYJE1_P2
+            DO I=MYIS_P2,MYIE_P3
+              ssx(i,j)=(ss1(i+ive(j),j  )-ss1(i+ivw(j),j  ))*few(i,j,k) &
+                      *hbm2(i,j)
+              ssy(i,j)=(ss1(i       ,j+1)-ss1(i       ,j-1))*fns(i,j,k) &
+                      *hbm2(i,j)
+            enddo
+          enddo
+          DO J=MYJS1_P2,MYJE2_P2
+            DO I=MYIS_P2,MYIE_P2
+              ssne(i,j)=(ss1(i+ihe(j),j+1)-ss1(i,j))*fne(i,j,k)*hbm2(i,j)
+            enddo
+          enddo
+          DO J=MYJS2_P2,MYJE1_P2
+            DO I=MYIS_P2,MYIE_P2
+              ssse(i,j)=(ss1(i+ihe(j),j-1)-ss1(i,j))*fse(i,j,k)*hbm2(i,j)
+            enddo
+          enddo
+!---advection of species------------------------------------------------
+          DO J=MYJS5,MYJE5
+            DO I=MYIS2,MYIE2
+              tcs(i,j,k,ks)=((ssx (i+ihw(j),j  )+ssx (i+ihe(j),j  ) &
+                             +ssy (i       ,j-1)+ssy (i       ,j+1) &
+                             +ssne(i+ihw(j),j-1)+ssne(i       ,j  ) &
+                             +ssse(i       ,j  )+ssse(i+ihw(j),j+1)) &
+                            *fad(i,j)*2.0*idtad &   !! 2.0 compensates for fad
+                            /(deta2(k)*pdop(i,j)+deta1_pdtop(k)) &
+                           +tcs(i,j,k,ks))*hbm2(i,j)
+            enddo
+          enddo
+!-----------------------------------------------------------------------
+!
+!***  upstream advection
+!
+!-----------------------------------------------------------------------
+!
+          upstream: IF(UPSTRM)THEN
+!
+!-----------------------------------------------------------------------
+!***
+!***  COMPUTE UPSTREAM COMPUTATIONS ON THIS TASK'S ROWS.
+!***
+!-----------------------------------------------------------------------
+!
+            jloop_upstream: DO J=MYJS2,MYJE2
+!
+              N_IUPH_J=N_IUP_H(J)   ! See explanation in START_DOMAIN_NMM
+              DO II=0,N_IUPH_J-1
+!
+                I=IUP_H(IMS+II,J)
+                tta=emt_loc(j) &
+                   *(uold(i       ,j-1,k)+uold(i+ihw(j),j  ,k) &
+                    +uold(i+ihe(j),j  ,k)+uold(i       ,j+1,k))
+                ttb=ent &
+                   *(vold(i       ,j-1,k)+vold(i+ihw(j),j  ,k) &
+                    +vold(i+ihe(j),j  ,k)+vold(i       ,j+1,k))
+                PP=-TTA-TTB
+                QP= TTA-TTB
+!
+                IF(PP<0.)THEN
+                  ISPA(I,J)=-1
+                ELSE
+                  ISPA(I,J)= 1
+                ENDIF
+!
+                IF(QP<0.)THEN
+                  ISQA(I,J)=-1
+                ELSE
+                  ISQA(I,J)= 1
+                ENDIF
+!
+                PP=ABS(PP)
+                QP=ABS(QP)
+                ARRAY3_X=PP*QP
+                ARRAY0(I,J)=ARRAY3_X-PP-QP
+                ARRAY1(I,J)=PP-ARRAY3_X
+                ARRAY2(I,J)=QP-ARRAY3_X
+                ARRAY3(I,J)=ARRAY3_X
+              ENDDO
+!
+!-----------------------------------------------------------------------
+!
+              N_IUPADH_J=N_IUP_ADH(J)
+              KNTI_ADH=1
+              IUP_ADH_J=IUP_ADH(IMS,J)
+!
+              iloop_T: DO II=0,N_IUPH_J-1
+!
+                I=IUP_H(IMS+II,J)
+!
+                ISP=ISPA(I,J)
+                ISQ=ISQA(I,J)
+                IFP=(ISP-1)/2
+                IFQ=(-ISQ-1)/2
+                IPQ=(ISP-ISQ)/2
+!
+!-----------------------------------------------------------------------
+!
+                IF(I==IUP_ADH_J)THEN  ! Upstream advection T tendencies
+!
+                  ISP=ISPA(I,J)
+                  ISQ=ISQA(I,J)
+                  IFP=(ISP-1)/2
+                  IFQ=(-ISQ-1)/2
+                  IPQ=(ISP-ISQ)/2
+!
+                  F0=ARRAY0(I,J)
+                  F1=ARRAY1(I,J)
+                  F2=ARRAY2(I,J)
+                  F3=ARRAY3(I,J)
+!
+                  tcs(i,j,k,ks)=(f0*s1(i,j,k,ks) &
+     &                          +f1*s1(i+ihe(j)+ifp,j+isp,k,ks) &
+     &                          +f2*s1(i+ihe(j)+ifq,j+isq,k,ks) &
+     &                          +f3*s1(i+ipq,j+isp+isq,k,ks))*2.0 &
+     &                          *idtad &
+     &                         +tcs(i,j,k,ks)*hbm2(i,j)
+!
+!-----------------------------------------------------------------------
+!
+                  IF(KNTI_ADH<N_IUPADH_J)THEN
+                    IUP_ADH_J=IUP_ADH(IMS+KNTI_ADH,J)
+                    KNTI_ADH=KNTI_ADH+1
+                  ENDIF
+!
+                ENDIF  ! End of upstream advection tendency IF block
+!
+              ENDDO iloop_T
+!
+!-----------------------------------------------------------------------
+            enddo jloop_upstream
+!-----------------------------------------------------------------------
+          endif upstream
+!-----------------------------------------------------------------------
+        enddo ! kts,kte
+!-----------------------------------------------------------------------
+      enddo ! end of the loop by the species
+!-----------------------------------------------------------------------
+                        endsubroutine adv2
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        subroutine mono &
+( &
+#if defined(DM_PARALLEL)
+ domdesc, &
+#endif
+ mype,ntsd,hours,kss,kse &
+,ids,ide,jds,jde,kds,kde &
+,ims,ime,jms,jme,kms,kme &
+,its,ite,jts,jte,kts,kte &
+,idtad &
+,dy,pdtop &
+,sumdrrw &
+,ihe,ihw &
+,deta1,deta2 &
+,dx,hbm2,pd &
+,s &
+!---temporary arguments-------------------------------------------------
+,s1,tcs)
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+implicit none
+!-----------------------------------------------------------------------
+real,parameter:: &
+ epsq=1.e-20 &               ! floor value for specific humidity
+,epsq2=0.02                  ! floor value for 2tke
+
+#ifdef DM_PARALLEL
+      INTEGER :: DOMDESC
+#endif
+
+integer,intent(in):: &
+ idtad &                     ! time step multiplier
+,kse &                       ! terminal species index
+,kss &                       ! initial species index
+,mype &                      !
+,ntsd &                      !
+,ids,ide,jds,jde,kds,kde &
+,ims,ime,jms,jme,kms,kme &
+,its,ite,jts,jte,kts,kte
+
+real,intent(in):: &
+ dy &                        !
+,pdtop &                     !
+,hours                       !
+
+real,intent(inout):: &
+ sumdrrw
+
+integer,dimension(jms:jme),intent(in):: &
+ ihe,ihw
+
+real,dimension(kts:kte),intent(in):: &
+ deta1 &                     ! delta sigmas
+,deta2                       ! delta sigmas
+
+real,dimension(ims:ime,jms:jme),intent(in):: &
+ dx &                        !
+,hbm2 &                      !
+,pd                          ! sigma range pressure difference
+
+real,dimension(ims:ime,jms:jme,kms:kme,kss:kse),intent(in):: &
+ s                           ! s
+!---temporary arguments-------------------------------------------------
+real,dimension(ims:ime,jms:jme,kms:kme,kss:kse),intent(inout):: &
+ s1 &                        ! intermediate value of s
+,tcs                         ! timechange of s
+!--local variables------------------------------------------------------
+integer:: &
+ i &                         !
+,ierr &                      !
+,irecv &                     !
+,j &                         !
+,k &                         !
+,ks &                        !
+,lngth &                     !
+,mpi_comm_comp               !
+
+real:: &
+ dsks &                      !
+,dvolp &                     !
+,rfacs &                     !
+,s1p &                       !
+,sfacs &                     !
+,smax &                      ! local maximum
+,smin &                      ! local minimum
+,smaxh &                     ! horizontal local maximum
+,sminh &                     ! horizontal local minimum
+,smaxv &                     ! vertical local maximum
+,sminv &                     ! vertical local minimum
+,sn &                        !
+,sumns &                     !
+,sumps &                     !
+,steep
+
+double precision:: &
+ xsmp,gsmp
+
+double precision,dimension(2*kss-1:2*kse):: &
+ vgsms
+
+real,dimension(kts:kte):: &
+ deta1_pdtop                 !
+
+real,dimension(2*kss-1:2*kse,kts:kte):: &
+ gsms_single                 !
+
+double precision,dimension(2*kss-1:2*kse,kts:kte):: &
+ gsms &                      ! sum of neg/pos changes all global fields
+,xsms                        ! sum of neg/pos changes all local fields
+
+double precision,dimension(2*kss-1:2*kse):: &
+ vgsums                      !
+
+real,dimension(its-5:ite+5,jts-5:jte+5,kts:kte):: &
+ dvol &                      ! grid box volume
+,rdvol                       ! 1./grid box volume
+
+logical, save :: first=.true.
+real, save :: sumrrw_first, summass_first
+real :: summass
+double precision, save :: gsmp_first
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!     steep=1.-0.040*idtad
+      steep=1.
+
+      DO K=KTS,KTE
+        deta1_pdtop(k)=deta1(k)*pdtop
+      enddo
+!
+      DO K=KTS,KTE
+        DO J=MYJS2,MYJE2
+          DO I=MYIS1,MYIE1
+            dvolp=(deta2(k)*pd(i,j)+deta1_pdtop(k))*dx(i,j)*dy
+            rdvol(i,j,k)=hbm2(i,j)/dvolp
+            dvol (i,j,k)=hbm2(i,j)*dvolp
+          enddo
+        enddo
+      enddo
+
+!      go to 109
+!---monotonization------------------------------------------------------
+      do ks=kss,kse ! loop by species
+!-----------------------------------------------------------------------
+        DO K=KTS,KTE
+          xsms(2*ks-1,k)=0.
+          xsms(2*ks  ,k)=0.
+          gsms(2*ks-1,k)=0.
+          gsms(2*ks  ,k)=0.
+!
+          DO J=MYJS2,MYJE2
+            DO I=MYIS1,MYIE1
+!
+              s1p=(s1(i,j,k,ks)+tcs(i,j,k,ks))**2
+              tcs(i,j,k,ks)=s1p-s(i,j,k,ks)
+!
+              sminh=min(s(i       ,j-2,k,ks) &
+                       ,s(i+ihw(j),j-1,k,ks) &
+                       ,s(i+ihe(j),j-1,k,ks) &
+                       ,s(i-1     ,j  ,k,ks) &
+                       ,s(i       ,j  ,k,ks) &
+                       ,s(i+1     ,j  ,k,ks) &
+                       ,s(i+ihw(j),j+1,k,ks) &
+                       ,s(i+ihe(j),j+1,k,ks) &
+                       ,s(i       ,j+2,k,ks))
+              smaxh=max(s(i       ,j-2,k,ks) &
+                       ,s(i+ihw(j),j-1,k,ks) &
+                       ,s(i+ihe(j),j-1,k,ks) &
+                       ,s(i-1     ,j  ,k,ks) &
+                       ,s(i       ,j  ,k,ks) &
+                       ,s(i+1     ,j  ,k,ks) &
+                       ,s(i+ihw(j),j+1,k,ks) &
+                       ,s(i+ihe(j),j+1,k,ks) &
+                       ,s(i       ,j+2,k,ks))
+!
+              if(k.gt.kts.and.k.lt.kte) then
+                sminv=min(s(i,j,k-1,ks),s(i,j,k  ,ks),s(i,j,k+1,ks))
+                smaxv=max(s(i,j,k-1,ks),s(i,j,k  ,ks),s(i,j,k+1,ks))
+              elseif(k.eq.kts) then
+                sminv=min(s(i,j,k  ,ks),s(i,j,k+1,ks))
+                smaxv=max(s(i,j,k  ,ks),s(i,j,k+1,ks))
+              elseif(k.eq.kte) then
+                sminv=min(s(i,j,k-1,ks),s(i,j,k  ,ks))
+                smaxv=max(s(i,j,k-1,ks),s(i,j,k  ,ks))
+              endif
+!
+              smin=min(sminh,sminv)
+              smax=max(smaxh,smaxv)
+!
+              sn=s1p
+              if(sn.gt.steep*smax) sn=smax
+              if(sn.lt.      smin) sn=smin
+!
+              dsks=(sn-s1p)*dvol(i,j,k)
+              s1(i,j,k,ks)=dsks
+              if(dsks.gt.0.) then
+                xsms(2*ks-1,k)=xsms(2*ks-1,k)+dsks
+              else
+                xsms(2*ks  ,k)=xsms(2*ks  ,k)+dsks
+              endif
+!
+            enddo
+          enddo
+        enddo
+!-----------------------------------------------------------------------
+      enddo ! end of the loop by species
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!***  GLOBAL REDUCTION
+!-----------------------------------------------------------------------
+!
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
+      CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
+      lngth=(2*kse-2*kss+2)*(KTE-KTS+1)
+      CALL MPI_ALLREDUCE(XSMS,GSMS,lngth                              &
+     &                  ,MPI_DOUBLE_PRECISION,MPI_SUM                   &
+     &                  ,MPI_COMM_COMP,IRECV)
+# else
+      DO K=KTS,KTE
+        do ks=kss,kse
+          gsms(2*ks-1,k)=xsms(2*ks-1,k)
+          gsms(2*ks  ,k)=xsms(2*ks  ,k)
+        enddo
+      enddo
+# endif
+!
+      DO K=KTS,KTE
+        do ks=kss,kse
+          gsms_single(2*ks-1,k)=gsms(2*ks-1,k)
+          gsms_single(2*ks  ,k)=gsms(2*ks  ,k)
+        enddo
+      enddo
+!
+!-----------------------------------------------------------------------
+!***  END OF GLOBAL REDUCTION
+!-----------------------------------------------------------------------
+!
+!dusan!---forced conservation after monotonization----------------------------
+!dusan      do ks=kss,kse
+!dusan        DO K=KTS,KTE
+!dusan          sumps=gsms_single(2*ks-1,k)
+!dusan          sumns=gsms_single(2*ks  ,k)
+!dusan!
+!dusan          if(sumps*(-sumns).gt.1.) then
+!dusan            sfacs=-sumns/sumps
+!dusan            rfacs=1./sfacs
+!dusan          else
+!dusan            sfacs=0.
+!dusan            rfacs=0.
+!dusan          endif
+!dusan!
+!dusan          DO J=MYJS2,MYJE2
+!dusan            DO I=MYIS1,MYIE1
+!dusan              dsks=s1(i,j,k,ks)*rdvol(i,j,k)
+!dusan              if(sfacs.gt.1.) then
+!dusan                if(dsks.lt.0.) dsks=dsks*rfacs
+!dusan!zjtest                if(dsks.lt.0.) dsks=dsks
+!dusan              else
+!dusan                if(dsks.ge.0.) dsks=dsks*sfacs
+!dusan              endif
+!dusan              tcs(i,j,k,ks)=tcs(i,j,k,ks)+dsks
+!dusan            enddo
+!dusan          enddo
+!dusan        enddo
+!dusan!-----------------------------------------------------------------------
+!dusan      enddo ! end of the loop by species
+
+!---forced conservation after monotonization----------------------------
+      do ks=kss,kse
+        vgsums(2*ks-1)=0.
+        vgsums(2*ks  )=0.
+        DO K=KTS,KTE
+          vgsums(2*ks-1)=gsms(2*ks-1,k)+vgsums(2*ks-1)
+          vgsums(2*ks  )=gsms(2*ks  ,k)+vgsums(2*ks  )
+        enddo
+      enddo
+
+      do ks=kss,kse
+        sumps=vgsums(2*ks-1)
+        sumns=vgsums(2*ks  )
+!
+        if(sumps*(-sumns).gt.1.) then
+          sfacs=-sumns/sumps
+          rfacs=1./sfacs
+        else
+          sfacs=0.
+          rfacs=0.
+        endif
+!
+        DO K=KTS,KTE
+          DO J=MYJS2,MYJE2
+            DO I=MYIS1,MYIE1
+              dsks=s1(i,j,k,ks)*rdvol(i,j,k)
+              if(sfacs.lt.1.) then
+                if(dsks.gt.0.) dsks=dsks*sfacs
+              endif
+              tcs(i,j,k,ks)=tcs(i,j,k,ks)+dsks
+            enddo
+          enddo
+        enddo
+!-----------------------------------------------------------------------
+      enddo ! end of the loop by species
+109   continue
+!-----------------------------------------------------------------------
+!zjwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+!-----------------------------------------------------------------------
+      do ks=kss,kse ! loop by species
+        DO K=KTS,KTE
+          xsms(2*ks-1,k)=0.
+          xsms(2*ks  ,k)=0.
+          gsms(2*ks-1,k)=0.
+          gsms(2*ks  ,k)=0.
+!
+          DO J=MYJS2,MYJE2
+            DO I=MYIS1,MYIE1
+              xsms(2*ks-1,k)=xsms(2*ks-1,k)+s  (i,j,k,ks)*dvol(i,j,k)
+              xsms(2*ks  ,k)=xsms(2*ks  ,k)+tcs(i,j,k,ks)*dvol(i,j,k)
+            enddo
+          enddo
+        enddo
+      enddo
+!
+      xsmp=0.
+      DO J=MYJS2,MYJE2
+        DO I=MYIS1,MYIE1
+          xsmp=pd(i,j)*dx(i,j)*dy*hbm2(i,j)+xsmp
+        enddo
+      enddo
+!
+!-----------------------------------------------------------------------
+!***  GLOBAL REDUCTION
+!-----------------------------------------------------------------------
+!
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
+      CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
+      lngth=1
+      CALL MPI_ALLREDUCE(xsmp,gsmp,lngth                                &
+     &                  ,MPI_DOUBLE_PRECISION,MPI_SUM                   &
+     &                  ,MPI_COMM_COMP,IRECV)
+# else
+      gsmp=xsmp
+# endif
+!
+!-----------------------------------------------------------------------
+!***  END OF GLOBAL REDUCTION
+!-----------------------------------------------------------------------
+!
+!
+!-----------------------------------------------------------------------
+!***  GLOBAL REDUCTION
+!-----------------------------------------------------------------------
+!
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
+      CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
+      lngth=(2*kse-2*kss+2)*(KTE-KTS+1)
+      CALL MPI_ALLREDUCE(XSMS,GSMS,lngth                                &
+     &                  ,MPI_DOUBLE_PRECISION,MPI_SUM                   &
+     &                  ,MPI_COMM_COMP,IRECV)
+# else
+      DO K=KTS,KTE
+        do ks=kss,kse
+          gsms(2*ks-1,k)=xsms(2*ks-1,k)
+          gsms(2*ks  ,k)=xsms(2*ks  ,k)
+        enddo
+      enddo
+# endif
+!
+      DO K=KTS,KTE
+        do ks=kss,kse
+          gsms_single(2*ks-1,k)=gsms(2*ks-1,k)
+          gsms_single(2*ks  ,k)=gsms(2*ks  ,k)
+        enddo
+      enddo
+!
+!-----------------------------------------------------------------------
+!***  END OF GLOBAL REDUCTION
+!-----------------------------------------------------------------------
+!
+
+      do ks=kss,kse
+        vgsms(2*ks-1)=0.
+        vgsms(2*ks  )=0.
+      enddo
+!
+      do ks=kss,kse
+        DO K=KTS,KTE
+          vgsms(2*ks-1)=gsms(2*ks-1,k)+vgsms(2*ks-1)
+          vgsms(2*ks  )=gsms(2*ks  ,k)+vgsms(2*ks  )
+        enddo
+      enddo
+!
+      sumdrrw=vgsms(6)+sumdrrw
+!
+      summass=0.0
+      DO K=KTS,KTE
+        DO J=MYJS2,MYJE2
+          DO I=MYIS1,MYIE1
+            summass=summass+dvol(i,j,k)
+          ENDDO
+        ENDDO
+      ENDDO
+!
+      if (first) then
+         sumrrw_first = vgsms(5)
+         gsmp_first = gsmp
+         summass_first = summass
+         first=.false.
+      end if
+!
+!     write(0,1000) ntsd,hours, &                                       ! 4,5
+!                   (vgsms(ks),ks=2*kss-1,2*kse), &                     ! 6-13
+!                   gsmp,gsmp_first,gsmp/gsmp_first, &                  ! 14-16
+!                   sumdrrw, &                                          ! 17
+!                   vgsms(5)/sumrrw_first,sumrrw_first, &               ! 18-19
+!                   summass,summass_first,summass/summass_first         ! 20-22
+ 1000 format('global vol sums ',i6,f8.3,30d13.5)
+!zjmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+                        endsubroutine mono
+!-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !
       END MODULE MODULE_ADVECTION
 !
 !-----------------------------------------------------------------------
-

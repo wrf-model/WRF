@@ -3,6 +3,7 @@
 # include <stdlib.h>
 #endif
 #include <string.h>
+#include "../inc/streams.h"
 
 #ifndef CRAY
 # ifdef NOUNDERSCORE
@@ -16,6 +17,9 @@
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field
 #      define PERTURB_REAL perturb_real
 #      define INSPECT_HEADER inspect_header
+#      define RESET_MASK reset_mask
+#      define SET_MASK set_mask
+#      define GET_MASK get_mask
 # else
 #   ifdef F2CSTYLE
 #      define INT_PACK_DATA  int_pack_data__
@@ -28,6 +32,9 @@
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field__
 #      define PERTURB_REAL perturb_real__
 #      define INSPECT_HEADER inspect_header__
+#      define RESET_MASK reset_mask__
+#      define SET_MASK set_mask__
+#      define GET_MASK get_mask__
 #   else
 #      define INT_PACK_DATA  int_pack_data_
 #      define INT_GET_TI_HEADER_C  int_get_ti_header_c_
@@ -39,6 +46,9 @@
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field_
 #      define PERTURB_REAL perturb_real_
 #      define INSPECT_HEADER inspect_header_
+#      define RESET_MASK reset_mask_
+#      define SET_MASK set_mask_
+#      define GET_MASK get_mask_
 #   endif
 # endif
 #endif
@@ -279,4 +289,102 @@ int INSPECT_HEADER ( char * buf, int * sz, int * line )
 #endif
     return(0) ;
 }
+
+/* note that these work the same as the routines in tools/misc.c, but are Fortran callable.  
+   They must be kept in sync, functionally. */
+
+void
+RESET_MASK ( unsigned int * mask , int *e )
+{
+   int w ;
+   unsigned int m, n ;
+
+   w = *e / (8*sizeof(int)-1) ;
+   n = 1 ;
+   m = ~( n << *e % (8*sizeof(int)-1) ) ;
+   if ( w >= 0 && w < IO_MASK_SIZE ) {
+     mask[w] &= m ;
+   }
+}
+
+void
+SET_MASK ( unsigned int * mask , int *e )
+{
+   int w ;
+   unsigned int m, n ;
+
+   w = *e / (8*sizeof(int)-1) ;
+   n = 1 ;
+   m = ( n << *e % (8*sizeof(int)-1) ) ;
+   if ( w >= 0 && w < IO_MASK_SIZE ) {
+     mask[w] |= m ;
+   }
+}
+
+/* this is slightly different from in tools dir since it returns result as argument, not function */
+/* definition of IO_MASK_SIZE comes from build and must be uniform with frame/module_domain_type.F and
+   version of this function in tools dir */
+void
+GET_MASK ( unsigned int * mask , int *e , int * retval )
+{
+   int w ;
+   unsigned int m, n ;
+
+   w = *e / (8*sizeof(int)-1) ;   /* 8 is number of bits per byte */
+   if ( w >= 0 && w < IO_MASK_SIZE ) {
+     m = mask[w] ;
+     n =  ( 1 << *e % (8*sizeof(int)-1) ) ;;
+     *retval = ( (m & n) != 0 ) ;
+   } else {
+     *retval = 0 ;
+   }
+}
+
+#ifdef WRAP_MALLOC
+# ifndef WRAP_MALLOC_ALIGNMENT
+#  define WRAP_MALLOC_ALIGNMENT 128
+# endif
+# define _XOPEN_SOURCE 600
+# include <stdlib.h>
+void *malloc(size_t size)
+{
+       void *tmp;
+       if (posix_memalign(&tmp, WRAP_MALLOC_ALIGNMENT, size) == 0)
+               return tmp;
+       else {
+               errno = ENOMEM;
+               return NULL;
+       }
+}
+#endif
+
+#ifndef DM_PARALLEL
+# ifndef CRAY
+#  ifdef NOUNDERSCORE
+#       define RSL_INTERNAL_MICROCLOCK  rsl_internal_microclock
+#  else
+#    ifdef F2CSTYLE
+#       define RSL_INTERNAL_MICROCLOCK  rsl_internal_microclock__
+#    else
+#       define RSL_INTERNAL_MICROCLOCK  rsl_internal_microclock_
+#    endif
+#  endif
+# endif
+# if !defined(MS_SUA) && !defined(_WIN32)
+#  include <sys/time.h>
+RSL_INTERNAL_MICROCLOCK ()
+{
+    struct timeval tb ;
+    struct timezone tzp ;
+    int isec ;  /* seconds */
+    int usec ;  /* microseconds */
+    int msecs ;
+    gettimeofday( &tb, &tzp ) ;
+    isec = tb.tv_sec ;
+    usec = tb.tv_usec ;
+    msecs = 1000000 * isec + usec ;
+    return(msecs) ;
+}
+# endif
+#endif
 

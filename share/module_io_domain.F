@@ -4,10 +4,8 @@
 MODULE module_io_domain
 USE module_io
 USE module_io_wrf
-USE module_wrf_error
-USE module_date_time
-USE module_configure
-USE module_domain
+USE module_configure, ONLY : grid_config_rec_type
+USE module_domain, ONLY : domain
 
 CONTAINS
 
@@ -18,7 +16,7 @@ CONTAINS
    INTEGER      , INTENT(INOUT) :: id , ierr
    LOGICAL , EXTERNAL :: wrf_dm_on_monitor
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-   CHARACTER*128             :: DataSet
+   CHARACTER*128             :: DataSet, tmp
    LOGICAL                   :: anyway
    CALL wrf_open_for_read ( fname ,                     &
                             grid%communicator ,         &
@@ -37,13 +35,19 @@ CONTAINS
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
    LOGICAL , EXTERNAL :: wrf_dm_on_monitor
    EXTERNAL outsub
-   CHARACTER*128             :: DataSet
+   CHARACTER*128             :: DataSet, sysdepinfo_tmp
    LOGICAL                   :: anyway
    CALL wrf_debug ( 100 , 'calling wrf_open_for_write_begin in open_w_dataset' )
+   sysdepinfo_tmp = ' '
+   IF ( grid%id < 10 ) THEN
+     write(sysdepinfo_tmp,'(a,i1)')TRIM(sysdepinfo)//',GRIDID=',grid%id
+   ELSE
+     write(sysdepinfo_tmp,'(a,i2)')TRIM(sysdepinfo)//',GRIDID=',grid%id
+   ENDIF
    CALL wrf_open_for_write_begin ( fname ,     &
                                    grid%communicator ,         &
                                    grid%iocommunicator ,       &
-                                   sysdepinfo ,                &
+                                   sysdepinfo_tmp ,            &
                                    id ,                        &
                                    ierr )
    IF ( ierr .LE. 0 ) THEN
@@ -102,610 +106,7 @@ CONTAINS
 
 ! ------------  Output model input data sets
 
-  SUBROUTINE output_model_input ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_input .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , model_input_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_model_input
-
-  SUBROUTINE output_aux_model_input1 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput1 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input1_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input1
-
-  SUBROUTINE output_aux_model_input2 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput2 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input2_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input2
-
-  SUBROUTINE output_aux_model_input3 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput3 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input3_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input3
-
-  SUBROUTINE output_aux_model_input4 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput4 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input4_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input4
-
-  SUBROUTINE output_aux_model_input5 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput5 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input5_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input5
-
-  SUBROUTINE output_aux_model_input6 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput6 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input6_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input6
-
-  SUBROUTINE output_aux_model_input7 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput7 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input7_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input7
-
-  SUBROUTINE output_aux_model_input8 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput8 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input8_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input8
-
-  SUBROUTINE output_aux_model_input9 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_sgfdda .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input9_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input9
-
-  SUBROUTINE output_aux_model_input10 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_gfdda .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input10_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input10
-
-  SUBROUTINE output_aux_model_input11 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput11 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_model_input11_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_model_input11
-
-!  ------------ Output model history data sets
-
-  SUBROUTINE output_history ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_history .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , history_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_history
-
-  SUBROUTINE output_aux_hist1 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist1 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist1_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist1
-
-  SUBROUTINE output_aux_hist2 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist2 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist2_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist2
-
-  SUBROUTINE output_aux_hist3 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist3 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist3_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist3
-
-  SUBROUTINE output_aux_hist4 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist4 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist4_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist4
-
-  SUBROUTINE output_aux_hist5 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist5 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist5_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist5
-
-  SUBROUTINE output_aux_hist6 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist6 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist6_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist6
-
-  SUBROUTINE output_aux_hist7 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist7 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist7_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist7
-
-  SUBROUTINE output_aux_hist8 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist8 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist8_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist8
-
-  SUBROUTINE output_aux_hist9 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist9 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist9_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist9
-
-  SUBROUTINE output_aux_hist10 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist10 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist10_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist10
-
-  SUBROUTINE output_aux_hist11 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist11 .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , aux_hist11_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_aux_hist11
-
-!  ------------ Output model restart data sets
-
-  SUBROUTINE output_restart ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr 
-    IF ( config_flags%io_form_restart .GT. 0 ) THEN
-#if ( NMM_CORE == 1 )
-!zhang's doing For bit reproducibility of random numbers when restarting
-             call random_seed(get=grid%nrnd1)
-!end of zhang's doing
-#endif
-      CALL output_wrf ( fid , grid , config_flags , restart_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_restart
-
-!  ------------ Output model boundary data sets
-
-  SUBROUTINE output_boundary ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid 
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_boundary .GT. 0 ) THEN
-      CALL output_wrf ( fid , grid , config_flags , boundary_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE output_boundary
-
-!  ------------ Input model input data sets
-
-  SUBROUTINE input_model_input ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_input .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , model_input_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_model_input
-
-  SUBROUTINE input_aux_model_input1 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput1 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input1_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input1
-
-  SUBROUTINE input_aux_model_input2 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput2 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input2_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input2
-
-  SUBROUTINE input_aux_model_input3 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput3 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input3_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input3
-
-  SUBROUTINE input_aux_model_input4 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput4 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input4_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input4
-
-  SUBROUTINE input_aux_model_input5 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput5 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input5_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input5
-
-  SUBROUTINE input_aux_model_input6 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput6 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input6_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input6
-  SUBROUTINE input_aux_model_input7 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput7 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input7_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input7
-  SUBROUTINE input_aux_model_input8 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput8 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input8_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input8
-  SUBROUTINE input_aux_model_input9 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_sgfdda .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input9_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input9
-  SUBROUTINE input_aux_model_input10 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_gfdda .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input10_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input10
-  SUBROUTINE input_aux_model_input11 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput11 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_model_input11_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_model_input11
-
-!  ------------ Input model history data sets
-
-  SUBROUTINE input_history ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_history .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , history_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_history
-
-  SUBROUTINE input_aux_hist1 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist1 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist1_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist1
-
-  SUBROUTINE input_aux_hist2 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist2 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist2_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist2
-
-  SUBROUTINE input_aux_hist3 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist3 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist3_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist3
-
-  SUBROUTINE input_aux_hist4 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist4 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist4_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist4
-
-  SUBROUTINE input_aux_hist5 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist5 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist5_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist5
-
-  SUBROUTINE input_aux_hist6 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist6 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist6_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist6
-  SUBROUTINE input_aux_hist7 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist7 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist7_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist7
-  SUBROUTINE input_aux_hist8 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist8 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist8_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist8
-  SUBROUTINE input_aux_hist9 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist9 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist9_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist9
-  SUBROUTINE input_aux_hist10 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist10 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist10_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist10
-  SUBROUTINE input_aux_hist11 ( fid , grid , config_flags , ierr )
-    IMPLICIT NONE
-    TYPE(domain) :: grid
-    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxhist11 .GT. 0 ) THEN
-      CALL input_wrf ( fid , grid , config_flags , aux_hist11_only , ierr )
-    ENDIF
-    RETURN
-  END SUBROUTINE input_aux_hist11
+#include "module_io_domain_defs.inc"
 
 !  ------------ Input model restart data sets
 
@@ -734,6 +135,38 @@ CONTAINS
     ENDIF
     RETURN
   END SUBROUTINE input_boundary
+
+!  ------------ Output model restart data sets
+
+  SUBROUTINE output_restart ( fid , grid , config_flags , ierr )
+    IMPLICIT NONE
+    TYPE(domain) :: grid
+    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+    INTEGER, INTENT(IN) :: fid
+    INTEGER, INTENT(INOUT) :: ierr 
+    IF ( config_flags%io_form_restart .GT. 0 ) THEN
+#ifdef HWRF 
+!zhang: HWRF for bit reproducibility of random numbers when restarting
+             call random_seed(get=grid%nrnd1)
+#endif
+      CALL output_wrf ( fid , grid , config_flags , restart_only , ierr )
+    ENDIF
+    RETURN
+  END SUBROUTINE output_restart
+
+!  ------------ Output model boundary data sets
+
+  SUBROUTINE output_boundary ( fid , grid , config_flags , ierr )
+    IMPLICIT NONE
+    TYPE(domain) :: grid
+    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+    INTEGER, INTENT(IN) :: fid 
+    INTEGER, INTENT(INOUT) :: ierr
+    IF ( config_flags%io_form_boundary .GT. 0 ) THEN
+      CALL output_wrf ( fid , grid , config_flags , boundary_only , ierr )
+    ENDIF
+    RETURN
+  END SUBROUTINE output_boundary
 
 END MODULE module_io_domain
 
@@ -772,10 +205,10 @@ SUBROUTINE construct_filename2a( result , basename , fld1 , len1 , date_char )
   CHARACTER*(*) :: result
   CHARACTER*(*) :: basename
   CHARACTER*(*) :: date_char
-
   INTEGER , INTENT(IN) :: fld1 , len1
   CHARACTER*64         :: t1, zeros
   INTEGER   i, j, l
+
   result=basename
   CALL zero_pad ( t1 , fld1 , len1 )
   i = index( basename , '<domain>' )
@@ -923,7 +356,7 @@ SUBROUTINE zero_pad ( result , fld1 , len1 )
 END SUBROUTINE zero_pad
 
 SUBROUTINE init_wrfio
-   USE module_io
+   USE module_io, ONLY : wrf_ioinit
    IMPLICIT NONE
    INTEGER ierr
    CALL wrf_ioinit(ierr)
@@ -939,7 +372,7 @@ END SUBROUTINE init_wrfio
 !</DESCRIPTION>
 ! 
 SUBROUTINE adjust_io_timestr ( TI, CT, ST, timestr )
-   USE module_io_domain
+   USE module_utility
    IMPLICIT NONE
 ! Args
    TYPE(WRFU_Time), INTENT(IN)            :: ST,CT    ! domain start and current time
@@ -962,7 +395,6 @@ END SUBROUTINE adjust_io_timestr
 ! unless it is a drive number. Convert to '_' instead.
 
 SUBROUTINE maybe_remove_colons( FileName )
-  USE module_configure
   CHARACTER*(*) FileName
   CHARACTER c, d
   INTEGER i, l

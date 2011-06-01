@@ -9,7 +9,6 @@ program gen_be_cov3d
    character*10        :: date, new_date             ! Current date (ccyymmddhh).
    character*10        :: variable1                  ! Variable name
    character*10        :: variable2                  ! Variable name
-   character(len=filename_len)        :: dat_dir                    ! Input data directory.
    character(len=filename_len)        :: filename                   ! Input filename.
    character*3         :: ce                         ! Member index -> character.
    integer             :: ni, nj, nk                 ! Grid dimensions.
@@ -37,7 +36,7 @@ program gen_be_cov3d
    real, allocatable   :: var(:)                     ! Autocovariance of field.
 
    namelist / gen_be_cov3d_nl / start_date, end_date, interval, &
-                                ne, variable1, variable2, dat_dir
+                                ne, variable1, variable2
 
    integer :: ounit,iunit,namelist_unit
 
@@ -59,7 +58,6 @@ program gen_be_cov3d
    ne = 1
    variable1 = 'psi'
    variable2 = 'chi'
-   dat_dir = '/mmmtmp1/dmbarker'
 
    open(unit=namelist_unit, file='gen_be_cov3d_nl.nl', &
         form='formatted', status='old', action='read')

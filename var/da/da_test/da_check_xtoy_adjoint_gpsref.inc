@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_gpsref(iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_gpsref")
 
-   do n=1, iv%info(gpsref)%nlocal
+   do n=iv%info(gpsref)%n1, iv%info(gpsref)%n2
       if (iv%info(gpsref)%proc_domain(1,n)) then
          do k=1, iv%info(gpsref)%levels(n)
             adjtest_lhs = adjtest_lhs + (y%gpsref(n)%ref(k) / typical_ref_rms)**2 

@@ -9,7 +9,7 @@ subroutine da_calc_power_spectrum(max_wave, power)
    integer, parameter  :: nj = 200          ! #Gaussian lats (even).
 
    integer, intent(in) :: max_wave          ! Smallest wavenumber for grid.
-   real, intent(out)   :: power(0:max_wave) ! Power spectrum.
+   real*8, intent(out) :: power(0:max_wave) ! Power spectrum.
 
    real                :: glats(1:nj)       ! Gaussian latitudes.
    real                :: gwgts(1:nj)       ! Gaussian weights.

@@ -16,6 +16,7 @@ MODULES =                       \
 	module_optional_input.o	\
 	module_compute_geop.o           \
 	module_soil_pre.o		\
+	module_check_a_mundo.o		\
 	module_llxy.o
 
 OBJS    = 		\
@@ -36,62 +37,12 @@ OBJS    = 		\
         wrf_timeseries.o                \
         wrf_ext_write_field.o           \
         wrf_ext_read_field.o            \
-        wrf_inputout.o        		\
-        wrf_auxinput1out.o		\
-        wrf_auxinput2out.o		\
-        wrf_auxinput3out.o		\
-        wrf_auxinput4out.o		\
-        wrf_auxinput5out.o		\
-        wrf_auxinput6out.o		\
-        wrf_auxinput7out.o		\
-        wrf_auxinput8out.o		\
-        wrf_auxinput9out.o		\
-        wrf_auxinput10out.o		\
-        wrf_auxinput11out.o		\
-        wrf_histout.o			\
-        wrf_auxhist1out.o		\
-        wrf_auxhist2out.o		\
-        wrf_auxhist3out.o		\
-        wrf_auxhist4out.o		\
-        wrf_auxhist5out.o		\
-        wrf_auxhist6out.o		\
-        wrf_auxhist7out.o		\
-        wrf_auxhist8out.o		\
-        wrf_auxhist9out.o		\
-        wrf_auxhist10out.o		\
-        wrf_auxhist11out.o		\
-        wrf_restartout.o		\
         wrf_bdyout.o			\
-        wrf_inputin.o         	  	\
-        wrf_auxhist1in.o                \
-        wrf_auxhist2in.o                \
-        wrf_auxhist3in.o                \
-        wrf_auxhist4in.o                \
-        wrf_auxhist5in.o                \
-        wrf_auxhist6in.o                \
-        wrf_auxhist7in.o                \
-        wrf_auxhist8in.o                \
-        wrf_auxhist9in.o                \
-        wrf_auxhist10in.o                \
-        wrf_auxhist11in.o                \
-        wrf_auxinput1in.o               \
-        wrf_auxinput2in.o               \
-        wrf_auxinput3in.o               \
-        wrf_auxinput4in.o               \
-        wrf_auxinput5in.o               \
-        wrf_auxinput6in.o               \
-        wrf_auxinput7in.o               \
-        wrf_auxinput8in.o               \
-        wrf_auxinput9in.o               \
-        wrf_auxinput10in.o               \
-        wrf_auxinput11in.o               \
 	wrf_fddaobs_in.o		\
         wrf_bdyin.o             	\
-        wrf_histin.o            	\
-        wrf_restartin.o                 \
         wrf_tsin.o                      \
         landread.o			\
-        julian_gregorian_converter.o
+	setfeenv.o
 
 
 NMM_MODULES = 
@@ -110,6 +61,15 @@ $(LIBTARGET) :  $(MODULES) $(OBJS)
 include ../configure.wrf
 
 nmm_contrib : $(NMM_OBJS) $(NMM_MODULES)
+
+#set_timekeeping_defs.inc : set_timekeeping_defs.m4
+#	$(M4) set_timekeeping_defs.m4 > set_timekeeping_defs.inc
+
+#set_timekeeping_alarms.inc : set_timekeeping_alarms.m4
+#	$(M4) set_timekeeping_alarms.m4 > set_timekeeping_alarms.inc
+
+#module_io_domain_defs.inc : module_io_domain_defs.m4
+#	$(M4) module_io_domain_defs.m4 > module_io_domain_defs.inc
 
 clean:
 	@ echo 'use the clean script'
@@ -134,16 +94,18 @@ module_io_domain.o: module_io_wrf.o module_date_time.o ../frame/module_io.o  \
 		../frame/module_domain.o ../frame/module_configure.o \
 		../frame/module_state_description.o
 
-module_io_wrf.o: module_date_time.o module_bc_time_utilities.o \
-		../frame/module_wrf_error.o ../frame/module_domain.o \
-		../frame/module_state_description.o ../frame/module_configure.o \
-		../frame/module_io.o ../frame/module_timing.o \
+module_io_wrf.o: module_date_time.o \
+                ../frame/module_wrf_error.o ../frame/module_streams.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 output_wrf.o:   ../frame/module_io.o ../frame/module_wrf_error.o \
                 ../frame/module_domain.o ../frame/module_state_description.o \
                 ../frame/module_configure.o module_io_wrf.o  \
 		$(ESMF_MOD_DEPENDENCE)
+
+wrf_fddaobs_in.o: \
+		module_date_time.o \
+		module_llxy.o
 
 wrf_timeseries.o: wrf_tsin.o \
 		module_model_constants.o \
@@ -167,6 +129,9 @@ module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o \
 		module_model_constants.o 
 
 module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
+
+module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
+		../frame/module_state_description.o
 
 dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		../frame/module_state_description.o \
@@ -207,7 +172,12 @@ mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../frame/module_timing.o
 
-mediation_nest_move.o: ../frame/module_domain.o ../frame/module_configure.o ../frame/module_state_description.o
+mediation_nest_move.o: \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
+		module_io_domain.o
 
 #mediation_conv_emissions.o: ../frame/module_domain.o ../frame/module_configure.o \
 #			../external/esmf_time_f90/ESMF_Mod.o \

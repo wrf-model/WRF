@@ -86,6 +86,9 @@
  /
 
  &dynamics
+ euler_advect                        = .false.,
+ idtadt                              = 1,
+ idtadc                              = 1
  /
 
  &bdy_control

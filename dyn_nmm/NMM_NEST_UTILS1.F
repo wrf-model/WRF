@@ -125,15 +125,16 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
 !   soil configuration
 
-!zhang test
+#ifdef HWRF
+!zhang 
     if ( .not.nest%analysis ) then
-!zhang test ends
+#endif
     nest%sldpth  = parent%sldpth
     nest%dzsoil  = parent%dzsoil
     nest%rtdpth  = parent%rtdpth
-!zhang test
+#ifdef HWRF 
     endif
-!zhang test ends
+#endif
 
 !   numerical set up
 
@@ -174,9 +175,10 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
    CALL nl_get_truelat1 (parent%id, parent%truelat1 )
    CALL nl_get_truelat2 (parent%id, parent%truelat2 )
+#ifdef HWRF
 ! bao : to make the restart output identical at the restart initial time for stand_lon
    CALL nl_get_stand_lon (parent%id, parent%stand_lon )
-! bao
+#endif
    CALL nl_get_map_proj (parent%id, parent%map_proj )
    CALL nl_get_iswater (parent%id, parent%iswater )
 
@@ -311,6 +313,16 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
 !   Determine the weights of nested grid h points nearest to H points of parent domain 
 
+#ifdef HWRFX
+    CALL G2T2H_new(    nest%IIH,nest%JJH,                            & ! output grid index in parent grid
+                       nest%HBWGT1,nest%HBWGT2,                      & ! output weights in terms of parent grid
+                       nest%HBWGT3,nest%HBWGT4,                      &
+                       nest%I_PARENT_START,nest%J_PARENT_START,      & ! nest start I, J in parent domain
+                       3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                       IMS,IME,JMS,JME,KMS,KME,            &
+                       ITS,ITE,JTS,JTE,KTS,KTE      )
+#else
     CALL G2T2H( nest%IIH,nest%JJH,                       & ! output grid index on nested grid
                 nest%HBWGT1,nest%HBWGT2,                 & ! output weights on the nested grid 
                 nest%HBWGT3,nest%HBWGT4,                 &
@@ -321,10 +333,21 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & ! 
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
+#endif
 
 
 !   Determine the weights of nested grid v points nearest to V points of parent domain
 
+#ifdef HWRFX
+    CALL G2T2V_new(    nest%IIV,nest%JJV,                            & ! output grid index in parent grid
+                       nest%VBWGT1,nest%VBWGT2,                      & ! output weights in terms of parent grid
+                       nest%VBWGT3,nest%VBWGT4,                      &
+                       nest%I_PARENT_START,nest%J_PARENT_START,      & ! nest start I, J in parent domain
+                       3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                       IMS,IME,JMS,JME,KMS,KME,            &
+                       ITS,ITE,JTS,JTE,KTS,KTE      )
+#else
     CALL G2T2V( nest%IIV,nest%JJV,                       & ! output grid index on nested grid
                 nest%VBWGT1,nest%VBWGT2,                 & ! output weights on the nested grid
                 nest%VBWGT3,nest%VBWGT4,                 &
@@ -335,6 +358,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & !
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
+#endif
 
 !*** CHECK WEIGHTS AT MASS AND VELOCITY POINTS
 
@@ -573,7 +597,7 @@ END SUBROUTINE EARTH_LATLON
 !***              V      H
 !***
 !***
-!***                 h           
+!***                 H           
 !***              H      V
 !***
 !***  THEN LOCATE THE NEAREST H POINT ON THE PARENT GRID
@@ -603,7 +627,7 @@ END SUBROUTINE EARTH_LATLON
 !***              H      V
 !***
 !***
-!***                 h 
+!***                 H 
 !***              V      H
 !***
 !***  THEN LOCATE THE NEAREST H POINT ON THE PARENT GRID
@@ -649,7 +673,7 @@ END SUBROUTINE EARTH_LATLON
 !***            H     V     H
 !***
 !***
-!***               h
+!***               H
 !***      H     V     H     V     H
 !***
 !***
@@ -725,7 +749,7 @@ END SUBROUTINE EARTH_LATLON
 !***
 !***                  4
 !***
-!***                  h
+!***                  H
 !***             1         2
 !***
 !***                  3
@@ -849,7 +873,7 @@ END SUBROUTINE EARTH_LATLON
 !***
 !***
 !***  
-!***                   h
+!***                   H
 !***             1                 2
 !***
 !***
@@ -948,9 +972,9 @@ END SUBROUTINE EARTH_LATLON
 !***  Gopal       - Revised Version for WRF (includes coincIDEnt grid points)
 !***
 !***  GIVEN PARENT CENTRAL LAT-LONS, RESOLUTION AND WESTERN AND SOUTHERN BOUNDARY,
-!***  AND THE NESTED GRID LAT-LONS AT v POINTS, THIS ROUTINE FIRST LOCATES THE
-!***  INDICES,IIV,JJV, OF THE PARENT DOMAIN'S v POINTS THAT LIES CLOSEST TO THE
-!***  v POINTS OF THE NESTED DOMAIN
+!***  AND THE NESTED GRID LAT-LONS AT V POINTS, THIS ROUTINE FIRST LOCATES THE
+!***  INDICES,IIV,JJV, OF THE PARENT DOMAIN'S V POINTS THAT LIES CLOSEST TO THE
+!***  V POINTS OF THE NESTED DOMAIN
 !
 !============================================================================
 
@@ -1001,9 +1025,9 @@ END SUBROUTINE EARTH_LATLON
   DO J =  JTS,MIN(JTE,JDE-1)
     DO I = ITS,MIN(ITE,IDE-1)
 !***
-!***  LOCATE TARGET v POINTS (VLAT AND VLON) ON THE PARENT DOMAIN AND
+!***  LOCATE TARGET V POINTS (VLAT AND VLON) ON THE PARENT DOMAIN AND
 !***  DETERMINE THE INDICES IN TERMS OF THE PARENT DOMAIN. FIRST
-!***  CONVERT NESTED GRID v POINTS FROM GEODETIC TO TRANSFORMED
+!***  CONVERT NESTED GRID V POINTS FROM GEODETIC TO TRANSFORMED
 !***  COORDINATE ON THE PARENT GRID
 !
 
@@ -1028,12 +1052,12 @@ END SUBROUTINE EARTH_LATLON
 
 !***
 !***
-!***  FIRST CONSIDER THE SITUATION WHERE THE POINT v IS AT
+!***  FIRST CONSIDER THE SITUATION WHERE THE POINT V IS AT
 !***
 !***              H      V
 !***
 !***
-!***                 v
+!***                 V
 !***              V      H
 !***
 !***  THEN LOCATE THE NEAREST V POINT ON THE PARENT GRID
@@ -1060,12 +1084,12 @@ END SUBROUTINE EARTH_LATLON
       ELSE
 
 !***
-!***  NOW CONSIDER THE SITUATION WHERE THE POINT v IS AT
+!***  NOW CONSIDER THE SITUATION WHERE THE POINT V IS AT
 !***
 !***              V      H
 !***
 !***
-!***                 v
+!***                 V
 !***              H      V
 !***
 !*** THEN LOCATE THE NEAREST V POINT ON THE PARENT GRID
@@ -1100,8 +1124,8 @@ END SUBROUTINE EARTH_LATLON
 !***
 !***  WE NOW KNOW THAT THE INNER GRID POINT IN QUESTION IS
 !***  NEAREST TO THE CENTER K AS SEEN BELOW.  WE MUST FIND
-!***  WHICH OF THE FOUR V-BOXES (OF WHICH THIS V POINT IS
-!***  A VERTEX) SURROUNDS THE INNER GRID v POINT IN QUESTION.
+!***  WHICH OF THE FOUR v-BOXES (OF WHICH THIS V POINT IS
+!***  A VERTEX) SURROUNDS THE INNER GRID V POINT IN QUESTION.
 !***
 !***
 !***                  V
@@ -1111,7 +1135,7 @@ END SUBROUTINE EARTH_LATLON
 !***            V     H     V
 !***
 !***
-!***               v
+!***               V
 !***      V     H     V     H     V
 !***
 !***
@@ -1123,7 +1147,7 @@ END SUBROUTINE EARTH_LATLON
 !***                  V
 !***
 !***
-!***  FIND THE SLOPE OF THE LINE CONNECTING v AND THE CENTER V.
+!***  FIND THE SLOPE OF THE LINE CONNECTING V AND THE CENTER v.
 !***
       N2R=K/IMT
       MK=MOD(K,IMT)
@@ -1187,7 +1211,7 @@ END SUBROUTINE EARTH_LATLON
 !***
 !***                  4
 !***
-!***                  v 
+!***                  V 
 !***             1         2
 !***
 !***                  3
@@ -1307,7 +1331,7 @@ END SUBROUTINE EARTH_LATLON
 !***
 !***
 !*** 
-!***                   v 
+!***                   V 
 !***             1                 2
 !***
 !***
@@ -1317,7 +1341,7 @@ END SUBROUTINE EARTH_LATLON
 !***
 !***
 !***
-!***  DL 1-4 ARE THE ANGULAR DISTANCES FROM v TO EACH VERTEX
+!***  DL 1-4 ARE THE ANGULAR DISTANCES FROM V TO EACH VERTEX
 
       TLATO=TLATVX(I,J)
       TLONO=TLONVX(I,J)
@@ -1381,6 +1405,769 @@ END SUBROUTINE EARTH_LATLON
 
  RETURN
  END SUBROUTINE G2T2V
+
+!-----------------------------------------------------------------------------  
+
+ SUBROUTINE G2T2H_new( IIH,JJH,                            & ! output grid index and weights 
+                       HBWGT1,HBWGT2,                      & ! output weights in terms of parent grid
+                       HBWGT3,HBWGT4,                      &
+                       I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain  
+                       RATIO,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                       IMS,IME,JMS,JME,KMS,KME,            &
+                       ITS,ITE,JTS,JTE,KTS,KTE      )
+!
+!*** XUEJIN ZHANG --- Initial version (09/08/2008)
+!*** XUEJIN ZHANG --- Modified for parallel purpose (09/10/2009)
+!*** XUEJIN ZHANG --- Modified for parallel purpose (09/29/2009)
+!Function: Bilnear interpolation weight and indexing for E-grid
+!
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: JP
+
+
+!*** ARRANGEMENT OF 4 VERTEXES FROM PARENT DOMAIN
+!***
+!***                  4
+!***
+!***                  h
+!***             1         2
+!***
+!***
+!***                  3
+!
+!************************************************************* 
+!***  POINT (i,j) SPANS 9 NESTED POINTS 
+!***  A VERTEX IN THE NEST DOMAIN AND INDEXING FOR PARENT DOMAIN 
+!***
+!***
+!***                  H
+!***                
+!***               h     h
+!***              / \
+!***            h     h     h
+!***           / \   / \
+!***         H     h     h     H  
+!***          \   / \   /   
+!***            h     h     h
+!***             \   /
+!***               h     h
+!***      
+!***                  H
+!***                 
+!***
+!***
+!************************************************************* 
+!*** MOVING NEST ALWAYS STARTING FROM MASS GRID H
+!*** PLEASE REFER TO E-GRID ARRANGEMENT FIGURE FOR MASS POINTS
+
+
+ DO J=JTS,MIN(JTE,JDE-1)
+ DO I=ITS,MIN(ITE,IDE-1)
+    JP = MOD(J,RATIO*2)
+    SELECT CASE(JP)
+    CASE ( 1 )
+      CALL SUB1H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 2 )
+      CALL SUB2H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &    
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 3 )
+      CALL SUB3H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 4 )
+      CALL SUB4H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &    
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 5 )
+      CALL SUB5H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 0 )
+      CALL SUB6H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &    
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    END SELECT
+       write(0,105)"NEW H WEIGHTS:",I,J,IIH(i,j),JJH(i,j),HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J), &
+                                HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J)
+  105  format(a,4i4,5f7.3)
+ END DO
+ END DO
+
+ RETURN
+ END SUBROUTINE G2T2H_new
+ SUBROUTINE SUB1H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 1.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 0.0
+    HBWGT4(I,J) = 0.0
+   CASE ( 2 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 4.0/9.0
+    HBWGT2(I,J) = 1.0/9.0
+    HBWGT3(I,J) = 2.0/9.0
+    HBWGT4(I,J) = 2.0/9.0
+   CASE ( 0 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 1.0/9.0
+    HBWGT2(I,J) = 4.0/9.0
+    HBWGT3(I,J) = 2.0/9.0
+    HBWGT4(I,J) = 2.0/9.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB1H
+ SUBROUTINE SUB2H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 2.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 0.0
+    HBWGT4(I,J) = 1.0/3.0
+   CASE ( 2 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 2.0/9.0
+    HBWGT2(I,J) = 2.0/9.0
+    HBWGT3(I,J) = 1.0/9.0
+    HBWGT4(I,J) = 4.0/9.0
+   CASE ( 0 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)+1
+    HBWGT1(I,J) = 1.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 2.0/3.0
+    HBWGT4(I,J) = 0.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB2H
+ SUBROUTINE SUB3H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)-1
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)+1
+    HBWGT1(I,J) = 2.0/9.0
+    HBWGT2(I,J) = 2.0/9.0
+    HBWGT3(I,J) = 4.0/9.0
+    HBWGT4(I,J) = 1.0/9.0
+   CASE ( 2 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 1.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 0.0
+    HBWGT4(I,J) = 2.0/3.0
+   CASE ( 0 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)+1
+    HBWGT1(I,J) = 2.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 1.0/3.0
+    HBWGT4(I,J) = 0.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB3H
+ SUBROUTINE SUB4H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)-1
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 1.0/9.0
+    HBWGT2(I,J) = 4.0/9.0
+    HBWGT3(I,J) = 2.0/9.0
+    HBWGT4(I,J) = 2.0/9.0
+   CASE ( 2 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 1.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 0.0
+    HBWGT4(I,J) = 0.0
+   CASE ( 0 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 4.0/9.0
+    HBWGT2(I,J) = 1.0/9.0
+    HBWGT3(I,J) = 2.0/9.0
+    HBWGT4(I,J) = 2.0/9.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB4H
+ SUBROUTINE SUB5H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)-1
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 2.0/9.0
+    HBWGT2(I,J) = 2.0/9.0
+    HBWGT3(I,J) = 1.0/9.0
+    HBWGT4(I,J) = 4.0/9.0
+   CASE ( 2 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)+1
+    HBWGT1(I,J) = 1.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 2.0/3.0
+    HBWGT4(I,J) = 0.0
+   CASE ( 0 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 2.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 0.0
+    HBWGT4(I,J) = 1.0/3.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB5H
+ SUBROUTINE SUB6H(I,J,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    HBWGT1(I,J) = 2.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 1.0/3.0
+    HBWGT4(I,J) = 0.0
+   CASE ( 2 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    HBWGT1(I,J) = 2.0/9.0
+    HBWGT2(I,J) = 2.0/9.0
+    HBWGT3(I,J) = 4.0/9.0
+    HBWGT4(I,J) = 1.0/9.0
+   CASE ( 0 )
+    IIH(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJH(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    HBWGT1(I,J) = 1.0/3.0
+    HBWGT2(I,J) = 0.0
+    HBWGT3(I,J) = 0.0
+    HBWGT4(I,J) = 2.0/3.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB6H
+
+!-----------------------------------------------------------------------------  
+
+ SUBROUTINE G2T2V_new( IIV,JJV,                            & ! output grid index and weights 
+                       VBWGT1,VBWGT2,                      & ! output weights in terms of parent grid
+                       VBWGT3,VBWGT4,                      &
+                       I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain  
+                       RATIO,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                       IMS,IME,JMS,JME,KMS,KME,            &
+                       ITS,ITE,JTS,JTE,KTS,KTE      )
+!
+!*** XUEJIN ZHANG --- Initial version (09/08/2008)
+!*** XUEJIN ZHANG --- Modified for parallel purpose (09/10/2009)
+!*** XUEJIN ZHANG --- Modified for parallel purpose (09/29/2009)
+!Function: Bilnear interpolation weight and indexing for E-grid
+!
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: JP
+
+!*** ARRANGEMENT OF 4 VERTEXES FROM PARENT DOMAIN
+!***
+!***                  4
+!***
+!***                  v
+!***             1         2
+!***
+!***
+!***                  3
+!
+!************************************************************* 
+!***  POINT (i,j) SPANS 9 NESTED POINTS 
+!***  A VERTEX IN THE NEST DOMAIN AND INDEXING FOR PARENT DOMAIN
+!***
+!***
+!***                  V
+!***                
+!***               v  h  v
+!***              / \
+!***            v  h  v  h  v
+!***           / \   / \
+!***         V  H  v  h  v  h  V  H
+!***          \   / \   /   
+!***            v  h  v  h  v
+!***             \   /
+!***               v  h  v
+!***      
+!***                  V
+!***                 
+!***
+!***
+!************************************************************* 
+!*** MOVING NEST ALWAYS STARTING FROM MASS GRID H
+!*** PLEASE REFER TO E-GRID ARRANGEMENT FIGURE FOR WIND POINTS
+
+ DO J=JTS,MIN(JTE,JDE-1)
+ DO I=ITS,MIN(ITE,IDE-1)
+    JP = MOD(J,RATIO*2)
+    SELECT CASE(JP)
+    CASE ( 1 )
+      CALL SUB1V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 2 )
+      CALL SUB2V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &    
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 3 )
+      CALL SUB3V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 4 )
+      CALL SUB4V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &    
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 5 )
+      CALL SUB5V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    CASE ( 0 )
+      CALL SUB6V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &    
+                I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                IMS,IME,JMS,JME,KMS,KME,                 &
+                ITS,ITE,JTS,JTE,KTS,KTE      )
+    END SELECT
+!      WRITE(0,105)'NEW V WEIGHTS:',I,J,VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J), &
+!                    VBWGT1(I,J)+VBWGT2(I,J)+VBWGT3(I,J)+VBWGT4(I,J),IIV(i,j),JJV(i,j)
+! 105  format(a,2i4,5f7.3,2i4)
+ END DO
+ END DO
+
+ RETURN
+ END SUBROUTINE G2T2V_new
+ SUBROUTINE SUB1V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO) - 1
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 1.0/9.0
+    VBWGT2(I,J) = 4.0/9.0
+    VBWGT3(I,J) = 2.0/9.0
+    VBWGT4(I,J) = 2.0/9.0
+   CASE ( 2 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO) 
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 1.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 0.0
+    VBWGT4(I,J) = 0.0
+   CASE ( 0 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 4.0/9.0
+    VBWGT2(I,J) = 1.0/9.0
+    VBWGT3(I,J) = 2.0/9.0
+    VBWGT4(I,J) = 2.0/9.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB1V
+ SUBROUTINE SUB2V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO) - 1
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 2.0/9.0
+    VBWGT2(I,J) = 2.0/9.0
+    VBWGT3(I,J) = 1.0/9.0
+    VBWGT4(I,J) = 4.0/9.0
+   CASE ( 2 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    VBWGT1(I,J) = 1.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 2.0/3.0
+    VBWGT4(I,J) = 0.0
+   CASE ( 0 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 2.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 0.0
+    VBWGT4(I,J) = 1.0/3.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB2V
+ SUBROUTINE SUB3V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    VBWGT1(I,J) = 2.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 1.0/3.0
+    VBWGT4(I,J) = 0.0
+   CASE ( 2 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    VBWGT1(I,J) = 2.0/9.0
+    VBWGT2(I,J) = 2.0/9.0
+    VBWGT3(I,J) = 4.0/9.0
+    VBWGT4(I,J) = 1.0/9.0
+   CASE ( 0 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 1.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 0.0
+    VBWGT4(I,J) = 2.0/3.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB3V
+ SUBROUTINE SUB4V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 1.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 0.0
+    VBWGT4(I,J) = 0.0
+   CASE ( 2 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 4.0/9.0
+    VBWGT2(I,J) = 1.0/9.0
+    VBWGT3(I,J) = 2.0/9.0
+    VBWGT4(I,J) = 2.0/9.0
+   CASE ( 0 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 1.0/9.0
+    VBWGT2(I,J) = 4.0/9.0
+    VBWGT3(I,J) = 2.0/9.0
+    VBWGT4(I,J) = 2.0/9.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB4V
+ SUBROUTINE SUB5V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 2.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 0.0
+    VBWGT4(I,J) = 1.0/3.0
+   CASE ( 2 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO)
+    VBWGT1(I,J) = 2.0/9.0
+    VBWGT2(I,J) = 2.0/9.0
+    VBWGT3(I,J) = 1.0/9.0
+    VBWGT4(I,J) = 4.0/9.0
+   CASE ( 0 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    VBWGT1(I,J) = 1.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 2.0/3.0
+    VBWGT4(I,J) = 0.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB5V
+ SUBROUTINE SUB6V(I,J,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4, &
+                 I_PARENT_START,J_PARENT_START,           & ! nest start I and J in parent domain  
+                 RATIO,                                   & ! Ratio of parent and child grid ( always = 3 for NMM)
+                 IDS,IDE,JDS,JDE,KDS,KDE,                 & ! target (nest) dimensions
+                 IMS,IME,JMS,JME,KMS,KME,                 &
+                 ITS,ITE,JTS,JTE,KTS,KTE      )
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+ INTEGER,    INTENT(IN   )                            :: RATIO
+ REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+ INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+!LOCAL VARIABLES
+ INTEGER                                              :: I,J
+ INTEGER                                              :: IP
+  IP = MOD(I,RATIO)
+  SELECT CASE(IP)
+   CASE ( 1 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO) - 1
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    VBWGT1(I,J) = 2.0/9.0
+    VBWGT2(I,J) = 2.0/9.0
+    VBWGT3(I,J) = 4.0/9.0
+    VBWGT4(I,J) = 1.0/9.0
+   CASE ( 2 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO) 
+    VBWGT1(I,J) = 1.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 0.0
+    VBWGT4(I,J) = 2.0/3.0
+   CASE ( 0 )
+    IIV(I,J)    = I_PARENT_START + INT((I-1)/RATIO)
+    JJV(I,J)    = J_PARENT_START + INT((J-1)/RATIO) + 1
+    VBWGT1(I,J) = 2.0/3.0
+    VBWGT2(I,J) = 0.0
+    VBWGT3(I,J) = 1.0/3.0
+    VBWGT4(I,J) = 0.0
+   END SELECT
+ RETURN
+ END SUBROUTINE SUB6V
+
 
 !------------------------------------------------------------------------------
 !
@@ -1893,7 +2680,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  real, allocatable, dimension(:,:,:) :: real_domain
 
- character (len=10), dimension(10)  :: name = (/ "XLAT_M    ", &
+ character (len=10), dimension(24)  :: name = (/ "XLAT_M    ", &
                                                 "XLONG_M   ", &
                                                 "XLAT_V    ", &
                                                 "XLONG_V   ", &
@@ -1902,6 +2689,20 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
                                                 "LANDMASK  ", &
                                                 "LANDUSEF  ", &
                                                 "LU_INDEX  ", &
+                                                "HCNVX     ", &
+                                                "HSTDV     ", &
+                                                "HASYW     ", &
+                                                "HASYS     ", &
+                                                "HASYSW    ", &
+                                                "HASYNW    ", &
+                                                "HLENW     ", &
+                                                "HLENS     ", &
+                                                "HLENSW    ", &
+                                                "HLENNW    ", &
+                                                "HANIS     ", &
+                                                "HSLOP     ", &
+                                                "HANGL     ", &
+                                                "HZMAX     ", &
                                                 "HGT_M     " /)
 
  integer, parameter :: IO_BIN=1, IO_NET=2
@@ -1971,7 +2772,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
           if (input_type == 1) then
 !
-!        SI version of the static file
+!        si version of the static file
 !
              CALL get_wrfsi_static_dims(nestpath, im_big, jm_big)
              ALLOCATE (avc_big(im_big,jm_big))
@@ -2009,7 +2810,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
              if (istatus /= 0) CALL wrf_error_fatal('NEST_TERRAIN error after ext_XXX_open_for_read '//trim(input_fname))
 
 
-             do n=1,10
+             do n=1,24
 
              cname = name(n)
 
@@ -2023,6 +2824,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
              if (io_form_input == IO_NET) &
                 call ext_ncd_get_var_info(handle, cname, ndim, memorder, stagger, domain_start, domain_end, wrftype, istatus)
 #endif
+             print *, "cname=", cname
              print *, "istatus=", istatus
              print *, "ndim=", ndim
              print *, "memorder=", memorder
@@ -2129,14 +2931,14 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
         WRITE(message,*)'SOME MATCHING TEST i_parent_start, j_parent_start',i_parent_start,j_parent_start
        CALL wrf_message(trim(message))
        CALL wrf_message('WRFSI LAT      COMPUTED LAT')
-        WRITE(message,*)lah_nest(1,1),nest%hlat(1,1)
+        WRITE(message,*)lah_nest(1,1),nest%HLAT(1,1)
        CALL wrf_message(trim(message))
        CALL wrf_message('WRFSI LON      COMPUTED LON')
-        WRITE(message,*)loh_nest(1,1),nest%hlon(1,1)
+        WRITE(message,*)loh_nest(1,1),nest%HLON(1,1)
        CALL wrf_message(trim(message))
 
-        IF(ABS(lah_nest(1,1)-nest%hlat(1,1)) .GE. 0.5 .OR.  & 
-           ABS(loh_nest(1,1)-nest%hlon(1,1)) .GE. 0.5)THEN 
+        IF(ABS(lah_nest(1,1)-nest%HLAT(1,1)) .GE. 0.5 .OR.  & 
+           ABS(loh_nest(1,1)-nest%HLON(1,1)) .GE. 0.5)THEN 
             CALL wrf_message('CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO') 
             CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
         ENDIF
@@ -2205,7 +3007,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
    INTERFACE
      SUBROUTINE med_initialize_nest_nmm ( grid  &   
 !
-# include <dummy_args.inc>
+# include <dummy_new_args.inc>
 !
                            )
         USE module_domain
@@ -2213,14 +3015,14 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
         USE module_timing
         IMPLICIT NONE
         TYPE(domain) , POINTER                  :: grid
-#include <dummy_decl.inc>
+#include <dummy_new_decl.inc>
      END SUBROUTINE med_initialize_nest_nmm 
    END INTERFACE
 
 !------------------------------------------------------------------------------
 !  PURPOSE: 
 !         - initialize some data, mainly 2D & 3D nmm arrays  very similar to 
-!           those done in ./dyn_nmm/module_initialize_real.F 
+!           those done in ./dyn_nmm/module_initialize_real.f 
 !-----------------------------------------------------------------------------
 !
 
@@ -2228,7 +3030,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
 
    CALL med_initialize_nest_nmm( grid &   
 !
-# include <actual_args.inc>
+# include <actual_new_args.inc>
 !
                        )
 
@@ -2236,7 +3038,7 @@ END SUBROUTINE med_init_domain_constants_nmm
 
 SUBROUTINE med_initialize_nest_nmm( grid &
 !
-# include <dummy_args.inc>
+# include <dummy_new_args.inc>
 !
                            )
 
@@ -2301,10 +3103,10 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  CHARACTER(LEN=255) :: message
 
    !  Definitions of dummy arguments to solve
-#include <dummy_decl.inc>
+#include <dummy_new_decl.inc>
 
-#define COPY_IN
-#include <scalar_derefs.inc>
+!#define COPY_IN
+!#include <scalar_derefs.inc>
 #ifdef DM_PARALLEL
 #      include <data_calls.inc>
 #endif
@@ -2327,6 +3129,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
     WRITE(message,*)'TIME STEP ON DOMAIN',grid%id,'==',dt
     CALL wrf_message(trim(message))
 
+    WRITE(message,*)'IDS,IDE ON DOMAIN',grid%id,'==',ids,ide
+    CALL wrf_message(trim(message))
 !
     ALLOCATE(KHL2(JTS:NNYP),KVL2(JTS:NNYP),KHH2(JTS:NNYP),KVH2(JTS:NNYP))
     ALLOCATE(DXJ(JTS:NNYP),WPDARJ(JTS:NNYP),CPGFUJ(JTS:NNYP),CURVJ(JTS:NNYP))
@@ -2341,36 +3145,37 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 !   Since SM has been changed on parent domain to be 0 over sea ice it can not be used here
 !   to find where sea ice is. That's why alogirthm here is slightly different than the
-!   one used in module_initalize_real.F
+!   one used in module_initalize_real.f
 
+#ifdef HWRF
 !zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
    IF(.not. grid%analysis)THEN
-!zhang's doing ends
+#endif
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
 
-      IF (SM(I,J).GT.0.9) THEN                              ! OVER WATER SURFACE
-         EPSR(I,J)= 0.97
-         EMBCK(I,J)= 0.97
-         GFFC(I,J)= 0.
-         ALBEDO(I,J)=.06
-         ALBASE(I,J)=.06
+      IF (grid%sm(I,J).GT.0.9) THEN                              ! OVER WATER SURFACE
+         grid%epsr(I,J)= 0.97
+         grid%embck(I,J)= 0.97
+         grid%gffc(I,J)= 0.
+         grid%albedo(I,J)=.06
+         grid%albase(I,J)=.06
       ENDIF
 
-      IF (SICE(I,J).GT.0.9) THEN                            ! OVER SEA-ICE
-         SM(I,J)=0.
-         SI(I,J)=0.
-         GFFC(I,J)=0.
-         ALBEDO(I,J)=.60
-         ALBASE(I,J)=.60
+      IF (grid%sice(I,J).GT.0.9) THEN                            ! OVER SEA-ICE
+         grid%sm(I,J)=0.
+         grid%si(I,J)=0.
+         grid%gffc(I,J)=0.
+         grid%albedo(I,J)=.60
+         grid%albase(I,J)=.60
       ENDIF
 
-      IF (SM(I,J).LT.0.5.AND.SICE(I,J).LT.0.5) THEN         ! OVER LAND SURFACE
-           SI(I,J)=5.0*WEASD(I,J)/1000. ! SNOW WATER EQ (mm) OBTAINED FROM PARENT (SI) IS INTERPOLATED
-           EPSR(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
-           EMBCK(I,J)=1.0               ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
-           GFFC(I,J)=0.0                ! just leave zero as irrelevant
-           SNO(I,J)=SI(I,J)*.20         ! LAND-SNOW COVER
+      IF (grid%sm(I,J).LT.0.5.AND.grid%sice(I,J).LT.0.5) THEN         ! OVER LAND SURFACE
+           grid%si(I,J)=5.0*grid%weasd(I,J)/1000. ! SNOW WATER EQ (mm) OBTAINED FROM PARENT (grid%si) IS INTERPOLATED
+           grid%epsr(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
+           grid%embck(I,J)=1.0               ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
+           grid%gffc(I,J)=0.0                ! just leave zero as irrelevant
+           grid%sno(I,J)=grid%si(I,J)*.20         ! LAND-SNOW COVER
       ENDIF
 
      ENDDO
@@ -2379,35 +3184,35 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 #if 0
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
-      IF(SM(I,J).GT.0.9) THEN           ! OVER WATER SURFACE
+      IF(grid%sm(I,J).GT.0.9) THEN           ! OVER WATER SURFACE
 !
            IF (XICE(I,J) .gt. 0)THEN    ! XICE: SI INPUT ON PARENT, INTERPOLATED ONTO NEST
-             SI(I,J)=1.0                ! INITIALIZE SI BASED ON XICE FROM INTERPOLATED INPUT
+             grid%si(I,J)=1.0                ! INITIALIZE SI BASED ON XICE FROM INTERPOLATED INPUT
            ENDIF
 !
-           EPSR(I,J)= 0.97              ! VALID OVER SEA SURFACE
-           EMBCK(I,J)= 0.97              ! VALID OVER SEA SURFACE
-           GFFC(I,J)= 0.
-           ALBEDO(I,J)=.06
-           ALBASE(I,J)=.06
+           grid%epsr(I,J)= 0.97              ! VALID OVER SEA SURFACE
+           grid%embck(I,J)= 0.97              ! VALID OVER SEA SURFACE
+           grid%gffc(I,J)= 0.
+           grid%albedo(I,J)=.06
+           grid%albase(I,J)=.06
 !
-              IF(SI (I,J) .GT. 0.)THEN  ! VALID OVER SEA-ICE 
-                 SM(I,J)=0.
-                 SI(I,J)=0.             ! 
-                 SICE(I,J)=1.
-                 GFFC(I,J)=0.           ! just leave zero as irrelevant
-                 ALBEDO(I,J)=.60        ! DEFINE ALBEDO 
-                 ALBASE(I,J)=.60
+              IF(grid%si (I,J) .GT. 0.)THEN  ! VALID OVER SEA-ICE 
+                 grid%sm(I,J)=0.
+                 grid%si(I,J)=0.             ! 
+                 grid%sice(I,J)=1.
+                 grid%gffc(I,J)=0.           ! just leave zero as irrelevant
+                 grid%albedo(I,J)=.60        ! DEFINE grid%albedo 
+                 grid%albase(I,J)=.60
               ENDIF
 !
       ELSE                              ! OVER LAND SURFACE
 !
-           SI(I,J)=5.0*WEASD(I,J)/1000. ! SNOW WATER EQ (mm) OBTAINED FROM PARENT (SI) IS INTERPOLATED 
-           EPSR(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
-           EMBCK(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
-           GFFC(I,J)=0.0                ! just leave zero as irrelevant
-           SICE(I,J)=0.                 ! SEA ICE
-           SNO(I,J)=SI(I,J)*.20         ! LAND-SNOW COVER 
+           grid%si(I,J)=5.0*grid%weasd(I,J)/1000. ! SNOW WATER EQ (mm) OBTAINED FROM PARENT (grid%si) IS INTERPOLATED 
+           grid%epsr(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
+           grid%embck(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
+           grid%gffc(I,J)=0.0                ! just leave zero as irrelevant
+           grid%sice(I,J)=0.                 ! SEA ICE
+           grid%sno(I,J)=grid%si(I,J)*.20         ! LAND-SNOW COVER 
 !
       ENDIF
 !
@@ -2419,7 +3224,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
-         VEGFRA(I,J)=VEGFRC(I,J)
+         grid%vegfra(I,J)=grid%vegfrc(I,J)
      ENDDO
     ENDDO
 
@@ -2430,37 +3235,37 @@ SUBROUTINE med_initialize_nest_nmm( grid &
     DO J = JTS, MIN(JTE,JDE-1) 
      DO I = ITS, MIN(ITE,IDE-1)
 
-          IF(SM(I,J).LT.0.9.AND.SICE(I,J).LT.0.9) THEN
+          IF(grid%sm(I,J).LT.0.9.AND.grid%sice(I,J).LT.0.9) THEN
 !
-            IF ( (SNO(I,J) .EQ. 0.0) .OR. &            ! SNOWFREE ALBEDO
-                           (ALBASE(I,J) .GE. MXSNAL(I,J) ) ) THEN
-              ALBEDO(I,J) = ALBASE(I,J)
+            IF ( (grid%sno(I,J) .EQ. 0.0) .OR. &            ! SNOWFREE ALBEDO
+                           (grid%albase(I,J) .GE. grid%mxsnal(I,J) ) ) THEN
+              grid%albedo(I,J) = grid%albase(I,J)
             ELSE
-              IF (SNO(I,J) .LT. SNUP) THEN             ! MODIFY ALBEDO IF SNOWCOVER:
-                  RSNOW = SNO(I,J)/SNUP                ! BELOW SNOWDEPTH THRESHOLD
+              IF (grid%sno(I,J) .LT. SNUP) THEN             ! MODIFY ALBEDO IF SNOWCOVER:
+                  RSNOW = grid%sno(I,J)/SNUP                ! BELOW SNOWDEPTH THRESHOLD
                   SNOFAC = 1. - ( EXP(-SALP*RSNOW) - RSNOW*EXP(-SALP))
               ELSE
                   SNOFAC = 1.0                         ! ABOVE SNOWDEPTH THRESHOLD
               ENDIF
-              ALBEDO(I,J) = ALBASE(I,J) &
-                          + (1.0-VEGFRA(I,J))*SNOFAC*(MXSNAL(I,J)-ALBASE(I,J))
+              grid%albedo(I,J) = grid%albase(I,J) &
+                          + (1.0-grid%vegfra(I,J))*SNOFAC*(grid%mxsnal(I,J)-grid%albase(I,J))
             ENDIF
 !
           END IF
 
-          SI(I,J)=5.0*WEASD(I,J)
-          SNO(I,J)=WEASD(I,J)
+          grid%si(I,J)=5.0*grid%weasd(I,J)
+          grid%sno(I,J)=grid%weasd(I,J)
 ! this block probably superfluous.  Meant to guarantee land/sea agreement
 
-        IF (SM(I,J) .gt. 0.5)THEN 
-           landmask(I,J)=0.0
+        IF (grid%sm(I,J) .gt. 0.5)THEN 
+           grid%landmask(I,J)=0.0
         ELSE 
-           landmask(I,J)=1.0
+           grid%landmask(I,J)=1.0
         ENDIF 
 
-        IF (SICE(I,J) .eq. 1.0) then !!!! change vegtyp and sltyp to fit seaice (desireable??)
-         ISLTYP(I,J)=16
-         IVGTYP(I,J)=24
+        IF (grid%sice(I,J) .eq. 1.0) then !!!! change vegtyp and sltyp to fit seaice (desireable??)
+         grid%isltyp(I,J)=16
+         grid%ivgtyp(I,J)=24
         ENDIF 
 
      ENDDO
@@ -2470,91 +3275,102 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS,MIN(ITE,IDE-1)
-      IF(SM(I,J).GT.0.9 .AND. VEGFRA(I,J) .NE. 0) THEN
-        WRITE(20,*)'PROBLEM AT THE LAND-WATER INTERFACE:',I,J,SM(I-1,J),VEGFRA(I-1,j),SM(I,J),VEGFRA(I,J)
+      IF(grid%sm(I,J).GT.0.9 .AND. grid%vegfra(I,J) .NE. 0) THEN
+        WRITE(message,*)'PROBLEM AT THE LAND-WATER INTERFACE (VEGFRA):', &
+             I,J,grid%sm(I-1,J),grid%vegfra(I-1,j),grid%sm(I,J),grid%vegfra(I,J)
+        CALL wrf_message(trim(message))
       ENDIF
 !
-      IF(SM(I,J).GT.0.9 .AND. NMM_TSK(I,J) .NE. 0) THEN
-        WRITE(20,*)'PROBLEM AT THE LAND-WATER INTERFACE:',I,J,SM(I-1,J),NMM_TSK(I-1,J),SM(I,J),NMM_TSK(I,J)
+#if defined(HWRF)
+      ! HWRF should not perform the check below because the nmm_tsk is
+      ! update with the correct skin temperature every timestep (on both
+      ! land and sea points).
+#else
+      IF(grid%sm(I,J).GT.0.9 .AND. grid%nmm_tsk(I,J) .NE. 0) THEN
+        WRITE(message,*)'PROBLEM AT THE LAND-WATER INTERFACE (NMM_TSK):', &
+             I,J,grid%sm(I-1,J),grid%nmm_tsk(I-1,J),grid%sm(I,J),grid%nmm_tsk(I,J)
+        CALL wrf_message(trim(message))
       ENDIF
+#endif
      ENDDO
     ENDDO
 
 
 !   hardwire root depth for time being
 
-        RTDPTH=0.
-        RTDPTH(1)=0.1
-        RTDPTH(2)=0.3
-        RTDPTH(3)=0.6
+        grid%rtdpth=0.
+        grid%rtdpth(1)=0.1
+        grid%rtdpth(2)=0.3
+        grid%rtdpth(3)=0.6
 
 !   hardwire soil depth for time being
 
-        SLDPTH=0.
-        SLDPTH(1)=0.1
-        SLDPTH(2)=0.3
-        SLDPTH(3)=0.6
-        SLDPTH(4)=1.0
+        grid%sldpth=0.
+        grid%sldpth(1)=0.1
+        grid%sldpth(2)=0.3
+        grid%sldpth(3)=0.6
+        grid%sldpth(4)=1.0
 
+#ifdef HWRF
 !zhang's doing: added to AVOID THIS COMPUTATION IF THE NEST IS STARTED USING ANALYSIS FILE
    ENDIF ! <------ for analysis set to false
-!zhang's doing ends
+#endif 
 !-----------  END OF LAND SURFACE INITIALIZATION -------------------------------------
 !
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
-       RES(I,J)=1.
+       grid%res(I,J)=1.
      ENDDO
     ENDDO
 
 !   INITIALIZE 2D BOUNDARY MASKS
 
-!! HBM2:
+!! grid%hbm2:
  
-    HBM2=0.
+    grid%hbm2=0.
     DO J = JTS, MIN(JTE,JDE-1)
       DO I = ITS, MIN(ITE,IDE-1)
        IF((J .GE. 3 .and. J .LE. (JDE-1)-2) .AND.   &
           (I .GE. 2 .and. I .LE. (IDE-1)-2+MOD(J,2))) THEN
-          HBM2(I,J)=1.
+          grid%hbm2(I,J)=1.
         ENDIF
       ENDDO
     ENDDO   
 
-!! HBM3:
+!! grid%hbm3:
 
-    HBM3=0.
+    grid%hbm3=0.
     DO J=JTS,MIN(JTE,JDE-1)
-     IHWG(J)=mod(J+1,2)-1
+     grid%ihwg(J)=mod(J+1,2)-1
       IF (J .ge. 4 .and. J .le. (JDE-1)-3) THEN
-        IHL=(IDS+1)-IHWG(J) 
+        IHL=(IDS+1)-grid%ihwg(J) 
         IHH=(IDE-1)-2
         DO I=ITS,MIN(ITE,IDE-1)
-           IF (I .ge. IHL  .and. I .le. IHH) HBM3(I,J)=1.
+           IF (I .ge. IHL  .and. I .le. IHH) grid%hbm3(I,J)=1.
         ENDDO 
       ENDIF
     ENDDO 
    
-!! VBM2
+!! grid%vbm2
 
-    VBM2=0.
+    grid%vbm2=0.
     DO J=JTS,MIN(JTE,JDE-1)
      DO I=ITS,MIN(ITE,IDE-1)
        IF((J .ge. 3 .and. J .le. (JDE-1)-2)  .AND.  &
           (I .ge. 2 .and. I .le. (IDE-1)-1-MOD(J,2))) THEN
-           VBM2(I,J)=1.
+           grid%vbm2(I,J)=1.
        ENDIF
      ENDDO
     ENDDO
 
-!! VBM3
+!! grid%vbm3
 
-    VBM3=0.
+    grid%vbm3=0.
     DO J=JTS,MIN(JTE,JDE-1)
       DO I=ITS,MIN(ITE,IDE-1)
         IF((J .ge. 4 .and. J .le. (JDE-1)-3)  .AND.  &
            (I .ge. 3-MOD(J,2) .and. I .le. (IDE-1)-2)) THEN
-           VBM3(I,J)=1.
+           grid%vbm3(I,J)=1.
         ENDIF
       ENDDO
     ENDDO
@@ -2566,8 +3382,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
     WB     = WBD*DTR
     SBD    = grid%SBD0   ! gopal's doing: may use Registry SBD0 now
     SB     = SBD*DTR
-    DLM    = DLMD*DTR  ! input now from med_nest_egrid_configure
-    DPH    = DPHD*DTR  ! input now from med_nest_egrid_configure
+    DLM    = grid%dlmd*DTR  ! input now from med_nest_egrid_configure
+    DPH    = grid%dphd*DTR  ! input now from med_nest_egrid_configure
     TDLM   = DLM+DLM
     TDPH   = DPH+DPH
     WBI    = WB+TDLM
@@ -2579,7 +3395,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
     TSPH   = 3600./grid%DT
     DTAD   = 1.0
     DTCF   = 4.0    
-    DY_NMM0= DY_NMM ! ERAD*DPH; input now from med_nest_egrid_configure
+    DY_NMM0= grid%dy_nmm ! ERAD*DPH; input now from med_nest_egrid_configure
 
 !   CORIOLIS PARAMETER  (There appears to be some roundoff in computing TLM & STPH and other terms,
 !   in the nested domain. The problem needs to be revisited
@@ -2592,7 +3408,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
       DO I=ITS,MIN(ITE,IDE-1)
          TLM=TLM0 + I*TDLM
          FP=TWOM*(CTPH0*STPH+STPH0*CTPH*COS(TLM))
-         F(I,J)=0.5*grid%DT*FP
+         grid%f(I,J)=0.5*grid%DT*FP
       ENDDO
     ENDDO
 
@@ -2626,25 +3442,25 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 ! --------------DERIVED VERTICAL GRID CONSTANTS--------------------------
 
-     WRITE(message,*)'NEW CHANGE',F4D,EF4T,F4Q
+     WRITE(message,*)'NEW CHANGE',grid%f4d,grid%ef4t,grid%f4q
      CALL wrf_message(trim(message))
 
       DO L=KDS,KDE-1
-        RDETA(L)=1./DETA(L)
-        F4Q2(L)=-.25*grid%DT*DTAD/DETA(L)
+        grid%rdeta(L)=1./grid%deta(L)
+        grid%f4q2(L)=-.25*grid%DT*DTAD/grid%deta(L)
       ENDDO
 
        DO J=JTS,MIN(JTE,JDE-1)
         DO I=ITS,MIN(ITE,IDE-1)
-          DX_NMM(I,J)=DXJ(J)
-          WPDAR(I,J)=WPDARJ(J)*HBM2(I,J)
-          CPGFU(I,J)=CPGFUJ(J)*VBM2(I,J)
-          CURV(I,J)=CURVJ(J)*VBM2(I,J)
-          FCP(I,J)=FCPJ(J)*HBM2(I,J)
-          FDIV(I,J)=FDIVJ(J)*HBM2(I,J)
-          FAD(I,J)=FADJ(J)
-          HDACV(I,J)=HDACJ(J)*VBM2(I,J)
-          HDAC(I,J)=HDACJ(J)*1.25*HBM2(I,J)
+          grid%dx_nmm(I,J)=DXJ(J)
+          grid%wpdar(I,J)=WPDARJ(J)*grid%hbm2(I,J)
+          grid%cpgfu(I,J)=CPGFUJ(J)*grid%vbm2(I,J)
+          grid%curv(I,J)=CURVJ(J)*grid%vbm2(I,J)
+          grid%fcp(I,J)=FCPJ(J)*grid%hbm2(I,J)
+          grid%fdiv(I,J)=FDIVJ(J)*grid%hbm2(I,J)
+          grid%fad(I,J)=FADJ(J)
+          grid%hdacv(I,J)=HDACJ(J)*grid%vbm2(I,J)
+          grid%hdac(I,J)=HDACJ(J)*1.25*grid%hbm2(I,J)
         ENDDO
        ENDDO
 
@@ -2653,21 +3469,21 @@ SUBROUTINE med_initialize_nest_nmm( grid &
           KHH=(IDE-1)-2+MOD(J,2) ! KHH is global...loop over I that have
           DO I=ITS,MIN(ITE,IDE-1)
              IF (I .ge. 2 .and. I .le. KHH) THEN
-               HDAC(I,J)=HDAC(I,J)* DFC
+               grid%hdac(I,J)=grid%hdac(I,J)* DFC
              ENDIF
           ENDDO
         ELSE
           KHH=2+MOD(J,2)
           DO I=ITS,MIN(ITE,IDE-1)
              IF (I .ge. 2 .and. I .le. KHH) THEN
-               HDAC(I,J)=HDAC(I,J)* DFC
+               grid%hdac(I,J)=grid%hdac(I,J)* DFC
              ENDIF
           ENDDO
           KHH=(IDE-1)-2+MOD(J,2)
 
           DO I=ITS,MIN(ITE,IDE-1)
              IF (I .ge. (IDE-1)-2 .and. I .le. KHH) THEN
-               HDAC(I,J)=HDAC(I,J)* DFC
+               grid%hdac(I,J)=grid%hdac(I,J)* DFC
              ENDIF
           ENDDO
         ENDIF
@@ -2675,9 +3491,9 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
       DO J=JTS,min(JTE,JDE-1)
       DO I=ITS,min(ITE,IDE-1)
-        DDMPU(I,J)=DDMPUJ(J)*VBM2(I,J)
-        DDMPV(I,J)=DDMPVJ(J)*VBM2(I,J)
-        HDACV(I,J)=HDACV(I,J)*VBM2(I,J)
+        grid%ddmpu(I,J)=DDMPUJ(J)*grid%vbm2(I,J)
+        grid%ddmpv(I,J)=DDMPVJ(J)*grid%vbm2(I,J)
+        grid%hdacv(I,J)=grid%hdacv(I,J)*grid%vbm2(I,J)
       ENDDO
       ENDDO
 
@@ -2688,26 +3504,26 @@ SUBROUTINE med_initialize_nest_nmm( grid &
           KVH=(IDE-1)-1-MOD(J,2)
           DO I=ITS,MIN(ITE,IDE-1)
             IF (I .ge. 2 .and.  I .le. KVH) THEN
-             DDMPU(I,J)=DDMPU(I,J)*DDFC
-             DDMPV(I,J)=DDMPV(I,J)*DDFC
-             HDACV(I,J)=HDACV(I,J)*DFC
+             grid%ddmpu(I,J)=grid%ddmpu(I,J)*DDFC
+             grid%ddmpv(I,J)=grid%ddmpv(I,J)*DDFC
+             grid%hdacv(I,J)=grid%hdacv(I,J)*DFC
             ENDIF
           ENDDO
         ELSE
           KVH=3-MOD(J,2)
           DO I=ITS,MIN(ITE,IDE-1)
            IF (I .ge. 2 .and.  I .le. KVH) THEN
-            DDMPU(I,J)=DDMPU(I,J)*DDFC
-            DDMPV(I,J)=DDMPV(I,J)*DDFC
-            HDACV(I,J)=HDACV(I,J)*DFC
+            grid%ddmpu(I,J)=grid%ddmpu(I,J)*DDFC
+            grid%ddmpv(I,J)=grid%ddmpv(I,J)*DDFC
+            grid%hdacv(I,J)=grid%hdacv(I,J)*DFC
            ENDIF
           ENDDO
           KVH=(IDE-1)-1-MOD(J,2)
           DO I=ITS,MIN(ITE,IDE-1)
            IF (I .ge. IDE-1-2 .and. I .le. KVH) THEN
-            DDMPU(I,J)=DDMPU(I,J)*DDFC
-            DDMPV(I,J)=DDMPV(I,J)*DDFC
-            HDACV(I,J)=HDACV(I,J)*DFC
+            grid%ddmpu(I,J)=grid%ddmpu(I,J)*DDFC
+            grid%ddmpv(I,J)=grid%ddmpv(I,J)*DDFC
+            grid%hdacv(I,J)=grid%hdacv(I,J)*DFC
            ENDIF
           ENDDO
         ENDIF
@@ -2717,8 +3533,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  
      DO J = JTS, MIN(JTE,JDE-1)
        DO I = ITS, MIN(ITE,IDE-1)
-          GLAT(I,J)=HLAT(I,J)*DTR
-          GLON(I,J)=HLON(I,J)*DTR
+          grid%GLAT(I,J)=grid%HLAT(I,J)*DTR
+          grid%GLON(I,J)=grid%HLON(I,J)*DTR
        ENDDO
      ENDDO
 
@@ -2739,22 +3555,22 @@ SUBROUTINE med_initialize_nest_nmm( grid &
           JA=JA+1
           KHLA(JA)=2
           KHHA(JA)=(IDE-1)-1-MOD(J+1,2)
- 161      EMT(JA)=EMTJ(J)
+ 161      grid%emt(JA)=EMTJ(J)
           DO 162 J=(JDE-1)-4,(JDE-1)-2
           JA=JA+1
           KHLA(JA)=2
           KHHA(JA)=(IDE-1)-1-MOD(J+1,2)
- 162      EMT(JA)=EMTJ(J)
+ 162      grid%emt(JA)=EMTJ(J)
           DO 163 J=6,(JDE-1)-5
           JA=JA+1
           KHLA(JA)=2
           KHHA(JA)=2+MOD(J,2)
- 163      EMT(JA)=EMTJ(J)
+ 163      grid%emt(JA)=EMTJ(J)
           DO 164 J=6,(JDE-1)-5
           JA=JA+1
           KHLA(JA)=(IDE-1)-2
           KHHA(JA)=(IDE-1)-1-MOD(J+1,2)
- 164      EMT(JA)=EMTJ(J)
+ 164      grid%emt(JA)=EMTJ(J)
 
 ! --------------SPREADING OF UPSTREAM VELOCITY-POINT ADVECTION FACTOR----
 
@@ -2763,22 +3579,22 @@ SUBROUTINE med_initialize_nest_nmm( grid &
           JA=JA+1
           KVLA(JA)=2
           KVHA(JA)=(IDE-1)-1-MOD(J,2)
- 171      EM(JA)=EMJ(J)
+ 171      grid%em(JA)=EMJ(J)
           DO 172 J=(JDE-1)-4,(JDE-2)-2
           JA=JA+1
           KVLA(JA)=2
           KVHA(JA)=(IDE-1)-1-MOD(J,2)
- 172      EM(JA)=EMJ(J)
+ 172      grid%em(JA)=EMJ(J)
           DO 173 J=6,(JDE-1)-5
           JA=JA+1
           KVLA(JA)=2
           KVHA(JA)=2+MOD(J+1,2)
- 173      EM(JA)=EMJ(J)
+ 173      grid%em(JA)=EMJ(J)
           DO 174 J=6,(JDE-1)-5
           JA=JA+1
           KVLA(JA)=(IDE-1)-2
           KVHA(JA)=(IDE-1)-1-MOD(J,2)
- 174      EM(JA)=EMJ(J)
+ 174      grid%em(JA)=EMJ(J)
 
 !        ENDIF ! wrf_dm_on_monitor
 
@@ -2791,10 +3607,10 @@ SUBROUTINE med_initialize_nest_nmm( grid &
          DO K=KDS,KDE-1                                         !  
           DO J=JDS,JDE-1,2                                      !  V  [H]    V    H
            IF (J .ge. JTS .and. J .le. JTE) THEN                !
-             U(IDE-1,J,K)=0.                                    !  H  [x]    H    V
-             V(IDE-1,J,K)=0.                                    !  ------    ------  
+             grid%u(IDE-1,J,K)=0.                                    !  H  [x]    H    V
+             grid%v(IDE-1,J,K)=0.                                    !  ------    ------  
            ENDIF                                                !   ide-1      ide
-          ENDDO                                                 !   NMM/SI     WRF
+          ENDDO                                                 !   NMM/si     WRF
          ENDDO                                                  !   domain    domain
         ENDIF                                                   !             (dummy)   
 
@@ -2802,8 +3618,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 ! just a test for gravity waves
 
 !  PD=62000.
-!   U=0.0
-!   V=0.0
+!   grid%u=0.0
+!   grid%v=0.0
 !   T=300.
 !   Q=0.0
 !   Q2=0.0
@@ -2814,8 +3630,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !  DO J = JTS, MIN(JTE,JDE-1)
 !   DO K = KTS,KTE
 !    DO I = ITS, MIN(ITE,IDE-1)
-!      SM(I,J)=I
-!       U(I,K,J)=J
+!      grid%sm(I,J)=I
+!       grid%u(I,K,J)=J
 !    ENDDO
 !   ENDDO
 !  ENDDO

@@ -5,7 +5,7 @@ MODULE GOCART_DUST
 
 CONTAINS
   subroutine gocart_dust_driver(ktau,dt,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,           &
          ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -35,6 +35,8 @@ CONTAINS
       INTENT(INOUT) ::                               smois
    REAL,  DIMENSION( ims:ime , jms:jme, 3 )                   ,               &
           INTENT(IN   ) ::    erod
+   REAL,  DIMENSION( ims:ime , jms:jme, 5 )                   ,               &
+          INTENT(INout   ) ::    dustin
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
           INTENT(IN   ) ::                                                 &
                                                      u10,                  &
@@ -63,6 +65,11 @@ CONTAINS
   real*8, dimension (1) :: dxy
   real*8  conver,converi
   real dttt
+  integer ibegc,jbegc,iendc,jendc
+  jbegc=max(jts,jds+3)
+  jendc=min(jte,jde-4)
+  ibegc=max(its,ids+3)
+  iendc=min(ite,ide-4)
 ! conver=1.e-9*mwdry
 ! converi=1.e9/mwdry
   conver=1.e-9
@@ -75,18 +82,22 @@ CONTAINS
   lmx=1
   nmx=5 
   k=kts
-  do j=jts,jte
-  do i=its,ite
+  do j=jbegc,jendc
+  do i=ibegc,iendc
 !
 ! donṫ do dust over water!!!
 !
      if(xland(i,j).lt.1.5)then
      ilwi(1,1)=1
-     tc(1)=chem(i,kts,j,p_dust_1)*conver
-     tc(2)=chem(i,kts,j,p_dust_2)*conver
-     tc(3)=chem(i,kts,j,p_dust_3)*conver
-     tc(4)=chem(i,kts,j,p_dust_4)*conver
-     tc(5)=chem(i,kts,j,p_dust_5)*conver
+     if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
+        tc(:)=1.e-16*conver
+     else
+        tc(1)=chem(i,kts,j,p_dust_1)*conver
+        tc(2)=chem(i,kts,j,p_dust_2)*conver
+        tc(3)=chem(i,kts,j,p_dust_3)*conver
+        tc(4)=chem(i,kts,j,p_dust_4)*conver
+        tc(5)=chem(i,kts,j,p_dust_5)*conver
+     endif
      w10m(1,1)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
      airmas(1,1)=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
 !
@@ -100,10 +111,11 @@ CONTAINS
 !  volumetric soil moisture over porosity
 !
      gwet(1,1)=smois(i,1,j)/porosity(isltyp(i,j))
-!    gwet(1,1)=.1
      ndt=ifix(dt)
      airden(1,1)=rho_phy(i,kts,j)
      dxy(1)=dx*dx
+!    if(erod(i,j,1).gt.0.)write(0,*)'er1=',p_dust_1,num_chem,erod(i,j,1),tc(2)
+!    if(erod(i,j,1).gt.0.)write(0,*)'er1=',dt,dxy(1),u10(i,j),w10m(1,1)
 !    erodin(1,1,1,1)=  0.149748762553862
 !    erodin(1,1,2,1)=  7.487438878070708E-002
 !    erodin(1,1,3,1)=  7.487438878070708E-002
@@ -127,17 +139,22 @@ CONTAINS
 !    write(0,*)tc(3)
 !    write(0,*)tc(4)
 !    write(0,*)tc(5)
+!    if(erod(i,j,1).gt.0.)write(0,*)'er2=',i,j,erod(i,j,1),tc(2)
+     if(config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) then
+      dustin(i,j,1:5)=tc(1:5)*converi
+     else
      chem(i,kts,j,p_dust_1)=tc(1)*converi
      chem(i,kts,j,p_dust_2)=tc(2)*converi
      chem(i,kts,j,p_dust_3)=tc(3)*converi
      chem(i,kts,j,p_dust_4)=tc(4)*converi
      chem(i,kts,j,p_dust_5)=tc(5)*converi
+     endif
 ! for output diagnostics
-     emis_dust(i,1,j,p_edust1)=bems(1)
-     emis_dust(i,1,j,p_edust2)=bems(2)
-     emis_dust(i,1,j,p_edust3)=bems(3)
-     emis_dust(i,1,j,p_edust4)=bems(4)
-     emis_dust(i,1,j,p_edust5)=bems(5)
+!    emis_dust(i,1,j,p_edust1)=bems(1)
+!    emis_dust(i,1,j,p_edust2)=bems(2)
+!    emis_dust(i,1,j,p_edust3)=bems(3)
+!    emis_dust(i,1,j,p_edust4)=bems(4)
+!    emis_dust(i,1,j,p_edust5)=bems(5)
      endif
   enddo
   enddo
@@ -283,8 +300,8 @@ end subroutine gocart_dust_driver
               IF (dsrc < 0.0) dsrc = 0.0
               
               ! Update dust mixing ratio at first model level.
-              tc(i,j,1,n) = tc(i,j,1,n) + dsrc / airmas(i,j,1)
-              bems(i,j,n) = dsrc
+              tc(i,j,1,n) = tc(i,j,1,n) + .2*dsrc / airmas(i,j,1)
+              bems(i,j,n) = .2*dsrc
            END DO
         END DO
      END DO

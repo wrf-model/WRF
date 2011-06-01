@@ -34,7 +34,6 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 /* redirect standard out and standard error based on compile options*/
                                                                                                                                               
 #ifndef NCEP_DEBUG_MULTIDIR
-# if !defined( MS_SUA ) 
     gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
@@ -54,6 +53,9 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     }
 
 /* redirect standard error */
+# if defined( _WIN32 ) 
+    if ( *me != 0 ) {   /* stderr from task 0 should come to screen on windows because it is buffered if redirected */
+#endif
     sprintf(filename,"rsl.error.%04d",*me) ;
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
@@ -70,33 +72,8 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     }
     fprintf( stdout, "taskid: %d hostname: %s\n",*me,hostname) ;
     fprintf( stderr, "taskid: %d hostname: %s\n",*me,hostname) ;
-# else
-    printf("host %d", *me ) ;
-    system("hostname") ;
-    sprintf( hostname, "host %d", *me ) ;
-/* redirect standard out*/
-    sprintf(filename,"rsl.out.%04d",*me) ;
-    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
-    {
-        return ;
+# if defined( _WIN32 ) 
     }
-    if( dup2( newfd, STANDARD_OUTPUT ) < 0 )
-    {
-        close(newfd) ;
-        return ;
-    }
-/* redirect standard error */
-    sprintf(filename,"rsl.error.%04d",*me) ;
-    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
-    {
-        return ;
-    }
-    if( dup2( newfd, STANDARD_ERROR ) < 0 )
-    {
-        close(newfd) ;
-        return ;
-    }
-
 # endif
 #else
 # ifndef NCEP_DEBUG_GLOBALSTDOUT
@@ -247,7 +224,8 @@ RSL_LITE_INIT_EXCH (
   int ips , ipe , jps , jpe , kps , kpe ;
   int xy ;
   int yp, ym, xp, xm ;
-  int nbytes, nbytes_x_recv, nbytes_y_recv ;
+  int nbytes ;
+  int nbytes_x_recv = 0, nbytes_y_recv = 0 ;
 
 #ifndef STUBMPI
   MPI_Comm comm, *comm0, dummy_comm ;

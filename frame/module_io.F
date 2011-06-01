@@ -49,6 +49,27 @@ MODULE module_io
 !</DESCRIPTION>
 #include "md_calls.inc"
 
+!--- registry-generated routine that gets the io format being used for a dataset
+
+  INTEGER FUNCTION io_form_for_dataset ( DataSet )
+    IMPLICIT NONE
+    CHARACTER*(*), INTENT(IN)  :: DataSet
+    INTEGER                    :: io_form 
+#include "io_form_for_dataset.inc"
+    io_form_for_dataset = io_form
+    RETURN
+  END FUNCTION io_form_for_dataset
+
+  INTEGER FUNCTION io_form_for_stream ( stream )
+    USE module_streams
+    IMPLICIT NONE
+    INTEGER,       INTENT(IN)  :: stream
+    INTEGER                    :: io_form 
+#include "io_form_for_stream.inc"
+    io_form_for_stream = io_form
+    RETURN
+  END FUNCTION io_form_for_stream
+
 !--- ioinit
 
 SUBROUTINE wrf_ioinit( Status )
@@ -186,6 +207,9 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 !</PRE>
 !</DESCRIPTION>
   USE module_state_description
+#ifdef DM_PARALLEL
+  USE module_dm, ONLY :  ntasks_x, mytask_x, local_communicator_x
+#endif
   IMPLICIT NONE
 #include "wrf_io_flags.h"
   CHARACTER*(*) :: FileName
@@ -202,69 +226,15 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
   CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
   INTEGER           :: myproc
   CHARACTER*128     :: mess
-  CHARACTER*1028    :: tstr
+  CHARACTER*1028    :: tstr, t1
+  INTEGER i,j
 
-  CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_write_begin' )
+  WRITE(mess,*) 'module_io.F: in wrf_open_for_write_begin, FileName = ',TRIM(FileName)
+  CALL wrf_debug( DEBUG_LVL, mess )
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
 
-  IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL nl_get_io_form_restart( 1, io_form )
-  ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL nl_get_io_form_input( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL nl_get_io_form_auxinput1( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL nl_get_io_form_auxinput2( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL nl_get_io_form_auxinput3( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL nl_get_io_form_auxinput4( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL nl_get_io_form_auxinput5( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT6' ) THEN
-    CALL nl_get_io_form_auxinput6( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT7' ) THEN
-    CALL nl_get_io_form_auxinput7( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT8' ) THEN
-    CALL nl_get_io_form_auxinput8( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
-    CALL nl_get_io_form_sgfdda( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
-    CALL nl_get_io_form_gfdda( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
-    CALL nl_get_io_form_auxinput11( 1, io_form )
-
-  ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL nl_get_io_form_history( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL nl_get_io_form_auxhist1( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL nl_get_io_form_auxhist2( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL nl_get_io_form_auxhist3( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL nl_get_io_form_auxhist4( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL nl_get_io_form_auxhist5( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST6' ) THEN
-    CALL nl_get_io_form_auxhist6( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST7' ) THEN
-    CALL nl_get_io_form_auxhist7( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST8' ) THEN
-    CALL nl_get_io_form_auxhist8( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST9' ) THEN
-    CALL nl_get_io_form_auxhist9( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST10' ) THEN
-    CALL nl_get_io_form_auxhist10( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST11' ) THEN
-    CALL nl_get_io_form_auxhist11( 1, io_form )
-
-  ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL nl_get_io_form_boundary( 1, io_form )
-  ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL nl_get_io_form_history( 1, io_form )
-  ENDIF
+  io_form = io_form_for_dataset( DataSet )
 
   Status = 0
   Hndl = -1
@@ -294,7 +264,17 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 #endif
 #ifdef PNETCDF
       CASE (IO_PNETCDF  )
-        CALL ext_pnc_open_for_write_begin( FileName, Comm_compute, Comm_io, SysDepInfo, &
+        WRITE(tstr,"(A,',NTASKS_X=',i10,',MYTASK_X=',i10,',LOCAL_COMMUNICATOR_X=',i10)") TRIM(SysDepInfo),ntasks_x,mytask_x,local_communicator_x
+        j=1
+        t1 = " "
+        DO i=1,len(TRIM(tstr))
+          IF ( tstr(i:i) .NE. ' ' ) THEN
+            t1(j:j) = tstr(i:i)
+            j = j + 1
+          ENDIF
+        ENDDO
+        tstr = t1
+        CALL ext_pnc_open_for_write_begin( FileName, Comm_compute, Comm_io, tstr, &
                                             Hndl, Status)
 #endif
 #ifdef XXX
@@ -546,63 +526,8 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read_begin' )
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
-  IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL nl_get_io_form_restart( 1, io_form )
-  ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL nl_get_io_form_input( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL nl_get_io_form_auxinput1( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL nl_get_io_form_auxinput2( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL nl_get_io_form_auxinput3( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL nl_get_io_form_auxinput4( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL nl_get_io_form_auxinput5( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT6' ) THEN
-    CALL nl_get_io_form_auxinput6( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT7' ) THEN
-    CALL nl_get_io_form_auxinput7( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT8' ) THEN
-    CALL nl_get_io_form_auxinput8( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
-    CALL nl_get_io_form_sgfdda( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
-    CALL nl_get_io_form_gfdda( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
-    CALL nl_get_io_form_auxinput11( 1, io_form )
 
-  ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL nl_get_io_form_history( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL nl_get_io_form_auxhist1( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL nl_get_io_form_auxhist2( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL nl_get_io_form_auxhist3( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL nl_get_io_form_auxhist4( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL nl_get_io_form_auxhist5( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST6' ) THEN
-    CALL nl_get_io_form_auxhist6( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST7' ) THEN
-    CALL nl_get_io_form_auxhist7( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST8' ) THEN
-    CALL nl_get_io_form_auxhist8( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST9' ) THEN
-    CALL nl_get_io_form_auxhist9( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST10' ) THEN
-    CALL nl_get_io_form_auxhist10( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST11' ) THEN
-    CALL nl_get_io_form_auxhist11( 1, io_form )
-
-  ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL nl_get_io_form_boundary( 1, io_form )
-  ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL nl_get_io_form_history( 1, io_form )
-  ENDIF
+  io_form = io_form_for_dataset( DataSet )
 
   Status = 0
   Hndl = -1
@@ -625,6 +550,11 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
           CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
         ENDIF
+#endif
+#ifdef PNETCDF
+      CASE ( IO_PNETCDF   )
+        CALL ext_pnc_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                                            Hndl , Status )
 #endif
 #ifdef XXX
       CASE ( IO_XXX   )
@@ -760,6 +690,10 @@ SUBROUTINE wrf_open_for_read_commit( DataHandle , Status )
         CASE ( IO_ESMF )
           CALL ext_esmf_open_for_read_commit ( Hndl , Status )
 #endif
+#ifdef PNETCDF
+        CASE ( IO_PNETCDF )
+          CALL ext_pnc_open_for_read_commit ( Hndl , Status )
+#endif
 #ifdef XXX
       CASE ( IO_XXX   )
         CALL ext_xxx_open_for_read_commit ( Hndl , Status )
@@ -821,64 +755,8 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_open_for_read' )
 
   CALL get_value_from_pairs ( "DATASET" , SysDepInfo , DataSet )
-  IF      ( DataSet .eq. 'RESTART' ) THEN
-    CALL nl_get_io_form_restart( 1, io_form )
-  ELSE IF ( DataSet .eq. 'INPUT' ) THEN
-    CALL nl_get_io_form_input( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT1' ) THEN
-    CALL nl_get_io_form_auxinput1( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT2' ) THEN
-    CALL nl_get_io_form_auxinput2( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT3' ) THEN
-    CALL nl_get_io_form_auxinput3( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT4' ) THEN
-    CALL nl_get_io_form_auxinput4( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT5' ) THEN
-    CALL nl_get_io_form_auxinput5( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT6' ) THEN
-    CALL nl_get_io_form_auxinput6( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT7' ) THEN
-    CALL nl_get_io_form_auxinput7( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT8' ) THEN
-    CALL nl_get_io_form_auxinput8( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT9' ) THEN
-    CALL nl_get_io_form_sgfdda( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT10' ) THEN
-    CALL nl_get_io_form_gfdda( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXINPUT11' ) THEN
-    CALL nl_get_io_form_auxinput11( 1, io_form )
 
-    CALL nl_get_io_form_auxinput5( 1, io_form )
-  ELSE IF ( DataSet .eq. 'HISTORY' ) THEN
-    CALL nl_get_io_form_history( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST1' ) THEN
-    CALL nl_get_io_form_auxhist1( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST2' ) THEN
-    CALL nl_get_io_form_auxhist2( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST3' ) THEN
-    CALL nl_get_io_form_auxhist3( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST4' ) THEN
-    CALL nl_get_io_form_auxhist4( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST5' ) THEN
-    CALL nl_get_io_form_auxhist5( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST6' ) THEN
-    CALL nl_get_io_form_auxhist6( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST7' ) THEN
-    CALL nl_get_io_form_auxhist7( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST8' ) THEN
-    CALL nl_get_io_form_auxhist8( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST9' ) THEN
-    CALL nl_get_io_form_auxhist9( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST10' ) THEN
-    CALL nl_get_io_form_auxhist10( 1, io_form )
-  ELSE IF ( DataSet .eq. 'AUXHIST11' ) THEN
-    CALL nl_get_io_form_auxhist11( 1, io_form )
-
-  ELSE IF ( DataSet .eq. 'BOUNDARY' ) THEN
-    CALL nl_get_io_form_boundary( 1, io_form )
-  ELSE  ! default if nothing is set in SysDepInfo; use history
-    CALL nl_get_io_form_history( 1, io_form )
-  ENDIF
+  io_form = io_form_for_dataset( DataSet )
 
   Hndl = -1
   Status = 0
@@ -901,14 +779,14 @@ SUBROUTINE wrf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
         CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )
       ENDIF
 #endif
-#ifdef PHDF5
-    CASE ( IO_PHDF5  )
-      CALL ext_phdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
-                               Hndl , Status )
-#endif
 #ifdef PNETCDF
     CASE ( IO_PNETCDF  )
       CALL ext_pnc_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+                               Hndl , Status )
+#endif
+#ifdef PHDF5
+    CASE ( IO_PHDF5  )
+      CALL ext_phdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                Hndl , Status )
 #endif
 #ifdef XXX
@@ -1109,6 +987,7 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
   LOGICAL                     :: for_out
 
   INTEGER io_form , Hndl
+  INTEGER                     :: str_length , str_count
 
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_inquire_filename' )
 
@@ -1119,6 +998,10 @@ SUBROUTINE wrf_inquire_filename ( DataHandle, FileName , FileStatus, Status )
       SELECT CASE ( use_package( io_form ) )
 #ifdef NETCDF
         CASE ( IO_NETCDF   )
+          str_length = LEN ( FileName )
+          DO str_count = 1 , str_length
+            FileName(str_count:str_count) = ' '
+          END DO
           IF (wrf_dm_on_monitor()) CALL ext_ncd_inquire_filename ( Hndl, FileName , FileStatus, Status )
           CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )
           CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )
@@ -1998,6 +1881,16 @@ SUBROUTINE bdys_are_distributed
   IMPLICIT NONE
   bdy_dist_flag = .TRUE.
 END SUBROUTINE bdys_are_distributed
+
+LOGICAL FUNCTION on_stream ( mask , switch )
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: mask(*), switch
+  INTEGER             :: result
+! get_mask is a C routine defined in frame/pack_utils.c
+! switch is decremented from its fortran value so it is zero based
+  CALL get_mask( mask, switch-1, result )
+  on_stream = ( result .NE. 0 )
+END FUNCTION on_stream
 
 END MODULE module_io
 
@@ -4173,10 +4066,12 @@ SUBROUTINE lower_case(MemoryOrder,MemOrd)
 !Local
   CHARACTER*1                :: c
   INTEGER       ,PARAMETER   :: upper_to_lower =IACHAR('a')-IACHAR('A')
-  INTEGER                    :: i,n
+  INTEGER                    :: i,n,n1
 !
   MemOrd = ' '
   N = len(MemoryOrder)
+  N1 = len(MemOrd)
+  N = MIN(N,N1)
   MemOrd(1:N) = MemoryOrder(1:N)
   DO i=1,N
     c = MemoryOrder(i:i)

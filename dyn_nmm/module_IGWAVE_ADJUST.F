@@ -14,6 +14,7 @@
       USE MODULE_MODEL_CONSTANTS
 !     USE MODULE_EXCHANGE
       USE MODULE_MPP,ONLY: MYPE
+      USE MODULE_WRF_ERROR     
 !     USE MODULE_TIMERS  ! this one creates a name conflict at compile time
 !-----------------------------------------------------------------------
 !***
@@ -475,7 +476,7 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !
-!zhang's doing        IF(.NOT.LAST_TIME)THEN    !Do not execute block at last timestep
+        IF(.NOT.LAST_TIME)THEN    !Do not execute block at last timestep
 !
 !-----------------------------------------------------------------------
 !***  LATITUDINAL AND LONGITUDINAL FLUXES AND OMEGA-ALPHA COMPONENTS
@@ -555,7 +556,7 @@
 !
 !-----------------------------------------------------------------------
 !
-!zhang's doing        ENDIF   !End block to skip execution at last timestep
+        ENDIF   !End block to skip execution at last timestep
 !
 !-----------------------------------------------------------------------
 !
@@ -627,13 +628,20 @@
 !***********************************************************************
 #ifdef DM_PARALLEL
       USE module_domain
-      USE module_dm
+      USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
+                                              ,MYTASK,NTASKS,NTASKS_X   &
+                                              ,NTASKS_Y                 &
+                                              ,wrf_dm_sum_real          &
+                                              ,wrf_dm_sum_integer          
+      USE MODULE_COMM_DM
 #endif
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
+      INCLUDE "mpif.h"
+#endif
 #ifdef DM_PARALLEL
-!     INCLUDE "mpif.h"
       TYPE (DOMAIN) :: GRID
       INTEGER,INTENT(IN) :: MYPE,MPI_COMM_COMP
 #endif
@@ -668,8 +676,9 @@
 !
       INTEGER :: I,IHH,IHL,IX,J,JHH,JHL,JX,K,KS,NSMUD
       INTEGER :: MY_IS_GLB,MY_IE_GLB,MY_JS_GLB,MY_JE_GLB
+      INTEGER :: LOC_NPTS, GLB_NPTS
 #ifdef DM_PARALLEL
-      INTEGER :: IPS,IPE,JPS,JPE,KPS,KPE
+      INTEGER :: IPS,IPE,JPS,JPE,KPS,KPE,IRET
 #endif
 !#ifdef DEREF_KLUDGE
 !! SEE http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -678,7 +687,7 @@
 !      INTEGER :: SM31Y,EM31Y,SM32Y,EM32Y,SM33Y,EM33Y
 !#endif
 !
-      REAL :: PETDTL
+      REAL :: PETDTL, TASK_CHANGE, GLOBAL_CHANGE, GLOBAL_CHANGE_WRF
 !
       REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: HBMS,PNE,PRET,PSE
 !
@@ -702,15 +711,29 @@
 !***  VERTICALLY INTEGRATE THE HORIZONTAL DIVERGENCE
 !-----------------------------------------------------------------------
 !
+
+      LOC_NPTS=0
+
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
       DO K=KTE-1,KTS,-1
         DO J=MYJS_P2,MYJE_P2
         DO I=MYIS_P2,MYIE_P2
           DIV(I,J,K)=DIV(I,J,K+1)+DIV(I,J,K)
+        if (K .eq. KTS) then
+         LOC_NPTS=LOC_NPTS+1
+        endif
+
         ENDDO
         ENDDO
       ENDDO
+
+#ifdef DM_PARALLEL
+      GLB_NPTS=wrf_dm_sum_integer(LOC_NPTS)
+#else
+      GLB_NPTS=LOC_NPTS
+#endif
+
 !
 !-----------------------------------------------------------------------
 !***  COMPUTATION OF PRESSURE TENDENCY
@@ -733,13 +756,34 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j)
+
+      TASK_CHANGE=0.
+
       DO J=MYJS_P2,MYJE_P2
       DO I=MYIS_P2,MYIE_P2
         PD(I,J)=PSDT(I,J)*DT+PD(I,J)
         PRET(I,J)=PSDT(I,J)*RES(I,J)
         PDSL(I,J)=PD(I,J)*RES(I,J)
+        TASK_CHANGE=TASK_CHANGE+abs(PSDT(I,J)*108./DT)  ! .01*10800/dt (hPa/3 h)
       ENDDO
       ENDDO
+
+#ifdef DM_PARALLEL
+      GLOBAL_CHANGE_WRF=wrf_dm_sum_real(TASK_CHANGE)/GLB_NPTS
+#else
+      GLOBAL_CHANGE_WRF=TASK_CHANGE/GLB_NPTS
+#endif
+
+#ifdef DM_PARALLEL
+      if ( MYPE == 0 ) then
+        write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
+        call wrf_debug(1,wrf_err_message)
+      endif
+#else
+        write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
+        call wrf_debug(1,wrf_err_message)
+#endif
+
 !
 !-----------------------------------------------------------------------
 !***  COMPUTATION OF PETDT
@@ -898,7 +942,10 @@
 !***********************************************************************
 #ifdef DM_PARALLEL
       USE MODULE_DOMAIN
-      USE MODULE_DM
+      USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
+                                              ,MYTASK,NTASKS,NTASKS_X   &
+                                              ,NTASKS_Y
+      USE MODULE_COMM_DM
 #endif
 !-----------------------------------------------------------------------
       IMPLICIT NONE

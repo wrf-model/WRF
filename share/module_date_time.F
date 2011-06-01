@@ -913,13 +913,12 @@ END MODULE module_date_time
       RETURN
    END SUBROUTINE wrf_atotime
 
-
-
    ! Converts an WRFU_Time object into a WRF date-time string.  
    ! The format of the WRF date-time strings is a slight variant on ISO 8601: 
    ! ISO is "YYYY-MM-DDThh:mm:ss" while WRF is "YYYY-MM-DD_hh:mm:ss".  
    SUBROUTINE wrf_timetoa ( time, str )
-      USE module_utility
+      USE module_utility, ONLY : WRFU_Time, WRFU_TimeGet, WRFU_SUCCESS
+      IMPLICIT NONE
       TYPE(WRFU_Time),   INTENT(INOUT) :: time
       CHARACTER (LEN=*), INTENT(OUT) :: str
       INTEGER strlen, rc
@@ -930,8 +929,9 @@ END MODULE module_date_time
       ENDIF
       tmpstr = ''
       CALL WRFU_TimeGet( time, timeString=tmpstr, rc=rc )
+      WRITE(mess,*)'WRFU_TimeGet() returns ',rc,' in wrf_timetoa() FAILED: timeString >',TRIM(tmpstr),'<'
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_TimeGet() in wrf_timetoa() FAILED', &
+                            mess, &
                             __FILE__ , &
                             __LINE__  )
       ! change ISO 8601 'T' to WRF '_' and hack off fraction if str is not 
@@ -945,11 +945,10 @@ END MODULE module_date_time
       RETURN
    END SUBROUTINE wrf_timetoa
 
-
-
    ! Converts an WRFU_TimeInterval object into a time-interval string.  
    SUBROUTINE wrf_timeinttoa ( timeinterval, str )
       USE module_utility
+      IMPLICIT NONE
       TYPE(WRFU_TimeInterval),   INTENT(INOUT) :: timeinterval
       CHARACTER (LEN=*), INTENT(OUT) :: str
       INTEGER rc

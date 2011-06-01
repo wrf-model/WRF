@@ -10,6 +10,7 @@ PROGRAM real_data
    USE module_driver_constants
    USE module_configure
    USE module_timing
+   USE module_check_a_mundo
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
@@ -113,6 +114,8 @@ PROGRAM real_data
    CALL initial_config
 #endif
 
+   CALL check_nml_consistency
+   CALL set_physics_rconfigs
 
    CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
@@ -240,6 +243,29 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
+#if defined(HWRF)
+  ! Sam Says:
+
+  ! The *INIT arrays are used to read init data written out by hwrf_prep_hybrid
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::TINIT,UINIT,VINIT,QINIT,CWMINIT
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::PINIT
+  REAL,ALLOCATABLE,DIMENSION(:,:)::PDINIT
+
+  ! The *B arrays are used to read boundary data written out by hwrf_prep_hybrid
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::TB,UB,VB,QB,CWMB
+  REAL,ALLOCATABLE,DIMENSION(:,:)::PDB
+
+  INTEGER :: KB, LM, IM, JM, iunit_gfs, N
+
+  integer :: i,j,k
+  LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
+  integer :: ids,ide, jds,jde, kds,kde
+  integer :: ims,ime, jms,jme, kms,kme
+  integer :: its,ite, jts,jte, kts,kte
+
+  integer :: ioerror
+#endif
+
 #include "deref_kludge.h"
 
 
@@ -310,6 +336,9 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       write(message,*) 'TRIM(config_flags%auxinput1_inname): ', TRIM(config_flags%auxinput1_inname)
       CALL wrf_message(message)
        
+#if defined(HWRF)
+     ifph_onlyfirst: if(.not.grid%use_prep_hybrid .or. loop==1) then
+#endif
       IF (config_flags%auxinput1_inname(1:10) .eq. 'real_input') THEN
          using_binary_wrfsi=.true.
       ENDIF
@@ -338,9 +367,9 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       !  Input data.
 
-      CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
+      CALL wrf_debug (100, 'med_sidata_input: call input_auxinput1_wrf')
 
-      CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
+      CALL input_auxinput1 ( idsi, grid, config_flags, ierr )
 
       !  Possible optional SI input.  This sets flags used by init_domain.
 
@@ -376,53 +405,24 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
                                                                                                                                               
         write(message,*) 'binary WPS branch'
         CALL wrf_message(message)
-        CALL wrf_error_fatal("binary WPS support deferred for initial release")
-                                                                                                                                              
-!       WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
-!       CALL wrf_debug ( 100 , wrf_err_message )
-!       CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , config_flags%io_form_auxinput1 )
-!       CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-                                                                                                                                              
-!         IF ( ierr .NE. 0 ) THEN
-!            CALL wrf_debug( 1 , 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
-!            CALL wrf_debug( 1 , 'will try again without the extension' )
-!            CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
-!            CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-!            IF ( ierr .NE. 0 ) THEN
-!               CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
-!            ENDIF
-!         ENDIF
-                                                                                                                                              
-      !  Input data.
-                                                                                                                                              
-!!! believe problematic as binary data from WPS will be XYZ ordered, while this
-!!! version of WRF will read in as XZY.  OR read all fields in as unique
-!!! Registry items that are XYZ, then swap.  More memory, and more overhead, but
-!!! better than having a stand alone "read_si" type code??
-                                                                                                                                              
-!      CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
-!      CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
- 
-      !  Possible optional SI input.  This sets flags used by init_domain.
- 
-!      IF ( loop .EQ. 1 ) THEN
-!         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_input' )
-!         CALL init_module_optional_input ( grid , config_flags )
-!      END IF
-!      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
-!
-!      CALL optional_input ( grid , idsi , config_flags)
-!        flag_metgrid=1
- 
-!
-!      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
- 
+        current_date_char(11:11)='_'
+        CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , &
+                                     config_flags%io_form_auxinput1 )
+        CALL read_wps ( grid, trim(si_inpname), current_date_char, config_flags%num_metgrid_levels )
+!!! bogus set some flags??
+      flag_metgrid=1
+      flag_soilhgt=1
+
+
           ENDIF
 
 #endif
       CASE DEFAULT
         CALL wrf_error_fatal('real: not valid io_form_auxinput1')
       END SELECT
+#if defined(HWRF)
+     endif ifph_onlyfirst
+#endif
 
       grid%islope=1
       grid%vegfra=grid%vegfrc
@@ -437,6 +437,99 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       grid%input_from_file = .true.
 
       CALL init_domain ( grid )
+
+#if defined(HWRF)
+     read_phinit: if(grid%use_prep_hybrid) then
+#if defined(DM_PARALLEL)
+        if(.not. wrf_dm_on_monitor()) then
+           call wrf_error_fatal('real: in use_prep_hybrid mode, threading and mpi are forbidden.')
+        endif
+#endif
+
+        ph_loop1: if(loop==1) then
+
+           ! determine kds, ids, jds
+           SELECT CASE ( model_data_order )
+           CASE ( DATA_ORDER_ZXY )
+              kds = grid%sd31 ; kde = grid%ed31 ;
+              ids = grid%sd32 ; ide = grid%ed32 ;
+              jds = grid%sd33 ; jde = grid%ed33 ;
+
+              kms = grid%sm31 ; kme = grid%em31 ;
+              ims = grid%sm32 ; ime = grid%em32 ;
+              jms = grid%sm33 ; jme = grid%em33 ;
+
+              kts = grid%sp31 ; kte = grid%ep31 ; ! tile is entire patch
+              its = grid%sp32 ; ite = grid%ep32 ; ! tile is entire patch
+              jts = grid%sp33 ; jte = grid%ep33 ; ! tile is entire patch
+
+           CASE ( DATA_ORDER_XYZ )
+              ids = grid%sd31 ; ide = grid%ed31 ;
+              jds = grid%sd32 ; jde = grid%ed32 ;
+              kds = grid%sd33 ; kde = grid%ed33 ;
+
+              ims = grid%sm31 ; ime = grid%em31 ;
+              jms = grid%sm32 ; jme = grid%em32 ;
+              kms = grid%sm33 ; kme = grid%em33 ;
+
+              its = grid%sp31 ; ite = grid%ep31 ; ! tile is entire patch
+              jts = grid%sp32 ; jte = grid%ep32 ; ! tile is entire patch
+              kts = grid%sp33 ; kte = grid%ep33 ; ! tile is entire patch
+
+           CASE ( DATA_ORDER_XZY )
+              ids = grid%sd31 ; ide = grid%ed31 ;
+              kds = grid%sd32 ; kde = grid%ed32 ;
+              jds = grid%sd33 ; jde = grid%ed33 ;
+
+              ims = grid%sm31 ; ime = grid%em31 ;
+              kms = grid%sm32 ; kme = grid%em32 ;
+              jms = grid%sm33 ; jme = grid%em33 ;
+
+              its = grid%sp31 ; ite = grid%ep31 ; ! tile is entire patch
+              kts = grid%sp32 ; kte = grid%ep32 ; ! tile is entire patch
+              jts = grid%sp33 ; jte = grid%ep33 ; ! tile is entire patch
+
+           END SELECT
+           ! Allocate 3D initialization arrays:
+           call wrf_message('ALLOCATE PREP_HYBRID INIT ARRAYS')
+           ALLOCATE ( TINIT  (ids:(ide-1),kds:(kde-1)  ,jds:(jde-1)) )
+           ALLOCATE ( PINIT  (ids:(ide-1),kds:kde      ,jds:(jde-1)) )
+           ALLOCATE ( UINIT  (ids:(ide-1),kds:(kde-1)  ,jds:(jde-1)) )
+           ALLOCATE ( VINIT  (ids:(ide-1),kds:(kde-1)  ,jds:(jde-1)) )
+           ALLOCATE ( QINIT  (ids:(ide-1),kds:(kde-1)  ,jds:(jde-1)) )
+           ALLOCATE ( CWMINIT(ids:(ide-1),kds:(kde-1)  ,jds:(jde-1)) )
+           ALLOCATE ( PDINIT (ids:(ide-1),              jds:(jde-1)) )
+
+           REWIND 900
+           READ(900,iostat=ioerror) PDINIT,TINIT,QINIT,CWMINIT,UINIT,VINIT,PINIT
+           if(ioerror/=0) then
+              call wrf_error_fatal('Unable to read MAKBND output from unit 900.')
+           endif
+           WRITE(0,*) 'U V T AT 10 10 10 ',UINIT(10,10,10),VINIT(10,10,10),TINIT(10,10,10)
+           ! Switch from IKJ to IJK ordering
+           DO I = ids,ide-1
+              DO J = jds,jde-1
+                 grid%pd(I,J) = PDINIT(I,J)
+                 DO K = kds,kde-1
+                    grid%q2(I,J,K) = 0
+                    grid%u(I,J,K) = UINIT(I,K,J)
+                    grid%v(I,J,K) = VINIT(I,K,J)
+                    grid%t(I,J,K) = TINIT(I,K,J)
+                    grid%q(I,J,K) = QINIT(I,K,J)
+                    grid%cwm(I,J,K) = CWMINIT(I,K,J)
+                 ENDDO
+                 !  Was commented out in original V2 HWRF too:
+                 !      DO K = kds,kde
+                 !         grid%nmm_pint(I,J,K) = pinit(I,K,J)
+                 !      ENDDO
+              ENDDO
+           ENDDO
+
+           call wrf_message('DEALLOCATE PREP_HYBRID INIT ARRAYS')
+           deallocate(TINIT,PINIT,UINIT,VINIT,QINIT,CWMINIT,PDINIT)
+        end if ph_loop1
+     end if read_phinit
+#endif
 
       CALL model_to_grid_config_rec ( grid%id, model_config_rec, config_flags )
 
@@ -603,6 +696,11 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    USE module_bc
    IMPLICIT NONE
 
+#if defined(HWRF)
+  external get_wrf_debug_level
+  integer :: debug
+#endif
+
    TYPE(domain)                 :: grid
    TYPE (grid_config_rec_type)  :: config_flags
    INTEGER , INTENT(IN)         :: loop , time_loop_max
@@ -614,8 +712,8 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    INTEGER :: inc_h,inc_v
    INTEGER :: i , j , k , idts
 
-   INTEGER :: id1 , interval_seconds , ierr, rc
-   INTEGER , SAVE :: id 
+   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update
+   INTEGER , SAVE :: id ,id4
    CHARACTER (LEN=80) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER(LEN=132) :: message
@@ -639,8 +737,31 @@ character *24 :: temp24 , temp24b
    INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 #endif
 
+#if defined(HWRF)
+  ! Sam says:
+
+  ! The *B arrays are used to read boundary data written out by hwrf_prep_hybrid
+  REAL,ALLOCATABLE,DIMENSION(:,:,:)::TB,UB,VB,QB,CWMB
+  REAL,ALLOCATABLE,DIMENSION(:,:)::PDB
+
+  ! Dimensions and looping variables:
+  INTEGER :: KB, LM, IM, JM, N
+
+  ! Unit number to read boundary data from (changes each time)
+  INTEGER :: iunit_gfs
+
+  ! Did we allocate the prep_hybrid input arrays?
+  LOGICAL :: alloc_ph_arrays
+
+  integer :: ioerror
+#endif
+
 #include "deref_kludge.h"
 
+#if defined(HWRF)
+  alloc_ph_arrays=.false.
+  call get_wrf_debug_level(debug)
+#endif
 
    !  Various sizes that we need to be concerned about.
 
@@ -697,12 +818,25 @@ character *24 :: temp24 , temp24b
 
    spec_bdy_width = model_config_rec%spec_bdy_width
    interval_seconds = model_config_rec%interval_seconds
+   sst_update = model_config_rec%sst_update
 
 !-----------------------------------------------------------------------
 !
    main_loop_test: IF ( loop .EQ. 1 ) THEN
 !
 !-----------------------------------------------------------------------
+
+      IF ( time_loop_max .NE. 1 ) THEN
+         IF(sst_update .EQ. 1)THEN
+           CALL construct_filename1( inpname , 'wrflowinp' , grid%id , 2 )
+           CALL open_w_dataset ( id4, TRIM(inpname) , grid , config_flags , output_auxinput4 , "DATASET=AUXINPUT4", ierr )
+           IF ( ierr .NE. 0 ) THEN
+              CALL wrf_error_fatal( 'real: error opening wrflowinp for writing' )
+           END IF
+           CALL output_auxinput4 ( id4, grid , config_flags , ierr )
+         END IF
+      END IF
+
 
    !  This is the space needed to save the current 3d data for use in computing
    !  the lateral boundary tendencies.
@@ -744,7 +878,7 @@ character *24 :: temp24 , temp24b
       CALL construct_filename1( inpname , 'wrfinput' , grid%id , 2 )
 
       CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , &
-                            output_model_input , "DATASET=INPUT", ierr )
+                            output_input , "DATASET=INPUT", ierr )
 
       IF ( ierr .NE. 0 ) THEN
       CALL wrf_error_fatal( 'real: error opening wrfinput for writing' )
@@ -753,10 +887,10 @@ character *24 :: temp24 , temp24b
 !     CALL calc_current_date ( grid%id , 0. )
 !      grid%write_metadata = .true.
 
-        write(message,*) 'making call to output_model_input'
+        write(message,*) 'making call to output_input'
         CALL wrf_message(message)
 
-        CALL output_model_input ( id1, grid , config_flags , ierr )
+        CALL output_input ( id1, grid , config_flags , ierr )
 
 !***
 !***  CLOSE THE WRFINPUT DATASET
@@ -962,6 +1096,222 @@ character *24 :: temp24 , temp24b
 !
 !-----------------------------------------------------------------------
 
+     call wrf_debug(1,'LOOP>1, so start making non-init boundary conditions')
+#if defined(HWRF)
+
+     bdytmp_useph: if(grid%use_prep_hybrid) then
+        call wrf_debug(1,'ALLOCATE PREP_HYBRID BOUNDARY ARRAYS')
+        !! When running in prep_hybrid mode, we must read in the data here.
+
+        ! Allocate boundary arrays:
+        KB = 2*IDE + JDE - 3
+        LM = KDE
+        IM = IDE
+        JM = JDE
+        ALLOCATE(TB(KB,LM,2))
+        ALLOCATE(QB(KB,LM,2))
+        ALLOCATE(CWMB(KB,LM,2))
+        ALLOCATE(UB(KB,LM,2))
+        ALLOCATE(VB(KB,LM,2))
+        ALLOCATE(PDB(KB,2))
+        alloc_ph_arrays=.true.
+
+        ! Read in the data:
+        IUNIT_GFS = 900 + LOOP - 1
+        READ(IUNIT_GFS,iostat=ioerror) PDB,TB,QB,CWMB,UB,VB
+        if(ioerror/=0) then
+           call wrf_error_fatal('Unable to read MAKBND output from unit 900.')
+        endif
+
+        ! Now copy the data into the temporary boundary arrays, and
+        ! switch from IKJ to IJK while we do it.
+
+        !!    Southern boundary
+
+        IF(JPS.EQ.JDS)THEN
+           J=1
+
+           DO k = kps , MIN(kde,kpe)
+              N=1
+              DO i = ips , MIN(ide,ipe)
+                 tbdy3dtemp2(i,j,k) =   TB(N,k,1)
+                 qbdy3dtemp2(i,j,k) =   QB(N,k,1)
+                 cwmbdy3dtemp2(i,j,k) = CWMB(N,k,1)
+                 q2bdy3dtemp2(i,j,k) =  0.0        !KWON
+                 write(message,*)'southtend t',k,i,n,tbdy3dtemp2(i,j,k)
+                 call wrf_debug(10,message)
+                 write(message,*)'southtend q',k,i,n,qbdy3dtemp2(i,j,k)
+                 call wrf_debug(10,message)
+                 if (K .eq. 1 ) then
+                    write(0,*) 'S boundary values T,Q : ', I,tbdy3dtemp2(i,j,k),  &
+                         qbdy3dtemp2(i,j,k)
+                 endif
+                 N=N+1
+              END DO
+           END DO
+
+           DO k = kps , MIN(kde,kpe)
+              N=1
+              DO i = ips , MIN(ide,ipe)
+                 ubdy3dtemp2(i,j,k) = UB(N,k,1)
+                 vbdy3dtemp2(i,j,k) = VB(N,k,1)
+                 N=N+1
+              ENDDO
+           END DO
+
+           N=1
+           DO i = ips , MIN(ide,ipe)
+              pdbdy2dtemp2(i,j,1) = PDB(N,1)
+              write(message,*)'southtend p',i,n,pdbdy2dtemp1(i,j,1)
+              call wrf_debug(10,message)
+              N=N+1
+           END DO
+
+        ENDIF
+
+        !     Northern boundary
+
+        IF(JPE.EQ.JDE)THEN
+
+           J=MIN(JDE,JPE)
+           DO k = kps , MIN(kde,kpe)
+              N=IM+1
+              DO i = ips , MIN(ide,ipe)
+                 tbdy3dtemp2(i,j,k) =   TB(N,k,1)
+                 qbdy3dtemp2(i,j,k) =   QB(N,k,1)
+                 cwmbdy3dtemp2(i,j,k) = CWMB(N,k,1)
+                 q2bdy3dtemp2(i,j,k) =  0.0        !KWON
+                    write(message,*)'northtend t',k,i,n,tbdy3dtemp2(i,j,k)
+                    call wrf_debug(10,message)
+                    write(message,*)'northtend q',k,i,n,qbdy3dtemp2(i,j,k)
+                    call wrf_debug(10,message)
+                 N=N+1
+              END DO
+           END DO
+
+           DO k = kps , MIN(kde,kpe)
+              N=IM
+              DO i = ips , MIN(ide,ipe)
+                 ubdy3dtemp2(i,j,k) = UB(N,k,1)
+                 vbdy3dtemp2(i,j,k) = VB(N,k,1)
+                 N=N+1
+              END DO
+           END DO
+
+           N=IM+1
+           DO i = ips , MIN(ide,ipe)
+              pdbdy2dtemp2(i,j,1) = PDB(N,1)
+                 write(message,*)'northtend p',i,n,pdbdy2dtemp1(i,j,1)
+                 call wrf_debug(10,message)
+              N=N+1
+           END DO
+
+        ENDIF
+
+        !!     Western boundary
+
+        IF(IPS.EQ.IDS)THEN
+           I=1
+           DO k = kps , MIN(kde,kpe)
+              N=2*IM+1
+              inc_h=mod(jps+1,2)
+              DO j = jps+inc_h, MIN(jde,jpe),2
+                 if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
+                    tbdy3dtemp2(i,j,k) =   TB(N,k,1)
+                    qbdy3dtemp2(i,j,k) =   QB(N,k,1)
+                    cwmbdy3dtemp2(i,j,k) = CWMB(N,k,1)
+                    q2bdy3dtemp2(i,j,k) =  0.0        !KWON
+                       write(message,*)'westtend t',k,j,n,tbdy3dtemp2(i,j,k)
+                       call wrf_debug(10,message)
+                       write(message,*)'westtend q',k,j,n,qbdy3dtemp2(i,j,k)
+                       call wrf_debug(10,message)
+                    N=N+1
+                 endif
+              END DO
+           END DO
+
+           DO k = kps , MIN(kde,kpe)
+              N=2*IM-1
+              inc_v=mod(jps,2)
+              DO j = jps+inc_v, MIN(jde,jpe),2
+                 if (J .ge. 2 .and. J .le. jde-1 .and. mod(J,2) .eq. 0) then
+                    ubdy3dtemp2(i,j,k) = UB(N,k,1)
+                    vbdy3dtemp2(i,j,k) = VB(N,k,1)
+                    N=N+1
+                 endif
+              END DO
+           END DO
+
+           N=2*IM+1
+           inc_h=mod(jps+1,2)
+           DO j = jps+inc_h, MIN(jde,jpe),2
+              if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
+                 pdbdy2dtemp2(i,j,1) = PDB(N,1)
+                    write(message,*)'westtend p',j,n,pdbdy2dtemp1(i,j,1)
+                    call wrf_debug(10,message)
+                 N=N+1
+              endif
+           END DO
+
+        ENDIF
+
+        !!     Eastern boundary
+
+        IF(IPE.EQ.IDE)THEN
+
+           I=MIN(IDE,IPE)
+
+           DO k = kps , MIN(kde,kpe)
+              N=2*IM+(JM/2)
+              inc_h=mod(jps+1,2)
+              DO j = jps+inc_h, MIN(jde,jpe),2
+                 if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
+                    tbdy3dtemp2(i,j,k) =   TB(N,k,1)
+                    qbdy3dtemp2(i,j,k) =   QB(N,k,1)
+                    cwmbdy3dtemp2(i,j,k) = CWMB(N,k,1)
+                    q2bdy3dtemp2(i,j,k) =  0.0        !KWON
+                       write(message,*)'easttend t',k,j,n,tbdy3dtemp2(i,j,k)
+                       call wrf_debug(10,message)
+                       write(message,*)'easttend q',k,j,n,qbdy3dtemp2(i,j,k)
+                       call wrf_debug(10,message)
+                    N=N+1
+                 endif
+              END DO
+           END DO
+
+           DO k = kps , MIN(kde,kpe)
+              N=2*IM+(JM/2)-1
+              inc_v=mod(jps,2)
+              DO j = jps+inc_v, MIN(jde,jpe),2
+                 if (J .ge. 2 .and. J .le. jde-1 .and. mod(J,2) .eq. 0) then
+                    ubdy3dtemp2(i,j,k) = UB(N,k,1)
+                    vbdy3dtemp2(i,j,k) = VB(N,k,1)
+                    N=N+1
+                 endif
+              END DO
+           END DO
+
+           N=2*IM+(JM/2)
+           inc_h=mod(jps+1,2)
+           DO j = jps+inc_h, MIN(jde,jpe),2
+              if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
+                 pdbdy2dtemp2(i,j,1) = PDB(N,1)
+                    write(message,*)'easttend p',j,n,pdbdy2dtemp1(i,j,1)
+                    call wrf_debug(10,message)
+                 N=N+1
+              endif
+           END DO
+
+        ENDIF
+     else
+#endif
+
+           CALL output_auxinput4 ( id4, grid , config_flags , ierr )
+
+#if defined( HWRF)
+     endif bdytmp_useph
+#endif
+
       write(message,*)' assemble_output loop=',loop,' in IF block'
       call wrf_message(message)
 
@@ -982,7 +1332,9 @@ character *24 :: temp24 , temp24b
          CALL domain_clockadvance( grid )
       END IF
 
-!
+#if defined(HWRF)
+     bdytmp_notph: if(.not.grid%use_prep_hybrid) then
+#endif
 !-----------------------------------------------------------------------
 !***  SOUTHERN BOUNDARY
 !-----------------------------------------------------------------------
@@ -1110,6 +1462,9 @@ character *24 :: temp24 , temp24b
 	endif
           END DO
         ENDIF
+#if defined(HWRF)
+     endif bdytmp_notph
+#endif
 !-----------------------------------------------------------------------
       !  During all of the loops after the first loop, 
       !  we first compute the boundary
@@ -1207,14 +1562,14 @@ character *24 :: temp24 , temp24b
       !  start the model at any of the available analysis time periods.
 
 !  WRITE ( loop_char , FMT = '(I4.4)' ) loop
-!  CALL open_w_dataset ( id1, 'wrfinput'//loop_char , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
+!  CALL open_w_dataset ( id1, 'wrfinput'//loop_char , grid , config_flags , output_input , "DATASET=INPUT", ierr )
 !  IF ( ierr .NE. 0 ) THEN
 !    CALL wrf_error_fatal( 'real: error opening wrfinput'//loop_char//' for writing' )
 !  ENDIF
 !  grid%write_metadata = .true.
 
 !  CALL calc_current_date ( grid%id , 0. )
-!  CALL output_model_input ( id1, grid , config_flags , ierr )
+!  CALL output_input ( id1, grid , config_flags , ierr )
 !  CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
 
   !  Is this or is this not the last time time?  We can remove some unnecessary
@@ -1249,7 +1604,6 @@ character *24 :: temp24 , temp24b
          DO j = jps , jpe
             DO i = ips , ipe
                pdbdy2dtemp1(i,j,1) = pdbdy2dtemp2(i,j,1)
-	if (J .eq. jpe) write(0,*) 'I,J, PDBDy2dtemp1(i,j,1):' , I,J, PDBDy2dtemp1(i,j,1)
             END DO
          END DO
 
@@ -1315,5 +1669,12 @@ character *24 :: temp24 , temp24b
       END IF
 
    END IF main_loop_test
+
+#if defined(HWRF)
+  if(alloc_ph_arrays) then
+     call wrf_debug(1,'DEALLOCATE PREP_HYBRID BOUNARY ARRAYS')
+     deallocate(TB,QB,CWMB,UB,VB,PDB)
+  endif
+#endif
 
 END SUBROUTINE assemble_output

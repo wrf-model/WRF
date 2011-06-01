@@ -126,8 +126,8 @@ CONTAINS
 ! ====================
 
          WRITE (0,'(/,A)')            ' Warning in sub. intplin_horiz:'
-         WRITE (0,'(A,F7.3,A,I3,A))') ' yi = ',pi,' outside [1 ',kix,'] or'
-         WRITE (0,'(A,F7.3,A,I3,A))') ' xj = ',pj,' outside [1 ',kjx,']'
+         WRITE (0,'(A,F7.3,A,I3,A)')  ' yi = ',pi,' outside [1 ',kix,'] or'
+         WRITE (0,'(A,F7.3,A,I3,A)')  ' xj = ',pj,' outside [1 ',kjx,']'
          WRITE (0,'(A,/)')            ' No interpolation was performed'
 !        STOP                         ' in intplin_horiz.F90'
          PVAL = 0. 

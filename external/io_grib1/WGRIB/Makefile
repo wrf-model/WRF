@@ -16,14 +16,14 @@ obj=wgrib_main.o seekgrib.o ibm2flt.o readgrib.o intpower.o cnames.o BDSunpk.o \
   dwdtable_002.o dwdtable_201.o dwdtable_202.o dwdtable_203.o \
   cptectable_254.o nceptab_130.o nceptab_131.o
 
-all: wgrib
+all: wgrib.exe
 
-archive: wgrib
+archive: wgrib.exe
 
-wgrib: $(obj)
-	$(CC) -o wgrib $(obj) -lm
-	( cd .. ; \rm -f wgrib ; \ln -sf WGRIB/wgrib wgrib ; cd WGRIB )
+wgrib.exe: $(obj)
+	$(CC) -o wgrib.exe $(obj) #-lm
+	( cd .. ; \rm -f wgrib.exe ; \ln -sf WGRIB/wgrib.exe wgrib.exe ; cd WGRIB )
 
 clean:	
-	\rm -f $(obj) wgrib
-	( cd .. ; \rm -f wgrib ; cd WGRIB )
+	\rm -f $(obj) *.obj wgrib.exe
+	( cd .. ; \rm -f wgrib.exe ; cd WGRIB )

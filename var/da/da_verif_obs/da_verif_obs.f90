@@ -24,7 +24,7 @@ program da_verif_obs
       if_plot_profiler, if_plot_polaramv, if_plot_qscat, if_plot_rmse, &
       if_plot_sound, if_plot_sonde_sfc, if_plot_synop, if_plot_surface, &
       if_plot_upr, if_plot_ships, if_plot_metar, interval, stdp, start_date, &
-      if_plot_geoamv
+      if_plot_geoamv, stdh, num_miss
    use da_verif_obs_init, only : initialize_surface_type, initialize_upr_type, &
       initialize_gpspw_type, initialize_gpsref_type, da_advance_cymdh , &
       initialize_t_tab      
@@ -37,7 +37,7 @@ program da_verif_obs
    
    character*5  :: stn_id               
    integer      :: n, k, kk, l, levels, dummy_i
-   real         :: lat, lon, press, dummy           
+   real         :: lat, lon, press, height, dummy           
    real         :: u_obs, u_inv, u_error, u_inc, & 
                    v_obs, v_inv, v_error, v_inc, &
                    t_obs, t_inv, t_error, t_inc, &
@@ -47,7 +47,7 @@ program da_verif_obs
    real         :: tpw_obs, tpw_inv, tpw_err, tpw_inc
    real         :: ref_obs, ref_inv, ref_err, ref_inc
    integer      :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc
-   integer      :: npr, ier, iexp
+   integer      :: npr, nht, ier, iexp
    character*10 :: date, new_date             ! Current date (ccyymmddhh).
    integer      :: sdate, cdate, edate        ! Starting, current ending dates.
    logical      :: if_write, is_file
@@ -299,11 +299,11 @@ program da_verif_obs
 
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                      call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                      call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                     call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
@@ -352,19 +352,19 @@ program da_verif_obs
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                      call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                      call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                     call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
-                   if( t_qc >=  0)  then
+                   if( t_qc >= 0 .and. npr > 0 )  then
                     call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
                     call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
                    endif
-                   if( q_qc >=  0)  then
+                   if( q_qc >= 0 .and. npr > 0 )  then
                     call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
                     call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
                    endif
@@ -389,15 +389,15 @@ program da_verif_obs
                      t_obs, t_inv, t_qc, t_error, t_inc    
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                     call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                     call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
-                   if( t_qc >=  0) then
+                   if( t_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
                     call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
                    endif
@@ -423,11 +423,11 @@ program da_verif_obs
                      v_obs, v_inv, v_qc, v_error, v_inc
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >=  0) then
+                   if( u_qc >= 0 .and. npr > 0 ) then
                        call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
                        call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
                    endif
-                   if( v_qc >=  0) then
+                   if( v_qc >= 0 .and. npr > 0 ) then
                        call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
                        call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
                    endif
@@ -529,19 +529,20 @@ program da_verif_obs
 
    IF ( num_obs > 0 ) THEN
       DO n = 1, num_obs
-       read(diag_unit_in,'(i8)') levels
+         read(diag_unit_in,'(i8)') levels
          DO k = 1, levels
-         read(diag_unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+            read(diag_unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                          kk, l, stn_id, &          ! Station
-                         lat, lon, press, &       ! Lat/lon, dummy
+                         lat, lon, height, &       ! Lat/lon, dummy
                          ref_obs, ref_inv, ref_qc, ref_err, ref_inc
-          if (if_write) then
-           if( ref_qc >=  0) then
-             call update_stats(gpsref%refomb(k),gpsref%refoma(k),ref_inv,ref_inc)
-             call update_stats(ggpsref%refomb(k),ggpsref%refoma(k),ref_inv,ref_inc)
-           end if
-          endif
-      END DO      !  loop over levels
+            if (if_write .and. height > 0.0) then
+               call get_std_ht_level(height, nht, stdh, nstdh)
+               if ( ref_qc >=  0) then
+                  call update_stats(gpsref%refomb(nht),gpsref%refoma(nht),ref_inv,ref_inc)
+                  call update_stats(ggpsref%refomb(nht),ggpsref%refoma(nht),ref_inv,ref_inc)
+               end if
+            end if
+         END DO      !  loop over levels
       END DO      !  loop over Obs
    ENDIF
    go to 1
@@ -560,11 +561,11 @@ program da_verif_obs
                      q_obs, q_inv, q_qc, q_error, q_inc
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( t_qc >=  0) then
+                   if( t_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
                     call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
                    endif
-                   if( q_qc >=  0) then
+                   if( q_qc >= 0 .and. npr > 0 ) then
                     call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
                     call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
                    endif
@@ -638,11 +639,12 @@ subroutine get_std_pr_level(prs, npr, stdp, nstd)
    real             :: pr
    integer               :: k   
 
+   npr = num_miss  ! initialize as a missing value
    pr = prs/100.0
    if        ( pr >= stdp(1)    ) then
        npr = 1
        return
-   else if ( pr < stdp(nstd-1) ) then
+   else if ( pr < stdp(nstd-1) .and. pr >= stdp(nstd) ) then
       npr = nstd
       return
    else
@@ -655,6 +657,36 @@ subroutine get_std_pr_level(prs, npr, stdp, nstd)
    end if
      
 end subroutine get_std_pr_level
+
+subroutine get_std_ht_level(height, nht, stdh, nstdh) 
+
+   implicit none
+
+   integer, intent(in )      :: nstdh
+   real,    intent(in)       :: stdh(nstdh)    
+   integer, intent(out)      :: nht
+   real,    intent(in)       :: height
+
+   real    :: ht
+   integer :: k   
+
+   ht = height*0.001  ! m to km
+   if ( ht <= stdh(1)    ) then
+      nht = 1
+      return
+   else if ( ht > stdh(nstdh-1) ) then
+      nht = nstdh
+      return
+   else
+      do k = 2,nstdh - 1
+         if ( ht <= stdh(k) ) then
+            nht = k 
+            return
+         end if
+      end do
+   end if
+     
+end subroutine get_std_ht_level
 
 subroutine update_stats(stats_omb, stats_oma, omb, oma) 
 
@@ -789,7 +821,7 @@ subroutine write_diag_multi_level(out_dir,ounit,ldate,obs_type,omb,oma)
       end if
    end do
 
-    write(ounit1,'(1x,a10,1x,16(6(1x,f9.2)))')ldate, (xnum(k), bias(k), abias(k),&
+    write(ounit1,'(1x,a10,1x,16(6(1x,f12.2)))')ldate, (xnum(k), bias(k), abias(k),&
          rmse(k),bar(k),sigt(k),k=1,nstd)
 
    do k = 1, nstd   
@@ -815,7 +847,7 @@ subroutine write_diag_multi_level(out_dir,ounit,ldate,obs_type,omb,oma)
        xnum(k) = num(k)
       end if
    end do
-   write(ounit2,'(1x,a10,1x,16(6(1x,f9.2)))')ldate, (xnum(k), bias(k), abias(k),&
+   write(ounit2,'(1x,a10,1x,16(6(1x,f12.2)))')ldate, (xnum(k), bias(k), abias(k),&
              rmse(k),bar(k),sigt(k),k=1,nstd)
        
    close(ounit1)
@@ -874,7 +906,7 @@ end subroutine write_diag_multi_level
       xnum(k) = num(k)
      endif
      enddo
-     write(ounit1,'(1x,a10,1x,125(6(1x,f9.2)))')date, (xnum(k), bias(k), abias(k), &
+     write(ounit1,'(1x,a10,1x,150(6(1x,f12.2)))')date, (xnum(k), bias(k), abias(k), &
            rmse(k),bar(k),sigt(k), k=1,nstdh)
 
      do k = 1, nstdh
@@ -903,7 +935,7 @@ end subroutine write_diag_multi_level
       xnum(k) = num(k)
      endif
      enddo
-     write(ounit2,'(1x,a10,1x,125(6(1x,f9.2)))')date, (xnum(k), bias(k), abias(k), &                  
+     write(ounit2,'(1x,a10,1x,150(6(1x,f12.2)))')date, (xnum(k), bias(k), abias(k), &                  
            rmse(k),bar(k),sigt(k), k=1,nstdh)
 
 !

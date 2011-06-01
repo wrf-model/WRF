@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_ssmt1(iv, y, adjtest_lhs, pertile_lhs)
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_ssmt1")
 
-   do n=1, iv%info(ssmt1)%nlocal
+   do n=iv%info(ssmt1)%n1, iv%info(ssmt1)%n2
       if (iv%info(ssmt1)%proc_domain(1,n)) then
          do k=1, iv%info(ssmt1)%levels(n)
             adjtest_lhs = adjtest_lhs + (y%ssmt1(n)%t(k)/typical_t_rms)**2

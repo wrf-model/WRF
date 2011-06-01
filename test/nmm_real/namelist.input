@@ -20,7 +20,7 @@
  history_interval                    = 60,       60,
  frames_per_outfile                  = 1,        1,
  restart                             = .false.,
- restart_interval                    = 5760,
+ restart_interval                    = 5400,
  reset_simulation_start              = F,
  io_form_input                       = 2
  io_form_history                     = 2
@@ -80,6 +80,12 @@
  /
 
  &dynamics
+ coac                                = 1.6,
+ codamp                              = 6.4,
+ slophc                              = 0.0064,
+ euler_adv                           = .true.,
+ idtadt                              = 2,
+ idtadc                              = 1
  /
 
  &bdy_control
@@ -90,7 +96,7 @@
 
  &fdda
  /
-
+ 
  &grib2
  /
 

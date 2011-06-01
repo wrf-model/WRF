@@ -1,4 +1,4 @@
-subroutine da_qc_amsua (i, nchan, ob, iv)
+subroutine da_qc_amsua (it, i, nchan, ob, iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for amsua data.
@@ -6,6 +6,7 @@ subroutine da_qc_amsua (i, nchan, ob, iv)
 
    implicit none
 
+   integer, intent(in)             :: it         ! outer loop count
    integer, intent(in)             :: i          ! sensor index.
    integer, intent(in)             :: nchan      ! number of channel
    type (y_type),  intent(in)      :: ob         ! Observation structure.
@@ -38,6 +39,7 @@ subroutine da_qc_amsua (i, nchan, ob, iv)
    nrej_topo       = 0
    nrej_limb       = 0
    num_proc_domain = 0
+
 
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
 
@@ -193,9 +195,9 @@ subroutine da_qc_amsua (i, nchan, ob, iv)
 
    if (rootproc) then
       if (num_fgat_time > 1) then
-         write(filename,'(a,i2.2)') 'qcstat_'//trim(iv%instid(i)%rttovid_string)//'_',iv%time
+         write(filename,'(i2.2,a,i2.2)') it,'_qcstat_'//trim(iv%instid(i)%rttovid_string)//'_',iv%time
       else
-         filename = 'qcstat_'//trim(iv%instid(i)%rttovid_string)
+         write(filename,'(i2.2,a)') it,'_qcstat_'//trim(iv%instid(i)%rttovid_string)
       end if
 
       call da_get_unit(fgat_rad_unit)
@@ -225,7 +227,6 @@ subroutine da_qc_amsua (i, nchan, ob, iv)
       close(fgat_rad_unit)
       call da_free_unit(fgat_rad_unit)
    end if
-
    if (trace_use) call da_trace_exit("da_qc_amsua")
 
 end subroutine da_qc_amsua

@@ -20,7 +20,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    character(len=120) :: filename
 
-   integer            :: n, ios
+   integer            :: n, ios, time_step_seconds
+   character*256 :: timestr, timestr1
 
    if (trace_use) call da_trace_entry("da_get_innov_vector") 
 
@@ -45,16 +46,21 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    filename = ' '
    
+   if (num_fgat_time > 1) then
+      call domain_clock_get (grid, stop_timestr=timestr1)
+      call domain_clock_set( grid, current_timestr=timestr1 )
+      call domain_clock_set (grid, time_step_seconds=-1*var4d_bin)
+      call domain_clockprint(150, grid, 'get CurrTime from clock,')
+   endif
 
-   do n=1, num_fgat_time
+   do n= num_fgat_time , 1, -1
       iv%time = n
       iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
       iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
 
       if (num_fgat_time > 1) then
-         write(unit=filename(1:10), fmt='(a, i2.2)') 'fg', n
-         call da_med_initialdata_input (grid , config_flags, filename)
-         call da_setup_firstguess (xbx, grid, config_flags)
+         call domain_clock_get( grid, current_timestr=timestr )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr ) 
       end if
 
       ! Radiosonde:
@@ -84,14 +90,16 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_metar     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(ships)%nlocal     > 0) &
          call da_get_innov_vector_ships     (it, num_qcstat_conv,grid, ob, iv)
+
       if ( (use_gpspwObs .and. iv%info(gpspw)%nlocal > 0) .or. &
            (pseudo_var(1:3) == 'tpw' .and. iv%info(pseudo)%nlocal > 0) ) then
          call da_get_innov_vector_gpspw     (it, num_qcstat_conv,grid, ob, iv)
       else if ( (use_gpsztdObs .and. iv%info(gpspw)%nlocal > 0) .or. &
            (pseudo_var(1:3) == 'ztd' .and. iv%info(pseudo)%nlocal > 0) ) then
          call da_get_innov_vector_gpsztd    ( it, num_qcstat_conv, grid, ob, iv )
-      end if
-      if (iv%info(gpsref)%nlocal    > 0) &
+      endif 
+      if ( (iv%info(gpsref)%nlocal    > 0  ) .or. &
+           (pseudo_var(1:3) == 'ref' .and. iv%info(pseudo)%nlocal > 0) ) &
          call da_get_innov_vector_gpsref    (it, num_qcstat_conv, grid, ob, iv)
       if (iv%info(ssmi_tb)%nlocal   > 0) &
          call da_get_innov_vector_ssmi_tb   (it, grid, ob, iv)
@@ -133,14 +141,22 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
       endif
 
+      if (n > 1) call domain_clockadvance (grid)
+      call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
+
    end do
+
+   if (num_fgat_time > 1) then
+      call nl_get_time_step ( grid%id, time_step_seconds)
+      call domain_clock_set (grid, time_step_seconds=time_step_seconds)
+      call domain_clockprint(150, grid, 'get CurrTime from clock,')
+   end if
 
    if ( multi_inc == 1 ) then
 #ifdef DM_PARALLEL
        call da_system("touch wrf_stop_now")
 #endif
        call wrf_message("*** WRF-Var multi-increment stage 1 completed successfully ***")
-       if (trace_use) call da_trace_exit("da_get_innov_vector")
        call wrfu_finalize
        call wrf_shutdown
 
@@ -178,7 +194,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    !-----------------------------------------------
    if (write_iv_rad_ascii) then
       write(unit=stdout,fmt='(A)')  'Writing radiance iv ascii'
-      call da_write_iv_rad_ascii(ob,iv)
+      call da_write_iv_rad_ascii(it,ob,iv)
    end if
 #endif
 
@@ -192,11 +208,6 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call da_write_filtered_rad(ob,iv)
    end if
 #endif
-
-   if (num_fgat_time > 1) then
-      call da_med_initialdata_input( grid , config_flags, 'fg')
-      call da_setup_firstguess(xbx, grid, config_flags)
-   end if
 
    close(qcstat_conv_unit)
    call da_free_unit(qcstat_conv_unit)

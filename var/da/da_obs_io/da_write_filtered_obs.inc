@@ -1,4 +1,4 @@
-subroutine da_write_filtered_obs(grid, ob, iv, &
+subroutine da_write_filtered_obs(it, grid, ob, iv, &
    coarse_ix, coarse_jy, start_x, start_y)
 
    !------------------------------------------------------------------------
@@ -39,6 +39,7 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
 
    implicit none
 
+   integer, intent(in)            :: it
    type (domain),     intent(in)  :: grid
    type (y_type),     intent(in)  :: ob      ! Observation structure.
    type (iv_type),    intent(inout) :: iv      ! O-B structure.
@@ -111,7 +112,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
       do n = 1, iv%info(synop)%nlocal
          if (.not.iv%info(synop)%proc_domain(1,n)) cycle
          ! Guo .. not write out the data below the lowest model level:
-         if (iv%info(synop)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(synop)%zk(1,n) == missing_r) cycle
 
          nlevels = iv%info(synop)%levels(n)
          if (iv%info(synop)%levels(n) > 1) then
@@ -213,7 +215,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
       do n = 1, iv%info(metar)%nlocal
          if (.not. iv%info(metar)%proc_domain(1,n)) cycle
          ! Do not write out the data below the lowest model level:
-         if (iv%info(metar)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(metar)%zk(1,n) == missing_r) cycle
 
          nlevels = iv%info(metar)%levels(n)
          if (iv%info(metar)%levels(n)> 1) then
@@ -313,7 +316,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
 
       do n = 1, iv%info(ships)%nlocal
          if (.not. iv%info(ships)%proc_domain(1,n)) cycle
-         if (iv%info(ships)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(ships)%zk(1,n) == missing_r) cycle
                
          nlevels = iv%info(ships)%levels(n)
          if (iv%info(ships)%levels(n) > 1) then
@@ -411,7 +415,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
 
       do n = 1, iv%info(buoy)%nlocal
          if (.not. iv%info(buoy)%proc_domain(1,n)) cycle
-         if (iv%info(buoy)%zk(1,n) == missing_r) cycle
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(buoy)%zk(1,n) == missing_r) cycle
                 
          nlevels = iv%info(buoy)%levels(n)
          if (iv%info(buoy)%levels(n) > 1) then
@@ -656,7 +661,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
                (/"Mismatch for Sound surface and upper air report"/))
          end if
          nz = 0
-         if (iv%info(sonde_sfc)%zk(1,n) == missing_r) then
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(sonde_sfc)%zk(1,n) == missing_r) then
             nz = nz + 1
          end if
 
@@ -697,7 +703,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
          j  = 0
 
          ! Not below the first model level
-         if (iv%info(sonde_sfc)%zk(1,n) == missing_r) then
+         if (sfc_assi_options == sfc_assi_options_1 .and.  &
+             iv%info(sonde_sfc)%zk(1,n) == missing_r) then
             nz = nz + 1
          else
             j = j + 1
@@ -1093,6 +1100,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
                call da_ffdduv(speed, dir, uu, vv, iv%info(profiler)%lon(k,n), &
                   convert_uv2fd)
                speed_error = iv%profiler(n)%u(k)%error
+               speed_qc    = iv%profiler(n)%u(k)%qc
+               dir_qc      = speed_qc
             else
                speed = missing_r
                dir   = missing_r
@@ -1581,8 +1590,9 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
 #endif
    if (rootproc) then
       call da_get_unit(filtered_obs_unit)
+      write(unit=filename, fmt='(a,i2.2)') 'filtered_obs_', it
       open (unit=filtered_obs_unit, &
-         file= 'filtered_obs' ,form='formatted', status='replace', iostat=iost)
+         file= filename ,form='formatted', status='replace', iostat=iost)
       if (iost /= 0) &
          call da_error(__FILE__,__LINE__, (/"Cannot open filtered_obs "/))
       call da_count_filtered_obs(&

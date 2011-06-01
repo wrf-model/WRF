@@ -55,7 +55,7 @@ SUBROUTINE solve_interface ( grid )
 #if (NMM_CORE == 1)
    CALL solve_nmm  ( grid , config_flags   &
 !
-# include <actual_args.inc>
+# include <actual_new_args.inc>
 !
                )
 # ifdef WRF_CHEM
@@ -72,7 +72,7 @@ SUBROUTINE solve_interface ( grid )
 #if (COAMPS_CORE == 1)
    CALL solve_coamps  ( grid , config_flags   &
 !
-# include <actual_args.inc>
+# include <actual_new_args.inc>
 !
                )
 #endif

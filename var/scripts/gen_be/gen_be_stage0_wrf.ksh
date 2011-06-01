@@ -6,7 +6,7 @@
 #
 # Note: START_DATE and END_DATE are defined as the times of the first and 
 # last perturbation. We derive START_DATE_STAGE0 and END_DATE_STAGE0
-# from these using FCST_RANGE.  
+# from these using FCST_RANGE1.  
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------------
@@ -23,8 +23,10 @@ if [[ ! -d $RUN_DIR ]]; then mkdir $RUN_DIR; fi
 if [[ ! -d $STAGE0_DIR ]]; then mkdir $STAGE0_DIR; fi
 
 #Derive times of initial/final FCST_RANGE forecasts:
-export START_DATE_STAGE0=$(${BUILD_DIR}/da_advance_time.exe $START_DATE -$FCST_RANGE1)
-export END_DATE_STAGE0=$(${BUILD_DIR}/da_advance_time.exe $END_DATE   -$FCST_RANGE1)
+DAAT=${BUILD_DIR}/da_advance_time.exe
+if [[ ! -x $DAAT ]]; then echo "gen_be_stage0_wrf finds no " $DAAT;exit; fi
+export START_DATE_STAGE0=$($DAAT $START_DATE -$FCST_RANGE1)
+export END_DATE_STAGE0=$($DAAT $END_DATE   -$FCST_RANGE1)
 export DATE=$START_DATE_STAGE0
 
 while [[ $DATE -le $END_DATE_STAGE0 ]]; do
@@ -38,7 +40,7 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    done
 
    #  Create file dates:
-   export FCST_TIME=$(${BUILD_DIR}/da_advance_time.exe $DATE $FCST_RANGE1)
+   export FCST_TIME=$($DAAT $DATE $FCST_RANGE1)
    echo "gen_be_stage0_wrf: Calculating standard perturbation fields valid at time " $FCST_TIME
 
    export YYYY=$(echo $FCST_TIME | cut -c1-4)
@@ -48,10 +50,10 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    export FILE_DATE=${YYYY}-${MM}-${DD}_${HH}:00:00
    export FILE=${FC_DIR}/${DATE}/wrfout_d${DOMAIN}_${FILE_DATE}
    export FILE1=wrfout_d${DOMAIN}_${FILE_DATE}
-   export FILE2=wrfout_d${DOMAIN}_${FILE_DATE}.e001
-   export FILE3=wrfout_d${DOMAIN}_${FILE_DATE}.e002
-   export NEXT_DATE=$(${BUILD_DIR}/da_advance_time.exe $DATE $INTERVAL)
+   export NEXT_DATE=$($DAAT $DATE $INTERVAL)
    if [[ $BE_METHOD == NMC ]]; then
+      export FILE2=wrfout_d${DOMAIN}_${FILE_DATE}.e001
+      export FILE3=wrfout_d${DOMAIN}_${FILE_DATE}.e002
       ln -sf $FILE $FILE1
       ln -sf $FILE $FILE2
       ln -sf ${FC_DIR}/${NEXT_DATE}/wrfout_d${DOMAIN}_${FILE_DATE} $FILE3
@@ -75,7 +77,7 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    # rm -rf $TMP_DIR 2> /dev/null
 
    echo $DATE $FILE ${FC_DIR}/${NEXT_DATE}/wrfout_d${DOMAIN}_${FILE_DATE}
-   export DATE=$(${BUILD_DIR}/da_advance_time.exe $DATE $INTERVAL)
+   export DATE=$($DAAT $DATE $INTERVAL)
 
 done     # End loop over dates.
 

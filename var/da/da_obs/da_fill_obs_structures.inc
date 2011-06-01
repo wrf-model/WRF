@@ -13,6 +13,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    integer :: n, k     ! Loop counters.
    real    :: rh_error ! RH obs. error.
    real    :: q_error  ! q obs. error.
+   real    :: geometric_h, geopotential_h
    integer :: i,j
    logical :: outside
 
@@ -246,6 +247,19 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    if (iv%info(gpsref)%nlocal > 0) then
       do n = 1, iv%info(gpsref)%nlocal
          do k = 1, iv%info(gpsref)%levels(n)
+! ............................................................................
+! Convert the geometric height to the geopotential height for GPSREF data
+! because GPSRO used geometric height for impact parameter, and the WRF model
+! always uses the geopotential height as the vertical coordinate for P, T, q.
+! YRG (10/05/2010):
+            geometric_h = iv%gpsref(n)%h(k) / 1000.0
+            call da_msl2geo1 (geometric_h, iv%info(gpsref)%lat(1,n),  &
+                           iv%info(gpsref)%lon(1,n), geopotential_h)
+            iv % gpsref(n) % h(k) = geopotential_h * 1000.0
+!            write (999,'("n=",i6," k=",i3,2x,"gmh, gph, lat, lon:",4f15.5)') &
+!                          n, k, geometric_h*1000.0, iv % gpsref(n) % h(k), &
+!                          iv%info(gpsref)%lat(1,n), iv%info(gpsref)%lon(1,n)
+! ............................................................................
             ob % gpsref(n) % ref(k) = iv % gpsref(n) % ref(k) % inv
             ob % gpsref(n) %   p(k) = iv % gpsref(n) %   p(k) % inv
             ob % gpsref(n) %   t(k) = iv % gpsref(n) %   t(k) % inv

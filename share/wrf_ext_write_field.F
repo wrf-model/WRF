@@ -1,4 +1,85 @@
 !WRF:MEDIATION:IO
+  SUBROUTINE wrf_ext_write_field_arr(DataHandle,DateStr,Var       &
+                                ,Field                            &
+                                ,idx4, idx5, idx6, idx7           &
+                                ,nx4 , nx5 , nx6                  &
+                                ,TypeSizeInBytes                  &
+                                ,FieldType,Comm,IOComm            &
+                                ,DomainDesc                       &
+                                ,bdy_mask                         &
+                                ,dryrun                           &
+                                ,MemoryOrder                      &
+                                ,Stagger                          &
+                                ,Dimname1, Dimname2, Dimname3     &
+                                ,Desc, Units                      &
+                                ,debug_message                                &
+                                ,ds1, de1, ds2, de2, ds3, de3                 &
+                                ,ms1, me1, ms2, me2, ms3, me3                 &
+                                ,ps1, pe1, ps2, pe2, ps3, pe3, Status          )
+    USE module_io
+    USE module_wrf_error
+    USE module_state_description
+    USE module_timing
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN)       :: idx4, idx5, idx6, idx7
+    INTEGER, INTENT(IN)       :: nx4 , nx5 , nx6
+    INTEGER, INTENT(IN)       :: TypeSizeInBytes
+    INTEGER               ,INTENT(IN   )         :: DataHandle
+    CHARACTER*(*)         ,INTENT(IN   )         :: DateStr
+    CHARACTER*(*)         ,INTENT(IN   )         :: Var
+    INTEGER               ,INTENT(IN   )         :: Field(*)
+    INTEGER               ,INTENT(IN   )         :: FieldType
+    INTEGER               ,INTENT(IN   )         :: Comm
+    INTEGER               ,INTENT(IN   )         :: IOComm
+    INTEGER               ,INTENT(IN   )         :: DomainDesc
+    LOGICAL               ,INTENT(IN   )         :: dryrun
+    CHARACTER*(*)         ,INTENT(IN   )         :: MemoryOrder
+    LOGICAL, DIMENSION(4) ,INTENT(IN   )         :: bdy_mask
+    CHARACTER*(*)         ,INTENT(IN   )         :: Stagger
+    CHARACTER*(*)         ,INTENT(IN   )         :: Dimname1, Dimname2, Dimname3
+    CHARACTER*(*)         ,INTENT(IN   )         :: Desc, Units
+    CHARACTER*(*)         ,INTENT(IN   )         :: debug_message
+
+    INTEGER ,       INTENT(IN   ) :: ds1, de1, ds2, de2, ds3, de3, &
+                                     ms1, me1, ms2, me2, ms3, me3, &
+                                     ps1, pe1, ps2, pe2, ps3, pe3
+    INTEGER ,       INTENT(INOUT) :: Status
+! Local
+    INTEGER  tsfac  ! Type size factor
+    CHARACTER*256 mess
+
+    tsfac = TypeSizeInBytes / IWORDSIZE
+
+    IF ( tsfac .LE. 0 ) THEN
+      CALL wrf_message('wrf_ext_write_field_arr')
+      WRITE(mess,*)'Internal error: email this message to wrfhelp@ucar.edu ',TypeSizeInBytes,IWORDSIZE
+      CALL wrf_error_fatal(mess)
+    ENDIF
+
+    CALL wrf_ext_write_field(    DataHandle,DateStr,Var           &
+                                ,Field(1                                                            &
+                                      +tsfac*(0                                                     &
+                                      +(idx4-1)*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)                 &
+                                      +(idx5-1)*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)             &
+                                      +(idx6-1)*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)         &
+                                      +(idx7-1)*nx6*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)))   &
+                                ,FieldType,Comm,IOComm            &
+                                ,DomainDesc                       &
+                                ,bdy_mask                         &
+                                ,dryrun                           &
+                                ,MemoryOrder                      &
+                                ,Stagger                          &
+                                ,Dimname1, Dimname2, Dimname3     &
+                                ,Desc, Units                      &
+                                ,debug_message                                &
+                                ,ds1, de1, ds2, de2, ds3, de3                 &
+                                ,ms1, me1, ms2, me2, ms3, me3                 &
+                                ,ps1, pe1, ps2, pe2, ps3, pe3, Status          )
+    
+  END SUBROUTINE wrf_ext_write_field_arr
+
+
   SUBROUTINE wrf_ext_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm,IOComm, &
                                  DomainDesc,                      &
                                  bdy_mask   ,                     &
@@ -17,28 +98,27 @@
     USE module_timing
     IMPLICIT NONE
 
-    INTEGER       itrace
-    integer                                      :: DataHandle
-    character*(*)                                :: DateStr
-    character*(*)                                :: Var
-    integer                                      :: Field(*)
-    integer                                      :: FieldType
-    integer                                      :: Comm
-    integer                                      :: IOComm
-    integer                                      :: DomainDesc
-    logical                                      :: dryrun
-    character*(*)                                :: MemoryOrder
-    logical, dimension(4)                        :: bdy_mask
-    character*(*)                                :: Stagger
-    character*(*)                                :: Dimname1, Dimname2, Dimname3
-    character*(*)                                :: Desc, Units
-    character*(*)                                :: debug_message
+    INTEGER               ,INTENT(IN   )         :: DataHandle
+    CHARACTER*(*)         ,INTENT(IN   )         :: DateStr
+    CHARACTER*(*)         ,INTENT(IN   )         :: Var
+    INTEGER               ,INTENT(IN   )         :: Field(*)
+    INTEGER               ,INTENT(IN   )         :: FieldType
+    INTEGER               ,INTENT(IN   )         :: Comm
+    INTEGER               ,INTENT(IN   )         :: IOComm
+    INTEGER               ,INTENT(IN   )         :: DomainDesc
+    LOGICAL               ,INTENT(IN   )         :: dryrun
+    CHARACTER*(*)         ,INTENT(IN   )         :: MemoryOrder
+    LOGICAL, DIMENSION(4) ,INTENT(IN   )         :: bdy_mask
+    CHARACTER*(*)         ,INTENT(IN   )         :: Stagger
+    CHARACTER*(*)         ,INTENT(IN   )         :: Dimname1, Dimname2, Dimname3
+    CHARACTER*(*)         ,INTENT(IN   )         :: Desc, Units
+    CHARACTER*(*)         ,INTENT(IN   )         :: debug_message
 
     INTEGER ,       INTENT(IN   ) :: ds1, de1, ds2, de2, ds3, de3, &
                                      ms1, me1, ms2, me2, ms3, me3, &
                                      ps1, pe1, ps2, pe2, ps3, pe3
 
-    
+! Local
     INTEGER , DIMENSION(3) :: domain_start , domain_end
     INTEGER , DIMENSION(3) :: memory_start , memory_end
     INTEGER , DIMENSION(3) :: patch_start , patch_end

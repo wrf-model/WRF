@@ -42,10 +42,11 @@ subroutine da_varbc_pred(iv)
       !--------------------
       if (rtm_option==rtm_option_rttov) then
 #ifdef RTTOV
-        call da_predictor_rttov( &
-	     pred_hk(1:npred_hk), npred_hk, &
-  	     iv%instid(inst)%t(1:43,n), &
-             iv%instid(inst)%mr(1:43,n)/q2ppmv, &
+        nlevels=iv%instid(inst)%nlevels
+        call da_predictor_rttov(inst, &
+	     pred_hk(1:npred_hk), npred_hk, nlevels, &
+  	     iv%instid(inst)%t(1:nlevels,n), &
+             iv%instid(inst)%mr(1:nlevels,n)/q2ppmv, &
 	     iv%instid(inst)%ts(n))
 #endif
       else if (rtm_option==rtm_option_crtm) then

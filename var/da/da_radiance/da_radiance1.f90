@@ -18,7 +18,7 @@ module da_radiance1
       use_error_factor_rad,biasprep_unit,obs_qc_pointer, filename_len, &
       print_detail_rad, rtm_option, trace_use_dull, &
       rtm_option_rttov,rtm_option_crtm, radiance, only_sea_rad, &
-      global, gas_constant, gravity, monitor_on,kts,kte, &
+      global, gas_constant, gravity, monitor_on,kts,kte,use_rttov_kmatrix, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_airs_mmr, use_satcv, cv_size_domain, &
       cv_size_domain_js
@@ -73,6 +73,9 @@ module da_radiance1
       real   ,  pointer  ::  t(:)
       real   ,  pointer  ::  q(:)
       real               ::  ps
+      real   ,  pointer  ::  t_jac(:,:) => null()
+      real   ,  pointer  ::  q_jac(:,:) => null()
+      real   ,  pointer  ::  ps_jac(:)  => null()
    end type con_vars_type
 
    type con_cld_vars_type
@@ -91,6 +94,8 @@ module da_radiance1
       integer            ::  surftype
       real               ::  surft, t2m, q2m, u10, v10
       real               ::  satzen, satazi  !!, fastem(5)
+      real               ::  solzen, solazi
+      real               ::  elevation ,rlat
    end type aux_vars_type
 
    type maxmin_rad_stats_type
@@ -205,14 +210,15 @@ contains
 #include "da_read_biascoef.inc"
 #include "da_biasprep.inc"
 #include "da_write_biasprep.inc"
+#ifdef RTTOV
 #include "da_predictor_rttov.inc"
+#endif
 #ifdef CRTM
 #include "da_predictor_crtm.inc"
 #include "da_qc_crtm.inc"
 #endif
 #include "da_cloud_sim_airs.inc"
 #include "da_cloud_detect_airs.inc"
-#include "inria_n2qn1.inc"
 #include "da_qc_airs.inc"
 #include "da_qc_amsua.inc"
 #include "da_qc_amsub.inc"
@@ -228,6 +234,8 @@ contains
 #include "da_print_stats_rad.inc"
 #include "da_qc_rad.inc"
 #include "da_setup_satcv.inc"
+#include "da_mspps_emis.inc"
+#include "da_mspps_ts.inc"
 
 #endif
 

@@ -1,4 +1,4 @@
-WRFV2 (Weather Research and Forecast) model.   
+WRFV3 (Weather Research and Forecast) model.   
 
 Contents:
 
@@ -107,4 +107,14 @@ The available test cases are
    waves, etc.
 
 10) Single column model (test/em_scm_xy)
+
+11) 3D tropical cyclone (test/em_tropical_cyclone)
+
+   Idealized tropical cyclone on an f-plane with constant SST in a 
+   specified environment.  Uses capped Newtonian relaxation to mimic 
+   longwave radiation.  The default setup uses the Jordan (1958) mean 
+   hurricane sounding with 28 C SST and no background winds.  The 
+   analytic initial vortex is from Rotunno and Emanuel (1987).  This 
+   case is useful for testing the effects of new model code (e.g., 
+   new physics options) on tropical cyclones in an idealized framework. 
 

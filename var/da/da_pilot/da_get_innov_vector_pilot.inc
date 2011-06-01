@@ -34,6 +34,15 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
    model_u(:,:) = 0.0
    model_v(:,:) = 0.0
 
+   if ( it > 1 ) then
+      do n=iv%info(pilot)%n1,iv%info(pilot)%n2
+         do k=1, iv%info(pilot)%levels(n)
+            if (iv%pilot(n)%u(k)%qc == fails_error_max) iv%pilot(n)%u(k)%qc = 0
+            if (iv%pilot(n)%v(k)%qc == fails_error_max) iv%pilot(n)%v(k)%qc = 0
+         end do
+      end do
+   end if
+
    do n=iv%info(pilot)%n1,iv%info(pilot)%n2
       ! [1.3] Get horizontal interpolation weights:
 
@@ -101,7 +110,8 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-    call da_check_max_iv_pilot(iv, it, num_qcstat_conv)    
+   if ( check_max_iv ) &
+      call da_check_max_iv_pilot(iv, it, num_qcstat_conv)    
 
    deallocate (model_u)
    deallocate (model_v)

@@ -24,6 +24,7 @@ subroutine da_get_field( input_file, var, field_dims, dim1, dim2, dim3,k,field)
 
    integer                   :: istart(4)        ! Start value of arrays.
    integer                   :: iend(4)          ! End value of arrays.
+   real(kind=4), allocatable :: field1d(:)       ! Used if 1D field read. 
    real(kind=4), allocatable :: field2d(:,:)     ! Used if 2D field read. 
    real(kind=4), allocatable :: field3d(:,:,:)   ! Used if 3D field read. 
 
@@ -31,11 +32,15 @@ subroutine da_get_field( input_file, var, field_dims, dim1, dim2, dim3,k,field)
 
    length = len_trim(input_file)
    rcode = nf_open( input_file(1:length), NF_NOwrite, cdfid)
+   if (rcode /= 0) then
+      write(message(1),'(3a,i0)')' nf_open(',input_file(1:length),') returned ',rcode
+      call da_error(__FILE__,__LINE__,message(1:1))
+   end if
 
    !  Check variable is in file:
    rcode = nf_inq_varid( cdfid, var, id_var)
    if (rcode /= 0) then
-      write(unit=message(1),fmt='(2a)')var, ' variable is not in input file'
+      write(message(1),'(3a)')var,' variable is not in input file ',input_file(1:length)
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
@@ -44,7 +49,15 @@ subroutine da_get_field( input_file, var, field_dims, dim1, dim2, dim3,k,field)
    iend(2) = dim2
    iend(4) = 1          ! Single time assumed.
 
-   if (field_dims == 2) then
+   if (field_dims == 1) then
+      iend(2) = 1
+      iend(3) = 1
+      allocate( field1d(1:dim1))
+      call ncvgt( cdfid, id_var, istart, iend, field1d, rcode)
+      field(:,1) = field1d(:)
+      rcode = nf_close( cdfid)
+      deallocate( field1d)
+   else if (field_dims == 2) then
       iend(3) = 1
       allocate( field2d(1:dim1,1:dim2))
       call ncvgt( cdfid, id_var, istart, iend, field2d, rcode)

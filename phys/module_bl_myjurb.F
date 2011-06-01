@@ -149,6 +149,7 @@
       IMPLICIT NONE
 !
 !----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: IDIFF
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
@@ -209,7 +210,7 @@
       REAL,DIMENSION(KTS:KTE) :: A_U,A_V,A_T,A_E,B_U,B_V,B_T,B_E   !Vertically flipped fields
       REAL,DIMENSION(KTS:KTE) :: A_Q,B_Q,VLK,DL_U,B_E_FACE,DZ_KFLIP   !Vertically flipped fields
       REAL,DIMENSION(KTS:KTE) :: SFK                             !Vertically flipped SF,VL
-      INTEGER :: IURB,IDIFF
+      INTEGER :: IURB
       REAL :: SLOPE,ICEPT
 ! UCM end
 
@@ -841,7 +842,7 @@
 !
 !--------------THE HEIGHT OF THE PBL------------------------------------
 !
- 110  PBLH=Z(LPBL)-Z(LMH+1)
+ 110  PBLH=Z(LPBL+1)-Z(LMH+1)
 !
 !-----------------------------------------------------------------------
       DO K=KTS,LMH

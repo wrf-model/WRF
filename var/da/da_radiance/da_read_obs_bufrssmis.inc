@@ -10,6 +10,8 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    !               and deallocate sequential data structure
    !---------------------------------------------------------------------------
 
+
+
    use da_control
 
    implicit none
@@ -31,11 +33,13 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SLNM ORBN SELV SURF RAINF'/
    character(10) :: date
    character(8)  :: subset, subfgn
+   character(20) :: filename
 
    logical :: outside, outside_all
 
    integer(i_kind) :: iost, inst, lnbufr, ifgat
-   integer(i_kind) :: ihh, i, j, n, k, slnm, ifov, idd
+   integer(i_kind) :: num_bufr(7),numbufr,ibufr
+   integer(i_kind) :: ihh, i, j, n, k, slnm, ifov, idd, ireadmg, ireadsb
    integer(i_kind) :: iret, idate, im, iy
    integer(i_kind) :: jc, incangl, bch, landsea_mask, rain_flag
    integer(i_kind) :: platform_id, satellite_id, sensor_id, nchan, num_ssmis_file
@@ -47,7 +51,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    ! pixel information
    integer(i_kind)   ::  year,month,day,hour,minute,second  ! observation time
-   real(r_double)    ::  obs_time
+   real(kind=8)    ::  obs_time
    real(r_double), allocatable ::  tb_inv(:)          !  bright temperatures
 
    type (datalink_type), pointer  :: head, p, current, prev
@@ -75,11 +79,53 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    sensor_id    = 10                ! for SSMIS
    nchan        = nchan_ssmis
 
+   allocate (tb_inv(nchan))
+   num_ssmis_file    = 0
+   num_ssmis_local   = 0
+   num_ssmis_global  = 0
+   num_ssmis_used    = 0
+   num_ssmis_thinned = 0
+   iobs = 0                 ! for thinning, argument is inout
+
    ! 0.0  Open unit to satellite bufr file and read file header
    !--------------------------------------------------------------
 
-   call da_get_unit(lnbufr)
-   open(unit=lnbufr,file=trim(infile),form='unformatted', &
+!   call da_get_unit(lnbufr)
+
+   num_bufr(:)=0
+   numbufr=0
+   if (num_fgat_time>1) then
+      do i=1,7
+         call da_get_unit(lnbufr)
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.bufr'
+         open(unit   = lnbufr, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+         if (iost == 0) then
+            numbufr=numbufr+1
+            num_bufr(numbufr)=i
+         else
+            close (lnbufr)
+         end if
+         call da_free_unit(lnbufr)
+      end do
+   else
+     numbufr=1
+   end if
+ 
+   if (numbufr==0) numbufr=1
+ 
+bufrfile:  do ibufr=1,numbufr
+   if (num_fgat_time==1) then
+      filename=trim(infile)//'.bufr'
+   else
+      if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+         filename=trim(infile)//'.bufr'
+      else
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.bufr'
+      end if
+   end if
+
+   lnbufr=98
+   open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
@@ -102,21 +148,11 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    ! Loop to read bufr file and assign information to a sequential structure
    !-------------------------------------------------------------------------
-
-   allocate (head)
-   nullify  ( head % next )
-   p => head
-
-   num_ssmis_file    = 0
-   num_ssmis_local   = 0
-   num_ssmis_global  = 0
-   num_ssmis_used    = 0
-   num_ssmis_thinned = 0
-   iobs = 0                 ! for thinning, argument is inout
-
-   allocate (tb_inv(nchan))
-
-   num_ssmis_file = 0
+   if ( ibufr == 1 ) then
+      allocate (head)
+      nullify  ( head % next )
+      p => head
+   end if
 
 ! Set various variables depending on type of data to be read
 
@@ -244,7 +280,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
             timedif = 0. !2.0_r_kind*abs(tdiff)        ! range:  0 to 6
             terrain = 0.01_r_kind*abs(bfr1bhdr(13))
             crit = 1. !0.01_r_kind+terrain + timedif !+ 10._r_kind*float(iskip)
-            call map2grids(inst,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
+            call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
             if (.not. iuse) then
                num_ssmis_thinned=num_ssmis_thinned+1
                cycle
@@ -311,23 +347,32 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    end do subset_loop
 
+  call closbf(lnbufr)
+  close(lnbufr)
+
+end do bufrfile
+
    if (thinning .and. num_ssmis_global > 0 ) then
 
 #ifdef DM_PARALLEL 
       
       ! Get minimum crit and associated processor index.
       j = 0
-      do n = 1, iv%num_inst
-         j = j + thinning_grid(n)%itxmax
-      end do 
-         
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            j = j + thinning_grid(n,ifgat)%itxmax
+         end do 
+      end do
+   
       allocate ( in  (j) )
       allocate ( out (j) )
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            in(j) = thinning_grid(n)%score_crit(i)
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               in(j) = thinning_grid(n,ifgat)%score_crit(i)
+            end do
          end do 
       end do
       call mpi_reduce(in, out, j, true_mpi_real, mpi_min, root, comm, ierr)
@@ -335,10 +380,12 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
       call wrf_dm_bcast_real (out, j)
 
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            if ( ABS(out(j)-thinning_grid(n)%score_crit(i)) > 1.0E-10 ) thinning_grid(n)%ibest_obs(i) = 0
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               if ( ABS(out(j)-thinning_grid(n,ifgat)%score_crit(i)) > 1.0E-10 ) thinning_grid(n,ifgat)%ibest_obs(i) = 0
+            end do
          end do
       end do
 
@@ -354,10 +401,11 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
       num_ssmis_used_tmp = num_ssmis_used
       do j = 1, num_ssmis_used_tmp
          n = p%sensor_index
+         ifgat = p%ifgat
          found = .false.
 
-         do i = 1, thinning_grid(n)%itxmax
-            if ( thinning_grid(n)%ibest_obs(i) == j .and. thinning_grid(n)%score_crit(i) < 9.99e6_r_kind ) then
+         do i = 1, thinning_grid(n,ifgat)%itxmax
+            if ( thinning_grid(n,ifgat)%ibest_obs(i) == j .and. thinning_grid(n,ifgat)%score_crit(i) < 9.99e6_r_kind ) then
                found = .true.
                exit
             end if
@@ -422,24 +470,12 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
    !  5.0 allocate innovation radiance structure
    !----------------------------------------------------------------  
    do i = 1, iv%num_inst 
-      if (rtm_option == rtm_option_crtm) then
-         iv%instid(i)%nlevels = kme-kms+1
-         iv%instid(i)%nchannels = nchan
-      end if
       if (nread(i) < 1) cycle
       iv%instid(i)%num_rad  = nread(i)
       iv%instid(i)%info%nlocal = nread(i)
       write(UNIT=stdout,FMT='(a,i3,2x,a,3x,i10)') &
         'Allocating space for radiance innov structure', &
          i, iv%instid(i)%rttovid_string, iv%instid(i)%num_rad
-
-#ifdef RTTOV
-      if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(1, nchan, coefs(i),             &   ! in
-            iv%instid(i)%nfrequencies,iv%instid(i)%nchannels, &
-            iv%instid(i)%nbtout)                                     ! out
-      end if
-#endif
 
       call da_allocate_rad_iv (i, nchan, iv)
 
@@ -472,12 +508,13 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    call closbf(lnbufr)
    close(lnbufr)
-   call da_free_unit(lnbufr)
+!   call da_free_unit(lnbufr)
 
    call da_trace_exit("da_read_obs_bufrssmis")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/))
 #endif
+ 
 
 end subroutine da_read_obs_bufrssmis
 

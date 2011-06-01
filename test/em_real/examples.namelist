@@ -16,6 +16,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  zap_close_levels                    = 500
  sfcp_to_sfcp                        = .false.
  adjust_heights                      = .false.
+ smooth_cg_topo                      = .false.
  eta_levels                          = 1.000, 0.990, 0.978, 0.964, 0.946,
                                        0.922, 0.894, 0.860, 0.817, 0.766,
                                        0.707, 0.644, 0.576, 0.507, 0.444,
@@ -29,9 +30,21 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  &time_control
  auxinput4_inname                    = "wrflowinp_d<domain>"
  auxinput4_interval                  = 360, 360, 360, 
+ io_form_auxinput4                   = 2
 
  &physics
  sst_update                          = 1,
+
+
+** Using stochastic backscatter scheme
+
+&physics
+ stoch_force_opt                      = 1,      1,      1,
+ stoch_vertstruc_opt                  = 0,      0,      0,
+ tot_backscat_t                       = 2.0E-6, 2.0E-6, 2.0E-6
+ tot_backscat_psi                     = 2.0,    2.0,    2.0
+ nens                                 = 1,
+
 
 ** Using DFI options (note this is a separate namelist record):
 
@@ -54,6 +67,9 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  dfi_fwdstop_minute                  = 00,
  dfi_fwdstop_second                  = 00,
  /
+
+ &domains
+ time_step_dfi                       = 60.
 
 ** Using gridded nudging option (note this is a separate namelist record) for
    upperair nudging
@@ -130,6 +146,36 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  obs_ipf_errob                       = .true.
  obs_ipf_nudob                       = .true.
  obs_ipf_in4dob                      = .true
+ obs_no_pbl_nudge_uv                 = 0
+ obs_no_pbl_nudge_t                  = 0
+ obs_no_pbl_nudge_q                  = 0
+ obs_sfc_scheme_horiz                = 0
+ obs_sfc_scheme_vert                 = 0
+ obs_max_sndng_gap                   = 20
+ obs_nudgezfullr1_uv                 = 50
+ obs_nudgezrampr1_uv                 = 50
+ obs_nudgezfullr2_uv                 = 50
+ obs_nudgezrampr2_uv                 = 50
+ obs_nudgezfullr4_uv                 = -5000
+ obs_nudgezrampr4_uv                 = 50  
+ obs_nudgezfullr1_t                  = 50 
+ obs_nudgezrampr1_t                  = 50
+ obs_nudgezfullr2_t                  = 50
+ obs_nudgezrampr2_t                  = 50
+ obs_nudgezfullr4_t                  = -5000
+ obs_nudgezrampr4_t                  = 50  
+ obs_nudgezfullr1_q                  = 50 
+ obs_nudgezrampr1_q                  = 50
+ obs_nudgezfullr2_q                  = 50
+ obs_nudgezrampr2_q                  = 50
+ obs_nudgezfullr4_q                  = -5000
+ obs_nudgezrampr4_q                  = 50
+ obs_nudgezfullmin                   = 50
+ obs_nudgezrampmin                   = 50
+ obs_nudgezmax                       = 3000
+ obs_sfcfact                         = 1.0
+ obs_sfcfacr                         = 1.0
+ obs_dpsmx                           = 7.5
  /
 
 ** Using spectral nudging option 
@@ -167,10 +213,12 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  use_adaptive_time_step              = .true.,
  step_to_output_time                 = .true.,
  target_cfl                          = 1.2, 1.2, 1.2,
+ target_hcfl                         = .84, .84, .84,
  max_step_increase_pct               = 5,   51,  51,
  starting_time_step                  = -1,  -1,  -1,
  max_time_step                       = 360, 120, 40,
  min_time_step                       =  90,  30, 10,
+ adaptation_domain                   =  1,
 
 ** Using automatic vortex-following option (tropical storm tracking only;
    add these in namelist record &domains):
@@ -193,9 +241,9 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 
 Topographic shading (only effective when grid sizes are a few kilometers)
 
- slope_rad                           = 0,
- topo_shading                        = 0,
- shadlen                             = 25000,
+ slope_rad                           = 1,     1,     1,
+ topo_shading                        = 1,     1,     1,
+ shadlen                             = 25000, 
 
 Setting threashold value for defining seaice if seaice is not in the input file:
 
@@ -205,14 +253,9 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
 
  no_mp_heating                       = 0,
 
-** Using CAM long and short wave radiation schemes:
+** Using precipiatiion bucket in a time interval (minutes):
 
- cam_abs_freq_s                      = 21600
- levsiz                              = 59
- paerlev                             = 29
- cam_abs_dim1                        = 4
- cam_abs_dim2                        = 28
- (cam_abs_dim2 should be the same as e_vert)
+ prec_acc_dt                         = 60.
 
 ** Using bucket accumulations for multi-year simulations (guideline: mean monthly accumulation)
 

@@ -108,3 +108,33 @@ MODULE module_driver_constants
    SUBROUTINE init_module_driver_constants
    END SUBROUTINE init_module_driver_constants
  END MODULE module_driver_constants
+
+! routines that external packages can call to get at WRF stuff that isn't available
+! through argument lists; since they are external we don't want them using WRF 
+! modules unnecessarily (complicates the build even more)
+ SUBROUTINE inquire_of_wrf_data_order_xyz( data_order )
+   USE module_driver_constants, ONLY : DATA_ORDER_XYZ
+   IMPLICIT NONE
+   INTEGER, INTENT(OUT) :: data_order
+   data_order = DATA_ORDER_XYZ
+ END SUBROUTINE inquire_of_wrf_data_order_xyz
+
+ SUBROUTINE inquire_of_wrf_data_order_xzy( data_order )
+   USE module_driver_constants, ONLY : DATA_ORDER_XZY
+   IMPLICIT NONE
+   INTEGER, INTENT(OUT) :: data_order
+   data_order = DATA_ORDER_XZY
+ END SUBROUTINE inquire_of_wrf_data_order_xzy
+
+ SUBROUTINE inquire_of_wrf_iwordsize( iwordsz )
+   IMPLICIT NONE
+   INTEGER, INTENT(OUT) :: iwordsz
+   iwordsz = IWORDSIZE
+ END SUBROUTINE inquire_of_wrf_iwordsize
+
+ SUBROUTINE inquire_of_wrf_rwordsize( rwordsz )
+   IMPLICIT NONE
+   INTEGER, INTENT(OUT) :: rwordsz
+   rwordsz = RWORDSIZE
+ END SUBROUTINE inquire_of_wrf_rwordsize
+

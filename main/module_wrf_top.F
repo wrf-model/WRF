@@ -14,12 +14,14 @@ MODULE module_wrf_top
    USE module_integrate
    USE module_driver_constants
    USE module_configure
+   USE module_check_a_mundo
 
    USE module_timing
    USE module_wrf_error
+   USE module_nesting
 
 #ifdef DM_PARALLEL
-   USE module_dm
+   USE module_dm, ONLY : wrf_dm_initialize
 #endif
 
    IMPLICIT NONE
@@ -30,7 +32,10 @@ MODULE module_wrf_top
               levels_to_process
 
    TYPE (domain) , POINTER :: keep_grid, grid_ptr, null_domain
+   TYPE (domain) , pointer :: parent_grid, new_nest
+   LOGICAL                                :: a_nest_was_opened
    TYPE (grid_config_rec_type), SAVE :: config_flags
+   INTEGER        :: kid, nestid
    INTEGER                 :: number_at_same_level
    INTEGER                 :: time_step_begin_restart
 
@@ -54,10 +59,16 @@ MODULE module_wrf_top
       TYPE(domain), POINTER :: grid
      END SUBROUTINE Setup_Timekeeping
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
      SUBROUTINE wrf_dfi_write_initialized_state( )
      END SUBROUTINE wrf_dfi_write_initialized_state
  
+     SUBROUTINE wrf_dfi_startfwd_init( )
+     END SUBROUTINE wrf_dfi_startfwd_init
+     
+     SUBROUTINE wrf_dfi_startbck_init( )
+     END SUBROUTINE wrf_dfi_startbck_init
+     
      SUBROUTINE wrf_dfi_bck_init( )
      END SUBROUTINE wrf_dfi_bck_init
      
@@ -69,7 +80,15 @@ MODULE module_wrf_top
      
      SUBROUTINE wrf_dfi_array_reset ( )
      END SUBROUTINE wrf_dfi_array_reset
-#endif
+! #endif
+
+     SUBROUTINE med_nest_initial ( parent , grid , config_flags )
+       USE module_domain
+       USE module_configure
+       TYPE (domain), POINTER ::  grid , parent
+       TYPE (grid_config_rec_type) config_flags
+     END SUBROUTINE med_nest_initial
+
    END INTERFACE
 
 
@@ -80,11 +99,20 @@ CONTAINS
 !<DESCRIPTION>
 !     WRF initialization routine.
 !</DESCRIPTION>
+#ifdef _OPENMP
+     use omp_lib
+#endif
+#ifdef _ACCEL
+     use accel_lib
+#endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
      INTEGER, ALLOCATABLE :: hostids(:), budds(:)
      CHARACTER*512 hostname
-#if defined(DM_PARALLEL) && defined(RUN_ON_GPU)
+#ifdef _ACCEL
+     integer :: it, nt, in, devnum
+#endif
+#if defined(DM_PARALLEL) && !defined(STUBMPI) && ( defined(RUN_ON_GPU) || defined(_ACCEL))
      include "mpif.h"
 #endif
 #include "version_decl"
@@ -110,7 +138,11 @@ CONTAINS
    CALL init_modules(1)
    IF ( .NOT. PRESENT( no_init1 ) ) THEN
      ! Initialize utilities (time manager, etc.)
+#ifdef NO_LEAP_CALENDAR
+     CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP )
+#else
      CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
+#endif
    ENDIF
    ! Phase 2 resumes after MPI_INIT() (if it is called)
    CALL init_modules(2)
@@ -142,12 +174,64 @@ CONTAINS
 #endif
 
    CALL set_derived_rconfigs
+   CALL check_nml_consistency
+   CALL set_physics_rconfigs
+
+#ifdef _ACCEL
+   buddcounter = 1
+   mydevice = 0
+# if defined(DM_PARALLEL) && !defined(STUBMPI) 
+   CALL wrf_get_myproc( myproc )
+   CALL wrf_get_nproc( nproc )
+   CALL wrf_get_hostid ( hostid )
+   CALL wrf_get_dm_communicator ( loccomm )
+
+   ALLOCATE( hostids(nproc) )
+   ALLOCATE( budds(nproc) )
+   CALL mpi_allgather( hostid, 1, MPI_INTEGER, hostids, 1, MPI_INTEGER, loccomm, ierr )
+   if ( ierr .NE. 0 ) print * ,'error in mpi_allgather ',ierr
+   budds = -1
+   buddcounter = 0
+   ! mark the ones i am on the same node with
+   DO i = 1, nproc
+      IF ( hostid .EQ. hostids(i) ) THEN
+         budds(i) = buddcounter
+         buddcounter = buddcounter + 1
+      ENDIF
+   ENDDO
+   mydevice = budds(myproc+1)
+   DEALLOCATE( hostids )
+   DEALLOCATE( budds )
+# endif
+   in = acc_get_num_devices(acc_device_nvidia)
+   if (in .le. 0) print *, 'error:  No GPUS present: ',in
+# ifdef _OPENMP
+   !$OMP PARALLEL SHARED(mydevice,in) PRIVATE(it,nt,devnum)
+   it = omp_get_thread_num()
+   nt = omp_get_num_threads()
+   devnum = mod(mod(mydevice*nt,in) + it, in)
+# ifdef _ACCEL_PROF
+   print *, "Process, Thread, Device: ",mydevice, it, devnum
+# endif
+   call acc_set_device_num(devnum, acc_device_nvidia)
+
+   !$OMP END PARALLEL
+# else
+   it = 0
+   nt = 1
+   devnum = mod(mod(mydevice*nt,in) + it, in)
+#  ifdef _ACCEL_PROF
+   print *, "Process, Thread, Device: ",mydevice, it, devnum
+#  endif
+   call acc_set_device_num(devnum, acc_device_nvidia)
+# endif
+#endif
 
 #ifdef RUN_ON_GPU
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )
-   CALL wrf_get_hostid ( hostid ) 
 # ifdef DM_PARALLEL
+   CALL wrf_get_hostid ( hostid ) 
    CALL wrf_get_dm_communicator ( loccomm )
    ALLOCATE( hostids(nproc) )
    ALLOCATE( budds(nproc) )
@@ -243,12 +327,12 @@ CONTAINS
    CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
    ! In case we are doing digital filter initialization, set dfi_stage = DFI_SETUP 
    !   to indicate in Setup_Timekeeping that we want forecast start and
    !   end times at this point 
    IF ( head_grid%dfi_opt .NE. DFI_NODFI ) head_grid%dfi_stage = DFI_SETUP
-#endif
+! #endif
 
    CALL Setup_Timekeeping (head_grid)
 
@@ -291,6 +375,19 @@ CONTAINS
    ! set default values for subtimes
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
+
+   !  For EM (but not DA), if this is a DFI run, we can allocate some space.  We are
+   !  not allowing anyting tricky for nested DFI.  If there are any nested domains,
+   !  they all need to start at the same time.  Otherwise, why even do the DFI?  If
+   !  the domains do not all start at the same time, then there will be inconsistencies,
+   !  which is what DFI is supposed to address.
+
+#if (EM_CORE == 1)
+   IF ( head_grid%dfi_opt .NE. DFI_NODFI ) THEN
+      CALL alloc_doms_for_dfi ( head_grid )
+   END IF
+#endif
+
 
    END SUBROUTINE wrf_init
 
@@ -363,7 +460,7 @@ CONTAINS
 !</DESCRIPTION>
       IMPLICIT NONE
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
       ! Initialization procedure
       IF ( config_flags%dfi_opt .NE. DFI_NODFI ) THEN
    
@@ -444,7 +541,7 @@ CONTAINS
          END SELECT
    
       END IF
-#endif
+! #endif
 
    END SUBROUTINE wrf_dfi
 
@@ -462,7 +559,7 @@ CONTAINS
       INTEGER :: i
 
 
-#if (EM_CORE == 1)
+! #if (EM_CORE == 1)
       IF ( model_config_rec % dfi_opt .EQ. DFI_NODFI ) THEN
         DO i = 1, model_config_rec % max_dom
            model_config_rec % mp_physics_dfi(i) = -1
@@ -472,7 +569,7 @@ CONTAINS
            model_config_rec % mp_physics_dfi(i) = model_config_rec % mp_physics(i)
         ENDDO
       END IF
-#endif
+! #endif
 
 #if (DA_CORE == 1)
       IF ( model_config_rec % dyn_opt .EQ. 2 ) THEN
@@ -487,5 +584,55 @@ CONTAINS
 #endif
 
    END SUBROUTINE set_derived_rconfigs
+
+   RECURSIVE SUBROUTINE alloc_doms_for_dfi ( grid )
+   
+      !  Input variables.
+
+      TYPE (domain) , pointer :: grid
+
+      !  Local variables.
+
+      TYPE (domain) , pointer :: new_nest_loc
+      TYPE (grid_config_rec_type) :: parent_config_flags
+      INTEGER :: nestid_loc , kid_loc
+   
+         !  Are there any subdomains from this level.  The output is the nestid (the domain
+         !  ID of the nest), and kid (an index to which of the parent's children this new nested
+         !  domain represents).
+   
+         DO WHILE ( nests_to_open( grid , nestid_loc , kid_loc ) )
+
+            !  If we found another child domain, we continue on: allocate, set up time keeping, 
+            !  initialize.
+   
+            CALL alloc_and_configure_domain ( domain_id  = nestid_loc   , &
+                                              grid       = new_nest_loc , &
+                                              parent     = grid         , &
+                                              kid        = kid_loc        )
+         
+print *,'for parent domain id #',grid%id,', found child domain #',nestid_loc
+            !  Since this is a DFI run, set the DFI switches to the same for all domains.
+
+            new_nest_loc%dfi_opt = head_grid%dfi_opt
+            new_nest_loc%dfi_stage = DFI_SETUP
+         
+            !  Set up time keeping for the fine grid space that was just allocated.
+
+            CALL Setup_Timekeeping (new_nest_loc)
+
+            !  With space allocated, and timers set, the fine grid can be initialized with data.
+
+            CALL model_to_grid_config_rec ( grid%id , model_config_rec , parent_config_flags )
+            CALL med_nest_initial ( grid , new_nest_loc , config_flags )
+
+            !  Here's the recursive part.  For each of these child domains, we call this same routine.
+            !  This will find all of "new_nest_loc" first generation progeny.
+   
+            CALL alloc_doms_for_dfi ( new_nest_loc )
+   
+         END DO
+   
+   END SUBROUTINE alloc_doms_for_dfi
 
 END MODULE module_wrf_top

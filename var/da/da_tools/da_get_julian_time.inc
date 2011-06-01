@@ -11,7 +11,7 @@ subroutine da_get_julian_time(year,month,day,hour,minute,gstime)
    integer, intent(in)  :: day
    integer, intent(in)  :: hour
    integer, intent(in)  :: minute
-   real,    intent(out) :: gstime
+   real*8,  intent(out) :: gstime
 
    integer    :: iw3jdn, ndays, nmind
 

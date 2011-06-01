@@ -1,4 +1,5 @@
 #ifndef DATA_H
+#include "../inc/streams.h"
 #include "registry.h"
 
 typedef struct node_struct {
@@ -29,34 +30,11 @@ typedef struct node_struct {
   struct node_struct * members ;
 
 /* I/O flags */
-  int     io_mask ;
-  int           history ;
-  int             auxhist1 ;
-  int             auxhist2 ;
-  int             auxhist3 ;
-  int             auxhist4 ;
-  int             auxhist5 ;
-  int             auxhist6 ;
-  int             auxhist7 ;
-  int             auxhist8 ;
-  int             auxhist9 ;
-  int             auxhist10 ;
-  int             auxhist11 ;
-  int           restart ;
-  int           input   ;
-  int             auxinput1   ;
-  int             auxinput2   ;
-  int             auxinput3   ;
-  int             auxinput4   ;
-  int             auxinput5   ;
-  int             auxinput6   ;
-  int             auxinput7   ;
-  int             auxinput8   ;
-  int             auxinput9   ;
-  int             auxinput10   ;
-  int             auxinput11   ;
-  int           boundary   ;
-  int           namelist   ;
+  unsigned int     io_mask[ IO_MASK_SIZE ] ;
+  unsigned int     nest_mask ;
+  int     restart ;
+  int     boundary   ;
+  int     namelist   ;
   char    namelistsection[NAMELEN] ;
   struct node_struct * next ;
   struct node_struct * next4d ;
@@ -122,6 +100,7 @@ EXTERN int sw_dm_serial_in_only ;
 EXTERN int sw_fort_kludge ;
 EXTERN char sw_commpath[NAMELEN] ;
 EXTERN int sw_new_bdys ;  /* 20070207 JM support decomposed boundary arrays */
+EXTERN int sw_unidir_shift_halo ;  /* 20100210 JM assume that halo to shift is same in both directions and only gen one of them */
 EXTERN int sw_new_with_old_bdys ;  /* 20070207 JM for debugging interim phase, new comms w/ old data structs */
 
 EXTERN node_t * Type ;

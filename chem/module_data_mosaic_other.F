@@ -23,7 +23,7 @@
 
 	integer, parameter :: imaxd=1, jmaxd=1, kmaxd=100
 
-	integer, parameter :: lmaxd=283, l2maxd=283
+	integer, parameter :: lmaxd=1200, l2maxd=1200 ! increased from 300 to 400 by Manish Shrivastava on 01/25/10 for additional soa gas species
 
 	integer, parameter :: nsubareamaxd = 1
 
@@ -39,6 +39,96 @@
 	integer, save :: ko3     = -999888777
 	integer, save :: kh2o    = -999888777
 	integer, save :: ktemp   = -999888777
+        integer, save :: kpcg1_b_c  = -999888777
+        integer, save :: kpcg2_b_c  = -999888777
+        integer, save :: kpcg3_b_c  = -999888777
+        integer, save :: kpcg4_b_c  = -999888777
+        integer, save :: kpcg5_b_c  = -999888777
+        integer, save :: kpcg6_b_c  = -999888777
+        integer, save :: kpcg7_b_c  = -999888777
+        integer, save :: kpcg8_b_c  = -999888777
+        integer, save :: kpcg9_b_c  = -999888777
+        integer, save :: kpcg1_b_o  = -999888777
+        integer, save :: kpcg2_b_o  = -999888777
+        integer, save :: kpcg3_b_o  = -999888777
+        integer, save :: kpcg4_b_o  = -999888777
+        integer, save :: kpcg5_b_o  = -999888777
+        integer, save :: kpcg6_b_o  = -999888777
+        integer, save :: kpcg7_b_o  = -999888777
+        integer, save :: kpcg8_b_o  = -999888777
+        integer, save :: kpcg9_b_o  = -999888777
+        integer, save :: kopcg1_b_c  = -999888777
+        integer, save :: kopcg2_b_c  = -999888777
+        integer, save :: kopcg3_b_c  = -999888777
+        integer, save :: kopcg4_b_c  = -999888777
+        integer, save :: kopcg5_b_c  = -999888777
+        integer, save :: kopcg6_b_c  = -999888777
+        integer, save :: kopcg7_b_c  = -999888777
+        integer, save :: kopcg8_b_c  = -999888777
+        integer, save :: kopcg1_b_o  = -999888777
+        integer, save :: kopcg2_b_o  = -999888777
+        integer, save :: kopcg3_b_o  = -999888777
+        integer, save :: kopcg4_b_o  = -999888777
+        integer, save :: kopcg5_b_o  = -999888777
+        integer, save :: kopcg6_b_o  = -999888777
+        integer, save :: kopcg7_b_o  = -999888777
+        integer, save :: kopcg8_b_o  = -999888777
+        integer, save :: kpcg1_f_c  = -999888777
+        integer, save :: kpcg2_f_c  = -999888777
+        integer, save :: kpcg3_f_c  = -999888777
+        integer, save :: kpcg4_f_c  = -999888777
+        integer, save :: kpcg5_f_c  = -999888777
+        integer, save :: kpcg6_f_c  = -999888777
+        integer, save :: kpcg7_f_c  = -999888777
+        integer, save :: kpcg8_f_c  = -999888777
+        integer, save :: kpcg9_f_c  = -999888777
+        integer, save :: kpcg1_f_o  = -999888777
+        integer, save :: kpcg2_f_o  = -999888777
+        integer, save :: kpcg3_f_o  = -999888777
+        integer, save :: kpcg4_f_o  = -999888777
+        integer, save :: kpcg5_f_o  = -999888777
+        integer, save :: kpcg6_f_o  = -999888777
+        integer, save :: kpcg7_f_o  = -999888777
+        integer, save :: kpcg8_f_o  = -999888777
+        integer, save :: kpcg9_f_o  = -999888777
+        integer, save :: kopcg1_f_c  = -999888777
+        integer, save :: kopcg2_f_c  = -999888777
+        integer, save :: kopcg3_f_c  = -999888777
+        integer, save :: kopcg4_f_c  = -999888777
+        integer, save :: kopcg5_f_c  = -999888777
+        integer, save :: kopcg6_f_c  = -999888777
+        integer, save :: kopcg7_f_c  = -999888777
+        integer, save :: kopcg8_f_c  = -999888777
+        integer, save :: kopcg1_f_o  = -999888777
+        integer, save :: kopcg2_f_o  = -999888777
+        integer, save :: kopcg3_f_o  = -999888777
+        integer, save :: kopcg4_f_o  = -999888777
+        integer, save :: kopcg5_f_o  = -999888777
+        integer, save :: kopcg6_f_o  = -999888777
+        integer, save :: kopcg7_f_o  = -999888777
+        integer, save :: kopcg8_f_o  = -999888777
+        integer, save :: kant1_c  = -999888777
+        integer, save :: kant2_c  = -999888777
+        integer, save :: kant3_c  = -999888777
+        integer, save :: kant4_c  = -999888777
+        integer, save :: kant1_o  = -999888777
+        integer, save :: kant2_o  = -999888777
+        integer, save :: kant3_o  = -999888777
+        integer, save :: kant4_o  = -999888777
+        integer, save :: kbiog1_c  = -999888777
+        integer, save :: kbiog2_c  = -999888777
+        integer, save :: kbiog3_c  = -999888777
+        integer, save :: kbiog4_c  = -999888777
+        integer, save :: kbiog1_o  = -999888777
+        integer, save :: kbiog2_o  = -999888777
+        integer, save :: kbiog3_o  = -999888777
+        integer, save :: kbiog4_o  = -999888777
+
+
+
+
+
+
 
 !   rce 2005-apr-12 - added for cldchem - kso2, kh2o2, khcho, khcooh, 
 !   koh, kho2, kno3, kno, kno2, khono, kpan, kch3o2, kch3oh, kch3ooh

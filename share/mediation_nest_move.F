@@ -1,11 +1,13 @@
 
 SUBROUTINE med_nest_move ( parent, nest )
   ! Driver layer
-   USE module_domain
+   USE module_domain, ONLY : domain, get_ijk_from_grid, adjust_domain_dims_for_move
+   USE module_utility
    USE module_timing
-   USE module_configure
-   USE module_io_domain
-   USE module_dm
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
+   USE module_state_description
+!   USE module_io_domain
+   USE module_dm, ONLY : wrf_dm_move_nest
    TYPE(domain) , POINTER                     :: parent, nest, grid
    INTEGER dx, dy       ! number of parent domain points to move
 #ifdef MOVE_NESTS
@@ -27,26 +29,38 @@ SUBROUTINE med_nest_move ( parent, nest )
    TYPE (grid_config_rec_type)   :: config_flags
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    LOGICAL, EXTERNAL :: should_not_move
+#ifdef HWRFX
+!XUEJIN added for HWRFx
+   INTEGER                  :: k,idum1,idum2 
+   INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
+#else
+!
+#endif
 
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
+!#ifdef HWRFX
+! XUEJIN added this directive here to exclude the ARW code
+!#else
      SUBROUTINE start_domain ( grid , allowed_to_move )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) :: grid
         LOGICAL, INTENT(IN) :: allowed_to_move
      END SUBROUTINE start_domain
+!#endif
 #if ( EM_CORE == 1 )
      SUBROUTINE shift_domain_em ( grid, disp_x, disp_y  &
 !
 # include <dummy_new_args.inc>
 !
                            )
-        USE module_domain
-        USE module_configure
-        USE module_timing
+        USE module_domain, ONLY : domain
+        USE module_state_description
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
@@ -56,11 +70,13 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if ( NMM_CORE == 1 )
      SUBROUTINE med_nest_egrid_configure ( parent , nest )
         USE module_domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_nest_egrid_configure
 
      SUBROUTINE med_construct_egrid_weights ( parent , nest )
         USE module_domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_construct_egrid_weights
 
@@ -73,8 +89,12 @@ SUBROUTINE med_nest_move ( parent, nest )
                                     IMS,IME,JMS,JME,KMS,KME, &
                                     IPS,IPE,JPS,JPE,KPS,KPE  )
 !
-
+#ifdef HWRFX
+!XUEJIN added for HWRFx
          USE MODULE_MODEL_CONSTANTS
+#else
+! 
+#endif
          IMPLICIT NONE
          INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
          INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
@@ -89,44 +109,49 @@ SUBROUTINE med_nest_move ( parent, nest )
      END SUBROUTINE BASE_STATE_PARENT
 
      SUBROUTINE NEST_TERRAIN ( nest, config_flags )
-       USE module_domain
+       USE module_domain, ONLY : domain
+       USE module_configure, ONLY : grid_config_rec_type
+       IMPLICIT NONE
        TYPE(domain) , POINTER                        :: nest
        TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
      END SUBROUTINE NEST_TERRAIN
 
      SUBROUTINE med_init_domain_constants_nmm ( parent, nest )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER                    :: parent , nest
      END SUBROUTINE med_init_domain_constants_nmm
 
      SUBROUTINE shift_domain_nmm ( grid, disp_x, disp_y &
 !
-# include <dummy_args.inc>
+# include <dummy_new_args.inc>
 !
                            )
         USE module_domain
-        USE module_configure
-        USE module_timing
         IMPLICIT NONE
         INTEGER disp_x, disp_y
         TYPE(domain) , POINTER                 :: grid
-#include <dummy_decl.inc>
+#include <dummy_new_decl.inc>
      END SUBROUTINE shift_domain_nmm
 #endif
+#ifdef HWRFX 
+! XUEJIN added this directive here to exclude the ARW code
+#else
      LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
-        USE module_domain
-        USE module_utility
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move
-
+#endif
 
 #ifdef HWRF
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 !     LOGICAL FUNCTION nest_roam ( parent , nest , dx , dy )  !REPLACED BY KWON
 !
      LOGICAL FUNCTION direction_of_move ( parent , nest , dx , dy )
-        USE module_domain
+        USE module_domain, ONLY : domain
+        IMPLICIT NONE
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION direction_of_move
@@ -135,19 +160,24 @@ SUBROUTINE med_nest_move ( parent, nest )
 #endif
 #endif
 
+#ifdef HWRFX 
+! XUEJIN added this directive here to exclude the ARW code
+#else
      SUBROUTINE  input_terrain_rsmas ( grid ,                  &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
-       USE module_domain
+       USE module_domain, ONLY : domain
+       IMPLICIT NONE
        TYPE ( domain ) :: grid
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
      END SUBROUTINE input_terrain_rsmas
      SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
-       USE module_domain
-       USE module_configure
+       USE module_domain, ONLY : domain
+       USE module_configure, ONLY : grid_config_rec_type
+        IMPLICIT NONE
        TYPE (domain), POINTER ::  nest , parent
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_feedback
@@ -155,6 +185,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
+       IMPLICIT NONE
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
@@ -165,12 +196,14 @@ SUBROUTINE med_nest_move ( parent, nest )
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
+       IMPLICIT NONE
        INTEGER                           :: ids , ide , jds , jde , kds , kde , &
                                             ims , ime , jms , jme , kms , kme , &
                                             ips , ipe , jps , jpe , kps , kpe
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_interpolated
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
      END SUBROUTINE copy_3d_field
+#endif
    END INTERFACE
 
   ! set grid pointer for code in deref_kludge (if used)
@@ -242,7 +275,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if (NMM_CORE == 1 && NMM_NEST == 1)
      CALL shift_domain_nmm( grid, dx, dy &
 !
-# include <actual_args.inc>
+# include <actual_new_args.inc>
 !
                           )
 #endif
@@ -311,9 +344,6 @@ SUBROUTINE med_nest_move ( parent, nest )
     ENDDO
 #endif
 
-
-
-
     DO J = JPS, MIN(JPE,JDE-1)
       DO I = IPS, MIN(IPE,IDE-1)
        nest%fis(I,J)=nest%hres_fis(I,J)
@@ -349,13 +379,13 @@ SUBROUTINE med_nest_move ( parent, nest )
     nest%KZMAX=KME
     parent%KZMAX=KME  ! just for safety
 
-    write(0,*) " nest%imask_nostag "
-    write(0,"(3X,1X,1000(I3))") (I, I = IPS, MIN(IPE,IDE-1) )
+!    write(0,*) " nest%imask_nostag "
+!    write(0,"(3X,1X,1000(I3))") (I, I = IPS, MIN(IPE,IDE-1) )
     DO J = MIN(JPE,JDE-1), JPS, -1
        IF ( MOD(J,2) /= 0 ) THEN
-    write(0,"(I3,1X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
+!    write(0,"(I3,1X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
        ELSE
-    write(0,"(I3,3X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
+!    write(0,"(I3,3X,1000(I3))") J, (nest%imask_nostag(I,J), I = IPS, MIN(IPE,IDE-1) )
        END IF
     ENDDO
 
@@ -460,7 +490,6 @@ SUBROUTINE med_nest_move ( parent, nest )
         where ( nest%imask_nostag .EQ. 1 ) nest%t_1(:,k,:)   = nest%t_2(:,k,:)
         where ( nest%imask_nostag .EQ. 1 ) nest%w_1(:,k,:)   = nest%w_2(:,k,:)
         where ( nest%imask_nostag .EQ. 1 ) nest%ph_1(:,k,:)  = nest%ph_2(:,k,:)
-        where ( nest%imask_nostag .EQ. 1 ) nest%tp_1(:,k,:)  = nest%tp_2(:,k,:)
         where ( nest%imask_nostag .EQ. 1 ) nest%tke_1(:,k,:) = nest%tke_2(:,k,:)
       enddo
       where ( nest%imask_nostag .EQ. 1 ) nest%mu_1(:,:)  = nest%mu_2(:,:)
@@ -477,11 +506,13 @@ END SUBROUTINE med_nest_move
 
 LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
   ! Driver layer
-   USE module_domain
-   USE module_configure
+   USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid, adjust_domain_dims_for_move
+!   USE module_configure
+   USE module_driver_constants, ONLY : max_moves
    USE module_compute_geop
-   USE module_dm
+   USE module_dm, ONLY : wrf_dm_max_real, wrf_dm_move_nest
    USE module_utility
+   USE module_streams, ONLY : compute_vortex_center_alarm
    IMPLICIT NONE
 ! Arguments
    TYPE(domain) , POINTER    :: parent, grid
@@ -918,9 +949,9 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
 END FUNCTION time_for_move2
 
 LOGICAL FUNCTION time_for_move ( parent , grid , move_cd_x, move_cd_y )
-   USE module_domain
-   USE module_configure
-   USE module_dm
+   USE module_domain, ONLY : domain, get_ijk_from_grid, adjust_domain_dims_for_move
+!   USE module_configure
+   USE module_dm, ONLY : wrf_dm_move_nest
 USE module_timing
    USE module_utility
    IMPLICIT NONE
@@ -942,8 +973,7 @@ USE module_timing
 ! interface
    INTERFACE
      LOGICAL FUNCTION time_for_move2 ( parent , nest , dx , dy )
-        USE module_domain
-        USE module_utility
+        USE module_domain, ONLY : domain
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move2
@@ -958,17 +988,19 @@ USE module_timing
    ENDIF
    kid = 1
 
+#if ( EM_CORE == 1 )
 !  Check if it is time to move the nest
-     xtime = grid%xtime
-     CALL nl_get_time_to_move ( grid%id , time_to_move )
-     if ( xtime .lt. time_to_move ) then
-        time_for_move = .FALSE.
-        move_cd_x = 0
-        move_cd_y = 0
-!       write(0,*) 'it is not the time to move ', xtime, time_to_move
-        return
-     endif
-!
+      xtime = grid%xtime
+      CALL nl_get_time_to_move ( grid%id , time_to_move )
+      if ( xtime .lt. time_to_move ) then
+         time_for_move = .FALSE.
+         move_cd_x = 0
+         move_cd_y = 0
+!        write(0,*) 'it is not the time to move ', xtime, time_to_move
+         return
+      endif
+#endif
+! 
 ! find out if this is the innermost nest (will not have kids)
    IF   ( grid%num_nests .EQ. 0 ) THEN
      ! code that executes on innermost nest
@@ -1099,7 +1131,7 @@ END FUNCTION time_for_move
 ! Put any tests for non-moving options or conditions in here
 LOGICAL FUNCTION should_not_move ( id )
   USE module_state_description
-  USE module_configure
+!  USE module_configure
   IMPLICIT NONE
   INTEGER, INTENT(IN) :: id
  ! Local
@@ -1147,7 +1179,331 @@ LOGICAL FUNCTION should_not_move ( id )
   should_not_move = retval
 END FUNCTION
 
-#ifdef HWRF
+#ifdef HWRFX
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
+   USE module_domain
+   USE module_configure
+   USE module_dm
+   IMPLICIT NONE
+! arguments
+   TYPE(domain) , POINTER    :: parent, grid
+   LOGICAL, EXTERNAL         :: wrf_dm_on_monitor
+   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+! local
+   INTEGER     :: coral_dist, kid
+   INTEGER     :: dw, de, ds, dn, pgr, idum, jdum
+   INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
+                  cims, cime, cjms, cjme, ckms, ckme, &
+                  cips, cipe, cjps, cjpe, ckps, ckpe, &
+                  nids, nide, njds, njde, nkds, nkde, &
+                  nims, nime, njms, njme, nkms, nkme, &
+                  nips, nipe, njps, njpe, nkps, nkpe
+! AUTHOR: XUEJIN ZHANG
+! ORIGINAL DATE: 10/12/2009
+! Modified: 2/28/2010
+! PURPOSE: DEICDE THE DIRECTION OF MOVE
+! executable
+!
+! Simplifying assumption: domains in moving nest simulations have only
+! one parent and only one child.
+! XUEJIN comment out 10/12/2009
+!  IF   ( grid%num_nests .GT. 1 ) THEN
+!    CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
+!  ENDIF
+!  kid = 1
+
+!  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
+
+   coral_dist=grid%ed31/grid%parent_grid_ratio
+   IF(grid%i_parent_start .le. 5 .or. (grid%i_parent_start+coral_dist) .ge. parent%ed31 - 5)THEN  
+     grid%mvnest=.false.
+     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO EAST/WEST BOUNDARY'
+   ENDIF
+!
+   coral_dist=grid%ed32/grid%parent_grid_ratio
+   IF(grid%j_parent_start .le. 5 .OR. (grid%j_parent_start+coral_dist) .ge. parent%ed32 - 5)THEN
+     grid%mvnest=.false.
+     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO NORTH/SOUTH BOUNDARY'
+   ENDIF
+
+!
+!  DETERMINE AUTOMATICALLY THE DIRECTION OF GRID MOTION
+!
+   WRITE(0,*)'PROBLEM MAY BE HERE',grid%id,grid%mvnest,grid%num_moves,grid%num_nests
+   WRITE(0,*)'PROBLEM MAY BE HERE',grid%XLOC_1,grid%XLOC_2,grid%YLOC_1,grid%YLOC_2 
+
+!  IF(grid%num_nests.EQ.0 .AND. grid%num_moves.EQ.-99 .AND. grid%mvnest)THEN 
+   IF(grid%num_moves.EQ.-99 .AND. grid%mvnest)THEN
+      IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
+         move_cd_x  = -1
+         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
+            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH EAST DIRECTION',grid%id
+            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
+                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+            move_cd_y  = +1
+         ELSE
+            WRITE(0,*)'HURRICANE IS MOVING IN THE EASTERLY FLOW',grid%id
+            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
+                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+            move_cd_y  =  0
+         ENDIF
+         direction_of_move2= .TRUE. 
+         grid%moved = .TRUE.
+      ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
+         move_cd_x  = +1 
+         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
+            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH WEST DIRECTION',grid%id
+            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,  &
+                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+            move_cd_y  = -1
+         ELSE
+           WRITE(0,*)'HURRICANE IN THE WESTERLY CURRENT',grid%id
+           WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,   &
+                     'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+           move_cd_y  =  0
+         ENDIF
+         direction_of_move2= .TRUE.
+         grid%moved = .TRUE.
+      ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 6)THEN 
+        WRITE(0,*)'HURRICANE IS MOVING NORTHWARD',grid%id
+        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
+                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+        move_cd_x  = 0 
+        move_cd_y  = 2 
+        direction_of_move2= .TRUE.
+        grid%moved = .TRUE.
+      ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
+        WRITE(0,*)'STRANGE: HURRICANE IS MOVING SOUTHWARD, MAY BE DUE TO INITIAL MANUVARE',grid%id
+        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
+                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+        move_cd_x  =  0
+        move_cd_y  = -2 
+        direction_of_move2= .TRUE.
+        grid%moved = .TRUE.
+      ELSE
+        move_cd_x  =  0 
+        move_cd_y  =  0 
+        direction_of_move2= .FALSE.
+        grid%moved = .FALSE.        
+      ENDIF
+   ELSE
+    move_cd_x  =  0
+    move_cd_y  =  0
+    direction_of_move2= .FALSE.
+    grid%moved = .FALSE.      
+   ENDIF
+
+  RETURN
+
+END FUNCTION direction_of_move2
+
+
+LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
+
+! AUTHOR: XUEJIN ZHANG
+! ORIGINAL DATE: 10/12/2009
+! Modified: 2/28/2010
+! PURPOSE: DEICDE THE DIRECTION OF MOVE
+
+   USE module_domain
+   USE module_configure
+   USE module_dm
+   IMPLICIT NONE
+! arguments
+   TYPE(domain) , POINTER    :: parent, grid, par, nst
+   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+! local
+   INTEGER     :: corral_dist, kid
+   INTEGER     :: dw, de, ds, dn, pgr
+   INTEGER     :: would_move_x, would_move_y
+   INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
+                  cims, cime, cjms, cjme, ckms, ckme, &
+                  cips, cipe, cjps, cjpe, ckps, ckpe, &
+                  nids, nide, njds, njde, nkds, nkde, &
+                  nims, nime, njms, njme, nkms, nkme, &
+                  nips, nipe, njps, njpe, nkps, nkpe
+      INTEGER                          :: IDS,IDE,JDS,JDE,KDS,KDE
+      INTEGER                          :: IMS,IME,JMS,JME,KMS,KME
+      INTEGER                          :: ITS,ITE,JTS,JTE,KTS,KTE
+! interface
+   INTERFACE
+     LOGICAL FUNCTION direction_of_move2 ( parent , nest , dx , dy )
+        USE module_domain
+        USE module_utility
+        TYPE(domain) , POINTER    :: parent , nest
+        INTEGER, INTENT(OUT)      :: dx , dy
+     END FUNCTION direction_of_move2
+     SUBROUTINE G2T2H_new( IIH,JJH,                            & ! output grid index and weights 
+                           HBWGT1,HBWGT2,                      & ! output weights in terms of parent grid
+                           HBWGT3,HBWGT4,                      &
+                           I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain  
+                           RATIO,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                           IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                           IMS,IME,JMS,JME,KMS,KME,            &
+                           ITS,ITE,JTS,JTE,KTS,KTE      )
+      IMPLICIT NONE
+      INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+      INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+      INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+      INTEGER,    INTENT(IN   )                            :: RATIO
+      REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+      INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
+     END SUBROUTINE G2T2H_new
+     SUBROUTINE G2T2V_new( IIV,JJV,                            & ! output grid index and weights 
+                           VBWGT1,VBWGT2,                      & ! output weights in terms of parent grid
+                           VBWGT3,VBWGT4,                      &
+                           I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain  
+                           RATIO,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                           IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                           IMS,IME,JMS,JME,KMS,KME,            &
+                           ITS,ITE,JTS,JTE,KTS,KTE      )
+      IMPLICIT NONE
+      INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+      INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+      INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,    INTENT(IN   )                            :: I_PARENT_START,J_PARENT_START
+      INTEGER,    INTENT(IN   )                            :: RATIO
+      REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
+      INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
+     END SUBROUTINE G2T2V_new
+   END INTERFACE
+! executable
+! 
+! Simplifying assumption: domains in moving nest simulations have only 
+! one parent and only one child.
+
+   IF   ( grid%num_nests .GT. 1 ) THEN
+     CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
+   ENDIF
+   kid = 1
+     write(0,*) 'grid%num_nests=',grid%num_nests
+!
+! find out if this is the innermost nest (will not have kids)
+   IF   ( grid%num_nests .EQ. 0 ) THEN
+     ! code that executes on innermost nest
+     direction_of_move = direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
+     par => grid%parents(1)%ptr
+     nst => grid
+
+100  CONTINUE
+       CALL get_ijk_from_grid (  nst ,                               &
+                                 nids, nide, njds, njde, nkds, nkde, &
+                                 nims, nime, njms, njme, nkms, nkme, &
+                                 nips, nipe, njps, njpe, nkps, nkpe  )
+       CALL get_ijk_from_grid (  par ,                               &
+                                 cids, cide, cjds, cjde, ckds, ckde, &
+                                 cims, cime, cjms, cjme, ckms, ckme, &
+                                 cips, cipe, cjps, cjpe, ckps, ckpe  )
+       CALL nl_get_parent_grid_ratio ( nst%id , pgr )
+
+     IF ( par%id .EQ. 1 ) THEN
+!        IF ( would_move_x .NE. 0 .AND. move_cd_x .NE. 0 ) THEN
+           CALL wrf_message('MOAD can not move. Cancelling nest move in X')
+!          if ( grid%num_nests .eq. 0 ) grid%vc_i = grid%vc_i + move_cd_x * pgr  ! cancel effect of move
+!          move_cd_x = 0
+!        ENDIF
+!        IF ( would_move_y .NE. 0 .AND. move_cd_y .NE. 0 ) THEN
+           CALL wrf_message('MOAD can not move. Cancelling nest move in Y')
+!          if ( grid%num_nests .eq. 0 ) grid%vc_j = grid%vc_j + move_cd_y * pgr  ! cancel effect of move
+!          move_cd_y = 0
+!        ENDIF
+     ELSE
+         nst => par
+         par => nst%parents(1)%ptr
+         GOTO 100
+     ENDIF
+
+! bottom of until loop
+     direction_of_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
+
+   ELSE
+     CALL get_ijk_from_grid (  grid%nests(kid)%ptr ,               &
+                               nids, nide, njds, njde, nkds, nkde, &
+                               nims, nime, njms, njme, nkms, nkme, &
+                               nips, nipe, njps, njpe, nkps, nkpe  )
+     CALL get_ijk_from_grid (  grid ,                              &
+                               cids, cide, cjds, cjde, ckds, ckde, &
+                               cims, cime, cjms, cjme, ckms, ckme, &
+                               cips, cipe, cjps, cjpe, ckps, ckpe  )
+     CALL nl_get_parent_grid_ratio ( grid%nests(kid)%ptr%id , pgr )
+     ! move this domain (the parent containing the moving nest)
+     ! in a direction that reestablishes the distance from 
+     ! the boundary.
+     move_cd_x = 0
+     move_cd_y = 0
+     direction_of_move = direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
+
+     IF ( direction_of_move ) THEN
+       IF ( grid%id .EQ. 1 ) THEN
+
+         CALL wrf_message( 'DANGER: Nest has moved too close to boundary of outermost domain.' )
+         direction_of_move = .FALSE.
+
+       ELSE
+         ! need to adjust the intermediate domain of the nest in relation to this
+         ! domain since we're moving
+         IF(MOD(move_cd_y,2) .NE. 0)THEN
+           move_cd_y=move_cd_y+sign(1,move_cd_y)
+            WRITE(0,*)'WARNING: move_cd_y REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT move_cd_y=',move_cd_y
+         ENDIF
+
+         CALL wrf_dm_move_nest ( grid , grid%nests(kid)%ptr%intermediate_grid , -move_cd_x*pgr, -move_cd_y*pgr )
+         CALL adjust_domain_dims_for_move( grid%nests(kid)%ptr%intermediate_grid , -move_cd_x*pgr, -move_cd_y*pgr )
+         grid%nests(kid)%ptr%i_parent_start = grid%nests(kid)%ptr%i_parent_start - move_cd_x*pgr
+         write(0,*)'grid%nests(kid)%ptr%i_parent_start =',grid%nests(kid)%ptr%i_parent_start,grid%nests(kid)%ptr%id
+         CALL nl_set_i_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%i_parent_start )
+         grid%nests(kid)%ptr%j_parent_start = grid%nests(kid)%ptr%j_parent_start - move_cd_y*pgr
+         write(0,*)'grid%nests(kid)%ptr%j_parent_start =',grid%nests(kid)%ptr%j_parent_start,grid%nests(kid)%ptr%id
+         CALL nl_set_j_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%j_parent_start )
+         IDS = grid%nests(kid)%ptr%sd31
+         IDE = grid%nests(kid)%ptr%ed31
+         JDS = grid%nests(kid)%ptr%sd32
+         JDE = grid%nests(kid)%ptr%ed32
+         KDS = grid%nests(kid)%ptr%sd33
+         KDE = grid%nests(kid)%ptr%ed33
+
+         IMS = grid%nests(kid)%ptr%sm31
+         IME = grid%nests(kid)%ptr%em31
+         JMS = grid%nests(kid)%ptr%sm32
+         JME = grid%nests(kid)%ptr%em32
+         KMS = grid%nests(kid)%ptr%sm33
+         KME = grid%nests(kid)%ptr%em33
+
+         ITS  = grid%nests(kid)%ptr%sp31
+         ITE  = grid%nests(kid)%ptr%ep31
+         JTS  = grid%nests(kid)%ptr%sp32
+         JTE  = grid%nests(kid)%ptr%ep32
+         KTS  = grid%nests(kid)%ptr%sp33
+         KTE  = grid%nests(kid)%ptr%ep33
+
+         CALL G2T2H_new(    grid%nests(kid)%ptr%IIH,grid%nests(kid)%ptr%JJH,                            & ! output grid index in parent grid
+                       grid%nests(kid)%ptr%HBWGT1,grid%nests(kid)%ptr%HBWGT2,                      & ! output weights in terms of parent grid
+                       grid%nests(kid)%ptr%HBWGT3,grid%nests(kid)%ptr%HBWGT4,                      &
+                       grid%nests(kid)%ptr%I_PARENT_START,grid%nests(kid)%ptr%J_PARENT_START,      & ! nest start I, J in parent domain
+                       3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                       IMS,IME,JMS,JME,KMS,KME,            &
+                       ITS,ITE,JTS,JTE,KTS,KTE      )
+         CALL G2T2V_new(    grid%nests(kid)%ptr%IIV,grid%nests(kid)%ptr%JJV,                            & ! output grid index in parent grid
+                       grid%nests(kid)%ptr%VBWGT1,grid%nests(kid)%ptr%VBWGT2,                      & ! output weights in terms of parent grid
+                       grid%nests(kid)%ptr%VBWGT3,grid%nests(kid)%ptr%VBWGT4,                      &
+                       grid%nests(kid)%ptr%I_PARENT_START,grid%nests(kid)%ptr%J_PARENT_START,      & ! nest start I, J in parent domain
+                       3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                       IMS,IME,JMS,JME,KMS,KME,            &
+                       ITS,ITE,JTS,JTE,KTS,KTE      )
+
+       ENDIF
+     ENDIF 
+
+   ENDIF
+
+   RETURN
+END FUNCTION direction_of_move
+#endif
+#else
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 LOGICAL FUNCTION nest_roam ( parent , grid , move_cd_x, move_cd_y )
    USE module_domain
@@ -1217,9 +1573,9 @@ END FUNCTION nest_roam
 !ADDED BY YOUNG KWON FOR VORTEX FOLLOWING NEST MOVE
 
 LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
-   USE module_domain
-   USE module_configure
-   USE module_dm
+   USE module_domain, ONLY : domain
+!   USE module_configure
+!   USE module_dm
 !!!   USE WRF_ESMF_MOD   !!COMMENTED OUT BY KWON TO FOLLOW DUSAN'S CODING
    IMPLICIT NONE
 ! arguments
@@ -1245,7 +1601,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
    ENDIF
    kid = 1
 
-   write(0,*) 'grid%ed31  grid%ed32  grid%ed33   ', grid%ed31, grid%ed32,grid%ed33
+!   write(0,*) 'grid%ed31  grid%ed32  grid%ed33   ', grid%ed31, grid%ed32,grid%ed33
 
 !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
 

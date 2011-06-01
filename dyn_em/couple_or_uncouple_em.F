@@ -15,7 +15,12 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
    USE module_driver_constants
    USE module_machine
    USE module_tiles
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic
+   USE module_comm_dm, ONLY : halo_em_couple_a_sub,halo_em_couple_b_sub,period_em_couple_a_sub,period_em_couple_b_sub
+#else
    USE module_dm
+#endif
    USE module_bc
 ! Mediation layer modules
 ! Registry generated module
@@ -268,6 +273,16 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
        ENDDO
      END IF
 
+     IF (num_tracer >= PARAM_FIRST_SCALAR )  THEN
+       DO im = PARAM_FIRST_SCALAR, num_tracer
+         DO k = kps,kpe-1
+         DO i = max(ids,ips),min(ide-1,ipe)
+           tracer(i,k,j,im)  =  tracer(i,k,j,im)*mut_2(i,j)
+         ENDDO
+         ENDDO
+       ENDDO
+     END IF
+
 !  do u and v
 
      DO k = kps,kpe-1
@@ -381,6 +396,18 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
        DO im = PARAM_FIRST_SCALAR , num_3d_s
 
      CALL set_physical_bc3d( scalar(ims,kms,jms,im), 'p',        &
+                             config_flags,                   &
+                             ids,ide, jds,jde, kds,kde,  & ! domain dims
+                             ims,ime, jms,jme, kms,kme,  & ! memory dims
+                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                             ips,ipe, jps,jpe, kps,kpe )
+     ENDDO
+     ENDIF
+
+     IF (num_tracer >= PARAM_FIRST_SCALAR) THEN
+       DO im = PARAM_FIRST_SCALAR , num_tracer
+ 
+     CALL set_physical_bc3d( tracer(ims,kms,jms,im), 'p',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims

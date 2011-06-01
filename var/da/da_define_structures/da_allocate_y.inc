@@ -174,8 +174,10 @@ subroutine da_allocate_y (iv, y)
          nlevels = iv%info(radar)%levels(n)
          allocate (y % radar(n)%rv(1:nlevels))
          allocate (y % radar(n)%rf(1:nlevels))
+         allocate (y % radar(n)%rr(1:nlevels))
          y % radar(n) % rv(1:nlevels) = 0.0
          y % radar(n) % rf(1:nlevels) = 0.0
+         y % radar(n) % rr(1:nlevels) = 0.0
       end do
    end if
 

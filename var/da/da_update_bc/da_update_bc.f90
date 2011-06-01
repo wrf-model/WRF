@@ -17,7 +17,7 @@ program da_update_bc
    use da_netcdf_interface, only : da_get_var_3d_real_cdf, &
       da_put_var_3d_real_cdf, da_get_dims_cdf, da_put_var_2d_real_cdf, &
       da_get_var_2d_real_cdf, da_get_var_2d_int_cdf, da_get_bdytimestr_cdf, &
-      da_get_times_cdf, da_get_bdyfrq, stderr, stdout
+      da_get_times_cdf, da_get_bdyfrq, stderr, stdout, da_put_var_2d_int_cdf
 
    use da_module_couple_uv, only : da_couple_uv
 
@@ -26,9 +26,9 @@ program da_update_bc
    include 'netcdf.inc'
 
    integer, parameter :: max_3d_variables = 20, &
-                         max_2d_variables = 20
+                         max_2d_variables = 25
  
-   character(len=512) :: wrfvar_output_file, &
+   character(len=512) :: da_file,      &
                          wrf_bdy_file, &
                          wrf_input
  
@@ -54,36 +54,52 @@ program da_update_bc
                                           tend2d, scnd2d, frst2d, full2d
 
    real, allocatable, dimension(:,  :) :: tsk, tsk_wrfvar
+   real, allocatable, dimension(:,:)   :: snow, snowc, snowh
 
-   integer, allocatable, dimension(:,:) :: ivgtyp
+   integer, allocatable, dimension(:,:) :: ivgtyp, full2dint
 
    character(len=80), allocatable, dimension(:) :: times, &
                                                    thisbdytime, nextbdytime
  
-   integer :: east_end, north_end, io_status, cdfid, varid, domain_id
+   integer :: east_end, north_end, io_status, cdfid, varid, domain_id, iswater
+   integer :: iostatus(4)
 
-   logical :: cycling, debug, low_bdy_only, update_lsm
+   logical :: debug, update_lateral_bdy, update_low_bdy, update_lsm, keep_tsk_wrf
+   logical :: keep_snow_wrf
 
    real :: bdyfrq
+
+   character(len=512) :: wrfvar_output_file    ! obsolete. Kept for backward compatibility
+   logical            :: cycling, low_bdy_only ! obsolete. Kept for backward compatibility
 
    integer, parameter :: namelist_unit = 7, &
                          ori_unit = 11, &
                          new_unit = 12
 
-   namelist /control_param/ wrfvar_output_file, &
+   namelist /control_param/ da_file,      &
                             wrf_bdy_file, &
                             wrf_input, domain_id, &
-                            cycling, debug, low_bdy_only, update_lsm
+                            debug, update_lateral_bdy, update_low_bdy, update_lsm, &
+                            keep_tsk_wrf, keep_snow_wrf, iswater, &
+                            wrfvar_output_file, cycling, low_bdy_only
 
-   wrfvar_output_file = 'wrfvar_output'
+   da_file            = 'wrfvar_output'
    wrf_bdy_file       = 'wrfbdy_d01'
    wrf_input          = 'wrfinput_d01'
    domain_id          = 1
 
-   cycling = .false.
-   debug   = .false. 
-   low_bdy_only = .false.
-   update_lsm = .false.
+   debug              = .false. 
+   update_lateral_bdy = .true.
+   update_low_bdy     = .true.
+   update_lsm         = .false.
+   keep_tsk_wrf       = .true.
+   keep_snow_wrf      = .true.
+   iswater            = 16      ! USGS water index: 16, MODIS water index: 17
+
+   wrfvar_output_file = 'OBSOLETE'
+   cycling            = .false.
+   low_bdy_only       = .false.
+
    !---------------------------------------------------------------------
    ! Read namelist
    !---------------------------------------------------------------------
@@ -105,13 +121,38 @@ program da_update_bc
          stop
       end if
 
+      ! deal with the old namelist
+      if ( index(wrfvar_output_file, 'OBSOLETE') <= 0 ) then
+         ! wrfvar_output_file is set in the user's parame.in
+         ! reset the settings
+         da_file = wrfvar_output_file
+         if ( domain_id > 1 ) then
+            low_bdy_only = .true.
+         end if
+         if ( cycling .and. domain_id == 1 ) then
+            update_lateral_bdy = .true.
+            update_low_bdy     = .true.
+         else
+            if ( low_bdy_only ) then
+               update_lateral_bdy = .false.
+               update_low_bdy     = .true.
+            else
+               update_lateral_bdy = .true.
+               update_low_bdy     = .false.
+            end if
+         end if
+      end if
+
       WRITE(unit=stdout, fmt='(2a)') &
-           'wrfvar_output_file = ', trim(wrfvar_output_file), &
-           'wrf_bdy_file          = ', trim(wrf_bdy_file), &
+           'da_file       = ', trim(da_file), &
+           'wrf_bdy_file  = ', trim(wrf_bdy_file), &
            'wrf_input     = ', trim(wrf_input)
 
-      WRITE(unit=stdout, fmt='(a, L10)') &
-           'cycling = ', cycling
+      WRITE(unit=stdout, fmt='(2(a, L10))')             &
+           'update_lateral_bdy = ', update_lateral_bdy, &
+           'update_low_bdy     = ', update_low_bdy
+
+      if ( update_lsm ) keep_snow_wrf = .false.
 
       close(unit=namelist_unit)
    end if
@@ -126,7 +167,7 @@ program da_update_bc
    var3d(6)='QVAPOR'
 
    ! 2D need update
-   num2d=18
+   num2d=22
    varsf(1)='MUB'
    varsf(2)='MU'
    varsf(3)='MAPFAC_U'
@@ -145,14 +186,24 @@ program da_update_bc
    varsf(16)='CANWAT'
    varsf(17)='RHOSN'
    varsf(18)='SNOWH'
+   varsf(19)='LANDMASK'
+   varsf(20)='IVGTYP'
+   varsf(21)='ISLTYP'
+   varsf(22)='SNOWC'
 
    if ( domain_id > 1 ) then
       write(unit=stdout, fmt='(a,i2)') 'Nested domain ID=',domain_id
       write(unit=stdout, fmt='(a)') &
         'No wrfbdy file needed, only low boundary need to be updated.'
-        low_bdy_only = .true.
-   else
+      if ( update_lateral_bdy ) then
+         write(unit=stdout, fmt='(a)') &
+            'Re-setting update_lateral_bdy to be false for nested domain.'
+         update_lateral_bdy = .false.
+      end if
+      update_low_bdy     = .true.
+   end if
 
+   if ( update_lateral_bdy ) then
    ! First, the boundary times
    call da_get_dims_cdf(wrf_bdy_file, 'Times', dims, ndims, debug)
 
@@ -195,7 +246,7 @@ program da_update_bc
    east_end=0
    north_end=0
 
-   cdfid = ncopn(wrfvar_output_file, NCNOWRIT, io_status )
+   cdfid = ncopn(da_file, NCNOWRIT, io_status )
 
    ! For 2D variables
    ! Get mu, mub, msfu, and msfv
@@ -205,54 +256,54 @@ program da_update_bc
       io_status = nf_inq_varid(cdfid, trim(varsf(n)), varid)
       if (io_status /= 0 ) then
          print '(/"N=",i2," io_status=",i5,5x,"VAR=",a,a)', &
-                   n, io_status, trim(varsf(n)), " not existed"
+                   n, io_status, trim(varsf(n)), " does not exist"
          cycle
       endif
 
-      call da_get_dims_cdf( wrfvar_output_file, trim(varsf(n)), dims, &
+      call da_get_dims_cdf( da_file, trim(varsf(n)), dims, &
          ndims, debug)
 
       select case(trim(varsf(n)))
       case ('MU') ;
-         if (low_bdy_only) cycle
+         if ( .not. update_lateral_bdy ) cycle
 
          allocate(mu(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, &
+         call da_get_var_2d_real_cdf( da_file, &
             trim(varsf(n)), mu, dims(1), dims(2), 1, debug)
 
          east_end=dims(1)+1
          north_end=dims(2)+1
       case ('MUB') ;
-         if (low_bdy_only) cycle
+         if ( .not. update_lateral_bdy ) cycle
 
          allocate(mub(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), mub, &
+         call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), mub, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_U') ;
-         if (low_bdy_only) cycle
+         if ( .not. update_lateral_bdy ) cycle
 
          allocate(msfu(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), msfu, &
+         call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), msfu, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_V') ;
-         if (low_bdy_only) cycle
+         if ( .not. update_lateral_bdy ) cycle
 
          allocate(msfv(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), msfv, &
+         call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), msfv, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_M') ;
-         if (low_bdy_only) cycle
+         if ( .not. update_lateral_bdy ) cycle
 
          allocate(msfm(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), msfm, &
+         call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), msfm, &
                                    dims(1), dims(2), 1, debug)
       case ('TSK') ;
-         if (.not. cycling .and. .not.low_bdy_only) cycle
+         if ( .not. update_low_bdy ) cycle
 
          allocate(tsk(dims(1), dims(2)))
          allocate(tsk_wrfvar(dims(1), dims(2)))
@@ -260,72 +311,152 @@ program da_update_bc
 
          call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), tsk, &
                                    dims(1), dims(2), 1, debug)
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), tsk_wrfvar, &
-                                   dims(1), dims(2), 1, debug)
-         call da_get_var_2d_int_cdf( wrfvar_output_file, 'IVGTYP', ivgtyp, &
-                                   dims(1), dims(2), 1, debug)
 
-         ! update TSK.
-         do j=1,dims(2)
-         do i=1,dims(1)
-               if (ivgtyp(i,j) /= 16) &
-                  tsk(i,j)=tsk_wrfvar(i,j)
+         if ( keep_tsk_wrf ) then
+            call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), tsk_wrfvar, &
+                                      dims(1), dims(2), 1, debug)
+            !hcl call da_get_var_2d_int_cdf( da_file, 'IVGTYP', ivgtyp, &
+            call da_get_var_2d_int_cdf( wrf_input, 'IVGTYP', ivgtyp, &
+                                      dims(1), dims(2), 1, debug)
+            ! update TSK.
+            do j=1,dims(2)
+               do i=1,dims(1)
+                  if (ivgtyp(i,j) /= iswater)  tsk(i,j)=tsk_wrfvar(i,j)
+               end do
             end do
-            end do
+         end if
 
-            call da_put_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), tsk, &
+            call da_put_var_2d_real_cdf( da_file, trim(varsf(n)), tsk, &
                                       dims(1), dims(2), 1, debug)
             deallocate(tsk)
             deallocate(ivgtyp)
             deallocate(tsk_wrfvar)
 
-         case ('TMN', 'SST', 'VEGFRA', 'ALBBCK', 'SEAICE') ;
-            if (.not. cycling .and. .not.low_bdy_only) cycle
+         !hcl case ('TMN', 'SST', 'VEGFRA', 'ALBBCK', 'SEAICE') ;
+         case ('TMN', 'SST', 'VEGFRA', 'ALBBCK', 'SEAICE', 'LANDMASK') ;
+            if ( .not. update_low_bdy ) cycle
 
             allocate(full2d(dims(1), dims(2)))
 
             call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), full2d, &
                                       dims(1), dims(2), 1, debug)
 
-            call da_put_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), full2d, &
+            call da_put_var_2d_real_cdf( da_file, trim(varsf(n)), full2d, &
                                       dims(1), dims(2), 1, debug)
             deallocate(full2d)
 
-         case ('SNOW', 'CANWAT', 'RHOSN', 'SNOWH') ;
-            if(.not. cycling .and. .not.low_bdy_only) cycle
-            if (update_lsm) then
+         case ('IVGTYP', 'ISLTYP') ;  !hcl add
+            if ( .not. update_low_bdy ) cycle
+
+            allocate(full2dint(dims(1), dims(2)))
+
+            call da_get_var_2d_int_cdf( wrf_input, trim(varsf(n)), full2dint, &
+                                      dims(1), dims(2), 1, debug)
+
+            call da_put_var_2d_int_cdf( da_file, trim(varsf(n)), full2dint, &
+                                      dims(1), dims(2), 1, debug)
+            deallocate(full2dint)
+
+         case ('SNOW', 'RHOSN', 'SNOWH', 'SNOWC') ;
+            if ( (.not. update_lsm) .and. (.not. update_low_bdy) ) cycle
+            if ( keep_snow_wrf ) cycle
+               allocate(full2d(dims(1), dims(2)))
+
+               call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), full2d, &
+                                      dims(1), dims(2), 1, debug )
+
+               call da_put_var_2d_real_cdf( da_file, trim(varsf(n)), full2d, &
+                                      dims(1), dims(2), 1, debug )
+               deallocate(full2d)
+
+         case ('CANWAT') ;
+            if ( .not. update_lsm ) cycle
                allocate(full2d(dims(1), dims(2)))
 
                call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), full2d, &
                                       dims(1), dims(2), 1, debug )
 !               print *,"sum(full2d^2)=", sum(full2d*full2d)
 
-               call da_put_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), full2d, &
+               call da_put_var_2d_real_cdf( da_file, trim(varsf(n)), full2d, &
                                       dims(1), dims(2), 1, debug )
                deallocate(full2d)
-            endif
 
          case ('TSLB', 'SMOIS', 'SH2O') ;
-            if(.not. cycling .and. .not.low_bdy_only) cycle
-            if (update_lsm) then
+            if( .not. update_lsm ) cycle
                allocate(full3d(dims(1), dims(2), dims(3)))
 
                call da_get_var_3d_real_cdf( wrf_input, trim(varsf(n)), full3d, &
                                       dims(1), dims(2), dims(3), 1, debug )
 !               print *,"sum(full3d^2)=", sum(full3d*full3d)
 
-               call da_put_var_3d_real_cdf( wrfvar_output_file, trim(varsf(n)), full3d, &
+               call da_put_var_3d_real_cdf( da_file, trim(varsf(n)), full3d, &
                                       dims(1), dims(2), dims(3), 1, debug )
                deallocate(full3d)
-
-            endif
 
          case default ;
             write(unit=stdout,fmt=*) 'It is impossible here. varsf(n)=', trim(varsf(n))
       end select
    end do
-  
-   if (low_bdy_only) goto 9999
+
+   ! check for snow over water
+   iostatus(1) = nf_inq_varid(cdfid, 'IVGTYP', varid)
+   iostatus(2) = nf_inq_varid(cdfid, 'SNOW',   varid)
+   iostatus(3) = nf_inq_varid(cdfid, 'SNOWC',  varid)
+   iostatus(4) = nf_inq_varid(cdfid, 'SNOWH',  varid)
+   if ( iostatus(1) == 0 ) then
+      allocate(snow(dims(1), dims(2)))
+      allocate(snowc(dims(1), dims(2)))
+      allocate(snowh(dims(1), dims(2)))
+      allocate(ivgtyp(dims(1), dims(2)))
+      if ( iostatus(1) == 0 ) then
+         call da_get_var_2d_int_cdf( da_file, 'IVGTYP', ivgtyp,    &
+                               dims(1), dims(2), 1, debug)
+      end if
+      if ( iostatus(2) == 0 ) then
+         call da_get_var_2d_real_cdf( da_file, 'SNOW',    snow,     &
+                                dims(1), dims(2), 1, debug)
+      end if
+      if ( iostatus(3) == 0 ) then
+         call da_get_var_2d_real_cdf( da_file, 'SNOWC',  snowc,     &
+                                dims(1), dims(2), 1, debug)
+      end if
+      if ( iostatus(4) == 0 ) then
+         call da_get_var_2d_real_cdf( da_file, 'SNOWH',  snowh,     &
+                                dims(1), dims(2), 1, debug)
+      end if
+      if ( iostatus(2) == 0 ) then
+         do j = 1, dims(2)
+            do i = 1, dims(1)
+               if (ivgtyp(i,j) == iswater)  then
+                  if ( snow(i,j) > 0.0 ) then
+                     write(unit=stdout,fmt=*) 'Remove snow over water at i, j = ', i, j
+                     if ( iostatus(2) == 0 ) snow(i,j)  = 0.0
+                     if ( iostatus(3) == 0 ) snowc(i,j) = 0.0
+                     if ( iostatus(4) == 0 ) snowh(i,j) = 0.0
+                  end if
+               end if
+            end do
+         end do
+      end if
+      if ( iostatus(2) == 0 ) then
+         call da_put_var_2d_real_cdf( da_file, 'SNOW',   snow, &
+                                dims(1), dims(2), 1, debug)
+      end if
+      if ( iostatus(3) == 0 ) then
+         call da_put_var_2d_real_cdf( da_file, 'SNOWC',  snowc, &
+                                dims(1), dims(2), 1, debug)
+      end if
+      if ( iostatus(4) == 0 ) then
+         call da_put_var_2d_real_cdf( da_file, 'SNOWH',  snowh, &
+                                dims(1), dims(2), 1, debug)
+      end if
+      deallocate(snow)
+      deallocate(snowc)
+      deallocate(snowh)
+      deallocate(ivgtyp)
+   end if
+   
+ if ( update_lateral_bdy ) then
 
    if (east_end < 1 .or. north_end < 1) then
       write(unit=stdout, fmt='(a)') 'Wrong data for Boundary.'
@@ -378,7 +509,7 @@ program da_update_bc
          write(unit=ori_unit, fmt='(a, 10i12)') &
               ' old ', (i, i=1,dims(2))
          do j=1,dims(1)
-            write(unit=ori_unit, fmt='(i4, 1x, 5e20.7)') &
+            write(unit=ori_unit, fmt='(i4, 1x, 10e20.7)') &
                   j, (tend2d(j,i), i=1,dims(2))
          end do
       end if
@@ -437,7 +568,7 @@ program da_update_bc
               ' new ', (i, i=1,dims(2))
 
          do j=1,dims(1)
-            write(unit=new_unit, fmt='(i4, 1x, 5e20.7)') &
+            write(unit=new_unit, fmt='(i4, 1x, 10e20.7)') &
                   j, (tend2d(j,i), i=1,dims(2))
          end do
       end if
@@ -458,9 +589,9 @@ program da_update_bc
    ! For 3D variables
 
    ! Get U
-   call da_get_dims_cdf( wrfvar_output_file, 'U', dims, ndims, debug)
+   call da_get_dims_cdf( da_file, 'U', dims, ndims, debug)
 
-   ! call da_get_att_cdf( wrfvar_output_file, 'U', debug)
+   ! call da_get_att_cdf( da_file, 'U', debug)
 
    allocate(u(dims(1), dims(2), dims(3)))
 
@@ -471,7 +602,7 @@ program da_update_bc
    kds=1
    kde=dims(3)
 
-   call da_get_var_3d_real_cdf( wrfvar_output_file, 'U', u, &
+   call da_get_var_3d_real_cdf( da_file, 'U', u, &
                              dims(1), dims(2), dims(3), 1, debug)
 
    ! do j=1,dims(2)
@@ -480,13 +611,13 @@ program da_update_bc
    ! end do
 
    ! Get V
-   call da_get_dims_cdf( wrfvar_output_file, 'V', dims, ndims, debug)
+   call da_get_dims_cdf( da_file, 'V', dims, ndims, debug)
 
-   ! call da_get_att_cdf( wrfvar_output_file, 'V', debug)
+   ! call da_get_att_cdf( da_file, 'V', debug)
 
    allocate(v(dims(1), dims(2), dims(3)))
 
-   call da_get_var_3d_real_cdf( wrfvar_output_file, 'V', v, &
+   call da_get_var_3d_real_cdf( da_file, 'V', v, &
                              dims(1), dims(2), dims(3), 1, debug)
 
    ! do i=1,dims(1)
@@ -516,7 +647,7 @@ program da_update_bc
    do n=1,num3d
       write(unit=stdout, fmt='(a, i3, 2a)') 'Processing: var3d(', n, ')=', trim(var3d(n))
 
-      call da_get_dims_cdf( wrfvar_output_file, trim(var3d(n)), dims, ndims, debug)
+      call da_get_dims_cdf( da_file, trim(var3d(n)), dims, ndims, debug)
 
       allocate(full3d(dims(1), dims(2), dims(3)))
 
@@ -536,7 +667,7 @@ program da_update_bc
          ! var_pref = 'R' // trim(var3d(n))
          var_pref = trim(var3d(n))
 
-         call da_get_var_3d_real_cdf( wrfvar_output_file, trim(var3d(n)), &
+         call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
             full3d, dims(1), dims(2), dims(3), 1, debug)
 
          if (debug) then
@@ -561,7 +692,7 @@ program da_update_bc
       case ('T', 'PH') ;
          var_pref=trim(var3d(n))
  
-         call da_get_var_3d_real_cdf( wrfvar_output_file, trim(var3d(n)), &
+         call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
             full3d, dims(1), dims(2), dims(3), 1, debug)
 
          if (debug) then
@@ -583,12 +714,12 @@ program da_update_bc
                     'After  couple Sample ', trim(var3d(n)), &
                     '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
             end if
-      case ('QVAPOR', 'QCLOUD', 'QRAin', 'QICE', 'QSNOW', 'QGRAUP') ;
+      case ('QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP') ;
          ! var_pref='R' // var3d(n)(1:2)
          ! var_pref=var3d(n)(1:2)
          var_pref=var3d(n)
  
-         call da_get_var_3d_real_cdf( wrfvar_output_file, trim(var3d(n)), &
+         call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
             full3d, dims(1), dims(2), dims(3), 1, debug)
 
          if (debug) then
@@ -649,7 +780,7 @@ program da_update_bc
             write(unit=ori_unit, fmt='(a, 10i12)') &
                  ' old ', (i, i=1,dims(3))
             do j=1,dims(1)
-               write(unit=ori_unit, fmt='(i4, 1x, 5e20.7)') &
+               write(unit=ori_unit, fmt='(i4, 1x, 10e20.7)') &
                      j, (tend3d(j,dims(2)/2,i), i=1,dims(3))
             end do
          end if
@@ -722,7 +853,7 @@ program da_update_bc
                  ' new ', (i, i=1,dims(3))
 
             do j=1,dims(1)
-               write(unit=new_unit, fmt='(i4, 1x, 5e20.7)') &
+               write(unit=new_unit, fmt='(i4, 1x, 10e20.7)') &
                      j, (tend3d(j,dims(2)/2,i), i=1,dims(3))
             end do
          end if
@@ -748,24 +879,20 @@ program da_update_bc
    deallocate(u)
    deallocate(v)
 
- 9999  continue
+ end if
 
-   print *,' '
-   print *,'=================================================================='
-   if(cycling .and. domain_id == 1) then
-     print *, &
-    'Both low boudary and lateral boundary updated.for cycling run with WRFvar'
-     if (update_lsm) print *,'  LSM variables updated from wrf_input file.' 
-   else
-     if(low_bdy_only) then
-       print *, 'Only low boudary updated for long-term forecast. domain_id=',&
-                 domain_id
-       if (update_lsm) print *,'  LSM variables updated from wrf_input file.' 
-     else
-       print *, 'Only lateral boundary updated for Cold-start run with WRFVar.'
-     endif
-   endif
-   
+ write(unit=stdout,fmt=*) &
+    '=================================================================='
+ if ( update_lateral_bdy ) then
+    write(unit=stdout,fmt=*) 'Lateral boundary tendency updated.'
+ end if
+ if ( update_low_bdy ) then
+    write(unit=stdout,fmt=*) 'Low boundary updated with wrf_input fields.'
+ end if
+ if ( update_lsm ) then
+    write(unit=stdout,fmt=*) 'LSM variables updated with wrf_input fields.'
+ end if
+
    if (io_status == 0) &
       write (unit=stdout,fmt=*) "*** Update_bc completed successfully ***"
 

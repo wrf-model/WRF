@@ -1,9 +1,5 @@
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !                                                                      C
-!                Copyright (C)  1995                                   C
-!        University Corporation for Atmospheric Research               C
-!                all rights reserved                                   C
-!                                                                      C
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !                                                                       
 !      File:           cmf5kf.f                                         

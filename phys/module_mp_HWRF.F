@@ -1,6 +1,6 @@
 !WRF:MODEL_MP:PHYSICS
 !
-MODULE module_mp_etanew_HWRF
+MODULE module_mp_HWRF
 !-----------------------------------------------------------------------
 !-- The following changes were made on 24 July 2006.
 !   (1) All known version 2.1 dependencies were removed from the 
@@ -1391,8 +1391,8 @@ MODULE module_mp_etanew_HWRF
           PRLOSS=0.
           RQR=0.
           N0r=0.
-          INDEXR1=INDEXR    ! For debugging only
           INDEXR=MDRmin
+          INDEXR1=INDEXR    ! For debugging only
           IF (RAIN_logical) THEN
             IF (ARAIN .LE. 0.) THEN
               INDEXR=MDRmin
@@ -2221,7 +2221,7 @@ nsteps = 0
         CALL wrf_dm_bcast_bytes ( etampnew_unit1 , IWORDSIZE )
 !
         IF ( etampnew_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_etanew: etanewinit: Can not find unused fortran unit to read in lookup table.' )
+          CALL wrf_error_fatal ( 'module_mp_hwrf: etanewinit: Can not find unused fortran unit to read in lookup table.' )
         ENDIF
 !
         IF ( wrf_dm_on_monitor() ) THEN
@@ -2387,7 +2387,7 @@ nsteps = 0
 !
 9061 CONTINUE
       WRITE( errmess , '(A,I4)' )                                        &
-       'module_mp_etanew: error opening ETAMPNEW_DATA on unit '          &
+       'module_mp_hwrf: error opening ETAMPNEW_DATA on unit '          &
      &, etampnew_unit1
       CALL wrf_error_fatal(errmess)
 !
@@ -2626,4 +2626,4 @@ nsteps = 0
 !
       END FUNCTION FPVSX0
 !
-      END MODULE module_mp_etanew_HWRF
+      END MODULE module_mp_HWRF

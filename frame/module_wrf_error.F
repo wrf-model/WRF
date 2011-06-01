@@ -4,6 +4,7 @@
 MODULE module_wrf_error
   INTEGER           :: wrf_debug_level = 0
   CHARACTER*256     :: wrf_err_message
+!$OMP THREADPRIVATE (wrf_err_message)
 CONTAINS
 
   LOGICAL FUNCTION wrf_at_debug_level ( level )
@@ -23,6 +24,9 @@ SUBROUTINE wrf_message( str )
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
   write(0,*) TRIM(str)
+# ifdef _WIN32
+  FLUSH(0)
+# endif
 #endif
   print*, TRIM(str)
 END SUBROUTINE wrf_message
@@ -32,6 +36,9 @@ SUBROUTINE wrf_message2( str )
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
+# ifdef _WIN32
+  FLUSH(0)
+# endif
 END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )

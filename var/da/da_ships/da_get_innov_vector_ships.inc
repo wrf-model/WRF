@@ -40,6 +40,15 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
    allocate (model_q(1,iv%info(ships)%n1:iv%info(ships)%n2))
    allocate (model_hsm(1,iv%info(ships)%n1:iv%info(ships)%n2))
 
+   if ( it > 1 ) then
+      do n=iv%info(ships)%n1,iv%info(ships)%n2
+         if (iv%ships(n)%u%qc == fails_error_max) iv%ships(n)%u%qc = 0
+         if (iv%ships(n)%v%qc == fails_error_max) iv%ships(n)%v%qc = 0
+         if (iv%ships(n)%t%qc == fails_error_max) iv%ships(n)%t%qc = 0
+         if (iv%ships(n)%p%qc == fails_error_max) iv%ships(n)%p%qc = 0
+         if (iv%ships(n)%q%qc == fails_error_max) iv%ships(n)%q%qc = 0
+      end do
+   end if
 
    if (sfc_assi_options == sfc_assi_options_1) then
       do n=iv%info(ships)%n1,iv%info(ships)%n2
@@ -206,7 +215,8 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !---------------------------------------------------------------------
 
-    call da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
+   if ( check_max_iv ) &
+      call da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
    
    deallocate (model_u)
    deallocate (model_v)

@@ -68,7 +68,6 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
-
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -170,6 +169,9 @@ CONTAINS
     CALL alloc_space_field ( grid, grid%id , 1 , 2 , .FALSE. ,     &
                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                              grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
+                             grid%sp31,  grid%ep31,  grid%sp32,  grid%ep32,  grid%sp33,  grid%ep33, &
+                             grid%sp31x, grid%ep31x, grid%sp32x, grid%ep32x, grid%sp33x, grid%ep33x, &
+                             grid%sp31y, grid%ep31y, grid%sp32y, grid%ep32y, grid%sp33y, grid%ep33y, &
                              grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                              grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
       )
@@ -178,6 +180,7 @@ CONTAINS
     RETURN
    END SUBROUTINE adjust_domain_dims_for_move
 
+#if 1
    SUBROUTINE get_ijk_from_grid1 (  grid ,                   &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
@@ -319,6 +322,7 @@ CONTAINS
      kpe0 = kpe
    RETURN
    END SUBROUTINE get_ijk_from_subgrid
+#endif
 
 
 ! Default version ; Otherwise module containing interface to DM library will provide
@@ -553,7 +557,6 @@ CONTAINS
 ! in share/mediation_wrfmain.F. 
 !</DESCRIPTION>
 
-      USE module_alloc_space      
       IMPLICIT NONE
 
       !  Input data.
@@ -676,7 +679,11 @@ CONTAINS
       CALL get_bdyzone_y( bdyzone_y )
 
       ALLOCATE ( new_grid )
-      ALLOCATE ( new_grid%parents( max_parents ) )
+      ALLOCATE( new_grid%head_statevars )
+      NULLIFY( new_grid%head_statevars%next)
+      new_grid%tail_statevars => new_grid%head_statevars 
+
+      ALLOCATE ( new_grid%parents( max_parents ) ) 
       ALLOCATE ( new_grid%nests( max_nests ) )
       NULLIFY( new_grid%sibling )
       DO i = 1, max_nests
@@ -740,10 +747,18 @@ CONTAINS
       new_grid%max_tiles   = 0
       new_grid%num_tiles_spec   = 0
       new_grid%nframes   = 0         ! initialize the number of frames per file (array assignment)
+#if (EM_CORE == 1)
+      new_grid%stepping_to_time = .FALSE.
+      new_grid%adaptation_domain = 1
+      new_grid%last_step_updated = -1
+#endif
 
       CALL alloc_space_field ( new_grid, domain_id , 3 , 3 , .FALSE. ,      &
                                sd1, ed1, sd2, ed2, sd3, ed3,       &
                                sm1,  em1,  sm2,  em2,  sm3,  em3,  &
+                               sp1,  ep1,  sp2,  ep2,  sp3,  ep3,  &
+                               sp1x, ep1x, sp2x, ep2x, sp3x, ep3x, &
+                               sp1y, ep1y, sp2y, ep2y, sp3y, ep3y, &
                                sm1x, em1x, sm2x, em2x, sm3x, em3x, &   ! x-xpose
                                sm1y, em1y, sm2y, em2y, sm3y, em3y  &   ! y-xpose
       )
@@ -913,7 +928,294 @@ CONTAINS
 
    END SUBROUTINE alloc_and_configure_domain
 
+   SUBROUTINE get_fieldstr(ix,c,instr,outstr,noutstr,noerr)
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)          :: ix
+     CHARACTER*(*), INTENT(IN)    :: c
+     CHARACTER*(*), INTENT(IN)    :: instr
+     CHARACTER*(*), INTENT(OUT)   :: outstr
+     INTEGER,       INTENT(IN)    :: noutstr  ! length of outstr
+     LOGICAL,       INTENT(INOUT) :: noerr     ! status
+     !local
+     INTEGER, PARAMETER :: MAX_DEXES = 100
+     INTEGER I, PREV, IDEX
+     INTEGER DEXES(MAX_DEXES)
+     outstr = ""
+     prev = 1
+     dexes(1) = 1
+     DO i = 2,MAX_DEXES
+       idex = INDEX(instr(prev:LEN(TRIM(instr))),c)
+       IF ( idex .GT. 0 ) THEN
+         dexes(i) = idex+prev
+         prev = dexes(i)+1
+       ELSE
+         dexes(i) = LEN(TRIM(instr))+2
+       ENDIF
+     ENDDO
+
+     IF     ( (dexes(ix+1)-2)-(dexes(ix)) .GT. noutstr ) THEN
+       noerr = .FALSE.  ! would overwrite
+     ELSE IF( dexes(ix) .EQ. dexes(ix+1) ) THEN 
+       noerr = .FALSE.  ! not found
+     ELSE
+       outstr = instr(dexes(ix):(dexes(ix+1)-2))
+       noerr = noerr .AND. .TRUE.
+     ENDIF
+   END SUBROUTINE get_fieldstr
+
+   SUBROUTINE change_to_lower_case(instr,outstr)
+     CHARACTER*(*) ,INTENT(IN)  :: instr
+     CHARACTER*(*) ,INTENT(OUT) :: outstr
+!Local
+     CHARACTER*1                :: c
+     INTEGER       ,PARAMETER   :: upper_to_lower =IACHAR('a')-IACHAR('A')
+     INTEGER                    :: i,n,n1
 !
+     outstr = ' '
+     N = len(instr)
+     N1 = len(outstr)
+     N = MIN(N,N1)
+     outstr(1:N) = instr(1:N)
+     DO i=1,N
+       c = instr(i:i)
+       if('A'<=c .and. c <='Z') outstr(i:i)=achar(iachar(c)+upper_to_lower)
+     ENDDO
+     RETURN
+   END SUBROUTINE change_to_lower_case
+
+!
+   SUBROUTINE modify_io_masks1 ( grid , id )
+      IMPLICIT NONE
+#include "streams.h"
+      INTEGER              , INTENT(IN  )  :: id
+      TYPE(domain), POINTER                :: grid
+      ! Local
+      TYPE(fieldlist), POINTER :: p, q
+      INTEGER, PARAMETER :: read_unit = 10
+      LOGICAL, EXTERNAL  :: wrf_dm_on_monitor
+      CHARACTER*256      :: fname, inln, mess, dname, t1, lookee
+      CHARACTER*256      :: fieldlst
+      CHARACTER*1        :: op, strmtyp
+      CHARACTER*3        :: strmid
+      CHARACTER*10       :: strmtyp_name
+      INTEGER            :: io_status
+      INTEGER            :: strmtyp_int, count_em
+      INTEGER            :: lineno, fieldno, istrm, retval, itrace
+      LOGICAL            :: keepgoing, noerr, gavewarning, ignorewarning, found
+      LOGICAL, SAVE      :: you_warned_me = .FALSE.
+      LOGICAL, SAVE      :: you_warned_me2(100,max_domains) = .FALSE.
+
+      gavewarning = .FALSE.
+
+      CALL nl_get_iofields_filename( id, fname )
+
+      IF ( grid%is_intermediate ) RETURN                ! short circuit
+      IF ( TRIM(fname) .EQ. "NONE_SPECIFIED" ) RETURN   ! short circuit
+
+      IF ( wrf_dm_on_monitor() ) THEN
+        OPEN ( UNIT   = read_unit    ,      &
+               FILE   = TRIM(fname)      ,      &
+               FORM   = "FORMATTED"      ,      &
+               STATUS = "OLD"            ,      &
+               IOSTAT = io_status         )
+        IF ( io_status .EQ. 0 ) THEN   ! only on success
+          keepgoing = .TRUE.
+          lineno = 0
+          count_em = 0    ! Count the total number of fields
+          DO WHILE ( keepgoing )
+            READ(UNIT=read_unit,FMT='(A)',IOSTAT=io_status) inln
+            keepgoing = (io_status .EQ. 0) .AND. (LEN(TRIM(inln)) .GT. 0)  
+            IF ( keepgoing ) THEN
+              lineno = lineno + 1
+              IF ( .NOT. LEN(TRIM(inln)) .LT. LEN(inln) ) THEN
+                WRITE(mess,*)'W A R N I N G : Line ',lineno,' of ',TRIM(fname),' is too long. Limit is ',LEN(inln),' characters.' 
+                gavewarning = .TRUE.
+              ENDIF
+              IF ( INDEX(inln,'#') .EQ. 0 ) THEN   ! skip comments, which is a # anywhere on line
+                IF ( keepgoing ) THEN
+                  noerr = .TRUE.
+                  CALL get_fieldstr(1,':',inln,op,1,noerr)          ! + is add, - is remove
+                  IF ( TRIM(op) .NE. '+' .AND. TRIM(op) .NE. '-' ) THEN
+                    WRITE(mess,*)'W A R N I N G : unknown operation ',TRIM(op),' (should be + or -). Line ',lineno
+                    gavewarning = .TRUE.
+                  ENDIF
+                  CALL get_fieldstr(2,':',inln,t1,1,noerr)          ! i is input, h is history
+                  CALL change_to_lower_case(t1,strmtyp) 
+
+                  SELECT CASE (TRIM(strmtyp))
+                  CASE ('h')
+                     strmtyp_name = 'history'
+                     strmtyp_int  = first_history
+                  CASE ('i')
+                     strmtyp_name = 'input'
+                     strmtyp_int  = first_input
+                  CASE DEFAULT
+                     WRITE(mess,*)'W A R N I N G : unknown stream type ',TRIM(strmtyp),'. Line ',lineno
+                     gavewarning = .TRUE.
+                  END SELECT
+
+                  CALL get_fieldstr(3,':',inln,strmid,3,noerr)      ! number of stream (main input and hist are 0)
+                  READ(strmid,'(I3)') istrm
+                  IF ( istrm .LT. 0 .OR. istrm .GT. last_history ) THEN
+                    WRITE(mess,*)'W A R N I N G : invalid stream id ',istrm,' (should be 0 <= id <= ',last_history,'). Line ',lineno
+                    gavewarning = .TRUE.
+                  ENDIF
+                  CALL get_fieldstr(4,':',inln,fieldlst,1024,noerr) ! get list of fields
+                  IF ( noerr ) THEN
+                    fieldno = 1
+                    CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
+                    CALL change_to_lower_case(t1,lookee)
+                    DO WHILE ( noerr )    ! linear search, blargh...
+                      p => grid%head_statevars
+                      found = .FALSE.
+                      count_em = count_em + 1
+                      DO WHILE ( ASSOCIATED( p ) )
+  
+                        IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+  
+                          DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                            CALL change_to_lower_case( p%dname_table( grid%id, itrace ) , dname ) 
+
+                            IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
+                            CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                                      strmtyp_name, dname, fname, lookee,      &
+                                                      p%streams_table(grid%id,itrace)%stream,  &
+                                                      mess, found, you_warned_me2)
+                          ENDDO
+                        ELSE 
+                          IF ( p%Ntl .GT. 0 ) THEN
+                            CALL change_to_lower_case(p%DataName(1:LEN(TRIM(p%DataName))-2),dname)
+                          ELSE
+                            CALL change_to_lower_case(p%DataName,dname)
+                          ENDIF
+  
+                          IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
+                          CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                                    strmtyp_name, dname, fname, lookee,      &
+                                                    p%streams, mess, found, you_warned_me2)
+                        ENDIF
+                        p => p%next
+                      ENDDO
+                      IF ( .NOT. found ) THEN
+                        WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
+                                     '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
+                        CALL wrf_message(mess)
+                        gavewarning = .TRUE.
+                      ENDIF
+                      fieldno = fieldno + 1
+                      CALL get_fieldstr(fieldno,',',fieldlst,t1,256,noerr)
+                      CALL change_to_lower_case(t1,lookee)
+                    ENDDO
+                  ELSE
+                    WRITE(mess,*)'W A R N I N G : Problem reading ',TRIM(fname),' at line ',lineno
+                    CALL wrf_message(mess)
+                    gavewarning = .TRUE.
+                  ENDIF
+                ENDIF  ! keepgoing
+              ENDIF    ! skip comments
+            ENDIF      ! keepgoing
+          ENDDO
+        ELSE
+          WRITE(mess,*)'W A R N I N G : Problem opening ',TRIM(fname)
+          CALL wrf_message(mess)
+          gavewarning = .TRUE.
+        ENDIF
+        CLOSE( read_unit )
+        IF ( gavewarning ) THEN
+          CALL nl_get_ignore_iofields_warning(1,ignorewarning)
+          IF ( .NOT. ignorewarning ) THEN
+            CALL wrf_message(mess)
+            WRITE(mess,*)'modify_io_masks: problems reading ',TRIM(fname) 
+            CALL wrf_message(mess)
+            CALL wrf_error_fatal('Set ignore_iofields_warn to true in namelist to ignore')
+          ELSE
+            IF ( .NOT. you_warned_me ) THEN
+              if ( .NOT. you_warned_me2(count_em,id) ) CALL wrf_message(mess)  ! Don't repeat the W A R N I N G message
+              WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
+              CALL wrf_message(mess)
+              CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )
+              CALL wrf_message(' ')
+              you_warned_me = .TRUE.
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF  ! wrf_dm_on_monitor
+
+#ifdef DM_PARALLEL
+! broadcast the new masks to the other tasks
+      p => grid%head_statevars
+      DO WHILE ( ASSOCIATED( p ) )
+        IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+
+          DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+            CALL wrf_dm_bcast_integer( p%streams_table(grid%id,itrace)%stream, IO_MASK_SIZE )
+          ENDDO
+
+        ELSE
+          CALL wrf_dm_bcast_integer( p%streams, IO_MASK_SIZE )
+        ENDIF
+        p => p%next
+      ENDDO
+#endif
+      
+   END SUBROUTINE modify_io_masks1
+
+   SUBROUTINE warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
+                                   strmtyp_name, dname, fname, lookee,      &
+                                   p_stream, mess, found, you_warned_me2)
+
+      IMPLICIT NONE
+
+! See if a field that is requested to be added to or removed from the I/O stream
+!    is already present or absent
+! If the requested action has already been done, write a warning message
+! If not, satisfy the request
+
+     INTEGER,       INTENT(IN )   :: id, istrm, lineno, strmtyp_int
+     INTEGER,       INTENT(IN )   :: p_stream(*), count_em
+     CHARACTER*1,   INTENT(IN )   :: op
+     CHARACTER*10,  INTENT(IN )   :: strmtyp_name
+     CHARACTER*256, INTENT(IN )   :: dname, fname, lookee
+     CHARACTER*256, INTENT(OUT)   :: mess
+     LOGICAL,       INTENT(OUT)   :: found
+     LOGICAL,       INTENT(INOUT) :: you_warned_me2(100,max_domains)
+   ! Local
+     INTEGER                      :: retval
+
+     found = .TRUE.
+     IF      ( TRIM(op) .EQ. '+' ) THEN
+       CALL get_mask( p_stream, strmtyp_int + istrm - 1, retval )
+       IF ( retval .NE. 0 ) THEN
+         WRITE(mess,*) 'Domain ',id, ' W A R N I N G : Variable ',TRIM(lookee),' already on ', &
+                       TRIM(strmtyp_name), ' stream ',istrm, '.  File: ', TRIM(fname),' at line ',lineno
+       ELSE
+         WRITE(mess,*) 'Domain ', id, ' Setting ', TRIM(strmtyp_name), ' stream ',istrm,' for ', &
+                                  TRIM(DNAME)  ; CALL wrf_debug(1,mess)
+         CALL set_mask( p_stream, strmtyp_int + istrm - 1 )
+       ENDIF
+     ELSE IF ( TRIM(op) .EQ. '-' ) THEN
+       CALL get_mask( p_stream, strmtyp_int + istrm - 1, retval )
+       IF ( retval .EQ. 0 ) THEN
+         WRITE(mess,*) 'Domain ',id, ' W A R N I N G : Variable ',TRIM(lookee),' already off ', &
+                       TRIM(strmtyp_name), ' stream ',istrm, '. File: ',TRIM(fname),' at line ',lineno
+       ELSE
+         WRITE(mess,*) 'Domain ', id, ' Resetting ', TRIM(strmtyp_name), ' stream ',istrm,' for ', &
+                                    TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
+         CALL reset_mask( p_stream, strmtyp_int + istrm - 1)
+       ENDIF
+     ENDIF
+     IF ( count_em > 100 ) THEN
+       WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at 100'
+       CALL wrf_message(mess)
+       CALL wrf_error_fatal('Did you really type > 100 fields into '//TRIM(fname)//' ?')
+     ELSE
+       IF ( .NOT. you_warned_me2(count_em,id) ) THEN
+         CALL wrf_message(mess)     ! Write warning message once for each field
+         you_warned_me2(count_em,id) = .TRUE.
+       ENDIF
+     ENDIF
+
+   END SUBROUTINE warn_me_or_set_mask 
 
 !  This routine ALLOCATEs the required space for the meteorological fields
 !  for a specific domain.  The fields are simply ALLOCATEd as an -1.  They
@@ -924,10 +1226,23 @@ CONTAINS
    SUBROUTINE alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
                                   sd31, ed31, sd32, ed32, sd33, ed33, &
                                   sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                  sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                   sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                   sm31y, em31y, sm32y, em32y, sm33y, em33y )
 
-      USE module_alloc_space, ONLY : alloc_space_field_core
+      USE module_alloc_space_0, ONLY : alloc_space_field_core_0
+      USE module_alloc_space_1, ONLY : alloc_space_field_core_1
+      USE module_alloc_space_2, ONLY : alloc_space_field_core_2
+      USE module_alloc_space_3, ONLY : alloc_space_field_core_3
+      USE module_alloc_space_4, ONLY : alloc_space_field_core_4
+      USE module_alloc_space_5, ONLY : alloc_space_field_core_5
+      USE module_alloc_space_6, ONLY : alloc_space_field_core_6
+      USE module_alloc_space_7, ONLY : alloc_space_field_core_7
+      USE module_alloc_space_8, ONLY : alloc_space_field_core_8
+      USE module_alloc_space_9, ONLY : alloc_space_field_core_9
+
       IMPLICIT NONE
 
       !  Input data.
@@ -937,6 +1252,9 @@ CONTAINS
       INTEGER , INTENT(IN)            :: setinitval_in   ! 3 = everything, 1 = arrays only, 0 = none
       INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
       INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
+      INTEGER , INTENT(IN)            :: sp31, ep31, sp32, ep32, sp33, ep33
+      INTEGER , INTENT(IN)            :: sp31x, ep31x, sp32x, ep32x, sp33x, ep33x
+      INTEGER , INTENT(IN)            :: sp31y, ep31y, sp32y, ep32y, sp33y, ep33y
       INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
       INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y
 
@@ -950,14 +1268,223 @@ CONTAINS
       ! false otherwise (all allocated, modulo tl above)
       LOGICAL , INTENT(IN)            :: inter_domain_in
 
-      ! now a separate module in WRFV3 to reduce the size of module_domain that the compiler sees
-      CALL alloc_space_field_core ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+      ! Local
+      INTEGER(KIND=8)  num_bytes_allocated
+      INTEGER  idum1, idum2
+
+#if (EM_CORE == 1)
+      IF ( grid%id .EQ. 1 ) CALL wrf_message ( &
+          'DYNAMICS OPTION: Eulerian Mass Coordinate ')
+#endif
+#if (NMM_CORE == 1)
+      IF ( grid%id .EQ. 1 ) &
+          CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
+#endif
+#if (COAMPS_CORE == 1)
+        IF ( grid%id .EQ. 1 ) &
+          CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
+#endif
+
+      CALL set_scalar_indices_from_config( id , idum1 , idum2 )
+
+      num_bytes_allocated = 0 
+
+      ! now separate modules to reduce the size of module_domain that the compiler sees
+      CALL alloc_space_field_core_0 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated , &
                                     sd31, ed31, sd32, ed32, sd33, ed33, &
                                     sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_1 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_2 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_3 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_4 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_5 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_6 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_7 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_8 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                    sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                    sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      CALL alloc_space_field_core_9 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , num_bytes_allocated ,  &
+                                    sd31, ed31, sd32, ed32, sd33, ed33, &
+                                    sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                    sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                    sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                    sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
                                     sm31x, em31x, sm32x, em32x, sm33x, em33x, &
                                     sm31y, em31y, sm32y, em32y, sm33y, em33y )
 
+      IF ( .NOT. grid%have_displayed_alloc_stats ) THEN
+        ! we do not want to see this message more than once, as can happen with the allocation and
+        ! deallocation of intermediate domains used in nesting.
+        WRITE(wrf_err_message,*)&
+            'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
+        CALL  wrf_debug( 0, wrf_err_message )
+        grid%have_displayed_alloc_stats = .TRUE.   
+      ENDIF
+
+
+      grid%alloced_sd31=sd31
+      grid%alloced_ed31=ed31
+      grid%alloced_sd32=sd32
+      grid%alloced_ed32=ed32
+      grid%alloced_sd33=sd33
+      grid%alloced_ed33=ed33
+      grid%alloced_sm31=sm31
+      grid%alloced_em31=em31
+      grid%alloced_sm32=sm32
+      grid%alloced_em32=em32
+      grid%alloced_sm33=sm33
+      grid%alloced_em33=em33
+      grid%alloced_sm31x=sm31x
+      grid%alloced_em31x=em31x
+      grid%alloced_sm32x=sm32x
+      grid%alloced_em32x=em32x
+      grid%alloced_sm33x=sm33x
+      grid%alloced_em33x=em33x
+      grid%alloced_sm31y=sm31y
+      grid%alloced_em31y=em31y
+      grid%alloced_sm32y=sm32y
+      grid%alloced_em32y=em32y
+      grid%alloced_sm33y=sm33y
+      grid%alloced_em33y=em33y
+
+      grid%allocated=.TRUE.
+
    END SUBROUTINE alloc_space_field
+
+   ! Ensure_space_field allocates a grid's arrays if they are not yet
+   ! allocated.  If they were already allocated, then it deallocates and
+   ! reallocates them if they were allocated with different dimensions.
+   ! If they were already allocated with the requested dimensions, then
+   ! ensure_space_field does nothing.
+
+   SUBROUTINE ensure_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+                                  sd31, ed31, sd32, ed32, sd33, ed33, &
+                                  sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                  sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                  sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                  sm31y, em31y, sm32y, em32y, sm33y, em33y )
+
+      IMPLICIT NONE
+
+      !  Input data.
+
+      TYPE(domain)               , POINTER          :: grid
+      INTEGER , INTENT(IN)            :: id
+      INTEGER , INTENT(IN)            :: setinitval_in   ! 3 = everything, 1 = arrays only, 0 = none
+      INTEGER , INTENT(IN)            :: sd31, ed31, sd32, ed32, sd33, ed33
+      INTEGER , INTENT(IN)            :: sm31, em31, sm32, em32, sm33, em33
+      INTEGER , INTENT(IN)            :: sp31, ep31, sp32, ep32, sp33, ep33
+      INTEGER , INTENT(IN)            :: sp31x, ep31x, sp32x, ep32x, sp33x, ep33x
+      INTEGER , INTENT(IN)            :: sp31y, ep31y, sp32y, ep32y, sp33y, ep33y
+      INTEGER , INTENT(IN)            :: sm31x, em31x, sm32x, em32x, sm33x, em33x
+      INTEGER , INTENT(IN)            :: sm31y, em31y, sm32y, em32y, sm33y, em33y
+
+      ! this argument is a bitmask. First bit is time level 1, second is time level 2, and so on.
+      ! e.g. to set both 1st and second time level, use 3
+      !      to set only 1st                        use 1
+      !      to set only 2st                        use 2
+      INTEGER , INTENT(IN)            :: tl_in
+  
+      ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
+      ! false otherwise (all allocated, modulo tl above)
+      LOGICAL , INTENT(IN)            :: inter_domain_in
+      LOGICAL                         :: size_changed
+
+      size_changed=         .not. ( &
+         grid%alloced_sd31 .eq. sd31 .and. grid%alloced_ed31 .eq. ed31 .and. &
+         grid%alloced_sd32 .eq. sd32 .and. grid%alloced_ed32 .eq. ed32 .and. &
+         grid%alloced_sd33 .eq. sd33 .and. grid%alloced_ed33 .eq. ed33 .and. &
+         grid%alloced_sm31 .eq. sm31 .and. grid%alloced_em31 .eq. em31 .and. &
+         grid%alloced_sm32 .eq. sm32 .and. grid%alloced_em32 .eq. em32 .and. &
+         grid%alloced_sm33 .eq. sm33 .and. grid%alloced_em33 .eq. em33 .and. &
+         grid%alloced_sm31x .eq. sm31x .and. grid%alloced_em31x .eq. em31x .and. &
+         grid%alloced_sm32x .eq. sm32x .and. grid%alloced_em32x .eq. em32x .and. &
+         grid%alloced_sm33x .eq. sm33x .and. grid%alloced_em33x .eq. em33x .and. &
+         grid%alloced_sm31y .eq. sm31y .and. grid%alloced_em31y .eq. em31y .and. &
+         grid%alloced_sm32y .eq. sm32y .and. grid%alloced_em32y .eq. em32y .and. &
+         grid%alloced_sm33y .eq. sm33y .and. grid%alloced_em33y .eq. em33y &
+      )
+      if(.not. grid%allocated .or. size_changed) then
+         if(.not. grid%allocated) then
+            call wrf_debug(1,'ensure_space_field: calling alloc_space_field because a grid was not allocated.')
+         else
+            if(size_changed) &
+                 call wrf_debug(1,'ensure_space_field: deallocating and reallocating a grid because grid size changed.')
+         end if
+         if(grid%allocated) &
+              call dealloc_space_field( grid )
+         call alloc_space_field ( grid,   id, setinitval_in ,  tl_in , inter_domain_in ,   &
+                                  sd31, ed31, sd32, ed32, sd33, ed33, &
+                                  sm31 , em31 , sm32 , em32 , sm33 , em33 , &
+                                  sp31 , ep31 , sp32 , ep32 , sp33 , ep33 , &
+                                  sp31x, ep31x, sp32x, ep32x, sp33x, ep33x, &
+                                  sp31y, ep31y, sp32y, ep32y, sp33y, ep33y, &
+                                  sm31x, em31x, sm32x, em32x, sm33x, em33x, &
+                                  sm31y, em31y, sm32y, em32y, sm33y, em33y )
+      end if
+
+   END SUBROUTINE ensure_space_field
 
 !  This routine is used to DEALLOCATE space for a single domain and remove 
 !  it from the linked list.  First the pointers in the linked list are fixed 
@@ -1022,6 +1549,7 @@ CONTAINS
       TYPE(domain) , POINTER          :: grid
 
       CALL dealloc_space_field ( grid )
+      CALL dealloc_linked_lists( grid )
       DEALLOCATE( grid%parents )
       DEALLOCATE( grid%nests )
       ! clean up time manager bits
@@ -1067,6 +1595,22 @@ CONTAINS
       NULLIFY( grid )
 
    END SUBROUTINE domain_destroy
+
+   SUBROUTINE dealloc_linked_lists ( grid )
+      IMPLICIT NONE
+      TYPE(domain), POINTER :: grid
+      TYPE(fieldlist), POINTER :: p, q
+      p => grid%head_statevars
+      DO WHILE ( ASSOCIATED( p%next ) )
+         q => p ; p => p%next ; DEALLOCATE(q)
+      ENDDO
+      NULLIFY(grid%head_statevars) ; NULLIFY( grid%tail_statevars)
+      IF ( .NOT. grid%is_intermediate ) THEN
+        ALLOCATE( grid%head_statevars )
+        NULLIFY( grid%head_statevars%next)
+        grid%tail_statevars => grid%head_statevars
+      ENDIF
+   END SUBROUTINE dealloc_linked_lists
 
    RECURSIVE SUBROUTINE show_nest_subtree ( grid )
       TYPE(domain), POINTER :: grid
@@ -1125,23 +1669,24 @@ CONTAINS
       INTEGER                   :: kid
       LOGICAL                   :: found
       found = .FALSE.
+      NULLIFY(result_grid)
       IF ( ASSOCIATED( in_grid ) ) THEN
-      IF ( in_grid%id .EQ. id ) THEN
-         result_grid => in_grid
-      ELSE
-         grid_ptr => in_grid
-         DO WHILE ( ASSOCIATED( grid_ptr ) .AND. .NOT. found )
-            DO kid = 1, max_nests
-               IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) .AND. .NOT. found ) THEN
-                  CALL find_grid_by_id ( id, grid_ptr%nests(kid)%ptr, result_grid )
-                  IF ( ASSOCIATED( result_grid ) ) THEN
-                    IF ( result_grid%id .EQ. id ) found = .TRUE.
-                  ENDIF
-               ENDIF
-            ENDDO
-            IF ( .NOT. found ) grid_ptr => grid_ptr%sibling
-         ENDDO
-      ENDIF
+        IF ( in_grid%id .EQ. id ) THEN
+           result_grid => in_grid
+        ELSE
+           grid_ptr => in_grid
+           DO WHILE ( ASSOCIATED( grid_ptr ) .AND. .NOT. found )
+              DO kid = 1, max_nests
+                 IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) .AND. .NOT. found ) THEN
+                    CALL find_grid_by_id ( id, grid_ptr%nests(kid)%ptr, result_grid )
+                    IF ( ASSOCIATED( result_grid ) ) THEN
+                      IF ( result_grid%id .EQ. id ) found = .TRUE.
+                    ENDIF
+                 ENDIF
+              ENDDO
+              IF ( .NOT. found ) grid_ptr => grid_ptr%sibling
+           ENDDO
+        ENDIF
       ENDIF
       RETURN
    END SUBROUTINE find_grid_by_id
@@ -2176,4 +2721,209 @@ SUBROUTINE get_current_grid_name( grid_str )
 END SUBROUTINE get_current_grid_name
 
 
+! moved these outside module domain to avoid circular reference from module_alloc_space which also uses
+
+   SUBROUTINE get_ijk_from_grid_ext (  grid ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
+    USE module_domain
+    IMPLICIT NONE
+    TYPE( domain ), INTENT (IN)  :: grid
+    INTEGER, INTENT(OUT) ::                                 &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey
+
+     CALL get_ijk_from_grid2 (  grid ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe )
+     data_ordering : SELECT CASE ( model_data_order )
+       CASE  ( DATA_ORDER_XYZ )
+           imsx = grid%sm31x ; imex = grid%em31x ; jmsx = grid%sm32x ; jmex = grid%em32x ; kmsx = grid%sm33x ; kmex = grid%em33x ;
+           ipsx = grid%sp31x ; ipex = grid%ep31x ; jpsx = grid%sp32x ; jpex = grid%ep32x ; kpsx = grid%sp33x ; kpex = grid%ep33x ;
+           imsy = grid%sm31y ; imey = grid%em31y ; jmsy = grid%sm32y ; jmey = grid%em32y ; kmsy = grid%sm33y ; kmey = grid%em33y ;
+           ipsy = grid%sp31y ; ipey = grid%ep31y ; jpsy = grid%sp32y ; jpey = grid%ep32y ; kpsy = grid%sp33y ; kpey = grid%ep33y ;
+       CASE  ( DATA_ORDER_YXZ )
+           imsx = grid%sm32x ; imex = grid%em32x ; jmsx = grid%sm31x ; jmex = grid%em31x ; kmsx = grid%sm33x ; kmex = grid%em33x ;
+           ipsx = grid%sp32x ; ipex = grid%ep32x ; jpsx = grid%sp31x ; jpex = grid%ep31x ; kpsx = grid%sp33x ; kpex = grid%ep33x ;
+           imsy = grid%sm32y ; imey = grid%em32y ; jmsy = grid%sm31y ; jmey = grid%em31y ; kmsy = grid%sm33y ; kmey = grid%em33y ;
+           ipsy = grid%sp32y ; ipey = grid%ep32y ; jpsy = grid%sp31y ; jpey = grid%ep31y ; kpsy = grid%sp33y ; kpey = grid%ep33y ;
+       CASE  ( DATA_ORDER_ZXY )
+           imsx = grid%sm32x ; imex = grid%em32x ; jmsx = grid%sm33x ; jmex = grid%em33x ; kmsx = grid%sm31x ; kmex = grid%em31x ;
+           ipsx = grid%sp32x ; ipex = grid%ep32x ; jpsx = grid%sp33x ; jpex = grid%ep33x ; kpsx = grid%sp31x ; kpex = grid%ep31x ;
+           imsy = grid%sm32y ; imey = grid%em32y ; jmsy = grid%sm33y ; jmey = grid%em33y ; kmsy = grid%sm31y ; kmey = grid%em31y ;
+           ipsy = grid%sp32y ; ipey = grid%ep32y ; jpsy = grid%sp33y ; jpey = grid%ep33y ; kpsy = grid%sp31y ; kpey = grid%ep31y ;
+       CASE  ( DATA_ORDER_ZYX )
+           imsx = grid%sm33x ; imex = grid%em33x ; jmsx = grid%sm32x ; jmex = grid%em32x ; kmsx = grid%sm31x ; kmex = grid%em31x ;
+           ipsx = grid%sp33x ; ipex = grid%ep33x ; jpsx = grid%sp32x ; jpex = grid%ep32x ; kpsx = grid%sp31x ; kpex = grid%ep31x ;
+           imsy = grid%sm33y ; imey = grid%em33y ; jmsy = grid%sm32y ; jmey = grid%em32y ; kmsy = grid%sm31y ; kmey = grid%em31y ;
+           ipsy = grid%sp33y ; ipey = grid%ep33y ; jpsy = grid%sp32y ; jpey = grid%ep32y ; kpsy = grid%sp31y ; kpey = grid%ep31y ;
+       CASE  ( DATA_ORDER_XZY )
+           imsx = grid%sm31x ; imex = grid%em31x ; jmsx = grid%sm33x ; jmex = grid%em33x ; kmsx = grid%sm32x ; kmex = grid%em32x ;
+           ipsx = grid%sp31x ; ipex = grid%ep31x ; jpsx = grid%sp33x ; jpex = grid%ep33x ; kpsx = grid%sp32x ; kpex = grid%ep32x ;
+           imsy = grid%sm31y ; imey = grid%em31y ; jmsy = grid%sm33y ; jmey = grid%em33y ; kmsy = grid%sm32y ; kmey = grid%em32y ;
+           ipsy = grid%sp31y ; ipey = grid%ep31y ; jpsy = grid%sp33y ; jpey = grid%ep33y ; kpsy = grid%sp32y ; kpey = grid%ep32y ;
+       CASE  ( DATA_ORDER_YZX )
+           imsx = grid%sm33x ; imex = grid%em33x ; jmsx = grid%sm31x ; jmex = grid%em31x ; kmsx = grid%sm32x ; kmex = grid%em32x ;
+           ipsx = grid%sp33x ; ipex = grid%ep33x ; jpsx = grid%sp31x ; jpex = grid%ep31x ; kpsx = grid%sp32x ; kpex = grid%ep32x ;
+           imsy = grid%sm33y ; imey = grid%em33y ; jmsy = grid%sm31y ; jmey = grid%em31y ; kmsy = grid%sm32y ; kmey = grid%em32y ;
+           ipsy = grid%sp33y ; ipey = grid%ep33y ; jpsy = grid%sp31y ; jpey = grid%ep31y ; kpsy = grid%sp32y ; kpey = grid%ep32y ;
+     END SELECT data_ordering
+   END SUBROUTINE get_ijk_from_grid_ext
+
+! return the values for subgrid whose refinement is in grid%sr
+! note when using this routine, it does not affect K. For K 
+! (vertical), it just returns what get_ijk_from_grid does
+   SUBROUTINE get_ijk_from_subgrid_ext (  grid ,                &
+                           ids0, ide0, jds0, jde0, kds0, kde0,    &
+                           ims0, ime0, jms0, jme0, kms0, kme0,    &
+                           ips0, ipe0, jps0, jpe0, kps0, kpe0    )
+    USE module_domain
+    IMPLICIT NONE
+    TYPE( domain ), INTENT (IN)  :: grid
+    INTEGER, INTENT(OUT) ::                                 &
+                           ids0, ide0, jds0, jde0, kds0, kde0,    &
+                           ims0, ime0, jms0, jme0, kms0, kme0,    &
+                           ips0, ipe0, jps0, jpe0, kps0, kpe0
+   ! Local
+    INTEGER              ::                                 &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe
+     CALL get_ijk_from_grid (  grid ,                         &
+                             ids, ide, jds, jde, kds, kde,    &
+                             ims, ime, jms, jme, kms, kme,    &
+                             ips, ipe, jps, jpe, kps, kpe    )
+     ids0 = ids
+     ide0 = ide * grid%sr_x
+     ims0 = (ims-1)*grid%sr_x+1
+     ime0 = ime * grid%sr_x
+     ips0 = (ips-1)*grid%sr_x+1
+     ipe0 = ipe * grid%sr_x
+
+     jds0 = jds
+     jde0 = jde * grid%sr_y
+     jms0 = (jms-1)*grid%sr_y+1
+     jme0 = jme * grid%sr_y
+     jps0 = (jps-1)*grid%sr_y+1
+     jpe0 = jpe * grid%sr_y
+
+     kds0 = kds
+     kde0 = kde
+     kms0 = kms
+     kme0 = kme
+     kps0 = kps
+     kpe0 = kpe
+   RETURN
+   END SUBROUTINE get_ijk_from_subgrid_ext
+
+! find the grid based on the id reference and return that
+   SUBROUTINE get_dims_from_grid_id (  id   &
+                          ,ds, de           &
+                          ,ms, me           &
+                          ,ps, pe           &
+                          ,mxs, mxe         &
+                          ,pxs, pxe         &
+                          ,mys, mye         &
+                          ,pys, pye )
+    USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+    IMPLICIT NONE
+    TYPE( domain ), POINTER  :: grid
+    INTEGER, INTENT(IN ) :: id
+    INTEGER, DIMENSION(3), INTENT(INOUT) ::                   &
+                           ds, de           &
+                          ,ms, me           &
+                          ,ps, pe           &
+                          ,mxs, mxe         &
+                          ,pxs, pxe         &
+                          ,mys, mye         &
+                          ,pys, pye
+
+     !local
+     CHARACTER*256 mess
+
+     NULLIFY( grid )
+     CALL find_grid_by_id ( id, head_grid, grid )
+
+     IF ( ASSOCIATED(grid) ) THEN
+           ds(1) = grid%sd31 ; de(1) = grid%ed31 ; ds(2) = grid%sd32 ; de(2) = grid%ed32 ; ds(3) = grid%sd33 ; de(3) = grid%ed33 ;
+           ms(1) = grid%sm31 ; me(1) = grid%em31 ; ms(2) = grid%sm32 ; me(2) = grid%em32 ; ms(3) = grid%sm33 ; me(3) = grid%em33 ;
+           ps(1) = grid%sp31 ; pe(1) = grid%ep31 ; ps(2) = grid%sp32 ; pe(2) = grid%ep32 ; ps(3) = grid%sp33 ; pe(3) = grid%ep33 ;
+           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x ; mxs(2) = grid%sm32x ; mxe(2) = grid%em32x ; mxs(3) = grid%sm33x ; mxe(3) = grid%em33x ;
+           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x ; pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x ; pxs(3) = grid%sp33x ; pxe(3) = grid%ep33x ;
+           mys(1) = grid%sm31y ; mye(1) = grid%em31y ; mys(2) = grid%sm32y ; mye(2) = grid%em32y ; mys(3) = grid%sm33y ; mye(3) = grid%em33y ;
+           pys(1) = grid%sp31y ; pye(1) = grid%ep31y ; pys(2) = grid%sp32y ; pye(2) = grid%ep32y ; pys(3) = grid%sp33y ; pye(3) = grid%ep33y ;
+     ELSE
+        WRITE(mess,*)'internal error: get_ijk_from_grid_id: no such grid id:',id
+        CALL wrf_error_fatal(TRIM(mess))
+     ENDIF
+
+   END SUBROUTINE get_dims_from_grid_id
+
+! find the grid based on the id reference and return that
+   SUBROUTINE get_ijk_from_grid_id (  id ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
+    USE module_domain, ONLY : domain, head_grid, find_grid_by_id, get_ijk_from_grid
+    IMPLICIT NONE
+    TYPE( domain ), POINTER  :: grid
+    INTEGER, INTENT(IN ) :: id
+    INTEGER, INTENT(OUT) ::                                 &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey
+     !local
+     CHARACTER*256 mess
+
+     NULLIFY( grid )
+     CALL find_grid_by_id ( id, head_grid, grid )
+
+     IF ( ASSOCIATED(grid) ) THEN
+     CALL get_ijk_from_grid (  grid ,                   &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe,    &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
+     ELSE
+        WRITE(mess,*)'internal error: get_ijk_from_grid_id: no such grid id:',id
+        CALL wrf_error_fatal(TRIM(mess))
+     ENDIF
+
+   END SUBROUTINE get_ijk_from_grid_id
+
+! version of this routine that can be called from set_scalar_indices_from_config in
+! module_configure, which can not USE module_domain without creating a circular use assocaition
+   SUBROUTINE modify_io_masks ( id )
+     USE module_domain, ONLY : domain, modify_io_masks1, head_grid, find_grid_by_id
+     IMPLICIT NONE
+     INTEGER, INTENT(IN) :: id
+     TYPE(domain), POINTER :: grid
+!write(0,*)'modify_io_masks head_grid ',id,ASSOCIATED(head_grid)
+     CALL find_grid_by_id( id, head_grid, grid )
+!write(0,*)'modify_io_masks grid ',id,ASSOCIATED(grid)
+     IF ( ASSOCIATED( grid ) ) CALL modify_io_masks1( grid, id ) 
+     RETURN 
+   END SUBROUTINE modify_io_masks
 

@@ -1,8 +1,8 @@
 subroutine da_crtm_init(iv,ob, nsensor)
 !------------------------------------------------------------------------------
-!  PURPOSE: interface to the initialization subroutine of RTTOV.
+!  PURPOSE: interface to the initialization subroutine of CRTM
 !
-!  METHOD:  1. read CRTM coefs files; 2. allocate radiance structure
+!  METHOD:  read CRTM coefs files
 !
 !  HISTORY: 10/15/2006  added crtm initialization    Tomislava Vukicevic, ATOC, University of Colorado
 !           11/09/2006  Updated                      Zhiquan Liu
@@ -33,42 +33,11 @@ subroutine da_crtm_init(iv,ob, nsensor)
 !  character( 80 ), pointer :: Sensor_Descriptor(:)
 !
 ! end of CRTM local
-!----------------------------------------------------------------
-!  input parameters of RTTOV_SETUP
-!----------------------------------
-!  integer :: err_unit        ! Logical error unit (<0 for default)
-!  integer :: verbosity_level ! (<0 for default)
-  integer :: unit_factor_rad
-!  integer, allocatable :: sensor(:,:) ! instrument id
-
-!  output parameters of RTTOV_SETUP
-!-------------------------------------
-!  integer, allocatable :: errorstatus(:)  ! return code
-!  integer              :: coef_errorstatus
-!  integer              :: i_amsua, i_amsub
-  integer     :: error
-
-! local variables
-!----------------
-! integer             :: nprofiles, nfrequencies, nchannels, nbtout
-! integer , pointer   :: lprofiles(:)
-! real    , pointer   :: surfem(:)
-! real    , pointer   :: emissivity(:)
-! integer , pointer   :: channels (:)
-! integer , pointer   :: polarisations(:,:)
-! integer             :: mxchn
- integer             :: idum, wmo_sensor_id, sensor_type, iost
- integer             :: iunit
-
-! local variables for tuning error factor
- character(len=20)   ::  rttovid_string
- integer             ::  num_tot
- real                ::  joa, jo, trace, factor 
 
   call da_trace_entry("da_crtm_init")
 
 !---------------------------------------------------------------------
-! 1.0 get CRTM sensor descriptor to use in CRTM_Set_ChannelInfo later
+! 1.0 get CRTM sensor descriptor
 !---------------------------------------------------------------------
   allocate(Sensor_Descriptor(nsensor))
   call da_crtm_sensor_descriptor(nsensor,Sensor_Descriptor)
@@ -92,25 +61,25 @@ subroutine da_crtm_init(iv,ob, nsensor)
   ! Sensor_Index - integer
   ! Channel_Index - integer pointer, index of the channels loaded during initialization
   ! Sensor_Channel - integer pointer, the sensor channel #
-  ! SensorID - character pointer, character string containing satellite and sensor descr
+  ! Sensor_ID - character pointer, character string containing satellite and sensor descr
   !                                        example: amsre_aqua (Appendix B in User guide)
   ! WMO_Satellite_ID - integer pointer
   ! WMO_Sensor_ID - integer pointer
   !----------------------------------------------------------------- 
 
-     Error_Status = CRTM_Init( ChannelInfo, &
-                              SensorID = Sensor_Descriptor, &
+     Error_Status = CRTM_Init(Sensor_Descriptor, &
+                              ChannelInfo, &
                               AerosolCoeff_File = AerosolCoeff_File, &
                               EmisCoeff_File = EmisCoeff_File , &
                               CloudCoeff_File = CloudCoeff_File, &
                               File_Path = File_Path) 
 
-!   Error_Status = CRTM_Set_ChannelInfo(Sensor_Descriptor(1),ChannelInfo)
-
      if ( Error_Status /= 0 ) then 
        call da_error(__FILE__,__LINE__, &
          (/"Error in initializing CRTM"/))
      END IF
+
+     iv%instid(1:nsensor)%nlevels = kme-kms+1
 
 !    do n = 1, nsensor
 !       write (6,*) 'in da_crtm_init: ChannelInfo content'
@@ -118,8 +87,11 @@ subroutine da_crtm_init(iv,ob, nsensor)
 !       write (6,*) 'n_channels ',ChannelInfo(n)%n_channels
 !       write (6,*) 'Channel_Index ',ChannelInfo(n)%Channel_Index(:)
 !       write (6,*) 'Sensor_Channel ',ChannelInfo(n)%Sensor_Channel(:)
-!       write (6,*) 'SensorID ',ChannelInfo(n)%SensorID
+!       write (6,*) 'Sensor_ID ',ChannelInfo(n)%Sensor_ID
+!       write (6,*) 'WMO_Satellite_ID ',ChannelInfo(n)%WMO_Satellite_ID
+!       write (6,*) 'WMO_Sensor_ID ',ChannelInfo(n)%WMO_Sensor_ID
 !    end do
 
   call da_trace_exit("da_crtm_init")
+
 end subroutine da_crtm_init

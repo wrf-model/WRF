@@ -265,7 +265,9 @@
         DO K=KTS+1,KTE
           T8W(I,K,J)=0.5*(TL(K-1)+TL(K))
         ENDDO
-        T8W(I,KTE+1,J)=-1.E20
+!        T8W(I,KTE+1,J)=-1.E20 
+! For RRTM 
+        T8W(I,KTE+1,J)=T8W(I,KTE,J) + 0.5*(T8W(I,KTE,J)-T8W(I,KTE-1,J))
 !
       ENDDO
       ENDDO
@@ -298,6 +300,8 @@
           SWNETDN(I,J)=0.   ! Net (down - up) total (clear+cloudy sky) shortwave at the surface
           TOTLWDN(I,J)=0.   ! Total longwave down at the surface
           CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
+          HTOPR(I,J) =0.
+          HBOTR(I,J) =0.
 !
 !-- NOTE:  HBOTR, HTOPR are passed into radiation and set equal to HBOT, HTOP.  HBOT, HTOP are
 !          reset to clear sky values to be used by the ARW.  At the bottom of this subroutine,
@@ -354,6 +358,7 @@
 #endif
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=RTHRATEN                               &
+     &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
      &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &
@@ -653,6 +658,7 @@
      &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
      &                ,HLENS,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX      & ! GWD
      &                ,CROT,SROT                                        & ! GWD
+     &                ,DEW                                              & ! RUC LSM
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT                                          &
@@ -764,6 +770,7 @@
      &                                                ,TSFC,TSNAV       &
      &                                                ,USTAR,UZ0,UZ0H   &
      &                                                ,VZ0,VZ0H         &
+     &                                                ,DEW              & !RUC LSM
      &                                                ,Z0,Z0BASE
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: AKHS_OUT,AKMS_OUT  &
@@ -801,6 +808,8 @@
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: KEEPFR3DFLAG & !<--- Used only in physics (IKJ)
      &                                                      ,SH2O,SMC     &
      &                                                      ,SMFR3D,STC
+!
+      REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME)               :: SMCREL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
@@ -902,7 +911,7 @@
       IDUMMY=0
       ISFFLX=1
       DX=0.
-      SST_UPDATE=0
+      SST_UPDATE=config_flags%SST_UPDATE
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j)
@@ -1187,7 +1196,9 @@
      &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,SWDOWN=RSW_DN_SFC        &
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
-     &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE,ISLTYP=ISLTYP      &
+     &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE                    &
+     &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
+     &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
      &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &
@@ -1197,6 +1208,7 @@
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
      &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &
+     &          ,SMCREL=SMCREL                                          &
      &          ,SST=SST,SST_UPDATE=SST_UPDATE                          &
      &          ,TH10=TH10,TH2=TH2X,T2=T2,THZ0=THZ0,TH_PHY=TH_PHY       &
      &          ,TMN=TG,TSHLTR=TSHLTR,TSK=TSFC,TSLB=STC,T_PHY=T_PHY     &
@@ -1205,14 +1217,14 @@
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
-     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE,SFENTH=SFENTH     &
+     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
      &          ,PSFC=PSFC_OUT,EMISS=EPSR,EMBCK=EMBCK                   &
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
-     &          ,LAI=GRID%LAI                                           &
+     &          ,LAI=GRID%LAI,IZ0TLND=CONFIG_FLAGS%IZ0TLND              &
      &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
 !     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
      &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
@@ -1234,6 +1246,7 @@
      &          ,QSG=QSG,QVG=QVG,QCG=QCG,SOILT1=SOILT1                  &
      &          ,TSNAV=TSNAV,SMFR3D=SMFR3D,KEEPFR3DFLAG=KEEPFR3DFLAG    &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
+     &          ,DEW=DEW                                                &
 ! for URBAN
      &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
      &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban
@@ -1305,12 +1318,12 @@
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
      &               ,U_PHY=U_PHY,V_PHY=V_PHY,TH_PHY=TH_PHY,RHO=RR    &
      &               ,P_PHY=P_PHY,PI_PHY=PI_PHY,P8W=P8W,T_PHY=T_PHY   &
-     &               ,DZ8W=DZ,Z=Z,TKE_MYJ=TKE,EL_MYJ=EL_MYJ,F=F       &
+     &               ,DZ8W=DZ,Z=Z,TKE_PBL=TKE,EL_PBL=EL_MYJ,F=F       &
      &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
      &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &
-     &               ,U10=U10,V10=V10,WSPD=WSPD,BR=BR,CHKLOWQ=CHKLOWQ &
+     &               ,U10=U10,V10=V10,T2=T2,WSPD=WSPD,BR=BR,CHKLOWQ=CHKLOWQ &   
      &               ,DX=DX,STEPBL=NPHS,WARM_RAIN=WARM_RAIN           &
      &               ,KPBL=KPBL,CT=CT,LH=ELFLX,SNOW=SNOW,XICE=SICE    &
      &               ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics      &
@@ -1497,8 +1510,19 @@
 !dbg print *,'TURBL: IGS,IGE,JGS,JGE,kpblmin,kpblmax=',IGS,IGE,JGS,JGE,kpblmin,kpblmax
 !dbg
 
+!      print *,'grid%id  gwd_opt at module_PHYSICS ',grid%id, grid%gwd_opt
+!      WRITE(0,*)'grid%id  gwd_opt at module_PHYSICS ',grid%id, grid%gwd_opt
+!      WRITE(MESSAGE,125)grid%gwd_opt
+!125   FORMAT(1X,'grid%id  module_PHYSICS.F :  gwd_opt  ',I2,2X,I2)
+
+
+#ifdef HWRF
+      IF (grid%gwd_opt .eq. 2 .AND. grid%id.eq.1) THEN                                        !Kwon's doing for parent only now
+#else
       IF (grid%gwd_opt .eq. 2) THEN
-       
+#endif
+!      print *,'==grid%id  gwd_opt at module_PHYSICS inside gwd ',grid%id, grid%gwd_opt        !because there is no data for nest domain
+
         CALL wrf_message("GWD usage currently may be problematic for some cases - use at own risk")
 
       CALL GWD_driver(U=U_PHY,V=V_PHY,T=T_PHY                           &
@@ -1640,22 +1664,21 @@
 !
             QW=MAX(0.,MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
             if(CONFIG_FLAGS%MP_PHYSICS.eq.etampnew)then
-            QI=MAX(0.,MOIST(I,J,K,P_QS)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
+             QI=MAX(0.,MOIST(I,J,K,P_QS)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
 !BSF            QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
-            QR=MAX(0.,MOIST(I,J,K,P_QR) )
-            MOIST(I,J,K,P_QC)=QW
-            MOIST(I,J,K,P_QS)=QI
-            MOIST(I,J,K,P_QR)=QR
-            CWM(I,J,K)=QW+QI+QR
+             QR=MAX(0.,MOIST(I,J,K,P_QR) )
+             MOIST(I,J,K,P_QC)=QW
+             MOIST(I,J,K,P_QS)=QI
+             MOIST(I,J,K,P_QR)=QR
             elseif(CONFIG_FLAGS%MP_PHYSICS.eq.etamp_hwrf)then
-            QI=MAX(0.,MOIST(I,J,K,P_QI)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
+             QI=MAX(0.,MOIST(I,J,K,P_QI)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
 !BSF            QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
-            QR=MAX(0.,MOIST(I,J,K,P_QR) )
-            MOIST(I,J,K,P_QC)=QW
-            MOIST(I,J,K,P_QI)=QI
-            MOIST(I,J,K,P_QR)=QR
-            CWM(I,J,K)=QW+QI+QR
+             QR=MAX(0.,MOIST(I,J,K,P_QR) )
+             MOIST(I,J,K,P_QC)=QW
+             MOIST(I,J,K,P_QI)=QI
+             MOIST(I,J,K,P_QR)=QR
             endif
+             CWM(I,J,K)=QW+QI+QR
 !
             IF(QI<=EPSQ)THEN
               F_ICE(I,K,J)=0.
@@ -1863,7 +1886,7 @@
 #endif
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
-     &                 ,NRND1                                              &  ! NRND1 is zhang's doing
+     &                 ,NRND1                                              &  ! NRND1 for random no restart
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
@@ -1941,7 +1964,7 @@
 #if (NMM_CORE==1)
       REAL, INTENT(INOUT)::MOMMIX
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
-      REAL,DIMENSION(IDS:IDE,JDS:JDE),INTENT(INOUT) :: DATA1 
+      REAL,DIMENSION(IDS:IDE,JDS:JDE)               :: DATA1 
       LOGICAL, EXTERNAL::wrf_dm_on_monitor
 #endif
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
@@ -2016,11 +2039,10 @@
 !-----------------------------------------------------------------------
       INTEGER :: DTEMP_CHECK=2.0
       REAL :: TCHANGE
-!zhang's doing  random number restart
-      INTEGER,   DIMENSION(2)       :: NRND1
+!  random number restart
+      INTEGER,DIMENSION(:),INTENT(INOUT) ::   NRND1
       INTEGER, SAVE  :: nfirst
       data nfirst /0/
-!end of zhang's doing
 #if (NMM_CORE==1)
       INTEGER                    :: IDT                
       REAL,   DIMENSION(2)       :: RND1 
@@ -2041,6 +2063,8 @@
          DO I=IMS,IME
            HTOP(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
+           CUTOP(I,J)=0.
+           CUBOT(I,J)=REAL(KTE+1)
            CUPPT(I,J)=0.
          ENDDO
          ENDDO
@@ -2050,8 +2074,6 @@
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
-      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME)RETURN
       
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
@@ -2284,7 +2306,7 @@
 !     CUMULUS DRIVER. THIS IS gopal's doing
 !
 
-      IF(CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME.or.CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+      IF(CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
 !
           IF(GRID%ID .EQ. 1)THEN   ! Both parent and nest set to 5 minutes for random number calls 
            IDT=MOD(NTSD,NCNVC)    
@@ -2296,13 +2318,11 @@
 !$omp parallel do                                                       &
 !$omp& private(i,j)
              IF (wrf_dm_on_monitor()) THEN   !!!! For bit reproducibility of random numbers 
-!zhang's doing  For bit reproducibility of random numbers when restarting
              if (restart .and. nfirst .eq. 0 ) then
              call random_seed(put=nrnd1)
              nfirst=1
              endif
              call random_seed(get=nrnd1)
-!end of zhang's doing
               DO J=JDS,JDE       !JTS,JTE
                DO I=IDS,IDE      !ITS,ITE       
                   CALL RANDOM_NUMBER(rnd1)
@@ -2323,8 +2343,9 @@
           ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
 !
       ELSE
-        STORE_RAND(I,J) = 0.0
-     ENDIF
+!jm        STORE_RAND(I,J) = 0.0
+        STORE_RAND = 0.0
+      ENDIF
 
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2356,7 +2377,7 @@
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
      &                 ,STEPCU=NSTEP_CNV,GSW=GSW                        &
      &                 ,PERIODIC_X=.FALSE.,PERIODIC_Y=.FALSE.           &
-     &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ         &
+     &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ,Z=Z     &
      &                 ,APR_GR=APR_GR,APR_W=APR_W,APR_MC=APR_MC         &
      &                 ,APR_ST=APR_ST,APR_AS=APR_AS,APR_CAPMA=APR_CAPMA &
      &                 ,APR_CAPME=APR_CAPME,APR_CAPMI=APR_CAPMI         &
@@ -2493,8 +2514,8 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,HWRFSASSCHEME)
-            IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.config_flags%mp_physics==etamp_hwrf)THEN
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME)
+            IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE
               MOIST_TRANS(I,K,J,P_QI)=MAX(0.,MOIST_TRANS(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)

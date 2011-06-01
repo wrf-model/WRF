@@ -61,7 +61,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
       SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
-# include "dummy_args.inc"
+# include "dummy_new_args.inc"
 !
                  )
          USE module_domain
@@ -70,12 +70,12 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: intermediate_grid
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_decl.inc>
+# include <dummy_new_decl.inc>
       END SUBROUTINE interp_domain_nmm_part1
 
       SUBROUTINE interp_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
-# include "dummy_args.inc"
+# include "dummy_new_args.inc"
 !
                  )
          USE module_domain
@@ -83,7 +83,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
          TYPE(domain), POINTER :: nested_grid
          TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_decl.inc>
+# include <dummy_new_decl.inc>
       END SUBROUTINE interp_domain_nmm_part2
 
 !=======================================================================
@@ -116,6 +116,9 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
   CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
+                           grid%sp31,  grid%ep31,  grid%sp32,  grid%ep32,  grid%sp33,  grid%ep33, &
+                           grid%sp31x, grid%ep31x, grid%sp32x, grid%ep32x, grid%sp33x, grid%ep33x,&
+                           grid%sp31y, grid%ep31y, grid%sp32y, grid%ep32y, grid%sp33y, grid%ep33y,&
                            grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                            grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
     )
@@ -158,9 +161,17 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
 #if defined(MOVE_NESTS) || (!defined(SGIALTIX))
-  CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,   &
+#   if defined(HWRF)
+  CALL ensure_space_field &
+#   else
+  CALL alloc_space_field &
+#   endif
+                         ( grid, grid%id , 1 , 2 , .TRUE. ,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
+                           grid%sp31,  grid%ep31,  grid%sp32,  grid%ep32,  grid%sp33,  grid%ep33, &
+                           grid%sp31x, grid%ep31x, grid%sp32x, grid%ep32x, grid%sp33x, grid%ep33x,&
+                           grid%sp31y, grid%ep31y, grid%sp32y, grid%ep32y, grid%sp33y, grid%ep33y,&
                            grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                            grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
       )
@@ -172,7 +183,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
   CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags    &
 !
-#     include "actual_args.inc"
+#     include "actual_new_args.inc"
 !
                                 )
   grid => nested_grid%intermediate_grid
@@ -180,14 +191,16 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
   CALL interp_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
-#     include "actual_args.inc"
+#     include "actual_new_args.inc"
 !
                                 )
 
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 #if defined(MOVE_NESTS) || (!defined(SGIALTIX))
+#   if !defined(HWRF)
   CALL dealloc_space_field ( grid )
+#   endif
 #endif
 
 ! ------------------------------------------------------------

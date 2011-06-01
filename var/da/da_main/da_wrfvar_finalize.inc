@@ -16,6 +16,9 @@ subroutine da_wrfvar_finalize
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
       call da_med_initialdata_output (head_grid, config_flags)
+#ifdef VAR4D
+      if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
+#endif
       call med_shutdown_io (head_grid, config_flags)
    end if
 
@@ -50,13 +53,15 @@ subroutine da_wrfvar_finalize
    if (rootproc) then
       close (cost_unit)
       close (grad_unit)
-      close (stats_unit)
+      if (.not. print_detail_outerloop) then
+         close (stats_unit)
+         call da_free_unit (stats_unit)
+      end if
       close (jo_unit)
       close (check_max_iv_unit)
       close (check_buddy_unit)
       call da_free_unit (cost_unit)
       call da_free_unit (grad_unit)
-      call da_free_unit (stats_unit)
       call da_free_unit (jo_unit)
       call da_free_unit (check_max_iv_unit)
       call da_free_unit (check_buddy_unit )

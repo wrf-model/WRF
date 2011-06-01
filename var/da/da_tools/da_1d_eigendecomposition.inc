@@ -18,9 +18,9 @@ subroutine da_1d_eigendecomposition( bx, e, l )
    integer                  :: work             ! Size of work array.
    integer                  :: info             ! Info code.
    
-   real, allocatable        :: ecopy(:,:)
-   real, allocatable        :: lcopy(:)
-   real, allocatable        :: work_array(:)
+   real*8, allocatable        :: ecopy(:,:)
+   real*8, allocatable        :: lcopy(:)
+   real*8, allocatable        :: work_array(:)
 
    if (trace_use_dull) call da_trace_entry("da_1d_eigendecomposition")
 

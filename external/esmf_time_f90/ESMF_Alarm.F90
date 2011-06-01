@@ -151,12 +151,12 @@
 ! !IROUTINE: ESMF_AlarmSet - Initializes an alarm
 
 ! !INTERFACE:
-      subroutine ESMF_AlarmSet(alarm, RingTime, RingInterval, &
+      subroutine ESMF_AlarmSet(alarm, RingTime, RingInterval, PrevRingTime, &
                                StopTime, Enabled, rc)
 
 ! !ARGUMENTS:
       type(ESMF_Alarm), intent(inout) :: alarm  ! really INTENT(OUT)
-      type(ESMF_Time), intent(in), optional :: RingTime
+      type(ESMF_Time), intent(in), optional :: RingTime, PrevRingTime
       type(ESMF_TimeInterval), intent(in), optional :: RingInterval
       type(ESMF_Time), intent(in), optional :: StopTime
       logical, intent(in), optional :: Enabled
@@ -193,6 +193,9 @@
           alarm%alarmint%RingInterval = &
             ESMF_TimeIntervalAbsValue( RingInterval )
           alarm%alarmint%RingIntervalSet = .TRUE.
+        ENDIF
+        IF ( PRESENT( PrevRingTime ) ) THEN
+          alarm%alarmint%PrevRingTime = PrevRingTime
         ENDIF
         IF ( PRESENT( RingTime ) ) THEN
           alarm%alarmint%RingTime = RingTime

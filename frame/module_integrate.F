@@ -293,6 +293,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
                                                  kid        = kid        )
                CALL Setup_Timekeeping (new_nest)
                CALL med_nest_initial ( grid , new_nest , config_flags )
+               IF ( grid%dfi_stage == DFI_STARTFWD ) THEN
+                  CALL wrf_dfi_startfwd_init(new_nest)
+               ENDIF
             END DO
             IF ( a_nest_was_opened ) THEN
                CALL set_overlaps ( grid )   ! find overlapping and set pointers
@@ -348,7 +351,15 @@ RECURSIVE SUBROUTINE integrate ( grid )
             !  Report on the timing for a single time step.
             IF ( wrf_dm_on_monitor() ) THEN
                CALL domain_clock_get ( grid, current_timestr=message2 )
-               WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
+#if (EM_CORE == 1)
+               if (config_flags%use_adaptive_time_step) then
+                  WRITE ( message , FMT = '("main (dt=",F6.2,"): time ",A," on domain ",I3)' ) grid%dt, TRIM(message2), grid%id
+               else
+                  WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
+               endif
+#else
+                  WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
+#endif
                CALL end_timing ( TRIM(message) )
             END IF
             CALL med_endup_step ( grid , config_flags )

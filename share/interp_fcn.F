@@ -92,14 +92,18 @@
 !                 if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
 !                   icmask( i, j ) = .TRUE.
 !                 endif
+                 if ( ni.ge.nims.and.ni.le.nime.and.nj.ge.njms.and.nj.le.njme) then
                   if ( imask(ni,nj) .eq. 1 ) then
                     icmask( i, j ) = .TRUE.
                   endif
+                 endif
+                 if ( ni-nioff.ge.nims.and.ni.le.nime.and.nj-njoff.ge.njms.and.nj.le.njme) then
                   if (ni .ge. nits-nioff .and. nj .ge. njts-njoff ) then
                     if ( imask(ni-nioff,nj-njoff) .eq. 1) then
                         icmask( i, j ) = .TRUE.
                     endif
                   endif
+                 endif
                 endif
                 psca(i,j,nf) = cfld(i,k,j)
               ENDDO
@@ -654,6 +658,69 @@
 
 !==================================
 
+   SUBROUTINE p2c ( cfld,                                 &  ! CD field
+                    cids, cide, ckds, ckde, cjds, cjde,   &
+                    cims, cime, ckms, ckme, cjms, cjme,   &
+                    cits, cite, ckts, ckte, cjts, cjte,   &
+                    nfld,                                 &  ! ND field
+                    nids, nide, nkds, nkde, njds, njde,   &
+                    nims, nime, nkms, nkme, njms, njme,   &
+                    nits, nite, nkts, nkte, njts, njte,   &
+                    shw,                                  &  ! stencil half width
+                    imask,                                &  ! interpolation mask
+                    xstag, ystag,                         &  ! staggering of field
+                    ipos, jpos,                           &  ! Position of lower left of nest in CD
+                    nri, nrj,                             &  ! nest ratios
+                    cbdy_xs, nbdy_xs,                     &  ! boundary arrays
+                    cbdy_xe, nbdy_xe,                     &  ! no needed, but registry builds interface
+                    cbdy_ys, nbdy_ys,                     &  ! for lateral bc forcing this way
+                    cbdy_ye, nbdy_ye,                     &
+                    cbdy_txs, nbdy_txs,                   &
+                    cbdy_txe, nbdy_txe,                   &
+                    cbdy_tys, nbdy_tys,                   &
+                    cbdy_tye, nbdy_tye                    &
+                    )   
+     USE module_configure
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
+
+     CALL  interp_fcn  (cfld,                             &  ! CD field
+                        cids, cide, ckds, ckde, cjds, cjde,   &
+                        cims, cime, ckms, ckme, cjms, cjme,   &
+                        cits, cite, ckts, ckte, cjts, cjte,   &
+                        nfld,                             &  ! ND field
+                        nids, nide, nkds, nkde, njds, njde,   &
+                        nims, nime, nkms, nkme, njms, njme,   &
+                        nits, nite, nkts, nkte, njts, njte,   &
+                        shw,                                  &  ! stencil half width for interp
+                        imask,                                &  ! interpolation mask
+                        xstag, ystag,                         &  ! staggering of field
+                        ipos, jpos,                           &  ! Position of lower left of nest in CD
+                        nri, nrj                             )   ! nest ratios
+
+   END SUBROUTINE p2c
+
+!==================================
+
    SUBROUTINE bdy_interp ( cfld,                                 &  ! CD field
                            cids, cide, ckds, ckde, cjds, cjde,   &
                            cims, cime, ckms, ckme, cjms, cjme,   &
@@ -819,9 +886,13 @@
 
      shw = 0
 
-     ioff = 0 ; joff = 0
-     IF ( xstag ) ioff = 1
-     IF ( ystag ) joff = 1
+     ioff  = 0 ; joff  = 0
+     IF ( xstag ) THEN 
+       ioff = (nri-1)/2
+     ENDIF
+     IF ( ystag ) THEN
+       joff = (nrj-1)/2
+     ENDIF
 
      ! Iterate over the ND tile and compute the values
      ! from the CD tile. 
@@ -1320,7 +1391,7 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &  ! nest ratios
-                           clu, nlu                              )
+                           clu, nlu, cflag, nflag                )
 
       USE module_configure
       USE module_wrf_error
@@ -1337,7 +1408,7 @@
                              nits, nite, nkts, nkte, njts, njte,   &
                              shw,                                  &
                              ipos, jpos,                           &
-                             nri, nrj
+                             nri, nrj, cflag, nflag
       LOGICAL, INTENT(IN) :: xstag, ystag
    
       REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
@@ -1350,13 +1421,9 @@
       ! Local
    
       INTEGER ci, cj, ck, ni, nj, nk, ip, jp
-      INTEGER :: icount , ii , jj , ist , ien , jst , jen , iswater
+      INTEGER :: icount , ii , jj , ist , ien , jst , jen
       REAL :: avg , sum , dx , dy
       INTEGER , PARAMETER :: max_search = 5
-   
-      !  Find out what the water value is.
-   
-      CALL nl_get_iswater(1,iswater)
 
       !  Right now, only mass point locations permitted.
    
@@ -1413,19 +1480,19 @@
    
                   !  This is a "water only" field.  If this is a land point, no operations required.
 
-                  IF      ( ( NINT(nlu(ni  ,nj  )) .NE. iswater ) ) THEN
+                  IF      ( ( NINT(nlu(ni  ,nj  )) .NE. nflag ) ) THEN
                      ! noop
 !                    nfld(ni,nk,nj) =  1.e20
-                     nfld(ni,nk,nj) = -1
+                     nfld(ni,nk,nj) = 0
 
                   !  If this is a nested water point, and the surrounding coarse values are all water points,
                   !  then this is a simple 4-pt interpolation.
 
-                  ELSE IF ( ( NINT(nlu(ni  ,nj  )) .EQ. iswater ) .AND. &
-                            ( NINT(clu(ci  ,cj  )) .EQ. iswater ) .AND. &
-                            ( NINT(clu(ci+1,cj  )) .EQ. iswater ) .AND. &
-                            ( NINT(clu(ci  ,cj+1)) .EQ. iswater ) .AND. &
-                            ( NINT(clu(ci+1,cj+1)) .EQ. iswater ) ) THEN
+                  ELSE IF ( ( NINT(nlu(ni  ,nj  )) .EQ. nflag ) .AND. &
+                            ( NINT(clu(ci  ,cj  )) .EQ. nflag ) .AND. &
+                            ( NINT(clu(ci+1,cj  )) .EQ. nflag ) .AND. &
+                            ( NINT(clu(ci  ,cj+1)) .EQ. nflag ) .AND. &
+                            ( NINT(clu(ci+1,cj+1)) .EQ. nflag ) ) THEN
                      nfld(ni,nk,nj) = ( 1. - dx ) * ( ( 1. - dy ) * cfld(ci  ,ck,cj  )   + &
                                                              dy   * cfld(ci  ,ck,cj+1) ) + &
                                              dx   * ( ( 1. - dy ) * cfld(ci+1,ck,cj  )   + &
@@ -1434,32 +1501,32 @@
                   !  If this is a nested water point and there are NO coarse water values surrounding,
                   !  we temporarily punt.
 
-                  ELSE IF ( ( NINT(nlu(ni  ,nj  )) .EQ. iswater ) .AND. &
-                            ( NINT(clu(ci  ,cj  )) .NE. iswater ) .AND. &
-                            ( NINT(clu(ci+1,cj  )) .NE. iswater ) .AND. &
-                            ( NINT(clu(ci  ,cj+1)) .NE. iswater ) .AND. &
-                            ( NINT(clu(ci+1,cj+1)) .NE. iswater ) ) THEN
+                  ELSE IF ( ( NINT(nlu(ni  ,nj  )) .EQ. nflag ) .AND. &
+                            ( NINT(clu(ci  ,cj  )) .NE. nflag ) .AND. &
+                            ( NINT(clu(ci+1,cj  )) .NE. nflag ) .AND. &
+                            ( NINT(clu(ci  ,cj+1)) .NE. nflag ) .AND. &
+                            ( NINT(clu(ci+1,cj+1)) .NE. nflag ) ) THEN
 !                    nfld(ni,nk,nj) = -1.e20
                      nfld(ni,nk,nj) = -1
 
                   !  If there are some land points and some water points, take an average. 
                   
-                  ELSE IF ( NINT(nlu(ni  ,nj  )) .EQ. iswater ) THEN
+                  ELSE IF ( NINT(nlu(ni  ,nj  )) .EQ. nflag ) THEN
                      icount = 0
                      sum = 0
-                     IF ( NINT(clu(ci  ,cj  )) .EQ. iswater ) THEN
+                     IF ( NINT(clu(ci  ,cj  )) .EQ. nflag ) THEN
                         icount = icount + 1
                         sum = sum + cfld(ci  ,ck,cj  )
                      END IF
-                     IF ( NINT(clu(ci+1,cj  )) .EQ. iswater ) THEN
+                     IF ( NINT(clu(ci+1,cj  )) .EQ. nflag ) THEN
                         icount = icount + 1
                         sum = sum + cfld(ci+1,ck,cj  )
                      END IF
-                     IF ( NINT(clu(ci  ,cj+1)) .EQ. iswater ) THEN
+                     IF ( NINT(clu(ci  ,cj+1)) .EQ. nflag ) THEN
                         icount = icount + 1
                         sum = sum + cfld(ci  ,ck,cj+1)
                      END IF
-                     IF ( NINT(clu(ci+1,cj+1)) .EQ. iswater ) THEN
+                     IF ( NINT(clu(ci+1,cj+1)) .EQ. nflag ) THEN
                         icount = icount + 1
                         sum = sum + cfld(ci+1,ck,cj+1)
                      END IF
@@ -1519,7 +1586,7 @@
                        sum = 0
                        DO jj = jst,jen
                           DO ii = ist,ien
-                             IF ( NINT(clu(ii,jj)) .EQ. iswater ) THEN
+                             IF ( NINT(clu(ii,jj)) .EQ. nflag ) THEN
                                 icount = icount + 1
                                 sum = sum + cfld(ii,nk,jj)
                              END IF

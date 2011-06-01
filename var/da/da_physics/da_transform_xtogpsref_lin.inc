@@ -24,9 +24,13 @@ subroutine da_transform_xtogpsref_lin(grid)
 
             ! 2.1 Part one: hydrostatic part
 
-            partone  = 0.776*grid%xa%p(i,j,k)/grid%xb%t(i,j,k) &
+! Do not consider the pressure perturbation (YRG, 10/08/2009):
+!            partone  = 0.776*grid%xa%p(i,j,k)/grid%xb%t(i,j,k) &
+
+            partone  = &
                - 0.776*grid%xb%p(i,j,k)*grid%xa%t (i,j,k)/ &
                (grid%xb%t(i,j,k)*grid%xb%t(i,j,k))
+
             partone9 = 0.776*grid%xb%p(i,j,k)/grid%xb%t(i,j,k)
 
             ! 2.2 Part two considering the moitsture:
@@ -34,7 +38,6 @@ subroutine da_transform_xtogpsref_lin(grid)
             dividnd  = grid%xa%t (i,j,k)*(0.622+0.378*grid%xb%q(i,j,k)) &
                      + grid%xb%t(i,j,k)*       0.378*grid%xa%q(i,j,k)
             dividnd9 = grid%xb%t(i,j,k)*(0.622+0.378*grid%xb%q(i,j,k))
-
             parttwo  =     coeff*grid%xa%q(i,j,k)/dividnd9 &
                      -     coeff*grid%xb%q(i,j,k)*dividnd /(dividnd9*dividnd9)
             parttwo9 = 1.0+coeff*grid%xb%q(i,j,k)/dividnd9

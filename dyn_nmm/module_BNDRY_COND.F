@@ -237,6 +237,7 @@
       MY_JE_GLB=JTE
 !
       DT=DT0
+
 !
 !-----------------------------------------------------------------------
 !***  SOUTH AND NORTH BOUNDARIES
@@ -539,8 +540,11 @@
 !***  ONE ROW SOUTH OF NORTHERN BOUNDARY
 !
       IF(N_BDY)THEN
+
         DO I=MYIS,MYIE1
           CWK=PD(I,JJM-1)
+!!        write(message,*)'I, PD is:', PD(I,JJM), PD(I,JJM-2),PD(I+1,JJM-2),PD(I+1,JJM)
+!!        call wrf_message(trim(message))
           PD(I,JJM-1)=0.25*(PD(I,JJM-2)+PD(I+1,JJM-2)                   &
      &                     +PD(I,JJM)+PD(I+1,JJM))
 !

@@ -35,6 +35,14 @@ subroutine da_get_innov_vector_satem(it, num_qcstat_conv,grid, ob, iv)
    
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_satem")
 
+   if ( it > 1 ) then
+      do n=iv%info(satem)%n1,iv%info(satem)%n2
+         do k = 1, iv%info(satem)%levels(n)
+            if (iv%satem(n)%thickness(k)%qc == fails_error_max) iv%satem(n)%thickness(k)%qc = 0
+         end do
+      end do
+   end if
+
    do n=iv%info(satem)%n1,iv%info(satem)%n2
       num_levs = iv%info(satem)%levels(n)
 
@@ -106,7 +114,8 @@ subroutine da_get_innov_vector_satem(it, num_qcstat_conv,grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-    call da_check_max_iv_satem(iv, it, num_qcstat_conv)        
+   if ( check_max_iv ) &
+      call da_check_max_iv_satem(iv, it, num_qcstat_conv)        
 
    !------------------------------------------------------------------------
    ! [6.0] Perform land/ocean check

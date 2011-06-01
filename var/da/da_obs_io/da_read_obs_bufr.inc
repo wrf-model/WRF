@@ -1,93 +1,185 @@
-subroutine da_read_obs_bufr (iv, filename)
+subroutine da_read_obs_bufr (iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: Read BUFR observation file for input to wrfvar
    !---------------------------------------------------------------------------
-
+   !   METHOD: use F90 sequantial data structure to avoid read file twice
+   !            so that da_scan_obs_bufr is not necessary any more.
+   !            1. read prepbufr data in sequential data structure
+   !            2. do gross QC check
+   !            3. assign sequential data structure to innovation structure
+   !                  and deallocate sequential data structure
+   !
+   !  HISTORY: 2009/10/13  - F90 sequantial structure  Peng Xiu
+   ! 
+   !----------------------------------------------------------------------------
+   
+   use da_define_structures, only: da_allocate_observations
+ 
    implicit none
 
    type (iv_type),             intent(inout) :: iv
-   character(len=*), optional, intent(in)    :: filename
-
+   
+   
 #ifdef BUFR
-
-   real, parameter              :: r8bfms = 9.0D08  ! BUFR missing value threshold
+   character(len=10)    :: filename
+   real, parameter    :: r8bfms = 9.0D08  ! BUFR missing value threshold
    logical                      :: match, end_of_file
    character(len=8)             :: subst2, csid, csid2
-   integer                      :: idate2, nlevels2, lv1, lv2
-   real                         :: hdr2(7), hdr_save(7), r8sid, r8sid2
-   real                         :: pob1, pob2
-   real                         :: temp(8,255)
-   real                         :: obs2(8,255), qms2(8,255)
-   real                         :: oes2(8,255), pco2(8,255)
-   real                         :: pmo2(2,1), pmo_save(2,1)
+   integer              :: idate2, nlevels2, lv1, lv2
+   real               :: hdr_save(7)
+   real*8             :: hdr2(7), r8sid, r8sid2
+   real               :: pob1, pob2
+   real               :: temp(8,255)
+   real               :: obs_save(8,255)
+   real*8             :: obs2(8,255), qms2(8,255)
+   real*8             :: oes2(8,255), pco2(8,255)
+   real               :: pmo_save(2,1)
+   real*8             :: pmo2(2,1)
    equivalence                     (r8sid, csid), (r8sid2, csid2)
    ! for thinning
-   real                         :: tdiff                       ! DHR
-   real                         :: dlat_earth,dlon_earth,crit
-   integer                      :: itt,itx
+   real               :: tdiff                       ! DHR
+   real               :: dlat_earth,dlon_earth,crit
+   integer              :: itt,itx,iout
    logical                      :: iuse
-
+   
    type (multi_level_type)      :: platform
    logical                      :: outside, outside_all, outside_time
-   integer                      :: nlocal(num_ob_indexes), ilocal(num_ob_indexes)
-   integer                      :: ntotal(num_ob_indexes)
+   integer              :: ilocal(num_ob_indexes)
+   integer              :: ntotal(num_ob_indexes)
+   integer              :: nlocal(num_ob_indexes)
+   integer              :: tp(num_ob_indexes)
+   character(len=40)            :: obstr,hdstr,qmstr,oestr, pcstr
+   character(len=8)             :: subset
+   character(len=14)            :: cdate, dmn, obs_date,platform_name
+   real*8             :: hdr(7)
+   real*8             :: pmo(2,1)
+   real*8             :: obs(8,255),qms(8,255),oes(8,255),pco(8,255)
+   real               :: woe,toe,qoe,poe,pob,pwe
+   real*8             :: obs_time
+   integer              :: iyear, imonth, iday, ihour, imin
 
-   character(len=40)     :: obstr,hdstr,qmstr,oestr, pcstr
-   character(len=8)      :: subset
-   character(len=14)     :: cdate, dmn, obs_date
-   real                  :: hdr(7)
-   real                  :: pmo(2,1)
-   real                  :: obs(8,255),qms(8,255),oes(8,255),pco(8,255)
-   real                  :: obs_time,woe,toe,qoe,poe,pob,pwe
-   integer               :: iyear, imonth, iday, ihour, imin
+   integer              :: iost, ndup, n, i, j, k, kk,surface_level, num_report, i1, i2
+   integer              :: iret, idate, kx, old_nlevels,nlevels, t29,ifgat,ii
+   integer              :: cat,zqm,pqm,qqm,tqm,wqm,pwq,pmq
+   integer              :: tpc, wpc,iret2
+   integer              :: iunit, fm , obs_index
 
-   integer               :: iost, ndup, n, i, j, k, surface_level, num_report, i1, i2
-   integer               :: iret, idate, kx, old_nlevels,nlevels, t29
-   integer               :: cat,zqm,pqm,qqm,tqm,wqm,pwq,pmq
-   integer               :: tpc, wpc
-   integer               :: iunit, fm , obs_index
+   integer              :: qflag           ! Flag for retaining data
 
-   integer, parameter    :: qflag=4         ! Flag for retaining data
+   real, allocatable  :: in(:), out(:)
+   integer :: num_bufr(7)
+   logical                      :: found
 
-   real, allocatable     :: in(:), out(:)
-   logical               :: found
+   logical                      :: use_errtable
+   integer              :: junit, itype, ivar
+   real                 :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
+   real                 :: err_uv, err_t, err_p, err_q, err_pw, coef
+   integer              :: ibufr
+   integer              :: num_outside_all, num_outside_time, num_thinned,num_p,numbufr
 
-   logical               :: use_errtable
-   integer               :: junit, itype, ivar
-   real                  :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
-   real                  :: err_uv, err_t, err_p, err_q, err_pw, coef
-   integer               :: num_outside_all, num_outside_time, num_thinned
+   type datalink_BUFR              !for PREPBUFR data reading
+       type (multi_level_type_BUFR)          :: platform_BUFR
+       integer                               :: fm_BUFR
+       integer                               :: t29_BUFR
+       integer                               :: ifgat_BUFR
+       integer                               :: nlevels_BUFR
+       integer                               :: kx_BUFR
+       real                                  :: pco_BUFR(8,255)
+       type(datalink_BUFR), pointer :: next
+   end type datalink_BUFR
+
+   type(datalink_BUFR),pointer  :: head, plink
+
 
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
 
+!  0.0 Initialize variables
+!--------------------------------------------------------------
    ilocal(:) = 0
-   nlocal(:) = 0
    ntotal(:) = 0
-
+   nlocal(:) = 0
+  
    err_uv = 10.0 ! m/s
    err_t  = 5.0  ! degree
    err_p  = 200  ! Pa
    err_q  = 10   ! RH percent
    err_pw = 0.2  ! cm
 
-   ! open file
-   !  ---------
-   call da_get_unit(iunit)
-   if (present(filename)) then
-      call closbf(iunit)
+   ! quality marker 0: Keep (always assimilate)
+   !                1: Good
+   !                2: Neutral or not checked
+   !                3: Suspect
+   if ( anal_type_verify ) then
+      qflag = min(qmarker_retain,2)
+   else
+      qflag = qmarker_retain
+   end if
+   write(unit=message(1),fmt='(a,i1,a)') &
+         "PREPBUFR ob with quality marker <= ", qflag, " will be retained."
+   call da_message(message(1:1))
+   
+   num_report       = 0
+   num_outside_all  = 0
+   num_outside_time = 0
+   num_thinned      = 0
+   num_p            = 0
+   tp(:)            = 0
+   
+
+! 1.0  Open file
+!---------------------------------------------------------------- 
+!
+!check if input file exist
+num_bufr(:)=0
+numbufr=0
+if (num_fgat_time>1) then
+  do i=1,7
+     call da_get_unit(iunit)
+     write(filename,fmt='(A,I1,A)') 'ob0',i,'.bufr'
+     open(unit   = iunit, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+     if (iost == 0) then
+        numbufr=numbufr+1
+	num_bufr(numbufr)=i
+     else
+        close (iunit)
+     end if
+     call da_free_unit(iunit)
+   end do
+ else
+   numbufr=1
+ end if
+  
+  if (numbufr==0) numbufr=1
+     
+bufrfile:  do ibufr=1,numbufr   
+     if (num_fgat_time==1) then
+         filename='ob.bufr'
+     else
+         if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+	    filename='ob.bufr'
+        else
+            write(filename,fmt='(A,I1,A)') 'ob0',num_bufr(ibufr),'.bufr'   
+        end if
+     end if
+!
+!     We want to use specific unit number to read preppbufr data, which enable us to control its endian
+      iunit = 96 
+
       open(unit   = iunit, FILE   = trim(filename), &
          iostat =  iost, form = 'unformatted', STATUS = 'OLD')
       if (iost /= 0) then
          write(unit=message(1),fmt='(A,I5,A)') &
             "Error",iost," opening PREPBUFR obs file "//trim(filename)
          call da_warning(__FILE__,__LINE__,message(1:1))
-         call da_free_unit(iunit)
-         if (trace_use) call da_trace_exit("da_read_obs_bufr")
-         return
+         if ( num_fgat_time == 1 ) then
+            call da_free_unit(iunit)
+            if (trace_use) call da_trace_exit("da_read_obs_bufr")
+            return
+         else
+            cycle bufrfile
+         end if
       end if
-   end if
-
    ! open observation error table if provided.
    call da_get_unit(junit)
    open (unit=junit, file='obs_errtable', form='formatted', status='old', &
@@ -118,7 +210,6 @@ subroutine da_read_obs_bufr (iv, filename)
    oestr='POE QOE TOE NUL WOE NUL PWE NUL' ! observation error
    pcstr='PPC QPC TPC ZPC WPC NUL PWP NUL' ! program code
 
-   ! read bufr observation file
    call openbf(iunit,'IN',iunit)
    call datelen(10)
 
@@ -128,22 +219,23 @@ subroutine da_read_obs_bufr (iv, filename)
          "Error",iret," reading PREPBUFR obs file "//trim(filename)
       call da_warning(__FILE__,__LINE__,message(1:1))
       call closbf(iunit)
-      call da_free_unit(iunit)
       if (trace_use) call da_trace_exit("da_read_obs_bufr")
       return
    end if
    !rewind(iunit)
 
-   num_report       = 0
-   num_outside_all  = 0
-   num_outside_time = 0
-   num_thinned      = 0
+   write(unit=message(1),fmt='(a,i10)') 'BUFR file date is: ', idate
+   call da_message(message(1:1))
 
+
+!  2.0 read data
+!  scan reports first
+!--------------------------------------------------------------
+  
    match        = .false.
    end_of_file  = .false.
    outside_all  = .false.
    outside_time = .false.
-
    reports: do while ( .not. end_of_file )
 
       if ( match .or. outside_all .or. outside_time ) then
@@ -159,7 +251,7 @@ subroutine da_read_obs_bufr (iv, filename)
 
       num_report = num_report+1
 
-      call ufbint(iunit,hdr,7,1,iret,hdstr)
+      call ufbint(iunit,hdr,7,1,iret2,hdstr)
       call ufbint(iunit,pmo,2,1,nlevels,'PMO PMQ')
       call ufbint(iunit,qms,8,255,nlevels,qmstr)
       call ufbint(iunit,oes,8,255,nlevels,oestr)
@@ -175,6 +267,20 @@ subroutine da_read_obs_bufr (iv, filename)
       platform % info % elv        = hdr(6)
       platform % info % lon        = hdr(2)
       platform % info % lat        = hdr(3)
+
+      ! blacklisted stations should be handled through an external table.
+      ! For now, temporary fix is implemented here for known incorrect 
+      ! station info in NCEP PREPBUFR file
+      if ( trim(platform%info%id) == 'BGQQ' ) then
+         platform%info%elv = 19
+         platform%info%lon = -69.21
+         platform%info%lat = 77.46
+      end if
+      if ( trim(platform%info%id) == 'UWKE' ) then
+         platform%info%elv = 194
+         platform%info%lon = 52.09
+         platform%info%lat = 55.56
+      end if
 
       ! Put a check on Lon and Lat
       if ( platform%info%lon >= 180.0 ) platform%info%lon = platform%info%lon - 360.0
@@ -226,7 +332,14 @@ subroutine da_read_obs_bufr (iv, filename)
       else
          outside_time = .false.
       end if
-
+      
+!--------  determine FGAT index ifgat
+ 
+         do ifgat=1,num_fgat_time
+            if (obs_time >= time_slots(ifgat-1) .and.  &
+                obs_time  < time_slots(ifgat)) exit
+         end do       
+         
       write(unit=platform%info%date_char, fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
          iyear, '-', imonth, '-', iday, '_', ihour, ':', imin, ':', 0
 
@@ -265,7 +378,7 @@ subroutine da_read_obs_bufr (iv, filename)
          end_of_file = .true.
       else
          match_check: do
-            call ufbint(iunit,hdr2,7,1,iret,hdstr)
+            call ufbint(iunit,hdr2,7,1,iret2,hdstr)
             ! check if this subset and the previous one are matching mass and wind
             match = .true.
             if ( subset /= subst2 ) then
@@ -412,8 +525,8 @@ subroutine da_read_obs_bufr (iv, filename)
       !  61: Satellite soundings/retrievals/radiances
       !  66: SSM/I rain rate product
       !  72: NEXTRAD VAD winds
-      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) cycle reports       
-
+      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) cycle reports 
+      
       platform % info % levels    = nlevels
 
       platform % loc % slp %inv   = missing_r     
@@ -423,14 +536,18 @@ subroutine da_read_obs_bufr (iv, filename)
       platform % loc % pw %qc     = missing_data
       platform % loc % pw %error  = err_pw
       pmq=nint(pmo(2,1))
-      if (pmq < qflag .and. pmq >= 0) then
+      if (pmq <= qflag .and. pmq >= 0) then
          platform % loc % slp % inv =pmo(1,1)*100.0
          platform % loc % slp % qc  =pmq
          platform % loc % slp % error = err_p          ! hardwired
       end if
       pwq=nint(qms(7,1))
+#if ( RWORDSIZE == 4 )
+      pwe = min(DBLE(err_pw), oes(7,1))
+#else
       pwe = min(err_pw, oes(7,1))
-      if (pwq < qflag .and. pwq >= 0) then
+#endif
+      if (pwq <= qflag .and. pwq >= 0) then
          platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
          platform % loc % pw % qc  =  pwq
          platform % loc % pw % error = pwe          ! hardwired
@@ -493,18 +610,25 @@ subroutine da_read_obs_bufr (iv, filename)
          wqm=nint(qms(5,k))
          cat=nint(obs(8,k))
 
+#if ( RWORDSIZE == 4 )
+         toe = min(DBLE(err_t), oes(3,k))
+         woe = min(DBLE(err_uv), oes(5,k))
+         qoe = min(DBLE(err_q), oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+         poe = min(DBLE(err_p), oes(1,k)*100.0) ! convert to Pa
+#else
          toe = min(err_t, oes(3,k))
          woe = min(err_uv, oes(5,k))
          qoe = min(err_q, oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
          poe = min(err_p, oes(1,k)*100.0) ! convert to Pa
+#endif
 
-         if (tqm < qflag .and. tqm >= 0) then
+         if (tqm <= qflag .and. tqm >= 0) then
             platform % each (k) % t % inv =obs(3,k)
             platform % each (k) % t % qc  =tqm
             platform % each (k) % t % error =toe
          end if
 
-         if (wqm < qflag .and. wqm >= 0) then
+         if (wqm <= qflag .and. wqm >= 0) then
             platform % each (k) % u % inv =obs(5,k)
             platform % each (k) % v % inv =obs(6,k)
             platform % each (k) % u % qc  =wqm
@@ -530,18 +654,20 @@ subroutine da_read_obs_bufr (iv, filename)
             end if
          end if
 
-         if (qqm<qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
+         if (qqm<=qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
             platform % each (k) % q % inv =obs(2,k)
-            platform % each (k) % q % qc  =qqm
+            if ( obs(1,k) >= 300.0 ) then   ! do not use mositure above 300 hPa
+               platform % each (k) % q % qc  =qqm
+            end if
             platform % each (k) % q % error = qoe
          end if
 
-         if (zqm < qflag .and. zqm >= 0)then
+         if (zqm <= qflag .and. zqm >= 0)then
             platform % each (k) % height  = obs(4,k)
             platform % each (k) % height_qc =zqm
          end if
 
-         if (pqm < qflag .and. pqm >= 0)then
+         if (pqm <= qflag .and. pqm >= 0)then
             platform % each (k) % p % inv =obs(1,k)*100.0  ! convert to Pa
             platform % each (k) % p % qc  =pqm
             platform % each (k) % p % error =poe
@@ -554,9 +680,15 @@ subroutine da_read_obs_bufr (iv, filename)
          qqm=nint(qms(2,1))
          tqm=nint(qms(3,1))
          wqm=nint(qms(5,1))
+#if ( RWORDSIZE == 4 )
+         toe = min(DBLE(err_t), oes(3,1))
+         woe = min(DBLE(err_uv), oes(5,1))
+         qoe = min(DBLE(err_q), oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+#else
          toe = min(err_t, oes(3,1))
          woe = min(err_uv, oes(5,1))
          qoe = min(err_q, oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+#endif
          if ( wqm == 8 .or. wqm  == 9 .or. wqm  == 15) then
             platform%each(1)%u%qc  = 88
             platform%each(1)%v%qc  = 88
@@ -644,70 +776,803 @@ subroutine da_read_obs_bufr (iv, filename)
             cycle reports
          end if
       end if
-      ! for thinning
-      tdiff = abs(platform%info%dhr-0.1)
+
+     if (num_fgat_time > 1 ) then !for 4dvar
+
+      if (.not. associated(head)) then
+         nullify ( head )
+         allocate ( head )
+         allocate ( head%platform_BUFR%each(1:nlevels) )
+         nullify ( head%next )
+         plink => head
+      else
+         allocate ( plink%next )
+         plink => plink%next
+         allocate ( plink%platform_BUFR%each(1:nlevels) )
+         nullify ( plink%next )
+      end if
+
+      ! Recalculate the tdiff  based on the base time at each slot
+      platform%info%dhr = ( obs_time - & 
+             time_slots(0) - (ifgat-1)*(time_slots(num_fgat_time)-time_slots(0))/float(num_fgat_time-1) & 
+                          ) / 60.0
+      plink%platform_BUFR%info = platform%info
+      plink%platform_BUFR%loc = platform%loc
+      plink%platform_BUFR%each(1:nlevels) = platform%each(1:nlevels)
+      plink%ifgat_BUFR=ifgat
+      plink%fm_BUFR=0
+      plink%nlevels_BUFR=nlevels
+      plink%kx_BUFR=kx
+      plink%t29_BUFR=t29
+      plink%pco_BUFR=pco
+
+      num_p=num_p+1
+
+   else  !3dvar
+          
+      tdiff = abs(platform%info%dhr-0.02)
       dlat_earth = platform%info%lat
       dlon_earth = platform%info%lon
       if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
       if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
-
-      !---------------------------------------------------------------------------
-      ! This is basically converting  rh to q i
-      ! Method : 
-      !  if rh, temp and pr all available computes Qs otherwise sets Qs= missing
-      !  if rh > 100 sets q = qs otherwise q = rh*Qs/100.0 
-      ! Note: Currently da_obs_proc_station is active only for ob_format_ascii
-      !      call da_obs_proc_station(platform)
-      !---------------------------------------------------------------------------
-
-      ! Loop over duplicating obs for global
       ndup = 1
       if (global .and. &
          (platform%loc%i < ids .or. platform%loc%i >= ide)) ndup= 2
+      if (test_transforms) ndup = 1
 
       ! It is possible that logic for counting obs is incorrect for the
       ! global case with >1 MPI tasks due to obs duplication, halo, etc.
       ! TBH:  20050913
-      if (.not.outside) then
-         if (print_detail_obs .and. ndup > 1) then
-            write(unit=stdout, fmt = '(A12,1X,A19,1X,A40,1X,I6,3(F12.3,11X),6X,A5)') &  
-               platform%info%platform,    &
-               platform%info%date_char,   &
-               platform%info%name,        &
-               platform%info%levels,      &
-               platform%info%lat,         &
-               platform%info%lon,         &
-               platform%info%elv,         &
-               platform%info%id
-
-            write(unit=stdout, fmt = '(a,2i5,4e20.10)') &
-               ' duplicating obs since loc% i,j,dx,dxm,dy & dym ', &
-               platform%loc%i,  platform%loc%j,   &
-               platform%loc%dx, platform%loc%dxm, &
-               platform%loc%dy, platform%loc%dym
-         end if
-      end if
       dup_loop: do n = 1, ndup
          select case(t29)
          case (11, 12, 13, 22, 23, 31)
             select case (kx)
             case (120, 122, 132, 220, 222, 232) ;         ! Sound
                if (.not.use_soundobs) cycle reports
-               if( n==1 ) ntotal(sound)     = ntotal(sound) + 1
-               if( n==1 ) ntotal(sonde_sfc) = ntotal(sonde_sfc) + 1
-               if (outside) then
-                  cycle reports
-               end if
-
+               if (n==1) iv%info(sound)%ntotal     = iv%info(sound)%ntotal + 1
+               if (n==1) iv%info(sonde_sfc)%ntotal = iv%info(sonde_sfc)%ntotal + 1
+               
+               if (outside) cycle reports
                if ( thin_conv ) then
                   crit = tdiff
-                  call map2grids_conv(sound,dlat_earth,dlon_earth,crit,nlocal(sound),itx,1,itt,ilocal(sound),iuse)
-                  call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,nlocal(sonde_sfc),itx,1,itt,ilocal(sonde_sfc),iuse)
+                  call map2grids_conv(sound,dlat_earth,dlon_earth,crit,iv%info(sound)%nlocal,itx,1,itt,iout,iuse)
+                  call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,iv%info(sonde_sfc)%nlocal,itx,1,itt,iout,iuse)
+
                   if ( .not. iuse ) then
                      num_thinned = num_thinned + 1
                      cycle reports
+                  end if
+               else
+                  iv%info(sound)%nlocal     = iv%info(sound)%nlocal + 1
+                  iv%info(sonde_sfc)%nlocal = iv%info(sound)%nlocal
+               end if
+               fm = 35
+               
+            case (221) ;                   ! Pilot
+               if (.not.use_pilotobs) cycle reports
+               if (n==1) iv%info(pilot)%ntotal = iv%info(pilot)%ntotal + 1
+               if (outside) cycle reports
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,iv%info(pilot)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(pilot)%nlocal = iv%info(pilot)%nlocal + 1
+               end if
+               fm = 32
+               
+            case default
+               exit dup_loop
+            end select
+
+         case (41)
+            ! case (130:131, 133, 230:231, 233) ; ! Airep
+               if (.not.use_airepobs) cycle reports
+               if (n==1) iv%info(airep)%ntotal = iv%info(airep)%ntotal + 1
+               if (outside)  cycle reports
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(airep,dlat_earth,dlon_earth,crit,iv%info(airep)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(airep)%nlocal = iv%info(airep)%nlocal + 1
+               end if
+               fm = 42
+               
+         case (522, 523);        ! Ships
+               if (.not.use_shipsobs) cycle reports
+               if (n==1) iv%info(ships)%ntotal = iv%info(ships)%ntotal + 1
+               if (outside) cycle reports
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(ships,dlat_earth,dlon_earth,crit,iv%info(ships)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(ships)%nlocal = iv%info(ships)%nlocal + 1
+               end if
+               fm = 13
+               
+         case (531, 532, 561, 562) ;          ! Buoy  
+               if (.not.use_buoyobs) cycle reports
+               if (n==1) iv%info(buoy)%ntotal = iv%info(buoy)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,iv%info(buoy)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(buoy)%nlocal = iv%info(buoy)%nlocal + 1
+               end if
+               fm = 18
+               
+         case (511, 514)
+            ! case (181, 281) ;                   ! Synop
+               if (.not.use_synopobs) cycle reports
+               
+               if (n==1) iv%info(synop)%ntotal = iv%info(synop)%ntotal + 1
+               if (outside) cycle reports
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(synop,dlat_earth,dlon_earth,crit,iv%info(synop)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(synop)%nlocal = iv%info(synop)%nlocal + 1
+               end if
+               fm = 12
+               
+         case (512)
+            ! case (187, 287) ;                        ! Metar
+               if (.not.use_metarobs) cycle reports
+               
+               if (n==1) iv%info(metar)%ntotal = iv%info(metar)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(metar,dlat_earth,dlon_earth,crit,iv%info(metar)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(metar)%nlocal = iv%info(metar)%nlocal + 1
+               end if
+               fm = 15
+               
+         case (63)
+            ! case (242:246, 252:253, 255) ;         ! Geo. CMVs
+               if (.not.use_geoamvobs) cycle reports
+               
+               if (n==1) iv%info(geoamv)%ntotal = iv%info(geoamv)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,iv%info(geoamv)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(geoamv)%nlocal = iv%info(geoamv)%nlocal + 1
+               end if
+               fm = 88
+               
+         case (582, 583)      ! QuikSCAT 582 and WindSat 583
+               if (.not.use_qscatobs) cycle reports
+               
+               if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,iv%info(qscat)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(qscat)%nlocal = iv%info(qscat)%nlocal + 1
+               end if
+               fm = 281
+               
+         case (74)       ! GPS PW
+               if (.not.use_gpspwobs) cycle reports
+               
+               if (n==1) iv%info(gpspw)%ntotal = iv%info(gpspw)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,iv%info(gpspw)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(gpspw)%nlocal = iv%info(gpspw)%nlocal + 1
+               end if
+               fm = 111
+               
+         case (71, 73, 75, 76, 77)    ! Profiler
+               if (.not.use_profilerobs) cycle reports
+
+               if (n==1) iv%info(profiler)%ntotal = iv%info(profiler)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,iv%info(profiler)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(profiler)%nlocal = iv%info(profiler)%nlocal + 1
+               end if
+               fm = 132
+               
+         case (571, 65)
+              if (.not. use_ssmiretrievalobs) cycle reports
+               
+               if (n==1) iv%info(ssmi_rv)%ntotal = iv%info(ssmi_rv)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,iv%info(ssmi_rv)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(ssmi_rv)%nlocal = iv%info(ssmi_rv)%nlocal + 1
+               end if
+               fm = 125      ! ssmi wind speed & tpw
+               
+         case default 
+            select case (kx)
+            case (111 , 210)    ;         !  Tropical Cyclone Bogus
+               ! Note Tropical cyclone Bougus is given type 135 in Obs-ascii
+               if (.not.use_bogusobs) cycle reports
+               
+               if (n==1) iv%info(bogus)%ntotal = iv%info(bogus)%ntotal + 1
+               if (outside) cycle reports
+               
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,iv%info(bogus)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     cycle reports
+                  end if
+               else
+                  iv%info(bogus)%nlocal = iv%info(bogus)%nlocal + 1
+               end if
+               fm = 135
+               
+            case default
+               if ( print_detail_obs ) then
+                  write(unit=message(1), fmt='(a, 2i12)') &
+                     'unsaved obs found with kx & t29= ',kx,t29
+                  call da_warning(__FILE__,__LINE__,message(1:1))
+               end if
+               exit dup_loop
+            end select
+         end select
+
+      obs_index=fm_index(fm)
+      iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, nlevels)    
+      
+      if (.not. associated(head)) then
+         nullify ( head )
+         allocate ( head )
+         allocate ( head%platform_BUFR%each(1:nlevels) )
+         nullify ( head%next )
+         plink => head
+      else
+         allocate ( plink%next )
+         plink => plink%next
+         allocate ( plink%platform_BUFR%each(1:nlevels) )
+         nullify ( plink%next )
+      end if
+
+      plink%platform_BUFR%info = platform%info
+      plink%platform_BUFR%loc = platform%loc
+      plink%platform_BUFR%each(1:nlevels) = platform%each(1:nlevels)
+      plink%fm_BUFR=fm
+      plink%ifgat_BUFR=ifgat
+      plink%nlevels_BUFR=nlevels
+      plink%kx_BUFR=kx
+      plink%t29_BUFR=t29
+      plink%pco_BUFR=pco
+      
+      num_p=num_p+1
+         end do dup_loop
+       end if !3dvar and 4dvar
+    end do reports
+    
+call closbf(iunit)
+close(iunit)
+if ( use_errtable ) then
+  close(junit)
+  call da_free_unit(junit)
+end if
+
+end do bufrfile   
+
+!  3.0 Thinning based on FGAT
+!      Only for 4dvar
+!--------------------------------------------------------------
+
+ if (num_fgat_time > 1 ) then
+
+    do kk=1,num_fgat_time
+      if ( thin_conv ) then
+         do n = 1, num_ob_indexes
+            call cleangrids_conv(n)
+         end do
+      end if
+
+       plink => head    
+       reports2: do ii=1,num_p
+
+       if (plink%ifgat_BUFR /= kk) then  !sort iv
+            if ( .not. associated(plink%next) ) exit reports2
+            plink => plink%next
+            cycle reports2
+      else
+                 ! for thinning
+      tdiff = abs(plink%platform_BUFR%info%dhr-0.02)
+      dlat_earth = plink%platform_BUFR%info%lat
+      dlon_earth = plink%platform_BUFR%info%lon
+      if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
+      if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
+      dlat_earth = dlat_earth * deg2rad
+      dlon_earth = dlon_earth * deg2rad
+      call da_llxy (plink%platform_BUFR%info, plink%platform_BUFR%loc,outside, outside_all)
+
+ ! Loop over duplicating obs for global
+      ndup = 1
+      if (global .and. &
+         (plink%platform_BUFR%loc%i < ids .or. plink%platform_BUFR%loc%i >= ide)) ndup= 2
+      if (test_transforms) ndup = 1
+
+      ! It is possible that logic for counting obs is incorrect for the
+      ! global case with >1 MPI tasks due to obs duplication, halo, etc.
+      ! TBH:  20050913
+      dup_loop2: do n = 1, ndup
+         select case(plink%t29_BUFR)
+         case (11, 12, 13, 22, 23, 31)
+            select case (plink%kx_BUFR)
+            case (120, 122, 132, 220, 222, 232) ;         ! Sound
+               if (.not.use_soundobs) then
+                      plink => plink%next
+                      cycle reports2
+               end if
+               if (n==1) iv%info(sound)%ntotal     = iv%info(sound)%ntotal + 1
+               if (n==1) iv%info(sonde_sfc)%ntotal = iv%info(sonde_sfc)%ntotal + 1
+               
+               if (outside) then
+                    plink => plink%next
+                    cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(sound,dlat_earth,dlon_earth,crit,iv%info(sound)%nlocal,itx,1,itt,iout,iuse)
+                  call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,iv%info(sonde_sfc)%nlocal,itx,1,itt,iout,iuse)
+
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(sound)%nlocal     = iv%info(sound)%nlocal + 1
+                  iv%info(sonde_sfc)%nlocal = iv%info(sound)%nlocal
+               end if
+               fm = 35
+               
+            case (221) ;                   ! Pilot
+               if (.not.use_pilotobs) then
+                     plink => plink%next
+                     cycle reports2
+               end if
+               if (n==1) iv%info(pilot)%ntotal = iv%info(pilot)%ntotal + 1
+               if (outside) then 
+                   plink => plink%next
+                   cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,iv%info(pilot)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(pilot)%nlocal = iv%info(pilot)%nlocal + 1
+               end if
+               fm = 32
+               
+            case default
+               exit dup_loop2
+            end select
+
+         case (41)
+            ! case (130:131, 133, 230:231, 233) ; ! Airep
+               if (.not.use_airepobs) then
+                      plink => plink%next
+                      cycle reports2
+               end if
+               if (n==1) iv%info(airep)%ntotal = iv%info(airep)%ntotal + 1
+               if (outside) then 
+                    plink => plink%next
+                    cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(airep,dlat_earth,dlon_earth,crit,iv%info(airep)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(airep)%nlocal = iv%info(airep)%nlocal + 1
+               end if
+               fm = 42
+               
+         case (522, 523);        ! Ships
+               if (.not.use_shipsobs) then
+                   plink => plink%next
+                   cycle reports2
+               end if
+               if (n==1) iv%info(ships)%ntotal = iv%info(ships)%ntotal + 1
+               if (outside) then
+                  plink => plink%next
+                  cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(ships,dlat_earth,dlon_earth,crit,iv%info(ships)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(ships)%nlocal = iv%info(ships)%nlocal + 1
+               end if
+               fm = 13
+               
+         case (531, 532, 561, 562) ;          ! Buoy  
+               if (.not.use_buoyobs) then
+                   plink => plink%next
+                   cycle reports2
+               end if
+               if (n==1) iv%info(buoy)%ntotal = iv%info(buoy)%ntotal + 1
+               if (outside) then
+                     plink => plink%next
+                     cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,iv%info(buoy)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(buoy)%nlocal = iv%info(buoy)%nlocal + 1
+               end if
+               fm = 18
+               
+         case (511, 514)
+            ! case (181, 281) ;                   ! Synop
+               if (.not.use_synopobs) then
+                   plink => plink%next
+                   cycle reports2
+               end if
+               if (n==1) iv%info(synop)%ntotal = iv%info(synop)%ntotal + 1
+               if (outside) then
+                     plink => plink%next
+                     cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(synop,dlat_earth,dlon_earth,crit,iv%info(synop)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(synop)%nlocal = iv%info(synop)%nlocal + 1
+               end if
+               fm = 12
+               
+         case (512)
+            ! case (187, 287) ;                        ! Metar
+               if (.not.use_metarobs) then
+                    plink => plink%next
+                    cycle reports2
+               end if
+               if (n==1) iv%info(metar)%ntotal = iv%info(metar)%ntotal + 1
+               if (outside) then 
+                    plink => plink%next
+                    cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(metar,dlat_earth,dlon_earth,crit,iv%info(metar)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(metar)%nlocal = iv%info(metar)%nlocal + 1
+               end if
+               fm = 15
+               
+         case (63)
+            ! case (242:246, 252:253, 255) ;         ! Geo. CMVs
+               if (.not.use_geoamvobs) then 
+                       plink => plink%next
+                       cycle reports2
+               end if
+               if (n==1) iv%info(geoamv)%ntotal = iv%info(geoamv)%ntotal + 1
+               if (outside) then 
+                  plink => plink%next
+                  cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,iv%info(geoamv)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(geoamv)%nlocal = iv%info(geoamv)%nlocal + 1
+               end if
+               fm = 88
+               
+         case (582, 583)      ! QuikSCAT 582 and WindSat 583
+               if (.not.use_qscatobs) then
+                      plink => plink%next
+                      cycle reports2
+               end if
+               if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1
+               if (outside) then
+                   plink => plink%next
+                   cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,iv%info(qscat)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(qscat)%nlocal = iv%info(qscat)%nlocal + 1
+               end if
+               fm = 281
+               
+         case (74)       ! GPS PW
+               if (.not.use_gpspwobs) then 
+                    plink => plink%next
+                    cycle reports2
+               end if
+               if (n==1) iv%info(gpspw)%ntotal = iv%info(gpspw)%ntotal + 1
+               if (outside) then 
+                   plink => plink%next
+                   cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,iv%info(gpspw)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(gpspw)%nlocal = iv%info(gpspw)%nlocal + 1
+               end if
+               fm = 111
+               
+         case (71, 73, 75, 76, 77)    ! Profiler
+               if (.not.use_profilerobs) then
+                     plink => plink%next
+                     cycle reports2
+               end if
+               if (n==1) iv%info(profiler)%ntotal = iv%info(profiler)%ntotal + 1
+               if (outside) then
+                  plink => plink%next
+                  cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,iv%info(profiler)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(profiler)%nlocal = iv%info(profiler)%nlocal + 1
+               end if
+               fm = 132
+               
+         case (571, 65)
+              if (.not. use_ssmiretrievalobs) then
+                         plink => plink%next
+                         cycle reports2
+               end if
+               if (n==1) iv%info(ssmi_rv)%ntotal = iv%info(ssmi_rv)%ntotal + 1
+               if (outside) then
+                    plink => plink%next
+                    cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,iv%info(ssmi_rv)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(ssmi_rv)%nlocal = iv%info(ssmi_rv)%nlocal + 1
+               end if
+               fm = 125      ! ssmi wind speed & tpw
+               
+         case default 
+            select case (plink%kx_BUFR)
+            case (111 , 210)    ;         !  Tropical Cyclone Bogus
+               ! Note Tropical cyclone Bougus is given type 135 in Obs-ascii
+               if (.not.use_bogusobs) then 
+                      plink => plink%next
+                      cycle reports2
+               end if
+               if (n==1) iv%info(bogus)%ntotal = iv%info(bogus)%ntotal + 1
+               if (outside) then 
+                  plink => plink%next
+                  cycle reports2
+               end if
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,iv%info(bogus)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) then
+                     num_thinned = num_thinned + 1
+                     plink => plink%next
+                     cycle reports2
+                  end if
+               else
+                  iv%info(bogus)%nlocal = iv%info(bogus)%nlocal + 1
+               end if
+               fm = 135
+               
+            case default
+               if ( print_detail_obs ) then
+                  write(unit=message(1), fmt='(a, 2i12)') &
+                     'unsaved obs found with kx & t29= ',plink%kx_BUFR,plink%t29_BUFR
+                  call da_warning(__FILE__,__LINE__,message(1:1))
+               end if
+               exit dup_loop2
+            end select
+         end select
+
+      obs_index=fm_index(fm)
+      iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, plink%nlevels_BUFR)    
+      
+      plink%fm_BUFR=fm
+
+      end do dup_loop2
+     end if  !sort iv
+
+     plink => plink%next
+     if ( .not. associated(plink) ) exit reports2
+
+   end do reports2
+
+end do !kk
+
+end if 
+
+!  4.0 Allocate iv 
+!  
+!--------------------------------------------------------------
+
+   iv%info(synop)%max_lev     = 1
+   iv%info(metar)%max_lev     = 1
+   iv%info(ships)%max_lev     = 1
+   iv%info(buoy)%max_lev      = 1
+   iv%info(sonde_sfc)%max_lev = 1
+  
+   call da_allocate_observations (iv) 
+
+!  5.0 Transfer p structure into iv structure
+!      Also sort iv structure to FGAT time bins
+!--------------------------------------------------------------       
+    do kk=1,num_fgat_time
+
+       if ( thin_conv ) then
+          do n = 1, num_ob_indexes
+             call cleangrids_conv(n)
+          end do
+       end if
+
+       plink => head 
+   
+      reports3: do ii=1,num_p
+         
+     if (plink%ifgat_BUFR /=  kk) then  !sort iv
+            if ( .not. associated(plink%next) ) exit reports3
+            plink => plink%next
+            cycle reports3
+      else
+      ! for thinning
+      tdiff = abs(plink%platform_BUFR%info%dhr-0.02)
+      dlat_earth = plink%platform_BUFR%info%lat
+      dlon_earth = plink%platform_BUFR%info%lon
+      if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
+      if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
+      dlat_earth = dlat_earth * deg2rad
+      dlon_earth = dlon_earth * deg2rad
+      call da_llxy (plink%platform_BUFR%info, plink%platform_BUFR%loc,outside, outside_all)
+      ndup = 1
+      if (global .and. &
+         (plink%platform_BUFR%loc%i < ids .or. plink%platform_BUFR%loc%i >= ide)) ndup= 2
+      if (test_transforms) ndup = 1
+      dup_loop3: do n = 1, ndup
+
+         select case(plink%t29_BUFR)
+           case (11, 12, 13, 22, 23, 31)
+            select case (plink%kx_BUFR)
+              case (120, 122, 132, 220, 222, 232) ;         ! Sound
+               if (.not.use_soundobs) then
+                      plink => plink%next
+                      cycle reports3
+               end if
+                 if (n==1) ntotal(sound) = ntotal(sound) + 1 
+                 if (n==1) ntotal(sonde_sfc) = ntotal(sonde_sfc) + 1
+                 if (outside) then
+                    plink => plink%next
+                    cycle reports3
+               end if
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(sound,dlat_earth,dlon_earth,crit,nlocal(sound),itx,1,itt,ilocal(sound),iuse)
+                  call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,nlocal(sonde_sfc),itx,1,itt,ilocal(sonde_sfc),iuse)
+                   if ( .not. iuse ) then
+                     plink => plink%next
+                     cycle reports3
                   end if
                else
                   nlocal(sound) = nlocal(sound) + 1
@@ -715,29 +1580,29 @@ subroutine da_read_obs_bufr (iv, filename)
                   ilocal(sound) = nlocal(sound)
                   ilocal(sonde_sfc) = ilocal(sound)
                end if
-        
-               platform  % info % platform ='FM-35 TEMP  '
-               if (nlocal(sound) > iv%info(sound)%nlocal) cycle reports
-               fm = 35
-               old_nlevels = nlevels
+
+               platform_name ='FM-35 TEMP  '
+               
+               old_nlevels = plink%nlevels_BUFR
 
                ! Search to see if we have surface obs.
 
                surface_level = 0
 
-               do i = 1, nlevels
+               do i = 1, plink%nlevels_BUFR
                   ! if (elevation and height are the same, it is surface)
-                  if (abs(platform%info%elv - &
-                     platform%each(i)%height) < 0.1) then
+                  if (abs(plink%platform_BUFR%info%elv - &
+                     plink%platform_BUFR%each(i)%height) < 0.1) then
                      surface_level = i
 
                      ! Save surface pressure.
-                     iv%sonde_sfc(ilocal(sonde_sfc))%h = platform%each(i)%height
-                     iv%sonde_sfc(ilocal(sonde_sfc))%u = platform%each(i)%u
-                     iv%sonde_sfc(ilocal(sonde_sfc))%v = platform%each(i)%v
-                     iv%sonde_sfc(ilocal(sonde_sfc))%t = platform%each(i)%t
-                     iv%sonde_sfc(ilocal(sonde_sfc))%q = platform%each(i)%q
-                     iv%sonde_sfc(ilocal(sonde_sfc))%p = platform%each(i)%p
+                     iv%sonde_sfc(ilocal(sonde_sfc))%h = plink%platform_BUFR%each(i)%height
+                     iv%sonde_sfc(ilocal(sonde_sfc))%u = plink%platform_BUFR%each(i)%u
+                     iv%sonde_sfc(ilocal(sonde_sfc))%v = plink%platform_BUFR%each(i)%v
+                     iv%sonde_sfc(ilocal(sonde_sfc))%t = plink%platform_BUFR%each(i)%t
+                     iv%sonde_sfc(ilocal(sonde_sfc))%q = plink%platform_BUFR%each(i)%q
+                     iv%sonde_sfc(ilocal(sonde_sfc))%p = plink%platform_BUFR%each(i)%p
+                    
                      exit
                   end if
                end do
@@ -745,8 +1610,8 @@ subroutine da_read_obs_bufr (iv, filename)
                ! processing the sound_sfc data:
 
                if (surface_level > 0) then
-                  nlevels = nlevels - 1
-               else
+                  plink%nlevels_BUFR = plink%nlevels_BUFR - 1
+               else   !missing surface data
                   iv%sonde_sfc(ilocal(sonde_sfc))%h = missing_r
                   iv%sonde_sfc(ilocal(sonde_sfc))%u%inv   = missing_r
                   iv%sonde_sfc(ilocal(sonde_sfc))%u%qc    = missing_data
@@ -755,442 +1620,461 @@ subroutine da_read_obs_bufr (iv, filename)
                   iv%sonde_sfc(ilocal(sonde_sfc))%t = iv%sonde_sfc(ilocal(sonde_sfc))%u
                   iv%sonde_sfc(ilocal(sonde_sfc))%p = iv%sonde_sfc(ilocal(sonde_sfc))%u
                   iv%sonde_sfc(ilocal(sonde_sfc))%q = iv%sonde_sfc(ilocal(sonde_sfc))%u
+                  
                end if
 
-               if (nlevels > 0) then
+               if (plink%nlevels_BUFR > 0) then
 
-                  if ( ilocal(sound) == nlocal(sound) ) then
+                  if ( ilocal(sound) == nlocal(sound) .or. &
+                       .not. associated(iv%sound(ilocal(sound))%h) ) then
                      allocate (iv%sound(ilocal(sound))%h(1:iv%info(sound)%max_lev))
                      allocate (iv%sound(ilocal(sound))%p(1:iv%info(sound)%max_lev))
                      allocate (iv%sound(ilocal(sound))%u(1:iv%info(sound)%max_lev))
                      allocate (iv%sound(ilocal(sound))%v(1:iv%info(sound)%max_lev))
                      allocate (iv%sound(ilocal(sound))%t(1:iv%info(sound)%max_lev))
                      allocate (iv%sound(ilocal(sound))%q(1:iv%info(sound)%max_lev))
-                  end if
+                   endif  
 
                   j = 0
                   do i = 1, old_nlevels
                      if (i == surface_level) cycle
                      j=j+1
-                     iv%sound(ilocal(sound))%h(j) = platform%each(i)%height
-                     iv%sound(ilocal(sound))%p(j) = platform%each(i)%p%inv
-                     iv%sound(ilocal(sound))%u(j) = platform%each(i)%u
-                     iv%sound(ilocal(sound))%v(j) = platform%each(i)%v
-                     iv%sound(ilocal(sound))%t(j) = platform%each(i)%t
-                     iv%sound(ilocal(sound))%q(j) = platform%each(i)%q
+                     iv%sound(ilocal(sound))%h(j) = plink%platform_BUFR%each(i)%height
+                     iv%sound(ilocal(sound))%p(j) = plink%platform_BUFR%each(i)%p%inv
+                     iv%sound(ilocal(sound))%u(j) = plink%platform_BUFR%each(i)%u
+                     iv%sound(ilocal(sound))%v(j) = plink%platform_BUFR%each(i)%v
+                     iv%sound(ilocal(sound))%t(j) = plink%platform_BUFR%each(i)%t
+                     iv%sound(ilocal(sound))%q(j) = plink%platform_BUFR%each(i)%q
+                     
                   end do
                end if
 
             case (221) ;           ! Pilot 
-               if (.not.use_pilotobs) cycle reports
-               if( n==1 ) ntotal(pilot) = ntotal(pilot) + 1
-               if (outside) then
-                  cycle reports
+                if (.not.use_pilotobs) then
+                     plink => plink%next
+                     cycle reports3
                end if
-
+               if (n==1) ntotal(pilot) = ntotal(pilot) + 1
+               if (outside) then 
+                   plink => plink%next
+                   cycle reports3
+               end if
                if ( thin_conv ) then
                   crit = tdiff
                   call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,nlocal(pilot),itx,1,itt,ilocal(pilot),iuse)
                   if ( .not. iuse ) then
-                     num_thinned = num_thinned + 1
-                     cycle reports
+                     plink => plink%next
+                     cycle reports3
                   end if
                else
                   nlocal(pilot) = nlocal(pilot) + 1
                   ilocal(pilot) = nlocal(pilot)
                end if
-
-               platform  % info % platform ='FM-32 PILOT '
-               if (nlocal(pilot) > iv%info(pilot)%nlocal) cycle reports
-               fm = 32
+                platform_name='FM-32 PILOT '
 
                if ( ilocal(pilot) == nlocal(pilot) ) then
                   allocate (iv%pilot(ilocal(pilot))%h(1:iv%info(pilot)%max_lev))
                   allocate (iv%pilot(ilocal(pilot))%p(1:iv%info(pilot)%max_lev))
                   allocate (iv%pilot(ilocal(pilot))%u(1:iv%info(pilot)%max_lev))
                   allocate (iv%pilot(ilocal(pilot))%v(1:iv%info(pilot)%max_lev))
+               endif   
+
+               do i = 1, plink%nlevels_BUFR
+                  iv%pilot(ilocal(pilot))%h(i) = plink%platform_BUFR%each(i)%height
+                  iv%pilot(ilocal(pilot))%p(i) = plink%platform_BUFR%each(i)%p%inv
+                  iv%pilot(ilocal(pilot))%u(i) = plink%platform_BUFR%each(i)%u
+                  iv%pilot(ilocal(pilot))%v(i) = plink%platform_BUFR%each(i)%v
+                  
+               end do
+                case default
+               exit dup_loop3
+            end select 
+         case (41)
+             if (.not.use_airepobs) then
+                      plink => plink%next
+                      cycle reports3
                end if
 
-               do i = 1, nlevels
-                  iv%pilot(ilocal(pilot))%h(i) = platform%each(i)%height
-                  iv%pilot(ilocal(pilot))%p(i) = platform%each(i)%p%inv
-                  iv%pilot(ilocal(pilot))%u(i) = platform%each(i)%u
-                  iv%pilot(ilocal(pilot))%v(i) = platform%each(i)%v
-               end do
-            case default
-               exit dup_loop
-            end select
-
-         case (41)
-            ! case (130:131, 133, 230:231, 233) ; ! Airep
-            if (.not.use_airepobs) cycle reports
-            if( n==1 ) ntotal(airep) = ntotal(airep) + 1
-            if (outside) then
-               cycle reports
-            end if
-
+            if (n==1) ntotal(airep) = ntotal(airep) + 1
+             if (outside) then 
+                    plink => plink%next
+                    cycle reports3
+               end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(airep,dlat_earth,dlon_earth,crit,nlocal(airep),itx,1,itt,ilocal(airep),iuse)
                if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                    plink => plink%next
+                    cycle reports3
+                  end if
             else
                nlocal(airep) = nlocal(airep) + 1
                ilocal(airep) = nlocal(airep)
             end if
-
-            platform  % info % platform ='FM-97 AIREP '
-            if (nlocal(airep) > iv%info(airep)%nlocal) cycle reports
-            fm = 42
-
+            platform_name ='FM-97 AIREP '
             if ( ilocal(airep) == nlocal(airep) ) then
                allocate (iv%airep(ilocal(airep))%h(1:iv%info(airep)%max_lev))
                allocate (iv%airep(ilocal(airep))%p(1:iv%info(airep)%max_lev))
                allocate (iv%airep(ilocal(airep))%u(1:iv%info(airep)%max_lev))
                allocate (iv%airep(ilocal(airep))%v(1:iv%info(airep)%max_lev))
                allocate (iv%airep(ilocal(airep))%t(1:iv%info(airep)%max_lev))
+               
             end if
-
-            do i = 1, nlevels
-               iv % airep (ilocal(airep)) % h(i) = platform % each(i) % height
-               iv % airep (ilocal(airep)) % p(i) = platform % each(i) % p % inv
-               iv % airep (ilocal(airep)) % u(i) = platform % each(i) % u
-               iv % airep (ilocal(airep)) % v(i) = platform % each(i) % v
-               iv % airep (ilocal(airep)) % t(i) = platform % each(i) % t
+            do i = 1, plink%nlevels_BUFR
+               iv % airep (ilocal(airep)) % h(i) = plink%platform_BUFR % each(i) % height
+               iv % airep (ilocal(airep)) % p(i) = plink%platform_BUFR % each(i) % p % inv
+               iv % airep (ilocal(airep)) % u(i) = plink%platform_BUFR % each(i) % u
+               iv % airep (ilocal(airep)) % v(i) = plink%platform_BUFR % each(i) % v
+               iv % airep (ilocal(airep)) % t(i) = plink%platform_BUFR % each(i) % t
+               
             end do
 
-         case (522, 523);        ! Ships
-            if (.not.use_shipsobs) cycle reports
-            if( n==1 ) ntotal(ships) = ntotal(ships) + 1
-            if (outside) then
-               cycle reports
-            end if
+         case (522,523);        ! Ships
+          if (.not.use_shipsobs) then
+                   plink => plink%next
+                   cycle reports3
+           end if
 
+            if (n==1) ntotal(ships) = ntotal(ships) + 1
+             if (outside) then
+                  plink => plink%next
+                  cycle reports3
+               end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(ships,dlat_earth,dlon_earth,crit,nlocal(ships),itx,1,itt,ilocal(ships),iuse)
-               if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                if ( .not. iuse ) then
+                   plink => plink%next
+                   cycle reports3
+                  end if
             else
                nlocal(ships) = nlocal(ships) + 1
                ilocal(ships) = nlocal(ships)
             end if
+            platform_name ='FM-13 SHIP  '
+            
+            iv % ships (ilocal(ships)) % h = plink%platform_BUFR % each(1) % height
+            iv % ships (ilocal(ships)) % u = plink%platform_BUFR % each(1) % u
+            iv % ships (ilocal(ships)) % v = plink%platform_BUFR % each(1) % v
+            iv % ships (ilocal(ships)) % t = plink%platform_BUFR % each(1) % t
+            iv % ships (ilocal(ships)) % p = plink%platform_BUFR % each(1) % p
+            iv % ships (ilocal(ships)) % q = plink%platform_BUFR % each(1) % q
+            
 
-            platform  % info % platform ='FM-13 SHIP  '
-            if (nlocal(ships) > iv%info(ships)%nlocal) cycle reports
-            fm = 13
-            iv % ships (ilocal(ships)) % h = platform % each(1) % height
-            iv % ships (ilocal(ships)) % u = platform % each(1) % u
-            iv % ships (ilocal(ships)) % v = platform % each(1) % v
-            iv % ships (ilocal(ships)) % t = platform % each(1) % t
-            iv % ships (ilocal(ships)) % p = platform % each(1) % p
-            iv % ships (ilocal(ships)) % q = platform % each(1) % q
-
-         case (531, 532, 561, 562) ;          ! Buoy  
-            if (.not.use_buoyobs) cycle reports
-            if( n==1 ) ntotal(buoy) = ntotal(buoy) + 1
-            if (outside) then
-               cycle reports
-            end if
-
+          case (531, 532, 561, 562) ;          ! Buoy
+           if (.not.use_buoyobs) then
+                   plink => plink%next
+                   cycle reports3
+               end if
+            if (n==1)  ntotal(buoy) = ntotal(buoy) + 1
+             if (outside) then
+                plink => plink%next
+                cycle reports3
+               end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,nlocal(buoy),itx,1,itt,ilocal(buoy),iuse)
                if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
+                  plink => plink%next
+                  cycle reports3
                end if
             else
                nlocal(buoy) = nlocal(buoy) + 1
                ilocal(buoy) = nlocal(buoy)
             end if
+            platform_name ='FM-18 BUOY  '
+            
+            iv%buoy(ilocal(buoy))%h = plink%platform_BUFR%each(1)%height
+            iv%buoy(ilocal(buoy))%u = plink%platform_BUFR%each(1)%u
+            iv%buoy(ilocal(buoy))%v = plink%platform_BUFR%each(1)%v
+            iv%buoy(ilocal(buoy))%t = plink%platform_BUFR%each(1)%t
+            
 
-            platform  % info % platform ='FM-18 BUOY  '
-            if (nlocal(buoy) > iv%info(buoy)%nlocal) cycle reports
-            fm = 18
-
-            iv%buoy(ilocal(buoy))%h = platform%each(1)%height
-            iv%buoy(ilocal(buoy))%u = platform%each(1)%u
-            iv%buoy(ilocal(buoy))%v = platform%each(1)%v
-            iv%buoy(ilocal(buoy))%t = platform%each(1)%t
-            if ( kx == 282 ) then  ! ATLAS BUOY, reported Pstn and Pmslp are both
+            if ( plink%kx_BUFR == 282 ) then  ! ATLAS BUOY, reported Pstn and Pmslp are both
                                    ! missing. Pstn is set to 1013hPa in PREPBUFR
                iv%buoy(ilocal(buoy))%p%inv   = missing_r
                iv%buoy(ilocal(buoy))%p%qc    = missing_data
                iv%buoy(ilocal(buoy))%p%error = err_p
             else
-               iv%buoy(ilocal(buoy))%p = platform%each(1)%p
+               iv%buoy(ilocal(buoy))%p = plink%platform_BUFR%each(1)%p
             end if
-            iv%buoy(ilocal(buoy))%q = platform%each(1)%q
+            iv%buoy(ilocal(buoy))%q = plink%platform_BUFR%each(1)%q
 
          case (511, 514)
-            if (.not.use_synopobs) cycle reports
-            ! case (181, 281) ;                   ! Synop
-
-            if( n==1 ) ntotal(synop) = ntotal(synop) + 1
+              if (.not.use_synopobs) then
+                 plink => plink%next
+                 cycle reports3
+               end if
+            if (n==1) ntotal(synop) = ntotal(synop) + 1
             if (outside) then
-              cycle reports
+               plink => plink%next
+               cycle reports3
             end if
-
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(synop,dlat_earth,dlon_earth,crit,nlocal(synop),itx,1,itt,ilocal(synop),iuse)
-               if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                if ( .not. iuse ) then
+                   plink => plink%next
+                   cycle reports3
+                end if
             else
                nlocal(synop) = nlocal(synop) + 1
                ilocal(synop) = nlocal(synop)
             end if
-
-            platform  % info % platform ='FM-12 SYNOP '
-            if (nlocal(synop) > iv%info(synop)%nlocal) cycle reports
-            fm = 12
-            iv % synop (ilocal(synop)) % h = platform % each(1) % height
-            iv % synop (ilocal(synop)) % u = platform % each(1) % u
-            iv % synop (ilocal(synop)) % v = platform % each(1) % v
-            iv % synop (ilocal(synop)) % t = platform % each(1) % t
-            iv % synop (ilocal(synop)) % p = platform % each(1) % p
-            iv % synop (ilocal(synop)) % q = platform % each(1) % q
- 
-            if (iv % synop(ilocal(synop)) % h < platform % info % elv) then
-               iv % synop(ilocal(synop)) % h = platform % info % elv
+            platform_name ='FM-12 SYNOP '
+            
+            iv % synop (ilocal(synop)) % h = plink%platform_BUFR % each(1) % height
+            iv % synop (ilocal(synop)) % u = plink%platform_BUFR % each(1) % u
+            iv % synop (ilocal(synop)) % v = plink%platform_BUFR % each(1) % v
+            iv % synop (ilocal(synop)) % t = plink%platform_BUFR % each(1) % t
+            iv % synop (ilocal(synop)) % p = plink%platform_BUFR % each(1) % p
+            iv % synop (ilocal(synop)) % q = plink%platform_BUFR % each(1) % q
+            
+            if (iv % synop(ilocal(synop)) % h < plink%platform_BUFR % info % elv) then
+               iv % synop(ilocal(synop)) % h = plink%platform_BUFR % info % elv
             end if
 
          case (512)
-            if (.not.use_metarobs) cycle reports
-            ! case (187, 287) ;                        ! Metar
-            if( n==1 ) ntotal(metar) = ntotal(metar) + 1
-            if (outside) then
-               cycle reports
-            end if
-
+          if (.not.use_metarobs) then
+                   plink => plink%next
+                   cycle reports3
+             end if
+            if (n==1) ntotal(metar) = ntotal(metar) + 1
+             if (outside) then 
+                   plink => plink%next
+                   cycle reports3
+               end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(metar,dlat_earth,dlon_earth,crit,nlocal(metar),itx,1,itt,ilocal(metar),iuse)
-               if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                if ( .not. iuse ) then
+                   plink => plink%next
+                   cycle reports3
+                  end if
+
             else
                nlocal(metar) = nlocal(metar) + 1
                ilocal(metar) = nlocal(metar)
             end if
-
-            platform  % info % platform ='FM-15 METAR '
-            if (nlocal(metar) > iv%info(metar)%nlocal) cycle reports
-            fm = 15
-            iv % metar (ilocal(metar)) % h = platform % each(1) % height
-            iv % metar (ilocal(metar)) % u = platform % each(1) % u
-            iv % metar (ilocal(metar)) % v = platform % each(1) % v
-            iv % metar (ilocal(metar)) % t = platform % each(1) % t
-            iv % metar (ilocal(metar)) % p = platform % each(1) % p
-            iv % metar (ilocal(metar)) % q = platform % each(1) % q
+               
+             platform_name='FM-15 METAR '
+           
+            iv % metar (ilocal(metar)) % h = plink%platform_BUFR % each(1) % height
+            iv % metar (ilocal(metar)) % u = plink%platform_BUFR % each(1) % u
+            iv % metar (ilocal(metar)) % v = plink%platform_BUFR % each(1) % v
+            iv % metar (ilocal(metar)) % t = plink%platform_BUFR % each(1) % t
+            iv % metar (ilocal(metar)) % p = plink%platform_BUFR % each(1) % p
+            iv % metar (ilocal(metar)) % q = plink%platform_BUFR % each(1) % q
+          
 
          case (63)
-            if (.not.use_geoamvobs) cycle reports
-            ! case (242:246, 252:253, 255) ;         ! Geo. CMVs
-            if( n==1 ) ntotal(geoamv) = ntotal(geoamv) + 1
-            if (outside) then
-               cycle reports
-            end if
-
-            if ( thin_conv ) then
+              if (.not.use_geoamvobs) then 
+                   plink => plink%next
+                   cycle reports3
+               end if
+               if (n==1) ntotal(geoamv) = ntotal(geoamv) + 1
+                if (outside) then 
+                   plink => plink%next
+                   cycle reports3
+               end if
+               if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,nlocal(geoamv),itx,1,itt,ilocal(geoamv),iuse)
-               if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                if ( .not. iuse ) then
+                   plink => plink%next
+                   cycle reports3
+                  end if
             else
                nlocal(geoamv) = nlocal(geoamv) + 1
                ilocal(geoamv) = nlocal(geoamv)
             end if
-
-            platform  % info % platform ='FM-88 SATOB '
-            if (nlocal(geoamv) > iv%info(geoamv)%nlocal) cycle reports
-            fm = 88
-
+               
+               platform_name ='FM-88 SATOB '
             if ( ilocal(geoamv) == nlocal(geoamv) ) then
                allocate (iv%geoamv(ilocal(geoamv))%p(1:iv%info(geoamv)%max_lev))
                allocate (iv%geoamv(ilocal(geoamv))%u(1:iv%info(geoamv)%max_lev))
                allocate (iv%geoamv(ilocal(geoamv))%v(1:iv%info(geoamv)%max_lev))
+               
             end if
 
-            do i = 1, nlevels
-               iv % geoamv (ilocal(geoamv)) % p(i)  = platform % each(i) % p % inv
-               iv % geoamv (ilocal(geoamv)) % u(i)  = platform % each(i) % u
-               iv % geoamv (ilocal(geoamv)) % v(i)  = platform % each(i) % v
+            do i = 1, plink%nlevels_BUFR
+               iv % geoamv (ilocal(geoamv)) % p(i)  = plink%platform_BUFR % each(i) % p % inv
+               iv % geoamv (ilocal(geoamv)) % u(i)  = plink%platform_BUFR % each(i) % u
+               iv % geoamv (ilocal(geoamv)) % v(i)  = plink%platform_BUFR % each(i) % v
+               
             end do
 
-         case (582, 583)
-            if (.not.use_qscatobs) cycle reports
-            if( n==1 ) ntotal(qscat) = ntotal(qscat) + 1
+          case (582, 583)
+          if (.not.use_qscatobs) then
+                   plink => plink%next
+                   cycle reports3
+               end if
+            if (n==1) ntotal(qscat) = ntotal(qscat) + 1
             if (outside) then
-               cycle reports
-            end if
-
+                   plink => plink%next
+                   cycle reports3
+               end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,nlocal(qscat),itx,1,itt,ilocal(qscat),iuse)
                if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                   plink => plink%next
+                   cycle reports3
+                  end if
             else
                nlocal(qscat) = nlocal(qscat) + 1
                ilocal(qscat) = nlocal(qscat)
             end if
-
-            platform  % info % platform ='FM-281 Quiks'
-            if (nlocal(qscat) > iv%info(qscat)%nlocal) cycle reports
-            fm = 281
-
+               
+            platform_name ='FM-281 Quiks'
+ 
             ! prepbufr uses pressure not height, so hardwire height to 
             ! 0 (sea-level)
             iv%qscat(ilocal(qscat))%h = 0.0
-            iv%qscat(ilocal(qscat))%u = platform%each(1)%u
-            iv%qscat(ilocal(qscat))%v = platform%each(1)%v
-            iv%qscat(ilocal(qscat))%u%error = max(platform%each(1)%u%error,1.0)
-            iv%qscat(ilocal(qscat))%v%error = max(platform%each(1)%v%error,1.0)
+            iv%qscat(ilocal(qscat))%u = plink%platform_BUFR%each(1)%u
+            iv%qscat(ilocal(qscat))%v = plink%platform_BUFR%each(1)%v
+            iv%qscat(ilocal(qscat))%u%error = max(plink%platform_BUFR%each(1)%u%error,1.0)
+            iv%qscat(ilocal(qscat))%v%error = max(plink%platform_BUFR%each(1)%v%error,1.0)
+            
 
          case (74)       ! GPS PW
-            if (.not.use_gpspwobs) cycle reports
-            if( n==1 ) ntotal(gpspw) = ntotal(gpspw) + 1
-            if (outside) then
-               cycle reports
-            end if
-
+          if (.not.use_gpspwobs) then 
+                   plink => plink%next
+                   cycle reports3
+               end if
+            if (n==1)  ntotal(gpspw) = ntotal(gpspw) + 1
+             if (outside) then 
+                   plink => plink%next
+                   cycle reports3
+               end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,nlocal(gpspw),itx,1,itt,ilocal(gpspw),iuse)
-               if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                if ( .not. iuse ) then
+                   plink => plink%next
+                   cycle reports3
+                  end if
             else
                nlocal(gpspw) = nlocal(gpspw) + 1
                ilocal(gpspw) = nlocal(gpspw)
             end if
+            platform_name ='FM-111 GPSPW'
+ 
+            iv%gpspw(ilocal(gpspw))%tpw  = plink%platform_BUFR%loc%pw
+            
 
-            platform  % info % platform ='FM-111 GPSPW'
-            if (nlocal(gpspw) > iv%info(gpspw)%nlocal) cycle reports
-            fm = 111
-
-            iv%gpspw(ilocal(gpspw))%tpw  = platform%loc%pw
-
-         case (71, 73, 75, 76, 77)
-            ! case (223, 224 )        ;         !  Profiler & VADWND - NEXRAD winds    
-            if (.not.use_profilerobs) cycle reports
-            if( n==1 ) ntotal(profiler) = ntotal(profiler) + 1
-            if (outside) then
-               cycle reports
-            end if
-
-            if ( thin_conv ) then
+          case (71, 73, 75, 76, 77)
+                if (.not.use_profilerobs) then
+                   plink => plink%next
+                   cycle reports3
+               end if
+               if (n==1) ntotal(profiler) = ntotal(profiler) + 1
+                if (outside) then
+                   plink => plink%next
+                   cycle reports3
+               end if
+               if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,nlocal(profiler),itx,1,itt,ilocal(profiler),iuse)
-               if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                if ( .not. iuse ) then
+                   plink => plink%next
+                   cycle reports3
+                  end if
             else
                nlocal(profiler) = nlocal(profiler) + 1
                ilocal(profiler) = nlocal(profiler)
             end if
-
-            platform  % info % platform ='FM-132 PRFLR'
-            if (nlocal(profiler) > iv%info(profiler)%nlocal) cycle reports
-            fm = 132
-
+               
+               platform_name ='FM-132 PRFLR'
             if ( ilocal(profiler) == nlocal(profiler) ) then
                allocate (iv%profiler(ilocal(profiler))%h(1:iv%info(profiler)%max_lev))
                allocate (iv%profiler(ilocal(profiler))%p(1:iv%info(profiler)%max_lev))
                allocate (iv%profiler(ilocal(profiler))%u(1:iv%info(profiler)%max_lev))
                allocate (iv%profiler(ilocal(profiler))%v(1:iv%info(profiler)%max_lev))
-            end if
+           end if     
 
-            do i = 1, nlevels
-               iv%profiler(ilocal(profiler))%h(i) = platform%each(i)%height
-               iv%profiler(ilocal(profiler))%p(i) = platform%each(i)%p%inv
-               iv%profiler(ilocal(profiler))%u(i) = platform%each(i)%u
-               iv%profiler(ilocal(profiler))%v(i) = platform%each(i)%v
+            do i = 1, plink%nlevels_BUFR 
+               iv%profiler(ilocal(profiler))%h(i) = plink%platform_BUFR%each(i)%height
+               iv%profiler(ilocal(profiler))%p(i) = plink%platform_BUFR%each(i)%p%inv
+               iv%profiler(ilocal(profiler))%u(i) = plink%platform_BUFR%each(i)%u
+               iv%profiler(ilocal(profiler))%v(i) = plink%platform_BUFR%each(i)%v
+               
             end do
 
-         case (571, 65)   ! SSM/I wind speed & TPW
-            if (.not. use_ssmiretrievalobs) cycle reports
-            if( n==1 ) ntotal(ssmi_rv) = ntotal(ssmi_rv) + 1
-            if (outside) then
-               cycle reports
-            end if
-
+          case (571, 65)   ! SSM/I wind speed & TPW
+          if (.not. use_ssmiretrievalobs) then
+                   plink => plink%next
+                   cycle reports3
+               end if
+           if (n==1)  ntotal(ssmi_rv) = ntotal(ssmi_rv) + 1
+           if (outside) then
+                   plink => plink%next
+                   cycle reports3
+               end if
             if ( thin_conv ) then
                crit = tdiff
                call map2grids_conv(ssmi_rv,dlat_earth,dlon_earth,crit,nlocal(ssmi_rv),itx,1,itt,ilocal(ssmi_rv),iuse)
-               if ( .not. iuse ) then
-                  num_thinned = num_thinned + 1
-                  cycle reports
-               end if
+                if ( .not. iuse ) then
+                   plink => plink%next
+                   cycle reports3
+                  end if
             else
                nlocal(ssmi_rv) = nlocal(ssmi_rv) + 1
                ilocal(ssmi_rv) = nlocal(ssmi_rv)
             end if
-
-            if (nlocal(ssmi_rv) > iv%info(ssmi_rv)%nlocal) cycle reports
-            platform  % info % platform ='FM-125 SSMI '
-            fm = 125
-
-            select case (kx)
+             
+            platform_name ='FM-125 SSMI '
+  
+            select case (plink%kx_BUFR)
             case ( 283)  ! wind speed
-               do i = 1, nlevels
+               do i = 1, plink%nlevels_BUFR
+                  wpc = nint(plink%pco_BUFR(5,i))
                   ! if wpc == 1, UOB is set to zero, VOB is speed
-                  iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%v
+                  iv%ssmi_rv(ilocal(ssmi_rv))%speed  = plink%platform_BUFR%each(i)%v
                   if ( wpc == 10 ) then
                      iv%ssmi_rv(ilocal(ssmi_rv))%speed%inv  = sqrt ( &
-                        platform%each(i)%u%inv * platform%each(i)%u%inv + & 
-                        platform%each(i)%v%inv * platform%each(i)%v%inv  )
+                        plink%platform_BUFR%each(i)%u%inv * plink%platform_BUFR%each(i)%u%inv + & 
+                        plink%platform_BUFR%each(i)%v%inv * plink%platform_BUFR%each(i)%v%inv  )
                   end if
-                  iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = platform%loc%pw
+                  iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = plink%platform_BUFR%loc%pw
+                  
                end do
            case ( 152 )  ! tpw
-              do i = 1, nlevels
-                 iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%u
-                 iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = platform%loc%pw
+              do i = 1, plink%nlevels_BUFR
+                 iv%ssmi_rv(ilocal(ssmi_rv))%speed  = plink%platform_BUFR%each(i)%u
+                 iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = plink%platform_BUFR%loc%pw
+                 
                end do
-           case default
-              exit dup_loop
+          case default
+              exit dup_loop3
+
            end select  
 
-         case default 
-            select case (kx)
-            case (111 , 210)    ;         !  Tropical Cyclone Bogus
-               if (.not.use_bogusobs) cycle reports
-               ! Note Tropical cyclone Bougus is given type 135 in Obs-ascii
-               if( n==1 ) ntotal(bogus) = ntotal(bogus) + 1
-               if (outside) then
-                  cycle reports
+          case default 
+            select case (plink%kx_BUFR)
+            case (111 , 210) 
+          if (.not.use_bogusobs) then 
+                   plink => plink%next
+                   cycle reports3
                end if
-
-               if ( thin_conv ) then
+               if (n==1)  ntotal(bogus) = ntotal(bogus) + 1
+                if (outside) then 
+                   plink => plink%next
+                   cycle reports3
+               end if
+                if ( thin_conv ) then
                   crit = tdiff
                   call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,nlocal(bogus),itx,1,itt,ilocal(bogus),iuse)
                   if ( .not. iuse ) then
-                     num_thinned = num_thinned + 1
-                     cycle reports
+                     plink => plink%next
+                     cycle reports3
                   end if
                else
                   nlocal(bogus) = nlocal(bogus) + 1
                   ilocal(bogus) = nlocal(bogus)
                end if
-
-               platform  % info % platform ='FM-135 TCBOG'
-               fm = 135
-
+          
+               platform_name ='FM-135 TCBOG'
                if ( ilocal(bogus) == nlocal(bogus) ) then
                   allocate (iv%bogus(ilocal(bogus))%h(1:iv%info(bogus)%max_lev))
                   allocate (iv%bogus(ilocal(bogus))%p(1:iv%info(bogus)%max_lev))
@@ -1198,107 +2082,105 @@ subroutine da_read_obs_bufr (iv, filename)
                   allocate (iv%bogus(ilocal(bogus))%v(1:iv%info(bogus)%max_lev))
                   allocate (iv%bogus(ilocal(bogus))%t(1:iv%info(bogus)%max_lev))
                   allocate (iv%bogus(ilocal(bogus))%q(1:iv%info(bogus)%max_lev))
-               end if
+               end if   
 
-               do i = 1, nlevels
-                  iv%bogus(ilocal(bogus))%h(i) = platform%each(i)%height
-                  iv%bogus(ilocal(bogus))%p(i) = platform%each(i)%p%inv
-                  iv%bogus(ilocal(bogus))%u(i) = platform%each(i)%u
-                  iv%bogus(ilocal(bogus))%v(i) = platform%each(i)%v
-                  iv%bogus(ilocal(bogus))%t(i) = platform%each(i)%t
-                  iv%bogus(ilocal(bogus))%q(i) = platform%each(i)%q
+               do i = 1, plink%nlevels_BUFR
+                  iv%bogus(ilocal(bogus))%h(i) = plink%platform_BUFR%each(i)%height
+                  iv%bogus(ilocal(bogus))%p(i) = plink%platform_BUFR%each(i)%p%inv
+                  iv%bogus(ilocal(bogus))%u(i) = plink%platform_BUFR%each(i)%u
+                  iv%bogus(ilocal(bogus))%v(i) = plink%platform_BUFR%each(i)%v
+                  iv%bogus(ilocal(bogus))%t(i) = plink%platform_BUFR%each(i)%t
+                  iv%bogus(ilocal(bogus))%q(i) = plink%platform_BUFR%each(i)%q
+                  
                end do
 
-               iv%bogus(ilocal(bogus))%slp    = platform%loc%slp
-
-            case default
-               exit dup_loop
-            end select
+               iv%bogus(ilocal(bogus))%slp    = plink%platform_BUFR%loc%slp
+              case default
+              exit dup_loop3
+             end select
          end select
 
-         obs_index = fm_index(fm)
-         iv%info(obs_index)%name(ilocal(obs_index))      = platform%info%name
-         iv%info(obs_index)%platform(ilocal(obs_index))  = platform%info%platform
-         iv%info(obs_index)%id(ilocal(obs_index))        = platform%info%id
-         iv%info(obs_index)%date_char(ilocal(obs_index)) = platform%info%date_char
+         obs_index = fm_index(plink%fm_BUFR)
+         iv%info(obs_index)%name(ilocal(obs_index))      = plink%platform_BUFR%info%name
+         iv%info(obs_index)%platform(ilocal(obs_index))  = platform_name
+         iv%info(obs_index)%id(ilocal(obs_index))        = plink%platform_BUFR%info%id
+         iv%info(obs_index)%date_char(ilocal(obs_index)) = plink%platform_BUFR%info%date_char
          ! nlevels adjusted for some obs types so use that
-         iv%info(obs_index)%levels(ilocal(obs_index))    = nlevels
-         iv%info(obs_index)%lat(:,ilocal(obs_index))     = platform%info%lat
-         iv%info(obs_index)%lon(:,ilocal(obs_index))     = platform%info%lon
-         iv%info(obs_index)%elv(ilocal(obs_index))       = platform%info%elv
-         iv%info(obs_index)%pstar(ilocal(obs_index))     = platform%info%pstar
+         iv%info(obs_index)%levels(ilocal(obs_index))    = min(iv%info(obs_index)%max_lev, plink%nlevels_BUFR)
+         iv%info(obs_index)%lat(:,ilocal(obs_index))     = plink%platform_BUFR%info%lat
+         iv%info(obs_index)%lon(:,ilocal(obs_index))     = plink%platform_BUFR%info%lon
+         iv%info(obs_index)%elv(ilocal(obs_index))       = plink%platform_BUFR%info%elv
+         iv%info(obs_index)%pstar(ilocal(obs_index))     = plink%platform_BUFR%info%pstar
 
-         iv%info(obs_index)%slp(ilocal(obs_index))           = platform%loc%slp
-         iv%info(obs_index)%pw(ilocal(obs_index))            = platform%loc%pw
-         iv%info(obs_index)%x(:,ilocal(obs_index))           = platform%loc%x
-         iv%info(obs_index)%y(:,ilocal(obs_index))           = platform%loc%y
-         iv%info(obs_index)%i(:,ilocal(obs_index))           = platform%loc%i
-         iv%info(obs_index)%j(:,ilocal(obs_index))           = platform%loc%j
-         iv%info(obs_index)%dx(:,ilocal(obs_index))          = platform%loc%dx
-         iv%info(obs_index)%dxm(:,ilocal(obs_index))         = platform%loc%dxm
-         iv%info(obs_index)%dy(:,ilocal(obs_index))          = platform%loc%dy
-         iv%info(obs_index)%dym(:,ilocal(obs_index))         = platform%loc%dym
-         iv%info(obs_index)%proc_domain(:,ilocal(obs_index)) = platform%loc%proc_domain
+         iv%info(obs_index)%slp(ilocal(obs_index))           = plink%platform_BUFR%loc%slp
+         iv%info(obs_index)%pw(ilocal(obs_index))            = plink%platform_BUFR%loc%pw
+         iv%info(obs_index)%x(:,ilocal(obs_index))           = plink%platform_BUFR%loc%x
+         iv%info(obs_index)%y(:,ilocal(obs_index))           = plink%platform_BUFR%loc%y
+         iv%info(obs_index)%i(:,ilocal(obs_index))           = plink%platform_BUFR%loc%i
+         iv%info(obs_index)%j(:,ilocal(obs_index))           = plink%platform_BUFR%loc%j
+         iv%info(obs_index)%dx(:,ilocal(obs_index))          = plink%platform_BUFR%loc%dx
+         iv%info(obs_index)%dxm(:,ilocal(obs_index))         = plink%platform_BUFR%loc%dxm
+         iv%info(obs_index)%dy(:,ilocal(obs_index))          = plink%platform_BUFR%loc%dy
+         iv%info(obs_index)%dym(:,ilocal(obs_index))         = plink%platform_BUFR%loc%dym
+         iv%info(obs_index)%proc_domain(:,ilocal(obs_index)) = plink%platform_BUFR%loc%proc_domain
 
-         iv%info(obs_index)%obs_global_index(ilocal(obs_index)) = ntotal(obs_index)
+         iv%info(obs_index)%obs_global_index(ilocal(obs_index)) = iv%info(obs_index)%ntotal
          ! special case for sonde_sfc, duplicate sound info
          if (obs_index == sound) then
 
-            iv%info(sonde_sfc)%name(ilocal(sonde_sfc))      = platform%info%name
-            iv%info(sonde_sfc)%platform(ilocal(sonde_sfc))  = platform%info%platform
-            iv%info(sonde_sfc)%id(ilocal(sonde_sfc))        = platform%info%id
-            iv%info(sonde_sfc)%date_char(ilocal(sonde_sfc)) = platform%info%date_char
+            iv%info(sonde_sfc)%name(ilocal(sonde_sfc))      = plink%platform_BUFR%info%name
+            iv%info(sonde_sfc)%platform(ilocal(sonde_sfc))  = platform_name
+            iv%info(sonde_sfc)%id(ilocal(sonde_sfc))        = plink%platform_BUFR%info%id
+            iv%info(sonde_sfc)%date_char(ilocal(sonde_sfc)) = plink%platform_BUFR%info%date_char
             iv%info(sonde_sfc)%levels(ilocal(sonde_sfc))    = 1
-            iv%info(sonde_sfc)%lat(:,ilocal(sonde_sfc))     = platform%info%lat
-            iv%info(sonde_sfc)%lon(:,ilocal(sonde_sfc))     = platform%info%lon
-            iv%info(sonde_sfc)%elv(ilocal(sonde_sfc))       = platform%info%elv
-            iv%info(sonde_sfc)%pstar(ilocal(sonde_sfc))     = platform%info%pstar
+            iv%info(sonde_sfc)%lat(:,ilocal(sonde_sfc))     = plink%platform_BUFR%info%lat
+            iv%info(sonde_sfc)%lon(:,ilocal(sonde_sfc))     = plink%platform_BUFR%info%lon
+            iv%info(sonde_sfc)%elv(ilocal(sonde_sfc))       = plink%platform_BUFR%info%elv
+            iv%info(sonde_sfc)%pstar(ilocal(sonde_sfc))     = plink%platform_BUFR%info%pstar
 
-            iv%info(sonde_sfc)%slp(ilocal(sonde_sfc))           = platform%loc%slp
-            iv%info(sonde_sfc)%pw(ilocal(sonde_sfc))            = platform%loc%pw
-            iv%info(sonde_sfc)%x(:,ilocal(sonde_sfc))           = platform%loc%x
-            iv%info(sonde_sfc)%y(:,ilocal(sonde_sfc))           = platform%loc%y
-            iv%info(sonde_sfc)%i(:,ilocal(sonde_sfc))           = platform%loc%i
-            iv%info(sonde_sfc)%j(:,ilocal(sonde_sfc))           = platform%loc%j
-            iv%info(sonde_sfc)%dx(:,ilocal(sonde_sfc))          = platform%loc%dx
-            iv%info(sonde_sfc)%dxm(:,ilocal(sonde_sfc))         = platform%loc%dxm
-            iv%info(sonde_sfc)%dy(:,ilocal(sonde_sfc))          = platform%loc%dy
-            iv%info(sonde_sfc)%dym(:,ilocal(sonde_sfc))         = platform%loc%dym
-            iv%info(sonde_sfc)%proc_domain(:,ilocal(sonde_sfc)) = platform%loc%proc_domain
+            iv%info(sonde_sfc)%slp(ilocal(sonde_sfc))           = plink%platform_BUFR%loc%slp
+            iv%info(sonde_sfc)%pw(ilocal(sonde_sfc))            = plink%platform_BUFR%loc%pw
+            iv%info(sonde_sfc)%x(:,ilocal(sonde_sfc))           = plink%platform_BUFR%loc%x
+            iv%info(sonde_sfc)%y(:,ilocal(sonde_sfc))           = plink%platform_BUFR%loc%y
+            iv%info(sonde_sfc)%i(:,ilocal(sonde_sfc))           = plink%platform_BUFR%loc%i
+            iv%info(sonde_sfc)%j(:,ilocal(sonde_sfc))           = plink%platform_BUFR%loc%j
+            iv%info(sonde_sfc)%dx(:,ilocal(sonde_sfc))          = plink%platform_BUFR%loc%dx
+            iv%info(sonde_sfc)%dxm(:,ilocal(sonde_sfc))         = plink%platform_BUFR%loc%dxm
+            iv%info(sonde_sfc)%dy(:,ilocal(sonde_sfc))          = plink%platform_BUFR%loc%dy
+            iv%info(sonde_sfc)%dym(:,ilocal(sonde_sfc))         = plink%platform_BUFR%loc%dym
+            iv%info(sonde_sfc)%proc_domain(:,ilocal(sonde_sfc)) = plink%platform_BUFR%loc%proc_domain
 
-            iv%info(sonde_sfc)%obs_global_index(ilocal(sonde_sfc)) = ntotal(sonde_sfc)
+            iv%info(sonde_sfc)%obs_global_index(ilocal(sonde_sfc)) =iv%info(sonde_sfc)%ntotal
+
          end if
+ 
+       end do dup_loop3
+     end if !sort iv
 
-         if (global .and. n < 2) then
-           if (test_transforms) exit dup_loop
-           if (platform%loc % i >= ide) then
-               platform%loc%i = platform%loc % i - ide
-            else if (platform%loc % i < ids) then
-               platform%loc%i = platform%loc % i + ide
-            end if
-            platform%loc%proc_domain = .not. platform%loc%proc_domain
-         end if
-      end do dup_loop   
-   end do reports
+     plink => plink%next
+     if ( .not. associated(plink) ) exit reports3
 
-   write(unit=message(1),fmt='(A,4(1x,i7))') &   
-      'da_read_obs_bufr: num_report, num_outside_all, num_outside_time, num_thinned: ', &
-      num_report, num_outside_all, num_outside_time, num_thinned
-   call da_message(message(1:1))
-
-   do n = 1, num_ob_indexes
-      if ( n /= 9 ) then   ! skip checking for gpsref because gpsref data are read in separate subroutine
-         if ( nlocal(n) /= iv%info(n)%nlocal ) then
-            call da_error(__FILE__,__LINE__,(/"numbers mismatch between scanning and reading PREPBUFR file"/))
-         end if
-      end if
-   end do
+   end do reports3
+   
+   if (num_fgat_time >1 ) then
+      do n = 1, num_ob_indexes
+          iv%info(n)%ptotal(kk)=ntotal(n)
+          iv%info(n)%plocal(kk)=nlocal(n)
+      end do
+   else
+      do n = 1, num_ob_indexes
+         ntotal(n)=iv%info(n)%ntotal
+	 nlocal(n)=iv%info(n)%nlocal
+         iv%info(n)%ptotal(1)=iv%info(n)%ntotal
+         iv%info(n)%plocal(1)=iv%info(n)%nlocal
+       end do
+    end if
 
    ! thinning check
    if ( thin_conv ) then
       do n = 1, num_ob_indexes
 
-         if ( ntotal(n)>0 ) then
+        if ( ntotal(n)>0 ) then
 
 #ifdef DM_PARALLEL
             ! Get minimum crit and associated processor index.
@@ -1320,8 +2202,8 @@ subroutine da_read_obs_bufr (iv, filename)
             deallocate( in  )
             deallocate( out )
 #endif
-
-            do j = 1, nlocal(n)
+         
+            do j = (1+tp(n)), nlocal(n)
                found = .false.
                do i = 1, thinning_grid_conv(n)%itxmax
                   if ( thinning_grid_conv(n)%ibest_obs(i) == j .and.         &
@@ -1334,24 +2216,43 @@ subroutine da_read_obs_bufr (iv, filename)
                   iv%info(n)%thinned(:,j) = .true.
                end if
             end do
+            
+         tp(n)=nlocal(n) 
+         end if
+      end do
+   end if  ! thin_conv
 
+ end do  !kk cycle
+
+if ( thin_conv ) then
+    do n = 1, num_ob_indexes
+        if ( ntotal(n)>0 ) then
             if ( nlocal(n) > 0 ) then
                if ( ANY(iv%info(n)%thinned(:,:)) ) then
                   call da_set_obs_missing(iv,n)  ! assign missing values to those thinned=true data
                end if
             end if
+        end if
+    end do
+end if
 
-         end if
-      end do
-   end if  ! thin_conv
+write(unit=message(1),fmt='(A,4(1x,i7))') &   
+      'da_read_obs_bufr: num_report, num_outside_all, num_outside_time, num_thinned: ', &
+      num_report, num_outside_all, num_outside_time, num_thinned
+   call da_message(message(1:1))
 
-   call closbf(iunit)
-   close(iunit)
-   call da_free_unit(iunit)
-   if ( use_errtable ) then
-      close(junit)
-      call da_free_unit(junit)
-   end if
+
+! Release the linked list
+plink => head
+
+DO WHILE ( ASSOCIATED (plink) )
+   head => plink%next
+   DEALLOCATE ( plink%platform_BUFR%each )
+   DEALLOCATE ( plink )
+   plink => head
+ENDDO
+
+NULLIFY (head)
 
    if (trace_use) call da_trace_exit("da_read_obs_bufr")
 #else
@@ -1359,3 +2260,6 @@ subroutine da_read_obs_bufr (iv, filename)
 #endif
 
 end subroutine da_read_obs_bufr
+
+
+

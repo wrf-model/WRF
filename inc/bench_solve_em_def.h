@@ -16,6 +16,7 @@ BENCH_DECL(rad_driver_tim)
 BENCH_DECL(surf_driver_tim)
 BENCH_DECL(pbl_driver_tim)
 BENCH_DECL(cu_driver_tim)
+BENCH_DECL(shcu_driver_tim)
 BENCH_DECL(fdda_driver_tim)
 BENCH_DECL(cal_phy_tend)
 BENCH_DECL(comp_diff_metrics_tim)
@@ -59,6 +60,8 @@ BENCH_DECL(time_filt_tim)
 BENCH_DECL(bc_2d_tim)
 BENCH_DECL(microswap_1)
 BENCH_DECL(microswap_2)
+BENCH_DECL(fire_driver_tim)
+BENCH_DECL(tracer_adv_tim)
 #else
 #define SOLVE_START
 #define SOLVE_END

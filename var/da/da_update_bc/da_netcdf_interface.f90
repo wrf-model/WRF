@@ -14,6 +14,7 @@ contains
 #include "da_put_var_3d_real_cdf.inc"
 #include "da_put_var_2d_real_cdf.inc"
 #include "da_get_var_2d_int_cdf.inc"
+#include "da_put_var_2d_int_cdf.inc"
 #include "da_get_att_cdf.inc"
 #include "da_put_att_cdf.inc"
 #include "da_get_bdyfrq.inc"

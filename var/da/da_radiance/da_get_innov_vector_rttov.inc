@@ -11,8 +11,6 @@ subroutine da_get_innov_vector_rttov (it, grid, ob, iv)
 
    implicit none
    
-!#include "rttov_q2v.interface"
-
    integer,           intent(in)    :: it       ! External iteration.
    type (domain),     intent(in)    :: grid     ! first guess state.
    type (y_type),     intent(inout) :: ob       ! Observation structure.
@@ -21,37 +19,36 @@ subroutine da_get_innov_vector_rttov (it, grid, ob, iv)
 #if defined(RTTOV)
 
    integer  :: n        ! Loop counter.
-   integer  :: k  ! Index dimension.
-   integer  :: nlevels ! Number of obs levels.
+   integer  :: i, j, k  ! Index dimension.
+   integer  :: nlevels  ! Number of obs levels.
+   integer  :: nchanprof, errorstatus
+   integer  :: ir_atlas_version, mw_atlas_version
 
-   real                             :: seap, icep, lndp, snop
+   character(len=256) :: atlas_path
+   real*8                           :: seap, icep, lndp, snop
    real, allocatable :: v_p(:,:)
 
    integer :: inst, nchan
-   real,    allocatable   :: polar(:)
    real,    allocatable   :: pres(:)
-   logical :: amsua, amsub, ssmi
-   ! logical :: mhs
 
-   integer :: kn,knchpf,sensor_type,n1,n2,n1n2
-   integer, allocatable :: kprof(:), kchan(:),kochan(:),knchan(:),indexn(:,:)
-   real   , allocatable :: pemsv(:), pemsh(:), pems5(:)
-   real   , allocatable :: zasat(:), zlsat(:)
+   integer :: n1,n2,n1n2
 
 ! FIX?
 real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
-   real, allocatable :: tgrn(:)
-   real, allocatable :: tsk(:)
+   real, allocatable :: emissivity(:)
 
    type(con_vars_type),  allocatable :: con_vars(:)
    type(aux_vars_type),  allocatable :: aux_vars(:)
 
+   type(rttov_chanprof), allocatable :: chanprof(:)
+   type(profile_type), allocatable   :: profiles(:)
+
    ! variables for computing clwp
    real, allocatable :: dpf(:,:), clw(:,:), pf(:,:)
 
-   ! variables for tb to radiance conversion
-   real :: tstore
+   real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
+   real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
 
    if (trace_use) call da_trace_entry("da_get_innov_vector_rttov")
 
@@ -64,12 +61,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       nlevels  = iv%instid(inst)%nlevels
       nchan    = iv%instid(inst)%nchan
 
-      amsua = trim( rttov_inst_name(rtminit_sensor(inst))) == 'amsua'
-      amsub = trim( rttov_inst_name(rtminit_sensor(inst))) == 'amsub'
-      ! mhs = trim( rttov_inst_name(rtminit_sensor(inst))) == 'mhs'
-      ssmi  = trim( rttov_inst_name(rtminit_sensor(inst))) == 'ssmi'
-      sensor_type  = coefs(inst)%id_sensor - 1  ! 0:IR 1:MW
-
       if (iv%instid(inst)%info%n2 < iv%instid(inst)%info%n1) cycle
       n1 = iv%instid(inst)%info%n1
       n2 = iv%instid(inst)%info%n2
@@ -79,24 +70,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       allocate (pres(1:nlevels))
       allocate (con_vars(n1:n2))
       allocate (aux_vars(n1:n2))
-      allocate (zasat(n1:n2))
-      allocate (zlsat(n1:n2))
-      allocate (polar(nchan))
  
-      knchpf = n1n2*nchan
-      ! knchpf = 1*nchan
-
-      allocate (knchan (n1:n2))
-      ! allocate (knchan (1))
-      allocate (kprof  (knchpf))
-      allocate (kchan  (knchpf))
-      allocate (kochan (knchpf))
-      allocate (indexn (1:nchan,n1:n2))
-      allocate (pemsv  (knchpf))
-      allocate (pemsh  (knchpf))
-      allocate (pems5  (knchpf))
-
-      pres(1:nlevels) = coefs(inst) % ref_prfl_p(1:nlevels)
+      pres(1:nlevels) = coefs(inst) % coef % ref_prfl_p(1:nlevels)
 
       allocate(v_p(kms:kme,n1:n2))
       v_p(:,:)=0.0
@@ -125,21 +100,16 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       call da_interp_lin_3d (grid%xb%t, iv%instid(inst)%info, iv%instid(inst)%t (:,n1:n2))
       call da_interp_lin_3d (grid%xb%q, iv%instid(inst)%info, iv%instid(inst)%mr(:,n1:n2))
 
+
       do n= n1,n2
          do k=1, nlevels
             if (iv%instid(inst)%info%zk(k,n) <= 0.0) then
-               iv%instid(inst)%t(k,n) = coefs(inst) % ref_prfl_t(k,gas_id_watervapour)  ! outside model level
-               iv%instid(inst)%mr(k,n) = coefs(inst) % ref_prfl_mr(k,gas_id_watervapour)
+               iv%instid(inst)%t(k,n) = coefs(inst) % coef % ref_prfl_t(k,gas_id_watervapour)  ! outside model level
+               iv%instid(inst)%mr(k,n) = coefs(inst) % coef % ref_prfl_mr(k,gas_id_watervapour)
             else
                iv%instid(inst)%mr(k,n) = iv%instid(inst)%mr(k,n) * q2ppmv
-               ! call rttov_q2v (&
-               !    gas_unit_specconc,  &! in
-               !    iv%instid(inst)%q(k,n),         &! in
-               !    gas_id_watervapour, &! in
-               !    iv%instid(inst)%q(k,n),         &! in
-               !    iv%instid(inst)%mr(k,n)     )    ! inout
             end if
-            if (pres(k) < 100.0) iv%instid(inst)%mr(k,n) = coefs(inst) % ref_prfl_mr(k,gas_id_watervapour)
+            if (pres(k) < 100.0) iv%instid(inst)%mr(k,n) = coefs(inst) % coef % ref_prfl_mr(k,gas_id_watervapour)
          end do
 
          ! determine surface type of obs location
@@ -152,41 +122,43 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             iv%instid(inst)%info%dxm(1,n), iv%instid(inst)%info%dym(1,n), &
             iv%instid(inst)%isflg(n),iv%instid(inst)%vegtyp(n), iv%instid(inst)%soiltyp(n), &
             seap, icep, lndp, snop )
-      end do
 
-      call da_interp_lin_2d (grid%xb % u10,  iv%instid(inst)%info, 1,iv%instid(inst)%u10(n1:n2))
-      call da_interp_lin_2d (grid%xb % v10,  iv%instid(inst)%info, 1,iv%instid(inst)%v10(n1:n2))
-      call da_interp_lin_2d (grid%xb % t2,   iv%instid(inst)%info, 1,iv%instid(inst)%t2m(n1:n2))
-      call da_interp_lin_2d (grid%xb % q2,   iv%instid(inst)%info, 1,iv%instid(inst)%q2m(n1:n2))
-      call da_interp_lin_2d (grid%xb % psfc, iv%instid(inst)%info, 1,iv%instid(inst)%ps (n1:n2))
+         iv%instid(inst)%snow_frac(n) = snop   ! snow coverage fraction 0-1
 
-      allocate (tgrn(n1:n2))
-      allocate (tsk(n1:n2))
-      call da_interp_lin_2d (grid%xb % tgrn, iv%instid(inst)%info, 1, tgrn)
-      call da_interp_lin_2d (grid%xb % tsk, iv%instid(inst)%info, 1, tsk)
-
-      do n=n1,n2
-         if (iv%instid(inst)%isflg(n) == 0) then   ! over sea using SST
-            iv%instid(inst)%ts(n) = tgrn(n)
+         if ( iv%instid(inst)%isflg(n) == 0 .or. iv%instid(inst)%isflg(n) == 4 ) then       ! sea
+            iv%instid(inst)%surftype(n) = 1
+         else if ( iv%instid(inst)%isflg(n) == 1 .or. iv%instid(inst)%isflg(n) == 5 ) then  ! sea-ice with snow
+            iv%instid(inst)%surftype(n) = 2
          else
-            iv%instid(inst)%ts(n) = tsk(n)
+            iv%instid(inst)%surftype(n) = 0
          end if
+
       end do
-      deallocate (tgrn)
-      deallocate (tsk)
 
-      call da_interp_lin_2d (grid%xb%terr,  iv%instid(inst)%info, 1, iv%instid(inst)%elevation(n1:n2))
+      call da_interp_lin_2d (grid%xb % u10,  iv%instid(inst)%info, 1, iv%instid(inst)%u10(n1:n2))
+      call da_interp_lin_2d (grid%xb % v10,  iv%instid(inst)%info, 1, iv%instid(inst)%v10(n1:n2))
+      call da_interp_lin_2d (grid%xb % t2,   iv%instid(inst)%info, 1, iv%instid(inst)%t2m(n1:n2))
+      call da_interp_lin_2d (grid%xb % q2,   iv%instid(inst)%info, 1, iv%instid(inst)%q2m(n1:n2))
+      call da_interp_lin_2d (grid%xb % psfc, iv%instid(inst)%info, 1, iv%instid(inst)%ps (n1:n2))
+      call da_interp_lin_2d (grid%xb % tsk,  iv%instid(inst)%info, 1, iv%instid(inst)%ts (n1:n2))
+      call da_interp_lin_2d (grid%xb % terr, iv%instid(inst)%info, 1, iv%instid(inst)%elevation(n1:n2))
 
-      ! variables for emissivity calculations
-      !---------------------------------------- 
-
-      call da_interp_lin_2d (grid%xb%smois,  iv%instid(inst)%info, 1, iv%instid(inst)%smois(n1:n2))
-      call da_interp_lin_2d (grid%xb%tslb,   iv%instid(inst)%info, 1, iv%instid(inst)%tslb(n1:n2))
-      call da_interp_lin_2d (grid%xb%snowh,  iv%instid(inst)%info, 1, iv%instid(inst)%snowh(n1:n2))
-      call da_interp_lin_2d (grid%xb%vegfra, iv%instid(inst)%info, 1, iv%instid(inst)%vegfra(n1:n2))
-
-      ! iv%instid(inst)%snowh(n1:n2) = iv%instid(inst)%snowh(n1:n2)*100.0   ! convert from m to mm
-      iv%instid(inst)%vegfra(n1:n2) = 0.01*iv%instid(inst)%vegfra(n1:n2)  ! convert range to 0~1
+      if ( use_mspps_ts(inst) ) then
+         ! only for AMSU-A over land
+         if ( trim(rttov_inst_name(rtminit_sensor(inst))) == 'amsua' ) then
+            do n = n1, n2
+               if ( iv%instid(inst)%surftype(n) == 0 ) then
+                  call da_mspps_ts(ob%instid(inst)%tb(1:nchan,n), nchan,  &
+                                   iv%instid(inst)%satzen(n), ts_mspps)
+                  ! ts_mspps is initilaized as negative values in the
+                  ! da_mspps_ts subroutine.  Apply only valid values here.
+                  if ( ts_mspps > 0.0 ) then
+                     iv%instid(inst)%ts(n) = ts_mspps
+                  end if
+               end if
+            end do
+         end if
+      end if
 
       ! variables for calculation of cloud affected radiance
       !-------------------------------------------------------
@@ -202,9 +174,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
       iv%instid(inst)%pm(:,n1:n2)  = v_p(:,n1:n2)
 
-      ! convert to hPa
-      iv%instid(inst)%ps(n1:n2) = 0.01 * iv%instid(inst)%ps(n1:n2)
-      iv%instid(inst)%mr2m(n1:n2) = iv%instid(inst)%q2m(n1:n2) * q2ppmv
+      iv%instid(inst)%ps(n1:n2) = 0.01 * iv%instid(inst)%ps(n1:n2)       ! hPa
+      iv%instid(inst)%mr2m(n1:n2) = iv%instid(inst)%q2m(n1:n2) * q2ppmv  ! ppmv
 
       ! ADD for computing cloud liquid water path (mm) from guess
 
@@ -222,70 +193,84 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          iv%instid(inst)%clwp(n1:n2)  =iv%instid(inst)%clwp(n1:n2) + clw(k,n1:n2)
       end do
 
-      ! call rttov_q2v (&
-      !    gas_unit_specconc,  &! in
-      !    iv%instid(inst)%q2m(n1:n2),          &! in
-      !    gas_id_watervapour, &! in
-      !    iv%instid(inst)%q2m(n1:n2),          &! in
-      !    iv%instid(inst)%mr2m(n1:n2)    ! inout
-
-      ! Compute surface emissivity for observation
+      ! surface emissivity
       !-------------------------------------------
 
-      zasat(n1:n2) = iv%instid(inst)%satzen(n1:n2) * deg2rad
-      zlsat(n1:n2) = iv%instid(inst)%satazi(n1:n2) * deg2rad
+      nchanprof = nchan*n1n2
+      allocate(emissivity(nchanprof))
+      emissivity(:) = 0.0
 
-      ! do i = n1,n2
-      !    knchan(i) = nchan
-      !    do kn=1,nchan 
-      !       kprof((i-1)*nchan+kn)  = i
-      !       kchan((i-1)*nchan+kn)  = kn
-      !       kochan((i-1)*nchan+kn) = kn
-      !       indexn(kn,i) = (-1)*nchan+kn 
-      !    end do
-      ! end do
+      if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
+         ! set up emissivity atlas
+         atlas_path = 'emis_data/'
+         ir_atlas_version = 100
+         mw_atlas_version = 100   ! TELSEM
+         if ( rttov_emis_atlas_mw == 2 ) mw_atlas_version = 200   ! CNRW
+         write(unit=message(1),fmt='(A,A)')  &
+            'Setting up emissivity atlas for instrument ', trim(iv%instid(inst)%rttovid_string)
+         call da_message(message(1:1))
+         call rttov_atlas_setup(              &
+            errorstatus,                      &
+            grid%start_month,                 &
+            coefs(inst)%coef,                 &
+            path = trim(atlas_path),          &
+            ir_atlas_ver = ir_atlas_version,  &
+            mw_atlas_ver = mw_atlas_version )
+         if ( errorstatus /= errorstatus_success ) then
+            call da_error(__FILE__,__LINE__, &
+               (/"failure in setting up emissivity atlas"/))
+         end if
 
-      pemsv(:)    = 0.0
-      pemsh(:)    = 0.0
-
-      if (amsua) then
-         polar(1:4) = 0.0  ! polarizition: 0:vertical; 1:horizontal
-         polar(5:6) = 1.0
-         polar(7)   = 0.0
-         polar(8:14)= 1.0
-         polar(15)  = 0.0
-      end if
-      if (amsub) then
-         polar(1:5) = 0.0
-      end if
-
-      do n=n1,n2
-         knchan(n) = nchan
-         do kn=1,nchan 
-            kprof((n-1)*nchan+kn)  = n
-            kchan((n-1)*nchan+kn)  = kn
-            kochan((n-1)*nchan+kn) = kn
-            indexn(kn,n) = (n-1)*nchan+kn 
+         ! Generate the chanprof array
+         allocate(chanprof(nchanprof))
+         do n = n1, n2
+            chanprof((n-1)*nchan+1:n*nchan)%prof = n
+            chanprof((n-1)*nchan+1:n*nchan)%chan = (/ (j, j=1,nchan) /)
          end do
-      end do
 
-      if (coefs(inst)%id_sensor == 2) then ! microwave
-         call da_trace("da_get_innov_vector_rttov",message="Calling gsi_emiss")
-         call gsi_emiss(inst,knchpf,kprof,kchan,knchan,indexn, &
-            iv%instid(inst)%satzen * deg2rad, &
-            iv%instid(inst)%satazi * deg2rad, polar, &
-            iv%instid(inst)%isflg,pemsv,pemsh,pems5, &
-            iv%instid(inst)%ts, &
-            iv%instid(inst)%soiltyp, &
-            iv%instid(inst)%tslb, &
-            iv%instid(inst)%smois, &
-            iv%instid(inst)%vegtyp, &
-            iv%instid(inst)%vegfra, &
-            iv%instid(inst)%snowh, &
-            sensor_type,n1n2,nchan, &
-            iv%instid(inst)%tb_inv(:,:),amsua,amsub,ssmi, &
-            iv%instid(inst)%u10, &
-            iv%instid(inst)%v10)
+         allocate(profiles(n1:n2))
+         do n = n1, n2
+            ! latitude, longitude, surftype are used for retreiving emis from atlas
+            ! zenangle is used by MW emmisivity atlas
+            ! snow_frac is used only by IR emmisivity atlas
+            profiles(n)%latitude      = iv%instid(inst)%info%lat(1,n)
+            profiles(n)%longitude     = iv%instid(inst)%info%lon(1,n)
+            profiles(n)%zenangle      = iv%instid(inst)%satzen(n)
+            profiles(n)%skin%surftype = iv%instid(inst)%surftype(n)
+            profiles(n)%snow_frac     = iv%instid(inst)%snow_frac(n)
+         end do
+         
+         ! Retrieve values from atlas
+         call rttov_get_emis(  &
+            errorstatus,       &
+            chanprof,          &
+            profiles,          &
+            coefs(inst)%coef,  &
+            emissivity = emissivity )
+         if ( errorstatus /= errorstatus_success ) then
+            call da_error(__FILE__,__LINE__, &
+               (/"failure in retrieving emissivity values"/))
+         end if
+         deallocate (profiles)
+         deallocate (chanprof)
+      end if
+
+      if ( use_mspps_emis(inst) ) then
+         ! Only for AMSU-A over land
+         if ( trim(rttov_inst_name(rtminit_sensor(inst))) == 'amsua' ) then
+            allocate(em_mspps(nchan))
+            do n = n1, n2
+               if ( iv%instid(inst)%surftype(n) == 0 ) then
+                  call da_mspps_emis(ob%instid(inst)%tb(1:nchan,n), nchan, em_mspps)
+                  do k = 1, nchan
+                     if ( emissivity((n-1)*nchan+k) < 0.01 ) then
+                        emissivity((n-1)*nchan+k) = em_mspps(k)
+                     end if
+                  end do
+               end if
+            end do
+            deallocate(em_mspps)
+         end if
       end if
 
       !$OMP PARALLEL DO &
@@ -294,6 +279,14 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          con_vars(n) % nlevels = nlevels 
          allocate (con_vars(n) % t(nlevels))
          allocate (con_vars(n) % q(nlevels))
+         if ( use_rttov_kmatrix ) then
+            allocate (con_vars(n) % t_jac(nchan,nlevels))
+            allocate (con_vars(n) % q_jac(nchan,nlevels))
+            allocate (con_vars(n) % ps_jac(nchan))
+            con_vars(n) % t_jac(:,:) = 0.0
+            con_vars(n) % q_jac(:,:) = 0.0
+            con_vars(n) % ps_jac(:)  = 0.0
+         end if
 
          con_vars(n) % t(1:nlevels) = iv%instid(inst)%t(1:nlevels,n)
          con_vars(n) % q(1:nlevels) = iv%instid(inst)%mr(1:nlevels,n)
@@ -303,42 +296,52 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          aux_vars(n) % q2m      = iv%instid(inst)%mr2m(n)
          aux_vars(n) % u10      = iv%instid(inst)%u10(n)
          aux_vars(n) % v10      = iv%instid(inst)%v10(n)
-         aux_vars(n) % surftype = iv%instid(inst)%landsea_mask(n) 
+         aux_vars(n) % surftype = iv%instid(inst)%surftype(n)
          aux_vars(n) % surft    = iv%instid(inst)%ts(n)
          aux_vars(n) % satzen   = iv%instid(inst)%satzen(n)
          aux_vars(n) % satazi   = iv%instid(inst)%satazi(n)
+         aux_vars(n) % solzen   = iv%instid(inst)%solzen(n)
+         aux_vars(n) % solazi   = iv%instid(inst)%solazi(n)
+         aux_vars(n) % elevation = iv%instid(inst)%elevation(n) !iv%instid(inst)%info%elv(n)
+         aux_vars(n) % rlat     = iv%instid(inst)%info%lat(1,n) 
 
          ! [1.3] Call RTM forward model
-
          ! da_rttov_direct nominally an array version, but doesn't handle arrays
          ! of surface flags properly
-         allocate(temp(nchan),temp2(nchan),temp3(nchan,kts:kte))
-         
-         !----------------------------------------------------------------
-         ! Compute Overcast Radiances for AIRS Cloud Detection(MMR)
-         !----------------------------------------------------------------
-	 call da_rttov_direct (inst, iv%instid(inst)%isflg(n), nchan, 1, &
-            con_vars(n:n), aux_vars(n:n), &
-            ! iv%instid(inst)%tb_xb(:,n), pemsv, pemsh, &
-!!!            temp, pemsv((n-1)*nchan+1:n*nchan), pemsh((n-1)*nchan+1:n*nchan), &
-            temp, temp2, temp3, pemsv((n-1)*nchan+1:n*nchan), pemsh((n-1)*nchan+1:n*nchan), &
-            iv%instid(inst)%emiss(:,n))
-         
-	 iv%instid(inst)%tb_xb(:,n)=temp(:)
+         ! da_rttov_k or da_rttov_direct is used one profile per call
+         allocate(temp(nchan),temp2(nchan),temp3(nchan,nlevels-1))   
+         if ( use_rttov_kmatrix ) then
+            call da_rttov_k (inst, nchan, 1, nlevels, &
+               con_vars(n:n), aux_vars(n:n), &
+               temp,temp2,temp3, emissivity((n-1)*nchan+1:n*nchan),&
+               iv%instid(inst)%emiss(:,n))
+         else
+            call da_rttov_direct (inst, nchan, 1, nlevels, &
+               con_vars(n:n), aux_vars(n:n), &
+               temp, temp2, temp3, emissivity((n-1)*nchan+1:n*nchan), &
+               iv%instid(inst)%emiss(:,n))
+         end if
+         iv%instid(inst)%tb_xb(:,n)=temp(:)
          iv%instid(inst)%rad_xb(:,n)=temp2(:)
-         iv%instid(inst)%rad_ovc(:,:,n)=temp3(:,:)
-
+         ! Overcast Radiances for AIRS Cloud Detection(MMR)
+         iv%instid(inst)%rad_ovc(:,1:nlevels-1,n)=temp3(:,:) ! overcast nlayers=nlevels-1
          deallocate(temp,temp2,temp3)
+
       end do
       !$OMP END PARALLEL DO
 
-      if (iv%instid(inst)%nchannels > nchan) then
-         iv%instid(inst)%emiss(nchan+1:iv%instid(inst)%nchannels,n1:n2) = 0.0
-      end if
-
-      if (coefs(inst)%id_sensor == 2) then ! microwave
-         do n=n1,n2
-            iv%instid(inst)%emiss(1:nchan,n) = pems5(1+(n-n1)*nchan:(n-n1+1)*nchan)
+      if ( use_rttov_kmatrix ) then
+         do n = n1, n2
+            do k = 1, nlevels
+               iv%instid(inst)%t_jacobian(:,k,n) = con_vars(n)%t_jac(:,k)
+               iv%instid(inst)%q_jacobian(:,k,n) = con_vars(n)%q_jac(:,k)
+            end do
+            iv%instid(inst)%ps_jacobian(:,n) = con_vars(n)%ps_jac(:)
+         end do
+         do n = n1, n2
+            deallocate (con_vars(n) % t_jac)
+            deallocate (con_vars(n) % q_jac)
+            deallocate (con_vars(n) % ps_jac)
          end do
       end if
 
@@ -357,6 +360,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
                iv%instid(inst)%tb_inv(k,n) = ob%instid(inst)%tb(k,n) - iv%instid(inst)%tb_xb(k,n)
             else
                iv%instid(inst)%tb_inv(k,n)   = missing_r
+               iv%instid(inst)%tb_qc(k,n)    = qc_bad
             end if
          end do
       end do
@@ -368,19 +372,12 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       deallocate (pres)
       deallocate (con_vars)
       deallocate (aux_vars)
-      deallocate (zasat)
-      deallocate (zlsat)
-      deallocate (polar)
-      deallocate (knchan)
-      deallocate (kprof)
-      deallocate (kchan)
-      deallocate (kochan)
-      deallocate (indexn)
-      deallocate (pemsv)
-      deallocate (pemsh)
-      deallocate (pems5)
+      deallocate (emissivity)
 
-      call da_convert_zk (iv%instid(inst)%info)
+      if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
+         call rttov_deallocate_atlas(coefs(inst)%coef)
+      end if
+
    end do        ! end loop for sensor
    
    if (trace_use) call da_trace_exit("da_get_innov_vector_rttov")
@@ -390,5 +387,4 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 #endif
  
 end subroutine da_get_innov_vector_rttov
-
 

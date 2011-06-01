@@ -14,7 +14,7 @@ subroutine da_earth_2_model_wind(eu,ev,mu,mv,lon)
 
    implicit none
 
-   real, intent(in)  :: eu, ev
+   real*8, intent(in)  :: eu, ev
    real, intent(out) :: mu, mv
    real, intent(in)  :: lon
 

@@ -17,6 +17,7 @@ gen_be : 	gen_be_ensrf.exe	\
 		gen_be_stage1.exe	\
 		gen_be_stage1_1dvar.exe	\
 		gen_be_stage2.exe	\
+                gen_be_stage2_gsi.exe   \
 		gen_be_stage2_1dvar.exe	\
 		gen_be_stage2a.exe	\
 		gen_be_stage3.exe	\
@@ -81,6 +82,11 @@ gen_be_stage2.exe : gen_be_stage2.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_stage2.f90 > gen_be_stage2.f
 	$(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_stage2.f
 	$(SFC) -o gen_be_stage2.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_stage2.o $(GEN_BE_LIB)
+
+gen_be_stage2_gsi.exe : gen_be_stage2_gsi.f90 
+	$(CPP) $(CPPFLAGS)  gen_be_stage2_gsi.f90 > gen_be_stage2_gsi.f
+	$(SFC) -c $(FCFLAGS)  gen_be_stage2_gsi.f
+	$(SFC) -o gen_be_stage2_gsi.exe $(LDFLAGS)  gen_be_stage2_gsi.o 
 
 gen_be_stage2_1dvar.exe : gen_be_stage2_1dvar.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_stage2_1dvar.f90 > gen_be_stage2_1dvar.f

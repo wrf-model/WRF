@@ -67,7 +67,7 @@ char * get_typename_i(int i) ;
 
 int gen_alloc ( char * dirname ) ;
 int gen_alloc1 ( char * dirname ) ;
-int gen_alloc2 ( FILE * fp , char * structname , node_t * node , int sw ) ;
+int gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw );
 
 int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;
@@ -97,8 +97,10 @@ int gen_config_reads ( char * dirname ) ;
 char * set_mem_order( node_t * node , char * str , int n  ) ;
 
 int gen_wrf_io ( char * dirname ) ;
-int set_dim_strs ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend, int sw_allow_stagger ) ;
-int gen_wrf_io2 ( FILE * fp , char * fname , char * structname , char * fourdname , node_t * node , int io_mask , int sw_io ) ;
+int set_dim_strs  ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend, int sw_allow_stagger ) ;
+int set_dim_strs2 ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend, int sw_disregard_stag ) ;
+int set_dim_strs3 ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend, int sw_disregard_stag ) ;
+int gen_wrf_io2 ( FILE * fp , char * fname , char * structname , char * fourdname , node_t * node , int sw_io ) ;
 
 int gen_namelist_defines ( char * dirname , int sw_dimension ) ;
 int gen_namelist_defaults ( char * dirname ) ;
@@ -142,6 +144,10 @@ int gen_nest_unpack ( char * dirname );
 int gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path );
 int count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int down_path );
 int gen_debug (  char * dirname );
+
+void reset_mask ( unsigned int * mask , int e ) ;
+void set_mask ( unsigned int * mask , int e ) ;
+int get_mask ( unsigned int * mask , int e ) ;
 
 #define PROTOS_H
 #endif

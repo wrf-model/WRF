@@ -5,8 +5,10 @@ program gen_be_ep2
 !  flow-dependent perturbations in WRF-Var (alpha control variable, 
 !  alphacv_method = 2).
 !
-!  Owner: Dale Barker (NCAR/MMM)
-!  Please acknowledge author/institute in work that uses this code.
+!  Dale Barker (NCAR/MMM)      January 2007
+!  Arthur P. Mizzi (NCAR/MMM)  February 2011  Modified to use .vari extension for
+!                                             ensemble variance file output from
+!                                             gen_be_ensmean.f90
 !
 !----------------------------------------------------------------------
 
@@ -76,6 +78,7 @@ program gen_be_ep2
 
 !---------------------------------------------------------------------------------------------
    write(6,'(/a)')' [1] Initialize information.'
+   print *, 'apm in gen_be_ep2'
 !---------------------------------------------------------------------------------------------
 
    call da_get_unit(gen_be_iunit)
@@ -118,7 +121,7 @@ program gen_be_ep2
 
 !  Get grid dimensions from first T field:
    var = "T"
-   input_file = trim(directory)//'.e001/'//trim(filename)
+   input_file = trim(directory)//'/'//trim(filename)//'.e001'
    call da_stage0_initialize( input_file, var, dim1, dim2, dim3, ds )
    dim1s = dim1+1 ! u i dimension is 1 larger.
    dim2s = dim2+1 ! v j dimension is 1 larger.
@@ -173,7 +176,7 @@ program gen_be_ep2
    do member = 1, ne
 
       write(UNIT=ce,FMT='(i3.3)')member
-      input_file = trim(directory)//'.e'//trim(ce)//'/'//trim(filename)
+      input_file = trim(directory)//'/'//trim(filename)//'.e'//trim(ce)
 
       do k = 1, dim3
 

@@ -22,9 +22,11 @@ CONTAINS
                      ,I_ACSWUPB,I_ACSWUPBC,I_ACSWDNB,I_ACSWDNBC       & ! Optional
                      ,I_ACLWUPT,I_ACLWUPTC,I_ACLWDNT,I_ACLWDNTC       & ! Optional
                      ,I_ACLWUPB,I_ACLWUPBC,I_ACLWDNB,I_ACLWDNBC       & ! Optional
-                     ,dt,xtime,sbw                                    &
+                     ,dt,xtime,sbw,t2                                 &
                      ,diag_print                                      &
                      ,bucket_mm, bucket_J                             &
+                     ,prec_acc_c, prec_acc_nc, snow_acc_nc            &
+                     ,snowncv, prec_acc_dt, curr_secs                 &
                                                                       )
 !----------------------------------------------------------------------
 
@@ -45,11 +47,17 @@ CONTAINS
 !-- RAINCV        cumulus scheme precipitation in one time step (mm)
 !-- RAINNC        explicit scheme precipitation since hour 0
 !-- RAINNCV       explicit scheme precipitation in one time step (mm)
+!-- SNOWNCV       explicit scheme snow in one time step (mm)
 !-- HFX           surface sensible heat flux
 !-- LH            surface latent heat flux
 !-- SFCEVP        total surface evaporation
 !-- U             u component of wind - to be used later to compute k.e.
 !-- V             v component of wind - to be used later to compute k.e.
+!-- PREC_ACC_C    accumulated convective precip over accumulation time prec_acc_dt
+!-- PREC_ACC_NC   accumulated explicit precip over accumulation time prec_acc_dt
+!-- SNOW_ACC_NC   accumulated explicit snow precip over accumulation time prec_acc_dt
+!-- PREC_ACC_DT   precip accumulation time, default is 60 min
+!-- CURR_SECS     model time in seconds
 !
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -99,9 +107,11 @@ CONTAINS
                                                            MU_2  &
                                                     ,   RAINNCV  &
                                                     ,    RAINCV  &
+                                                    ,   SNOWNCV  &
                                                     ,       HFX  &
+                                                    ,        LH  &
                                                     ,    SFCEVP  &  
-                                                    ,        LH  
+                                                    ,        T2     
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                DPSDT  &
@@ -127,7 +137,10 @@ CONTAINS
                       I_ACLWUPT,I_ACLWUPTC,I_ACLWDNT,I_ACLWDNTC,  &
                       I_ACLWUPB,I_ACLWUPBC,I_ACLWDNB,I_ACLWDNBC
 
-! LOCAL  VAR
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
+                      PREC_ACC_C, PREC_ACC_NC, SNOW_ACC_NC
+
+   REAL, OPTIONAL, INTENT(IN)::  PREC_ACC_DT, CURR_SECS
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
    INTEGER :: idp,jdp,irc,jrc,irnc,jrnc,isnh,jsnh
@@ -172,7 +185,7 @@ CONTAINS
       ENDDO      
       ENDDO
 
-      IF (xtime .eq. 0.0 .and. PRESENT(ACSWUPT))THEN
+      IF (xtime .eq. 0.0 .and. bucket_J .gt. 0.0 .and. PRESENT(ACSWUPT))THEN
         DO j=j_start(ij),j_end(ij)
         DO i=i_start(ij),i_end(ij)
           i_acswupt(i,j) = 0
@@ -186,7 +199,7 @@ CONTAINS
         ENDDO      
         ENDDO
       ENDIF
-      IF (xtime .eq. 0.0 .and. PRESENT(ACLWUPT))THEN
+      IF (xtime .eq. 0.0  .and. bucket_J .gt. 0.0 .and. PRESENT(ACLWUPT))THEN
         DO j=j_start(ij),j_end(ij)
         DO i=i_start(ij),i_end(ij)
           i_aclwupt(i,j) = 0
@@ -200,7 +213,7 @@ CONTAINS
         ENDDO      
         ENDDO
       ENDIF
-      IF (PRESENT(ACSWUPT))THEN
+      IF (PRESENT(ACSWUPT) .and. bucket_J .gt. 0.0)THEN
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
         IF(acswupt(i,j) .gt. bucket_J)THEN
@@ -238,7 +251,7 @@ CONTAINS
       ENDDO      
       ENDDO
       ENDIF
-      IF (PRESENT(ACLWUPT))THEN
+      IF (PRESENT(ACLWUPT) .and. bucket_J .gt. 0.0)THEN
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
         IF(aclwupt(i,j) .gt. bucket_J)THEN
@@ -279,6 +292,40 @@ CONTAINS
    ENDDO
 !  !$OMP END PARALLEL DO
    ENDIF
+
+! Compute precipitation accumulation in a given time window: prec_acc_dt
+   IF (prec_acc_dt .gt. 0.) THEN
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+
+   DO ij = 1 , num_tiles
+
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+         IF (mod(curr_secs, 60.* prec_acc_dt) == 0.) THEN
+            prec_acc_c(i,j)  = 0.
+            prec_acc_nc(i,j) = 0.
+            snow_acc_nc(i,j)  = 0.
+         ENDIF
+         prec_acc_c(i,j)  = prec_acc_c(i,j)  +  RAINCV(i,j)
+         prec_acc_nc(i,j) = prec_acc_nc(i,j) + RAINNCV(i,j)
+         prec_acc_c(i,j)  = MAX (prec_acc_c(i,j), 0.0)
+         prec_acc_nc(i,j) = MAX (prec_acc_nc(i,j), 0.0)
+         snow_acc_nc(i,j)   = snow_acc_nc(i,j) + SNOWNCV(I,J)
+! add convective precip to snow bucket if t2 < 273.15
+         IF ( t2(i,j) .lt. 273.15 ) THEN
+         snow_acc_nc(i,j)   = snow_acc_nc(i,j) +  RAINCV(i,j)
+         snow_acc_nc(i,j)   = MAX (snow_acc_nc(i,j), 0.0)
+         ENDIF
+      ENDDO     
+      ENDDO     
+
+   ENDDO     
+
+!  !$OMP END PARALLEL DO
+   ENDIF
+
    if (diag_print .eq. 0 ) return
 
    IF ( xtime .ne. 0. ) THEN
@@ -351,6 +398,8 @@ CONTAINS
    sfcevp_sum = 0.
    hfx_sum = 0.
    lh_sum = 0.
+   raincmax = 0.
+   rainncmax = 0.
 
    DO j = jps, min(jpe,jde-1)
      DO i = ips, min(ipe,ide-1)

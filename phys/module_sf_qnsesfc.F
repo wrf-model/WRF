@@ -47,6 +47,7 @@
      &                 ,FZT2=CZIV*GRRS*TVISC*SQPR                      &
      &                 ,FZU1=CZIV*VISC                                 &
      &                 ,PIHF=0.5*PI                                    &
+     &                 ,PRT0=0.72                                      &
      &                 ,RQVISC=1./QVISC                                &
      &                 ,USTFC=0.018/G                                  &
      &                 ,WWST2=WWST*WWST                                &
@@ -559,12 +560,8 @@ CONTAINS
             K=MAX(K,0)
             PSHZL=(PSIH1(K+2)-PSIH1(K+1))*RDZT+PSIH1(K+1)
 !
-            IF(RLMO.LE.0.)THEN
-              SIMH=(PSHZL-PSHZ+RLOGT)*FH01
-            ELSE
-! Pr=0.7 used in stable case
-              SIMH=(PSHZL-PSHZ+RLOGT/1.4)*FH01
-            ENDIF
+            SIMH=(PSHZL-PSHZ+RLOGT)*PRT0
+!           SIMH=(PSHZL-PSHZ+RLOGT)*FH01
 !----------------------------------------------------------------------
             USTARK=USTAR*VKARMAN
             AKMS=MAX(USTARK/SIMM,CXCHS)
@@ -712,12 +709,8 @@ CONTAINS
             K=MAX(K,0)
             PSHZL=(PSIH2(K+2)-PSIH2(K+1))*RDZT+PSIH2(K+1)
 !
-            IF(RLMO.LE.0.)THEN
-              SIMH=(PSHZL-PSHZ+RLOGT)*FH02
-            ELSE
-! Pr=0.7 used in stable case
-              SIMH=(PSHZL-PSHZ+RLOGT/1.4)*FH02
-            ENDIF
+            SIMH=(PSHZL-PSHZ+RLOGT)*PRT0
+!           SIMH=(PSHZL-PSHZ+RLOGT)*FH02
 !----------------------------------------------------------------------
             USTARK=USTAR*VKARMAN
             AKMS=MAX(USTARK/SIMM,CXCHL)
@@ -826,7 +819,8 @@ CONTAINS
           K=MAX(K,0)
           PSH02=(PSIH1(K+2)-PSIH1(K+1))*RDZT+PSIH1(K+1)
 !
-          SIMH02=(PSH02-PSHZ+RLNT02)*FH01
+          SIMH02=(PSH02-PSHZ+RLNT02)*PRT0
+!         SIMH02=(PSH02-PSHZ+RLNT02)*FH01
 !
           RZ=(ZTAT10-ZTMIN1)/DZETA1
           K=INT(RZ)
@@ -835,7 +829,8 @@ CONTAINS
           K=MAX(K,0)
           PSH10=(PSIH1(K+2)-PSIH1(K+1))*RDZT+PSIH1(K+1)
 !
-          SIMH10=(PSH10-PSHZ+RLNT10)*FH01
+          SIMH10=(PSH10-PSHZ+RLNT10)*PRT0
+!         SIMH10=(PSH10-PSHZ+RLNT10)*FH01
 !
           AKMS10=MAX(USTARK/SIMM10,CXCHS)
           AKHS02=MAX(USTARK/SIMH02,CXCHS)
@@ -868,7 +863,8 @@ CONTAINS
           K=MAX(K,0)
           PSH02=(PSIH2(K+2)-PSIH2(K+1))*RDZT+PSIH2(K+1)
 !
-          SIMH02=(PSH02-PSHZ+RLNT02)*FH02
+          SIMH02=(PSH02-PSHZ+RLNT02)*PRT0
+!         SIMH02=(PSH02-PSHZ+RLNT02)*FH02
 !
           RZ=(ZTAT10-ZTMIN2)/DZETA2
           K=INT(RZ)
@@ -877,7 +873,8 @@ CONTAINS
           K=MAX(K,0)
           PSH10=(PSIH2(K+2)-PSIH2(K+1))*RDZT+PSIH2(K+1)
 !
-          SIMH10=(PSH10-PSHZ+RLNT10)*FH02
+          SIMH10=(PSH10-PSHZ+RLNT10)*PRT0
+!         SIMH10=(PSH10-PSHZ+RLNT10)*FH02
 !
           AKMS10=MAX(USTARK/SIMM10,CXCHL)
           AKHS02=MAX(USTARK/SIMH02,CXCHL)
@@ -1004,7 +1001,7 @@ CONTAINS
 !
 !     INTEGER :: MPI_INTEGER,MPI_MAX
 !
-      REAL :: SM,X,ZETA1,ZETA2,ZRNG1,ZRNG2
+      REAL :: SM,X,ZETA1,ZETA2,ZRNG1,ZRNG2,PSIMQ,PSIHQ
 !
       REAL :: PIHF=3.1415926/2.,EPS=1.E-6
 !----------------------------------------------------------------------
@@ -1128,9 +1125,19 @@ CONTAINS
 !***  PAULSON 1970 FUNCTIONS
 !----------------------------------------------------------------------
           X=SQRT(SQRT(1.-16.*ZETA1))
-!
+ 
           PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
           PSIH1(K)=-2.*LOG((X*X+1.)/2.)
+!
+!----------------------------------------------------------------------
+!***  DERIVED BY S. SUKORIANSKY USING QNSE THEORY
+!----------------------------------------------------------------------
+!
+          PSIMQ=2.25*ZETA1+ZETA1**2+45.9*ZETA1**3
+          PSIHQ=2.0*ZETA1+10.3*ZETA1**2+130*ZETA1**3
+!         PSIHQ=1.45*ZETA1+7.42*ZETA1**2+93.5*ZETA1**3      ! /PRT0
+          PSIM1(K)=MAX(PSIMQ,PSIM1(K))
+          PSIH1(K)=MAX(PSIHQ,PSIH1(K))
 !
 !----------------------------------------------------------------------
 !***  STABLE RANGE
@@ -1156,7 +1163,8 @@ CONTAINS
 !----------------------------------------------------------------------
 !
           PSIM1(K)=2.25*ZETA1-0.2*ZETA1*ZETA1
-          PSIH1(K)=1.42*ZETA1+0.1*((ZETA1-0.5)**5+0.03125)
+          PSIH1(K)=2.0*ZETA1+0.14*((ZETA1-0.5)**5+0.03125)
+!         PSIH1(K)=1.42*ZETA1+0.1*((ZETA1-0.5)**5+0.03125)  !/PRT0
 !----------------------------------------------------------------------
 !
         ENDIF
@@ -1172,9 +1180,20 @@ CONTAINS
 !----------------------------------------------------------------------
 !
           X=SQRT(SQRT(1.-16.*ZETA2))
-!
+ 
           PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
           PSIH2(K)=-2.*LOG((X*X+1.)/2.)
+!
+!----------------------------------------------------------------------
+!***  DERIVED BY S. SUKORIANSKY USING QNSE THEORY
+!----------------------------------------------------------------------
+!
+          PSIMQ=2.25*ZETA2+ZETA2**2+45.9*ZETA2**3
+          PSIHQ=2.0*ZETA2+10.3*ZETA2**2+130*ZETA2**3
+!         PSIHQ=1.45*ZETA2+7.42*ZETA2**2+93.5*ZETA2**3      ! /PRT0
+          PSIM2(K)=MAX(PSIMQ,PSIM2(K))
+          PSIH2(K)=MAX(PSIHQ,PSIH2(K))
+!
 !----------------------------------------------------------------------
 !***  STABLE RANGE
 !----------------------------------------------------------------------
@@ -1200,7 +1219,8 @@ CONTAINS
 !----------------------------------------------------------------------
 !
           PSIM2(K)=2.25*ZETA2-0.2*ZETA2*ZETA2
-          PSIH2(K)=1.42*ZETA2+0.1*((ZETA2-0.5)**5+0.03125)
+          PSIH2(K)=2.0*ZETA2+0.14*((ZETA2-0.5)**5+0.03125)
+!         PSIH2(K)=1.42*ZETA2+0.1*((ZETA2-0.5)**5+0.03125)  !/PRT0
 !----------------------------------------------------------------------
 !
         ENDIF

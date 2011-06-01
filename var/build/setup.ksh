@@ -60,8 +60,8 @@ fi
 if test -d ${EXT_DIR}/netcdf/netcdf-3.6.1/${COMPILER}_${PROCESSOR}; then
   export NETCDF=${EXT_DIR}/netcdf/netcdf-3.6.1/${COMPILER}_${PROCESSOR}
 fi
-if test -d ${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}; then
-   export RTTOV=${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}
+if test -d ${EXT_DIR}/rttov/rttov93/${COMPILER}_${PROCESSOR}; then
+   export RTTOV=${EXT_DIR}/rttov/rttov93/${COMPILER}_${PROCESSOR}
 fi
 #if test -d ${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}; then
 #   export CRTM=${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}
@@ -114,21 +114,6 @@ fi
 
 if test -d /usr/lpp/ppe.poe; then
    export MPIHOME=/usr/lpp/ppe.poe
-fi
-
-# Lightning
-
-if test $MACHINE = "lightning"; then 
-   if test $COMPILER = pathscale; then
-      export MPIHOME=/contrib/2.6/mpich-gm/1.2.6..14a-pathscale-2.4-64
-   fi
-   if test $COMPILER = pgi; then
-      export MPIHOME=/contrib/2.6/mpich-gm/1.2.6..14a-pgi-6.2-64
-   fi
-   if test $COMPILER = intel; then
-      . /contrib/2.6/intel/9.1.036-64/bin/ifortvars.sh
-      export MPIHOME=/contrib/2.6/mpich-gm/1.2.6..14a-intel-9.1.042-64
-   fi
 fi
 
 export LINUX_MPIHOME=$MPIHOME

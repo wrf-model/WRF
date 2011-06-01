@@ -1,4 +1,4 @@
-subroutine da_qc_airs (i, nchan, ob, iv)
+subroutine da_qc_airs (it, i, nchan, ob, iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for AQUA/EOS-2-AIRS data.
@@ -6,6 +6,7 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 
    implicit none
 
+   integer, intent(in)             :: it         ! outer loop count
    integer, intent(in)             :: i          ! sensor index.
    integer, intent(in)             :: nchan      ! number of channel
    type (y_type),  intent(in)      :: ob         ! Observation structure.
@@ -69,12 +70,20 @@ subroutine da_qc_airs (i, nchan, ob, iv)
          if (isflg > 0) then
             ! Check surface emissivity Jacobian 
             !-----------------------------------
-            if (use_crtm_kmatrix) then
+            if (rtm_option == rtm_option_crtm .and. use_crtm_kmatrix) then
                do k = 1, nchan
                   if ( abs(iv%instid(i)%emiss_jacobian(k,n)) > 0.1 ) &
                   iv%instid(i)%tb_qc(k,n)  =  qc_bad
 	       end do  	      
             end if
+        
+            if (use_rttov_kmatrix) then
+               do k = 1, nchan
+                  if ( abs(iv%instid(i)%emiss_jacobian(k,n)) > 0.1 ) &
+                  iv%instid(i)%tb_qc(k,n)  =  qc_bad
+               end do
+            end if
+
 
             ! reject all channels 
             !--------------------
@@ -87,7 +96,7 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 
          ! a (bis) Check T and Q Jacobians for sensitivity to model top  
          !-----------------------------------------------------------
-         if (use_crtm_kmatrix) then
+         if (rtm_option == rtm_option_crtm .and. use_crtm_kmatrix) then
             do k = 1, nchan
               if ( abs(iv%instid(i)%t_jacobian(k,1,n)) > 0.1 * SUM( &
 	           abs(iv%instid(i)%t_jacobian(k,1:41,n))) ) &
@@ -97,6 +106,17 @@ subroutine da_qc_airs (i, nchan, ob, iv)
                  iv%instid(i)%tb_qc(k,n)  =  qc_bad
      	    end do
 	 end if     
+         
+         if (use_rttov_kmatrix) then
+            do k = 1, nchan
+              if ( abs(iv%instid(i)%t_jacobian(k,1,n)) > 0.1 * SUM( &
+                   abs(iv%instid(i)%t_jacobian(k,1:41,n))) ) &
+                 iv%instid(i)%tb_qc(k,n)  =  qc_bad
+              if ( abs(iv%instid(i)%q_jacobian(k,1,n)) > 0.1 * SUM( &
+                   abs(iv%instid(i)%q_jacobian(k,1:41,n))) ) &
+                 iv%instid(i)%tb_qc(k,n)  =  qc_bad
+            end do
+         end if  
 
 !         !  a.  reject all channels over mixture surface type
 !         !------------------------------------------------------
@@ -267,13 +287,13 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 	    if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
   	       kte_surf   = iv%instid(i)%nlevels     
-               kts_100hPa = MAXLOC(coefs(i)%ref_prfl_p(1:kte_surf), &
-	                    MASK = coefs(i)%ref_prfl_p(1:kte_surf) < 100.0)
+               kts_100hPa = MAXLOC(coefs(i)%coef%ref_prfl_p(1:kte_surf), &
+	                    MASK = coefs(i)%coef%ref_prfl_p(1:kte_surf) < 100.0)
 	       do k=1,nchan 
-                  tstore = coefs(i)%ff_bco(k) + coefs(i)%ff_bcs(k) * &
+                  tstore = coefs(i)%coef%ff_bco(k) + coefs(i)%coef%ff_bcs(k) * &
 		          (ob%instid(i)%tb(k,n) - bias_global(k))
-                  iv%instid(i)%rad_obs(k,n) = coefs(i)%planck1(k) / &
-		                             (EXP(coefs(i)%planck2(k)/tstore) - 1.0)
+                  iv%instid(i)%rad_obs(k,n) = coefs(i)%coef%planck1(k) / &
+		                             (EXP(coefs(i)%coef%planck2(k)/tstore) - 1.0)
 	       end do   
 #endif
             elseif (rtm_option == rtm_option_crtm) then
@@ -335,9 +355,9 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 
    if (rootproc) then
       if (num_fgat_time > 1) then
-         write(filename,'(a,i2.2)') 'qcstat_'//trim(iv%instid(i)%rttovid_string)//'_',iv%time
+         write(filename,'(i2.2,a,i2.2)') it,'_qcstat_'//trim(iv%instid(i)%rttovid_string)//'_',iv%time
       else
-         filename = 'qcstat_'//trim(iv%instid(i)%rttovid_string)
+         write(filename,'(i2.2,a)') it, '_qcstat_'//trim(iv%instid(i)%rttovid_string)
       end if
 
       call da_get_unit(fgat_rad_unit)

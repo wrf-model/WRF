@@ -32,8 +32,10 @@ CONTAINS
   REAL*8    :: chmlos(1,1,1,4)
   REAL*8    :: bchmlos(1,1,4)
   REAL*8 :: pc2(1,1,1,2)
-  REAL*8 :: tc(4)
+  REAL*8 :: tc(4),tt1,tt2
   real, parameter :: mw_c = 12.
+! .. Intrinsic Functions ..
+        INTRINSIC abs
 
        imx=1
        jmx=1
@@ -52,10 +54,16 @@ CONTAINS
           tc(2)=chem(i,k,j,p_oc1)/mw_c*mwdry*1.d-9
           tc(3)=chem(i,k,j,p_bc2)/mw_c*mwdry*1.d-9
           tc(4)=chem(i,k,j,p_oc2)/mw_c*mwdry*1.d-9
+          tt1=tc(1) +tc(3)
 
          CALL chem_1(imx,jmx,lmx, nmx, ndt1, airmas, tc, &
               chmlos, bchmlos, pc2)
          CALL chem_2(imx,jmx,lmx, nmx, ndt1, airmas, tc, pc2)
+          tt2=tc(3)+tc(1)
+          tt1=tt2-tt1
+          if(abs(tt1).gt.1.e-16)then
+           write(0,*)'no conservation in aerosol driver',tt1,i,k,j
+          endif
           chem(i,k,j,p_bc1)=tc(1)/mwdry*mw_c*1.e9
           chem(i,k,j,p_oc1)=tc(2)/mwdry*mw_c*1.e9
           chem(i,k,j,p_bc2)=tc(3)/mwdry*mw_c*1.e9
@@ -72,6 +80,7 @@ end subroutine gocart_aerosols_driver
             its,ite, jts,jte, kts,kte                                  )
    USE module_configure
    USE module_state_description
+   USE module_data_gocartchem, only: nh4_mfac,oc_mfac
    IMPLICIT NONE
    REAL, PARAMETER :: mwso4 = 96.0576
    INTEGER,      INTENT(IN   ) :: ids,ide, jds,jde, kds,kde,               &
@@ -107,7 +116,8 @@ end subroutine gocart_aerosols_driver
             pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,p_dust_2)*d_2_5     &
                                             +chem(ii,k,jj,p_seas_1)           &        
                                             +chem(ii,k,jj,p_seas_2)*s_2_5     &        
-                                            +sulfate
+                                            +sulfate*nh4_mfac                 &
+                                            +(chem(ii,k,jj,p_oc1)+chem(ii,k,jj,p_oc2))*(oc_mfac-1.)
    
             !Convert the units from mixing ratio to concentration (ug m^-3)
             pm2_5_dry(i,k,j)    = pm2_5_dry(i,k,j) / alt(ii,k,jj)
@@ -126,9 +136,10 @@ end subroutine gocart_aerosols_driver
                do n=p_seas_1,p_seas_3
                   pm10(i,k,j) = pm10(i,k,j)+chem(ii,k,jj,n)        
                enddo
-               pm10(i,k,j) = pm10(i,k,j) + sulfate                 &
+               pm10(i,k,j) = pm10(i,k,j) + sulfate*nh4_mfac        &
                             +chem(ii,k,jj,p_dust_4)*d_10           &
-                            +chem(ii,k,jj,p_p10)
+                            +chem(ii,k,jj,p_p10)                &
+                            +(chem(ii,k,jj,p_oc1)+chem(ii,k,jj,p_oc2))*(oc_mfac-1.)
                pm10(i,k,j) = pm10(i,k,j)/ alt(ii,k,jj)
             enddo
          enddo

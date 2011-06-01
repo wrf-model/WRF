@@ -42,6 +42,17 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
    model_t(:,:) = 0.0
    model_q(:,:) = 0.0
 
+   if ( it > 1 ) then
+      do n=iv%info(bogus)%n1,iv%info(bogus)%n2
+         do k=1, iv%info(bogus)%levels(n)
+            if (iv%bogus(n)%u(k)%qc == fails_error_max) iv%bogus(n)%u(k)%qc = 0
+            if (iv%bogus(n)%v(k)%qc == fails_error_max) iv%bogus(n)%v(k)%qc = 0
+            if (iv%bogus(n)%t(k)%qc == fails_error_max) iv%bogus(n)%t(k)%qc = 0
+            if (iv%bogus(n)%q(k)%qc == fails_error_max) iv%bogus(n)%q(k)%qc = 0
+         end do
+      end do
+   end if
+
    do n=iv%info(bogus)%n1,iv%info(bogus)%n2
       num_levs = iv%info(bogus)%levels(n)
 
@@ -159,7 +170,8 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-    call da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
+   if ( check_max_iv ) &
+      call da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
 
     deallocate (model_u)
     deallocate (model_v)

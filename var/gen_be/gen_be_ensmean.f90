@@ -81,7 +81,7 @@ program gen_be_ensmean
    write(6,'(50a)')'   List of variables to average = ', cv(1:nv)
 
 !  Open template ensemble mean with write access:
-   input_file = trim(directory)//'/'//trim(filename)
+   input_file = trim(directory)//'/'//trim(filename)//'.mean'
    length = len_trim(input_file)
    rcode = nf_open(input_file(1:length), NF_WRITE, cdfid_mean )
    if ( rcode /= 0) then
@@ -112,7 +112,8 @@ program gen_be_ensmean
          write(UNIT=ce,FMT='(i3.3)')member
 
 !        Open file:
-         input_file = trim(directory)//'.e'//trim(ce)//'/'//trim(filename)
+         input_file = trim(directory)//'/'//trim(filename)//'.e'//trim(ce)
+         print *, 'APM open ',input_file
          length = len_trim(input_file)
          rcode = nf_open( input_file(1:length), NF_NOWRITE, cdfid )
 
@@ -152,6 +153,8 @@ program gen_be_ensmean
                    var, ' variable is not real type'
                 call da_error(__FILE__,__LINE__,message(1:1))
              end if
+print *, var, ivtype, id_var
+print *, istart, iend(1), iend(2), iend(3)
          end if
 
 !        Calculate accumulating mean and variance:
@@ -163,6 +166,11 @@ program gen_be_ensmean
          rcode = nf_close( cdfid )
 
       end do ! member
+
+      data_r_vari = ( real(num_members)/real(num_members-1) * (data_r_vari - &
+                      data_r_mean*data_r_mean) ) 
+
+      data_r_vari = sqrt(data_r_vari)
 
       call ncvpt( cdfid_mean, id_var, istart, iend, data_r_mean, rcode)
       call ncvpt( cdfid_vari, id_var, istart, iend, data_r_vari, rcode)

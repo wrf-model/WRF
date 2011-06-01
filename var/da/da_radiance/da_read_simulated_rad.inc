@@ -24,7 +24,7 @@ subroutine da_read_simulated_rad (iv)
    integer :: i,j,k,nchan,inst, alloc_stat
    type(info_type)       ::  info
    type(model_loc_type)  ::  loc
-   
+ 
    call da_trace_entry("da_read_simulated_rad")
 
    ! Initialize variables
@@ -61,19 +61,6 @@ subroutine da_read_simulated_rad (iv)
    !----------------------------------------------------------------  
    
    if ( iv%instid(inst)%num_rad > 0 ) then
-#ifdef CRTM
-      if (rtm_option == rtm_option_crtm) then
-         iv%instid(inst)%nlevels = kme-kms+1
-         iv%instid(inst)%nchannels=nchan
-      end if
-#endif
-#ifdef RTTOV
-      if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(inst, nchan, coefs(inst), &   ! in
-            iv%instid(inst)%nfrequencies,iv%instid(inst)%nchannels, &
-            iv%instid(inst)%nbtout)      ! out
-      end if
-#endif
 
       call da_allocate_rad_iv(inst,nchan,iv)
 
@@ -123,5 +110,6 @@ subroutine da_read_simulated_rad (iv)
          inst, iv%instid(inst)%rttovid_string, iv%instid(inst)%num_rad
 
    call da_trace_exit("da_read_simulated_rad")
+   
 
 end subroutine da_read_simulated_rad

@@ -783,6 +783,7 @@
         Alarm%alarmint%Ringing = .FALSE.
 
         ! finally, load the alarm into the list
+! write(0,*)'ESMF_ClockAddAlarm ',clock%clockint%NumAlarms
         clock%clockint%AlarmList(clock%clockint%NumAlarms) = Alarm
       ENDIF
     
@@ -1015,8 +1016,16 @@ use esmf_timemod
                              clock%clockint%CurrTime ) )
                 ENDIF
               ENDIF
-              IF ( ( .NOT. ( pred1 ) ) .AND. &
-                   ( ( pred2 ) .OR. ( pred3 ) ) ) THEN
+              IF ( (.NOT. pred1) .AND. pred2 ) THEN
+                 alarm%alarmint%Ringing = .TRUE.
+                 alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
+                 alarm%alarmint%RingTimeSet = .FALSE.  !it is a one time alarm, it rang, now let it resort to interval
+                 IF ( PRESENT( RingingAlarmList ) .AND. &
+                      PRESENT ( NumRingingAlarms ) ) THEN
+                   NumRingingAlarms = NumRingingAlarms + 1
+                   RingingAlarmList( NumRingingAlarms ) = alarm
+                 ENDIF
+              ELSE IF ( (.NOT. pred1) .AND. pred3 ) THEN
                  alarm%alarmint%Ringing = .TRUE.
                  IF ( positive_timestep ) THEN
 ! hack for bug in PGI 5.1-x
@@ -1027,7 +1036,7 @@ use esmf_timemod
                        ESMF_TimeInc( alarm%alarmint%PrevRingTime, &
                                      alarm%alarmint%RingInterval )
                  ELSE
-                   ! in this case time step is negative and stop time is 
+                   ! in this case time step is negative and stop time is
                    ! less than start time
                    ! ring interval must always be positive
 ! hack for bug in PGI 5.1-x
@@ -1054,7 +1063,9 @@ use esmf_timemod
 !                IF ( alarm%alarmint%RingTime <= clock%clockint%CurrTime ) THEN
                 IF ( ESMF_TimeLE( alarm%alarmint%RingTime, &
                                   clock%clockint%CurrTime ) ) THEN
+                   alarm%alarmint%RingTimeSet = .FALSE.  !it is a one time alarm, it rang, now let it resort to interval
                    alarm%alarmint%Ringing = .TRUE.
+                   alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
                    IF ( PRESENT( RingingAlarmList ) .AND. &
                         PRESENT ( NumRingingAlarms ) ) THEN
                      NumRingingAlarms = NumRingingAlarms + 1
@@ -1068,7 +1079,9 @@ use esmf_timemod
 !                IF ( alarm%alarmint%RingTime >= clock%clockint%CurrTime ) THEN
                 IF ( ESMF_TimeGE( alarm%alarmint%RingTime, &
                                   clock%clockint%CurrTime ) ) THEN
+                   alarm%alarmint%RingTimeSet = .FALSE.  !it is a one time alarm, it rang, now let it resort to interval
                    alarm%alarmint%Ringing = .TRUE.
+                   alarm%alarmint%PrevRingTime = clock%clockint%CurrTime
                    IF ( PRESENT( RingingAlarmList ) .AND. &
                         PRESENT ( NumRingingAlarms ) ) THEN
                      NumRingingAlarms = NumRingingAlarms + 1

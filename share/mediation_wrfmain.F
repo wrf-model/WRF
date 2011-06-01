@@ -16,8 +16,6 @@ SUBROUTINE med_initialdata_input_ptr ( grid , config_flags )
       END SUBROUTINE med_initialdata_input
    END INTERFACE
    CALL  med_initialdata_input ( grid , config_flags )
-
-
 END SUBROUTINE med_initialdata_input_ptr
 
 SUBROUTINE med_initialdata_input ( grid , config_flags )
@@ -50,6 +48,7 @@ use module_io
    CHARACTER (LEN=80)     :: inpname , rstname, timestr
    CHARACTER (LEN=80)     :: message
    LOGICAL                :: restart
+   LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
 
    CALL nl_get_restart( 1, restart )
    IF ( .NOT. restart ) THEN
@@ -58,6 +57,8 @@ use module_io
      IF ( grid%input_from_file ) THEN
 
         CALL       wrf_debug ( 1 , 'wrf main: calling open_r_dataset for wrfinput' )
+
+        IF ( wrf_dm_on_monitor() ) CALL start_timing
 
 ! typically <date> will not be part of input_inname but allow for it
         CALL domain_clock_get( grid, current_timestr=timestr )
@@ -68,59 +69,14 @@ use module_io
           WRITE( wrf_err_message , * ) 'program wrf: error opening ',TRIM(inpname),' for reading ierr=',ierr
           CALL WRF_ERROR_FATAL ( wrf_err_message )
         ENDIF
-        IF      ( ( grid%id .EQ. 1 ) .OR. ( config_flags%fine_input_stream .EQ. 0 ) ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_model_input' )
-           CALL input_model_input      ( fid ,  grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_model_input' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 1 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input1' )
-           CALL input_aux_model_input1 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input1' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 2 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input2' )
-           CALL input_aux_model_input2 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input2' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 3 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input3' )
-           CALL input_aux_model_input3 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input3' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 4 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input4' )
-           CALL input_aux_model_input4 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input4' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 5 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input5' )
-           CALL input_aux_model_input5 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input5' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 6 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input6' )
-           CALL input_aux_model_input6 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input6' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 7 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input7' )
-           CALL input_aux_model_input7 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input7' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 8 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input8' )
-           CALL input_aux_model_input8 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input8' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 9 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input9' )
-           CALL input_aux_model_input9 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input9' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 10 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input10' )
-           CALL input_aux_model_input10 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input10' )
-        ELSE IF   ( config_flags%fine_input_stream .EQ. 11 ) THEN
-           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input11' )
-           CALL input_aux_model_input11 ( fid ,   grid , config_flags , ierr )
-           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input11' )
-        ELSE
-           WRITE( message , '("med_initialdata_input: bad fine_input_stream = ",I4)') config_flags%fine_input_stream
-           CALL WRF_ERROR_FATAL ( message )
-        END IF
+! registry-generated code that reads the variable set defined on a given stream
+#include "fine_stream_input.inc"
+
         CALL close_dataset ( fid , config_flags , "DATASET=INPUT" )
+        IF ( wrf_dm_on_monitor() ) THEN
+          WRITE ( message , FMT = '("processing wrfinput file (stream 0) for domain ",I8)' ) grid%id
+          CALL end_timing ( TRIM(message) )
+        ENDIF
 #ifdef MOVE_NESTS
 #if ( EM_CORE == 1 )
         grid%nest_pos = grid%ht
@@ -137,6 +93,9 @@ use module_io
 #endif
      CALL start_domain ( grid , .TRUE. )
    ELSE
+
+     IF ( wrf_dm_on_monitor() ) CALL start_timing
+
      CALL domain_clock_get( grid, current_timestr=timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , grid%id , 2 , timestr )
 
@@ -149,6 +108,12 @@ use module_io
      ENDIF
      CALL input_restart ( fid,   grid , config_flags , ierr )
      CALL close_dataset ( fid , config_flags , "DATASET=RESTART" )
+
+     IF ( wrf_dm_on_monitor() ) THEN
+       WRITE ( message , FMT = '("processing restart file for domain ",I8)' ) grid%id
+       CALL end_timing ( TRIM(message) )
+     ENDIF
+
      grid%imask_nostag = 1
      grid%imask_xstag = 1
      grid%imask_ystag = 1
@@ -179,21 +144,10 @@ SUBROUTINE med_shutdown_io ( grid , config_flags )
    INTEGER                 :: ierr
 
    IF ( grid%oid > 0 ) CALL close_dataset ( grid%oid , config_flags , "DATASET=HISTORY" )
-   IF ( grid%auxhist1_oid > 0 ) CALL close_dataset ( grid%auxhist1_oid , config_flags , "DATASET=AUXHIST1" )
-   IF ( grid%auxhist2_oid > 0 ) CALL close_dataset ( grid%auxhist2_oid , config_flags , "DATASET=AUXHIST2" )
-   IF ( grid%auxhist3_oid > 0 ) CALL close_dataset ( grid%auxhist3_oid , config_flags , "DATASET=AUXHIST3" )
-   IF ( grid%auxhist4_oid > 0 ) CALL close_dataset ( grid%auxhist4_oid , config_flags , "DATASET=AUXHIST4" )
-   IF ( grid%auxhist5_oid > 0 ) CALL close_dataset ( grid%auxhist5_oid , config_flags , "DATASET=AUXHIST5" )
-#if 0
-   IF ( grid%auxhist6_oid > 0 ) CALL close_dataset ( grid%auxhist6_oid , config_flags , "DATASET=AUXHIST6" )
-   IF ( grid%auxhist7_oid > 0 ) CALL close_dataset ( grid%auxhist7_oid , config_flags , "DATASET=AUXHIST7" )
-   IF ( grid%auxhist8_oid > 0 ) CALL close_dataset ( grid%auxhist8_oid , config_flags , "DATASET=AUXHIST8" )
-   IF ( grid%auxhist9_oid > 0 ) CALL close_dataset ( grid%auxhist9_oid , config_flags , "DATASET=AUXHIST9" )
-   IF ( grid%auxhist10_oid > 0 ) CALL close_dataset ( grid%auxhist10_oid , config_flags , "DATASET=AUXHIST10" )
-   IF ( grid%auxhist11_oid > 0 ) CALL close_dataset ( grid%auxhist11_oid , config_flags , "DATASET=AUXHIST11" )
-#endif
-
    IF ( grid%lbc_fid > 0 ) CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+
+! registry generated closes for auxhist streams
+#include "shutdown_closes.inc"
 
    CALL wrf_ioexit( ierr )    ! shut down the quilt I/O
 

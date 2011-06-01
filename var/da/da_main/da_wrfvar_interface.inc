@@ -15,9 +15,9 @@ subroutine da_wrfvar_interface (grid, config_flags)
 
    ! call mediation_setup_step (grid , config_flags , 1 , 1 , 1)
 
-   ! call set_scalar_indices_from_config (grid%id , idum1 , idum2)
+   call set_scalar_indices_from_config (grid%id , idum1 , idum2)
 
-   ! call model_to_grid_config_rec (grid%id , model_config_rec , config_flags)
+   call model_to_grid_config_rec (grid%id , model_config_rec , config_flags)
 
    grid%itimestep = 1
 

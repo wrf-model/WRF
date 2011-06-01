@@ -1,20 +1,21 @@
 program gen_be_stage4_regional
 
-   use da_control, only : stderr,stdout, filename_len
+   use da_control, only : filename_len,stderr,stdout,do_normalize,use_rf
+   use da_reporting, only : da_error
    use da_tools_serial, only : da_get_unit, da_advance_cymdh
+   use da_wavelet, only: lf,namw,nb,nij,ws,wsd
 
    implicit none
 
    character*10        :: start_date, end_date       ! Starting and ending dates.
    character*10        :: date, new_date             ! Current date (ccyymmddhh).
    character*10        :: variable                   ! Variable name
-   character(len=filename_len)       :: run_dir                    ! Run directory.
-   character(len=filename_len)       :: filename                   ! Input filename.
+   character(len=filename_len)       :: run_dir      ! Run directory.
+   character(len=filename_len)       :: filename     ! I/O filename.
    character*1         :: k_label                    ! = 'k' if model level, 'm' if mode output.
    character*2         :: ck                         ! Level index -> character.
-   character*3         :: ce                         ! Member index -> character.
    integer             :: ni, nj                     ! Dimensions read in.
-   integer             :: k, kdum                    ! Vertical index.
+   integer             :: k                          ! Vertical index.
    integer             :: stride                     ! Calculate correlation with every stride point.
    integer             :: nbins                      ! Number of latitude bins
    integer             :: ibin                       ! Which latitude bin to process (1:nbins)
@@ -24,13 +25,21 @@ program gen_be_stage4_regional
    integer             :: ne                         ! Number of ensemble members.
    integer             :: member                     ! Loop counters.
    integer             :: jstart, jend               ! Starting and ending j indices
-   real                :: count                      ! Counter for times/members.
+   integer             :: i                          ! Dummy index
+   logical             :: print_wavelets
+   real                :: rcount                     ! Counter for times/members ("count" is intrinsic).
+   real                :: fnorm                      ! field norm
    integer, allocatable:: nr(:)                      ! Number of points in each bin.
    real, allocatable   :: field(:,:)                 ! Input 2D field.
+   real, allocatable   :: grid_box_area(:,:)         ! cf. da_transfer_wrftoxb
+   real, allocatable   :: sd(:,:)                    ! Field standard deviations.
    real, allocatable   :: cov(:)                     ! Covariance as a function of distance.
 
+   real, allocatable   :: wav(:,:)                   ! Wavelet-coefficient averages.
+
    namelist / gen_be_stage4_regional_nl / start_date, end_date, interval, variable, &
-                                          ne, k, nbins, ibin, stride, run_dir
+                                          ne, k, nbins, ibin, stride, run_dir, &
+                                          do_normalize, print_wavelets, lf, namw, nb, use_rf
 
    integer :: ounit,iunit,namelist_unit
 
@@ -51,9 +60,11 @@ program gen_be_stage4_regional
    variable = 'psi'
    ne = 1
    k = 1
-   stride = 1
-   nbins = 1
-   ibin = 1
+   if( use_rf )then
+      nbins = 1
+      ibin = 1
+      stride = 1
+   endif
    run_dir = '/mmmtmp/dmbarker'
    open(unit=namelist_unit, file='gen_be_stage4_regional_nl.nl', &
         form='formatted', status='old', action='read')
@@ -62,85 +73,271 @@ program gen_be_stage4_regional
 
    read(start_date(1:10), fmt='(i10)')sdate
    read(end_date(1:10), fmt='(i10)')edate
-   write(UNIT=6,FMT='(4a)')' Computing error correlation scales for dates ', start_date, ' to ', end_date
-   write(UNIT=6,FMT='(a,i3,a,i3)') '                                    for bin ', ibin, ' of ', nbins
+   if( use_rf )then
+      write(UNIT=6,FMT='(4a)')' Computing error correlation scales for dates ', start_date, ' to ', end_date
+      write(UNIT=6,FMT='(a,i3,a,i3)') '                                    for bin ', ibin, ' of ', nbins
+      write(UNIT=6,FMT='(a,i8)')' Stride over which to jump points in correlation calculation = ', stride
+   else
+#ifdef WAVELET
+      call qftest_w(namw//char(0),lf)
+#else
+      call da_error(__FILE__,__LINE__,(/"needs qftest_w, compile after setenv WAVELET 1"/))
+#endif
+      write(6,'(" Computing field and wavelet std. devs. for dates ",a," to ",a)')start_date,end_date
+      write(6,'("    using ",i8," bands of ",a,i0.2," wavelet.")')nb,namw,lf
+!     allocate(fw(lf,0:1))			! Wavelet filters.
+!     do i=0,1					! Assign wavelet filters:
+!        call qf_w(namw//char(0),lf,i,fw(:,i))
+!        call print_filter(namw,lf,i,fw(:,i))
+!     enddo
+      allocate(nij(0:nb,0:1,0:2))
+   endif
    write(UNIT=6,FMT='(a,i8,a)')' Interval between dates = ', interval, 'hours.'
    write(UNIT=6,FMT='(a,i8)')' Number of ensemble members at each time = ', ne
-   write(UNIT=6,FMT='(a,i8)')' Stride over which to jump points in correlation calculation = ', stride
-
-   date = start_date
-   cdate = sdate
 
    write(UNIT=ck,FMT='(i2)') k
    if ( k < 10 ) ck = '0'//ck(2:2)
    k_label = 'm'
 
+   call initialize_dates(date,start_date,cdate,sdate,rcount)
+
 !---------------------------------------------------------------------------------------------
-   write(6,'(a)')' [2] Input fields and calculate correlation as a function of distance between points.'
+   if( use_rf )then
+      write(6,'(" [2.0] Input fields and calculate correlation as a function of distance between points.")')
+   else
+      write(6,'(" [2.0] Input fields and calculate wavelet mean and mean-square values.")')
+      filename=trim(run_dir)//'/grid_box_area'
+      open(iunit,file=filename,form='unformatted')
+      read(iunit)ni,nj
+      allocate(grid_box_area(ni,nj))
+      read(iunit)grid_box_area
+      close(iunit)
+   endif
 !---------------------------------------------------------------------------------------------
 
-   count = 1.0
+   if( do_normalize )then
+      do while( cdate<=edate )			! Do part of later cdate loop now:
+         do member = 1, ne			! Loop over members:
+            call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj)
+            if( rcount==1.0 )call allocate_field_moments(field,wav,sd,ni,nj)
+            read(iunit)field
+            close(iunit)
+            call update_moments(field,wav,sd,ni,nj,rcount,1.)
+         enddo					! End loop over members.
+         call calculate_next_date(date,interval,new_date,cdate)
+      enddo					! do while ( cdate<=edate )
+!---------------------------------------------------------------------------------------------
+      write(6,'(" [2.1] Compute field standard deviations.")')
+!---------------------------------------------------------------------------------------------
+      call update_moments(field,wav,sd,ni,nj,rcount,0.)
+!     print'(es9.2,"< sd[",a,",k=",i0,"]~",es9.2,"<",es9.2)', &
+!        minval(sd),trim(variable),k,sqrt(sum(sd**2)/product(nij(0,:,0))),maxval(sd)
+      deallocate(field,wav)			! Need different SIZEs later.
+      call initialize_dates(date,start_date,cdate,sdate,rcount)
+   endif					! if( do_normalize )
 
    do while ( cdate <= edate )
       do member = 1, ne
 
          write(UNIT=6,FMT='(5a,i4)')'    Date = ', date, ', variable ', trim(variable), &
                            ' and member ', member
-
-         write(UNIT=ce,FMT='(i3.3)')member
-
-!        Assumes variable directory has been created by script:
-         filename = trim(run_dir)//'/'//trim(variable)//'/'//date(1:10)//'.'//trim(variable)
-         filename = trim(filename)//'.e'//ce//'.'//ck
-         open (UNIT=iunit, file = filename, form='unformatted')
-         read(UNIT=iunit) ni, nj, kdum
-
-         jstart = floor(real(ibin-1)*real(nj)/real(nbins))+1
-         jend   = floor(real(ibin)  *real(nj)/real(nbins))
-         write(UNIT=6,FMT='(a,i4,a,i4)') 'Computing length scale over j range ', jstart, ' to ', jend
-
-         if ( count == 1.0 ) then
-            nn = ni * ni + nj * nj  ! Maximum radius across grid (squared).
-            allocate(field(1:ni,1:nj))
-            allocate(nr(0:nn))
-            allocate(cov(0:nn))
-            cov(0:nn) = 0.0
-
-            call get_grid_info( ni, nj, nn, stride, nr, jstart, jend )
-         end if
+         call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj)
+         if( use_rf )then
+            jstart = floor(real(ibin-1)*real(nj)/real(nbins))+1
+            jend   = floor(real(ibin)  *real(nj)/real(nbins))
+            write(UNIT=6,FMT='(a,i4,a,i4)') 'Computing length scale over j range ', jstart, ' to ', jend
+         else
+            write(6,'("Computing wavelet coefficients")')
+         endif
+         if ( rcount == 1.0 ) then
+            if( use_rf )then
+               nn = ni * ni + nj * nj		! Maximum radius across grid (squared).
+               allocate(field(1:ni,1:nj))
+               allocate(nr(0:nn))
+               allocate(cov(0:nn))
+               cov(0:nn) = 0.0
+               call get_grid_info( ni, nj, nn, stride, nr, jstart, jend )
+            else				! Use wavelets:
+               nij(0,0,0)=nj			! Largest low-pass dimension along j.
+               nij(0,1,0)=ni			! Largest low-pass dimension along i.
+               do i=1,0,-1			! loop over i & j directions:
+#ifdef WAVELET
+                  call dwta_partition(nij(:,i,0),nij(:,i,1),nij(:,i,2),nb,lf,lf)
+#else
+                  call da_error(__FILE__,__LINE__,(/"needs dwta_partition, compile after setenv WAVELET 1"/))
+#endif
+                  write(6,&
+                        '("Direction ",a," has partition nij(0:",i1,",",i1,",0:2)={",99("{",i3,",",i3,",",i3,"}",:))',&
+                        ADVANCE="NO")char(106-i),nb,i,transpose(nij(:,i,:))
+                  write(6,'("}.")')
+               enddo
+               call allocate_field_moments(field,wav,wsd,nij(0,1,2),nij(0,0,2))
+               allocate(ws(maxval(nij(0,:,2))))
+            endif
+         endif					! rcount == 1.0
 
          read(UNIT=iunit)field(1:ni,1:nj)
          close(UNIT=iunit)
 
-!        Calculate spatial correlation:
-         call get_covariance( ni, nj, nn, stride, count, nr, jstart, jend, field, cov )
+         if( do_normalize )field(:ni,:nj)=field(:ni,:nj)/sd
+         if( use_rf )then
+!           Calculate spatial correlation:
+            call get_covariance( ni, nj, nn, stride, rcount, nr, jstart, jend, field(:ni,:nj), cov )
+            rcount=rcount+1.0
+         else
+            field(:ni,:nj)=field(:ni,:nj)*sqrt(grid_box_area)
+            fnorm=sqrt(sum(field(:ni,:nj)**2))
+            print'("r=||    ",a,"(",a,",",i0,",:",i0,",:",i0,") ||  : ",ES15.9)', &
+                  trim(variable),date,member,ni,nj,fnorm
+!           Calculate wavelet transform:
+#ifdef WAVELET
+            call dwtai2_w(namw//char(0),lf,field,ws,nij(0,0,0),nij(0,0,2),nb)
+#else
+            call da_error(__FILE__,__LINE__,(/"needs dwtai2_w, compile after setenv WAVELET 1"/))
+#endif
+            print'("1-||  W[",a,"(",a,",",i0,",:",i0,",:",i0,")]||/r: ",ES15.9)', &
+                  trim(variable),date,member,nij(0,1,2),nij(0,0,2),1.-sqrt(sum(field**2))/fnorm
+            call update_moments(field,wav,wsd,nij(0,1,2),nij(0,0,2),rcount,1.)
+         endif
 
-         count = count + 1.0
+      enddo					! End loop over members.
+      call calculate_next_date(date,interval,new_date,cdate)
+   end do					! do while ( cdate <= edate )
 
-      end do ! End loop over members.
-
-!     Calculate next date:
-      call da_advance_cymdh( date, interval, new_date )
-      date = new_date
-      read(date(1:10), fmt='(i10)')cdate
-   end do
-
+   if( use_rf )then
 !---------------------------------------------------------------------------------------------
-   write(UNIT=6,FMT='(a)')' [3] Compute fit of correlation to a straight line.'
+      write(UNIT=6,FMT='(a)')' [3] Compute fit of correlation to a straight line.'
 !---------------------------------------------------------------------------------------------
-
-   filename = 'sl_print.'//trim(variable)//'.'//ck
-   open( unit=ounit, file=trim(filename), form='formatted', &
-         action='write', access='sequential', status='replace')
-
-   call make_scale_length( variable, ck, ounit, nn, nr, cov )
-
-   close(unit=ounit, status='keep')
-
-   deallocate (field) 
-   deallocate (cov)
+      filename = 'sl_print.'//trim(variable)//'.'//ck
+      open( unit=ounit, file=trim(filename), form='formatted', iostat=i, &
+            action='write', access='sequential', status='replace')
+      if( i/=0 )print'("OPEN(FILE=",a,",IOSTAT=",i0,")")',trim(filename),i
+      call make_scale_length( variable, ck, ounit, nn, nr, cov )
+      close(unit=ounit, status='keep')
+      deallocate(cov)
+      if( do_normalize )then
+         write(ck,'(i0)')k
+         open(ounit,action="write",file="mom",form="unformatted",status="replace")
+         write(ounit)do_normalize
+         write(ounit)nj,ni
+         write(ounit)sd
+         close(ounit)
+      endif
+   else 
+!---------------------------------------------------------------------------------------------
+      write(6,'(" [3] Compute wavelet standard deviations.")')
+!---------------------------------------------------------------------------------------------
+      call update_moments(field,wav,wsd,nij(0,1,2),nij(0,0,2),rcount,0.)
+      print'(es9.2,"<wsd[",a,",k=",i0,"]~",es9.2,"<",es9.2)', &
+         minval(wsd),trim(variable),k,sqrt(sum(wsd**2)/product(nij(0,:,2))),maxval(wsd)
+      open(ounit,action="write",file="momw",form="unformatted",status="replace")
+!     Note that namw is just 1 byte!
+      write(ounit)do_normalize,namw,lf,nb
+      write(ounit)nij
+      write(ounit)wsd
+      if( do_normalize )write(ounit)sd
+      close(ounit)
+      if( print_wavelets )then
+         do i=1,0,-1			! loop over i & j directions:
+            deallocate(ws)
+            allocate(cov(nij(0,i,2)),ws(2*floor(.5*(nij(0,i,0)+lf))+lf-2))
+            open(ounit,action="write",file="w_"//char(106-i)//".dat",form="unformatted",status="replace")
+            write(ounit)namw,lf,nb,nij(:,i,:)
+            do k=1,nij(0,i,2)		! loop over wavelet indexes:
+               cov=0.			! compute wavelet basis functions:
+               cov(k)=1.		! k'th wavelet basis function
+#ifdef WAVELET
+               call idwtai_w(namw//char(0),lf,cov,ws,nij(0,i,0),nij(0,i,1),nij(0,i,2),nb)
+#else
+               write(6,*) "Needs idwtai_w, please compile code with WAVELET setting"
+               stop
+#endif
+               write(ounit)real(cov(:nij(0,i,0)),4)
+            enddo			! wrote wavelet basis function to file
+            close(ounit)
+            deallocate(cov)
+         enddo
+      endif 
+!     deallocate(fw)
+      deallocate(grid_box_area,nij,wav,ws,wsd)
+      if( do_normalize )deallocate(sd)
+   endif
+   deallocate(field) 
 
 contains
+
+ SUBROUTINE allocate_field_moments(field,av,sd,ni,nj)
+ IMPLICIT NONE
+ INTEGER,         INTENT(IN   )::ni,nj
+ REAL,ALLOCATABLE,INTENT(INOUT)::av(:,:),field(:,:),sd(:,:)
+ ALLOCATE(av(ni,nj),field(ni,nj),sd(ni,nj))
+ av=0.
+ sd=0.
+ ENDSUBROUTINE allocate_field_moments
+
+ SUBROUTINE calculate_next_date(date,interval,new_date,cdate)
+ IMPLICIT NONE
+ CHARACTER*10,INTENT(INOUT)::date
+ CHARACTER*10,INTENT(  OUT)::new_date
+ INTEGER,     INTENT(IN   )::interval
+ INTEGER,     INTENT(  OUT)::cdate
+ CALL da_advance_cymdh(date,interval,new_date)
+ date=new_date
+ READ(date,'(I10)')cdate
+ ENDSUBROUTINE calculate_next_date
+
+ SUBROUTINE initialize_dates(date,start_date,cdate,sdate,rcount)
+ IMPLICIT NONE
+ CHARACTER*10,INTENT(IN )::start_date
+ CHARACTER*10,INTENT(OUT)::date
+ INTEGER,INTENT(IN )::sdate
+ INTEGER,INTENT(OUT)::cdate
+ REAL,   INTENT(OUT)::rcount
+ date=start_date
+ cdate=sdate
+ rcount=1.0
+ ENDSUBROUTINE initialize_dates
+
+ SUBROUTINE update_moments(field,av,sd,ni,nj,rcount,irc)
+ IMPLICIT NONE
+ INTEGER,INTENT(IN   ):: ni,nj
+ REAL,   INTENT(IN   ):: field(ni,nj),irc
+ REAL,   INTENT(INOUT):: av(ni,nj),rcount,sd(ni,nj)
+ REAL                 :: c
+ IF( irc==1. )THEN
+    av=av+field
+    sd=sd+field**2			! sd>=av**2/rcount in exact arithmetic.
+    rcount=rcount+irc
+ ELSE
+    rcount=rcount-1.			! Last increment was bogus.
+    av=av/rcount
+    sd=(sd-rcount*av**2)/(rcount-1.)
+    c=COUNT(sd<0.)
+    IF(c>0.) &
+       PRINT'(a,": rcount=",F2.0,", zeroing 0 > sd**2 > ",ES9.2," (",ES8.2,")%.")', &
+          __FILE__,rcount,MINVAL(sd),100*c/(ni*nj)
+!   Correct for small negative differences:
+    sd=SQRT(MAX(0.,sd))
+ ENDIF
+ ENDSUBROUTINE update_moments
+
+ SUBROUTINE read_ni_nj(iunit,member,run_dir,variable,date,ck,ni,nj)
+ IMPLICIT NONE 
+ CHARACTER(LEN=filename_len),INTENT(IN):: run_dir	! Run directory.
+ CHARACTER*2,                INTENT(IN):: ck		! Level index -> character.
+ CHARACTER*10,               INTENT(IN):: date,variable! Date, variable name
+ INTEGER,                    INTENT(IN):: iunit,member
+ INTEGER,                   INTENT(OUT):: ni,nj
+ CHARACTER*3                           :: ce		! Member index -> character.
+ CHARACTER(LEN=filename_len)           :: filename	! I/O filename.
+ INTEGER                               :: kdum
+ WRITE(ce,'(i3.3)')member
+! Assumes variable directory has been created by script:
+ filename=TRIM(run_dir)//'/'//TRIM(variable)//'/'//date//'.'//TRIM(variable) &
+                                    //'.e'//ce//'.'//ck
+ OPEN(iunit,FILE=filename,FORM="UNFORMATTED")
+ READ(iunit)ni,nj,kdum
+ ENDSUBROUTINE read_ni_nj
 
 subroutine get_grid_info( ni, nj, nn, stride, nr, jstart, jend )
 

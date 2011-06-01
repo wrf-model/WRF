@@ -51,6 +51,11 @@ MODULE module_data_mgn2mech
   REAL,    DIMENSION (n_megan2mozcart) :: mozcart_per_megan
   DATA p_of_mozcart / n_megan2mozcart*non_react /
 
+  INTEGER, PARAMETER :: n_megan2saprcnov = 138
+  INTEGER, DIMENSION (n_megan2saprcnov) :: p_of_megan2saprcnov, p_of_saprcnov
+  REAL,    DIMENSION (n_megan2saprcnov) :: saprcnov_per_megan
+  DATA p_of_saprcnov / n_megan2saprcnov*non_react /
+
 !--------------------------------------------------------------------
 ! Some naming convention in denoting MEGAN species
 ! _a  = alpha     , _b  = beta      , _c  = cis       , _al = allo    ,
@@ -749,5 +754,151 @@ CONTAINS
     p_of_megan2racm(147) = is_hexenyl_act_c3   ; p_of_racm(147) = p_oli     ;  racm_per_megan(147)    =  1.000 
 
   END SUBROUTINE get_megan2racm_table
+
+  SUBROUTINE get_megan2saprcnov_table
+    ! Based on Tan''s MAP_CV2SAPRC99.EXT
+
+    ! Index of                                      Index of                           Molar ratio
+    ! MEGAN species                                 RADM2 Species
+
+    p_of_megan2saprcnov(  1) = is_isoprene         ; p_of_saprcnov(  1) = p_isoprene  ; saprcnov_per_megan(  1) = 1.000
+    p_of_megan2saprcnov(  2) = is_myrcene          ; p_of_saprcnov(  2) = p_terp      ; saprcnov_per_megan(  2) = 1.000
+    p_of_megan2saprcnov(  3) = is_sabinene         ; p_of_saprcnov(  3) = p_terp      ; saprcnov_per_megan(  3) = 1.000
+    p_of_megan2saprcnov(  4) = is_limonene         ; p_of_saprcnov(  4) = p_terp      ; saprcnov_per_megan(  4) = 1.000
+    p_of_megan2saprcnov(  5) = is_carene_3         ; p_of_saprcnov(  5) = p_terp      ; saprcnov_per_megan(  5) = 1.000
+    p_of_megan2saprcnov(  6) = is_ocimene_t_b      ; p_of_saprcnov(  6) = p_terp      ; saprcnov_per_megan(  6) = 1.000
+    p_of_megan2saprcnov(  7) = is_pinene_b         ; p_of_saprcnov(  7) = p_terp      ; saprcnov_per_megan(  7) = 1.000
+    p_of_megan2saprcnov(  8) = is_pinene_a         ; p_of_saprcnov(  8) = p_terp      ; saprcnov_per_megan(  8) = 1.000
+    p_of_megan2saprcnov(  9) = is_2met_styrene     ; p_of_saprcnov(  9) = p_ole2      ; saprcnov_per_megan(  9) = 1.000
+    p_of_megan2saprcnov( 10) = is_cymene_p         ; p_of_saprcnov( 10) = p_aro2      ; saprcnov_per_megan( 10) = 1.000
+    p_of_megan2saprcnov( 11) = is_cymene_o         ; p_of_saprcnov( 11) = p_aro2      ; saprcnov_per_megan( 11) = 1.000
+    p_of_megan2saprcnov( 12) = is_phellandrene_a   ; p_of_saprcnov( 12) = p_terp      ; saprcnov_per_megan( 12) = 1.000
+    p_of_megan2saprcnov( 13) = is_thujene_a        ; p_of_saprcnov( 13) = p_terp      ; saprcnov_per_megan( 13) = 1.000
+    p_of_megan2saprcnov( 14) = is_terpinene_a      ; p_of_saprcnov( 14) = p_terp      ; saprcnov_per_megan( 14) = 1.000
+    p_of_megan2saprcnov( 15) = is_terpinene_g      ; p_of_saprcnov( 15) = p_terp      ; saprcnov_per_megan( 15) = 1.000
+    p_of_megan2saprcnov( 16) = is_terpinolene      ; p_of_saprcnov( 16) = p_terp      ; saprcnov_per_megan( 16) = 1.000
+    p_of_megan2saprcnov( 17) = is_phellandrene_b   ; p_of_saprcnov( 17) = p_terp      ; saprcnov_per_megan( 17) = 1.000
+    p_of_megan2saprcnov( 18) = is_camphene         ; p_of_saprcnov( 18) = p_terp      ; saprcnov_per_megan( 18) = 1.000
+    p_of_megan2saprcnov( 19) = is_bornene          ; p_of_saprcnov( 19) = p_terp      ; saprcnov_per_megan( 19) = 1.000
+    p_of_megan2saprcnov( 20) = is_fenchene_a       ; p_of_saprcnov( 20) = p_terp      ; saprcnov_per_megan( 20) = 1.000
+    p_of_megan2saprcnov( 21) = is_ocimene_al       ; p_of_saprcnov( 21) = p_terp      ; saprcnov_per_megan( 21) = 1.000
+    p_of_megan2saprcnov( 22) = is_ocimene_c_b      ; p_of_saprcnov( 22) = p_terp      ; saprcnov_per_megan( 22) = 1.000
+    p_of_megan2saprcnov( 23) = is_tricyclene       ; p_of_saprcnov( 23) = p_alk5      ; saprcnov_per_megan( 23) = 1.000
+    p_of_megan2saprcnov( 24) = is_estragole        ; p_of_saprcnov( 24) = p_terp      ; saprcnov_per_megan( 24) = 1.000
+    p_of_megan2saprcnov( 25) = is_camphor          ; p_of_saprcnov( 25) = p_terp      ; saprcnov_per_megan( 25) = 1.000
+    p_of_megan2saprcnov( 26) = is_fenchone         ; p_of_saprcnov( 26) = p_alk5      ; saprcnov_per_megan( 26) = 1.000
+    p_of_megan2saprcnov( 27) = is_piperitone       ; p_of_saprcnov( 27) = p_terp      ; saprcnov_per_megan( 27) = 1.000
+    p_of_megan2saprcnov( 28) = is_thujone_a        ; p_of_saprcnov( 28) = p_alk5      ; saprcnov_per_megan( 28) = 1.000
+    p_of_megan2saprcnov( 29) = is_thujone_b        ; p_of_saprcnov( 29) = p_alk5      ; saprcnov_per_megan( 29) = 1.000
+    p_of_megan2saprcnov( 30) = is_cineole_1_8      ; p_of_saprcnov( 30) = p_alk5      ; saprcnov_per_megan( 30) = 1.000
+    p_of_megan2saprcnov( 31) = is_borneol          ; p_of_saprcnov( 31) = p_alk5      ; saprcnov_per_megan( 31) = 1.000
+    p_of_megan2saprcnov( 32) = is_linalool         ; p_of_saprcnov( 32) = p_terp      ; saprcnov_per_megan( 32) = 1.000
+    p_of_megan2saprcnov( 33) = is_terpineol_4      ; p_of_saprcnov( 33) = p_terp      ; saprcnov_per_megan( 33) = 1.000
+    p_of_megan2saprcnov( 34) = is_terpineol_a      ; p_of_saprcnov( 34) = p_terp      ; saprcnov_per_megan( 34) = 1.000
+    p_of_megan2saprcnov( 35) = is_linalool_oxd_c   ; p_of_saprcnov( 35) = p_terp      ; saprcnov_per_megan( 35) = 1.000
+    p_of_megan2saprcnov( 36) = is_linalool_oxd_t   ; p_of_saprcnov( 36) = p_terp      ; saprcnov_per_megan( 36) = 1.000
+    p_of_megan2saprcnov( 37) = is_ionone_b         ; p_of_saprcnov( 37) = p_terp      ; saprcnov_per_megan( 37) = 1.000
+    p_of_megan2saprcnov( 38) = is_bornyl_act       ; p_of_saprcnov( 38) = p_alk5      ; saprcnov_per_megan( 38) = 1.000
+    p_of_megan2saprcnov( 39) = is_farnescene_a     ; p_of_saprcnov( 39) = p_sesq      ; saprcnov_per_megan( 39) = 1.000
+    p_of_megan2saprcnov( 40) = is_caryophyllene_b  ; p_of_saprcnov( 40) = p_sesq      ; saprcnov_per_megan( 40) = 1.000
+    p_of_megan2saprcnov( 41) = is_acoradiene       ; p_of_saprcnov( 41) = p_terp      ; saprcnov_per_megan( 41) = 1.000
+    p_of_megan2saprcnov( 42) = is_aromadendrene    ; p_of_saprcnov( 42) = p_sesq      ; saprcnov_per_megan( 42) = 1.000
+    p_of_megan2saprcnov( 43) = is_bergamotene_a    ; p_of_saprcnov( 43) = p_sesq      ; saprcnov_per_megan( 43) = 1.000
+    p_of_megan2saprcnov( 44) = is_bergamotene_b    ; p_of_saprcnov( 44) = p_sesq      ; saprcnov_per_megan( 44) = 1.000
+    p_of_megan2saprcnov( 45) = is_bisabolene_a     ; p_of_saprcnov( 45) = p_sesq      ; saprcnov_per_megan( 45) = 1.000
+    p_of_megan2saprcnov( 46) = is_bisabolene_b     ; p_of_saprcnov( 46) = p_sesq      ; saprcnov_per_megan( 46) = 1.000
+    p_of_megan2saprcnov( 47) = is_bourbonene_b     ; p_of_saprcnov( 47) = p_sesq      ; saprcnov_per_megan( 47) = 1.000
+    p_of_megan2saprcnov( 48) = is_cadinene_d       ; p_of_saprcnov( 48) = p_sesq      ; saprcnov_per_megan( 48) = 1.000
+    p_of_megan2saprcnov( 49) = is_cadinene_g       ; p_of_saprcnov( 49) = p_sesq      ; saprcnov_per_megan( 49) = 1.000
+    p_of_megan2saprcnov( 50) = is_cedrene_a        ; p_of_saprcnov( 50) = p_sesq      ; saprcnov_per_megan( 50) = 1.000
+    p_of_megan2saprcnov( 51) = is_copaene_a        ; p_of_saprcnov( 51) = p_sesq      ; saprcnov_per_megan( 51) = 1.000
+    p_of_megan2saprcnov( 52) = is_cubebene_a       ; p_of_saprcnov( 52) = p_sesq      ; saprcnov_per_megan( 52) = 1.000
+    p_of_megan2saprcnov( 53) = is_cubebene_b       ; p_of_saprcnov( 53) = p_sesq      ; saprcnov_per_megan( 53) = 1.000
+    p_of_megan2saprcnov( 54) = is_elemene_b        ; p_of_saprcnov( 54) = p_sesq      ; saprcnov_per_megan( 54) = 1.000
+    p_of_megan2saprcnov( 55) = is_farnescene_b     ; p_of_saprcnov( 55) = p_sesq      ; saprcnov_per_megan( 55) = 1.000
+    p_of_megan2saprcnov( 56) = is_germacrene_b     ; p_of_saprcnov( 56) = p_sesq      ; saprcnov_per_megan( 56) = 1.000
+    p_of_megan2saprcnov( 57) = is_germacrene_d     ; p_of_saprcnov( 57) = p_sesq      ; saprcnov_per_megan( 57) = 1.000
+    p_of_megan2saprcnov( 58) = is_gurjunene_b      ; p_of_saprcnov( 58) = p_sesq      ; saprcnov_per_megan( 58) = 1.000
+    p_of_megan2saprcnov( 59) = is_humulene_a       ; p_of_saprcnov( 59) = p_sesq      ; saprcnov_per_megan( 59) = 1.000
+    p_of_megan2saprcnov( 60) = is_humulene_g       ; p_of_saprcnov( 60) = p_sesq      ; saprcnov_per_megan( 60) = 1.000
+    p_of_megan2saprcnov( 61) = is_isolongifolene   ; p_of_saprcnov( 61) = p_sesq      ; saprcnov_per_megan( 61) = 1.000
+    p_of_megan2saprcnov( 62) = is_longifolene      ; p_of_saprcnov( 62) = p_sesq      ; saprcnov_per_megan( 62) = 1.000
+    p_of_megan2saprcnov( 63) = is_longipinene      ; p_of_saprcnov( 63) = p_sesq      ; saprcnov_per_megan( 63) = 1.000
+    p_of_megan2saprcnov( 64) = is_muurolene_a      ; p_of_saprcnov( 64) = p_sesq      ; saprcnov_per_megan( 64) = 1.000
+    p_of_megan2saprcnov( 65) = is_muurolene_g      ; p_of_saprcnov( 65) = p_sesq      ; saprcnov_per_megan( 65) = 1.000
+    p_of_megan2saprcnov( 66) = is_selinene_b       ; p_of_saprcnov( 66) = p_sesq      ; saprcnov_per_megan( 66) = 1.000
+    p_of_megan2saprcnov( 67) = is_selinene_d       ; p_of_saprcnov( 67) = p_sesq      ; saprcnov_per_megan( 67) = 1.000
+    p_of_megan2saprcnov( 68) = is_nerolidol_c      ; p_of_saprcnov( 68) = p_sesq      ; saprcnov_per_megan( 68) = 1.000
+    p_of_megan2saprcnov( 69) = is_nerolidol_t      ; p_of_saprcnov( 69) = p_sesq      ; saprcnov_per_megan( 69) = 1.000
+    p_of_megan2saprcnov( 70) = is_cedrol           ; p_of_saprcnov( 70) = p_sesq      ; saprcnov_per_megan( 70) = 1.000
+    p_of_megan2saprcnov( 71) = is_mbo_2m3e2ol      ; p_of_saprcnov( 71) = p_isoprene  ; saprcnov_per_megan( 71) = 1.000
+    p_of_megan2saprcnov( 72) = is_methanol         ; p_of_saprcnov( 72) = p_meoh      ; saprcnov_per_megan( 72) = 1.000
+    p_of_megan2saprcnov( 73) = is_acetone          ; p_of_saprcnov( 73) = p_acet      ; saprcnov_per_megan( 73) = 1.000
+    p_of_megan2saprcnov( 74) = is_methane          ; p_of_saprcnov( 74) = p_ch4       ; saprcnov_per_megan( 74) = 1.000
+    p_of_megan2saprcnov( 75) = is_ammonia          ; p_of_saprcnov( 75) = non_react   ; saprcnov_per_megan( 75) = 1.000
+    p_of_megan2saprcnov( 76) = is_nitrous_oxd      ; p_of_saprcnov( 76) = non_react   ; saprcnov_per_megan( 76) = 1.000
+    p_of_megan2saprcnov( 77) = is_nitric_oxd       ; p_of_saprcnov( 77) = p_no        ; saprcnov_per_megan( 77) = 1.000
+    p_of_megan2saprcnov( 78) = is_acetaldehyde     ; p_of_saprcnov( 78) = p_ccho      ; saprcnov_per_megan( 78) = 1.000
+    p_of_megan2saprcnov( 79) = is_ethanol          ; p_of_saprcnov( 79) = p_alk3      ; saprcnov_per_megan( 79) = 1.000
+    p_of_megan2saprcnov( 80) = is_formic_acid      ; p_of_saprcnov( 80) = p_hcooh     ; saprcnov_per_megan( 80) = 1.000
+    p_of_megan2saprcnov( 81) = is_formaldehyde     ; p_of_saprcnov( 81) = p_hcho      ; saprcnov_per_megan( 81) = 1.000
+    p_of_megan2saprcnov( 82) = is_acetic_acid      ; p_of_saprcnov( 82) = p_cco_oh    ; saprcnov_per_megan( 82) = 1.000
+    p_of_megan2saprcnov( 83) = is_mbo_3m2e1ol      ; p_of_saprcnov( 83) = p_isoprene  ; saprcnov_per_megan( 83) = 1.000
+    p_of_megan2saprcnov( 84) = is_mbo_3m3e1ol      ; p_of_saprcnov( 84) = p_isoprene  ; saprcnov_per_megan( 84) = 1.000
+    p_of_megan2saprcnov( 85) = is_benzaldehyde     ; p_of_saprcnov( 85) = p_bald      ; saprcnov_per_megan( 85) = 1.000
+    p_of_megan2saprcnov( 86) = is_butanone_2       ; p_of_saprcnov( 86) = p_mek       ; saprcnov_per_megan( 86) = 1.000
+    p_of_megan2saprcnov( 87) = is_decanal          ; p_of_saprcnov( 87) = p_rcho      ; saprcnov_per_megan( 87) = 1.000
+    p_of_megan2saprcnov( 88) = is_dodecene_1       ; p_of_saprcnov( 88) = p_ole1      ; saprcnov_per_megan( 88) = 1.000
+    p_of_megan2saprcnov( 89) = is_geranyl_acetone  ; p_of_saprcnov( 89) = p_terp      ; saprcnov_per_megan( 89) = 1.000
+    p_of_megan2saprcnov( 90) = is_heptanal         ; p_of_saprcnov( 90) = p_rcho      ; saprcnov_per_megan( 90) = 1.000
+    p_of_megan2saprcnov( 91) = is_heptane          ; p_of_saprcnov( 91) = p_alk5      ; saprcnov_per_megan( 91) = 1.000
+    p_of_megan2saprcnov( 92) = is_hexane           ; p_of_saprcnov( 92) = p_alk4      ; saprcnov_per_megan( 92) = 1.000
+    p_of_megan2saprcnov( 93) = is_met_benzoate     ; p_of_saprcnov( 93) = p_aro1      ; saprcnov_per_megan( 93) = 1.000
+    p_of_megan2saprcnov( 94) = is_met_heptenone    ; p_of_saprcnov( 94) = p_ole2      ; saprcnov_per_megan( 94) = 1.000
+    p_of_megan2saprcnov( 95) = is_neryl_acetone    ; p_of_saprcnov( 95) = p_ole2      ; saprcnov_per_megan( 95) = 1.000
+    p_of_megan2saprcnov( 96) = is_nonanal          ; p_of_saprcnov( 96) = p_rcho      ; saprcnov_per_megan( 96) = 1.000
+    p_of_megan2saprcnov( 97) = is_nonenal          ; p_of_saprcnov( 97) = p_ole1      ; saprcnov_per_megan( 97) = 1.000
+    p_of_megan2saprcnov( 98) = is_octanal          ; p_of_saprcnov( 98) = p_rcho      ; saprcnov_per_megan( 98) = 1.000
+    p_of_megan2saprcnov( 99) = is_octanol          ; p_of_saprcnov( 99) = p_alk5      ; saprcnov_per_megan( 99) = 1.000
+    p_of_megan2saprcnov(100) = is_octenol_1e3ol    ; p_of_saprcnov(100) = p_ole1      ; saprcnov_per_megan(100) = 1.000
+    p_of_megan2saprcnov(101) = is_oxopentanal      ; p_of_saprcnov(101) = p_rcho      ; saprcnov_per_megan(101) = 1.000
+    p_of_megan2saprcnov(102) = is_pentane          ; p_of_saprcnov(102) = p_alk4      ; saprcnov_per_megan(102) = 1.000
+    p_of_megan2saprcnov(103) = is_phenyl_cco       ; p_of_saprcnov(103) = p_aro1      ; saprcnov_per_megan(103) = 1.000
+    p_of_megan2saprcnov(104) = is_pyruvic_acid     ; p_of_saprcnov(104) = p_rco_oh    ; saprcnov_per_megan(104) = 1.000
+    p_of_megan2saprcnov(105) = is_terpinyl_act_a   ; p_of_saprcnov(105) = p_terp      ; saprcnov_per_megan(105) = 1.000
+    p_of_megan2saprcnov(106) = is_tetradecene_1    ; p_of_saprcnov(106) = p_ole1      ; saprcnov_per_megan(106) = 1.000
+    p_of_megan2saprcnov(107) = is_toluene          ; p_of_saprcnov(107) = p_aro1      ; saprcnov_per_megan(107) = 1.000
+    p_of_megan2saprcnov(108) = is_carbon_monoxide  ; p_of_saprcnov(108) = p_co        ; saprcnov_per_megan(108) = 1.000
+    p_of_megan2saprcnov(109) = is_butene           ; p_of_saprcnov(109) = p_ole1      ; saprcnov_per_megan(109) = 1.000
+    p_of_megan2saprcnov(110) = is_ethane           ; p_of_saprcnov(110) = p_c2h6      ; saprcnov_per_megan(110) = 1.000
+    p_of_megan2saprcnov(111) = is_ethene           ; p_of_saprcnov(111) = p_ethene    ; saprcnov_per_megan(111) = 1.000
+    p_of_megan2saprcnov(112) = is_hydrogen_cyanide ; p_of_saprcnov(112) = non_react   ; saprcnov_per_megan(112) = 1.000
+    p_of_megan2saprcnov(113) = is_propane          ; p_of_saprcnov(113) = p_c3h8      ; saprcnov_per_megan(113) = 1.000
+    p_of_megan2saprcnov(114) = is_propene          ; p_of_saprcnov(114) = p_c3h6      ; saprcnov_per_megan(114) = 1.000
+    p_of_megan2saprcnov(115) = is_carbon_2s        ; p_of_saprcnov(115) = non_react   ; saprcnov_per_megan(115) = 1.000
+    p_of_megan2saprcnov(116) = is_carbonyl_s       ; p_of_saprcnov(116) = non_react   ; saprcnov_per_megan(116) = 1.000
+    p_of_megan2saprcnov(117) = is_diallyl_2s       ; p_of_saprcnov(117) = p_ole1      ; saprcnov_per_megan(117) = 1.000
+    p_of_megan2saprcnov(118) = is_2met_2s          ; p_of_saprcnov(118) = p_alk5      ; saprcnov_per_megan(118) = 1.000
+    p_of_megan2saprcnov(119) = is_2met_s           ; p_of_saprcnov(119) = p_alk4      ; saprcnov_per_megan(119) = 1.000
+    p_of_megan2saprcnov(120) = is_met_chloride     ; p_of_saprcnov(120) = non_react   ; saprcnov_per_megan(120) = 1.000
+    p_of_megan2saprcnov(121) = is_met_bromide      ; p_of_saprcnov(121) = non_react   ; saprcnov_per_megan(121) = 1.000
+    p_of_megan2saprcnov(122) = is_met_iodide       ; p_of_saprcnov(122) = non_react   ; saprcnov_per_megan(122) = 1.000
+    p_of_megan2saprcnov(123) = is_hydrogen_s       ; p_of_saprcnov(123) = non_react   ; saprcnov_per_megan(123) = 1.000
+    p_of_megan2saprcnov(124) = is_met_mercaptan    ; p_of_saprcnov(124) = p_alk5      ; saprcnov_per_megan(124) = 1.000
+    p_of_megan2saprcnov(125) = is_met_propenyl_2s  ; p_of_saprcnov(125) = p_ole1      ; saprcnov_per_megan(125) = 1.000
+    p_of_megan2saprcnov(126) = is_pppp_2s          ; p_of_saprcnov(126) = p_ole1      ; saprcnov_per_megan(126) = 1.000
+    p_of_megan2saprcnov(127) = is_2met_nonatriene  ; p_of_saprcnov(127) = p_terp      ; saprcnov_per_megan(127) = 1.000
+    p_of_megan2saprcnov(128) = is_met_salicylate   ; p_of_saprcnov(128) = p_aro1      ; saprcnov_per_megan(128) = 1.000
+    p_of_megan2saprcnov(129) = is_indole           ; p_of_saprcnov(129) = p_aro2      ; saprcnov_per_megan(129) = 1.000
+    p_of_megan2saprcnov(130) = is_jasmone          ; p_of_saprcnov(130) = p_terp      ; saprcnov_per_megan(130) = 1.000
+    p_of_megan2saprcnov(131) = is_met_jasmonate    ; p_of_saprcnov(131) = p_terp      ; saprcnov_per_megan(131) = 1.000
+    p_of_megan2saprcnov(132) = is_3met_3dctt       ; p_of_saprcnov(132) = p_terp      ; saprcnov_per_megan(132) = 1.000
+    p_of_megan2saprcnov(133) = is_hexanal          ; p_of_saprcnov(133) = p_rcho      ; saprcnov_per_megan(133) = 1.000
+    p_of_megan2saprcnov(134) = is_hexanol_1        ; p_of_saprcnov(134) = p_alk5      ; saprcnov_per_megan(134) = 1.000
+    p_of_megan2saprcnov(135) = is_hexenal_c3       ; p_of_saprcnov(135) = p_ole2      ; saprcnov_per_megan(135) = 1.000
+    p_of_megan2saprcnov(136) = is_hexenal_t2       ; p_of_saprcnov(136) = p_ole2      ; saprcnov_per_megan(136) = 1.000
+    p_of_megan2saprcnov(137) = is_hexenol_c3       ; p_of_saprcnov(137) = p_ole2      ; saprcnov_per_megan(137) = 1.000
+    p_of_megan2saprcnov(138) = is_hexenyl_act_c3   ; p_of_saprcnov(138) = p_ole2      ; saprcnov_per_megan(138) = 1.000
+  END SUBROUTINE get_megan2saprcnov_table
 
 END MODULE module_data_mgn2mech

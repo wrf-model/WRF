@@ -1,4 +1,4 @@
-subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
+subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
 
    !---------------------------------------------------------------------------
    ! Purpose: Convert analysis increments into WRFAD increments 
@@ -11,6 +11,9 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
    type(grid_config_rec_type), intent(inout) :: config_flags
 
    character*4, intent(in) :: filnam
+   character*256, intent(in) :: timestr
+
+#ifdef VAR4D
 
    integer :: i, j, k, ndynopt
    integer :: is, ie, js, je, ks, ke
@@ -39,6 +42,10 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
    grid%g_moist   = 0.0
    grid%g_mu_2 = 0.0
    grid%g_ph_2 = 0.0
+   grid%g_rainnc = 0.0
+   grid%g_rainncv = 0.0
+   grid%g_rainc = 0.0
+   grid%g_raincv = 0.0
    !---------------------------------------------------------------------------
    ! [6.0] ALL THE SIMPLE ONES
    !---------------------------------------------------------------------------
@@ -55,6 +62,19 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
       end do
    end do
    grid%xa%w(is:ie,js:je,ks:ke+1) = 0.0
+
+   if(var4d)then
+    if (size(grid%g_moist,dim=4) >= 4) then
+      do k=ks,ke
+         do j=js,je
+            do i=is,ie
+               grid%g_moist(i,j,k,p_g_qc)=grid%xa%qcw(i,j,k)
+               grid%g_moist(i,j,k,p_g_qr)=grid%xa%qrn(i,j,k)
+            end do
+         end do
+      end do
+    end if
+   end if
 
 #ifdef VAR4D_MICROPHYSICS
    ! New code needed once we introduce the microphysics to 4dvar in 2008
@@ -229,17 +249,32 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
 
    grid%xa%q(is:ie, js:je, ks:ke) = 0.0
 
-   ndynopt      = grid%dyn_opt
-   grid%dyn_opt = DYN_EM_TL
-   call nl_set_dyn_opt (1 , DYN_EM_TL)
+   call kj_swap (grid%g_u_2, model_grid%g_u_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_v_2, model_grid%g_v_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_w_2, model_grid%g_w_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_t_2, model_grid%g_t_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   model_grid%g_mu_2 = grid%g_mu_2
+   model_grid%g_rainnc = grid%g_rainnc
+   model_grid%g_rainncv = grid%g_rainncv
+   model_grid%g_rainc = grid%g_rainc
+   model_grid%g_raincv = grid%g_raincv
 
-   call da_med_initialdata_output(grid , config_flags, filnam)
+   do i = PARAM_FIRST_SCALAR, num_moist
+      call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   enddo
 
-   grid%dyn_opt = ndynopt
-   call nl_set_dyn_opt (1 , DYN_EM)
+   call push_ad_forcing (timestr)
 
    if (trace_use) call da_trace_exit("da_transfer_wrftltoxa_adj")
 
+#endif
 end subroutine da_transfer_wrftltoxa_adj
 
 

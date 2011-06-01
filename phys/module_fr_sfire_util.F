@@ -1,9 +1,6 @@
 !
-!*** Jan Mandel August-October 2007
-!*** email: jmandel@ucar.edu or Jan.Mandel@gmail.com or Jan.Mandel@cudenver.edu
-!
-! This module contains general purpose utilities and WRF wrappers because I want the
-! model to be able to run standalone. No physics here.
+! This module contains general purpose utilities and WRF wrappers because some
+! applications require this module to run standalone. No physics here.
 ! Some are dependent on WRF indexing scheme. Some violate WRF conventions but these
 ! are not called from the WRF dependent code. Some are not called at all.
 ! 
@@ -12,11 +9,13 @@ module module_fr_sfire_util
 
 ! various method selection parameters
 ! 1. add the parameter and its static default here
+! optional:
 ! 2. add copy from config_flags in module_fr_sfire_driver%%set_flags
-! 3. (optional) add a line in Registry.EM to define the variable and set default value
+! 3. add a line in Registry.EM to define the variable and set default value
+! 4. add the variable and value in namelist.input
 
 
-integer ::              &
+integer,save::          &
  fire_print_msg=1,      &  ! print SFIRE progress 
  fire_print_file=1,     &  ! write many files by write_array_m; compile with DEBUG_OUT, do not run in parallel
  fuel_left_method=1,    &  ! 1=simple, 2=exact in linear case
@@ -27,16 +26,20 @@ integer ::              &
  fire_upwinding=3,      &  ! upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian 
  fire_upwind_split=0,   &  ! 1=upwind advection separately from normal direction spread
  fire_test_steps=0,     &  ! 0=no fire, 1=normal, >1 = do specified number of steps and terminate (testing only)
- fire_topo_from_atm=1      ! 0 = expect ZSF set correctly on entry, 1 = populate by interploating from atmosphere
- 
+ fire_topo_from_atm=1,  &  ! 0 = expect ZSF set correctly on entry, 1 = populate by interploating from atmosphere
+ fire_advection=0          ! 0 = fire spread from normal wind/slope (CAWFE), 1 = full speed projected
  
 
-
-real ::                 &
+real, save::            &
+ fire_const_time=-1,    &  ! time from ignition to start constant heat output  <0=never
+ fire_const_grnhfx=-1., &  ! if both >=0, the constant heat flux to output then
+ fire_const_grnqfx=-1., &  ! if both >=0, the constant heat flux to output then
  fire_atm_feedback=1. , &  ! 1 = normal, 0. = one way coupling atmosphere -> fire only
  fire_back_weight=0.5,  &  ! RK parameter, 0 = Euler method, 0.5 = Heun, 1 = fake backward Euler
  fire_viscosity=0.4,    &  ! artificial viscosity
  fire_lfn_ext_up=1.        ! 0.=extend level set function at boundary by reflection, 1.=always up
+
+integer, parameter:: REAL_SUM=10, REAL_MAX=20, RNRM_SUM=30, RNRM_MAX=40
 
 contains
 
@@ -44,40 +47,104 @@ contains
 !****************
 !
 subroutine crash(s)
+use module_wrf_error
 implicit none
 character(len=*), intent(in)::s
 character(len=128)msg
-msg='SFIRE:'//s
+msg='crash: '//s
+call message(msg,level=0)
+!$OMP CRITICAL(SFIRE_MESSAGE_CRIT)
 call wrf_error_fatal(msg)
+!$OMP END CRITICAL(SFIRE_MESSAGE_CRIT)
 end subroutine crash
 
 !
 !****************
 !
 
-subroutine message(s)
-!$ use OMP_LIB 
+subroutine message(s,level)
+use module_wrf_error
+#ifdef _OPENMP
+use OMP_LIB 
+#endif
 implicit none
+!*** arguments
 character(len=*), intent(in)::s
-character(len=128)msg
-character(len=1)thread
-integer m
-m=-1
-!$     m=omp_get_thread_num()
-if (m<0) then
-    msg='SFIRE:'//s
+integer,intent(in),optional::level
+!*** local
+character(len=128)::msg
+character(len=118)::t
+integer m,mlevel
+logical op
+!*** executable
+if(present(level))then
+    mlevel=level
 else
-    write(thread,'(i1,a)')m
-    msg='SFIRE'//thread//s
+    mlevel=2  ! default message level
 endif
-if(fire_print_msg.gt.0)then
-call wrf_message(msg)
+if(fire_print_msg.ge.mlevel)then
+      m=0
+!$OMP CRITICAL(SFIRE_MESSAGE_CRIT)
+#ifdef _OPENMP
+      m=omp_get_thread_num()
+      t=s
+      write(msg,'(a6,i3,a1,a118)')'SFIRE:',m,':',t
+#else
+      msg='SFIRE:'//s
+#endif
+      call wrf_message(msg)
+!      flush(6)
+!      flush(0)
+!$OMP END CRITICAL(SFIRE_MESSAGE_CRIT)
 endif
 end subroutine message
 
 !
 !****************
 !
+
+
+integer function open_text_file(filename,rw)
+implicit none
+character(len=*),intent(in):: filename,rw
+!$ integer, external:: OMP_GET_THREAD_NUM
+character(len=128):: msg
+character(len=1)::act
+integer::iounit,ierr
+logical::op
+
+!$  if (OMP_GET_THREAD_NUM() .ne. 0)then
+!$     call crash('open_input_text_file: called from parallel loop')
+!$  endif
+
+    do iounit=19,99
+       inquire(iounit,opened=op)
+       if(.not.op)goto 1
+    enddo
+    call crash('open_text_file: Cannot find any available I/O unit')
+1   continue
+    act=rw(1:1)
+    select case (act)
+        case ('r','R')
+            OPEN(iounit, FILE=filename,FORM='FORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ierr)
+        case ('w','W')
+            OPEN(iounit, FILE=filename,FORM='FORMATTED',STATUS='UNKNOWN',ACTION='WRITE',IOSTAT=ierr)
+        case default
+            write(msg,*)'open_text_file: bad mode ',trim(rw),' for file ',trim(filename)
+    end select
+    
+    if(ierr.ne.0)then 
+	write(msg,*)'open_text_file: Cannot open file ',filename
+        call crash(msg)
+    endif
+    open_text_file=iounit
+
+end function open_text_file
+
+!
+!****************
+!
+
 
 subroutine set_ideal_coord( dxf,dyf, &
                 ifds,ifde,jfds,jfde,  &
@@ -115,6 +182,7 @@ subroutine continue_at_boundary(ix,iy,bias, & ! do x direction or y direction
     ids,ide,jds,jde, &                ! domain dims
     ips,ipe,jps,jpe, &                ! patch dims
     its,ite,jts,jte, &                ! tile dims
+    itso,iteo,jtso,jteo, &            ! tile dims where set
     lfn)                              ! array
 implicit none
 !*** description
@@ -125,10 +193,11 @@ real,intent(in)::bias                   ! 0=none, 1.=max
 integer, intent(in)::ims,ime,jms,jme, &                ! memory dims
     ids,ide,jds,jde, &                ! domain dims
     ips,ipe,jps,jpe, &                ! patch dims
-    its,ite,jts,jte                 ! tile dims
+    its,ite,jts,jte                   ! tile dims
+integer, intent(out)::itso,jtso,iteo,jteo ! where set
 real,intent(inout),dimension(ims:ime,jms:jme)::lfn
 !*** local
-integer i,j,itso,jtso,iteo,jteo
+integer i,j
 character(len=128)::msg
 integer::its1,ite1,jts1,jte1
 integer,parameter::halo=1           ! width of halo region to update 
@@ -153,8 +222,10 @@ if(its.eq.ips.and..not.its.eq.ids)its1=its-halo
 if(jts.eq.jps.and..not.jts.eq.jds)jts1=jts-halo
 if(ite.eq.ipe.and..not.ite.eq.ide)ite1=ite+halo
 if(jte.eq.jpe.and..not.jte.eq.jde)jte1=jte+halo
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
 write(msg,'(a,2i5,a,f5.2)')'continue_at_boundary: directions',ix,iy,' bias ',bias 
 call message(msg)
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 if(ix.ne.0)then
     if(its.eq.ids)then
         do j=jts1,jte1
@@ -168,8 +239,10 @@ if(ix.ne.0)then
         enddo
         iteo=ide+1
     endif
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
     write(msg,'(8(a,i5))')'continue_at_boundary: x:',its,':',ite,',',jts,':',jte,' ->',itso,':',iteo,',',jts1,':',jte1
     call message(msg)
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 endif
 if(iy.ne.0)then
     if(jts.eq.jds)then
@@ -184,7 +257,9 @@ if(iy.ne.0)then
         enddo
         jteo=jde+1
     endif
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
     write(msg,'(8(a,i5))')'continue_at_boundary: y:',its,':',ite,',',jts,':',jte,' ->',its1,':',ite1,',',jtso,':',jteo
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
     call message(msg)
 endif
 ! corners of the domain
@@ -212,9 +287,11 @@ implicit none
 integer, intent(in)::ids,ide,jds,jde,ims,ime,jms,jme
 character(len=128)msg
 if(ids<ims.or.ide>ime.or.jds<jms.or.jde>jme)then
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
     write(msg,*)'mesh dimensions:  ',ids,ide,jds,jde
     call message(msg)
     write(msg,*)'memory dimensions:',ims,ime,jms,jme
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
     call message(msg)
     call crash('check_mesh_2dim: memory dimensions too small')
 endif
@@ -308,6 +385,7 @@ enddo
 return
 
 9 continue
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
 write(msg,91)its2,ite2,jts2,jte2,ims2,ime2,jms2,jme2
 call message(msg)
 write(msg,91)its1,ite1,jts1,jte1,ims1,ime1,jms1,jme1
@@ -318,6 +396,7 @@ call message(msg)
 write(msg,92)'output mesh size:',isz1,jsz1
 call message(msg)
 92 format(a,2i8)
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 call crash('module_fr_spread_util:sum_mesh_cells: bad mesh sizes')
 
 end subroutine sum_2d_cells
@@ -338,9 +417,8 @@ implicit none
 
 !*** purpose
 ! interpolate nodal values in mesh2 to nodal values in mesh1
-! input mesh 2 is coarse output mesh 1 is fine
-! interpolation runs over mesh2 region its2:ite2,jts2:jte2 
-! only the part of mesh 1 region its1:ite1,jts1:jte1 is modified
+! interpolation runs over the mesh2 region its2:ite2,jts2:jte2 
+! only the part of mesh 1 in the region its1:ite1,jts1:jte1 is modified
 
 !*** arguments
 
@@ -367,10 +445,10 @@ call check_mesh_2dim(its2,ite2,jts2,jte2,ims2,ime2,jms2,jme2)
 rx=1./ir
 ry=1./jr
 
-do j2=jts2,jte2-1       ! loop over coarse mesh cells
-    rjo=rjp1+jr*(j2-rjp2)  ! fine grid coordinate of the coarse grid patch start
-    js=max(jts1,ceiling(rjo))     ! lower bound of fine grid patch for this cell
-    je=min(jte1,floor(rjo)+jr)  ! upper bound of fine grid patch for this cell
+do j2=jts2,jte2-1               ! loop over mesh 2 cells
+    rjo=rjp1+jr*(j2-rjp2)       ! mesh 1 coordinate of the mesh 2 patch start
+    js=max(jts1,ceiling(rjo))   ! lower bound of mesh 1 patch for this mesh 2 cell
+    je=min(jte1,floor(rjo)+jr)  ! upper bound of mesh 1 patch for this mesh 2 cell 
     do i2=its2,ite2-1
         rio=rip1+ir*(i2-rip2)
         is=max(its1,ceiling(rio))
@@ -378,7 +456,7 @@ do j2=jts2,jte2-1       ! loop over coarse mesh cells
         do j1=js,je
             ty = (j1-rjo)*ry
             do i1=is,ie
-                ! in case fine grid lies on the boundary of several cells
+                ! in case mesh 1 node lies on the boundary of several mesh 2 cells
                 ! the result will be written multiple times with the same value
                 ! up to a rounding error
                 tx = (i1-rio)*rx
@@ -482,6 +560,7 @@ call interpolate_2d_w(ip,jp,ih,jh,ir,jr,              &
 return
 
 9 continue
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
 write(msg,91)ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2
 call message(msg)
 write(msg,91)ids1,ide1,jds1,jde1,ims1,ime1,jms1,jme1
@@ -493,6 +572,7 @@ write(msg,92)'output mesh size:',isz1,jsz1
 call message(msg)
 92 format(a,2i8)
 call crash("module_fr_sfire_util:interpolate_2dmesh_cells: bad mesh sizes")
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 end subroutine interpolate_2d_cells2cells
 
 !
@@ -569,6 +649,7 @@ call interpolate_2d_w(ip,jp,ih,jh,ir,jr,              &
 
 return
 9 continue
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
 write(msg,91)ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2
 call message(msg)
 write(msg,91)ids1,ide1,jds1,jde1,ims1,ime1,jms1,jme1
@@ -580,6 +661,7 @@ write(msg,92)'output mesh size:',isz1,jsz1
 call message(msg)
 92 format(a,2i8)
 call crash("module_fr_sfire_util:interpolate_2d_cells2nodes: bad mesh sizes")
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 end subroutine interpolate_2d_cells2nodes
 !
 !****************
@@ -860,7 +942,7 @@ character(len=*),intent(in)::name
 integer:: i,j
 real:: t 
 real:: avg_a,max_a,min_a 
-character(len=25)id
+character(len=25)::id
 id=name
 call print_2d_stats(ips,ipe,jps,jpe, &
                          ims,ime,jms,jme, &
@@ -892,11 +974,13 @@ integer, intent(in)::ips,ipe,jps,jpe
 character(len=*),intent(in)::name
 real,intent(in)::min_a,max_a,avg_a
 !*** local
-character(len=128)msg
-character(len=24)id
+character(len=128)::msg
+character(len=24)::id
 if(fire_print_msg.eq.0)return
 id=name
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
 write(msg,'(a,4i4,3g11.3)')id,ips,ipe,jps,jpe,min_a,max_a,avg_a
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 call message(msg)
 if(.not.avg_a.eq.avg_a)call crash('NaN detected')
 end subroutine print_stat_line
@@ -910,9 +994,19 @@ integer, intent(in)::ips,ipe,jps,jpe,ims,ime,jms,jme,kms,kme,kps,kpe
 real, intent(in)::a(ims:ime,kms:kme,jms:jme)
 character(len=*),intent(in)::name
 integer:: i,j,k
-real:: avg_a,max_a,min_a,t,aa
-character(len=128)msg
-if(fire_print_msg.eq.0)return
+real:: avg_a,max_a,min_a,t,aa,bb
+character(len=128)::msg
+! if(fire_print_msg.eq.0)return
+! check for nans in any case
+bb=0.
+do j=jps,jpe
+  do k=kps,kpe
+    do i=ips,ipe
+       bb=bb+a(i,k,j)
+    enddo
+  enddo
+enddo
+if(bb.eq.bb.and.fire_print_msg.eq.0)return
 avg_a=0
 max_a=-huge(max_a)
 min_a= huge(min_a)
@@ -921,27 +1015,30 @@ do j=jps,jpe
   do k=kps,kpe
     do i=ips,ipe
         aa=a(i,k,j)
-        if(aa.ne.aa)then
-            write(msg,1)name,i,k,j,'NaN'
-            call crash(msg)
-        endif
-        if(.not.aa.le.t)then
-            write(msg,1)name,i,k,j,'Inf'
-            call crash(msg)
-        endif
-        if(.not.aa.ge.-t)then
-            write(msg,1)name,i,k,j,'-Inf'
-            call crash(msg)
-        endif
+        if(aa.ne.aa.or..not.aa.le.t.or..not.aa.ge.-t)goto 9
         max_a=max(max_a,aa)
         min_a=min(min_a,aa)
         avg_a=avg_a+aa
     enddo
   enddo
 enddo
-1 format(a,'(',i6,',',i6,',',i6,') = ',a)
+if(bb.ne.bb)goto 10 ! should never happen 
+if(fire_print_msg.eq.0)return
 avg_a = avg_a/((ipe-ips+1)*(jpe-jps+1)*(kpe-kps+1))
 call print_stat_line(name,ips,ipe,jps,jpe,min_a,max_a,avg_a)
+return
+9 continue
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
+write(msg,1)name,i,k,j,aa
+call message(msg)
+1 format(a30,'(',i6,',',i6,',',i6,') = ',g13.5)
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
+call print_stat_line(name,ips,ipe,jps,jpe,aa,aa,aa)
+if(aa.ne.aa)goto 10
+msg='Invalid floating point number detected in '//name
+call crash(msg)
+10 msg='NaN detected in '//name
+call crash(msg)
 end subroutine print_3d_stats
 
 subroutine print_2d_stats(ips,ipe,jps,jpe, &
@@ -951,8 +1048,8 @@ implicit none
 integer, intent(in)::ips,ipe,jps,jpe,ims,ime,jms,jme
 real, intent(in)::a(ims:ime,jms:jme)
 character(len=*),intent(in)::name
-!!character(len=128)msg
-if(fire_print_msg.eq.0)return
+!!character(len=128)::msg
+!if(fire_print_msg.eq.0)return
 call print_3d_stats(ips,ipe,1,1,jps,jpe, &
                          ims,ime,1,1,jms,jme, &
                          a,name)
@@ -1003,6 +1100,7 @@ character(len=*),intent(in)::name
 integer i,j
 character(len=128)::msg
 !****
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
 write(msg,*)name,' start ',id,' dim ',its,ite,jts,jte
 call message(msg)
 do j=jts,jte
@@ -1013,6 +1111,7 @@ do j=jts,jte
 enddo
 write(msg,*)name,' end ',id
 call message(msg)
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 end subroutine print_array
 
 subroutine write_array_m(its,ite,jts,jte,           &
@@ -1048,28 +1147,22 @@ character(len=128)::fname,msg
 if(fire_print_file.eq.0.or.id.le.0)return
 call check_mesh_2dim(its,ite,jts,jte,ims,ime,jms,jme)
 call wrf_get_nproc (nprocs)
-call wrf_get_myproc( myproc )
+call wrf_get_myproc(myproc)
 
+!$OMP CRITICAL(SFIRE_UTIL_CRIT)
 if(nprocs.eq.1)then
     write(fname,3)name,'_',id,'.txt'
 else
     write(fname,4)name,'_',id,'.',myproc,'.txt'
 endif
-do ilen=len(fname),2,-1
-    if(fname(ilen:ilen).ne.' ')goto 19
-enddo
-19 continue
-
-!$OMP CRITICAL
 
 iu=0
 do i=6,99
     inquire(unit=i,opened=op)
     if(.not.op.and.iu.le.0)iu=i
 enddo
-if(iu.gt.0)open(iu,file=fname(1:ilen),form='formatted',status='unknown')
+if(iu.gt.0)open(iu,file=trim(fname),form='formatted',status='unknown')
 
-!$OMP END CRITICAL
 if(iu.le.0)call crash('write_array_m: cannot find available fortran unit')
 
 write(iu,1)real(its)
@@ -1081,19 +1174,134 @@ write(iu,1)real(kte)
 write(iu,1)(((a(i,k,j),i=its,ite),j=jts,jte),k=kts,kte)
 close(iu)
 write(msg,2)name,'(',its,':',ite,',',jts,':',jte,',', &
-kts,':',kte,') -> ',fname(1:ilen) 
+kts,':',kte,') -> ',trim(fname) 
+!$OMP END CRITICAL(SFIRE_UTIL_CRIT)
 call message(msg)
 return
 
 1 format(e20.12)
 2 format(2a,3(i5,a,i5,a),2a)
-3 format(a,a,i5.5,a)
-4 format(a,a,i5.5,a,i4.4,a)
+3 format(a,a,i8.8,a)
+4 format(a,a,i8.8,a,i4.4,a)
 
-9 write(msg,'(3a)')'Cannot open file ',fname(1:ilen),' for writing'
-call crash(msg)
 
 end subroutine write_array_m3
+!
+!***
+!
+subroutine read_array_2d_integer(filename,ia,its,ite,jts,jte,ims,ime,jms,jme)
+!*** arguments
+integer, intent(in)::its,ite,jts,jte,ims,ime,jms,jme
+integer, intent(out), dimension(ims:ime,jms:jme):: ia
+character(len=*),intent(in)::filename
+!*** local
+real, allocatable, dimension(:,:)::a
+integer::i,j
+real::r
+character(len=256)msg
+!*** executable
+allocate(a(ims:ime,jms:jme))
+call read_array_2d_real(filename,a,its,ite,jts,jte,ims,ime,jms,jme)
+do j=jts,jte
+    do i=its,ite
+        ia(i,j)=a(i,j)
+	r=ia(i,j)
+	if(r.ne.a(i,j))then
+           write(6,*)'Reading file ',trim(filename)
+           write(6,*)'value at position ',i,j,' cannot be converted to integer'
+           write(6,*)'read ',a(i,j),' converted as',k,' converted as ',r
+	   msg=trim(filename)//' is not integer file'
+	   call crash(msg)
+        endif
+    enddo
+enddo
+end subroutine read_array_2d_integer
+
+        
+
+subroutine read_array_2d_real(filename,a,its,ite,jts,jte,ims,ime,jms,jme)
+#ifdef _OPENMP
+use OMP_LIB 
+#endif
+implicit none
+!*** purpose: read a 2D array from a text file
+! file format: line 1: array dimensions ni,nj
+!              following lines: one row of a at a time
+!              each row may be split between several lines
+!*** arguments
+integer, intent(in)::its,ite,jts,jte,ims,ime,jms,jme
+real, intent(out), dimension(ims:ime,jms:jme):: a
+character(len=*),intent(in)::filename
+!*** local
+integer i,j,ni,nj,mi,mj,nprocs,myproc,mythread,iu
+logical op
+character(len=128)::fname,msg
+!*** executable
+
+call wrf_get_nproc (nprocs)
+call wrf_get_myproc( myproc )
+mythread=0
+#ifdef _OPENMP
+    mythread=omp_get_thread_num()
+#endif
+if(nprocs.ne.1.or.myproc.ne.0.or.mythread.ne.0) &
+   call crash('read_array_2d: parallel execution not supported')
+
+! print line
+mi=ite-its+1
+mj=jte-jts+1
+write(msg,2)'reading array size ',mi,mj,' from file ',trim(filename)
+2 format(a,2i6,2a)
+call message(msg)
+
+! check array index overflow
+call check_mesh_2dim(its,ite,jts,jte,ims,ime,jms,jme)
+
+! find available unit
+iu=0
+do i=11,99
+    inquire(unit=i,opened=op)
+    if(.not.op.and.iu.le.0)iu=i
+enddo
+if(iu.le.0)call crash('read_array_2d: cannot find available fortran unit')
+
+if(iu.gt.0)open(iu,file=filename,form='formatted',status='old',err=9)
+rewind(iu,err=9)
+
+read(iu,*,err=10)ni,nj
+if(ni.ne.mi.or.nj.ne.mj)then
+    write(msg,'(a,2i6,a,2i6)')'Array dimensions',ni,nj,' in the input file should be ',mi,mj
+    call message(msg)
+    goto 10
+endif
+do i=its,ite
+   read(iu,*,err=10)(a(i,j),j=jts,jte)
+enddo
+close(iu,err=11)
+return
+
+9  msg='Error opening file '//trim(filename)
+call crash(msg)
+10 msg='Error reading file '//trim(filename)
+call crash(msg)
+11 msg='Error closing file '//trim(filename)
+call crash(msg)
+end subroutine read_array_2d_real
+!
+!***
+!
+
+! general conditional expression
+pure integer function ifval(l,i,j)
+implicit none
+logical, intent(in)::l
+integer, intent(in)::i,j
+if(l)then
+	ifval=i
+else
+	ifval=j
+endif
+end function ifval
 
 ! function to go beyond domain boundary if tile is next to it
 pure integer function snode(t,d,i)
@@ -1105,5 +1313,197 @@ else
     snode=t+i
 endif
 end function snode
+
+subroutine print_chsum( id, & 
+    ims,ime,kms,kme,jms,jme, &                ! memory dims
+    ids,ide,kds,kde,jds,jde, &                ! domain dims
+    ips,ipe,kps,kpe,jps,jpe, &                ! patch or tile dims
+    istag,kstag,jstag,       &
+    a,name)                      
+
+#ifdef DM_PARALLEL
+    USE module_dm , only : wrf_dm_bxor_integer
+#endif
+
+integer, intent(in):: id, &
+    ims,ime,kms,kme,jms,jme, &                ! memory dims
+    ids,ide,kds,kde,jds,jde, &                ! domain dims
+    ips,ipe,kps,kpe,jps,jpe, &                ! patch dims
+    istag,kstag,jstag
+real, intent(in),dimension(ims:ime,kms:kme,jms:jme)::a
+character(len=*)::name
+
+!$ external, logical:: omp_in_parallel
+!$ external, integer:: omp_get_thread_num
+
+!*** local
+integer::lsum
+integer::i,j,k,n,ipe1,jpe1,kpe1,iel,thread,is,js,ks
+integer, save::psum,gsum
+real::rel
+equivalence(rel,iel)
+character(len=256)msg
+
+if(fire_print_msg.le.0)return
+
+ipe1=ifval(ipe.eq.ide.and.istag.ne.0,ipe+1,ipe)
+kpe1=ifval(kpe.eq.kde.and.kstag.ne.0,kpe+1,kpe)
+jpe1=ifval(jpe.eq.jde.and.jstag.ne.0,jpe+1,jpe)
+is=ifval(istag.ne.0,1,0)
+ks=ifval(kstag.ne.0,1,0)
+js=ifval(jstag.ne.0,1,0)
+
+lsum=0
+do j=jps,jpe1
+  do k=kps,kpe1
+    do i=ips,ipe1
+      rel=a(i,k,j)
+      lsum=ieor(lsum,iel)
+    enddo
+  enddo
+enddo
+
+! get process sum over all threads
+thread=0
+!$ thread=omp_get_thread_num()
+if(thread.eq.0)psum=0
+!$OMP BARRIER
+!$OMP CRITICAL(CHSUM)
+psum=ieor(psum,lsum)
+!$OMP END CRITICAL(CHSUM)
+!$OMP BARRIER
+
+! get global sum over all processes
+if(thread.eq.0)then
+#ifdef DM_PARALLEL
+    gsum = wrf_dm_bxor_integer ( psum )
+#else
+    gsum = psum
+#endif
+    write(msg,1)id,name,ids,ide+is,kds,kde+ks,jds,jde+js,gsum
+1   format(i6,1x,a10,' dims',6i5,' chsum ',z8.8)
+    call message(msg)
+endif
+
+end subroutine print_chsum 
+
+
+real function fun_real(fun,  & 
+    ims,ime,kms,kme,jms,jme, &                ! memory dims
+    ids,ide,kds,kde,jds,jde, &                ! domain dims
+    ips,ipe,kps,kpe,jps,jpe, &                ! patch or tile dims
+    istag,kstag,jstag,       &                ! staggering
+    a,b)                      
+
+#ifdef DM_PARALLEL
+    USE module_dm , only : wrf_dm_sum_real , wrf_dm_max_real
+#endif
+
+integer, intent(in)::  fun, &
+    ims,ime,kms,kme,jms,jme, &                ! memory dims
+    ids,ide,kds,kde,jds,jde, &                ! domain dims
+    ips,ipe,kps,kpe,jps,jpe, &                ! patch dims
+    istag,kstag,jstag                         ! staggering
+real, intent(in),dimension(ims:ime,kms:kme,jms:jme)::a,b
+
+!*** local
+real::lsum,void
+integer::i,j,k,n,ipe1,jpe1,kpe1,iel,thread,is,js,ks
+real, save::psum,gsum
+real::rel
+logical:: dosum,domax
+character(len=256)msg
+
+ipe1=ifval(ipe.eq.ide.and.istag.ne.0,ipe+1,ipe)
+kpe1=ifval(kpe.eq.kde.and.kstag.ne.0,kpe+1,kpe)
+jpe1=ifval(jpe.eq.jde.and.jstag.ne.0,jpe+1,jpe)
+is=ifval(istag.ne.0,1,0)
+ks=ifval(kstag.ne.0,1,0)
+js=ifval(jstag.ne.0,1,0)
+
+if(fun.eq.REAL_SUM)then
+  void=0.
+  lsum=void
+  do j=jps,jpe1
+    do k=kps,kpe1
+      do i=ips,ipe1
+        lsum=lsum+a(i,k,j)
+      enddo
+    enddo
+  enddo
+elseif(fun.eq.RNRM_SUM)then
+  void=0.
+  lsum=void
+  do j=jps,jpe1
+    do k=kps,kpe1
+      do i=ips,ipe1
+        lsum=lsum+sqrt(a(i,k,j)*a(i,k,j)+b(i,k,j)*b(i,k,j))
+      enddo
+    enddo
+  enddo
+elseif(fun.eq.REAL_MAX)then
+  void=-huge(lsum)
+  lsum=void
+  do j=jps,jpe1
+    do k=kps,kpe1
+      do i=ips,ipe1
+        lsum=max(lsum,a(i,k,j))
+      enddo
+    enddo
+  enddo
+elseif(fun.eq.RNRM_MAX)then
+  void=0.
+  lsum=void
+  do j=jps,jpe1
+    do k=kps,kpe1
+      do i=ips,ipe1
+        lsum=max(lsum,sqrt(a(i,k,j)*a(i,k,j)+b(i,k,j)*b(i,k,j)))
+      enddo
+    enddo
+  enddo
+else
+  call crash('fun_real: bad fun')
+endif
+
+if(lsum.ne.lsum)call crash('fun_real: NaN detected')
+
+dosum=fun.eq.REAL_SUM.or.fun.eq.RNRM_SUM
+domax=fun.eq.REAL_MAX.or.fun.eq.RNRM_MAX
+
+! get process sum over all threads
+!$OMP SINGLE
+! only one thread should write to shared variable
+psum=void
+!$OMP END SINGLE
+!$OMP BARRIER
+! now all threads know psum
+
+!$OMP CRITICAL(RDSUM)
+! each thread adds its own lsum
+if(dosum)psum=psum+lsum
+if(domax)psum=max(psum,lsum)
+!$OMP END CRITICAL(RDSUM)
+
+! wait till all theads are done
+!$OMP BARRIER
+
+! get global sum over all processes
+!$OMP SINGLE
+! only one threads will do the mpi communication
+#ifdef DM_PARALLEL
+    if(dosum) gsum = wrf_dm_sum_real ( psum )
+    if(domax) gsum = wrf_dm_max_real ( psum )
+#else
+    gsum = psum
+#endif
+if(gsum.ne.gsum)call crash('fun_real: NaN detected')
+!$OMP END SINGLE
+
+!$OMP BARRIER
+! now gsum is known to all threads
+
+fun_real=gsum
+
+end function fun_real
 
 end module module_fr_sfire_util

@@ -34,6 +34,7 @@ CONTAINS
 !-------------------------------------------------------------------
 !  Lin et al., 1983, JAM, 1065-1092, and
 !  Rutledge and Hobbs, 1984, JAS, 2949-2972
+!  May 2009 - Changes and corrections from P. Blossey (U. Washington)
 !-------------------------------------------------------------------
   SUBROUTINE lin_et_al(th                                          &
                       ,qv, ql, qr                                  &
@@ -45,6 +46,8 @@ CONTAINS
                       ,XLS, XLV, XLF, rhowater, rhosnow            &
                       ,EP2,SVP1,SVP2,SVP3,SVPT0                    &
                       , RAINNC, RAINNCV                            &
+                      , SNOWNC, SNOWNCV                            &
+                      , GRAUPELNC, GRAUPELNCV, SR                  &
                       ,ids,ide, jds,jde, kds,kde                   &
                       ,ims,ime, jms,jme, kms,kme                   &
                       ,its,ite, jts,jte, kts,kte                   &
@@ -100,9 +103,16 @@ CONTAINS
 
   REAL, DIMENSION( ims:ime , jms:jme ),                           &
         INTENT(INOUT) ::                                  RAINNC, &
-                                                         RAINNCV
+                                                         RAINNCV, &
+                                                              SR
 
 ! Optional
+  REAL, DIMENSION( ims:ime , jms:jme ),                           &
+        OPTIONAL,                                                 &
+        INTENT(INOUT) ::                                  SNOWNC, &
+                                                         SNOWNCV, &
+                                                       GRAUPELNC, &
+                                                      GRAUPELNCV
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
         OPTIONAL,                                                 &
@@ -229,9 +239,14 @@ CONTAINS
    snow(i,j)=pptsnow
    graupel(i,j)=pptgraul
    ice(i,j)=pptice
+   sr(i,j)=(pptice+pptsnow+pptgraul)/(pptice+pptsnow+pptgraul+pptrain+1.e-12)
 !
    RAINNCV(i,j)= pptrain + pptsnow + pptgraul + pptice
    RAINNC(i,j)=RAINNC(i,j) + pptrain + pptsnow + pptgraul + pptice
+   IF(PRESENT(SNOWNCV))SNOWNCV(i,j)= pptsnow + pptice
+   IF(PRESENT(SNOWNC))SNOWNC(i,j)=SNOWNC(i,j) + pptsnow + pptice
+   IF(PRESENT(GRAUPELNCV))GRAUPELNCV(i,j)= pptgraul
+   IF(PRESENT(GRAUPELNC))GRAUPELNC(i,j)=GRAUPELNC(i,j) + pptgraul
 
 !
 !- update data from 1-D back to 3-D
@@ -455,19 +470,19 @@ CONTAINS
 !
   REAL                          :: tmp_tem, tmp_temcc !bloss
 !
+  real :: liqconc, dis, beta, kappa, p0, xc, capn,rhocgs
 
 !sg: begin
-! liqconc = liquid water content in gcm^-3
-! capn = droplet number concentration cm^-3
+! liqconc = liquid water content (g cm^-3)
+! capn = droplet number concentration (# cm^-3)
 ! dis = relative dispersion (dimensionless) between 0.2 and 1.
 ! Written by Yangang Liu based on Liu et al., GRL 32, 2005.
-! Autoconversion rate P = P0*T
-! p0 = rate function
-! kappa = constant in Long kernel
-! beta = Condensation rate constant
+! Autoconversion rate p = p0 * (threshold function)
+! p0 = "base" autoconversion rate (g cm^-3 s^-1)
+! kappa = constant in Long kernel = [kappa2 * (3/(4*pi*rhow))^3] in Liu papers
+! beta = Condensation rate constant = (beta6)^6 in Liu papers
 ! xc = Normalized critical mass
 ! ***********************************************************
-       real liqconc, dis, beta, kappa, p0, xc, capn,rhocgs
   if(flag_qndrop)then
      dis = 0.5 ! droplet dispersion, set to 0.5 per SG 8-Nov-2006
 !    Give  empirical constants
@@ -1415,16 +1430,16 @@ CONTAINS
            if( qndropz(k) >= 1. ) then
 !         Liu et al. autoconversion scheme
               rhocgs=rho(k)*1.e-3
-              liqconc=rhocgs*qlz(k)
-              capn=1.e-03*rhocgs*qndropz(k)
+              liqconc=rhocgs*qlz(k)   ! (kg/kg) to (g/cm3)
+              capn=1.0e-3*rhocgs*qndropz(k)   ! (#/kg) to (#/cm3)
 !         rate function
               if(liqconc.gt.1.e-10)then
-                 p0=kappa*beta/capn*(liqconc*liqconc*liqconc)
+                 p0=(kappa*beta/capn)*(liqconc*liqconc*liqconc)
                  xc=9.7d-17*capn*sqrt(capn)/(liqconc*liqconc)
 !         Calculate autoconversion rate (g/g/s)
                  if(xc.lt.10.)then
-                    praut(k)=p0/rhocgs*0.5d0*(xc*xc+2*xc+2.0d0)* &
-                         (1.0d0+xc)*dexp(-2.0d0*xc)
+                    praut(k)=(p0/rhocgs) * ( 0.5d0*(xc*xc+2*xc+2.0d0)* &
+                         (1.0d0+xc)*exp(-2.0d0*xc) )
                  endif
               endif
            endif

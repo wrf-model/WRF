@@ -683,16 +683,16 @@ MODULE module_bioemi_beis313
 
         REAL          :: cfnowet, cfnodry
 
-        INTEGER growseason, gday
-        EXTERNAL growseason
+        INTEGER gday
 !***********************************************************************
 
         tair = tairin
 
 !............. calculate NO emissions by going thru temperature cases
 
-       ! gday = growseason(julday)
-        gday = 91
+        gday = growseason(julday)
+!       Control of growing season should be done in the input files for BEIS3.13
+        ! gday = 91
         IF (gday .eq. 0) THEN         !not growing season
            IF ( tair .GT. 303.00 ) tair = 303.00
 
@@ -760,11 +760,9 @@ MODULE module_bioemi_beis313
 !
 !******** function calls
 !
-      INTEGER growseason
-      EXTERNAL growseason
-       
-     ! gday = growseason(julday)
-      gday = 91
+     gday = growseason(julday)
+!       Control of growing season should be done in the input files for BEIS3.13
+     ! gday = 91
       
       IF (gday .EQ. 0) THEN
           fertilizer_adj = 0.0
@@ -809,11 +807,9 @@ MODULE module_bioemi_beis313
 !
 !******* function calls
 !
-      INTEGER growseason
-      EXTERNAL growseason
-       
-      !gday = growseason(julday)
-      gday = 91
+      gday = growseason(julday)
+!       Control of growing season should be done in the input files for BEIS3.13
+      !gday = 91
       
       IF (gday .LE. 30) THEN
           veg_adj = 1.0

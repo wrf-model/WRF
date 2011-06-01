@@ -3263,7 +3263,8 @@
       rk_m4(15) = 1.0e-15
       rk_m4(16) = 1.6e-11
       rk_m4(17) = 1.0e-13
-      rk_m4(18) = arr(2.5e-13, -8686., te)
+!Bug fixing, the coefficient changed from 2.5e-13 to 2.5e13 by Qing.Yang@pnl.gov
+      rk_m4(18) = arr(2.5e13, -8686., te)
       rk_m4(19) = 1.0e-14
       rk_m4(20) = 5.0e-15
       rk_m4(21) = 2.5e-13

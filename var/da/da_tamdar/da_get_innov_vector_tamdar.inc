@@ -40,6 +40,17 @@ subroutine da_get_innov_vector_tamdar (it, num_qcstat_conv, grid, ob, iv)
    model_t(:,:) = 0.0
    model_q(:,:) = 0.0
 
+   if ( it > 1 ) then
+      do n=iv%info(tamdar)%n1,iv%info(tamdar)%n2
+         do k=1, iv%info(tamdar)%levels(n)
+            if (iv%tamdar(n)%u(k)%qc == fails_error_max) iv%tamdar(n)%u(k)%qc = 0
+            if (iv%tamdar(n)%v(k)%qc == fails_error_max) iv%tamdar(n)%v(k)%qc = 0
+            if (iv%tamdar(n)%t(k)%qc == fails_error_max) iv%tamdar(n)%t(k)%qc = 0
+            if (iv%tamdar(n)%q(k)%qc == fails_error_max) iv%tamdar(n)%q(k)%qc = 0
+         end do
+      end do
+   end if
+
    do n=iv%info(tamdar)%n1, iv%info(tamdar)%n2
       if (iv%info(tamdar)%levels(n) < 1) cycle
 

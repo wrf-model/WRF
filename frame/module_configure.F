@@ -4,6 +4,7 @@
 MODULE module_scalar_tables
   USE module_driver_constants
   USE module_state_description
+  USE module_domain_type, ONLY : streamrec
 #include <scalar_tables.inc>
 CONTAINS
   SUBROUTINE init_module_scalar_tables
@@ -166,35 +167,6 @@ CONTAINS
 #define SOURCE_REC_DEX
 #include <config_assigns.inc>
 
-#ifdef PLANET
-!***************** special conversion for timesteps *********************
-! 2004-12-07 ADT Notes
-! NB: P2SI needs to defined in multiple places.  Right now this
-! requirement is a kludge, and if I can find something more elegant
-! I will try to implement it later.
-!
-! Beware: dt as the namelist timestep is now obsolete.  The new
-! variable "timestep" (which is an *integer* number of seconds),
-! with the (optional) additional specification of a fraction (to
-! make non-integer timesteps) now acts as the true timestep.
-! In share/set_timekeeping.F the integer(s) are converted to a real
-! number and put back in dt anyway!
-! We will deal with the case of the integer variables in
-! share/set_timekeeping.F itself.  For now, since they left dt in
-! the namelist definition, I will leave this here just in case ...
-      model_config_rec%dt    = dt    * P2SI
-! All of the following variables are told to be input in *MINUTES*
-! These values are converted to units of timesteps in the various
-! init routines in phys/module_physics_init.F by dividing by the
-! formula STEP = (xxDT*60./dt).  So it seems safe to multiply them
-! by P2SI here (with the exception of adding roundoff error later).
-! See notes in phys/module_radiation_driver for the radt example.
-      model_config_rec%radt  = radt  * P2SI
-      model_config_rec%bldt  = bldt  * P2SI
-      model_config_rec%cudt  = cudt  * P2SI
-      model_config_rec%gsmdt = gsmdt * P2SI
-!************************************************************************
-#endif
 
       CLOSE ( UNIT = nml_read_unit , IOSTAT = io_status )
 
@@ -208,6 +180,10 @@ CONTAINS
       IF ( io_status .NE. 0 ) THEN
         CALL WRF_ERROR_FATAL ( 'ERROR CLOSING namelist.output' )
       ENDIF
+#endif
+
+#ifdef _WIN32
+      model_config_rec%nocolons = .TRUE.   ! always no colons for Windows
 #endif
 
       RETURN
@@ -375,6 +351,8 @@ CONTAINS
 ! If there is an error reading the "nml_name" namelist, this routine is
 ! called to check for namelist variables that have been removed by the 
 ! developers and are still in user's namelists.
+! 
+! The calls to this routine are in registry-generated code: inc/config_reads.inc
 !</DESCRIPTION>
 !
      IMPLICIT NONE
@@ -427,10 +405,10 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = dynamics , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0, "Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
-                                 TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Replace them with moist_adv_opt, chem_adv_opt, tke_adv_opt"// &
-                                " and scalar_adv_opt, respectively.")
+           CALL wrf_debug(0, "-- Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
+                               TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Replace them with moist_adv_opt, chem_adv_opt, tke_adv_opt "// &
+                             " and scalar_adv_opt, respectively.")
         ENDIF
 
 !---------------------------------- physics -----------------------------
@@ -439,8 +417,8 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = physics , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Is ucmcall still in your "// TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Replace it with sf_urban_physics")
+           CALL wrf_debug(0, "-- Is ucmcall still in your "// TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Replace it with sf_urban_physics")
         ENDIF
 
 !---------------------------------- fdda --------------------------------
@@ -449,8 +427,8 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = fdda , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Is obs_nobs_prt still in your "// TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Replace it with obs_prt_max")
+           CALL wrf_debug(0, "-- Is obs_nobs_prt still in your "// TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Replace it with obs_prt_max")
         ENDIF
 
 !---------------------------------- wrfvar1 -----------------------------
@@ -459,10 +437,10 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = wrfvar1 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Are global, print_detail_airep, print_detail_timing still in your "// &
-                            TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Remove global, print_detail_airep, print_detail_timing "// &
-                                "from wrfvar1 namelist as they are obsolete.")
+           CALL wrf_debug(0, "-- Are global, print_detail_airep, print_detail_timing still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove global, print_detail_airep, print_detail_timing "// &
+                             "from wrfvar1 namelist as they are obsolete.")
         ENDIF
 
 !---------------------------------- wrfvar2 -----------------------------
@@ -471,23 +449,23 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = wrfvar2 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Are write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
-                            "write_filtered_obs still in your "// &
-                            TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Remove write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
-                                "write_filtered_obs as they are obsolete.")
+           CALL wrf_debug(0, "-- Are write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
+                             "write_filtered_obs still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
+                             "write_filtered_obs as they are obsolete.")
         ENDIF
 
 !---------------------------------- wrfvar4 -----------------------------
      else if ( TRIM(nml_name) .eq. "wrfvar4" ) then
 
-     READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
+        READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
 
-     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-        CALL wrf_debug(0,"Is use_eos_radobs still in your "// &
-                         TRIM(nml_name)//" namelist?")
-        CALL wrf_error_fatal("Remove use_eos_radobs as it is obsolete.")
-     ENDIF
+        IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+           CALL wrf_debug(0, "-- Is use_eos_radobs still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove use_eos_radobs as it is obsolete.")
+        ENDIF
 
 !---------------------------------- wrfvar14 -----------------------------
      else if ( TRIM(nml_name) .eq. "wrfvar14" ) then
@@ -495,15 +473,21 @@ CONTAINS
      READ   ( UNIT = nml_read_unit , NML = wrfvar14 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0,"Are use_crtm_kmatrix_fast, spccoeff_file, taucoeff_file, "// &
-                            "aerosolcoeff_file, cloudcoeff_file, emiscoeff_file still in your "// &
-                            TRIM(nml_name)//" namelist?")
-           CALL wrf_error_fatal("Remove them as they are obsolete.")
+           CALL wrf_debug(0, "-- Are use_crtm_kmatrix_fast, spccoeff_file, taucoeff_file, "// &
+                             "aerosolcoeff_file, cloudcoeff_file, emiscoeff_file still in your "// &
+                              TRIM(nml_name)//" namelist?")
+           CALL wrf_debug(0, "-- Remove them as they are obsolete.")
         ENDIF
 
 !---------------------------------- error -------------------------------
      else
-        CALL wrf_error_fatal(TRIM(nml_name)//" is not a valid namelist name")
+         IF ( &
+#include "namelist_nametest.inc"
+              ) THEN
+            nml_error = 0
+         ELSE
+            CALL wrf_debug(0, TRIM(nml_name)//" is not a valid namelist name")
+         ENDIF
      end if
 
      IF ( nml_error .NE. 0 ) then    ! Still failed

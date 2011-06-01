@@ -5,29 +5,41 @@ program gen_be_vertloc
    implicit none
 
    integer, parameter    :: ni = 1000 
-   integer, parameter    :: nk = 44
    integer, parameter    :: ktarget = 44
    integer, parameter    :: stdout = 6 
- 
-   real, parameter       :: rscale = 0.1
-   real, parameter       :: var_threshold = 0.99
+   character (len=3)     :: cnk                       ! vertical level 
+   real*8, parameter       :: rscale = 0.1
+   real*8, parameter       :: var_threshold = 0.99
 
-   integer               :: i, k, k1, m
+   integer               :: i, k, k1, m,nk,nk2
    integer               :: nm
-   real                  :: ni1_inv
-   real                  :: nk_inv, nk3_inv
-   real                  :: kscale, kscale_invsq
-   real                  :: kdist
-   real                  :: r
-   real                  :: totvar, totvar_inv, cumvar
-   real                  :: rho(1:nk,1:nk)
-   real                  :: e(1:ni,1:nk)
-   real                  :: cov(1:nk,1:nk)
-   real                  :: eval(1:nk)
-   real                  :: evec(1:nk,1:nk)
-   real                  :: v(1:nk)
-   real                  :: x(1:nk)
+   real*8                  :: ni1_inv
+   real*8                  :: nk_inv, nk3_inv
+   real*8                  :: kscale, kscale_invsq
+   real*8                  :: kdist
+   real*8                  :: r
+   real*8                  :: totvar, totvar_inv, cumvar
+   real*8,allocatable      :: rho(:,:)
+   real*8,allocatable      :: e(:,:)
+   real,allocatable      :: cov(:,:)
+   real*8,allocatable      :: eval(:)
+   real*8,allocatable      :: evec(:,:)
+   real*8,allocatable      :: v(:)
+   real*8,allocatable      :: x(:)
+   
+  cnk=""
+  call getarg( 1, cnk )
+  read(cnk,'(i3)')nk2
+  nk=nk2-1
+  write(stdout,'(a,i6)') ' vertical level = ', nk2
 
+  allocate(rho(1:nk,1:nk))
+  allocate(e(1:ni,1:nk))
+  allocate(cov(1:nk,1:nk))
+  allocate(eval(1:nk))
+  allocate(evec(1:nk,1:nk))
+  allocate(v(1:nk))
+  allocate(x(1:nk))
    ni1_inv = 1.0 / real (ni - 1)
    nk_inv = 1.0 / real (nk)
    nk3_inv = 1.0 / real (nk-3)
@@ -118,6 +130,14 @@ program gen_be_vertloc
       x(k) = sum(evec(k,1:nm) * eval(1:nm) * v(1:nm))
 !      write(22,'(i5,2f15.5)')k, rho(ktarget,k), x(k)
    end do
+   
+  deallocate(rho)
+  deallocate(e)
+  deallocate(cov)
+  deallocate(eval)
+  deallocate(evec)
+  deallocate(v)
+  deallocate(x)
 
 end program gen_be_vertloc
 

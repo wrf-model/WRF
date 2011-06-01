@@ -14,7 +14,7 @@ MODULE da_verif_obs_control
 !----------------------------------------------------------------------------   
    implicit none
 
-  integer, parameter       :: maxnum = 10, nstd = 16, nstdh = 125
+  integer, parameter       :: maxnum = 10, nstd = 16, nstdh = 150
   integer, parameter       :: num_verif_var =5        
   real,    dimension(nstd) :: stdp
   real,    dimension(nstdh):: stdh
@@ -36,7 +36,9 @@ MODULE da_verif_obs_control
            18.2,18.4,18.6,18.8,19.0,19.2,19.4,19.6,19.8,20.0, &
            20.2,20.4,20.6,20.8,21.0,21.2,21.4,21.6,21.8,22.0, &
            22.2,22.4,22.6,22.8,23.0,23.2,23.4,23.6,23.8,24.0, &
-           24.2,24.4,24.6,24.8,25.0/
+           24.2,24.4,24.6,24.8,25.0,25.2,25.4,25.6,25.8,26.0, &
+           26.2,26.4,26.6,26.8,27.0,27.2,27.4,27.6,27.8,28.0, &
+           28.2,28.4,28.6,28.8,29.0,29.2,29.4,29.6,29.8,30.0 /
 
 
   character (len=1)   :: verif_var(num_verif_var)

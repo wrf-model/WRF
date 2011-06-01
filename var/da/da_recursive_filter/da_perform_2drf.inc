@@ -10,10 +10,10 @@ subroutine da_perform_2drf(ni, nj, num_passes, rf_scale, field)
    integer, intent(in)    :: nj               ! Array dimension 2.
    integer, intent(in)    :: num_passes       ! Number of passes of RF.
    real,    intent(in)    :: rf_scale         ! Recursive filter scaling parameter.
-   real,    intent(inout) :: field(1:ni,1:nj) ! Field to be filtered.
+   real*8,  intent(inout) :: field(1:ni,1:nj) ! Field to be filtered.
 
    integer               :: i, j, pass       ! Loop counters.
-   real                  :: e, alpha         ! Recursive filter parameters.
+   real*8                :: e, alpha         ! Recursive filter parameters.
    real                  :: mean_field       ! Mean field.
 
    if (trace_use) call da_trace_entry("da_perform_2drf")

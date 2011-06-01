@@ -23,7 +23,7 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx                   )
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -84,7 +84,8 @@ CONTAINS
 !-- cd          momentum exchange coeff at 10 meters
 !-- cka         enthalpy exchange coeff at the lowest model level
 !-- cda         momentum exchange coeff at the lowest model level
-!-- isftcflx    =0, (Charnock and Carlson-Boland); =1, AHW Ck, Cd
+!-- isftcflx    =0, (Charnock and Carlson-Boland); =1, AHW Ck, Cd, =2 Garratt
+!-- iz0tlnd     =0 Carlson-Boland, =1 Czil_new
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -177,7 +178,7 @@ CONTAINS
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
 
 ! LOCAL VARS
 
@@ -223,7 +224,7 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
 #if ( EM_CORE == 1 )
-                ,isftcflx,                                         &
+                ,isftcflx,iz0tlnd,                                 &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j)                               &
 #endif
@@ -247,7 +248,7 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     isftcflx,                                     &
+                     isftcflx, iz0tlnd,                            &
                      ustm,ck,cka,cd,cda                            )
 !-------------------------------------------------------------------
       IMPLICIT NONE
@@ -321,7 +322,7 @@ CONTAINS
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
 
 ! LOCAL VARS
 
@@ -334,6 +335,8 @@ CONTAINS
                                                            PSIH10, &
                                                            PSIM10, &
                                                            DENOMQ, &
+                                                          DENOMQ2, &
+                                                          DENOMT2, &
                                                             WSPDI, &
                                                            GZ2OZ0, &
                                                            GZ10OZ0
@@ -352,7 +355,7 @@ CONTAINS
       REAL    ::  PL,THCON,TVCON,E1
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
-      REAL    ::  FLUXC,VSGD,Z0Q
+      REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL,RESTAR2
 !-------------------------------------------------------------------
       KL=kte
 
@@ -678,13 +681,31 @@ CONTAINS
         PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-PSIH10(I)
         IF ( PRESENT(ISFTCFLX) ) THEN
            IF ( ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
-              Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.))**2
-!             Z0Q = 0.62*1.5E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.))**2
+! v3.1
+!             Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.))**2
+! hfip1
+!             Z0Q = 0.62*2.0E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.5))**2
+! v3.2
+              Z0Q = 1.e-4
               PSIQ=ALOG(ZA(I)/Z0Q)-PSIH(I)
               PSIT=PSIQ
               PSIQ2=ALOG(2./Z0Q)-PSIH2(I)
               PSIQ10=ALOG(10./Z0Q)-PSIH10(I)
               PSIT2=PSIQ2
+           ENDIF
+           IF ( ISFTCFLX.EQ.2 .AND. (XLAND(I)-1.5).GE.0. ) THEN
+! AHW: Garratt formula: Calculate roughness Reynolds number
+!        Kinematic viscosity of air (linear approc to
+!                 temp dependence at sea levle)
+              VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
+!!            VISC=1.5E-5
+              RESTAR=UST(I)*ZNT(I)/VISC
+              RESTAR2=2.48*SQRT(SQRT(RESTAR))-2.
+              PSIT=GZ1OZ0(I)-PSIH(I)+RESTAR2
+              PSIQ=GZ1OZ0(I)-PSIH(I)+2.28*SQRT(SQRT(RESTAR))-2.
+              PSIT2=GZ2OZ0(I)-PSIH2(I)+RESTAR2
+              PSIQ2=GZ2OZ0(I)-PSIH2(I)+2.28*SQRT(SQRT(RESTAR))-2.
+              PSIQ10=GZ10OZ0(I)-PSIH(I)+2.28*SQRT(SQRT(RESTAR))-2.
            ENDIF
         ENDIF
         IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN
@@ -692,6 +713,23 @@ CONTAINS
            Cd(I)=(karman/psix10)*(karman/psix10)
            Cka(I)=(karman/psix)*(karman/psiq)
            Cda(I)=(karman/psix)*(karman/psix)
+        ENDIF
+        IF ( PRESENT(IZ0TLND) ) THEN
+           IF ( IZ0TLND.EQ.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
+              ZL=ZNT(I)
+!             CZIL RELATED CHANGES FOR LAND
+              VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
+              RESTAR=UST(I)*ZL/VISC
+!             Modify CZIL according to Chen & Zhang, 2009
+
+              CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+
+              PSIT=GZ1OZ0(I)-PSIH(I)+CZIL*KARMAN*SQRT(RESTAR)
+              PSIQ=GZ1OZ0(I)-PSIH(I)+CZIL*KARMAN*SQRT(RESTAR)
+              PSIT2=GZ2OZ0(I)-PSIH2(I)+CZIL*KARMAN*SQRT(RESTAR)
+              PSIQ2=GZ2OZ0(I)-PSIH2(I)+CZIL*KARMAN*SQRT(RESTAR)
+
+           ENDIF
         ENDIF
 ! TO PREVENT OSCILLATIONS AVERAGE WITH OLD VALUE 
         UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
@@ -717,6 +755,8 @@ CONTAINS
         ENDIF                                                                    
         MOL(I)=KARMAN*DTG/PSIT/PRT                              
         DENOMQ(I)=PSIQ
+        DENOMQ2(I)=PSIQ2
+        DENOMT2(I)=PSIT2
   330 CONTINUE                                                                   
 !                                                                                
   335 CONTINUE                                                                   
@@ -737,11 +777,12 @@ CONTAINS
           ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
 ! AHW: change roughness length, and hence the drag coefficients Ck and Cd
           IF ( PRESENT(ISFTCFLX) ) THEN
-             IF ( ISFTCFLX.EQ.1 ) THEN
-                ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
-                ZNT(I)=MIN(ZNT(I),2.85e-3)
+             IF ( ISFTCFLX.NE.0 ) THEN
+!               ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
+                ZNT(I)=10.*exp(-9.5*UST(I)**(-.3333))
                 ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
-!               ZNT(I)=MAX(ZNT(I),1.27e-7)
+                ZNT(I)=MIN(ZNT(I),2.85e-3)
+                ZNT(I)=MAX(ZNT(I),1.27e-7)
              ENDIF
           ENDIF
           ZL = ZNT(I)
@@ -778,6 +819,12 @@ CONTAINS
       DO 400 I=its,ite
         IF(XLAND(I)-1.5.GT.0.)THEN                                           
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
+          IF ( PRESENT(ISFTCFLX) ) THEN
+             IF ( ISFTCFLX.NE.0 ) THEN
+! AHW: add dissipative heating term
+                HFX(I)=HFX(I)+RHOX(I)*USTM(I)*USTM(I)*WSPDI(I)
+             ENDIF
+          ENDIF
         ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
           HFX(I)=AMAX1(HFX(I),-250.)                                       
@@ -790,15 +837,13 @@ CONTAINS
          ELSE
            ZL=0.01
          ENDIF
-         CHS(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*ZA(I) &
-                /XKA+ZA(I)/ZL)-PSIH(I))
+         CHS(I)=UST(I)*KARMAN/DENOMQ(I)
 !        GZ2OZ0(I)=ALOG(2./ZNT(I))
 !        PSIM2(I)=-10.*GZ2OZ0(I)
 !        PSIM2(I)=AMAX1(PSIM2(I),-10.)
 !        PSIH2(I)=PSIM2(I)
-         CQS2(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*2.0  &
-               /XKA+2.0/ZL)-PSIH2(I))
-         CHS2(I)=UST(I)*KARMAN/(GZ2OZ0(I)-PSIH2(I))
+         CQS2(I)=UST(I)*KARMAN/DENOMQ2(I)
+         CHS2(I)=UST(I)*KARMAN/DENOMT2(I)
       ENDDO
                                                                         
   410 CONTINUE                                                                   

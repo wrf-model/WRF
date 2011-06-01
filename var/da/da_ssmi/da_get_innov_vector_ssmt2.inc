@@ -27,6 +27,14 @@ subroutine da_get_innov_vector_ssmt2 (it, num_qcstat_conv,grid, ob, iv)
    allocate (model_rh(1:iv%info(ssmt2)%max_lev,iv%info(ssmt2)%n1:iv%info(ssmt2)%n2))
    model_rh(:,:) = 0.0
 
+   if ( it > 1 )then
+      do n=iv%info(ssmt2)%n1,iv%info(ssmt2)%n2
+         do k = 1, iv%info(ssmt1)%levels(n)
+            if(iv % ssmt2(n) % rh(k) % qc == fails_error_max)iv % ssmt2(n) % rh(k) % qc = 0
+         end do
+      end do
+   end if
+
    do n=iv%info(ssmt2)%n1,iv%info(ssmt2)%n2
       num_levs = iv%info(ssmt2)%levels(n)
 

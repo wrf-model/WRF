@@ -33,6 +33,13 @@ MAX_DOMAINS	=	21
 
 CONFIG_BUF_LEN	=	32768
 
+#### Size of bitmasks (in 4byte integers) of stream masks for WRF I/O
+
+MAX_HISTORY = 25
+
+IWORDSIZE = 4
+DWORDSIZE = 8
+LWORDSIZE = 4
 
 ##############################################################################
 #### The settings in this section are defaults that may be overridden by the 
@@ -80,7 +87,4 @@ LIBWRFLIB = libwrflib.a
 
 
 #### Architecture specific settings ####
-
-# To enable over-decompostion with dmpar and dm+sm compiles, 
-# add -DALLOW_OVERDECOMP to ARCH_LOCAL, below. (not recommended)
 

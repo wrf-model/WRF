@@ -14,7 +14,7 @@ subroutine da_check_xtoy_adjoint_bogus(iv, y, adjtest_lhs, pertile_lhs)
    
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_bogus")
 
-   do n=1, iv%info(bogus)%nlocal
+   do n=iv%info(bogus)%n1, iv%info(bogus)%n2
       if (iv%info(bogus)%proc_domain(1,n)) then
          do k=1, iv%info(bogus)%levels(n)
             adjtest_lhs = adjtest_lhs + &

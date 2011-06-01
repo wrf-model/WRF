@@ -1,0 +1,25 @@
+state    real   avgflx_rum     ikj     dyn_em      1         X      rh      "avgflx_rum"        "hist-time-averaged mu-coupled u"   "Pa m s-1"
+state    real   avgflx_rvm     ikj     dyn_em      1         Y      rh       "avgflx_rvm"        "hist-time-averaged mu-coupled v"   "Pa m s-1"
+state    real   avgflx_wwm     ikj     dyn_em      1         Z      rh        "avgflx_wwm"   "hist-time-averaged mu-coupled eta-dot"          "Pa s-1"
+state    integer   avgflx_count    -      dyn_em      -         -       r     "avgflx_count"    "Counter for time-averaged mu-coupled velocities"  ""
+state    real  avgflx_cfu1     ikj      misc        1         Z     rh        "CFU1"                  "AVERAGE updraft mass flux from GD-scheme"         "kg m-2 s-1"
+state    real  avgflx_cfd1     ikj      misc        1         Z     rh        "CFD1"                  "AVERAGE downdraft mass flux from GD-scheme"         "kg m-2 s-1"
+state    real  avgflx_dfu1     ikj      misc        1         -     rh        "DFU1"                  "AVERAGE detrainment from updraft from GD-scheme"         "kg m-2 s-1"
+state    real  avgflx_efu1     ikj      misc        1         -     rh        "EFU1"                  "AVERAGE entrainment into updraft  from GD-scheme"         "kg m-2 s-1"
+state    real  avgflx_dfd1     ikj      misc        1         -     rh        "DFD1"                  "AVERAGE detrainment from downdraft from GD-scheme"         "kg m-2 s-1"
+state    real  avgflx_efd1     ikj      misc        1         -     rh        "EFD1"                  "AVERAGE entrainment into downdraft  from GD-scheme"         "kg m-2 s-1"
+state    real  cfu1            ikj      misc        1         Z      -        ""                  "instantaneous updraft mass flux from GD-scheme"         "kg m-2 s-1"
+state    real  cfd1            ikj      misc        1         Z      -        ""                  "instantaneous downdraft mass flux from GD-scheme"         "kg m-2 s-1"
+state    real  dfu1            ikj      misc        1         -      -        ""                  "instantaneous detrainment from updraft from GD-scheme"         "kg m-2 s-1"
+state    real  efu1            ikj      misc        1         -      -        ""                  "instantaneous entrainment into updraft  from GD-scheme"         "kg m-2 s-1"
+state    real  dfd1            ikj      misc        1         -      -        ""                  "instantaneous detrainment from downdraft from GD-scheme"         "kg m-2 s-1"
+state    real  efd1            ikj      misc        1         -      -        ""                  "instantaneous entrainment into downdraft  from GD-scheme"         "kg m-2 s-1"
+rconfig   integer do_avgflx_em            namelist,dynamics     max_domains     0     irh  "do_avgflx_em"     "activate output ofhist-time-averaged mu-coupled winds"   ""
+rconfig   integer do_avgflx_cugd          namelist,dynamics     max_domains     0     irh  "do_avgflx_cugd"   "activate output of hist-time-averaged cugd fluxes"   ""
+# Is the following line really needed?
+package   noavgflxem     do_avgflx_em==0             -             -
+package   avgflxem       do_avgflx_em==1             -             state:avgflx_rum,avgflx_rvm,avgflx_wwm
+# Is the following line really needed?
+package   noavgflxcugd   do_avgflx_cugd==0           -             -
+package   avgflxcugd     do_avgflx_cugd==1           -             state:avgflx_cfu1,avgflx_cfd1,avgflx_dfu1,avgflx_efu1,avgflx_dfd1,avgflx_efd1,cfu1,cfd1,dfu1,efu1,dfd1,efd1
+

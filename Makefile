@@ -4,6 +4,10 @@ LN      =       ln -s
 MAKE    =       make -i -r
 MV	=	/bin/mv
 RM      =       /bin/rm -f
+CHEM_FILES =	../chem/module_aerosols_sorgam.o \
+		../chem/module_gocart_aerosols.o \
+		../chem/module_mosaic_driver.o \
+		../chem/module_input_tracer.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -25,6 +29,8 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 #EXP_MODULE_DIR = -I../dyn_exp
 #EXP_MODULES =  $(EXP_MODULE_DIR)
 
+# set this in the compile script now
+#J = -j 6
 
 NMM_MODULE_DIR = -I../dyn_nmm
 NMM_MODULES =  $(NMM_MODULE_DIR)
@@ -64,12 +70,31 @@ wrf : framework_only
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 all_wrfvar : 
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
-	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) all_wrfvar )
-	( cd var/obsproc; $(MAKE) BUFR_CPP="$(BUFR_CPP)" )
+	if [ $(CRTM) ] ; then \
+	  (cd var/external/crtm; \
+	   export ABI_CRTM="${ABI_CRTM}"; . configure/$(SFC_CRTM).setup; $(MAKE) $(J) ) ; \
+	fi
+	if [ $(BUFR) ] ; then \
+	  (cd var/external/bufr;  \
+	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCDEBUG) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+	fi
+### Use 'make' to avoid '-i -r' above:
+	if [ $(WAVELET) ] ; then \
+	  ( cd var/external/wavelet; \
+		make CC="$(SC99) -DNOUNDERSCORE" RM="$(RM)" libWavelet.a; \
+		make FC="$(FC)" RM="$(RM)" lib_wavelet.a ) ; \
+	fi
+#	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) $(J) all_wrfvar )
+	( cd var/build; make depend; $(MAKE) $(J) all_wrfvar )
+	( cd var/obsproc; $(MAKE) $(J) BUFR_CPP="$(BUFR_CPP)" )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 ### 3.a.  rules to build the framework and then the experimental core
 
@@ -94,11 +119,14 @@ em_fire : wrf
 	( cd test/em_fire ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_fire ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_fire ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd test/em_fire ; /bin/sh create_links.sh )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_fire/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_fire/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_quarter_ss : wrf
 	@ echo '--------------------------------------'
@@ -113,6 +141,8 @@ em_quarter_ss : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_quarter_ss/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_quarter_ss/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_squall2d_x : wrf
 	@ echo '--------------------------------------'
@@ -127,6 +157,8 @@ em_squall2d_x : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_squall2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_x/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_squall2d_y : wrf
 	@ echo '--------------------------------------'
@@ -141,6 +173,8 @@ em_squall2d_y : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_squall2d_y/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_squall2d_y/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_b_wave : wrf
 	@ echo '--------------------------------------'
@@ -155,6 +189,8 @@ em_b_wave : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_b_wave/namelist.input . )
 	( cd run ; /bin/rm -f input_jet ; ln -s ../test/em_b_wave/input_jet . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_les : wrf
 	@ echo '--------------------------------------'
@@ -169,6 +205,8 @@ em_les : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_les/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_les/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_seabreeze2d_x : wrf
 	@ echo '--------------------------------------'
@@ -183,6 +221,22 @@ em_seabreeze2d_x : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_seabreeze2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_seabreeze2d_x/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+
+em_tropical_cyclone : wrf
+	@ echo '--------------------------------------'
+	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=tropical_cyclone em_ideal )
+	( cd test/em_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	( cd test/em_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+	( cd test/em_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_tropical_cyclone/namelist.input . )
+	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_tropical_cyclone/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_scm_xy : wrf
 	@ echo '--------------------------------------'
@@ -195,6 +249,8 @@ em_scm_xy : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_scm_xy/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_scm_xy/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 convert_em : framework_only
 	if [ $(WRF_CONVERT) -eq 1 ] ; then \
@@ -281,6 +337,8 @@ em_real : wrf
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 
 em_hill2d_x : wrf
@@ -296,6 +354,8 @@ em_hill2d_x : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_hill2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_hill2d_x/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_grav2d_x : wrf
 	@ echo '--------------------------------------'
@@ -310,6 +370,8 @@ em_grav2d_x : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_grav2d_x/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_grav2d_x/input_sounding . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 em_heldsuarez : wrf
 	@ echo '--------------------------------------'
@@ -323,6 +385,8 @@ em_heldsuarez : wrf
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_heldsuarez/namelist.input . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 #### anthropogenic emissions converter
 
@@ -442,7 +506,7 @@ ext :
 
 framework :
 	@ echo '--------------------------------------'
-	( cd frame ; $(MAKE) framework; \
+	( cd frame ; $(MAKE) $(J) framework; \
           cd ../external/io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
@@ -464,19 +528,27 @@ framework :
 
 shared :
 	@ echo '--------------------------------------'
-	( cd share ; $(MAKE) )
+	( cd share ; $(MAKE) $(J) )
 
 chemics :
 	@ echo '--------------------------------------'
-	( cd chem ; $(MAKE) )
+	if [ $(WRF_KPP) -eq 1 ] ; then ( cd chem ; $(MAKE) ) ; fi
+	if [ $(WRF_KPP) -eq 0 ] ; then ( cd chem ; $(MAKE) $(J) ) ; fi
+#	( cd chem ; $(MAKE) )
+#	( cd chem ; $(MAKE) $(J) )
 
 physics :
 	@ echo '--------------------------------------'
-	( cd phys ; $(MAKE) )
+	( cd phys ; $(MAKE)  $(J) )
 
 em_core :
 	@ echo '--------------------------------------'
-	( cd dyn_em ; $(MAKE) )
+	if [ $(WRF_CHEM) -eq 0 ] ; then \
+		CF= ; \
+	else \
+		CF=$(CHEM_FILES) ; \
+	fi
+	( cd dyn_em ; $(MAKE) $(J) CF="$(CF)" )
 
 # rule used by configure to test if this will compile with MPI 2 calls MPI_Comm_f2c and _c2f
 mpi2_test :
@@ -505,7 +577,10 @@ nmm_core :
 
 toolsdir :
 	@ echo '--------------------------------------'
-	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS)" )
+	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY)" )
+
+
+#	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIO_MASK_SIZE=$(IO_MASK_SIZE)" )
 
 # Use this target to build stand-alone tests of esmf_time_f90.  
 # Only touches external/esmf_time_f90/.  

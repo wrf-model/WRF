@@ -42,23 +42,7 @@ OBJS    	=	error_handler.o \
 			check_obs.o \
 			setup.o
 
-BUFR_OBJS    	=	../../build/da_bufr.o \
-			../../build/bort.o \
-			../../build/irev.o \
-			../../build/iupm.o \
-			../../build/adn30.o \
-			../../build/istdesc.o \
-			../../build/restd.o \
-			../../build/ifxy.o \
-			../../build/nemtbb.o \
-			../../build/numtbd.o \
-			../../build/uptdd.o \
-			../../build/cadn30.o \
-			../../build/valx.o \
-			../../build/bort_exit.o \
-			../../build/wrdesc.o \
-			../../build/rjust.o \
-			../../build/bort2.o
+BUFR_LIB    	=	../../external/bufr/libbufr.a
 
 #	Source code dependencies
 
@@ -77,8 +61,8 @@ obsproc.exe:		$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(SFC) -o $@ \
 			$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(MODULES_GTS) \
-			$(OBJS) $(BUFR_OBJS) \
-			obsproc.o $(LDFLAGS) $(LOCAL_LIBRARIES) ; \
+			$(OBJS) \
+			obsproc.o $(LDFLAGS) $(LOCAL_LIBRARIES) $(BUFR_LIB); \
 			else \
 			$(SFC) -o $@ \
 			$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
@@ -89,121 +73,40 @@ obsproc.exe:		$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 
 #------------------------------------------------------------------------------
 
-obsproc.o:		module_namelist.o module_date.o \
-			module_decoded.o \
-			module_type.o \
-			module_per_type.o \
-			module_sort.o \
-			module_duplicate.o \
-			module_write.o \
-			module_complete.o \
-			module_diagnostics.o \
-			module_recoverp.o \
-			module_recoverh.o \
-			module_qc.o \
-			sort_platform.o \
-			qc_reduction.o \
-			check_obs.o \
-                        setup.o \
-			module_err_afwa.o \
-			module_err_ncep.o
-
-#------------------------------------------------------------------------------
-
-sort_platform.o:	\
-			module_type.o module_func.o
-
-qc_reduction.o:		missing.inc \
-			module_type.o module_func.o 
-
-check_obs.o:		missing.inc platform_interface.inc \
-			module_type.o module_func.o \
-			module_per_type.o 
-
-setup.o:		constants.inc 
-
-module_namelist.o:	\
-			module_date.o error_handler.o \
-			module_mm5.o \
-			module_map.o \
-			module_map_utils.o
-
-module_mm5.o:		constants.inc
-
-module_map.o:		constants.inc \
-			module_mm5.o
-
-module_map_utils.o:	constants.inc
-
-module_decoded.o:	missing.inc \
-			module_date.o \
-			module_type.o module_func.o \
-			module_inside.o  module_obs_merge.o \
-			module_per_type.o \
-			module_icao.o \
-			fm_decoder.o error_handler.o 
-
-module_func.o:	\
-			module_date.o
-
-module_inside.o:	\
-			module_type.o module_func.o \
-			module_map.o  module_mm5.o 
-
-module_obs_merge.o:	missing.inc \
-			module_type.o module_func.o
-
-
-module_sort.o:		\
-			module_type.o module_func.o
-
-module_duplicate.o:	\
-			module_date.o \
-			module_type.o module_func.o
-
-module_complete.o:	missing.inc platform_interface.inc\
-			module_type.o module_func.o \
-			module_per_type.o 
-
-module_write.o:	\
-			module_date.o \
-			module_type.o module_func.o \
-			module_decoded.o 
-
-module_diagnostics.o:	missing.inc constants.inc \
-			module_type.o module_func.o \
-			module_map.o
-
-module_qc.o:		missing.inc constants.inc platform_interface.inc \
-			module_type.o module_func.o \
-			module_per_type.o 
-
-module_recoverp.o:	missing.inc constants.inc \
-			module_type.o \
-			module_func.o \
-			module_mm5.o \
-			error_handler.o 
-
-module_recoverh.o:	missing.inc constants.inc platform_interface.inc \
-			module_type.o \
-			module_func.o \
-			module_per_type.o \
-			module_mm5.o \
-			module_icao.o \
-			error_handler.o 
-
-module_err_afwa.o:	missing.inc constants.inc platform_interface.inc \
-			module_type.o module_func.o \
-			module_err_ncep.o module_intp.o
-
-module_err_ncep.o:	missing.inc constants.inc \
-			module_type.o module_func.o \
-			module_intp.o 
-
-module_thin_ob.:	module_mm5.o \
-			module_func.o \
-                        module_type.o \
-			module_map.o
+check_obs.o : check_obs.F90 platform_interface.inc missing.inc module_per_type.o module_func.o module_type.o 
+error_handler.o : error_handler.F90 
+fm_decoder.o : fm_decoder.F90 
+module_complete.o : module_complete.F90 platform_interface.inc missing.inc module_per_type.o module_func.o module_type.o 
+module_date.o : module_date.F90 
+module_decoded.o : module_decoded.F90 platform_interface.inc missing.inc module_obs_merge.o module_icao.o module_per_type.o module_date.o module_inside.o module_func.o module_type.o 
+module_diagnostics.o : module_diagnostics.F90 constants.inc missing.inc module_intp.o module_map.o module_mm5.o module_func.o module_type.o 
+module_duplicate.o : module_duplicate.F90 platform_interface.inc module_per_type.o module_obs_merge.o module_date.o module_func.o module_type.o 
+module_err_afwa.o : module_err_afwa.F90 constants.inc missing.inc platform_interface.inc module_intp.o module_err_ncep.o module_func.o module_type.o 
+module_err_ncep.o : module_err_ncep.F90 constants.inc missing.inc module_intp.o module_func.o module_type.o 
+module_func.o : module_func.F90 module_date.o module_type.o 
+module_gpspw.o : module_gpspw.F90 module_gpspw_gst.o module_gpspw_caa.o 
+module_gpspw_caa.o : module_gpspw_caa.F90 missing.inc module_per_type.o module_inside.o module_type.o module_date.o 
+module_gpspw_gst.o : module_gpspw_gst.F90 missing.inc module_per_type.o module_inside.o module_type.o module_date.o 
+module_icao.o : module_icao.F90 missing.inc constants.inc 
+module_inside.o : module_inside.F90 module_date.o module_map.o module_namelist.o module_map_utils.o module_mm5.o module_func.o module_type.o 
+module_intp.o : module_intp.F90 
+module_map.o : module_map.F90 constants.inc module_mm5.o 
+module_map_utils.o : module_map_utils.F90 
+module_mm5.o : module_mm5.F90 constants.inc 
+module_namelist.o : module_namelist.F90 missing.inc module_map_utils.o module_mm5.o module_date.o 
+module_obs_merge.o : module_obs_merge.F90 missing.inc module_func.o module_type.o 
+module_per_type.o : module_per_type.F90 
+module_qc.o : module_qc.F90 constants.inc missing.inc platform_interface.inc module_mm5.o module_per_type.o module_func.o module_type.o 
+module_recoverh.o : module_recoverh.F90 constants.inc platform_interface.inc missing.inc module_mm5.o module_per_type.o module_func.o module_type.o 
+module_recoverp.o : module_recoverp.F90 platform_interface.inc missing.inc module_mm5.o module_func.o module_type.o 
+module_sort.o : module_sort.F90 module_func.o module_type.o 
+module_thin_ob.o : module_thin_ob.F90 module_namelist.o module_map_utils.o module_map.o module_mm5.o module_func.o module_type.o 
+module_type.o : module_type.F90 
+module_write.o : module_write.F90 constants.inc module_map.o module_decoded.o module_date.o module_func.o module_type.o 
+obsproc.o : obsproc.F90 module_write.o module_thin_ob.o module_complete.o module_err_afwa.o module_err_ncep.o module_qc.o module_diagnostics.o module_recoverh.o module_recoverp.o module_per_type.o module_duplicate.o module_sort.o module_icao.o module_func.o module_type.o module_decoded.o module_namelist.o module_map_utils.o module_map.o module_mm5.o 
+qc_reduction.o : qc_reduction.F90 missing.inc module_func.o module_type.o 
+setup.o : setup.F90 constants.inc 
+sort_platform.o : sort_platform.F90 platform_interface.inc module_type.o 
 
 #       The user should not need to modify any of this.
 

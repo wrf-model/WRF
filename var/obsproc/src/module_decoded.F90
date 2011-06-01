@@ -222,7 +222,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 !  obs_num = 1
    obs_num = n_obs + 1
 
-   read_obs : DO                                 
+   read_obs : DO while ( io_error == 0 ) 
       !  This is an array that we are filling.  Are we beyond that limit yet?
 
       IF ((obs_num .GT. total_number_of_obs) .AND.  &
@@ -1537,7 +1537,7 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
 
       IF ((     eps_equal (current%meas%dew_point%data , missing_r , 1.)) .AND.&
           (.NOT.eps_equal (current%meas%rh       %data , missing_r , 1.))) THEN
-           WRITE (iunit,'(A,F10.2,/,A,F10.2))') &
+           WRITE (iunit,'(A,F10.2,/,A,F10.2)') &
           " Td = ",current%meas%dew_point%data,&
           " Rh = ",current%meas%rh%data  
       ENDIF

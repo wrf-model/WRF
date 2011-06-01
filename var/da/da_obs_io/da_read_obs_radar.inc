@@ -23,6 +23,9 @@ subroutine da_read_obs_radar (iv, filename)
    integer                       :: nlocal(num_ob_indexes)
    integer                       :: ntotal(num_ob_indexes)
 
+   real*8                        :: obs_time
+   integer                       :: iyear, imonth, iday, ihour, imin
+
    if (trace_use) call da_trace_entry("da_read_obs_radar")
 
    nlocal(:) = iv%info(:)%plocal(iv%time-1)
@@ -182,6 +185,23 @@ subroutine da_read_obs_radar (iv, filename)
             end if
          end do
 
+         ! Check if outside of the time range:
+
+         read (platform%info%date_char,'(i4,4(1x,i2))') &
+               iyear, imonth, iday, ihour, imin
+         call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+         if ( obs_time < time_slots(0) .or. &
+              obs_time >= time_slots(num_fgat_time) ) then
+            if (print_detail_radar) then
+               write(unit=stdout, fmt='(a)') '*** Outside of the time range:'
+               write(unit=stdout, fmt=fmt_info) &
+                     platform%info%platform,    &
+                     platform%info%date_char,   &
+                     platform%stn%name
+            end if
+            cycle
+         endif
+
          call da_llxy (platform%info, platform%loc, outside)
 
          nlevels = platform%info%levels
@@ -244,6 +264,8 @@ subroutine da_read_obs_radar (iv, filename)
                allocate (iv % radar (nlocal(radar)) % height_qc(1:nlevels))
                allocate (iv % radar (nlocal(radar)) % rv       (1:nlevels))
                allocate (iv % radar (nlocal(radar)) % rf       (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rr       (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rro       (1:nlevels))
 
                do i = 1, nlevels
                   iv % radar (nlocal(radar)) % height(i)    = platform % each(i) % height

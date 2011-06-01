@@ -31,9 +31,17 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    real   :: qvf1, cvpm, cpovcv, ppb, ttb, albn, aln, height, temp
    real, allocatable :: arrayglobal(:,:)
+
+   logical:: no_ppb
+
 #ifdef A2C
    real   :: uu, vv
 #endif
+
+
+   ! If grid%pb does not existed in FG (YRG, 08/26/2010):
+     ppb = sum(grid%pb*grid%pb)
+     no_ppb = ppb == 0.0
 
    !---------------------------------------------------------------------------
    ! Set xb array range indices for processor subdomain.
@@ -239,26 +247,10 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
 #else
 
-   do j=jts,jte
-      do k=kts,kte
-         do i=its,ite+1
-            grid%xa%u(i,j,k) = grid%u_2(i,j,k)
-         end do
-      end do
-   end do
-
-   do j=jts,jte+1
-      do k=kts,kte
-         do i=its,ite
-            grid%xa%v(i,j,k) = grid%v_2(i,j,k)
-         end do
-      end do
-   end do
-
    ! Fill the halo region for u and v.
 
 #ifdef DM_PARALLEL
-#include "HALO_PSICHI_UV_ADJ.inc"
+#include "HALO_EM_C.inc"
 #endif
 
 #endif
@@ -349,50 +341,76 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       ! are included in the wrfinput file. However, P and PB are still
       ! re-calculated here.
 
+      ! NOTE: as of 7/01/2010, P and PB are directly from the first guess
+      ! and no longer re-calculated here.
+
       cvpm =  - (1.0 - gas_constant/cp)
       cpovcv = cp / (cp - gas_constant)
 
-      do k=kts,kte
-         do i=its,ite
-            ! The base specific volume (from real.init.code)
-            ppb  = grid%znu(k) * grid%mub(i,j) + ptop
-            grid%pb(i,j,k) = ppb
-            temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
-            ttb  = temp * (base_pres/ppb)**kappa
-            ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
-            !   (base_pres/ppb)**kappa
-            albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
+      if (no_ppb) then
+         do k=kts,kte
+            do i=its,ite
+               ! The base specific volume (from real.init.code)
+               ppb  = grid%znu(k) * grid%mub(i,j) + ptop
+               grid%pb(i,j,k) = ppb
+               temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+               ttb  = temp * (base_pres/ppb)**kappa
+               ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
+               !   (base_pres/ppb)**kappa
+               albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
 
-            qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
-            aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
-               (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
-               (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
-            ! total pressure:
-            grid%xb%p(i,j,k) = base_pres * &
-               ((gas_constant*(t0+grid%t_2(i,j,k))*qvf1) / &
-               (base_pres*(aln+albn)))**cpovcv
-            ! total density
-            grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
-            ! pressure purtubation:
-            grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
+               qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
+               aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
+                      (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
+                      (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
+               ! total pressure:
+               grid%xb%p(i,j,k) = base_pres * &
+                                 ((gas_constant*(t0+grid%t_2(i,j,k))*qvf1) / &
+                                 (base_pres*(aln+albn)))**cpovcv
+               ! total density
+               grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
+               ! pressure purtubation:
+               grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
+            end do
          end do
-      end do
+      else
+         do k=kts,kte
+            do i=its,ite
+               ppb = grid%pb(i,j,k)
+               temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+               ttb  = temp * (base_pres/ppb)**kappa
+               ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
+               !   (base_pres/ppb)**kappa
+               albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
+
+               qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
+               aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
+                      (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
+                      (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
+               grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
+               ! total density
+               grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
+            end do
+         end do
+      endif
 
       do k=kts,kte+1
          do i=its,ite
             grid%xb%hf(i,j,k) = (grid%phb(i,j,k)+grid%ph_2(i,j,k))/gravity
-            grid%xa%w (i,j,k) = grid%w_2(i,j,k)
             grid%xb%w (i,j,k) = grid%w_2(i,j,k)
          end do
       end do
 
       do k=kts,kte
          do i=its,ite
-            grid%xb%u(i,j,k) = 0.5*(grid%xa%u(i,j,k)+grid%xa%u(i+1,j,k))
-            grid%xb%v(i,j,k) = 0.5*(grid%xa%v(i,j,k)+grid%xa%v(i,j+1,k))
+            grid%xb%u(i,j,k) = 0.5*(grid%u_2(i,j,k)+grid%u_2(i+1,j,k))
+            grid%xb%v(i,j,k) = 0.5*(grid%v_2(i,j,k)+grid%v_2(i,j+1,k))
             grid%xb%wh(i,j,k)= 0.5*(grid%xb%w(i,j,k)+grid%xb%w(i,j,k+1))
             grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
 
+            if ( num_pseudo == 0 ) then
+               grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV), qlimit)
+            end if
             grid%xb%q(i,j,k) = grid%moist(i,j,k,P_QV)
 
             theta = t0 + grid%t_2(i,j,k)
@@ -400,25 +418,23 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
-            if (num_pseudo == 0 .and. grid%xb%q(i,j,k) < 1.0e-9) &
-               grid%xb%q(i,j,k) = 1.0e-9
    
             ! Background qrn needed for radar radial velocity assmiilation:
 
             if (size(grid%moist,dim=4) >= 4) then
-               grid%xb%qcw(i,j,k) = grid%moist(i,j,k,p_qc)
-               grid%xb%qrn(i,j,k) = grid%moist(i,j,k,p_qr)
+               grid%xb%qcw(i,j,k) = max(grid%moist(i,j,k,p_qc), 0.0)
+               grid%xb%qrn(i,j,k) = max(grid%moist(i,j,k,p_qr), 0.0)
                grid%xb%qt (i,j,k) = grid%xb%q(i,j,k) + grid%xb%qcw(i,j,k) + &
                   grid%xb%qrn(i,j,k)
             end if
 
             if (size(grid%moist,dim=4) >= 6) then
-               grid%xb%qci(i,j,k) = grid%moist(i,j,k,p_qi)
-               grid%xb%qsn(i,j,k) = grid%moist(i,j,k,p_qs)
+               grid%xb%qci(i,j,k) = max(grid%moist(i,j,k,p_qi), 0.0)
+               grid%xb%qsn(i,j,k) = max(grid%moist(i,j,k,p_qs), 0.0)
             end if
 
             if (size(grid%moist,dim=4) >= 7) then
-               grid%xb%qgr(i,j,k) = grid%moist(i,j,k,p_qg)
+               grid%xb%qgr(i,j,k) = max(grid%moist(i,j,k,p_qg), 0.0)
             end if
 
             if ( config_flags%mp_physics == 3 ) then   ! WSM3-class scheme
@@ -435,7 +451,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
       do i=its,ite
          grid%xb%psac(i,j) = grid%mub(i,j)+grid%mu_2(i,j)
-         grid%xb%psfc(i,j) = grid%mub(i,j)+grid%p(i,j,kts)+grid%p_top
+! To make the Psfc consistent with WRF (YRG, 04/06/2010):
+         grid%xb%psfc(i,j) = grid%psfc(i,j)
 
          if (grid%xb%tgrn(i,j) < 100.0) &    
             grid%xb%tgrn(i,j) = grid%xb%t(i,j,kts)+ &
@@ -446,6 +463,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end do
    !$OMP END PARALLEL DO
 
+!   write (999,'("MABS=",e13.5)') sum(abs(grid%xb%psfc(:,:)-grid%psfc(:,:))) / &
+!                                       float((ite-its+1)*(jte-jts+1))
+      
    grid%xb%ztop = grid%xb%hf(its,jts,kte+1)
 
    if (print_detail_xb) then
@@ -520,7 +540,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       grid%start_minute, ':', &
       grid%start_second
 
-   xbx % mminlu = 'USGS'
+   !xbx % mminlu = 'USGS'
+   xbx % mminlu = trim(grid%mminlu)
 
    call da_roughness_from_lanu(19, xbx % mminlu, current_date, &
       grid%xb % lanu, grid%xb % rough)
@@ -581,6 +602,14 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    end do
    !$OMP END PARALLEL DO
+
+#ifdef VAR4D
+   CALL set_physical_bc2d( grid%xb%grid_box_area, 't', config_flags, &
+                           ids, ide, jds, jde,    &
+                           ims, ime, jms, jme,    &
+                           ips, ipe, jps, jpe,    &
+                           its, ite, jts, jte    )
+#endif
 
    !---------------------------------------------------------------------------
    ! Calculate saturation vapour pressure and relative humidity:

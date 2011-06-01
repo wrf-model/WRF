@@ -294,7 +294,30 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
            iv%info(gpspw)%lon(1,nth) == lon ) then
 
          read(unit_in,'(E22.13,i8,3E22.13)')&
-           iv%gpspw(nth)%tpw
+         iv%gpspw(nth)%tpw
+         found_flag = .true.
+         rewind (unit_in)
+         read(unit_in,*)
+         return
+      else
+         read(unit_in,*)
+      endif
+   enddo
+   found_flag = .false.
+
+   CASE ('radar')
+
+   do n = 1, num_obs
+      read(unit_in,'(2i8,2E22.13)') n_dummy, levels, lat, lon
+
+      if ( iv%info(radar)%lat(1,nth) == lat    .and.  &
+           iv%info(radar)%lon(1,nth) == lon ) then
+
+         do k = 1, levels
+         read(unit_in,'(E22.13,i8,3E22.13)')&
+         iv%radar(nth)%rv(k) 
+         enddo
+
          found_flag = .true.
          rewind (unit_in)
          read(unit_in,*)
@@ -330,6 +353,7 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
 
    do n = 1, num_obs
       read(unit_in,'(2i8,a5,2E22.13)') n_dummy, levels, stn_id, lat, lon
+ 
       if ( iv%info(airep)%id(nth)  == stn_id .and.  &
            iv%info(airep)%lat(1,nth) == lat    .and.  &
            iv%info(airep)%lon(1,nth) == lon ) then
@@ -342,6 +366,7 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
                iv%airep(nth)%v(k), &! O-B v
                iv%airep(nth)%t(k)
         enddo
+
         found_flag = .true.
         rewind (unit_in)
         read(unit_in,*)

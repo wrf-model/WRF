@@ -11,7 +11,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
    character(len=200)          :: filename
-   integer                     :: i, j, n, ios
+   integer                     :: i, j, n, ios, ifgat
    logical                     :: lprinttovs 
 
    ! thinning variables
@@ -79,10 +79,12 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
       dlat_grid = rlat_max - rlat_min
       dlon_grid = rlon_max - rlon_min
 
-      allocate(thinning_grid(iv%num_inst))
-      do n=1,iv%num_inst
-          call makegrids (n,thinning_mesh(n))
-      end do
+      allocate(thinning_grid(iv%num_inst,num_fgat_time))
+      do ifgat=1,num_fgat_time
+         do n=1,iv%num_inst
+            call makegrids (n,thinning_mesh(n),ifgat)
+         end do
+      end do 
    end if
 
    !-------------------------------------------------------------------
@@ -93,79 +95,68 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
       if (use_hirs2obs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from hirs2.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'hirs2.bufr'
+         filename = 'hirs2 '
          call da_read_obs_bufrtovs ('hirs2', iv, filename)
       end if
 
       if (use_msuobs) then
-         filename = ' '
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from msu.bufr'
-         write(filename(1:8), fmt='(a)') 'msu.bufr'
+         filename = 'msu'
          call da_read_obs_bufrtovs ('msu  ', iv, filename)
       end if
 
       if (use_hirs3obs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from hirs3.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'hirs3.bufr'
+         filename = 'hirs3'
          call da_read_obs_bufrtovs('hirs3', iv, filename)
       end if
 
       if (use_amsuaobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from amsua.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'amsua.bufr'
+         filename = 'amsua'
          call da_read_obs_bufrtovs ('amsua', iv, filename)
       end if
 
       if (use_amsubobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from amsub.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'amsub.bufr'
+         filename = 'amsub'
          call da_read_obs_bufrtovs ('amsub', iv, filename)
       end if
 
       if (use_hirs4obs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from hirs4.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'hirs4.bufr'
+         filename = 'hirs4'
          call da_read_obs_bufrtovs('hirs4', iv, filename)
       end if
 
       if (use_mhsobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mhs.bufr'
-         filename = ' '
-         write(filename(1:8), fmt='(a)') 'mhs.bufr'
+         filename = 'mhs'
          call da_read_obs_bufrtovs('mhs  ', iv, filename)
       end if
 
       if (use_airsobs) then
          write(unit=stdout,fmt='(a)') 'Reading airs 1b data from airs.bufr'
-         filename = ' '
-         write(filename(1:9), fmt='(a)') 'airs.bufr'
+         filename = 'airs'
          call da_read_obs_bufrairs ('airs     ',iv, filename)
       end if
 
       if (use_eos_amsuaobs) then
          write(unit=stdout,fmt='(a)') 'Reading eos_amsua 1b data from airs.bufr'
-         filename = ' '
-         write(filename(1:9), fmt='(a)') 'airs.bufr'
+         filename = 'airs'
          call da_read_obs_bufrairs ('eos_amsua',iv, filename)
       end if
 
       if (use_hsbobs) then
          write(unit=stdout,fmt='(a)') 'Reading hsb 1b data from airs.bufr'
-         filename = ' '
-         write(filename(1:9), fmt='(a)') 'airs.bufr'
+         filename = 'airs'
          call da_read_obs_bufrairs ('hsb      ',iv, filename)
       end if
 
       if (use_ssmisobs) then
          write(unit=stdout,fmt='(a)') 'Reading ssmis data from ssmis.bufr'
-         filename = ' '
-         write(filename(1:10), fmt='(a)') 'ssmis.bufr'
-         call da_read_obs_bufrssmis ('ssmis',iv, filename)
+         filename = 'ssmis'
+         call da_read_obs_bufrssmis ('ssmis    ',iv, filename)
       end if
 
    end if
@@ -177,12 +168,19 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
    if ( use_simulated_rad ) then
       write(unit=stdout,fmt='(a)') 'Reading simulated radiance'
+ 
+
       call da_read_simulated_rad (iv)
+ 
+
    end if
 
    if ( use_pseudo_rad ) then
-      write(unit=stdout,fmt='(a)') 'Reading pseudo radiance from namelist'
+      write(unit=stdout,fmt='(a)') 'Reading pseudo radiance from namelist'    
+  
       call da_read_pseudo_rad (iv)
+   
+
    end if
 
    if (use_kma1dvar) then
@@ -195,14 +193,18 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    end if
 
    if (thinning) then
-      do n=1,iv%num_inst
-         call destroygrids (n)
+      do ifgat=1,num_fgat_time
+           do n=1,iv%num_inst
+              call destroygrids (n,ifgat)
+           end do
       end do
       deallocate(thinning_grid)
    end if
 
    ! sorting obs into FGAT time bins
+
    call da_sort_rad(iv)
+
 
    !-----------------------------------------------------------------------------
    ! [3.0] create (smaller) ob structure:

@@ -36,7 +36,8 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
    !---------------------------------------------------------------------------
 
    ! GPS TPW Pseudo OBS test:
-   if (pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) then
+   if ( (pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) .and. &
+        it == 1 ) then
       ! Deallocate:
       if (iv%info(gpspw)%nlocal > 0) then
          write(unit=stdout, fmt='(a,i4)') 'iv%info(gpspw)%nlocal =', iv%info(gpspw)%nlocal
@@ -56,7 +57,8 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
       iv%info(gpspw)%n1 = 1
       iv%info(gpspw)%n2 = 1
       allocate (ob % gpspw (1:num_pseudo))
-
+      ob % gpspw(1) % tpw   = 0.0
+    
       print '(a,i2)','==> GPS TPW pseudo OBS test: num_pseudo=',num_pseudo
 
       iv%info(gpspw)%x(:,1)   = pseudo_x
@@ -109,6 +111,9 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
 
       do n=iv%info(gpspw)%n1,iv%info(gpspw)%n2
 
+         if( iv % gpspw(n) % tpw % qc == fails_error_max .and. it > 1) &
+             iv % gpspw(n) % tpw % qc = 0
+
          ! [1.1] Get horizontal interpolation weights:
 
          i   = iv%info(gpspw)%i(1,n)
@@ -121,11 +126,8 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
          model_tpw = dym*(dxm*grid%xb%tpw(i,j)   + dx*grid%xb%tpw(i+1,j)) + &
                      dy *(dxm*grid%xb%tpw(i,j+1) + dx*grid%xb%tpw(i+1,j+1))
 
-         if (pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) then
-            ! To compute the 'ob':
-            ob % gpspw(n) % tpw = iv % gpspw(n) % tpw % inv + model_tpw
-         else
             ! To compute the 'inv':
+            if (.not.(pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) ) &
             iv % gpspw(n) % tpw % inv = 0.0
             if (ob % gpspw(n) % tpw > missing_r .AND. &
                 iv % gpspw(n) % tpw % qc >= obs_qc_pointer) then
@@ -161,16 +163,25 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
                      dpw = dpw + ddpw
                   end do
                end if
-               iv % gpspw(n) % tpw % inv = ob % gpspw(n) % tpw - model_tpw + 0.1*dpw
+               if ( (pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) .and. it == 1 ) then
+               ! To compute the 'ob':
+                 ob % gpspw(n) % tpw = iv % gpspw(n) % tpw % inv + model_tpw - 0.1*dpw
+               else
+                 iv % gpspw(n) % tpw % inv = ob % gpspw(n) % tpw - model_tpw + 0.1*dpw
+               end if
             end if
-         end if
 
-         !------------------------------------------------------------------------
-         ! [5.0] Perform optional maximum error check:
-         !------------------------------------------------------------------------
+!          print '("n,inv,qc,error,ob:",i3,e13.5,i8,2e13.5)', &
+!            n, iv % gpspw(n) % tpw % inv, iv % gpspw(n) % tpw % qc, &
+!               iv % gpspw(n) % tpw % error, ob % gpspw(n) % tpw
 
       end do
-      call da_check_max_iv_gpspw(iv, it, num_qcstat_conv) 
+
+      !------------------------------------------------------------------------
+      ! [5.0] Perform optional maximum error check:
+      !------------------------------------------------------------------------
+      if (.not.(pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) .and. check_max_iv ) &
+         call da_check_max_iv_gpspw(iv, it, num_qcstat_conv) 
    end if
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpspw")
 

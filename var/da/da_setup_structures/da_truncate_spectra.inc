@@ -9,7 +9,7 @@ subroutine da_truncate_spectra(max_wave, nw, power_trunc, power, max_wave_trunc)
    integer, intent(in)  :: max_wave         ! Smallest wave for domain.
    integer, intent(in)  :: nw               ! Dimension of input power spectrum.
    real,    intent(in)  :: power_trunc      ! Power truncation (fraction).
-   real,    intent(in)  :: power(0:nw)      ! Power spectrum.
+   real*8,  intent(in)  :: power(0:nw)      ! Power spectrum.
    integer, intent(out) :: max_wave_trunc   ! Smallest wave after truncation.
 
    integer :: l                ! Loop counter.

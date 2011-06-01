@@ -1,5 +1,4 @@
 
-# Available characters for dimspec: 0123456789@%+=|?.!&[{}]
 #<Table>  <Dim> <Order> <How defined>                <Coord-axis>  <Dimname in Datasets>
 
 dimspec    i       1     standard_domain                   x          west_east
@@ -26,11 +25,13 @@ dimspec    obs     -     namelist=max_obs                  c     max_obs
 dimspec    h       -     namelist=nobs_err_flds            c     nobs_err_flds
 dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
 dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
+dimspec    obsstid -     constant=40                       c     obs station id names
 dimspec    &       2     namelist=lagday                   z     lagday
 
 endif
 
 ifdef NMM_CORE=1
+dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
 dimspec    j       2     standard_domain                   y     south_north
 dimspec    k       3     standard_domain                   z     bottom_top
 #definitions for NMM slab arrays
@@ -66,5 +67,7 @@ dimspec    +       2     namelist=kemit                    z     emissions_zdim
 dimspec    nm      2     namelist=nmegan                   z     megan_species
 dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
 dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
-dimspec    .       3     namelist=errosion_dim             z     dust_errosion_dimension
+dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
+dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
+dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
 endif

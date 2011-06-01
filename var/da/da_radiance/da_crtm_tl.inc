@@ -14,7 +14,7 @@ subroutine da_crtm_tl(  nsensor, nchan, nprof, Atmosphere,   &
    type (CRTM_ChannelInfo_type),  intent(in)  :: ChannelInfo(nsensor)
    type( CRTM_Atmosphere_type ),  intent(in)  :: Atmosphere(nprof), Atmosphere_TL(nprof)
    type( CRTM_Surface_type ),     intent(in)  :: Surface(nprof),Surface_TL(nprof)
-   type( CRTM_GeometryInfo_type ),intent(inout)  :: GeometryInfo(nprof)
+   type( CRTM_Geometry_type ),    intent(inout)  :: GeometryInfo(nprof)
    type (CRTM_Options_type),      intent(in)     :: Options(nprof)
 
    integer :: Error_Status

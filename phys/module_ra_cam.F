@@ -1,5 +1,7 @@
 MODULE module_ra_cam
   use module_ra_cam_support
+  use module_cam_support, only: endrun
+
   implicit none
 ! 
 ! A. Slingo's data for cloud particle radiative properties (from 'A GCM
@@ -22,12 +24,15 @@ MODULE module_ra_cam
    data ebarl/ 0.829    , 0.794    ,0.754    ,0.826    /
    data fbarl/ 2.482e-03, 4.226e-03,6.560e-03,4.353e-03/
 
+#if 0
+! moved and changed to local variables into radcswmx for thread-safety, JM 20100217
    real(r8) abarli           ! A coefficient for current spectral band
    real(r8) bbarli           ! B coefficient for current spectral band
    real(r8) cbarli           ! C coefficient for current spectral band
    real(r8) dbarli           ! D coefficient for current spectral band
    real(r8) ebarli           ! E coefficient for current spectral band
    real(r8) fbarli           ! F coefficient for current spectral band
+#endif
 ! 
 ! Caution... A. Slingo recommends no less than 4.0 micro-meters nor
 ! greater than 20 micro-meters
@@ -50,12 +55,15 @@ MODULE module_ra_cam
    data ebari/ 0.7661   , 0.7730   ,0.794    ,0.9595   /
    data fbari/ 5.851e-04, 5.665e-04,7.267e-04,1.076e-04/
 
+#if 0
+! moved and changed to local variables into radcswmx for thread-safety, JM 20100217
    real(r8) abarii           ! A coefficient for current spectral band
    real(r8) bbarii           ! B coefficient for current spectral band
    real(r8) cbarii           ! C coefficient for current spectral band
    real(r8) dbarii           ! D coefficient for current spectral band
    real(r8) ebarii           ! E coefficient for current spectral band
    real(r8) fbarii           ! F coefficient for current spectral band
+#endif
 ! 
    real(r8) delta            ! Pressure (in atm) for stratos. h2o limit
    real(r8) o2mmr            ! O2 mass mixing ratio:
@@ -345,9 +353,6 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), DIMENSION( 1:ite-its+1 ) :: asdir, asdif, aldir, aldif, ps
    real(r8), DIMENSION( 1:ite-its+1, 1:kte-kts+1 ) :: cld, pmid, lnpmid, pdel, zm, t
    real(r8), DIMENSION( 1:ite-its+1, 1:kte-kts+2 ) ::  pint, lnpint
-   real(r8), DIMENSION( its:ite , kts:kte+1 ) :: phyd
-   real(r8), DIMENSION( its:ite , kts:kte   ) :: phydmid
-   real(r8), DIMENSION( its:ite ) :: fp
    real(r8), DIMENSION( 1:ite-its+1, 1:kte-kts+1, n_cldadv) :: q
 !   real(r8), DIMENSION( 1:kte-kts+1 ) :: hypm       ! reference pressures at midpoints
 !   real(r8), DIMENSION( 1:kte-kts+2 ) :: hypi       ! reference pressures at interfaces
@@ -488,20 +493,21 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
-      q(ii,kk,1) = max(1.e-10,qv3d(i,k,j))
+!    convert to specific humidity
+      q(ii,kk,1) = max(1.e-10,qv3d(i,k,j)/(1.+qv3d(i,k,j)))
      IF ( F_QI .and. F_QC .and. F_QS ) THEN
-      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j))
-      q(ii,kk,ixcldice) = max(0.,qi3d(i,k,j)+qs3d(i,k,j))
+      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
+      q(ii,kk,ixcldice) = max(0.,(qi3d(i,k,j)+qs3d(i,k,j))/(1.+qv3d(i,k,j)))
      ELSE IF ( F_QC .and. F_QR ) THEN
 ! Warm rain or simple ice
       q(ii,kk,ixcldliq) = 0.
       q(ii,kk,ixcldice) = 0.
-      if(t_phy(i,k,j).gt.273.15)q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j))
-      if(t_phy(i,k,j).le.273.15)q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j))
+      if(t_phy(i,k,j).gt.273.15)q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
+      if(t_phy(i,k,j).le.273.15)q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
      ELSE IF ( F_QC .and. F_QS ) THEN
 ! For Ferrier (note that currently Ferrier has QI, so this section will not be used)
-      q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)*f_ice_phy(i,k,j))
-      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)*(1.-f_ice_phy(i,k,j))*(1.-f_rain_phy(i,k,j)))
+      q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j))*f_ice_phy(i,k,j))
+      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j))*(1.-f_ice_phy(i,k,j))*(1.-f_rain_phy(i,k,j)))
      ELSE
       q(ii,kk,ixcldliq) = 0.
       q(ii,kk,ixcldice) = 0.
@@ -551,35 +557,11 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       lwups(ii) = stebol*EMISS(I,J)*TSK(I,J)**4
       enddo
 
-! first guess
-      do k = kts,kte+1
-      do i = its,ite
-      if(k.eq.kts)then
-        phyd(i,k)=p8w(i,kts,j)
-      else
-        phyd(i,k)=phyd(i,k-1) - gravmks*rho_phy(i,k-1,j)*dz8w(i,k-1,j)
-      endif
-      enddo
-      enddo
-
-! correction factor FP to match p8w(I,kts,J)-p8w(I,kte+1,J)
-      do i = its,ite
-        fp(i)=(p8w(I,kts,J)-p8w(I,kte+1,J))/(PHYD(i,KTS)-PHYD(i,KTE+1))
-      enddo
-
-! final pass
-      do k = kts+1,kte+1
-      do i = its,ite
-        phyd(i,k)=phyd(i,k-1) - gravmks*rho_phy(i,k-1,j)*dz8w(i,k-1,j)*fp(i)
-        phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
-      enddo
-      enddo
-
       do k = kts,kte+1
       kk = kte - k + kts + 1
       do i = its,ite
       ii = i - its + 1
-      pint(ii,kk) = phyd(i,k)
+      pint(ii,kk) = p8w(i,k,j)
       if(k.eq.kts)ps(ii)=pint(ii,kk)
       lnpint(ii,kk) = log(pint(ii,kk))
       enddo
@@ -613,7 +595,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
-      pmid(ii,kk) = phydmid(i,k)
+      pmid(ii,kk) = p_phy(i,k,j)
       lnpmid(ii,kk) = log(pmid(ii,kk))
       lnpint(ii,kk) = log(pint(ii,kk))
       pdel(ii,kk) = pint(ii,kk+1) - pint(ii,kk)
@@ -1132,7 +1114,7 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
             if (AEROSOLt(i, k, m) < speciesmin(m)) then
                write(6,*) 'AEROSOL_INTERPOLATE: negative mass mixing ratio, exiting'
                write(6,*) 'm, column, pver',m, i, k ,AEROSOLt(i, k, m)
-!              call endrun ()
+               call endrun ()
             end if
          end do
       end do
@@ -6047,6 +6029,22 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) fluxdn(0:pverp)  ! Down flux at model interface
    real(r8) wexptdn          ! Direct solar beam trans. to surface
 
+! moved to here from the module storage above, because these have to be thread-private.  JM 20100217
+   real(r8) abarli           ! A coefficient for current spectral band
+   real(r8) bbarli           ! B coefficient for current spectral band
+   real(r8) cbarli           ! C coefficient for current spectral band
+   real(r8) dbarli           ! D coefficient for current spectral band
+   real(r8) ebarli           ! E coefficient for current spectral band
+   real(r8) fbarli           ! F coefficient for current spectral band
+
+   real(r8) abarii           ! A coefficient for current spectral band
+   real(r8) bbarii           ! B coefficient for current spectral band
+   real(r8) cbarii           ! C coefficient for current spectral band
+   real(r8) dbarii           ! D coefficient for current spectral band
+   real(r8) ebarii           ! E coefficient for current spectral band
+   real(r8) fbarii           ! F coefficient for current spectral band
+! JM 20100217
+
 ! 
 !-----------------------------------------------------------------------
 ! START OF CALCULATION
@@ -6816,7 +6814,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                npasses = npasses + 1
                if (npasses >= 2 ) then
                   write(6,*)'RADCSWMX: Maximum overlap of column ','failed'
-!                 call endrun
+                  call endrun
                endif
                nmxrgn(i)=1
                pmxrgn(i,1)=1.0e30
@@ -7823,7 +7821,7 @@ subroutine radozn (lchnk, ncol, pcols, pver,pmid, pin, levsiz, ozmix, o3vmr)
       end do
 
       if (kount.gt.ncol) then
-!        call endrun ('RADOZN: Bad ozone data: non-monotonicity suspected')
+         call endrun ('RADOZN: Bad ozone data: non-monotonicity suspected')
       end if
 35    continue
    end do

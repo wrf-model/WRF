@@ -110,7 +110,7 @@ main( int argc , char *argv[] )
             col-- ;
             if ( col <= 0 ) {
               col = 130 ;
-              putchar('&') ; putchar('\n') ; putchar('&') ;
+              if (*q!=')' || *(q+1) ) {  putchar('&') ; putchar('\n') ; putchar('&') ; }
             }
           }
           putchar('\n') ;
@@ -154,6 +154,11 @@ drop_comment( char * linei )
             (*(q)   == 'd' || *(q)   == 'D') &&
             (*(q+1) == 'e' || *(q+1) == 'E') &&
             (*(q+2) == 'c' || *(q+2) == 'C') )  return(0) ;
+       /* nor a pgi accelerator directive */
+         if ((*q == '$') &&
+            (*(q+1) == 'a' || *(q+1) == 'A') &&
+            (*(q+2) == 'c' || *(q+2) == 'C') &&
+            (*(q+3) == 'c' || *(q+3) == 'C') )  return(0) ;
        }
        *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
     }

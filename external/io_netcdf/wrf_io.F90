@@ -40,7 +40,7 @@ module wrf_data
   integer                , parameter      :: WARN             = 1
   integer                , parameter      :: WrfDataHandleMax = 99
   integer                , parameter      :: MaxDims          = 2000 ! = NF_MAX_VARS
-  integer                , parameter      :: MaxVars          = 2000
+  integer                , parameter      :: MaxVars          = 3000
   integer                , parameter      :: MaxTimes         = 900000
   integer                , parameter      :: DateStrLen       = 19
   integer                , parameter      :: VarNameLen       = 31
@@ -463,6 +463,42 @@ subroutine GetIndices(NDim,Start,End,i1,i2,j1,j2,k1,k2)
   k2 = End  (3)
   return
 end subroutine GetIndices
+
+logical function ZeroLengthHorzDim(MemoryOrder,Vector,Status)
+  use wrf_data
+  include 'wrf_status_codes.h'
+  character*(*)              ,intent(in)    :: MemoryOrder
+  integer,dimension(*)       ,intent(in)    :: Vector
+  integer                    ,intent(out)   :: Status
+  integer                                   :: NDim
+  integer,dimension(NVarDims)               :: temp
+  character*3                               :: MemOrd
+  logical zero_length
+
+  call GetDim(MemoryOrder,NDim,Status)
+  temp(1:NDim) = Vector(1:NDim)
+  call LowerCase(MemoryOrder,MemOrd)
+  zero_length = .false.
+  select case (MemOrd)
+    case ('xsz','xez','ysz','yez','xs','xe','ys','ye','z','c')
+      continue
+    case ('0')
+      continue  ! NDim=0 for scalars.  TBH:  20060502
+    case ('xzy','yzx')
+      zero_length = temp(1) .lt. 1 .or. temp(3) .lt. 1
+    case ('xy','yx','xyz','yxz')
+      zero_length = temp(1) .lt. 1 .or. temp(2) .lt. 1
+    case ('zxy','zyx')
+      zero_length = temp(2) .lt. 1 .or. temp(3) .lt. 1
+    case default
+      Status = WRF_WARN_BAD_MEMORYORDER
+      ZeroLengthHorzDim = .true.
+      return
+  end select
+  Status = WRF_NO_ERR
+  ZeroLengthHorzDim = zero_length
+  return
+end function ZeroLengthHorzDim
 
 subroutine ExtOrder(MemoryOrder,Vector,Status)
   use wrf_data
@@ -2360,6 +2396,12 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldTypeIn,  &
 
   Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
 
+  IF ( ZeroLengthHorzDim(MemoryOrder,Length,Status) ) THEN
+     write(msg,*)'ext_ncd_write_field: zero length dimension in ',TRIM(Var),'. Ignoring'
+     call wrf_debug ( WARN , TRIM(msg))
+     return
+  ENDIF
+
   call ExtOrder(MemoryOrder,Length,Status)
   call ExtOrderStr(MemoryOrder,DimNames,RODimNames,Status)
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
@@ -2419,7 +2461,7 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldTypeIn,  &
               exit
             else
               Status = WRF_WARN_DIMNAME_REDEFINED
-              write(msg,*) 'Warning DIM ',i,', NAME ',TRIM(DH%DimNames(i)),' REDIFINED  by var ', &
+              write(msg,*) 'Warning DIM ',i,', NAME ',TRIM(DH%DimNames(i)),' REDEFINED  by var ', &
                            TRIM(Var),' ',DH%DimLengths(i),Length(j) ,' in ', __FILE__ ,' line', __LINE__ 
               call wrf_debug ( WARN , TRIM(msg))
               return
@@ -2966,6 +3008,8 @@ subroutine ext_ncd_get_next_time(DataHandle, DateStr, Status)
     Status = WRF_NO_ERR
   else
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
+    write(msg,*) 'DH%FileStatus ',DH%FileStatus
+    call wrf_debug ( FATAL , msg)
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , msg)
   endif

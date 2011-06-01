@@ -1166,7 +1166,7 @@ subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem
   USE module_model_constants, only: g,rhowater, mwdry
   use module_configure, only:  grid_config_rec_type,   &
 		param_first_scalar,   &
-		p_so2, p_h2o2, p_sulf, p_msa,   &
+		p_so2, p_h2o2, p_sulf,p_h2so4, p_msa,   &
 		p_hno3, p_hcl, p_nh3
 
    implicit none
@@ -1251,7 +1251,8 @@ subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem
 
    lg_ptr(ig_so2  ) = p_so2  
    lg_ptr(ig_h2o2 ) = p_h2o2 
-   lg_ptr(ig_h2so4) = p_sulf 
+   lg_ptr(ig_h2so4) = p_sulf
+   lg_ptr(ig_h2so4) = p_h2so4
    lg_ptr(ig_msa  ) = p_msa  
    lg_ptr(ig_hno3 ) = p_hno3 
    lg_ptr(ig_hcl  ) = p_hcl  

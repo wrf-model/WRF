@@ -148,6 +148,7 @@ module da_control
    integer, parameter :: bufr_solzen         = 12
    integer, parameter :: bufr_station_height = 13
    integer, parameter :: bufr_landsea_mask   = 14
+   integer, parameter :: bufr_solazi         = 15     !RTTOV9_3
 
    integer, parameter :: nchan_amsua = 15
    integer, parameter :: nchan_amsub = 5
@@ -211,6 +212,7 @@ module da_control
    real, parameter    :: typical_thickness_rms = 50.0   ! m
    real, parameter    :: typical_qrn_rms = 0.00001 ! g/kg
    real, parameter    :: typical_qcw_rms = 0.00001 ! g/kg
+   real, parameter    :: typical_qci_rms = 0.00001 ! g/kg
    real, parameter    :: typical_w_rms = 0.1     ! m/s
    real, parameter    :: typical_rv_rms = 1.0    ! m/s
    real, parameter    :: typical_rf_rms = 1.0    ! dBZ
@@ -342,6 +344,7 @@ module da_control
    integer       :: cv_size_domain_je    ! Total je cv size.
    integer       :: cv_size_domain_jp    ! Total jp cv size.
    integer       :: cv_size_domain_js    ! Total js cv size.
+   integer       :: cv_size_domain_jl    ! Total jl cv size.
    integer       :: cv_size_domain       ! Total cv size.    
 
    ! Hybrid:
@@ -351,6 +354,8 @@ module da_control
    ! Namelist variables in future?:
    real, parameter :: maximum_rh = 100.0
    real, parameter :: minimum_rh =  10.0
+
+   real, parameter :: qlimit = 1.0e-12   ! imposed minimum mixing ratio
 
    ! other
 
@@ -438,9 +443,6 @@ module da_control
    integer                :: myproc               ! My processor ID.
    integer, parameter     :: root = 0             ! Number of root processor
    logical                :: rootproc             ! Am I the root processor
-
-   integer, parameter :: var4d_coupling_disk_linear = 1
-   integer, parameter :: var4d_coupling_disk_simul  = 2
 
    integer, parameter :: rtm_option_rttov = 1
    integer, parameter :: rtm_option_crtm = 2
@@ -611,7 +613,7 @@ module da_control
    real, parameter :: ppbot(npres_print) = (/ 1200.0, 999.9, 899.9, 799.0, 599.9, 399.9,  &
                       299.9,  249.9, 199.9, 149.9, 99.9, 2000./)
 
-   real, allocatable :: time_slots(:)
+   real*8, allocatable :: time_slots(:)
 
    logical :: global
 

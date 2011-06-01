@@ -3,6 +3,7 @@
 ! Factor so abs(Sn) < Sd and ensure that signs of S and Sn match.  
 ! Also, enforce consistency.  
 ! YR and MM fields are ignored.  
+
 SUBROUTINE normalize_basetime( basetime )
   USE esmf_basemod
   USE esmf_basetimemod
@@ -159,8 +160,7 @@ SUBROUTINE timeintchecknormalized( timeInt, msgstr )
   CHARACTER(LEN=*), INTENT(IN) :: msgstr
   ! locals
   CHARACTER(LEN=256) :: outstr
-  IF ( ( timeInt%YR /= 0 ) .OR. &
-       ( timeInt%MM /= 0 ) ) THEN
+  IF ( ( timeInt%YR /= 0 ) ) THEN
     outstr = 'un-normalized TimeInterval not allowed:  '//TRIM(msgstr)
     CALL wrf_error_fatal( outstr )
   ENDIF
@@ -769,6 +769,8 @@ SUBROUTINE c_esmc_basetimesum( time1, timeinterval, timeOut )
   INTEGER :: m
   timeOut = time1
   timeOut%basetime = timeOut%basetime + timeinterval%basetime
+#if 0
+!jm Month has no meaning for a timeinterval; removed 20100319
 #if defined PLANET
   ! Do nothing...
 #else
@@ -779,6 +781,7 @@ SUBROUTINE c_esmc_basetimesum( time1, timeinterval, timeOut )
       CALL timedecmonth( timeOut )
     ENDIF
   ENDDO
+#endif
 #endif
   timeOut%YR = timeOut%YR + timeinterval%YR
   CALL normalize_time( timeOut )
@@ -802,8 +805,11 @@ SUBROUTINE c_esmc_basetimedec( time1, timeinterval, timeOut )
   neginterval%basetime%S = -neginterval%basetime%S
   neginterval%basetime%Sn = -neginterval%basetime%Sn
   neginterval%YR = -neginterval%YR
+#if 0
+!jm month has no meaning for an interval; removed 20100319
 #ifndef PLANET
   neginterval%MM = -neginterval%MM
+#endif
 #endif
   timeOut = time1 + neginterval
 END SUBROUTINE c_esmc_basetimedec

@@ -1,7 +1,7 @@
 !WRF:MODEL_LAYER:CHEMICS
 !
     subroutine mechanism_driver(id,curr_secs,ktau,dtstep,ktauc,dtstepc,&
-               config_flags,gmt,julday,t_phy,moist,p8w,t8w,            &
+               config_flags,gmt,julday,t_phy,moist,p8w,t8w,gd_cldfr,   &
                p_phy,chem,rho_phy,dz8w,dx,g,z,z_at_w,xlat,xlong,vdrog3,&
                vcsulf_old,vcso2_old,vch2o2_old,ttday,tcosz,            &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
@@ -64,7 +64,8 @@
          INTENT(INOUT ) ::                                             &
                addt,addx,addc,etep,oltp,olip,cslp,limp,hc5p,hc8p,tolp, &
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
-               ketp,olnd 
+               ketp,olnd
+
 
 !
 ! on input from meteorological model 
@@ -74,10 +75,13 @@
           INTENT(IN   ) ::                                             &
                                                       t_phy,           &
                                                       p_phy,           &
-                                                      dz8w,            &
+                                                    dz8w,              &
                         z    ,backg_oh,backg_h2o2,backg_no3,           &
                                               t8w,p8w,z_at_w ,         &
                                                     rho_phy
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,           &
+          OPTIONAL,                                                    &
+          INTENT(IN   ) ::  gd_cldfr
 ! ..
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 !
@@ -105,7 +109,7 @@
        call gocart_chem_driver(curr_secs,dtstepc,config_flags,        &
          gmt,julday,t_phy,moist,                                      &
          chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,backg_no3,         &
-         dx,g,xlat,xlong,ttday,tcosz, &
+         gd_cldfr,dx,g,xlat,xlong,ttday,tcosz, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -115,6 +119,7 @@
             max(chem(its:ite,kts:kte,jts:jte,p_so2),epsilc)
        vch2o2_old(its:ite,kts:kte,jts:jte) = &
             max(chem(its:ite,kts:kte,jts:jte,p_h2o2),epsilc)
+
 
      CASE (RADM2, RADM2SORG, RADM2SORG_AQ)
        CALL wrf_debug(15,'calling radm2_driver from mechanism_driver')
@@ -133,12 +138,15 @@
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
 
-     CASE (RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ)
+     CASE (RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP)
        vcsulf_old(its:ite,kts:kte,jts:jte) = &
           max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
 
-     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN,  &
-                          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN,      &
+                 CBMZ_MOSAIC_4BIN_AQ,     CBMZ_MOSAIC_8BIN_AQ,     &
+                 CBMZ_MOSAIC_DMS_4BIN,    CBMZ_MOSAIC_DMS_8BIN,    &
+                 CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ  )
+
        CALL wrf_debug(15,'calling cbmz_driver from mechanism_driver')
        call cbmz_driver(id,curr_secs,ktau,dtstep,ktauc,dtstepc,        &
                config_flags,                                           &

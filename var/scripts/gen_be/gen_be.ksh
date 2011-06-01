@@ -43,6 +43,7 @@ for CV in $CONTROL_VARIABLES; do mkdir -p $CV; done
 echo 
 echo $(date) "Start"
 echo "WRFVAR_DIR is" $WRFVAR_DIR $(svnversion $WRFVAR_DIR)
+echo "RUN_DIR is" $RUN_DIR
 
 if $RUN_GEN_BE_STAGE0; then
    echo "---------------------------------------------------------------"
@@ -235,20 +236,28 @@ fi
 #------------------------------------------------------------------------
 
 if $RUN_GEN_BE_STAGE4; then
-   export BEGIN_CPU=$(date)
-   echo "Beginning CPU time: ${BEGIN_CPU}"
 
    if $GLOBAL; then    
       echo "---------------------------------------------------------------"
       echo "Run Stage 4: Calculate horizontal covariances (global power spectra)."
       echo "---------------------------------------------------------------"
 
+      export BEGIN_CPU=$(date)
+      echo "Beginning CPU time: ${BEGIN_CPU}"
+
       ${SCRIPTS_DIR}/gen_be/gen_be_stage4_global.ksh > gen_be_stage4_global.log 2>&1
 
    else
       echo "---------------------------------------------------------------"
-      echo "Run Stage 4: Calculate horizontal covariances (regional lengthscales)."
+      if ${USE_RFi}; then
+         echo "Run Stage 4: Calculate horizontal covariances (regional lengthscales)."
+      else
+         echo "Run Stage 4: Calculate horizontal covariances (" $WAVELET_NBAND$WAVELET_NAME$WAVELET_FILT_LEN "-wavelet variances)."
+      fi
       echo "---------------------------------------------------------------"
+
+      export BEGIN_CPU=$(date)
+      echo "Beginning CPU time: ${BEGIN_CPU}"
 
       ${SCRIPTS_DIR}/gen_be/gen_be_stage4_regional.ksh > gen_be_stage4_regional.log 2>&1
       RC=$?
@@ -273,7 +282,9 @@ if $RUN_GEN_BE_DIAGS; then
    cat > gen_be_diags_nl.nl << EOF
 &gen_be_diags_nl
    uh_method = '${UH_METHOD}',
-   n_smth_sl = ${N_SMTH_SL}, /
+   n_smth_sl = ${N_SMTH_SL},
+   use_rf = ${USE_RF},
+   do_normalize = ${DO_NORMALIZE}, /
 EOF
 
    ./gen_be_diags.exe > gen_be_diags.log 2>&1
@@ -295,7 +306,7 @@ fi
 if $RUN_GEN_BE_DIAGS_READ; then
    cat > gen_be_diags_nl.nl << EOF
 &gen_be_diags_nl
-   uh_method = '${UH_METHOD}' /
+   uh_method = '${UH_METHOD}', /
 EOF
 
    ln -sf ${BUILD_DIR}/gen_be_diags_read.exe .

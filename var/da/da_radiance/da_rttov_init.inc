@@ -8,7 +8,6 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    !  HISTORY: 07/28/2005 - Creation                               Zhiquan Liu
    !           03/22/2006   add error tuning factor read in        Zhiquan Liu
    !           10/24/2007   limit this routine to RTTOV init       Tom Auligne
-   !
    !---------------------------------------------------------------------------
 
    implicit none 
@@ -18,43 +17,29 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    integer ,       intent (in)    :: nsensor
    integer ,       intent (in)    :: nchan(nsensor)
 
-#include "rttov_setup.interface"
-#include "rttov_readscattcoeffs.interface"
-
    !  local arguments
    !------------------- 
-   integer   :: i, j,ichan,unit_factor_rad, n
+   integer   :: i, j, n
 
-   !
    !  input parameters of RTTOV_SETUP
    !----------------------------------
    integer :: err_unit        ! Logical error unit (<0 for default)
    integer :: verbosity_level ! (<0 for default)
-   integer, allocatable :: sensor(:,:) ! instrument id
-   !  integer, allocatable :: channels(:,:)   ! channel list per instrument
+   integer, allocatable  :: sensor(:,:) ! instrument id
+   integer, allocatable  :: coefs_channels (:,:)
+   character(len=256)    :: fmt_string
+   character(len=256)    :: file_path, file_suffix
+   character(len=256)    :: coef_prefix, scaer_prefix, sccld_prefix
+   character(len=256)    :: coef_filename, scaer_filename, sccld_filename
 
    !  output parameters of RTTOV_SETUP
    !-------------------------------------
-   integer, allocatable :: errorstatus(:)  ! return code
-   integer              :: coef_errorstatus, i_amsua, i_amsub
-   !  type( rttov_coef ), allocatable :: coefs(:)         ! coefficients
+   integer :: errorstatus  ! return code
 
    ! local variables
    !----------------
-   integer             :: nprofiles, nfrequencies, nchannels, nbtout
-   integer , allocatable :: lprofiles(:)
-   real    , allocatable :: surfem(:), emissivity(:)
-   integer , allocatable :: channels (:), polarisations(:,:)
-   integer             :: mxchn
-   integer , allocatable :: coefs_channels (:,:)
+   integer               :: mxchn
  
-   integer             :: idum, wmo_sensor_id, sensor_type, iost, iunit
-
-   ! local variables for tuning error factor
-   character(len=20)   ::  rttovid_string
-   integer             ::  num_tot
-   real                ::  joa, jo, trace, factor 
-
    if (trace_use) call da_trace_entry("da_rttov_init")
 
    !--------------------------------------------------------------
@@ -65,8 +50,8 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    err_unit        =  stderr
    verbosity_level =  rtminit_print
 
-   allocate (errorstatus(nsensor))
    allocate (coefs(nsensor))
+   allocate (opts(nsensor))
    allocate (sensor(3,nsensor))
    allocate (coefs_channels(mxchn,nsensor))
 
@@ -90,137 +75,69 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    end if
 
    !-----------------------------------------------------------
-   ! 2.0 call rttov_setup for reading clear sky coefficients
+   ! 2.0 read and initialize coefficients
+   !     rttov_read_coefs and rttov_init_coefs are called for each instrument
    !-----------------------------------------------------------
+ 
+   file_path    = 'rttov_coeffs/'
+   file_suffix  = '.dat'
+   coef_prefix  = 'rtcoef_'
+   scaer_prefix = 'scaercoef_'  ! scattering coefficients - aerosols
+   sccld_prefix = 'sccldcoef_'  ! scattering coefficients - clouds
 
-   call rttov_setup (&
-      errorstatus,      &! out
-      err_unit,         &! in
-      verbosity_level,  &! in
-      nsensor,          &! in
-      coefs,            &! out
-      sensor,           &! in
-      coefs_channels )   ! in (Optional)
+   write(unit=message(1),fmt='(a)') 'Read in the RTTOV coef files for the following sensors'
+   call da_message(message(1:1))
 
-   if (any(errorstatus(:) /= errorstatus_success)) then
-      call da_error(__FILE__,__LINE__,(/"rttov_setup fatal error"/))
-   end if
+   do n = 1, nsensor
 
-   !-------------------------------------------------------------
-   ! 3.0 read coef file for cloud/rain absorption/scattering
-   !-------------------------------------------------------------
+      opts(n)%switchrad  = .true.   ! brightness temperature radiance%bt is the input perturbation
+      opts(n)%addrefrac  = .false.  ! refraction in path calc
+      opts(n)%addinterp  = .false.  ! interpolation of input profile
+      opts(n)%addsolar   = .false.  ! reflected solar
+      opts(n)%addclouds  = .false.  ! cloud effect
+      opts(n)%addaerosl  = .false.  ! aerosol effect
+      opts(n)%ozone_data = .false.
+      opts(n)%co2_data   = .false.
+      opts(n)%n2o_data   = .false.
+      opts(n)%ch4_data   = .false.
+      opts(n)%co_data    = .false.
+      opts(n)%clw_data   = .false.
 
-   if (rttov_scatt) then
-      i_amsua = 0
-      i_amsub = 0
-      do i=1,nsensor
-         if (trim(rttov_inst_name(rtminit_sensor(i))) == 'amsua') &
-            i_amsua = i
-         if ( trim(rttov_inst_name(rtminit_sensor(i))) == 'amsub') &
-            i_amsub = i 
-      end do
+      ! construct the full path name to the coef file
+      coef_filename = trim(file_path)//trim(coef_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
+      scaer_filename = trim(file_path)//trim(scaer_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
+      sccld_filename = trim(file_path)//trim(sccld_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
 
-      if (i_amsua /= 0 .and. i_amsub == 0) then
-         n_scatt_coef = 1
-         allocate (coefs_scatt(n_scatt_coef))
-         allocate (coefs_scatt_instname(n_scatt_coef))
-         coefs_scatt_instname(1) = 'amsua'
-         call rttov_readscattcoeffs(coef_errorstatus, coefs(i_amsua), &
-                                   coefs_scatt(1))
-         if (coef_errorstatus /= errorstatus_success ) then
-            call da_error(__FILE__,__LINE__,(/"rttov_readscattcoeffs fatal error"/))
-         end if
-      end if
-      if (i_amsua == 0 .and. i_amsub /= 0) then
-         n_scatt_coef = 1
-         allocate (coefs_scatt(n_scatt_coef))
-         allocate (coefs_scatt_instname(n_scatt_coef))
-         coefs_scatt_instname(1) = 'amsub'
-         call rttov_readscattcoeffs(coef_errorstatus, coefs(i_amsub), &
-                                    coefs_scatt(1))
-         if (coef_errorstatus /= errorstatus_success ) then
-            call da_error(__FILE__,__LINE__,(/"rttov_readscattcoeffs fatal error"/))
-         end if      
+      write(unit=fmt_string, fmt='(a,i3,a)') '(2a,2x,a,', nchan(n), 'i5)'
+      write(unit=message(2),fmt=trim(fmt_string)) "   ", &
+      !write(unit=message(2),fmt='(2a,2x,a,(30i5))') "   ", &
+         trim(iv%instid(n)%rttovid_string), 'nchan = ', coefs_channels(1:nchan(n),n)
+      call da_message(message(2:2))
+
+      call rttov_read_coefs( &
+        & errorstatus,       &   ! out
+        & coefs(n),          &   ! out
+        & opts(n),           &   ! in
+        & channels     = coefs_channels(1:nchan(n),n),  &   ! list of channels to extract coefs
+        & file_coef    = trim(coef_filename),  &
+        & file_scaer   = trim(scaer_filename), &
+        & file_sccld   = trim(sccld_filename) )
+      if ( errorstatus /= errorstatus_success ) then
+         call da_error(__FILE__,__LINE__,(/"rttov_read_coefs fatal error"/))
       end if
 
-      if (i_amsua /= 0 .and. i_amsub /= 0) then
-         n_scatt_coef = 2
-         allocate (coefs_scatt(n_scatt_coef))
-         allocate (coefs_scatt_instname(n_scatt_coef))
-         coefs_scatt_instname(1) = 'amsua'
-         call rttov_readscattcoeffs(coef_errorstatus, coefs(i_amsua), &
-                                  coefs_scatt(1))
-         if (coef_errorstatus /= errorstatus_success ) then
-            call da_error(__FILE__,__LINE__,(/"rttov_readscattcoeffs fatal error"/))
-         end if
-         coefs_scatt_instname(2) = 'amsub'
-         call rttov_readscattcoeffs(coef_errorstatus, coefs(i_amsub), &
-                                  coefs_scatt(2))
-         if (coef_errorstatus /= errorstatus_success ) then
-            call da_error(__FILE__,__LINE__,(/"rttov_readscattcoeffs fatal error"/))
-         end if
+      call rttov_init_coefs (errorstatus, opts(n), coefs(n))
+      if ( errorstatus /= errorstatus_success ) then
+         call da_error(__FILE__,__LINE__,(/"rttov_init_coefs fatal error"/))
       end if
 
-      if ( i_amsua == 0 .and. i_amsub == 0 ) n_scatt_coef = 0
-   end if
+      iv%instid(n)%nlevels = coefs(n)%coef%nlevels
 
-   !----------------------------------------------------------------
-   ! 4.0 set up some common variables for innovation/observation structure
-   !----------------------------------------------------------------
+   end do
 
-   iv%instid(1:nsensor)%nlevels = coefs(1:nsensor)%nlevels
-
-   call da_message((/"Read in the RTTOV coef files for the following sensors"/))
-
-   loop_sensor2: do i = 1, nsensor
-
-      !---------------------------------------------------
-      ! 4.1 get more information about sensor
-      !---------------------------------------------------
-
-      nprofiles = 1
-      write(unit=message(1),fmt='(2a,2x,a,i5)') "   ", &
-         iv%instid(i)%rttovid_string, 'nchan=',nchan(i)
-
-      call rttov_setupchan(nprofiles, nchan(i), coefs(i), &    ! in
-                     nfrequencies, nchannels, nbtout )        ! out
-
-      allocate (lprofiles(nfrequencies))
-      allocate (channels (nfrequencies))
-      allocate (polarisations(nchannels, 3))
-      allocate (emissivity( nchannels))
-      allocate (surfem ( nchannels))
-      surfem(:) = 0.0
-
-      call rttov_setupindex(nchan(i), nprofiles, nfrequencies, &    ! in
-                     nchannels, nbtout, coefs(i), surfem,  &    ! in
-                     lprofiles, channels, polarisations,     &    ! out
-                     emissivity  )
-
-      write (unit=message(2),fmt=*) &
-          '  nprofiles = ', nprofiles, &
-          'nchan = ', nchan(i), &
-          'nfrequencies = ', nfrequencies, &
-          'nchannels    = ', nchannels, &
-          'nbtout       = ', nbtout
-      ! FIX? problems with PGI
-      ! write (unit=message(3),fmt=*) '  lprofiles    = ', lprofiles
-      ! write (unit=message(4),fmt=*) '  channels     = ', channels
-
-      call da_message(message(1:2))
-
-      deallocate (lprofiles)
-      deallocate (channels)
-      deallocate (polarisations)
-      deallocate (emissivity)
-      deallocate (surfem)
-
-   end do loop_sensor2
-
-   deallocate (errorstatus)
    deallocate (sensor)
    deallocate (coefs_channels)
 
    if (trace_use) call da_trace_exit("da_rttov_init")
-
+ 
 end subroutine da_rttov_init

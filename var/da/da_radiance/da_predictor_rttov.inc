@@ -1,71 +1,77 @@
-subroutine da_predictor_rttov(pred,npred,temp,hum,T_skin)
+subroutine da_predictor_rttov(inst, pred,npred,nlevels,temp,hum,t_skin)
 
    implicit none
 
-   ! temp - 43 level temperatures
-   ! hum  - 43 level moistures
-   ! T-skin - model skin temperature
+   ! temp - RTM level temperatures (k)
+   ! hum  - RTM level moistures    (kg/kg)
+   ! t-skin - model skin temperature (k)
+   ! nlevels - number of RTM levels (1:nlevels)
+   ! pf   - RTM full level pressure  (hpa)
 
-   ! pred(1) - 1000-300 thickness 43 1005.43-521.46 thickness
-   ! pred(2) - 200-50 thickness   43  194.36-56.73  thickness
-   ! pred(3) - T_skin
+   ! pred(1) - 1000-300 thickness
+   ! pred(2) - 200-50 thickness
+   ! pred(3) - t_skin
    ! pred(4) - total column precipitable water
-   ! pred(5) - 10 -2 thickness    43  10.37-2.61 thickness
-   ! pred(6) - 50 -10thickness    43  45.29-10.37 thickness
 
-   integer, parameter :: JPRTLEV = 43
-
-   integer, intent(in)  :: npred
-   real,    intent(in)  :: temp(JPRTLEV), hum(JPRTLEV), T_skin
+   integer, intent(in)  :: inst, npred, nlevels
+   real,    intent(in)  :: temp(nlevels), hum(nlevels), t_skin
    real,    intent(out) :: pred(npred)
 
-   real, parameter :: Kth = gas_constant*0.5/gravity
-   real, parameter :: Kpc = 100.0*0.5/gravity
-
-   real :: tv(JPRTLEV)
-
-   logical, SAVE :: FIRST = .true.
-
-   real :: PLEVS(JPRTLEV) =  (/ 0.10,    0.29,    0.69,   1.42,    2.61, &
-                                4.41,    6.95,   10.37,  14.81,   20.40, &
-                                27.26,   35.51,   45.29,  56.73,   69.97, &
-                                85.18,  102.05,  122.04, 143.84,  167.95, &
-                               194.36,  222.94,  253.71, 286.60,  321.50, &
-                               358.28,  396.81,  436.95, 478.54,  521.46, &
-                               565.54,  610.60,  656.43, 702.73,  749.12, &
-                               795.09,  839.95,  882.80, 922.46,  957.44, &
-                               985.88, 1005.43, 1013.25 /)
-
-   real, SAVE :: DLP(JPRTLEV-1), DP(JPRTLEV-1)
+   real, parameter :: kth = gas_constant/gravity
+   real, parameter :: kpc = 100.0/gravity
+   real :: pf(nlevels)
+   real :: tv(nlevels-1), qm(nlevels-1)
+   real :: dlp(nlevels-1), dp(nlevels-1)
+   real    :: add_thk
+   integer :: itmp(1), k
+   integer :: index1000, index300, index200, index50
 
    if (trace_use) call da_trace_entry("da_predictor_rttov")
 
-   ! If first time compute log P(i)/P(i-1) and P(i)-P(i-1)
-   if (FIRST) then
-      DLP(1:JPRTLEV-1) = LOG(PLEVS(2:JPRTLEV)) - LOG(PLEVS(1:JPRTLEV-1))
-      DP(1:JPRTLEV-1) = PLEVS(2:JPRTLEV) - PLEVS(1:JPRTLEV-1)
-      FIRST = .false.
+   pf = coefs(inst)%coef%ref_prfl_p
+
+   do k = 1, nlevels-1
+      ! full-level to half-level
+      qm(k)=0.5*(hum(k)+hum(k+1))
+   end do
+
+   dlp(1:nlevels-1) = log(pf(2:nlevels)) - log(pf(1:nlevels-1))
+    dp(1:nlevels-1) =     pf(2:nlevels)  -     pf(1:nlevels-1)
+
+   ! 0.0 find the pressure level index that is closest to 
+   ! 1000hPa, 300hPa, 200hPa, and 50hPa respectively
+
+   itmp(1:1) = minloc(abs(pf(:)-1000.0))
+   index1000 = itmp(1)
+   itmp(1:1) = minloc(abs(pf(:)-300.0))
+   index300  = itmp(1)
+   itmp(1:1) = minloc(abs(pf(:)-200.0))
+   index200  = itmp(1)
+   itmp(1:1) = minloc(abs(pf(:)-50.0))
+   index50   = itmp(1)
+
+   ! 1.0 convert all temperatures to virtual temperatures
+   !     and full-level to half-level
+   ! ----------------------------------------------------
+   do k = 1, nlevels-1
+      tv(k) = 0.5*(temp(k)+temp(k+1))*(1.0+0.608*qm(k))
+   end do
+
+   if ( (1000.0 > pf(nlevels)) ) then
+      add_thk = kth*( tv(nlevels-1)*(log(1000.0)-log(pf(nlevels))) )  ! approximation
+   else
+      add_thk = 0.0
    end if
 
-   ! 1.0 Convert all temperatures to virtual temperatures
-   ! ----------------------------------------------------
-   tv =  temp*(1.0+0.608*hum)
-
-   ! 2.0 Construct averages for NESDIS thick layers
+   ! 2.0 construct averages for nesdis thick layers
    ! ----------------------------------------------
 
-   pred(1) = Kth*sum((tv(26:42) + tv(25:41))*DLP(25:41))
-   pred(2) = Kth*sum((tv(14:21) + tv(13:20))*DLP(13:20))
-   pred(3) = T_skin
-   pred(4) = Kpc*sum((hum(2:43) + hum(1:42))*DP(1:42))
-
-   if (npred == 6) then
-      pred(5) = Kth*sum((tv(5:8)  + tv(4:7))*DLP(4:7))
-      pred(6) = Kth*sum((tv(8:13)  + tv(7:12))*DLP(7:12))
-   end if
+   pred(1) = kth*sum( tv(index300+1:index1000)*dlp(index300+1:index1000) ) + add_thk
+   pred(2) = kth*sum( tv(index50+1:index200)*dlp(index50+1:index200) )
+   pred(3) = t_skin
+   pred(4) = kpc*sum( qm(1:nlevels-1)*dp(1:nlevels-1) )
 
    if (trace_use) call da_trace_exit("da_predictor_rttov")
 
 end subroutine da_predictor_rttov
-
 

@@ -67,6 +67,7 @@
            ph_terpooh,ph_mvk,ph_glyald,ph_hyac
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
+         OPTIONAL,                                                     &
          INTENT(INOUT ) ::                                             &
            gd_cloud,gd_cloud2
 !
@@ -104,8 +105,9 @@
                                                      xlong
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
-   LOGICAL, INTENT(IN) :: haveaer
-   integer, INTENT(IN )        :: ivgtyp(ims:ime,jms:jme)
+   LOGICAL, INTENT(IN)  :: haveaer
+   integer, INTENT(IN ) :: ivgtyp(ims:ime,jms:jme)
+   character(len=132)   :: dbg_msg
 !         
 !                                                    
 ! LOCAL  VAR
@@ -114,6 +116,9 @@
 !-----------------------------------------------------------------
 
    IF (config_flags%phot_opt .eq. 0) return
+
+   write(dbg_msg,*) 'photolysis_driver: called for domain ',id
+   CALL wrf_message( trim(dbg_msg) )
 !
 ! select photolysis option
 !
@@ -152,7 +157,7 @@
                its,ite, jts,jte, kts,kte                               )
      CASE (FTUV)
        call wrf_debug(15,'calling ftuv_driver')
-       call ftuv_radm2_driver( id, curr_secs, dtstep, config_flags,          &
+       call ftuv_driver(      id, curr_secs, dtstep, config_flags,     &
                               gmt, julday,                             &
                               p_phy, t_phy, rho_phy, p8w, t8w,         &
                               xlat, xlong,    z_at_w,                  &
@@ -160,9 +165,15 @@
                               ph_no2,ph_o31d,ph_o33p,ph_hno2,          &
                               ph_hno3,ph_hno4,ph_no3o2,ph_no3o,        &
                               ph_h2o2,ph_ch2om,ph_ch2or,ph_ch3cho,     &
-                              ph_ch3o2h,ph_o2,ph_ch3coo2h,ph_ch3coch3,ph_hcocho,     &
-                              ph_hcochob,ph_ch3cocho,ph_hcochest,ph_ch3ono2,          &
-                              ph_macr,ph_ch3coc2h5,                    &
+                              ph_ch3o2h,ph_o2,ph_ch3coo2h,ph_ch3coch3,ph_hcocho, &
+                              ph_hcochob,ph_ch3cocho,ph_hcochest,ph_ch3ono2,     &
+                              ph_macr,ph_ch3coc2h5,ph_n2o,             &
+                              ph_pan,ph_mpan,ph_acetol,ph_gly,         &
+                              ph_bigald,ph_mek,ph_c2h5ooh,ph_c3h7ooh,  &
+                              ph_pooh,ph_rooh,ph_xooh,ph_isopooh,      &
+                              ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh,&
+                              ph_n2o5,ph_mvk,ph_glyald,ph_hyac,        &
+                              ivgtyp,                                  &
                               ids,ide, jds,jde, kds,kde,               &
                               ims,ime, jms,jme, kms,kme,               &
                               its,ite, jts,jte, kts,kte                )

@@ -19,6 +19,11 @@ libwrfio_int.a:		$(OBJS)
 
 io_int.o:               io_int.F90 module_internal_header_util.o
 			$(CPP1)  -I../ioapi_share io_int.F90 | $(M4) - > io_int.f
+			@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+                          echo COMPILING io_int.F90 for 4DVAR ; \
+                          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl io_int.f > io_int.f.tmp ; \
+                          mv io_int.f.tmp io_int.f ; \
+                        fi
 			$(FC) $(FFLAGS) -I. -I../ioapi_share -o $@ -c io_int.f
 			/bin/rm -f intio_tags.h
 

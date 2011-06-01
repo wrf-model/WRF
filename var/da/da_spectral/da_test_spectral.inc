@@ -12,7 +12,7 @@ subroutine da_test_spectral (max_wave, sizec, xbx, field)
    real,            intent(in) :: field(its:ite,jts:jte)    ! Gridpoint field.
 
    real    :: field_out(its:ite,jts:jte)
-   real    :: power(0:max_wave)   ! Power spectrum
+   real*8  :: power(0:max_wave)   ! Power spectrum
    real    :: rcv(1:2*sizec)      ! Spectral modes.
    real    :: rcv_out(1:2*sizec)  ! Spectral modes.
    integer :: m,mm, index_start, index_end

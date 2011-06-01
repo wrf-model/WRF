@@ -25,7 +25,7 @@ subroutine da_setup_testfield(grid)
    ! [2.0]: set up test increment field structure:
    !-------------------------------------------------------------------------
 
-   ! [2.1] test wind, temperature, pressure, and humidity.
+   ! [2.1] test wind, temperature, pressure, humidity and cloud parameters
 
    call da_set_tst_trnsf_fld(grid, grid%xa%u, grid%xb%u, typical_u_rms)
    call da_set_tst_trnsf_fld(grid, grid%xa%v, grid%xb%v, typical_v_rms)
@@ -33,8 +33,20 @@ subroutine da_setup_testfield(grid)
    call da_set_tst_trnsf_fld(grid, grid%xa%t, grid%xb%t, typical_t_rms)
    call da_set_tst_trnsf_fld(grid, grid%xa%p, grid%xb%p, typical_p_rms)
    call da_set_tst_trnsf_fld(grid, grid%xa%q, grid%xb%q, typical_q_rms)
-   call da_set_tst_trnsf_fld(grid, grid%xa%qcw, grid%xb%qcw, typical_qcw_rms)
-   call da_set_tst_trnsf_fld(grid, grid%xa%qrn, grid%xb%qrn, typical_qrn_rms)
+   if ( use_rad .and. crtm_cloud ) then
+      call da_set_tst_trnsf_fld(grid, grid%xa%qcw, grid%xb%qcw, typical_qcw_rms)
+      call da_set_tst_trnsf_fld(grid, grid%xa%qrn, grid%xb%qrn, typical_qrn_rms)
+      call da_set_tst_trnsf_fld(grid, grid%xa%qci, grid%xb%qci, typical_qci_rms)
+      call da_set_tst_trnsf_fld(grid, grid%xa%qsn, grid%xb%qsn, typical_qci_rms)
+      call da_set_tst_trnsf_fld(grid, grid%xa%qgr, grid%xb%qgr, typical_qci_rms)
+   end if
+   if ( use_radarobs .and. use_radar_rf ) then
+      call da_set_tst_trnsf_fld(grid, grid%xa%qcw, grid%xb%qcw, typical_qcw_rms)
+      call da_set_tst_trnsf_fld(grid, grid%xa%qrn, grid%xb%qrn, typical_qrn_rms)
+      if ( cloud_cv_options /= 1 ) then
+         call da_set_tst_trnsf_fld(grid, grid%xa%qci, grid%xb%qci, typical_qci_rms)
+      end if
+   end if
 
    ! [2.5] get test density increment from linearised ideal gas law:
 

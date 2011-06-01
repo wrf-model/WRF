@@ -246,10 +246,11 @@ END MODULE module_ext_esmf
         CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid:  Calling ioesmf_create_grid_int()' )
         CALL ioesmf_create_grid_int( grid( DataHandle )%ptr,     &
                               numdims,                    &
-!                              DomainStart, DomainEndFull, &
-                              DomainStart, DomainEnd, &
+                              DomainStart, DomainEndFull, &
+!                              DomainStart, DomainEnd, &
                               MemoryStart, MemoryEnd,     &
-                              PatchStart, PatchEndFull )
+!                              PatchStart, PatchEndFull )
+                              PatchStart, PatchEnd )
         CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid:  back from ioesmf_create_grid_int()' )
         WRITE( msg,* ) 'DEBUG ioesmf_create_grid:  done creating grid(',DataHandle,')%ptr'
         CALL wrf_debug ( 5, TRIM(msg) )

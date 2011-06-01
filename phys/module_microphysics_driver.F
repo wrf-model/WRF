@@ -23,30 +23,40 @@ SUBROUTINE microphysics_driver(                                          &
                       ,i_start,i_end,j_start,j_end,kts,kte               &
                       ,num_tiles, naer                                   &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
-                      ,qndrop_curr,qni_curr                              &
-                      ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr      & 
+                      ,qndrop_curr,qni_curr,qh_curr,qnh_curr             &
+                      ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr      &
+                      ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr      &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
-                      ,f_qns,f_qnr,f_qng,f_qnc,f_qnn                     & 
-                      ,qrcuten, qscuten, qicuten, mu                     & 
+                      ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
+                      ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
+                      ,qrcuten, qscuten, qicuten, mu                     &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew
-                      ,hail,ice2                                         & ! for gsfcgce
+                      ,hail,ice2                                         & ! for mp_gsfcgce
+!                     ,ccntype                                           & ! for mp_milbrandt2mom
                       ,w ,z                                              &
-                      ,rainnc, rainncv                                   &
-                      ,snownc, snowncv                                   &
+                      ,rainnc,    rainncv                                &
+                      ,snownc,    snowncv                                &
+                      ,hailnc,    hailncv                                &
                       ,graupelnc, graupelncv                             &
-                                                                         )
+                      ,refl_10cm                                         & ! HM, 9/22/09, add for refl
+! YLIN
+! Added the RI_CURR array to the call
+                      ,ri_curr                                           &
+                                                   )
 ! Framework
 #if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
-                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME  &
+                    ,MILBRANDT2MOM !,MILBRANDT3MOM
 #else
    USE module_state_description, ONLY :                                  &
-                     KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
+                     KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
+                    ,MILBRANDT2MOM !,MILBRANDT3MOM
 #endif
 
 ! Model Layer
@@ -57,17 +67,20 @@ SUBROUTINE microphysics_driver(                                          &
 
    USE module_mp_kessler
    USE module_mp_lin
+   USE module_mp_sbu_ylin
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
    USE module_mp_thompson
-   USE module_mp_thompson07
    USE module_mp_gsfcgce
-   USE module_mp_morr_two_moment 
+   USE module_mp_morr_two_moment
    USE module_mp_wdm5
    USE module_mp_wdm6
-   USE module_mp_etanew_HWRF
+   USE module_mp_milbrandt2mom
+!  USE module_mp_milbrandt3mom
+
+   USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 !----------------------------------------------------------------------
@@ -81,22 +94,23 @@ SUBROUTINE microphysics_driver(                                          &
    ! WRF Single-Moment 5-class, Hong, Dudhia and Chen (2004)
    ! WRF Single-Moment 6-class, Lim and Hong (2003 WRF workshop)
    ! Eta Grid-scale Cloud and Precipitation scheme (EGCP01, Ferrier)
-   ! 
+   ! Milbrandt and Yau (2005)
+
 !----------------------------------------------------------------------
    IMPLICIT NONE
 !======================================================================
 ! Grid structure in physics part of WRF
-!----------------------------------------------------------------------  
+!----------------------------------------------------------------------
 ! The horizontal velocities used in the physics are unstaggered
 ! relative to temperature/moisture variables. All predicted
 ! variables are carried at half levels except w, which is at full
 ! levels. Some arrays with names (*8w) are at w (full) levels.
 !
-!----------------------------------------------------------------------  
-! In WRF, kms (smallest number) is the bottom level and kme (largest 
-! number) is the top level.  In your scheme, if 1 is at the top level, 
+!----------------------------------------------------------------------
+! In WRF, kms (smallest number) is the bottom level and kme (largest
+! number) is the top level.  In your scheme, if 1 is at the top level,
 ! then you have to reverse the order in the k direction.
-!                 
+!
 !         kme      -   half level (no data at this level)
 !         kme    ----- full level
 !         kme-1    -   half level
@@ -116,16 +130,25 @@ SUBROUTINE microphysics_driver(                                          &
 !-----------
 ! Rho_d      dry density (kg/m^3)
 ! Theta_m    moist potential temperature (K)
-! Qv         water vapor mixing ratio (kg/kg)
-! Qc         cloud water mixing ratio (kg/kg)
-! Qr         rain water mixing ratio (kg/kg)
-! Qi         cloud ice mixing ratio (kg/kg)
-! Qs         snow mixing ratio (kg/kg)
+! Qv         water vapor    mixing ratio (kg/kg)
+! Qc         cloud water    mixing ratio (kg/kg)
+! Qr         rain water     mixing ratio (kg/kg)
+! Qi         cloud ice      mixing ratio (kg/kg)
+! Qs         snow           mixing ratio (kg/kg)
+! Qg         graupel        mixing ratio (kg/kg)
+! Qh         hail           mixing ratio (kg/kg)
 ! Qndrop     droplet number mixing ratio (#/kg)
 ! Qni        cloud ice number concentration (#/kg)
-! Qns        snow number concentration (#/kg), 
-! Qnr        rain number concentration (#/kg), 
-! Qng        graupel number concentration (#/kg), 
+! Qns        snow      number concentration (#/kg)
+! Qnr        rain      number concentration (#/kg)
+! Qng        graupel   number concentration (#/kg)
+! Qnh        hail      number concentration (#/kg)
+
+! Qzr        rain             reflectivity (m6/kg)
+! Qzi        ice              reflectivity (m6/kg)
+! Qzs        snow             reflectivity (m6/kg)
+! Qzg        graupel          reflectivity (m6/kg)
+! Qzh        hail             reflectivity (m6/kg)
 
 !
 !----------------------------------------------------------------------
@@ -141,6 +164,8 @@ SUBROUTINE microphysics_driver(                                          &
 !-- SNOWNCV       one time step grid scale snow and ice (mm/step)
 !-- GRAUPELNC     grid scale graupel (mm)
 !-- GRAUPELNCV    one time step grid scale graupel (mm/step)
+!-- HAILNC        grid scale hail (mm)
+!-- HAILNCV       one time step grid scale hail (mm/step)
 !-- SR            one time step mass ratio of snow to total precip
 !-- z             Height above sea level   (m)
 !-- dt            Time step              (s)
@@ -170,11 +195,18 @@ SUBROUTINE microphysics_driver(                                          &
 !-- P_QI          species index for cloud ice
 !-- P_QS          species index for snow
 !-- P_QG          species index for graupel
+!-- P_QH          species index for hail
 !-- P_QNDROP      species index for cloud drop mixing ratio
+!-- P_QNR         species index for rain number concentration,
 !-- P_QNI         species index for cloud ice number concentration
-!-- P_QNS         species index for snow number concentration, 
-!-- P_QNR         species index for rain number concentration, 
-!-- P_QNG         species index for graupel number concentration, 
+!-- P_QNS         species index for snow number concentration,
+!-- P_QNG         species index for graupel number concentration,
+!-- P_QNH         species index for hail number concentration,
+!-- P_QZR         species index for rain    reflectivity
+!-- P_QZI         species index for ice     reflectivity
+!-- P_QZS         species index for snow    reflectivity
+!-- P_QZG         species index for graupel reflectivity
+!-- P_QZH         species index for hail    reflectivity
 !-- id            grid id number
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -205,7 +237,7 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER,    INTENT(IN   )    :: mp_physics
    LOGICAL,    INTENT(IN   )    :: specified
    INTEGER, OPTIONAL, INTENT(IN   )    :: chem_opt, progn
-   INTEGER, OPTIONAL, INTENT(IN   )    :: hail, ice2
+   INTEGER, OPTIONAL, INTENT(IN   )    :: hail, ice2 !, ccntype
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
@@ -258,23 +290,31 @@ SUBROUTINE microphysics_driver(                                          &
 !
 ! Optional
 !
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm
+
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
-                  w, z, t8w                                       & 
+                  w, z, t8w                                       &
                  ,cldfra, cldfra_old, exch_h                      &
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
-                 ,qt_curr,qndrop_curr,qni_curr                    &
-                 ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr
+                 ,qt_curr,qndrop_curr,qni_curr,qh_curr,qnh_curr   &
+                 ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr    &
+                 ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & 
-         OPTIONAL,                                                & 
-         INTENT(IN) :: qrcuten, qscuten, qicuten                    
-   REAL, DIMENSION( ims:ime, jms:jme ),                           & 
-         OPTIONAL,                                                & 
-         INTENT(IN) :: mu                                           
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(IN) :: qrcuten, qscuten, qicuten
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         OPTIONAL,                                                &
+         INTENT(IN) :: mu
+! YLIN
+! Added RI_CURR similar to microphysics fields above
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: ri_curr
 
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                   &
@@ -291,7 +331,9 @@ SUBROUTINE microphysics_driver(                                          &
                                                           ,SNOWNC &
                                                          ,SNOWNCV &
                                                        ,GRAUPELNC &
-                                                      ,GRAUPELNCV
+                                                      ,GRAUPELNCV &
+                                                          ,HAILNC &
+                                                         ,HAILNCV
    INTEGER,OPTIONAL,INTENT(IN   )    ::                        id
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
@@ -301,8 +343,9 @@ SUBROUTINE microphysics_driver(                                          &
                                          ,tbpvs_state,tbpvs0_state
 !
 
-   LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt &
-                                   ,f_qns,f_qnr,f_qng,f_qnn,f_qnc
+   LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt    &
+                       ,f_qns,f_qnr,f_qng,f_qnn,f_qnc,f_qh,f_qnh,f_qzr       &
+                       ,f_qzi,f_qzs,f_qzg,f_qzh
 
 ! LOCAL  VAR
 
@@ -310,7 +353,7 @@ SUBROUTINE microphysics_driver(                                          &
    LOGICAL :: channel
 
 !---------------------------------------------------------------------
-!  check for microphysics type.  We need a clean way to 
+!  check for microphysics type.  We need a clean way to
 !  specify these things!
 !---------------------------------------------------------------------
 
@@ -352,11 +395,16 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
 
 
+! 2009-06009 rce - zero all these for safety
        IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.
+       IF( PRESENT(precr ) ) precr(its:ite,kts:kte,jts:jte)  = 0.
+       IF( PRESENT(preci ) ) preci(its:ite,kts:kte,jts:jte)  = 0.
+       IF( PRESENT(precs ) ) precs(its:ite,kts:kte,jts:jte)  = 0.
+       IF( PRESENT(precg ) ) precg(its:ite,kts:kte,jts:jte)  = 0.
 
 !-----------
        IF( PRESENT(chem_opt) .AND. PRESENT(progn) ) THEN
-       IF( chem_opt==0 .AND. progn==1 .AND. mp_physics==LINSCHEME ) THEN
+       IF( chem_opt==0 .AND. progn==1 .AND. (mp_physics==LINSCHEME  .OR. mp_physics==MORR_TWO_MOMENT)) THEN
           IF( PRESENT( QNDROP_CURR ) ) THEN
              CALL wrf_debug ( 100 , 'microphysics_driver: calling prescribe_aerosol_mixactivate' )
 ! 06-nov-2005 rce - id  & itimestep added to arg list
@@ -371,8 +419,8 @@ SUBROUTINE microphysics_driver(                                          &
                   its,ite, jts,jte, kts,kte,                    &
                   F_QC=f_qc, F_QI=f_qi                          )
           END IF
-       ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME ) THEN
-             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME.")
+       ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME .AND. mp_physics/=MORR_TWO_MOMENT) THEN
+             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
        END IF
        END IF
 
@@ -398,7 +446,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
-             ELSE 
+             ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling kessler' )
              ENDIF
 
@@ -451,7 +499,7 @@ SUBROUTINE microphysics_driver(                                          &
          PRESENT (QNR_CURR) .AND. PRESENT (QNG_CURR).AND. &
          PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
          PRESENT (QRCUTEN) .AND. PRESENT (QICUTEN).AND. &
-                 PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
+         PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
          PRESENT (Z      ) .AND.PRESENT ( W      )  ) THEN
          CALL mp_morr_two_moment(                            &
                      ITIMESTEP=itimestep,                &  !*
@@ -467,26 +515,136 @@ SUBROUTINE microphysics_driver(                                          &
                      NR=qnr_curr,                        &  !* ! VVT
                      NG=qng_curr,                        &  !* ! VVT
                      RHO=rho,                            &  !*
-                     PII=pi_phy,                         &  !*            
+                     PII=pi_phy,                         &  !*
                      P=p,                                &  !*
                      DT_IN=dt,                           &  !*
-                     DZ=dz8w,                            &  !* !hm  
+                     DZ=dz8w,                            &  !* !hm
                      HT=ht,                              &  !*
                      W=w                                 &  !*
-                    ,RAINNC=RAINNC                       &  !*   
+                    ,RAINNC=RAINNC                       &  !*
                     ,RAINNCV=RAINNCV                     &  !*
-                    ,SR=SR                               &  !* !hm 
+                    ,SR=SR                               &  !* !hm
                     ,qrcuten=qrcuten                     &  ! hm
-                    ,qscuten=qscuten                     &  ! hm 
-                    ,qicuten=qicuten                     &  ! hm 
-                    ,mu=mu                          &  ! hm 
+                    ,qscuten=qscuten                     &  ! hm
+                    ,qicuten=qicuten                     &  ! hm
+                    ,mu=mu                          &  ! hm
+                    ,F_QNDROP=f_qndrop                   &  ! hm for wrf-chem
+                 ,QNDROP=qndrop_curr                     &  ! hm for wrf-chem
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,QLSINK=qlsink                                     & ! jdf for wrf-chem
+                 ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   & ! jdf for wrf-chem
                                                                     )
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling morrison two moment')
         ENDIF
+
+
+    CASE (MILBRANDT2MOM)
+         CALL wrf_debug(100, 'microphysics_driver: calling milbrandt2mom')
+         IF (PRESENT (QV_CURR) .AND.                           &
+             PRESENT (QC_CURR) .AND. PRESENT (QNC_CURR)  .AND. &
+             PRESENT (QR_CURR) .AND. PRESENT (QNR_CURR)  .AND. &
+             PRESENT (QI_CURR) .AND. PRESENT (QNI_CURR)  .AND. &
+             PRESENT (QS_CURR) .AND. PRESENT (QNS_CURR)  .AND. &
+             PRESENT (QG_CURR) .AND. PRESENT (QNG_CURR)  .AND. &
+             PRESENT (QH_CURR) .AND. PRESENT (QNH_CURR)  .AND. &
+             PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)   .AND. &
+             PRESENT (SNOWNC ) .AND. PRESENT (SNOWNCV)   .AND. &
+             PRESENT (HAILNC ) .AND. PRESENT (HAILNCV)   .AND. &
+             PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
+             PRESENT (Z      ) .AND. PRESENT ( W      )  ) THEN
+!            PRESENT (ccntype)                                 &
+
+         CALL mp_milbrandt2mom_driver(                   &
+                     ITIMESTEP=itimestep,                &
+                     TH=th,                              &
+                     QV=qv_curr,                         &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     QH=qh_curr,                         &
+                     NC=qnc_curr,                        &
+                     NR=qnr_curr,                        &
+                     NI=qni_curr,                        &
+                     NS=qns_curr,                        &
+                     NG=qng_curr,                        &
+                     NH=qnh_curr,                        &
+                     PII=pi_phy,                         &
+                     P=p,                                &
+                     DT_IN=dt,                           &
+                     DZ=dz8w,                            &
+                     W=w,                                &
+                     RAINNC   = RAINNC,                  &
+                     RAINNCV  = RAINNCV,                 &
+                     SNOWNC   = SNOWNC,                  &
+                     SNOWNCV  = SNOWNCV,                 &
+                     HAILNC   = HAILNC,                  &
+                     HAILNCV  = HAILNCV,                 &
+                     GRPLNC   = GRAUPELNC,               &
+                     GRPLNCV  = GRAUPELNCV,              &
+                     SR=SR,                              &
+!                    ccntype  = ccntype,                 &
+                     Zet      = refl_10cm,               & ! HM, 9/22/09 for refl
+                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
+                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
+                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
+                                                                    )
+        ELSE
+           Call wrf_error_fatal( 'arguments not present for calling milbrandt2mom')
+        ENDIF
+
+
+!     CASE (MILBRANDT3MOM)
+!          CALL wrf_debug(100, 'microphysics_driver: calling milbrandt3mom')
+!          IF (PRESENT (QV_CURR) .AND.                          &
+!              PRESENT (QC_CURR) .AND. PRESENT (QNC_CURR) .AND. &
+!              PRESENT (QR_CURR) .AND. PRESENT (QNR_CURR) .AND. PRESENT (QZR_CURR) .AND.  &
+!              PRESENT (QI_CURR) .AND. PRESENT (QNI_CURR) .AND. PRESENT (QZI_CURR) .AND.  &
+!              PRESENT (QS_CURR) .AND. PRESENT (QNS_CURR) .AND. PRESENT (QZS_CURR) .AND.  &
+!              PRESENT (QG_CURR) .AND. PRESENT (QNG_CURR) .AND. PRESENT (QZG_CURR) .AND.  &
+!              PRESENT (QH_CURR) .AND. PRESENT (QNH_CURR) .AND. PRESENT (QZH_CURR) .AND.  &
+!              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV)  .AND. &
+!              PRESENT (Z      ) .AND. PRESENT ( W      )  ) THEN
+!          CALL mp_milbrandt3mom_driver(                   &
+!                      ITIMESTEP=itimestep,                &  !*
+!                      TH=th,                              &  !*
+!                      QV=qv_curr,                         &  !*
+!                      QC=qc_curr,                         &  !*
+!                      QR=qr_curr,                         &  !*
+!                      QI=qi_curr,                         &  !*
+!                      QS=qs_curr,                         &  !*
+!                      QG=qg_curr,                         &  !*
+!                      QH=qh_curr,                         &  !*
+!                      NC=qnc_curr,                        &  !*
+!                      NR=qnr_curr,                        &  !*
+!                      NI=qni_curr,                        &  !*
+!                      NS=qns_curr,                        &  !*
+!                      NG=qng_curr,                        &  !*
+!                      NH=qnh_curr,                        &  !*
+!                      ZR=qzr_curr,                        &  !*
+!                      ZI=qzi_curr,                        &  !*
+!                      ZS=qzs_curr,                        &  !*
+!                      ZG=qzg_curr,                        &  !*
+!                      ZH=qzh_curr,                        &  !*
+!                      PII=pi_phy,                         &  !*
+!                      P=p,                                &  !*
+!                      DT_IN=dt,                           &  !*
+!                      DZ=dz8w,                            &  !* ! h
+!                      W=w                                 &  !*
+!                     ,RAINNC=RAINNC                       &  !*
+!                     ,RAINNCV=RAINNCV                     &  !*
+!                     ,SR=SR                               &  !* !hm
+!                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+!                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+!                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+!                                                                     )
+!         ELSE
+!            Call wrf_error_fatal( 'arguments not present for calling milbrandt3mom')
+!         ENDIF
 
 !
         CASE (GSFCGCESCHEME)
@@ -552,6 +710,8 @@ SUBROUTINE microphysics_driver(                                          &
                  ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
                  ,SVP3=svp3,SVPT0=svpt0                             &
                  ,RAINNC=rainnc, RAINNCV=rainncv                    &
+                 ,SNOWNC=snownc, SNOWNCV=snowncv                    &
+                 ,GRAUPELNC=graupelnc, GRAUPELNCV=graupelncv, SR=sr &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -560,9 +720,51 @@ SUBROUTINE microphysics_driver(                                          &
                  ,QG=qg_curr                                        &
                  ,QNDROP=qndrop_curr                                &
                                                                     )
-             ELSE 
+             ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling lin_et_al' )
              ENDIF
+
+       CASE (SBU_YLINSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling sbu_ylin' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR )                           .AND.  &
+                  PRESENT( RI_CURR )                           .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( Z       ) ) THEN
+               CALL sbu_ylin(                                       &
+                  TH=th                                             &
+                 ,QV=qv_curr                                        &
+                 ,QL=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,RI3D=ri_curr                                      &
+!                 ,QLSINK=qlsink                                     &
+                 ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
+                 ,HT=ht, DZ8W=dz8w                                  &
+!                 , GRAV=G,  CP=cp                  &
+!                 ,RAIR=r_d, RVAPOR=R_v                              &
+!                 ,XLS=xls, XLV=xlv, XLF=xlf                         &
+!                 ,RHOWATER=rhowater, RHOSNOW=rhosnow                &
+!                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+!                 ,SVP3=svp3,SVPT0=svpt0                             &
+                 ,RAINNC=rainnc, RAINNCV=rainncv                    &
+!                 ,SNOWNC=snownc, SNOWNCV=snowncv                    &
+!                 ,GRAUPELNC=graupelnc, GRAUPELNCV=graupelncv, SR=sr &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+!                 ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   &
+!                 ,F_QG=f_qg                                         &
+!                 ,F_QNDROP=f_qndrop                      &
+!                 ,QG=qg_curr                                        &
+!                 ,QNDROP=qndrop_curr                                &
+                                                                     )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling sbu_ylin' )
+             ENDIF
+
 
         CASE (WSM3SCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm3' )
@@ -589,7 +791,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
-             ELSE 
+             ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling wsm3' )
              ENDIF
 
@@ -684,6 +886,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
+                 ,ITIMESTEP=itimestep                               & 
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -722,6 +925,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
                  ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
+                 ,ITIMESTEP=itimestep                               & 
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -765,27 +969,12 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( mp_restart_state )                  .AND. &
                   PRESENT( tbpvs_state )                      .AND. &
                   PRESENT( tbpvs0_state )                       ) THEN
-#ifdef HWRF
-               CALL ETAMP_NEW(                                      &
-                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy, GID=id &
-                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
-                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
-                 ,QV=qv_curr                                        &
-                 ,QC=qc_curr                                        &
-                 ,LOWLYR=LOWLYR,SR=SR                               &
-                 ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
-                 ,F_RIMEF_PHY=F_RIMEF_PHY                           &
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                                                                    )
-#else
                CALL ETAMP_NEW(                                      &
                   ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
                  ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
                  ,QV=qv_curr                                        &
                  ,QC=qc_curr                                        &
-                 ,QS=qs_curr                                        & 
+                 ,QS=qs_curr                                        &
                  ,QR=qr_curr                                        &
                  ,QT=qt_curr                                        &
                  ,LOWLYR=LOWLYR,SR=SR                               &
@@ -798,48 +987,16 @@ SUBROUTINE microphysics_driver(                                          &
                  ,MP_RESTART_STATE=mp_restart_state                 &
                  ,TBPVS_STATE=tbpvs_state,TBPVS0_STATE=tbpvs0_state &
                                                                     )
-#endif
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
              ENDIF
 
-        CASE (THOMPSON07)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson07 et al' )
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-                                           PRESENT ( QNI_CURR ).AND.  &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
-             CALL mp_gt_driver07(                        &
-                     QV=qv_curr,                         &
-                     QC=qc_curr,                         &
-                     QR=qr_curr,                         &
-                     QI=qi_curr,                         &
-                     QS=qs_curr,                         &
-                     QG=qg_curr,                         &
-                     NI=qni_curr,                        &
-                     TH=th,                              &
-                     PII=pi_phy,                         &
-                     P=p,                                &
-                     DZ=dz8w,                            &
-                     DT_IN=dt,                           &
-                     ITIMESTEP=itimestep,                &
-                     RAINNC=RAINNC,                      &
-                     RAINNCV=RAINNCV,                    &
-                     SR=SR                               &
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
-             ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling thompson07' )
-             ENDIF
-
-      CASE DEFAULT 
+      CASE DEFAULT
 
          WRITE( wrf_err_message , * ) 'The microphysics option does not exist: mp_physics = ', mp_physics
          CALL wrf_error_fatal ( wrf_err_message )
 
-      END SELECT micro_select 
+      END SELECT micro_select
 
    ENDDO
 #ifndef RUN_ON_GPU

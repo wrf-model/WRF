@@ -22,7 +22,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer          :: iost
    integer(i_kind), allocatable :: nread(:)
 
-   integer(i_kind),parameter:: n1bhdr=14
+   integer(i_kind),parameter:: n1bhdr=15
    integer(i_kind),parameter:: maxinfo=12
    integer(i_kind),parameter:: maxchanl=100
 
@@ -33,8 +33,10 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    character(10) date
    character(8) subset,subfgn
    character(80) hdr1b
-   integer(i_kind) ihh,i,j,k,ifov,idd
+   integer(i_kind) ihh,i,j,k,ifov,idd,ireadmg,ireadsb
    integer(i_kind) iret,idate,im,iy,nchan
+   integer :: num_bufr(7), numbufr, ibufr
+   character(20) :: filename
 
    ! thinning variables
    integer(i_kind) itt,itx,iobs,iout
@@ -54,9 +56,9 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
    ! pixel information
    integer   ::  year,month,day,hour,minute,second  ! observation time
-   real      ::  obs_time
+   real*8    ::  obs_time
    ! real      ::  rlat, rlon                         !  lat/lon in degrees   for Anfovs
-   real      ::  satzen, satazi, solzen     !  scan angles for Anfovs
+   real      ::  satzen, satazi, solzen ,solazi       !  scan angles for Anfovs
    integer   ::  landsea_mask
    real      ::  srf_height
    ! channels' bright temperature
@@ -69,7 +71,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    type(info_type)                ::  info
    type(model_loc_type)           ::  loc
 
-   data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL'/
+   data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SOLAZI'/
    !  data hdr1b /'FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SLNM BEARAZ'/
 
    data tbmin,tbmax,tbbad / 50.0_r_kind, 550.0_r_kind, -9.99e11_r_kind /
@@ -152,16 +154,57 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
    allocate (tb_inv(nchan))
 
+   num_tovs_file     = 0    ! number of obs in file
+   num_tovs_global   = 0    ! number of obs within whole domain
+   num_tovs_local    = 0    ! number of obs within tile
+   num_tovs_thinned  = 0    ! number of obs rejected by thinning
+   num_tovs_used     = 0    ! number of obs entered into innovation computation
+   num_tovs_selected = 0    ! number of obs limited for debuging
+   iobs = 0                 ! for thinning, argument is inout
+
    ! 0.0  Open unit to satellite bufr file and read file header
    !--------------------------------------------------------------
 
-   call da_get_unit(lnbufr)
-   open(unit=lnbufr,file=trim(infile),form='unformatted', &
+   num_bufr(:)=0
+   numbufr=0
+   if (num_fgat_time>1) then
+      do i=1,7
+         call da_get_unit(lnbufr)
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.bufr'
+         open(unit   = lnbufr, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+         if (iost == 0) then
+            numbufr=numbufr+1
+	    num_bufr(numbufr)=i
+         else
+            close (lnbufr)
+         end if
+         call da_free_unit(lnbufr)
+      end do
+   else
+     numbufr=1
+   end if
+  
+   if (numbufr==0) numbufr=1
+
+bufrfile:  do ibufr=1,numbufr   
+   if (num_fgat_time==1) then
+      filename=trim(infile)//'.bufr'
+   else
+      if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
+         filename=trim(infile)//'.bufr'
+      else
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.bufr'   
+      end if
+   end if
+
+!  We want to use specific unit number for bufr data, so we can control the endian format in environment. 
+   lnbufr = 99
+
+   open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      call da_free_unit(lnbufr)
       call da_trace_exit("da_read_obs_bufrtovs")
       return
    end if
@@ -170,6 +213,8 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    call datelen(10)
    call readmg(lnbufr,subset,idate,iret)
    if (subset /= subfgn) then
+      call closbf(lnbufr)
+      close(lnbufr)
       message(1)='The file title does not match the data subset'
       write(unit=message(2),fmt=*) &
          'infile=', lnbufr, infile,' subset=', subset, ' subfgn=',subfgn
@@ -188,18 +233,12 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    ! Loop to read bufr file and assign information to a sequential structure
    !-------------------------------------------------------------------------
 
-   allocate (head)
-   !  allocate ( head % tb_inv (1:nchan) )
-   nullify  ( head % next )
-   p => head
-
-   num_tovs_file     = 0    ! number of obs in file
-   num_tovs_global   = 0    ! number of obs within whole domain
-   num_tovs_local    = 0    ! number of obs within tile
-   num_tovs_thinned  = 0    ! number of obs rejected by thinning
-   num_tovs_used     = 0    ! number of obs entered into innovation computation
-   num_tovs_selected = 0    ! number of obs limited for debuging
-   iobs = 0                 ! for thinning, argument is inout
+   if ( ibufr == 1 ) then
+      allocate (head)
+      !  allocate ( head % tb_inv (1:nchan) )
+      nullify  ( head % next )
+      p => head
+   endif
 
    if (tovs_start > 1) then
       write (unit=stdout,fmt='(A,I6)') "   Skipping tovs obs before", tovs_start
@@ -226,6 +265,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          ! if (rlon < 0.0) rlon = rlon+360.0
 
          info%lat  =  bfr1bhdr(bufr_lat)
+
          info%lon  =  bfr1bhdr(bufr_lon)
          call da_llxy (info, loc, outside, outside_all)
 
@@ -238,6 +278,9 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          if ( nint(bfr1bhdr(bufr_satellite_id)) >= 206 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 209 ) then
             platform_id = 1
             satellite_id = nint(bfr1bhdr(bufr_satellite_id))-191
+         else if ( nint(bfr1bhdr(bufr_satellite_id)) == 223 ) then ! noaa-19
+            platform_id = 1
+            satellite_id = nint(bfr1bhdr(bufr_satellite_id))-204
          else if ( nint(bfr1bhdr(bufr_satellite_id)) >= 3 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 5 ) then
             platform_id = 10
             satellite_id = nint(bfr1bhdr(bufr_satellite_id))-2
@@ -254,7 +297,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          hour   = bfr1bhdr(bufr_hour)   
          minute = bfr1bhdr(bufr_minute) 
          second = bfr1bhdr(bufr_second) 
-
+         
          write(unit=info%date_char, fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
             year, '-', month, '-', day, '_', hour, ':', minute, ':', second
 
@@ -303,6 +346,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          else
             satzen = bfr1bhdr(bufr_satzen) !*deg2rad   ! local zenith angle
             satzen = abs(satzen)
+ 
             ! if (amsua .and. ifov .le. 15) satzen=-satzen
             ! if (amsub .and. ifov .le. 45) satzen=-satzen
             ! if (hirs3 .and. ifov .le. 28) satzen=-satzen
@@ -311,6 +355,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          satazi = panglr*rad2deg            ! look angle
          ! if (satazi<0.0) satazi = satazi+360.0
          solzen = bfr1bhdr(bufr_solzen)              ! solar zenith angle
+         solazi = bfr1bhdr(bufr_solazi)              !RTTOV9_3
 
          num_tovs_global = num_tovs_global + 1
          ptotal(ifgat) = ptotal(ifgat) + 1
@@ -352,7 +397,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
             timedif = 0.0 !2.0_r_kind*abs(tdiff)        ! range:  0 to 6
             terrain = 0.01_r_kind*abs(bfr1bhdr(13))
             crit = 1.0 !0.01_r_kind+terrain + timedif !+ 10.0_r_kind*float(iskip)
-            call map2grids(inst,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
+            call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
             if (.not. iuse) then
                num_tovs_thinned=num_tovs_thinned+1
                cycle
@@ -363,8 +408,12 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          nread(inst) = nread(inst) + 1
 
          ! 3.5 extract surface information
-   
          srf_height = bfr1bhdr(bufr_station_height)          ! station height
+         if (srf_height < 8888.0 .AND. srf_height > -416.0) then
+         else
+            srf_height = 0.0
+         endif  
+
          landsea_mask = nint(bfr1bhdr(bufr_landsea_mask))  ! 0:land ; 1:sea (same as RTTOV)
          ! rmask=one                          ! land
          ! if (nint(bfr1bhdr(bufr_landsea_mask))==1) rmask=0.0_r_kind   ! reverse the land/sea mask in bufr
@@ -379,6 +428,12 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
             if ( tb_inv(k) < tbmin .or. tb_inv(k) > tbmax) &
                tb_inv(k) = missing_r
          end do
+         if ( all(tb_inv<0.0) ) then
+            num_tovs_local = num_tovs_local -1
+            num_tovs_used = num_tovs_used - 1
+            nread(inst) = nread(inst) - 1
+            cycle
+         end if
 
          !  4.0   assign information to sequential radiance structure
          !--------------------------------------------------------------------------
@@ -393,7 +448,9 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
          p%tb_inv(1:nchan)  = tb_inv(1:nchan)
          p%sensor_index     = inst
          p%ifgat            = ifgat
-
+!RTTOV9_3
+         p%solazi           = solazi
+ !end of RTTOV9_3
          allocate (p%next)   ! add next data
 
          p => p%next
@@ -401,24 +458,33 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
       end do
    end do obs
 
+   call closbf(lnbufr)
+   close(lnbufr)
+
+end do bufrfile
+
    if (thinning .and. num_tovs_global > 0 ) then
 
 #ifdef DM_PARALLEL
 
       ! Get minimum crit and associated processor index.
       j = 0
-      do n = 1, iv%num_inst
-         j = j + thinning_grid(n)%itxmax
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            j = j + thinning_grid(n,ifgat)%itxmax
+         end do
       end do
 
       allocate ( in  (j) )
       allocate ( out (j) )
 
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            in(j) = thinning_grid(n)%score_crit(i) 
+      do ifgat = 1, num_fgat_time
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               in(j) = thinning_grid(n,ifgat)%score_crit(i) 
+            end do
          end do
       end do
       call mpi_reduce(in, out, j, true_mpi_real, mpi_min, root, comm, ierr)
@@ -426,10 +492,12 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
       call wrf_dm_bcast_real (out, j)
 
       j = 0
-      do n = 1, iv%num_inst
-         do i = 1, thinning_grid(n)%itxmax
-            j = j + 1
-            if ( ABS(out(j)-thinning_grid(n)%score_crit(i)) > 1.0E-10 ) thinning_grid(n)%ibest_obs(i)  = 0
+      do ifgat = 1, num_fgat_time 
+         do n = 1, iv%num_inst
+            do i = 1, thinning_grid(n,ifgat)%itxmax
+               j = j + 1
+               if ( ABS(out(j)-thinning_grid(n,ifgat)%score_crit(i)) > 1.0E-10 ) thinning_grid(n,ifgat)%ibest_obs(i)  = 0
+            end do
          end do
       end do
 
@@ -445,15 +513,16 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
       num_tovs_used_tmp = num_tovs_used
       do j = 1, num_tovs_used_tmp
          n = p%sensor_index
+         ifgat = p%ifgat 
          found = .false.
 
-         do i = 1, thinning_grid(n)%itxmax
-            if ( thinning_grid(n)%ibest_obs(i) == j .and. thinning_grid(n)%score_crit(i) < 9.99e6_r_kind ) then
+         do i = 1, thinning_grid(n,ifgat)%itxmax
+            if ( thinning_grid(n,ifgat)%ibest_obs(i) == j .and. thinning_grid(n,ifgat)%score_crit(i) < 9.99e6_r_kind ) then
                found = .true.
                exit
             endif
          end do 
-
+        
          ! free current data
          if ( .not. found ) then
             current => p
@@ -484,7 +553,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
             prev => p
             p => p%next
          endif
-
+        
       end do
 
    endif  ! End of thinning
@@ -509,31 +578,17 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    write(unit=stdout,fmt='(5i10)') num_tovs_file,num_tovs_global, num_tovs_local,num_tovs_used,num_tovs_thinned
 
    deallocate(tb_inv)  
-   call closbf(lnbufr)
-   call da_free_unit(lnbufr)
 
    !  5.0 allocate innovation radiance structure
    !----------------------------------------------------------------  
    
    do i = 1, iv%num_inst
-      if (rtm_option == rtm_option_crtm) then
-         iv%instid(i)%nlevels = kme-kms+1
-         iv%instid(i)%nchannels=nchan
-      end if
       if (nread(i) < 1) cycle
       iv%instid(i)%num_rad = nread(i)
       iv%instid(i)%info%nlocal = nread(i)
       write(UNIT=stdout,FMT='(a,i3,2x,a,3x,i10)') &
         'Allocating space for radiance innov structure', &
          i, iv%instid(i)%rttovid_string, iv%instid(i)%num_rad
-
-#ifdef RTTOV
-      if (rtm_option == rtm_option_rttov) then
-         call rttov_setupchan(1, nchan, coefs(i), &   ! in
-            iv%instid(i)%nfrequencies,iv%instid(i)%nchannels, &
-            iv%instid(i)%nbtout)      ! out
-      end if
-#endif
 
       call da_allocate_rad_iv(i,nchan,iv)
 
@@ -576,6 +631,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/)) 
 #endif
+  
 
 end subroutine da_read_obs_bufrtovs
 

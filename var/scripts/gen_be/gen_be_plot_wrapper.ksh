@@ -9,21 +9,21 @@
 #
 #                             Y.-R. Guo  06/16/2008
 #-----------------------------------------------------------------------
-export NCARG_ROOT=/contrib
+#export NCARG_ROOT=/contrib
 
 #[1] Define job by overriding default environment variables:
 
-export WRFVAR_DIR=/ptmp/xinzhang/blueice_ibm_opt/WRFDA
+export WRFVAR_DIR=/kukui/users/xinzhang/code/WRFDA
 export GEN_BE_PLOT=${WRFVAR_DIR}/var/graphics/ncl/gen_be
 
 export GRAPHIC_WORKS=pdf
 
-export NUM_WE=89 # 1 point less than stagger points  90
-export NUM_SN=59 # 1 point less than stagger points  60
-export NUM_LEVELS=40 # 1 point less than stagger points 41
-export RESOLUTION=60.0  # km
+export NUM_WE=74 # 1 point less than stagger points  90
+export NUM_SN=69 # 1 point less than stagger points  60
+export NUM_LEVELS=27 # 1 point less than stagger points 41
+export RESOLUTION=35.0  # km
 export REGION=tutorial     # only for naming output purpose
-export BE_DIR=/mmm/mmmtmp/xinzhang/gen_be5/working
+export BE_DIR=/kukui/users/xinzhang/code/tmp/GENBE/gen_be5/working
 export BE_NROW=$NUM_LEVELS
 
 #[2] Plot gen_be

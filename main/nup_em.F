@@ -60,8 +60,11 @@
 PROGRAM nup_em
 
    USE module_machine
-   USE module_domain, only : domain, wrfu_timeinterval, alloc_and_configure_domain, &
-      domain_clock_set
+   USE module_domain, ONLY : domain, wrfu_timeinterval, alloc_and_configure_domain, &
+      domain_clock_set, domain_get_current_time, domain_get_stop_time, head_grid, &
+      domain_clock_get, domain_clockadvance
+   USE module_domain_type, ONLY : program_name
+   USE module_streams
    USE module_initialize_real, only : wrfu_initialize
    USE module_integrate
    USE module_driver_constants
@@ -208,7 +211,11 @@ integer :: ii
    !  chemistry indices, etc.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
+#ifdef NO_LEAP_CALENDAR
+   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP, rc=rc )
+#else
    CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
+#endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  Get the NAMELIST data.  This is handled in the initial_config routine.  All of the
@@ -374,15 +381,15 @@ write(0,*)'after alloc_and_configure_domain ',associated(nested_grid%intermediat
           EXIT main_loop
         ENDIF
 
-        nested_grid%nframes(0) = nested_grid%nframes(0) + 1
-        IF ( nested_grid%nframes(0) >= config_flags%frames_per_outfile ) THEN
+        nested_grid%nframes(history_only) = nested_grid%nframes(history_only) + 1
+        IF ( nested_grid%nframes(history_only) >= config_flags%frames_per_outfile ) THEN
           CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
           CALL close_dataset ( in_id , config_flags , "DATASET=HISTORY" )
           CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
           CALL close_dataset ( out_id , config_flags , "DATASET=HISTORY" )
           in_id = 0
           out_id = 0
-          nested_grid%nframes(0) = 0
+          nested_grid%nframes(history_only) = 0
         ENDIF
         CALL WRFU_AlarmRingerOff( nested_grid%alarms( HISTORY_ALARM ), rc=rc )
       ENDIF

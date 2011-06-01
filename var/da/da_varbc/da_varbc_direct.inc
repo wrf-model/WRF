@@ -34,10 +34,12 @@
             do n= iv%instid(inst)%info%n1,iv%instid(inst)%info%n2  ! loop for pixel      	     
               ! apply bias correction through linear regression
               !-------------------------------------------------
-	       iv%instid(inst)%tb_inv(k,n) = iv%instid(inst)%tb_inv(k,n) - &
-	          SUM( iv%instid(inst)%varbc(k)%param(1:npred) * &
-	               iv%instid(inst)%varbc_info%pred( &
-		       iv%instid(inst)%varbc(k)%ipred(1:npred),n) )
+              if ( iv%instid(inst)%tb_inv(k,n) > missing_r ) then
+                 iv%instid(inst)%tb_inv(k,n) = iv%instid(inst)%tb_inv(k,n) - &
+                       SUM( iv%instid(inst)%varbc(k)%param(1:npred) * &
+                            iv%instid(inst)%varbc_info%pred( &
+                            iv%instid(inst)%varbc(k)%ipred(1:npred),n) )
+              end if
 	    end do
          end do
       end do                                   ! end loop for sensor

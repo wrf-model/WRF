@@ -13,6 +13,7 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    type (grid_config_rec_type), intent(inout) :: config_flags
 
    character*4 filnam
+   character(len=256) ::  timestr
 
    if (trace_use) call da_trace_entry("da_transfer_xatoanalysis")
 
@@ -23,16 +24,13 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    if (fg_format == fg_format_wrf_arw_regional) then
       if (write_increments .and. var4d) then
          write(unit=filnam,fmt='(a3,i1)') 'inc',it
-         call da_transfer_xatowrftl(grid, config_flags, filnam)
+         call domain_clock_get( grid, current_timestr=timestr )
+         call da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
       end if
 
       call da_transfer_xatowrf(grid)
 
       if (it < max_ext_its) then
-         if (var4d) then
-            call da_med_initialdata_output(grid , config_flags)
-         end if
-
          call da_transfer_wrftoxb(xbx, grid, config_flags)
       end if
    else if (fg_format == fg_format_wrf_arw_global) then

@@ -1,4 +1,4 @@
-SUBROUTINE adapt_timestep(grid, config_flags)
+RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
 !--------------------------------------------------------------------------
 !<DESCRIPTION>
@@ -17,7 +17,7 @@ SUBROUTINE adapt_timestep(grid, config_flags)
 ! Driver layer modules
   USE module_domain
   USE module_configure
-  USE module_dm
+  USE module_dm, ONLY : wrf_dm_maxval, wrf_dm_minval, wrf_dm_mintile_double, wrf_dm_tile_val_int, wrf_dm_maxtile_real
   USE module_bc_em
 
   IMPLICIT NONE
@@ -33,17 +33,20 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   INTEGER                                    :: idex=0, jdex=0
   INTEGER                                    :: rc
   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, dtInterval
+  TYPE(WRFU_TimeInterval)                    :: dtInterval_horiz
+  TYPE(WRFU_TimeInterval)                    :: dtInterval_vert  
+  TYPE(WRFU_TimeInterval)                    :: parent_dtInterval
   INTEGER                                    :: num_small_steps
   integer                                    :: tile
   LOGICAL                                    :: stepping_to_bc
   INTEGER                                    :: bc_time, output_time
-  double precision                           :: dt
+  double precision                           :: dt = 0
   INTEGER, PARAMETER                         :: precision = 100
   INTEGER                                    :: dt_num, dt_den, dt_whole
-  REAL                                       :: factor
-  INTEGER                                    :: num, den
+  INTEGER                                    :: num, den, history_interval_sec
   TYPE(WRFU_TimeInterval)                    :: last_dtInterval
   REAL                                       :: real_time
+  REAL                                       :: max_vert_cfl, max_horiz_cfl
 
   !
   ! If use_last2 is true, this routine will use the time step
@@ -53,24 +56,52 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   use_last2 = .FALSE.
 
   !
-  ! For nests, we only want to change nests' time steps when the time is 
-  !    conincident with the parent's time.  So, if dtbc is not
-  !    zero, simply return and leave the last time step in place.
+  ! Assign last_dtInterval type values from restart file
   !
-  if (config_flags%nested) then
-     if (abs(grid%dtbc) > 0.0001) then
-        return
-     endif
+
+  CALL WRFU_TimeIntervalSet(grid%last_dtInterval,  S=grid%last_dt_sec, &
+                         Sn=grid%last_dt_sec_num, Sd=grid%last_dt_sec_den)
+
+  !
+  ! If this step has already been adapted, no need to do it again.
+  ! time step can already be adapted when adaptation_domain is
+  ! enabled.
+  !
+
+  if (grid%last_step_updated == grid%itimestep) then
+     return
+  else
+     grid%last_step_updated = grid%itimestep
   endif
+
+  !
+  ! For nests, set adapt_step_using_child to parent's value
+  !
+  if (grid%id .ne. 1) then
+     grid%adapt_step_using_child = grid%parents(1)%ptr%adapt_step_using_child;
+  endif
+
+  !
+  ! For nests, if we're not adapting using child nest, we only want to change 
+  !    nests' time steps when the time is conincident with the parent's time.  
+  !    So, if dtbc is not zero, simply return and leave the last time step in 
+  !    place.
+  !
+
+!  if ((grid%id .ne. 1) .and. (.not. grid%adapt_step_using_child)) then
+!     if (abs(grid%dtbc) > 0.0001) then
+!        return
+!     endif
+!  endif
 
   last_dtInterval = grid%last_dtInterval
 
   !
-  ! Get current time
+  ! Get time since beginning of simulation start
   !
 
   tmpTimeInterval = domain_get_current_time ( grid ) - &
-       domain_get_start_time ( grid )
+                    domain_get_sim_start_time ( grid )
 
   !
   ! Calculate current time in seconds since beginning of model run.
@@ -84,12 +115,7 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   ! Calculate the maximum allowable increase in the time step given
   !   the user input max_step_increase_pct value and the nest ratio.
   !
-  if (config_flags%nested) then
-     max_increase_factor = 1. + &
-          grid%parent_time_step_ratio * grid%max_step_increase_pct / 100.     
-  else
-     max_increase_factor = 1. + grid%max_step_increase_pct / 100.
-  endif
+  max_increase_factor = 1. + grid%max_step_increase_pct / 100.
 
   !
   ! If this is the first time step of the model run (indicated by current_time 
@@ -97,53 +123,32 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   !
   ! Else, calculate the time step based on cfl.
   !
-  if (domain_get_current_time ( grid ) .eq. domain_get_start_time ( grid )) then
+  if ( (domain_get_current_time ( grid ) .eq. domain_get_start_time ( grid )) .AND. &
+       .NOT. config_flags%restart ) then
      CALL WRFU_TimeIntervalSet(dtInterval, Sn=grid%starting_time_step, Sd=1)
      curr_secs = 0
      CALL WRFU_TimeIntervalSet(last_dtInterval, Sn=0, Sd=1)
 
   else
-     if (grid%max_cfl_val < 0.001) then 
-        !
-        ! If the max_cfl_val is small, then we increase dtInterval the maximum
-        !    amount allowable.
-        !
-        num = INT(max_increase_factor * precision + 0.5)
-        den = precision
-        dtInterval = last_dtInterval * num / den
 
+     if (grid%stepping_to_time) then
+        max_vert_cfl = grid%last_max_vert_cfl
+        max_horiz_cfl = grid%last_max_horiz_cfl
      else
-        !
-        ! If the max_cfl_val is greater than the user input target cfl, we 
-        !    reduce the time step, 
-        ! else, we increase it.
-        !
-        if (grid%max_cfl_val .gt. grid%target_cfl) then
-           !
-           ! If we are reducing the time step, we go below target cfl by half the
-           !   difference between max and target (or 75% of the last time step,
-           !   which ever is greater).
-           !   This tends to keep the model more stable.
-           !
-           
-           factor = MAX ( 0.75 , ( (grid%target_cfl - 0.5 * &
-                (grid%max_cfl_val - grid%target_cfl) ) / grid%max_cfl_val ) )
-           num = INT(factor * precision + 0.5)
-           den = precision
+        max_vert_cfl = grid%max_vert_cfl
+        max_horiz_cfl = grid%max_horiz_cfl
+     endif
 
-           dtInterval = last_dtInterval * num / den
+     CALL calc_dt(dtInterval_vert, max_vert_cfl, max_increase_factor, &
+          precision, last_dtInterval, grid%target_cfl)
 
-        else
-           !
-           ! Linearly increase dtInterval (we'll limit below)
-           !
-           
-           factor = grid%target_cfl / grid%max_cfl_val
-           num = INT(factor * precision + 0.5)
-           den = precision
-           dtInterval = last_dtInterval * num / den
-        endif
+     CALL calc_dt(dtInterval_horiz, max_horiz_cfl, max_increase_factor, &
+          precision, last_dtInterval, grid%target_hcfl)
 
+     if (dtInterval_vert < dtInterval_horiz) then
+        dtInterval = dtInterval_vert
+     else
+        dtInterval = dtInterval_horiz
      endif
 
   endif
@@ -182,22 +187,42 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   endif
 
   !
-  ! Now, if this is a nest, we round down the time step to the nearest 
+  ! Now, if this is a nest, and we are adapting based upon parent, 
+  !   we round down the time step to the nearest 
   !   value that divides evenly into the parent time step.
+  ! If this is a nest, and we are adapting based upon the child (i.e., the 
+  !   nest), we update the parent timestep to the next smallest multiple
+  !   timestep.
   !
-  if (config_flags%nested) then
-     ! We'll calculate real numbers to get the number of small steps:
-     
-     dt = real_time(dtInterval)
+  if (grid%nested) then
 
-     num_small_steps = CEILING( grid%parents(1)%ptr%dt / dt )
+     dt = real_time(dtInterval)
+        
+     if (.not. grid%adapt_step_using_child) then 
+
+        ! We'll calculate real numbers to get the number of small steps:
+     
+        num_small_steps = CEILING( grid%parents(1)%ptr%dt / dt )
 
 #ifdef DM_PARALLEL
-     call wrf_dm_maxval(num_small_steps, idex, jdex)
+        call wrf_dm_maxval(num_small_steps, idex, jdex)
 #endif
-     dtInterval = domain_get_time_step(grid%parents(1)%ptr) / &
-          num_small_steps
+        dtInterval = domain_get_time_step(grid%parents(1)%ptr) / &
+             num_small_steps
+     else
+
+        num_small_steps = FLOOR( grid%parents(1)%ptr%dt / dt )
+
+#ifdef DM_PARALLEL
+        call wrf_dm_minval(num_small_steps, idex, jdex)
+#endif
+        if (num_small_steps < 1) then
+           num_small_steps = 1
+        endif
+
+     endif
   endif
+
 
   !
   ! Setup the values for several variables from the tile with the
@@ -213,10 +238,27 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   call wrf_dm_tile_val_int(dt_whole, tile)
   CALL WRFU_TimeIntervalSet(dtInterval, Sn = dt_whole*dt_den + dt_num, Sd = dt_den)
 
-  call wrf_dm_maxtile_real(grid%max_cfl_val, tile)
   call wrf_dm_maxtile_real(grid%max_vert_cfl, tile)
   call wrf_dm_maxtile_real(grid%max_horiz_cfl, tile)
 #endif
+
+  if ((grid%nested) .and. (grid%adapt_step_using_child)) then 
+
+     grid%dt = real_time(dtInterval)
+
+     ! Set parent step here.
+     grid%parents(1)%ptr%dt = grid%dt * num_small_steps
+     parent_dtInterval = dtInterval * num_small_steps
+
+     !
+     ! Update the parent clock based on the new time step
+     !
+     CALL WRFU_ClockSet ( grid%parents(1)%ptr%domain_clock,        &
+          timeStep=parent_dtInterval, &
+          rc=rc )
+     
+  endif
+
 
   !
   ! Assure that we fall on a BC time.  Due to a bug in WRF, the time
@@ -224,35 +266,33 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   !   when this is not the first time step on this domain.
   !
 
-  if ( real_time(domain_get_current_time(grid) - domain_get_start_time(grid)) .GT. 0.01 ) THEN
-     time_to_bc = grid%interval_seconds - grid%dtbc
-     num = INT(time_to_bc * precision + 0.5)
-     den = precision
-     CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
-      
-     if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
-          ( tmpTimeInterval .GT. dtInterval ) ) then
-        dtInterval = tmpTimeInterval / 2
-        
-        use_last2 = .TRUE.
-        stepping_to_bc = .true.
-   
-     elseif (tmpTimeInterval .LE. dtInterval) then
-   
-        bc_time = NINT ( (curr_secs + time_to_bc) / ( grid%interval_seconds ) ) &
-             * ( grid%interval_seconds )
-        CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
-        dtInterval = tmpTimeInterval - &
-             (domain_get_current_time(grid) - domain_get_start_time(grid))
-   
-        use_last2 = .TRUE.
-        stepping_to_bc = .true.
-     else
-        stepping_to_bc = .false.
-     endif
+  grid%stepping_to_time = .FALSE.
+  time_to_bc = grid%interval_seconds - grid%dtbc
+  num = INT(time_to_bc * precision + 0.5)
+  den = precision
+  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
+  
+  if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
+       ( tmpTimeInterval .GT. dtInterval ) ) then
+     dtInterval = tmpTimeInterval / 2
+     
+     use_last2 = .TRUE.
+     stepping_to_bc = .true.
+     grid%stepping_to_time = .TRUE.
+     
+  elseif (tmpTimeInterval .LE. dtInterval) then
+     
+     bc_time = NINT ( (curr_secs + time_to_bc) / ( grid%interval_seconds ) ) &
+          * ( grid%interval_seconds )
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
+     dtInterval = tmpTimeInterval - &
+          (domain_get_current_time(grid) - domain_get_sim_start_time(grid))
+     
+     use_last2 = .TRUE.
+     stepping_to_bc = .true.
+     grid%stepping_to_time = .TRUE.
   else
      stepping_to_bc = .false.
-     tmpTimeInterval = dtInterval
   endif
 
   !
@@ -263,10 +303,14 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   !
 
   if ((grid%step_to_output_time) .and. (.not. stepping_to_bc) .and. &
-       (.not. config_flags%nested)) then
+       (.not. grid%nested)) then
 
-     time_to_output = grid%history_interval*60 - &
-          mod(curr_secs, grid%history_interval*60.0)
+     IF ( grid%history_interval_m .EQ. 0 ) grid%history_interval_m = grid%history_interval
+     history_interval_sec = grid%history_interval_s + grid%history_interval_m*60 + &
+                            grid%history_interval_h*3600 + grid%history_interval_d*86400
+
+     time_to_output = history_interval_sec - &
+          mod( curr_secs, REAL(history_interval_sec) )
      num = INT(time_to_output * precision + 0.5)
      den = precision
      call WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
@@ -275,6 +319,7 @@ SUBROUTINE adapt_timestep(grid, config_flags)
           ( tmpTimeInterval .GT. dtInterval ) ) then
         dtInterval = tmpTimeInterval / 2
         use_last2 = .TRUE.
+        grid%stepping_to_time = .TRUE.
 
      elseif (tmpTimeInterval .LE. dtInterval) then
         !
@@ -287,19 +332,46 @@ SUBROUTINE adapt_timestep(grid, config_flags)
         !    we don't have any rounding error.
         !
         output_time = NINT ( (curr_secs + time_to_output) /  &
-             ( grid%history_interval * 60 ) ) * (grid%history_interval * 60)
+             (history_interval_sec) ) * (history_interval_sec)
         CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=output_time)
         dtInterval = tmpTimeInterval - &
-             (domain_get_current_time(grid) - domain_get_start_time(grid))
+             (domain_get_current_time(grid) - domain_get_sim_start_time(grid))
 
         use_last2 = .TRUE.
+        grid%stepping_to_time = .TRUE.
      endif
   endif
 
+  !
+  ! Now, set adapt_step_using_child only if we are not stepping to an
+  !   output time, or, it's not the start of the model run.
+  ! Note:  adapt_step_using_child is updated just before recursive call to
+  !    adapt_timestep--see end of this function.
+  !
+
+  if (grid%id == 1) then
+     if ((grid%adaptation_domain > 1) .and. &
+          (grid%max_dom == 2) .and. &
+          (.not. grid%stepping_to_time) .and. &
+          (domain_get_current_time(grid) .ne. &
+          domain_get_start_time(grid)) &
+          ) then
+        
+        grid%adapt_step_using_child = .TRUE.
+     else
+        grid%adapt_step_using_child = .FALSE.
+     endif
+  endif
+
+
   if (use_last2) then
      grid%last_dtInterval = last_dtInterval
+     grid%last_max_vert_cfl = grid%last_max_vert_cfl
+     grid%last_max_horiz_cfl = grid%last_max_horiz_cfl
   else
      grid%last_dtInterval = dtInterval
+     grid%last_max_vert_cfl = grid%max_vert_cfl
+     grid%last_max_horiz_cfl = grid%max_horiz_cfl
   endif
 
   grid%dt = real_time(dtInterval)
@@ -314,13 +386,99 @@ SUBROUTINE adapt_timestep(grid, config_flags)
        rc=rc )
 
   !
+  ! If we're are adapting based on the child time step, 
+  !    we call the child from here.  This assures that 
+  !    child and parent are updated in sync.
+  ! Note: This is not necessary when we are adapting based
+  !    upon parent.
+  !
+  if ((grid%id == 1) .and. (grid%adapt_step_using_child)) then
+     !
+     ! Finally, check if we can adapt using child.  If we are
+     !   stepping to an output time, we cannot adapt based upon
+     !   child.  So, we reset the variable before calling the child.  
+     ! This covers the case that, within this parent time-step that
+     !   we just calculated, we are stepping to an output time.
+     !
+     if (grid%stepping_to_time) then
+        grid%adapt_step_using_child = .FALSE.
+     endif
+     call adapt_timestep(grid%nests(1)%ptr, config_flags)
+  endif
+
+  !
   ! Lateral boundary weight recomputation based on time step.
   !
-  CALL lbc_fcx_gcx ( grid%fcx , grid%gcx , grid%spec_bdy_width , &
-                     grid%spec_zone , grid%relax_zone , grid%dt , config_flags%spec_exp , &
-                     config_flags%specified , config_flags%nested )
+  if (grid%id == 1) then
+     CALL lbc_fcx_gcx ( grid%fcx , grid%gcx , grid%spec_bdy_width , &
+          grid%spec_zone , grid%relax_zone , grid%dt , config_flags%spec_exp , &
+          config_flags%specified , config_flags%nested )
+  endif
+
+! Update last timestep info for restart file
+
+  CALL WRFU_TimeIntervalGet(grid%last_dtInterval,  S=grid%last_dt_sec, &
+                         Sn=grid%last_dt_sec_num, Sd=grid%last_dt_sec_den)
 
 END SUBROUTINE adapt_timestep
+
+SUBROUTINE calc_dt(dtInterval, max_cfl, max_increase_factor, precision, &
+     last_dtInterval, target_cfl)
+
+  USE module_domain
+
+  TYPE(WRFU_TimeInterval) ,INTENT(OUT)      :: dtInterval
+  REAL                    ,INTENT(IN)       :: max_cfl
+  REAL                    ,INTENT(IN)       :: max_increase_factor
+  INTEGER                 ,INTENT(IN)       :: precision
+  REAL                    ,INTENT(IN)       :: target_cfl
+  TYPE(WRFU_TimeInterval) ,INTENT(IN)       :: last_dtInterval
+  REAL                                      :: factor
+  INTEGER                                   :: num, den
+  
+
+  if (max_cfl < 0.001) then 
+     !
+     ! If the max_cfl is small, then we increase dtInterval the maximum
+     !    amount allowable.
+     !
+     num = INT(max_increase_factor * precision + 0.5)
+     den = precision
+     dtInterval = last_dtInterval * num / den
+
+  else
+     !
+     ! If the max_cfl is greater than the user input target cfl, we 
+     !    reduce the time step, 
+     ! else, we increase it.
+     !
+     if (max_cfl .gt. target_cfl) then
+        !
+        ! If we are reducing the time step, we go below target cfl by half
+        !   the difference between max and target.
+        !   This tends to keep the model more stable.
+        !
+        
+        factor = ( target_cfl - 0.5 * (max_cfl - target_cfl) ) / max_cfl
+        num = INT(factor * precision + 0.5)
+        den = precision
+
+        dtInterval = last_dtInterval * num / den
+
+     else
+        !
+        ! Linearly increase dtInterval (we'll limit below)
+        !
+        
+        factor = target_cfl / max_cfl
+        num = INT(factor * precision + 0.5)
+        den = precision
+        dtInterval = last_dtInterval * num / den
+     endif
+  endif
+
+END SUBROUTINE calc_dt
+
 
 FUNCTION real_time( timeinterval ) RESULT ( out_time )
 
@@ -352,7 +510,6 @@ FUNCTION real_time( timeinterval ) RESULT ( out_time )
          out_time = dt_whole + dt_num / REAL(dt_den)
       endif
 END FUNCTION 
-
 
 FUNCTION real_time_r8( timeinterval ) RESULT ( out_time )
 

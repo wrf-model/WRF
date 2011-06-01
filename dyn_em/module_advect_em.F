@@ -5938,9 +5938,11 @@ END SUBROUTINE advect_w
 !----------------------------------------------------------------
 
 SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
+                                h_tendency, z_tendency,        & 
                                 ru, rv, rom,                   &
                                 mut, mub, mu_old,              &
-                                config_flags,                  &
+                                time_step, config_flags,       &
+                                tenddec,                       & 
                                 msfux, msfuy, msfvx, msfvy,    &
                                 msftx, msfty,                  &
                                 fzm, fzp,                      &
@@ -5966,6 +5968,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
+   LOGICAL ,                 INTENT(IN   ) :: tenddec  ! tendency flag
+
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                               ims, ime, jms, jme, kms, kme, &
                                               its, ite, jts, jte, kts, kte
@@ -5978,6 +5982,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut, mub, mu_old
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(  OUT) :: h_tendency, z_tendency 
 
    REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
                                                                     msfuy,  &
@@ -5993,6 +5998,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
                                                                   dt
+   INTEGER ,                                     INTENT(IN   ) :: time_step
 
    ! Local data
    
@@ -6029,7 +6035,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+           sign(1,time_step)*sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
 
       flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
             (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
@@ -6037,7 +6043,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(1./60.)*(                             &
+            -sign(1,time_step)*sign(1.,ua)*(1./60.)*(           &
               (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
 
       flux_upwind(q_im1, q_i, cr ) = 0.5*min( 1.0,(cr+abs(cr)))*q_im1 &
@@ -7618,6 +7624,19 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   ENDDO
   ENDDO
 
+  IF(tenddec) THEN
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     z_tendency (i,k,j) = 0. -rdzw(k)*( fqz (i,k+1,j)-fqz (i,k,j)  &
+                                      +fqzl(i,k+1,j)-fqzl(i,k,j))
+
+  ENDDO
+  ENDDO
+  ENDDO
+  END IF
+
 ! x flux divergence
 !
   IF(degrade_xs) i_start = MAX(its,ids+1)
@@ -7635,6 +7654,20 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   ENDDO
   ENDDO
   ENDDO
+
+  IF(tenddec) THEN
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     h_tendency (i,k,j) = 0.                                      &
+               - msftx(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
+                                   +fqxl(i+1,k,j)-fqxl(i,k,j))   )
+
+  ENDDO
+  ENDDO
+  ENDDO
+  END IF
 
 ! y flux divergence
 !
@@ -7657,14 +7690,30 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   ENDDO
   ENDDO
 
+  IF(tenddec) THEN
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     h_tendency (i,k,j) = h_tendency (i,k,j)                      &
+               - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+                                   +fqyl(i,k,j+1)-fqyl(i,k,j))   )
+
+  ENDDO
+  ENDDO
+  ENDDO
+  END IF
+
 END SUBROUTINE advect_scalar_pd
 
 !----------------------------------------------------------------
 
 SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
+                                  h_tendency, z_tendency,        & 
                                   ru, rv, rom,                   &
                                   mut, mub, mu_old,              &
                                   config_flags,                  &
+                                  tenddec,                       & 
                                   msfux, msfuy, msfvx, msfvy,    &
                                   msftx, msfty,                  &
                                   fzm, fzp,                      &
@@ -7688,6 +7737,8 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
    
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
+   LOGICAL ,                 INTENT(IN   ) :: tenddec ! tendency flag
+
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                               ims, ime, jms, jme, kms, kme, &
                                               its, ite, jts, jte, kts, kte
@@ -7700,6 +7751,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut, mub, mu_old
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(  OUT) :: h_tendency, z_tendency 
 
    REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
                                                                     msfuy,  &
@@ -8512,6 +8564,19 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
   ENDDO
   ENDDO
 
+  IF(tenddec) THEN
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     z_tendency (i,k,j) = 0. -rdzw(k)*( fqz (i,k+1,j)-fqz (i,k,j)  &
+                                      +fqzl(i,k+1,j)-fqzl(i,k,j))
+
+  ENDDO
+  ENDDO
+  ENDDO
+  END IF
+
 ! x flux divergence
 !
 
@@ -8534,6 +8599,20 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
   ENDDO
   ENDDO
   ENDDO
+
+  IF(tenddec) THEN
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     h_tendency (i,k,j) = 0.                                      &
+               - msftx(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
+                                   +fqxl(i+1,k,j)-fqxl(i,k,j))   )
+
+  ENDDO
+  ENDDO
+  ENDDO
+  END IF
 
 ! y flux divergence
 !
@@ -8559,6 +8638,20 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
   ENDDO
   ENDDO
   ENDDO
+
+  IF(tenddec) THEN
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     h_tendency (i,k,j) = h_tendency (i,k,j)                      &
+               - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+                                   +fqyl(i,k,j+1)-fqyl(i,k,j))   )
+
+  ENDDO
+  ENDDO
+  ENDDO
+  END IF
 
 END SUBROUTINE advect_scalar_mono
 

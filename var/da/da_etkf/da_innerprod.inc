@@ -8,7 +8,7 @@ subroutine da_innerprod(mata,matc,ni,nj)
 
    integer, intent(in)  :: ni, nj
    real,    intent(in)  :: mata(ni,nj)
-   real,    intent(out) :: matc(nj,nj)
+   real*8,  intent(out) :: matc(nj,nj)
 
    integer             :: i1, i2, k       ! Loop counters.
 

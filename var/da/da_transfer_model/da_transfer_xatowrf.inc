@@ -251,11 +251,6 @@ subroutine da_transfer_xatowrf(grid)
 
 #ifdef A2C
 
-   !TBH:  NOTE that grid%xp%halo_id3 = HALO_PSICHI_UV_ADJ which its currently defined 
-   !TBH:  in the Regitstry as "dyn_em 24:grid%xa%u,grid%xa%v,grid%xa%psfc".  Clearly it its not 
-   !TBH:  necessary to update halos in grid%xa%psfc here!  
-
-!rizvi's update
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
        fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
      ipe = ipe + 1
@@ -270,16 +265,10 @@ subroutine da_transfer_xatowrf(grid)
 #else
    ! CONVERT FROM A-GRID TO C-GRID
 
-
-   !TBH:  NOTE that grid%xp%halo_id3 = HALO_PSICHI_UV_ADJ which its currently defined 
-   !TBH:  in the Regitstry as "dyn_em 24:grid%xa%u,grid%xa%v,grid%xa%psfc".  Clearly it its not 
-   !TBH:  necessary to update halos in grid%xa%psfc here!  Also, 24-point stencil its 
-   !TBH:  too thick, 9-point should suffice.  Apparently, grid%xp%halo_id3 its used 
-   !TBH:  in many places!  Thits needs to be fixed. 
 #endif
 
 #ifdef DM_PARALLEL
-#include "HALO_PSICHI_UV_ADJ.inc"
+#include "HALO_XA_A.inc"
 #endif
 
 #ifdef A2C
@@ -362,25 +351,29 @@ subroutine da_transfer_xatowrf(grid)
             grid%v_2(i,j,k) = grid%v_2(i,j,k) + v_cgrid(i,j,k)
 #endif
             grid%w_2(i,j,k) = grid%w_2(i,j,k) + grid%xa%w(i,j,k)
-            grid%moist(i,j,k,P_QV) = grid%moist(i,j,k,P_QV) + q_cgrid(i,j,k)
+
+            ! (xb%q+xa%q in specific humidity) >= 0.0
+            ! does not guarantee that (qv+q_cgrid in mixing ratio) >= 0.0
+            ! for example, when xa%q is negative, q_cgrid is a lager negative value.
+            ! impose a minimum value to prevent negative final qv
+            if ( num_pseudo == 0 ) then
+               grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV)+q_cgrid(i,j,k), qlimit)
+            else
+               grid%moist(i,j,k,P_QV) = grid%moist(i,j,k,P_QV)+q_cgrid(i,j,k)
+            end if
 
             if (size(grid%moist,dim=4) >= 4) then
-               grid%moist(i,j,k,p_qc) = grid%moist(i,j,k,p_qc) + grid%xa%qcw(i,j,k)
-               grid%moist(i,j,k,p_qr) = grid%moist(i,j,k,p_qr) + grid%xa%qrn(i,j,k)
-               if (grid%moist(i,j,k,p_qc) < 0.0) grid%moist(i,j,k,p_qc) = 0.0
-               if (grid%moist(i,j,k,p_qr) < 0.0) grid%moist(i,j,k,p_qr) = 0.0
+               grid%moist(i,j,k,p_qc) = max(grid%moist(i,j,k,p_qc) + grid%xa%qcw(i,j,k), 0.0)
+               grid%moist(i,j,k,p_qr) = max(grid%moist(i,j,k,p_qr) + grid%xa%qrn(i,j,k), 0.0)
             end if
 
             if (size(grid%moist,dim=4) >= 6) then
-               grid%moist(i,j,k,p_qi) = grid%moist(i,j,k,p_qi) + grid%xa%qci(i,j,k)
-               grid%moist(i,j,k,p_qs) = grid%moist(i,j,k,p_qs) + grid%xa%qsn(i,j,k)
-               if (grid%moist(i,j,k,p_qi) < 0.0) grid%moist(i,j,k,p_qi) = 0.0
-               if (grid%moist(i,j,k,p_qs) < 0.0) grid%moist(i,j,k,p_qs) = 0.0
+               grid%moist(i,j,k,p_qi) = max(grid%moist(i,j,k,p_qi) + grid%xa%qci(i,j,k), 0.0)
+               grid%moist(i,j,k,p_qs) = max(grid%moist(i,j,k,p_qs) + grid%xa%qsn(i,j,k), 0.0)
             end if
 
             if (size(grid%moist,dim=4) >= 7) then
-               grid%moist(i,j,k,p_qg) = grid%moist(i,j,k,p_qg) + grid%xa%qgr(i,j,k)
-               if (grid%moist(i,j,k,p_qg) < 0.0) grid%moist(i,j,k,p_qg) = 0.0
+               grid%moist(i,j,k,p_qg) = max(grid%moist(i,j,k,p_qg) + grid%xa%qgr(i,j,k), 0.0)
             end if
          end do
       end do
@@ -430,7 +423,7 @@ subroutine da_transfer_xatowrf(grid)
 ! re-calculate T2, Q2, U10, V10, TH2 using updated fields
 
    do j=jts,jte
-      do i=its,ite 
+      do i=its,ite
          uu = 0.5*(grid%u_2(i,j,kts)+grid%u_2(i+1,j,kts) )
          vv = 0.5*(grid%v_2(i,j,kts)+grid%v_2(i,j+1,kts) )
          ps1 = grid%p(i,j,kts)   + grid%pb(i,j,kts)
@@ -535,7 +528,63 @@ subroutine da_transfer_xatowrf(grid)
 #endif
       end do
    end if
+#ifdef VAR4D
+   IF ( var4d ) THEN
 
+      ! We need to transfer LBC perturbation from model_grid to grid for output
+
+      grid%u_bxs = grid%u_bxs + model_grid%g_u_bxs
+      grid%u_bxe = grid%u_bxe + model_grid%g_u_bxe
+      grid%u_bys = grid%u_bys + model_grid%g_u_bys
+      grid%u_bye = grid%u_bye + model_grid%g_u_bye
+      grid%v_bxs = grid%v_bxs + model_grid%g_v_bxs
+      grid%v_bxe = grid%v_bxe + model_grid%g_v_bxe
+      grid%v_bys = grid%v_bys + model_grid%g_v_bys
+      grid%v_bye = grid%v_bye + model_grid%g_v_bye
+      grid%t_bxs = grid%t_bxs + model_grid%g_t_bxs
+      grid%t_bxe = grid%t_bxe + model_grid%g_t_bxe
+      grid%t_bys = grid%t_bys + model_grid%g_t_bys
+      grid%t_bye = grid%t_bye + model_grid%g_t_bye
+      grid%mu_bxs = grid%mu_bxs + model_grid%g_mu_bxs
+      grid%mu_bxe = grid%mu_bxe + model_grid%g_mu_bxe
+      grid%mu_bys = grid%mu_bys + model_grid%g_mu_bys
+      grid%mu_bye = grid%mu_bye + model_grid%g_mu_bye
+      grid%ph_bxs = grid%ph_bxs + model_grid%g_ph_bxs
+      grid%ph_bxe = grid%ph_bxe + model_grid%g_ph_bxe
+      grid%ph_bys = grid%ph_bys + model_grid%g_ph_bys
+      grid%ph_bye = grid%ph_bye + model_grid%g_ph_bye
+      grid%moist_bxs = grid%moist_bxs + model_grid%g_moist_bxs
+      grid%moist_bxe = grid%moist_bxe + model_grid%g_moist_bxe
+      grid%moist_bys = grid%moist_bys + model_grid%g_moist_bys
+      grid%moist_bye = grid%moist_bye + model_grid%g_moist_bye
+   
+      grid%u_btxs = grid%u_btxs + model_grid%g_u_btxs
+      grid%u_btxe = grid%u_btxe + model_grid%g_u_btxe
+      grid%u_btys = grid%u_btys + model_grid%g_u_btys
+      grid%u_btye = grid%u_btye + model_grid%g_u_btye
+      grid%v_btxs = grid%v_btxs + model_grid%g_v_btxs
+      grid%v_btxe = grid%v_btxe + model_grid%g_v_btxe
+      grid%v_btys = grid%v_btys + model_grid%g_v_btys
+      grid%v_btye = grid%v_btye + model_grid%g_v_btye
+      grid%t_btxs = grid%t_btxs + model_grid%g_t_btxs
+      grid%t_btxe = grid%t_btxe + model_grid%g_t_btxe
+      grid%t_btys = grid%t_btys + model_grid%g_t_btys
+      grid%t_btye = grid%t_btye + model_grid%g_t_btye
+      grid%mu_btxs = grid%mu_btxs + model_grid%g_mu_btxs
+      grid%mu_btxe = grid%mu_btxe + model_grid%g_mu_btxe
+      grid%mu_btys = grid%mu_btys + model_grid%g_mu_btys
+      grid%mu_btye = grid%mu_btye + model_grid%g_mu_btye
+      grid%ph_btxs = grid%ph_btxs + model_grid%g_ph_btxs
+      grid%ph_btxe = grid%ph_btxe + model_grid%g_ph_btxe
+      grid%ph_btys = grid%ph_btys + model_grid%g_ph_btys
+      grid%ph_btye = grid%ph_btye + model_grid%g_ph_btye
+      grid%moist_btxs = grid%moist_btxs + model_grid%g_moist_btxs
+      grid%moist_btxe = grid%moist_btxe + model_grid%g_moist_btxe
+      grid%moist_btys = grid%moist_btys + model_grid%g_moist_btys
+      grid%moist_btye = grid%moist_btye + model_grid%g_moist_btye
+
+   ENDIF
+#endif
    if (trace_use) call da_trace_exit("da_transfer_xatowrf")
 
 end subroutine da_transfer_xatowrf

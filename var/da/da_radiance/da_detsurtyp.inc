@@ -27,7 +27,7 @@ subroutine da_detsurtyp (snow,ice,landsea, vegtyp, soiltyp, is, ie, js, je, &
    integer, intent(out) :: isflg                ! Output variable 
    real,    intent(out) :: ob_vegtyp            ! Output variable
    real,    intent(out) :: ob_soiltyp            ! Output variable
-   real,    intent(out) :: seap, icep, lndp, snop ! percentage of surface type
+   real*8,  intent(out) :: seap, icep, lndp, snop ! percentage of surface type
    
    !     isflg    - surface flag
    !                0 sea
@@ -114,7 +114,7 @@ subroutine da_detsurtyp (snow,ice,landsea, vegtyp, soiltyp, is, ie, js, je, &
    else
       seap = 1.0 - lndp
    end if   
-   lndp = MAX(1.0-seap-icep-snop, 0.0)
+   lndp = MAX(1.0_8-seap-icep-snop, 0.0_8)
    
    ! fo2d   = dym*(dxm*fm2d(i,j  ) + dx*fm2d(i+1,j  )) &
    !         + dy *(dxm*fm2d(i,j+1) + dx*fm2d(i+1,j+1))

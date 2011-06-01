@@ -6,10 +6,11 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE calc_ts_locations( grid )
 
-   USE module_domain
-   USE module_configure
-   USE module_dm
+   USE module_domain, ONLY : domain, get_ijk_from_grid
+   USE module_configure, ONLY : model_config_rec, grid_config_rec_type, model_to_grid_config_rec
+   USE module_dm, ONLY : wrf_dm_min_real
    USE module_llxy
+   USE module_state_description
 
    IMPLICIT NONE
 
@@ -80,7 +81,7 @@ SUBROUTINE calc_ts_locations( grid )
    
       ! Lambert conformal
       ELSE IF (config_flags%map_proj == PROJ_LC) THEN
-      CALL map_set(PROJ_LC, ts_proj,                  &
+         CALL map_set(PROJ_LC, ts_proj,                  &
                       truelat1 = config_flags%truelat1,  &
                       truelat2 = config_flags%truelat2,  &
                       stdlon   = config_flags%stand_lon, &
@@ -101,6 +102,7 @@ SUBROUTINE calc_ts_locations( grid )
                       knownj   = 1.,                     &
                       dx       = config_flags%dx)
    
+#if (EM_CORE == 1)
       ! Cassini (global ARW)
       ELSE IF (config_flags%map_proj == PROJ_CASSINI) THEN
          CALL map_set(PROJ_CASSINI, ts_proj,                            &
@@ -108,13 +110,12 @@ SUBROUTINE calc_ts_locations( grid )
                       loninc   = grid%dx*360.0/(2.0*EARTH_RADIUS_M*PI), & 
                       lat1     = known_lat,                             &
                       lon1     = known_lon,                             &
-! We still need to get POLE_LAT and POLE_LON metadata variables before
-!   this will work for rotated poles.
-                      lat0     = 90.0,                                  &
-                      lon0     = 0.0,                                   &
+                      lat0     = config_flags%pole_lat,                 &
+                      lon0     = config_flags%pole_lon,                 &
                       knowni   = 1.,                                    &
                       knownj   = 1.,                                    &
                       stdlon   = config_flags%stand_lon)
+#endif
 
       ! Rotated latitude-longitude
       ELSE IF (config_flags%map_proj == PROJ_ROTLL) THEN
@@ -141,7 +142,13 @@ SUBROUTINE calc_ts_locations( grid )
          ntsloc_temp = 0
          DO k=1,grid%ntsloc
    
-            CALL latlon_to_ij(ts_proj, grid%lattsloc(k), grid%lontsloc(k), ts_rx, ts_ry)
+            IF (config_flags%map_proj == 0) THEN  ! For idealized cases, no map transformation needed
+               ts_rx = grid%lattsloc(k)           ! NB: (x,y) = (lat,lon) rather than (x,y) = (lon,lat)
+               ts_ry = grid%lontsloc(k)
+            ELSE
+               CALL latlon_to_ij(ts_proj, grid%lattsloc(k), grid%lontsloc(k), ts_rx, ts_ry)
+            END IF
+            
 
             ntsloc_temp = ntsloc_temp + 1
             grid%itsloc(ntsloc_temp) = NINT(ts_rx)
@@ -367,9 +374,9 @@ END SUBROUTINE calc_ts
 
 SUBROUTINE write_ts( grid )
 
-   USE module_domain
-   USE module_dm
-
+   USE module_domain, ONLY : domain
+   USE module_dm, ONLY : wrf_dm_min_reals
+   USE module_state_description
 
    IMPLICIT NONE
 

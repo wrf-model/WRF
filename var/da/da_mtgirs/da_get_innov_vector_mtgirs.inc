@@ -43,6 +43,17 @@ subroutine da_get_innov_vector_mtgirs (it, num_qcstat_conv, grid, ob, iv)
    model_t(:,:) = 0.0
    model_q(:,:) = 0.0
 
+   if ( it > 1 ) then
+      do n=iv%info(mtgirs)%n1, iv%info(mtgirs)%n2
+         do k=1, iv%info(mtgirs)%levels(n)
+            if (iv%mtgirs(n)%u(k)%qc == fails_error_max) iv%mtgirs(n)%u(k)%qc = 0
+            if (iv%mtgirs(n)%v(k)%qc == fails_error_max) iv%mtgirs(n)%v(k)%qc = 0
+            if (iv%mtgirs(n)%t(k)%qc == fails_error_max) iv%mtgirs(n)%t(k)%qc = 0
+            if (iv%mtgirs(n)%q(k)%qc == fails_error_max) iv%mtgirs(n)%q(k)%qc = 0
+         end do
+      end do
+   end if
+
    do n=iv%info(mtgirs)%n1, iv%info(mtgirs)%n2
       if (iv%info(mtgirs)%levels(n) < 1) cycle
 
@@ -149,7 +160,8 @@ subroutine da_get_innov_vector_mtgirs (it, num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !----------------------------------------------------------------------
 
-    call da_check_max_iv_mtgirs (iv, it, num_qcstat_conv)
+    if ( check_max_iv ) &
+       call da_check_max_iv_mtgirs (iv, it, num_qcstat_conv)
 
    deallocate (model_u)
    deallocate (model_v)

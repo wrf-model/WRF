@@ -94,7 +94,8 @@
 	        iv%instid(inst)%varbc(k)%param(1) = mode
 
 	    Deallocate ( hist, hist_tot )
-            write(unit=stdout,fmt='(A,A,I5,A,F5.2)') 'VARBC: Cold-starting ', &
+            if ( satinfo(inst)%iuse(k) == 1 ) &
+               write(unit=stdout,fmt='(A,A,I5,A,F5.2)') 'VARBC: Cold-starting ', &
                   trim(adjustl(iv%instid(inst)%rttovid_string)),iv%instid(inst)%ichan(k),&
 	          ' --> ',mode			       	
 	 end if

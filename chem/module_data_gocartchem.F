@@ -15,5 +15,9 @@ MODULE module_data_gocartchem
   INTEGER               :: NDMS=1, NSO2=2, NSO4=3, NMSA=4 
   REAL,    PARAMETER :: airmw    = 28.97
   REAL,    PARAMETER :: smw      = 32.00 
+  REAL,    PARAMETER :: nh4_mfac = 1.375   ! increase sulf (output ond AOD only)
+                                           ! to account for missing nh4
+  REAL,    PARAMETER :: oc_mfac = 1.8      ! increase oc (output ond AOD nly)
+                                           ! to account for Carbon to Organic mass
 
 END MODULE module_data_gocartchem

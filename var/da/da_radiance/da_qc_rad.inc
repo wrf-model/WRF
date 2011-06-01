@@ -1,4 +1,4 @@
-subroutine da_qc_rad (ob, iv)
+subroutine da_qc_rad (it, ob, iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for radiance data.
@@ -8,6 +8,7 @@ subroutine da_qc_rad (ob, iv)
 
    implicit none
 
+   integer      ,  intent(in)      :: it         ! outer loop count
    type (y_type),  intent(in)      :: ob         ! Observation structure.
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
@@ -42,6 +43,9 @@ subroutine da_qc_rad (ob, iv)
    if ( .not. allocated(spare_count) )      allocate (spare_count(num_procs))
 
    do i = 1, iv%num_inst
+
+      !if (iv%instid(i)%info%n2 < iv%instid(i)%info%n1) cycle
+
       nchan    = iv%instid(i)%nchan
 
       amsua = trim(rttov_inst_name(rtminit_sensor(i))) == 'amsua'
@@ -55,23 +59,23 @@ subroutine da_qc_rad (ob, iv)
 
       if (hirs) then
          ! 1.0 QC for HIRS
-         call da_qc_hirs(i,nchan,ob,iv)
+         call da_qc_hirs(it, i,nchan,ob,iv)
       else if (airs) then
-         call da_qc_airs(i,nchan,ob,iv)
+         call da_qc_airs(it, i,nchan,ob,iv)
       else if ( hsb ) then
-         ! call da_qc_hsb(i,nchan,ob,iv)
+         ! call da_qc_hsb(it, i,nchan,ob,iv)
          call da_warning(__FILE__,__LINE__,(/'QC Not implemented for HSB'/))
       else if (amsua) then
-         call da_qc_amsua(i,nchan,ob,iv)
+         call da_qc_amsua(it,i,nchan,ob,iv)
       else if ( amsub ) then
-         call da_qc_amsub(i,nchan,ob,iv)
+         call da_qc_amsub(it,i,nchan,ob,iv)
       else if (msu) then
-         ! call da_qc_msu(i,nchan, ob,iv)
+         ! call da_qc_msu(it, i,nchan, ob,iv)
          call da_warning(__FILE__,__LINE__,(/'QC Not implemented for MSU'/))
       else if (ssmis) then
-         call da_qc_ssmis(i,nchan,ob,iv)
+         call da_qc_ssmis(it, i,nchan,ob,iv)
       else if (mhs) then
-         call da_qc_mhs(i,nchan,ob,iv)
+         call da_qc_mhs(it,i,nchan,ob,iv)
       else
          write(unit=message(1),fmt='(A,A)') &
             "Unrecognized instrument",trim(rttov_inst_name(rtminit_sensor(i)))

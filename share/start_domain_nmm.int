@@ -1,6 +1,6 @@
       SUBROUTINE start_domain_nmm ( grid, allowed_to_read  &
 !
-#          include <dummy_args.inc>
+#          include <dummy_new_args.inc>
 !
                                  )
          USE module_domain

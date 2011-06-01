@@ -22,6 +22,7 @@
 !   satem    86          'SATEM'
 !   satob    88          'SATOB'
 !   airep    96,97       'AIREP'
+!   tamdar   101         'TAMDAR'
 !   gpspw    111         'GPSPW'
 !   gpsztd   114         'GPSZD'
 !   gpsref   116         'GPSRF'

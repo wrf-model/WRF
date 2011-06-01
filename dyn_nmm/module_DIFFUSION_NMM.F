@@ -13,6 +13,8 @@
 !
 !-----------------------------------------------------------------------
       USE MODULE_MODEL_CONSTANTS
+      USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
+      USE MODULE_STATE_DESCRIPTION
 !-----------------------------------------------------------------------
 !
       LOGICAL :: SECOND=.TRUE.
@@ -30,7 +32,9 @@
 #else
      &                ,T,Q,U,V,Q2,Z,W,SM,SICE                           &
 #endif
+     &                ,DEF3D                                            &
      &                ,IHE,IHW,IVE,IVW                                  &
+     &                ,CONFIG_FLAGS                                     &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -88,6 +92,10 @@
 !
 !-----------------------------------------------------------------------
 !
+!***  STRUCTURE THAT CONTAINS RUN-TIME CONFIGURATION (NAMELIST) DATA FOR DOMAIN
+!
+      TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
+!
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
@@ -104,6 +112,8 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: FIS,HBM2            &
      &                                             ,HDAC,HDACV          &
      &                                             ,SM,SICE
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: DEF3D          
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: W,Z
 !
@@ -138,7 +148,11 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
       SLOPHC=SLOPHT*SQRT(2.)*0.5*9.
+#else
+      SLOPHC=config_flags%slophc
+#endif
       RDY=1./DY
 !
       DO J=JTS-5,JTE+5
@@ -185,6 +199,12 @@
 !-----------------------------------------------------------------------
 !
       main_integration : DO K=KTS,KTE
+
+      DO J=JMS,JME
+      DO I=IMS,IME
+        DEF3D(I,J,K)=0.
+      ENDDO
+      ENDDO
 !
 !-----------------------------------------------------------------------
 !***  SLOPE SWITCHES FOR MOISTURE
@@ -263,19 +283,26 @@
      &         -V(I,J+1,K)+V(I,J-1,K)
           DEFSK=U(I,J+1,K)-U(I,J-1,K)                                   &
      &         +V(I+IHE(J),J,K)-V(I+IHW(J),J,K)
-          DEF1=W(I+IHW(J),J-1,K)-W(I,J,K)
-          DEF2=W(I+IHE(J),J-1,K)-W(I,J,K)
-          DEF3=W(I+IHW(J),J+1,K)-W(I,J,K)
-          DEF4=W(I+IHE(J),J+1,K)-W(I,J,K)
+          DEF1=(W(I+IHW(J),J-1,K)-W(I,J,K))*0.5
+          DEF2=(W(I+IHE(J),J-1,K)-W(I,J,K))*0.5
+          DEF3=(W(I+IHW(J),J+1,K)-W(I,J,K))*0.5
+          DEF4=(W(I+IHE(J),J+1,K)-W(I,J,K))*0.5
           Q2L=Q2(I,J,K)
           IF(Q2L<=EPSQ2)Q2L=0.
-          DEF_IJ=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2            & 
-     &          +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
+          IF ( CONFIG_FLAGS%BL_PBL_PHYSICS  == MYJPBLSCHEME) then
+                DEF_IJ=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2 &
+    &             +DEF3*DEF3+DEF4*DEF4+SCQ2*Q2L
+          else
+                DEF_IJ=DEFTK*DEFTK+DEFSK*DEFSK+DEF1*DEF1+DEF2*DEF2 &
+    &            +DEF3*DEF3+DEF4*DEF4
+          ENDIF
+
           DEF_IJ=SQRT(DEF_IJ+DEF_IJ)*HBM2(I,J)
           DEF_IJ=MAX(DEF_IJ,DEFC)
           DEF_IJ=MIN(DEF_IJ,DEFM)
           DEF_IJ=DEF_IJ*0.1
           DEF(I,J)=DEF_IJ
+          DEF3D(I,J,K)=DEF_IJ
         ENDDO
         ENDDO
 !

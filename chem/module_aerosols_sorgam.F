@@ -211,7 +211,6 @@ CONTAINS
                         (3.80*exp(17.27*(t_phy(i,k,j)-273.)/      &
                         (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j)))   )
                rh(k)=max(.1,0.01*rh(k))
-!               rh(k) = .10
             enddo
             do k=kts,kte
 !           if(timer.gt.2.)then
@@ -485,11 +484,11 @@ CONTAINS
     SUBROUTINE sum_pm_sorgam (                                         &
          alt, chem, h2oaj, h2oai,                                      &
          pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                   &
-         ids,ide, jds,jde, kds,kde,                                    &
+         dust_opt,ids,ide, jds,jde, kds,kde,                                    &
          ims,ime, jms,jme, kms,kme,                                    &
          its,ite, jts,jte, kts,kte                                     )
 
-   INTEGER,      INTENT(IN   )    ::                                   &
+   INTEGER,      INTENT(IN   )    ::  dust_opt,                        &
                                       ids,ide, jds,jde, kds,kde,       &
                                       ims,ime, jms,jme, kms,kme,       &
                                       its,ite, jts,jte, kts,kte
@@ -515,6 +514,14 @@ CONTAINS
       do k=kts,kte
       do i=its,ite
          ii=min(ide-1,i)
+!        if(dust_opt == 1 ) then
+! first add gocart dust and seasalt (aqmeii)
+!        pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,p_dust_1)+ &
+!                              .286*chem(ii,k,jj,p_dust_2) +            &
+!                              chem(ii,k,jj,p_seas_1) +                 &
+!                              .942*chem(ii,k,jj,p_seas_2)
+!        endif
+!
          do n=p_so4aj,p_p25i
             pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,n)
          enddo
@@ -535,16 +542,25 @@ CONTAINS
          do k=kts,kte
             do i=its,ite
                ii=min(ide-1,i)
+!              if(dust_opt == 1 ) then
+!              pm10(i,k,j) = pm2_5_dry(i,k,j)                       &
+!                          + ( chem(ii,k,jj,p_antha)               &
+!                          + .714*chem(ii,k,jj,p_dust_2)                 &
+!                          + chem(ii,k,jj,p_dust_3)                 &
+!                          + .058*chem(ii,k,jj,p_seas_2)                 &
+!                          + chem(ii,k,jj,p_seas_3) ) / alt(ii,k,jj)
+!              else
                pm10(i,k,j) = pm2_5_dry(i,k,j)                       &
                            + ( chem(ii,k,jj,p_antha)               &
                            + chem(ii,k,jj,p_soila)                 &
                            + chem(ii,k,jj,p_seas) ) / alt(ii,k,jj)
+!              endif
             enddo
          enddo
       enddo
     END SUBROUTINE sum_pm_sorgam
 ! ///////////////////////////////////////////////////
-    SUBROUTINE sorgam_depdriver (id,ktau,dtstep,                        &
+    SUBROUTINE sorgam_depdriver (id,config_flags,ktau,dtstep,           &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
                alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
@@ -554,6 +570,9 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
+
+   USE module_configure,only:  grid_config_rec_type
+   TYPE (grid_config_rec_type) , INTENT (IN) :: config_flags
    INTEGER,      INTENT(IN   )    ::                             &
                                       numaer,                    &
                                       ids,ide, jds,jde, kds,kde, &
@@ -801,6 +820,14 @@ CONTAINS
       cblk(1,VNH4AI   ) =   max(epsilc,chem(i,k,j,p_nh4ai)*convfac2)
       cblk(1,VNO3AJ   ) =   max(epsilc,chem(i,k,j,p_no3aj)*convfac2)
       cblk(1,VNO3AI   ) =   max(epsilc,chem(i,k,j,p_no3ai)*convfac2)
+      if (p_naai >= param_first_scalar) &
+         cblk(1,VNAAI ) =   max(epsilc,chem(i,k,j,p_naai)*convfac2)
+      if (p_naaj >= param_first_scalar) &
+         cblk(1,VNAAJ ) =   max(epsilc,chem(i,k,j,p_naaj)*convfac2)
+      if (p_clai >= param_first_scalar) &
+         cblk(1,VCLAI ) =   max(epsilc,chem(i,k,j,p_clai)*convfac2)
+      if (p_claj >= param_first_scalar) &
+         cblk(1,VCLAJ ) =   max(epsilc,chem(i,k,j,p_claj)*convfac2)
       cblk(1,VORGARO1J) =   max(epsilc,chem(i,k,j,p_orgaro1j)*convfac2)
       cblk(1,VORGARO1I) =   max(epsilc,chem(i,k,j,p_orgaro1i)*convfac2)
       cblk(1,VORGARO2J) =   max(epsilc,chem(i,k,j,p_orgaro2j)*convfac2)
@@ -869,24 +896,32 @@ CONTAINS
              DGNUC, DGACC, DGCOR,                             &
              KNNUC, KNACC,KNCOR    )                                   
 !       print *,'out modpar ',i,j
-!        CALL VDVG(  BLKSIZE, NSPCSDA, NUMCELLS,k,CBLK, &
-!             BLKTA, BLKDENS, AER_RES(I,j), USTAR, WSTAR,  AMU,   &   
-!             DGNUC, DGACC, DGCOR,                      &
-!             KNNUC, KNACC,KNCOR,                       &
-!             PDENSN, PDENSA, PDENSC,                   &
-!             VSED, VDEP )                                             
+        if (config_flags%aer_drydep_opt == 11) then
+        CALL VDVG(  BLKSIZE, NSPCSDA, NUMCELLS,k,CBLK, &
+             BLKTA, BLKDENS, AER_RES(I,j), USTAR, WSTAR,  AMU,   &   
+             DGNUC, DGACC, DGCOR,                      &
+             KNNUC, KNACC,KNCOR,                       &
+             PDENSN, PDENSA, PDENSC,                   &
+             VSED, VDEP )                                             
+        else
         CALL VDVG_2(  BLKSIZE, NSPCSDA, NUMCELLS,k,CBLK, &
              BLKTA, BLKDENS, AER_RES(I,j), USTAR, PBLH,&
              ZNTT, RMOLM, AMU, DGNUC, DGACC, DGCOR,XLM,&
              KNNUC, KNACC,KNCOR,                       &
              PDENSN, PDENSA, PDENSC,                   &
              VSED, VDEP )
+        endif
+
         VGSA(i, j, VSO4AJ   )  =  VDEP(1, VDMACC )
         VGSA(i, j, VSO4AI   )  =  VDEP(1, VDMNUC )
         VGSA(i, j, VNH4AJ   )  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VNH4AI   )  =  VGSA(i, j, VSO4AI )
         VGSA(i, j, VNO3AJ   )  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VNO3AI   )  =  VGSA(i, j, VSO4AI )
+        if (p_naai >= param_first_scalar) VGSA(i, j, VNAAI )  =  VGSA(i, j, VSO4AI )
+        if (p_naaj >= param_first_scalar) VGSA(i, j, VNAAJ )  =  VGSA(i, j, VSO4AJ )
+        if (p_clai >= param_first_scalar) VGSA(i, j, VCLAI )  =  VGSA(i, j, VSO4AI )
+        if (p_claj >= param_first_scalar) VGSA(i, j, VCLAJ )  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VORGARO1J)  =  VGSA(i, j, VSO4AJ )
         VGSA(i, j, VORGARO1I)  =  VGSA(i, j, VSO4AI )
         VGSA(i, j, VORGARO2J)  =  VGSA(i, j, VSO4AJ )
@@ -7084,6 +7119,7 @@ END SUBROUTINE VDVG
         RBcor=exp(-2.0*(STQ**0.5)) ! Rebound correction factor used in Slinn (1982)
         vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
         vdplim=min(vdplim,.02)
+        vdplim=max(vdplim,1e-35) !wig: add check since occasionally a lg particle causes overflow of rsurfq
         RSURFQ=RA(LCELL)+1./vdplim
 !       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
 !
@@ -8035,12 +8071,14 @@ END SUBROUTINE VDVG_2
     END SUBROUTINE sorgam_init_aer_ic_pnnl
 
 !------------------------------------------------------------------------
+
 SUBROUTINE sorgam_addemiss(                                             &
      id, dtstep, u10, v10, alt, dz8w, xland, chem,                      &
      ebu,                                   &
      slai,ust,smois,ivgtyp,isltyp,                                      &
      emis_ant,dust_emiss_active,                                        &
      seasalt_emiss_active,kemit,biom,num_soil_layers,emissopt,          &
+     dust_opt,ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                   &
      ids,ide, jds,jde, kds,kde,                                         &
      ims,ime, jms,jme, kms,kme,                                         &
      its,ite, jts,jte, kts,kte                                          )
@@ -8055,6 +8093,7 @@ SUBROUTINE sorgam_addemiss(                                             &
 
   INTEGER,      INTENT(IN   ) :: seasalt_emiss_active, kemit,emissopt,  &
                                  dust_emiss_active,num_soil_layers,id,  &
+                                 ktau,dust_opt,                         &
                                  biom,ids,ide, jds,jde, kds,kde,        &
                                  ims,ime, jms,jme, kms,kme,             &
                                  its,ite, jts,jte, kts,kte
@@ -8082,6 +8121,14 @@ SUBROUTINE sorgam_addemiss(                                             &
        INTENT(IN   ) ::                                                 &
        alt, dz8w
 
+! add for gocart dust
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
+         INTENT(IN    ) :: p8w,u_phy,v_phy,rho_phy 
+   REAL, INTENT(IN    ) :: dx, g
+   REAL, DIMENSION( ims:ime, jms:jme, 3 ),                              &
+         INTENT(IN    ) :: erod
+!
+
   REAL,  DIMENSION( ims:ime , jms:jme ),                                &
        INTENT(IN   ) ::                                                 &
        u10, v10, xland, slai, ust
@@ -8108,7 +8155,8 @@ SUBROUTINE sorgam_addemiss(                                             &
        chem(its:ite,kts:kemit,jts:jte,p_nu0) +                   &
        factor(its:ite,kts:kemit,jts:jte)*factnumn*(                                  &
        anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25i) +            &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci) ) +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci)  +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naai) ) +                      &
        orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgi) )
 
 ! Accumulation mode next...
@@ -8117,7 +8165,8 @@ SUBROUTINE sorgam_addemiss(                                             &
        chem(its:ite,kts:kemit,jts:jte,p_ac0) +                   &
        factor(its:ite,kts:kemit,jts:jte)*factnuma*(                                  &
        anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25j) +            &
-       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj) ) +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj)  +                      &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naaj) ) +                      &
        orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgj) )
 
 ! And now the coarse mode...
@@ -8148,6 +8197,12 @@ SUBROUTINE sorgam_addemiss(                                             &
   chem(its:ite,kts:kemit,jts:jte,p_eci) =                        &
        chem(its:ite,kts:kemit,jts:jte,p_eci) +                   &
        emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci)*factor(its:ite,kts:kemit,jts:jte)
+  chem(its:ite,kts:kemit,jts:jte,p_naaj) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_naaj) +                   &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naaj)*factor(its:ite,kts:kemit,jts:jte)
+  chem(its:ite,kts:kemit,jts:jte,p_naai) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_naai) +                   &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_naai)*factor(its:ite,kts:kemit,jts:jte)
 
   chem(its:ite,kts:kemit,jts:jte,p_orgpaj) =                     &
        chem(its:ite,kts:kemit,jts:jte,p_orgpaj) +                &
@@ -8288,7 +8343,7 @@ SUBROUTINE sorgam_addemiss(                                             &
 !          ims,ime, jms,jme, kms,kme,                             &
 !          its,ite, jts,jte, kts,kte                              )
   end if
-  if( dust_emiss_active == 1 ) then
+  if( dust_opt == 2 ) then
       call sorgam_dust_emiss(                                     &
            slai, ust, smois, ivgtyp, isltyp,                      &
            id, dtstep, u10, v10, alt, dz8w,                       &
@@ -8297,9 +8352,17 @@ SUBROUTINE sorgam_addemiss(                                             &
            ims,ime, jms,jme, kms,kme,                             &
            its,ite, jts,jte, kts,kte                              )
   end if
+  if( dust_opt == 3 ) then
+      call sorgam_dust_gocartemis(                                &
+           ktau,dtstep,num_soil_layers,alt,u_phy,                 &
+           v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,        &
+           ivgtyp,isltyp,xland,dx,g,                              &
+           ids,ide, jds,jde, kds,kde,                             &
+           ims,ime, jms,jme, kms,kme,                             &
+           its,ite, jts,jte, kts,kte                              )
+  end if
 
 END SUBROUTINE sorgam_addemiss
-
 
 !------------------------------------------------------------------------
 SUBROUTINE sorgam_seasalt_emiss(                                        &
@@ -8608,6 +8671,7 @@ END SUBROUTINE sorgam_seasalt_emiss
            f8=0.005
            f50=0.00
            f51=0.10
+           f51=0.066
            f52=0.00
            alphamask=(f8+f50)*1.0+(f51+f52)*0.5
          endif
@@ -8616,6 +8680,7 @@ END SUBROUTINE sorgam_seasalt_emiss
            f50=0.00
            f51=0.00
            f52=0.15
+           f52=0.10
            alphamask=(f8+f50)*1.0+(f51+f52)*0.5
          endif
          if (ivgtyp(i,j) .eq. 10) then
@@ -8727,18 +8792,22 @@ END SUBROUTINE sorgam_seasalt_emiss
 !   if (ivgtyp(i,j) .eq. 8) print*,'jdf',i,j,ustar1,ustart0,factaa,ftot
          chem(i,k,j,p_p25j)=chem(i,k,j,p_p25j) +   &
             factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot
+!jdf        factbb * (sz(3)+sz(4)+sz(5)) * fractot
          chem(i,k,j,p_soila)=chem(i,k,j,p_soila) +   &
             factbb * (sz(7)+sz(8)) * fractot
+!jdf        factbb * (sz(6)+sz(7)+sz(8)) * fractot
 ! mass1part is mass of a single particle in ug, density of dust ~2.5 g cm-3
          densdust=2.5
          dp_meanvol_tmp = 1.0e2*dginia*exp(1.5*l2sginia) ! accum 
          mass1part=0.523598*(dp_meanvol_tmp**3)*densdust*1.0e06
          chem(i,k,j,p_ac0)=chem(i,k,j,p_ac0) +   &
             factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot / mass1part
+!jdf        factbb * (sz(3)+sz(4)+sz(5)) * fractot / mass1part
          dp_meanvol_tmp = 1.0e2*dginic*exp(1.5*l2sginic) ! coarse
          mass1part=0.523598*(dp_meanvol_tmp**3)*densdust*1.0e06
          chem(i,k,j,p_corn)=chem(i,k,j,p_corn) +   &
             factbb * (sz(7)+sz(8)) * fractot / mass1part
+!jdf        factbb * (sz(6)+sz(7)+sz(8)) * fractot / mass1part
 
 1840    continue
 
@@ -8748,6 +8817,230 @@ END SUBROUTINE sorgam_seasalt_emiss
         return
 
    END subroutine sorgam_dust_emiss
+
+!====================================================================================
+!add another dust emission scheme following GOCART mechanism  --czhao  09/17/2009
+!====================================================================================
+  subroutine sorgam_dust_gocartemis (ktau,dt,num_soil_layers,alt,u_phy,    &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                   &
+         ivgtyp,isltyp,xland,dx,g,                                         &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+  USE module_data_gocart_dust
+  USE module_configure
+  USE module_state_description
+  USE module_model_constants, ONLY: mwdry
+  USE module_data_mosaic_asect
+  IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   ) :: ktau, num_soil_layers,           &
+                                  ids,ide, jds,jde, kds,kde,               &
+                                  ims,ime, jms,jme, kms,kme,               &
+                                  its,ite, jts,jte, kts,kte
+   INTEGER,DIMENSION( ims:ime , jms:jme )                  ,               &
+          INTENT(IN   ) ::                                                 &
+                                                     ivgtyp,               &
+                                                     isltyp
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
+         INTENT(INOUT ) ::                                   chem
+  REAL, DIMENSION( ims:ime, num_soil_layers, jms:jme ) ,      &
+      INTENT(INOUT) ::                               smois
+   REAL,  DIMENSION( ims:ime , jms:jme, 3 )                   ,               &
+          INTENT(IN   ) ::    erod
+   REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
+          INTENT(IN   ) ::                                                 &
+                                                     u10,                  &
+                                                     v10,                  &
+                                                     xland
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
+          INTENT(IN   ) ::                                                 &
+                                                        alt,               &
+                                                     dz8w,p8w,             &
+                                              u_phy,v_phy,rho_phy
+
+  REAL, INTENT(IN   ) :: dt,dx,g
+!
+! local variables
+!
+  integer :: nmx,i,j,k,ndt,imx,jmx,lmx
+  integer ilwi, start_month
+  real*8, DIMENSION (3) :: erodin
+  real*8, DIMENSION (5) :: bems
+  real*8  w10m,gwet,airden,airmas
+  real*8  cdustemis,jdustemis,cdustcon,jdustcon
+  real*8  cdustdens,jdustdens,mass1part,jdustdiam,cdustdiam,dp_meanvol_tmp
+  real*8  dxy
+  real*8  conver,converi
+  real dttt
+  real soilfacj,rhosoilj,rhosoilc
+  real totalemis,accfrac,corfrac,rscale1,rscale2
+  
+  accfrac=0.07              ! assign 7% to accumulation mode
+  corfrac=0.93              ! assign 93% to coarse mode
+  rscale1=1.00  ! to account for the dust larger than 10um in radius
+  rscale2=1.02  ! to account for the dust larger than 10um in radius
+  accfrac=accfrac*rscale1
+  corfrac=corfrac*rscale2
+
+  rhosoilj=2.5e3
+  rhosoilc=2.6e3
+  soilfacj=soilfac*rhosoilj/rhosoilc
+
+  conver=1.e-9
+  converi=1.e9
+!
+! number of dust bins
+  nmx=5
+  k=kts
+  do j=jts,jte
+  do i=its,ite
+!
+! don't do dust over water!!!
+     if(xland(i,j).lt.1.5)then
+
+     ilwi=1
+     start_month = 3   ! it doesn't matter, ch_dust is not a month dependent now, a constant
+     w10m=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
+     airmas=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g   ! kg 
+
+! we don't trust the u10,v10 values, if model layers are very thin near surface
+     if(dz8w(i,kts,j).lt.12.)w10m=sqrt(u_phy(i,kts,j)*u_phy(i,kts,j)+v_phy(i,kts,j)*v_phy(i,kts,j))
+    !erodin(1)=erod(i,j,1)/dx/dx   ! czhao erod shouldn't be scaled to the area, because it's a fraction
+    !erodin(2)=erod(i,j,2)/dx/dx
+    !erodin(3)=erod(i,j,3)/dx/dx
+     erodin(1)=erod(i,j,1)
+     erodin(2)=erod(i,j,2)
+     erodin(3)=erod(i,j,3)
+!
+!  volumetric soil moisture over porosity
+     gwet=smois(i,1,j)/porosity(isltyp(i,j))
+     ndt=ifix(dt)
+     airden=rho_phy(i,kts,j)
+     dxy=dx*dx
+
+    call sorgam_source_du( nmx, dt,i,j, &
+                     erodin, ilwi, dxy, w10m, gwet, airden, airmas, &
+                     bems,start_month,g)
+
+!bems: kg/timestep/cell
+    !sum up the dust emission from 0.1-10 um in radius 
+    ! unit change from kg/timestep/cell to ug/m2/s
+    totalemis=(sum(bems(1:5))/dt)*converi/dxy 
+     ! to account for the particles larger than 10 um radius
+     ! based on assumed size distribution
+    jdustemis = totalemis*accfrac   ! accumulation mode
+    cdustemis = totalemis*corfrac   ! coarse mode 
+
+         cdustcon = sum(bems(1:5))*corfrac/airmas  ! kg/kg-dryair
+         cdustcon = cdustcon * converi   ! ug/kg-dryair
+         jdustcon = sum(bems(1:5))*accfrac/airmas  ! kg/kg-dryair
+         jdustcon = jdustcon * converi   ! ug/kg-dryair
+
+         chem(i,k,j,p_p25)=chem(i,k,j,p_p25j) + jdustcon
+         chem(i,k,j,p_soila)=chem(i,k,j,p_soila) + cdustcon
+
+! czhao doing dust number emission following pm10
+! use soilfacj for accumulation mode because GOCART assign a less dense dust in
+! accumulation mode
+       chem(i,k,j,p_ac0) =  chem(i,k,j,p_ac0) + jdustcon * factnuma*soilfacj
+       chem(i,k,j,p_corn) =  chem(i,k,j,p_corn) + cdustcon * factnumc*soilfac
+
+     endif
+  enddo
+  enddo
+
+end subroutine sorgam_dust_gocartemis
+
+  SUBROUTINE sorgam_source_du( nmx, dt1,i,j, &
+                     erod, ilwi, dxy, w10m, gwet, airden, airmas, &
+                     bems,month,g0)
+
+! ****************************************************************************
+! *  Evaluate the source of each dust particles size classes  (kg/m3)        
+! *  by soil emission.
+! *  Input:
+! *         EROD      Fraction of erodible grid cell                (-)
+! *                   for 1: Sand, 2: Silt, 3: Clay
+! *         DUSTDEN   Dust density                                  (kg/m3)
+! *         DXY       Surface of each grid cell                     (m2)
+! *         AIRVOL    Volume occupy by each grid boxes              (m3)
+! *         NDT1      Time step                                     (s)
+! *         W10m      Velocity at the anemometer level (10meters)   (m/s)
+! *         u_tresh   Threshold velocity for particule uplifting    (m/s)
+! *         CH_dust   Constant to fudge the total emission of dust  (s2/m2)
+! *      
+! *  Output:
+! *         DSRC      Source of each dust type           (kg/timestep/cell) 
+! *
+! *  Working:
+! *         SRC       Potential source                   (kg/m/timestep/cell)
+! *
+! ****************************************************************************
+
+ USE module_data_gocart_dust
+
+  INTEGER, INTENT(IN)    :: nmx
+  REAL*8,    INTENT(IN)  :: erod(ndcls)
+  INTEGER, INTENT(IN)    :: ilwi,month
+
+  REAL*8,    INTENT(IN)    :: w10m, gwet
+  REAL*8,    INTENT(IN)    :: dxy
+  REAL*8,    INTENT(IN)    :: airden, airmas
+  REAL*8,    INTENT(OUT)   :: bems(nmx)
+
+  REAL*8    :: den(nmx), diam(nmx)
+  REAL*8    :: tsrc, u_ts0, cw, u_ts, dsrc, srce
+  REAL, intent(in)    :: g0
+  REAL    :: rhoa, g,dt1
+  INTEGER :: i, j, n, m, k
+
+  ! default is 1 ug s2 m-5 == 1.e-9 kg s2 m-5
+  !ch_dust(:,:)=0.8D-9   ! ch_dust is defined here instead of in the chemics_ini.F if with SORGAM  -czhao
+   ch_dust(:,:)=1.0D-9  ! default 
+  !ch_dust(:,:)=0.65D-9   ! ch_dust is tuned to match MODIS and AERONET measurements over Sahara 
+  !ch_dust(:,:)=1.0D-9*0.36  ! ch_dust is scaled to sorgam total dust emission 
+
+  ! executable statemenst
+  DO n = 1, nmx
+     ! Threshold velocity as a function of the dust density and the diameter from Bagnold (1941)
+     den(n) = den_dust(n)*1.0D-3
+     diam(n) = 2.0*reff_dust(n)*1.0D2
+     g = g0*1.0E2
+     ! Pointer to the 3 classes considered in the source data files
+     m = ipoint(n)
+     tsrc = 0.0
+              rhoa = airden*1.0D-3
+              u_ts0 = 0.13*1.0D-2*SQRT(den(n)*g*diam(n)/rhoa)* &
+                   SQRT(1.0+0.006/den(n)/g/(diam(n))**2.5)/ &
+                   SQRT(1.928*(1331.0*(diam(n))**1.56+0.38)**0.092-1.0)
+
+              ! Case of surface dry enough to erode
+             IF (gwet < 0.5) THEN  !  Pete's modified value
+!              IF (gwet < 0.2) THEN
+                 u_ts = MAX(0.0D+0,u_ts0*(1.2D+0+2.0D-1*LOG10(MAX(1.0D-3, gwet))))
+              ELSE
+                 ! Case of wet surface, no erosion
+                 u_ts = 100.0
+              END IF
+              srce = frac_s(n)*erod(m)*dxy  ! (m2)
+              IF (ilwi == 1 ) THEN
+                 dsrc = ch_dust(n,month)*srce*w10m**2 &
+                      * (w10m - u_ts)*dt1  ! (kg)
+              ELSE
+                 dsrc = 0.0
+              END IF
+              IF (dsrc < 0.0) dsrc = 0.0
+
+              ! Update dust mixing ratio at first model level.
+              !tc(n) = tc(n) + dsrc / airmas    !kg/kg-dryair -czhao
+              bems(n) = dsrc     ! kg/timestep/cell
+
+  ENDDO
+
+END SUBROUTINE sorgam_source_du
+
+!===========================================================================
 
 
 
@@ -8823,3 +9116,6 @@ END SUBROUTINE sorgam_seasalt_emiss
    end subroutine wetscav_sorgam_driver
 
 END Module module_aerosols_sorgam
+
+
+

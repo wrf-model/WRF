@@ -458,6 +458,19 @@ program gen_be_stage0_wrf
    write(gen_be_ounit)psfc_mean
    close(gen_be_ounit)
 
+   output_file='../grid_box_area'
+   inquire(exist=test_inverse,file=output_file)
+   if( .not.test_inverse )then		! misnomer use of test_inverse:
+      open(gen_be_ounit,file=output_file,form='unformatted')
+      write(gen_be_ounit)dim1,dim2	! e_we-s_we, e_sn-s_sn
+      mapfac_m=(ds/mapfac_m)**2		! cf. da_transfer_wrftoxb.inc
+      print'(a,": ",es7.1,"<grid_box_area~",es7.1,"<",es7.1)', &
+         __FILE__,minval(mapfac_m),sqrt(sum(mapfac_m**2)/(dim1*dim2)),maxval(mapfac_m)
+      write(gen_be_ounit)mapfac_m
+      close(gen_be_ounit)
+   endif
+
+   deallocate( mapfac_m )
    deallocate( psi )
    deallocate( chi )
    deallocate( temp )

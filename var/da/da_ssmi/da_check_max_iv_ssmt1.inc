@@ -2,6 +2,9 @@ subroutine da_check_max_iv_ssmt1(iv, it, num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -25,8 +28,8 @@ subroutine da_check_max_iv_ssmt1(iv, it, num_qcstat_conv)
       do k = 1, iv%info(ssmt1)%levels(n)
          call da_get_print_lvl(iv%ssmt1(n)%p(k),ipr)
 
-        if( iv%ssmt1(n)%t(k)%qc == fails_error_max .and. it > 1 )iv%ssmt1(n)%t(k)%qc =0
-        if( iv%ssmt1(n)%t(k)%qc >= obs_qc_pointer ) then
+        failed= .false.
+        if( iv%ssmt1(n)%t(k)%qc >= obs_qc_pointer ) then 
         call da_max_error_qc(it, iv%info(ssmt1), n, iv%ssmt1(n)%t(k), max_error_t, failed)
         if( iv%info(ssmt1)%proc_domain(k,n) ) then
          num_qcstat_conv(1,ssmt1,3,ipr) = num_qcstat_conv(1,ssmt1,3,ipr) + 1

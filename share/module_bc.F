@@ -263,7 +263,16 @@ CONTAINS
       config_flags%periodic_y
       end if
       
-
+      IF ( variable == 'd' ) then  !JDM
+         istag = 0
+         jstag = 0
+      ENDIF
+      IF ( variable == 'e' ) then  !JDM
+         istag = 0
+      ENDIF
+      IF ( variable == 'f' ) then  !JDM
+         jstag = 0
+      ENDIF
 
 !  periodic conditions.
 !  note, patch must cover full range in periodic dir, or else

@@ -24,6 +24,10 @@
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
 
+    TYPE( fieldlist ), POINTER :: p
+
+    INTEGER newswitch, itrace
+
     INTEGER       iname(9)
     INTEGER       iordering(3)
     INTEGER       icurrent_date(24)
@@ -40,16 +44,23 @@
     INTEGER       IBDY, NAMELEN
     LOGICAL wrf_dm_on_monitor
     EXTERNAL wrf_dm_on_monitor
-    Type(WRFU_Time) time, currtime
+    Type(WRFU_Time) time, currtime, currentTime
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     CHARACTER*80  fname
+    CHARACTER*80  dname, memord
     LOGICAL dryrun
     INTEGER idt
     INTEGER itmp
     INTEGER filestate, ierr3
     INTEGER :: ide_compare , jde_compare , kde_compare
-    CHARACTER (len=19) simulation_start_date
+    CHARACTER (len=19) simulation_start_date , first_date_input , first_date_nml
+    INTEGER first_date_start_year   , &
+            first_date_start_month  , &
+            first_date_start_day    , &
+            first_date_start_hour   , &
+            first_date_start_minute , &
+            first_date_start_second
     INTEGER simulation_start_year   , &
             simulation_start_month  , &
             simulation_start_day    , &
@@ -60,6 +71,23 @@
     REAL dx_compare , dy_compare , dum
     INTEGER :: num_land_cat_compare
     CHARACTER (LEN=256) :: MMINLU
+
+    !  Local variables for vertical interpolation.
+
+    REAL, ALLOCATABLE, DIMENSION(:      ) ::  f_vint_1d
+    REAL, ALLOCATABLE, DIMENSION(:,:,:  ) ::  f_vint_3d
+    REAL, ALLOCATABLE, DIMENSION(:,:,:,:) ::  f_vint_4d
+    integer :: ed1_c,em1_c,ep1_c
+    integer :: ed2_c,em2_c,ep2_c
+    integer :: n_ref_m,i_inter
+
+    !  Local variables for the alarms in the input restart file.
+
+    INTEGER max_wrf_alarms_compare, seconds
+    CHARACTER*80 alarmname, timestr
+    TYPE(WRFU_Time) :: curtime, ringTime
+    TYPE(WRFU_TimeInterval) :: interval, interval2
+    integer s, iring
 
 !<DESCRIPTION>
 !
@@ -72,6 +100,8 @@
 
     WRITE(wrf_err_message,*)'input_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
+
+    CALL modify_io_masks ( grid%id )   ! this adjusts the I/O masks according to the users run-time specs, if any
 
     ierr = 0
 
@@ -98,8 +128,49 @@
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
 ! simulation start time is a Singleton maintained by head_grid
-    IF ( ( switch .EQ.     model_input_only  ) .OR. &
+    IF ( ( switch .EQ.     input_only  ) .OR. &
          ( switch .EQ.          restart_only ) ) THEN
+
+      IF ( switch .EQ. restart_only .AND. .NOT. config_flags%override_restart_timers ) THEN
+        ! recover the restart alarms from input if avialable
+ 
+        CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
+        IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
+          WRITE(wrf_err_message,*)'MAX_WRF_ALARMS different in restart file (',max_wrf_alarms_compare,&
+                                  ') from in code (',MAX_WRF_ALARMS,').  Disregarding info in restart file.'
+        ELSE
+          curtime = domain_get_current_time( grid )
+          DO i = 1, MAX_WRF_ALARMS
+            IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
+              write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
+  
+              write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
+              IF ( ierr .EQ. 0 &
+                   .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
+                                                ! which keep time differently
+  
+                ! Get and set interval so that we are sure to have both the
+                ! interval and first ring time set correctly
+                CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
+                CALL WRFU_TimeIntervalSet(interval,S=seconds)
+                ringTime = curtime + interval
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
+
+              ENDIF
+
+              IF ( iring .EQ. 1 ) THEN
+                CALL WRFU_AlarmRingerOn( grid%alarms( i ) )
+              ELSE
+                CALL WRFU_AlarmRingerOff( grid%alarms( i ) )
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDIF
+
+      ENDIF
+
       CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
       CALL nl_get_reset_simulation_start ( 1, reset_simulation_start )
       IF ( ( ierr .EQ. 0 ) .AND. ( .NOT. reset_simulation_start ) ) THEN
@@ -122,8 +193,8 @@
         CALL nl_set_simulation_start_hour   ( 1 , simulation_start_hour   )
         CALL nl_set_simulation_start_minute ( 1 , simulation_start_minute )
         CALL nl_set_simulation_start_second ( 1 , simulation_start_second )
-        IF ( switch .EQ. model_input_only  ) THEN
-          WRITE(wrf_err_message,*)fid,' input_wrf, model_input_only:  SIMULATION_START_DATE = ', &
+        IF ( switch .EQ. input_only  ) THEN
+          WRITE(wrf_err_message,*)fid,' input_wrf, input_only:  SIMULATION_START_DATE = ', &
                                   simulation_start_date(1:19)
           CALL wrf_debug ( 300 , TRIM(wrf_err_message ) )
         ELSE IF ( switch .EQ. restart_only  ) THEN
@@ -159,13 +230,29 @@
       ! Note that it is NOT necessary to reset grid%julian here.
       WRITE(wrf_err_message,*) 'input_wrf:  set xtime to ',grid%xtime
       CALL wrf_debug ( 100, TRIM(wrf_err_message) )
+    ELSE IF ( switch .EQ. auxinput1_only ) then
+      CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , first_date_input , ierr )
+      WRITE(wrf_err_message,*)'metgrid input_wrf.F first_date_input = ',first_date_input
+      CALL wrf_message(wrf_err_message)
+      CALL nl_get_start_year   ( 1 , first_date_start_year   )
+      CALL nl_get_start_month  ( 1 , first_date_start_month  )
+      CALL nl_get_start_day    ( 1 , first_date_start_day    )
+      CALL nl_get_start_hour   ( 1 , first_date_start_hour   )
+      CALL nl_get_start_minute ( 1 , first_date_start_minute )
+      CALL nl_get_start_second ( 1 , first_date_start_second )
+      WRITE ( first_date_nml, fmt = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+             first_date_start_year,   first_date_start_month,                     &
+             first_date_start_day,    first_date_start_hour,                      &
+             first_date_start_minute, first_date_start_second
+      WRITE (wrf_err_message,*) 'metgrid input_wrf.F first_date_nml = ',first_date_nml
+      CALL wrf_message( TRIM(wrf_err_message ) )
     ENDIF
 
     !  Test to make sure that the input data is the right size.  Do this for input from real/ideal into
     !  WRF, and from the standard initialization into real.
 
-    IF ( ( switch .EQ.     model_input_only  ) .OR. &
-         ( switch .EQ. aux_model_input1_only ) ) THEN
+    IF ( ( switch .EQ.     input_only  ) .OR. &
+         ( switch .EQ. auxinput1_only ) ) THEN
        ierr = 0
        CALL wrf_get_dom_ti_integer ( fid , 'WEST-EAST_GRID_DIMENSION' ,    ide_compare , 1 , icnt , ierr3 )
        ierr = max( ierr, ierr3 )
@@ -186,8 +273,11 @@
              WRITE(wrf_err_message,*)'input_wrf: DX and DY from input file expected to be wrong'
              CALL wrf_debug ( 1 , wrf_err_message )
           ELSE
-             print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
-             CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
+             WRITE(wrf_err_message,*)'dx and dy from file     ',dx_compare,dy_compare
+             CALL wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,*)'dx and dy from namelist ',config_flags%dx,config_flags%dy
+             CALL wrf_message(wrf_err_message)
+             CALL wrf_error_fatal( 'DX and DY do not match comparing namelist to the input file' )
           END IF
        END IF
 #endif
@@ -328,10 +418,18 @@
     endif
 
     ! Test here to check that config_flags%num_metgrid_soil_levels in namelist
-    ! is equal to what is in the global attributes of the met_em files
+    ! is equal to what is in the global attributes of the met_em files.  Note that
+    ! if this is not the first time period, we don't really care about soil data.
 
-    IF ( switch .EQ. aux_model_input1_only ) THEN
+    IF ( ( switch .EQ. auxinput1_only ) .AND. &
+         ( first_date_nml .EQ. first_date_input ) )  THEN
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
+
+#if (EM_CORE == 1)
+       IF ( itmp .EQ. 1 ) THEN
+             call wrf_error_fatal("NUM_METGRID_SOIL_LEVELS must be greater than 1")
+       END IF
+#endif
    
        IF ( ierr .EQ. 0 ) THEN
           WRITE(wrf_err_message,*)'input_wrf: global attribute NUM_METGRID_SOIL_LEVELS returns ', itmp
@@ -340,9 +438,53 @@
              call wrf_message("----------------- ERROR -------------------")
              WRITE(wrf_err_message,'("namelist    : num_metgrid_soil_levels = ",I10)') config_flags%num_metgrid_soil_levels
              call wrf_message(wrf_err_message)
+#if (EM_CORE == 1)
              WRITE(wrf_err_message,'("input files : NUM_METGRID_SOIL_LEVELS = ",I10, " (from met_em files).")') itmp
+#else
+             WRITE(wrf_err_message,'("input files : NUM_METGRID_SOIL_LEVELS = ",I10, " (from met_nmm files).")') itmp
+#endif
              call wrf_message(wrf_err_message)
              call wrf_error_fatal("Mismatch between namelist and global attribute NUM_METGRID_SOIL_LEVELS")
+          END IF
+       END IF
+    END IF
+
+#if 0
+#ifdef WRF_CHEM
+    !  Dust erosion static data.
+
+    CALL wrf_get_dom_ti_integer ( fid, 'EROSION_DIM', itmp, 1, icnt, ierr )
+
+    IF ( ierr .EQ. 0 ) THEN
+       WRITE(wrf_err_message,*)'input_wrf: global attribute EROSION_DIM returns ', itmp
+       CALL wrf_debug ( 300 , wrf_err_message )
+       IF ( config_flags%erosion_dim /= itmp ) THEN
+          call wrf_message("----------------- ERROR -------------------")
+          WRITE(wrf_err_message,'("namelist    : erosion_dim = ",I10)') config_flags%erosion_dim
+          call wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,'("input files : EROSION_DIM = ",I10, " (from met_em files).")') itmp
+          call wrf_message(wrf_err_message)
+          call wrf_error_fatal("Mismatch between namelist and global attribute EROSION_DIM")
+       END IF
+    END IF
+#endif
+#endif
+
+    ! Test here to check that config_flags%sf_surface_physics in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( switch .EQ. input_only  ) THEN
+       CALL wrf_get_dom_ti_integer ( fid, 'SF_SURFACE_PHYSICS', itmp, 1, icnt, ierr )
+       IF ( ierr .EQ. 0 ) THEN
+          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_SURFACE_PHYSICS returns ', itmp
+          CALL wrf_debug ( 300 , wrf_err_message )
+          IF ( config_flags%sf_surface_physics /= itmp ) THEN
+             call wrf_message("----------------- ERROR -------------------")
+             WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
+             call wrf_message(wrf_err_message)
+             call wrf_error_fatal("Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
           END IF
        END IF
     END IF
@@ -359,6 +501,7 @@
          ENDIF
     ENDIF
     CALL nl_set_iswater ( grid%id , config_flags%iswater )
+    grid%iswater = config_flags%iswater
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISLAKE' ,  config_flags%islake , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISLAKE returns ',config_flags%islake
@@ -367,6 +510,7 @@
          config_flags%islake = -1
     ENDIF
     CALL nl_set_islake ( grid%id , config_flags%islake )
+    grid%islake = config_flags%islake
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISICE returns ',config_flags%isice
@@ -379,6 +523,7 @@
          ENDIF
     ENDIF
     CALL nl_set_isice ( grid%id , config_flags%isice )
+    grid%isice = config_flags%isice
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISURBAN returns ',config_flags%isurban
@@ -391,6 +536,7 @@
          ENDIF
     ENDIF
     CALL nl_set_isurban ( grid%id , config_flags%isurban )
+    grid%isurban = config_flags%isurban
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISOILWATER returns ',config_flags%isoilwater
@@ -399,6 +545,7 @@
          config_flags%isoilwater = 14
     ENDIF
     CALL nl_set_isoilwater ( grid%id , config_flags%isoilwater )
+    grid%isoilwater = config_flags%isoilwater
 
 #ifdef MOVE_NESTS
 ! Added these fields for restarting of moving nests, JM
@@ -423,8 +570,8 @@
 #if (EM_CORE == 1)
 
 !KLUDGE - is there a more elegant way to determine "old si" input
-    IF      ( ( switch .EQ.     model_input_only  ) .OR. &
-            ( ( switch .EQ. aux_model_input1_only ) .AND. &
+    IF      ( ( switch .EQ.     input_only  ) .OR. &
+            ( ( switch .EQ. auxinput1_only ) .AND. &
               ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) ) THEN
 
        !  Test to make sure that the input data is the right size.
@@ -437,7 +584,7 @@
           CALL wrf_error_fatal( wrf_err_message )
        ENDIF
 
-    ELSE IF ( switch .EQ. aux_model_input1_only ) THEN
+    ELSE IF ( switch .EQ. auxinput1_only ) THEN
 
        !  Test to make sure that the input data is the right size.
 
@@ -455,7 +602,7 @@
 
 #if (NMM_CORE == 1)
 
-    IF      ( ( switch .EQ. aux_model_input1_only  ) .AND. &
+    IF      ( ( switch .EQ. auxinput1_only  ) .AND. &
               ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) THEN
 
        CALL wrf_get_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMSNSION' ,   kde_compare , 1 , icnt , ierr3 )
@@ -470,7 +617,7 @@
           CALL wrf_debug( 100, wrf_err_message )
        ENDIF
 
-       ELSEIF ( switch .EQ. aux_model_input1_only ) THEN          ! assume just WPS in this branch
+       ELSEIF ( switch .EQ. auxinput1_only ) THEN          ! assume just WPS in this branch
          IF ( ( ide-1                           .NE. ide_compare ) .OR. &
             ( config_flags%num_metgrid_levels .NE. kde_compare ) .OR. &
             ( jde-1                             .NE. jde_compare ) .AND. ierr3 .EQ. 0 ) THEN
@@ -522,21 +669,21 @@
 ! JM 20040511
 !
       SELECT CASE ( switch )
-        CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
-               aux_model_input3_only, aux_model_input4_only, aux_model_input5_only,  &
-               aux_model_input6_only, aux_model_input7_only, aux_model_input8_only,  &
-               aux_model_input9_only, aux_model_input10_only )
+        CASE ( input_only, auxinput1_only, auxinput2_only,       &
+               auxinput3_only, auxinput4_only, auxinput5_only,  &
+               auxinput6_only, auxinput7_only, auxinput8_only,  &
+               auxinput9_only, auxinput10_only )
 #ifdef WRF_CHEM
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
-              ((switch.eq.aux_model_input5_only) .or. (switch.eq.aux_model_input6_only) .or. &
-               (switch.eq.aux_model_input7_only) .or. (switch.eq.aux_model_input8_only)) ) then
+              ((switch.eq.auxinput5_only) .or. (switch.eq.auxinput6_only) .or. &
+               (switch.eq.auxinput7_only) .or. (switch.eq.auxinput8_only)) ) then
                CALL wrf_message( "**WARNING** Time in input file not being checked **WARNING**" )
            ELSE
 #endif
             CALL wrf_atotime( current_date(1:19), time )
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
-#if (DA_CORE != 1)
+#if (DA_CORE != 1) 
 ! Don't perform the check for WRFVAR, as we're not passing the right dates
 ! around
             CALL domain_clockprint(150, grid, &
@@ -565,73 +712,580 @@
 ! iterate forward to the correct interval in the input LBC file
 !
     IF ( switch .EQ. boundary_only ) THEN
+        CALL domain_clock_get( grid, current_time=currentTime )
         CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
         CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
         CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
         CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
+#if (DA_CORE != 1)
+        IF( currentTime .GE. grid%next_bdy_time ) THEN
+          IF ( wrf_dm_on_monitor() ) write(0,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+          RETURN
+        ENDIF
+#endif
     ENDIF
 
-#if 1
-    IF      ( switch .EQ. model_input_only ) THEN
-      CALL wrf_inputin( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. history_only ) THEN
-      CALL wrf_histin( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input1_only ) THEN
-      CALL wrf_auxinput1in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input2_only ) THEN
-      CALL wrf_auxinput2in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input3_only ) THEN
-      CALL wrf_auxinput3in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input4_only ) THEN
-      CALL wrf_auxinput4in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input5_only ) THEN
-      CALL wrf_auxinput5in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input6_only ) THEN
-      CALL wrf_auxinput6in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input7_only ) THEN
-      CALL wrf_auxinput7in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input8_only ) THEN
-      CALL wrf_auxinput8in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
-      CALL wrf_auxinput9in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
-      CALL wrf_auxinput10in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
-      CALL wrf_auxinput11in( fid , grid , config_flags , switch , ierr )
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+    !  Vertical interpolation space is required if specified by user.
 
-
-    ELSE IF ( switch .EQ. aux_hist1_only ) THEN
-      CALL wrf_auxhist1in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist2_only ) THEN
-      CALL wrf_auxhist2in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist3_only ) THEN
-      CALL wrf_auxhist3in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist4_only ) THEN
-      CALL wrf_auxhist4in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist5_only ) THEN
-      CALL wrf_auxhist5in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist6_only ) THEN
-      CALL wrf_auxhist6in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist7_only ) THEN
-      CALL wrf_auxhist7in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist8_only ) THEN
-      CALL wrf_auxhist8in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist9_only ) THEN
-      CALL wrf_auxhist9in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist10_only ) THEN
-      CALL wrf_auxhist10in( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. aux_hist11_only ) THEN
-      CALL wrf_auxhist11in( fid , grid , config_flags , switch , ierr )
-
-    ELSE IF ( switch .EQ. restart_only ) THEN
-      CALL wrf_restartin( fid , grid , config_flags , switch , ierr )
-    ELSE IF ( switch .EQ. boundary_only ) THEN
-      CALL wrf_bdyin( fid , grid , config_flags , switch , ierr )
-    ENDIF
-
-    CALL wrf_tsin( grid , ierr )
+    n_ref_m = config_flags%vert_refine_fact
 #else
-    CALL wrf_message ( "ALL I/O DISABLED IN share/module_io_wrf.F")
+    !  Default value indicating no vertical interpolation required.
+
+    n_ref_m = 0
+#endif
+
+    IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
+         (first_history .LE. switch .AND. switch .LE. last_history) .OR. &
+         switch .EQ. restart_only    ) THEN
+      newswitch = switch
+      p => grid%head_statevars%next
+      DO WHILE ( ASSOCIATED( p ) ) 
+        IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN   ! no I/O for xposed variables
+          IF ( p%Ndim .EQ. 0 ) THEN
+            IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+                IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                dname = p%DataName
+                IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                  IF      ( p%Type .EQ. 'r' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%rfield_0d             , & ! Field
+                                    WRF_FLOAT               , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    '0'                     , & ! MemoryOrder
+                                    ''                      , & ! Stagger
+                     __FILE__ // ' reading 0d real ' // TRIM(p%VarName)     , & ! Debug message
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'd' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%dfield_0d             , & ! Field
+                                    WRF_DOUBLE              , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    '0'                     , & ! MemoryOrder
+                                    ''                      , & ! Stagger
+                     __FILE__ // ' reading 0d double ' // TRIM(p%VarName)     , & ! Debug message
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'i' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%ifield_0d             , & ! Field
+                                    WRF_INTEGER             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    '0'                     , & ! MemoryOrder
+                                    ''                      , & ! Stagger
+                     __FILE__ // ' reading 0d integer ' // TRIM(p%VarName)     , & ! Debug message
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'l' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%lfield_0d             , & ! Field
+                                    WRF_LOGICAL             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    '0'                     , & ! MemoryOrder
+                                    ''                      , & ! Stagger
+                     __FILE__ // ' reading 0d logical ' // TRIM(p%VarName)     , & ! Debug message
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     1 , 1 , 1 , 1 , 1 , 1 ,  &
+                     ierr )
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 1 ) THEN
+            IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) ) THEN
+                IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                  dname = p%DataName
+                  IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                  memord = p%MemoryOrder
+
+                  i_inter = 0
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+                  !  Vertical interpolation space is required if specified by user.
+
+                  if( TRIM(p%dimname1).EQ.'bottom_top'.OR.TRIM(p%dimname1).EQ.'bottom_top_stag') i_inter = 1 
+#endif
+                  
+                  IF      ( p%Type .EQ. 'r' ) THEN
+                    IF( (i_inter.eq.1.and.n_ref_m.ge.2).and.(switch.eq.history_only) ) THEN
+                       em1_c = (p%em1 - 1)/n_ref_m +1
+                       ed1_c = em1_c
+                       ep1_c = em1_c
+                       if (TRIM(p%dimname1).EQ.'bottom_top') then
+                       ed1_c = em1_c-1
+                       ep1_c = em1_c-1
+                       endif
+                       allocate (f_vint_1d(em1_c))
+
+                       CALL wrf_ext_read_field (  &
+                                       fid                     , & ! DataHandle
+                                       current_date(1:19)      , & ! DateStr
+                                       TRIM(dname)             , & ! Data Name
+                                       f_vint_1d                , & ! Field
+                                       WRF_FLOAT               , & ! FieldType
+                                       grid%communicator       , & ! Comm
+                                       grid%iocommunicator     , & ! Comm
+                                       grid%domdesc            , & ! Comm
+                                       grid%bdy_mask           , & ! bdy_mask
+                                       TRIM(memord)            , & ! MemoryOrder
+                                       p%Stagger               , & ! Stagger
+                        __FILE__ // ' reading 1d real ' // TRIM(p%VarName)     , & ! Debug message
+                        p%sd1 , ed1_c , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                        p%sm1 , em1_c , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                        p%sp1 , ep1_c , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                        ierr )
+
+                        do k=1,ed1_c
+                        p%rfield_1d(k) = f_vint_1d(k)
+                        enddo
+                        deallocate (f_vint_1d)
+
+                     ELSE
+                       CALL wrf_ext_read_field (  &
+                                       fid                     , & ! DataHandle
+                                       current_date(1:19)      , & ! DateStr
+                                       TRIM(dname)             , & ! Data Name
+                                       p%rfield_1d             , & ! Field
+                                       WRF_FLOAT               , & ! FieldType
+                                       grid%communicator       , & ! Comm
+                                       grid%iocommunicator     , & ! Comm
+                                       grid%domdesc            , & ! Comm
+                                       grid%bdy_mask           , & ! bdy_mask
+                                       TRIM(memord)            , & ! MemoryOrder
+                                       p%Stagger               , & ! Stagger
+                        __FILE__ // ' reading 1d real ' // TRIM(p%VarName)     , & ! Debug message
+                        p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                        p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                        p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                        ierr )
+                     END IF
+                  ELSE IF ( p%Type .EQ. 'd' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%dfield_1d             , & ! Field
+                                    WRF_DOUBLE              , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 1d double ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'i' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%ifield_1d             , & ! Field
+                                    WRF_INTEGER             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 1d integer ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'l' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%lfield_1d             , & ! Field
+                                    WRF_LOGICAL             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 1d logical ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 2 ) THEN
+            IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
+                IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                  dname = p%DataName
+                  IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                  memord = p%MemoryOrder
+                  IF      ( p%Type .EQ. 'r' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%rfield_2d             , & ! Field
+                                    WRF_FLOAT               , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 2d real ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'd' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%dfield_2d             , & ! Field
+                                    WRF_DOUBLE              , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 2d double ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'i' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%ifield_2d             , & ! Field
+                                    WRF_INTEGER             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 2d integer ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'l' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%lfield_2d             , & ! Field
+                                    WRF_LOGICAL             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 2d logical ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 3 ) THEN
+            IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
+              IF ( in_use_for_config(grid%id,TRIM(p%VarName)) .AND.  &
+                   ( .NOT. p%subgrid_x .OR. (p%subgrid_x .AND. grid%sr_x .GT. 0) ) .AND. &
+                   ( .NOT. p%subgrid_y .OR. (p%subgrid_y .AND. grid%sr_y .GT. 0) )       &
+                 ) THEN
+                IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
+                  dname = p%DataName
+                  IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                  memord = p%MemoryOrder
+
+                  i_inter = 0
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+                  !  Vertical interpolation space is required if specified by user.
+
+                  if( TRIM(p%dimname2).EQ.'bottom_top'.OR.TRIM(p%dimname2).EQ.'bottom_top_stag') i_inter = 1
+#endif
+
+                  IF      ( p%Type .EQ. 'r' ) THEN
+                    IF( (i_inter.eq.1.and.n_ref_m.ge.2).and.(switch.eq.history_only) ) then
+                       em2_c = (p%em2 - 1)/n_ref_m +1
+                       ed2_c = em2_c
+                       ep2_c = em2_c
+                       if (TRIM(p%dimname2).EQ.'bottom_top') then
+                       ed2_c = em2_c-1
+                       ep2_c = em2_c-1
+                       endif
+                       allocate (f_vint_3d(p%sm1:p%em1,em2_c,p%sm3:p%em3))
+                       CALL wrf_ext_read_field (  &
+                                       fid                     , & ! DataHandle
+                                       current_date(1:19)      , & ! DateStr
+                                       TRIM(dname)             , & ! Data Name
+                                       f_vint_3d               , & ! Field
+                                       WRF_FLOAT               , & ! FieldType
+                                       grid%communicator       , & ! Comm
+                                       grid%iocommunicator     , & ! Comm
+                                       grid%domdesc            , & ! Comm
+                                       grid%bdy_mask           , & ! bdy_mask
+                                       TRIM(memord)            , & ! MemoryOrder
+                                       TRIM(p%Stagger)         , & ! Stagger
+                        __FILE__ // ' reading 3d real ' // TRIM(p%VarName)     , & ! Debug message
+                        p%sd1 , p%ed1 , p%sd2 , ed2_c , p%sd3 , p%ed3 ,  &
+                        p%sm1 , p%em1 , p%sm2 , em2_c , p%sm3 , p%em3 ,  &
+                        p%sp1 , p%ep1 , p%sp2 , ep2_c , p%sp3 , p%ep3 ,  &
+                        ierr )
+
+                        do j = p%sm3,p%em3
+                        do k = 1,ed2_c
+                        do i = p%sm1,p%em1
+                        p%rfield_3d(i,k,j) = f_vint_3d(i,k,j)
+                        enddo
+                        enddo
+                        enddo
+                        deallocate (f_vint_3d)
+                    ELSE
+                       CALL wrf_ext_read_field (  &
+                                       fid                     , & ! DataHandle
+                                       current_date(1:19)      , & ! DateStr
+                                       TRIM(dname)             , & ! Data Name
+                                       p%rfield_3d             , & ! Field
+                                       WRF_FLOAT               , & ! FieldType
+                                       grid%communicator       , & ! Comm
+                                       grid%iocommunicator     , & ! Comm
+                                       grid%domdesc            , & ! Comm
+                                       grid%bdy_mask           , & ! bdy_mask
+                                       TRIM(memord)            , & ! MemoryOrder
+                                       TRIM(p%Stagger)         , & ! Stagger
+                        __FILE__ // ' reading 3d real ' // TRIM(p%VarName)     , & ! Debug message
+                        p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                        p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                        p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                        ierr )
+                    ENDIF
+                  ELSE IF ( p%Type .EQ. 'd' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%dfield_3d             , & ! Field
+                                    WRF_DOUBLE              , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 3d double ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+                  ELSE IF ( p%Type .EQ. 'i' ) THEN
+                    CALL wrf_ext_read_field (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%ifield_3d             , & ! Field
+                                    WRF_INTEGER             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                     __FILE__ // ' reading 3d integer ' // TRIM(p%VarName)     , & ! Debug message
+                     p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                     p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                     p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                     ierr )
+! NOTE no io on logical arrays greater than 2d
+                  ENDIF
+                ENDIF
+              ENDIF
+            ENDIF
+          ELSE IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
+! Use a different read routine, wrf_ext_read_field_arr, and pass in the
+! tracer indeces so that p%rfield_4d can be passsed in without arguments,
+! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
+! JM 20091208
+            DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+              IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams_table(grid%id,itrace)%stream,newswitch)) THEN
+                dname = p%dname_table( grid%id, itrace )
+                IF (p%Ntl.GT.0.AND.switch.NE.restart_only)dname=dname(1:len(TRIM(dname))-2)
+                memord = p%MemoryOrder
+
+                i_inter = 0
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+                !  Vertical interpolation space is required if specified by user.
+
+                if( TRIM(p%dimname2).EQ.'bottom_top'.OR.TRIM(p%dimname2).EQ.'bottom_top_stag') i_inter = 1
+#endif
+
+                IF      ( p%Type .EQ. 'r' ) THEN
+                    IF( (i_inter.eq.1.and.n_ref_m.ge.2).and.(switch.eq.history_only) ) then
+                       em2_c = (p%em2 - 1)/n_ref_m +1
+                       ed2_c = em2_c
+                       ep2_c = em2_c
+                       if (TRIM(p%dimname2).EQ.'bottom_top') then
+                       ed2_c = em2_c-1
+                       ep2_c = em2_c-1
+                       endif
+                       allocate (f_vint_4d(p%sm1:p%em1,em2_c,p%sm3:p%em3,p%num_table(grid%id)))
+
+                       CALL wrf_ext_read_field_arr (  &
+                                         fid                     , & ! DataHandle
+                                         current_date(1:19)      , & ! DateStr
+                                         TRIM(dname)             , & ! Data Name
+                                         f_vint_4d               , & ! Field
+                                         itrace, 1, 1, 1         , & ! see comment above
+                                         1, 1, 1                 , & ! see comment above
+                                         RWORDSIZE               , &
+                                         WRF_FLOAT               , & ! FieldType
+                                         grid%communicator       , & ! Comm
+                                         grid%iocommunicator     , & ! Comm
+                                         grid%domdesc            , & ! Comm
+                                         grid%bdy_mask           , & ! bdy_mask
+                                         TRIM(memord)            , & ! MemoryOrder
+                                         TRIM(p%Stagger)         , & ! Stagger
+                        __FILE__ // ' reading 4d real ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                        p%sd1 , p%ed1 , p%sd2 , ed2_c , p%sd3 , p%ed3 ,  &
+                        p%sm1 , p%em1 , p%sm2 , em2_c , p%sm3 , p%em3 ,  &
+                        p%sp1 , p%ep1 , p%sp2 , ep2_c , p%sp3 , p%ep3 ,  &
+                        ierr )
+                        do j = p%sm3,p%em3
+                        do k = 1,ed2_c
+                        do i = p%sm1,p%em1
+                        p%rfield_4d(i,k,j,itrace) = f_vint_4d(i,k,j,itrace)
+                        enddo
+                        enddo
+                        enddo
+                        deallocate (f_vint_4d)
+                   ELSE
+                        CALL wrf_ext_read_field_arr (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%rfield_4d             , & ! Field
+                                    itrace, 1, 1, 1         , & ! see comment above
+                                    1, 1, 1                 , & ! see comment above
+                                    RWORDSIZE               , &
+                                    WRF_FLOAT               , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                       __FILE__ // ' reading 4d real ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                       p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                       p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                       p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                       ierr )
+                   ENDIF
+                ELSE IF ( p%Type .EQ. 'd' ) THEN
+                  CALL wrf_ext_read_field_arr (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%dfield_4d             , & ! Field
+                                    itrace, 1, 1, 1         , & ! see comment above
+                                    1, 1, 1                 , & ! see comment above
+                                    DWORDSIZE               , &
+                                    WRF_DOUBLE              , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                   __FILE__ // ' reading 4d double ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ELSE IF ( p%Type .EQ. 'i' ) THEN
+                  CALL wrf_ext_read_field_arr (  &
+                                    fid                     , & ! DataHandle
+                                    current_date(1:19)      , & ! DateStr
+                                    TRIM(dname)             , & ! Data Name
+                                    p%ifield_4d             , & ! Field
+                                    itrace, 1, 1, 1         , & ! see comment above
+                                    1, 1, 1                 , & ! see comment above
+                                    IWORDSIZE               , &
+                                    WRF_INTEGER             , & ! FieldType
+                                    grid%communicator       , & ! Comm
+                                    grid%iocommunicator     , & ! Comm
+                                    grid%domdesc            , & ! Comm
+                                    grid%bdy_mask           , & ! bdy_mask
+                                    TRIM(memord)            , & ! MemoryOrder
+                                    TRIM(p%Stagger)         , & ! Stagger
+                   __FILE__ // ' reading 4d integer ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                   p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
+                   p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
+                   p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
+                   ierr )
+                ENDIF
+              ENDIF
+            ENDDO  ! loop over tracers
+          ENDIF
+        ENDIF
+        p => p%next
+      ENDDO
+    ELSE
+      IF ( switch .EQ. boundary_only ) THEN
+        CALL wrf_bdyin( fid , grid , config_flags , switch , ierr )
+      ENDIF
+    ENDIF
+
+#if (DA_CORE != 1)
+    CALL wrf_tsin( grid , ierr )
 #endif
 
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid

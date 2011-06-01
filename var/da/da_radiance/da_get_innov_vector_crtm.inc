@@ -44,6 +44,11 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real    :: model_rho(kms:kme)
    real, allocatable :: model_snow(:)  ! snow water equivalent, different from model_snowh,
                                        ! used in calculating reff_water
+   real, allocatable :: em_mspps(:)    ! emissivity caluclated using MSPPS algorithm
+   real              :: ts_mspps       ! surface temperature calcualted using MSPPS algorithm
+   character(len=19) :: date_char
+
+   integer :: month, crtm_climat
 
    ! real    :: model_tm(kms:kme)
 
@@ -55,12 +60,13 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real    :: clwp
 
    ! CRTM local varaibles and types
-   integer :: wmo_sensor_id,Error_Status, Allocate_Status
+   integer :: Allocate_Status
+   integer :: n_layers, n_absorbers, n_clouds, n_aerosols
 
    type (CRTM_RTSolution_type), allocatable :: RTSolution(:,:)
    type (CRTM_Atmosphere_type)   :: Atmosphere(1)
    type (CRTM_Surface_type)      :: Surface(1)
-   type (CRTM_GeometryInfo_type) :: GeometryInfo(1)
+   type (CRTM_Geometry_type)     :: GeometryInfo(1)
    type (CRTM_Options_type)      :: Options(1)
    type (CRTM_RTSolution_type), allocatable :: RTSolution_K(:,:)
    type (CRTM_Atmosphere_type), allocatable :: Atmosphere_K(:,:)
@@ -73,7 +79,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    
    ! Initializations for AIRS (MMR) Cloud Detection
    integer           :: ilev, jlev, nclouds
-   real, allocatable :: hessian(:,:), eignvec(:,:), eignval(:)
+   real, allocatable :: hessian(:,:)
+   real*8, allocatable :: eignvec(:,:), eignval(:)
    real              :: rad_clr, rad_ovc_ilev, rad_ovc_jlev
    
    integer           :: Band_Size(5), Bands(AIRS_Max_Channels,5) 
@@ -134,28 +141,27 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
    ! CRTM allocation
 
-   ! Atmosphere structure
-   Atmosphere(1)%n_Layers=(kte-kts)+1   ! number of vertical levels
-   Atmosphere(1)%n_Absorbers=2
-   Atmosphere(1)%n_Clouds=0
-   Atmosphere(1)%n_Aerosols=0
-   if (crtm_cloud) Atmosphere(1)%n_Clouds=6
- 
-   Error_Status = CRTM_Allocate_Atmosphere( Atmosphere(1)%n_Layers, &
-                                            Atmosphere(1)%n_Absorbers, &
-                                            Atmosphere(1)%n_Clouds, &
-                                            Atmosphere(1)%n_Aerosols, &
-                                            Atmosphere)
-   if (Error_Status /= 0) then 
+   ! CRTM Atmosphere
+   n_layers    = (kte-kts)+1   ! number of vertical levels
+   n_absorbers = 2
+   n_aerosols  = 0
+   n_clouds    = 0
+   if ( crtm_cloud ) n_clouds = 6
+
+   call CRTM_Atmosphere_Create ( Atmosphere(1), &
+                                 n_layers,      &
+                                 n_absorbers,   &
+                                 n_clouds,      &
+                                 n_aerosols )
+   IF ( .NOT. CRTM_Atmosphere_Associated( Atmosphere(1) ) ) THEN 
        call da_error(__FILE__,__LINE__, &
          (/"Error in allocating CRTM Atmosphere Structure"/))
-   end if
+   END IF 
 
    Atmosphere(1)%Absorber_ID(1)=H2O_ID
    Atmosphere(1)%Absorber_ID(2)=O3_ID
-   Atmosphere(1)%Climatology=crtm_atmosphere
-   write(stdout,*) 'CRTM Reference profile is: ', &
-                    CLIMATOLOGY_MODEL_NAME(Atmosphere(1)%Climatology)
+   Atmosphere(1)%Absorber_Units(1) = MASS_MIXING_RATIO_UNITS
+   Atmosphere(1)%Absorber_Units(2) = VOLUME_MIXING_RATIO_UNITS
 
    if (crtm_cloud) then
       Atmosphere(1)%Cloud(1)%Type=WATER_CLOUD
@@ -173,11 +179,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       ! if ( iv%instid(inst)%num_rad < 1 ) cycle
       if (iv%instid(inst)%info%n2 < iv%instid(inst)%info%n1) cycle
       num_levs  = kte-kts+1 
-      ! CRTM channel information structure
-      ! Error_Status = CRTM_Set_ChannelInfo(Sensor_Descriptor(inst),ChannelInfo)
-      ! if (Error_Status /= 0) then
-      !   call da_error(__FILE__,__LINE__, (/"Error in calling CRTM_Set_ChannelInfo"/))
-      ! end if
       nchanl    = ChannelInfo(inst)%n_channels
 
       ! Allocate forward model solution RTSolution array to number of channels
@@ -196,40 +197,21 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end if
       end if
       
-      ! CRTM Surface Structure
-      if (trim(crtm_sensor_name(rtminit_sensor(inst))) =='amsua') then
-         wmo_sensor_id=WMO_AMSUA
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='amsub') then
-         wmo_sensor_id=WMO_AMSUB
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='amsre') then
-         wmo_sensor_id=WMO_AMSRE
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='ssmi') then
-         wmo_sensor_id=WMO_SSMI
-#ifndef CRTM_1_1
-      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='ssmis') then
-         wmo_sensor_id=WMO_SSMIS   ! available since CRTM_1_2
-#endif
-      else
-         wmo_sensor_id=INVALID_WMO_SENSOR_ID
-      end if
-
-      Error_Status = CRTM_Allocate_Surface( nchanl,     &  ! Input
-                                   Surface)  ! Output
-      if (Error_Status /= 0) then
+      call CRTM_Surface_Create ( Surface(1), & ! Output
+                                 nchanl )      ! Input
+      IF ( .NOT. CRTM_Surface_Associated( Surface(1) ) ) THEN 
          call da_error(__FILE__,__LINE__, &
-            (/"Error in allocating CRTM Surface Structure Structure"/))
+            (/"Error in allocating CRTM Surface Structure"/))
       end if
 
       ! CRTM Options structure
-      Options(1)%n_channels = nchanl
-      if ( use_antcorr(inst) ) Options(1)%Antenna_Correction = 1   ! SET = 1 in CRTM_Parameters.f90
-     
-      Error_Status = CRTM_Allocate_Options( nchanl,    &  ! Input
-                                            Options)      ! InOut
-      if ( Error_Status /= 0 ) then
+      call CRTM_Options_Create( Options(1), &  ! Output
+                                nchanl )       ! Input
+      IF ( .NOT. CRTM_Options_Associated( Options(1) ) ) THEN 
         call da_error(__FILE__,__LINE__, &
           (/"Error in allocatting CRTM Options Structure"/))
       endif
+      if ( use_antcorr(inst) ) Options(1)%Use_Antenna_Correction = .true.
 
       ! do n= 1, iv%instid(inst)%num_rad           ! loop for pixel
 
@@ -286,8 +268,10 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end do		         
       end if   
 #endif
+
+      if ( use_mspps_emis(inst) ) allocate(em_mspps(nchanl))
 	
-      do n=n1,n2
+      pixel_loop: do n=n1,n2
          ! if ( n > iv%instid(inst)%num_rad ) exit
 
          ! [1.1] Get horizontal interpolation weights:
@@ -298,6 +282,13 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          dy = iv%instid(inst)%info%dy(1,n)
          dxm = iv%instid(inst)%info%dxm(1,n)
          dym = iv%instid(inst)%info%dym(1,n)
+
+         ! determine CRTM climatology based on latitude and month
+         date_char=iv%instid(inst)%info%date_char(n)
+         read(unit=date_char(6:7), fmt='(i2.2)') month
+         call da_det_crtm_climat(iv%instid(inst)%info%lat(1,n), month, crtm_climat)
+         iv%instid(inst)%crtm_climat(n) = crtm_climat
+         Atmosphere(1)%Climatology = iv%instid(inst)%crtm_climat(n)
 
          ! determine surface type of obs location
          !-----------------------------------------
@@ -324,7 +315,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             ! NOTE: WRF high-level q values seems too big, replaced by constants
             if (p(1)*0.01 < 75.0) Atmosphere(1)%Absorber(kte-k+1,1) = 0.001
 
-            call da_interp_lin_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
+            call da_interp_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
             
             if (crtm_cloud) then
 
@@ -382,10 +373,27 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          Atmosphere(1)%Level_Pressure(0)                      = model_ptop    ! to sigma level 51-->sigmaf=0
          Atmosphere(1)%Level_Pressure(Atmosphere(1)%n_Layers) = model_psfc(n) ! to sigma level 1->sigmaf=1
 
-         do k=kts+1,kte
-            Atmosphere(1)%Level_Pressure(kte-k+1)= grid%xb%sigmaf(k)*(model_psfc(n)-model_ptop)+model_ptop
+         ! calculating full-level P from half-level P using
+         ! linear interpolation: (pf-pf1)/(sigmaf-sigmaf1)=(ph2-ph1)/(sigmah2-sigmah1)
+         ! note: sigma is from bottem to top; pressure is from top to bottem
+         do k=kts,kte-1 ! from top to bottem
+            Atmosphere(1)%Level_Pressure(k)= (Atmosphere(1)%Pressure(k+1) - Atmosphere(1)%Pressure(k))/ &
+                                             (grid%xb%sigmah(kte-k) - grid%xb%sigmah(kte-k+1)) * &
+                                             (grid%xb%sigmaf(kte-k+1) - grid%xb%sigmah(kte-k+1)) + &
+                                              Atmosphere(1)%Pressure(k)
          end do
  
+         ! check for pressure monotonicity
+         do k = kte, kts+1, -1  ! from bottom to top
+            if ( Atmosphere(1)%Level_Pressure(k) <= Atmosphere(1)%Level_Pressure(k-1) ) then
+               write(message(1),'(a,2i5.0,a)') ' Skipping the pixel at loc ', i, j,  &
+                  ' where the pressure is not monotonic'
+               call da_warning(__FILE__,__LINE__,message(1:1))
+               iv%instid(inst)%tb_inv(:,n) = missing_r
+               cycle pixel_loop
+            end if
+         end do
+
          ! convert cloud content unit from kg/kg to kg/m^2        
          if (crtm_cloud) then
             do k=kts,kte
@@ -435,6 +443,20 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          ! CRTM Surface parameter data
 
+         if ( use_mspps_ts(inst) ) then
+            ! only for AMSU-A over land
+            if ( trim(crtm_sensor_name(rtminit_sensor(inst))) == 'amsua' &
+                 .and. model_isflg == 2 ) then
+               call da_mspps_ts(ob%instid(inst)%tb(1:nchanl,n), nchanl,  &
+                                iv%instid(inst)%satzen(n), ts_mspps)
+               ! ts_mspps is initilaized as negative values in the
+               ! da_mspps_ts subroutine.  Apply only valid values here.
+               if ( ts_mspps > 0.0 ) then
+                  model_ts(n) = ts_mspps
+               end if
+            end if
+         end if
+
          if (Surface(1)%Land_Coverage > 0.0) then
             Surface(1)%Land_Type=GRASS_SOIL           ! land type (User guide appendix 3)
             Surface(1)%Land_Temperature=model_ts(n)      ! K
@@ -467,40 +489,41 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          end if
          if (nchanl > 0) then
-            Surface(1)%SensorData%n_channels = nchanl
-#ifdef CRTM_1_1
-            Surface(1)%SensorData%Sensor_Id  = wmo_sensor_id             ! CRTM_1.1
-#else
-            Surface(1)%SensorData%Select_WMO_Sensor_Id  = wmo_sensor_id  ! CRTM_1.2
-#endif
-            Surface(1)%SensorData%Tb(1:nchanl) = ob%instid(inst)%tb(1:nchanl,n)
+            Surface(1)%SensorData%n_channels        = nchanl
+            Surface(1)%SensorData%Sensor_Channel    = ChannelInfo(inst)%Sensor_Channel
+            Surface(1)%SensorData%Sensor_Id         = ChannelInfo(inst)%Sensor_Id
+            Surface(1)%SensorData%WMO_Satellite_Id  = ChannelInfo(inst)%WMO_Satellite_Id
+            Surface(1)%SensorData%WMO_Sensor_Id     = ChannelInfo(inst)%WMO_Sensor_Id
+            Surface(1)%SensorData%Tb(1:nchanl)      = ob%instid(inst)%tb(1:nchanl,n)
          end if
-	 
+
+         ! user emissivity options
+         Options(1)%use_emissivity = .false.
+         if ( use_mspps_emis(inst) ) then
+            ! Only for AMSU-A over land
+            if ( trim(crtm_sensor_name(rtminit_sensor(inst))) == 'amsua' &
+                 .and. model_isflg == 2 ) then
+               call da_mspps_emis(ob%instid(inst)%tb(1:nchanl,n), nchanl, em_mspps)
+               Options(1)%use_emissivity = .true.
+               Options(1)%emissivity(1:nchanl) = em_mspps(1:nchanl)
+            end if
+         end if
+
          if (use_crtm_kmatrix) then
-   
+
             ! CRTM surface/atmosphere K initialization
             do l = 1, ChannelInfo(inst)%n_Channels
                ! -- Copy the adjoint atmosphere structure
-               Error_Status = CRTM_Assign_Atmosphere( Atmosphere, Atmosphere_K(l,:) )
-
-               if ( Error_Status /= 0 ) then
-                  call da_error(__FILE__,__LINE__,  &
-                     (/"Error copying Atmosphere_K structure"/))
-               end if
+               Atmosphere_K(l,1) = Atmosphere(1)
  
                ! -- Copy the adjoint surface structure
-               Error_Status = CRTM_Assign_Surface( Surface, Surface_K(l,:) )
-       
-               if ( Error_Status /= 0 ) then
-                  call da_error(__FILE__,__LINE__, &
-                     (/"Error copying Surface_K structure"/))
-               end if
+               Surface_K(l,1) = Surface(1)
             end do
 
             ! -- Zero the Adjoint outputs
             ! Important: adjoint variables must be initialized
-            call CRTM_Zero_Atmosphere( Atmosphere_K )
-            call CRTM_Zero_Surface( Surface_K )
+            call CRTM_Atmosphere_Zero( Atmosphere_K )
+            call CRTM_Surface_Zero( Surface_K )
 
             ! Assign tb = R^-1 Re :
             RTSolution_K(:,1)%brightness_temperature = 1.
@@ -650,31 +673,19 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                if (use_crtm_kmatrix) then
 	          ! Cloud Jacobian
                   do l=1,nchanl
-                     iv%instid(inst)%water_jacobian(l,k,n) =   &
-                        Atmosphere_k(l,1)%cloud(1)%water_content(k)
-                     iv%instid(inst)%ice_jacobian(l,k,n) =     &
-                        Atmosphere_k(l,1)%cloud(2)%water_content(k)
-                     iv%instid(inst)%rain_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(3)%water_content(k)
-                     iv%instid(inst)%snow_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(4)%water_content(k)
-                     iv%instid(inst)%graupel_jacobian(l,k,n) = &
-                        Atmosphere_k(l,1)%cloud(5)%water_content(k)
-                     iv%instid(inst)%hail_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(6)%water_content(k)
+                     iv%instid(inst)%water_jacobian(l,k,n)    = Atmosphere_k(l,1)%cloud(1)%water_content(k)
+                     iv%instid(inst)%ice_jacobian(l,k,n)      = Atmosphere_k(l,1)%cloud(2)%water_content(k)
+                     iv%instid(inst)%rain_jacobian(l,k,n)     = Atmosphere_k(l,1)%cloud(3)%water_content(k)
+                     iv%instid(inst)%snow_jacobian(l,k,n)     = Atmosphere_k(l,1)%cloud(4)%water_content(k)
+                     iv%instid(inst)%graupel_jacobian(l,k,n)  = Atmosphere_k(l,1)%cloud(5)%water_content(k)
+                     iv%instid(inst)%hail_jacobian(l,k,n)     = Atmosphere_k(l,1)%cloud(6)%water_content(k)
 
-                     iv%instid(inst)%water_r_jacobian(l,k,n) =   &
-                        Atmosphere_k(l,1)%cloud(1)%effective_radius(k)
-                     iv%instid(inst)%ice_r_jacobian(l,k,n) =     &
-                        Atmosphere_k(l,1)%cloud(2)%effective_radius(k)
-                     iv%instid(inst)%rain_r_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(3)%effective_radius(k)
-                     iv%instid(inst)%snow_r_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(4)%effective_radius(k)
-                     iv%instid(inst)%graupel_r_jacobian(l,k,n) = &
-                        Atmosphere_k(l,1)%cloud(5)%effective_radius(k)
-                     iv%instid(inst)%hail_r_jacobian(l,k,n) =    &
-                        Atmosphere_k(l,1)%cloud(6)%effective_radius(k)
+                     iv%instid(inst)%water_r_jacobian(l,k,n)  = Atmosphere_k(l,1)%cloud(1)%effective_radius(k)
+                     iv%instid(inst)%ice_r_jacobian(l,k,n)    = Atmosphere_k(l,1)%cloud(2)%effective_radius(k)
+                     iv%instid(inst)%rain_r_jacobian(l,k,n)   = Atmosphere_k(l,1)%cloud(3)%effective_radius(k)
+                     iv%instid(inst)%snow_r_jacobian(l,k,n)   = Atmosphere_k(l,1)%cloud(4)%effective_radius(k)
+                     iv%instid(inst)%graupel_r_jacobian(l,k,n)= Atmosphere_k(l,1)%cloud(5)%effective_radius(k)
+                     iv%instid(inst)%hail_r_jacobian(l,k,n)   = Atmosphere_k(l,1)%cloud(6)%effective_radius(k)
                   end do
 	       end if	  
             end do
@@ -702,7 +713,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          iv%instid(inst)%land_coverage(n)  = Surface(1)%land_coverage
          iv%instid(inst)%ice_coverage(n)   = Surface(1)%ice_coverage                              
          iv%instid(inst)%snow_coverage(n)  = Surface(1)%snow_coverage
-      end do       !  end loop for pixels
+      end do pixel_loop      !  end loop for pixels
+
+      if ( use_mspps_emis(inst) ) deallocate(em_mspps)
 
       deallocate (model_u10)
       deallocate (model_v10)
@@ -727,26 +740,26 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                (/"Error in deallocating RTSolution_K"/))
       end if	 
 
-      Error_Status = CRTM_Destroy_Options(Options)
-      if (Error_Status /= 0) &
+      call CRTM_Options_Destroy(Options)
+      IF ( CRTM_Options_Associated( Options(1) ) ) &
          call da_error(__FILE__,__LINE__, &
             (/"Error in deallocating CRTM Options Structure"/))
 
-      Error_Status = CRTM_Destroy_Surface(Surface)
-      if (Error_Status /= 0) &
+      call CRTM_Surface_Destroy(Surface)
+      IF ( CRTM_Surface_Associated( Surface(1) ) ) &
          call da_error(__FILE__,__LINE__, &
             (/"Error in deallocating CRTM Surface Structure"/))
 
       if (use_crtm_kmatrix) then
-         Error_Status = CRTM_Destroy_Surface(Surface_K)
-         if ( Error_Status /= 0 ) &
+         call CRTM_Surface_Destroy(Surface_K)
+         IF ( ANY( CRTM_Surface_Associated( Surface_K(1,:)) ) ) &
             call da_error(__FILE__,__LINE__, &
                (/"Error in deallocatting CRTM Surface_K Structure"/))
       endif
 
       if (use_crtm_kmatrix) then
-         Error_Status = CRTM_Destroy_Atmosphere( Atmosphere_K )
-         if ( Error_Status /= 0 ) &
+         call CRTM_Atmosphere_Destroy( Atmosphere_K )
+         IF ( ANY( CRTM_Atmosphere_Associated( Atmosphere_K(1,:)) ) ) &
             call da_error(__FILE__,__LINE__, &
                (/"Error in deallocatting CRTM Atmosphere_K Structure"/))
       endif
@@ -760,8 +773,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
    end do        ! end loop for sensor
 
-   Error_Status = CRTM_Destroy_Atmosphere (Atmosphere)
-   if (Error_Status /= 0) &
+   call CRTM_Atmosphere_Destroy (Atmosphere)
+   IF ( CRTM_Atmosphere_Associated( Atmosphere(1) ) ) &
        call da_error(__FILE__,__LINE__, &
          (/"Error in deallocating CRTM Atmosphere Structure"/))
 

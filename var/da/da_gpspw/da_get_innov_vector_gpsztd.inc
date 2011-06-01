@@ -47,7 +47,8 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 !
 ! GPS ZTD Pseudo OBS test:
 !
-   if ( pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0 ) then
+   if ( (pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0) .and. &
+        it == 1 ) then
 
 ! Deallocate:
      if (iv%info(gpspw)%nlocal > 0) then
@@ -68,6 +69,7 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
      iv%info(gpspw)%n1 = 1
      iv%info(gpspw)%n2 = 1
      allocate (ob % gpspw (1:num_pseudo))
+     ob % gpspw(1) % tpw   = 0.0
 
      print '(a,i2)','==> GPS ZTD pseudo OBS test: num_pseudo=',num_pseudo
      
@@ -130,6 +132,9 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 
       do n=iv%info(gpspw)%n1,iv%info(gpspw)%n2
 
+         if( iv % gpspw(n) % tpw % qc == fails_error_max .and. it > 1) &
+             iv % gpspw(n) % tpw % qc = 0
+
 !        [1.1] Get horizontal interpolation weights:
 
          i   = iv%info(gpspw)%i(1,n)
@@ -142,16 +147,10 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
          mdl_ztd   = dym*(dxm*grid%xb%ztd(i,j)   + dx*grid%xb%ztd(i+1,j)) + &
                      dy *(dxm*grid%xb%ztd(i,j+1) + dx*grid%xb%ztd(i+1,j+1))
 
-         if (pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0) then
-
-! To compute the 'ob':
-            ob % gpspw(n) % tpw = iv % gpspw(n) % tpw % inv + mdl_ztd
-
-         else
-
 ! To compute the 'inv':
-            iv % gpspw(n) % tpw % inv = 0.0
-            if ( ob % gpspw(n) % tpw > missing_r .and. &
+         if ( .not.(pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0) ) &
+         iv % gpspw(n) % tpw % inv = 0.0
+         if ( ob % gpspw(n) % tpw > missing_r .and. &
                  iv % gpspw(n) % tpw % qc >= obs_qc_pointer ) then
 
             dzd = 0.0
@@ -189,6 +188,14 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
                end do
             end if
 
+            if ( (pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0) .and. it == 1 ) then
+
+! To compute the 'ob':
+              ob % gpspw(n) % tpw = iv % gpspw(n) % tpw % inv + mdl_ztd - 1.e-4 * dzd
+
+            else
+
+
               iv % gpspw(n) % tpw % inv = ob % gpspw(n) % tpw - mdl_ztd &
                                           + 1.e-4 * dzd
 !
@@ -211,7 +218,8 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 !------------------------------------------------------------------------
 !        [5.0] Perform optional maximum error check:
 !------------------------------------------------------------------------
-      call da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
+      if ( .not.(pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0) .and. check_max_iv ) &
+         call da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
    end if
 
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpsztd")

@@ -12,14 +12,17 @@ subroutine da_rescale_background_errors (var_scaling, len_scaling, &
    real, intent(in)                 :: var_scaling       ! Variance factor.
    real, intent(in)                 :: len_scaling       ! Lengthscale factor.
    real, intent(in)                 :: ds                ! Resolution (m)
-   real, intent(inout)              :: s(:)              ! RF lengthscale.
+   real*8, intent(inout)            :: s(:)              ! RF lengthscale.
    type (be_subtype), intent(inout) :: be_sub            ! Backgrd error struct.
     
    integer                          :: mz                ! Vertical truncation.
    integer                          :: m
-   real, allocatable                :: rf_scale_factor(:)! RF rescaling.
+   real*8, allocatable              :: rf_scale_factor(:)! RF rescaling.
 
    if (trace_use_dull) call da_trace_entry("da_rescale_background_errors")
+
+   write(unit=stdout,fmt='(3x,"Scaling: var, len, ds:",3e15.6 )') &
+                                     var_scaling, len_scaling, ds
 
    !--------------------------------------------------------------------------
    ! [1.0] Initialise:

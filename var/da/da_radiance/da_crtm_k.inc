@@ -18,7 +18,7 @@ subroutine da_crtm_k(  nsensor, nchan, nprof, &
    type( CRTM_Atmosphere_type ),  intent(inout)  :: Atmosphere_K(nchan,nprof)
    type( CRTM_Surface_type ),     intent(in)     :: Surface(nprof)
    type( CRTM_Surface_type ),     intent(inout)  :: Surface_K(nchan,nprof)
-   type( CRTM_GeometryInfo_type ),intent(inout)  :: GeometryInfo(nprof)
+   type( CRTM_Geometry_type ),    intent(inout)  :: GeometryInfo(nprof)
    type (CRTM_Options_type),      intent(in)     :: Options(nprof)
 
    integer :: Error_Status

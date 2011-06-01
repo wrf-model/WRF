@@ -13,8 +13,8 @@ subroutine da_transform_vvtovp(grid, evec, eval, vertical_wgt, vv, vp, mz, level
    integer, intent(in)  :: mz                         ! # vertical modes.
    integer, intent(in)  :: levels                     ! # no. of levels  
 
-   real,    intent(in)  :: evec(jds:jde,kds:kde,1:mz) ! Eigenvectors.
-   real,    intent(in)  :: eval(jds:jde,1:mz)         ! Eigenvalues.
+   real*8,  intent(in)  :: evec(jds:jde,kds:kde,1:mz) ! Eigenvectors.
+   real*8,  intent(in)  :: eval(jds:jde,1:mz)         ! Eigenvalues.
    real,    intent(in)  :: vertical_wgt(ims:ime,jms:jme,kms:kme) ! Weighting.
    real,    intent(in)  :: vv(ims:ime,jms:jme,kms:kme)   ! CV in EOF space.
    real,    intent(out) :: vp(ims:ime,jms:jme,kms:kme)! CV in level space.

@@ -1,10 +1,7 @@
 #!/bin/csh
 
-# #BSUB -x                                # exlusive use of node (not_shared)
-# #BSUB -a mpich_gm                       # at NCAR: lightning
-# #BSUB -R "span[ptile=2]"                # how many tasks per node (1 or 2)
 #BSUB -a poe                            # at NCAR: bluevista
-#BSUB -R "span[ptile=4]"                # how many tasks per node (up to 8)
+#BSUB -R "span[ptile=32]"                # how many tasks per node (up to 8)
 #BSUB -n 4                              # number of total tasks
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
@@ -12,40 +9,36 @@
 #BSUB -q share                          # queue
 #BSUB -W 6:00                          # wallclock time
 #BSUB -P 64000400
-
-# QSUB -q ded_4             # submit to 4 proc
-# QSUB -l mpp_p=4           # request 4 processors
-# QSUB -lT  21600           # max. job time limit is 6 h
-# QSUB -lF 250Mw            # max. job file size limit is 250 Megawords
-# QSUB -eo                  # merge error and output into one file
-# QSUB -o  reg.out          # output file name
-# QSUB                      # there are no further QSUB commands
+##BSUB -P 66770001
 
 #	This is a script to test the bit-for-bit reproducibility of
 #	the WRF model, when comparing single processor serial runs to
 #	OpenMP and MPI parallel runs.  There are several regression tests
 #	that are performed.  Failed comparisons get reported, but don't
-#	stop the script.  Failed builds or forecasts force an exit from 
-#	the script.
+#	stop the script.  Failed builds force an exit from the script.
 
-#	Approximate time for completion of full test suite
-#		Compaq 733 MHz   ev67 :  2.5 hours (empty)
-#		Intel  1.2 GHz (4-pe) :  3.0 hours (empty)
-#		IBM            P4     :  2.0 hours (empty)
+setenv WRF_NMM_NEST 1
+set WHERE_AM_I = `pwd`
 
 if ( `uname` == AIX ) then
 
-	xlf -qversion
-	source ~gill/sourceme_modules
-	module load xlf12
-	xlf -qversion
+	set USE_SPECIAL_XLF = TRUE
 
-	set VERSION = `xlf -qversion | grep AIX | cut -f2 -d, | cut -f2 -dV | cut -f1 -d.`
-	if ( $VERSION != 12 ) then
-		echo wrong xlf version $VERSION
-		exit
-	else
-		echo right xlf version $VERSION
+	if ( $USE_SPECIAL_XLF == TRUE ) then
+		xlf -qversion
+		source ~gill/sourceme_modules
+		#module load xlf/12.01.0000.0005.091127
+		#module load xlf/12.01.0000.0005
+		module load xlf/84213
+		xlf -qversion
+
+		set VERSION = `xlf -qversion | grep AIX | cut -f2 -d, | cut -f2 -dV | cut -f1 -d.`
+		if ( $VERSION != 12 ) then
+			echo wrong xlf version $VERSION
+			exit
+		else
+			echo right xlf version $VERSION
+		endif
 	endif
 
 	set tdir = 1
@@ -326,10 +319,12 @@ endif
 if ( $KPP == TRUE ) then
 	setenv WRF_KPP 1
 	setenv FLEX_LIB_DIR /usr/local/lib
+	setenv YACC "/usr/bin/yacc -d"
 	set CHEM_OPT = 104
 else if ( $KPP == FALSE ) then
 	setenv WRF_KPP 0 
 	setenv FLEX_LIB_DIR
+	setenv YACC "/usr/bin/yacc -d"
 	set CHEM_OPT =
 endif
 
@@ -370,12 +365,17 @@ if ( $ESMF_LIB == TRUE ) then
 		setenv OBJECT_MODE 64
 #	set ESMFLIBSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
 #	set ESMFINCSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
+set NEVER = FALSE
+if ( $NEVER == TRUE ) then
 		setenv ESMF_DIR /mmm/users/michalak/esmf
 		setenv ESMF_BOPT g
 		setenv ESMF_ABI 64
 		setenv ESMF_INSTALL_PREFIX $ESMF_DIR/../esmf_install
 		setenv ESMFLIB $ESMF_INSTALL_PREFIX/lib/libg/AIX.default.64.mpi.default
 		setenv ESMFINC $ESMF_INSTALL_PREFIX/mod/modg/AIX.default.64.mpi.default
+else
+source ~michalak/sourceme_esmf
+endif
 		set ESMFLIBSAVE = $ESMFLIB
 		set ESMFINCSAVE = $ESMFINC
 		echo "Using ESMFLIB = ${ESMFLIBSAVE}"
@@ -487,8 +487,10 @@ if      ( $REAL8 == TRUE ) then
 	set CORES = ( em_real em_quarter_ss )
 endif
 
-if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) &&   ( $REAL8 != TRUE ) && ( $GLOBAL != TRUE )   ) then
-	set PHYSOPTS =	( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 )
+if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) &&   ( $REAL8 != TRUE ) && ( $GLOBAL != TRUE ) && ( $ADAPTIVE != TRUE ) ) then
+	set PHYSOPTS =	( 1 2 3 4 5 6 7 8 10 11 13 14 15 )
+else if ( $ADAPTIVE == TRUE ) then
+	set PHYSOPTS =	( 1 2 3   5   7 8 9 10    12 13    15 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( ( $REAL8 == TRUE ) || ( $GLOBAL == TRUE ) ) ) then
 	set PHYSOPTS =	( 1 2 3 4 5 6 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
@@ -510,9 +512,9 @@ endif
 #	With no nesting, run all three ideal physics options.
 
 if      ( $NESTED == TRUE ) then
-	set Max_Ideal_Physics_Options = 2
+	set Max_Ideal_Physics_Options = 5
 else if ( $NESTED != TRUE ) then
-	set Max_Ideal_Physics_Options = 3
+	set Max_Ideal_Physics_Options = 5
 endif
 
 set CUR_DIR = `pwd`
@@ -688,7 +690,7 @@ cat >! phys_real_1  << EOF
  mp_physics                          = 1,     1,     1,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 1,     1,     1,
  sf_surface_physics                  = 1,     1,     1,
  bl_pbl_physics                      = 1,     1,     1,
@@ -740,19 +742,22 @@ cat >! phys_real_2 << EOF
  mp_physics                          = 2,     2,     2,
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 2,     2,     2,
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 2,     2,     2,
  bldt                                = 0,     0,     0,
  cu_physics                          = 2,     2,     0,
  cudt                                = 5,     5,     5,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
- sf_urban_physics                    = 0,     0,     0,
+ sf_urban_physics                    = 2,     2,     2,
  mp_zero_out                         = 0,
  levsiz                              = 59
  paerlev                             = 29
@@ -790,16 +795,13 @@ cat >! phys_real_3 << EOF
  mp_physics                          = 3,     3,     3,
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 4,     4,     4,
  sf_surface_physics                  = 1,     1,     1,
  bl_pbl_physics                      = 4,     4,     4,
  bldt                                = 0,     0,     0,
  cu_physics                          = 3,     3,     0,
  cudt                                = 5,     5,     5,
- omlcall                             = 1,
- oml_hml0                            = 50,
- oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -838,12 +840,12 @@ cat >! phys_real_4 << EOF
  mp_physics                          = 4,     4,     4,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 2,     2,     2,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 5,     5,     5,
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 5,     5,     5,
  bldt                                = 0,     0,     0,
- cu_physics                          = 5,     5,     0,
+ cu_physics                          = 4,     4,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -877,14 +879,14 @@ EOF
 
 cat >! phys_real_5 << EOF
  mp_physics                          = 5,     5,     5, 
- ra_lw_physics                       = 3,     3,     3,
- ra_sw_physics                       = 3,     3,     3,
- radt                                = 30,    30,    30,
+ ra_lw_physics                       = 5,     5,     5,
+ ra_sw_physics                       = 5,     5,     5,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 7,     7,     7,
  sf_surface_physics                  = 7,     7,     7,
  bl_pbl_physics                      = 7,     7,     7,
  bldt                                = 0,     0,     0,
- cu_physics                          =99,    99,     0,
+ cu_physics                          = 5,     5,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -892,11 +894,7 @@ cat >! phys_real_5 << EOF
  surface_input_source                = 1,
  num_soil_layers                     = 2,
  mp_zero_out                         = 0,
- levsiz                              = 59
- paerlev                             = 29
- cam_abs_freq_s                      = 21600
- cam_abs_dim1                        = 4
- cam_abs_dim2                        = 28
+ ishallow                            = 0,
 EOF
 
 cat >! dyn_real_5  << EOF
@@ -924,13 +922,16 @@ cat >! phys_real_6 << EOF
  mp_physics                          = 6,     6,     6,
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 2,     2,     2,
  sf_surface_physics                  = 1,     1,     1,
  bl_pbl_physics                      = 8,     8,     8,
  bldt                                = 0,     0,     0,
- cu_physics                          = 1,     1,     0,
+ cu_physics                          = 6,     6,     0,
  cudt                                = 0,     0,     0,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -964,13 +965,16 @@ cat >! phys_real_7 << EOF
  mp_physics                          = 7,     7,     7,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
- radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 1,     1,     1,
+ radt                                = 21,    21,    21,
+ sf_sfclay_physics                   =10,    10,    10,
  sf_surface_physics                  = 2,     2,     2,
- bl_pbl_physics                      = 1,     1,     1,
+ bl_pbl_physics                      =10,    10,    10,
  bldt                                = 0,     0,     0,
- cu_physics                          = 2,     2,     0,
+ cu_physics                          =14,    14,     0,
  cudt                                = 5,     5,     5,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  slope_rad                           = 0,     0,     0, 
  topo_shading                        = 0,     0,     0, 
  isfflx                              = 1,
@@ -978,7 +982,6 @@ cat >! phys_real_7 << EOF
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
- sf_urban_physics                    = 1,     1,     1,
  mp_zero_out                         = 0,
 EOF
 
@@ -1005,14 +1008,14 @@ EOF
 
 cat >! phys_real_8 << EOF
  mp_physics                          = 8,     8,     8, 
- ra_lw_physics                       = 3,     3,     3,
- ra_sw_physics                       = 3,     3,     3,
- radt                                = 30,    30,    30,
+ ra_lw_physics                       = 5,     5,     5,
+ ra_sw_physics                       = 5,     5,     5,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 2,     2,     2,
  sf_surface_physics                  = 3,     3,     3,
- bl_pbl_physics                      = 2,     2,     2,
+ bl_pbl_physics                      = 9,     9,     9,
  bldt                                = 0,     0,     0,
- cu_physics                          = 3,     3,     0,
+ cu_physics                          = 7,     7,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -1020,16 +1023,6 @@ cat >! phys_real_8 << EOF
  surface_input_source                = 1,
  num_soil_layers                     = 6,
  mp_zero_out                         = 0,
- maxiens                             = 1,
- maxens                              = 3,
- maxens2                             = 3,
- maxens3                             = 16,
- ensdim                              = 144,
- levsiz                              = 59
- paerlev                             = 29
- cam_abs_freq_s                      = 21600
- cam_abs_dim1                        = 4
- cam_abs_dim2                        = 28
 EOF
 
 cat >! dyn_real_8  << EOF
@@ -1054,15 +1047,15 @@ cat >! damp_real_8  << EOF
 EOF
 
 cat >! phys_real_9 << EOF
- mp_physics                          = 10,    10,    10,
- ra_lw_physics                       = 4,     4,     4,
- ra_sw_physics                       = 4,     4,     4,
- radt                                = 30,    30,    30,
+ mp_physics                          = 9,     9,     9,
+ ra_lw_physics                       = 3,     3,     3,
+ ra_sw_physics                       = 3,     3,     3,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 5,     5,     5,
  sf_surface_physics                  = 3,     3,     3,
  bl_pbl_physics                      = 6,     6,     6,
  bldt                                = 0,     0,     0,
- cu_physics                          = 5,     5,     0,
+ cu_physics                          = 1,     1,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -1070,6 +1063,11 @@ cat >! phys_real_9 << EOF
  surface_input_source                = 1,
  num_soil_layers                     = 6,
  mp_zero_out                         = 0,
+ levsiz                              = 59
+ paerlev                             = 29
+ cam_abs_freq_s                      = 21600
+ cam_abs_dim1                        = 4
+ cam_abs_dim2                        = 28
 EOF
 
 cat >! dyn_real_9  << EOF
@@ -1094,15 +1092,15 @@ cat >! damp_real_9  << EOF
 EOF
 
 cat >! phys_real_10 << EOF
- mp_physics                          = 14,    14,    14,
+ mp_physics                          = 10,    10,    10,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 2,     2,     2,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 4,     4,     4,
  sf_surface_physics                  = 7,     7,     7,
  bl_pbl_physics                      = 4,     4,     4,
  bldt                                = 0,     0,     0,
- cu_physics                          =99,    99,     0,
+ cu_physics                          = 2,     2,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -1134,19 +1132,16 @@ cat >! damp_real_10  << EOF
 EOF
 
 cat >! phys_real_11 << EOF
- mp_physics                          = 16,    16,    16,
+ mp_physics                          = 14,    14,    14,
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 7,     7,     7,
  sf_surface_physics                  = 1,     1,     1,
  bl_pbl_physics                      = 7,     7,     7,
  bldt                                = 0,     0,     0,
- cu_physics                          = 1,     1,     0,
+ cu_physics                          = 4,     4,     0,
  cudt                                = 0,     0,     0,
- omlcall                             = 1,
- oml_hml0                            = 50,
- oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -1182,23 +1177,29 @@ cat >! damp_real_11  << EOF
 EOF
 
 cat >! phys_real_12 << EOF
- mp_physics                          = 98,    98,    98,
+ mp_physics                          = 16,    16,    16,
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
- radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 2,     2,     2,
+ radt                                = 21,    21,    21,
+ sf_sfclay_physics                   = 1,     1,     1,
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 8,     8,     8,
  bldt                                = 0,     0,     0,
- cu_physics                          = 2,     2,     0,
+ cu_physics                          = 3,     3,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
- sf_urban_physics                    = 2,     2,     2,
+ sf_urban_physics                    = 3,     3,     3,
+ num_urban_layers                    = 1040
  surface_input_source                = 1,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
 EOF
 
 cat >! dyn_real_12  << EOF
@@ -1223,15 +1224,15 @@ cat >! damp_real_12  << EOF
 EOF
 
 cat >! phys_real_13 << EOF
- mp_physics                          = 3,     3,     3, 
+ mp_physics                          =13,    13,    13,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
- radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 1,     1,     1,
+ radt                                = 21,    21,    21,
+ sf_sfclay_physics                   = 2,     2,     2,
  sf_surface_physics                  = 3,     3,     3,
- bl_pbl_physics                      = 1,     1,     1,
+ bl_pbl_physics                      = 9,     9,     9,
  bldt                                = 0,     0,     0,
- cu_physics                          = 3,     3,     0,
+ cu_physics                          = 7,     7,     0,
  cudt                                = 0,     0,     0,
  slope_rad                           = 1,     1,     1,
  topo_shading                        = 0,     0,     0,
@@ -1241,11 +1242,6 @@ cat >! phys_real_13 << EOF
  surface_input_source                = 1,
  num_soil_layers                     = 6,
  mp_zero_out                         = 0,
- maxiens                             = 1,
- maxens                              = 3,
- maxens2                             = 3,
- maxens3                             = 16,
- ensdim                              = 144,
 EOF
 
 cat >! dyn_real_13  << EOF
@@ -1264,21 +1260,22 @@ cat >! nest_real_13  << EOF
 EOF
 
 cat >! damp_real_13  << EOF
+ gwd_opt                             = 0,
  damp_opt                            = 3,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.05,   0.05,   0.05
 EOF
 
 cat >! phys_real_14 << EOF
- mp_physics                          = 4,     4,     4, 
+ mp_physics                          = 3,     3,     3, 
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
- radt                                = 30,    30,    30,
+ radt                                = 21,    21,    21,
  sf_sfclay_physics                   = 4,     4,     4,
  sf_surface_physics                  = 3,     3,     3,
  bl_pbl_physics                      = 4,     4,     4,
  bldt                                = 0,     0,     0,
- cu_physics                          = 5,     5,     0,
+ cu_physics                          = 6,     6,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -1315,15 +1312,15 @@ cat >! damp_real_14  << EOF
 EOF
 
 cat >! phys_real_15 << EOF
- mp_physics                          = 6,     6,     6, 
- ra_lw_physics                       = 4,     4,     4,
- ra_sw_physics                       = 4,     4,     4,
- radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 1,     1,     1,
+ mp_physics                          = 4,     4,     4, 
+ ra_lw_physics                       = 5,     5,     5,
+ ra_sw_physics                       = 5,     5,     5,
+ radt                                = 21,    21,    21,
+ sf_sfclay_physics                   =10,    10,    10,
  sf_surface_physics                  = 7,     7,     7,
- bl_pbl_physics                      = 1,     1,     1,
+ bl_pbl_physics                      =10,    10,    10,
  bldt                                = 0,     0,     0,
- cu_physics                          =99,    99,     0,
+ cu_physics                          =14,    14,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -1355,7 +1352,7 @@ cat >! damp_real_15  << EOF
 EOF
 
 if ( $GLOBAL == TRUE ) then
-	foreach exp ( 2 5 8 11 14 ) 
+	foreach exp ( 2 9 11 14 )
 		sed -e 's/ cam_abs_dim2 *= [0-9][0-9]/ cam_abs_dim2 = 41/g' phys_real_$exp >! phys_foo ; mv phys_foo phys_real_$exp
 	end
 	cp dyn_real_SAFE dyn_real_1
@@ -1630,6 +1627,36 @@ cat >! phys_b_wave_3d  << EOF
  input_from_file                     = .true.,.false.,.false.
 EOF
 
+cat >! phys_b_wave_4a << EOF
+ diff_opt                            = 1,
+ km_opt                              = 1,
+ damp_opt                            = 0,
+EOF
+cat >! phys_b_wave_4b << EOF
+ mp_physics                          = 2,     2,     2,
+EOF
+cat >! phys_b_wave_4c << EOF
+ non_hydrostatic                     = .true., .true., .true.,
+EOF
+cat >! phys_b_wave_4d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
+cat >! phys_b_wave_5a << EOF
+ diff_opt                            = 1,
+ km_opt                              = 1,
+ damp_opt                            = 0,
+EOF
+cat >! phys_b_wave_5b << EOF
+ mp_physics                          = 0,     0,     0,
+EOF
+cat >! phys_b_wave_5c << EOF
+ non_hydrostatic                     = .false., .false., .false.,
+EOF
+cat >! phys_b_wave_5d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
 #	Tested options for ideal case em_quarter_ss.  Modifying these
 #	parameters is acceptable.  Adding to these requires changes
 #	to the ideal namelist build below.
@@ -1677,6 +1704,7 @@ cat >! phys_quarter_ss_2c << EOF
  scalar_adv_opt                      = 2,      2,      2,
  chem_adv_opt                        = 2,      2,      2,
  tke_adv_opt                         = 2,      2,      2,
+ sfs_opt                             = 0,      0,      0,
  non_hydrostatic                     = .true., .true., .true.,
 EOF
 cat >! phys_quarter_ss_2d  << EOF
@@ -1696,23 +1724,55 @@ EOF
 
 cat >! phys_quarter_ss_3a << EOF
  diff_opt                            = 2,
- km_opt                              = 3,
- damp_opt                            = 2,
+ km_opt                              = 2,
+ damp_opt                            = 1,
 EOF
 cat >! phys_quarter_ss_3b << EOF
- mp_physics                          = 2,     2,     2,
+ mp_physics                          = 1,     1,     1,
 EOF
 cat >! phys_quarter_ss_3c << EOF
- moist_adv_opt                       = 1,      1,      1,
- scalar_adv_opt                      = 1,      1,      1,
- chem_adv_opt                        = 1,      1,      1,
- tke_adv_opt                         = 1,      1,      1,
- non_hydrostatic                     = .false., .false., .false.,
+ moist_adv_opt                       = 2,      2,      2,
+ scalar_adv_opt                      = 2,      2,      2,
+ chem_adv_opt                        = 2,      2,      2,
+ tke_adv_opt                         = 2,      2,      2,
+ sfs_opt                             = 1,      1,      1,
+ non_hydrostatic                     = .true., .true., .true.,
 EOF
 cat >! phys_quarter_ss_3d  << EOF
  input_from_file                     = .true.,.false.,.false.
 EOF
 cat >! phys_quarter_ss_3e << EOF
+ periodic_x                          = .false.,.false.,.false.,
+ open_xs                             = .true., .false.,.false.,
+ open_xe                             = .true., .false.,.false.,
+ periodic_y                          = .false.,.false.,.false.,
+ open_ys                             = .true., .false.,.false.,
+ open_ye                             = .true., .false.,.false.,
+EOF
+cat >! phys_quarter_ss_3f << EOF
+ sf_sfclay_physics                   = 1,     1,     1,
+EOF
+
+cat >! phys_quarter_ss_4a << EOF
+ diff_opt                            = 2,
+ km_opt                              = 3,
+ damp_opt                            = 2,
+EOF
+cat >! phys_quarter_ss_4b << EOF
+ mp_physics                          = 2,     2,     2,
+EOF
+cat >! phys_quarter_ss_4c << EOF
+ moist_adv_opt                       = 1,      1,      1,
+ scalar_adv_opt                      = 1,      1,      1,
+ chem_adv_opt                        = 1,      1,      1,
+ tke_adv_opt                         = 1,      1,      1,
+ sfs_opt                             = 1,      1,      1,
+ non_hydrostatic                     = .false., .false., .false.,
+EOF
+cat >! phys_quarter_ss_4d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+cat >! phys_quarter_ss_4e << EOF
  periodic_x                          = .true., .false.,.false.,
  open_xs                             = .false.,.false.,.false.,
  open_xe                             = .false.,.false.,.false.,
@@ -1720,7 +1780,38 @@ cat >! phys_quarter_ss_3e << EOF
  open_ys                             = .false.,.false.,.false.,
  open_ye                             = .false.,.false.,.false.,
 EOF
-cat >! phys_quarter_ss_3f << EOF
+cat >! phys_quarter_ss_4f << EOF
+ sf_sfclay_physics                   = 1,     1,     1,
+EOF
+
+cat >! phys_quarter_ss_5a << EOF
+ diff_opt                            = 2,
+ km_opt                              = 2,
+ damp_opt                            = 2,
+EOF
+cat >! phys_quarter_ss_5b << EOF
+ mp_physics                          = 2,     2,     2,
+EOF
+cat >! phys_quarter_ss_5c << EOF
+ moist_adv_opt                       = 2,      2,      2,
+ scalar_adv_opt                      = 2,      2,      2,
+ chem_adv_opt                        = 2,      2,      2,
+ tke_adv_opt                         = 2,      2,      2,
+ sfs_opt                             = 2,      2,      2,
+ non_hydrostatic                     = .false., .false., .false.,
+EOF
+cat >! phys_quarter_ss_5d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+cat >! phys_quarter_ss_5e << EOF
+ periodic_x                          = .true., .false.,.false.,
+ open_xs                             = .false.,.false.,.false.,
+ open_xe                             = .false.,.false.,.false.,
+ periodic_y                          = .true., .false.,.false.,
+ open_ys                             = .false.,.false.,.false.,
+ open_ye                             = .false.,.false.,.false.,
+EOF
+cat >! phys_quarter_ss_5f << EOF
  sf_sfclay_physics                   = 1,     1,     1,
 EOF
 
@@ -2147,7 +2238,7 @@ else
 	echo "Unrecognized architecture for regression test"  >! error_message
 	echo `uname`                                          >> error_message
 	echo `hostname`                                       >> error_message
-	$MAIL -s "Unknown architecture $ARCH[1] " $FAIL_MAIL   < error_message
+	$MAIL -s "Unknown architecture $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL   < error_message
 	exit ( 1 )
 endif
 
@@ -2187,7 +2278,7 @@ if ( $ok != 0 ) then
 	echo "Gee, I cannot make a directory in $DEF_DIR"  >! error_message
 	echo `pwd`                                         >> error_message
 	echo `\ls -ls`                                     >> error_message
-	$MAIL -s "$DEF_DIR not writable $ARCH[1] " $FAIL_MAIL < error_message
+	$MAIL -s "$DEF_DIR not writable $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < error_message
 	exit ( 1 )
 else
 	pushd regression_test
@@ -2259,6 +2350,7 @@ endif
 
 if ( -e ${DEF_DIR}/wrftest.output ) rm ${DEF_DIR}/wrftest.output
 echo "Architecture $ARCH[1]      machine: `hostname`" >>! ${DEF_DIR}/wrftest.output
+echo "Test run from directory: ${WHERE_AM_I}" >>! ${DEF_DIR}/wrftest.output
 echo "WRFV3 source from: $acquire_from " >>! ${DEF_DIR}/wrftest.output
 echo "Number of OpenMP processes to use: $OPENMP" >>! ${DEF_DIR}/wrftest.output
 echo "Number of MPI    processes to use: $Num_Procs" >>! ${DEF_DIR}/wrftest.output
@@ -2537,6 +2629,10 @@ cp configure.wrf configure.wrf.core=${core}_build=${compopt}
 #			sed -e '/^OMP/s/-qsmp=noauto/-qsmp=noauto:noopt/'  configure.wrf > ! foo ; /bin/mv foo configure.wrf
 #		endif
 
+		#	A special flag to insure the same results from a random number used in the SAS CU scheme.
+
+		sed -e '/^ARCH_LOCAL/s/=/=	-DREGTEST /' configure.wrf > ! foo ; /bin/mv foo configure.wrf
+
 		#	Save the configure file.
 
 		cp configure.wrf configure.wrf.core=${core}_build=${compopt}
@@ -2579,7 +2675,7 @@ banner 9
 
 		if ( $ok != 0 ) then
 			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
-			$MAIL -s "REGRESSION FAILURE $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+			$MAIL -s "REGRESSION FAILURE $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 			exit ( 3 )
 		else
 			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
@@ -2814,7 +2910,7 @@ banner 15
 							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						else
 							echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
-							$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+							$MAIL -s "WRF FAIL making IC/BC $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 							if ( $KEEP_ON_RUNNING == FALSE ) exit ( 4 )
 							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						endif
@@ -2825,7 +2921,7 @@ banner 15
 						else
 							echo "SUMMARY generate IC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-							$MAIL -s "WRF FAIL making IC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+							$MAIL -s "WRF FAIL making IC $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 							if ( $KEEP_ON_RUNNING == FALSE ) exit ( 41 )
 						endif
 					endif
@@ -2915,9 +3011,9 @@ banner 17
 						endif
 
 					else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-#						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
+#						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
 #						if ( $joe_times >= 100 ) then
-						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
+						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
 						if ( $joe_times == 2 ) then
 							set ok = 0
 						else
@@ -2930,13 +3026,13 @@ banner 17
 					else
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+						$MAIL -s "WRF FAIL FCST $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						if ( $KEEP_ON_RUNNING == FALSE ) exit ( 5 )
 					endif
 				else
 					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-					$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+					$MAIL -s "WRF FAIL FCST $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 					if ( $KEEP_ON_RUNNING == FALSE ) exit ( 6 )
 				endif
 #DAVE###################################################
@@ -3035,7 +3131,7 @@ banner 19c
 			else
 				echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 				echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-				$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+				$MAIL -s "WRF FAIL making IC/BC $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 				if ( $KEEP_ON_RUNNING == FALSE ) exit ( 4 )
 			endif
 #DAVE###################################################
@@ -3132,7 +3228,7 @@ banner 22
 							endif
 
 						else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-							../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m above gnd:3600 sec fcst"
+							../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m above gnd:3600 sec fcst"
 							set ok = $status
 						endif
 						if ( $ok == 0 ) then
@@ -3142,13 +3238,13 @@ banner 22
 						else
 							echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-							$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+							$MAIL -s "WRF FAIL FCST $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 							if ( if ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) )exit ( 5 )
 						endif
 					else
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+						$MAIL -s "WRF FAIL FCST $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						if ( ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) ) exit ( 6 )
 					endif
 					mv wrfout_d01_${filetag} $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.${compopt}_${n}p
@@ -3329,7 +3425,7 @@ banner 27
 					else
 						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-						$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+						$MAIL -s "WRF FAIL making IC/BC $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						if ( $KEEP_ON_RUNNING == FALSE ) exit ( 7 )
 					endif
 				endif
@@ -3389,9 +3485,9 @@ banner 28
 						endif
 
 					else if ( $IO_FORM_NAME[$IO_FORM] == io_grib1  ) then
-#						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
+#						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep -v ":anl:" | wc -l`
 #						if ( $joe_times >= 100 ) then
-						set joe_times = `../../external/io_grib1/wgrib -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
+						set joe_times = `../../external/io_grib1/wgrib.exe -s -4yr wrfout_d01_${filetag} |  grep "UGRD:10 m" | wc -l`
 						if ( $joe_times == 2 ) then
 							set ok = 0
 						else
@@ -3404,13 +3500,13 @@ banner 28
 					else
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+						$MAIL -s "WRF FAIL FCST $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 						if ( $KEEP_ON_RUNNING == FALSE ) exit ( 8 )
 					endif
 				else
 					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-					$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+					$MAIL -s "WRF FAIL FCST $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 					if ( $KEEP_ON_RUNNING == FALSE ) exit ( 9 )
 				endif
 
@@ -3542,7 +3638,17 @@ banner 29
 				else
 					set RIGHT_SIZE_MPI = FALSE
 				endif
-	
+
+				!	We just check to see if the files have two times worth of data in them.  
+				!	We might be able to get rid of this test later.  Dec 2009.
+
+				set times1 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[1] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
+				set times3 = ( ` ncdump -h $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3] | grep Time | grep UNLIMITED | grep currently | cut -d"(" -f 2 | cut -d" " -f1 `)
+				if ( ( $RIGHT_SIZE_MPI != TRUE ) && ( $times1 == 2 ) && ( $times3 == 2 ) ) then
+					echo "--- RIGHT_SIZE_MPI false ---" >>! ${DEF_DIR}/wrftest.output
+					set RIGHT_SIZE_MPI = TRUE
+				endif
+
 				#	Are we skipping the OpenMP runs?
 	
 				if ( $ZAP_OPENMP == TRUE ) then
@@ -3804,9 +3910,9 @@ set ok = $status
 #	Send email of the status.
 
 if ( $ok == 0 ) then
-	$MAIL -s "REGRESSION FAILURE $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+	$MAIL -s "REGRESSION FAILURE $ARCH[1] ${WHERE_AM_I} " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
 else
-	$MAIL -s "REGRESSION SUCCESS $ARCH[1] " $GOOD_MAIL < ${DEF_DIR}/wrftest.output
+	$MAIL -s "REGRESSION SUCCESS $ARCH[1] ${WHERE_AM_I} " $GOOD_MAIL < ${DEF_DIR}/wrftest.output
 endif
 
 #	Clean left up detritus

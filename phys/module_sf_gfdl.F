@@ -1,4 +1,4 @@
-!!WRF:MODEL_LAYER:PHYSICS
+!-- XLV         latent heat of vaporization for water (J/kg)
 !
 MODULE module_sf_gfdl
 
@@ -250,7 +250,7 @@ CONTAINS
    IM=ITE-ITS+1
    KM=KTE-KTS+1
 
-   WRITE(0,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB',NTSFLG
+   WRITE(0,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB  2010 UPGRADS',NTSFLG
 
    DO J=jts,jte
 
@@ -356,7 +356,22 @@ CONTAINS
       DO i=its,ite
 !       update skin temp only when using GFDL slab...
 
-        IF(NTSFLG==1)tsk(i,j) = tstrc(i)      ! gopal's doing 
+        IF(NTSFLG==1)    then
+        tsk(i,j) = tstrc(i)      ! gopal's doing 
+!bugfix 4
+!       bob's doing patch tsk with neigboring values... are grid boundaries
+        if(j.eq.jde) then
+         tsk(i,j) = tsk(i,j-1)
+         endif
+
+        if(j.eq.jds) then
+         tsk(i,j) = tsk(i,j+1)
+         endif
+   
+        if(i.eq.ide) tsk(i,j) = tsk(i-1,j)
+        if(i.eq.ids) tsk(i,j) = tsk(i+1,j)
+        endif
+
 
         znt(i,j)= 0.01*abs(zoc(i))
         wspd(i,j) = SQRT(upc(kts,i)*upc(kts,i) + vpc(kts,i)*vpc(kts,i))
@@ -450,6 +465,12 @@ CONTAINS
 !       write(0,*) j,(u3d(ii,1,j),ii=70,90)
 !       write(0,*) j,(ustar(ii),ii=70,90)
 !       write(0,*) j,(cdm(ii),ii=70,90)
+    if(j.eq.jds.or.j.eq.jde) then
+
+    write(0,*) "TSFC in gfdl sf mod,dt, its,ite,jts,jts", dt,its,ite,jts,jte,ids,ide,jds,jde
+    write(0,*) "TSFC",  (TSK(i,j),i=its,ite)
+    endif
+
    ENDDO            ! FOR THE J LOOP I PRESUME
 !      if(100.ge.its.and.100.le.ite.and.100.ge.jts.and.100.le.jte) then 
 !       write(0,*) 'output vars of sf_gfdl at i,j=100'
@@ -537,7 +558,7 @@ CONTAINS
       real, intent (out), dimension (ims :ime ) :: fxmx
       real, intent (out), dimension (ims :ime ) :: fxmy
       real, intent (out), dimension (ims :ime ) :: cdm
-!SBAO      real, intent (out), dimension (ims :ime ) :: cdm2
+!      real, intent (out), dimension (ims :ime ) :: cdm2
       real, intent (out), dimension (ims :ime ) :: rib
       real, intent (out), dimension (ims :ime ) :: xxfh
       real, intent (out), dimension (ims :ime ) :: xxfh2
@@ -655,7 +676,9 @@ CONTAINS
       real :: shfx,sigt4,reflect
       real :: cor1,cor2,szetho,zal2gh,cons_p000001,cons_7,vis,ustar,restar,rat
       real :: wndm,ckg
-      integer:: ip,i,j,ii,iq,nnest,icnt,ngd
+      real :: yz,y1,y2,y3,y4,windmks,znott,znotm
+      integer:: i,j,ii,iq,nnest,icnt,ngd,ip
+      data amask/ -98.0/
 
 !-----------------------------------------------------------------------
 !     internal variables
@@ -683,7 +706,6 @@ CONTAINS
 !     tables used to obtain the vapor pressures or saturated vapor 
 !     pressure
 !-----------------------------------------------------------------------
-      data amask/ -98.0/
 
       data tab11/21*0.01403,0.01719,0.02101,0.02561,0.03117,0.03784,      &
      &.04584,.05542,.06685,.08049,.09672,.1160,.1388,.1658,.1977,.2353,   &
@@ -759,6 +781,7 @@ CONTAINS
       real,parameter :: g     = 980.6
       real,parameter :: rgas  = 2.87e6
       real,parameter :: og    = 1./g
+
 !
 !     character*10 routine
 !     routine = 'mflux2'
@@ -772,6 +795,11 @@ CONTAINS
 !
        cor1 = .120
        cor2 = 720.
+       yz=           -0.0001344
+       y1=            3.015e-05 
+       y2=            1.517e-06 
+       y3=           -3.567e-08
+       y4=            2.046e-10
 
       do i = its,ite
         z10(i) = 1000.
@@ -799,13 +827,46 @@ CONTAINS
         else
           ecof(i) = wetc(i)
           land(i) = 0.0
+#ifdef HWRF
           zot (i) = zoc(i)
+!  now use 2 regime fit for znot thermal
+          windmks=wind(i)*.01
+          znott=0.2375*exp(-0.5250*windmks) + 0.0025*exp(-0.0211*windmks)
+          znott=0.01*znott
+!  go back to moon et al for below 7m/s
+          if(windmks.le. 7.)                         &
+          znott = (0.0185/9.8*(7.59e-8*wind(i)**2+   &
+                                  2.46e-4*wind(i))**2)
+! back to cgs
+          zot (i) = 100.*znott
+#else
+!         zot (i) = zoc(i)
+!  now use 2 regime fit for znot thermal
+    windmks=wind(i)*.01
+    znott=1.9551e-5  - 2.6338e-7 * windmks
+    if(windmks.le.10.) znott=0.0025542 * windmks **(-1.8023)
+    znott=amax1(1.e-6,znott)
+!  go back to moon et al for below 7m/s
+   if(windmks.le. 7.)                         &
+   znott = (0.0185/9.8*(7.59e-8*wind(i)**2+   &
+                                  2.46e-4*wind(i))**2)
+! back to cgs
+   zot (i) = 100.*znott
+#endif
+!   end of kwon correction....
 !     in hwrf, thermal znot(zot) is passed as argument zoc
 !     in hwrf, momentum znot is recalculated internally
               zoc(i)=-(0.0185/9.8*(7.59e-8*wind(i)**2+   &
                                   2.46e-4*wind(i))**2)*100.
             if(wind(i).ge.1250.0)   &
              zoc(i)=-(.000739793 * wind(i) -0.58)/10
+        if(wind(i).ge.3000.)   then
+        windmks=wind(i)*.01
+!       kwon znotm
+        znotm   = yz   +windmks*y1   +windmks**2*y2   +windmks**3*y3   +windmks**4*y4 !powell 2003
+!       back to cgs
+        zoc(i)  = 100.*znotm
+        endif
         endif
 
 !------------------------------------------------------------------------
@@ -1512,6 +1573,7 @@ CONTAINS
 
       return
       end subroutine MFLUX2
+
   SUBROUTINE hwrfsfcinit(isn,XICE,VEGFRA,SNOW,SNOWC,CANWAT,SMSTAV,       &
                         SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,       &
                         ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,     & !  STEMP

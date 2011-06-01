@@ -4,13 +4,16 @@
 PROGRAM ndown_em
 
    USE module_machine
-   USE module_domain, ONLY : domain
+   USE module_domain, ONLY : domain, head_grid, alloc_and_configure_domain, &
+                             domain_clock_set, domain_clock_get, get_ijk_from_grid
+   USE module_domain_type, ONLY : program_name
    USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver
    USE module_integrate
    USE module_driver_constants
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec
    USE module_io_domain
    USE module_utility
+   USE module_check_a_mundo
 
    USE module_timing
    USE module_wrf_error
@@ -47,12 +50,17 @@ PROGRAM ndown_em
        TYPE(domain), POINTER  :: parent , nest
      END SUBROUTINE init_domain_constants_em_ptr
 
+     SUBROUTINE vertical_interp (nested_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c)
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER ::  nested_grid
+         INTEGER , INTENT (IN) :: k_dim_c
+         REAL , INTENT (IN) :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
+         REAL , DIMENSION(k_dim_c) , INTENT (IN) ::  znw_c,znu_c
+      END SUBROUTINE vertical_interp
+
+
    END INTERFACE
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!new for bc
    INTEGER :: ids , ide , jds , jde , kds , kde
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
@@ -116,10 +124,16 @@ character *19 :: temp19
 character *24 :: temp24 , temp24b
 character(len=24) :: start_date_hold
 
-   CHARACTER (LEN=80)      :: message
+   CHARACTER (LEN=256)     :: message
 integer :: ii
 
 #include "version_decl"
+
+!!!!!!!!!!!!!!!!!!!!!    mousta   
+    integer ::  n_ref_m,k_dim_c,k_dim_n
+real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
+   REAL , DIMENSION(:) , ALLOCATABLE :: znw_c,znu_c
+!!!!!!!!!!!!!!!!!!!!!!!!!!11
 
    !  Interface block for routine that passes pointers and needs to know that they
    !  are receiving pointers.
@@ -137,6 +151,12 @@ integer :: ii
          TYPE(domain), POINTER :: parent_grid
       END SUBROUTINE Setup_Timekeeping
 
+      SUBROUTINE vert_cor(parent_grid,znw_c,k_dim_c)
+         USE module_domain
+         TYPE(domain), POINTER :: parent_grid
+         integer , intent(in) :: k_dim_c
+         real , dimension(k_dim_c), INTENT(IN) :: znw_c
+      END SUBROUTINE vert_cor
    END INTERFACE
 
    !  Define the name of this program (program_name defined in module_domain)
@@ -153,7 +173,11 @@ integer :: ii
    !  chemistry indices, etc.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
+#ifdef NO_LEAP_CALENDAR
+   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP, rc=rc )
+#else
    CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
+#endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
    !  Get the NAMELIST data.  This is handled in the initial_config routine.  All of the
@@ -172,6 +196,29 @@ integer :: ii
 #else
    CALL initial_config
 #endif
+
+   CALL check_nml_consistency
+   CALL set_physics_rconfigs
+
+   !  If we are running ndown, and that is WHERE we are now, make sure that we account
+   !  for folks forgetting to say that the aux_input2 stream is in place.
+
+   IF ( model_config_rec%io_form_auxinput2 .EQ. 0 ) THEN
+      CALL wrf_error_fatal( 'ndown: Please set io_form_auxinput2 in the time_control namelist record (probably to 2).')
+   END IF
+
+!!!!!!!!!!!!!!! mousta
+   n_ref_m = model_config_rec % vert_refine_fact
+   k_dim_c = model_config_rec % e_vert(1)
+   k_dim_n = k_dim_c
+   if (n_ref_m .ge. 2) k_dim_n = (k_dim_c - 1) *  n_ref_m + 1
+   model_config_rec % e_vert(1) = k_dim_n
+   model_config_rec % e_vert(2) = k_dim_n
+   ALLOCATE(znw_c(k_dim_c))
+   ALLOCATE(znu_c(k_dim_c))
+   WRITE ( message , FMT = '(A,3I5)' ) 'KDIM_C', k_dim_c , model_config_rec % e_vert(1) , model_config_rec % e_vert(2)
+   CALL       wrf_debug (  99,message )
+!!!!!!!!!!!!!!! mousta
 
    !  And here is an instance of using the information in the NAMELIST.  
 
@@ -290,11 +337,13 @@ integer :: ii
       !  Which date are we currently soliciting?
 
       CALL geth_newdate ( date_string , start_date_char , ( time_loop - 1 ) * NINT ( new_bdy_frq) )
-print *,'-------->>>  Processing data: loop=',time_loop,'  date/time = ',date_string
+      WRITE ( message , FMT = '(A,I5," ",A,A)' ) '-------->>>  Processing data: loop=',time_loop,'  date/time = ',date_string
+      CALL       wrf_debug (  99,message )
       current_date_char = date_string
       current_date      = date_string // '.0000'
       start_date        = date_string // '.0000'
-print *,'loopmax = ', time_loop_max, '   ending date = ',end_date_char
+      WRITE ( message , FMT = '(A,I5," ",A,A)' ) 'loopmax = ', time_loop_max, '   ending date = ',end_date_char
+      CALL       wrf_debug (  99,message )
       CALL domain_clock_set( parent_grid, &
                              current_timestr=current_date(1:19) )
 
@@ -305,7 +354,9 @@ print *,'loopmax = ', time_loop_max, '   ending date = ',end_date_char
       get_the_right_time : DO
       
          CALL wrf_get_next_time ( fid , date_string , status_next_var )
-print *,'file date/time = ',date_string,'     desired date = ',current_date_char,'     status = ', status_next_var
+         WRITE ( message , FMT = '(A,A,A,A,A,I5)' ) 'file date/time = ',date_string,'     desired date = ',&
+         current_date_char,'     status = ', status_next_var
+         CALL       wrf_debug (  99,message )
 
          IF      (  status_next_var .NE. 0 ) THEN
             CALL wrf_debug          ( 100 , 'ndown_em main: calling close_dataset  for ' // TRIM(eligible_file_name(file_counter)) )
@@ -335,7 +386,28 @@ print *,'file date/time = ',date_string,'     desired date = ',current_date_char
 
       CALL wrf_debug          ( 100 , 'wrf: calling input_history' )
       CALL wrf_get_previous_time ( fid , date_string , status_next_var )
-      CALL input_history      ( fid , head_grid , config_flags, ierr )
+      WRITE ( message , * ) 'CFB' ,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,znw_c(1),znu_c(1)
+      CALL       wrf_debug (  99,message )
+      CALL input_history ( fid , head_grid , config_flags, ierr)
+!!!!!!!!!!!!!1   mousta
+      cf1_c = head_grid%cf1
+      cf2_c = head_grid%cf2
+      cf3_c = head_grid%cf3
+
+      cfn_c = head_grid%cfn
+      cfn1_c = head_grid%cfn1
+
+      do k = 1,k_dim_c
+      znw_c(k) = head_grid%znw(k)
+      znu_c(k) = head_grid%znu(k)
+      enddo
+      call vert_cor(head_grid,znw_c,k_dim_c)
+      WRITE ( message , * ) 'CFA' ,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,znw_c(1),znu_c(1)
+      CALL       wrf_debug (  99,message )
+      WRITE ( message , * ) 'CFV' ,head_grid%cf1,head_grid%cf2,head_grid%cf3,head_grid%cfn,head_grid%cfn1,&
+      head_grid%znw(1),head_grid%znu(1) , head_grid%e_vert , parent_grid%cf1 , parent_grid%znw(1) , parent_grid%znu(1)
+      CALL       wrf_debug (  99,message )
+!!!!!!!!!!!!!1   mousta
       CALL wrf_debug          ( 100 , 'wrf: back from input_history' )
 
       !  Get the coarse grid info for later transfer to the fine grid domain.
@@ -401,7 +473,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
    
          CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfinput' )
          CALL construct_filename1( outname , 'wrfinput' , nested_grid%id , 2 )
-         CALL open_w_dataset     ( fido, TRIM(outname) , nested_grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
+         CALL open_w_dataset     ( fido, TRIM(outname) , nested_grid , config_flags , output_input , "DATASET=INPUT", ierr )
          IF ( ierr .NE. 0 ) THEN
             WRITE( wrf_err_message , FMT='(A,A,A,I8)' ) 'program ndown: error opening ',TRIM(outname),' for reading ierr=',ierr
             CALL WRF_ERROR_FATAL ( wrf_err_message )
@@ -472,6 +544,11 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       nested_grid%imask_xystag = 1
 
       CALL med_interp_domain ( head_grid , nested_grid )
+      WRITE ( message , * ) 'MOUSTA_L', nested_grid%mu_2(ips,jps) , nested_grid%u_2(ips,kde-2,jps)
+      CALL       wrf_debug (  99,message )
+      CALL vertical_interp (nested_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c)
+      WRITE ( message , * ) 'MOUSTA_V', nested_grid%mu_2(ips,jps) , nested_grid%u_2(ips,kde-2,jps)
+      CALL       wrf_debug (  99,message )
       nested_grid%ht_int = nested_grid%ht
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -503,8 +580,8 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Input data.
    
-         CALL       wrf_debug ( 100 , 'ndown_em: calling input_aux_model_input2' )
-         CALL input_aux_model_input2 ( idsi , nested_grid , config_flags , ierr )
+         CALL       wrf_debug ( 100 , 'ndown_em: calling input_auxinput2' )
+         CALL input_auxinput2 ( idsi , nested_grid , config_flags , ierr )
          nested_grid%ht_input = nested_grid%ht
    
          !  Close this fine grid static input file.
@@ -654,7 +731,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Output the first time period of the data.
    
-         CALL output_model_input ( fido , nested_grid , config_flags , ierr )
+         CALL output_input ( fido , nested_grid , config_flags , ierr )
 
          CALL wrf_put_dom_ti_integer ( fido , 'MAP_PROJ' , map_proj , 1 , ierr ) 
 !        CALL wrf_put_dom_ti_real    ( fido , 'DX'  , dx  , 1 , ierr ) 
@@ -1169,7 +1246,8 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       !  Process which time now?
 
    END DO big_time_loop_thingy
-
+   DEALLOCATE(znw_c)
+   DEALLOCATE(znu_c)
    CALL model_to_grid_config_rec ( parent_grid%id , model_config_rec , config_flags )
    CALL med_shutdown_io ( parent_grid , config_flags )
 
@@ -1415,6 +1493,60 @@ print *,'points artificially set to water: ',oops2
 endif
 
 END SUBROUTINE check_consistency2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+      SUBROUTINE vert_cor(parent,znw_c,k_dim_c)
+         USE module_domain
+   IMPLICIT NONE
+         TYPE(domain), POINTER :: parent
+         integer , intent(in) :: k_dim_c
+         real , dimension(k_dim_c), INTENT(IN) :: znw_c
+
+       integer :: kde_c , kde_n ,n_refine,ii,kkk,k
+       real :: dznw_m,cof1,cof2
+
+        kde_c = k_dim_c
+        kde_n = parent%e_vert
+        n_refine = parent % vert_refine_fact
+
+
+         kkk = 0
+         do k = 1 , kde_c-1
+         dznw_m = znw_c(k+1) - znw_c(k)
+         do ii = 1,n_refine
+         kkk = kkk + 1
+         parent%znw(kkk) = znw_c(k) + float(ii-1)/float(n_refine)*dznw_m
+         enddo
+         enddo
+         parent%znw(kde_n) = znw_c(kde_c)
+         parent%znw(1) = znw_c(1)
+
+      DO k=1, kde_n-1
+         parent%dnw(k) = parent%znw(k+1) - parent%znw(k)
+         parent%rdnw(k) = 1./parent%dnw(k)
+         parent%znu(k) = 0.5*(parent%znw(k+1)+parent%znw(k))
+      END DO
+
+      DO k=2, kde_n-1
+         parent%dn(k) = 0.5*(parent%dnw(k)+parent%dnw(k-1))
+         parent%rdn(k) = 1./parent%dn(k)
+         parent%fnp(k) = .5* parent%dnw(k  )/parent%dn(k)
+         parent%fnm(k) = .5* parent%dnw(k-1)/parent%dn(k)
+      END DO
+
+  cof1 = (2.*parent%dn(2)+parent%dn(3))/(parent%dn(2)+parent%dn(3))*parent%dnw(1)/parent%dn(2)
+  cof2 =     parent%dn(2)        /(parent%dn(2)+parent%dn(3))*parent%dnw(1)/parent%dn(3)
+
+      parent%cf1  = parent%fnp(2) + cof1
+      parent%cf2  = parent%fnm(2) - cof1 - cof2
+      parent%cf3  = cof2
+
+      parent%cfn  = (.5*parent%dnw(kde_n-1)+parent%dn(kde_n-1))/parent%dn(kde_n-1)
+      parent%cfn1 = -.5*parent%dnw(kde_n-1)/parent%dn(kde_n-1)
+
+
+
+      END SUBROUTINE vert_cor
+
 
 SUBROUTINE init_domain_constants_em_ptr ( parent , nest ) 
    USE module_domain
@@ -1430,3 +1562,498 @@ SUBROUTINE init_domain_constants_em_ptr ( parent , nest )
    END INTERFACE 
    CALL init_domain_constants_em ( parent , nest )
 END SUBROUTINE init_domain_constants_em_ptr
+
+
+     SUBROUTINE vertical_interp (parent_grid,znw_c,znu_c,cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c,k_dim_c)
+         USE module_domain
+         USE module_configure
+   IMPLICIT NONE
+         TYPE(domain), POINTER ::  parent_grid
+         INTEGER , INTENT (IN) :: k_dim_c
+         REAL , INTENT (IN) :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
+         REAL , DIMENSION(k_dim_c) , INTENT (IN) ::  znw_c,znu_c
+
+       integer :: kde_c , kde_n ,n_refine,ii,kkk
+       integer :: i , j, k , itrace
+       real :: p_top_m  , p_surf_m , mu_m , hsca_m , pre_c ,pre_n
+
+       real, allocatable, dimension(:) ::  alt_w_c , alt_u_c ,pro_w_c , pro_u_c
+       real, allocatable, dimension(:) ::  alt_w_n , alt_u_n ,pro_w_n , pro_u_n
+
+   INTEGER :: nids, nide, njds, njde, nkds, nkde, &
+              nims, nime, njms, njme, nkms, nkme, &
+              nips, nipe, njps, njpe, nkps, nkpe
+
+      
+         hsca_m = 6.7
+         n_refine = model_config_rec % vert_refine_fact
+         kde_c = k_dim_c
+         kde_n = parent_grid%e_vert
+
+         CALL get_ijk_from_grid ( parent_grid , &
+                                   nids, nide, njds, njde, nkds, nkde, &
+                                   nims, nime, njms, njme, nkms, nkme, &
+                                   nips, nipe, njps, njpe, nkps, nkpe )
+
+      print * , 'MOUSTA_VER  ',parent_grid%e_vert , kde_c , kde_n
+         print *, nids , nide , njds , njde , nkds , nkde
+         print *, nims , nime , njms , njme , nkms , nkme
+         print *, nips , nipe , njps , njpe , nkps , nkpe
+
+
+
+         allocate (alt_w_c(kde_c))
+         allocate (alt_u_c(kde_c+1))
+         allocate (pro_w_c(kde_c))
+         allocate (pro_u_c(kde_c+1))
+
+         allocate (alt_w_n(kde_n))
+         allocate (alt_u_n(kde_n+1))
+         allocate (pro_w_n(kde_n))
+         allocate (pro_u_n(kde_n+1))
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11111
+         p_top_m = parent_grid%p_top
+         p_surf_m = 1.e5
+         mu_m = p_surf_m - p_top_m
+         print * , 'p_top_m', p_top_m
+!    parent
+         do  k = 1,kde_c
+         pre_c = mu_m * znw_c(k) + p_top_m
+         alt_w_c(k) =  -hsca_m * alog(pre_c/p_surf_m)
+         enddo
+         do  k = 1,kde_c-1
+         pre_c = mu_m * znu_c(k) + p_top_m
+         alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
+         enddo
+         alt_u_c(1) =  alt_w_c(1) 
+         alt_u_c(kde_c+1) =  alt_w_c(kde_c) 
+!    nest
+         do  k = 1,kde_n
+         pre_n = mu_m * parent_grid%znw(k) + p_top_m
+         alt_w_n(k) =  -hsca_m * alog(pre_n/p_surf_m)
+         enddo
+         do  k = 1,kde_n-1
+         pre_n = mu_m * parent_grid%znu(k) + p_top_m
+         alt_u_n(k+1) =  -hsca_m * alog(pre_n/p_surf_m)
+         enddo
+         alt_u_n(1) =  alt_w_n(1)
+         alt_u_n(kde_n+1) =  alt_w_n(kde_n)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+IF ( SIZE( parent_grid%u_2, 1 ) * SIZE( parent_grid%u_2, 3 ) .GT. 1 ) THEN 
+do j = njms , njme
+do i = nims , nime
+    
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%u_2(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%u_2(i,1,j) &
+                     + cf2_c*parent_grid%u_2(i,2,j) &
+                     + cf3_c*parent_grid%u_2(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%u_2(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%u_2(i,kde_c-2,j) 
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%u_2(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+IF ( SIZE( parent_grid%v_2, 1 ) * SIZE( parent_grid%v_2, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%v_2(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%v_2(i,1,j) &
+                     + cf2_c*parent_grid%v_2(i,2,j) &
+                     + cf3_c*parent_grid%v_2(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%v_2(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%v_2(i,kde_c-2,j)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%v_2(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+IF ( SIZE( parent_grid%w_2, 1 ) * SIZE( parent_grid%w_2, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c
+    pro_w_c(k) = parent_grid%w_2(i,k,j)
+    enddo
+    call inter(pro_w_c,alt_w_c,kde_c,pro_w_n,alt_w_n,kde_n)
+
+    do k = 1,kde_n
+    parent_grid%w_2(i,k,j) = pro_w_n(k)
+    enddo
+enddo
+enddo
+ENDIF
+
+IF ( SIZE( parent_grid%t_2, 1 ) * SIZE( parent_grid%t_2, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%t_2(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%t_2(i,1,j) &
+                     + cf2_c*parent_grid%t_2(i,2,j) &
+                     + cf3_c*parent_grid%t_2(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%t_2(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%t_2(i,kde_c-2,j)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%t_2(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+DO itrace = PARAM_FIRST_SCALAR, num_moist
+IF ( SIZE( parent_grid%moist, 1 ) * SIZE( parent_grid%moist, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%moist(i,k,j,itrace)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%moist(i,1,j,itrace) &
+                     + cf2_c*parent_grid%moist(i,2,j,itrace) &
+                     + cf3_c*parent_grid%moist(i,3,j,itrace)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%moist(i,kde_c-1,j,itrace) &
+                     + cfn1_c*parent_grid%moist(i,kde_c-2,j,itrace)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%moist(i,k,j,itrace) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+ENDDO
+
+DO itrace = PARAM_FIRST_SCALAR, num_dfi_moist
+IF ( SIZE( parent_grid%dfi_moist, 1 ) * SIZE( parent_grid%dfi_moist, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%dfi_moist(i,k,j,itrace)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%dfi_moist(i,1,j,itrace) &
+                     + cf2_c*parent_grid%dfi_moist(i,2,j,itrace) &
+                     + cf3_c*parent_grid%dfi_moist(i,3,j,itrace)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%dfi_moist(i,kde_c-1,j,itrace) &
+                     + cfn1_c*parent_grid%dfi_moist(i,kde_c-2,j,itrace)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%dfi_moist(i,k,j,itrace) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+ENDDO
+
+DO itrace = PARAM_FIRST_SCALAR, num_scalar
+IF ( SIZE( parent_grid%scalar, 1 ) * SIZE( parent_grid%scalar, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%scalar(i,k,j,itrace)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%scalar(i,1,j,itrace) &
+                     + cf2_c*parent_grid%scalar(i,2,j,itrace) &
+                     + cf3_c*parent_grid%scalar(i,3,j,itrace)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%scalar(i,kde_c-1,j,itrace) &
+                     + cfn1_c*parent_grid%scalar(i,kde_c-2,j,itrace)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%scalar(i,k,j,itrace) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+ENDDO
+
+DO itrace = PARAM_FIRST_SCALAR, num_dfi_scalar
+IF ( SIZE( parent_grid%dfi_scalar, 1 ) * SIZE( parent_grid%dfi_scalar, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%dfi_scalar(i,k,j,itrace)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%dfi_scalar(i,1,j,itrace) &
+                     + cf2_c*parent_grid%dfi_scalar(i,2,j,itrace) &
+                     + cf3_c*parent_grid%dfi_scalar(i,3,j,itrace)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%dfi_scalar(i,kde_c-1,j,itrace) &
+                     + cfn1_c*parent_grid%dfi_scalar(i,kde_c-2,j,itrace)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%dfi_scalar(i,k,j,itrace) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+ENDDO
+
+
+
+IF ( SIZE( parent_grid%f_ice_phy, 1 ) * SIZE( parent_grid%f_ice_phy, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%f_ice_phy(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%f_ice_phy(i,1,j) &
+                     + cf2_c*parent_grid%f_ice_phy(i,2,j) &
+                     + cf3_c*parent_grid%f_ice_phy(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%f_ice_phy(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%f_ice_phy(i,kde_c-2,j)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%f_ice_phy(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+IF ( SIZE( parent_grid%f_rain_phy, 1 ) * SIZE( parent_grid%f_rain_phy, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%f_rain_phy(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%f_rain_phy(i,1,j) &
+                     + cf2_c*parent_grid%f_rain_phy(i,2,j) &
+                     + cf3_c*parent_grid%f_rain_phy(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%f_rain_phy(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%f_rain_phy(i,kde_c-2,j)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%f_rain_phy(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+
+IF ( SIZE( parent_grid%f_rimef_phy, 1 ) * SIZE( parent_grid%f_rimef_phy, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%f_rimef_phy(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%f_rimef_phy(i,1,j) &
+                     + cf2_c*parent_grid%f_rimef_phy(i,2,j) &
+                     + cf3_c*parent_grid%f_rimef_phy(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%f_rimef_phy(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%f_rimef_phy(i,kde_c-2,j)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%f_rimef_phy(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+IF ( SIZE( parent_grid%h_diabatic, 1 ) * SIZE( parent_grid%h_diabatic, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) = parent_grid%h_diabatic(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%h_diabatic(i,1,j) &
+                     + cf2_c*parent_grid%h_diabatic(i,2,j) &
+                     + cf3_c*parent_grid%h_diabatic(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%h_diabatic(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%h_diabatic(i,kde_c-2,j)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%h_diabatic(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+IF ( SIZE( parent_grid%rthraten, 1 ) * SIZE( parent_grid%rthraten, 3 ) .GT. 1 ) THEN
+do j = njms , njme
+do i = nims , nime
+
+    do k = 1,kde_c-1
+    pro_u_c(k+1) =  parent_grid%rthraten(i,k,j)
+    enddo
+    pro_u_c(1      ) = cf1_c*parent_grid%rthraten(i,1,j) &
+                     + cf2_c*parent_grid%rthraten(i,2,j) &
+                     + cf3_c*parent_grid%rthraten(i,3,j)
+
+    pro_u_c(kde_c+1) = cfn_c *parent_grid%rthraten(i,kde_c-1,j) &
+                     + cfn1_c*parent_grid%rthraten(i,kde_c-2,j)
+
+    call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
+
+    do k = 1,kde_n-1
+    parent_grid%rthraten(i,k,j) = pro_u_n(k+1)
+    enddo
+
+enddo
+enddo
+ENDIF
+
+
+
+
+
+
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         deallocate (alt_w_c)
+         deallocate (alt_u_c)
+         deallocate (pro_w_c)
+         deallocate (pro_u_c)
+
+         deallocate (alt_w_n)
+         deallocate (alt_u_n)
+         deallocate (pro_w_n)
+         deallocate (pro_u_n)
+
+
+      END SUBROUTINE vertical_interp
+
+!!!!!!!!!!!!!!!!!!!!!!!!11
+    SUBROUTINE inter(pro_c,alt_c,kde_c,pro_n,alt_n,kde_n)
+
+  IMPLICIT NONE
+   INTEGER , INTENT(IN) :: kde_c,kde_n
+   REAL , DIMENSION(kde_c) , INTENT(IN ) :: pro_c,alt_c
+   REAL , DIMENSION(kde_n) , INTENT(IN ) :: alt_n
+   REAL , DIMENSION(kde_n) , INTENT(OUT) :: pro_n
+
+      real ,dimension(kde_c) :: a,b,c,d
+      real :: p
+      integer :: i,j
+
+
+      call coeff_mon(alt_c,pro_c,a,b,c,d,kde_c)
+
+       do i = 1,kde_n-1
+
+          do j=1,kde_c-1
+
+               if ( (alt_n(i) .ge. alt_c(j)).and.(alt_n(i) .lt. alt_c(j+1)) ) then
+                p =  alt_n(i)-alt_c(j)
+                pro_n(i) = p*( p*(a(j)*p+b(j))+c(j)) + d(j)
+                goto 20
+               endif
+           enddo
+20             continue
+       enddo
+
+       pro_n(kde_n) = pro_c(kde_c)
+
+
+   END SUBROUTINE inter
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+
+     subroutine  coeff_mon(x,y,a,b,c,d,n)
+
+      implicit none
+
+      integer :: n
+      real ,dimension(n) :: x,y,a,b,c,d
+      real ,dimension(n) :: h,s,p,yp
+
+       integer :: i
+
+
+      do i=1,n-1
+      h(i) = (x(i+1)-x(i))
+      s(i) = (y(i+1)-y(i)) / h(i)
+      enddo
+
+      do i=2,n-1
+      p(i) = (s(i-1)*h(i)+s(i)*h(i-1)) / (h(i-1)+h(i))
+      enddo
+
+      p(1) = s(1)
+      p(n) = s(n-1)
+
+      do i=1,n
+      yp(i) = p(i)
+      enddo
+!!!!!!!!!!!!!!!!!!!!!
+
+      do i=2,n-1
+      yp(i) = (sign(1.,s(i-1))+sign(1.,s(i)))* min( abs(s(i-1)),abs(s(i)),0.5*abs(p(i)))
+      enddo
+
+      do i = 1,n-1
+      a(i) = (yp(i)+yp(i+1)-2.*s(i))/(h(i)*h(i))
+      b(i) = (3.*s(i)-2.*yp(i)-yp(i+1))/h(i)
+      c(i) = yp(i)
+      d(i) = y(i)
+      enddo
+
+      end  subroutine  coeff_mon
+
+

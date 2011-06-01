@@ -2,6 +2,11 @@ subroutine da_setup_be_global (be)
 
    !---------------------------------------------------------------------------
    ! Purpose: Define and allocate components of background errors
+   ! 
+   ! Updates: 
+   !
+   !       Implementation of multi-variate BE  
+   !       Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 02/01/2010
    !---------------------------------------------------------------------------
 
    implicit none
@@ -27,14 +32,21 @@ subroutine da_setup_be_global (be)
    character*10         :: variable
    integer              :: ni, nj, nk, b, be_unit
    integer, allocatable :: max_wave(:)
-   real, allocatable    :: evec_g(:,:)
-   real, allocatable    :: eval_g(:)  
-   real, allocatable    :: evec_loc(:,:,:)
-   real, allocatable    :: eval_loc(:,:)  
-   real, allocatable    :: regcoeff1(:)
-   real, allocatable    :: regcoeff2(:,:)
-   real, allocatable    :: regcoeff3(:,:,:)
-   real, allocatable    :: power(:)               ! Temporary power spectrum.
+   real*8, allocatable  :: evec_g(:,:)
+   real*8, allocatable  :: eval_g(:)  
+   real*8, allocatable  :: evec_loc(:,:,:)
+   real*8, allocatable  :: eval_loc(:,:)  
+   real, allocatable   :: regcoeff_psi_chi(:)        ! psi/chi    regression cooefficient.
+   real, allocatable   :: regcoeff_psi_t(:,:,:)      ! psi/t   regression cooefficient.
+   real, allocatable   :: regcoeff_psi_ps(:,:)       ! psi/ps     regression cooefficient.
+   real, allocatable   :: regcoeff_psi_rh(:,:,:)     ! psi/rh     regression cooefficient.
+   real, allocatable   :: regcoeff_chi_u_t(:,:,:)    ! chi_u/t regression coefficient
+   real, allocatable   :: regcoeff_chi_u_ps(:,:)     ! chi_u/ps   regression coefficient
+   real, allocatable   :: regcoeff_chi_u_rh(:,:,:)   ! chi_u/rh   regression coefficient
+   real, allocatable   :: regcoeff_t_u_rh(:,:,:)     ! t_u/rh  regression coefficient
+   real, allocatable   :: regcoeff_ps_u_rh(:,:)      ! ps_u/rh    regression coefficient
+
+   real*8, allocatable :: power(:)               ! Temporary power spectrum.
    real, allocatable    :: power2d(:,:)           ! Temporary power spectrum.
 
    if (trace_use) call da_trace_entry("da_setup_be_global")
@@ -70,45 +82,91 @@ subroutine da_setup_be_global (be)
    ! [2] Read in be regression coefficients:
    !---------------------------------------------------------------------
 
-   allocate (regcoeff1(1:num_bins))
-   allocate (regcoeff2(1:nk,1:num_bins2d))
-   allocate (regcoeff3(1:nk,1:nk,1:num_bins2d))
 
-   read (be_unit,end= 99,  err = 100) regcoeff1  
-   read (be_unit,end= 99,  err = 100) regcoeff2 
-   read (be_unit,end= 99,  err = 100) regcoeff3  
+   allocate  (regcoeff_psi_chi(1:num_bins))
+   allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
+   allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
+   allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
+   allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
 
-   allocate (be%reg_chi(1:jde,1:kde))
-   allocate (be%reg_ps (1:jde,1:kde))
-   allocate (be%reg_t  (1:jde,1:kde,1:kde))
+   regcoeff_psi_chi = 0.
+   regcoeff_psi_t   = 0.
+   regcoeff_psi_ps  = 0.
+   regcoeff_psi_rh  = 0.
+   regcoeff_chi_u_t = 0.
+   regcoeff_chi_u_ps= 0.
+   regcoeff_chi_u_rh= 0.
+   regcoeff_t_u_rh  = 0.
+   regcoeff_ps_u_rh = 0.
+
+   read (be_unit,end= 99,  err = 100) regcoeff_psi_chi
+   read (be_unit,end= 99,  err = 100) regcoeff_psi_ps 
+   read (be_unit,end= 99,  err = 100) regcoeff_psi_t
 
    ! Fill regression coeff. array
-   do k=1,kde
+   allocate (be%reg_psi_chi(1:jde,1:nk))
+   allocate (be%reg_psi_t  (1:jde,1:nk,1:nk))
+   allocate (be%reg_psi_ps (1:jde,1:nk))
+   allocate (be%reg_psi_rh (1:jde,1:nk,1:nk))
+   allocate (be%reg_chi_u_t(1:jde,1:nk,1:nk))
+   allocate (be%reg_chi_u_ps(1:jde,1:nk))
+   allocate (be%reg_chi_u_rh(1:jde,1:nk,1:nk))
+   allocate (be%reg_t_u_rh (1:jde,1:nk,1:nk))
+   allocate (be%reg_ps_u_rh(1:jde,1:nk))
+
+
+   be%reg_psi_chi = 0.
+   be%reg_psi_t   = 0.
+   be%reg_psi_ps  = 0.
+   be%reg_psi_rh  = 0.
+   be%reg_chi_u_t = 0.
+   be%reg_chi_u_ps= 0.
+   be%reg_chi_u_rh= 0.
+   be%reg_t_u_rh  = 0.
+
+
+   do k=1,nk
       do j =1, jde
-         b = bin(1,j,k) ! Assumes bins averaged over i direction.
-         be%reg_chi(j,k) = regcoeff1(b)
+         b = bin(1,j,k)
+         be%reg_psi_chi(j,k) = psi_chi_factor * regcoeff_psi_chi(b)
       end do
    end do
 
    do j=1,jde
       b = bin2d(1,j)
-      do k=1,kde
-         be%reg_ps(j,k) = regcoeff2(k,b)
+      do k=1,nk
+         be%reg_psi_ps(j,k)   = psi_ps_factor   * regcoeff_psi_ps(k,b)
+         be%reg_ps_u_rh(j,k)  = ps_u_rh_factor  * regcoeff_ps_u_rh(k,b)
+         be%reg_chi_u_ps(j,k) = chi_u_ps_factor * regcoeff_chi_u_ps(k,b)
       end do
    end do
 
    do j=1,jde
       b = bin2d(1,j)
-      do i=1,kde
-         do k=1,kde
-            be%reg_t(j,i,k) = regcoeff3(i,k,b)
+      do i=1,nk
+         do k=1,nk
+            be%reg_psi_t(j,i,k)   = psi_t_factor      *  regcoeff_psi_t(i,k,b)
+            be%reg_psi_rh(j,i,k)  = psi_rh_factor     *  regcoeff_psi_rh(i,k,b)
+            be%reg_chi_u_t(j,i,k) = chi_u_t_factor    *  regcoeff_chi_u_t(i,k,b)
+            be%reg_chi_u_rh(j,i,k)= chi_u_rh_factor   *  regcoeff_chi_u_rh(i,k,b)
+            be%reg_t_u_rh(j,i,k)  = t_u_rh_factor     *  regcoeff_t_u_rh(i,k,b)
          end do
       end do
    end do
 
-   deallocate(regcoeff1)
-   deallocate(regcoeff2)
-   deallocate(regcoeff3)
+   deallocate (regcoeff_psi_chi)
+   deallocate (regcoeff_psi_t)
+   deallocate (regcoeff_psi_ps)
+   deallocate (regcoeff_psi_rh)
+   deallocate (regcoeff_chi_u_t)
+   deallocate (regcoeff_chi_u_ps)
+   deallocate (regcoeff_chi_u_rh)
+   deallocate (regcoeff_t_u_rh)
+   deallocate (regcoeff_ps_u_rh)
 
    !---------------------------------------------------------------------
    ! [3] Read in be vertical eigenmodes:
@@ -131,22 +189,22 @@ subroutine da_setup_be_global (be)
       if (nrec == 1) then
          be % v1 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var1, var_scaling1, be%v1)
+            evec_loc, eval_loc, max_vert_var1, var_scaling1(1), be%v1)
 
       else if (nrec == 2) then
          be % v2 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var2, var_scaling2, be%v2)
+            evec_loc, eval_loc, max_vert_var2, var_scaling2(1), be%v2)
 
       else if (nrec == 3) then
          be % v3 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var3, var_scaling3, be%v3)
+            evec_loc, eval_loc, max_vert_var3, var_scaling3(1), be%v3)
 
       else if (nrec == 4) then
          be % v4 % name = variable               
          call da_get_bins_info(nj, nk, bin2d, evec_g, eval_g, &
-            evec_loc, eval_loc, max_vert_var4, var_scaling4, be%v4)
+            evec_loc, eval_loc, max_vert_var4, var_scaling4(1), be%v4)
       end if 
 
       deallocate (evec_g)     
@@ -186,7 +244,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v1 % name, ' = ', be % v1 % max_wave
    allocate (be % v1 % power(0:be % v1 % max_wave,1:nk))
    be % v1 % power(0:be % v1 % max_wave,1:nk) = power2d(0:be % v1 % max_wave,1:nk)
-   be % v1 % power(0,1:nk) = len_scaling1 * be % v1 % power(0,1:nk) 
+   be % v1 % power(0,1:nk) = len_scaling1(1) * be % v1 % power(0,1:nk) 
 
    do k = 1, nk
       read (be_unit) variable
@@ -205,7 +263,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v2 % name, ' = ', be % v2 % max_wave
    allocate (be % v2 % power(0:be % v2 % max_wave,1:nk))
    be % v2 % power(0:be % v2 % max_wave,1:nk) = power2d(0:be % v2 % max_wave,1:nk)
-   be % v2 % power(0,1:nk) = len_scaling2 * be % v2 % power(0,1:nk) 
+   be % v2 % power(0,1:nk) = len_scaling2(1) * be % v2 % power(0,1:nk) 
 
    do k = 1, nk
       read (be_unit) variable
@@ -224,7 +282,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v3 % name, ' = ', be % v3 % max_wave
    allocate (be % v3 % power(0:be % v3 % max_wave,1:nk))
    be % v3 % power(0:be % v3 % max_wave,1:nk) = power2d(0:be % v3 % max_wave,1:nk)
-   be % v3 % power(0,1:nk) = len_scaling3 * be % v3 % power(0,1:nk) 
+   be % v3 % power(0,1:nk) = len_scaling3(1) * be % v3 % power(0,1:nk) 
 
    do k = 1, nk
       read (be_unit) variable
@@ -243,7 +301,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v4 % name, ' = ', be % v4 % max_wave
    allocate (be % v4 % power(0:be % v4 % max_wave,1:nk))
    be % v4 % power(0:be % v4 % max_wave,1:nk) = power2d(0:be % v4 % max_wave,1:nk)
-   be % v4 % power(0,1:nk) = len_scaling4 * be % v4 % power(0,1:nk) 
+   be % v4 % power(0,1:nk) = len_scaling4(1) * be % v4 % power(0,1:nk) 
 
    ! ps_u:
    read (be_unit) variable
@@ -262,7 +320,7 @@ subroutine da_setup_be_global (be)
       'Horizontal truncation for ', be % v5 % name, ' = ', be % v5 % max_wave
    allocate (be % v5 % power(0:be % v5 % max_wave,1))
    be % v5 % power(0:be % v5 % max_wave,1) = power(0:be % v5 % max_wave)
-   be % v5 % power(0,1) = len_scaling5 * be%v5%power(0,1) 
+   be % v5 % power(0,1) = len_scaling5(1) * be%v5%power(0,1) 
 
    deallocate(power)
 

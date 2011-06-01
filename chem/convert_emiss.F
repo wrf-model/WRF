@@ -17,13 +17,15 @@ PROGRAM convert_emissions
    USE module_machine
    USE module_wrf_error
    USE module_integrate
-   USE module_domain, ONLY : domain
-   USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver
+   USE module_domain
+!   USE module_domain, ONLY : domain, alloc_and_configure_domain, &
+!        domain_clock_set, domain_clock_get, head_grid, program_name, domain_clockprint
+   USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver, find_my_parent
    USE module_driver_constants
-   USE module_configure, ONLY : grid_config_rec_type, model_config_rec
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &
+        initial_config, get_config_as_buffer, set_config_as_buffer
    USE module_io_domain
-   USE module_timing
-   USE module_utility
+
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -93,13 +95,19 @@ PROGRAM convert_emissions
    INTEGER, PARAMETER  :: iklev=55
    real,dimension(iklev) :: p_g,p_wrf
    REAL        :: p00, t00, a, p_surf, pd_surf,p_top
-   integer :: kbot,ktop
+   integer :: kbot,ktop,k_initial,k_final,kk4,ko,kl
    REAL, ALLOCATABLE, DIMENSION(:) :: gocart_lev
    REAL, ALLOCATABLE, DIMENSION(:,:) :: tmp2
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: tmp_oh,tmp_no3,tmp_h2o2,tmp3,interpolate
-   REAL, ALLOCATABLE :: dumc0(:,:,:),dumc4(:,:,:)
+   REAL, ALLOCATABLE :: dumc0(:,:,:),dumc4(:,:,:),zlevel(:,:,:)
    REAL, ALLOCATABLE :: dumc1(:,:)
    real mmax
+! Volcanic stuff
+!     
+   real, allocatable, dimension (:,:) :: ash_mass,ash_height,erup_dt
+   real, allocatable, dimension (:) :: vert_mass_dist
+   real :: x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
+
 
 #if (NMM_CORE == 1)
    REAL, ALLOCATABLE :: plvl(:,:,:)
@@ -119,7 +127,7 @@ PROGRAM convert_emissions
 
    REAL :: cen_lat, cen_lon, moad_cen_lat, truelat1, truelat2, gmt, stand_lon, dum1
    INTEGER :: map_proj, julyr, julday, iswater, isice, isurban, isoilwater
-   INTEGER :: iswaterr,itest
+   INTEGER :: iswaterr,itest,beg_day,beg_hour
    INTEGER :: itime = 0
    INTEGER :: nv = 0
    INTEGER :: nv_f = 0
@@ -134,6 +142,10 @@ PROGRAM convert_emissions
    CHARACTER (LEN=80) :: inpname , eminame, dum_str, wrfinname
    CHARACTER (LEN=80)       :: bdyname, bdyname2
    CHARACTER (LEN=20)       :: dname
+   CHARACTER (LEN=12)       :: dname2
+   CHARACTER (LEN=256)      :: timestr
+
+   INTEGER            :: new_emiss
 
 ! Number of reference emission and LAI files to open
    INTEGER, PARAMETER :: numfil=19
@@ -266,8 +278,8 @@ PROGRAM convert_emissions
    CALL Setup_Timekeeping ( grid )
    CALL domain_clock_set( grid, &
                           time_step_seconds=model_config_rec%interval_seconds )
-   CALL domain_clock_get ( grid, current_timestr=message )
-   write(message,FMT='(A,A)') ' current_time ',Trim(message)
+   CALL domain_clock_get( grid, current_timestr=timestr )
+   write(message,FMT='(A,A)') ' current_time ',Trim(timestr)
    CALL  wrf_debug ( 100, message )
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -344,6 +356,13 @@ PROGRAM convert_emissions
      ALLOCATE( tmp3(ids:ide,jds:jde,3) )
      ALLOCATE( interpolate(ids:ide,kds:kde,jds:jde) )
      ALLOCATE( gocart_lev(iklev))
+     if(config_flags%emiss_opt == 9 ) then
+        ALLOCATE( ash_mass(ids:ide,jds:jde) )
+        ALLOCATE( ash_height(ids:ide,jds:jde) )
+        ALLOCATE( erup_dt(ids:ide,jds:jde) )
+        ALLOCATE( vert_mass_dist(kds:kde) )
+        ALLOCATE( zlevel(ids:ide,kds:kde,jds:jde) )
+     endif
 
 
    ihour = start_hour
@@ -386,9 +405,9 @@ PROGRAM convert_emissions
 #else
        read(19)tmp3(ids:ide  ,jds:jde  ,1:3)
 #endif
-      do i=1,3 
-       grid%erod(ips:ipe,jps:jpe,i)=tmp3(ips:ipe,jps:jpe,i)
-      enddo
+!     do i=1,3 
+!      grid%erod(ips:ipe,jps:jpe,i)=tmp3(ips:ipe,jps:jpe,i)
+!     enddo
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -440,7 +459,7 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 00, message )
 
    CALL construct_filename1( inpname , 'wrfchemi_gocart_bg' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input8 , "DATASET=AUXINPUT8", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput8 , "DATASET=AUXINPUT8", ierr )
    write(message,FMT='(A,A)') '  GOCART BACKGROUND DATA file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    
@@ -571,7 +590,7 @@ PROGRAM convert_emissions
 
    ENDIF ! chem_opt gocart_simple or gocartracm
 
-   CALL output_aux_model_input8 ( id1 , grid , config_flags , ierr )
+   CALL output_auxinput8 ( id1 , grid , config_flags , ierr )
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT8" )
 
@@ -583,7 +602,170 @@ PROGRAM convert_emissions
    DEALLOCATE( tmp2)
    DEALLOCATE( tmp3)
    DEALLOCATE( interpolate )
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     if(config_flags%emiss_opt == 9 ) then
+     write(message, FMT='(A,4I6)') ' I am reading global volcanic emissions, dims: =',ids, ide-1, jds, jde-1
+     call wrf_message( TRIM( message ) )
+     CALL construct_filename1 ( bdyname , 'volc' , grid%id , 2 )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+        open (92,file=bdyname,form='unformatted')
+     ENDIf
+#else
+     OPEN(92,FILE=bdyname,FORM='UNFORMATTED')
+#endif
+     write(message, FMT='(A,A)') ' OPENED FILE: ',TRIM(bdyname)
+     call wrf_message( TRIM( message ) )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+       read(92)nv_g
+       read(92)dname
+       read(92)dname2
+       CALL wrf_dm_bcast_bytes ( nv_g , rnum8 )
+       CALL wrf_dm_bcast_bytes ( dname , rnum8 )
+       CALL wrf_dm_bcast_bytes ( dname2 , rnum8 )
+     ENDIF
+#else
+       read(92)nv_g
+       read(92)dname
+       read(92)dname2
+#endif
+       CALL nl_get_julday (grid%id, grid%julday)
+       read(unit=dname2(7:8), FMT='(I2)')beg_day
+       read(unit=dname2(9:10), FMT='(I2)')beg_hour
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)ash_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(ash_mass)
+#else
+       read(92)ash_mass(ids:ide  ,jds:jde  )
+#endif
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)ash_height(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(ash_height)
+#else
+       read(92)ash_height(ids:ide  ,jds:jde  )
+#endif
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)erup_dt(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(erup_dt)
+#else  
+       read(92)erup_dt(ids:ide  ,jds:jde  )
+#endif 
+       do j=jps,jpe
+       do k=kps,kpe
+       do i=ips,ipe
+         zlevel(i,k,j) = (grid%phb(i,k,j)+grid%ph_2(i,k,j))/9.81
+       enddo
+       enddo
+       enddo
+       percen_mass_umbrel=.75
+       base_umbrel=.25    ! fraction
+       do j=jps,jpe
+       do i=ips,ipe
+         ashz_above_vent=ash_height(i,j)+zlevel(i,kps,j)
+         if(erup_dt(i,j).le.0.)CYCLE
+!        write(0,*)'found active volcano at i,j,kps,kpe = ',i,j,kps,kpe
+!        write(0,*)ash_height(i,j),ash_mass(i,j),erup_dt(i,j),ashz_above_vent
+         do k=kpe-1,kps,-1
+!           write(0,*)k,zlevel(i,k,j)
+            if(zlevel(i,k,j) < ashz_above_vent)then
+              k_final=k+1
+              exit
+            endif
+         enddo
+!        write(0,*)'k_final = ',k_final
+         do k=kpe-1,kps,-1
+            write(0,*)k,zlevel(i,k,j)
+           if(zlevel(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
+              k_initial=k
+              exit
+            endif
+         enddo
+!        write(0,*)'k_init = ',k_initial
+         vert_mass_dist=0.
+           k_initial=int((k_final+k_initial)*0.5)
+            
+           !- parabolic vertical distribution between k_initial and k_final
+           kk4 = k_final-k_initial+2
+           do ko=1,kk4-1
+               kl=ko+k_initial-1
+               vert_mass_dist(kl) = 6.*percen_mass_umbrel* float(ko)/float(kk4)**2 * (1. - float(ko)/float(kk4))
+           enddo
+!          write(0,*)' mass=',sum(vert_mass_dist)*100.
+           if(sum(vert_mass_dist(kps:kpe)) .ne. percen_mass_umbrel) then
+               x1= ( percen_mass_umbrel- sum(vert_mass_dist(kps:kpe)) )/float(k_final-k_initial+1)
+               do ko=k_initial,k_final
+                 vert_mass_dist(ko) = vert_mass_dist(ko)+ x1 !- values between 0 and 1.
+               enddo
+!               print*,'new mass=',sum(vmd)*100.,x1
+               !pause
+           endif
+           !k_final > 0 .and. k_initial >
+
+!linear detrainment from vent to base of umbrella
+           do ko=1,k_initial-1
+              vert_mass_dist(ko)=float(ko)/float(k_initial-1)
+           enddo
+           x1=sum(vert_mass_dist(1:k_initial-1))
+           
+           do ko=1,k_initial-1
+               vert_mass_dist(ko)=(1.-percen_mass_umbrel)*vert_mass_dist(ko)/x1
+           enddo
+               
+               do ko=1,k_final
+!                vert_mass_dist(ko) = vert_mass_dist(ko)+ x1 !- values between 0 and 1.
+!                write(0,*)'k,vert_mass_dist = ',ko,vert_mass_dist(ko)
+                 grid%emis_ant(i,ko,j,p_e_vash1)=.02*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash2)=.04*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash3)=.11*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash4)=.09*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash5)=.09*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash6)=.13*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash7)=.16*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash8)=.16*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash9)=.1*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_ant(i,ko,j,p_e_vash10)=.1*vert_mass_dist(ko)*ash_mass(i,j)
+               enddo
+               grid%erup_beg(i,j)=float(grid%julday)*1000.+float(beg_hour)
+               grid%erup_end(i,j)=grid%erup_beg(i,j)+erup_dt(i,j)
+                write(0,*)'new mass=',sum(vert_mass_dist)*100.,x1
+               !pause
+!          endif
+       enddo
+       enddo
+
+!
+! simple file dump here....
+!
+         write(message,FMT='(A)') ' OPEN EMISSIONS WRF file for emissions coming from volcano data set'
+         call wrf_message( TRIM( message ) )
+         write(message, FMT='(A)') ' NO TIME DEPENDENCE IN THIS DATASET'
+! emissions from  volcanoes (prep_chem_sources)
+!              
+         CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
+               
+         CALL output_auxinput5 ( id1 , grid , config_flags , ierr )
+       
+         CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+
+
+     endif
+!!!!!!!!!!!!!!!!!!!! end volcanic stuff
+!        
+     if(config_flags%emiss_opt == 9 ) then 
+        DEALLOCATE( ash_mass )
+        DEALLOCATE( ash_height )
+        DEALLOCATE( erup_dt)
+        DEALLOCATE( zlevel)
+        DEALLOCATE( vert_mass_dist)
+     endif
+
 !
 ! now do fire and/or global emissions
 !
@@ -886,9 +1068,9 @@ PROGRAM convert_emissions
 ! emissions from retro/edgar/gocart
 !
          CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
-         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
 
-         CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
+         CALL output_auxinput5 ( id1 , grid , config_flags , ierr )
 
          CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
 
@@ -944,7 +1126,7 @@ PROGRAM convert_emissions
 
      write(message, FMT='(A)') ' put dumc1 into ebu_in_so2'
      call wrf_debug(100, TRIM( message ) )
-     grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_so2) =dumc1(ips:ipe  ,jps:jpe  )
+     grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_so2) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -954,7 +1136,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_no) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_no) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -964,7 +1146,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ald) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_ald) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -974,7 +1156,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hcho) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_hcho) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -984,7 +1166,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ora2) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_ora2) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -994,7 +1176,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-     ! grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_nh3) =dumc1(ips:ipe  ,jps:jpe  )
+     ! grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_nh3) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1004,7 +1186,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hc3) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_hc3) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1014,7 +1196,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hc5) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_hc5) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1024,7 +1206,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_hc8) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_hc8) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1034,7 +1216,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_eth) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_eth) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1044,7 +1226,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_co) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_co) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1054,7 +1236,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-   !   grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ol2) =dumc1(ips:ipe  ,jps:jpe  )
+   !   grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_ol2) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1064,7 +1246,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_olt) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_olt) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1074,7 +1256,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_oli) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_oli) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1084,7 +1266,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_tol) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_tol) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1094,7 +1276,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_xyl) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_xyl) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1104,7 +1286,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_ket) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_ket) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1114,7 +1296,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_csl) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_csl) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1124,7 +1306,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_iso) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_iso) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1134,7 +1316,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_pm25) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_pm25) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1144,7 +1326,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_pm10) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_pm10) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1154,7 +1336,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_oc) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_oc) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1164,7 +1346,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_bc) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_bc) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1174,7 +1356,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_dms) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_dms) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1184,7 +1366,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_in(ips:ipe,  jps:jpe  ,p_ebu_in_sulf) =dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_sulf) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1267,7 +1449,7 @@ PROGRAM convert_emissions
          write(message, FMT='(A,A)') ' NOW OPEN FILE FOR WRITE: ',TRIM(inpname)
          call wrf_message( TRIM( message ) )
 
-         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input7 , "DATASET=AUXINPUT7", ierr )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput7 , "DATASET=AUXINPUT7", ierr )
          write(message,FMT='(A,A)') ' FIRE EMISSIONS OUTPUT file name: ',TRIM(inpname)
          CALL  wrf_message ( message )
          IF ( ierr .NE. 0 ) THEN
@@ -1275,7 +1457,7 @@ PROGRAM convert_emissions
             CALL wrf_error_fatal( TRIM( message ) )
          ENDIF
 
-         CALL output_aux_model_input7 ( id1 , grid , config_flags , ierr )
+         CALL output_auxinput7 ( id1 , grid , config_flags , ierr )
  
          CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT7" )
 
@@ -1289,12 +1471,14 @@ PROGRAM convert_emissions
        CALL wrf_error_fatal( TRIM( message ) )
     endif
     if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG .or.  &
+       CONFIG_FLAGS%EMISS_OPT == MOZEM .or. CONFIG_FLAGS%EMISS_OPT == MOZCEM    .or.  &
        CONFIG_FLAGS%EMISS_OPT == ECBMZ_MOSAIC ) then
    !  Figure out our loop count for the processing times.
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
 #endif
 
+   new_emiss = 0
    time_loop = 1
    write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',start_date_char
    CALL  wrf_message ( message )
@@ -1381,6 +1565,8 @@ PROGRAM convert_emissions
      write(message, '(A,I8,A,I8)') ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
      call wrf_message( TRIM( message ) )
 
+     if( nv .GT. 30) new_emiss = 1
+
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
      write(message, FMT='(A)') ' read dumc0 '
@@ -1418,6 +1604,18 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( new_emiss .GT. 0) THEN
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF   ! new_emiss
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -1625,6 +1823,28 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( new_emiss .GT. 0) THEN
+!!! naai and naaj for aqmeii
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naai)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naaj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF   ! new_emiss
+!
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -1685,7 +1905,7 @@ PROGRAM convert_emissions
 
    write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
    CALL  wrf_debug ( 100, message )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
    write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    IF ( ierr .NE. 0 ) THEN
@@ -1705,7 +1925,7 @@ PROGRAM convert_emissions
 
    write(message,FMT='(A)') ' WRITE EMISSIONS 1'
    CALL  wrf_message ( message )
-    CALL output_aux_model_input5 ( id1 , grid , config_flags, ierr )
+    CALL output_auxinput5 ( id1 , grid , config_flags, ierr )
 
    CALL wrf_dm_bcast_bytes ( time_loop , rnum8 )
    nemi_frames = time_loop
@@ -1724,8 +1944,8 @@ PROGRAM convert_emissions
      IF (wrf_dm_on_monitor()) THEN
      write(message,FMT='(A,I4)') 'emi_frame: ',emi_frame
      CALL  wrf_debug ( 100, message )
-     CALL domain_clock_get ( grid, current_timestr=message )
-     write(message,FMT='(A,A)') ' Current time ',Trim(message)
+     CALL domain_clock_get ( grid, current_timestr=timestr )
+     write(message,FMT='(A,A)') ' Current time ',Trim(timestr)
      CALL  wrf_debug ( 100, message )
 
      current_date_char = current_date(1:19)
@@ -1759,7 +1979,7 @@ PROGRAM convert_emissions
            CALL construct_filename1 ( inpname ,TRIM(eminame), grid%id , 2 )
            write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
            CALL  wrf_debug ( 0, message )
-           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
            write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
            CALL  wrf_message ( message )
            IF ( ierr .NE. 0 ) THEN
@@ -1774,8 +1994,8 @@ PROGRAM convert_emissions
 #else
      write(message,FMT='(A,I4)') 'emi_frame: ',emi_frame
      CALL  wrf_debug ( 100, message )
-     CALL domain_clock_get ( grid, current_timestr=message )
-     write(message,FMT='(A,A)') ' Current time ',Trim(message)
+     CALL domain_clock_get ( grid, current_timestr=timestr )
+     write(message,FMT='(A,A)') ' Current time ',Trim(timestr)
      CALL  wrf_debug ( 100, message )
 
      current_date_char = current_date(1:19)
@@ -1817,7 +2037,7 @@ PROGRAM convert_emissions
            CALL construct_filename1 ( inpname , TRIM(eminame) , grid%id , 2 )
            write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
            CALL  wrf_debug ( 0, message )
-           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+           CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
            write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
            CALL  wrf_message ( message )
            IF ( ierr .NE. 0 ) THEN
@@ -1868,6 +2088,7 @@ PROGRAM convert_emissions
         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_so2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -1878,6 +2099,19 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     IF( new_emiss .GT. 0) THEN
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF   ! new_emiss
+!
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2112,6 +2346,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_eci)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2121,6 +2356,30 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ecj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!
+     IF( new_emiss .GT. 0) THEN
+!
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naai)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naaj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF  ! new_emiss
+!
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2138,7 +2397,7 @@ PROGRAM convert_emissions
 
      write(message,FMT='(A)') ' Output emissions '
      CALL  wrf_debug ( 100, message ) 
-     CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
+     CALL output_auxinput5 ( id1 , grid , config_flags , ierr )
 
 !   idum1 = 1
    END DO   ! NEMI_FRAMES loop
@@ -2410,7 +2669,7 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 100, message )
 
    CALL construct_filename1( inpname , 'wrfbiochemi' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input6 , "DATASET=AUXINPUT6", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput6 , "DATASET=AUXINPUT6", ierr )
    write(message,FMT='(A,A)') ' BIOGENIC EMISSIONS file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
 
@@ -2421,7 +2680,7 @@ PROGRAM convert_emissions
    write(message,FMT='(A)') ' WRITE BIOGENIC EMISSIONS WRF file '
    CALL  wrf_debug ( 100, message )
 
-   CALL output_aux_model_input6 ( id1 , grid , config_flags , ierr )
+   CALL output_auxinput6 ( id1 , grid , config_flags , ierr )
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT6" )
 

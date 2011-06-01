@@ -62,7 +62,7 @@ MODULE module_bl_mynn
 !  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
   REAL, PARAMETER :: gno=4.64158883361278196
   REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8,qkemin=1.e-12
-
+!  REAL, PARAMETER :: pblh_ref=1500.
 
   REAL, PARAMETER :: rr2=0.7071068, rrp=0.3989423
 
@@ -1112,7 +1112,6 @@ CONTAINS
 
 
   SUBROUTINE  mym_condensation (kts,kte, &
-    &            levflag,  &
     &            dz, &
     &            thl, qw, &
     &            p,exner, &
@@ -1120,7 +1119,6 @@ CONTAINS
     &            Vt, Vq)
 
     INTEGER, INTENT(IN)   :: kts,kte
-    INTEGER, INTENT(in) :: levflag
 
     REAL, DIMENSION(kts:kte), INTENT(IN) :: dz
     REAL, DIMENSION(kts:kte), INTENT(IN) :: p,exner, thl, qw, &
@@ -1610,7 +1608,8 @@ CONTAINS
        &Du,Dv,Dth,&
        &Dqv,Dqc,&
 !       &K_m,K_h,K_q&
-       &K_h,k_m&
+       &K_h,k_m,&
+       &Pblh&
        &,IDS,IDE,JDS,JDE,KDS,KDE                    &
        &,IMS,IME,JMS,JME,KMS,KME                    &
        &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1645,8 +1644,9 @@ CONTAINS
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(out) :: &
          &K_h,K_m
 
-
-
+    REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(inout) :: &
+         &Pblh
+    
 !local vars
     INTEGER :: ITF,JTF,KTF
     INTEGER :: i,j,k
@@ -1659,22 +1659,28 @@ CONTAINS
     
     REAL :: cpm,sqcg,flt,flq,pmz,phh,exnerg,zet
     
+    REAL, DIMENSION(KMS:KME) :: thetav
+    REAL :: thsfc
+
+
     INTEGER, SAVE :: levflag
     
     JTF=MIN0(JTE,JDE-1)
     ITF=MIN0(ITE,IDE-1)
     KTF=MIN0(KTE,KDE-1)
     
-    IF (initflag > 0) THEN
-
        levflag=mynn_level
+
+    IF (initflag > 0) THEN
 
        DO j=JTS,JTF
           DO i=ITS,ITF
              DO k=KTS,KTF
                 sqv(k)=qv(i,k,j)/(1.+qv(i,k,j))
                 thl(k)=th(i,k,j)
-
+!JOE-PBLH test
+                thetav(k)=th(i,k,j)*(1.+0.61*qv(i,k,j))
+!JOE-end
                 IF (k==kts) THEN
                    zw(k)=0.
                 ELSE
@@ -1688,7 +1694,7 @@ CONTAINS
              ENDDO
              
              zw(ktf+1)=zw(ktf)+dz(i,ktf,j)
-
+             
              CALL mym_initialize ( kts,kte,&
                   &dz(i,kts:kte,j), zw,  &
                   &u(i,kts:kte,j), v(i,kts:kte,j), &
@@ -1696,10 +1702,23 @@ CONTAINS
                   &ust(i,j), rmol(i,j),&
                   &Qke(i,kts:kte,j), Tsq(i,kts:kte,j), &
                   &Qsq(i,kts:kte,j), Cov(i,kts:kte,j))
-
+             
+!             pblh(i,j)=pblh_ref
+          
+!JOE-PBLH test begin
+             PBLH(i,j)=0.
+             thsfc = thetav(1)
+             DO k = kts+1,kte
+                IF (PBLH(i,j)==0.  .AND.  thetav(k)>(thsfc+0.5))THEN
+                   PBLH(i,j)=zw(k) - ((thetav(k)-(thsfc+0.5)) * &
+                        &(dz(i,k-1,j)/(MAX(thetav(k)-thetav(k-1),0.01))))
+                ENDIF
+             ENDDO
+!JOE--PBLH test end
+             
           ENDDO
        ENDDO
-       
+
     ENDIF
 
     DO j=JTS,JTF
@@ -1709,6 +1728,10 @@ CONTAINS
              sqc(k)=qc(i,k,j)/(1.+qc(i,k,j))
              sqw(k)=sqv(k)+sqc(k)
              thl(k)=th(i,k,j)-xlvcp/exner(i,k,j)*sqc(k)
+!JOE-PBLH test
+             thetav(k)=th(i,k,j)*(1.+0.61*qv(i,k,j))
+!JOE-end
+
              IF (k==kts) THEN
                 zw(k)=0.
              ELSE
@@ -1741,7 +1764,6 @@ CONTAINS
 !!!!!
 
           CALL  mym_condensation ( kts,kte,&
-               &levflag,  &
                &dz(i,kts:kte,j), &
                &thl, sqw, &
                &p(i,kts:kte,j),exner(i,kts:kte,j), &
@@ -1788,6 +1810,19 @@ CONTAINS
                &dfm,dfh,dfq,dz(i,kts:kte,j),&
                &K_m(i,kts:kte,j),K_h(i,kts:kte,j),K_q(i,kts:kte,j))
 
+       
+!JOE-PBLH test begin
+          PBLH(i,j)=0.
+          thsfc = thetav(1)
+          DO k = kts+1,kte
+             IF (PBLH(i,j)==0.  .AND.  thetav(k)>(thsfc+0.5))THEN
+                PBLH(i,j)=zw(k) - ((thetav(k)-(thsfc+0.5)) * &
+                     &(dz(i,k-1,j)/(MAX(thetav(k)-thetav(k-1),0.01))))
+             ENDIF
+          ENDDO
+!JOE--PBLH test end
+          
+!          pblh(i,j)=pblh_ref
 
        ENDDO
     ENDDO

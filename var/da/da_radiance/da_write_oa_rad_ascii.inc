@@ -1,4 +1,4 @@
-subroutine da_write_oa_rad_ascii ( ob, iv, re )
+subroutine da_write_oa_rad_ascii (it, ob, iv, re )
 
    !---------------------------------------------------------------------------
    ! Purpose: write out OMB and OMA vector structure for radiance data.
@@ -6,6 +6,7 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
 
    implicit none
 
+   integer      ,     intent(in)  :: it       ! outer loop count
    type (y_type),     intent(in)  :: ob       ! Observation structure.
    type (iv_type),    intent(in)  :: iv       ! O-B structure.
    type (y_type),     intent(in)  :: re       ! O-A structure.
@@ -34,7 +35,7 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
       end do
       if (ndomain < 1) cycle
 
-      write(unit=filename, fmt='(a,i4.4)') 'oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
+      write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
       call da_get_unit(oma_rad_unit)
       open(unit=oma_rad_unit,file=trim(filename),form='formatted',iostat=ios)
@@ -122,7 +123,7 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
                   do k = 1, nlevelss
                      write(unit=oma_rad_unit,fmt='(i3,f10.2,f8.2,e11.4)') &
                         k, &                             ! RTTOV levels
-                        coefs(i) % ref_prfl_p(k) , &
+                        coefs(i) % coef % ref_prfl_p(k) , &
                         iv%instid(i)%t(k,n) , &
                         iv%instid(i)%mr(k,n)
                   end do  ! end loop RTTOV levels

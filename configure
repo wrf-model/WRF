@@ -5,7 +5,7 @@
 thiscmd=$0
 
 FORTRAN_COMPILER_TIMER=""
-opt_level=""
+opt_level="-f"
 print_usage=""
 chemistry=""
 wrf_core=""
@@ -21,7 +21,9 @@ while [ $# -ge 1 ]; do
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
-      wrfda) wrf_core=DA_CORE  ;;
+      radardfi) WRF_DFI_RADAR=1  ;;
+      wrfda) wrf_core=DA_CORE ;;
+      4dvar) wrf_core=4D_DA_CORE ;;
       arw) wrf_core=EM_CORE  ;;
       nmm) wrf_core=NMM_CORE  ;;
       coamps) wrf_core=COAMPS_CORE  ;;
@@ -296,6 +298,21 @@ else
   echo "PHDF5 not set in environment. Will configure WRF for use without."
 fi
 
+if [ "$wrf_core" = "DA_CORE" ]; then
+   if [ -n "$WRFPLUS_DIR" ] ; then
+      echo "To compile WRFDA without 4DVAR, please remove \$WRFPLUS_DIR from environment. "
+      exit
+   fi
+fi
+
+if [ "$wrf_core" = "4D_DA_CORE" ]; then
+   if [ -n "$WRFPLUS_DIR" ] ; then
+      echo "Will use WRFPLUS in dir: $WRFPLUS_DIR"
+   else
+      echo "WRFPLUS_DIR not set in environment. Please compile WRFPLUS and set WRFPLUS_DIR."
+      exit
+   fi
+fi
 # Users who are cross-compiling can set environment variable 
 # $WRF_OS to override the value normally obtained from `uname`.  
 # If $WRF_OS is set, then $WRF_MACH can also be set to override 
@@ -321,7 +338,11 @@ else
     if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" -o "$os" = "HP-UX"  -o "$os" = "Darwin" -o "$os" = "Interix" ] ; then
       mach="ARCH"
     else
-      if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o "$os" = "CYGWIN_NT-5.1" ] ; then
+      xxx=`expr "$os" : '\(.........\).*'`
+      if [ "$xxx"  = "CYGWIN_NT" ] ; then
+        os=$xxx
+      fi
+      if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o  "$os" = "CYGWIN_NT" ] ; then
         mach=`uname -m`
         if [ "$mach" = "ia64" -a -f /etc/sgi-release ] ; then
           mach="Altix"
@@ -369,13 +390,26 @@ if [ -n "$WRF_VENUS" ] ; then
     compileflags="${compileflags}!-DPLANET!-DVENUS"
   fi
 fi
-if [ $WRF_NMM_CORE = 1 ]; then
-if [ -n "$HWRF" ]; then
-    if [ $HWRF = 1 ]; then
-      echo building WRF with HWRF option
-      compileflags="${compileflags}!-DHWRF=1"
+if [ -n "$WRF_NMM_CORE" ]; then
+  if [ $WRF_NMM_CORE = 1 ]; then
+    if [ -n "$HWRF" ]; then
+      if [ $HWRF = 1 ]; then
+        echo building WRF with HWRF option
+        compileflags="${compileflags}!-DHWRF=1"
+        if [ -n "$HWRFX" ]; then
+          if [ $HWRFX = 1 ]; then
+            compileflags="${compileflags}!-DHWRFX=1"
+          fi
+        fi
+      fi
     fi
+  fi
 fi
+if [ -n "$WRF_DFI_RADAR" ] ; then
+  if [ $WRF_DFI_RADAR = 1 ] ; then
+    echo building WRF with radar dfi option
+    compileflags="${compileflags}!-DWRF_DFI_RADAR=1"
+  fi
 fi
 if [ -n "$WRF_CHEM" ] ; then
   if [ $WRF_CHEM = 1 ] ; then
@@ -392,6 +426,10 @@ if [ -n "$WRF_CHEM" ] ; then
   fi
 else
   compileflags="${compileflags} "
+fi
+
+if [ `which timex` ] ; then
+  FORTRAN_COMPILER_TIMER=timex
 fi
 
 # Found perl, so proceed with configuration
@@ -434,6 +472,9 @@ if test -f configure.wrf ; then
     if test -e tools/mpi2_test.o ; then
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
       sed '/^DM_CC.*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      if [ `hostname | cut -c 1-2` = "be" ] ; then
+         sed '/^ARCH_LOCAL.*=/s/$/ -DUSE_MPI_IN_PLACE/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      fi
     else
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
     fi
@@ -503,11 +544,206 @@ if test -n $NETCDF ; then
 fi
 echo "  "
 
-if [ "$wrf_core" = "DA_CORE" ]; then
-  if [ `grep '^SFC' configure.wrf | cut -d= -f2` = "gfortran" ]; then
+if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ]; then
+  if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" ]; then
     echo "WRFDA using gfortran needs realsize=8"
     sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
     /bin/mv configure.wrf.edit configure.wrf
   fi
 fi
 
+#Checking cross-compiling capability for some particular environment 
+#on Linux and Mac box
+
+if [ $os = "Linux" -o $os = "Darwin" ]; then
+
+  SFC=`grep '^SFC' configure.wrf | awk '{print $3}'`
+  SCC=`grep '^SCC' configure.wrf | awk '{print $3}'`
+  CCOMP=`grep '^CCOMP' configure.wrf | awk '{print $3}'`
+
+  SFC="`type $SFC 2>/dev/null | awk '{print $NF}' | sed -e 's/(//g;s/)//g'`"
+  SCC="`type $SCC 2>/dev/null | awk '{print $NF}' | sed -e 's/(//g;s/)//g'`"
+  CCOMP="`type $CCOMP 2>/dev/null | awk '{print $NF}' | sed -e 's/(//g;s/)//g'`"
+
+  if [ -e $NETCDF/lib/libnetcdf.a -a "$SFC" != "" -a "$SCC" != "" -a "$CCOMP" != "" ]; then
+
+    SFC_MULTI_ABI=0
+    SCC_MULTI_ABI=0
+    CCOMP_MULTI_ABI=0
+    CROSS_COMPILING=0
+
+    foo=foo_$$
+
+    echo
+    echo Testing for NetCDF, C and Fortran compiler
+    echo
+
+cat > ${foo}.c <<EOF 
+ int main(int argc, char ** argv)
+ {
+     return (0);
+ }
+EOF
+
+cat > ${foo}.f <<EOF
+          program test_exit
+            integer :: STATUS = 0
+            call EXIT(STATUS)
+          end program test_exit
+EOF
+
+    ar p $NETCDF/lib/libnetcdf.a nc.o > ${foo}.o
+    netcdf_arch="`file ${foo}.o | grep -o -E '[0-9]{2}-bit|i386'`"
+    rm ${foo}.o
+
+    $SFC -o ${foo} ${foo}.f > /dev/null 2>&1 
+    SFC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
+    rm ${foo} ${foo}.o 2> /dev/null
+
+    $SCC -o ${foo} ${foo}.c > /dev/null 2>&1
+    SCC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
+    CCOMP_arch=$SCC_arch
+    rm ${foo} ${foo}.o 2> /dev/null
+
+    if [ "$SCC" != "$CCOMP" ]; then
+      $CCOMP -o ${foo} ${foo}.c > /dev/null 2>&1
+      CCOMP_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
+      rm ${foo} ${foo}.o 2> /dev/null
+    fi
+
+    if [ "$SFC_arch" = "" -o "$SCC_arch" = "" -o "$CCOMP_arch" = "" ]; then
+      echo "  One of compilers testing failed!"
+      echo "  Please check your compiler"
+      echo 
+      rm -f ${foo} ${foo}.[cfo] 2> /dev/null
+      exit
+    else
+      cp configure.wrf configure.wrf.edit
+    fi
+
+    case $netcdf_arch in
+
+      32-bit|i386 )
+
+      if [ "$SFC_arch" = "64-bit" ] ; then
+        CROSS_COMPILING=1
+        $SFC -m32 -o ${foo} ${foo}.f > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SFC_MULTI_ABI=1
+          sed '/^SFC.*=/s/$/ -m32/' configure.wrf.edit > configure.wrf.tmp
+          mv configure.wrf.tmp configure.wrf.edit
+        fi
+      fi
+      if [ "$SCC_arch" = "64-bit" ] ; then
+        CROSS_COMPILING=1
+        $SCC -m32 -o ${foo} ${foo}.c > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SCC_MULTI_ABI=1
+          sed '/^SCC.*=/s/$/ -m32/' configure.wrf.edit > configure.wrf.tmp
+          mv configure.wrf.tmp  configure.wrf.edit
+        fi
+      fi
+
+      if [ "$CCOMP_arch" = "64-bit" ] ; then
+        CROSS_COMPILING=1
+        if [ "$CCOMP" != "$SCC" ]; then
+          $CCOMP -m32 -o ${foo} ${foo}.c > /dev/null 2>&1
+          if [ $? = 0 ]; then
+            CCOMP_MULTI_ABI=1
+            sed '/^CCOMP/ s/$/ -m32/' configure.wrf.edit > configure.wrf.tmp
+            mv configure.wrf.tmp  configure.wrf.edit
+          fi
+        else
+          CCOMP_MULTI_ABI=1
+          sed '/^CCOMP/ s/$/ -m32/' configure.wrf.edit > configure.wrf.tmp
+          mv configure.wrf.tmp  configure.wrf.edit
+        fi
+      fi
+
+      if [ $CROSS_COMPILING -eq 1 ] ; then
+        echo NOTE:
+        echo This installation NetCDF is 32-bit
+        if [ \( $SFC_MULTI_ABI -ne 1 -a "$SFC_arch" = "64-bit" \) \
+             -o \( $SCC_MULTI_ABI -ne 1 -a "$SCC_arch" = "64-bit" \) \
+             -o \( $CCOMP_MULTI_ABI -ne 1 -a "$CCOMP_arch" = "64-bit" \) ] ; then
+             rm configure.wrf.edit
+             echo One of compilers is 64-bit and doesn\'t support cross-compiling.
+             echo Please check your NETCDF lib and compiler
+        else
+          echo -m32 is appended to configure.wrf
+          echo It will be forced to build in 32-bit.
+          echo If you don\'t want 32-bit binaries, please use 64-bit NetCDF, and re-run the configure script.
+        fi
+      fi
+      ;;
+
+      64-bit )
+
+      if [ "$SFC_arch" = "32-bit" -o "$SFC_arch" = "i386" ] ; then
+        CROSS_COMPILING=1
+        $SFC -m64 -o ${foo} ${foo}.f > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SFC_MULTI_ABI=1
+          sed '/^SFC.*=/s/$/ -m64/' configure.wrf.edit > configure.wrf.tmp
+          mv configure.wrf.tmp configure.wrf.edit
+        fi
+      fi
+      if [ "$SCC_arch" = "32-bit" -o "$SCC_arch" = "i386" ] ; then
+        CROSS_COMPILING=1
+        $SCC -m64 -o ${foo} ${foo}.c > /dev/null 2>&1
+        if [ $? = 0 ]; then
+          SCC_MULTI_ABI=1
+          sed '/^SCC.*=/s/$/ -m64/' configure.wrf.edit > configure.wrf.tmp
+          mv configure.wrf.tmp configure.wrf.edit
+        fi
+      fi
+
+      if [ "$CCOMP_arch" = "32-bit" -o "$CCOMP_arch" = "i386" ] ; then
+        CROSS_COMPILING=1
+        if [ "$CCOMP" != "$SCC" ]; then
+          $CCOMP -m64 -o ${foo} ${foo}.c > /dev/null 2>&1
+          if [ $? = 0 ]; then
+            CCOMP_MULTI_ABI=1
+            sed '/^CCOMP/ s/$/ -m64/' configure.wrf.edit > configure.wrf.tmp
+            mv configure.wrf.tmp  configure.wrf.edit
+          fi
+        else
+          CCOMP_MULTI_ABI=1
+          sed '/^CCOMP/ s/$/ -m64/' configure.wrf.edit > configure.wrf.tmp
+          mv configure.wrf.tmp  configure.wrf.edit
+        fi
+      fi
+
+      if [ $CROSS_COMPILING -eq 1 ] ; then
+        echo NOTE:
+        echo This installation NetCDF is 64-bit
+        if [ \( $SFC_MULTI_ABI -ne 1 -a "$SFC_arch" != "64-bit" \) \
+            -o \( $SCC_MULTI_ABI -ne 1 -a "$SCC_arch" != "64-bit" \) \
+            -o \( $CCOMP_MULTI_ABI -ne 1 -a "CCOMP_arch" != "64-bit" \) ]; then
+            rm configure.wrf.edit
+            echo One of Compilers is 32-bit and doesn\'t support cross-compiling.
+            echo Please check your NetCDF lib and compiler
+        else
+          echo -m64 is appended to configure.wrf
+          echo It will be forced to build in 64-bit. 
+          echo If you don\'t want 64-bit binaries, please use 32-bit NetCDF, and re-run the configure script.
+        fi
+      fi
+      ;;
+    esac
+
+    if [ -e configure.wrf.edit ]; then 
+      mv configure.wrf.edit configure.wrf
+    fi
+
+    rm -f ${foo} ${foo}.[cfo] 2> /dev/null
+
+    if [ $CROSS_COMPILING -eq 0 ] ; then
+      echo This installation NetCDF is $netcdf_arch
+      echo C compiler is $SCC_arch
+      echo Fortran compiler is $SFC_arch
+      echo It will build in $netcdf_arch
+    fi
+    echo
+  fi
+fi

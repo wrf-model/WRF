@@ -12,9 +12,11 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
 
    character*4, intent(in) :: filnam
 
+#ifdef VAR4D
+
    ! Local variables
 
-   integer :: i, j, k
+   integer :: i, j, k, bid, ierr, ii, jj, spec_bdy_width
    real    :: sdmd, s1md
    real    :: rho_cgrid
 
@@ -22,6 +24,9 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
 #ifndef A2C
    real, dimension(ims:ime,jms:jme,kms:kme) :: utmp
    real, dimension(ims:ime,jms:jme,kms:kme) :: vtmp
+   real, dimension(ims:ime,jms:jme) :: mut
+   real, dimension(ims:ime,jms:jme) :: muu
+   real, dimension(ims:ime,jms:jme) :: muv
 #endif
 
    integer ndynopt
@@ -32,14 +37,51 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    ! [7.0] Adjoint of outPUT (inPUT)
    !---------------------------------------------------------------------------
 
-   ndynopt      = grid%dyn_opt
-   grid%dyn_opt = DYN_EM_AD
-   call nl_set_dyn_opt (1 , DYN_EM_AD)
+   if ( .not. adj_sens ) then
 
-   call da_med_initialdata_input(grid , config_flags, filnam)
+   call kj_swap_reverse (model_grid%a_u_2, grid%a_u_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%a_v_2, grid%a_v_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%a_w_2, grid%a_w_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%a_t_2, grid%a_t_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%a_ph_2, grid%a_ph_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
 
-   grid%dyn_opt = ndynopt
-   call nl_set_dyn_opt (1 , DYN_EM)
+   grid%a_mu_2 = model_grid%a_mu_2
+   grid%a_rainnc  = model_grid%a_rainnc
+   grid%a_rainncv = model_grid%a_rainncv
+   grid%a_rainc  = model_grid%a_rainc
+   grid%a_raincv = model_grid%a_raincv
+
+   do i = PARAM_FIRST_SCALAR, num_moist
+      call kj_swap_reverse (model_grid%a_moist(:,:,:,i), grid%a_moist(:,:,:,i), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   enddo
+
+   call da_transfer_wrftl_lbc_t0_adj ( grid )
+
+   else
+
+   if ( grid%auxinput17_oid .NE. 0 ) then
+      call close_dataset ( grid%auxinput17_oid , config_flags , "DATASET=AUXINPUT17" )
+   endif
+
+   call open_r_dataset ( grid%auxinput17_oid, TRIM(filnam) , grid , config_flags, &
+                              "DATASET=AUXINPUT17", ierr )
+   if ( ierr .NE. 0 ) then
+      WRITE( message(1) , * ) 'Error opening ', TRIM( filnam )
+      CALL wrf_error_fatal( TRIM( message(1) ) )
+   endif
+
+   call wrf_debug (00 , 'Calling input_auxinput17' )
+   call input_auxinput17 ( grid%auxinput17_oid, grid , config_flags , ierr )
+
+   call close_dataset ( grid%auxinput17_oid , config_flags , "DATASET=AUXINPUT17" )
+
+   endif
 
    !---------------------------------------------------------------------------
    ! [6.0] Adjoint of save OTHERinCREMENT
@@ -116,7 +158,7 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
   end if
 #endif
 #ifdef DM_PARALLEL
-#include "HALO_PSICHI_UV_ADJ.inc"
+#include "HALO_XA_A.inc"
 #endif
 
 #ifdef A2C
@@ -265,10 +307,27 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
       end do
    end do
 
+   if (size(grid%a_moist,dim=4) >= 4) then
+      do k=kts,kte
+         do j=jts,jte
+            do i=its,ite
+             grid%xa%qcw(i,j,k)=grid%xa%qcw(i,j,k) + grid%a_moist(i,j,k,P_A_QC)
+             grid%xa%qrn(i,j,k)=grid%xa%qrn(i,j,k) + grid%a_moist(i,j,k,P_A_QR)
+            end do
+         end do
+      end do
+   end if
+
    grid%a_moist = 0.0
+
+   grid%a_rainnc = 0.0
+   grid%a_rainncv = 0.0
+   grid%a_rainc = 0.0
+   grid%a_raincv = 0.0
 
    if (trace_use) call da_trace_exit("da_transfer_xatowrftl_adj")
 
+#endif
 end subroutine da_transfer_xatowrftl_adj
 
 

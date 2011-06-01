@@ -20,7 +20,8 @@ $sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
 $sw_rttov_flag = "" ;
 $sw_rttov_inc = "" ;
 $sw_crtm_flag = "" ;
-$sw_crtm_inc = "" ;
+$sw_4dvar_flag = "" ;
+$sw_wavelet_flag = "" ;
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
 $sw_mach = "ARCH" ;         # ARCH will match any
@@ -101,6 +102,14 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
     }
+    if ( index ( $sw_wrf_core , "4D_DA_CORE" ) > -1 ) 
+    {
+      $sw_em_core = "-DEM_CORE=1" ;
+      $sw_da_core = "-DDA_CORE=1" ;
+      $sw_nmm_core = "-DNMM_CORE=0" ;
+      $sw_exp_core = "-DEXP_CORE=0" ;
+      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+    }
     if ( index ( $sw_wrf_core , "NMM_CORE" ) > -1 ) 
     {
       $sw_em_core = "-DEM_CORE=0" ;
@@ -160,6 +169,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  $sw_nest_opt = "" ; 
  $sw_comms_external = "gen_comms_serial module_dm_serial" ;
 
+
  if ( $sw_dmparallel eq "RSL_LITE" ) 
  {
   $sw_fc = "\$(DM_FC)" ;
@@ -193,12 +203,19 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      if ( $ENV{CRTM} )
        {
        $sw_crtm_flag = "-DCRTM";
-       $sw_crtm_inc = "-I$ENV{CRTM}/src";
        }
      if ( $ENV{RTTOV} )
        {
        $sw_rttov_flag = "-DRTTOV";
-       $sw_rttov_inc = "-I$ENV{RTTOV}/src";
+       $sw_rttov_inc = "-I$ENV{RTTOV}/include -I$ENV{RTTOV}/mod";
+       }
+     if ( $sw_wrf_core eq "4D_DA_CORE" )
+       {
+       $sw_4dvar_flag = "-DVAR4D";
+       }
+     if ( $ENV{WAVELET} )
+       {
+       $sw_wavelet_flag = "-DWAVELET";
        }
    }
 
@@ -301,27 +318,32 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
     $_ =~ s/CONFIGURE_COMMS_INCLUDE/$sw_comms_include/g ;
     $_ =~ s/CONFIGURE_COMMS_EXTERNAL/$sw_comms_external/g ;
+    if ( $sw_os ne "CYGWIN_NT" ) {
+      $_ =~ s/#NOWIN// ;
+    }
     $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
+    $_ =~ s/CONFIGURE_4DVAR_FLAG/$sw_4dvar_flag/g ;
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
-    $_ =~ s/CONFIGURE_CRTM_INC/$sw_crtm_inc/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
+    $_ =~ s/CONFIGURE_WAVELET_FLAG/$sw_wavelet_flag/g ;
     if ( $sw_ifort_r8 ) {
       $_ =~ s/^PROMOTION.*=/PROMOTION       =       -r8 /g ;
     }
     if ( $sw_dmparallel ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
        $_ =~ s/#// ;
     }
-    if ( $sw_ompparallel ne "" && ( $_ =~ /^OMPCPP[=\t ]/ || $_ =~ /^OMP[=\t ]/ ) ) {
+    if ( $sw_ompparallel ne "" && ( $_ =~ /^OMPCPP[=\t ]/ || $_ =~ /^OMPCC[=\t ]/ || $_ =~ /^OMP[=\t ]/ ) ) {
+       $_ =~ s/#// ;
        $_ =~ s/#// ;
        $_ =~ s/#// ;
     }
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
-        if ( $sw_os == Interix ) {
+        if ( $sw_os eq "Interix" ) {
 	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
         } else {
 	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
@@ -336,7 +358,7 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_pnetcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_PNF/wrfio_pnf/g ;
 	$_ =~ s:CONFIGURE_PNETCDF_FLAG:-DPNETCDF: ;
-        if ( $sw_os == Interix ) {
+        if ( $sw_os eq "Interix" ) {
 	  $_ =~ s:CONFIGURE_PNETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_pnetcdf/libwrfio_pnf.a -L$sw_pnetcdf_path/lib -lpnetcdf: ;
         } else {
 	  $_ =~ s:CONFIGURE_PNETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_pnetcdf -lwrfio_pnf -L$sw_pnetcdf_path/lib -lpnetcdf: ;
@@ -386,7 +408,7 @@ while ( <CONFIGURE_DEFAULTS> )
       {
         $_ =~ s:CONFIGURE_ESMF_FLAG::g ;
         $_ =~ s:ESMFLIBFLAG::g ;
-        if ( $sw_os == Interix ) {
+        if ( $sw_os eq "Interix" ) {
            $_ =~ s:ESMFIOLIB:\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90/libesmf_time.a:g ;
            $_ =~ s:ESMFIOEXTLIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90/libesmf_time.a:g ;
         } else {
@@ -396,15 +418,15 @@ while ( <CONFIGURE_DEFAULTS> )
       }
      if ( $ENV{HWRF} )
        {
-        $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
-        $_ =~ s:CONFIGURE_ATMPOM_INC:-I\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom:g;
-        $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
+        $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;
+        $_ =~ s:CONFIGURE_ATMOCN_INC:-I\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn:g;
+        $_ =~ s/CONFIGURE_ATMOCN/atm_ocn/g ;
        }
      else
        {
-        $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
-        $_ =~ s/CONFIGURE_ATMPOM//g ;
-        $_ =~ s:CONFIGURE_ATMPOM_INC::g;
+        $_ =~ s:CONFIGURE_ATMOCN_LIB::g ;
+        $_ =~ s/CONFIGURE_ATMOCN//g ;
+        $_ =~ s:CONFIGURE_ATMOCN_INC::g;
        }
 
     if ( ! (substr( $_, 0, 5 ) eq "#ARCH") ) { @machopts = ( @machopts, $_ ) ; }
@@ -472,7 +494,11 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( ( $response == 1 ) || ( $response == 2 ) || ( $response == 3 ) ) {
           if ( ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) {   # nesting without MPI
             $sw_stubmpi = "-DSTUBMPI" ;
-            $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            if ( $sw_os ne "CYGWIN_NT" ) {
+              $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            } else {
+              $sw_comms_lib = "../external/RSL_LITE/librsl_lite.a" ;
+            }
             $sw_comms_external = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms_rsllite module_dm_rsllite" ;
             $sw_dmparallel = "RSL_LITE" ;
             $sw_dmparallelflag = "-DDM_PARALLEL" ;
@@ -485,7 +511,11 @@ while ( <CONFIGURE_DEFAULTS> )
         }
         if ( $paropt eq 'smpar' || $paropt eq 'dm+sm' ) { $sw_ompparallel = "OMP" ; }
         if ( $paropt eq 'dmpar' || $paropt eq 'dm+sm' ) { 
-          $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
+          if ( $sw_os ne "CYGWIN_NT" ) {
+            $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
+          } else {
+            $sw_comms_lib = "../external/RSL_LITE/librsl_lite.a" ;
+          }
           $sw_comms_external = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms_rsllite module_dm_rsllite" ;
           $sw_dmparallel = "RSL_LITE" ;
           $sw_dmparallelflag = "-DDM_PARALLEL" ;
@@ -534,13 +564,13 @@ while ( <ARCH_PREAMBLE> )
     }
   if ( $ENV{HWRF} )
     {
-    $_ =~ s:CONFIGURE_ATMPOM_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_pom  -latm_pom:g ;
-    $_ =~ s/CONFIGURE_ATMPOM/atm_pom/g ;
+    $_ =~ s:CONFIGURE_ATMOCN_LIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/atm_ocn  -latm_ocn:g ;
+    $_ =~ s/CONFIGURE_ATMOCN/atm_ocn/g ;
     }
   else
     {
-    $_ =~ s:CONFIGURE_ATMPOM_LIB::g ;
-    $_ =~ s/CONFIGURE_ATMPOM//g ;
+    $_ =~ s:CONFIGURE_ATMOCN_LIB::g ;
+    $_ =~ s/CONFIGURE_ATMOCN//g ;
     }
   $_ =~ s:CONFIGURE_EM_CORE:$sw_em_core:g ;
   $_ =~ s:CONFIGURE_DA_CORE:$sw_da_core:g ;

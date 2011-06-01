@@ -16,18 +16,24 @@ CONTAINS
               ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                &
               ,APR_CAPMA,APR_CAPME,APR_CAPMI                    &
               ,MASS_FLUX,XF_ENS,PR_ENS,HT,XLAND,gsw,edt_out     &
-              ,GDC,GDC2                                         &
+              ,GDC,GDC2 ,kpbl,k22_shallow,kbcon_shallow         &
+              ,ktop_shallow,xmb_shallow                         &
               ,cugd_tten,cugd_qvten ,cugd_qcten                 &
               ,cugd_ttens,cugd_qvtens,cugd_avedx,imomentum      &
               ,ensdim,maxiens,maxens,maxens2,maxens3,ichoice    &
-              ,ids,ide, jds,jde, kds,kde                        &
+              ,ishallow_g3,ids,ide, jds,jde, kds,kde            &
               ,ims,ime, jms,jme, kms,kme                        &
               ,ips,ipe, jps,jpe, kps,kpe                        &
               ,its,ite, jts,jte, kts,kte                        &
               ,periodic_x,periodic_y                            &
               ,RQVCUTEN,RQCCUTEN,RQICUTEN                       &
               ,RQVFTEN,RTHFTEN,RTHCUTEN                         &
+              ,rqvblten,rthblten                                &
               ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS         &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+              ,do_capsuppress,cap_suppress_loc                  &
+#endif                                 
                                                                 )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -44,7 +50,8 @@ CONTAINS
    integer, intent (in   )              ::                      &
                        ensdim,maxiens,maxens,maxens2,maxens3,ichoice
   
-   INTEGER,      INTENT(IN   ) :: STEPCU, ITIMESTEP,cugd_avedx,imomentum
+   INTEGER,      INTENT(IN   ) :: STEPCU, ITIMESTEP,cugd_avedx, &
+                                  ishallow_g3,imomentum
    LOGICAL,      INTENT(IN   ) :: warm_rain
 
    REAL,         INTENT(IN   ) :: XLV, R_v
@@ -68,6 +75,9 @@ CONTAINS
                GDC,GDC2
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(IN) :: GSW,HT,XLAND
+   INTEGER, DIMENSION( ims:ime , jms:jme ),INTENT(IN) :: KPBL
+   INTEGER, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT) :: k22_shallow, &
+                 kbcon_shallow,ktop_shallow
 !
    REAL, INTENT(IN   ) :: DT, DX
 !
@@ -75,7 +85,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ),                        &
          INTENT(INOUT) ::           pratec,RAINCV, MASS_FLUX,   &
                           APR_GR,APR_W,APR_MC,APR_ST,APR_AS,    &
-                         edt_out,APR_CAPMA,APR_CAPME,APR_CAPMI,htop,hbot
+                         edt_out,APR_CAPMA,APR_CAPME,APR_CAPMI, &
+                         htop,hbot,xmb_shallow
 !+lxz
 !  REAL, DIMENSION( ims:ime , jms:jme ) :: & !, INTENT(INOUT) ::       &
 !        HTOP,     &! highest model layer penetrated by cumulus since last reset in radiation_driver
@@ -100,6 +111,8 @@ CONTAINS
          INTENT(INOUT) ::                                       &
                                                    RTHCUTEN,    &
                                                    RQVCUTEN,    &
+                                                   RQVBLTEN,    &
+                                                   RTHBLTEN,    &
                                                    RQCCUTEN,    &
                                                    RQICUTEN
 !
@@ -117,6 +130,18 @@ CONTAINS
                                                   ,F_QS
 
 
+#if ( WRF_DFI_RADAR == 1 )
+!
+!  option of cap suppress: 
+!        do_capsuppress = 1   do
+!        do_capsuppress = other   don't
+!
+!
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
+   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(IN   ),OPTIONAL  :: cap_suppress_loc
+   REAL, DIMENSION( its:ite ) :: cap_suppress_j
+#endif
+
 
 ! LOCAL VARS
      real,    dimension(ims:ime,jms:jme,1:ensdim),intent(inout) ::      &
@@ -127,13 +152,13 @@ CONTAINS
                           APRi_GR,APRi_W,APRi_MC,APRi_ST,APRi_AS,    &
                          edti_out,APRi_CAPMA,APRi_CAPME,APRi_CAPMI,gswi
      real,    dimension (its:ite,kts:kte) ::                    &
-        SUBT,SUBQ,OUTT,OUTQ,OUTQC,phh,subm,cupclw
-     real,    dimension (its:ite,kts:kte+1) ::  phf
+        SUBT,SUBQ,OUTT,OUTQ,OUTQC,phh,subm,cupclw,dhdt,         &
+        outts,outqs
      real,    dimension (its:ite)         ::                    &
         pret, ter11, aa0, fp,xlandi
 !+lxz
      integer, dimension (its:ite) ::                            &
-        kbcon, ktop
+        kbcon, ktop,kpbli,k22s,kbcons,ktops
 !.lxz
      integer, dimension (its:ite,jts:jte) ::                    &
         iact_old_gr
@@ -147,24 +172,28 @@ CONTAINS
 ! convection for this call only and at that particular gridpoint
 !
      real,    dimension (its:ite,kts:kte) ::                    &
-        T2d,q2d,PO,P2d,US,VS,tn,qo
+        T2d,q2d,PO,P2d,US,VS,tn,qo,tshall,qshall
      real,    dimension (ips-2:ipe+2,kps:kpe,jps-2:jpe+2) ::    &
         ave_f_t,ave_f_q
      real,    dimension (its:ite,kts:kte,1:ens4) ::                    &
         omeg,tx,qx
      real, dimension (its:ite)            ::                    &
-        Z1,PSUR,AAEQ,direction,cuten,umean,vmean,pmean
+        Z1,PSUR,AAEQ,direction,cuten,umean,vmean,pmean,xmbs
      real, dimension (its:ite,1:ens4)     ::                    &
         mconv
 
    INTEGER :: i,j,k,ICLDCK,ipr,jpr
-   REAL    :: tcrit,dp,dq,sub_spread,subcenter
+   REAL    :: tcrit,tscl_KF,dp,dq,sub_spread,subcenter
    INTEGER :: itf,jtf,ktf,iss,jss,nbegin,nend
    INTEGER :: high_resolution
    REAL    :: rkbcon,rktop        !-lxz
 ! ruc variable
      real, dimension (its:ite)            ::  tkm
 
+  ! A. Betts for shallow convection: suggestion for the KF timescale < DELTAX  / 25 m/s
+   tscl_kf=dx/25.
+  !
+!   write(0,*)'ishallow = ',ishallow_g3
    high_resolution=0
    if(cugd_avedx.gt.1) high_resolution=1
    subcenter=0.
@@ -172,7 +201,7 @@ CONTAINS
    sub_spread=max(1.,float(cugd_avedx*cugd_avedx-1))
    sub_spread=(1.-subcenter)/sub_spread
    iens=1
-   ipr=37
+   ipr=43
    jpr=1
    ipr=0
    jpr=0
@@ -202,6 +231,14 @@ CONTAINS
       jbegc=max(jts,jds+4)
       jendc=min(jte,jde-5)
    END IF
+   do j=jts,jte
+   do i=its,ite
+     k22_shallow(i,j)=0
+     kbcon_shallow(i,j)=0
+     ktop_shallow(i,j)=0
+     xmb_shallow(i,j)=0
+   enddo
+   enddo
    tcrit=258.
    ave_f_t=0.
    ave_f_q=0.
@@ -253,6 +290,8 @@ CONTAINS
         kbcon(i)=0
         ktop(i)=0
         tkm(i)=0.
+        HBOT(I,J)  =REAL(KTE)
+        HTOP(I,J)  =REAL(KTS)
         iact_old_gr(i,j)=0
         mass_flux(i,j)=0.
         massi_flx(i,j)=0.
@@ -298,42 +337,15 @@ CONTAINS
         massflni(i,j,k)=0.
      ENDDO
      ENDDO
-#if ( EM_CORE == 1 )
-     !  hydrostatic pressure, first on full levels
-     DO I=ITS,ITF
-         phf(i,1) = p8w(i,1,j)
-     ENDDO
-     !  integrate up, dp = -rho * g * dz
-     DO K=kts+1,ktf+1
-     DO I=ITS,ITF
-         phf(i,k) = phf(i,k-1) - rho(i,k-1,j) * g * dz8w(i,k-1,j)
-     ENDDO
-     ENDDO
-     !  scale factor so that pressure is not zero after integration
-     DO I=ITS,ITF
-         fp(i) = (p8w(i,kts,j)-p8w(i,kte,j))/(phf(i,kts)-phf(i,kte))
-     ENDDO
-     !  re-integrate up, dp = -rho * g * dz * scale_factor
-     DO K=kts+1,ktf+1
-     DO I=ITS,ITF
-         phf(i,k) = phf(i,k-1) - rho(i,k-1,j) * g * dz8w(i,k-1,j) * fp(i)
-     ENDDO
-     ENDDO 
      !  put hydrostatic pressure on half levels
      DO K=kts,ktf
      DO I=ITS,ITF
-         phh(i,k) = (phf(i,k) + phf(i,k+1))*0.5
+         phh(i,k) = p(i,k,j)
      ENDDO
      ENDDO
 
-#endif
      DO I=ITS,ITF
-#if ( EM_CORE == 1 )
          PSUR(I)=p8w(I,1,J)*.01
-#endif
-#if ( NMM_CORE == 1 )
-         PSUR(I)=p(I,1,J)*.01
-#endif
 !        PSUR(I)=p(I,1,J)*.01
          TER11(I)=HT(i,j)
          aaeq(i)=0.
@@ -342,16 +354,13 @@ CONTAINS
          umean(i)=0.
          vmean(i)=0.
          pmean(i)=0.
+         kpbli(i)=kpbl(i,j)
      ENDDO
+!    if(j.eq.jpr)write(0,*)'psur(ipr),ter11(ipr),kpbli(ipr)'
+!    if(j.eq.jpr)write(0,*)psur(ipr),ter11(ipr),kpbli(ipr),r_v
      DO K=kts,ktf
      DO I=ITS,ITF
-#if ( EM_CORE == 1 )
          po(i,k)=phh(i,k)*.01
-#endif
-
-#if ( NMM_CORE == 1 )
-         po(i,k)=p(i,k,j)*.01
-#endif
          subm(i,k)=0.
          P2d(I,K)=PO(i,k)
          US(I,K) =u(i,k,j)
@@ -364,16 +373,25 @@ CONTAINS
          OUTT(I,K)=0.
          OUTQ(I,K)=0.
          OUTQC(I,K)=0.
+         OUTTS(I,K)=0.
+         OUTQS(I,K)=0.
          TN(I,K)=t2d(i,k)+RTHFTEN(i,k,j)*dt
          QO(I,K)=q2d(i,k)+RQVFTEN(i,k,j)*dt
+         TSHALL(I,K)=t2d(i,k)+RTHBLTEN(i,k,j)*pi(i,k,j)*dt
+         DHDT(I,K)=cp*RTHBLTEN(i,k,j)*pi(i,k,j)+ XLV*RQVBLTEN(i,k,j)
+         QSHALL(I,K)=q2d(i,k)+RQVBLTEN(i,k,j)*dt
          if(high_resolution.eq.1)then
             TN(I,K)=t2d(i,k)+ave_f_t(i,k,j)*dt
             QO(I,K)=q2d(i,k)+ave_f_q(i,k,j)*dt
          endif
          IF(TN(I,K).LT.200.)TN(I,K)=T2d(I,K)
          IF(QO(I,K).LT.1.E-08)QO(I,K)=1.E-08
+!        if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,123)k,p2d(i,k),t2d(i,k),tn(i,k),q2d(i,k),QO(i,k),RTHBLTEN(i,k,j),RQVBLTEN(i,k,j)
+!        endif
      ENDDO
      ENDDO
+123  format(1x,i2,f8.0,1x,2(1x,f8.3),4(1x,e12.4))
      ens4n=0
      nbegin=0
      nend=0
@@ -436,8 +454,17 @@ CONTAINS
 !
 !---- CALL CUMULUS PARAMETERIZATION
 !
+#if ( WRF_DFI_RADAR == 1 )
+      if(do_capsuppress == 1 ) then
+        DO I= its,itf
+            cap_suppress_j(i)=cap_suppress_loc(i,j)
+        ENDDO
+      endif
+#endif
       CALL CUP_enss_3d(outqc,j,AAEQ,T2d,Q2d,TER11,subm,TN,QO,PO,PRET,&
            P2d,OUTT,OUTQ,DT,itimestep,tkm,PSUR,US,VS,tcrit,iens,tx,qx,          &
+           tshall,qshall,kpbli,DHDT,outts,outqs,tscl_kf,           &
+           k22s,kbcons,ktops,xmbs,                                 &
            mconv,massflni,iact_old_gr,omeg,direction,MASSi_FLX,  &
            maxiens,maxens,maxens2,maxens3,ensdim,                 &
            APRi_GR,APRi_W,APRi_MC,APRi_ST,APRi_AS,                &
@@ -445,25 +472,39 @@ CONTAINS
            xfi_ens,pri_ens,XLANDi,gswi,edti_out,subt,subq,        &
 ! ruc          lv_p,rv_p,cpd_p,g0_p,ichoice,ipr,jpr,                  &
            xlv,r_v,cp,g,ichoice,ipr,jpr,ens4,high_resolution,     &
-           itf,jtf,ktf,                                           &
-           its,ite, jts,jte, kts,kte                             )
+           ishallow_g3,itf,jtf,ktf,                               &
+           its,ite, jts,jte, kts,kte                              &
+#if ( WRF_DFI_RADAR == 1 )
+           ,do_capsuppress,cap_suppress_j                         &             
+#endif
+                                                             )
 
 
             if(j.lt.jbegc.or.j.gt.jendc)go to 100
             DO I=ibegc,iendc
+              xmb_shallow(i,j)=xmbs(i)
+              k22_shallow(i,j)=k22s(i)
+              kbcon_shallow(i,j)=kbcons(i)
+              ktop_shallow(i,j)=ktops(i)
               cuten(i)=0.
               if(pret(i).gt.0.)then
                  cuten(i)=1.
 !                raincv(i,j)=pret(i)*dt
               endif
             ENDDO
+!           if(j.eq.jpr)write(0,*)'precip,ktop,kbcon = ',pret(ipr),ktop(ipr),kbcon(ipr)
             DO I=ibegc,iendc
             DO K=kts,ktf
                cugd_ttens(I,K,J)=subt(i,k)*cuten(i)*sub_spread
                cugd_qvtens(I,K,J)=subq(i,k)*cuten(i)*sub_spread
-               cugd_tten(I,K,J)=outt(i,k)*cuten(i) 
-               cugd_qvten(I,K,J)=outq(i,k)*cuten(i)
+!              cugd_tten(I,K,J)=outt(i,k)*cuten(i) 
+!              cugd_qvten(I,K,J)=outq(i,k)*cuten(i)
+               cugd_tten(I,K,J)=outts(i,k)+outt(i,k)*cuten(i)
+               cugd_qvten(I,K,J)=outqs(i,k)+outq(i,k)*cuten(i)
                cugd_qcten(I,K,J)=outqc(i,k)*cuten(i)
+!              if(i.eq.ipr.and.j.eq.jpr)then
+!                write(0,*)subt(i,k)+outt(i,k),subq(i,k)+outq(i,k),outts(i,k),outqs(i,k)
+!              endif
             ENDDO
             ENDDO
             DO I=ibegc,iendc
@@ -533,15 +574,23 @@ CONTAINS
 
    SUBROUTINE CUP_enss_3d(OUTQC,J,AAEQ,T,Q,Z1,sub_mas,                    &
               TN,QO,PO,PRE,P,OUTT,OUTQ,DTIME,ktau,tkmax,PSUR,US,VS,    &
-              TCRIT,iens,tx,qx,mconv,massfln,iact,                     &
+              TCRIT,iens,tx,qx,                                        &
+              tshall,qshall,kpbl,dhdt,outts,outqs,tscl_kf,             &
+              k23,kbcon3,ktop3,xmb3,                                   &
+              mconv,massfln,iact,                                      &
               omeg,direction,massflx,maxiens,                          &
               maxens,maxens2,maxens3,ensdim,                           &
               APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                       &
               APR_CAPMA,APR_CAPME,APR_CAPMI,kbcon,ktop,cupclw,         &   !-lxz
               xf_ens,pr_ens,xland,gsw,edt_out,subt,subq,               &
               xl,rv,cp,g,ichoice,ipr,jpr,ens4,high_resolution,         &
-              itf,jtf,ktf,                                             &
-              its,ite, jts,jte, kts,kte                         )
+              ishallow_g3,itf,jtf,ktf,                                 &
+              its,ite, jts,jte, kts,kte                                &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+                     ,do_capsuppress,cap_suppress_j                  &
+#endif                                 
+                                                )
 
    IMPLICIT NONE
 
@@ -550,7 +599,7 @@ CONTAINS
         itf,jtf,ktf,ktau,                                              &
         its,ite, jts,jte, kts,kte,ipr,jpr,ens4,high_resolution
      integer, intent (in   )              ::                           &
-        j,ensdim,maxiens,maxens,maxens2,maxens3,ichoice,iens
+        j,ensdim,maxiens,ishallow_g3,maxens,maxens2,maxens3,ichoice,iens
   !
   ! 
   !
@@ -573,15 +622,16 @@ CONTAINS
   ! pre    = output precip
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (inout  )                   ::                           &
-        OUTT,OUTQ,OUTQC,subt,subq,sub_mas,cupclw
+        DHDT,OUTT,OUTQ,OUTQC,subt,subq,sub_mas,cupclw,outts,outqs
      real,    dimension (its:ite)                                      &
         ,intent (out  )                   ::                           &
-        pre
-!+lxz
+        pre,xmb3
      integer,    dimension (its:ite)                                   &
         ,intent (out  )                   ::                           &
-        kbcon,ktop
-!.lxz
+        kbcon,ktop,k23,kbcon3,ktop3
+     integer,    dimension (its:ite)                                   &
+        ,intent (in  )                   ::                           &
+        kpbl
   !
   ! basic environmental input includes moisture convergence (mconv)
   ! omega (omeg), windspeed (us,vs), and a flag (aaeq) to turn off
@@ -589,7 +639,7 @@ CONTAINS
   !
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
-        T,PO,P,US,VS,tn
+        T,PO,P,US,VS,tn,tshall,qshall
      real,    dimension (its:ite,kts:kte,1:ens4)                       &
         ,intent (inout   )                   ::                           &
         omeg,tx,qx
@@ -606,8 +656,18 @@ CONTAINS
        
        real                                                            &
         ,intent (in   )                   ::                           &
-        dtime,tcrit,xl,cp,rv,g
+        dtime,tcrit,xl,cp,rv,g,tscl_kf
 
+#if ( WRF_DFI_RADAR == 1 )
+!
+!  option of cap suppress: 
+!        do_capsuppress = 1   do
+!        do_capsuppress = other   don't
+!
+!
+   INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
+   REAL, DIMENSION( its:ite ),INTENT(IN   ) ,OPTIONAL   :: cap_suppress_j
+#endif
 
 !
 !  local ensemble dependent variables in this routine
@@ -691,6 +751,15 @@ CONTAINS
   ! hc = cloud moist static energy
   ! hkb = moist static energy at originating level
   ! mentr_rate = entrainment rate
+     real,    dimension (its:ite,kts:kte) ::                           &
+        he3,hes3,qes3,z3,zdo3,zu3_0,hc3_0,dby3_0,gamma3_0_cup,         &
+        qes3_cup,q3_cup,he3_cup,hes3_cup,z3_cup,gamma3_cup,t3_cup,     &
+        xhe3,xhes3,xqes3,xz3,xt3,xq3,                                  &
+        xqes3_cup,xq3_cup,xhe3_cup,xhes3_cup,xz3_cup,xgamma3_cup,      &
+        xt3_cup,                                                       &
+        xdby3,xqc3,xhc3,xqrc3,xzu3,                                    &
+        dby3,qc3,pw3,hc3,qrc3,zu3,cd3,DELLAH3,DELLAQ3,                 &
+        dsubt3,dsubq3,DELLAT3,DELLAQC3
 
      real,    dimension (its:ite,kts:kte) ::                           &
         he,hes,qes,z,                                                  &
@@ -721,30 +790,36 @@ CONTAINS
   ! aa1     = cloud work function with forcing effects
   ! xaa0    = cloud work function with cloud effects (ensemble dependent)
   ! edt     = epsilon
+
      real,    dimension (its:ite) ::                                   &
-       edt,edto,edtx,AA1,AA0,XAA0,HKB,HKBO,aad,XHKB,QKB,QKBO,          &
-       XMB,XPWAV,XPWEV,PWAV,PWEV,PWAVO,PWEVO,BU,BUO,cap_max,xland1,     &
-       cap_max_increment,closure_n
+       aa3_0,aa3,hkb3,qkb3,pwav3,bu3,xaa3,xhkb3,                       &
+       hkb3_0,edt,edto,edtx,AA1,AA0,XAA0,HKB,                          &
+       HKBO,aad,XHKB,QKB,QKBO,edt3,                                    &
+       XMB,XPWAV,XPWEV,PWAV,PWEV,PWAVO,                                &
+       PWEVO,BU,BUO,cap_max,xland1,                                    &
+       cap_max_increment,closure_n,cap_max3
      real,    dimension (its:ite,1:ens4) ::                                   &
         axx
      integer,    dimension (its:ite) ::                                &
-       kzdown,KDET,K22,KB,JMIN,kstabi,kstabm,K22x,                     &   !-lxz
-       KBCONx,KBx,KTOPx,ierr,ierr2,ierr3,KBMAX 
+       kzdown,KDET,K22,KB,JMIN,kstabi,kstabm,K22x,jmin3,kdet3,         &   !-lxz
+       KBCONx,KBx,KTOPx,ierr,ierr2,ierr3,KBMAX,ierr5,ierr5_0 
 
      integer                              ::                           &
        nall,iedt,nens,nens3,ki,I,K,KK,iresult
      real                                 ::                           &
-      day,dz,mbdt,entr_rate,radius,entrd_rate,mentr_rate,mentrd_rate,  &
+      day,dz,mbdt,mbdt_s,entr_rate,radius,entrd_rate,mentr_rate,mentrd_rate,  &
       zcutdown,edtmax,edtmin,depth_min,zkbmax,z_detr,zktop,            &
-      massfld,dh,cap_maxs,trash
+      massfld,dh,cap_maxs,trash,entr_rate3,mentr_rate3
 
      integer :: jmini
      logical :: keep_going
+     real xff_shal(9),blqe,xkshal
 
 
 
       day=86400.
       do i=its,itf
+        xmb3(i)=0.
         closure_n(i)=16.
         xland1(i)=1.
         if(xland(i).gt.1.5)xland1(i)=0.
@@ -763,12 +838,14 @@ CONTAINS
 !--- gross entrainment rate (these may be changed later on in the
 !--- program, depending what your detrainment is!!)
 !
-      entr_rate=.2/radius
+      entr_rate =.2/radius
+      entr_rate3=.2/200.
 !
 !--- entrainment of mass
 !
       mentrd_rate=0.
       mentr_rate=entr_rate
+      mentr_rate3=entr_rate3
 !
 !--- initial detrainmentrates
 !
@@ -776,7 +853,12 @@ CONTAINS
       do i=its,itf
         cupclw(i,k)=0.
         cd(i,k)=0.01*entr_rate
+        cd3(i,k)=entr_rate3
         cdd(i,k)=0.
+        zdo3(i,k)=0.
+        hcdo(i,k)=0.
+        qrcdo(i,k)=0.
+        dellaqc(i,k)=0.
       enddo
       enddo
 !
@@ -797,27 +879,59 @@ CONTAINS
       cap_maxs=75.
       DO i=its,itf
         kbmax(i)=1
+        jmin3(i)=0
+        kdet3(i)=0
         aa0(i)=0.
+        aa3_0(i)=0.
         aa1(i)=0.
+        aa3(i)=0.
         aad(i)=0.
         edt(i)=0.
+        edt3(i)=0.
         kstabm(i)=ktf-1
         IERR(i)=0
         IERR2(i)=0
         IERR3(i)=0
-        if(aaeq(i).lt.-0.1)then
-           ierr(i)=20
-        endif
+        IERR5(i)=0
+        IERR5_0(i)=0
  enddo
 !
 !--- first check for upstream convection
 !
+#if ( WRF_DFI_RADAR == 1 )
+  if(do_capsuppress == 1) then
       do i=its,itf
           cap_max(i)=cap_maxs
+          cap_max3(i)=25.
+          if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
+          if (abs(cap_suppress_j(i) - 1.0 ) < 0.1 ) then
+             cap_max(i)=cap_maxs+75.
+          elseif (abs(cap_suppress_j(i) - 0.0 ) < 0.1 ) then
+             cap_max(i)=10.0
+          endif
+          iresult=0
+      enddo
+  else
+     do i=its,itf
+         cap_max(i)=cap_maxs
+          cap_max3(i)=25.
+         if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
+       iresult=0
+     enddo
+  endif
+
+      do i=its,itf
+        edt_out(i,j)=cap_max(i)
+      enddo
+#else
+      do i=its,itf
+          cap_max(i)=cap_maxs
+          cap_max3(i)=25.
           if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
         iresult=0
 
       enddo
+#endif
 !
 !--- max height(m) above ground where updraft air can originate
 !
@@ -873,7 +987,10 @@ CONTAINS
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
-      if(ierr(i).eq.0)then
+        if(aaeq(i).lt.-0.1)then
+           ierr(i)=20
+        endif
+!     if(ierr(i).eq.0)then
 !
       do k=kts,ktf
         if(zo_cup(i,k).gt.zkbmax+z1(i))then
@@ -893,7 +1010,7 @@ CONTAINS
       enddo
  26   continue
 !
-      endif
+!     endif
       enddo
 !
 !
@@ -935,11 +1052,11 @@ CONTAINS
 !--- calculate incloud moist static energy
 !
       call cup_up_he(k22,hkb,z_cup,cd,mentr_rate,he_cup,hc, &
-           kbcon,ierr,dby,he,hes_cup, &
+           kbcon,ierr,dby,he,hes_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_up_he(k22,hkbo,zo_cup,cd,mentr_rate,heo_cup,hco, &
-           kbcon,ierr,dbyo,heo,heso_cup, &
+           kbcon,ierr,dbyo,heo,heso_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 
@@ -1064,7 +1181,7 @@ CONTAINS
 !
 !--- calculate moisture properties of updraft
 !
-      call cup_up_moisture(ierr,z_cup,qc,qrc,pw,pwav, &
+      call cup_up_moisture('deep',ierr,z_cup,qc,qrc,pw,pwav, &
            kbcon,ktop,cd,dby,mentr_rate,clw_all,      &
            q,GAMMA_cup,zu,qes_cup,k22,q_cup,xl, &
            itf,jtf,ktf, &
@@ -1074,7 +1191,7 @@ CONTAINS
          cupclw(i,k)=qrc(i,k)
       enddo
       enddo
-      call cup_up_moisture(ierr,zo_cup,qco,qrco,pwo,pwavo, &
+      call cup_up_moisture('deep',ierr,zo_cup,qco,qrco,pwo,pwavo, &
            kbcon,ktop,cd,dbyo,mentr_rate,clw_all, &
            qo,GAMMAo_cup,zuo,qeso_cup,k22,qo_cup,xl,&
            itf,jtf,ktf, &
@@ -1097,6 +1214,312 @@ CONTAINS
            endif
          endif
       enddo
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!    NEXT section for shallow convection
+!
+      if(ishallow_g3.eq.1)then
+!     write(0,*)'now do shallow for j = ',j
+      call cup_env(z3,qes3,he3,hes3,tshall,qshall,po,z1, &
+           psur,ierr5,tcrit,0,xl,cp,   &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_env_clev(tshall,qes3,qshall,he3,hes3,z3,po,qes3_cup,q3_cup, &
+           he3_cup,hes3_cup,z3_cup,po_cup,gamma3_cup,t3_cup,psur,  &
+           ierr5,z1,xl,rv,cp,          &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      CALL cup_MAXIMI(HE3_CUP,1,kbmax,K23,ierr5, &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+       DO i=its,itf
+         if(kpbl(i).gt.5)cap_max3(i)=po_cup(i,kpbl(i))
+         IF(ierr5(I).eq.0.)THEN
+         IF(K23(I).Gt.Kbmax(i))ierr5(i)=2
+         if(kpbl(i).gt.5)k23(i)=kpbl(i)
+         endif
+         ierr5_0(i)=ierr5(i)
+       ENDDO
+      call cup_kbcon(cap_max_increment,5,k23,kbcon3,he3_cup,hes3_cup, &
+           ierr5,kbmax,po_cup,cap_max3, &
+!          ierr5,kpbl,po_cup,cap_max3, &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_up_he(k23,hkb3,z3_cup,cd3,mentr_rate3,he3_cup,hc3, &
+           kbcon3,ierr5,dby3,he3,hes3_cup,'shallow', &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_up_he(k23,hkb3_0,z_cup,cd3,mentr_rate3,he_cup,hc3_0, &
+           kbcon3,ierr5,dby3_0,he,hes_cup,'shallow', &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_ktop(1,dby3,kbcon3,ktop3,ierr5, &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_up_nms(zu3,z3_cup,mentr_rate3,cd3,kbcon3,ktop3,    &
+           ierr5,k23, &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_up_nms(zu3_0,z_cup,mentr_rate3,cd3,kbcon3,ktop3,    &
+           ierr5,k23, &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+!
+! first calculate aa3_0_cup
+!
+      call cup_up_aa0(aa3_0,z,zu3_0,dby3_0,GAMMA3_0_CUP,t_cup, &
+           kbcon3,ktop3,ierr5,           &
+           itf,jtf,ktf, &
+          its,ite, jts,jte, kts,kte)
+!
+!  now what is necessary for aa3 and feedbacks
+!
+      call cup_up_moisture('shallow',ierr5,z3_cup,qc3,qrc3,pw3,pwav3, &
+           kbcon3,ktop3,cd3,dby3,mentr_rate3,clw_all, &
+           qshall,GAMMA3_cup,zu3,qes3_cup,k23,q3_cup,xl,&
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_up_aa0(aa3,z3,zu3,dby3,GAMMA3_CUP,t3_cup, &
+           kbcon3,ktop3,ierr5,           &
+           itf,jtf,ktf, &
+          its,ite, jts,jte, kts,kte)
+!     do i=its,itf
+!        if(ierr5(i).eq.0)then
+!          if(aa3(i).eq.0.)then
+!              ierr5(i)=17
+!          endif
+!        endif
+!     enddo
+!     call cup_dellabot('shallow',ipr,jpr,q3_cup,ierr5,z3_cup,po,qrcdo,edto, &
+!          zdo,cdd,q3,dellaq3,dsubq,j,mentrd_rate,z3,g,&
+!          itf,jtf,ktf, &
+!          its,ite, jts,jte, kts,kte)
+      call cup_dellas_3d(ierr5,z3_cup,po_cup,hcdo,edt3,zdo3,cdd,    &
+           he3,dellah3,dsubt3,j,mentrd_rate,zu3,g,                     &
+           cd3,hc3,ktop3,k23,kbcon3,mentr_rate3,jmin,he3_cup,kdet, &
+           k23,ipr,jpr,'shallow',0,                                 &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_dellas_3d(ierr5,z3_cup,po_cup,qrcdo,edt3,zdo3,cdd, &
+           qshall,dellaq3,dsubq3,j,mentrd_rate,zu3,g, &
+           cd3,qc3,ktop3,k23,kbcon3,mentr_rate3,jmin,q3_cup,kdet, &
+           k23,ipr,jpr,'shallow',0,               &
+              itf,jtf,ktf,                     &
+              its,ite, jts,jte, kts,kte    )
+              mbdt_s=1.e-1*mbdt_ens(1)
+              do k=kts,ktf
+              do i=its,itf
+                 dellat3(i,k)=0.
+                 if(ierr5(i).eq.0)then
+                    trash=dsubt3(i,k)
+                    XHE3(I,K)=(dsubt3(i,k)+DELLAH3(I,K))*MBDT_S+HE3(I,K)
+                    XQ3(I,K)=(dsubq3(i,k)+DELLAQ3(I,K))*MBDT_S+QSHALL(I,K)
+                    DELLAT3(I,K)=(1./cp)*(DELLAH3(I,K)-xl*DELLAQ3(I,K))
+                    dSUBT3(I,K)=(1./cp)*(dsubt3(i,k)-xl*dsubq3(i,k))
+                    XT3(I,K)= (DELLAT3(I,K)+dsubt3(i,k))*MBDT_S+TSHALL(I,K)
+                    IF(XQ3(I,K).LE.0.)XQ3(I,K)=1.E-08
+!                    if(i.eq.ipr.and.j.eq.jpr)then
+!                      write(0,*)k,trash,DELLAQ3(I,K),dsubq3(I,K),dsubt3(i,k)
+!                    endif
+                 ENDIF
+              enddo
+              enddo
+      do i=its,itf
+      if(ierr5(i).eq.0)then
+      XHE3(I,ktf)=HE3(I,ktf)
+      XQ3(I,ktf)=QSHALL(I,ktf)
+      XT3(I,ktf)=TSHALL(I,ktf)
+      IF(XQ3(I,ktf).LE.0.)XQ3(I,ktf)=1.E-08
+      endif
+      enddo
+!
+!--- calculate moist static energy, heights, qes
+!
+      call cup_env(xz3,xqes3,xhe3,xhes3,xt3,xq3,po,z1, &
+           psur,ierr5,tcrit,2,xl,cp,   &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+!
+!--- environmental values on cloud levels
+!
+      call cup_env_clev(xt3,xqes3,xq3,xhe3,xhes3,xz3,po,xqes3_cup,xq3_cup, &
+           xhe3_cup,xhes3_cup,xz3_cup,po_cup,gamma3_cup,xt3_cup,psur,   &
+           ierr5,z1,xl,rv,cp,          &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+!     
+!     
+!**************************** static control
+!     
+!--- moist static energy inside cloud
+!
+      do i=its,itf
+        if(ierr5(i).eq.0)then
+          xhkb3(i)=xhe3(i,k23(i))
+        endif
+      enddo
+      call cup_up_he(k23,xhkb3,xz3_cup,cd3,mentr_rate3,xhe3_cup,xhc3, &
+           kbcon3,ierr5,xdby3,xhe3,xhes3_cup,'shallow', &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+!          
+!c--- normalized mass flux profile and CWF
+!          
+      call cup_up_nms(xzu3,xz3_cup,mentr_rate3,cd3,kbcon3,ktop3,ierr5,k23, &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+      call cup_up_aa0(xaa3,xz3,xzu3,xdby3,GAMMA3_CUP,xt3_cup, &
+           kbcon3,ktop3,ierr5,           &
+           itf,jtf,ktf, &
+           its,ite, jts,jte, kts,kte)
+!
+! now for shallow forcing
+!
+       do i=its,itf
+        xmb3(i)=0.
+        xff_shal(1:9)=0.
+        if(ierr5(i).eq.0)then
+          xkshal=(xaa3(i)-aa3(i))/mbdt_s
+          if(xkshal.gt.0.)xkshal=+1.e6
+          if(xkshal.gt.-1.e-4 .and. xkshal.lt.0.)xkshal=-1.e-4
+          xff_shal(1)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))
+          xff_shal(2)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))
+          xff_shal(3)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))
+          if(aa3_0(i).le.0)then
+           xff_shal(1)=0.
+           xff_shal(2)=0.
+           xff_shal(3)=0.
+          endif
+          if(aa3(i)-aa3_0(i).le.0.)then
+           xff_shal(1)=0.
+           xff_shal(2)=0.
+           xff_shal(3)=0.
+          endif
+! boundary layer QE (from Saulo Freitas)
+          blqe=0.
+          trash=0.
+          if(k23(i).lt.kpbl(i)+1)then
+             do k=1,kbcon3(i)-1
+                blqe=blqe+100.*dhdt(i,k)*(p_cup(i,k)-p_cup(i,k+1))/g
+             enddo
+             trash=max((hc3(i,kbcon3(i))-he_cup(i,kbcon3(i))),1.e1)
+             xff_shal(7)=max(0.,blqe/trash)
+             xff_shal(7)=min(0.1,xff_shal(7))
+          else
+             xff_shal(7)=0.
+          endif
+          if((xkshal.lt.-1.1e-04) .and.  &
+             ((aa3(i)-aa3_0(i).gt.0.) .or. (xff_shal(7).gt.0)))then
+          xff_shal(4)=max(0.,-aa3(i)/(xkshal*tscl_KF))
+          xff_shal(4)=min(0.1,xff_shal(4))
+          xff_shal(5)=xff_shal(4)
+          xff_shal(6)=xff_shal(4)
+          else
+           xff_shal(4)=0.
+           xff_shal(5)=0.
+           xff_shal(6)=0.
+          endif
+!         write(0,888)'i0=',i,j,kpbl(i),blqe,xff_shal(7)
+888       format(a3,3(1x,i3),2e12.4)
+          xff_shal(8)= xff_shal(7)
+          xff_shal(9)= xff_shal(7)
+          do k=1,9
+           xmb3(i)=xmb3(i)+xff_shal(k)
+          enddo
+          xmb3(i)=min(.1,xmb3(i)/9.)
+!         if(xmb3(i).eq.10.1 )then
+!           write(0,*)'i0,xmb3,blqe,xkshal = ',i,j,xmb3(i),blqe,xkshal
+!           if(xff_shal(7).ge.0.1)then
+!             write(0,*)'i1,blqe,trash = ',blqe,trash
+!           endif
+!           if(xff_shal(7).eq.0 .and. xff_shal(1).ge.0.1)then
+!              write(0,*)'i2,aa3_0(i),aa3(i),xaa3(i) = ',aa3_0(i),aa3(i),xaa3(i)
+!           endif
+!           if(xff_shal(5).ge.0.1)then
+!              write(0,*)'i3,aa3(i),a0,xkshal= ',aa3(i),aa3_0(i),xkshal
+!           endif
+!           write(0,*)'i0, xff_shallow = ',xff_shal
+!         endif
+!!         if(xff_shal(7).eq.0 .and. xff_shal(4).gt.0 .and. xmb3(i).eq.0.5)then
+!!           write(0,*)'i4,xmb3 = ',i,j,xmb3(i),xkshal
+!!           write(0,*)'xff_shallow = ',xff_shal
+!!           write(0,*)aa3(i),xaa3(i),blqe
+!!         endif
+          if(xmb3(i).eq.0.)ierr5(i)=22
+          if(xmb3(i).lt.0.)then
+             ierr5(i)=21
+!            write(0,*)'neg xmb,i,j,xmb3 for shallow = ',i,j,k23(i),ktop3(i),kbcon3(i),kpbl(i)
+          endif
+        endif
+!         if(ierr5(i).eq.0)write(0,*)'i,j,xmb3 for shallow = ',i,j,xmb3(i),k23(i),ktop3(i)
+!         if(ierr5(i).eq.0.and.i.eq.12.and.j.eq.25)write(0,*)'i,j,xmb3 for shallow = ',k23(i),ktop3(i),kbcon3(i),kpbl(i)
+!         if(ierr5(i).eq.0)write(0,*)'i,j,xmb3 for shallow = ',i,j,k23(i),ktop3(i),kbcon3(i),kpbl(i)
+        if(ierr5(i).ne.0)then
+           k23(i)=0
+           kbcon3(i)=0
+           ktop3(i)=0
+           xmb3(i)=0
+           do k=kts,ktf
+              outts(i,k)=0.
+              outqs(i,k)=0.
+           enddo
+        else if(ierr5(i).eq.0)then
+!
+! got the mass flux, sanity check, first for heating rates
+!
+          trash=0.
+          do k=2,ktop3(i)
+           trash=max(trash,86400.*(dsubt3(i,k)+dellat3(i,k))*xmb3(i))
+          enddo
+          if(trash.gt.150.)xmb3(i)=xmb3(i)*150./trash
+!
+! sanity check on moisture tendencies: do not allow anything that may allow neg tendencies
+!
+          do k=2,ktop3(i)
+           trash=q(i,k)+(dsubq3(i,k)+dellaq3(i,k))*xmb3(i)*dtime
+          if(trash.lt.1.e-12)then
+! max allowable tendency over tendency that would lead to too small mix ratios
+!
+            trash=((1.e-12-q(i,k))/dtime)                   &
+                  /((dsubq3(i,k)+dellaq3(i,k))*xmb3(i))
+            trash=max(0.,trash)
+            trash=min(1.,trash)
+            xmb3(i)=trash*xmb3(i)
+          endif
+          enddo
+! 
+! final tendencies
+!
+          do k=2,ktop3(i)
+           outts(i,k)=(dsubt3(i,k)+dellat3(i,k))*xmb3(i)
+           outqs(i,k)=(dsubq3(i,k)+dellaq3(i,k))*xmb3(i)
+          enddo
+        endif
+       enddo
+!       if(j.eq.-25)then
+!!        write(0,*)'!!!!!!!! j = ',j,' !!!!!!!!!!!!!!!!!!!!'
+        i=12
+!        write(0,*)k23(i),kbcon3(i),ktop3(i)
+!        write(0,*)kpbl(i),ierr5(i),ierr(i)
+!        write(0,*)xmb3(i),xff_shal(1:9)
+!        write(0,*)xaa3(i),aa1(i),aa0(i),aa3(i)
+!        do k=1,ktf
+!          write(0,*)po(i,k),he3(i,k),hes3(i,k),dellah3(i,k)
+!        enddo
+!        do k=1,ktf
+!          write(0,*)zu3(i,k),hc3(i,k),dsubt3(i,k),dellat3(i,k)
+!        enddo
+!        do k=1,ktop3(i)+1
+!          blqe=cp*outts(i,k)+xl*outqs(i,k)
+!          write(0,*)outts(i,k),outqs(i,k),blqe
+!        enddo
+!       endif
+!      
+! done shallow
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       ENDIF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
       call cup_axx(tcrit,kbmax,z1,p,psur,xl,rv,cp,tx,qx,axx,ierr,    &
            cap_max,cap_max_increment,entr_rate,mentr_rate,&
            j,itf,jtf,ktf, &
@@ -1135,22 +1558,22 @@ CONTAINS
         enddo
         enddo
 !
-      if(j.eq.jpr.and.iedt.eq.1.and.ipr.gt.its.and.ipr.lt.ite)then
-!      if(j.eq.jpr)then
-         i=ipr
-!        write(0,*)'in 250 loop ',iedt,edt(ipr),ierr(ipr)
-!       if(ierr(i).eq.0.or.ierr(i).eq.3)then
-         write(0,*)'250',k22(I),kbcon(i),ktop(i),jmin(i)
-         write(0,*)edt(i),aa0(i),aa1(i)
-         do k=kts,ktf
-           write(0,*)k,z(i,k),he(i,k),hes(i,k)
-         enddo
-         write(0,*)'end 250 loop ',iedt,edt(ipr),ierr(ipr)
-         do k=1,ktop(i)+1
-           write(0,*)zu(i,k),zd(i,k),pw(i,k),pwd(i,k)
-         enddo
-!        endif
-      endif
+!      if(j.eq.jpr.and.iedt.eq.1.and.ipr.gt.its.and.ipr.lt.ite)then
+!!      if(j.eq.jpr)then
+!         i=ipr
+!!        write(0,*)'in 250 loop ',iedt,edt(ipr),ierr(ipr)
+!!       if(ierr(i).eq.0.or.ierr(i).eq.3)then
+!         write(0,*)'250',k22(I),kbcon(i),ktop(i),jmin(i)
+!         write(0,*)edt(i),aa0(i),aa1(i)
+!         do k=kts,ktf
+!           write(0,*)k,z(i,k),he(i,k),hes(i,k)
+!         enddo
+!         write(0,*)'end 250 loop ',iedt,edt(ipr),ierr(ipr)
+!         do k=1,ktop(i)+1
+!           write(0,*)zu(i,k),zd(i,k),pw(i,k),pwd(i,k)
+!         enddo
+!!        endif
+!      endif
       do i=its,itf
         aad(i)=0.
       enddo
@@ -1159,11 +1582,11 @@ CONTAINS
 !
 !--- 1. in bottom layer
 !
-      call cup_dellabot(ipr,jpr,heo_cup,ierr,zo_cup,po,hcdo,edto, &
+      call cup_dellabot('deep',ipr,jpr,heo_cup,ierr,zo_cup,po,hcdo,edto, &
            zdo,cdd,heo,dellah,dsubt,j,mentrd_rate,zo,g, &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
-      call cup_dellabot(ipr,jpr,qo_cup,ierr,zo_cup,po,qrcdo,edto, &
+      call cup_dellabot('deep',ipr,jpr,qo_cup,ierr,zo_cup,po,qrcdo,edto, &
            zdo,cdd,qo,dellaq,dsubq,j,mentrd_rate,zo,g,&
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
@@ -1215,9 +1638,9 @@ CONTAINS
       xaa0_ens(i,3)=0.
       enddo
 
-      if(j.eq.jpr)then
-               write(0,*)'xt',xl,'DELLAH(I,K),DELLAQ(I,K),dsubq(I,K),dsubt(i,k)'
-      endif
+!      if(j.eq.jpr)then
+!               write(0,*)'xt',xl,'DELLAH(I,K),DELLAQ(I,K),dsubq(I,K),dsubt(i,k)'
+!      endif
       do k=kts,ktf
       do i=its,itf
          dellat(i,k)=0.
@@ -1229,9 +1652,9 @@ CONTAINS
             dSUBT(I,K)=(1./cp)*(dsubt(i,k)-xl*dsubq(i,k))
             XT(I,K)= (DELLAT(I,K)+dsubt(i,k))*MBDT+TN(I,K)
             IF(XQ(I,K).LE.0.)XQ(I,K)=1.E-08
-             if(i.eq.ipr.and.j.eq.jpr)then
-               write(0,*)k,trash,DELLAQ(I,K),dsubq(I,K),dsubt(i,k)
-             endif
+!             if(i.eq.ipr.and.j.eq.jpr)then
+!               write(0,*)k,trash,DELLAQ(I,K),dsubq(I,K),dsubt(i,k)
+!             endif
          ENDIF
       enddo
       enddo
@@ -1270,7 +1693,7 @@ CONTAINS
         endif
       enddo
       call cup_up_he(k22,xhkb,xz_cup,cd,mentr_rate,xhe_cup,xhc, &
-           kbcon,ierr,xdby,xhe,xhes_cup, &
+           kbcon,ierr,xdby,xhe,xhes_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
@@ -1299,7 +1722,7 @@ CONTAINS
 !
 !------- MOISTURE updraft
 !
-      call cup_up_moisture(ierr,xz_cup,xqc,xqrc,xpw,xpwav, &
+      call cup_up_moisture('deep',ierr,xz_cup,xqc,xqrc,xpw,xpwav, &
            kbcon,ktop,cd,xdby,mentr_rate,clw_all, &
            xq,GAMMA_cup,xzu,xqes_cup,k22,xq_cup,xl, &
            itf,jtf,ktf, &
@@ -1407,11 +1830,11 @@ CONTAINS
            dellaqc_ens(i,k,iedt)=0.
            pwo_ens(i,k,iedt)=0.
         endif
-       if(i.eq.ipr.and.j.eq.jpr)then
-         write(0,*)'1',iens,iedt,dellat(i,k),dellat_ens(i,k,iedt), &
-           dellaq(i,k), dellaqc(i,k)
-         write(0,*)'2',k,subt_ens(i,k,iedt),subq_ens(i,k,iedt)
-       endif
+!       if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,*)'1',iens,iedt,dellat(i,k),dellat_ens(i,k,iedt), &
+!           dellaq(i,k), dellaqc(i,k)
+!         write(0,*)'2',k,subt_ens(i,k,iedt),subq_ens(i,k,iedt)
+!       endif
       enddo
       enddo
  250  continue
@@ -1429,26 +1852,36 @@ CONTAINS
            its,ite, jts,jte, kts,kte)
       k=1
       do i=its,itf
+          if(ierr(i).eq.0.and.ierr5(i).eq.0.and.kbcon(i).lt.ktop3(i)+1)then
+!            write(0,*)'both ier and ier5=0 at i,j=',i,j,kbcon(i),ktop3(i)
+             if(high_resolution.eq.1)then
+                outts(i,kts:kte)=0.
+                outqs(i,kts:kte)=0.
+             endif
+          elseif (ierr5(i).eq.0)then
+!            write(0,*)'ier5=0 at i,j=',i,j,k23(i),ktop3(i)
+          endif
+
            PRE(I)=MAX(PRE(I),0.)
-           if(i.eq.ipr.and.j.eq.jpr)then
-             write(0,*)'i,j,pre(i),aa0(i),aa1(i)'
-             write(0,*)i,j,pre(i),aa0(i)
-           endif
+!           if(i.eq.ipr.and.j.eq.jpr)then
+!             write(0,*)'i,j,pre(i),aa0(i),aa1(i)'
+!             write(0,*)i,j,pre(i),aa0(i)
+!           endif
       enddo
 !
 !---------------------------done------------------------------
 !
-      do i=its,itf
-        if(ierr(i).eq.0)then
-       if(i.eq.ipr.and.j.eq.jpr)then
-         write(0,*)'on output, pre =',pre(i),its,itf,kts,ktf
-         do k=kts,ktf
-           write(0,*)z(i,k),outt(i,k)*86400.,subt(i,k)*86400.
-         enddo
-         write(0,*)i,j,(axx(i,k),k=1,ens4)
-       endif
-       endif
-      enddo
+!      do i=its,itf
+!        if(ierr(i).eq.0)then
+!       if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,*)'on output, pre =',pre(i),its,itf,kts,ktf
+!         do k=kts,ktf
+!           write(0,*)z(i,k),outt(i,k)*86400.,subt(i,k)*86400.
+!         enddo
+!         write(0,*)i,j,(axx(i,k),k=1,ens4)
+!       endif
+!       endif
+!      enddo
 !     print *,'ierr(i) = ',ierr(i),pre(i)
 
    END SUBROUTINE CUP_enss_3d
@@ -1603,7 +2036,7 @@ CONTAINS
               (p(i,kk) - p(i,kk+1))
             sdp(i) = sdp(i) + p(i,kk) - p(i,kk+1)
           endif
-          if (kk .eq. ktf)vshear(i) = 1.e3 * vws(i) / sdp(i)
+          if (kk .eq. ktf-1)vshear(i) = 1.e3 * vws(i) / sdp(i)
    62   continue
        end do
       do i=its,itf
@@ -1965,7 +2398,7 @@ CONTAINS
    END SUBROUTINE cup_dd_nms
 
 
-   SUBROUTINE cup_dellabot(ipr,jpr,he_cup,ierr,z_cup,p_cup,  &
+   SUBROUTINE cup_dellabot(name,ipr,jpr,he_cup,ierr,z_cup,p_cup,  &
               hcd,edt,zd,cdd,he,della,subs,j,mentrd_rate,z,g,     &
               itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
@@ -1978,6 +2411,8 @@ CONTAINS
         its,ite, jts,jte, kts,kte
      integer, intent (in   )              ::                           &
         j,ipr,jpr
+      character *(*), intent (in)        ::                           &
+       name
   !
   ! ierr error value, maybe modified in this routine
   !
@@ -2005,6 +2440,10 @@ CONTAINS
       totmas
 !
 !
+!     if(name.eq.'shallow')then
+!        edt(:)=0.
+!        cdd(:,:)=0.
+!     endif
       do 100 i=its,itf
       della(i,1)=0.
       subs(i,1)=0.
@@ -2021,10 +2460,10 @@ CONTAINS
                  +subin*he_cup(i,2) &
                  -entdo*he(i,1))*g/dp
       SUBS(I,1)=0.
-      if(i.eq.ipr.and.j.eq.jpr)then
-       write(0,*)'db1',della(i,1),subs(i,1),subin,entdo
-       write(0,*)'db2',detdo1,detdo2,detdo1+detdo2-entdo+subin
-      endif
+!      if(i.eq.ipr.and.j.eq.jpr)then
+!       write(0,*)'db1',della(i,1),subs(i,1),subin,entdo
+!       write(0,*)'db2',detdo1,detdo2,detdo1+detdo2-entdo+subin
+!      endif
  100  CONTINUE
 
    END SUBROUTINE cup_dellabot
@@ -2072,22 +2511,27 @@ CONTAINS
 !  local variables in this routine
 !
 
-      integer i,k
+      integer i,k,kstart
       real detdo1,detdo2,entdo,dp,dz,subin,detdo,entup,                &
       detup,subdown,entdoj,entupk,detupk,totmas
 !
       i=ipr
-       DO K=kts+1,ktf
+      kstart=kts+1
+      if(name.eq.'shallow')kstart=kts
+       DO K=kstart,ktf
        do i=its,itf
           della(i,k)=0.
           subs(i,k)=0.
        enddo
        enddo
 !
+! no downdrafts for shallow convection
+!
        DO 100 k=kts+1,ktf-1
        DO 100 i=its,ite
          IF(ierr(i).ne.0)GO TO 100
          IF(K.Gt.KTOP(I))GO TO 100
+         if(k.lt.k22(i)-1.and.name.eq.'shallow')GO TO 100
 !
 !--- SPECIFY DETRAINMENT OF DOWNDRAFT, HAS TO BE CONSISTENT
 !--- WITH ZD CALCULATIONS IN SOUNDD.
@@ -2205,15 +2649,15 @@ CONTAINS
                subs(i,k)=(entupk*he(i,k)-entupk*he_cup(i,k))*g/dp
          endif
          endif
-       if(i.eq.ipr.and.j.eq.jpr)then
-         write(0,*)'d',k,della(i,k),subs(i,k),subin,subdown
-!        write(0,*)'d',detup,entup,entdo,entupk,entdoj
-!        print *,k,della(i,k),subin*he_cup(i,k+1),subdown*he_cup(i,k),
-!     1            detdo*.5*(HCD(i,K+1)+HCD(i,K))
-!        print *,k,detup*.5*(HC(i,K+1)+HC(i,K)),detupk*hc(i,ktop(i)),
-!     1         entup*he(i,k),entdo*he(i,k)
-!        print *,k,he_cup(i,k+1),he_cup(i,k),entupk*he_cup(i,k)
-       endif
+!       if(i.eq.ipr.and.j.eq.jpr)then
+!         write(0,*)'d',k,della(i,k),subs(i,k),subin,subdown
+!!        write(0,*)'d',detup,entup,entdo,entupk,entdoj
+!!        print *,k,della(i,k),subin*he_cup(i,k+1),subdown*he_cup(i,k),
+!!     1            detdo*.5*(HCD(i,K+1)+HCD(i,K))
+!!        print *,k,detup*.5*(HC(i,K+1)+HC(i,K)),detupk*hc(i,ktop(i)),
+!!     1         entup*he(i,k),entdo*he(i,k)
+!!        print *,k,he_cup(i,k+1),he_cup(i,k),entupk*he_cup(i,k)
+!       endif
 
  100  CONTINUE
 
@@ -2379,13 +2823,13 @@ CONTAINS
   !
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
-        p,t
+        p,t,q
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (out  )                   ::                           &
         he,hes,qes
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (inout)                   ::                           &
-        z,q
+        z
      real,    dimension (its:ite)                                      &
         ,intent (in   )                   ::                           &
         psur,z1
@@ -2427,7 +2871,8 @@ CONTAINS
 !       print *, 'P, E = ', P(I,K), E
         QES(I,K)=.622*E/(100.*P(I,K)-E)
         IF(QES(I,K).LE.1.E-08)QES(I,K)=1.E-08
-        IF(Q(I,K).GT.QES(I,K))Q(I,K)=QES(I,K)
+        IF(QES(I,K).LT.Q(I,K))QES(I,K)=Q(I,K)
+!       IF(Q(I,K).GT.QES(I,K))Q(I,K)=QES(I,K)
         TV(I,K)=T(I,K)+.608*Q(I,K)*T(I,K)
         endif
       enddo
@@ -2907,7 +3352,6 @@ CONTAINS
                       massfln(i,j,nall+8)=0.
                       xff_ens3(9) =0.
                       massfln(i,j,nall+9)=0.
-                      closure_n(i)=closure_n(i)-1.
                       xff_ens3(13) =0.
                       massfln(i,j,nall+13)=0.
                       xff_ens3(15) =0.
@@ -3190,9 +3634,9 @@ CONTAINS
 !
 
      integer                              ::                           &
-        i
+        i,k
      real                                 ::                           &
-        pbcdif,plus
+        pbcdif,plus,hetest
 !
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
 !
@@ -3204,12 +3648,18 @@ CONTAINS
  31   CONTINUE
       KBCON(I)=KBCON(I)+1
       IF(KBCON(I).GT.KBMAX(i)+2)THEN
-         if(iloop.lt.4)ierr(i)=3
+         if(iloop.ne.4)ierr(i)=3
 !        if(iloop.lt.4)ierr(i)=997
         GO TO 27
       ENDIF
  32   CONTINUE
-      IF(HE_cup(I,K22(I)).LT.HES_cup(I,KBCON(I)))GO TO 31
+      hetest=HE_cup(I,K22(I))
+      if(iloop.eq.5)then
+       do k=1,k22(i)
+         hetest=max(hetest,he_cup(i,k))
+       enddo
+      endif
+      IF(HETEST.LT.HES_cup(I,KBCON(I)))GO TO 31
 
 !     cloud base pressure and max moist static energy pressure
 !     i.e., the depth (in mb) of the layer of negative buoyancy
@@ -3217,6 +3667,10 @@ CONTAINS
       PBCDIF=-P_cup(I,KBCON(I))+P_cup(I,K22(I))
       plus=max(25.,cap_max(i)-float(iloop-1)*cap_inc(i))
       if(iloop.eq.4)plus=cap_max(i)
+!
+! for shallow convection, if cap_max is greater than 25, it is the pressure at pbltop
+      if(iloop.eq.5)plus=25.
+      if(iloop.eq.5.and.cap_max(i).gt.25)pbcdif=-P_cup(I,KBCON(I))+cap_max(i)
       IF(PBCDIF.GT.plus)THEN
         K22(I)=K22(I)+1
         KBCON(I)=K22(I)
@@ -3682,7 +4136,7 @@ CONTAINS
 
 
    SUBROUTINE cup_up_he(k22,hkb,z_cup,cd,entr,he_cup,hc,     &
-              kbcon,ierr,dby,he,hes_cup,                     &
+              kbcon,ierr,dby,he,hes_cup,name,                &
               itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
@@ -3697,6 +4151,8 @@ CONTAINS
         ,intent (in   )                   ::                           &
                                   itf,jtf,ktf,           &
                                   its,ite, jts,jte, kts,kte
+      character *(*), intent (in)        ::                           &
+       name
   ! hc = cloud moist static energy
   ! hkb = moist static energy at originating level
   ! he = moist static energy on model levels
@@ -3746,28 +4202,31 @@ CONTAINS
 !
       do k=kts,ktf
       do i=its,itf
-       hc(i,k)=0.
-       DBY(I,K)=0.
+         hc(i,k)=0.
+         DBY(I,K)=0.
       enddo
       enddo
       do i=its,itf
-       hkb(i)=0.
+         hkb(i)=0.
       enddo
       do i=its,itf
-      if(ierr(i).eq.0.)then
-      hkb(i)=he_cup(i,k22(i))
-      do k=1,k22(i)
-        hc(i,k)=he_cup(i,k)
-!       DBY(I,K)=0.
-      enddo
-      do k=k22(i),kbcon(i)-1
-        hc(i,k)=hkb(i)
-!       DBY(I,K)=0.
-      enddo
-        k=kbcon(i)
-        hc(i,k)=hkb(i)
-        DBY(I,Kbcon(i))=Hkb(I)-HES_cup(I,K)
-      endif
+        if(ierr(i).eq.0.)then
+          hkb(i)=he_cup(i,k22(i))
+          if(name.eq.'shallow')then
+             do k=1,k22(i)
+               hkb(i)=max(hkb(i),he_cup(i,k))
+             enddo
+          endif
+          do k=1,k22(i)
+              hc(i,k)=he_cup(i,k)
+          enddo
+          do k=k22(i),kbcon(i)-1
+              hc(i,k)=hkb(i)
+          enddo
+          k=kbcon(i)
+          hc(i,k)=hkb(i)
+          DBY(I,Kbcon(i))=Hkb(I)-HES_cup(I,K)
+        endif
       enddo
       do k=kts+1,ktf
       do i=its,itf
@@ -3784,7 +4243,7 @@ CONTAINS
    END SUBROUTINE cup_up_he
 
 
-   SUBROUTINE cup_up_moisture(ierr,z_cup,qc,qrc,pw,pwav,     &
+   SUBROUTINE cup_up_moisture(name,ierr,z_cup,qc,qrc,pw,pwav,     &
               kbcon,ktop,cd,dby,mentr_rate,clw_all,                  &
               q,GAMMA_cup,zu,qes_cup,k22,qe_cup,xl,          &
               itf,jtf,ktf,                     &
@@ -3830,6 +4289,8 @@ CONTAINS
      integer, dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
         ierr
+      character *(*), intent (in)        ::                           &
+       name
    ! qc = cloud q (including liquid water) after entrainment
    ! qrch = saturation q in cloud
    ! qrc = liquid water content in cloud after rainout
@@ -3857,11 +4318,7 @@ CONTAINS
 !
 !--- no precip for small clouds
 !
-        if(mentr_rate.gt.0.)then
-          radius=.2/mentr_rate
-          if(radius.lt.900.)c0=0.
-!         if(radius.lt.900.)iall=0
-        endif
+        if(name.eq.'shallow')c0=0.
         do i=its,itf
           pwav(i)=0.
         enddo
@@ -4110,7 +4567,6 @@ CONTAINS
      ENDDO
      ENDDO
 
-   ENDIF
      DO j=jts,jtf
      DO i=its,itf
         APR_GR(i,j)=0.
@@ -4123,6 +4579,8 @@ CONTAINS
         APR_CAPMI(i,j)=0.
      ENDDO
      ENDDO
+
+   ENDIF
 
    END SUBROUTINE g3init
 
@@ -4537,7 +4995,7 @@ CONTAINS
 !--- calculate incloud moist static energy
 !
       call cup_up_he(k22xx,hkb,z_cup,cd,mentr_rate,he_cup,hc, &
-           kbconxx,ierrxx,dby,he,hes_cup, &
+           kbconxx,ierrxx,dby,he,hes_cup,'deep', &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 

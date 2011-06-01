@@ -33,7 +33,7 @@ program da_rad_diags
    integer                                :: nproc, nlev, ilev, ich
    integer                                :: cycle_period, nlev_rtm, nlev_mdl
    character(len=20), dimension(maxnum)   :: instid
-   character(len=3)                       :: file_prefix
+   character(len=6)                       :: file_prefix
    character(len=10)                      :: start_date, end_date
 !
 ! netcdf variables
@@ -144,7 +144,7 @@ ntime_loop: do itime = 1, ntime
       nproc_loop_1: do iproc = 0, nproc - 1   ! loop for first getting number of pixels from each proc
 
          write(unit=inpname(iproc), fmt='(a,i4.4)')  &
-            trim(datestr1(itime))//'/'//file_prefix//'_'//trim(instid(iinst))//'.', iproc
+            trim(datestr1(itime))//'/'//trim(adjustl(file_prefix))//'_'//trim(instid(iinst))//'.', iproc
          iunit(iproc) = 101 + iproc
          inquire(file=trim(inpname(iproc)), exist=isfile)
          if ( .not. isfile ) Then

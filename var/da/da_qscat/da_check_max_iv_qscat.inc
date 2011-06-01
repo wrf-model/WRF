@@ -2,6 +2,9 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! Update:
+   !    Removed Outerloop check as it is done in da_get_innov
+   !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
    !-----------------------------------------------------------------------
 
    implicit none
@@ -20,10 +23,8 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
-      if( iv%qscat(n)%u%qc == fails_error_max .and. it > 1 )iv%qscat(n)%u%qc =0
-      if( iv%qscat(n)%u%qc >= obs_qc_pointer ) then
       failed=.false.
-      if( check_max_iv) &
+      if( iv%qscat(n)%u%qc >= obs_qc_pointer )  then
       call da_max_error_qc(it, iv%info(qscat), n, iv%qscat(n)%u, max_error_uv, failed)
       if( iv%info(qscat)%proc_domain(1,n) ) then
                 num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
@@ -34,10 +35,9 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
       end if
       end if
       end if
-     if( iv%qscat(n)%v%qc == fails_error_max .and. it > 1 )iv%qscat(n)%v%qc =0
-      if( iv%qscat(n)%v%qc >= obs_qc_pointer ) then
+             
       failed=.false.
-      if( check_max_iv) &
+      if( iv%qscat(n)%v%qc >= obs_qc_pointer )  then
       call da_max_error_qc(it, iv%info(qscat), n, iv%qscat(n)%v, max_error_uv, failed)
       if( iv%info(qscat)%proc_domain(1,n) ) then
                 num_qcstat_conv(1,qscat,2,1) = num_qcstat_conv(1,qscat,2,1) + 1

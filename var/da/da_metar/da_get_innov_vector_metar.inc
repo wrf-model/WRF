@@ -41,6 +41,16 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
    allocate (model_p  (1,iv%info(metar)%n1:iv%info(metar)%n2))
    allocate (model_hsm(1,iv%info(metar)%n1:iv%info(metar)%n2))
 
+   if ( it > 1 ) then
+      do n=iv%info(metar)%n1,iv%info(metar)%n2
+         if (iv%metar(n)%u%qc == fails_error_max) iv%metar(n)%u%qc = 0
+         if (iv%metar(n)%v%qc == fails_error_max) iv%metar(n)%v%qc = 0
+         if (iv%metar(n)%t%qc == fails_error_max) iv%metar(n)%t%qc = 0
+         if (iv%metar(n)%p%qc == fails_error_max) iv%metar(n)%p%qc = 0
+         if (iv%metar(n)%q%qc == fails_error_max) iv%metar(n)%q%qc = 0
+      end do
+   end if
+
    if (sfc_assi_options == sfc_assi_options_1) then
 
       do n=iv%info(metar)%n1,iv%info(metar)%n2
@@ -212,7 +222,8 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !-----------------------------------------------------------------------
 
-   call da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
+   if ( check_max_iv ) &
+      call da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
 
    deallocate (model_u)
    deallocate (model_v)

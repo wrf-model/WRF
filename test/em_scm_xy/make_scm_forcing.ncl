@@ -35,10 +35,9 @@ cdlFName = "forcing_file.cdl"
 
 ; dates determine solar insolation at the top of the atmosphere
 initTime = "1999-10-22_19:00:00"; need to be in WRF format
-endTime = "1999-10-25_06:00:00"; 59 hours in GABLS II
 
 nz = 8
-nt = 2 ; only need a start and end
+nt = 1 ; only need a start and a tendency for this case
 
 ;-------END USER MODIFICATIONS-----------------
 
@@ -70,8 +69,6 @@ delete(dims)
 
 DateStr = stringtochar(initTime)
 oFl->Times(0,:) = (/DateStr(0:DateLen-1)/)
-DateStr = stringtochar(endTime)
-oFl->Times(1,:) = (/DateStr(0:DateLen-1)/)
 
 ; have to loop since Time is unlimited
 do itime = 0, nt-1
@@ -87,9 +84,6 @@ do itime = 0, nt-1
   oFl->U_UPSTREAM_Y(itime,:)=(/0.0/)
   oFl->V_UPSTREAM_X(itime,:)=(/0.0/)
   oFl->V_UPSTREAM_Y(itime,:)=(/0.0/)
-end do
-
-do itime = 0, nt-2
   oFl->Z_FORCE_TEND(itime,:)=(/0.0/)
   oFl->U_G_TEND(itime,:)=(/0.0/)
   oFl->V_G_TEND(itime,:)=(/0.0/)

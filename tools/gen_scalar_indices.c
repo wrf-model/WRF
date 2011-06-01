@@ -43,9 +43,8 @@ gen_scalar_indices ( char * dirname )
     strcpy( fname5, fn5[i] ) ;
     if ( strlen(dirname) > 0 ) { sprintf(fname5,"%s/%s",dirname,fn5[i]) ; }
     if ((fp5[i] = fopen( fname5 , "w" )) == NULL ) return(1) ;
-    print_warning(fp5[i],fname) ;
+    print_warning(fp5[i],fname5) ;
   }
-
   gen_scalar_indices1 ( fp, fp5 ) ;
   close_the_file( fp ) ;
   for ( i = 0 ; i < 7 ; i++ ) {
@@ -82,12 +81,13 @@ gen_scalar_tables ( FILE * fp )
   node_t * p ;
   for ( p = FourD ; p != NULL ; p=p->next4d )
   {
-    fprintf(fp,"  INTEGER :: %s_index_table( param_num_%s, max_domains )\n",p->name,p->name )  ;
-    fprintf(fp,"  INTEGER :: %s_num_table( max_domains )\n", p->name,p->name ) ;
-    fprintf(fp,"  INTEGER :: %s_stream_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
-    fprintf(fp,"  CHARACTER*256 :: %s_dname_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
-    fprintf(fp,"  CHARACTER*256 :: %s_desc_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
-    fprintf(fp,"  CHARACTER*256 :: %s_units_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  INTEGER, TARGET :: %s_index_table( param_num_%s, max_domains )\n",p->name,p->name )  ;
+    fprintf(fp,"  INTEGER, TARGET :: %s_num_table( max_domains )\n", p->name ) ;
+    fprintf(fp,"  TYPE(streamrec), TARGET :: %s_streams_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  LOGICAL, TARGET :: %s_boundary_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256, TARGET :: %s_dname_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256, TARGET :: %s_desc_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
+    fprintf(fp,"  CHARACTER*256, TARGET :: %s_units_table( max_domains, param_num_%s )\n", p->name,p->name ) ;
   }
   return(0) ;
 }
@@ -122,6 +122,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
   char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG], fname[NAMELEN_LONG] ;
   char scalars_str[NAMELEN_LONG] ;
   char * scalars ;
+  int i ;
 
   for ( p = FourD ; p != NULL ; p = p->next )
    { for ( memb = p->members ; memb != NULL ; memb = memb->next )
@@ -169,13 +170,20 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                   /* arrays */
                   sprintf(fourd_bnd,"%s_b",assoc_4d) ;
                   if ( get_entry( fourd_bnd  ,Domain.fields) != NULL ) {
-                     x->io_mask |= BOUNDARY ;
+                     x->boundary = 1 ;
                   }
                 }
-                fprintf(fp,"   %s_stream_table( idomain, P_%s ) = %d\n",assoc_4d,c, x->io_mask ) ;
+                fprintf(fp,"   %s_boundary_table( idomain, P_%s ) = %s\n",assoc_4d,c, (x->boundary==1)?".TRUE.":".FALSE." ) ;
                 fprintf(fp,"   %s_dname_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->dname) ;
                 fprintf(fp,"   %s_desc_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->descrip) ;
                 fprintf(fp,"   %s_units_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->units) ;
+
+
+                for ( i = 0 ; i < IO_MASK_SIZE ; i++ ) {
+                  fprintf(fp,"   %s_streams_table( idomain, P_%s )%%stream(%d) = %d ! %08x \n",assoc_4d,c,
+                                                                          i+1,x->io_mask[i],x->io_mask[i] ) ;
+                }
+
                 fprintf(fp,"   F_%s = .TRUE.\n",c) ;
               } else if ((p = get_entry( c , Domain.fields )) != NULL ) {
                 int tag, fo  ;

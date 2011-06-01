@@ -2,6 +2,10 @@ module da_define_structures
 
    !---------------------------------------------------------------------------
    ! Purpose: Collection of routines to define and allocate structures.
+   !  Update: Multivariate BE option (cv_options=6)
+   !          Syed RH Rizvi (MMM/NESL/NCAR)   Date: 02/01/2010
+   !
+   !  Note: Please acknowledge author/institute in work that uses this code.
    !---------------------------------------------------------------------------
 
    use module_domain, only: vp_type, x_type
@@ -9,7 +13,7 @@ module da_define_structures
    use da_control, only : anal_type_randomcv, stdout, max_fgat_time, &
       vert_corr, global, vert_evalue,print_detail_be, maxsensor, &
       max_ob_levels, trace_use, num_ob_indexes, kms, kme, &
-      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, &
+      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, do_normalize, use_rf, &
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
@@ -20,6 +24,7 @@ module da_define_structures
    use da_tools_serial, only : da_array_print
 
    use da_reporting, only : da_error, message
+   use da_wavelet, only : nij,ws
 
    implicit none
    
@@ -210,6 +215,10 @@ module da_define_structures
 
       type (field_type)     , pointer :: rv       (:) ! Radial Velocity
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
+      type (field_type)     , pointer :: rr       (:) ! Reflectivity
+      real                  , pointer :: rro      (:)
+      real                  , pointer :: qso      (:)
+      real                  , pointer :: qco      (:)
    end type radar_type
 
    type multi_level_type
@@ -217,6 +226,12 @@ module da_define_structures
       type (model_loc_type)                   :: loc
       type (each_level_type)                  :: each(max_ob_levels)
    end type multi_level_type
+
+   type multi_level_type_BUFR
+      type (info_type)                        :: info
+      type (model_loc_type)                   :: loc
+      type (each_level_type), pointer         :: each(:)
+   end type multi_level_type_BUFR
 
    type radar_stn_type
       character (len = 5)    :: platform      ! Data type
@@ -422,8 +437,8 @@ module da_define_structures
                                              ! 1 (monitor_on):  monitoring
                                              ! monitor_on and monitor_off defined in da_control.f90
       character(len=20)    :: rttovid_string
+      character(len=20)    :: rttovid_string_coef
       integer              :: num_rad, nchan, nlevels
-      integer              :: nchannels, nfrequencies,nbtout
       integer              :: num_rad_glo
       integer, pointer     :: ichan(:)
       real,    pointer     :: tb_inv(:,:)
@@ -477,6 +492,8 @@ module da_define_structures
       integer, pointer     :: isflg(:)
       integer, pointer     :: ifgat(:)
       integer, pointer     :: landsea_mask(:)
+      integer, pointer     :: surftype(:)     ! RTTOV only, 0:land, 1:sea, 2:sea-ice
+      real,    pointer     :: snow_frac(:)    ! RTTOV only
       real,    pointer     :: elevation(:)
       real,    pointer     :: soiltyp(:)
       real,    pointer     :: vegtyp(:)
@@ -505,6 +522,7 @@ module da_define_structures
       real,    pointer     :: land_coverage(:)
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
+      integer, pointer     :: crtm_climat(:) ! CRTM only
 
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)
@@ -537,7 +555,7 @@ module da_define_structures
       real    :: qscat_ef_u, qscat_ef_v
       real    :: profiler_ef_u, profiler_ef_v
       real    :: buoy_ef_u, buoy_ef_v, buoy_ef_t, buoy_ef_p, buoy_ef_q
-      real    :: radar_ef_rv, radar_ef_rf
+      real    :: radar_ef_rv, radar_ef_rf, radar_ef_rr
       real    :: bogus_ef_u, bogus_ef_v, bogus_ef_t, bogus_ef_p, bogus_ef_q, bogus_ef_slp
       real    :: airsr_ef_t,  airsr_ef_q
 
@@ -600,6 +618,7 @@ module da_define_structures
       type (bad_info_type)       :: rh
       type (bad_info_type)       :: rv
       type (bad_info_type)       :: rf
+      type (bad_info_type)       :: rr
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
    end type bad_data_type
@@ -732,6 +751,7 @@ module da_define_structures
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
+      real, pointer :: rr(:)                    ! rr
    end type residual_radar_type
 
    type residual_instid_type
@@ -821,7 +841,7 @@ module da_define_structures
       real                :: qscat_u, qscat_v
       real                :: profiler_u, profiler_v
       real                :: buoy_u, buoy_v, buoy_t, buoy_p, buoy_q
-      real                :: radar_rv, radar_rf
+      real                :: radar_rv, radar_rf, radar_rr
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
       type(jo_type_rad), pointer       :: rad(:)
@@ -834,6 +854,7 @@ module da_define_structures
       real             :: je
       real             :: jp
       real             :: js
+      real             :: jl
       type (jo_type)   :: jo
    end type j_type
 
@@ -843,29 +864,48 @@ module da_define_structures
       integer :: size_je     ! Size of CV array for Je term.
       integer :: size_jp     ! Size of CV array for Jp term.
       integer :: size_js     ! Size of CV array for Js term.
+      integer :: size_jl     ! Size of CV array for Jl term.
       integer :: size1c      ! Complex size of CV array of 1st variable error.
       integer :: size2c      ! Complex size of CV array of 2nd variable error.
       integer :: size3c      ! Complex size of CV array of 3rd variable error.
       integer :: size4c      ! Complex size of CV array of 4th variable error.
       integer :: size5c      ! Complex size of CV array of 5th variable error.
+#ifdef CLOUD_CV
+      integer :: size6c      ! Complex size of CV array of 6th variable error.
+      integer :: size7c      ! Complex size of CV array of 7th variable error.
+      integer :: size8c      ! Complex size of CV array of 7th variable error.
+#endif
       integer :: size_alphac ! Size of alpha control variable (complex).
       integer :: size1       ! Size of CV array of 1st variable error.
       integer :: size2       ! Size of CV array of 2nd variable error.
       integer :: size3       ! Size of CV array of 3rd variable error.
       integer :: size4       ! Size of CV array of 4th variable error.
       integer :: size5       ! Size of CV array of 5th variable error.
+#ifdef CLOUD_CV
+      integer :: size6       ! Size of CV array of 6th variable error.
+      integer :: size7       ! Size of CV array of 7th variable error.
+      integer :: size8       ! Size of CV array of 7th variable error.
+#endif
+      integer :: size1l      ! Size of CV array of 1st variable lbc error.
+      integer :: size2l      ! Size of CV array of 2nd variable lbc error.
+      integer :: size3l      ! Size of CV array of 3rd variable lbc error.
+      integer :: size4l      ! Size of CV array of 4th variable lbc error.
+      integer :: size5l      ! Size of CV array of 5th variable lbc error.
    end type cv_type
 
    type be_subtype
       integer           :: mz          ! Vertical truncation of errors.
       integer           :: max_wave    ! Global only - horizontal spectral truncation.
       character*5       :: name        ! Variable name.
-      real, pointer     :: rf_alpha(:) ! RF scale length.
-      real, pointer     :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
-      real, pointer     :: evec(:,:,:) ! Local Vertical eigenvectors.
-      real, pointer     :: val_g(:)    ! Global Standard dev./sqrt(eigenvalue).
-      real, pointer     :: evec_g(:,:) ! Global Vertical eigenvectors.
-      real, pointer     :: power(:,:)  ! Power spectrum
+      real*8, pointer   :: rf_alpha(:) ! RF scale length.
+      real*8, pointer   :: val(:,:)    ! Local Standard dev./sqrt(eigenvalue).
+      real*8, pointer   :: evec(:,:,:) ! Local Vertical eigenvectors.
+      real*8, pointer   :: val_g(:)    ! Global Standard dev./sqrt(eigenvalue).
+      real*8, pointer   :: evec_g(:,:) ! Global Vertical eigenvectors.
+      real*8, pointer   :: power(:,:)  ! Power spectrum
+!_____For wavelet option:
+      REAL, POINTER     ::sd(:,:,:)    ! 3D field   std. dev.
+      REAL, POINTER     ::wsd(:,:,:)   ! 3D wavelet std. dev.
    end type be_subtype
 
    type be_type
@@ -878,15 +918,26 @@ module da_define_structures
       type (be_subtype) :: v3
       type (be_subtype) :: v4
       type (be_subtype) :: v5
+#ifdef CLOUD_CV
+      type (be_subtype) :: v6
+      type (be_subtype) :: v7
+      type (be_subtype) :: v8
+#endif
       type (be_subtype) :: alpha
-      real, pointer     :: pb_vert_reg(:,:,:)
+      real*8, pointer     :: pb_vert_reg(:,:,:)
 
       ! Control variable space errors:
       type (cv_type)    :: cv
 
-      real, pointer     :: reg_chi(:,:)
-      real, pointer     :: reg_t  (:,:,:)
-      real, pointer     :: reg_ps (:,:)
+      real, pointer :: reg_psi_chi  (:,:)
+      real, pointer :: reg_psi_t (:,:,:)
+      real, pointer :: reg_psi_ps   (:,:)
+      real, pointer :: reg_psi_rh   (:,:,:)
+      real, pointer :: reg_chi_u_t   (:,:,:)
+      real, pointer :: reg_chi_u_ps     (:,:)
+      real, pointer :: reg_chi_u_rh     (:,:,:)
+      real, pointer :: reg_t_u_rh    (:,:,:)
+      real, pointer :: reg_ps_u_rh      (:,:)
 
 !-----For cv option 3:
       INTEGER          :: ndeg,nta
@@ -904,6 +955,10 @@ module da_define_structures
       REAL, POINTER    :: vz(:,:,:,:)
       REAL, POINTER    :: corz(:,:,:,:)
       REAL, POINTER    :: corp(:,:)
+
+!_____For wavelet option:
+      REAL, POINTER    ::sd( :,:,:)! 4 3D & 1 2D field   std. dev. sets.
+      REAL, POINTER    ::wsd(:,:,:)! 4 3D & 1 2D wavelet std. dev. sets.
    end type be_type
 
    ! Analysis_Stats maximum-minumum structure.

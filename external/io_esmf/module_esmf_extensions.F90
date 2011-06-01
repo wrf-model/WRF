@@ -399,20 +399,19 @@ CONTAINS
 
       ! extend ESMF_TimeGet() to make dayOfYear_r8 work...  
       subroutine WRFU_TimeGet(time, yy, yy_i8, &
-                                    mm, dd, &
-                                    d, d_i8, &
-                                    h, m, &
-                                    s, s_i8, &
-                                    ms, us, ns, &
-                                    d_r8, h_r8, m_r8, s_r8, &
-                                    ms_r8, us_r8, ns_r8, &
-                                    sN, sD, &
-                                    calendar, calendarType, timeZone, &
-                                    timeString, timeStringISOFrac, &
-                                    dayOfWeek, midMonth, &
-                                    dayOfYear,  dayOfYear_r8, &
-                                    dayOfYear_intvl, rc)
-
+                              mm, dd, &
+                              d, d_i8, &
+                              h, m, &
+                              s, s_i8, &
+                              ms, us, ns, &
+                              d_r8, h_r8, m_r8, s_r8, &
+                              ms_r8, us_r8, ns_r8, &
+                              sN, sD, &
+                              calendar, calendarType, timeZone, &
+                              timeString, timeStringISOFrac, &
+                              dayOfWeek, midMonth, &
+                              dayOfYear,  dayOfYear_r8, &
+                              dayOfYear_intvl, rc)
       type(ESMF_Time),         intent(inout)            :: time
       integer(ESMF_KIND_I4),   intent(out), optional :: yy
       integer(ESMF_KIND_I8),   intent(out), optional :: yy_i8
@@ -451,20 +450,20 @@ CONTAINS
       INTEGER(ESMF_KIND_I4) :: year, seconds, Sn, Sd
       INTEGER(ESMF_KIND_I8), PARAMETER :: SECONDS_PER_DAY = 86400_ESMF_KIND_I8
 
-      call ESMF_TimeGet(time, yy, yy_i8, &
-                              mm, dd, &
-                              d, d_i8, &
-                              h, m, &
-                              s, s_i8, &
-                              ms, us, ns, &
-                              d_r8, h_r8, m_r8, s_r8, &
-                              ms_r8, us_r8, ns_r8, &
-                              sN, sD, &
-                              calendar, calendarType, timeZone, &
-                              timeString, timeStringISOFrac, &
-                              dayOfWeek, midMonth, &
-                              dayOfYear,  dayOfYear_r8, &
-                              dayOfYear_intvl, rc)
+      CALL ESMF_TimeGet(time=time, yy=yy, yy_i8=yy_i8, &
+                                    mm=mm, dd=dd, &
+                                    d=d, d_i8=d_i8, &
+                                    h=h, m=m, &
+                                    s=s, s_i8=s_i8, &
+                                    ms=ms, us=us, ns=ns, &
+                                    d_r8=d_r8, h_r8=h_r8, m_r8=m_r8, s_r8=s_r8, &
+                                    ms_r8=ms_r8, us_r8=us_r8, ns_r8=ns_r8, &
+                                    sN=sN, sD=sD, &
+                                    calendar=calendar, calendarType=calendarType, timeZone=timeZone, &
+                                    timeString=timeString, timeStringISOFrac=timeStringISOFrac, &
+                                    dayOfWeek=dayOfWeek, midMonth=midMonth, &
+                                    dayOfYear=dayOfYear,  dayOfYear_R8=dayOfYear_r8, &
+                                    dayOfYear_intvl=dayOfYear_intvl, rc=rc)
       IF ( rc == ESMF_SUCCESS ) THEN
         IF ( PRESENT( dayOfYear_r8 ) ) THEN
           ! get seconds since start of year and fractional seconds
@@ -473,8 +472,10 @@ CONTAINS
             ! 64-bit IEEE 754 has 52-bit mantisssa -- only need 25 bits to hold
             ! number of seconds in a year...
             rsec = REAL( seconds, ESMF_KIND_R8 )
-            IF ( Sd /= 0 ) THEN
-              rsec = rsec + ( REAL( Sn, ESMF_KIND_R8 ) / REAL( Sd, ESMF_KIND_R8 ) )
+            IF ( PRESENT( Sd ) ) THEN
+              IF ( Sd /= 0 ) THEN
+                rsec = rsec + ( REAL( Sn, ESMF_KIND_R8 ) / REAL( Sd, ESMF_KIND_R8 ) )
+              ENDIF
             ENDIF
             dayOfYear_r8 = rsec / REAL( SECONDS_PER_DAY, ESMF_KIND_R8 )
             ! start at 1

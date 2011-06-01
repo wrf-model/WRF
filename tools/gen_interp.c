@@ -43,7 +43,8 @@ int contains_tok( char *s1, char *s2, char *delims )
 }
   
 
-char halo_define[4*4096], halo_use[NAMELEN], halo_id[NAMELEN], x[NAMELEN] ;
+ /* Had to increase size for SOA from 4*4096 to 4*7000 */
+char halo_define[4*7000], halo_use[NAMELEN], halo_id[NAMELEN], x[NAMELEN] ;
 
 int 
 gen_nest_interp ( char * dirname )
@@ -98,7 +99,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char * fn = "nest_interp.inc" ;
   char fname[NAMELEN] ;
   node_t *p, *p1, *dim ;
-  int d2, d3, xdex, ydex, zdex, io_mask ;
+  int d2, d3, xdex, ydex, zdex, nest_mask ;
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
@@ -128,18 +129,18 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
     if ( p1->node_kind & FOURD )
     {
       if ( p1->members->next ) {
-        io_mask = p1->members->next->io_mask ;
+        nest_mask = p1->members->next->nest_mask ;
       } else {
         continue ;
       }
     }
     else
     {
-      io_mask = p1->io_mask ;
+      nest_mask = p1->nest_mask ;
     }
     p = p1 ;
 
-    if ( io_mask & down_path )
+    if ( nest_mask & down_path )
     {
         if ( p->ntl > 1 ) { sprintf(tag,"_2") ; sprintf(tag2,"_%d", use_nest_time_level) ; }
         else              { sprintf(tag,"")   ; sprintf(tag2,"")                         ; }
@@ -321,11 +322,19 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                      int bdy ;
                      for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
                        if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+#if 0
                          fprintf(fp,",%s%s,ngrid%%%s%s  &\n", nd->name, bdy_indicator(bdy), nd->name, bdy_indicator(bdy) ) ;
+#else
+                         fprintf(fp,",dummy_%s,ngrid%%%s%s  &\n", 
+                                     bdy_indicator(bdy),
+                                     nd->name, bdy_indicator(bdy) ) ;
+#endif
                        } else {
                          char c ;
                          c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
-                         fprintf(fp,",%s%s(c%cms,1,1,itrace),ngrid%%%s%s(n%cms,1,1,itrace)  &\n", nd->name, bdy_indicator(bdy), c, nd->name, bdy_indicator(bdy), c  ) ;
+                         fprintf(fp,",%s%s(c%cms,1,1,itrace),ngrid%%%s%s(n%cms,1,1,itrace)  &\n", 
+                                           nd->name, bdy_indicator(bdy), c, 
+                                           nd->name, bdy_indicator(bdy), c  ) ;
                        }
                      }
                    } else {

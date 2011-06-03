@@ -1695,9 +1695,10 @@
 !***  CONVECTIVE PRECIPITATION
 !----------------------------------------------------------------------
 !
-      IF(MOD(grid%ntsd,GRID%NCNVC)==0.AND.                                  &
-     &   (CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME .or.                     &
-         CONFIG_FLAGS%CU_PHYSICS==SASSCHEME))THEN                       ! Kwon's doing for SAS
+      IF(MOD(grid%ntsd,GRID%NCNVC)==0.AND.                              &
+     &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
         btimx=timef()
 !-----------------
@@ -1784,11 +1785,13 @@
 !-------------------------------------------------------------------------------------
 !       This is gopal's doing for HWRFSAS
 
-!        IF(MOD(grid%ntsd,GRID%NCNVC).eq.0.and.(CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN
+!        IF(MOD(grid%ntsd,GRID%NCNVC).eq.0.and.(CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME))THEN
 ! update to match HWRFV2 behaviour - review later (1/15/10)
 !
 !emc_2010_bugfix_h50
-        IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME)THEN
+        IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
+     &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !
         btimx=timef()

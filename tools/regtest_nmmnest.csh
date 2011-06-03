@@ -34,6 +34,7 @@
 #		Intel  1.2 GHz (4-pe) :  3.0 hours (empty)
 #		IBM            P4     :  2.0 hours (empty)
 
+setenv HWRF 0
 #	Do we keep running even when there are BAD failures?
 
 set KEEP_ON_RUNNING = FALSE

@@ -45,6 +45,7 @@ MODULES = \
 	module_cu_gd.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
+	module_cu_osas.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
 	module_mp_sbu_ylin.o  \
@@ -278,6 +279,10 @@ module_cu_sas.o: module_gfs_machine.o \
 		 module_gfs_funcphys.o \
 		 module_gfs_physcons.o
 
+module_cu_osas.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o
+
 module_cu_tiedtke.o:module_gfs_machine.o \
 		module_gfs_funcphys.o \
 		module_gfs_physcons.o
@@ -388,6 +393,7 @@ module_physics_init.o : \
 		module_cu_gd.o			\
 		module_cu_nsas.o		\
 		module_cu_sas.o			\
+		module_cu_osas.o		\
 		module_cu_camzm_driver.o        \
 		module_cu_camuwshcu.o		\
 		module_mp_sbu_ylin.o		\
@@ -445,6 +451,7 @@ module_cumulus_driver.o: \
 		module_cu_gd.o \
 		module_cu_nsas.o \
 		module_cu_sas.o \
+		module_cu_osas.o \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
 		../frame/module_state_description.o \

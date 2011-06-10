@@ -25,6 +25,22 @@
 !      POTENTIAL FOR SPURIOUS ACCUMULATION OF PRECIPITATION DURING SUB-STEPPING FOR SEDIMENTATION
 ! 3) BUG FIX TO LATENT HEAT RELEASE DUE TO COLLISIONS OF CLOUD ICE WITH RAIN
 ! 4) CLEAN UP OF COMMENTS IN THE CODE
+    
+! additional minor bug fixes and small changes, 5/30/2011
+! minor revisions by A. Ackerman April 2011:
+! 1) replaced kinematic with dynamic viscosity 
+! 2) replaced scaling by air density for cloud droplet sedimentation
+!    with viscosity-dependent Stokes expression
+! 3) use Ikawa and Saito (1991) air-density scaling for cloud ice
+! 4) corrected typo in 2nd digit of ventilation constant F2R
+
+! additional fixes:
+! 5) TEMPERATURE FOR ACCELERATED MELTING DUE TO COLLIIONS OF SNOW AND GRAUPEL
+!    WITH RAIN SHOULD USE CELSIUS, NOT KELVIN (BUG REPORTED BY K. VAN WEVERBERG)
+! 6) NPRACS IS NO SUBTRACTED SUBTRACTED FROM SNOW NUMBER CONCENTRATION, SINCE
+!    DECREASE IN SNOW NUMBER IS ALREADY ACCOUNTED FOR BY NSMLTS 
+! 7) fix for switch for running w/o graupel/hail (cloud ice and snow only)
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -327,7 +343,9 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
          F1S = 0.86
          F2S = 0.28
          F1R = 0.78
-         F2R = 0.32
+!         F2R = 0.32
+! fix 053011
+         F2R = 0.308
 !         G = 9.806
          QSMALL = 1.E-14
          EII = 0.1
@@ -1258,14 +1276,22 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !..................................................................
 ! MICROPHYSICS PARAMETERS VARYING IN TIME/HEIGHT
 
+! fix 053011
+            MU(K) = 1.496E-6*T3D(K)**1.5/(T3D(K)+120.)
+
 ! FALL SPEED WITH DENSITY CORRECTION (HEYMSFIELD AND BENSSEMER 2006)
 
             DUM = (RHOSU/RHO(K))**0.54
 
-            AIN(K) = DUM*AI
+! fix 053011
+!            AIN(K) = DUM*AI
+! AA revision 4/1/11: Ikawa and Saito 1991 air-density correction 
+            AIN(K) = (RHOSU/RHO(K))**0.35
             ARN(K) = DUM*AR
             ASN(K) = DUM*AS
-            ACN(K) = DUM*AC
+!            ACN(K) = DUM*AC
+! AA revision 4/1/11: temperature-dependent Stokes fall speed
+            ACN(K) = G*RHOW/(18.*MU(K))
 ! HM ADD GRAUPEL 8/28/06
             AGN(K) = DUM*AG
 
@@ -1284,21 +1310,17 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! THERMAL CONDUCTIVITY FOR AIR
 
-            DUM = 1.496E-6*T3D(K)**1.5/(T3D(K)+120.)
-
-!            KAP(K) = 1.414E3*1.496E-6*T3D(K)**1.5/(T3D(K)+120.)
-            KAP(K) = 1.414E3*DUM
+! fix 053011
+            KAP(K) = 1.414E3*MU(K)
 
 ! DIFFUSIVITY OF WATER VAPOR
 
             DV(K) = 8.794E-5*T3D(K)**1.81/PRES(K)
 
-! VISCOSITY OF AIR
 ! SCHMIT NUMBER
 
-!            MU(K) = 1.496E-6*T3D(K)**1.5/(T3D(K)+120.)/RHO(K)
-            MU(K) = DUM/RHO(K)
-            SC(K) = MU(K)/DV(K)
+! fix 053011
+            SC(K) = MU(K)/(RHO(K)*DV(K))
 
 ! PSYCHOMETIC CORRECTIONS
 
@@ -1557,11 +1579,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                   2./(LAMS(K)**2*LAMR(K)**2)+                  &
                   0.5/(LAMS(K)*LAMR(K)**3)))
 
-            NPRACS(K) = CONS32*RHO(K)*(1.7*(UNR-UNS)**2+            &
-                0.3*UNR*UNS)**0.5*N0RR(K)*N0S(K)*              &
-                (1./(LAMR(K)**3*LAMS(K))+                      &
-                 1./(LAMR(K)**2*LAMS(K)**2)+                   &
-                 1./(LAMR(K)*LAMS(K)**3))
+! fix 053011, npracs no longer subtracted from snow
+!            NPRACS(K) = CONS32*RHO(K)*(1.7*(UNR-UNS)**2+            &
+!                0.3*UNR*UNS)**0.5*N0RR(K)*N0S(K)*              &
+!                (1./(LAMR(K)**3*LAMS(K))+                      &
+!                 1./(LAMR(K)**2*LAMS(K)**2)+                   &
+!                 1./(LAMR(K)*LAMS(K)**3))
 
          END IF
 
@@ -1669,8 +1692,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
           IF (QNI3D(K).GE.1.E-8) THEN
 
+! fix 053011
 ! HM, MODIFY FOR V3.2, ADD ACCELERATED MELTING DUE TO COLLISION WITH RAIN
-             DUM = -CPW/XLF(K)*T3D(K)*PRACS(K)
+!             DUM = -CPW/XLF(K)*T3D(K)*PRACS(K)
+             DUM = -CPW/XLF(K)*(T3D(K)-273.15)*PRACS(K)
 
              PSMLT(K)=2.*PI*N0S(K)*KAP(K)*(273.15-T3D(K))/       &
                     XLF(K)*RHO(K)*(F1S/(LAMS(K)*LAMS(K))+        &
@@ -1701,8 +1726,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
           IF (QG3D(K).GE.1.E-8) THEN
 
+! fix 053011
 ! HM, MODIFY FOR V3.2, ADD ACCELERATED MELTING DUE TO COLLISION WITH RAIN
-             DUM = -CPW/XLF(K)*T3D(K)*PRACG(K)
+!             DUM = -CPW/XLF(K)*T3D(K)*PRACG(K)
+             DUM = -CPW/XLF(K)*(T3D(K)-273.15)*PRACG(K)
 
              PGMLT(K)=2.*PI*N0G(K)*KAP(K)*(273.15-T3D(K))/ 		 &
                     XLF(K)*RHO(K)*(F1S/(LAMG(K)*LAMG(K))+                &
@@ -1806,7 +1833,8 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       QR3DTEN(K) = QR3DTEN(K)+(PRE(K)+PRA(K)+PRC(K)-PSMLT(K)-PGMLT(K)+PRACS(K)+PRACG(K))
       QNI3DTEN(K) = QNI3DTEN(K)+(PSMLT(K)+EVPMS(K)-PRACS(K))
       QG3DTEN(K) = QG3DTEN(K)+(PGMLT(K)+EVPMG(K)-PRACG(K))
-      NS3DTEN(K) = NS3DTEN(K)-NPRACS(K)
+! fix 053011
+!      NS3DTEN(K) = NS3DTEN(K)-NPRACS(K)
 ! HM, bug fix 5/12/08, npracg is subtracted from nr not ng
 !      NG3DTEN(K) = NG3DTEN(K)
       NC3DTEN(K) = NC3DTEN(K)+ (-NPRA(K)-NPRC(K))
@@ -2859,6 +2887,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 	    NSUBG(K) = 0.
 	    NGMLTG(K) = 0.
             NGMLTR(K) = 0.
+! fix 053011
+            PIACRS(K)=PIACRS(K)+PIACR(K)
+            PIACR(K) = 0.
        END IF
 
 ! CONSERVATION OF QC
@@ -3247,8 +3278,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         dum=(rhosu/rho(k))**0.54
         UMS=MIN(UMS,1.2*dum)
         UNS=MIN(UNS,1.2*dum)
-        UMI=MIN(UMI,1.2*dum)
-        UNI=MIN(UNI,1.2*dum)
+! fix 053011
+! fix for correction by AA 4/6/11
+        UMI=MIN(UMI,1.2*(rhosu/rho(k))**0.35)
+        UNI=MIN(UNI,1.2*(rhosu/rho(k))**0.35)
         UMR=MIN(UMR,9.1*dum)
         UNR=MIN(UNR,9.1*dum)
         UMG=MIN(UMG,20.*dum)

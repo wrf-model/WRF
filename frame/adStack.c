@@ -8,10 +8,10 @@ static char adSid[]="$Id: adStack.c 3723 2011-02-24 13:34:42Z llh $";
 #      define POPREAL8ARRAY popreal8array
 # else
 #   ifdef F2CSTYLE
-#      define PUSHINTEGER4ARRAY pushinteger4array__
-#      define POPINTEGER4ARRAY popinteger4array__
-#      define PUSHREAL8ARRAY pushreal8array__
-#      define POPREAL8ARRAY popreal8array__
+#      define PUSHINTEGER4ARRAY pushinteger4array_
+#      define POPINTEGER4ARRAY popinteger4array_
+#      define PUSHREAL8ARRAY pushreal8array_
+#      define POPREAL8ARRAY popreal8array_
 #   else
 #      define PUSHINTEGER4ARRAY pushinteger4array_
 #      define POPINTEGER4ARRAY popinteger4array_

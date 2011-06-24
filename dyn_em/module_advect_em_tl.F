@@ -7614,3625 +7614,4984 @@ j_loop_y_flux_5:DO j=j_start,j_end+1
   END IF
 END SUBROUTINE G_ADVECT_W
 
- SUBROUTINE g_advect_scalar_pd(field,g_field,field_old,g_field_old,tendency, &
- g_tendency,h_tendency,g_h_tendency,z_tendency,g_z_tendency,ru,g_ru,rv,g_rv,rom,g_rom,mut,g_mut,mub,mu_old,g_mu_old, &
- time_step,config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
- ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2,Tmpv3,g_Tmpv3,Tmpv4,g_Tmpv4,Tmpv5, &
- g_Tmpv5,Tmpv6,g_Tmpv6,Tmpv7,g_Tmpv7,Tmpv8,g_Tmpv8
-
- REAL g_FuncVal1,FuncVal1
- TYPE(grid_config_rec_type) :: config_flags
- LOGICAL :: tenddec
- INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: field,g_field,field_old,g_field_old, &
- ru,g_ru,rv,g_rv,rom,g_rom
- REAL,DIMENSION(ims:ime,jms:jme) :: mut,g_mut,mub,mu_old,g_mu_old
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,g_tendency
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_tendency, z_tendency
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: g_h_tendency, g_z_tendency
- REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
- REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
- REAL :: rdx,rdy,dt
- INTEGER :: time_step
-
- INTEGER :: i,j,k,itf,jtf,ktf
- INTEGER :: i_start,i_end,j_start,j_end
- INTEGER :: i_start_f,i_end_f,j_start_f,j_end_f
- INTEGER :: jmin,jmax,jp,jm,imin,imax
- REAL :: mrdx,g_mrdx,mrdy,g_mrdy,ub,g_ub,vb,g_vb,uw,g_uw,vw,g_vw,mu,g_mu
- REAL,DIMENSION(its-1:ite+2,kts:kte,jts-1:jte+2) :: fqx,g_fqx,fqy,g_fqy,fqz,g_fqz
- REAL,DIMENSION(its-1:ite+2,kts:kte,jts-1:jte+2) :: fqxl,g_fqxl,fqyl,g_fqyl, &
- fqzl,g_fqzl
- INTEGER :: horz_order,vert_order
- LOGICAL :: degrade_xs,degrade_ys
- LOGICAL :: degrade_xe,degrade_ye
- INTEGER :: jp1,jp0,jtmp
- REAL :: flux_out,g_flux_out,ph_low,g_ph_low,scale,g_scale
- REAL,PARAMETER :: eps =1.e-20
- REAL :: flux3,g_flux3,flux4,g_flux4,flux5,g_flux5,flux6,g_flux6, &
- flux_upwind,g_flux_upwind
- REAL :: q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua,vel,g_vel,cr,g_cr
-
- g_flux4(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,ua, &
- g_ua) =(7./12.)*(g_q_i +g_q_im1) -(1./12.)*(g_q_ip1 +g_q_im2)
- flux4(q_im2,q_im1,q_i,q_ip1,ua) =(7./12.)*(q_i +q_im1) -(1./12.)*(q_ip1 +q_im2)
-
- g_flux3(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,ua, &
- g_ua) =g_flux4(q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1, &
- ua,g_ua) +sign(1, time_step) *sign(1., ua) *(1./12.)*((g_q_ip1 -g_q_im2) &
- -3.*(g_q_i -g_q_im1))
- flux3(q_im2,q_im1,q_i,q_ip1,ua) =flux4(q_im2,q_im1,q_i,q_ip1,ua) +sign(1, time_step) &
- *sign(1., ua) *(1./12.)*((q_ip1 -q_im2) -3.*(q_i -q_im1))
-
- g_flux6(q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua) =(37./60.)*(g_q_i +g_q_im1) -(2./15.) &
-*(g_q_ip1 +g_q_im2) +(1./60.)*(g_q_ip2 +g_q_im3)
- flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =(37./60.)*(q_i +q_im1) -(2./15.) &
-*(q_ip1 +q_im2) +(1./60.)*(q_ip2 +q_im3)
-
- g_flux5(q_im3,g_q_im3,q_im2,g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1, &
- g_q_ip1,q_ip2,g_q_ip2,ua,g_ua) =g_flux6(q_im3,g_q_im3,q_im2, &
- g_q_im2,q_im1,g_q_im1,q_i,g_q_i,q_ip1,g_q_ip1,q_ip2,g_q_ip2,ua, &
- g_ua) -sign(1, time_step) *sign(1., ua) *(1./60.)*((g_q_ip2 -g_q_im3) &
- -5.*(g_q_ip1 -g_q_im2) +10.*(g_q_i -g_q_im1))
- flux5(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2, &
- ua) -sign(1, time_step) *sign(1., ua) *(1./60.)*((q_ip2 -q_im3) -5.*(q_ip1 -q_im2) &
- +10.*(q_i -q_im1))
-
-!REVISED BY WALLS
-!g_Tmpv1 =0.5*min(1.0,(cr +abs(cr)))*g_q_im1 +0.5*(0.0 +(g_cr +sign(1.0, cr) &
-!*g_cr) -(0.0 -(g_cr +sign(1.0, cr)*g_cr))*sign(1.0, 1.0 -((cr +abs(cr)))))*0.5*q_im1 
-!Tmpv1 =0.5*min(1.0,(cr +abs(cr)))*q_im1
-
-!g_Tmpv2 =0.5*max(-1.0,(cr -abs(cr)))*g_q_i +0.5*(0.0 +(g_cr -sign(1.0, cr) &
-!*g_cr) +(0.0 -(g_cr -sign(1.0, cr)*g_cr))*sign(1.0, -1.0 -((cr -abs(cr)))))*0.5*q_i 
-!Tmpv2 =0.5*max(-1.0,(cr -abs(cr)))*q_i
-
-!g_flux_upwind(q_im1,g_q_im1,q_i,g_q_i,cr,g_cr) =g_Tmpv1 +g_Tmpv2
-!flux_upwind(q_im1,q_i,cr) =Tmpv1 +Tmpv2
-
- g_flux_upwind(q_im1,g_q_im1,q_i,g_q_i,cr,g_cr) =0.5*min(1.0,(cr +abs(cr)))*g_q_im1&
- +0.5*(0.0 +(g_cr +sign(1.0, cr) &
- *g_cr) -(0.0 -(g_cr +sign(1.0, cr)*g_cr))*sign(1.0, 1.0 -((cr +abs(cr)))))*0.5*q_im1&
- +0.5*max(-1.0,(cr -abs(cr)))*g_q_i +0.5*(0.0 +(g_cr -sign(1.0, cr) &
- *g_cr) +(0.0 -(g_cr -sign(1.0, cr)*g_cr))*sign(1.0, -1.0 -((cr -abs(cr)))))*0.5*q_i
- flux_upwind(q_im1,q_i,cr) =0.5*min(1.0,(cr +abs(cr)))*q_im1+0.5*max(-1.0,(cr -abs(cr)))*q_i
-
- REAL :: dx,g_dx,dy,g_dy,dz,g_dz
- LOGICAL,PARAMETER :: pd_limit =.true.
-
-!LPB[1]
-
- IF(config_flags%polar) THEN
-
- g_fqx(:,:,:) =0.0
- fqx(:,:,:) =0.
-
- g_fqy(:,:,:) =0.0
- fqy(:,:,:) =0.
-
- g_fqz(:,:,:) =0.0
- fqz(:,:,:) =0.
-
- g_fqxl(:,:,:) =0.0
- fqxl(:,:,:) =0.
-
- g_fqyl(:,:,:) =0.0
- fqyl(:,:,:) =0.
-
- g_fqzl(:,:,:) =0.0
- fqzl(:,:,:) =0.
-
- END IF
-
-!LPB[2]
- ktf =min(kte,kde-1)
-
- horz_order =config_flags%h_sca_adv_order
-
- vert_order =config_flags%v_sca_adv_order
-
- degrade_xs =.true.
-
- degrade_xe =.true.
-
- degrade_ys =.true.
-
- degrade_ye =.true.
-
-!LPB[3]
- IF( horz_order == 6 ) THEN
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-4)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye =.false.
-
- ktf =min(kte,kde-1)
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_xs) i_start =max(its-1,ids)
-
- IF(degrade_xe) i_end =min(ite+1,ide-1)
-
- IF(degrade_ys) THEN
-
- j_start =max(jts-1,jds+1)
-
- j_start_f =jds+3
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte+1,jde-2)
-
- j_end_f =jde-3
- ENDIF
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux6(field(i,k,j-3),g_field(i,k,j-3),field(i,k,j-2) &
-,g_field(i,k,j-2),field(i,k,j-1),g_field(i,k,j-1),field(i,k,j),g_field(i,k, &
- j),field(i,k,j+1),g_field(i,k,j+1),field(i,k,j+2),g_field(i,k,j+2),vel,g_vel)
- FuncVal1 =flux6(field(i,k,j-3),field(i,k,j-2),field(i,k,j-1),field(i,k,j) &
-,field(i,k,j+1),field(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i,k,j-2),g_field(i,k,j-2),field(i,k,j-1) &
-,g_field(i,k,j-1),field(i,k,j),g_field(i,k,j),field(i,k,j+1),g_field(i,k,j+ &
- 1),vel,g_vel)
- FuncVal1 =flux4(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i,k,j-2),g_field(i,k,j-2),field(i,k,j-1) &
-,g_field(i,k,j-1),field(i,k,j),g_field(i,k,j),field(i,k,j+1),g_field(i,k,j+ &
- 1),vel,g_vel)
- FuncVal1 =flux4(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
- ENDIF
- ENDDO
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- IF(degrade_ys) j_start =max(jts-1,jds)
-
- IF(degrade_ye) j_end =min(jte+1,jde-1)
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its-1)
-
- i_start_f =ids+3
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-2,ite+1)
-
- i_end_f =ide-3
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux6(field(i-3,k,j),g_field(i-3,k,j),field(i-2,k,j) &
-,g_field(i-2,k,j),field(i-1,k,j),g_field(i-1,k,j),field(i,k,j),g_field(i,k, &
- j),field(i+1,k,j),g_field(i+1,k,j),field(i+2,k,j),g_field(i+2,k,j),vel,g_vel)
- FuncVal1 =flux6(field(i-3,k,j),field(i-2,k,j),field(i-1,k,j),field(i,k,j) &
-,field(i+1,k,j),field(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- DO i =i_start,i_start_f-1
-
- IF(i == ids+1) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_Tmpv1 =(g_ru(i,k,j)*mu -g_mu*ru(i,k,j))/(mu*mu) 
- Tmpv1 =ru(i,k,j)/mu
-
- g_vel =g_Tmpv1
- vel =Tmpv1
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_cr =g_Tmpv1
- cr =Tmpv1
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
-
- IF(i == ids+2) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i-2,k,j),g_field(i-2,k,j),field(i-1,k,j) &
-,g_field(i-1,k,j),field(i,k,j),g_field(i,k,j),field(i+1,k,j),g_field(i+1,k, &
- j),vel,g_vel)
- FuncVal1 =flux4(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- DO i =i_end_f+1,i_end+1
-
- IF( i == ide-1 ) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
-
- IF( i == ide-2 ) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i-2,k,j),g_field(i-2,k,j),field(i-1,k,j) &
-,g_field(i-1,k,j),field(i,k,j),g_field(i,k,j),field(i+1,k,j),g_field(i+1,k, &
- j),vel,g_vel)
- FuncVal1 =flux4(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDDO
- ENDIF
-
- ENDDO
- ELSE IF( horz_order == 5 ) THEN
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-4)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye =.false.
-
- ktf =min(kte,kde-1)
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_xs) i_start =max(its-1,ids)
-
- IF(degrade_xe) i_end =min(ite+1,ide-1)
-
- IF(degrade_ys) THEN
-
- j_start =max(jts-1,jds+1)
-
- j_start_f =jds+3
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte+1,jde-2)
-
- j_end_f =jde-3
- ENDIF
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux5(field(i,k,j-3),g_field(i,k,j-3),field(i,k,j-2) &
-,g_field(i,k,j-2),field(i,k,j-1),g_field(i,k,j-1),field(i,k,j),g_field(i,k, &
- j),field(i,k,j+1),g_field(i,k,j+1),field(i,k,j+2),g_field(i,k,j+2),vel,g_vel)
- FuncVal1 =flux5(field(i,k,j-3),field(i,k,j-2),field(i,k,j-1),field(i,k,j) &
-,field(i,k,j+1),field(i,k,j+2),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i,k,j-2),g_field(i,k,j-2),field(i,k,j-1) &
-,g_field(i,k,j-1),field(i,k,j),g_field(i,k,j),field(i,k,j+1),g_field(i,k,j+ &
- 1),vel,g_vel)
- FuncVal1 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-2 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i,k,j-2),g_field(i,k,j-2),field(i,k,j-1) &
-,g_field(i,k,j-1),field(i,k,j),g_field(i,k,j),field(i,k,j+1),g_field(i,k,j+ &
- 1),vel,g_vel)
- FuncVal1 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
- ENDIF
- ENDDO
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- IF(degrade_ys) j_start =max(jts-1,jds)
-
- IF(degrade_ye) j_end =min(jte+1,jde-1)
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its-1)
-
- i_start_f =ids+3
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-2,ite+1)
-
- i_end_f =ide-3
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux5(field(i-3,k,j),g_field(i-3,k,j),field(i-2,k,j) &
-,g_field(i-2,k,j),field(i-1,k,j),g_field(i-1,k,j),field(i,k,j),g_field(i,k, &
- j),field(i+1,k,j),g_field(i+1,k,j),field(i+2,k,j),g_field(i+2,k,j),vel,g_vel)
- FuncVal1 =flux5(field(i-3,k,j),field(i-2,k,j),field(i-1,k,j),field(i,k,j) &
-,field(i+1,k,j),field(i+2,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- DO i =i_start,i_start_f-1
-
- IF(i == ids+1) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_Tmpv1 =(g_ru(i,k,j)*mu -g_mu*ru(i,k,j))/(mu*mu) 
- Tmpv1 =ru(i,k,j)/mu
-
- g_vel =g_Tmpv1
- vel =Tmpv1
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_cr =g_Tmpv1
- cr =Tmpv1
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
-
- IF(i == ids+2) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i-2,k,j),g_field(i-2,k,j),field(i-1,k,j) &
-,g_field(i-1,k,j),field(i,k,j),g_field(i,k,j),field(i+1,k,j),g_field(i+1,k, &
- j),vel,g_vel)
- FuncVal1 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDDO
- ENDIF
-
- IF( degrade_xe ) THEN
-
- DO i =i_end_f+1,i_end+1
-
- IF( i == ide-1 ) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
-
- IF( i == ide-2 ) THEN
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i-2,k,j),g_field(i-2,k,j),field(i-1,k,j) &
-,g_field(i-1,k,j),field(i,k,j),g_field(i,k,j),field(i+1,k,j),g_field(i+1,k, &
- j),vel,g_vel)
- FuncVal1 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDDO
- ENDIF
-
- ENDDO
- ELSE IF( horz_order == 4 ) THEN
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+1)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+1)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-2)                ) degrade_ye =.false.
-
- ktf =min(kte,kde-1)
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_xs) i_start =its
-
- IF(degrade_xe) i_end =min(ite,ide-1)
-
- IF(degrade_ys) THEN
-
- j_start =max(jts,jds+1)
-
- j_start_f =jds+2
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte,jde-2)
-
- j_end_f =jde-2
- ENDIF
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i,k,j-2),g_field(i,k,j-2),field(i,k,j-1) &
-,g_field(i,k,j-1),field(i,k,j),g_field(i,k,j),field(i,k,j+1),g_field(i,k,j+ &
- 1),vel,g_vel)
- FuncVal1 =flux4(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
- ENDIF
- ENDDO
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- IF(degrade_ys) j_start =jts
-
- IF(degrade_ye) j_end =min(jte,jde-1)
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its)
-
- i_start_f =i_start+1
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-2,ite)
-
- i_end_f =ide-2
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i-2,k,j),g_field(i-2,k,j),field(i-1,k,j) &
-,g_field(i-1,k,j),field(i,k,j),g_field(i,k,j),field(i+1,k,j),g_field(i+1,k, &
- j),vel,g_vel)
- FuncVal1 =flux4(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- IF( i_start == ids+1 ) THEN
-
- i =ids+1
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_Tmpv1 =(g_ru(i,k,j)*mu -g_mu*ru(i,k,j))/(mu*mu) 
- Tmpv1 =ru(i,k,j)/mu
-
- g_vel =g_Tmpv1
- vel =Tmpv1
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_cr =g_Tmpv1
- cr =Tmpv1
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDIF
-
- IF( degrade_xe ) THEN
-
- IF( i_end == ide-2 ) THEN
-
- i =ide-1
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDIF
-
- ENDDO
- ELSE IF( horz_order == 3 ) THEN
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+2)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-1)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+2)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-1)                ) degrade_ye =.false.
-
- ktf =min(kte,kde-1)
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- j_start_f =j_start
-
- j_end_f =j_end+1
-
- IF(degrade_xs) i_start =its
-
- IF(degrade_xe) i_end =min(ite,ide-1)
-
- IF(degrade_ys) THEN
-
- j_start =max(jts,jds+1)
-
- j_start_f =jds+2
- ENDIF
-
- IF(degrade_ye) THEN
-
- j_end =min(jte,jde-2)
-
- j_end_f =jde-2
- ENDIF
-
- DO j =j_start,j_end+1
-
- IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i,k,j-2),g_field(i,k,j-2),field(i,k,j-1) &
-,g_field(i,k,j-1),field(i,k,j),g_field(i,k,j),field(i,k,j+1),g_field(i,k,j+ &
- 1),vel,g_vel)
- FuncVal1 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jds+1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
-
- ELSE IF( j == jde-1 ) THEN
-
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
- ENDIF
- ENDDO
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- i_start_f =i_start
-
- i_end_f =i_end+1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- IF(degrade_ys) j_start =jts
-
- IF(degrade_ye) j_end =min(jte,jde-1)
-
- IF(degrade_xs) THEN
-
- i_start =max(ids+1,its)
-
- i_start_f =i_start+1
- ENDIF
-
- IF(degrade_xe) THEN
-
- i_end =min(ide-2,ite)
-
- i_end_f =ide-2
- ENDIF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start_f,i_end_f
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i-2,k,j),g_field(i-2,k,j),field(i-1,k,j) &
-,g_field(i-1,k,j),field(i,k,j),g_field(i,k,j),field(i+1,k,j),g_field(i+1,k, &
- j),vel,g_vel)
- FuncVal1 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDDO
-
- IF( degrade_xs ) THEN
-
- IF( i_start == ids+1 ) THEN
-
- i =ids+1
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_Tmpv1 =(g_ru(i,k,j)*mu -g_mu*ru(i,k,j))/(mu*mu) 
- Tmpv1 =ru(i,k,j)/mu
-
- g_vel =g_Tmpv1
- vel =Tmpv1
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_cr =g_Tmpv1
- cr =Tmpv1
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDIF
-
- IF( degrade_xe ) THEN
-
- IF( i_end == ide-2 ) THEN
-
- i =ide-1
-
- DO k =kts,ktf
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*(ru(i,k,j))*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*(g_ru( &
- i,k,j))*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*(ru(i,k,j))*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDIF
- ENDIF
-
- ENDDO
- ELSE IF( horz_order == 2 ) THEN
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+1)                ) degrade_xs =.false.
-
- IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+1)                ) degrade_ys =.false.
-
- IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-2)                ) degrade_ye =.false.
-
- ktf =min(kte,kde-1)
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- IF(degrade_xs) i_start =its
-
- IF(degrade_xe) i_end =min(ite,ide-1)
-
- IF(degrade_ys) j_start =max(jts,jds+1)
-
- IF(degrade_ye) j_end =min(jte,jde-2)
-
- DO j =j_start,j_end+1
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_dy =0.0
- dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j-1))
- mu =0.5*(mut(i,j) +mut(i,j-1))
-
- g_vel =g_rv(i,k,j)
- vel =rv(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dy -g_dy*vel*dt)/(dy*dy) 
- Tmpv1 =vel*dt/dy
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dy/dt) +g_mu*(dy/dt) 
- Tmpv1 =mu*(dy/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k,j-1),g_field_old(i,k,j-1) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqyl(i,k,j) =g_Tmpv2
- fqyl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*rv(i,k,j)*(g_field(i,k,j) +g_field(i,k,j-1)) +0.5*g_rv(i,k, &
- j)*(field(i,k,j) +field(i,k,j-1)) 
- Tmpv1 =0.5*rv(i,k,j)*(field(i,k,j) +field(i,k,j-1))
-
- g_fqy(i,k,j) =g_Tmpv1
- fqy(i,k,j) =Tmpv1
-
- g_fqy(i,k,j) =g_fqy(i,k,j) -g_fqyl(i,k,j)
- fqy(i,k,j) =fqy(i,k,j) -fqyl(i,k,j)
-
- ENDDO
- ENDDO
- ENDDO
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end+1
-
- g_dx =0.0
- dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i-1,j))
- mu =0.5*(mut(i,j) +mut(i-1,j))
-
- g_vel =g_ru(i,k,j)
- vel =ru(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dx -g_dx*vel*dt)/(dx*dx) 
- Tmpv1 =vel*dt/dx
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dx/dt) +g_mu*(dx/dt) 
- Tmpv1 =mu*(dx/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i-1,k,j),g_field_old(i-1,k,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqxl(i,k,j) =g_Tmpv2
- fqxl(i,k,j) =Tmpv2
-
- g_Tmpv1 =0.5*ru(i,k,j)*(g_field(i,k,j) +g_field(i-1,k,j)) +0.5*g_ru(i,k, &
- j)*(field(i,k,j) +field(i-1,k,j)) 
- Tmpv1 =0.5*ru(i,k,j)*(field(i,k,j) +field(i-1,k,j))
-
- g_fqx(i,k,j) =g_Tmpv1
- fqx(i,k,j) =Tmpv1
-
- g_fqx(i,k,j) =g_fqx(i,k,j) -g_fqxl(i,k,j)
- fqx(i,k,j) =fqx(i,k,j) -fqxl(i,k,j)
-
- ENDDO
- ENDDO
- ENDDO
- ELSE
-
- WRITE (wrf_err_message,*) 'module_advect: advect_scalar_pd, h_order not known ',horz_order
-
-!REVISED BY WALLS
- CALL wrf_error_fatal(Trim(wrf_err_message))
- ENDIF
-
-!LPB[4]
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
-!LPB[5]
- IF( (config_flags%open_xs) .and. (its == ids) ) THEN
-
- DO j =j_start,j_end
- DO k =kts,ktf
-
- g_ub =(0.5*(g_ru(its,k,j) +g_ru(its+1,k,j)) +0.0 -(0.5*(g_ru(its,k,j) &
- +g_ru(its+1,k,j)) -0.0)*sign(1.0, 0.5*(ru(its,k,j) +ru(its+1,k,j)) -(0.)))*0.5
- ub =min(0.5*(ru(its,k,j) +ru(its+1,k,j)),0.)
-
- g_Tmpv1 =ub*(g_field_old(its+1,k,j) -g_field_old(its,k,j)) +g_ub*( &
- field_old(its+1,k,j) -field_old(its,k,j)) 
- Tmpv1 =ub*(field_old(its+1,k,j) -field_old(its,k,j))
-
- g_Tmpv2 =field(its,k,j)*(g_ru(its+1,k,j) -g_ru(its,k,j)) +g_field(its,k, &
- j)*(ru(its+1,k,j) -ru(its,k,j)) 
- Tmpv2 =field(its,k,j)*(ru(its+1,k,j) -ru(its,k,j))
-
- g_tendency(its,k,j) =g_tendency(its,k,j) -rdx*(g_Tmpv1 +g_Tmpv2)
- tendency(its,k,j) =tendency(its,k,j) -rdx*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
- ENDIF
-
-!LPB[7]
- IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-
- DO j =j_start,j_end
- DO k =kts,ktf
-
- g_ub =(0.5*(g_ru(ite-1,k,j) +g_ru(ite,k,j)) +0.0 +(0.5*(g_ru(ite-1,k,j) &
- +g_ru(ite,k,j)) -0.0)*sign(1.0, 0.5*(ru(ite-1,k,j) +ru(ite,k,j)) -(0.)))*0.5
- ub =max(0.5*(ru(ite-1,k,j) +ru(ite,k,j)),0.)
-
- g_Tmpv1 =ub*(g_field_old(i_end,k,j) -g_field_old(i_end-1,k,j)) &
- +g_ub*(field_old(i_end,k,j) -field_old(i_end-1,k,j)) 
- Tmpv1 =ub*(field_old(i_end,k,j) -field_old(i_end-1,k,j))
-
- g_Tmpv2 =field(i_end,k,j)*(g_ru(ite,k,j) -g_ru(ite-1,k,j)) +g_field( &
- i_end,k,j)*(ru(ite,k,j) -ru(ite-1,k,j)) 
- Tmpv2 =field(i_end,k,j)*(ru(ite,k,j) -ru(ite-1,k,j))
-
- g_tendency(i_end,k,j) =g_tendency(i_end,k,j) -rdx*(g_Tmpv1 +g_Tmpv2)
- tendency(i_end,k,j) =tendency(i_end,k,j) -rdx*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
- ENDIF
-
-!LPB[9]
- IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
-
- DO i =i_start,i_end
- DO k =kts,ktf
-
- g_vb =(0.5*(g_rv(i,k,jts) +g_rv(i,k,jts+1)) +0.0 -(0.5*(g_rv(i,k,jts) &
- +g_rv(i,k,jts+1)) -0.0)*sign(1.0, 0.5*(rv(i,k,jts) +rv(i,k,jts+1)) -(0.)))*0.5
- vb =min(0.5*(rv(i,k,jts) +rv(i,k,jts+1)),0.)
-
- g_Tmpv1 =vb*(g_field_old(i,k,jts+1) -g_field_old(i,k,jts)) +g_vb*( &
- field_old(i,k,jts+1) -field_old(i,k,jts)) 
- Tmpv1 =vb*(field_old(i,k,jts+1) -field_old(i,k,jts))
-
- g_Tmpv2 =field(i,k,jts)*(g_rv(i,k,jts+1) -g_rv(i,k,jts)) +g_field(i,k, &
- jts)*(rv(i,k,jts+1) -rv(i,k,jts)) 
- Tmpv2 =field(i,k,jts)*(rv(i,k,jts+1) -rv(i,k,jts))
-
- g_tendency(i,k,jts) =g_tendency(i,k,jts) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,jts) =tendency(i,k,jts) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
- ENDIF
-
-!LPB[11]
- IF( (config_flags%open_ye) .and. (jte == jde)) THEN
-
- DO i =i_start,i_end
- DO k =kts,ktf
-
- g_vb =(0.5*(g_rv(i,k,jte-1) +g_rv(i,k,jte)) +0.0 +(0.5*(g_rv(i,k,jte-1) &
- +g_rv(i,k,jte)) -0.0)*sign(1.0, 0.5*(rv(i,k,jte-1) +rv(i,k,jte)) -(0.)))*0.5
- vb =max(0.5*(rv(i,k,jte-1) +rv(i,k,jte)),0.)
-
- g_Tmpv1 =vb*(g_field_old(i,k,j_end) -g_field_old(i,k,j_end-1)) &
- +g_vb*(field_old(i,k,j_end) -field_old(i,k,j_end-1)) 
- Tmpv1 =vb*(field_old(i,k,j_end) -field_old(i,k,j_end-1))
-
- g_Tmpv2 =field(i,k,j_end)*(g_rv(i,k,jte) -g_rv(i,k,jte-1)) +g_field(i,k, &
- j_end)*(rv(i,k,jte) -rv(i,k,jte-1)) 
- Tmpv2 =field(i,k,j_end)*(rv(i,k,jte) -rv(i,k,jte-1))
-
- g_tendency(i,k,j_end) =g_tendency(i,k,j_end) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,j_end) =tendency(i,k,j_end) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
- ENDIF
-
-!LPB[13]
- IF( (config_flags%polar) .and. (jts == jds) ) THEN
-
- DO i =i_start,i_end
- DO k =kts,ktf
-
- g_vb =(0.5*g_rv(i,k,jts+1) +0.0 -(0.5*g_rv(i,k,jts+1) -0.0)*sign(1.0, 0.5* &
- rv(i,k,jts+1) -(0.)))*0.5
- vb =min(0.5*rv(i,k,jts+1),0.)
-
- g_Tmpv1 =vb*(g_field_old(i,k,jts+1) -g_field_old(i,k,jts)) +g_vb*( &
- field_old(i,k,jts+1) -field_old(i,k,jts)) 
- Tmpv1 =vb*(field_old(i,k,jts+1) -field_old(i,k,jts))
-
- g_Tmpv2 =field(i,k,jts)*g_rv(i,k,jts+1) +g_field(i,k,jts)*rv(i,k,jts+1) 
- Tmpv2 =field(i,k,jts)*rv(i,k,jts+1)
-
- g_tendency(i,k,jts) =g_tendency(i,k,jts) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,jts) =tendency(i,k,jts) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
- ENDIF
-
-!LPB[15]
- IF( (config_flags%polar) .and. (jte == jde)) THEN
-
- DO i =i_start,i_end
- DO k =kts,ktf
-
- g_vb =(0.5*g_rv(i,k,jte-1) +0.0 +(0.5*g_rv(i,k,jte-1) -0.0)*sign(1.0, 0.5* &
- rv(i,k,jte-1) -(0.)))*0.5
- vb =max(0.5*rv(i,k,jte-1),0.)
-
- g_Tmpv1 =vb*(g_field_old(i,k,j_end) -g_field_old(i,k,j_end-1)) &
- +g_vb*(field_old(i,k,j_end) -field_old(i,k,j_end-1)) 
- Tmpv1 =vb*(field_old(i,k,j_end) -field_old(i,k,j_end-1))
-
- g_Tmpv2 =field(i,k,j_end)*(-g_rv(i,k,jte-1)) +g_field(i,k,j_end)*(-rv(i,k,jte-1)) 
- Tmpv2 =field(i,k,j_end)*(-rv(i,k,jte-1))
-
- g_tendency(i,k,j_end) =g_tendency(i,k,j_end) -rdy*(g_Tmpv1 +g_Tmpv2)
- tendency(i,k,j_end) =tendency(i,k,j_end) -rdy*(Tmpv1 +Tmpv2)
-
- ENDDO
- ENDDO
- ENDIF
-
-!LPB[16]
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- IF(degrade_xs) i_start =max(its-1,ids)
-
- IF(degrade_xe) i_end =min(ite+1,ide-1)
-
- IF(degrade_ys) j_start =max(jts-1,jds)
-
- IF(degrade_ye) j_end =min(jte+1,jde-1)
-
-!LPB[25]
- IF(vert_order == 6) THEN
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_fqz(i,1,j) =0.0
- fqz(i,1,j) =0.
-
- g_fqzl(i,1,j) =0.0
- fqzl(i,1,j) =0.
-
- g_fqz(i,kde,j) =0.0
- fqz(i,kde,j) =0.
-
- g_fqzl(i,kde,j) =0.0
- fqzl(i,kde,j) =0.
-
- ENDDO
-
- DO k =kts+3,ktf-2
- DO i =i_start,i_end
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux6(field(i,k-3,j),g_field(i,k-3,j),field(i,k-2,j) &
-,g_field(i,k-2,j),field(i,k-1,j),g_field(i,k-1,j),field(i,k,j),g_field(i,k, &
- j),field(i,k+1,j),g_field(i,k+1,j),field(i,k+2,j),g_field(i,k+2,j),-vel,-g_vel)
- FuncVal1 =flux6(field(i,k-3,j),field(i,k-2,j),field(i,k-1,j),field(i,k,j) &
-,field(i,k+1,j),field(i,k+2,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =kts+2
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i,k-2,j),g_field(i,k-2,j),field(i,k-1,j) &
-,g_field(i,k-1,j),field(i,k,j),g_field(i,k,j),field(i,k+1,j),g_field(i,k+1, &
- j),-vel,-g_vel)
- FuncVal1 =flux4(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =ktf-1
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i,k-2,j),g_field(i,k-2,j),field(i,k-1,j) &
-,g_field(i,k-1,j),field(i,k,j),g_field(i,k,j),field(i,k+1,j),g_field(i,k+1, &
- j),-vel,-g_vel)
- FuncVal1 =flux4(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =ktf
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 5) THEN
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_fqz(i,1,j) =0.0
- fqz(i,1,j) =0.
-
- g_fqzl(i,1,j) =0.0
- fqzl(i,1,j) =0.
-
- g_fqz(i,kde,j) =0.0
- fqz(i,kde,j) =0.
-
- g_fqzl(i,kde,j) =0.0
- fqzl(i,kde,j) =0.
-
- ENDDO
-
- DO k =kts+3,ktf-2
- DO i =i_start,i_end
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux5(field(i,k-3,j),g_field(i,k-3,j),field(i,k-2,j) &
-,g_field(i,k-2,j),field(i,k-1,j),g_field(i,k-1,j),field(i,k,j),g_field(i,k, &
- j),field(i,k+1,j),g_field(i,k+1,j),field(i,k+2,j),g_field(i,k+2,j),-vel,-g_vel)
- FuncVal1 =flux5(field(i,k-3,j),field(i,k-2,j),field(i,k-1,j),field(i,k,j) &
-,field(i,k+1,j),field(i,k+2,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =kts+2
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i,k-2,j),g_field(i,k-2,j),field(i,k-1,j) &
-,g_field(i,k-1,j),field(i,k,j),g_field(i,k,j),field(i,k+1,j),g_field(i,k+1, &
- j),-vel,-g_vel)
- FuncVal1 =flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =ktf-1
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i,k-2,j),g_field(i,k-2,j),field(i,k-1,j) &
-,g_field(i,k-1,j),field(i,k,j),g_field(i,k,j),field(i,k+1,j),g_field(i,k+1, &
- j),-vel,-g_vel)
- FuncVal1 =flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =ktf
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 4) THEN
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_fqz(i,1,j) =0.0
- fqz(i,1,j) =0.
-
- g_fqzl(i,1,j) =0.0
- fqzl(i,1,j) =0.
-
- g_fqz(i,kde,j) =0.0
- fqz(i,kde,j) =0.
-
- g_fqzl(i,kde,j) =0.0
- fqzl(i,kde,j) =0.
-
- ENDDO
-
- DO k =kts+2,ktf-1
- DO i =i_start,i_end
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux4(field(i,k-2,j),g_field(i,k-2,j),field(i,k-1,j) &
-,g_field(i,k-1,j),field(i,k,j),g_field(i,k,j),field(i,k+1,j),g_field(i,k+1, &
- j),-vel,-g_vel)
- FuncVal1 =flux4(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =ktf
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 3) THEN
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_fqz(i,1,j) =0.0
- fqz(i,1,j) =0.
-
- g_fqzl(i,1,j) =0.0
- fqzl(i,1,j) =0.
-
- g_fqz(i,kde,j) =0.0
- fqz(i,kde,j) =0.
-
- g_fqzl(i,kde,j) =0.0
- fqzl(i,kde,j) =0.
-
- ENDDO
-
- DO k =kts+2,ktf-1
- DO i =i_start,i_end
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_FuncVal1=g_flux3(field(i,k-2,j),g_field(i,k-2,j),field(i,k-1,j) &
-,g_field(i,k-1,j),field(i,k,j),g_field(i,k,j),field(i,k+1,j),g_field(i,k+1, &
- j),-vel,-g_vel)
- FuncVal1 =flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-
- g_Tmpv1 =vel*g_FuncVal1 +g_vel*FuncVal1 
- Tmpv1 =vel*FuncVal1
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
-
- DO i =i_start,i_end
-
- k =kts+1
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- k =ktf
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
- ELSE IF(vert_order == 2) THEN
-
- DO j =j_start,j_end
- DO i =i_start,i_end
-
- g_fqz(i,1,j) =0.0
- fqz(i,1,j) =0.
-
- g_fqzl(i,1,j) =0.0
- fqzl(i,1,j) =0.
-
- g_fqz(i,kde,j) =0.0
- fqz(i,kde,j) =0.
-
- g_fqzl(i,kde,j) =0.0
- fqzl(i,kde,j) =0.
-
- ENDDO
-
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_dz =0.0
- dz =2./(rdzw(k)+rdzw(k-1))
-
- g_mu =0.5*(g_mut(i,j) +g_mut(i,j))
- mu =0.5*(mut(i,j) +mut(i,j))
-
- g_vel =g_rom(i,k,j)
- vel =rom(i,k,j)
-
- g_Tmpv1 =(g_vel*dt*dz -g_dz*vel*dt)/(dz*dz) 
- Tmpv1 =vel*dt/dz
-
- g_Tmpv2 =(g_Tmpv1*mu -g_mu*Tmpv1)/(mu*mu) 
- Tmpv2 =Tmpv1/mu
-
- g_cr =g_Tmpv2
- cr =Tmpv2
-
- g_Tmpv1 =mu*(g_dz/dt) +g_mu*(dz/dt) 
- Tmpv1 =mu*(dz/dt)
-
- g_FuncVal1=g_flux_upwind(field_old(i,k-1,j),g_field_old(i,k-1,j) &
-,field_old(i,k,j),g_field_old(i,k,j),cr,g_cr)
- FuncVal1 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-
- g_Tmpv2 =Tmpv1*g_FuncVal1 +g_Tmpv1*FuncVal1 
- Tmpv2 =Tmpv1*FuncVal1
-
- g_fqzl(i,k,j) =g_Tmpv2
- fqzl(i,k,j) =Tmpv2
-
- g_Tmpv1 =rom(i,k,j)*(fzm(k)*g_field(i,k,j) +fzp(k)*g_field(i,k-1,j)) &
- +g_rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)) 
- Tmpv1 =rom(i,k,j)*(fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j))
-
- g_fqz(i,k,j) =g_Tmpv1
- fqz(i,k,j) =Tmpv1
-
- g_fqz(i,k,j) =g_fqz(i,k,j) -g_fqzl(i,k,j)
- fqz(i,k,j) =fqz(i,k,j) -fqzl(i,k,j)
-
- ENDDO
- ENDDO
- ENDDO
- ELSE
-
- WRITE (wrf_err_message,*) ' advect_scalar_pd, v_order not known ',vert_order
-
-!REVISED BY WALLS
- CALL wrf_error_fatal(wrf_err_message)
- ENDIF
-
-!LPB[26]
- IF(pd_limit) THEN
-
- i_start =its-1
-
- i_end =min(ite,ide-1) +1
-
- j_start =jts-1
-
- j_end =min(jte,jde-1) +1
-
- IF(degrade_xs) i_start =max(its-1,ids)
-
- IF(degrade_xe) i_end =min(ite+1,ide-1)
-
- IF(degrade_ys) j_start =max(jts-1,jds)
-
- IF(degrade_ye) j_end =min(jte+1,jde-1)
-
- IF(config_flags%specified .or. config_flags%nested) THEN
-
- IF(degrade_xs) i_start =max(its-1,ids+1)
-
- IF(degrade_xe) i_end =min(ite+1,ide-2)
-
- IF(degrade_ys) j_start =max(jts-1,jds+1)
-
- IF(degrade_ye) j_end =min(jte+1,jde-2)
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of advect_scalar_pd in forward (tangent) mode:
+!   variations   of useful results: tendency h_tendency z_tendency
+!   with respect to varying inputs: rom field tendency h_tendency
+!                z_tendency ru rv mu_old field_old mut
+!   RW status of diff variables: rom:in field:in tendency:in-out
+!                h_tendency:in-out z_tendency:in-out ru:in rv:in
+!                mu_old:in field_old:in mut:in
+SUBROUTINE G_ADVECT_SCALAR_PD(field, fieldd, field_old, field_oldd, &
+&  tendency, tendencyd, h_tendency, h_tendencyd, z_tendency, z_tendencyd&
+&  , ru, rud, rv, rvd, rom, romd, mut, mutd, mub, mu_old, mu_oldd, &
+&  time_step, config_flags, tenddec, msfux, msfuy, msfvx, msfvy, msftx, &
+&  msfty, fzm, fzp, rdx, rdy, rdzw, dt, ids, ide, jds, jde, kds, kde, ims&
+&  , ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+! Input data
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+! tendency flag
+  LOGICAL, INTENT(IN) :: tenddec
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: field, &
+&  field_old, ru, rv, rom
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: fieldd, &
+&  field_oldd, rud, rvd, romd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mut, mub, mu_old
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mutd, mu_oldd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendencyd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: h_tendency&
+&  , z_tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: h_tendencyd&
+&  , z_tendencyd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: msfux, msfuy, msfvx, &
+&  msfvy, msftx, msfty
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp, rdzw
+  REAL, INTENT(IN) :: rdx, rdy, dt
+  INTEGER, INTENT(IN) :: time_step
+! Local data
+  INTEGER :: i, j, k, itf, jtf, ktf
+  INTEGER :: i_start, i_end, j_start, j_end
+  INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
+  INTEGER :: jmin, jmax, jp, jm, imin, imax
+  REAL :: mrdx, mrdy, ub, vb, uw, vw, mu
+  REAL :: ubd, vbd, mud
+!  storage for high and low order fluxes
+  REAL, DIMENSION(its - 1:ite + 2, kts:kte, jts - 1:jte + 2) :: fqx, fqy&
+&  , fqz
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: fqxd, fqyd, fqzd
+  REAL, DIMENSION(its - 1:ite + 2, kts:kte, jts - 1:jte + 2) :: fqxl, &
+&  fqyl, fqzl
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: fqxld, fqyld, &
+&  fqzld
+  INTEGER :: horz_order, vert_order
+  LOGICAL :: degrade_xs, degrade_ys
+  LOGICAL :: degrade_xe, degrade_ye
+  INTEGER :: jp1, jp0, jtmp
+  REAL :: flux_out, ph_low, scale
+  REAL :: flux_outd, ph_lowd, scaled
+  REAL, PARAMETER :: eps=1.e-20
+! definition of flux operators, 3rd, 4th, 5th or 6th order
+  REAL :: flux3, flux4, flux5, flux6, flux_upwind
+  REAL :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel, cr
+  REAL :: veld, crd
+!      flux_upwind(q_im1, q_i, cr ) = 0.5*(1.+sign(1.,cr))*q_im1 &
+!                                    +0.5*(1.-sign(1.,cr))*q_i
+!      flux_upwind(q_im1, q_i, cr ) = 0.
+  REAL :: dx, dy, dz
+  LOGICAL, PARAMETER :: pd_limit=.true.
+  REAL :: abs30
+  REAL :: y93
+  REAL :: max43
+  REAL :: abs67
+  REAL :: abs100
+  REAL :: abs18d
+  REAL :: y92
+  REAL :: max42
+  REAL :: abs66
+  REAL :: abs26d
+  REAL :: max39d
+  REAL :: y91
+  REAL :: max41
+  REAL :: abs65
+  REAL :: y28d
+  REAL :: abs34d
+  REAL :: min5d
+  REAL :: max10d
+  REAL :: max47d
+  REAL :: y90
+  REAL :: max40
+  REAL :: abs64
+  REAL :: abs79d
+  REAL :: y36d
+  REAL :: abs42d
+  REAL :: abs63
+  REAL :: abs87d
+  REAL :: y44d
+  REAL :: abs50d
+  REAL :: abs62
+  REAL :: abs99
+  REAL :: min37d
+  REAL :: y52d
+  REAL :: y89d
+  REAL :: abs95d
+  REAL :: abs61
+  REAL :: abs98
+  REAL :: y4d
+  REAL :: y60d
+  REAL :: y97d
+  INTEGER :: min39
+  REAL :: abs60
+  REAL :: abs97
+  INTEGER :: min9
+  REAL :: min38
+  REAL :: abs96
+  REAL :: abs29d
+  REAL :: min61d
+  REAL :: abs102d
+  INTEGER :: min8
+  REAL :: min37
+  REAL :: abs95
+  REAL :: max13d
+  REAL :: abs37d
+  REAL :: min7
+  REAL :: min36
+  REAL :: abs94
+  REAL :: max21d
+  REAL :: abs1d
+  REAL :: y39d
+  REAL :: abs45d
+  REAL :: min6
+  INTEGER :: min35
+  REAL :: y29
+  REAL :: abs93
+  REAL :: abs53d
+  REAL :: y10d
+  REAL :: y47d
+  REAL :: min5
+  INTEGER :: min34
+  REAL :: y28
+  REAL :: abs92
+  REAL :: y55d
+  REAL :: abs61d
+  REAL :: abs98d
+  REAL :: min4
+  REAL :: min33
+  REAL :: y27
+  REAL :: abs91
+  REAL :: y63d
+  REAL :: min48d
+  REAL :: max2d
+  REAL :: y7d
+  REAL :: min11d
+  REAL :: min3
+  REAL :: min32
+  REAL :: y26
+  REAL :: min69
+  REAL :: abs90
+  REAL :: y71d
+  REAL :: min56d
+  INTEGER :: min2
+  REAL :: min31
+  REAL :: y25
+  REAL :: min68
+  REAL :: min64d
+  INTEGER :: min1
+  INTEGER :: min30
+  REAL :: y24
+  REAL :: min67
+  REAL :: max16d
+  REAL :: y23
+  REAL :: min66
+  REAL :: abs11d
+  REAL :: max24d
+  REAL :: abs4d
+  REAL :: abs48d
+  REAL :: y22
+  REAL :: min65
+  REAL :: y59
+  REAL :: y13d
+  REAL :: max32d
+  REAL :: abs56d
+  REAL :: y21
+  REAL :: min64
+  REAL :: y58
+  REAL :: abs64d
+  REAL :: y21d
+  REAL :: y58d
+  REAL :: max40d
+  REAL :: y20
+  REAL :: min63
+  REAL :: y57
+  REAL :: y66d
+  REAL :: abs72d
+  REAL :: max5d
+  REAL :: min14d
+  REAL :: min62
+  REAL :: y56
+  REAL :: y74d
+  REAL :: abs80d
+  REAL :: min59d
+  REAL :: y102d
+  REAL :: min61
+  REAL :: y55
+  REAL :: abs29
+  REAL :: y82d
+  REAL :: min67d
+  REAL :: min60
+  REAL :: y54
+  REAL :: abs28
+  REAL :: max19d
+  REAL :: y90d
+  REAL :: min75d
+  REAL :: y53
+  REAL :: abs27
+  REAL :: abs14d
+  REAL :: max27d
+  REAL :: abs7d
+  REAL :: y52
+  REAL :: abs26
+  REAL :: y89
+  REAL :: max39
+  REAL :: y16d
+  REAL :: abs22d
+  REAL :: max35d
+  REAL :: abs59d
+  REAL :: y51
+  REAL :: abs25
+  REAL :: y88
+  REAL :: max38
+  REAL :: abs67d
+  REAL :: y24d
+  REAL :: abs30d
+  REAL :: max43d
+  REAL :: y50
+  REAL :: abs24
+  REAL :: y87
+  REAL :: max37
+  REAL :: min17d
+  REAL :: y69d
+  REAL :: abs75d
+  REAL :: y32d
+  REAL :: max8d
+  REAL :: max51d
+  REAL :: abs23
+  REAL :: y86
+  REAL :: max36
+  REAL :: min25d
+  REAL :: y77d
+  REAL :: abs83d
+  REAL :: y40d
+  REAL :: abs22
+  REAL :: y85
+  REAL :: max35
+  REAL :: abs59
+  REAL :: min33d
+  REAL :: y85d
+  REAL :: abs91d
+  REAL :: abs21
+  REAL :: y84
+  REAL :: max34
+  REAL :: abs58
+  REAL :: min41d
+  REAL :: y93d
+  REAL :: abs20
+  REAL :: y83
+  REAL :: max33
+  REAL :: abs57
+  REAL :: abs17d
+  REAL :: y82
+  REAL :: max32
+  REAL :: abs56
+  REAL :: y19d
+  REAL :: abs25d
+  REAL :: max38d
+  REAL :: y81
+  REAL :: max31
+  REAL :: abs55
+  REAL :: y27d
+  REAL :: abs33d
+  REAL :: min4d
+  REAL :: max46d
+  REAL :: y80
+  REAL :: max30
+  REAL :: abs54
+  REAL :: abs78d
+  REAL :: y35d
+  REAL :: abs41d
+  REAL :: max54d
+  REAL :: abs53
+  REAL :: min28d
+  REAL :: abs86d
+  REAL :: y43d
+  REAL :: abs52
+  REAL :: abs89
+  REAL :: min36d
+  REAL :: y88d
+  REAL :: abs94d
+  REAL :: y51d
+  REAL :: abs51
+  REAL :: abs88
+  REAL :: y3d
+  REAL :: y96d
+  INTEGER :: min29
+  REAL :: abs50
+  REAL :: abs87
+  REAL :: min52d
+  REAL :: min28
+  REAL :: abs86
+  REAL :: abs28d
+  REAL :: min60d
+  REAL :: abs101d
+  REAL :: min27
+  REAL :: abs85
+  REAL :: max12d
+  REAL :: min7d
+  REAL :: abs36d
+  REAL :: max49d
+  REAL :: min26
+  REAL :: abs84
+  REAL :: max20d
+  REAL :: y38d
+  REAL :: abs44d
+  REAL :: min25
+  REAL :: y19
+  REAL :: abs83
+  REAL :: abs52d
+  REAL :: abs89d
+  REAL :: y46d
+  REAL :: min24
+  REAL :: y18
+  REAL :: abs82
+  REAL :: y54d
+  REAL :: abs60d
+  REAL :: abs97d
+  INTEGER :: min23
+  REAL :: y17
+  REAL :: abs81
+  REAL :: y62d
+  REAL :: min47d
+  REAL :: y6d
+  REAL :: min10d
+  REAL :: y99d
+  REAL :: max1d
+  INTEGER :: min22
+  REAL :: y16
+  REAL :: min59
+  REAL :: abs80
+  REAL :: y70d
+  REAL :: min55d
+  REAL :: y15
+  REAL :: min21
+  REAL :: min58
+  REAL :: min63d
+  REAL :: y14
+  REAL :: min20
+  REAL :: min57
+  REAL :: max15d
+  REAL :: abs39d
+  REAL :: min71d
+  REAL :: y13
+  REAL :: min56
+  REAL :: max23d
+  REAL :: abs3d
+  REAL :: abs10d
+  REAL :: abs47d
+  REAL :: y12
+  REAL :: min55
+  REAL :: y49
+  REAL :: y12d
+  REAL :: max31d
+  REAL :: abs55d
+  REAL :: y49d
+  REAL :: y11
+  INTEGER :: min54
+  REAL :: y48
+  REAL :: abs63d
+  REAL :: y20d
+  REAL :: y57d
+  REAL :: y10
+  INTEGER :: min53
+  REAL :: y47
+  REAL :: y65d
+  REAL :: abs71d
+  REAL :: max4d
+  REAL :: y9d
+  REAL :: min13d
+  REAL :: min52
+  REAL :: y46
+  REAL :: min21d
+  REAL :: y73d
+  REAL :: min58d
+  REAL :: y101d
+  REAL :: min51
+  REAL :: y45
+  REAL :: abs19
+  REAL :: y81d
+  REAL :: min66d
+  INTEGER :: min50
+  REAL :: y44
+  REAL :: abs18
+  REAL :: max18d
+  REAL :: min74d
+  REAL :: y43
+  REAL :: abs17
+  REAL :: abs13d
+  REAL :: max26d
+  REAL :: abs6d
+  REAL :: y42
+  REAL :: abs16
+  REAL :: y79
+  REAL :: max29
+  REAL :: y15d
+  REAL :: abs21d
+  REAL :: max34d
+  REAL :: abs58d
+  REAL :: y41
+  REAL :: abs15
+  REAL :: y78
+  REAL :: max28
+  REAL :: abs66d
+  REAL :: y23d
+  REAL :: max42d
+  REAL :: y40
+  REAL :: abs14
+  REAL :: y77
+  REAL :: max27
+  REAL :: y68d
+  REAL :: abs74d
+  REAL :: y31d
+  REAL :: max7d
+  REAL :: max50d
+  REAL :: abs13
+  REAL :: y76
+  REAL :: max26
+  REAL :: min24d
+  REAL :: y76d
+  REAL :: abs82d
+  REAL :: abs12
+  REAL :: y75
+  REAL :: max25
+  REAL :: abs49
+  REAL :: min32d
+  REAL :: y84d
+  REAL :: abs90d
+  REAL :: min69d
+  REAL :: abs11
+  REAL :: y74
+  REAL :: max24
+  REAL :: abs48
+  REAL :: y102
+  REAL :: y92d
+  REAL :: abs10
+  REAL :: y73
+  REAL :: max23
+  REAL :: abs47
+  REAL :: y101
+  REAL :: abs16d
+  REAL :: max29d
+  REAL :: abs9d
+  REAL :: y72
+  REAL :: max22
+  REAL :: abs46
+  REAL :: y100
+  REAL :: y18d
+  REAL :: abs24d
+  REAL :: max37d
+  REAL :: y71
+  REAL :: max21
+  REAL :: abs45
+  REAL :: abs69d
+  REAL :: y26d
+  REAL :: abs32d
+  REAL :: min3d
+  REAL :: max45d
+  REAL :: y70
+  REAL :: max20
+  REAL :: abs44
+  REAL :: min19d
+  REAL :: abs77d
+  REAL :: y34d
+  REAL :: abs40d
+  REAL :: max53d
+  REAL :: abs43
+  REAL :: min27d
+  REAL :: y79d
+  REAL :: abs85d
+  REAL :: y42d
+  REAL :: abs42
+  REAL :: abs79
+  REAL :: y87d
+  REAL :: abs93d
+  REAL :: y50d
+  REAL :: abs41
+  REAL :: abs78
+  REAL :: max54
+  REAL :: min43d
+  REAL :: y2d
+  REAL :: y95d
+  REAL :: min19
+  REAL :: abs40
+  REAL :: abs77
+  REAL :: max53
+  REAL :: abs19d
+  REAL :: min51d
+  REAL :: min18
+  REAL :: max52
+  REAL :: abs76
+  REAL :: abs27d
+  REAL :: abs100d
+  REAL :: min17
+  REAL :: max51
+  REAL :: abs75
+  REAL :: y29d
+  REAL :: min6d
+  REAL :: max11d
+  REAL :: abs35d
+  REAL :: max48d
+  INTEGER :: min16
+  REAL :: abs9
+  REAL :: max50
+  REAL :: abs74
+  REAL :: y37d
+  REAL :: abs43d
+  INTEGER :: min15
+  REAL :: abs8
+  REAL :: abs73
+  REAL :: abs88d
+  REAL :: y45d
+  REAL :: abs51d
+  REAL :: min14
+  REAL :: abs7
+  REAL :: abs72
+  REAL :: min38d
+  REAL :: y53d
+  REAL :: abs96d
+  REAL :: min13
+  REAL :: abs6
+  REAL :: abs71
+  REAL :: min46d
+  REAL :: y5d
+  REAL :: y61d
+  REAL :: y98d
+  REAL :: min12
+  INTEGER :: min49
+  REAL :: abs5
+  REAL :: abs70
+  REAL :: min11
+  REAL :: min48
+  REAL :: abs4
+  REAL :: min62d
+  REAL :: min10
+  REAL :: min47
+  REAL :: abs3
+  REAL :: max14d
+  REAL :: abs38d
+  REAL :: min70d
+  REAL :: min46
+  REAL :: abs2
+  REAL :: max22d
+  REAL :: abs2d
+  REAL :: abs46d
+  INTEGER :: min45
+  REAL :: y39
+  REAL :: abs1
+  REAL :: y11d
+  REAL :: max30d
+  REAL :: abs54d
+  REAL :: y48d
+  INTEGER :: min44
+  REAL :: y38
+  REAL :: abs62d
+  REAL :: y56d
+  REAL :: abs99d
+  REAL :: min43
+  REAL :: y37
+  REAL :: y64d
+  REAL :: abs70d
+  REAL :: max3d
+  REAL :: y8d
+  REAL :: min12d
+  REAL :: min42
+  REAL :: y36
+  REAL :: min20d
+  REAL :: y72d
+  REAL :: min57d
+  REAL :: y100d
+  REAL :: min41
+  REAL :: y35
+  REAL :: y80d
+  REAL :: min65d
+  INTEGER :: min40
+  REAL :: y34
+  REAL :: max17d
+  REAL :: y33
+  REAL :: max9
+  REAL :: min76
+  REAL :: abs12d
+  REAL :: max25d
+  REAL :: abs5d
+  REAL :: abs49d
+  REAL :: y32
+  REAL :: max8
+  REAL :: y69
+  REAL :: max19
+  REAL :: min75
+  REAL :: y14d
+  REAL :: abs20d
+  REAL :: max33d
+  REAL :: abs57d
+  REAL :: y31
+  REAL :: max7
+  REAL :: y68
+  REAL :: max18
+  REAL :: min74
+  REAL :: abs65d
+  REAL :: y22d
+  REAL :: y59d
+  REAL :: max41d
+  REAL :: y30
+  INTEGER :: min73
+  REAL :: max6
+  REAL :: y67
+  REAL :: max17
+  REAL :: y67d
+  REAL :: abs73d
+  REAL :: y30d
+  REAL :: max6d
+  INTEGER :: min72
+  REAL :: max5
+  REAL :: y66
+  REAL :: max16
+  REAL :: y75d
+  REAL :: abs81d
+  REAL :: y9
+  REAL :: min71
+  REAL :: max4
+  REAL :: y65
+  REAL :: max15
+  REAL :: abs39
+  REAL :: min31d
+  REAL :: y83d
+  REAL :: min68d
+  REAL :: y8
+  REAL :: min70
+  REAL :: max3
+  REAL :: y64
+  REAL :: max14
+  REAL :: abs38
+  REAL :: y91d
+  REAL :: min76d
+  REAL :: y7
+  REAL :: max2
+  REAL :: y63
+  REAL :: max13
+  REAL :: abs37
+  REAL :: abs15d
+  REAL :: max28d
+  REAL :: abs8d
+  REAL :: y6
+  REAL :: max1
+  REAL :: y62
+  REAL :: max12
+  REAL :: abs36
+  REAL :: y99
+  REAL :: max49
+  REAL :: y17d
+  REAL :: abs23d
+  REAL :: max36d
+  REAL :: y5
+  REAL :: y61
+  REAL :: max11
+  REAL :: abs35
+  REAL :: y98
+  REAL :: max48
+  REAL :: abs68d
+  REAL :: y25d
+  REAL :: abs31d
+  REAL :: max44d
+  REAL :: y4
+  REAL :: y60
+  REAL :: max10
+  REAL :: abs34
+  REAL :: y97
+  REAL :: max47
+  REAL :: min18d
+  REAL :: abs76d
+  REAL :: y33d
+  REAL :: max9d
+  REAL :: max52d
+  REAL :: y3
+  REAL :: abs33
+  REAL :: y96
+  REAL :: max46
+  REAL :: min26d
+  REAL :: y78d
+  REAL :: abs84d
+  REAL :: y41d
+  REAL :: y2
+  REAL :: abs32
+  REAL :: y95
+  REAL :: max45
+  REAL :: abs69
+  REAL :: abs102
+  REAL :: y86d
+  REAL :: abs92d
+  REAL :: y1
+  REAL :: abs31
+  REAL :: y94
+  REAL :: max44
+  REAL :: abs68
+  REAL :: abs101
+  REAL :: min42d
+  REAL :: y1d
+  REAL :: y94d
+
+
+
+
+
+! set order for the advection schemes
+!  write(6,*) ' in pd advection routine '
+! Empty arrays just in case:
+  IF (config_flags%polar) THEN
+    fqx(:, :, :) = 0.
+    fqy(:, :, :) = 0.
+    fqz(:, :, :) = 0.
+    fqxl(:, :, :) = 0.
+    fqyl(:, :, :) = 0.
+    fqzl(:, :, :) = 0.
   END IF
-
- IF(config_flags%open_xs) THEN
-
- IF(degrade_xs) i_start =max(its-1,ids+1)
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
   END IF
-
- IF(config_flags%open_xe) THEN
-
- IF(degrade_xe) i_end =min(ite+1,ide-2)
+  horz_order = config_flags%h_sca_adv_order
+  vert_order = config_flags%v_sca_adv_order
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+  degrade_xs = .true.
+  degrade_xe = .true.
+  degrade_ys = .true.
+  degrade_ye = .true.
+!  begin with horizontal flux divergence
+!  here is the choice of flux operators
+  IF (horz_order .EQ. 6) THEN
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 4) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min1 = ide - 1
+    ELSE
+      min1 = ite
+    END IF
+    i_end = min1 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min2 = jde - 1
+    ELSE
+      min2 = jte
+    END IF
+    j_end = min2 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+!      IF(degrade_xs) i_start = MAX(its-1,ids-1)
+!      IF(degrade_xe) i_end   = MIN(ite+1,ide-2)
+    IF (degrade_xs) THEN
+      IF (its - 1 .LT. ids) THEN
+        i_start = ids
+      ELSE
+        i_start = its - 1
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ite + 1 .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite + 1
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts - 1
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte + 1
+      END IF
+      j_end_f = jde - 3
+      fqyld = 0.0
+      fqyd = 0.0
+    ELSE
+      fqyld = 0.0
+      fqyd = 0.0
+    END IF
+!  compute fluxes, 6th order
+j_loop_y_flux_6:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs1d = crd
+              abs1 = cr
+            ELSE
+              abs1d = -crd
+              abs1 = -cr
+            END IF
+            y1d = crd + abs1d
+            y1 = cr + abs1
+            IF (1.0 .GT. y1) THEN
+              min3d = y1d
+              min3 = y1
+            ELSE
+              min3 = 1.0
+              min3d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs52d = crd
+              abs52 = cr
+            ELSE
+              abs52d = -crd
+              abs52 = -cr
+            END IF
+            y52d = crd - abs52d
+            y52 = cr - abs52
+            IF (-1.0 .LT. y52) THEN
+              max2d = y52d
+              max2 = y52
+            ELSE
+              max2 = -1.0
+              max2d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min3*field_old(i, k, j-1)+0.5*&
+&              max2*field_old(i, k, j))+mu*(0.5*(min3d*field_old(i, k, j-&
+&              1)+min3*field_oldd(i, k, j-1))+0.5*(max2d*field_old(i, k, &
+&              j)+max2*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min3*field_old(i, k, j-1)+&
+&              0.5*max2*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(37./60.*(field(i, k, j)+field(i, k, j-&
+&              1))-2./15.*(field(i, k, j+1)+field(i, k, j-2))+1./60.*(&
+&              field(i, k, j+2)+field(i, k, j-3))) + vel*(37.*(fieldd(i, &
+&              k, j)+fieldd(i, k, j-1))/60.-2.*(fieldd(i, k, j+1)+fieldd(&
+&              i, k, j-2))/15.+(fieldd(i, k, j+2)+fieldd(i, k, j-3))/60.)
+            fqy(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k, j-1)&
+&              )-2./15.*(field(i, k, j+1)+field(i, k, j-2))+1./60.*(field&
+&              (i, k, j+2)+field(i, k, j-3)))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs2d = crd
+              abs2 = cr
+            ELSE
+              abs2d = -crd
+              abs2 = -cr
+            END IF
+            y2d = crd + abs2d
+            y2 = cr + abs2
+            IF (1.0 .GT. y2) THEN
+              min4d = y2d
+              min4 = y2
+            ELSE
+              min4 = 1.0
+              min4d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs53d = crd
+              abs53 = cr
+            ELSE
+              abs53d = -crd
+              abs53 = -cr
+            END IF
+            y53d = crd - abs53d
+            y53 = cr - abs53
+            IF (-1.0 .LT. y53) THEN
+              max3d = y53d
+              max3 = y53
+            ELSE
+              max3 = -1.0
+              max3d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min4*field_old(i, k, j-1)+0.5*&
+&              max3*field_old(i, k, j))+mu*(0.5*(min4d*field_old(i, k, j-&
+&              1)+min4*field_oldd(i, k, j-1))+0.5*(max3d*field_old(i, k, &
+&              j)+max3*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min4*field_old(i, k, j-1)+&
+&              0.5*max3*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs3d = crd
+              abs3 = cr
+            ELSE
+              abs3d = -crd
+              abs3 = -cr
+            END IF
+            y3d = crd + abs3d
+            y3 = cr + abs3
+            IF (1.0 .GT. y3) THEN
+              min5d = y3d
+              min5 = y3
+            ELSE
+              min5 = 1.0
+              min5d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs54d = crd
+              abs54 = cr
+            ELSE
+              abs54d = -crd
+              abs54 = -cr
+            END IF
+            y54d = crd - abs54d
+            y54 = cr - abs54
+            IF (-1.0 .LT. y54) THEN
+              max4d = y54d
+              max4 = y54
+            ELSE
+              max4 = -1.0
+              max4d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min5*field_old(i, k, j-1)+0.5*&
+&              max4*field_old(i, k, j))+mu*(0.5*(min5d*field_old(i, k, j-&
+&              1)+min5*field_oldd(i, k, j-1))+0.5*(max4d*field_old(i, k, &
+&              j)+max4*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min5*field_old(i, k, j-1)+&
+&              0.5*max4*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k, j-1&
+&              ))-1./12.*(field(i, k, j+1)+field(i, k, j-2))) + vel*(7.*(&
+&              fieldd(i, k, j)+fieldd(i, k, j-1))/12.-(fieldd(i, k, j+1)+&
+&              fieldd(i, k, j-2))/12.)
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2)))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs4d = crd
+              abs4 = cr
+            ELSE
+              abs4d = -crd
+              abs4 = -cr
+            END IF
+            y4d = crd + abs4d
+            y4 = cr + abs4
+            IF (1.0 .GT. y4) THEN
+              min6d = y4d
+              min6 = y4
+            ELSE
+              min6 = 1.0
+              min6d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs55d = crd
+              abs55 = cr
+            ELSE
+              abs55d = -crd
+              abs55 = -cr
+            END IF
+            y55d = crd - abs55d
+            y55 = cr - abs55
+            IF (-1.0 .LT. y55) THEN
+              max5d = y55d
+              max5 = y55
+            ELSE
+              max5 = -1.0
+              max5d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min6*field_old(i, k, j-1)+0.5*&
+&              max5*field_old(i, k, j))+mu*(0.5*(min6d*field_old(i, k, j-&
+&              1)+min6*field_oldd(i, k, j-1))+0.5*(max5d*field_old(i, k, &
+&              j)+max5*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min6*field_old(i, k, j-1)+&
+&              0.5*max5*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs5d = crd
+              abs5 = cr
+            ELSE
+              abs5d = -crd
+              abs5 = -cr
+            END IF
+            y5d = crd + abs5d
+            y5 = cr + abs5
+            IF (1.0 .GT. y5) THEN
+              min7d = y5d
+              min7 = y5
+            ELSE
+              min7 = 1.0
+              min7d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs56d = crd
+              abs56 = cr
+            ELSE
+              abs56d = -crd
+              abs56 = -cr
+            END IF
+            y56d = crd - abs56d
+            y56 = cr - abs56
+            IF (-1.0 .LT. y56) THEN
+              max6d = y56d
+              max6 = y56
+            ELSE
+              max6 = -1.0
+              max6d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min7*field_old(i, k, j-1)+0.5*&
+&              max6*field_old(i, k, j))+mu*(0.5*(min7d*field_old(i, k, j-&
+&              1)+min7*field_oldd(i, k, j-1))+0.5*(max6d*field_old(i, k, &
+&              j)+max6*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min7*field_old(i, k, j-1)+&
+&              0.5*max6*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k, j-1&
+&              ))-1./12.*(field(i, k, j+1)+field(i, k, j-2))) + vel*(7.*(&
+&              fieldd(i, k, j)+fieldd(i, k, j-1))/12.-(fieldd(i, k, j+1)+&
+&              fieldd(i, k, j-2))/12.)
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2)))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      END IF
+    END DO j_loop_y_flux_6
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min8 = ide - 1
+    ELSE
+      min8 = ite
+    END IF
+    i_end = min8 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min9 = jde - 1
+    ELSE
+      min9 = jte
+    END IF
+    j_end = min9 + 1
+!--  modify loop bounds for open and specified b.c
+!      IF(degrade_ys) j_start = MAX(jts-1,jds+1)
+!      IF(degrade_ye) j_end   = MIN(jte+1,jde-2)
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds) THEN
+        j_start = jds
+      ELSE
+        j_start = jts - 1
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte + 1
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its - 1) THEN
+        i_start = its - 1
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = ids + 3
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite + 1) THEN
+        i_end = ite + 1
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+      fqxld = 0.0
+      fqxd = 0.0
+    ELSE
+      fqxld = 0.0
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  5th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          veld = rud(i, k, j)
+          vel = ru(i, k, j)
+          crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs6d = crd
+            abs6 = cr
+          ELSE
+            abs6d = -crd
+            abs6 = -cr
+          END IF
+          y6d = crd + abs6d
+          y6 = cr + abs6
+          IF (1.0 .GT. y6) THEN
+            min10d = y6d
+            min10 = y6
+          ELSE
+            min10 = 1.0
+            min10d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs57d = crd
+            abs57 = cr
+          ELSE
+            abs57d = -crd
+            abs57 = -cr
+          END IF
+          y57d = crd - abs57d
+          y57 = cr - abs57
+          IF (-1.0 .LT. y57) THEN
+            max7d = y57d
+            max7 = y57
+          ELSE
+            max7 = -1.0
+            max7d = 0.0
+          END IF
+          fqxld(i, k, j) = dx*(mud*(0.5*min10*field_old(i-1, k, j)+0.5*&
+&            max7*field_old(i, k, j))+mu*(0.5*(min10d*field_old(i-1, k, j&
+&            )+min10*field_oldd(i-1, k, j))+0.5*(max7d*field_old(i, k, j)&
+&            +max7*field_oldd(i, k, j))))/dt
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min10*field_old(i-1, k, j)+0.5&
+&            *max7*field_old(i, k, j))
+          fqxd(i, k, j) = veld*(37./60.*(field(i, k, j)+field(i-1, k, j)&
+&            )-2./15.*(field(i+1, k, j)+field(i-2, k, j))+1./60.*(field(i&
+&            +2, k, j)+field(i-3, k, j))) + vel*(37.*(fieldd(i, k, j)+&
+&            fieldd(i-1, k, j))/60.-2.*(fieldd(i+1, k, j)+fieldd(i-2, k, &
+&            j))/15.+(fieldd(i+2, k, j)+fieldd(i-3, k, j))/60.)
+          fqx(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i-1, k, j))-&
+&            2./15.*(field(i+1, k, j)+field(i-2, k, j))+1./60.*(field(i+2&
+&            , k, j)+field(i-3, k, j)))
+          fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        DO i=i_start,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+! second order
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = (rud(i, k, j)*mu-ru(i, k, j)*mud)/mu**2
+              vel = ru(i, k, j)/mu
+              crd = dt*veld/dx
+              cr = vel*dt/dx
+              IF (cr .GE. 0.) THEN
+                abs7d = crd
+                abs7 = cr
+              ELSE
+                abs7d = -crd
+                abs7 = -cr
+              END IF
+              y7d = crd + abs7d
+              y7 = cr + abs7
+              IF (1.0 .GT. y7) THEN
+                min11d = y7d
+                min11 = y7
+              ELSE
+                min11 = 1.0
+                min11d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs58d = crd
+                abs58 = cr
+              ELSE
+                abs58d = -crd
+                abs58 = -cr
+              END IF
+              y58d = crd - abs58d
+              y58 = cr - abs58
+              IF (-1.0 .LT. y58) THEN
+                max8d = y58d
+                max8 = y58
+              ELSE
+                max8 = -1.0
+                max8d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min11*field_old(i-1, k, j)+&
+&                0.5*max8*field_old(i, k, j))+mu*(0.5*(min11d*field_old(i&
+&                -1, k, j)+min11*field_oldd(i-1, k, j))+0.5*(max8d*&
+&                field_old(i, k, j)+max8*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min11*field_old(i-1, k, j)&
+&                +0.5*max8*field_old(i, k, j))
+              fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-&
+&                1, k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)&
+&                ))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+          IF (i .EQ. ids + 2) THEN
+! fourth order
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = rud(i, k, j)
+              vel = ru(i, k, j)
+              crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs8d = crd
+                abs8 = cr
+              ELSE
+                abs8d = -crd
+                abs8 = -cr
+              END IF
+              y8d = crd + abs8d
+              y8 = cr + abs8
+              IF (1.0 .GT. y8) THEN
+                min12d = y8d
+                min12 = y8
+              ELSE
+                min12 = 1.0
+                min12d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs59d = crd
+                abs59 = cr
+              ELSE
+                abs59d = -crd
+                abs59 = -cr
+              END IF
+              y59d = crd - abs59d
+              y59 = cr - abs59
+              IF (-1.0 .LT. y59) THEN
+                max9d = y59d
+                max9 = y59
+              ELSE
+                max9 = -1.0
+                max9d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min12*field_old(i-1, k, j)+&
+&                0.5*max9*field_old(i, k, j))+mu*(0.5*(min12d*field_old(i&
+&                -1, k, j)+min12*field_oldd(i-1, k, j))+0.5*(max9d*&
+&                field_old(i, k, j)+max9*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min12*field_old(i-1, k, j)&
+&                +0.5*max9*field_old(i, k, j))
+              fqxd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i-1, k&
+&                , j))-1./12.*(field(i+1, k, j)+field(i-2, k, j))) + vel*&
+&                (7.*(fieldd(i, k, j)+fieldd(i-1, k, j))/12.-(fieldd(i+1&
+&                , k, j)+fieldd(i-2, k, j))/12.)
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j)))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+! second order flux next to the boundary
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = rud(i, k, j)
+              vel = ru(i, k, j)
+              crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs9d = crd
+                abs9 = cr
+              ELSE
+                abs9d = -crd
+                abs9 = -cr
+              END IF
+              y9d = crd + abs9d
+              y9 = cr + abs9
+              IF (1.0 .GT. y9) THEN
+                min13d = y9d
+                min13 = y9
+              ELSE
+                min13 = 1.0
+                min13d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs60d = crd
+                abs60 = cr
+              ELSE
+                abs60d = -crd
+                abs60 = -cr
+              END IF
+              y60d = crd - abs60d
+              y60 = cr - abs60
+              IF (-1.0 .LT. y60) THEN
+                max10d = y60d
+                max10 = y60
+              ELSE
+                max10 = -1.0
+                max10d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min13*field_old(i-1, k, j)+&
+&                0.5*max10*field_old(i, k, j))+mu*(0.5*(min13d*field_old(&
+&                i-1, k, j)+min13*field_oldd(i-1, k, j))+0.5*(max10d*&
+&                field_old(i, k, j)+max10*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min13*field_old(i-1, k, j)&
+&                +0.5*max10*field_old(i, k, j))
+              fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-&
+&                1, k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)&
+&                ))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+          IF (i .EQ. ide - 2) THEN
+! fourth order flux one in from the boundary
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = rud(i, k, j)
+              vel = ru(i, k, j)
+              crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs10d = crd
+                abs10 = cr
+              ELSE
+                abs10d = -crd
+                abs10 = -cr
+              END IF
+              y10d = crd + abs10d
+              y10 = cr + abs10
+              IF (1.0 .GT. y10) THEN
+                min14d = y10d
+                min14 = y10
+              ELSE
+                min14 = 1.0
+                min14d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs61d = crd
+                abs61 = cr
+              ELSE
+                abs61d = -crd
+                abs61 = -cr
+              END IF
+              y61d = crd - abs61d
+              y61 = cr - abs61
+              IF (-1.0 .LT. y61) THEN
+                max11d = y61d
+                max11 = y61
+              ELSE
+                max11 = -1.0
+                max11d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min14*field_old(i-1, k, j)+&
+&                0.5*max11*field_old(i, k, j))+mu*(0.5*(min14d*field_old(&
+&                i-1, k, j)+min14*field_oldd(i-1, k, j))+0.5*(max11d*&
+&                field_old(i, k, j)+max11*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min14*field_old(i-1, k, j)&
+&                +0.5*max11*field_old(i, k, j))
+              fqxd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i-1, k&
+&                , j))-1./12.*(field(i+1, k, j)+field(i-2, k, j))) + vel*&
+&                (7.*(fieldd(i, k, j)+fieldd(i-1, k, j))/12.-(fieldd(i+1&
+&                , k, j)+fieldd(i-2, k, j))/12.)
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j)))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+        END DO
+      END IF
+    END DO
+  ELSE IF (horz_order .EQ. 5) THEN
+! enddo for outer J loop
+!--- end of 6th order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 4) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min15 = ide - 1
+    ELSE
+      min15 = ite
+    END IF
+    i_end = min15 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min16 = jde - 1
+    ELSE
+      min16 = jte
+    END IF
+    j_end = min16 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+!      IF(degrade_xs) i_start = MAX(its-1,ids-1)
+!      IF(degrade_xe) i_end   = MIN(ite+1,ide-2)
+    IF (degrade_xs) THEN
+      IF (its - 1 .LT. ids) THEN
+        i_start = ids
+      ELSE
+        i_start = its - 1
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ite + 1 .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite + 1
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts - 1
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte + 1
+      END IF
+      j_end_f = jde - 3
+      fqyld = 0.0
+      fqyd = 0.0
+    ELSE
+      fqyld = 0.0
+      fqyd = 0.0
+    END IF
+!  compute fluxes, 5th order
+j_loop_y_flux_5:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs11d = crd
+              abs11 = cr
+            ELSE
+              abs11d = -crd
+              abs11 = -cr
+            END IF
+            y11d = crd + abs11d
+            y11 = cr + abs11
+            IF (1.0 .GT. y11) THEN
+              min17d = y11d
+              min17 = y11
+            ELSE
+              min17 = 1.0
+              min17d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs62d = crd
+              abs62 = cr
+            ELSE
+              abs62d = -crd
+              abs62 = -cr
+            END IF
+            y62d = crd - abs62d
+            y62 = cr - abs62
+            IF (-1.0 .LT. y62) THEN
+              max12d = y62d
+              max12 = y62
+            ELSE
+              max12 = -1.0
+              max12d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min17*field_old(i, k, j-1)+0.5&
+&              *max12*field_old(i, k, j))+mu*(0.5*(min17d*field_old(i, k&
+&              , j-1)+min17*field_oldd(i, k, j-1))+0.5*(max12d*field_old(&
+&              i, k, j)+max12*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min17*field_old(i, k, j-1)+&
+&              0.5*max12*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(37./60.*(field(i, k, j)+field(i, k, j-&
+&              1))-2./15.*(field(i, k, j+1)+field(i, k, j-2))+1./60.*(&
+&              field(i, k, j+2)+field(i, k, j-3))-SIGN(1, time_step)*SIGN&
+&              (1., vel)*(1./60.)*(field(i, k, j+2)-field(i, k, j-3)-5.*(&
+&              field(i, k, j+1)-field(i, k, j-2))+10.*(field(i, k, j)-&
+&              field(i, k, j-1)))) + vel*(37.*(fieldd(i, k, j)+fieldd(i, &
+&              k, j-1))/60.-2.*(fieldd(i, k, j+1)+fieldd(i, k, j-2))/15.+&
+&              (fieldd(i, k, j+2)+fieldd(i, k, j-3))/60.-SIGN(1, &
+&              time_step)*SIGN(1., vel)*(fieldd(i, k, j+2)-fieldd(i, k, j&
+&              -3)-5.*(fieldd(i, k, j+1)-fieldd(i, k, j-2))+10.*(fieldd(i&
+&              , k, j)-fieldd(i, k, j-1)))/60.)
+            fqy(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k, j-1)&
+&              )-2./15.*(field(i, k, j+1)+field(i, k, j-2))+1./60.*(field&
+&              (i, k, j+2)+field(i, k, j-3))-SIGN(1, time_step)*SIGN(1., &
+&              vel)*(1./60.)*(field(i, k, j+2)-field(i, k, j-3)-5.*(field&
+&              (i, k, j+1)-field(i, k, j-2))+10.*(field(i, k, j)-field(i&
+&              , k, j-1))))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs12d = crd
+              abs12 = cr
+            ELSE
+              abs12d = -crd
+              abs12 = -cr
+            END IF
+            y12d = crd + abs12d
+            y12 = cr + abs12
+            IF (1.0 .GT. y12) THEN
+              min18d = y12d
+              min18 = y12
+            ELSE
+              min18 = 1.0
+              min18d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs63d = crd
+              abs63 = cr
+            ELSE
+              abs63d = -crd
+              abs63 = -cr
+            END IF
+            y63d = crd - abs63d
+            y63 = cr - abs63
+            IF (-1.0 .LT. y63) THEN
+              max13d = y63d
+              max13 = y63
+            ELSE
+              max13 = -1.0
+              max13d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min18*field_old(i, k, j-1)+0.5&
+&              *max13*field_old(i, k, j))+mu*(0.5*(min18d*field_old(i, k&
+&              , j-1)+min18*field_oldd(i, k, j-1))+0.5*(max13d*field_old(&
+&              i, k, j)+max13*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min18*field_old(i, k, j-1)+&
+&              0.5*max13*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs13d = crd
+              abs13 = cr
+            ELSE
+              abs13d = -crd
+              abs13 = -cr
+            END IF
+            y13d = crd + abs13d
+            y13 = cr + abs13
+            IF (1.0 .GT. y13) THEN
+              min19d = y13d
+              min19 = y13
+            ELSE
+              min19 = 1.0
+              min19d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs64d = crd
+              abs64 = cr
+            ELSE
+              abs64d = -crd
+              abs64 = -cr
+            END IF
+            y64d = crd - abs64d
+            y64 = cr - abs64
+            IF (-1.0 .LT. y64) THEN
+              max14d = y64d
+              max14 = y64
+            ELSE
+              max14 = -1.0
+              max14d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min19*field_old(i, k, j-1)+0.5&
+&              *max14*field_old(i, k, j))+mu*(0.5*(min19d*field_old(i, k&
+&              , j-1)+min19*field_oldd(i, k, j-1))+0.5*(max14d*field_old(&
+&              i, k, j)+max14*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min19*field_old(i, k, j-1)+&
+&              0.5*max14*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k, j-1&
+&              ))-1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1)))) + vel*(&
+&              7.*(fieldd(i, k, j)+fieldd(i, k, j-1))/12.-(fieldd(i, k, j&
+&              +1)+fieldd(i, k, j-2))/12.+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(fieldd(i, k, j+1)-fieldd(i, k, j-2)-3.*(fieldd(i, k, j)&
+&              -fieldd(i, k, j-1)))/12.)
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1))))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs14d = crd
+              abs14 = cr
+            ELSE
+              abs14d = -crd
+              abs14 = -cr
+            END IF
+            y14d = crd + abs14d
+            y14 = cr + abs14
+            IF (1.0 .GT. y14) THEN
+              min20d = y14d
+              min20 = y14
+            ELSE
+              min20 = 1.0
+              min20d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs65d = crd
+              abs65 = cr
+            ELSE
+              abs65d = -crd
+              abs65 = -cr
+            END IF
+            y65d = crd - abs65d
+            y65 = cr - abs65
+            IF (-1.0 .LT. y65) THEN
+              max15d = y65d
+              max15 = y65
+            ELSE
+              max15 = -1.0
+              max15d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min20*field_old(i, k, j-1)+0.5&
+&              *max15*field_old(i, k, j))+mu*(0.5*(min20d*field_old(i, k&
+&              , j-1)+min20*field_oldd(i, k, j-1))+0.5*(max15d*field_old(&
+&              i, k, j)+max15*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min20*field_old(i, k, j-1)+&
+&              0.5*max15*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs15d = crd
+              abs15 = cr
+            ELSE
+              abs15d = -crd
+              abs15 = -cr
+            END IF
+            y15d = crd + abs15d
+            y15 = cr + abs15
+            IF (1.0 .GT. y15) THEN
+              min21d = y15d
+              min21 = y15
+            ELSE
+              min21 = 1.0
+              min21d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs66d = crd
+              abs66 = cr
+            ELSE
+              abs66d = -crd
+              abs66 = -cr
+            END IF
+            y66d = crd - abs66d
+            y66 = cr - abs66
+            IF (-1.0 .LT. y66) THEN
+              max16d = y66d
+              max16 = y66
+            ELSE
+              max16 = -1.0
+              max16d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min21*field_old(i, k, j-1)+0.5&
+&              *max16*field_old(i, k, j))+mu*(0.5*(min21d*field_old(i, k&
+&              , j-1)+min21*field_oldd(i, k, j-1))+0.5*(max16d*field_old(&
+&              i, k, j)+max16*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min21*field_old(i, k, j-1)+&
+&              0.5*max16*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k, j-1&
+&              ))-1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1)))) + vel*(&
+&              7.*(fieldd(i, k, j)+fieldd(i, k, j-1))/12.-(fieldd(i, k, j&
+&              +1)+fieldd(i, k, j-2))/12.+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(fieldd(i, k, j+1)-fieldd(i, k, j-2)-3.*(fieldd(i, k, j)&
+&              -fieldd(i, k, j-1)))/12.)
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1))))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      END IF
+    END DO j_loop_y_flux_5
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min22 = ide - 1
+    ELSE
+      min22 = ite
+    END IF
+    i_end = min22 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min23 = jde - 1
+    ELSE
+      min23 = jte
+    END IF
+    j_end = min23 + 1
+!--  modify loop bounds for open and specified b.c
+!      IF(degrade_ys) j_start = MAX(jts-1,jds+1)
+!      IF(degrade_ye) j_end   = MIN(jte+1,jde-2)
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds) THEN
+        j_start = jds
+      ELSE
+        j_start = jts - 1
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte + 1
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its - 1) THEN
+        i_start = its - 1
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = ids + 3
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite + 1) THEN
+        i_end = ite + 1
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+      fqxld = 0.0
+      fqxd = 0.0
+    ELSE
+      fqxld = 0.0
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  5th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          veld = rud(i, k, j)
+          vel = ru(i, k, j)
+          crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs16d = crd
+            abs16 = cr
+          ELSE
+            abs16d = -crd
+            abs16 = -cr
+          END IF
+          y16d = crd + abs16d
+          y16 = cr + abs16
+          IF (1.0 .GT. y16) THEN
+            min24d = y16d
+            min24 = y16
+          ELSE
+            min24 = 1.0
+            min24d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs67d = crd
+            abs67 = cr
+          ELSE
+            abs67d = -crd
+            abs67 = -cr
+          END IF
+          y67d = crd - abs67d
+          y67 = cr - abs67
+          IF (-1.0 .LT. y67) THEN
+            max17d = y67d
+            max17 = y67
+          ELSE
+            max17 = -1.0
+            max17d = 0.0
+          END IF
+          fqxld(i, k, j) = dx*(mud*(0.5*min24*field_old(i-1, k, j)+0.5*&
+&            max17*field_old(i, k, j))+mu*(0.5*(min24d*field_old(i-1, k, &
+&            j)+min24*field_oldd(i-1, k, j))+0.5*(max17d*field_old(i, k, &
+&            j)+max17*field_oldd(i, k, j))))/dt
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min24*field_old(i-1, k, j)+0.5&
+&            *max17*field_old(i, k, j))
+          fqxd(i, k, j) = veld*(37./60.*(field(i, k, j)+field(i-1, k, j)&
+&            )-2./15.*(field(i+1, k, j)+field(i-2, k, j))+1./60.*(field(i&
+&            +2, k, j)+field(i-3, k, j))-SIGN(1, time_step)*SIGN(1., vel)&
+&            *(1./60.)*(field(i+2, k, j)-field(i-3, k, j)-5.*(field(i+1, &
+&            k, j)-field(i-2, k, j))+10.*(field(i, k, j)-field(i-1, k, j)&
+&            ))) + vel*(37.*(fieldd(i, k, j)+fieldd(i-1, k, j))/60.-2.*(&
+&            fieldd(i+1, k, j)+fieldd(i-2, k, j))/15.+(fieldd(i+2, k, j)+&
+&            fieldd(i-3, k, j))/60.-SIGN(1, time_step)*SIGN(1., vel)*(&
+&            fieldd(i+2, k, j)-fieldd(i-3, k, j)-5.*(fieldd(i+1, k, j)-&
+&            fieldd(i-2, k, j))+10.*(fieldd(i, k, j)-fieldd(i-1, k, j)))/&
+&            60.)
+          fqx(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i-1, k, j))-&
+&            2./15.*(field(i+1, k, j)+field(i-2, k, j))+1./60.*(field(i+2&
+&            , k, j)+field(i-3, k, j))-SIGN(1, time_step)*SIGN(1., vel)*(&
+&            1./60.)*(field(i+2, k, j)-field(i-3, k, j)-5.*(field(i+1, k&
+&            , j)-field(i-2, k, j))+10.*(field(i, k, j)-field(i-1, k, j))&
+&            ))
+          fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        DO i=i_start,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+! second order
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = (rud(i, k, j)*mu-ru(i, k, j)*mud)/mu**2
+              vel = ru(i, k, j)/mu
+              crd = dt*veld/dx
+              cr = vel*dt/dx
+              IF (cr .GE. 0.) THEN
+                abs17d = crd
+                abs17 = cr
+              ELSE
+                abs17d = -crd
+                abs17 = -cr
+              END IF
+              y17d = crd + abs17d
+              y17 = cr + abs17
+              IF (1.0 .GT. y17) THEN
+                min25d = y17d
+                min25 = y17
+              ELSE
+                min25 = 1.0
+                min25d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs68d = crd
+                abs68 = cr
+              ELSE
+                abs68d = -crd
+                abs68 = -cr
+              END IF
+              y68d = crd - abs68d
+              y68 = cr - abs68
+              IF (-1.0 .LT. y68) THEN
+                max18d = y68d
+                max18 = y68
+              ELSE
+                max18 = -1.0
+                max18d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min25*field_old(i-1, k, j)+&
+&                0.5*max18*field_old(i, k, j))+mu*(0.5*(min25d*field_old(&
+&                i-1, k, j)+min25*field_oldd(i-1, k, j))+0.5*(max18d*&
+&                field_old(i, k, j)+max18*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min25*field_old(i-1, k, j)&
+&                +0.5*max18*field_old(i, k, j))
+              fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-&
+&                1, k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)&
+&                ))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+          IF (i .EQ. ids + 2) THEN
+! third order
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = rud(i, k, j)
+              vel = ru(i, k, j)
+              crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs18d = crd
+                abs18 = cr
+              ELSE
+                abs18d = -crd
+                abs18 = -cr
+              END IF
+              y18d = crd + abs18d
+              y18 = cr + abs18
+              IF (1.0 .GT. y18) THEN
+                min26d = y18d
+                min26 = y18
+              ELSE
+                min26 = 1.0
+                min26d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs69d = crd
+                abs69 = cr
+              ELSE
+                abs69d = -crd
+                abs69 = -cr
+              END IF
+              y69d = crd - abs69d
+              y69 = cr - abs69
+              IF (-1.0 .LT. y69) THEN
+                max19d = y69d
+                max19 = y69
+              ELSE
+                max19 = -1.0
+                max19d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min26*field_old(i-1, k, j)+&
+&                0.5*max19*field_old(i, k, j))+mu*(0.5*(min26d*field_old(&
+&                i-1, k, j)+min26*field_oldd(i-1, k, j))+0.5*(max19d*&
+&                field_old(i, k, j)+max19*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min26*field_old(i-1, k, j)&
+&                +0.5*max19*field_old(i, k, j))
+              fqxd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i-1, k&
+&                , j))-1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1&
+&                , time_step)*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-&
+&                field(i-2, k, j)-3.*(field(i, k, j)-field(i-1, k, j)))) &
+&                + vel*(7.*(fieldd(i, k, j)+fieldd(i-1, k, j))/12.-(&
+&                fieldd(i+1, k, j)+fieldd(i-2, k, j))/12.+SIGN(1, &
+&                time_step)*SIGN(1., vel)*(fieldd(i+1, k, j)-fieldd(i-2, &
+&                k, j)-3.*(fieldd(i, k, j)-fieldd(i-1, k, j)))/12.)
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1, &
+&                time_step)*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-&
+&                field(i-2, k, j)-3.*(field(i, k, j)-field(i-1, k, j))))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+        END DO
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+! second order flux next to the boundary
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = rud(i, k, j)
+              vel = ru(i, k, j)
+              crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs19d = crd
+                abs19 = cr
+              ELSE
+                abs19d = -crd
+                abs19 = -cr
+              END IF
+              y19d = crd + abs19d
+              y19 = cr + abs19
+              IF (1.0 .GT. y19) THEN
+                min27d = y19d
+                min27 = y19
+              ELSE
+                min27 = 1.0
+                min27d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs70d = crd
+                abs70 = cr
+              ELSE
+                abs70d = -crd
+                abs70 = -cr
+              END IF
+              y70d = crd - abs70d
+              y70 = cr - abs70
+              IF (-1.0 .LT. y70) THEN
+                max20d = y70d
+                max20 = y70
+              ELSE
+                max20 = -1.0
+                max20d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min27*field_old(i-1, k, j)+&
+&                0.5*max20*field_old(i, k, j))+mu*(0.5*(min27d*field_old(&
+&                i-1, k, j)+min27*field_oldd(i-1, k, j))+0.5*(max20d*&
+&                field_old(i, k, j)+max20*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min27*field_old(i-1, k, j)&
+&                +0.5*max20*field_old(i, k, j))
+              fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-&
+&                1, k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)&
+&                ))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+          IF (i .EQ. ide - 2) THEN
+! third order flux one in from the boundary
+            DO k=kts,ktf
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              veld = rud(i, k, j)
+              vel = ru(i, k, j)
+              crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs20d = crd
+                abs20 = cr
+              ELSE
+                abs20d = -crd
+                abs20 = -cr
+              END IF
+              y20d = crd + abs20d
+              y20 = cr + abs20
+              IF (1.0 .GT. y20) THEN
+                min28d = y20d
+                min28 = y20
+              ELSE
+                min28 = 1.0
+                min28d = 0.0
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs71d = crd
+                abs71 = cr
+              ELSE
+                abs71d = -crd
+                abs71 = -cr
+              END IF
+              y71d = crd - abs71d
+              y71 = cr - abs71
+              IF (-1.0 .LT. y71) THEN
+                max21d = y71d
+                max21 = y71
+              ELSE
+                max21 = -1.0
+                max21d = 0.0
+              END IF
+              fqxld(i, k, j) = dx*(mud*(0.5*min28*field_old(i-1, k, j)+&
+&                0.5*max21*field_old(i, k, j))+mu*(0.5*(min28d*field_old(&
+&                i-1, k, j)+min28*field_oldd(i-1, k, j))+0.5*(max21d*&
+&                field_old(i, k, j)+max21*field_oldd(i, k, j))))/dt
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min28*field_old(i-1, k, j)&
+&                +0.5*max21*field_old(i, k, j))
+              fqxd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i-1, k&
+&                , j))-1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1&
+&                , time_step)*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-&
+&                field(i-2, k, j)-3.*(field(i, k, j)-field(i-1, k, j)))) &
+&                + vel*(7.*(fieldd(i, k, j)+fieldd(i-1, k, j))/12.-(&
+&                fieldd(i+1, k, j)+fieldd(i-2, k, j))/12.+SIGN(1, &
+&                time_step)*SIGN(1., vel)*(fieldd(i+1, k, j)-fieldd(i-2, &
+&                k, j)-3.*(fieldd(i, k, j)-fieldd(i-1, k, j)))/12.)
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1, &
+&                time_step)*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-&
+&                field(i-2, k, j)-3.*(field(i, k, j)-field(i-1, k, j))))
+              fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+          END IF
+        END DO
+      END IF
+    END DO
+  ELSE IF (horz_order .EQ. 4) THEN
+! enddo for outer J loop
+!--- end of 5th order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 1) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 1) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 2) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min29 = ide - 1
+    ELSE
+      min29 = ite
+    END IF
+    i_end = min29 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min30 = jde - 1
+    ELSE
+      min30 = jte
+    END IF
+    j_end = min30 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+    IF (degrade_xs) i_start = its
+    IF (degrade_xe) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 2
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 2
+      fqyld = 0.0
+      fqyd = 0.0
+    ELSE
+      fqyld = 0.0
+      fqyd = 0.0
+    END IF
+!  compute fluxes, 4th order
+j_loop_y_flux_4:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs21d = crd
+              abs21 = cr
+            ELSE
+              abs21d = -crd
+              abs21 = -cr
+            END IF
+            y21d = crd + abs21d
+            y21 = cr + abs21
+            IF (1.0 .GT. y21) THEN
+              min31d = y21d
+              min31 = y21
+            ELSE
+              min31 = 1.0
+              min31d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs72d = crd
+              abs72 = cr
+            ELSE
+              abs72d = -crd
+              abs72 = -cr
+            END IF
+            y72d = crd - abs72d
+            y72 = cr - abs72
+            IF (-1.0 .LT. y72) THEN
+              max22d = y72d
+              max22 = y72
+            ELSE
+              max22 = -1.0
+              max22d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min31*field_old(i, k, j-1)+0.5&
+&              *max22*field_old(i, k, j))+mu*(0.5*(min31d*field_old(i, k&
+&              , j-1)+min31*field_oldd(i, k, j-1))+0.5*(max22d*field_old(&
+&              i, k, j)+max22*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min31*field_old(i, k, j-1)+&
+&              0.5*max22*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k, j-1&
+&              ))-1./12.*(field(i, k, j+1)+field(i, k, j-2))) + vel*(7.*(&
+&              fieldd(i, k, j)+fieldd(i, k, j-1))/12.-(fieldd(i, k, j+1)+&
+&              fieldd(i, k, j-2))/12.)
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2)))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs22d = crd
+              abs22 = cr
+            ELSE
+              abs22d = -crd
+              abs22 = -cr
+            END IF
+            y22d = crd + abs22d
+            y22 = cr + abs22
+            IF (1.0 .GT. y22) THEN
+              min32d = y22d
+              min32 = y22
+            ELSE
+              min32 = 1.0
+              min32d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs73d = crd
+              abs73 = cr
+            ELSE
+              abs73d = -crd
+              abs73 = -cr
+            END IF
+            y73d = crd - abs73d
+            y73 = cr - abs73
+            IF (-1.0 .LT. y73) THEN
+              max23d = y73d
+              max23 = y73
+            ELSE
+              max23 = -1.0
+              max23d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min32*field_old(i, k, j-1)+0.5&
+&              *max23*field_old(i, k, j))+mu*(0.5*(min32d*field_old(i, k&
+&              , j-1)+min32*field_oldd(i, k, j-1))+0.5*(max23d*field_old(&
+&              i, k, j)+max23*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min32*field_old(i, k, j-1)+&
+&              0.5*max23*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs23d = crd
+              abs23 = cr
+            ELSE
+              abs23d = -crd
+              abs23 = -cr
+            END IF
+            y23d = crd + abs23d
+            y23 = cr + abs23
+            IF (1.0 .GT. y23) THEN
+              min33d = y23d
+              min33 = y23
+            ELSE
+              min33 = 1.0
+              min33d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs74d = crd
+              abs74 = cr
+            ELSE
+              abs74d = -crd
+              abs74 = -cr
+            END IF
+            y74d = crd - abs74d
+            y74 = cr - abs74
+            IF (-1.0 .LT. y74) THEN
+              max24d = y74d
+              max24 = y74
+            ELSE
+              max24 = -1.0
+              max24d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min33*field_old(i, k, j-1)+0.5&
+&              *max24*field_old(i, k, j))+mu*(0.5*(min33d*field_old(i, k&
+&              , j-1)+min33*field_oldd(i, k, j-1))+0.5*(max24d*field_old(&
+&              i, k, j)+max24*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min33*field_old(i, k, j-1)+&
+&              0.5*max24*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      END IF
+    END DO j_loop_y_flux_4
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min34 = ide - 1
+    ELSE
+      min34 = ite
+    END IF
+    i_end = min34 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min35 = jde - 1
+    ELSE
+      min35 = jte
+    END IF
+    j_end = min35 + 1
+!--  modify loop bounds for open and specified b.c
+    IF (degrade_ys) j_start = jts
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 2
+      fqxld = 0.0
+      fqxd = 0.0
+    ELSE
+      fqxld = 0.0
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  4th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          veld = rud(i, k, j)
+          vel = ru(i, k, j)
+          crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs24d = crd
+            abs24 = cr
+          ELSE
+            abs24d = -crd
+            abs24 = -cr
+          END IF
+          y24d = crd + abs24d
+          y24 = cr + abs24
+          IF (1.0 .GT. y24) THEN
+            min36d = y24d
+            min36 = y24
+          ELSE
+            min36 = 1.0
+            min36d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs75d = crd
+            abs75 = cr
+          ELSE
+            abs75d = -crd
+            abs75 = -cr
+          END IF
+          y75d = crd - abs75d
+          y75 = cr - abs75
+          IF (-1.0 .LT. y75) THEN
+            max25d = y75d
+            max25 = y75
+          ELSE
+            max25 = -1.0
+            max25d = 0.0
+          END IF
+          fqxld(i, k, j) = dx*(mud*(0.5*min36*field_old(i-1, k, j)+0.5*&
+&            max25*field_old(i, k, j))+mu*(0.5*(min36d*field_old(i-1, k, &
+&            j)+min36*field_oldd(i-1, k, j))+0.5*(max25d*field_old(i, k, &
+&            j)+max25*field_oldd(i, k, j))))/dt
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min36*field_old(i-1, k, j)+0.5&
+&            *max25*field_old(i, k, j))
+          fqxd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i-1, k, j))&
+&            -1./12.*(field(i+1, k, j)+field(i-2, k, j))) + vel*(7.*(&
+&            fieldd(i, k, j)+fieldd(i-1, k, j))/12.-(fieldd(i+1, k, j)+&
+&            fieldd(i-2, k, j))/12.)
+          fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j))-&
+&            1./12.*(field(i+1, k, j)+field(i-2, k, j)))
+          fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        IF (i_start .EQ. ids + 1) THEN
+! second order flux next to the boundary
+          i = ids + 1
+          DO k=kts,ktf
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            veld = (rud(i, k, j)*mu-ru(i, k, j)*mud)/mu**2
+            vel = ru(i, k, j)/mu
+            crd = dt*veld/dx
+            cr = vel*dt/dx
+            IF (cr .GE. 0.) THEN
+              abs25d = crd
+              abs25 = cr
+            ELSE
+              abs25d = -crd
+              abs25 = -cr
+            END IF
+            y25d = crd + abs25d
+            y25 = cr + abs25
+            IF (1.0 .GT. y25) THEN
+              min37d = y25d
+              min37 = y25
+            ELSE
+              min37 = 1.0
+              min37d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs76d = crd
+              abs76 = cr
+            ELSE
+              abs76d = -crd
+              abs76 = -cr
+            END IF
+            y76d = crd - abs76d
+            y76 = cr - abs76
+            IF (-1.0 .LT. y76) THEN
+              max26d = y76d
+              max26 = y76
+            ELSE
+              max26 = -1.0
+              max26d = 0.0
+            END IF
+            fqxld(i, k, j) = dx*(mud*(0.5*min37*field_old(i-1, k, j)+0.5&
+&              *max26*field_old(i, k, j))+mu*(0.5*(min37d*field_old(i-1, &
+&              k, j)+min37*field_oldd(i-1, k, j))+0.5*(max26d*field_old(i&
+&              , k, j)+max26*field_oldd(i, k, j))))/dt
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min37*field_old(i-1, k, j)+&
+&              0.5*max26*field_old(i, k, j))
+            fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-1&
+&              , k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+        END IF
+      END IF
+      IF (degrade_xe) THEN
+        IF (i_end .EQ. ide - 2) THEN
+! second order flux next to the boundary
+          i = ide - 1
+          DO k=kts,ktf
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            veld = rud(i, k, j)
+            vel = ru(i, k, j)
+            crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+            cr = vel*dt/dx/mu
+            IF (cr .GE. 0.) THEN
+              abs26d = crd
+              abs26 = cr
+            ELSE
+              abs26d = -crd
+              abs26 = -cr
+            END IF
+            y26d = crd + abs26d
+            y26 = cr + abs26
+            IF (1.0 .GT. y26) THEN
+              min38d = y26d
+              min38 = y26
+            ELSE
+              min38 = 1.0
+              min38d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs77d = crd
+              abs77 = cr
+            ELSE
+              abs77d = -crd
+              abs77 = -cr
+            END IF
+            y77d = crd - abs77d
+            y77 = cr - abs77
+            IF (-1.0 .LT. y77) THEN
+              max27d = y77d
+              max27 = y77
+            ELSE
+              max27 = -1.0
+              max27d = 0.0
+            END IF
+            fqxld(i, k, j) = dx*(mud*(0.5*min38*field_old(i-1, k, j)+0.5&
+&              *max27*field_old(i, k, j))+mu*(0.5*(min38d*field_old(i-1, &
+&              k, j)+min38*field_oldd(i-1, k, j))+0.5*(max27d*field_old(i&
+&              , k, j)+max27*field_oldd(i, k, j))))/dt
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min38*field_old(i-1, k, j)+&
+&              0.5*max27*field_old(i, k, j))
+            fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-1&
+&              , k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+        END IF
+      END IF
+    END DO
+  ELSE IF (horz_order .EQ. 3) THEN
+! enddo for outer J loop
+!--- end of 4th order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 1) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 1) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min39 = ide - 1
+    ELSE
+      min39 = ite
+    END IF
+    i_end = min39 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min40 = jde - 1
+    ELSE
+      min40 = jte
+    END IF
+    j_end = min40 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+    IF (degrade_xs) i_start = its
+    IF (degrade_xe) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 2
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 2
+      fqyld = 0.0
+      fqyd = 0.0
+    ELSE
+      fqyld = 0.0
+      fqyd = 0.0
+    END IF
+!  compute fluxes, 3rd order
+j_loop_y_flux_3:DO j=j_start,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs27d = crd
+              abs27 = cr
+            ELSE
+              abs27d = -crd
+              abs27 = -cr
+            END IF
+            y27d = crd + abs27d
+            y27 = cr + abs27
+            IF (1.0 .GT. y27) THEN
+              min41d = y27d
+              min41 = y27
+            ELSE
+              min41 = 1.0
+              min41d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs78d = crd
+              abs78 = cr
+            ELSE
+              abs78d = -crd
+              abs78 = -cr
+            END IF
+            y78d = crd - abs78d
+            y78 = cr - abs78
+            IF (-1.0 .LT. y78) THEN
+              max28d = y78d
+              max28 = y78
+            ELSE
+              max28 = -1.0
+              max28d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min41*field_old(i, k, j-1)+0.5&
+&              *max28*field_old(i, k, j))+mu*(0.5*(min41d*field_old(i, k&
+&              , j-1)+min41*field_oldd(i, k, j-1))+0.5*(max28d*field_old(&
+&              i, k, j)+max28*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min41*field_old(i, k, j-1)+&
+&              0.5*max28*field_old(i, k, j))
+            fqyd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k, j-1&
+&              ))-1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1)))) + vel*(&
+&              7.*(fieldd(i, k, j)+fieldd(i, k, j-1))/12.-(fieldd(i, k, j&
+&              +1)+fieldd(i, k, j-2))/12.+SIGN(1, time_step)*SIGN(1., vel&
+&              )*(fieldd(i, k, j+1)-fieldd(i, k, j-2)-3.*(fieldd(i, k, j)&
+&              -fieldd(i, k, j-1)))/12.)
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1))))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs28d = crd
+              abs28 = cr
+            ELSE
+              abs28d = -crd
+              abs28 = -cr
+            END IF
+            y28d = crd + abs28d
+            y28 = cr + abs28
+            IF (1.0 .GT. y28) THEN
+              min42d = y28d
+              min42 = y28
+            ELSE
+              min42 = 1.0
+              min42d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs79d = crd
+              abs79 = cr
+            ELSE
+              abs79d = -crd
+              abs79 = -cr
+            END IF
+            y79d = crd - abs79d
+            y79 = cr - abs79
+            IF (-1.0 .LT. y79) THEN
+              max29d = y79d
+              max29 = y79
+            ELSE
+              max29 = -1.0
+              max29d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min42*field_old(i, k, j-1)+0.5&
+&              *max29*field_old(i, k, j))+mu*(0.5*(min42d*field_old(i, k&
+&              , j-1)+min42*field_oldd(i, k, j-1))+0.5*(max29d*field_old(&
+&              i, k, j)+max29*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min42*field_old(i, k, j-1)+&
+&              0.5*max29*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          DO i=i_start,i_end
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            veld = rvd(i, k, j)
+            vel = rv(i, k, j)
+            crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs29d = crd
+              abs29 = cr
+            ELSE
+              abs29d = -crd
+              abs29 = -cr
+            END IF
+            y29d = crd + abs29d
+            y29 = cr + abs29
+            IF (1.0 .GT. y29) THEN
+              min43d = y29d
+              min43 = y29
+            ELSE
+              min43 = 1.0
+              min43d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs80d = crd
+              abs80 = cr
+            ELSE
+              abs80d = -crd
+              abs80 = -cr
+            END IF
+            y80d = crd - abs80d
+            y80 = cr - abs80
+            IF (-1.0 .LT. y80) THEN
+              max30d = y80d
+              max30 = y80
+            ELSE
+              max30 = -1.0
+              max30d = 0.0
+            END IF
+            fqyld(i, k, j) = dy*(mud*(0.5*min43*field_old(i, k, j-1)+0.5&
+&              *max30*field_old(i, k, j))+mu*(0.5*(min43d*field_old(i, k&
+&              , j-1)+min43*field_oldd(i, k, j-1))+0.5*(max30d*field_old(&
+&              i, k, j)+max30*field_oldd(i, k, j))))/dt
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min43*field_old(i, k, j-1)+&
+&              0.5*max30*field_old(i, k, j))
+            fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k&
+&              , j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+        END DO
+      END IF
+    END DO j_loop_y_flux_3
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min44 = ide - 1
+    ELSE
+      min44 = ite
+    END IF
+    i_end = min44 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min45 = jde - 1
+    ELSE
+      min45 = jte
+    END IF
+    j_end = min45 + 1
+!--  modify loop bounds for open and specified b.c
+    IF (degrade_ys) j_start = jts
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 2
+      fqxld = 0.0
+      fqxd = 0.0
+    ELSE
+      fqxld = 0.0
+      fqxd = 0.0
+    END IF
+!  compute fluxes
+    DO j=j_start,j_end
+!  4th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          veld = rud(i, k, j)
+          vel = ru(i, k, j)
+          crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs30d = crd
+            abs30 = cr
+          ELSE
+            abs30d = -crd
+            abs30 = -cr
+          END IF
+          y30d = crd + abs30d
+          y30 = cr + abs30
+          IF (1.0 .GT. y30) THEN
+            min46d = y30d
+            min46 = y30
+          ELSE
+            min46 = 1.0
+            min46d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs81d = crd
+            abs81 = cr
+          ELSE
+            abs81d = -crd
+            abs81 = -cr
+          END IF
+          y81d = crd - abs81d
+          y81 = cr - abs81
+          IF (-1.0 .LT. y81) THEN
+            max31d = y81d
+            max31 = y81
+          ELSE
+            max31 = -1.0
+            max31d = 0.0
+          END IF
+          fqxld(i, k, j) = dx*(mud*(0.5*min46*field_old(i-1, k, j)+0.5*&
+&            max31*field_old(i, k, j))+mu*(0.5*(min46d*field_old(i-1, k, &
+&            j)+min46*field_oldd(i-1, k, j))+0.5*(max31d*field_old(i, k, &
+&            j)+max31*field_oldd(i, k, j))))/dt
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min46*field_old(i-1, k, j)+0.5&
+&            *max31*field_old(i, k, j))
+          fqxd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i-1, k, j))&
+&            -1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1, &
+&            time_step)*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-field(i-&
+&            2, k, j)-3.*(field(i, k, j)-field(i-1, k, j)))) + vel*(7.*(&
+&            fieldd(i, k, j)+fieldd(i-1, k, j))/12.-(fieldd(i+1, k, j)+&
+&            fieldd(i-2, k, j))/12.+SIGN(1, time_step)*SIGN(1., vel)*(&
+&            fieldd(i+1, k, j)-fieldd(i-2, k, j)-3.*(fieldd(i, k, j)-&
+&            fieldd(i-1, k, j)))/12.)
+          fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j))-&
+&            1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1, time_step&
+&            )*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-field(i-2, k, j)-&
+&            3.*(field(i, k, j)-field(i-1, k, j))))
+          fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        IF (i_start .EQ. ids + 1) THEN
+! second order flux next to the boundary
+          i = ids + 1
+          DO k=kts,ktf
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            veld = (rud(i, k, j)*mu-ru(i, k, j)*mud)/mu**2
+            vel = ru(i, k, j)/mu
+            crd = dt*veld/dx
+            cr = vel*dt/dx
+            IF (cr .GE. 0.) THEN
+              abs31d = crd
+              abs31 = cr
+            ELSE
+              abs31d = -crd
+              abs31 = -cr
+            END IF
+            y31d = crd + abs31d
+            y31 = cr + abs31
+            IF (1.0 .GT. y31) THEN
+              min47d = y31d
+              min47 = y31
+            ELSE
+              min47 = 1.0
+              min47d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs82d = crd
+              abs82 = cr
+            ELSE
+              abs82d = -crd
+              abs82 = -cr
+            END IF
+            y82d = crd - abs82d
+            y82 = cr - abs82
+            IF (-1.0 .LT. y82) THEN
+              max32d = y82d
+              max32 = y82
+            ELSE
+              max32 = -1.0
+              max32d = 0.0
+            END IF
+            fqxld(i, k, j) = dx*(mud*(0.5*min47*field_old(i-1, k, j)+0.5&
+&              *max32*field_old(i, k, j))+mu*(0.5*(min47d*field_old(i-1, &
+&              k, j)+min47*field_oldd(i-1, k, j))+0.5*(max32d*field_old(i&
+&              , k, j)+max32*field_oldd(i, k, j))))/dt
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min47*field_old(i-1, k, j)+&
+&              0.5*max32*field_old(i, k, j))
+            fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-1&
+&              , k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+        END IF
+      END IF
+      IF (degrade_xe) THEN
+        IF (i_end .EQ. ide - 2) THEN
+! second order flux next to the boundary
+          i = ide - 1
+          DO k=kts,ktf
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            veld = rud(i, k, j)
+            vel = ru(i, k, j)
+            crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+            cr = vel*dt/dx/mu
+            IF (cr .GE. 0.) THEN
+              abs32d = crd
+              abs32 = cr
+            ELSE
+              abs32d = -crd
+              abs32 = -cr
+            END IF
+            y32d = crd + abs32d
+            y32 = cr + abs32
+            IF (1.0 .GT. y32) THEN
+              min48d = y32d
+              min48 = y32
+            ELSE
+              min48 = 1.0
+              min48d = 0.0
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs83d = crd
+              abs83 = cr
+            ELSE
+              abs83d = -crd
+              abs83 = -cr
+            END IF
+            y83d = crd - abs83d
+            y83 = cr - abs83
+            IF (-1.0 .LT. y83) THEN
+              max33d = y83d
+              max33 = y83
+            ELSE
+              max33 = -1.0
+              max33d = 0.0
+            END IF
+            fqxld(i, k, j) = dx*(mud*(0.5*min48*field_old(i-1, k, j)+0.5&
+&              *max33*field_old(i, k, j))+mu*(0.5*(min48d*field_old(i-1, &
+&              k, j)+min48*field_oldd(i-1, k, j))+0.5*(max33d*field_old(i&
+&              , k, j)+max33*field_oldd(i, k, j))))/dt
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min48*field_old(i-1, k, j)+&
+&              0.5*max33*field_old(i, k, j))
+            fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-1&
+&              , k, j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+        END IF
+      END IF
+    END DO
+  ELSE IF (horz_order .EQ. 2) THEN
+! enddo for outer J loop
+!--- end of 3rd order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 1) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 1) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 2) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min49 = ide - 1
+    ELSE
+      min49 = ite
+    END IF
+    i_end = min49 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min50 = jde - 1
+    ELSE
+      min50 = jte
+    END IF
+    j_end = min50 + 1
+!--  modify loop bounds if open or specified
+    IF (degrade_xs) i_start = its
+    IF (degrade_xe) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      fqyld = 0.0
+      fqyd = 0.0
+    ELSE
+      fqyld = 0.0
+      fqyd = 0.0
+    END IF
+!  compute fluxes, 2nd order, y flux
+    DO j=j_start,j_end+1
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! ADT eqn 48 d/dy
+          dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+          mud = 0.5*(mutd(i, j)+mutd(i, j-1))
+          mu = 0.5*(mut(i, j)+mut(i, j-1))
+          veld = rvd(i, k, j)
+          vel = rv(i, k, j)
+          crd = (dt*veld*mu/dy-vel*dt*mud/dy)/mu**2
+          cr = vel*dt/dy/mu
+          IF (cr .GE. 0.) THEN
+            abs33d = crd
+            abs33 = cr
+          ELSE
+            abs33d = -crd
+            abs33 = -cr
+          END IF
+          y33d = crd + abs33d
+          y33 = cr + abs33
+          IF (1.0 .GT. y33) THEN
+            min51d = y33d
+            min51 = y33
+          ELSE
+            min51 = 1.0
+            min51d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs84d = crd
+            abs84 = cr
+          ELSE
+            abs84d = -crd
+            abs84 = -cr
+          END IF
+          y84d = crd - abs84d
+          y84 = cr - abs84
+          IF (-1.0 .LT. y84) THEN
+            max34d = y84d
+            max34 = y84
+          ELSE
+            max34 = -1.0
+            max34d = 0.0
+          END IF
+          fqyld(i, k, j) = dy*(mud*(0.5*min51*field_old(i, k, j-1)+0.5*&
+&            max34*field_old(i, k, j))+mu*(0.5*(min51d*field_old(i, k, j-&
+&            1)+min51*field_oldd(i, k, j-1))+0.5*(max34d*field_old(i, k, &
+&            j)+max34*field_oldd(i, k, j))))/dt
+          fqyl(i, k, j) = mu*(dy/dt)*(0.5*min51*field_old(i, k, j-1)+0.5&
+&            *max34*field_old(i, k, j))
+          fqyd(i, k, j) = 0.5*(rvd(i, k, j)*(field(i, k, j)+field(i, k, &
+&            j-1))+rv(i, k, j)*(fieldd(i, k, j)+fieldd(i, k, j-1)))
+          fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j-1&
+&            ))
+          fqyd(i, k, j) = fqyd(i, k, j) - fqyld(i, k, j)
+          fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+        END DO
+      END DO
+    END DO
+    fqxld = 0.0
+    fqxd = 0.0
+!  next, x flux
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end+1
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          mud = 0.5*(mutd(i, j)+mutd(i-1, j))
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          veld = rud(i, k, j)
+          vel = ru(i, k, j)
+          crd = (dt*veld*mu/dx-vel*dt*mud/dx)/mu**2
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs34d = crd
+            abs34 = cr
+          ELSE
+            abs34d = -crd
+            abs34 = -cr
+          END IF
+          y34d = crd + abs34d
+          y34 = cr + abs34
+          IF (1.0 .GT. y34) THEN
+            min52d = y34d
+            min52 = y34
+          ELSE
+            min52 = 1.0
+            min52d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs85d = crd
+            abs85 = cr
+          ELSE
+            abs85d = -crd
+            abs85 = -cr
+          END IF
+          y85d = crd - abs85d
+          y85 = cr - abs85
+          IF (-1.0 .LT. y85) THEN
+            max35d = y85d
+            max35 = y85
+          ELSE
+            max35 = -1.0
+            max35d = 0.0
+          END IF
+          fqxld(i, k, j) = dx*(mud*(0.5*min52*field_old(i-1, k, j)+0.5*&
+&            max35*field_old(i, k, j))+mu*(0.5*(min52d*field_old(i-1, k, &
+&            j)+min52*field_oldd(i-1, k, j))+0.5*(max35d*field_old(i, k, &
+&            j)+max35*field_oldd(i, k, j))))/dt
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min52*field_old(i-1, k, j)+0.5&
+&            *max35*field_old(i, k, j))
+          fqxd(i, k, j) = 0.5*(rud(i, k, j)*(field(i, k, j)+field(i-1, k&
+&            , j))+ru(i, k, j)*(fieldd(i, k, j)+fieldd(i-1, k, j)))
+          fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k, j&
+&            ))
+          fqxd(i, k, j) = fqxd(i, k, j) - fqxld(i, k, j)
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+    END DO
+  ELSE
+!--- end of 2nd order horizontal flux calculation
+    WRITE(wrf_err_message, *) &
+&    'module_advect: advect_scalar_pd, h_order not known ', horz_order
+    CALL WRF_ERROR_FATAL(TRIM(wrf_err_message))
+    fqxld = 0.0
+    fqyld = 0.0
+    fqxd = 0.0
+    fqyd = 0.0
   END IF
-
- IF(config_flags%open_ys) THEN
-
- IF(degrade_ys) j_start =max(jts-1,jds+1)
+!  pick up the rest of the horizontal radiation boundary conditions.
+!  (these are the computations that don't require 'cb'.
+!  first, set to index ranges
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
   END IF
-
- IF(config_flags%open_ye) THEN
-
- IF(degrade_ye) j_end =min(jte+1,jde-2)
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
   END IF
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =(mub(i,j) +mu_old(i,j))*g_field_old(i,k,j) +(g_mu_old(i,j)) &
-*field_old(i,k,j) 
- Tmpv1 =(mub(i,j) +mu_old(i,j))*field_old(i,k,j)
-
- g_ph_low =g_Tmpv1 -dt*(msftx(i,j) *msfty(i,j)*(rdx*(g_fqxl(i+1,k,j) &
- -g_fqxl(i,k,j)) +rdy*(g_fqyl(i,k,j+1) -g_fqyl(i,k,j))) +msfty(i,j) *rdzw(k) &
-*(g_fqzl(i,k+1,j) -g_fqzl(i,k,j)))
- ph_low =Tmpv1 -dt*(msftx(i,j) *msfty(i,j)*(rdx*(fqxl(i+1,k,j) -fqxl(i,k,j)) &
- +rdy*(fqyl(i,k,j+1) -fqyl(i,k,j))) +msfty(i,j) *rdzw(k)*(fqzl(i,k+1,j) -fqzl(i,k,j)))
-
- g_flux_out =dt*((msftx(i,j) *msfty(i,j))*(rdx*((0.0 +g_fqx(i+1,k,j) &
- +(0.0 -g_fqx(i+1,k,j))*sign(1.0, 0. -(fqx(i+1,k,j))))*0.5 -(0.0 +g_fqx(i,k,j) &
- -(0.0 -g_fqx(i,k,j))*sign(1.0, 0. -(fqx(i,k,j))))*0.5) +rdy*((0.0 +g_fqy(i,k, &
- j+1) +(0.0 -g_fqy(i,k,j+1))*sign(1.0, 0. -(fqy(i,k,j+1))))*0.5 -(0.0 +g_fqy(i, &
- k,j) -(0.0 -g_fqy(i,k,j))*sign(1.0, 0. -(fqy(i,k,j))))*0.5)) +msfty(i,j) *rdzw(k) &
-*((0.0 +g_fqz(i,k+1,j) -(0.0 -g_fqz(i,k+1,j))*sign(1.0, 0. -(fqz(i,k+1,j)))) &
-*0.5 -(0.0 +g_fqz(i,k,j) +(0.0 -g_fqz(i,k,j))*sign(1.0, 0. -(fqz(i,k,j))))*0.5))
- flux_out =dt*((msftx(i,j) *msfty(i,j))*(rdx*(max(0.,fqx(i+1,k,j)) -min(0.,fqx(i,k, &
- j))) +rdy*(max(0.,fqy(i,k,j+1)) -min(0.,fqy(i,k,j)))) +msfty(i,j) *rdzw(k) &
-*(min(0.,fqz(i,k+1,j)) -max(0.,fqz(i,k,j))))
-
- IF( flux_out .gt. ph_low ) THEN
-
- g_Tmpv1 =(g_ph_low*(flux_out +eps) -(g_flux_out)*ph_low)/((flux_out +eps) &
- *(flux_out +eps)) 
- Tmpv1 =ph_low/(flux_out +eps)
-
- g_scale =(0.0 +g_Tmpv1 +(0.0 -g_Tmpv1)*sign(1.0, 0. -(Tmpv1)))*0.5
- scale =max(0.,Tmpv1)
-!print*, 'TL1:', scale, flux_out, ph_low, '(',i,k,j,')',fqx(i+1,k,j),fqx(i,k,j)
-
-!REVISED BY WALLSWALLSWALLSWALLSWALLSWALLSWALLSWALLWALLSWALLSWALLSWALLS
-!REVISED BY WALLSWALLSWALLSWALLSWALLSWALLSWALLSWALLWALLSWALLSWALLSWALLS
-!BIG ERRORS OCCUR IN THE FOLLOWING LINES
-
-!g_Tmpv1 =scale*g_fqx(i+1,k,j) +g_scale*fqx(i+1,k,j) 
-!Tmpv1 =scale*fqx(i+1,k,j)
-
-!IF( fqx (i+1,k,j) .gt. 0.) g_fqx(i+1,k,j) =g_Tmpv1
-!IF( fqx (i+1,k,j) .gt. 0.) fqx(i+1,k,j) =Tmpv1
-
-!g_Tmpv1 =scale*g_fqx(i,k,j) +g_scale*fqx(i,k,j) 
-!Tmpv1 =scale*fqx(i,k,j)
-
-!IF( fqx (i  ,k,j) .lt. 0.) g_fqx(i,k,j) =g_Tmpv1
-!IF( fqx (i  ,k,j) .lt. 0.) fqx(i,k,j) =Tmpv1
-
-!g_Tmpv1 =scale*g_fqy(i,k,j+1) +g_scale*fqy(i,k,j+1) 
-!Tmpv1 =scale*fqy(i,k,j+1)
-
-!IF( fqy (i,k,j+1) .gt. 0.) g_fqy(i,k,j+1) =g_Tmpv1
-!IF( fqy (i,k,j+1) .gt. 0.) fqy(i,k,j+1) =Tmpv1
-
-!g_Tmpv1 =scale*g_fqy(i,k,j) +g_scale*fqy(i,k,j) 
-!Tmpv1 =scale*fqy(i,k,j)
-
-!IF( fqy (i,k,j  ) .lt. 0.) g_fqy(i,k,j) =g_Tmpv1
-!IF( fqy (i,k,j  ) .lt. 0.) fqy(i,k,j) =Tmpv1
-
-!g_Tmpv1 =scale*g_fqz(i,k+1,j) +g_scale*fqz(i,k+1,j) 
-!Tmpv1 =scale*fqz(i,k+1,j)
-
-!IF( fqz (i,k+1,j) .lt. 0.) g_fqz(i,k+1,j) =g_Tmpv1
-!IF( fqz (i,k+1,j) .lt. 0.) fqz(i,k+1,j) =Tmpv1
-
-!g_Tmpv1 =scale*g_fqz(i,k,j) +g_scale*fqz(i,k,j) 
-!Tmpv1 =scale*fqz(i,k,j)
-
-!IF( fqz (i,k  ,j) .gt. 0.) g_fqz(i,k,j) =g_Tmpv1
-!IF( fqz (i,k  ,j) .gt. 0.) fqz(i,k,j) =Tmpv1
-
- IF( fqx (i+1,k,j) .gt. 0.) g_fqx(i+1,k,j) =scale*g_fqx(i+1,k,j) +g_scale*fqx(i+1,k,j)
- IF( fqx (i+1,k,j) .gt. 0.) fqx(i+1,k,j) =scale*fqx(i+1,k,j)
-
- IF( fqx (i  ,k,j) .lt. 0.) g_fqx(i,k,j) =scale*g_fqx(i,k,j) +g_scale*fqx(i,k,j)
- IF( fqx (i  ,k,j) .lt. 0.) fqx(i,k,j) =scale*fqx(i,k,j)
-
- IF( fqy (i,k,j+1) .gt. 0.) g_fqy(i,k,j+1) =scale*g_fqy(i,k,j+1) +g_scale*fqy(i,k,j+1)
- IF( fqy (i,k,j+1) .gt. 0.) fqy(i,k,j+1) =scale*fqy(i,k,j+1)
-
- IF( fqy (i,k,j  ) .lt. 0.) g_fqy(i,k,j) =scale*g_fqy(i,k,j) +g_scale*fqy(i,k,j)
- IF( fqy (i,k,j  ) .lt. 0.) fqy(i,k,j) =scale*fqy(i,k,j)
-
- IF( fqz (i,k+1,j) .lt. 0.) g_fqz(i,k+1,j) =scale*g_fqz(i,k+1,j) +g_scale*fqz(i,k+1,j)
- IF( fqz (i,k+1,j) .lt. 0.) fqz(i,k+1,j) =scale*fqz(i,k+1,j)
-
- IF( fqz (i,k  ,j) .gt. 0.) g_fqz(i,k,j) =scale*g_fqz(i,k,j) +g_scale*fqz(i,k,j)
- IF( fqz (i,k  ,j) .gt. 0.) fqz(i,k,j) =scale*fqz(i,k,j)
-
- END IF
- ENDDO
- ENDDO
- ENDDO
- END IF
-
-!LPB[28]
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
-!LPB[29]
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -rdzw(k)*(g_fqz(i,k+1,j) -g_fqz(i,k, &
- j) +g_fqzl(i,k+1,j) -g_fqzl(i,k,j))
- tendency(i,k,j) =tendency(i,k,j) -rdzw(k)*(fqz(i,k+1,j) -fqz(i,k,j) +fqzl(i,k+1,j) &
- -fqzl(i,k,j))
-
- ENDDO
- ENDDO
- ENDDO
-
- IF(tenddec) THEN
- DO j = j_start, j_end
- DO k = kts, ktf
- DO i = i_start, i_end
-
-    g_z_tendency (i,k,j) = -rdzw(k)*( g_fqz (i,k+1,j)-g_fqz (i,k,j)  &
-                                     +g_fqzl(i,k+1,j)-g_fqzl(i,k,j))
-    z_tendency (i,k,j) = 0. -rdzw(k)*( fqz (i,k+1,j)-fqz (i,k,j)  &
-                                     +fqzl(i,k+1,j)-fqzl(i,k,j))
-
- ENDDO
- ENDDO
- ENDDO
- END IF
-
- IF(degrade_xs) i_start =max(its,ids+1)
-
- IF(degrade_xe) i_end =min(ite,ide-2)
-
-!LPB[34]
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -msftx(i,j)*(rdx*(g_fqx(i+1,k,j) &
- -g_fqx(i,k,j) +g_fqxl(i+1,k,j) -g_fqxl(i,k,j)))
- tendency(i,k,j) =tendency(i,k,j) -msftx(i,j)*(rdx*(fqx(i+1,k,j) -fqx(i,k,j) &
- +fqxl(i+1,k,j) -fqxl(i,k,j)))
-
- ENDDO
- ENDDO
- ENDDO
-
- IF(tenddec) THEN
- DO j = j_start, j_end
- DO k = kts, ktf
- DO i = i_start, i_end
-
-    g_h_tendency (i,k,j) =                                       &
-              - msftx(i,j)*( rdx*( g_fqx (i+1,k,j)-g_fqx (i,k,j)     &
-                                  +g_fqxl(i+1,k,j)-g_fqxl(i,k,j))   )
-    h_tendency (i,k,j) = 0.                                      &
-              - msftx(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
-                                  +fqxl(i+1,k,j)-fqxl(i,k,j))   )
-
- ENDDO
- ENDDO
- ENDDO
- END IF
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- IF(degrade_ys) j_start =max(jts,jds+1)
-
- IF(degrade_ye) j_end =min(jte,jde-2)
-
-!LPB[39]
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_tendency(i,k,j) =g_tendency(i,k,j) -msftx(i,j)*(rdy*(g_fqy(i,k,j+1) &
- -g_fqy(i,k,j) +g_fqyl(i,k,j+1) -g_fqyl(i,k,j)))
- tendency(i,k,j) =tendency(i,k,j) -msftx(i,j)*(rdy*(fqy(i,k,j+1) -fqy(i,k,j) &
- +fqyl(i,k,j+1) -fqyl(i,k,j)))
-
- ENDDO
- ENDDO
- ENDDO
-
- IF(tenddec) THEN
- DO j = j_start, j_end
- DO k = kts, ktf
- DO i = i_start, i_end
-
-    g_h_tendency (i,k,j) = g_h_tendency (i,k,j)                      &
-              - msftx(i,j)*( rdy*( g_fqy (i,k,j+1)-g_fqy (i,k,j)     &
-                                  +g_fqyl(i,k,j+1)-g_fqyl(i,k,j))   )
-    h_tendency (i,k,j) = h_tendency (i,k,j)                      &
-              - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
-                                  +fqyl(i,k,j+1)-fqyl(i,k,j))   )
-
- ENDDO
- ENDDO
- ENDDO
- END IF
-
- END SUBROUTINE g_advect_scalar_pd
+!  compute x (u) conditions for v, w, or scalar
+  IF (config_flags%open_xs .AND. its .EQ. ids) THEN
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        IF (0.5*(ru(its, k, j)+ru(its+1, k, j)) .GT. 0.) THEN
+          ub = 0.
+          ubd = 0.0
+        ELSE
+          ubd = 0.5*(rud(its, k, j)+rud(its+1, k, j))
+          ub = 0.5*(ru(its, k, j)+ru(its+1, k, j))
+        END IF
+        tendencyd(its, k, j) = tendencyd(its, k, j) - rdx*(ubd*(&
+&          field_old(its+1, k, j)-field_old(its, k, j))+ub*(field_oldd(&
+&          its+1, k, j)-field_oldd(its, k, j))+fieldd(its, k, j)*(ru(its+&
+&          1, k, j)-ru(its, k, j))+field(its, k, j)*(rud(its+1, k, j)-rud&
+&          (its, k, j)))
+        tendency(its, k, j) = tendency(its, k, j) - rdx*(ub*(field_old(&
+&          its+1, k, j)-field_old(its, k, j))+field(its, k, j)*(ru(its+1&
+&          , k, j)-ru(its, k, j)))
+      END DO
+    END DO
+  END IF
+  IF (config_flags%open_xe .AND. ite .EQ. ide) THEN
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        IF (0.5*(ru(ite-1, k, j)+ru(ite, k, j)) .LT. 0.) THEN
+          ub = 0.
+          ubd = 0.0
+        ELSE
+          ubd = 0.5*(rud(ite-1, k, j)+rud(ite, k, j))
+          ub = 0.5*(ru(ite-1, k, j)+ru(ite, k, j))
+        END IF
+        tendencyd(i_end, k, j) = tendencyd(i_end, k, j) - rdx*(ubd*(&
+&          field_old(i_end, k, j)-field_old(i_end-1, k, j))+ub*(&
+&          field_oldd(i_end, k, j)-field_oldd(i_end-1, k, j))+fieldd(&
+&          i_end, k, j)*(ru(ite, k, j)-ru(ite-1, k, j))+field(i_end, k, j&
+&          )*(rud(ite, k, j)-rud(ite-1, k, j)))
+        tendency(i_end, k, j) = tendency(i_end, k, j) - rdx*(ub*(&
+&          field_old(i_end, k, j)-field_old(i_end-1, k, j))+field(i_end, &
+&          k, j)*(ru(ite, k, j)-ru(ite-1, k, j)))
+      END DO
+    END DO
+  END IF
+  IF (config_flags%open_ys .AND. jts .EQ. jds) THEN
+    DO i=i_start,i_end
+      DO k=kts,ktf
+        IF (0.5*(rv(i, k, jts)+rv(i, k, jts+1)) .GT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = 0.5*(rvd(i, k, jts)+rvd(i, k, jts+1))
+          vb = 0.5*(rv(i, k, jts)+rv(i, k, jts+1))
+        END IF
+        tendencyd(i, k, jts) = tendencyd(i, k, jts) - rdy*(vbd*(&
+&          field_old(i, k, jts+1)-field_old(i, k, jts))+vb*(field_oldd(i&
+&          , k, jts+1)-field_oldd(i, k, jts))+fieldd(i, k, jts)*(rv(i, k&
+&          , jts+1)-rv(i, k, jts))+field(i, k, jts)*(rvd(i, k, jts+1)-rvd&
+&          (i, k, jts)))
+        tendency(i, k, jts) = tendency(i, k, jts) - rdy*(vb*(field_old(i&
+&          , k, jts+1)-field_old(i, k, jts))+field(i, k, jts)*(rv(i, k, &
+&          jts+1)-rv(i, k, jts)))
+      END DO
+    END DO
+  END IF
+  IF (config_flags%open_ye .AND. jte .EQ. jde) THEN
+    DO i=i_start,i_end
+      DO k=kts,ktf
+        IF (0.5*(rv(i, k, jte-1)+rv(i, k, jte)) .LT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = 0.5*(rvd(i, k, jte-1)+rvd(i, k, jte))
+          vb = 0.5*(rv(i, k, jte-1)+rv(i, k, jte))
+        END IF
+        tendencyd(i, k, j_end) = tendencyd(i, k, j_end) - rdy*(vbd*(&
+&          field_old(i, k, j_end)-field_old(i, k, j_end-1))+vb*(&
+&          field_oldd(i, k, j_end)-field_oldd(i, k, j_end-1))+fieldd(i, k&
+&          , j_end)*(rv(i, k, jte)-rv(i, k, jte-1))+field(i, k, j_end)*(&
+&          rvd(i, k, jte)-rvd(i, k, jte-1)))
+        tendency(i, k, j_end) = tendency(i, k, j_end) - rdy*(vb*(&
+&          field_old(i, k, j_end)-field_old(i, k, j_end-1))+field(i, k, &
+&          j_end)*(rv(i, k, jte)-rv(i, k, jte-1)))
+      END DO
+    END DO
+  END IF
+  IF (config_flags%polar .AND. jts .EQ. jds) THEN
+! Assuming rv(i,k,jds) = 0.
+    DO i=i_start,i_end
+      DO k=kts,ktf
+        IF (0.5*rv(i, k, jts+1) .GT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = 0.5*rvd(i, k, jts+1)
+          vb = 0.5*rv(i, k, jts+1)
+        END IF
+        tendencyd(i, k, jts) = tendencyd(i, k, jts) - rdy*(vbd*(&
+&          field_old(i, k, jts+1)-field_old(i, k, jts))+vb*(field_oldd(i&
+&          , k, jts+1)-field_oldd(i, k, jts))+fieldd(i, k, jts)*rv(i, k, &
+&          jts+1)+field(i, k, jts)*rvd(i, k, jts+1))
+        tendency(i, k, jts) = tendency(i, k, jts) - rdy*(vb*(field_old(i&
+&          , k, jts+1)-field_old(i, k, jts))+field(i, k, jts)*rv(i, k, &
+&          jts+1))
+      END DO
+    END DO
+  END IF
+  IF (config_flags%polar .AND. jte .EQ. jde) THEN
+! Assuming rv(i,k,jde) = 0.
+    DO i=i_start,i_end
+      DO k=kts,ktf
+        IF (0.5*rv(i, k, jte-1) .LT. 0.) THEN
+          vb = 0.
+          vbd = 0.0
+        ELSE
+          vbd = 0.5*rvd(i, k, jte-1)
+          vb = 0.5*rv(i, k, jte-1)
+        END IF
+        tendencyd(i, k, j_end) = tendencyd(i, k, j_end) - rdy*(vbd*(&
+&          field_old(i, k, j_end)-field_old(i, k, j_end-1))+vb*(&
+&          field_oldd(i, k, j_end)-field_oldd(i, k, j_end-1))-fieldd(i, k&
+&          , j_end)*rv(i, k, jte-1)-field(i, k, j_end)*rvd(i, k, jte-1))
+        tendency(i, k, j_end) = tendency(i, k, j_end) - rdy*(vb*(&
+&          field_old(i, k, j_end)-field_old(i, k, j_end-1))+field(i, k, &
+&          j_end)*(-rv(i, k, jte-1)))
+      END DO
+    END DO
+  END IF
+!-------------------- vertical advection
+!-- loop bounds for periodic or sym conditions
+  i_start = its - 1
+  IF (ite .GT. ide - 1) THEN
+    min53 = ide - 1
+  ELSE
+    min53 = ite
+  END IF
+  i_end = min53 + 1
+  j_start = jts - 1
+  IF (jte .GT. jde - 1) THEN
+    min54 = jde - 1
+  ELSE
+    min54 = jte
+  END IF
+  j_end = min54 + 1
+!-- loop bounds for open or specified conditions
+  IF (degrade_xs) THEN
+    IF (its - 1 .LT. ids) THEN
+      i_start = ids
+    ELSE
+      i_start = its - 1
+    END IF
+  END IF
+  IF (degrade_xe) THEN
+    IF (ite + 1 .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite + 1
+    END IF
+  END IF
+  IF (degrade_ys) THEN
+    IF (jts - 1 .LT. jds) THEN
+      j_start = jds
+    ELSE
+      j_start = jts - 1
+    END IF
+  END IF
+  IF (degrade_ye) THEN
+    IF (jte + 1 .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte + 1
+    END IF
+  END IF
+  IF (vert_order .EQ. 6) THEN
+    fqzd = 0.0
+    fqzld = 0.0
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        fqzd(i, 1, j) = 0.0
+        fqz(i, 1, j) = 0.
+        fqzld(i, 1, j) = 0.0
+        fqzl(i, 1, j) = 0.
+        fqzd(i, kde, j) = 0.0
+        fqz(i, kde, j) = 0.
+        fqzld(i, kde, j) = 0.0
+        fqzl(i, kde, j) = 0.
+      END DO
+      DO k=kts+3,ktf-2
+        DO i=i_start,i_end
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          mud = 0.5*2*mutd(i, j)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          veld = romd(i, k, j)
+          vel = rom(i, k, j)
+          crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs35d = crd
+            abs35 = cr
+          ELSE
+            abs35d = -crd
+            abs35 = -cr
+          END IF
+          y35d = crd + abs35d
+          y35 = cr + abs35
+          IF (1.0 .GT. y35) THEN
+            min55d = y35d
+            min55 = y35
+          ELSE
+            min55 = 1.0
+            min55d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs86d = crd
+            abs86 = cr
+          ELSE
+            abs86d = -crd
+            abs86 = -cr
+          END IF
+          y86d = crd - abs86d
+          y86 = cr - abs86
+          IF (-1.0 .LT. y86) THEN
+            max36d = y86d
+            max36 = y86
+          ELSE
+            max36 = -1.0
+            max36d = 0.0
+          END IF
+          fqzld(i, k, j) = dz*(mud*(0.5*min55*field_old(i, k-1, j)+0.5*&
+&            max36*field_old(i, k, j))+mu*(0.5*(min55d*field_old(i, k-1, &
+&            j)+min55*field_oldd(i, k-1, j))+0.5*(max36d*field_old(i, k, &
+&            j)+max36*field_oldd(i, k, j))))/dt
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min55*field_old(i, k-1, j)+0.5&
+&            *max36*field_old(i, k, j))
+          fqzd(i, k, j) = veld*(37./60.*(field(i, k, j)+field(i, k-1, j)&
+&            )-2./15.*(field(i, k+1, j)+field(i, k-2, j))+1./60.*(field(i&
+&            , k+2, j)+field(i, k-3, j))) + vel*(37.*(fieldd(i, k, j)+&
+&            fieldd(i, k-1, j))/60.-2.*(fieldd(i, k+1, j)+fieldd(i, k-2, &
+&            j))/15.+(fieldd(i, k+2, j)+fieldd(i, k-3, j))/60.)
+          fqz(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k-1, j))-&
+&            2./15.*(field(i, k+1, j)+field(i, k-2, j))+1./60.*(field(i, &
+&            k+2, j)+field(i, k-3, j)))
+          fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs36d = crd
+          abs36 = cr
+        ELSE
+          abs36d = -crd
+          abs36 = -cr
+        END IF
+        y36d = crd + abs36d
+        y36 = cr + abs36
+        IF (1.0 .GT. y36) THEN
+          min56d = y36d
+          min56 = y36
+        ELSE
+          min56 = 1.0
+          min56d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs87d = crd
+          abs87 = cr
+        ELSE
+          abs87d = -crd
+          abs87 = -cr
+        END IF
+        y87d = crd - abs87d
+        y87 = cr - abs87
+        IF (-1.0 .LT. y87) THEN
+          max37d = y87d
+          max37 = y87
+        ELSE
+          max37 = -1.0
+          max37d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min56*field_old(i, k-1, j)+0.5*&
+&          max37*field_old(i, k, j))+mu*(0.5*(min56d*field_old(i, k-1, j)&
+&          +min56*field_oldd(i, k-1, j))+0.5*(max37d*field_old(i, k, j)+&
+&          max37*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min56*field_old(i, k-1, j)+0.5*&
+&          max37*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = kts + 2
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs37d = crd
+          abs37 = cr
+        ELSE
+          abs37d = -crd
+          abs37 = -cr
+        END IF
+        y37d = crd + abs37d
+        y37 = cr + abs37
+        IF (1.0 .GT. y37) THEN
+          min57d = y37d
+          min57 = y37
+        ELSE
+          min57 = 1.0
+          min57d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs88d = crd
+          abs88 = cr
+        ELSE
+          abs88d = -crd
+          abs88 = -cr
+        END IF
+        y88d = crd - abs88d
+        y88 = cr - abs88
+        IF (-1.0 .LT. y88) THEN
+          max38d = y88d
+          max38 = y88
+        ELSE
+          max38 = -1.0
+          max38d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min57*field_old(i, k-1, j)+0.5*&
+&          max38*field_old(i, k, j))+mu*(0.5*(min57d*field_old(i, k-1, j)&
+&          +min57*field_oldd(i, k-1, j))+0.5*(max38d*field_old(i, k, j)+&
+&          max38*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min57*field_old(i, k-1, j)+0.5*&
+&          max38*field_old(i, k, j))
+        fqzd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&          1./12.*(field(i, k+1, j)+field(i, k-2, j))) + vel*(7.*(fieldd(&
+&          i, k, j)+fieldd(i, k-1, j))/12.-(fieldd(i, k+1, j)+fieldd(i, k&
+&          -2, j))/12.)
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j)))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf - 1
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs38d = crd
+          abs38 = cr
+        ELSE
+          abs38d = -crd
+          abs38 = -cr
+        END IF
+        y38d = crd + abs38d
+        y38 = cr + abs38
+        IF (1.0 .GT. y38) THEN
+          min58d = y38d
+          min58 = y38
+        ELSE
+          min58 = 1.0
+          min58d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs89d = crd
+          abs89 = cr
+        ELSE
+          abs89d = -crd
+          abs89 = -cr
+        END IF
+        y89d = crd - abs89d
+        y89 = cr - abs89
+        IF (-1.0 .LT. y89) THEN
+          max39d = y89d
+          max39 = y89
+        ELSE
+          max39 = -1.0
+          max39d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min58*field_old(i, k-1, j)+0.5*&
+&          max39*field_old(i, k, j))+mu*(0.5*(min58d*field_old(i, k-1, j)&
+&          +min58*field_oldd(i, k-1, j))+0.5*(max39d*field_old(i, k, j)+&
+&          max39*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min58*field_old(i, k-1, j)+0.5*&
+&          max39*field_old(i, k, j))
+        fqzd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&          1./12.*(field(i, k+1, j)+field(i, k-2, j))) + vel*(7.*(fieldd(&
+&          i, k, j)+fieldd(i, k-1, j))/12.-(fieldd(i, k+1, j)+fieldd(i, k&
+&          -2, j))/12.)
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j)))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs39d = crd
+          abs39 = cr
+        ELSE
+          abs39d = -crd
+          abs39 = -cr
+        END IF
+        y39d = crd + abs39d
+        y39 = cr + abs39
+        IF (1.0 .GT. y39) THEN
+          min59d = y39d
+          min59 = y39
+        ELSE
+          min59 = 1.0
+          min59d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs90d = crd
+          abs90 = cr
+        ELSE
+          abs90d = -crd
+          abs90 = -cr
+        END IF
+        y90d = crd - abs90d
+        y90 = cr - abs90
+        IF (-1.0 .LT. y90) THEN
+          max40d = y90d
+          max40 = y90
+        ELSE
+          max40 = -1.0
+          max40d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min59*field_old(i, k-1, j)+0.5*&
+&          max40*field_old(i, k, j))+mu*(0.5*(min59d*field_old(i, k-1, j)&
+&          +min59*field_oldd(i, k-1, j))+0.5*(max40d*field_old(i, k, j)+&
+&          max40*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min59*field_old(i, k-1, j)+0.5*&
+&          max40*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 5) THEN
+    fqzd = 0.0
+    fqzld = 0.0
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        fqzd(i, 1, j) = 0.0
+        fqz(i, 1, j) = 0.
+        fqzld(i, 1, j) = 0.0
+        fqzl(i, 1, j) = 0.
+        fqzd(i, kde, j) = 0.0
+        fqz(i, kde, j) = 0.
+        fqzld(i, kde, j) = 0.0
+        fqzl(i, kde, j) = 0.
+      END DO
+      DO k=kts+3,ktf-2
+        DO i=i_start,i_end
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          mud = 0.5*2*mutd(i, j)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          veld = romd(i, k, j)
+          vel = rom(i, k, j)
+          crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs40d = crd
+            abs40 = cr
+          ELSE
+            abs40d = -crd
+            abs40 = -cr
+          END IF
+          y40d = crd + abs40d
+          y40 = cr + abs40
+          IF (1.0 .GT. y40) THEN
+            min60d = y40d
+            min60 = y40
+          ELSE
+            min60 = 1.0
+            min60d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs91d = crd
+            abs91 = cr
+          ELSE
+            abs91d = -crd
+            abs91 = -cr
+          END IF
+          y91d = crd - abs91d
+          y91 = cr - abs91
+          IF (-1.0 .LT. y91) THEN
+            max41d = y91d
+            max41 = y91
+          ELSE
+            max41 = -1.0
+            max41d = 0.0
+          END IF
+          fqzld(i, k, j) = dz*(mud*(0.5*min60*field_old(i, k-1, j)+0.5*&
+&            max41*field_old(i, k, j))+mu*(0.5*(min60d*field_old(i, k-1, &
+&            j)+min60*field_oldd(i, k-1, j))+0.5*(max41d*field_old(i, k, &
+&            j)+max41*field_oldd(i, k, j))))/dt
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min60*field_old(i, k-1, j)+0.5&
+&            *max41*field_old(i, k, j))
+          fqzd(i, k, j) = veld*(37./60.*(field(i, k, j)+field(i, k-1, j)&
+&            )-2./15.*(field(i, k+1, j)+field(i, k-2, j))+1./60.*(field(i&
+&            , k+2, j)+field(i, k-3, j))-SIGN(1, time_step)*SIGN(1., -vel&
+&            )*(1./60.)*(field(i, k+2, j)-field(i, k-3, j)-5.*(field(i, k&
+&            +1, j)-field(i, k-2, j))+10.*(field(i, k, j)-field(i, k-1, j&
+&            )))) + vel*(37.*(fieldd(i, k, j)+fieldd(i, k-1, j))/60.-2.*(&
+&            fieldd(i, k+1, j)+fieldd(i, k-2, j))/15.+(fieldd(i, k+2, j)+&
+&            fieldd(i, k-3, j))/60.-SIGN(1, time_step)*SIGN(1., -vel)*(&
+&            fieldd(i, k+2, j)-fieldd(i, k-3, j)-5.*(fieldd(i, k+1, j)-&
+&            fieldd(i, k-2, j))+10.*(fieldd(i, k, j)-fieldd(i, k-1, j)))/&
+&            60.)
+          fqz(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k-1, j))-&
+&            2./15.*(field(i, k+1, j)+field(i, k-2, j))+1./60.*(field(i, &
+&            k+2, j)+field(i, k-3, j))-SIGN(1, time_step)*SIGN(1., -vel)*&
+&            (1./60.)*(field(i, k+2, j)-field(i, k-3, j)-5.*(field(i, k+1&
+&            , j)-field(i, k-2, j))+10.*(field(i, k, j)-field(i, k-1, j))&
+&            ))
+          fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs41d = crd
+          abs41 = cr
+        ELSE
+          abs41d = -crd
+          abs41 = -cr
+        END IF
+        y41d = crd + abs41d
+        y41 = cr + abs41
+        IF (1.0 .GT. y41) THEN
+          min61d = y41d
+          min61 = y41
+        ELSE
+          min61 = 1.0
+          min61d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs92d = crd
+          abs92 = cr
+        ELSE
+          abs92d = -crd
+          abs92 = -cr
+        END IF
+        y92d = crd - abs92d
+        y92 = cr - abs92
+        IF (-1.0 .LT. y92) THEN
+          max42d = y92d
+          max42 = y92
+        ELSE
+          max42 = -1.0
+          max42d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min61*field_old(i, k-1, j)+0.5*&
+&          max42*field_old(i, k, j))+mu*(0.5*(min61d*field_old(i, k-1, j)&
+&          +min61*field_oldd(i, k-1, j))+0.5*(max42d*field_old(i, k, j)+&
+&          max42*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min61*field_old(i, k-1, j)+0.5*&
+&          max42*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = kts + 2
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs42d = crd
+          abs42 = cr
+        ELSE
+          abs42d = -crd
+          abs42 = -cr
+        END IF
+        y42d = crd + abs42d
+        y42 = cr + abs42
+        IF (1.0 .GT. y42) THEN
+          min62d = y42d
+          min62 = y42
+        ELSE
+          min62 = 1.0
+          min62d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs93d = crd
+          abs93 = cr
+        ELSE
+          abs93d = -crd
+          abs93 = -cr
+        END IF
+        y93d = crd - abs93d
+        y93 = cr - abs93
+        IF (-1.0 .LT. y93) THEN
+          max43d = y93d
+          max43 = y93
+        ELSE
+          max43 = -1.0
+          max43d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min62*field_old(i, k-1, j)+0.5*&
+&          max43*field_old(i, k, j))+mu*(0.5*(min62d*field_old(i, k-1, j)&
+&          +min62*field_oldd(i, k-1, j))+0.5*(max43d*field_old(i, k, j)+&
+&          max43*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min62*field_old(i, k-1, j)+0.5*&
+&          max43*field_old(i, k, j))
+        fqzd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&          1./12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step)*&
+&          SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)-3.*&
+&          (field(i, k, j)-field(i, k-1, j)))) + vel*(7.*(fieldd(i, k, j)&
+&          +fieldd(i, k-1, j))/12.-(fieldd(i, k+1, j)+fieldd(i, k-2, j))/&
+&          12.+SIGN(1, time_step)*SIGN(1., -vel)*(fieldd(i, k+1, j)-&
+&          fieldd(i, k-2, j)-3.*(fieldd(i, k, j)-fieldd(i, k-1, j)))/12.)
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step)*&
+&          SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)-3.*&
+&          (field(i, k, j)-field(i, k-1, j))))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf - 1
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs43d = crd
+          abs43 = cr
+        ELSE
+          abs43d = -crd
+          abs43 = -cr
+        END IF
+        y43d = crd + abs43d
+        y43 = cr + abs43
+        IF (1.0 .GT. y43) THEN
+          min63d = y43d
+          min63 = y43
+        ELSE
+          min63 = 1.0
+          min63d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs94d = crd
+          abs94 = cr
+        ELSE
+          abs94d = -crd
+          abs94 = -cr
+        END IF
+        y94d = crd - abs94d
+        y94 = cr - abs94
+        IF (-1.0 .LT. y94) THEN
+          max44d = y94d
+          max44 = y94
+        ELSE
+          max44 = -1.0
+          max44d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min63*field_old(i, k-1, j)+0.5*&
+&          max44*field_old(i, k, j))+mu*(0.5*(min63d*field_old(i, k-1, j)&
+&          +min63*field_oldd(i, k-1, j))+0.5*(max44d*field_old(i, k, j)+&
+&          max44*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min63*field_old(i, k-1, j)+0.5*&
+&          max44*field_old(i, k, j))
+        fqzd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&          1./12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step)*&
+&          SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)-3.*&
+&          (field(i, k, j)-field(i, k-1, j)))) + vel*(7.*(fieldd(i, k, j)&
+&          +fieldd(i, k-1, j))/12.-(fieldd(i, k+1, j)+fieldd(i, k-2, j))/&
+&          12.+SIGN(1, time_step)*SIGN(1., -vel)*(fieldd(i, k+1, j)-&
+&          fieldd(i, k-2, j)-3.*(fieldd(i, k, j)-fieldd(i, k-1, j)))/12.)
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step)*&
+&          SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)-3.*&
+&          (field(i, k, j)-field(i, k-1, j))))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs44d = crd
+          abs44 = cr
+        ELSE
+          abs44d = -crd
+          abs44 = -cr
+        END IF
+        y44d = crd + abs44d
+        y44 = cr + abs44
+        IF (1.0 .GT. y44) THEN
+          min64d = y44d
+          min64 = y44
+        ELSE
+          min64 = 1.0
+          min64d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs95d = crd
+          abs95 = cr
+        ELSE
+          abs95d = -crd
+          abs95 = -cr
+        END IF
+        y95d = crd - abs95d
+        y95 = cr - abs95
+        IF (-1.0 .LT. y95) THEN
+          max45d = y95d
+          max45 = y95
+        ELSE
+          max45 = -1.0
+          max45d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min64*field_old(i, k-1, j)+0.5*&
+&          max45*field_old(i, k, j))+mu*(0.5*(min64d*field_old(i, k-1, j)&
+&          +min64*field_oldd(i, k-1, j))+0.5*(max45d*field_old(i, k, j)+&
+&          max45*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min64*field_old(i, k-1, j)+0.5*&
+&          max45*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 4) THEN
+    fqzd = 0.0
+    fqzld = 0.0
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        fqzd(i, 1, j) = 0.0
+        fqz(i, 1, j) = 0.
+        fqzld(i, 1, j) = 0.0
+        fqzl(i, 1, j) = 0.
+        fqzd(i, kde, j) = 0.0
+        fqz(i, kde, j) = 0.
+        fqzld(i, kde, j) = 0.0
+        fqzl(i, kde, j) = 0.
+      END DO
+      DO k=kts+2,ktf-1
+        DO i=i_start,i_end
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          mud = 0.5*2*mutd(i, j)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          veld = romd(i, k, j)
+          vel = rom(i, k, j)
+          crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs45d = crd
+            abs45 = cr
+          ELSE
+            abs45d = -crd
+            abs45 = -cr
+          END IF
+          y45d = crd + abs45d
+          y45 = cr + abs45
+          IF (1.0 .GT. y45) THEN
+            min65d = y45d
+            min65 = y45
+          ELSE
+            min65 = 1.0
+            min65d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs96d = crd
+            abs96 = cr
+          ELSE
+            abs96d = -crd
+            abs96 = -cr
+          END IF
+          y96d = crd - abs96d
+          y96 = cr - abs96
+          IF (-1.0 .LT. y96) THEN
+            max46d = y96d
+            max46 = y96
+          ELSE
+            max46 = -1.0
+            max46d = 0.0
+          END IF
+          fqzld(i, k, j) = dz*(mud*(0.5*min65*field_old(i, k-1, j)+0.5*&
+&            max46*field_old(i, k, j))+mu*(0.5*(min65d*field_old(i, k-1, &
+&            j)+min65*field_oldd(i, k-1, j))+0.5*(max46d*field_old(i, k, &
+&            j)+max46*field_oldd(i, k, j))))/dt
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min65*field_old(i, k-1, j)+0.5&
+&            *max46*field_old(i, k, j))
+          fqzd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k-1, j))&
+&            -1./12.*(field(i, k+1, j)+field(i, k-2, j))) + vel*(7.*(&
+&            fieldd(i, k, j)+fieldd(i, k-1, j))/12.-(fieldd(i, k+1, j)+&
+&            fieldd(i, k-2, j))/12.)
+          fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&            1./12.*(field(i, k+1, j)+field(i, k-2, j)))
+          fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs46d = crd
+          abs46 = cr
+        ELSE
+          abs46d = -crd
+          abs46 = -cr
+        END IF
+        y46d = crd + abs46d
+        y46 = cr + abs46
+        IF (1.0 .GT. y46) THEN
+          min66d = y46d
+          min66 = y46
+        ELSE
+          min66 = 1.0
+          min66d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs97d = crd
+          abs97 = cr
+        ELSE
+          abs97d = -crd
+          abs97 = -cr
+        END IF
+        y97d = crd - abs97d
+        y97 = cr - abs97
+        IF (-1.0 .LT. y97) THEN
+          max47d = y97d
+          max47 = y97
+        ELSE
+          max47 = -1.0
+          max47d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min66*field_old(i, k-1, j)+0.5*&
+&          max47*field_old(i, k, j))+mu*(0.5*(min66d*field_old(i, k-1, j)&
+&          +min66*field_oldd(i, k-1, j))+0.5*(max47d*field_old(i, k, j)+&
+&          max47*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min66*field_old(i, k-1, j)+0.5*&
+&          max47*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs47d = crd
+          abs47 = cr
+        ELSE
+          abs47d = -crd
+          abs47 = -cr
+        END IF
+        y47d = crd + abs47d
+        y47 = cr + abs47
+        IF (1.0 .GT. y47) THEN
+          min67d = y47d
+          min67 = y47
+        ELSE
+          min67 = 1.0
+          min67d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs98d = crd
+          abs98 = cr
+        ELSE
+          abs98d = -crd
+          abs98 = -cr
+        END IF
+        y98d = crd - abs98d
+        y98 = cr - abs98
+        IF (-1.0 .LT. y98) THEN
+          max48d = y98d
+          max48 = y98
+        ELSE
+          max48 = -1.0
+          max48d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min67*field_old(i, k-1, j)+0.5*&
+&          max48*field_old(i, k, j))+mu*(0.5*(min67d*field_old(i, k-1, j)&
+&          +min67*field_oldd(i, k-1, j))+0.5*(max48d*field_old(i, k, j)+&
+&          max48*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min67*field_old(i, k-1, j)+0.5*&
+&          max48*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 3) THEN
+    fqzd = 0.0
+    fqzld = 0.0
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        fqzd(i, 1, j) = 0.0
+        fqz(i, 1, j) = 0.
+        fqzld(i, 1, j) = 0.0
+        fqzl(i, 1, j) = 0.
+        fqzd(i, kde, j) = 0.0
+        fqz(i, kde, j) = 0.
+        fqzld(i, kde, j) = 0.0
+        fqzl(i, kde, j) = 0.
+      END DO
+      DO k=kts+2,ktf-1
+        DO i=i_start,i_end
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          mud = 0.5*2*mutd(i, j)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          veld = romd(i, k, j)
+          vel = rom(i, k, j)
+          crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs48d = crd
+            abs48 = cr
+          ELSE
+            abs48d = -crd
+            abs48 = -cr
+          END IF
+          y48d = crd + abs48d
+          y48 = cr + abs48
+          IF (1.0 .GT. y48) THEN
+            min68d = y48d
+            min68 = y48
+          ELSE
+            min68 = 1.0
+            min68d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs99d = crd
+            abs99 = cr
+          ELSE
+            abs99d = -crd
+            abs99 = -cr
+          END IF
+          y99d = crd - abs99d
+          y99 = cr - abs99
+          IF (-1.0 .LT. y99) THEN
+            max49d = y99d
+            max49 = y99
+          ELSE
+            max49 = -1.0
+            max49d = 0.0
+          END IF
+          fqzld(i, k, j) = dz*(mud*(0.5*min68*field_old(i, k-1, j)+0.5*&
+&            max49*field_old(i, k, j))+mu*(0.5*(min68d*field_old(i, k-1, &
+&            j)+min68*field_oldd(i, k-1, j))+0.5*(max49d*field_old(i, k, &
+&            j)+max49*field_oldd(i, k, j))))/dt
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min68*field_old(i, k-1, j)+0.5&
+&            *max49*field_old(i, k, j))
+          fqzd(i, k, j) = veld*(7./12.*(field(i, k, j)+field(i, k-1, j))&
+&            -1./12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, &
+&            time_step)*SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i&
+&            , k-2, j)-3.*(field(i, k, j)-field(i, k-1, j)))) + vel*(7.*(&
+&            fieldd(i, k, j)+fieldd(i, k-1, j))/12.-(fieldd(i, k+1, j)+&
+&            fieldd(i, k-2, j))/12.+SIGN(1, time_step)*SIGN(1., -vel)*(&
+&            fieldd(i, k+1, j)-fieldd(i, k-2, j)-3.*(fieldd(i, k, j)-&
+&            fieldd(i, k-1, j)))/12.)
+          fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&            1./12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step&
+&            )*SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)&
+&            -3.*(field(i, k, j)-field(i, k-1, j))))
+          fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+      END DO
+      DO i=i_start,i_end
+        k = kts + 1
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs49d = crd
+          abs49 = cr
+        ELSE
+          abs49d = -crd
+          abs49 = -cr
+        END IF
+        y49d = crd + abs49d
+        y49 = cr + abs49
+        IF (1.0 .GT. y49) THEN
+          min69d = y49d
+          min69 = y49
+        ELSE
+          min69 = 1.0
+          min69d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs100d = crd
+          abs100 = cr
+        ELSE
+          abs100d = -crd
+          abs100 = -cr
+        END IF
+        y100d = crd - abs100d
+        y100 = cr - abs100
+        IF (-1.0 .LT. y100) THEN
+          max50d = y100d
+          max50 = y100
+        ELSE
+          max50 = -1.0
+          max50d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min69*field_old(i, k-1, j)+0.5*&
+&          max50*field_old(i, k, j))+mu*(0.5*(min69d*field_old(i, k-1, j)&
+&          +min69*field_oldd(i, k-1, j))+0.5*(max50d*field_old(i, k, j)+&
+&          max50*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min69*field_old(i, k-1, j)+0.5*&
+&          max50*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mud = 0.5*2*mutd(i, j)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        veld = romd(i, k, j)
+        vel = rom(i, k, j)
+        crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs50d = crd
+          abs50 = cr
+        ELSE
+          abs50d = -crd
+          abs50 = -cr
+        END IF
+        y50d = crd + abs50d
+        y50 = cr + abs50
+        IF (1.0 .GT. y50) THEN
+          min70d = y50d
+          min70 = y50
+        ELSE
+          min70 = 1.0
+          min70d = 0.0
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs101d = crd
+          abs101 = cr
+        ELSE
+          abs101d = -crd
+          abs101 = -cr
+        END IF
+        y101d = crd - abs101d
+        y101 = cr - abs101
+        IF (-1.0 .LT. y101) THEN
+          max51d = y101d
+          max51 = y101
+        ELSE
+          max51 = -1.0
+          max51d = 0.0
+        END IF
+        fqzld(i, k, j) = dz*(mud*(0.5*min70*field_old(i, k-1, j)+0.5*&
+&          max51*field_old(i, k, j))+mu*(0.5*(min70d*field_old(i, k-1, j)&
+&          +min70*field_oldd(i, k-1, j))+0.5*(max51d*field_old(i, k, j)+&
+&          max51*field_oldd(i, k, j))))/dt
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min70*field_old(i, k-1, j)+0.5*&
+&          max51*field_old(i, k, j))
+        fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp(k&
+&          )*fieldd(i, k-1, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 2) THEN
+    fqzd = 0.0
+    fqzld = 0.0
+    DO j=j_start,j_end
+      DO i=i_start,i_end
+        fqzd(i, 1, j) = 0.0
+        fqz(i, 1, j) = 0.
+        fqzld(i, 1, j) = 0.0
+        fqzl(i, 1, j) = 0.
+        fqzd(i, kde, j) = 0.0
+        fqz(i, kde, j) = 0.
+        fqzld(i, kde, j) = 0.0
+        fqzl(i, kde, j) = 0.
+      END DO
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          mud = 0.5*2*mutd(i, j)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          veld = romd(i, k, j)
+          vel = rom(i, k, j)
+          crd = (dt*veld*mu/dz-vel*dt*mud/dz)/mu**2
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs51d = crd
+            abs51 = cr
+          ELSE
+            abs51d = -crd
+            abs51 = -cr
+          END IF
+          y51d = crd + abs51d
+          y51 = cr + abs51
+          IF (1.0 .GT. y51) THEN
+            min71d = y51d
+            min71 = y51
+          ELSE
+            min71 = 1.0
+            min71d = 0.0
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs102d = crd
+            abs102 = cr
+          ELSE
+            abs102d = -crd
+            abs102 = -cr
+          END IF
+          y102d = crd - abs102d
+          y102 = cr - abs102
+          IF (-1.0 .LT. y102) THEN
+            max52d = y102d
+            max52 = y102
+          ELSE
+            max52 = -1.0
+            max52d = 0.0
+          END IF
+          fqzld(i, k, j) = dz*(mud*(0.5*min71*field_old(i, k-1, j)+0.5*&
+&            max52*field_old(i, k, j))+mu*(0.5*(min71d*field_old(i, k-1, &
+&            j)+min71*field_oldd(i, k-1, j))+0.5*(max52d*field_old(i, k, &
+&            j)+max52*field_oldd(i, k, j))))/dt
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min71*field_old(i, k-1, j)+0.5&
+&            *max52*field_old(i, k, j))
+          fqzd(i, k, j) = romd(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j)) + rom(i, k, j)*(fzm(k)*fieldd(i, k, j)+fzp&
+&            (k)*fieldd(i, k-1, j))
+          fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))
+          fqzd(i, k, j) = fqzd(i, k, j) - fqzld(i, k, j)
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+      END DO
+    END DO
+  ELSE
+    WRITE(wrf_err_message, *) ' advect_scalar_pd, v_order not known ', &
+&    vert_order
+    CALL WRF_ERROR_FATAL(wrf_err_message)
+    fqzd = 0.0
+    fqzld = 0.0
+  END IF
+  IF (pd_limit) THEN
+! positive definite filter
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min72 = ide - 1
+    ELSE
+      min72 = ite
+    END IF
+    i_end = min72 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min73 = jde - 1
+    ELSE
+      min73 = jte
+    END IF
+    j_end = min73 + 1
+!-- loop bounds for open or specified conditions
+    IF (degrade_xs) THEN
+      IF (its - 1 .LT. ids) THEN
+        i_start = ids
+      ELSE
+        i_start = its - 1
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ite + 1 .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite + 1
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds) THEN
+        j_start = jds
+      ELSE
+        j_start = jts - 1
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte + 1
+      END IF
+    END IF
+    IF (config_flags%specified .OR. config_flags%nested) THEN
+      IF (degrade_xs) THEN
+        IF (its - 1 .LT. ids + 1) THEN
+          i_start = ids + 1
+        ELSE
+          i_start = its - 1
+        END IF
+      END IF
+      IF (degrade_xe) THEN
+        IF (ite + 1 .GT. ide - 2) THEN
+          i_end = ide - 2
+        ELSE
+          i_end = ite + 1
+        END IF
+      END IF
+      IF (degrade_ys) THEN
+        IF (jts - 1 .LT. jds + 1) THEN
+          j_start = jds + 1
+        ELSE
+          j_start = jts - 1
+        END IF
+      END IF
+      IF (degrade_ye) THEN
+        IF (jte + 1 .GT. jde - 2) THEN
+          j_end = jde - 2
+        ELSE
+          j_end = jte + 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_xs) THEN
+      IF (degrade_xs) THEN
+        IF (its - 1 .LT. ids + 1) THEN
+          i_start = ids + 1
+        ELSE
+          i_start = its - 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_xe) THEN
+      IF (degrade_xe) THEN
+        IF (ite + 1 .GT. ide - 2) THEN
+          i_end = ide - 2
+        ELSE
+          i_end = ite + 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_ys) THEN
+      IF (degrade_ys) THEN
+        IF (jts - 1 .LT. jds + 1) THEN
+          j_start = jds + 1
+        ELSE
+          j_start = jts - 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_ye) THEN
+      IF (degrade_ye) THEN
+        IF (jte + 1 .GT. jde - 2) THEN
+          j_end = jde - 2
+        ELSE
+          j_end = jte + 1
+        END IF
+      END IF
+    END IF
+! ADT note:
+! We don't want to change j_start and j_end
+! for polar BC's since we want to calculate
+! fluxes for directions other than y at the
+! edge
+!-- here is the limiter...
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          ph_lowd = mu_oldd(i, j)*field_old(i, k, j) + (mub(i, j)+mu_old&
+&            (i, j))*field_oldd(i, k, j) - dt*(msftx(i, j)*msfty(i, j)*(&
+&            rdx*(fqxld(i+1, k, j)-fqxld(i, k, j))+rdy*(fqyld(i, k, j+1)-&
+&            fqyld(i, k, j)))+msfty(i, j)*rdzw(k)*(fqzld(i, k+1, j)-fqzld&
+&            (i, k, j)))
+          ph_low = (mub(i, j)+mu_old(i, j))*field_old(i, k, j) - dt*(&
+&            msftx(i, j)*msfty(i, j)*(rdx*(fqxl(i+1, k, j)-fqxl(i, k, j))&
+&            +rdy*(fqyl(i, k, j+1)-fqyl(i, k, j)))+msfty(i, j)*rdzw(k)*(&
+&            fqzl(i, k+1, j)-fqzl(i, k, j)))
+          IF (0. .LT. fqx(i+1, k, j)) THEN
+            max1d = fqxd(i+1, k, j)
+            max1 = fqx(i+1, k, j)
+          ELSE
+            max1 = 0.
+            max1d = 0.0
+          END IF
+          IF (0. .GT. fqx(i, k, j)) THEN
+            min74d = fqxd(i, k, j)
+            min74 = fqx(i, k, j)
+          ELSE
+            min74 = 0.
+            min74d = 0.0
+          END IF
+          IF (0. .LT. fqy(i, k, j+1)) THEN
+            max53d = fqyd(i, k, j+1)
+            max53 = fqy(i, k, j+1)
+          ELSE
+            max53 = 0.
+            max53d = 0.0
+          END IF
+          IF (0. .GT. fqy(i, k, j)) THEN
+            min75d = fqyd(i, k, j)
+            min75 = fqy(i, k, j)
+          ELSE
+            min75 = 0.
+            min75d = 0.0
+          END IF
+          IF (0. .GT. fqz(i, k+1, j)) THEN
+            min76d = fqzd(i, k+1, j)
+            min76 = fqz(i, k+1, j)
+          ELSE
+            min76 = 0.
+            min76d = 0.0
+          END IF
+          IF (0. .LT. fqz(i, k, j)) THEN
+            max54d = fqzd(i, k, j)
+            max54 = fqz(i, k, j)
+          ELSE
+            max54 = 0.
+            max54d = 0.0
+          END IF
+          flux_outd = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1d-min74d)+&
+&            rdy*(max53d-min75d))+msfty(i, j)*rdzw(k)*(min76d-max54d))
+          flux_out = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1-min74)+rdy*(&
+&            max53-min75))+msfty(i, j)*rdzw(k)*(min76-max54))
+          IF (flux_out .GT. ph_low) THEN
+            IF (0. .LT. ph_low/(flux_out+eps)) THEN
+              scaled = (ph_lowd*(flux_out+eps)-ph_low*flux_outd)/(&
+&                flux_out+eps)**2
+              scale = ph_low/(flux_out+eps)
+            ELSE
+              scale = 0.
+              scaled = 0.0
+            END IF
+            IF (fqx(i+1, k, j) .GT. 0.) THEN
+              fqxd(i+1, k, j) = scaled*fqx(i+1, k, j) + scale*fqxd(i+1, &
+&                k, j)
+              fqx(i+1, k, j) = scale*fqx(i+1, k, j)
+            END IF
+            IF (fqx(i, k, j) .LT. 0.) THEN
+              fqxd(i, k, j) = scaled*fqx(i, k, j) + scale*fqxd(i, k, j)
+              fqx(i, k, j) = scale*fqx(i, k, j)
+            END IF
+            IF (fqy(i, k, j+1) .GT. 0.) THEN
+              fqyd(i, k, j+1) = scaled*fqy(i, k, j+1) + scale*fqyd(i, k&
+&                , j+1)
+              fqy(i, k, j+1) = scale*fqy(i, k, j+1)
+            END IF
+            IF (fqy(i, k, j) .LT. 0.) THEN
+              fqyd(i, k, j) = scaled*fqy(i, k, j) + scale*fqyd(i, k, j)
+              fqy(i, k, j) = scale*fqy(i, k, j)
+            END IF
+!  note: z flux is opposite sign in mass coordinate because 
+!  vertical coordinate decreases with increasing k
+            IF (fqz(i, k+1, j) .LT. 0.) THEN
+              fqzd(i, k+1, j) = scaled*fqz(i, k+1, j) + scale*fqzd(i, k+&
+&                1, j)
+              fqz(i, k+1, j) = scale*fqz(i, k+1, j)
+            END IF
+            IF (fqz(i, k, j) .GT. 0.) THEN
+              fqzd(i, k, j) = scaled*fqz(i, k, j) + scale*fqzd(i, k, j)
+              fqz(i, k, j) = scale*fqz(i, k, j)
+            END IF
+          END IF
+        END DO
+      END DO
+    END DO
+  END IF
+! add in the pd-limited flux divergence
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  DO j=j_start,j_end
+    DO k=kts,ktf
+      DO i=i_start,i_end
+        tendencyd(i, k, j) = tendencyd(i, k, j) - rdzw(k)*(fqzd(i, k+1, &
+&          j)-fqzd(i, k, j)+fqzld(i, k+1, j)-fqzld(i, k, j))
+        tendency(i, k, j) = tendency(i, k, j) - rdzw(k)*(fqz(i, k+1, j)-&
+&          fqz(i, k, j)+fqzl(i, k+1, j)-fqzl(i, k, j))
+      END DO
+    END DO
+  END DO
+  IF (tenddec) THEN
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          z_tendencyd(i, k, j) = -(rdzw(k)*(fqzd(i, k+1, j)-fqzd(i, k, j&
+&            )+fqzld(i, k+1, j)-fqzld(i, k, j)))
+          z_tendency(i, k, j) = 0. - rdzw(k)*(fqz(i, k+1, j)-fqz(i, k, j&
+&            )+fqzl(i, k+1, j)-fqzl(i, k, j))
+        END DO
+      END DO
+    END DO
+  END IF
+! x flux divergence
+!
+  IF (degrade_xs) THEN
+    IF (its .LT. ids + 1) THEN
+      i_start = ids + 1
+    ELSE
+      i_start = its
+    END IF
+  END IF
+  IF (degrade_xe) THEN
+    IF (ite .GT. ide - 2) THEN
+      i_end = ide - 2
+    ELSE
+      i_end = ite
+    END IF
+  END IF
+  DO j=j_start,j_end
+    DO k=kts,ktf
+      DO i=i_start,i_end
+! Un-"canceled" map scale factor, ADT Eq. 48
+        tendencyd(i, k, j) = tendencyd(i, k, j) - msftx(i, j)*rdx*(fqxd(&
+&          i+1, k, j)-fqxd(i, k, j)+fqxld(i+1, k, j)-fqxld(i, k, j))
+        tendency(i, k, j) = tendency(i, k, j) - msftx(i, j)*(rdx*(fqx(i+&
+&          1, k, j)-fqx(i, k, j)+fqxl(i+1, k, j)-fqxl(i, k, j)))
+      END DO
+    END DO
+  END DO
+  IF (tenddec) THEN
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          h_tendencyd(i, k, j) = -(msftx(i, j)*rdx*(fqxd(i+1, k, j)-fqxd&
+&            (i, k, j)+fqxld(i+1, k, j)-fqxld(i, k, j)))
+          h_tendency(i, k, j) = 0. - msftx(i, j)*(rdx*(fqx(i+1, k, j)-&
+&            fqx(i, k, j)+fqxl(i+1, k, j)-fqxl(i, k, j)))
+        END DO
+      END DO
+    END DO
+  END IF
+! y flux divergence
+!
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  IF (degrade_ys) THEN
+    IF (jts .LT. jds + 1) THEN
+      j_start = jds + 1
+    ELSE
+      j_start = jts
+    END IF
+  END IF
+  IF (degrade_ye) THEN
+    IF (jte .GT. jde - 2) THEN
+      j_end = jde - 2
+    ELSE
+      j_end = jte
+    END IF
+  END IF
+  DO j=j_start,j_end
+    DO k=kts,ktf
+      DO i=i_start,i_end
+! Un-"canceled" map scale factor, ADT Eq. 48
+! It is correct to use msftx (and not msfty), per W. Skamarock, 20080606
+        tendencyd(i, k, j) = tendencyd(i, k, j) - msftx(i, j)*rdy*(fqyd(&
+&          i, k, j+1)-fqyd(i, k, j)+fqyld(i, k, j+1)-fqyld(i, k, j))
+        tendency(i, k, j) = tendency(i, k, j) - msftx(i, j)*(rdy*(fqy(i&
+&          , k, j+1)-fqy(i, k, j)+fqyl(i, k, j+1)-fqyl(i, k, j)))
+      END DO
+    END DO
+  END DO
+  IF (tenddec) THEN
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          h_tendencyd(i, k, j) = h_tendencyd(i, k, j) - msftx(i, j)*rdy*&
+&            (fqyd(i, k, j+1)-fqyd(i, k, j)+fqyld(i, k, j+1)-fqyld(i, k, &
+&            j))
+          h_tendency(i, k, j) = h_tendency(i, k, j) - msftx(i, j)*(rdy*(&
+&            fqy(i, k, j+1)-fqy(i, k, j)+fqyl(i, k, j+1)-fqyl(i, k, j)))
+        END DO
+      END DO
+    END DO
+  END IF
+END SUBROUTINE G_ADVECT_SCALAR_PD
 
  SUBROUTINE g_advect_scalar_mono(field,g_field,field_old,g_field_old, &
  tendency,g_tendency,h_tendency,g_h_tendency,z_tendency,g_z_tendency,ru,g_ru,rv,g_rv,rom,g_rom,mut,g_mut,mub,mu_old, &

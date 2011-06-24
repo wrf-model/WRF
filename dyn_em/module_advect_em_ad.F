@@ -12896,9011 +12896,9157 @@ j_loop_y_flux_5:DO j=ad_from12,j_end+1
  100 CONTINUE
 END SUBROUTINE A_ADVECT_W
 
-   SUBROUTINE a_advect_scalar_pd(field,a_field,field_old,a_field_old,tendency, &
-   a_tendency,h_tendency,a_h_tendency,z_tendency,a_z_tendency,ru,a_ru,rv,a_rv,rom,a_rom,mut,a_mut,mub,mu_old,a_mu_old, &
-   time_step,config_flags,tenddec,msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,dt, &
-   ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
-!PART I: DECLARATION OF VARIABLES
-
-   IMPLICIT NONE
-
-   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-   TYPE(grid_config_rec_type) :: config_flags
-   LOGICAL :: tenddec
-   INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: field,a_field,field_old,a_field_old, &
-   ru,a_ru,rv,a_rv,rom,a_rom
-   REAL,DIMENSION(ims:ime,jms:jme) :: mut,a_mut,mub,mu_old,a_mu_old
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: h_tendency, z_tendency
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: a_h_tendency, a_z_tendency
-   REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
-   REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
-   REAL :: rdx,rdy,dt
-   INTEGER :: time_step
-   INTEGER :: i,j,k,itf,jtf,ktf
-   INTEGER :: i_start,i_end,j_start,j_end
-   INTEGER :: i_start_f,i_end_f,j_start_f,j_end_f
-   INTEGER :: jmin,jmax,jp,jm,imin,imax
-   REAL :: mrdx,mrdy,ub,a_ub,vb,a_vb,uw,a_uw,vw,a_vw,mu,a_mu
-   REAL,DIMENSION(its-1:ite+2,kts:kte,jts-1:jte+2) :: fqx,a_fqx,fqy,a_fqy,fqz,a_fqz
-   REAL,DIMENSION(its-1:ite+2,kts:kte,jts-1:jte+2) :: fqxl,a_fqxl,fqyl,a_fqyl,fqzl,a_fqzl
-   INTEGER :: horz_order,vert_order
-   LOGICAL :: degrade_xs,degrade_ys
-   LOGICAL :: degrade_xe,degrade_ye
-   INTEGER :: jp1,jp0,jtmp
-   REAL :: flux_out,a_flux_out,ph_low,a_ph_low,scale,a_scale
-   REAL,PARAMETER :: eps =1.e-20
-   REAL :: flux3,Diff_flux3,flux4,Diff_flux4,flux5,Diff_flux5,flux6,Diff_flux6,flux_upwind, &
-   Diff_flux_upwind
-   REAL :: q_im3,a_q_im3,q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1, &
-   q_ip2,a_q_ip2,ua,a_ua,vel,a_vel,cr,a_cr
-
-   Diff_flux4(q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1,ua, &
-   a_ua) =(7./12.)*(a_q_i +a_q_im1) -(1./12.)*(a_q_ip1 +a_q_im2)
-   flux4(q_im2,q_im1,q_i,q_ip1,ua) =(7./12.)*(q_i +q_im1) -(1./12.)*(q_ip1 +q_im2)
-
-   Diff_flux3(q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1,ua, &
-   a_ua) =Diff_flux4(q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1, &
-   ua,a_ua) +sign(1, time_step) *sign(1., ua) *(1./12.)*((a_q_ip1 -a_q_im2) &
-   -3.*(a_q_i -a_q_im1))
-   flux3(q_im2,q_im1,q_i,q_ip1,ua) =flux4(q_im2,q_im1,q_i,q_ip1,ua) +sign(1, time_step) &
-   *sign(1., ua) *(1./12.)*((q_ip1 -q_im2) -3.*(q_i -q_im1))
-
-   Diff_flux6(q_im3,a_q_im3,q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1, &
-   a_q_ip1,q_ip2,a_q_ip2,ua,a_ua) =(37./60.)*(a_q_i +a_q_im1) -(2./15.) &
-   *(a_q_ip1 +a_q_im2) +(1./60.)*(a_q_ip2 +a_q_im3)
-   flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =(37./60.)*(q_i +q_im1) -(2./15.) &
-   *(q_ip1 +q_im2) +(1./60.)*(q_ip2 +q_im3)
-
-   Diff_flux5(q_im3,a_q_im3,q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1, &
-   a_q_ip1,q_ip2,a_q_ip2,ua,a_ua) =Diff_flux6(q_im3,a_q_im3,q_im2, &
-   a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1,q_ip2,a_q_ip2,ua, &
-   a_ua) -sign(1, time_step) *sign(1., ua) *(1./60.)*((a_q_ip2 -a_q_im3) &
-   -5.*(a_q_ip1 -a_q_im2) +10.*(a_q_i -a_q_im1))
-   flux5(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2, &
-   ua) -sign(1, time_step) *sign(1., ua) *(1./60.)*((q_ip2 -q_im3) -5.*(q_ip1 -q_im2) &
-   +10.*(q_i -q_im1))
-
-   Diff_flux_upwind(q_im1,a_q_im1,q_i,a_q_i,cr,a_cr) =0.5*min(1.0,(cr +abs(cr)))*a_q_im1&
-   +0.5*(0.0 +(a_cr +sign(1.0, cr) &
-   *a_cr) -(0.0 -(a_cr +sign(1.0, cr)*a_cr))*sign(1.0, 1.0 -((cr +abs(cr)))))*0.5*q_im1&
-   +0.5*max(-1.0,(cr -abs(cr)))*a_q_i +0.5*(0.0 +(a_cr -sign(1.0, cr) & 
-   *a_cr) +(0.0 -(a_cr -sign(1.0, cr)*a_cr))*sign(1.0, -1.0 -((cr -abs(cr)))))*0.5*q_i
-   flux_upwind(q_im1,q_i,cr) =0.5*min(1.0,(cr +abs(cr)))*q_im1+0.5*max(-1.0,(cr -abs(cr)))*q_i
-
-   REAL :: dx,a_dx,dy,a_dy,dz,a_dz
-   LOGICAL,PARAMETER :: pd_limit =.true.
-
-   REAL :: Keep_Lpb3_cr
-   REAL :: Keep_Lpb7_ub
-   REAL :: Keep_Lpb11_vb
-   REAL :: Keep_Lpb13_vb
-   REAL :: Keep_Lpb15_vb
-   REAL :: Keep_Lpb25_mu
-   REAL :: Keep_Lpb25_vel
-   REAL :: Keep_Lpb25_cr   
-   INTEGER :: IX1,IX2,IX3
-
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004, &
-   a_Tmpv5,Tmpv005,a_Tmpv6,Tmpv006,a_Tmpv7,Tmpv007,a_Tmpv8,Tmpv008,a_Tmpv9, &
-   Tmpv009,a_Tmpv10,Tmpv010,a_Tmpv11,Tmpv011,a_Tmpv12,Tmpv012
-
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv300
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv301
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv302
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,its,min(jts-1,jds)):max0(min(jte,jde-1),min(ite,ide-1),min(jte+1,jde-1))) &
-    :: Tmpv303
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv304
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv305
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv306
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv307
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv308
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv309
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3010
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3011
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3012
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3013
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3014
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3015
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3016
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3017
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3018
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3019
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3020
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3021
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3022
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3023
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3024
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3025
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3026
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3027
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3028
-   REAL,DIMENSION(min0(kts,min(its-1,ids)):max0(min(kte,kde-1),min(ite+1,ide-1)) &
-   ,min0(jts,min(jts-1,jds)):max0(min(jte,jde-1),min(jte+1,jde-1))) :: Tmpv3029
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3030
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3031
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3032
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3033
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3034
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3035
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3036
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3037
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3038
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3039
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3040
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3041
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3042
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3043
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3044
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3045
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3046
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3047
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3048
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3049
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3050
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3051
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3052
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3053
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3054
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3055
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3056
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3057
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3058
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3059
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3060
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3061
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3062
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3063
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3064
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3065
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3066
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3067
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3068
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3069
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3070
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3071
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3072
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3073
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3074
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3075
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3076
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3077
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3078
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3079
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3080
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3081
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3082
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3083
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3084
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3085
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3086
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3087
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3088
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3089
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3090
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3091
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3092
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3093
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3094
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv3095
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv400
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv401
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv402
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv403
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv404
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv405
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv406
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv407
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv408
-   REAL,DIMENSION(min0(its-1,ids):max0(min(ite+1,ide-1) &
-   ,min(ite+1,ide-2)),min0(kts,kts+3):max0(min(kte,kde-1),min(kte,kde-1)-2) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1) &
-   ,min(jte+1,jde-2))) :: Tmpv409
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4010
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4011
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4012
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4013
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4014
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+3):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-2),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4015
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4016
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4017
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4018
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4019
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4020
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4021
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4022
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4023
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4024
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4025
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4026
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4027
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4028
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4029
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4030
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+2):max0(min(kte,kde-1) &
-   ,min(kte,kde-1)-1),min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2) &
-   +1,min(jte+1,jde-1))) :: Tmpv4031
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4032
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4033
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4034
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4035
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4036
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4037
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4038
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),min0(kts,kts+1):min(kte,kde-1) &
-   ,min0(max(jts-1,jds+1),max(jts-1,jds)):max0(min(jte+1,jde-2)+1,min(jte+1,jde-1))) :: Tmpv4039
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4040
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4041
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4042
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4043
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4044
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4045
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4046
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv4047
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4048
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4049
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4050
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4051
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4052
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4053
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4054
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4055
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4056
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4057
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4058
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4059
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4060
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4061
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4062
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4063
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4064
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4065
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4066
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4067
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4068
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4069
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4070
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4071
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4072
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4073
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4074
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4075
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4076
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4077
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv4078
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4079
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4080
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4081
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4082
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4083
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4084
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4085
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4086
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4087
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4088
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4089
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4090
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4091
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4092
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4093
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4094
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4095
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4096
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4097
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4098
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv4099
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40100
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40101
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40102
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40103
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40104
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40105
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40106
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40107
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40108
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40109
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40110
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40111
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40112
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40113
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40114
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40115
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40116
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40117
-   REAL,DIMENSION(min(its-1,ids):min(ite+1,ide-1),kts:min(kte,kde-1),max(jts-1,jds+1) &
-   :min(jte+1,jde-2)+1) :: Tmpv40118
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40119
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40120
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40121
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40122
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40123
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40124
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40125
-   REAL,DIMENSION(ids+3:ide-3,kts:min(kte,kde-1),min(jts-1,jds):min(jte+1,jde-1)) :: Tmpv40126
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40127
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40128
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40129
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40130
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40131
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40132
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40133
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40134
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40135
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40136
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40137
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40138
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40139
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40140
-   REAL,DIMENSION(kts:min(kte,kde-1),max(ids+1,its-1):ids+3-1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40141
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40142
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40143
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40144
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40145
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40146
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40147
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40148
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40149
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40150
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40151
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40152
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40153
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40154
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40155
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40156
-   REAL,DIMENSION(kts:min(kte,kde-1),ide-3+1:min(ide-2,ite+1)+1,max(jts-1,jds) &
-   :min(jte+1,jde-1)) :: Tmpv40157
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40158
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40159
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40160
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40161
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40162
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40163
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40164
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40165
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40166
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40167
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40168
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40169
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40170
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40171
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40172
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40173
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40174
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40175
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40176
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40177
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40178
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40179
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40180
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40181
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40182
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40183
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40184
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40185
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40186
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40187
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40188
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40189
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40190
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40191
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40192
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40193
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40194
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40195
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40196
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40197
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40198
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40199
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40200
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40201
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40202
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40203
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40204
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40205
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40206
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40207
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40208
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40209
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40210
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40211
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40212
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40213
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40214
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40215
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40216
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40217
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40218
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40219
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40220
-   REAL,DIMENSION(max(ids+1,its)+1:ide-2,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv40221
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40222
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40223
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40224
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40225
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40226
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40227
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40228
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)+1) &
-    :: Tmpv40229
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40230
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40231
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40232
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40233
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40234
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40235
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40236
-   REAL,DIMENSION(its:min(ite,ide-1)+1,kts:min(kte,kde-1),max(jts,jds+1):min(jte,jde-2)) &
-    :: Tmpv40237
-
-!PART II: CALCULATIONS OF B. S. TRAJECTORY
-
-!LPB[1]
-
-    IF (config_flags%polar) THEN
-
-          fqx(:,:,:)  = 0.
-          fqy(:,:,:)  = 0.
-          fqz(:,:,:)  = 0.
-          fqxl(:,:,:) = 0.
-          fqyl(:,:,:) = 0.
-          fqzl(:,:,:) = 0.
-
-   END IF
-
-!LPB[2]
-
-     ktf=MIN(kte,kde-1)
-     horz_order = config_flags%h_sca_adv_order
-     vert_order = config_flags%v_sca_adv_order
-
-     degrade_xs = .true.
-     degrade_xe = .true.
-     degrade_ys = .true.
-     degrade_ye = .true.
-
-!LPB[3]
-       Keep_Lpb3_cr =cr
-
-  horizontal_order_test : IF( horz_order == 6 ) THEN
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs = .false.
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-4)                ) degrade_xe = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye = .false.
-
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = MAX(its-1,ids)
-
-      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts-1,jds+1)
-           j_start_f = jds+3
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte+1,jde-2)
-           j_end_f = jde-3
-         ENDIF
-
-         j_loop_y_flux_6 : DO j = j_start, j_end+1
-      IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-           DO k=kts,ktf
-           DO i = i_start, i_end
-             dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-             mu = 0.5*(mut(i,j)+mut(i,j-1))
-             vel = rv(i,k,j)
-             cr = vel*dt/dy/mu
-             fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
-             fqy( i, k, j  ) = vel*flux6(                                    &
-                     field(i,k,j-3), field(i,k,j-2), field(i,k,j-1),         &
-                     field(i,k,j  ), field(i,k,j+1), field(i,k,j+2),  vel )
-             fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-           ENDDO
-           ENDDO
-         ELSE IF ( j == jds+1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i,k, j) = 0.5*rv(i,k,j)*            &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF  ( j == jds+2 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy( i, k, j ) = vel*flux4(                &
-                      field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel )
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF ( j == jde-1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i, k, j ) = 0.5*rv(i,k,j)*        &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF ( j == jde-2 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy( i, k, j) = vel*flux4(               &
-                      field(i,k,j-2),field(i,k,j-1),      &
-                      field(i,k,j),field(i,k,j+1),vel )
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ENDIF
-      ENDDO j_loop_y_flux_6
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         i_start_f = i_start
-         i_end_f   = i_end+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-      IF(degrade_ys) j_start = MAX(jts-1,jds)
-
-      IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
-
-      IF(degrade_xs) then
-
-           i_start = MAX(ids+1,its-1)
-           i_start_f = ids+3
-         ENDIF
-      IF(degrade_xe) then
-
-           i_end = MIN(ide-2,ite+1)
-           i_end_f = ide-3
-         ENDIF
-
-         DO j = j_start, j_end
-           DO k=kts,ktf
-           DO i = i_start_f, i_end_f
-             dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-             mu = 0.5*(mut(i,j)+mut(i-1,j))
-             vel = ru(i,k,j)
-             cr = vel*dt/dx/mu
-             fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-             fqx( i,k,j ) = vel*flux6( field(i-3,k,j), field(i-2,k,j),    &
-                                            field(i-1,k,j), field(i  ,k,j),    &
-                                            field(i+1,k,j), field(i+2,k,j),    &
-                                            vel                             )
-             fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-           ENDDO
-           ENDDO
-        IF( degrade_xs ) THEN
-
-             DO i=i_start,i_start_f-1
-            IF(i == ids+1) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)/mu
-                   cr = vel*dt/dx
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx(i,k,j) = 0.5*(ru(i,k,j))   &
-                          *(field(i,k,j)+field(i-1,k,j))
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-            IF(i == ids+2) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)
-                   cr = vel*dt/dx/mu
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx( i,k,j ) = vel*flux4( field(i-2,k,j), field(i-1,k,j),    &
-                                             field(i  ,k,j), field(i+1,k,j),    &
-                                             vel                             )
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-             ENDDO
-           ENDIF
-        IF( degrade_xe ) THEN
-
-             DO i = i_end_f+1, i_end+1
-            IF( i == ide-1 ) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)
-                   cr = vel*dt/dx/mu
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx(i,k,j) = 0.5*(ru(i,k,j))        &
-                          *(field(i,k,j)+field(i-1,k,j))
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-            IF( i == ide-2 ) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)
-                   cr = vel*dt/dx/mu
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx( i,k,j ) = vel*flux4( field(i-2,k,j), field(i-1,k,j),    &
-                                             field(i  ,k,j), field(i+1,k,j),    &
-                                             vel                             )
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-             ENDDO
-           ENDIF
-         ENDDO
-       ELSE IF( horz_order == 5 ) THEN
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs = .false.
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-4)                ) degrade_xe = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye = .false.
-
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = MAX(its-1,ids)
-
-      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts-1,jds+1)
-           j_start_f = jds+3
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte+1,jde-2)
-           j_end_f = jde-3
-         ENDIF
-
-         j_loop_y_flux_5 : DO j = j_start, j_end+1
-      IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-           DO k=kts,ktf
-           DO i = i_start, i_end
-             dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-             mu = 0.5*(mut(i,j)+mut(i,j-1))
-             vel = rv(i,k,j)
-             cr = vel*dt/dy/mu
-             fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
-             fqy( i, k, j  ) = vel*flux5(                                    &
-                     field(i,k,j-3), field(i,k,j-2), field(i,k,j-1),         &
-                     field(i,k,j  ), field(i,k,j+1), field(i,k,j+2),  vel )
-             fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-           ENDDO
-           ENDDO
-         ELSE IF ( j == jds+1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i,k, j) = 0.5*rv(i,k,j)*            &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF  ( j == jds+2 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy( i, k, j ) = vel*flux3(                &
-                      field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel )
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF ( j == jde-1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i, k, j ) = 0.5*rv(i,k,j)*        &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF ( j == jde-2 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy( i, k, j) = vel*flux3(               &
-                      field(i,k,j-2),field(i,k,j-1),      &
-                      field(i,k,j),field(i,k,j+1),vel )
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ENDIF
-      ENDDO j_loop_y_flux_5
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         i_start_f = i_start
-         i_end_f   = i_end+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-      IF(degrade_ys) j_start = MAX(jts-1,jds)
-
-      IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
-
-      IF(degrade_xs) then
-
-           i_start = MAX(ids+1,its-1)
-           i_start_f = ids+3
-         ENDIF
-      IF(degrade_xe) then
-
-           i_end = MIN(ide-2,ite+1)
-           i_end_f = ide-3
-         ENDIF
-
-         DO j = j_start, j_end
-           DO k=kts,ktf
-           DO i = i_start_f, i_end_f
-             dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-             mu = 0.5*(mut(i,j)+mut(i-1,j))
-             vel = ru(i,k,j)
-             cr = vel*dt/dx/mu
-             fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-             fqx( i,k,j ) = vel*flux5( field(i-3,k,j), field(i-2,k,j),    &
-                                            field(i-1,k,j), field(i  ,k,j),    &
-                                            field(i+1,k,j), field(i+2,k,j),    &
-                                            vel                             )
-             fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-           ENDDO
-           ENDDO
-        IF( degrade_xs ) THEN
-
-             DO i=i_start,i_start_f-1
-            IF(i == ids+1) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)/mu
-                   cr = vel*dt/dx
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx(i,k,j) = 0.5*(ru(i,k,j))   &
-                          *(field(i,k,j)+field(i-1,k,j))
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-            IF(i == ids+2) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)
-                   cr = vel*dt/dx/mu
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),    &
-                                             field(i  ,k,j), field(i+1,k,j),    &
-                                             vel                             )
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-             ENDDO
-           ENDIF
-        IF( degrade_xe ) THEN
-
-             DO i = i_end_f+1, i_end+1
-            IF( i == ide-1 ) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)
-                   cr = vel*dt/dx/mu
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx(i,k,j) = 0.5*(ru(i,k,j))        &
-                          *(field(i,k,j)+field(i-1,k,j))
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-            IF( i == ide-2 ) THEN
-
-                 DO k=kts,ktf
-                   dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                   mu = 0.5*(mut(i,j)+mut(i-1,j))
-                   vel = ru(i,k,j)
-                   cr = vel*dt/dx/mu
-                   fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j) &
-   , field_old(i,k,j  ), cr)
-                   fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),    &
-                                             field(i  ,k,j), field(i+1,k,j),    &
-                                             vel                             )
-                   fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-                 ENDDO
-               ENDIF
-             ENDDO
-           ENDIF
-         ENDDO
-       ELSE IF( horz_order == 4 ) THEN
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+1)                ) degrade_xs = .false.
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+1)                ) degrade_ys = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-2)                ) degrade_ye = .false.
-
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = its
-
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts,jds+1)
-           j_start_f = jds+2
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte,jde-2)
-           j_end_f = jde-2
-         ENDIF
-
-         j_loop_y_flux_4 : DO j = j_start, j_end+1
-      IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-           DO k=kts,ktf
-           DO i = i_start, i_end
-             dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-             mu = 0.5*(mut(i,j)+mut(i,j-1))
-             vel = rv(i,k,j)
-             cr = vel*dt/dy/mu
-             fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
-             fqy( i, k, j  ) = vel*flux4(  field(i,k,j-2), field(i,k,j-1),         &
-                                           field(i,k,j  ), field(i,k,j+1), vel )
-             fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-           ENDDO
-           ENDDO
-         ELSE IF ( j == jds+1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i,k, j) = 0.5*rv(i,k,j)*            &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF ( j == jde-1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i, k, j ) = 0.5*rv(i,k,j)*        &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ENDIF
-      ENDDO j_loop_y_flux_4
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         i_start_f = i_start
-         i_end_f   = i_end+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-      IF(degrade_ys) j_start = jts
-
-      IF(degrade_ye) j_end   = MIN(jte,jde-1)
-
-      IF(degrade_xs) then
-
-           i_start = MAX(ids+1,its)
-           i_start_f = i_start+1
-         ENDIF
-      IF(degrade_xe) then
-
-           i_end = MIN(ide-2,ite)
-           i_end_f = ide-2
-         ENDIF
-
-         DO j = j_start, j_end
-           DO k=kts,ktf
-           DO i = i_start_f, i_end_f
-             dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-             mu = 0.5*(mut(i,j)+mut(i-1,j))
-             vel = ru(i,k,j)
-             cr = vel*dt/dx/mu
-             fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-             fqx( i,k,j ) = vel*flux4( field(i-2,k,j), field(i-1,k,j),   &
-                                       field(i  ,k,j), field(i+1,k,j), vel )
-             fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-           ENDDO
-           ENDDO
-        IF( degrade_xs ) THEN
-
-          IF( i_start == ids+1 ) THEN
-
-               i = ids+1
-
-               DO k=kts,ktf
-                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                 mu = 0.5*(mut(i,j)+mut(i-1,j))
-                 vel = ru(i,k,j)/mu
-                 cr = vel*dt/dx
-                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k, &
-   j  ), cr)
-                 fqx(i,k,j) = 0.5*(ru(i,k,j))   &
-                        *(field(i,k,j)+field(i-1,k,j))
-                 fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-               ENDDO
-             ENDIF
-           ENDIF
-        IF( degrade_xe ) THEN
-
-          IF( i_end == ide-2 ) THEN
-
-               i = ide-1
-
-               DO k=kts,ktf
-                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                 mu = 0.5*(mut(i,j)+mut(i-1,j))
-                 vel = ru(i,k,j)
-                 cr = vel*dt/dx/mu
-                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k, &
-   j  ), cr)
-                 fqx(i,k,j) = 0.5*(ru(i,k,j))        &
-                        *(field(i,k,j)+field(i-1,k,j))
-                 fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-               ENDDO
-             ENDIF
-           ENDIF
-         ENDDO
-      ELSE IF( horz_order == 3 ) THEN
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+2)                ) degrade_xs = .false.
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-1)                ) degrade_xe = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+2)                ) degrade_ys = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-1)                ) degrade_ye = .false.
-
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = its
-
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts,jds+1)
-           j_start_f = jds+2
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte,jde-2)
-           j_end_f = jde-2
-         ENDIF
-
-         j_loop_y_flux_3 : DO j = j_start, j_end+1
-      IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-           DO k=kts,ktf
-           DO i = i_start, i_end
-             dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-             mu = 0.5*(mut(i,j)+mut(i,j-1))
-             vel = rv(i,k,j)
-             cr = vel*dt/dy/mu
-             fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
-             fqy( i, k, j  ) = vel*flux3(  field(i,k,j-2), field(i,k,j-1),         &
-                                           field(i,k,j  ), field(i,k,j+1), vel )
-             fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-           ENDDO
-           ENDDO
-         ELSE IF ( j == jds+1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i,k, j) = 0.5*rv(i,k,j)*            &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ELSE IF ( j == jde-1 ) THEN
-
-               DO k=kts,ktf
-               DO i = i_start, i_end
-                 dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-                 mu = 0.5*(mut(i,j)+mut(i,j-1))
-                 vel = rv(i,k,j)
-                 cr = vel*dt/dy/mu
-                 fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k, &
-   j  ), cr)
-                 fqy(i, k, j ) = 0.5*rv(i,k,j)*        &
-                        (field(i,k,j)+field(i,k,j-1))
-                 fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-               ENDDO
-               ENDDO
-         ENDIF
-      ENDDO j_loop_y_flux_3
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         i_start_f = i_start
-         i_end_f   = i_end+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-      IF(degrade_ys) j_start = jts
-
-      IF(degrade_ye) j_end   = MIN(jte,jde-1)
-
-      IF(degrade_xs) then
-
-           i_start = MAX(ids+1,its)
-           i_start_f = i_start+1
-         ENDIF
-      IF(degrade_xe) then
-
-           i_end = MIN(ide-2,ite)
-           i_end_f = ide-2
-         ENDIF
-
-         DO j = j_start, j_end
-           DO k=kts,ktf
-           DO i = i_start_f, i_end_f
-             dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-             mu = 0.5*(mut(i,j)+mut(i-1,j))
-             vel = ru(i,k,j)
-             cr = vel*dt/dx/mu
-             fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-             fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),   &
-                                       field(i  ,k,j), field(i+1,k,j), vel )
-             fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-           ENDDO
-           ENDDO
-        IF( degrade_xs ) THEN
-
-          IF( i_start == ids+1 ) THEN
-
-               i = ids+1
-
-               DO k=kts,ktf
-                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                 mu = 0.5*(mut(i,j)+mut(i-1,j))
-                 vel = ru(i,k,j)/mu
-                 cr = vel*dt/dx
-                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k, &
-   j  ), cr)
-                 fqx(i,k,j) = 0.5*(ru(i,k,j))   &
-                        *(field(i,k,j)+field(i-1,k,j))
-                 fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-               ENDDO
-             ENDIF
-           ENDIF
-        IF( degrade_xe ) THEN
-
-          IF( i_end == ide-2 ) THEN
-
-               i = ide-1
-
-               DO k=kts,ktf
-                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-                 mu = 0.5*(mut(i,j)+mut(i-1,j))
-                 vel = ru(i,k,j)
-                 cr = vel*dt/dx/mu
-                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k, &
-   j  ), cr)
-                 fqx(i,k,j) = 0.5*(ru(i,k,j))        &
-                        *(field(i,k,j)+field(i-1,k,j))
-                 fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-               ENDDO
-             ENDIF
-           ENDIF
-         ENDDO
-      ELSE IF( horz_order == 2 ) THEN
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+1)                ) degrade_xs = .false.
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-2)                ) degrade_xe = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+1)                ) degrade_ys = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-2)                ) degrade_ye = .false.
-
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-      IF(degrade_xs) i_start = its
-
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-
-      IF(degrade_ys) j_start = MAX(jts,jds+1)
-
-      IF(degrade_ye) j_end = MIN(jte,jde-2)
-
-         DO j = j_start, j_end+1
-           DO k=kts,ktf
-           DO i = i_start, i_end
-              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
-              vel = rv(i,k,j)
-              cr = vel*dt/dy/mu
-              fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
-              fqy(i,k, j) = 0.5*rv(i,k,j)*            &
-                     (field(i,k,j)+field(i,k,j-1))
-              fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
-           ENDDO
-           ENDDO
-         ENDDO
-
-         DO j = j_start, j_end
-           DO k=kts,ktf
-           DO i = i_start, i_end+1
-               dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx
-               mu = 0.5*(mut(i,j)+mut(i-1,j))
-               vel = ru(i,k,j)
-               cr = vel*dt/dx/mu
-               fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-               fqx( i,k,j ) = 0.5*ru(i,k,j)*            &
-                     (field(i,k,j)+field(i-1,k,j))
-               fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-           ENDDO
-           ENDDO
-         ENDDO
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of advect_scalar_pd in reverse (adjoint) mode:
+!   gradient     of useful results: rom field tendency h_tendency
+!                z_tendency ru rv mu_old field_old mut
+!   with respect to varying inputs: rom field tendency h_tendency
+!                z_tendency ru rv mu_old field_old mut
+!   RW status of diff variables: rom:incr field:incr tendency:in-out
+!                h_tendency:in-out z_tendency:in-out ru:incr rv:incr
+!                mu_old:incr field_old:incr mut:incr
+SUBROUTINE A_ADVECT_SCALAR_PD(field, fieldb, field_old, field_oldb, &
+&  tendency, tendencyb, h_tendency, h_tendencyb, z_tendency, z_tendencyb&
+&  , ru, rub, rv, rvb, rom, romb, mut, mutb, mub, mu_old, mu_oldb, &
+&  time_step, config_flags, tenddec, msfux, msfuy, msfvx, msfvy, msftx, &
+&  msfty, fzm, fzp, rdx, rdy, rdzw, dt, ids, ide, jds, jde, kds, kde, ims&
+&  , ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+! Input data
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+! tendency flag
+  LOGICAL, INTENT(IN) :: tenddec
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: field, &
+&  field_old, ru, rv, rom
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: fieldb, field_oldb, rub&
+&  , rvb, romb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mut, mub, mu_old
+  REAL, DIMENSION(ims:ime, jms:jme) :: mutb, mu_oldb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: tendencyb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: h_tendency, z_tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: h_tendencyb, z_tendencyb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: msfux, msfuy, msfvx, &
+&  msfvy, msftx, msfty
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp, rdzw
+  REAL, INTENT(IN) :: rdx, rdy, dt
+  INTEGER, INTENT(IN) :: time_step
+! Local data
+  INTEGER :: i, j, k, itf, jtf, ktf
+  INTEGER :: i_start, i_end, j_start, j_end
+  INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
+  INTEGER :: jmin, jmax, jp, jm, imin, imax
+  REAL :: mrdx, mrdy, ub, vb, uw, vw, mu
+  REAL :: ubb, vbb, mub0
+!  storage for high and low order fluxes
+  REAL, DIMENSION(its - 1:ite + 2, kts:kte, jts - 1:jte + 2) :: fqx, fqy&
+&  , fqz
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: fqxb, fqyb, fqzb
+  REAL, DIMENSION(its - 1:ite + 2, kts:kte, jts - 1:jte + 2) :: fqxl, &
+&  fqyl, fqzl
+  REAL, DIMENSION(its-1:ite+2, kts:kte, jts-1:jte+2) :: fqxlb, fqylb, &
+&  fqzlb
+  INTEGER :: horz_order, vert_order
+  LOGICAL :: degrade_xs, degrade_ys
+  LOGICAL :: degrade_xe, degrade_ye
+  INTEGER :: jp1, jp0, jtmp
+  REAL :: flux_out, ph_low, scale
+  REAL :: flux_outb, ph_lowb, scaleb
+  REAL, PARAMETER :: eps=1.e-20
+! definition of flux operators, 3rd, 4th, 5th or 6th order
+  REAL :: flux3, flux4, flux5, flux6, flux_upwind
+  REAL :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel, cr
+  REAL :: velb, crb
+!      flux_upwind(q_im1, q_i, cr ) = 0.5*(1.+sign(1.,cr))*q_im1 &
+!                                    +0.5*(1.-sign(1.,cr))*q_i
+!      flux_upwind(q_im1, q_i, cr ) = 0.
+  REAL :: dx, dy, dz
+  LOGICAL, PARAMETER :: pd_limit=.true.
+  INTEGER :: branch
+  INTEGER :: ad_from
+  INTEGER :: ad_to
+  INTEGER :: ad_from0
+  INTEGER :: ad_to0
+  INTEGER :: ad_from1
+  INTEGER :: ad_to1
+  INTEGER :: ad_from2
+  INTEGER :: ad_to2
+  INTEGER :: ad_from3
+  INTEGER :: ad_to3
+  INTEGER :: ad_from4
+  INTEGER :: ad_to4
+  INTEGER :: ad_from5
+  INTEGER :: ad_to5
+  INTEGER :: ad_from6
+  INTEGER :: ad_to6
+  INTEGER :: ad_from7
+  INTEGER :: ad_to7
+  INTEGER :: ad_from8
+  INTEGER :: ad_to8
+  INTEGER :: ad_from9
+  INTEGER :: ad_to9
+  INTEGER :: ad_from10
+  INTEGER :: ad_to10
+  INTEGER :: ad_from11
+  INTEGER :: ad_to11
+  INTEGER :: ad_from12
+  INTEGER :: ad_to12
+  INTEGER :: ad_from13
+  INTEGER :: ad_to13
+  INTEGER :: ad_from14
+  INTEGER :: ad_to14
+  INTEGER :: ad_from15
+  INTEGER :: ad_to15
+  INTEGER :: ad_from16
+  INTEGER :: ad_to16
+  INTEGER :: ad_from17
+  INTEGER :: ad_to17
+  INTEGER :: ad_from18
+  INTEGER :: ad_to18
+  INTEGER :: ad_from19
+  INTEGER :: ad_to19
+  INTEGER :: ad_from20
+  INTEGER :: ad_to20
+  INTEGER :: ad_from21
+  INTEGER :: ad_to21
+  INTEGER :: ad_from22
+  INTEGER :: ad_to22
+  INTEGER :: ad_from23
+  INTEGER :: ad_to23
+  INTEGER :: ad_from24
+  INTEGER :: ad_to24
+  INTEGER :: ad_from25
+  INTEGER :: ad_to25
+  INTEGER :: ad_from26
+  INTEGER :: ad_to26
+  INTEGER :: ad_from27
+  INTEGER :: ad_to27
+  INTEGER :: ad_from28
+  INTEGER :: ad_to28
+  INTEGER :: ad_from29
+  INTEGER :: ad_to29
+  INTEGER :: ad_from30
+  INTEGER :: ad_to30
+  INTEGER :: ad_from31
+  INTEGER :: ad_to31
+  INTEGER :: ad_from32
+  INTEGER :: ad_to32
+  INTEGER :: ad_from33
+  INTEGER :: ad_to33
+  INTEGER :: ad_from34
+  INTEGER :: ad_to34
+  INTEGER :: ad_from35
+  INTEGER :: ad_to35
+  INTEGER :: ad_from36
+  INTEGER :: ad_to36
+  INTEGER :: ad_from37
+  INTEGER :: ad_to37
+  INTEGER :: ad_from38
+  INTEGER :: ad_to38
+  INTEGER :: ad_from39
+  INTEGER :: ad_to39
+  INTEGER :: ad_from40
+  INTEGER :: ad_to40
+  INTEGER :: ad_from41
+  INTEGER :: ad_to41
+  INTEGER :: ad_from42
+  INTEGER :: ad_to42
+  INTEGER :: ad_from43
+  INTEGER :: ad_to43
+  INTEGER :: ad_from44
+  INTEGER :: ad_to44
+  INTEGER :: ad_from45
+  INTEGER :: ad_to45
+  INTEGER :: ad_from46
+  INTEGER :: ad_to46
+  INTEGER :: ad_from47
+  INTEGER :: ad_to47
+  INTEGER :: ad_from48
+  INTEGER :: ad_to48
+  INTEGER :: ad_from49
+  INTEGER :: ad_to49
+  INTEGER :: ad_from50
+  INTEGER :: ad_to50
+  INTEGER :: ad_from51
+  INTEGER :: ad_to51
+  INTEGER :: ad_from52
+  INTEGER :: ad_to52
+  INTEGER :: ad_from53
+  INTEGER :: ad_to53
+  INTEGER :: ad_from54
+  INTEGER :: ad_to54
+  INTEGER :: ad_from55
+  INTEGER :: ad_to55
+  INTEGER :: ad_from56
+  INTEGER :: ad_to56
+  INTEGER :: ad_from57
+  INTEGER :: ad_to57
+  INTEGER :: ad_from58
+  INTEGER :: ad_to58
+  INTEGER :: ad_from59
+  INTEGER :: ad_to59
+  INTEGER :: ad_from60
+  INTEGER :: ad_to60
+  INTEGER :: ad_from61
+  INTEGER :: ad_to61
+  INTEGER :: ad_from62
+  INTEGER :: ad_to62
+  INTEGER :: ad_from63
+  INTEGER :: ad_to63
+  REAL :: abs30
+  REAL :: y93
+  REAL :: max43
+  REAL :: abs67
+  REAL :: abs100
+  REAL :: temp3
+  REAL :: temp29
+  REAL :: temp31b43
+  REAL :: y86b
+  REAL :: abs92b
+  REAL :: y92
+  REAL :: max42
+  REAL :: abs66
+  REAL :: temp2
+  REAL :: min42b
+  INTEGER :: temp28
+  REAL :: y1b
+  REAL :: temp31b42
+  REAL :: temp31b79
+  REAL :: y94b
+  REAL :: y91
+  REAL :: max41
+  REAL :: abs65
+  REAL :: temp1
+  REAL :: abs18b
+  REAL :: temp23b22
+  REAL :: temp27
+  REAL :: temp31b41
+  REAL :: temp31b78
+  REAL :: y90
+  REAL :: max40
+  REAL :: abs64
+  INTEGER :: temp0
+  REAL :: abs26b
+  REAL :: temp26
+  REAL :: temp23b21
+  REAL :: temp31b40
+  REAL :: max39b
+  REAL :: temp31b77
+  REAL :: abs63
+  REAL :: temp7b
+  REAL :: temp25
+  REAL :: temp23b20
+  REAL :: y28b
+  REAL :: abs34b
+  REAL :: min5b
+  REAL :: max10b
+  REAL :: temp31b76
+  REAL :: max47b
+  REAL :: abs62
+  REAL :: abs99
+  INTEGER :: temp24
+  REAL :: abs79b
+  REAL :: y36b
+  REAL :: temp31b75
+  REAL :: abs42b
+  REAL :: temp35b6
+  REAL :: abs61
+  REAL :: abs98
+  REAL :: temp23
+  REAL :: abs87b
+  REAL :: temp31b74
+  REAL :: temp35b5
+  REAL :: y44b
+  REAL :: abs50b
+  INTEGER :: min39
+  REAL :: abs60
+  REAL :: abs97
+  REAL :: temp22
+  REAL :: min37b
+  REAL :: y52b
+  REAL :: y89b
+  REAL :: temp31b73
+  REAL :: temp35b4
+  REAL :: abs95b
+  INTEGER :: min9
+  REAL :: min38
+  REAL :: abs96
+  REAL :: temp21
+  REAL :: y4b
+  REAL :: y60b
+  REAL :: temp31b72
+  REAL :: temp35b3
+  REAL :: y97b
+  INTEGER :: min8
+  REAL :: min37
+  REAL :: abs95
+  INTEGER :: temp20
+  REAL :: temp31b71
+  REAL :: temp35b2
+  REAL :: min7
+  REAL :: min36
+  REAL :: abs94
+  REAL :: abs29b
+  REAL :: temp31b70
+  REAL :: min61b
+  REAL :: temp35b1
+  REAL :: abs102b
+  REAL :: min6
+  INTEGER :: min35
+  REAL :: y29
+  REAL :: abs93
+  REAL :: max13b
+  REAL :: abs37b
+  REAL :: temp35b0
+  REAL :: min5
+  INTEGER :: min34
+  REAL :: y28
+  REAL :: abs92
+  REAL :: max21b
+  REAL :: abs1b
+  REAL :: y39b
+  REAL :: abs45b
+  REAL :: min4
+  REAL :: min33
+  REAL :: y27
+  REAL :: abs91
+  REAL :: abs53b
+  REAL :: y10b
+  REAL :: y47b
+  REAL :: min3
+  REAL :: min32
+  REAL :: y26
+  REAL :: min69
+  REAL :: abs90
+  REAL :: y55b
+  REAL :: abs61b
+  REAL :: abs98b
+  INTEGER :: min2
+  REAL :: min31
+  REAL :: y25
+  REAL :: min68
+  REAL :: y63b
+  REAL :: temp23b9
+  REAL :: min48b
+  REAL :: max2b
+  REAL :: y7b
+  REAL :: min11b
+  INTEGER :: min1
+  INTEGER :: min30
+  REAL :: y24
+  REAL :: min67
+  REAL :: y71b
+  REAL :: temp23b8
+  REAL :: min56b
+  REAL :: y23
+  REAL :: min66
+  REAL :: tempb4
+  REAL :: temp19b
+  REAL :: temp23b7
+  REAL :: min64b
+  REAL :: y22
+  REAL :: min65
+  REAL :: y59
+  REAL :: tempb3
+  REAL :: max16b
+  REAL :: temp23b6
+  REAL :: temp27b
+  REAL :: y21
+  REAL :: min64
+  REAL :: y58
+  REAL :: abs11b
+  REAL :: tempb2
+  REAL :: temp23b5
+  REAL :: max24b
+  REAL :: abs4b
+  REAL :: temp35b
+  REAL :: abs48b
+  REAL :: y20
+  REAL :: min63
+  REAL :: y57
+  REAL :: tempb1
+  REAL :: y13b
+  REAL :: temp23b4
+  REAL :: max32b
+  REAL :: abs56b
+  REAL :: temp43b
+  REAL :: min62
+  REAL :: y56
+  REAL :: tempb0
+  REAL :: abs64b
+  REAL :: y21b
+  REAL :: temp23b3
+  REAL :: y58b
+  REAL :: max40b
+  REAL :: temp47b18
+  REAL :: min61
+  REAL :: y55
+  REAL :: abs29
+  REAL :: y66b
+  REAL :: abs72b
+  REAL :: temp23b2
+  REAL :: max5b
+  REAL :: min14b
+  REAL :: temp47b17
+  REAL :: min60
+  REAL :: y54
+  REAL :: abs28
+  REAL :: temp23b1
+  REAL :: y74b
+  REAL :: abs80b
+  REAL :: min59b
+  REAL :: y102b
+  REAL :: temp47b16
+  REAL :: y53
+  REAL :: abs27
+  REAL :: temp7b6
+  REAL :: temp23b0
+  REAL :: y82b
+  REAL :: min67b
+  REAL :: temp47b15
+  REAL :: y52
+  REAL :: abs26
+  REAL :: y89
+  REAL :: max39
+  REAL :: temp7b5
+  REAL :: max19b
+  REAL :: temp31b39
+  REAL :: y90b
+  REAL :: min75b
+  REAL :: temp47b14
+  REAL :: y51
+  REAL :: abs25
+  REAL :: y88
+  REAL :: max38
+  REAL :: abs14b
+  REAL :: temp7b4
+  REAL :: max27b
+  REAL :: temp23b19
+  REAL :: abs7b
+  REAL :: temp31b38
+  REAL :: temp47b13
+  REAL :: y50
+  REAL :: abs24
+  REAL :: y87
+  REAL :: max37
+  REAL :: temp7b3
+  REAL :: y16b
+  REAL :: abs22b
+  REAL :: temp23b18
+  REAL :: max35b
+  REAL :: abs59b
+  REAL :: temp31b37
+  REAL :: temp47b12
+  REAL :: abs23
+  REAL :: y86
+  REAL :: max36
+  REAL :: temp3b
+  REAL :: temp7b2
+  REAL :: abs67b
+  REAL :: y24b
+  REAL :: temp23b17
+  REAL :: abs30b
+  REAL :: temp31b36
+  REAL :: max43b
+  REAL :: temp47b11
+  REAL :: abs22
+  REAL :: y85
+  REAL :: max35
+  REAL :: abs59
+  REAL :: min17b
+  REAL :: temp7b1
+  REAL :: y69b
+  REAL :: abs75b
+  REAL :: temp23b16
+  REAL :: y32b
+  REAL :: max8b
+  REAL :: temp31b35
+  REAL :: max51b
+  REAL :: temp47b10
+  REAL :: abs21
+  REAL :: y84
+  REAL :: max34
+  REAL :: abs58
+  REAL :: temp7b0
+  REAL :: min25b
+  REAL :: temp23b15
+  REAL :: y77b
+  REAL :: abs83b
+  REAL :: temp31b34
+  REAL :: y40b
+  REAL :: abs20
+  REAL :: y83
+  REAL :: max33
+  REAL :: abs57
+  REAL :: temp19
+  REAL :: min33b
+  REAL :: temp23b14
+  REAL :: y85b
+  REAL :: temp31b33
+  REAL :: abs91b
+  REAL :: y82
+  REAL :: max32
+  REAL :: abs56
+  REAL :: temp18
+  REAL :: temp23b13
+  REAL :: min41b
+  REAL :: temp31b32
+  REAL :: temp31b69
+  REAL :: y93b
+  REAL :: y81
+  REAL :: max31
+  REAL :: abs55
+  REAL :: temp11b4
+  REAL :: abs17b
+  REAL :: temp17
+  REAL :: temp23b12
+  REAL :: temp31b31
+  REAL :: temp31b68
+  REAL :: temp43b9
+  REAL :: y80
+  REAL :: max30
+  REAL :: abs54
+  REAL :: temp11b3
+  INTEGER :: temp16
+  REAL :: y19b
+  REAL :: temp23b11
+  REAL :: abs25b
+  REAL :: temp31b30
+  REAL :: max38b
+  REAL :: temp31b67
+  REAL :: temp43b8
+  REAL :: abs53
+  REAL :: temp11b2
+  REAL :: temp15
+  REAL :: temp23b10
+  REAL :: y27b
+  REAL :: abs33b
+  REAL :: min4b
+  REAL :: temp31b66
+  REAL :: max46b
+  REAL :: temp43b7
+  REAL :: abs52
+  REAL :: abs89
+  REAL :: temp14
+  REAL :: temp11b1
+  REAL :: abs78b
+  REAL :: y35b
+  REAL :: temp31b65
+  REAL :: abs41b
+  REAL :: temp43b6
+  REAL :: max54b
+  REAL :: abs51
+  REAL :: abs88
+  REAL :: temp13
+  REAL :: temp11b0
+  REAL :: min28b
+  REAL :: abs86b
+  REAL :: temp31b64
+  REAL :: y43b
+  REAL :: temp43b5
+  INTEGER :: min29
+  REAL :: abs50
+  REAL :: abs87
+  INTEGER :: temp12
+  REAL :: min36b
+  REAL :: temp31b63
+  REAL :: y88b
+  REAL :: abs94b
+  REAL :: temp43b4
+  REAL :: y51b
+  REAL :: min28
+  REAL :: abs86
+  REAL :: temp11
+  REAL :: y3b
+  REAL :: temp31b62
+  REAL :: y96b
+  REAL :: temp43b3
+  REAL :: min27
+  REAL :: abs85
+  REAL :: temp10
+  REAL :: min52b
+  REAL :: temp31b61
+  REAL :: temp43b2
+  REAL :: min26
+  REAL :: abs84
+  REAL :: temp15b
+  REAL :: abs28b
+  REAL :: temp31b60
+  REAL :: min60b
+  REAL :: temp43b1
+  REAL :: temp46
+  REAL :: abs101b
+  REAL :: min25
+  REAL :: y19
+  REAL :: abs83
+  REAL :: max12b
+  REAL :: temp23b
+  REAL :: min7b
+  REAL :: abs36b
+  REAL :: temp43b0
+  REAL :: max49b
+  REAL :: temp45
+  REAL :: min24
+  REAL :: y18
+  REAL :: abs82
+  REAL :: max20b
+  REAL :: temp19b6
+  REAL :: temp31b
+  REAL :: y38b
+  REAL :: abs44b
+  INTEGER :: temp44
+  INTEGER :: min23
+  REAL :: y17
+  REAL :: abs81
+  REAL :: temp19b5
+  REAL :: abs52b
+  REAL :: abs89b
+  REAL :: y46b
+  REAL :: temp43
+  INTEGER :: min22
+  REAL :: y16
+  REAL :: min59
+  REAL :: abs80
+  REAL :: temp19b4
+  REAL :: y54b
+  REAL :: abs60b
+  REAL :: temp42
+  REAL :: abs97b
+  REAL :: y15
+  REAL :: min21
+  REAL :: min58
+  REAL :: y62b
+  REAL :: temp19b3
+  REAL :: min47b
+  REAL :: temp31b9
+  REAL :: y6b
+  REAL :: min10b
+  REAL :: temp41
+  REAL :: y99b
+  REAL :: max1b
+  REAL :: y14
+  REAL :: min20
+  REAL :: min57
+  REAL :: y70b
+  REAL :: temp19b2
+  REAL :: temp31b8
+  REAL :: min55b
+  INTEGER :: temp40
+  REAL :: y13
+  REAL :: min56
+  REAL :: temp19b1
+  REAL :: temp31b7
+  REAL :: min63b
+  REAL :: y12
+  REAL :: min55
+  REAL :: y49
+  REAL :: max15b
+  REAL :: temp19b0
+  REAL :: temp31b6
+  REAL :: abs39b
+  REAL :: min71b
+  REAL :: y11
+  INTEGER :: min54
+  REAL :: y48
+  REAL :: max23b
+  REAL :: temp31b5
+  REAL :: abs3b
+  REAL :: abs10b
+  REAL :: abs47b
+  REAL :: y10
+  INTEGER :: min53
+  REAL :: y47
+  REAL :: y12b
+  REAL :: max31b
+  REAL :: temp31b4
+  REAL :: abs55b
+  REAL :: y49b
+  REAL :: min52
+  REAL :: y46
+  REAL :: abs63b
+  REAL :: y20b
+  REAL :: temp31b3
+  REAL :: y57b
+  REAL :: min51
+  REAL :: y45
+  REAL :: abs19
+  REAL :: tempb
+  REAL :: y65b
+  REAL :: abs71b
+  REAL :: temp31b2
+  REAL :: max4b
+  REAL :: y9b
+  REAL :: min13b
+  INTEGER :: min50
+  REAL :: y44
+  REAL :: abs18
+  REAL :: min21b
+  REAL :: y73b
+  REAL :: temp31b1
+  REAL :: min58b
+  REAL :: y101b
+  REAL :: y43
+  REAL :: abs17
+  REAL :: y81b
+  REAL :: temp31b0
+  REAL :: min66b
+  REAL :: y42
+  REAL :: abs16
+  REAL :: y79
+  REAL :: max29
+  REAL :: max18b
+  REAL :: temp31b29
+  REAL :: min74b
+  REAL :: y41
+  REAL :: abs15
+  REAL :: y78
+  REAL :: max28
+  REAL :: abs13b
+  REAL :: max26b
+  REAL :: temp31b28
+  REAL :: abs6b
+  REAL :: y40
+  REAL :: abs14
+  REAL :: y77
+  REAL :: max27
+  REAL :: y15b
+  REAL :: abs21b
+  REAL :: max34b
+  REAL :: temp31b27
+  REAL :: abs58b
+  REAL :: abs13
+  REAL :: y76
+  REAL :: max26
+  REAL :: abs66b
+  REAL :: y23b
+  REAL :: temp31b26
+  REAL :: max42b
+  REAL :: abs12
+  REAL :: y75
+  REAL :: max25
+  REAL :: abs49
+  REAL :: y68b
+  REAL :: abs74b
+  REAL :: y31b
+  REAL :: temp31b25
+  REAL :: max7b
+  REAL :: max50b
+  REAL :: abs11
+  REAL :: y74
+  REAL :: max24
+  REAL :: abs48
+  REAL :: y102
+  REAL :: min24b
+  REAL :: y76b
+  REAL :: abs82b
+  REAL :: temp31b24
+  REAL :: abs10
+  REAL :: y73
+  REAL :: max23
+  REAL :: abs47
+  REAL :: y101
+  REAL :: min32b
+  REAL :: y84b
+  REAL :: temp31b23
+  REAL :: abs90b
+  REAL :: min69b
+  REAL :: y72
+  REAL :: max22
+  REAL :: abs46
+  REAL :: y100
+  REAL :: temp31b22
+  REAL :: temp31b59
+  REAL :: y92b
+  REAL :: y71
+  REAL :: max21
+  REAL :: abs45
+  REAL :: abs16b
+  REAL :: max29b
+  REAL :: temp31b21
+  REAL :: abs9b
+  REAL :: temp31b58
+  REAL :: temp39b3
+  REAL :: y70
+  REAL :: max20
+  REAL :: abs44
+  REAL :: temp11b
+  REAL :: y18b
+  REAL :: abs24b
+  REAL :: temp31b20
+  REAL :: temp31b57
+  REAL :: max37b
+  REAL :: temp39b2
+  REAL :: abs43
+  REAL :: abs69b
+  REAL :: y26b
+  REAL :: abs32b
+  REAL :: min3b
+  REAL :: temp31b56
+  REAL :: temp39b1
+  REAL :: max45b
+  REAL :: abs42
+  REAL :: abs79
+  REAL :: min19b
+  REAL :: abs77b
+  REAL :: y34b
+  REAL :: temp31b55
+  REAL :: abs40b
+  REAL :: temp39b0
+  REAL :: max53b
+  REAL :: abs41
+  REAL :: abs78
+  REAL :: max54
+  REAL :: temp3b6
+  REAL :: min27b
+  REAL :: y79b
+  REAL :: abs85b
+  REAL :: temp31b54
+  REAL :: y42b
+  REAL :: min19
+  REAL :: abs40
+  REAL :: abs77
+  REAL :: max53
+  REAL :: temp3b5
+  REAL :: temp31b53
+  REAL :: y87b
+  REAL :: abs93b
+  REAL :: temp39
+  REAL :: y50b
+  REAL :: min18
+  REAL :: max52
+  REAL :: abs76
+  REAL :: temp3b4
+  REAL :: min43b
+  REAL :: y2b
+  REAL :: temp31b52
+  REAL :: temp38
+  REAL :: y95b
+  REAL :: min17
+  REAL :: max51
+  REAL :: abs75
+  REAL :: temp3b3
+  REAL :: abs19b
+  REAL :: temp27b9
+  REAL :: min51b
+  REAL :: temp31b51
+  REAL :: temp37
+  INTEGER :: min16
+  REAL :: abs9
+  REAL :: max50
+  REAL :: abs74
+  REAL :: temp3b2
+  REAL :: abs27b
+  REAL :: temp27b8
+  REAL :: temp31b50
+  INTEGER :: temp36
+  REAL :: abs100b
+  INTEGER :: min15
+  REAL :: abs8
+  REAL :: abs73
+  REAL :: temp3b1
+  REAL :: y29b
+  REAL :: temp27b7
+  REAL :: min6b
+  REAL :: max11b
+  REAL :: abs35b
+  REAL :: temp35
+  REAL :: max48b
+  REAL :: min14
+  REAL :: abs7
+  REAL :: abs72
+  REAL :: temp3b0
+  REAL :: temp27b6
+  REAL :: y37b
+  REAL :: temp34
+  REAL :: abs43b
+  REAL :: min13
+  REAL :: abs6
+  REAL :: abs71
+  REAL :: temp27b5
+  REAL :: abs88b
+  REAL :: temp33
+  REAL :: y45b
+  REAL :: abs51b
+  REAL :: min12
+  INTEGER :: min49
+  REAL :: abs5
+  REAL :: abs70
+  REAL :: min38b
+  REAL :: temp27b4
+  REAL :: y53b
+  INTEGER :: temp32
+  REAL :: abs96b
+  REAL :: min11
+  REAL :: min48
+  REAL :: abs4
+  REAL :: temp27b3
+  REAL :: min46b
+  REAL :: y5b
+  REAL :: y61b
+  REAL :: temp31
+  REAL :: y98b
+  REAL :: min10
+  REAL :: min47
+  REAL :: abs3
+  REAL :: temp27b2
+  REAL :: temp30
+  REAL :: temp31b81
+  REAL :: min46
+  REAL :: abs2
+  REAL :: temp27b1
+  REAL :: temp31b80
+  REAL :: min62b
+  INTEGER :: min45
+  REAL :: y39
+  REAL :: abs1
+  REAL :: max14b
+  REAL :: temp27b0
+  REAL :: abs38b
+  REAL :: min70b
+  INTEGER :: min44
+  REAL :: y38
+  REAL :: max22b
+  REAL :: abs2b
+  REAL :: abs46b
+  REAL :: min43
+  REAL :: y37
+  REAL :: y11b
+  REAL :: max30b
+  REAL :: abs54b
+  REAL :: y48b
+  REAL :: min42
+  REAL :: y36
+  REAL :: abs62b
+  REAL :: y56b
+  REAL :: abs99b
+  REAL :: min41
+  REAL :: y35
+  REAL :: y64b
+  REAL :: abs70b
+  REAL :: max3b
+  REAL :: y8b
+  REAL :: min12b
+  INTEGER :: min40
+  REAL :: y34
+  REAL :: min20b
+  REAL :: y72b
+  REAL :: min57b
+  REAL :: y100b
+  REAL :: y33
+  REAL :: max9
+  REAL :: min76
+  REAL :: y80b
+  REAL :: min65b
+  REAL :: y32
+  REAL :: max8
+  REAL :: y69
+  REAL :: max19
+  REAL :: min75
+  REAL :: max17b
+  REAL :: temp31b19
+  REAL :: temp43b16
+  REAL :: y31
+  REAL :: max7
+  REAL :: y68
+  REAL :: max18
+  REAL :: min74
+  REAL :: abs12b
+  REAL :: temp15b5
+  REAL :: max25b
+  REAL :: temp31b18
+  REAL :: abs5b
+  REAL :: temp43b15
+  REAL :: abs49b
+  REAL :: y30
+  INTEGER :: min73
+  REAL :: max6
+  REAL :: y67
+  REAL :: max17
+  REAL :: y14b
+  REAL :: temp15b4
+  REAL :: abs20b
+  REAL :: max33b
+  REAL :: temp31b17
+  REAL :: abs57b
+  REAL :: temp43b14
+  REAL :: temp47b9
+  INTEGER :: min72
+  REAL :: max5
+  REAL :: y66
+  REAL :: max16
+  REAL :: abs65b
+  REAL :: temp15b3
+  REAL :: y22b
+  REAL :: temp31b16
+  REAL :: y59b
+  REAL :: max41b
+  REAL :: temp43b13
+  REAL :: temp47b8
+  REAL :: y9
+  REAL :: min71
+  REAL :: max4
+  REAL :: y65
+  REAL :: max15
+  REAL :: abs39
+  REAL :: temp
+  REAL :: y67b
+  REAL :: temp15b2
+  REAL :: abs73b
+  REAL :: y30b
+  REAL :: temp31b15
+  REAL :: max6b
+  REAL :: temp43b12
+  REAL :: temp47b7
+  REAL :: y8
+  REAL :: min70
+  REAL :: max3
+  REAL :: y64
+  REAL :: max14
+  REAL :: abs38
+  REAL :: temp15b1
+  REAL :: y75b
+  REAL :: abs81b
+  REAL :: temp31b14
+  REAL :: temp43b11
+  REAL :: temp47b6
+  REAL :: y7
+  REAL :: max2
+  REAL :: y63
+  REAL :: max13
+  REAL :: abs37
+  REAL :: temp15b0
+  REAL :: min31b
+  REAL :: y83b
+  REAL :: temp31b13
+  REAL :: temp43b10
+  REAL :: min68b
+  REAL :: temp47b5
+  REAL :: y6
+  REAL :: max1
+  REAL :: y62
+  REAL :: max12
+  REAL :: abs36
+  REAL :: y99
+  REAL :: max49
+  REAL :: temp9
+  REAL :: temp31b12
+  REAL :: temp31b49
+  REAL :: y91b
+  REAL :: temp47b4
+  REAL :: min76b
+  REAL :: y5
+  REAL :: y61
+  REAL :: max11
+  REAL :: abs35
+  REAL :: y98
+  REAL :: max48
+  REAL :: abs15b
+  INTEGER :: temp8
+  REAL :: max28b
+  REAL :: temp31b11
+  REAL :: abs8b
+  REAL :: temp31b48
+  REAL :: temp39b
+  REAL :: temp47b3
+  REAL :: y4
+  REAL :: y60
+  REAL :: max10
+  REAL :: abs34
+  REAL :: y97
+  REAL :: max47
+  REAL :: temp7
+  REAL :: y17b
+  REAL :: abs23b
+  REAL :: temp31b10
+  REAL :: temp31b47
+  REAL :: max36b
+  REAL :: temp47b
+  REAL :: temp47b2
+  REAL :: y3
+  REAL :: abs33
+  REAL :: y96
+  REAL :: max46
+  REAL :: temp6
+  REAL :: abs68b
+  REAL :: y25b
+  REAL :: abs31b
+  REAL :: temp31b46
+  REAL :: max44b
+  REAL :: temp47b1
+  REAL :: y2
+  REAL :: abs32
+  REAL :: y95
+  REAL :: max45
+  REAL :: abs69
+  REAL :: abs102
+  REAL :: min18b
+  REAL :: temp5
+  REAL :: abs76b
+  REAL :: y33b
+  REAL :: max9b
+  REAL :: temp31b45
+  REAL :: temp47b0
+  REAL :: max52b
+  REAL :: y1
+  REAL :: abs31
+  REAL :: y94
+  REAL :: max44
+  REAL :: abs68
+  REAL :: abs101
+  INTEGER :: temp4
+  REAL :: min26b
+  REAL :: y78b
+  REAL :: abs84b
+  REAL :: temp31b44
+  REAL :: y41b
+! set order for the advection schemes
+!  write(6,*) ' in pd advection routine '
+! Empty arrays just in case:
+  IF (config_flags%polar) THEN
+    fqx(:, :, :) = 0.
+    fqy(:, :, :) = 0.
+    fqz(:, :, :) = 0.
+    fqxl(:, :, :) = 0.
+    fqyl(:, :, :) = 0.
+    fqzl(:, :, :) = 0.
+  END IF
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  horz_order = config_flags%h_sca_adv_order
+  vert_order = config_flags%v_sca_adv_order
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+  degrade_xs = .true.
+  degrade_xe = .true.
+  degrade_ys = .true.
+  degrade_ye = .true.
+!  begin with horizontal flux divergence
+!  here is the choice of flux operators
+  IF (horz_order .EQ. 6) THEN
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 4) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min1 = ide - 1
+    ELSE
+      min1 = ite
+    END IF
+    i_end = min1 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min2 = jde - 1
+    ELSE
+      min2 = jte
+    END IF
+    j_end = min2 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+!      IF(degrade_xs) i_start = MAX(its-1,ids-1)
+!      IF(degrade_xe) i_end   = MIN(ite+1,ide-2)
+    IF (degrade_xs) THEN
+      IF (its - 1 .LT. ids) THEN
+        i_start = ids
       ELSE
-         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-
-   ENDIF horizontal_order_test  
-
-!LPB[4]
-
-         i_start = its
-         i_end   = MIN(ite,ide-1)
-         j_start = jts
-         j_end   = MIN(jte,jde-1)
-
-!LPB[5]
-   IF( (config_flags%open_xs) .and. (its == ids) ) THEN
-
-          DO j = j_start, j_end
-          DO k = kts, ktf
-            ub = MIN( 0.5*(ru(its,k,j)+ru(its+1,k,j)), 0. )
-            tendency(its,k,j) = tendency(its,k,j)                       &
-                  - rdx*(                                               &
-                          ub*(   field_old(its+1,k,j)                   &
-                               - field_old(its  ,k,j)   ) +             &
-                          field(its,k,j)*(ru(its+1,k,j)-ru(its,k,j))    &
-                                                                   )
-          ENDDO
-          ENDDO
-
-   ENDIF
-
-!LPB[6]
-
-!LPB[7]
-       Keep_Lpb7_ub =ub
-
-   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-
-          DO j = j_start, j_end
-          DO k = kts, ktf
-            ub = MAX( 0.5*(ru(ite-1,k,j)+ru(ite,k,j)), 0. )
-            tendency(i_end,k,j) = tendency(i_end,k,j)                     &
-                  - rdx*(                                                 &
-                          ub*(  field_old(i_end  ,k,j)                    &
-                              - field_old(i_end-1,k,j) ) +                &
-                          field(i_end,k,j)*(ru(ite,k,j)-ru(ite-1,k,j))    &
-                                                                       )
-          ENDDO
-          ENDDO
-
-   ENDIF
-
-!LPB[8]
-
-!LPB[9]
-
-   IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
-
-          DO i = i_start, i_end
-          DO k = kts, ktf
-            vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
-            tendency(i,k,jts) = tendency(i,k,jts)                       &
-                  - rdy*(                                               &
-                          vb*(  field_old(i,k,jts+1)                    &
-                              - field_old(i,k,jts  ) ) +                &
-                          field(i,k,jts)*(rv(i,k,jts+1)-rv(i,k,jts))    &
-                                                                   )
-          ENDDO
-          ENDDO
-
-   ENDIF
-
-!LPB[10]
-
-!LPB[11]
-       Keep_Lpb11_vb =vb
-
-   IF( (config_flags%open_ye) .and. (jte == jde)) THEN
-
-          DO i = i_start, i_end
-          DO k = kts, ktf
-            vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
-            tendency(i,k,j_end) = tendency(i,k,j_end)                     &
-                  - rdy*(                                                 &
-                          vb*(   field_old(i,k,j_end  )                   &
-                               - field_old(i,k,j_end-1) ) +               &
-                          field(i,k,j_end)*(rv(i,k,jte)-rv(i,k,jte-1))    &
-                                                                       )
-          ENDDO
-          ENDDO
-
-   ENDIF
-
-!LPB[12]
-
-!LPB[13]
-       Keep_Lpb13_vb =vb
-
-   IF( (config_flags%polar) .and. (jts == jds) ) THEN
-
-          DO i = i_start, i_end
-          DO k = kts, ktf
-            vb = MIN( 0.5*rv(i,k,jts+1), 0. )
-            tendency(i,k,jts) = tendency(i,k,jts)                       &
-                  - rdy*(                                               &
-                          vb*(  field_old(i,k,jts+1)                    &
-                              - field_old(i,k,jts  ) ) +                &
-                          field(i,k,jts)*rv(i,k,jts+1)                  &
-                                                                   )
-          ENDDO
-          ENDDO
-
-   ENDIF
-
-!LPB[14]
-
-!LPB[15]
-       Keep_Lpb15_vb =vb
-
-   IF( (config_flags%polar) .and. (jte == jde)) THEN
-
-          DO i = i_start, i_end
-          DO k = kts, ktf
-            vb = MAX( 0.5*rv(i,k,jte-1), 0. )
-            tendency(i,k,j_end) = tendency(i,k,j_end)                     &
-                  - rdy*(                                                 &
-                          vb*(   field_old(i,k,j_end  )                   &
-                               - field_old(i,k,j_end-1) ) +               &
-                          field(i,k,j_end)*(-rv(i,k,jte-1))               &
-                                                                       )
-          ENDDO
-          ENDDO
-
-   ENDIF
-
-!LPB[16]
-
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-
-!LPB[17]
-    IF(degrade_xs) i_start = MAX(its-1,ids)
-
-!LPB[18]
-
-!LPB[19]
-    IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-
-!LPB[20]
-
-!LPB[21]
-    IF(degrade_ys) j_start = MAX(jts-1,jds)
-
-!LPB[22]
-
-!LPB[23]
-    IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
-
-!LPB[24]
-
-!LPB[25]
-       Keep_Lpb25_mu =mu
-       Keep_Lpb25_vel =vel
-       Keep_Lpb25_cr =cr
-
-    vert_order_test : IF (vert_order == 6) THEN    
-
-         DO j = j_start, j_end
-            DO i = i_start, i_end
-              fqz(i,1,j)  = 0.
-              fqzl(i,1,j) = 0.
-              fqz(i,kde,j)  = 0.
-              fqzl(i,kde,j) = 0.
-            ENDDO
-
-            DO k=kts+3,ktf-2
-            DO i = i_start, i_end
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux6( field(i,k-3,j), field(i,k-2,j), field(i,k-1,j) &
-   ,        &
-                                      field(i,k  ,j), field(i,k+1,j), field(i,k+2,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-            ENDDO
-
-            DO i = i_start, i_end
-              k=kts+1
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=kts+2
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux4(                        &
-                      field(i,k-2,j), field(i,k-1,j),        &
-                      field(i,k  ,j), field(i,k+1,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=ktf-1
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux4(                        &
-                      field(i,k-2,j), field(i,k-1,j),        &
-                      field(i,k  ,j), field(i,k+1,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=ktf
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-         ENDDO
-       ELSE IF (vert_order == 5) THEN    
-
-         DO j = j_start, j_end
-            DO i = i_start, i_end
-              fqz(i,1,j)  = 0.
-              fqzl(i,1,j) = 0.
-              fqz(i,kde,j)  = 0.
-              fqzl(i,kde,j) = 0.
-            ENDDO
-
-            DO k=kts+3,ktf-2
-            DO i = i_start, i_end
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux5( field(i,k-3,j), field(i,k-2,j), field(i,k-1,j) &
-   ,        &
-                                      field(i,k  ,j), field(i,k+1,j), field(i,k+2,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-            ENDDO
-
-            DO i = i_start, i_end
-              k=kts+1
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=kts+2
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux3(                        &
-                      field(i,k-2,j), field(i,k-1,j),        &
-                      field(i,k  ,j), field(i,k+1,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=ktf-1
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux3(                        &
-                      field(i,k-2,j), field(i,k-1,j),        &
-                      field(i,k  ,j), field(i,k+1,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=ktf
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-         ENDDO
-       ELSE IF (vert_order == 4) THEN    
-
-         DO j = j_start, j_end
-            DO i = i_start, i_end
-              fqz(i,1,j)  = 0.
-              fqzl(i,1,j) = 0.
-              fqz(i,kde,j)  = 0.
-              fqzl(i,kde,j) = 0.
-            ENDDO
-
-            DO k=kts+2,ktf-1
-            DO i = i_start, i_end
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux4(                        &
-                      field(i,k-2,j), field(i,k-1,j),        &
-                      field(i,k  ,j), field(i,k+1,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-            ENDDO
-
-            DO i = i_start, i_end
-              k=kts+1
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=ktf
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-         ENDDO
-       ELSE IF (vert_order == 3) THEN    
-
-         DO j = j_start, j_end
-            DO i = i_start, i_end
-              fqz(i,1,j)  = 0.
-              fqzl(i,1,j) = 0.
-              fqz(i,kde,j)  = 0.
-              fqzl(i,kde,j) = 0.
-            ENDDO
-
-            DO k=kts+2,ktf-1
-            DO i = i_start, i_end
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j) = vel*flux3(                        &
-                      field(i,k-2,j), field(i,k-1,j),        &
-                      field(i,k  ,j), field(i,k+1,j),  -vel )
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-            ENDDO
-
-            DO i = i_start, i_end
-              k=kts+1
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-              k=ktf
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-            ENDDO
-         ENDDO
-      ELSE IF (vert_order == 2) THEN    
-
-         DO j = j_start, j_end
-            DO i = i_start, i_end
-              fqz(i,1,j)  = 0.
-              fqzl(i,1,j) = 0.
-              fqz(i,kde,j)  = 0.
-              fqzl(i,kde,j) = 0.
-            ENDDO
-
-            DO k=kts+1,ktf
-            DO i = i_start, i_end
-              dz = 2./(rdzw(k)+rdzw(k-1))
-              mu = 0.5*(mut(i,j)+mut(i,j))
-              vel = rom(i,k,j)
-              cr = vel*dt/dz/mu
-              fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
-              fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-              fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
-           ENDDO
-           ENDDO
-         ENDDO
+        i_start = its - 1
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ite + 1 .GT. ide - 1) THEN
+        i_end = ide - 1
       ELSE
-         WRITE (wrf_err_message,*) ' advect_scalar_pd, v_order not known ',vert_order
-         CALL wrf_error_fatal ( wrf_err_message )
-
-   ENDIF vert_order_test
-
-!PART III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
-
-   a_ub =0.0
-   a_vb =0.0
-   a_uw =0.0
-   a_vw =0.0
-   a_mu =0.0
-
-   Do K2_ADJ =jts-1, jte+2
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its-1, ite+2
-   a_fqx(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
-
-   Do K2_ADJ =jts-1, jte+2
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its-1, ite+2
-   a_fqy(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
-
-   Do K2_ADJ =jts-1, jte+2
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its-1, ite+2
-   a_fqz(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
-
-   Do K2_ADJ =jts-1, jte+2
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its-1, ite+2
-   a_fqxl(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
-
-   Do K2_ADJ =jts-1, jte+2
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its-1, ite+2
-   a_fqyl(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
-
-   Do K2_ADJ =jts-1, jte+2
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its-1, ite+2
-   a_fqzl(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
-
-   a_flux_out =0.0
-   a_ph_low =0.0
-   a_scale =0.0
-   a_q_im3 =0.0
-   a_q_im2 =0.0
-   a_q_im1 =0.0
-   a_q_i =0.0
-   a_q_ip1 =0.0
-   a_q_ip2 =0.0
-   a_ua =0.0
-   a_vel =0.0
-   a_cr =0.0
-   a_dx =0.0
-   a_dy =0.0
-   a_dz =0.0
-
-!PART IV: REVERSE/BACKWARD ACCUMULATIONS
-
-!ADDED BY WALLSWALLSWALLS
-!ADDED BY WALLSWALLSWALLS
-!FROM LPB[28]
+        i_end = ite + 1
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts - 1
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte + 1
+      END IF
+      j_end_f = jde - 3
+    END IF
+    ad_from26 = j_start
+!  compute fluxes, 6th order
+j_loop_y_flux_6:DO j=ad_from26,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          ad_from21 = i_start
+          DO i=ad_from21,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs1 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs1 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y1 = cr + abs1
+            IF (1.0 .GT. y1) THEN
+              CALL PUSHREAL8(min3)
+              min3 = y1
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min3)
+              min3 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs52 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs52 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y52 = cr - abs52
+            IF (-1.0 .LT. y52) THEN
+              CALL PUSHREAL8(max2)
+              max2 = y52
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max2)
+              max2 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min3*field_old(i, k, j-1)+&
+&              0.5*max2*field_old(i, k, j))
+            fqy(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k, j-1)&
+&              )-2./15.*(field(i, k, j+1)+field(i, k, j-2))+1./60.*(field&
+&              (i, k, j+2)+field(i, k, j-3)))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from21)
+        END DO
+        CALL PUSHCONTROL3B(5)
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          ad_from22 = i_start
+          DO i=ad_from22,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs2 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs2 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y2 = cr + abs2
+            IF (1.0 .GT. y2) THEN
+              CALL PUSHREAL8(min4)
+              min4 = y2
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min4)
+              min4 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs53 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs53 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y53 = cr - abs53
+            IF (-1.0 .LT. y53) THEN
+              CALL PUSHREAL8(max3)
+              max3 = y53
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max3)
+              max3 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min4*field_old(i, k, j-1)+&
+&              0.5*max3*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from22)
+        END DO
+        CALL PUSHCONTROL3B(4)
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          ad_from23 = i_start
+          DO i=ad_from23,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs3 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs3 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y3 = cr + abs3
+            IF (1.0 .GT. y3) THEN
+              CALL PUSHREAL8(min5)
+              min5 = y3
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min5)
+              min5 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs54 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs54 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y54 = cr - abs54
+            IF (-1.0 .LT. y54) THEN
+              CALL PUSHREAL8(max4)
+              max4 = y54
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max4)
+              max4 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min5*field_old(i, k, j-1)+&
+&              0.5*max4*field_old(i, k, j))
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2)))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from23)
+        END DO
+        CALL PUSHCONTROL3B(3)
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          ad_from24 = i_start
+          DO i=ad_from24,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs4 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs4 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y4 = cr + abs4
+            IF (1.0 .GT. y4) THEN
+              CALL PUSHREAL8(min6)
+              min6 = y4
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min6)
+              min6 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs55 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs55 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y55 = cr - abs55
+            IF (-1.0 .LT. y55) THEN
+              CALL PUSHREAL8(max5)
+              max5 = y55
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max5)
+              max5 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min6*field_old(i, k, j-1)+&
+&              0.5*max5*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from24)
+        END DO
+        CALL PUSHCONTROL3B(2)
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts,ktf
+          ad_from25 = i_start
+          DO i=ad_from25,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs5 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs5 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y5 = cr + abs5
+            IF (1.0 .GT. y5) THEN
+              CALL PUSHREAL8(min7)
+              min7 = y5
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min7)
+              min7 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs56 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs56 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y56 = cr - abs56
+            IF (-1.0 .LT. y56) THEN
+              CALL PUSHREAL8(max6)
+              max6 = y56
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max6)
+              max6 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min7*field_old(i, k, j-1)+&
+&              0.5*max6*field_old(i, k, j))
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2)))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from25)
+        END DO
+        CALL PUSHCONTROL3B(1)
+      ELSE
+        CALL PUSHCONTROL3B(0)
+      END IF
+    END DO j_loop_y_flux_6
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from26)
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min8 = ide - 1
+    ELSE
+      min8 = ite
+    END IF
+    i_end = min8 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min9 = jde - 1
+    ELSE
+      min9 = jte
+    END IF
+    j_end = min9 + 1
+!--  modify loop bounds for open and specified b.c
+!      IF(degrade_ys) j_start = MAX(jts-1,jds+1)
+!      IF(degrade_ye) j_end   = MIN(jte+1,jde-2)
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds) THEN
+        j_start = jds
+      ELSE
+        j_start = jts - 1
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte + 1
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its - 1) THEN
+        i_start = its - 1
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = ids + 3
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite + 1) THEN
+        i_end = ite + 1
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+    END IF
+    ad_from28 = j_start
+!  compute fluxes
+    DO j=ad_from28,j_end
+!  5th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+          CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          CALL PUSHREAL8(vel)
+          vel = ru(i, k, j)
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs6 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs6 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y6 = cr + abs6
+          IF (1.0 .GT. y6) THEN
+            CALL PUSHREAL8(min10)
+            min10 = y6
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min10)
+            min10 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs57 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs57 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y57 = cr - abs57
+          IF (-1.0 .LT. y57) THEN
+            CALL PUSHREAL8(max7)
+            max7 = y57
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max7)
+            max7 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min10*field_old(i-1, k, j)+0.5&
+&            *max7*field_old(i, k, j))
+          fqx(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i-1, k, j))-&
+&            2./15.*(field(i+1, k, j)+field(i-2, k, j))+1./60.*(field(i+2&
+&            , k, j)+field(i-3, k, j)))
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        ad_from27 = i_start
+        DO i=ad_from27,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+! second order
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)/mu
+              cr = vel*dt/dx
+              IF (cr .GE. 0.) THEN
+                abs7 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs7 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y7 = cr + abs7
+              IF (1.0 .GT. y7) THEN
+                CALL PUSHREAL8(min11)
+                min11 = y7
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min11)
+                min11 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs58 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs58 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y58 = cr - abs58
+              IF (-1.0 .LT. y58) THEN
+                CALL PUSHREAL8(max8)
+                max8 = y58
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max8)
+                max8 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min11*field_old(i-1, k, j)&
+&                +0.5*max8*field_old(i, k, j))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ids + 2) THEN
+! fourth order
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs8 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs8 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y8 = cr + abs8
+              IF (1.0 .GT. y8) THEN
+                CALL PUSHREAL8(min12)
+                min12 = y8
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min12)
+                min12 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs59 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs59 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y59 = cr - abs59
+              IF (-1.0 .LT. y59) THEN
+                CALL PUSHREAL8(max9)
+                max9 = y59
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max9)
+                max9 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min12*field_old(i-1, k, j)&
+&                +0.5*max9*field_old(i, k, j))
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j)))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(ad_from27)
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+! second order flux next to the boundary
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs9 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs9 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y9 = cr + abs9
+              IF (1.0 .GT. y9) THEN
+                CALL PUSHREAL8(min13)
+                min13 = y9
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min13)
+                min13 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs60 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs60 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y60 = cr - abs60
+              IF (-1.0 .LT. y60) THEN
+                CALL PUSHREAL8(max10)
+                max10 = y60
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max10)
+                max10 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min13*field_old(i-1, k, j)&
+&                +0.5*max10*field_old(i, k, j))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ide - 2) THEN
+! fourth order flux one in from the boundary
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs10 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs10 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y10 = cr + abs10
+              IF (1.0 .GT. y10) THEN
+                CALL PUSHREAL8(min14)
+                min14 = y10
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min14)
+                min14 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs61 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs61 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y61 = cr - abs61
+              IF (-1.0 .LT. y61) THEN
+                CALL PUSHREAL8(max11)
+                max11 = y61
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max11)
+                max11 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min14*field_old(i-1, k, j)&
+&                +0.5*max11*field_old(i, k, j))
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j)))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHCONTROL1B(1)
+      ELSE
+        CALL PUSHCONTROL1B(0)
+      END IF
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from28)
+    CALL PUSHCONTROL3B(5)
+  ELSE IF (horz_order .EQ. 5) THEN
+! enddo for outer J loop
+!--- end of 6th order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 4) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 4) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min15 = ide - 1
+    ELSE
+      min15 = ite
+    END IF
+    i_end = min15 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min16 = jde - 1
+    ELSE
+      min16 = jte
+    END IF
+    j_end = min16 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+!      IF(degrade_xs) i_start = MAX(its-1,ids-1)
+!      IF(degrade_xe) i_end   = MIN(ite+1,ide-2)
+    IF (degrade_xs) THEN
+      IF (its - 1 .LT. ids) THEN
+        i_start = ids
+      ELSE
+        i_start = its - 1
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ite + 1 .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite + 1
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts - 1
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte + 1
+      END IF
+      j_end_f = jde - 3
+    END IF
+    ad_from4 = j_start
+!  compute fluxes, 5th order
+j_loop_y_flux_5:DO j=ad_from4,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          ad_from = i_start
+          DO i=ad_from,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs11 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs11 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y11 = cr + abs11
+            IF (1.0 .GT. y11) THEN
+              CALL PUSHREAL8(min17)
+              min17 = y11
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min17)
+              min17 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs62 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs62 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y62 = cr - abs62
+            IF (-1.0 .LT. y62) THEN
+              CALL PUSHREAL8(max12)
+              max12 = y62
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max12)
+              max12 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min17*field_old(i, k, j-1)+&
+&              0.5*max12*field_old(i, k, j))
+            fqy(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k, j-1)&
+&              )-2./15.*(field(i, k, j+1)+field(i, k, j-2))+1./60.*(field&
+&              (i, k, j+2)+field(i, k, j-3))-SIGN(1, time_step)*SIGN(1., &
+&              vel)*(1./60.)*(field(i, k, j+2)-field(i, k, j-3)-5.*(field&
+&              (i, k, j+1)-field(i, k, j-2))+10.*(field(i, k, j)-field(i&
+&              , k, j-1))))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from)
+        END DO
+        CALL PUSHCONTROL3B(5)
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          ad_from0 = i_start
+          DO i=ad_from0,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs12 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs12 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y12 = cr + abs12
+            IF (1.0 .GT. y12) THEN
+              CALL PUSHREAL8(min18)
+              min18 = y12
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min18)
+              min18 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs63 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs63 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y63 = cr - abs63
+            IF (-1.0 .LT. y63) THEN
+              CALL PUSHREAL8(max13)
+              max13 = y63
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max13)
+              max13 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min18*field_old(i, k, j-1)+&
+&              0.5*max13*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from0)
+        END DO
+        CALL PUSHCONTROL3B(4)
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          ad_from1 = i_start
+          DO i=ad_from1,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs13 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs13 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y13 = cr + abs13
+            IF (1.0 .GT. y13) THEN
+              CALL PUSHREAL8(min19)
+              min19 = y13
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min19)
+              min19 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs64 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs64 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y64 = cr - abs64
+            IF (-1.0 .LT. y64) THEN
+              CALL PUSHREAL8(max14)
+              max14 = y64
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max14)
+              max14 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min19*field_old(i, k, j-1)+&
+&              0.5*max14*field_old(i, k, j))
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1))))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from1)
+        END DO
+        CALL PUSHCONTROL3B(3)
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          ad_from2 = i_start
+          DO i=ad_from2,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs14 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs14 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y14 = cr + abs14
+            IF (1.0 .GT. y14) THEN
+              CALL PUSHREAL8(min20)
+              min20 = y14
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min20)
+              min20 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs65 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs65 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y65 = cr - abs65
+            IF (-1.0 .LT. y65) THEN
+              CALL PUSHREAL8(max15)
+              max15 = y65
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max15)
+              max15 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min20*field_old(i, k, j-1)+&
+&              0.5*max15*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from2)
+        END DO
+        CALL PUSHCONTROL3B(2)
+      ELSE IF (j .EQ. jde - 2) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts,ktf
+          ad_from3 = i_start
+          DO i=ad_from3,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs15 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs15 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y15 = cr + abs15
+            IF (1.0 .GT. y15) THEN
+              CALL PUSHREAL8(min21)
+              min21 = y15
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min21)
+              min21 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs66 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs66 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y66 = cr - abs66
+            IF (-1.0 .LT. y66) THEN
+              CALL PUSHREAL8(max16)
+              max16 = y66
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max16)
+              max16 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min21*field_old(i, k, j-1)+&
+&              0.5*max16*field_old(i, k, j))
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1))))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from3)
+        END DO
+        CALL PUSHCONTROL3B(1)
+      ELSE
+        CALL PUSHCONTROL3B(0)
+      END IF
+    END DO j_loop_y_flux_5
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from4)
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min22 = ide - 1
+    ELSE
+      min22 = ite
+    END IF
+    i_end = min22 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min23 = jde - 1
+    ELSE
+      min23 = jte
+    END IF
+    j_end = min23 + 1
+!--  modify loop bounds for open and specified b.c
+!      IF(degrade_ys) j_start = MAX(jts-1,jds+1)
+!      IF(degrade_ye) j_end   = MIN(jte+1,jde-2)
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds) THEN
+        j_start = jds
+      ELSE
+        j_start = jts - 1
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte + 1
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its - 1) THEN
+        i_start = its - 1
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = ids + 3
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite + 1) THEN
+        i_end = ite + 1
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+    END IF
+    ad_from6 = j_start
+!  compute fluxes
+    DO j=ad_from6,j_end
+!  5th order flux
+      DO k=kts,ktf
+        DO i=i_start_f,i_end_f
+          CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          CALL PUSHREAL8(vel)
+          vel = ru(i, k, j)
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs16 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs16 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y16 = cr + abs16
+          IF (1.0 .GT. y16) THEN
+            CALL PUSHREAL8(min24)
+            min24 = y16
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min24)
+            min24 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs67 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs67 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y67 = cr - abs67
+          IF (-1.0 .LT. y67) THEN
+            CALL PUSHREAL8(max17)
+            max17 = y67
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max17)
+            max17 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min24*field_old(i-1, k, j)+0.5&
+&            *max17*field_old(i, k, j))
+          fqx(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i-1, k, j))-&
+&            2./15.*(field(i+1, k, j)+field(i-2, k, j))+1./60.*(field(i+2&
+&            , k, j)+field(i-3, k, j))-SIGN(1, time_step)*SIGN(1., vel)*(&
+&            1./60.)*(field(i+2, k, j)-field(i-3, k, j)-5.*(field(i+1, k&
+&            , j)-field(i-2, k, j))+10.*(field(i, k, j)-field(i-1, k, j))&
+&            ))
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        ad_from5 = i_start
+        DO i=ad_from5,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+! second order
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)/mu
+              cr = vel*dt/dx
+              IF (cr .GE. 0.) THEN
+                abs17 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs17 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y17 = cr + abs17
+              IF (1.0 .GT. y17) THEN
+                CALL PUSHREAL8(min25)
+                min25 = y17
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min25)
+                min25 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs68 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs68 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y68 = cr - abs68
+              IF (-1.0 .LT. y68) THEN
+                CALL PUSHREAL8(max18)
+                max18 = y68
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max18)
+                max18 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min25*field_old(i-1, k, j)&
+&                +0.5*max18*field_old(i, k, j))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ids + 2) THEN
+! third order
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs18 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs18 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y18 = cr + abs18
+              IF (1.0 .GT. y18) THEN
+                CALL PUSHREAL8(min26)
+                min26 = y18
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min26)
+                min26 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs69 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs69 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y69 = cr - abs69
+              IF (-1.0 .LT. y69) THEN
+                CALL PUSHREAL8(max19)
+                max19 = y69
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max19)
+                max19 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min26*field_old(i-1, k, j)&
+&                +0.5*max19*field_old(i, k, j))
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1, &
+&                time_step)*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-&
+&                field(i-2, k, j)-3.*(field(i, k, j)-field(i-1, k, j))))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(ad_from5)
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+! second order flux next to the boundary
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs19 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs19 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y19 = cr + abs19
+              IF (1.0 .GT. y19) THEN
+                CALL PUSHREAL8(min27)
+                min27 = y19
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min27)
+                min27 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs70 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs70 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y70 = cr - abs70
+              IF (-1.0 .LT. y70) THEN
+                CALL PUSHREAL8(max20)
+                max20 = y70
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max20)
+                max20 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min27*field_old(i-1, k, j)&
+&                +0.5*max20*field_old(i, k, j))
+              fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, &
+&                k, j))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ide - 2) THEN
+! third order flux one in from the boundary
+            DO k=kts,ktf
+              CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+              dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+              CALL PUSHREAL8(mu)
+              mu = 0.5*(mut(i, j)+mut(i-1, j))
+              CALL PUSHREAL8(vel)
+              vel = ru(i, k, j)
+              cr = vel*dt/dx/mu
+              IF (cr .GE. 0.) THEN
+                abs20 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs20 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y20 = cr + abs20
+              IF (1.0 .GT. y20) THEN
+                CALL PUSHREAL8(min28)
+                min28 = y20
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(min28)
+                min28 = 1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              IF (cr .GE. 0.) THEN
+                abs71 = cr
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                abs71 = -cr
+                CALL PUSHCONTROL1B(1)
+              END IF
+              y71 = cr - abs71
+              IF (-1.0 .LT. y71) THEN
+                CALL PUSHREAL8(max21)
+                max21 = y71
+                CALL PUSHCONTROL1B(0)
+              ELSE
+                CALL PUSHREAL8(max21)
+                max21 = -1.0
+                CALL PUSHCONTROL1B(1)
+              END IF
+              fqxl(i, k, j) = mu*(dx/dt)*(0.5*min28*field_old(i-1, k, j)&
+&                +0.5*max21*field_old(i, k, j))
+              fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j&
+&                ))-1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1, &
+&                time_step)*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-&
+&                field(i-2, k, j)-3.*(field(i, k, j)-field(i-1, k, j))))
+              fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+            END DO
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHCONTROL1B(1)
+      ELSE
+        CALL PUSHCONTROL1B(0)
+      END IF
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from6)
+    CALL PUSHCONTROL3B(4)
+  ELSE IF (horz_order .EQ. 4) THEN
+! enddo for outer J loop
+!--- end of 5th order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 1) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 1) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 2) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min29 = ide - 1
+    ELSE
+      min29 = ite
+    END IF
+    i_end = min29 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min30 = jde - 1
+    ELSE
+      min30 = jte
+    END IF
+    j_end = min30 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+    IF (degrade_xs) i_start = its
+    IF (degrade_xe) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 2
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 2
+    END IF
+    ad_from10 = j_start
+!  compute fluxes, 4th order
+j_loop_y_flux_4:DO j=ad_from10,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          ad_from7 = i_start
+          DO i=ad_from7,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs21 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs21 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y21 = cr + abs21
+            IF (1.0 .GT. y21) THEN
+              CALL PUSHREAL8(min31)
+              min31 = y21
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min31)
+              min31 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs72 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs72 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y72 = cr - abs72
+            IF (-1.0 .LT. y72) THEN
+              CALL PUSHREAL8(max22)
+              max22 = y72
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max22)
+              max22 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min31*field_old(i, k, j-1)+&
+&              0.5*max22*field_old(i, k, j))
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2)))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from7)
+        END DO
+        CALL PUSHCONTROL2B(3)
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          ad_from8 = i_start
+          DO i=ad_from8,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs22 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs22 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y22 = cr + abs22
+            IF (1.0 .GT. y22) THEN
+              CALL PUSHREAL8(min32)
+              min32 = y22
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min32)
+              min32 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs73 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs73 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y73 = cr - abs73
+            IF (-1.0 .LT. y73) THEN
+              CALL PUSHREAL8(max23)
+              max23 = y73
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max23)
+              max23 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min32*field_old(i, k, j-1)+&
+&              0.5*max23*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from8)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          ad_from9 = i_start
+          DO i=ad_from9,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs23 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs23 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y23 = cr + abs23
+            IF (1.0 .GT. y23) THEN
+              CALL PUSHREAL8(min33)
+              min33 = y23
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min33)
+              min33 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs74 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs74 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y74 = cr - abs74
+            IF (-1.0 .LT. y74) THEN
+              CALL PUSHREAL8(max24)
+              max24 = y74
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max24)
+              max24 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min33*field_old(i, k, j-1)+&
+&              0.5*max24*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from9)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE
+        CALL PUSHCONTROL2B(0)
+      END IF
+    END DO j_loop_y_flux_4
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from10)
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min34 = ide - 1
+    ELSE
+      min34 = ite
+    END IF
+    i_end = min34 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min35 = jde - 1
+    ELSE
+      min35 = jte
+    END IF
+    j_end = min35 + 1
+!--  modify loop bounds for open and specified b.c
+    IF (degrade_ys) j_start = jts
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 2
+    END IF
+    ad_from11 = j_start
+!  compute fluxes
+    DO j=ad_from11,j_end
+!  4th order flux
+      DO k=kts,ktf
+        CALL PUSHINTEGER4(i)
+        DO i=i_start_f,i_end_f
+          CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          CALL PUSHREAL8(vel)
+          vel = ru(i, k, j)
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs24 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs24 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y24 = cr + abs24
+          IF (1.0 .GT. y24) THEN
+            CALL PUSHREAL8(min36)
+            min36 = y24
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min36)
+            min36 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs75 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs75 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y75 = cr - abs75
+          IF (-1.0 .LT. y75) THEN
+            CALL PUSHREAL8(max25)
+            max25 = y75
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max25)
+            max25 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min36*field_old(i-1, k, j)+0.5&
+&            *max25*field_old(i, k, j))
+          fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j))-&
+&            1./12.*(field(i+1, k, j)+field(i-2, k, j)))
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        IF (i_start .EQ. ids + 1) THEN
+          CALL PUSHINTEGER4(i)
+! second order flux next to the boundary
+          i = ids + 1
+          DO k=kts,ktf
+            CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            CALL PUSHREAL8(vel)
+            vel = ru(i, k, j)/mu
+            cr = vel*dt/dx
+            IF (cr .GE. 0.) THEN
+              abs25 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs25 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y25 = cr + abs25
+            IF (1.0 .GT. y25) THEN
+              CALL PUSHREAL8(min37)
+              min37 = y25
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min37)
+              min37 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs76 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs76 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y76 = cr - abs76
+            IF (-1.0 .LT. y76) THEN
+              CALL PUSHREAL8(max26)
+              max26 = y76
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max26)
+              max26 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min37*field_old(i-1, k, j)+&
+&              0.5*max26*field_old(i, k, j))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+          CALL PUSHCONTROL2B(0)
+        ELSE
+          CALL PUSHCONTROL2B(1)
+        END IF
+      ELSE
+        CALL PUSHCONTROL2B(2)
+      END IF
+      IF (degrade_xe) THEN
+        IF (i_end .EQ. ide - 2) THEN
+          CALL PUSHINTEGER4(i)
+! second order flux next to the boundary
+          i = ide - 1
+          DO k=kts,ktf
+            CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            CALL PUSHREAL8(vel)
+            vel = ru(i, k, j)
+            cr = vel*dt/dx/mu
+            IF (cr .GE. 0.) THEN
+              abs26 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs26 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y26 = cr + abs26
+            IF (1.0 .GT. y26) THEN
+              CALL PUSHREAL8(min38)
+              min38 = y26
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min38)
+              min38 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs77 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs77 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y77 = cr - abs77
+            IF (-1.0 .LT. y77) THEN
+              CALL PUSHREAL8(max27)
+              max27 = y77
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max27)
+              max27 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min38*field_old(i-1, k, j)+&
+&              0.5*max27*field_old(i, k, j))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+          CALL PUSHCONTROL2B(2)
+        ELSE
+          CALL PUSHCONTROL2B(1)
+        END IF
+      ELSE
+        CALL PUSHCONTROL2B(0)
+      END IF
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from11)
+    CALL PUSHCONTROL3B(3)
+  ELSE IF (horz_order .EQ. 3) THEN
+! enddo for outer J loop
+!--- end of 4th order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 1) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 1) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min39 = ide - 1
+    ELSE
+      min39 = ite
+    END IF
+    i_end = min39 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min40 = jde - 1
+    ELSE
+      min40 = jte
+    END IF
+    j_end = min40 + 1
+    j_start_f = j_start
+    j_end_f = j_end + 1
+!--  modify loop bounds if open or specified
+    IF (degrade_xs) i_start = its
+    IF (degrade_xe) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 2
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 2
+    END IF
+    ad_from15 = j_start
+!  compute fluxes, 3rd order
+j_loop_y_flux_3:DO j=ad_from15,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+! use full stencil
+        DO k=kts,ktf
+          ad_from12 = i_start
+          DO i=ad_from12,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs27 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs27 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y27 = cr + abs27
+            IF (1.0 .GT. y27) THEN
+              CALL PUSHREAL8(min41)
+              min41 = y27
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min41)
+              min41 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs78 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs78 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y78 = cr - abs78
+            IF (-1.0 .LT. y78) THEN
+              CALL PUSHREAL8(max28)
+              max28 = y78
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max28)
+              max28 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min41*field_old(i, k, j-1)+&
+&              0.5*max28*field_old(i, k, j))
+            fqy(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k, j-1))&
+&              -1./12.*(field(i, k, j+1)+field(i, k, j-2))+SIGN(1, &
+&              time_step)*SIGN(1., vel)*(1./12.)*(field(i, k, j+1)-field(&
+&              i, k, j-2)-3.*(field(i, k, j)-field(i, k, j-1))))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from12)
+        END DO
+        CALL PUSHCONTROL2B(3)
+      ELSE IF (j .EQ. jds + 1) THEN
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          ad_from13 = i_start
+          DO i=ad_from13,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs28 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs28 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y28 = cr + abs28
+            IF (1.0 .GT. y28) THEN
+              CALL PUSHREAL8(min42)
+              min42 = y28
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min42)
+              min42 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs79 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs79 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y79 = cr - abs79
+            IF (-1.0 .LT. y79) THEN
+              CALL PUSHREAL8(max29)
+              max29 = y79
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max29)
+              max29 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min42*field_old(i, k, j-1)+&
+&              0.5*max29*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from13)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      ELSE IF (j .EQ. jde - 1) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          ad_from14 = i_start
+          DO i=ad_from14,i_end
+            CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+            dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i, j-1))
+            CALL PUSHREAL8(vel)
+            vel = rv(i, k, j)
+            cr = vel*dt/dy/mu
+            IF (cr .GE. 0.) THEN
+              abs29 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs29 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y29 = cr + abs29
+            IF (1.0 .GT. y29) THEN
+              CALL PUSHREAL8(min43)
+              min43 = y29
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min43)
+              min43 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs80 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs80 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y80 = cr - abs80
+            IF (-1.0 .LT. y80) THEN
+              CALL PUSHREAL8(max30)
+              max30 = y80
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max30)
+              max30 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqyl(i, k, j) = mu*(dy/dt)*(0.5*min43*field_old(i, k, j-1)+&
+&              0.5*max30*field_old(i, k, j))
+            fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j&
+&              -1))
+            fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from14)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE
+        CALL PUSHCONTROL2B(0)
+      END IF
+    END DO j_loop_y_flux_3
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from15)
+!  next, x flux
+!--  these bounds are for periodic and sym conditions
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min44 = ide - 1
+    ELSE
+      min44 = ite
+    END IF
+    i_end = min44 + 1
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min45 = jde - 1
+    ELSE
+      min45 = jte
+    END IF
+    j_end = min45 + 1
+!--  modify loop bounds for open and specified b.c
+    IF (degrade_ys) j_start = jts
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 2
+    END IF
+    ad_from16 = j_start
+!  compute fluxes
+    DO j=ad_from16,j_end
+!  4th order flux
+      DO k=kts,ktf
+        CALL PUSHINTEGER4(i)
+        DO i=i_start_f,i_end_f
+          CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          CALL PUSHREAL8(vel)
+          vel = ru(i, k, j)
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs30 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs30 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y30 = cr + abs30
+          IF (1.0 .GT. y30) THEN
+            CALL PUSHREAL8(min46)
+            min46 = y30
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min46)
+            min46 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs81 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs81 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y81 = cr - abs81
+          IF (-1.0 .LT. y81) THEN
+            CALL PUSHREAL8(max31)
+            max31 = y81
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max31)
+            max31 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min46*field_old(i-1, k, j)+0.5&
+&            *max31*field_old(i, k, j))
+          fqx(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i-1, k, j))-&
+&            1./12.*(field(i+1, k, j)+field(i-2, k, j))+SIGN(1, time_step&
+&            )*SIGN(1., vel)*(1./12.)*(field(i+1, k, j)-field(i-2, k, j)-&
+&            3.*(field(i, k, j)-field(i-1, k, j))))
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+      END DO
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        IF (i_start .EQ. ids + 1) THEN
+          CALL PUSHINTEGER4(i)
+! second order flux next to the boundary
+          i = ids + 1
+          DO k=kts,ktf
+            CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            CALL PUSHREAL8(vel)
+            vel = ru(i, k, j)/mu
+            cr = vel*dt/dx
+            IF (cr .GE. 0.) THEN
+              abs31 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs31 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y31 = cr + abs31
+            IF (1.0 .GT. y31) THEN
+              CALL PUSHREAL8(min47)
+              min47 = y31
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min47)
+              min47 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs82 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs82 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y82 = cr - abs82
+            IF (-1.0 .LT. y82) THEN
+              CALL PUSHREAL8(max32)
+              max32 = y82
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max32)
+              max32 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min47*field_old(i-1, k, j)+&
+&              0.5*max32*field_old(i, k, j))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+          CALL PUSHCONTROL2B(0)
+        ELSE
+          CALL PUSHCONTROL2B(1)
+        END IF
+      ELSE
+        CALL PUSHCONTROL2B(2)
+      END IF
+      IF (degrade_xe) THEN
+        IF (i_end .EQ. ide - 2) THEN
+          CALL PUSHINTEGER4(i)
+! second order flux next to the boundary
+          i = ide - 1
+          DO k=kts,ktf
+            CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+            dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+            CALL PUSHREAL8(mu)
+            mu = 0.5*(mut(i, j)+mut(i-1, j))
+            CALL PUSHREAL8(vel)
+            vel = ru(i, k, j)
+            cr = vel*dt/dx/mu
+            IF (cr .GE. 0.) THEN
+              abs32 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs32 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y32 = cr + abs32
+            IF (1.0 .GT. y32) THEN
+              CALL PUSHREAL8(min48)
+              min48 = y32
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(min48)
+              min48 = 1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (cr .GE. 0.) THEN
+              abs83 = cr
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              abs83 = -cr
+              CALL PUSHCONTROL1B(1)
+            END IF
+            y83 = cr - abs83
+            IF (-1.0 .LT. y83) THEN
+              CALL PUSHREAL8(max33)
+              max33 = y83
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(max33)
+              max33 = -1.0
+              CALL PUSHCONTROL1B(1)
+            END IF
+            fqxl(i, k, j) = mu*(dx/dt)*(0.5*min48*field_old(i-1, k, j)+&
+&              0.5*max33*field_old(i, k, j))
+            fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k&
+&              , j))
+            fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+          END DO
+          CALL PUSHCONTROL2B(2)
+        ELSE
+          CALL PUSHCONTROL2B(1)
+        END IF
+      ELSE
+        CALL PUSHCONTROL2B(0)
+      END IF
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from16)
+    CALL PUSHCONTROL3B(2)
+  ELSE IF (horz_order .EQ. 2) THEN
+! enddo for outer J loop
+!--- end of 3rd order horizontal flux calculation
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 1) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 1) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 2) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min49 = ide - 1
+    ELSE
+      min49 = ite
+    END IF
+    i_end = min49 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min50 = jde - 1
+    ELSE
+      min50 = jte
+    END IF
+    j_end = min50 + 1
+!--  modify loop bounds if open or specified
+    IF (degrade_xs) i_start = its
+    IF (degrade_xe) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 2) THEN
+        j_end = jde - 2
+      ELSE
+        j_end = jte
+      END IF
+    END IF
+    ad_from18 = j_start
+!  compute fluxes, 2nd order, y flux
+    DO j=ad_from18,j_end+1
+      DO k=kts,ktf
+        ad_from17 = i_start
+        DO i=ad_from17,i_end
+          CALL PUSHREAL8(dy)
+! ADT eqn 48 d/dy
+          dy = 2./(msftx(i, j)+msftx(i, j-1))/rdy
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i, j-1))
+          CALL PUSHREAL8(vel)
+          vel = rv(i, k, j)
+          cr = vel*dt/dy/mu
+          IF (cr .GE. 0.) THEN
+            abs33 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs33 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y33 = cr + abs33
+          IF (1.0 .GT. y33) THEN
+            CALL PUSHREAL8(min51)
+            min51 = y33
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min51)
+            min51 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs84 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs84 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y84 = cr - abs84
+          IF (-1.0 .LT. y84) THEN
+            CALL PUSHREAL8(max34)
+            max34 = y84
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max34)
+            max34 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqyl(i, k, j) = mu*(dy/dt)*(0.5*min51*field_old(i, k, j-1)+0.5&
+&            *max34*field_old(i, k, j))
+          fqy(i, k, j) = 0.5*rv(i, k, j)*(field(i, k, j)+field(i, k, j-1&
+&            ))
+          fqy(i, k, j) = fqy(i, k, j) - fqyl(i, k, j)
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from17)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from18)
+    ad_from20 = j_start
+!  next, x flux
+    DO j=ad_from20,j_end
+      DO k=kts,ktf
+        ad_from19 = i_start
+        DO i=ad_from19,i_end+1
+          CALL PUSHREAL8(dx)
+! ADT eqn 48 d/dx
+          dx = 2./(msfty(i, j)+msfty(i-1, j))/rdx
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i-1, j))
+          CALL PUSHREAL8(vel)
+          vel = ru(i, k, j)
+          cr = vel*dt/dx/mu
+          IF (cr .GE. 0.) THEN
+            abs34 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs34 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y34 = cr + abs34
+          IF (1.0 .GT. y34) THEN
+            CALL PUSHREAL8(min52)
+            min52 = y34
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min52)
+            min52 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs85 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs85 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y85 = cr - abs85
+          IF (-1.0 .LT. y85) THEN
+            CALL PUSHREAL8(max35)
+            max35 = y85
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max35)
+            max35 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqxl(i, k, j) = mu*(dx/dt)*(0.5*min52*field_old(i-1, k, j)+0.5&
+&            *max35*field_old(i, k, j))
+          fqx(i, k, j) = 0.5*ru(i, k, j)*(field(i, k, j)+field(i-1, k, j&
+&            ))
+          fqx(i, k, j) = fqx(i, k, j) - fqxl(i, k, j)
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from19)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from20)
+    CALL PUSHCONTROL3B(1)
+  ELSE
+    CALL PUSHCONTROL3B(0)
+  END IF
+!  pick up the rest of the horizontal radiation boundary conditions.
+!  (these are the computations that don't require 'cb'.
+!  first, set to index ranges
   i_start = its
-  i_end   = MIN(ite,ide-1)
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
   j_start = jts
-  j_end   = MIN(jte,jde-1)
-
-!FROM LPB[35]
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+!  compute x (u) conditions for v, w, or scalar
+  IF (config_flags%open_xs .AND. its .EQ. ids) THEN
+    ad_from29 = j_start
+    DO j=ad_from29,j_end
+      DO k=kts,ktf
+        IF (0.5*(ru(its, k, j)+ru(its+1, k, j)) .GT. 0.) THEN
+          CALL PUSHREAL8(ub)
+          ub = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(ub)
+          ub = 0.5*(ru(its, k, j)+ru(its+1, k, j))
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from29)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%open_xe .AND. ite .EQ. ide) THEN
+    ad_from30 = j_start
+    DO j=ad_from30,j_end
+      DO k=kts,ktf
+        IF (0.5*(ru(ite-1, k, j)+ru(ite, k, j)) .LT. 0.) THEN
+          CALL PUSHREAL8(ub)
+          ub = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(ub)
+          ub = 0.5*(ru(ite-1, k, j)+ru(ite, k, j))
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from30)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%open_ys .AND. jts .EQ. jds) THEN
+    ad_from31 = i_start
+    CALL PUSHINTEGER4(i)
+    DO i=ad_from31,i_end
+      DO k=kts,ktf
+        IF (0.5*(rv(i, k, jts)+rv(i, k, jts+1)) .GT. 0.) THEN
+          CALL PUSHREAL8(vb)
+          vb = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(vb)
+          vb = 0.5*(rv(i, k, jts)+rv(i, k, jts+1))
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(i - 1)
+    CALL PUSHINTEGER4(ad_from31)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%open_ye .AND. jte .EQ. jde) THEN
+    ad_from32 = i_start
+    CALL PUSHINTEGER4(i)
+    DO i=ad_from32,i_end
+      DO k=kts,ktf
+        IF (0.5*(rv(i, k, jte-1)+rv(i, k, jte)) .LT. 0.) THEN
+          CALL PUSHREAL8(vb)
+          vb = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(vb)
+          vb = 0.5*(rv(i, k, jte-1)+rv(i, k, jte))
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(i - 1)
+    CALL PUSHINTEGER4(ad_from32)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%polar .AND. jts .EQ. jds) THEN
+    ad_from33 = i_start
+    CALL PUSHINTEGER4(i)
+! Assuming rv(i,k,jds) = 0.
+    DO i=ad_from33,i_end
+      DO k=kts,ktf
+        IF (0.5*rv(i, k, jts+1) .GT. 0.) THEN
+          CALL PUSHREAL8(vb)
+          vb = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(vb)
+          vb = 0.5*rv(i, k, jts+1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(i - 1)
+    CALL PUSHINTEGER4(ad_from33)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%polar .AND. jte .EQ. jde) THEN
+    ad_from34 = i_start
+    CALL PUSHINTEGER4(i)
+! Assuming rv(i,k,jde) = 0.
+    DO i=ad_from34,i_end
+      DO k=kts,ktf
+        IF (0.5*rv(i, k, jte-1) .LT. 0.) THEN
+          CALL PUSHREAL8(vb)
+          vb = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(vb)
+          vb = 0.5*rv(i, k, jte-1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(i - 1)
+    CALL PUSHINTEGER4(ad_from34)
+    CALL PUSHCONTROL1B(1)
+  ELSE
+    CALL PUSHCONTROL1B(0)
+  END IF
+!-------------------- vertical advection
+!-- loop bounds for periodic or sym conditions
+  i_start = its - 1
+  IF (ite .GT. ide - 1) THEN
+    min53 = ide - 1
+  ELSE
+    min53 = ite
+  END IF
+  CALL PUSHINTEGER4(i_end)
+  i_end = min53 + 1
+  j_start = jts - 1
+  IF (jte .GT. jde - 1) THEN
+    min54 = jde - 1
+  ELSE
+    min54 = jte
+  END IF
+  CALL PUSHINTEGER4(j_end)
+  j_end = min54 + 1
+!-- loop bounds for open or specified conditions
+  IF (degrade_xs) THEN
+    IF (its - 1 .LT. ids) THEN
+      i_start = ids
+    ELSE
+      i_start = its - 1
+    END IF
+  END IF
+  IF (degrade_xe) THEN
+    IF (ite + 1 .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite + 1
+    END IF
+  END IF
+  IF (degrade_ys) THEN
+    IF (jts - 1 .LT. jds) THEN
+      j_start = jds
+    ELSE
+      j_start = jts - 1
+    END IF
+  END IF
+  IF (degrade_ye) THEN
+    IF (jte + 1 .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte + 1
+    END IF
+  END IF
+  IF (vert_order .EQ. 6) THEN
+    ad_from38 = j_start
+    DO j=ad_from38,j_end
+      ad_from35 = i_start
+      CALL PUSHINTEGER4(i)
+      DO i=ad_from35,i_end
+        fqz(i, 1, j) = 0.
+        fqzl(i, 1, j) = 0.
+        fqz(i, kde, j) = 0.
+        fqzl(i, kde, j) = 0.
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from35)
+      CALL PUSHINTEGER4(k)
+      DO k=kts+3,ktf-2
+        ad_from36 = i_start
+        DO i=ad_from36,i_end
+          CALL PUSHREAL8(dz)
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL PUSHREAL8(vel)
+          vel = rom(i, k, j)
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs35 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs35 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y35 = cr + abs35
+          IF (1.0 .GT. y35) THEN
+            CALL PUSHREAL8(min55)
+            min55 = y35
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min55)
+            min55 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs86 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs86 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y86 = cr - abs86
+          IF (-1.0 .LT. y86) THEN
+            CALL PUSHREAL8(max36)
+            max36 = y86
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max36)
+            max36 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min55*field_old(i, k-1, j)+0.5&
+&            *max36*field_old(i, k, j))
+          fqz(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k-1, j))-&
+&            2./15.*(field(i, k+1, j)+field(i, k-2, j))+1./60.*(field(i, &
+&            k+2, j)+field(i, k-3, j)))
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from36)
+      END DO
+      ad_from37 = i_start
+      DO i=ad_from37,i_end
+        CALL PUSHINTEGER4(k)
+        k = kts + 1
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        CALL PUSHREAL8(mu)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs36 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs36 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y36 = cr + abs36
+        IF (1.0 .GT. y36) THEN
+          CALL PUSHREAL8(min56)
+          min56 = y36
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min56)
+          min56 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs87 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs87 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y87 = cr - abs87
+        IF (-1.0 .LT. y87) THEN
+          CALL PUSHREAL8(max37)
+          max37 = y87
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max37)
+          max37 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min56*field_old(i, k-1, j)+0.5*&
+&          max37*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = kts + 2
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs37 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs37 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y37 = cr + abs37
+        IF (1.0 .GT. y37) THEN
+          CALL PUSHREAL8(min57)
+          min57 = y37
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min57)
+          min57 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs88 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs88 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y88 = cr - abs88
+        IF (-1.0 .LT. y88) THEN
+          CALL PUSHREAL8(max38)
+          max38 = y88
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max38)
+          max38 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min57*field_old(i, k-1, j)+0.5*&
+&          max38*field_old(i, k, j))
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j)))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf - 1
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs38 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs38 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y38 = cr + abs38
+        IF (1.0 .GT. y38) THEN
+          CALL PUSHREAL8(min58)
+          min58 = y38
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min58)
+          min58 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs89 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs89 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y89 = cr - abs89
+        IF (-1.0 .LT. y89) THEN
+          CALL PUSHREAL8(max39)
+          max39 = y89
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max39)
+          max39 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min58*field_old(i, k-1, j)+0.5*&
+&          max39*field_old(i, k, j))
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j)))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs39 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs39 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y39 = cr + abs39
+        IF (1.0 .GT. y39) THEN
+          CALL PUSHREAL8(min59)
+          min59 = y39
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min59)
+          min59 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs90 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs90 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y90 = cr - abs90
+        IF (-1.0 .LT. y90) THEN
+          CALL PUSHREAL8(max40)
+          max40 = y90
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max40)
+          max40 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min59*field_old(i, k-1, j)+0.5*&
+&          max40*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from37)
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from38)
+    CALL PUSHCONTROL3B(0)
+  ELSE IF (vert_order .EQ. 5) THEN
+    ad_from42 = j_start
+    DO j=ad_from42,j_end
+      ad_from39 = i_start
+      CALL PUSHINTEGER4(i)
+      DO i=ad_from39,i_end
+        fqz(i, 1, j) = 0.
+        fqzl(i, 1, j) = 0.
+        fqz(i, kde, j) = 0.
+        fqzl(i, kde, j) = 0.
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from39)
+      CALL PUSHINTEGER4(k)
+      DO k=kts+3,ktf-2
+        ad_from40 = i_start
+        DO i=ad_from40,i_end
+          CALL PUSHREAL8(dz)
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL PUSHREAL8(vel)
+          vel = rom(i, k, j)
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs40 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs40 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y40 = cr + abs40
+          IF (1.0 .GT. y40) THEN
+            CALL PUSHREAL8(min60)
+            min60 = y40
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min60)
+            min60 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs91 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs91 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y91 = cr - abs91
+          IF (-1.0 .LT. y91) THEN
+            CALL PUSHREAL8(max41)
+            max41 = y91
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max41)
+            max41 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min60*field_old(i, k-1, j)+0.5&
+&            *max41*field_old(i, k, j))
+          fqz(i, k, j) = vel*(37./60.*(field(i, k, j)+field(i, k-1, j))-&
+&            2./15.*(field(i, k+1, j)+field(i, k-2, j))+1./60.*(field(i, &
+&            k+2, j)+field(i, k-3, j))-SIGN(1, time_step)*SIGN(1., -vel)*&
+&            (1./60.)*(field(i, k+2, j)-field(i, k-3, j)-5.*(field(i, k+1&
+&            , j)-field(i, k-2, j))+10.*(field(i, k, j)-field(i, k-1, j))&
+&            ))
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from40)
+      END DO
+      ad_from41 = i_start
+      DO i=ad_from41,i_end
+        CALL PUSHINTEGER4(k)
+        k = kts + 1
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        CALL PUSHREAL8(mu)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs41 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs41 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y41 = cr + abs41
+        IF (1.0 .GT. y41) THEN
+          CALL PUSHREAL8(min61)
+          min61 = y41
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min61)
+          min61 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs92 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs92 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y92 = cr - abs92
+        IF (-1.0 .LT. y92) THEN
+          CALL PUSHREAL8(max42)
+          max42 = y92
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max42)
+          max42 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min61*field_old(i, k-1, j)+0.5*&
+&          max42*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = kts + 2
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs42 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs42 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y42 = cr + abs42
+        IF (1.0 .GT. y42) THEN
+          CALL PUSHREAL8(min62)
+          min62 = y42
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min62)
+          min62 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs93 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs93 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y93 = cr - abs93
+        IF (-1.0 .LT. y93) THEN
+          CALL PUSHREAL8(max43)
+          max43 = y93
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max43)
+          max43 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min62*field_old(i, k-1, j)+0.5*&
+&          max43*field_old(i, k, j))
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step)*&
+&          SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)-3.*&
+&          (field(i, k, j)-field(i, k-1, j))))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf - 1
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs43 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs43 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y43 = cr + abs43
+        IF (1.0 .GT. y43) THEN
+          CALL PUSHREAL8(min63)
+          min63 = y43
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min63)
+          min63 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs94 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs94 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y94 = cr - abs94
+        IF (-1.0 .LT. y94) THEN
+          CALL PUSHREAL8(max44)
+          max44 = y94
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max44)
+          max44 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min63*field_old(i, k-1, j)+0.5*&
+&          max44*field_old(i, k, j))
+        fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-1./&
+&          12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step)*&
+&          SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)-3.*&
+&          (field(i, k, j)-field(i, k-1, j))))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs44 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs44 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y44 = cr + abs44
+        IF (1.0 .GT. y44) THEN
+          CALL PUSHREAL8(min64)
+          min64 = y44
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min64)
+          min64 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs95 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs95 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y95 = cr - abs95
+        IF (-1.0 .LT. y95) THEN
+          CALL PUSHREAL8(max45)
+          max45 = y95
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max45)
+          max45 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min64*field_old(i, k-1, j)+0.5*&
+&          max45*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from41)
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from42)
+    CALL PUSHCONTROL3B(1)
+  ELSE IF (vert_order .EQ. 4) THEN
+    ad_from46 = j_start
+    DO j=ad_from46,j_end
+      ad_from43 = i_start
+      CALL PUSHINTEGER4(i)
+      DO i=ad_from43,i_end
+        fqz(i, 1, j) = 0.
+        fqzl(i, 1, j) = 0.
+        fqz(i, kde, j) = 0.
+        fqzl(i, kde, j) = 0.
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from43)
+      CALL PUSHINTEGER4(k)
+      DO k=kts+2,ktf-1
+        ad_from44 = i_start
+        DO i=ad_from44,i_end
+          CALL PUSHREAL8(dz)
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL PUSHREAL8(vel)
+          vel = rom(i, k, j)
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs45 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs45 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y45 = cr + abs45
+          IF (1.0 .GT. y45) THEN
+            CALL PUSHREAL8(min65)
+            min65 = y45
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min65)
+            min65 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs96 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs96 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y96 = cr - abs96
+          IF (-1.0 .LT. y96) THEN
+            CALL PUSHREAL8(max46)
+            max46 = y96
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max46)
+            max46 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min65*field_old(i, k-1, j)+0.5&
+&            *max46*field_old(i, k, j))
+          fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&            1./12.*(field(i, k+1, j)+field(i, k-2, j)))
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from44)
+      END DO
+      ad_from45 = i_start
+      DO i=ad_from45,i_end
+        CALL PUSHINTEGER4(k)
+        k = kts + 1
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        CALL PUSHREAL8(mu)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs46 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs46 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y46 = cr + abs46
+        IF (1.0 .GT. y46) THEN
+          CALL PUSHREAL8(min66)
+          min66 = y46
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min66)
+          min66 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs97 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs97 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y97 = cr - abs97
+        IF (-1.0 .LT. y97) THEN
+          CALL PUSHREAL8(max47)
+          max47 = y97
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max47)
+          max47 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min66*field_old(i, k-1, j)+0.5*&
+&          max47*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs47 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs47 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y47 = cr + abs47
+        IF (1.0 .GT. y47) THEN
+          CALL PUSHREAL8(min67)
+          min67 = y47
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min67)
+          min67 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs98 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs98 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y98 = cr - abs98
+        IF (-1.0 .LT. y98) THEN
+          CALL PUSHREAL8(max48)
+          max48 = y98
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max48)
+          max48 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min67*field_old(i, k-1, j)+0.5*&
+&          max48*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from45)
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from46)
+    CALL PUSHCONTROL3B(2)
+  ELSE IF (vert_order .EQ. 3) THEN
+    ad_from50 = j_start
+    DO j=ad_from50,j_end
+      ad_from47 = i_start
+      CALL PUSHINTEGER4(i)
+      DO i=ad_from47,i_end
+        fqz(i, 1, j) = 0.
+        fqzl(i, 1, j) = 0.
+        fqz(i, kde, j) = 0.
+        fqzl(i, kde, j) = 0.
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from47)
+      CALL PUSHINTEGER4(k)
+      DO k=kts+2,ktf-1
+        ad_from48 = i_start
+        DO i=ad_from48,i_end
+          CALL PUSHREAL8(dz)
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL PUSHREAL8(vel)
+          vel = rom(i, k, j)
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs48 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs48 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y48 = cr + abs48
+          IF (1.0 .GT. y48) THEN
+            CALL PUSHREAL8(min68)
+            min68 = y48
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min68)
+            min68 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs99 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs99 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y99 = cr - abs99
+          IF (-1.0 .LT. y99) THEN
+            CALL PUSHREAL8(max49)
+            max49 = y99
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max49)
+            max49 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min68*field_old(i, k-1, j)+0.5&
+&            *max49*field_old(i, k, j))
+          fqz(i, k, j) = vel*(7./12.*(field(i, k, j)+field(i, k-1, j))-&
+&            1./12.*(field(i, k+1, j)+field(i, k-2, j))+SIGN(1, time_step&
+&            )*SIGN(1., -vel)*(1./12.)*(field(i, k+1, j)-field(i, k-2, j)&
+&            -3.*(field(i, k, j)-field(i, k-1, j))))
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from48)
+      END DO
+      ad_from49 = i_start
+      DO i=ad_from49,i_end
+        CALL PUSHINTEGER4(k)
+        k = kts + 1
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        CALL PUSHREAL8(mu)
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs49 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs49 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y49 = cr + abs49
+        IF (1.0 .GT. y49) THEN
+          CALL PUSHREAL8(min69)
+          min69 = y49
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min69)
+          min69 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs100 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs100 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y100 = cr - abs100
+        IF (-1.0 .LT. y100) THEN
+          CALL PUSHREAL8(max50)
+          max50 = y100
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max50)
+          max50 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min69*field_old(i, k-1, j)+0.5*&
+&          max50*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        k = ktf
+        CALL PUSHREAL8(dz)
+        dz = 2./(rdzw(k)+rdzw(k-1))
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL PUSHREAL8(vel)
+        vel = rom(i, k, j)
+        cr = vel*dt/dz/mu
+        IF (cr .GE. 0.) THEN
+          abs50 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs50 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y50 = cr + abs50
+        IF (1.0 .GT. y50) THEN
+          CALL PUSHREAL8(min70)
+          min70 = y50
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(min70)
+          min70 = 1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        IF (cr .GE. 0.) THEN
+          abs101 = cr
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          abs101 = -cr
+          CALL PUSHCONTROL1B(1)
+        END IF
+        y101 = cr - abs101
+        IF (-1.0 .LT. y101) THEN
+          CALL PUSHREAL8(max51)
+          max51 = y101
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(max51)
+          max51 = -1.0
+          CALL PUSHCONTROL1B(1)
+        END IF
+        fqzl(i, k, j) = mu*(dz/dt)*(0.5*min70*field_old(i, k-1, j)+0.5*&
+&          max51*field_old(i, k, j))
+        fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*field(&
+&          i, k-1, j))
+        fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from49)
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from50)
+    CALL PUSHCONTROL3B(3)
+  ELSE IF (vert_order .EQ. 2) THEN
+    ad_from53 = j_start
+    DO j=ad_from53,j_end
+      ad_from51 = i_start
+      CALL PUSHINTEGER4(i)
+      DO i=ad_from51,i_end
+        fqz(i, 1, j) = 0.
+        fqzl(i, 1, j) = 0.
+        fqz(i, kde, j) = 0.
+        fqzl(i, kde, j) = 0.
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from51)
+      DO k=kts+1,ktf
+        ad_from52 = i_start
+        DO i=ad_from52,i_end
+          CALL PUSHREAL8(dz)
+          dz = 2./(rdzw(k)+rdzw(k-1))
+          CALL PUSHREAL8(mu)
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL PUSHREAL8(vel)
+          vel = rom(i, k, j)
+          cr = vel*dt/dz/mu
+          IF (cr .GE. 0.) THEN
+            abs51 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs51 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y51 = cr + abs51
+          IF (1.0 .GT. y51) THEN
+            CALL PUSHREAL8(min71)
+            min71 = y51
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(min71)
+            min71 = 1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (cr .GE. 0.) THEN
+            abs102 = cr
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            abs102 = -cr
+            CALL PUSHCONTROL1B(1)
+          END IF
+          y102 = cr - abs102
+          IF (-1.0 .LT. y102) THEN
+            CALL PUSHREAL8(max52)
+            max52 = y102
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHREAL8(max52)
+            max52 = -1.0
+            CALL PUSHCONTROL1B(1)
+          END IF
+          fqzl(i, k, j) = mu*(dz/dt)*(0.5*min71*field_old(i, k-1, j)+0.5&
+&            *max52*field_old(i, k, j))
+          fqz(i, k, j) = rom(i, k, j)*(fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))
+          fqz(i, k, j) = fqz(i, k, j) - fqzl(i, k, j)
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from52)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from53)
+    CALL PUSHCONTROL3B(4)
+  ELSE
+    CALL PUSHCONTROL3B(5)
+  END IF
+  IF (pd_limit) THEN
+! positive definite filter
+    i_start = its - 1
+    IF (ite .GT. ide - 1) THEN
+      min72 = ide - 1
+    ELSE
+      min72 = ite
+    END IF
+    i_end = min72 + 1
+    j_start = jts - 1
+    IF (jte .GT. jde - 1) THEN
+      min73 = jde - 1
+    ELSE
+      min73 = jte
+    END IF
+    j_end = min73 + 1
+!-- loop bounds for open or specified conditions
+    IF (degrade_xs) THEN
+      IF (its - 1 .LT. ids) THEN
+        i_start = ids
+      ELSE
+        i_start = its - 1
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ite + 1 .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite + 1
+      END IF
+    END IF
+    IF (degrade_ys) THEN
+      IF (jts - 1 .LT. jds) THEN
+        j_start = jds
+      ELSE
+        j_start = jts - 1
+      END IF
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte + 1 .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte + 1
+      END IF
+    END IF
+    IF (config_flags%specified .OR. config_flags%nested) THEN
+      IF (degrade_xs) THEN
+        IF (its - 1 .LT. ids + 1) THEN
+          i_start = ids + 1
+        ELSE
+          i_start = its - 1
+        END IF
+      END IF
+      IF (degrade_xe) THEN
+        IF (ite + 1 .GT. ide - 2) THEN
+          i_end = ide - 2
+        ELSE
+          i_end = ite + 1
+        END IF
+      END IF
+      IF (degrade_ys) THEN
+        IF (jts - 1 .LT. jds + 1) THEN
+          j_start = jds + 1
+        ELSE
+          j_start = jts - 1
+        END IF
+      END IF
+      IF (degrade_ye) THEN
+        IF (jte + 1 .GT. jde - 2) THEN
+          j_end = jde - 2
+        ELSE
+          j_end = jte + 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_xs) THEN
+      IF (degrade_xs) THEN
+        IF (its - 1 .LT. ids + 1) THEN
+          i_start = ids + 1
+        ELSE
+          i_start = its - 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_xe) THEN
+      IF (degrade_xe) THEN
+        IF (ite + 1 .GT. ide - 2) THEN
+          i_end = ide - 2
+        ELSE
+          i_end = ite + 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_ys) THEN
+      IF (degrade_ys) THEN
+        IF (jts - 1 .LT. jds + 1) THEN
+          j_start = jds + 1
+        ELSE
+          j_start = jts - 1
+        END IF
+      END IF
+    END IF
+    IF (config_flags%open_ye) THEN
+      IF (degrade_ye) THEN
+        IF (jte + 1 .GT. jde - 2) THEN
+          j_end = jde - 2
+        ELSE
+          j_end = jte + 1
+        END IF
+      END IF
+    END IF
+    ad_from55 = j_start
+! ADT note:
+! We don't want to change j_start and j_end
+! for polar BC's since we want to calculate
+! fluxes for directions other than y at the
+! edge
+!-- here is the limiter...
+    DO j=ad_from55,j_end
+      CALL PUSHINTEGER4(k)
+      DO k=kts,ktf
+        ad_from54 = i_start
+        CALL PUSHINTEGER4(i)
+        DO i=ad_from54,i_end
+          CALL PUSHREAL8(ph_low)
+          ph_low = (mub(i, j)+mu_old(i, j))*field_old(i, k, j) - dt*(&
+&            msftx(i, j)*msfty(i, j)*(rdx*(fqxl(i+1, k, j)-fqxl(i, k, j))&
+&            +rdy*(fqyl(i, k, j+1)-fqyl(i, k, j)))+msfty(i, j)*rdzw(k)*(&
+&            fqzl(i, k+1, j)-fqzl(i, k, j)))
+          IF (0. .LT. fqx(i+1, k, j)) THEN
+            max1 = fqx(i+1, k, j)
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+            max1 = 0.
+          END IF
+          IF (0. .GT. fqx(i, k, j)) THEN
+            min74 = fqx(i, k, j)
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+            min74 = 0.
+          END IF
+          IF (0. .LT. fqy(i, k, j+1)) THEN
+            max53 = fqy(i, k, j+1)
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+            max53 = 0.
+          END IF
+          IF (0. .GT. fqy(i, k, j)) THEN
+            min75 = fqy(i, k, j)
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+            min75 = 0.
+          END IF
+          IF (0. .GT. fqz(i, k+1, j)) THEN
+            min76 = fqz(i, k+1, j)
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+            min76 = 0.
+          END IF
+          IF (0. .LT. fqz(i, k, j)) THEN
+            max54 = fqz(i, k, j)
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+            max54 = 0.
+          END IF
+          CALL PUSHREAL8(flux_out)
+          flux_out = dt*(msftx(i, j)*msfty(i, j)*(rdx*(max1-min74)+rdy*(&
+&            max53-min75))+msfty(i, j)*rdzw(k)*(min76-max54))
+          IF (flux_out .GT. ph_low) THEN
+            IF (0. .LT. ph_low/(flux_out+eps)) THEN
+              CALL PUSHREAL8(scale)
+              scale = ph_low/(flux_out+eps)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHREAL8(scale)
+              scale = 0.
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (fqx(i+1, k, j) .GT. 0.) THEN
+              CALL PUSHREAL8(fqx(i+1, k, j))
+              fqx(i+1, k, j) = scale*fqx(i+1, k, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (fqx(i, k, j) .LT. 0.) THEN
+              CALL PUSHREAL8(fqx(i, k, j))
+              fqx(i, k, j) = scale*fqx(i, k, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (fqy(i, k, j+1) .GT. 0.) THEN
+              CALL PUSHREAL8(fqy(i, k, j+1))
+              fqy(i, k, j+1) = scale*fqy(i, k, j+1)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (fqy(i, k, j) .LT. 0.) THEN
+              CALL PUSHREAL8(fqy(i, k, j))
+              fqy(i, k, j) = scale*fqy(i, k, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+!  note: z flux is opposite sign in mass coordinate because 
+!  vertical coordinate decreases with increasing k
+            IF (fqz(i, k+1, j) .LT. 0.) THEN
+              CALL PUSHREAL8(fqz(i, k+1, j))
+              fqz(i, k+1, j) = scale*fqz(i, k+1, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+            IF (fqz(i, k, j) .GT. 0.) THEN
+              CALL PUSHREAL8(fqz(i, k, j))
+              fqz(i, k, j) = scale*fqz(i, k, j)
+              CALL PUSHCONTROL2B(2)
+            ELSE
+              CALL PUSHCONTROL2B(1)
+            END IF
+          ELSE
+            CALL PUSHCONTROL2B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from54)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from55)
+    CALL PUSHCONTROL1B(1)
+  ELSE
+    CALL PUSHCONTROL1B(0)
+  END IF
+! add in the pd-limited flux divergence
   i_start = its
-  i_end   = MIN(ite,ide-1)
-  IF(degrade_ys) j_start = MAX(jts,jds+1)
-  IF(degrade_ye) j_end   = MIN(jte,jde-2)
-
-  IF(tenddec) THEN
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv6 =a_h_tendency(i,k,j)
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =msftx(i,j)*a_Tmpv5
-   a_Tmpv3 =rdy*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqyl(i,k,j+1) =a_fqyl(i,k,j+1) +a_Tmpv2
-   a_fqy(i,k,j+1) =a_fqy(i,k,j+1) +a_Tmpv1
-   a_fqy(i,k,j) =a_fqy(i,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-  ENDIF
-!LPB[39]
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv6 =a_tendency(i,k,j)
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =msftx(i,j)*a_Tmpv5
-   a_Tmpv3 =rdy*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqyl(i,k,j+1) =a_fqyl(i,k,j+1) +a_Tmpv2
-   a_fqy(i,k,j+1) =a_fqy(i,k,j+1) +a_Tmpv1
-   a_fqy(i,k,j) =a_fqy(i,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-!LPB[34]
-!FROM LPB[28]
-  i_start = its
-  i_end   = MIN(ite,ide-1)
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
   j_start = jts
-  j_end   = MIN(jte,jde-1)
-
-!FROM LPB[30]
-  IF(degrade_xs) i_start = MAX(its,ids+1)
-  IF(degrade_xe) i_end   = MIN(ite,ide-2)
-
-  IF(tenddec) THEN
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv6 =a_h_tendency(i,k,j)
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =msftx(i,j)*a_Tmpv5
-   a_Tmpv3 =rdx*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqxl(i+1,k,j) =a_fqxl(i+1,k,j) +a_Tmpv2
-   a_fqx(i+1,k,j) =a_fqx(i+1,k,j) +a_Tmpv1
-   a_fqx(i,k,j) =a_fqx(i,k,j) -a_Tmpv1
-   a_h_tendency(i,k,j) = 0.0
-   ENDDO
-   ENDDO
-   ENDDO
-  ENDIF
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv6 =a_tendency(i,k,j)
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =msftx(i,j)*a_Tmpv5
-   a_Tmpv3 =rdx*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqxl(i+1,k,j) =a_fqxl(i+1,k,j) +a_Tmpv2
-   a_fqx(i+1,k,j) =a_fqx(i+1,k,j) +a_Tmpv1
-   a_fqx(i,k,j) =a_fqx(i,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-!LPB[33]
-
-!LPB[30]
-
-!LPB[29]
-!FROM LPB[28]
-  i_start = its
-  i_end   = MIN(ite,ide-1)
-  j_start = jts
-  j_end   = MIN(jte,jde-1)
-
-  IF(tenddec) THEN
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv5 =a_z_tendency(i,k,j)
-   a_Tmpv4 =-a_Tmpv5
-   a_Tmpv3 =rdzw(k)*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqzl(i,k+1,j) =a_fqzl(i,k+1,j) +a_Tmpv2
-   a_fqz(i,k+1,j) =a_fqz(i,k+1,j) +a_Tmpv1
-   a_fqz(i,k,j) =a_fqz(i,k,j) -a_Tmpv1
-   a_z_tendency(i,k,j) = 0.0
-   ENDDO
-   ENDDO
-   ENDDO
-  ENDIF
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv5 =a_tendency(i,k,j)
-   a_Tmpv4 =-a_Tmpv5
-   a_Tmpv3 =rdzw(k)*a_Tmpv4
-   a_Tmpv2 =a_Tmpv3
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_fqzl(i,k+1,j) =a_fqzl(i,k+1,j) +a_Tmpv2
-   a_fqz(i,k+1,j) =a_fqz(i,k+1,j) +a_Tmpv1
-   a_fqz(i,k,j) =a_fqz(i,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF(pd_limit) THEN
-   i_start = its-1
-   i_end   = MIN(ite,ide-1)+1
-   j_start = jts-1
-   j_end   = MIN(jte,jde-1)+1
-
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids)
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-1)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds)
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-1)
-   END IF
-   IF(config_flags%specified .or. config_flags%nested) THEN
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids+1)
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-2)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds+1)
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-2)
-   END IF
-   END IF
-   IF(config_flags%open_xs) THEN
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids+1)
-   END IF
-   END IF
-   IF(config_flags%open_xe) THEN
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-2)
-   END IF
-   END IF
-   IF(config_flags%open_ys) THEN
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds+1)
-   END IF
-   END IF
-   IF(config_flags%open_ye) THEN
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-2)
-   END IF
-   END IF
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   Tmpv001 =(mub(i,j) +mu_old(i,j))*field_old(i,k,j)
-   Tmpv002 =fqxl(i+1,k,j) -fqxl(i,k,j)
-   Tmpv003 =rdx*Tmpv002
-   Tmpv004 =fqyl(i,k,j+1) -fqyl(i,k,j)
-   Tmpv005 =rdy*Tmpv004
-   Tmpv006 =Tmpv003 +Tmpv005
-   Tmpv007 =msftx(i,j)*msfty(i,j)*Tmpv006
-   Tmpv008 =fqzl(i,k+1,j) -fqzl(i,k,j)
-   Tmpv009 =msfty(i,j)*rdzw(k)*Tmpv008
-   Tmpv010 =Tmpv007 +Tmpv009
-   Tmpv011 =dt*Tmpv010
-   Tmpv012 =Tmpv001 -Tmpv011
-   ph_low =Tmpv012
-   Tmpv400(i,k,j) =ph_low
-
-   Tmpv001 =max(0., fqx(i+1,k,j)) -min(0., fqx(i,k,j))
-   Tmpv002 =rdx*Tmpv001
-   Tmpv003 =max(0., fqy(i,k,j+1)) -min(0., fqy(i,k,j))
-   Tmpv004 =rdy*Tmpv003
-   Tmpv005 =Tmpv002 +Tmpv004
-   Tmpv006 =(msftx(i,j)*msfty(i,j))*Tmpv005
-   Tmpv007 =min(0., fqz(i,k+1,j)) -max(0., fqz(i,k,j))
-   Tmpv008 =msfty(i,j)*rdzw(k)*Tmpv007
-   Tmpv009 =Tmpv006 +Tmpv008
-   Tmpv010 =dt*Tmpv009
-   flux_out =Tmpv010
-   Tmpv401(i,k,j) =flux_out
-
-   Tmpv404(i,k,j) =fqx(i+1,k,j)
-   Tmpv405(i,k,j) =fqx(i,k,j)
-   Tmpv406(i,k,j) =fqy(i,k,j+1)
-   Tmpv407(i,k,j) =fqy(i,k,j)
-   Tmpv408(i,k,j) =fqz(i,k+1,j)
-   Tmpv409(i,k,j) =fqz(i,k,j)
-
-   IF( flux_out .gt. ph_low ) THEN
-
-   Tmpv001 =ph_low/(flux_out +eps)
-   Tmpv402(i,k,j) =Tmpv001
-
-   scale =max(0., Tmpv402(i,k,j))
-   Tmpv403(i,k,j) =scale
-   IF( fqx (i+1,k,j) .gt. 0.) THEN
-   Tmpv001 =scale*fqx(i+1,k,j)
-   fqx(i+1,k,j) =Tmpv001
-   END IF
-
-   IF( fqx (i  ,k,j) .lt. 0.) THEN
-   Tmpv001 =scale*fqx(i,k,j)
-   fqx(i,k,j) =Tmpv001
-   END IF
-
-   IF( fqy (i,k,j+1) .gt. 0.) THEN
-   Tmpv001 =scale*fqy(i,k,j+1)
-   fqy(i,k,j+1) =Tmpv001
-   END IF
-
-   IF( fqy (i,k,j  ) .lt. 0.) THEN
-   Tmpv001 =scale*fqy(i,k,j)
-   fqy(i,k,j) =Tmpv001
-   END IF
-
-   IF( fqz (i,k+1,j) .lt. 0.) THEN
-   Tmpv001 =scale*fqz(i,k+1,j)
-   fqz(i,k+1,j) =Tmpv001
-   END IF
-
-   IF( fqz (i,k  ,j) .gt. 0.) THEN
-   Tmpv001 =scale*fqz(i,k,j)
-   fqz(i,k,j) =Tmpv001
-   END IF
-   END IF
-   ENDDO
-   ENDDO
-   ENDDO
-   END IF
-
-   IF(pd_limit) THEN
-   i_start = its-1
-   i_end   = MIN(ite,ide-1)+1
-   j_start = jts-1
-   j_end   = MIN(jte,jde-1)+1
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids)
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-1)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds)
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-1)
-   END IF
-   IF(config_flags%specified .or. config_flags%nested) THEN
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids+1)
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-2)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds+1)
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-2)
-   END IF
-   END IF
-   IF(config_flags%open_xs) THEN
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids+1)
-   END IF
-   END IF
-   IF(config_flags%open_xe) THEN
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-2)
-   END IF
-   END IF
-   IF(config_flags%open_ys) THEN
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds+1)
-   END IF
-   END IF
-   IF(config_flags%open_ye) THEN
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-2)
-   END IF
-   END IF
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-
-   flux_out =Tmpv401(i,k,j)
-   ph_low =Tmpv400(i,k,j)
-
-   fqx(i+1,k,j) =Tmpv404(i,k,j)
-   fqx(i,k,j) =Tmpv405(i,k,j)
-   fqy(i,k,j+1) =Tmpv406(i,k,j)
-   fqy(i,k,j) =Tmpv407(i,k,j)
-   fqz(i,k+1,j) =Tmpv408(i,k,j)
-   fqz(i,k,j) =Tmpv409(i,k,j)
-
-   IF( flux_out .gt. ph_low ) THEN
-
-   scale =Tmpv403(i,k,j)
-
-   IF( fqx (i+1,k,j) .gt. 0.) THEN
-
-   a_Tmpv1 =a_fqx(i+1,k,j)
-   a_fqx(i+1,k,j) =0.0
-   a_scale =a_scale +fqx(i+1,k,j)*a_Tmpv1
-   a_fqx(i+1,k,j) =a_fqx(i+1,k,j) +scale*a_Tmpv1
-
-   END IF
-
-   IF( fqx (i  ,k,j) .lt. 0.) THEN
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_scale =a_scale +fqx(i,k,j)*a_Tmpv1
-   a_fqx(i,k,j) =a_fqx(i,k,j) +scale*a_Tmpv1
-
-   END IF
-
-   IF( fqy (i,k,j+1) .gt. 0.) THEN
-
-   a_Tmpv1 =a_fqy(i,k,j+1)
-   a_fqy(i,k,j+1) =0.0
-   a_scale =a_scale +fqy(i,k,j+1)*a_Tmpv1
-   a_fqy(i,k,j+1) =a_fqy(i,k,j+1) +scale*a_Tmpv1
-
-   END IF
-
-   IF( fqy (i,k,j  ) .lt. 0.) THEN
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_scale =a_scale +fqy(i,k,j)*a_Tmpv1
-   a_fqy(i,k,j) =a_fqy(i,k,j) +scale*a_Tmpv1
-
-   END IF
-
-   IF( fqz (i,k+1,j) .lt. 0.) THEN
-
-   a_Tmpv1 =a_fqz(i,k+1,j)
-   a_fqz(i,k+1,j) =0.0
-   a_scale =a_scale +fqz(i,k+1,j)*a_Tmpv1
-   a_fqz(i,k+1,j) =a_fqz(i,k+1,j) +scale*a_Tmpv1
-
-   END IF
-
-   IF( fqz (i,k  ,j) .gt. 0.) THEN
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_scale =a_scale +fqz(i,k,j)*a_Tmpv1
-   a_fqz(i,k,j) =a_fqz(i,k,j) +scale*a_Tmpv1
-
-   END IF
-
-   a_Tmpv1=(1.0 +(-1.0)*sign(1.0, 0. -Tmpv402(i,k,j)))*0.5*a_scale
-   a_scale =0.0
-   a_ph_low =a_ph_low +a_Tmpv1/(flux_out +eps)
-   a_flux_out =a_flux_out -ph_low/((flux_out +eps)*(flux_out +eps))*a_Tmpv1
-
-   END IF
-
-   a_Tmpv10 =a_flux_out
-   a_flux_out =0.0
-   a_Tmpv9 =dt*a_Tmpv10
-   a_Tmpv6 =a_Tmpv9
-   a_Tmpv8 =a_Tmpv9
-   a_Tmpv7 =msfty(i,j)*rdzw(k)*a_Tmpv8
-   a_fqz(i,k+1,j) =a_fqz(i,k+1,j) +(1.0 -(-1.0)*sign(1.0, 0. -fqz(i,k+1,j)))*0.5*a_Tmpv7
-   a_fqz(i,k,j) =a_fqz(i,k,j) -(1.0 +(-1.0)*sign(1.0, 0. -fqz(i,k,j)))*0.5*a_Tmpv7
-   a_Tmpv5 =(msftx(i,j)*msfty(i,j))*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_Tmpv3 =rdy*a_Tmpv4
-   a_fqy(i,k,j+1) =a_fqy(i,k,j+1) +(1.0 +(-1.0)*sign(1.0, 0. -fqy(i,k,j+1)))*0.5*a_Tmpv3
-   a_fqy(i,k,j) =a_fqy(i,k,j) -(1.0 -(-1.0)*sign(1.0, 0. -fqy(i,k,j)))*0.5*a_Tmpv3
-   a_Tmpv1 =rdx*a_Tmpv2
-   a_fqx(i+1,k,j) =a_fqx(i+1,k,j) +(1.0 +(-1.0)*sign(1.0, 0. -fqx(i+1,k,j)))*0.5*a_Tmpv1
-   a_fqx(i,k,j) =a_fqx(i,k,j) -(1.0 -(-1.0)*sign(1.0, 0. -fqx(i,k,j)))*0.5*a_Tmpv1
-
-!  ph_low =Tmpv400(i,k,j)
-
-   a_Tmpv12 =a_ph_low
-   a_ph_low =0.0
-   a_Tmpv1 =a_Tmpv12
-   a_Tmpv11 =-a_Tmpv12
-   a_Tmpv10 =dt*a_Tmpv11
-   a_Tmpv7 =a_Tmpv10
-   a_Tmpv9 =a_Tmpv10
-   a_Tmpv8 =msfty(i,j)*rdzw(k)*a_Tmpv9
-   a_fqzl(i,k+1,j) =a_fqzl(i,k+1,j) +a_Tmpv8
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv8
-   a_Tmpv6 =msftx(i,j)*msfty(i,j)*a_Tmpv7
-   a_Tmpv3 =a_Tmpv6
-   a_Tmpv5 =a_Tmpv6
-   a_Tmpv4 =rdy*a_Tmpv5
-   a_fqyl(i,k,j+1) =a_fqyl(i,k,j+1) +a_Tmpv4
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv4
-   a_Tmpv2 =rdx*a_Tmpv3
-   a_fqxl(i+1,k,j) =a_fqxl(i+1,k,j) +a_Tmpv2
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv2
-   a_mu_old(i,j) =a_mu_old(i,j) +field_old(i,k,j)*a_Tmpv1
-   a_field_old(i,k,j) =a_field_old(i,k,j) +(mub(i,j) +mu_old(i,j))*a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF(config_flags%open_ye) THEN
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   END IF
-
-   IF(config_flags%open_ys) THEN
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-   END IF
-
-   IF(config_flags%open_xe) THEN
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   END IF
-
-   IF(config_flags%open_xs) THEN
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   END IF
-
-   IF(config_flags%specified .or. config_flags%nested) THEN
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   END IF
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   END IF
-
-!LPB[25]
-!FROM LPB[16]
-   i_start = its-1
-   i_end   = MIN(ite,ide-1)+1
-   j_start = jts-1
-   j_end   = MIN(jte,jde-1)+1
-
-   IF(degrade_xs) i_start = MAX(its-1,ids)
-   IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-   IF(degrade_ys) j_start = MAX(jts-1,jds)
-   IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
-
-   mu =Keep_Lpb25_mu
-   vel =Keep_Lpb25_vel
-   cr =Keep_Lpb25_cr
-
-   IF(vert_order == 6) THEN
-   DO j =j_start, j_end
-   DO i =i_start, i_end
-   fqz(i,1,j) =0.
-
-   fqzl(i,1,j) =0.
-
-   fqz(i,kde,j) =0.
-
-   fqzl(i,kde,j) =0.
-
-   ENDDO
-
-   DO k =kts+3, ktf-2
-   DO i =i_start, i_end
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv400(i,k,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv401(i,k,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv402(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv403(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv403(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv404(i,k,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv405(i,k,j) =Tmpv001
-   Tmpv406(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv405(i,k,j)*Tmpv406(i,k,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux6(field(i,k-3,j),field(i,k-2,j),field(i,k-1,j),field(i,k,j)  &
-   ,field(i,k+1,j),field(i,k+2,j),-vel)
-   Tmpv407(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv407(i,k,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-
-   DO i =i_start, i_end
-   k =kts+1
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv300(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv301(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv302(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv303(i,j) =Tmpv001
-   Tmpv002 =Tmpv303(i,j)/mu
-   cr =Tmpv002
-   Tmpv304(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv305(i,j) =Tmpv001
-   Tmpv306(i,j) =Tmpv002
-   Tmpv003 =Tmpv305(i,j)*Tmpv306(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv307(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv307(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =kts+2
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv308(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv309(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3010(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3011(i,j) =Tmpv001
-   Tmpv002 =Tmpv3011(i,j)/mu
-   cr =Tmpv002
-   Tmpv3012(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3013(i,j) =Tmpv001
-   Tmpv3014(i,j) =Tmpv002
-   Tmpv003 =Tmpv3013(i,j)*Tmpv3014(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-   Tmpv3015(i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv3015(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =ktf-1
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3016(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3017(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3018(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3019(i,j) =Tmpv001
-   Tmpv002 =Tmpv3019(i,j)/mu
-   cr =Tmpv002
-   Tmpv3020(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3021(i,j) =Tmpv001
-   Tmpv3022(i,j) =Tmpv002
-   Tmpv003 =Tmpv3021(i,j)*Tmpv3022(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-   Tmpv3023(i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv3023(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =ktf
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3024(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3025(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3026(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3027(i,j) =Tmpv001
-   Tmpv002 =Tmpv3027(i,j)/mu
-   cr =Tmpv002
-   Tmpv3028(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3029(i,j) =Tmpv001
-   Tmpv3030(i,j) =Tmpv002
-   Tmpv003 =Tmpv3029(i,j)*Tmpv3030(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv3031(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv3031(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF(vert_order == 5) THEN
-   DO j =j_start, j_end
-   DO i =i_start, i_end
-   fqz(i,1,j) =0.
-
-   fqzl(i,1,j) =0.
-
-   fqz(i,kde,j) =0.
-
-   fqzl(i,kde,j) =0.
-
-   ENDDO
-
-   DO k =kts+3, ktf-2
-   DO i =i_start, i_end
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv408(i,k,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv409(i,k,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv4010(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv4011(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4011(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4012(i,k,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv4013(i,k,j) =Tmpv001
-   Tmpv4014(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4013(i,k,j)*Tmpv4014(i,k,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux5(field(i,k-3,j),field(i,k-2,j),field(i,k-1,j),field(i,k,j)  &
-   ,field(i,k+1,j),field(i,k+2,j),-vel)
-   Tmpv4015(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4015(i,k,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-
-   DO i =i_start, i_end
-   k =kts+1
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3032(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3033(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3034(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3035(i,j) =Tmpv001
-   Tmpv002 =Tmpv3035(i,j)/mu
-   cr =Tmpv002
-   Tmpv3036(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3037(i,j) =Tmpv001
-   Tmpv3038(i,j) =Tmpv002
-   Tmpv003 =Tmpv3037(i,j)*Tmpv3038(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv3039(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv3039(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =kts+2
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3040(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3041(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3042(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3043(i,j) =Tmpv001
-   Tmpv002 =Tmpv3043(i,j)/mu
-   cr =Tmpv002
-   Tmpv3044(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3045(i,j) =Tmpv001
-   Tmpv3046(i,j) =Tmpv002
-   Tmpv003 =Tmpv3045(i,j)*Tmpv3046(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-   Tmpv3047(i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv3047(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =ktf-1
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3048(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3049(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3050(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3051(i,j) =Tmpv001
-   Tmpv002 =Tmpv3051(i,j)/mu
-   cr =Tmpv002
-   Tmpv3052(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3053(i,j) =Tmpv001
-   Tmpv3054(i,j) =Tmpv002
-   Tmpv003 =Tmpv3053(i,j)*Tmpv3054(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-   Tmpv3055(i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv3055(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =ktf
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3056(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3057(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3058(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3059(i,j) =Tmpv001
-   Tmpv002 =Tmpv3059(i,j)/mu
-   cr =Tmpv002
-   Tmpv3060(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3061(i,j) =Tmpv001
-   Tmpv3062(i,j) =Tmpv002
-   Tmpv003 =Tmpv3061(i,j)*Tmpv3062(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv3063(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv3063(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF(vert_order == 4) THEN
-   DO j =j_start, j_end
-   DO i =i_start, i_end
-   fqz(i,1,j) =0.
-
-   fqzl(i,1,j) =0.
-
-   fqz(i,kde,j) =0.
-
-   fqzl(i,kde,j) =0.
-
-   ENDDO
-
-   DO k =kts+2, ktf-1
-   DO i =i_start, i_end
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv4016(i,k,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv4017(i,k,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv4018(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv4019(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4019(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4020(i,k,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv4021(i,k,j) =Tmpv001
-   Tmpv4022(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4021(i,k,j)*Tmpv4022(i,k,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-   Tmpv4023(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4023(i,k,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-
-   DO i =i_start, i_end
-   k =kts+1
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3064(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3065(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3066(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3067(i,j) =Tmpv001
-   Tmpv002 =Tmpv3067(i,j)/mu
-   cr =Tmpv002
-   Tmpv3068(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3069(i,j) =Tmpv001
-   Tmpv3070(i,j) =Tmpv002
-   Tmpv003 =Tmpv3069(i,j)*Tmpv3070(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv3071(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv3071(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =ktf
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3072(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3073(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3074(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3075(i,j) =Tmpv001
-   Tmpv002 =Tmpv3075(i,j)/mu
-   cr =Tmpv002
-   Tmpv3076(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3077(i,j) =Tmpv001
-   Tmpv3078(i,j) =Tmpv002
-   Tmpv003 =Tmpv3077(i,j)*Tmpv3078(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv3079(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv3079(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF(vert_order == 3) THEN
-   DO j =j_start, j_end
-   DO i =i_start, i_end
-   fqz(i,1,j) =0.
-
-   fqzl(i,1,j) =0.
-
-   fqz(i,kde,j) =0.
-
-   fqzl(i,kde,j) =0.
-
-   ENDDO
-
-   DO k =kts+2, ktf-1
-   DO i =i_start, i_end
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv4024(i,k,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv4025(i,k,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv4026(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv4027(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4027(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4028(i,k,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv4029(i,k,j) =Tmpv001
-   Tmpv4030(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4029(i,k,j)*Tmpv4030(i,k,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i,k-2,j),field(i,k-1,j),field(i,k,j),field(i,k+1,j),-vel)
-   Tmpv4031(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4031(i,k,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-
-   DO i =i_start, i_end
-   k =kts+1
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3080(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3081(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3082(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3083(i,j) =Tmpv001
-   Tmpv002 =Tmpv3083(i,j)/mu
-   cr =Tmpv002
-   Tmpv3084(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3085(i,j) =Tmpv001
-   Tmpv3086(i,j) =Tmpv002
-   Tmpv003 =Tmpv3085(i,j)*Tmpv3086(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv3087(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv3087(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   k =ktf
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv3088(i,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv3089(i,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv3090(i,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv3091(i,j) =Tmpv001
-   Tmpv002 =Tmpv3091(i,j)/mu
-   cr =Tmpv002
-   Tmpv3092(i,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv3093(i,j) =Tmpv001
-   Tmpv3094(i,j) =Tmpv002
-   Tmpv003 =Tmpv3093(i,j)*Tmpv3094(i,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv3095(i,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv3095(i,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 2) THEN
-   DO j =j_start, j_end
-   DO i =i_start, i_end
-   fqz(i,1,j) =0.
-
-   fqzl(i,1,j) =0.
-
-   fqz(i,kde,j) =0.
-
-   fqzl(i,kde,j) =0.
-
-   ENDDO
-
-   DO k =kts+1, ktf
-   DO i =i_start, i_end
-   dz =2./(rdzw(k)+rdzw(k-1))
-   Tmpv4032(i,k,j) =dz
-
-   mu =0.5*(mut(i,j) +mut(i,j))
-   Tmpv4033(i,k,j) =mu
-
-   vel =rom(i,k,j)
-   Tmpv4034(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dz
-   Tmpv4035(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4035(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4036(i,k,j) =cr
-
-   Tmpv001 =mu*(dz/dt)
-   Tmpv002 =flux_upwind(field_old(i,k-1,j),field_old(i,k,j),cr)
-   Tmpv4037(i,k,j) =Tmpv001
-   Tmpv4038(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4037(i,k,j)*Tmpv4038(i,k,j)
-   fqzl(i,k,j) =Tmpv003
-
-   Tmpv001 =fzm(k)*field(i,k,j) +fzp(k)*field(i,k-1,j)
-   Tmpv4039(i,k,j) =Tmpv001
-   Tmpv002 =rom(i,k,j)*Tmpv4039(i,k,j)
-   fqz(i,k,j) =Tmpv002
-
-   Tmpv001 =fqz(i,k,j) -fqzl(i,k,j)
-   fqz(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ENDDO
-   ELSE
-   CALL wrf_error_fatal(wrf_err_message)
-
-   ENDIF
-
-   IF(vert_order == 6) THEN
-
-   DO j =j_end, j_start, -1
-   DO i =i_end, i_start, -1
-!ADDED AND REVISED BY WALLS
-   k =ktf
-   mu =Tmpv3025(i,j)
-   cr =Tmpv3028(i,j)
-   vel =Tmpv3026(i,j)
-   dz =Tmpv3024(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv3031(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3030(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3029(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3027(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-
-!ADDED AND REVISED BY WALLS
-   k =ktf-1
-   cr =Tmpv3020(i,j)
-   vel =Tmpv3018(i,j)
-   mu =Tmpv3017(i,j)
-   dz =Tmpv3016(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv3023(i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,j),0.0,field(i,k,j)  &
-   ,0.0,field(i,k+1,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux4(field(i,k-2,j),1.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3022(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3021(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3019(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-
-!ADDED AND REVISED BY WALLS
-   k =kts+2
-   cr =Tmpv3012(i,j)
-   vel =Tmpv3010(i,j)
-   mu =Tmpv309(i,j)
-   dz =Tmpv308(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv3015(i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,j),0.0,field(i,k,j)  &
-   ,0.0,field(i,k+1,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux4(field(i,k-2,j),1.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3014(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3013(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3011(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-
-!ADDED AND REVISED BY WALLS
-   k =kts+1
-   cr =Tmpv304(i,j)
-   vel =Tmpv302(i,j)
-   mu =Tmpv301(i,j)
-   dz =Tmpv300(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv307(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv306(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv305(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv303(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-   ENDDO
-   DO k =ktf-2, kts+3, -1
-   DO i =i_end, i_start, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv404(i,k,j)
-   vel =Tmpv402(i,k,j)
-   mu =Tmpv401(i,k,j)
-   dz =Tmpv400(i,k,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv407(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux6(field(i,k-3,j),0.0,field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+2,j) =a_field(i,k+2,j) +Diff_flux6(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux6(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux6(field(i,k-3,j),0.0,field(i,k-2,j)  &
-   ,0.0,field(i,k-1,j),0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux6(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux6(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),1.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-3,j) =a_field(i,k-3,j) +Diff_flux6(field(i,k-3,j),1.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv406(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv405(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv403(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-   ENDDO
-   ENDDO
-   DO i =i_end, i_start, -1
-   a_fqzl(i,kde,j) =0.0
-   a_fqz(i,kde,j) =0.0
-   a_fqzl(i,1,j) =0.0
-   a_fqz(i,1,j) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 5) THEN
-
-   DO j =j_end, j_start, -1
-   DO i =i_end, i_start, -1
-!ADDED BY WALLS
-   k =ktf
-   cr =Tmpv3060(i,j)
-   vel =Tmpv3058(i,j)
-   mu =Tmpv3057(i,j)
-   dz =Tmpv3056(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv3063(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3062(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3061(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3059(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-
-!ADDED BY WALLS
-   k =ktf-1
-   cr =Tmpv3052(i,j)
-   vel =Tmpv3050(i,j)
-   mu =Tmpv3049(i,j)
-   dz =Tmpv3048(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv3055(i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,j),0.0,field(i,k,j)  &
-   ,0.0,field(i,k+1,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux3(field(i,k-2,j),1.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3054(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3053(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3051(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-
-!ADDED BY WALLS
-   k =kts+2
-   cr =Tmpv3044(i,j)
-   vel =Tmpv3042(i,j)
-   mu =Tmpv3041(i,j)
-   dz =Tmpv3040(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv3047(i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,j),0.0,field(i,k,j)  &
-   ,0.0,field(i,k+1,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux3(field(i,k-2,j),1.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3046(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3045(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3043(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-
-!ADDED BY WALLS
-   k =kts+1
-   cr =Tmpv3036(i,j)
-   vel =Tmpv3034(i,j)
-   dz =Tmpv3032(i,j)
-   mu =Tmpv3033(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv3039(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3038(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3037(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3035(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-   ENDDO
-   DO k =ktf-2, kts+3, -1
-   DO i =i_end, i_start, -1
-!REVISED AND ADDED BY WALLS
-   cr =Tmpv4012(i,k,j)
-   vel =Tmpv4010(i,k,j)
-   mu =Tmpv409(i,k,j)
-   dz =Tmpv408(i,k,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4015(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux5(field(i,k-3,j),0.0,field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+2,j) =a_field(i,k+2,j) +Diff_flux5(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux5(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux5(field(i,k-3,j),0.0,field(i,k-2,j)  &
-   ,0.0,field(i,k-1,j),0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux5(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux5(field(i,k-3,j),0.0,field(i,k-2,  &
-   j),1.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-3,j) =a_field(i,k-3,j) +Diff_flux5(field(i,k-3,j),1.0,field(i,k-2,  &
-   j),0.0,field(i,k-1,j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,field(i,k+2,j)  &
-   ,0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4014(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4013(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4011(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-   ENDDO
-   ENDDO
-   DO i =i_end, i_start, -1
-   a_fqzl(i,kde,j) =0.0
-   a_fqz(i,kde,j) =0.0
-   a_fqzl(i,1,j) =0.0
-   a_fqz(i,1,j) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 4) THEN
-
-   DO j =j_end, j_start, -1
-   DO i =i_end, i_start, -1
-!ADDED BY WALLS
-   k =ktf
-   cr =Tmpv3076(i,j)
-   vel =Tmpv3074(i,j)
-   mu =Tmpv3073(i,j)
-   dz =Tmpv3072(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv3079(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3078(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3077(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv3076(i,j)
-!  vel =Tmpv3074(i,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3075(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv3073(i,j)
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-!  dz =Tmpv3072(i,j)
-
-   a_dz =0.0
-
-!ADDED BY WALLS
-   k =kts+1
-   cr =Tmpv3068(i,j)
-   vel =Tmpv3066(i,j)
-   mu =Tmpv3065(i,j)
-   dz =Tmpv3064(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv3071(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3070(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3069(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv3068(i,j)
-!  vel =Tmpv3066(i,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3067(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv3065(i,j)
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-!  dz =Tmpv3064(i,j)
-
-   a_dz =0.0
-   ENDDO
-   DO k =ktf-1, kts+2, -1
-   DO i =i_end, i_start, -1
-!ADDED BY WALLS
-   cr =Tmpv4020(i,k,j)
-   vel =Tmpv4018(i,k,j)
-   mu =Tmpv4017(i,k,j)
-   dz =Tmpv4016(i,k,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4023(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,j),0.0,field(i,k,j)  &
-   ,0.0,field(i,k+1,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux4(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux4(field(i,k-2,j),1.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4022(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4021(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv4020(i,k,j)
-!  vel =Tmpv4018(i,k,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4019(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv4017(i,k,j)
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-!  dz =Tmpv4016(i,k,j)
-
-   a_dz =0.0
-   ENDDO
-   ENDDO
-   DO i =i_end, i_start, -1
-   a_fqzl(i,kde,j) =0.0
-   a_fqz(i,kde,j) =0.0
-   a_fqzl(i,1,j) =0.0
-   a_fqz(i,1,j) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 3) THEN
-
-!ALL RECALCULATED SCALAR IN THE FOLLOWING ARE REVISED BY WALLS
-   DO j =j_end, j_start, -1
-
-   DO i =i_end, i_start, -1
-   cr =Tmpv3092(i,j)
-   vel =Tmpv3090(i,j)
-   mu =Tmpv3089(i,j)
-   dz =Tmpv3088(i,j)
-
-   k =ktf
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv3095(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3094(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3093(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3091(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   mu =Tmpv3081(i,j)
-   cr =Tmpv3084(i,j)
-
-   a_dz =0.0
-
-   k =kts+1
-   dz =Tmpv3080(i,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv3087(i,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3086(i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3085(i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-   vel =Tmpv3082(i,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3083(i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-   a_dz =0.0
-   ENDDO
-
-   DO k =ktf-1, kts+2, -1
-   DO i =i_end, i_start, -1
-   mu =Tmpv4025(i,k,j)
-   dz =Tmpv4024(i,k,j)
-   cr =Tmpv4028(i,k,j)
-   vel =Tmpv4026(i,k,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4031(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,j),0.0,field(i,k,j)  &
-   ,0.0,field(i,k+1,j),0.0,-vel,1.0)*a_Tmpv1
-   a_field(i,k+1,j) =a_field(i,k+1,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,j)  &
-   ,0.0,field(i,k,j),1.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +Diff_flux3(field(i,k-2,j),0.0,field(i,k-1,  &
-   j),1.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_field(i,k-2,j) =a_field(i,k-2,j) +Diff_flux3(field(i,k-2,j),1.0,field(i,k-1,  &
-   j),0.0,field(i,k,j),0.0,field(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4030(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4029(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv4028(i,k,j)
-!  vel =Tmpv4026(i,k,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4027(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv4025(i,k,j)
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-!  dz =Tmpv4024(i,k,j)
-
-   a_dz =0.0
-   ENDDO
-   ENDDO
-
-   DO i =i_end, i_start, -1
-   a_fqzl(i,kde,j) =0.0
-   a_fqz(i,kde,j) =0.0
-   a_fqzl(i,1,j) =0.0
-   a_fqz(i,1,j) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 2) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts+1, -1
-   DO i =i_end, i_start, -1
-   cr =Tmpv4036(i,k,j)
-   vel=Tmpv4034(i,k,j)
-   mu =Tmpv4033(i,k,j)
-   dz =Tmpv4032(i,k,j)
-
-   a_Tmpv1 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_fqz(i,k,j) =a_fqz(i,k,j) +a_Tmpv1
-   a_fqzl(i,k,j) =a_fqzl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqz(i,k,j)
-   a_fqz(i,k,j) =0.0
-   a_rom(i,k,j) =a_rom(i,k,j) +Tmpv4039(i,k,j)*a_Tmpv2
-   a_Tmpv1 =rom(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +fzm(k)*a_Tmpv1
-   a_field(i,k-1,j) =a_field(i,k-1,j) +fzp(k)*a_Tmpv1
-   a_Tmpv3 =a_fqzl(i,k,j)
-   a_fqzl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4038(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4037(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k-1,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k-1,j) =a_field_old(i,k-1,j) +Diff_flux_upwind(field_old(i,k-1,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dz/dt)*a_Tmpv1
-   a_dz =a_dz +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv4036(i,k,j)
-!  vel =Tmpv4034(i,k,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4035(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dz*a_Tmpv1
-   a_dz =a_dz -vel*dt/(dz*dz)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv4033(i,k,j)
-
-   a_mut(i,j) =a_mut(i,j) +0.5*(1.0 +1.0)*a_mu
-   a_mu =0.0
-
-!  dz =Tmpv4032(i,k,j)
-
-   a_dz =0.0
-   ENDDO
-   ENDDO
-
-   DO i =i_end, i_start, -1
-   a_fqzl(i,kde,j) =0.0
-   a_fqz(i,kde,j) =0.0
-   a_fqzl(i,1,j) =0.0
-   a_fqz(i,1,j) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE
-
-!DELETED BY WALLS
-!  CALL a_wrf_error_fatal(wrf_err_message)
-
-   ENDIF
-
-!LPB[15]
-!FROM LPB[4]
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  ad_from57 = j_start
+  DO j=ad_from57,j_end
+    CALL PUSHINTEGER4(k)
+    DO k=kts,ktf
+      ad_from56 = i_start
+      CALL PUSHINTEGER4(i)
+      i = i_end + 1
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from56)
+    END DO
+  END DO
+  CALL PUSHINTEGER4(j - 1)
+  CALL PUSHINTEGER4(ad_from57)
+  IF (tenddec) THEN
+    ad_from59 = j_start
+    DO j=ad_from59,j_end
+      CALL PUSHINTEGER4(k)
+      DO k=kts,ktf
+        ad_from58 = i_start
+        CALL PUSHINTEGER4(i)
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from58)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from59)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+! x flux divergence
+!
+  IF (degrade_xs) THEN
+    IF (its .LT. ids + 1) THEN
+      i_start = ids + 1
+    ELSE
       i_start = its
-      i_end   = MIN(ite,ide-1)
+    END IF
+  END IF
+  IF (degrade_xe) THEN
+    IF (ite .GT. ide - 2) THEN
+      i_end = ide - 2
+    ELSE
+      i_end = ite
+    END IF
+  END IF
+  ad_from61 = j_start
+  DO j=ad_from61,j_end
+    CALL PUSHINTEGER4(k)
+    DO k=kts,ktf
+      ad_from60 = i_start
+      CALL PUSHINTEGER4(i)
+      i = i_end + 1
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from60)
+    END DO
+  END DO
+  CALL PUSHINTEGER4(j - 1)
+  CALL PUSHINTEGER4(ad_from61)
+  IF (tenddec) THEN
+    ad_from63 = j_start
+    DO j=ad_from63,j_end
+      CALL PUSHINTEGER4(k)
+      DO k=kts,ktf
+        ad_from62 = i_start
+        CALL PUSHINTEGER4(i)
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from62)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from63)
+    CALL PUSHCONTROL1B(1)
+  ELSE
+    CALL PUSHCONTROL1B(0)
+  END IF
+! y flux divergence
+!
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  IF (degrade_ys) THEN
+    IF (jts .LT. jds + 1) THEN
+      j_start = jds + 1
+    ELSE
       j_start = jts
-      j_end   = MIN(jte,jde-1)
-
-   vb =Keep_Lpb15_vb
-
-   IF( (config_flags%polar) .and. (jte == jde)) THEN
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   vb =max(0.5*rv(i,k,jte-1), 0.)
-   Tmpv300(k,i) =vb
-
-   Tmpv001 =field_old(i,k,j_end) -field_old(i,k,j_end-1)
-   Tmpv301(k,i) =Tmpv001
-   Tmpv002 =vb*Tmpv301(k,i)
-   Tmpv003 =field(i,k,j_end)*(-rv(i,k,jte-1))
-   Tmpv004 =Tmpv002 +Tmpv003
-   Tmpv005 =rdy*Tmpv004
-   Tmpv006 =tendency(i,k,j_end) -Tmpv005
-   tendency(i,k,j_end) =Tmpv006
-
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%polar) .and. (jte == jde)) THEN
-
-   DO i =i_end, i_start, -1
-   DO k =ktf, kts, -1
-!ADDED BY WALLS
-   vb =Tmpv300(k,i)
-
-   a_Tmpv6 =a_tendency(i,k,j_end)
-   a_tendency(i,k,j_end) =0.0
-   a_tendency(i,k,j_end) =a_tendency(i,k,j_end) +a_Tmpv6
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =rdy*a_Tmpv5
-   a_Tmpv2 =a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_field(i,k,j_end) =a_field(i,k,j_end) +(-rv(i,k,jte-1))*a_Tmpv3
-   a_rv(i,k,jte-1) =a_rv(i,k,jte-1) -1.0*field(i,k,j_end)*a_Tmpv3
-   a_vb =a_vb +Tmpv301(k,i)*a_Tmpv2
-   a_Tmpv1 =vb*a_Tmpv2
-   a_field_old(i,k,j_end) =a_field_old(i,k,j_end) +a_Tmpv1
-   a_field_old(i,k,j_end-1) =a_field_old(i,k,j_end-1) -a_Tmpv1
-
-   a_rv(i,k,jte-1) =a_rv(i,k,jte-1) +(0.5 +(0.5)*sign(1.0, 0.5*rv(i,k,jte-1) -0.)  &
-   )*0.5*a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[14]
-
-!LPB[13]
-   vb =Keep_Lpb13_vb
-
-   IF( (config_flags%polar) .and. (jts == jds) ) THEN
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   vb =min(0.5*rv(i,k,jts+1), 0.)
-   Tmpv300(k,i) =vb
-
-   Tmpv001 =field_old(i,k,jts+1) -field_old(i,k,jts)
-   Tmpv301(k,i) =Tmpv001
-   Tmpv002 =vb*Tmpv301(k,i)
-   Tmpv003 =field(i,k,jts)*rv(i,k,jts+1)
-   Tmpv004 =Tmpv002 +Tmpv003
-   Tmpv005 =rdy*Tmpv004
-   Tmpv006 =tendency(i,k,jts) -Tmpv005
-!  tendency(i,k,jts) =Tmpv006
-
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%polar) .and. (jts == jds) ) THEN
-
-   DO i =i_end, i_start, -1
-   DO k =ktf, kts, -1
-   vb =Tmpv300(k,i)
-
-   a_Tmpv6 =a_tendency(i,k,jts)
-   a_tendency(i,k,jts) =0.0
-   a_tendency(i,k,jts) =a_tendency(i,k,jts) +a_Tmpv6
-   a_Tmpv5 =-a_Tmpv6
-   a_Tmpv4 =rdy*a_Tmpv5
-   a_Tmpv2 =a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_field(i,k,jts) =a_field(i,k,jts) +rv(i,k,jts+1)*a_Tmpv3
-   a_rv(i,k,jts+1) =a_rv(i,k,jts+1) +field(i,k,jts)*a_Tmpv3
-   a_vb =a_vb +Tmpv301(k,i)*a_Tmpv2
-   a_Tmpv1 =vb*a_Tmpv2
-   a_field_old(i,k,jts+1) =a_field_old(i,k,jts+1) +a_Tmpv1
-   a_field_old(i,k,jts) =a_field_old(i,k,jts) -a_Tmpv1
-
-   a_rv(i,k,jts+1) =a_rv(i,k,jts+1) +(0.5 -(0.5)*sign(1.0, 0.5*rv(i,k,jts+1) -0.)  &
-   )*0.5*a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[12]
-
-!LPB[11]
-   vb =Keep_Lpb11_vb
-
-   IF( (config_flags%open_ye) .and. (jte == jde)) THEN
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   Tmpv001 =rv(i,k,jte-1) +rv(i,k,jte)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,i) =Tmpv002
-   vb =max(Tmpv300(k,i), 0.)
-   Tmpv301(k,i) =vb
-
-   Tmpv001 =field_old(i,k,j_end) -field_old(i,k,j_end-1)
-   Tmpv302(k,i) =Tmpv001
-   Tmpv002 =vb*Tmpv302(k,i)
-   Tmpv003 =rv(i,k,jte) -rv(i,k,jte-1)
-   Tmpv303(k,i) =Tmpv003
-   Tmpv004 =field(i,k,j_end)*Tmpv303(k,i)
-   Tmpv005 =Tmpv002 +Tmpv004
-   Tmpv006 =rdy*Tmpv005
-   Tmpv007 =tendency(i,k,j_end) -Tmpv006
-!  tendency(i,k,j_end) =Tmpv007
-
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_ye) .and. (jte == jde)) THEN
-
-   DO i =i_end, i_start, -1
-   DO k =ktf, kts, -1
-   vb =Tmpv301(k,i)
-
-   a_Tmpv7 =a_tendency(i,k,j_end)
-   a_tendency(i,k,j_end) =0.0
-   a_tendency(i,k,j_end) =a_tendency(i,k,j_end) +a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   a_Tmpv5 =rdy*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_field(i,k,j_end) =a_field(i,k,j_end) +Tmpv303(k,i)*a_Tmpv4
-   a_Tmpv3 =field(i,k,j_end)*a_Tmpv4
-   a_rv(i,k,jte) =a_rv(i,k,jte) +a_Tmpv3
-   a_rv(i,k,jte-1) =a_rv(i,k,jte-1) -a_Tmpv3
-   a_vb =a_vb +Tmpv302(k,i)*a_Tmpv2
-   a_Tmpv1 =vb*a_Tmpv2
-   a_field_old(i,k,j_end) =a_field_old(i,k,j_end) +a_Tmpv1
-   a_field_old(i,k,j_end-1) =a_field_old(i,k,j_end-1) -a_Tmpv1
-
-   a_Tmpv2=(1.0 +(1.0)*sign(1.0, Tmpv300(k,i) -0.))*0.5*a_vb
-   a_vb =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rv(i,k,jte-1) =a_rv(i,k,jte-1) +a_Tmpv1
-   a_rv(i,k,jte) =a_rv(i,k,jte) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[10]
-
-!LPB[9]
-
-   IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   Tmpv001 =rv(i,k,jts) +rv(i,k,jts+1)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,i) =Tmpv002
-   vb =min(Tmpv300(k,i), 0.)
-   Tmpv301(k,i) =vb
-
-   Tmpv001 =field_old(i,k,jts+1) -field_old(i,k,jts)
-   Tmpv302(k,i) =Tmpv001
-   Tmpv002 =vb*Tmpv302(k,i)
-   Tmpv003 =rv(i,k,jts+1) -rv(i,k,jts)
-   Tmpv303(k,i) =Tmpv003
-   Tmpv004 =field(i,k,jts)*Tmpv303(k,i)
-   Tmpv005 =Tmpv002 +Tmpv004
-   Tmpv006 =rdy*Tmpv005
-   Tmpv007 =tendency(i,k,jts) -Tmpv006
-!  tendency(i,k,jts) =Tmpv007
-
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
-
-   DO i =i_end, i_start, -1
-   DO k =ktf, kts, -1
-   vb =Tmpv301(k,i)
-
-   a_Tmpv7 =a_tendency(i,k,jts)
-   a_tendency(i,k,jts) =0.0
-   a_tendency(i,k,jts) =a_tendency(i,k,jts) +a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   a_Tmpv5 =rdy*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_field(i,k,jts) =a_field(i,k,jts) +Tmpv303(k,i)*a_Tmpv4
-   a_Tmpv3 =field(i,k,jts)*a_Tmpv4
-   a_rv(i,k,jts+1) =a_rv(i,k,jts+1) +a_Tmpv3
-   a_rv(i,k,jts) =a_rv(i,k,jts) -a_Tmpv3
-   a_vb =a_vb +Tmpv302(k,i)*a_Tmpv2
-   a_Tmpv1 =vb*a_Tmpv2
-   a_field_old(i,k,jts+1) =a_field_old(i,k,jts+1) +a_Tmpv1
-   a_field_old(i,k,jts) =a_field_old(i,k,jts) -a_Tmpv1
-
-   a_Tmpv2=(1.0 -(1.0)*sign(1.0, Tmpv300(k,i) -0.))*0.5*a_vb
-   a_vb =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rv(i,k,jts) =a_rv(i,k,jts) +a_Tmpv1
-   a_rv(i,k,jts+1) =a_rv(i,k,jts+1) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[8]
-
-!LPB[7]
-   ub =Keep_Lpb7_ub
-
-   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   Tmpv001 =ru(ite-1,k,j) +ru(ite,k,j)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,j) =Tmpv002
-   ub =max(Tmpv300(k,j), 0.)
-   Tmpv301(k,j) =ub
-
-   Tmpv001 =field_old(i_end,k,j) -field_old(i_end-1,k,j)
-   Tmpv302(k,j) =Tmpv001
-   Tmpv002 =ub*Tmpv302(k,j)
-   Tmpv003 =ru(ite,k,j) -ru(ite-1,k,j)
-   Tmpv303(k,j) =Tmpv003
-   Tmpv004 =field(i_end,k,j)*Tmpv303(k,j)
-   Tmpv005 =Tmpv002 +Tmpv004
-   Tmpv006 =rdx*Tmpv005
-   Tmpv007 =tendency(i_end,k,j) -Tmpv006
-!  tendency(i_end,k,j) =Tmpv007
-
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   ub =Tmpv301(k,j)
-
-   a_Tmpv7 =a_tendency(i_end,k,j)
-   a_tendency(i_end,k,j) =0.0
-   a_tendency(i_end,k,j) =a_tendency(i_end,k,j) +a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   a_Tmpv5 =rdx*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_field(i_end,k,j) =a_field(i_end,k,j) +Tmpv303(k,j)*a_Tmpv4
-   a_Tmpv3 =field(i_end,k,j)*a_Tmpv4
-   a_ru(ite,k,j) =a_ru(ite,k,j) +a_Tmpv3
-   a_ru(ite-1,k,j) =a_ru(ite-1,k,j) -a_Tmpv3
-   a_ub =a_ub +Tmpv302(k,j)*a_Tmpv2
-   a_Tmpv1 =ub*a_Tmpv2
-   a_field_old(i_end,k,j) =a_field_old(i_end,k,j) +a_Tmpv1
-   a_field_old(i_end-1,k,j) =a_field_old(i_end-1,k,j) -a_Tmpv1
-
-   a_Tmpv2=(1.0 +(1.0)*sign(1.0, Tmpv300(k,j) -0.))*0.5*a_ub
-   a_ub =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(ite-1,k,j) =a_ru(ite-1,k,j) +a_Tmpv1
-   a_ru(ite,k,j) =a_ru(ite,k,j) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[6]
-
-!LPB[5]
-   IF( (config_flags%open_xs) .and. (its == ids) ) THEN
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   Tmpv001 =ru(its,k,j) +ru(its+1,k,j)
-   Tmpv002 =0.5*Tmpv001
-   Tmpv300(k,j) =Tmpv002
-   ub =min(Tmpv300(k,j), 0.)
-   Tmpv301(k,j) =ub
-
-   Tmpv001 =field_old(its+1,k,j) -field_old(its,k,j)
-   Tmpv302(k,j) =Tmpv001
-   Tmpv002 =ub*Tmpv302(k,j)
-   Tmpv003 =ru(its+1,k,j) -ru(its,k,j)
-   Tmpv303(k,j) =Tmpv003
-   Tmpv004 =field(its,k,j)*Tmpv303(k,j)
-   Tmpv005 =Tmpv002 +Tmpv004
-   Tmpv006 =rdx*Tmpv005
-   Tmpv007 =tendency(its,k,j) -Tmpv006
-!  tendency(its,k,j) =Tmpv007
-
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_xs) .and. (its == ids) ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   ub =Tmpv301(k,j)
-
-   a_Tmpv7 =a_tendency(its,k,j)
-   a_tendency(its,k,j) =0.0
-   a_tendency(its,k,j) =a_tendency(its,k,j) +a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   a_Tmpv5 =rdx*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_field(its,k,j) =a_field(its,k,j) +Tmpv303(k,j)*a_Tmpv4
-   a_Tmpv3 =field(its,k,j)*a_Tmpv4
-   a_ru(its+1,k,j) =a_ru(its+1,k,j) +a_Tmpv3
-   a_ru(its,k,j) =a_ru(its,k,j) -a_Tmpv3
-   a_ub =a_ub +Tmpv302(k,j)*a_Tmpv2
-   a_Tmpv1 =ub*a_Tmpv2
-   a_field_old(its+1,k,j) =a_field_old(its+1,k,j) +a_Tmpv1
-   a_field_old(its,k,j) =a_field_old(its,k,j) -a_Tmpv1
-
-   a_Tmpv2=(1.0 -(1.0)*sign(1.0, Tmpv300(k,j) -0.))*0.5*a_ub
-   a_ub =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(its,k,j) =a_ru(its,k,j) +a_Tmpv1
-   a_ru(its+1,k,j) =a_ru(its+1,k,j) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[3]
-   cr =Keep_Lpb3_cr
-
-!ADDED BY WALLS
-    IF (config_flags%polar) THEN
-
-          fqx(:,:,:)  = 0.
-          fqy(:,:,:)  = 0.
-          fqz(:,:,:)  = 0.
-          fqxl(:,:,:) = 0.
-          fqyl(:,:,:) = 0.
-          fqzl(:,:,:) = 0.
-
-   END IF
-
-     ktf=MIN(kte,kde-1)
-     horz_order = config_flags%h_sca_adv_order
-     vert_order = config_flags%v_sca_adv_order
-
-     degrade_xs = .true.
-     degrade_xe = .true.
-     degrade_ys = .true.
-     degrade_ye = .true.
-
-   IF( horz_order == 6 ) THEN
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xs .or.  	       (its > ids+3)                ) THEN
-   degrade_xs =.false.
-   END IF
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xe .or.  	       (ite < ide-4)                ) THEN
-   degrade_xe =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ys .or.  	       (jts > jds+3)                ) THEN
-   degrade_ys =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ye .or.  	       (jte < jde-4)                ) THEN
-   degrade_ye =.false.
-   END IF
-   ktf =min(kte, kde-1)
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   j_start_f =j_start
-   j_end_f =j_end+1
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids)
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-1)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds+1)
-   j_start_f =jds+3
-   ENDIF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-2)
-   j_end_f =jde-3
-   ENDIF
-   DO j =j_start, j_end+1
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv400(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv401(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv402(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv403(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv403(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv404(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv405(i,k,j) =Tmpv001
-   Tmpv406(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv405(i,k,j)*Tmpv406(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux6(field(i,k,j-3),field(i,k,j-2),field(i,k,j-1),field(i,k,j)  &
-   ,field(i,k,j+1),field(i,k,j+2),vel)
-   Tmpv407(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv407(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv408(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv409(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv4010(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv4011(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4011(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4012(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4013(i,k,j) =Tmpv001
-   Tmpv4014(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4013(i,k,j)*Tmpv4014(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv4015(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv4015(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jds+2 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv4016(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4017(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv4018(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv4019(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4019(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4020(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4021(i,k,j) =Tmpv001
-   Tmpv4022(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4021(i,k,j)*Tmpv4022(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv4023(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4023(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv4024(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4025(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv4026(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv4027(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4027(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4028(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4029(i,k,j) =Tmpv001
-   Tmpv4030(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4029(i,k,j)*Tmpv4030(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv4031(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv4031(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jde-2 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv4032(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4033(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv4034(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv4035(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4035(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4036(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4037(i,k,j) =Tmpv001
-   Tmpv4038(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4037(i,k,j)*Tmpv4038(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv4039(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4039(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ENDIF
-   ENDDO
-
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   i_start_f =i_start
-   i_end_f =i_end+1
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds)
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-1)
-   END IF
-   IF(degrade_xs) THEN
-   i_start =max(ids+1, its-1)
-   i_start_f =ids+3
-   ENDIF
-   IF(degrade_xe) THEN
-   i_end =min(ide-2, ite+1)
-   i_end_f =ide-3
-   ENDIF
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   DO i =i_start_f, i_end_f
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv4040(i,k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4041(i,k,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv4042(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv4043(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4043(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4044(i,k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4045(i,k,j) =Tmpv001
-   Tmpv4046(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4045(i,k,j)*Tmpv4046(i,k,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux6(field(i-3,k,j),field(i-2,k,j),field(i-1,k,j),field(i,k,j)  &
-   ,field(i+1,k,j),field(i+2,k,j),vel)
-   Tmpv4047(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4047(i,k,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   IF( degrade_xs ) THEN
-
-   DO i =i_start, i_start_f-1
-   IF(i == ids+1) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv4048(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4049(k,i,j) =mu
-
-   Tmpv001 =ru(i,k,j)/mu
-   vel =Tmpv001
-   Tmpv4050(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   cr =Tmpv001
-   Tmpv4051(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4052(k,i,j) =Tmpv001
-   Tmpv4053(k,i,j) =Tmpv002
-   Tmpv003 =Tmpv4052(k,i,j)*Tmpv4053(k,i,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv4054(k,i,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv4054(k,i,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   IF(i == ids+2) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv4055(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4056(k,i,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv4057(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv4058(k,i,j) =Tmpv001
-   Tmpv002 =Tmpv4058(k,i,j)/mu
-   cr =Tmpv002
-   Tmpv4059(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4060(k,i,j) =Tmpv001
-   Tmpv4061(k,i,j) =Tmpv002
-   Tmpv003 =Tmpv4060(k,i,j)*Tmpv4061(k,i,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv4062(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4062(k,i,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDDO
-   ENDIF
-   IF( degrade_xe ) THEN
-
-   DO i =i_end_f+1, i_end+1
-   IF( i == ide-1 ) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv4063(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4064(k,i,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv4065(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv4066(k,i,j) =Tmpv001
-   Tmpv002 =Tmpv4066(k,i,j)/mu
-   cr =Tmpv002
-   Tmpv4067(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4068(k,i,j) =Tmpv001
-   Tmpv4069(k,i,j) =Tmpv002
-   Tmpv003 =Tmpv4068(k,i,j)*Tmpv4069(k,i,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv4070(k,i,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv4070(k,i,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   IF( i == ide-2 ) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv4071(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4072(k,i,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv4073(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv4074(k,i,j) =Tmpv001
-   Tmpv002 =Tmpv4074(k,i,j)/mu
-   cr =Tmpv002
-   Tmpv4075(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv4076(k,i,j) =Tmpv001
-   Tmpv4077(k,i,j) =Tmpv002
-   Tmpv003 =Tmpv4076(k,i,j)*Tmpv4077(k,i,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv4078(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4078(k,i,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDDO
-   ENDIF
-   ENDDO
-
-   ELSE IF( horz_order == 5 ) THEN
-!ALL SCALARS IN THE FOLLOWING ARE REVISED BY WALLS
-!ALL SCALARS IN THE FOLLOWING ARE REVISED BY WALLS
-
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xs .or.  	       (its > ids+3)                ) THEN
-   degrade_xs =.false.
-   END IF
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xe .or.  	       (ite < ide-4)                ) THEN
-   degrade_xe =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ys .or.  	       (jts > jds+3)                ) THEN
-   degrade_ys =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ye .or.  	       (jte < jde-4)                ) THEN
-   degrade_ye =.false.
-   END IF
-   ktf =min(kte, kde-1)
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   j_start_f =j_start
-   j_end_f =j_end+1
-   IF(degrade_xs) THEN
-   i_start =max(its-1, ids)
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite+1, ide-1)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds+1)
-   j_start_f =jds+3
-   ENDIF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-2)
-   j_end_f =jde-3
-   ENDIF
-   DO j =j_start, j_end+1
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv4079(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4080(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv4081(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv4082(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4082(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4083(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4084(i,k,j) =Tmpv001
-   Tmpv4085(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4084(i,k,j)*Tmpv4085(i,k,j)
-   fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux5(field(i,k,j-3),field(i,k,j-2),field(i,k,j-1),field(i,k,j)  &
-   ,field(i,k,j+1),field(i,k,j+2),vel)
-   Tmpv4086(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv4086(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv4087(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4088(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv4089(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv4090(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4090(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4091(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv4092(i,k,j) =Tmpv001
-   Tmpv4093(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv4092(i,k,j)*Tmpv4093(i,k,j)
-   fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv4094(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv4094(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jds+2 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv4095(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv4096(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv4097(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv4098(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv4098(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv4099(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40100(i,k,j) =Tmpv001
-   Tmpv40101(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40100(i,k,j)*Tmpv40101(i,k,j)
-   fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv40102(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40102(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40103(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40104(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40105(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40106(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40106(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40107(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40108(i,k,j) =Tmpv001
-   Tmpv40109(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40108(i,k,j)*Tmpv40109(i,k,j)
-   fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv40110(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv40110(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jde-2 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40111(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40112(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40113(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40114(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40114(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40115(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40116(i,k,j) =Tmpv001
-   Tmpv40117(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40116(i,k,j)*Tmpv40117(i,k,j)
-   fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv40118(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40118(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ENDIF
-   ENDDO
-
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   i_start_f =i_start
-   i_end_f =i_end+1
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   IF(degrade_ys) THEN
-   j_start =max(jts-1, jds)
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte+1, jde-1)
-   END IF
-   IF(degrade_xs) THEN
-   i_start =max(ids+1, its-1)
-   i_start_f =ids+3
-   ENDIF
-   IF(degrade_xe) THEN
-   i_end =min(ide-2, ite+1)
-   i_end_f =ide-3
-   ENDIF
-
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   DO i =i_start_f, i_end_f
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40119(i,k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40120(i,k,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv40121(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv40122(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40122(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40123(i,k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40124(i,k,j) =Tmpv001
-   Tmpv40125(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40124(i,k,j)*Tmpv40125(i,k,j)
-   fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux5(field(i-3,k,j),field(i-2,k,j),field(i-1,k,j),field(i,k,j)  &
-   ,field(i+1,k,j),field(i+2,k,j),vel)
-   Tmpv40126(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40126(i,k,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   IF( degrade_xs ) THEN
-
-   DO i =i_start, i_start_f-1
-   IF(i == ids+1) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40127(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40128(k,i,j) =mu
-
-   Tmpv001 =ru(i,k,j)/mu
-   vel =Tmpv001
-   Tmpv40129(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   cr =Tmpv001
-   Tmpv40130(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40131(k,i,j) =Tmpv001
-   Tmpv40132(k,i,j) =Tmpv002
-   Tmpv003 =Tmpv40131(k,i,j)*Tmpv40132(k,i,j)
-   fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv40133(k,i,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv40133(k,i,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   IF(i == ids+2) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40134(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40135(k,i,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv40136(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv40137(k,i,j) =Tmpv001
-   Tmpv002 =Tmpv40137(k,i,j)/mu
-   cr =Tmpv002
-   Tmpv40138(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40139(k,i,j) =Tmpv001
-   Tmpv40140(k,i,j) =Tmpv002
-   fqxl(i,k,j) =Tmpv003
-   Tmpv003 =Tmpv40139(k,i,j)*Tmpv40140(k,i,j)
-
-   Tmpv001 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv40141(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40141(k,i,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDDO
-   ENDIF
-   IF( degrade_xe ) THEN
-
-   DO i =i_end_f+1, i_end+1
-   IF( i == ide-1 ) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40142(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40143(k,i,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv40144(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv40145(k,i,j) =Tmpv001
-   Tmpv002 =Tmpv40145(k,i,j)/mu
-   cr =Tmpv002
-   Tmpv40146(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40147(k,i,j) =Tmpv001
-   Tmpv40148(k,i,j) =Tmpv002
-   Tmpv003 =Tmpv40147(k,i,j)*Tmpv40148(k,i,j)
-   fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv40149(k,i,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv40149(k,i,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   IF( i == ide-2 ) THEN
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40150(k,i,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40151(k,i,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv40152(k,i,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv40153(k,i,j) =Tmpv001
-   Tmpv002 =Tmpv40153(k,i,j)/mu
-   cr =Tmpv002
-   Tmpv40154(k,i,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40155(k,i,j) =Tmpv001
-   Tmpv40156(k,i,j) =Tmpv002
-   Tmpv003 =Tmpv40155(k,i,j)*Tmpv40156(k,i,j)
-   fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv40157(k,i,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40157(k,i,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDDO
-   ENDIF
-   ENDDO
-
-   ELSE IF( horz_order == 4 ) THEN
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xs .or.  	       (its > ids+1)                ) THEN
-   degrade_xs =.false.
-   END IF
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xe .or.  	       (ite < ide-2)                ) THEN
-   degrade_xe =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ys .or.  	       (jts > jds+1)                ) THEN
-   degrade_ys =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ye .or.  	       (jte < jde-2)                ) THEN
-   degrade_ye =.false.
-   END IF
-   ktf =min(kte, kde-1)
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   j_start_f =j_start
-   j_end_f =j_end+1
-   IF(degrade_xs) THEN
-   i_start =its
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite, ide-1)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts, jds+1)
-   j_start_f =jds+2
-   ENDIF
-   IF(degrade_ye) THEN
-   j_end =min(jte, jde-2)
-   j_end_f =jde-2
-   ENDIF
-   DO j =j_start, j_end+1
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40158(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40159(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40160(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40161(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40161(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40162(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40163(i,k,j) =Tmpv001
-   Tmpv40164(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40163(i,k,j)*Tmpv40164(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv40165(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40165(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40166(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40167(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40168(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40169(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40169(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40170(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40171(i,k,j) =Tmpv001
-   Tmpv40172(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40171(i,k,j)*Tmpv40172(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv40173(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv40173(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40174(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40175(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40176(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40177(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40177(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40178(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40179(i,k,j) =Tmpv001
-   Tmpv40180(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40179(i,k,j)*Tmpv40180(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv40181(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv40181(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ENDIF
-   ENDDO
-
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   i_start_f =i_start
-   i_end_f =i_end+1
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   IF(degrade_ys) THEN
-   j_start =jts
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte, jde-1)
-   END IF
-   IF(degrade_xs) THEN
-   i_start =max(ids+1, its)
-   i_start_f =i_start+1
-   ENDIF
-   IF(degrade_xe) THEN
-   i_end =min(ide-2, ite)
-   i_end_f =ide-2
-   ENDIF
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   DO i =i_start_f, i_end_f
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40182(i,k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40183(i,k,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv40184(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv40185(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40185(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40186(i,k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40187(i,k,j) =Tmpv001
-   Tmpv40188(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40187(i,k,j)*Tmpv40188(i,k,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux4(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv40189(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40189(i,k,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   IF( degrade_xs ) THEN
-   IF( i_start == ids+1 ) THEN
-   i =ids+1
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv300(k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv301(k,j) =mu
-
-   Tmpv001 =ru(i,k,j)/mu
-   vel =Tmpv001
-   Tmpv302(k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   cr =Tmpv001
-   Tmpv303(k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv304(k,j) =Tmpv001
-   Tmpv305(k,j) =Tmpv002
-   Tmpv003 =Tmpv304(k,j)*Tmpv305(k,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv306(k,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv306(k,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDIF
-   IF( degrade_xe ) THEN
-   IF( i_end == ide-2 ) THEN
-   i =ide-1
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv307(k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv308(k,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv309(k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv3010(k,j) =Tmpv001
-   Tmpv002 =Tmpv3010(k,j)/mu
-   cr =Tmpv002
-   Tmpv3011(k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv3012(k,j) =Tmpv001
-   Tmpv3013(k,j) =Tmpv002
-   Tmpv003 =Tmpv3012(k,j)*Tmpv3013(k,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv3014(k,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv3014(k,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDIF
-   ENDDO
-
-   ELSE IF( horz_order == 3 ) THEN
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xs .or.  	       (its > ids+2)                ) THEN
-   degrade_xs =.false.
-   END IF
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xe .or.  	       (ite < ide-1)                ) THEN
-   degrade_xe =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ys .or.  	       (jts > jds+2)                ) THEN
-   degrade_ys =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ye .or.  	       (jte < jde-1)                ) THEN
-   degrade_ye =.false.
-   END IF
-
-   ktf =min(kte, kde-1)
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   j_start_f =j_start
-   j_end_f =j_end+1
-   IF(degrade_xs) THEN
-   i_start =its
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite, ide-1)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts, jds+1)
-   j_start_f =jds+2
-   ENDIF
-   IF(degrade_ye) THEN
-   j_end =min(jte, jde-2)
-   j_end_f =jde-2
-   ENDIF
-   DO j =j_start, j_end+1
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40190(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40191(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40192(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40193(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40193(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40194(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40195(i,k,j) =Tmpv001
-   Tmpv40196(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40195(i,k,j)*Tmpv40196(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel)
-   Tmpv40197(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40197(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40198(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40199(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40200(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40201(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40201(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40202(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40203(i,k,j) =Tmpv001
-   Tmpv40204(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40203(i,k,j)*Tmpv40204(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv40205(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv40205(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40206(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40207(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40208(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40209(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40209(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40210(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40211(i,k,j) =Tmpv001
-   Tmpv40212(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40211(i,k,j)*Tmpv40212(i,k,j)
-!  fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv40213(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv40213(i,k,j)
-!  fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-!  fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ENDIF
-   ENDDO
-
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   i_start_f =i_start
-   i_end_f =i_end+1
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   IF(degrade_ys) THEN
-   j_start =jts
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte, jde-1)
-   END IF
-   IF(degrade_xs) THEN
-   i_start =max(ids+1, its)
-   i_start_f =i_start+1
-   ENDIF
-   IF(degrade_xe) THEN
-   i_end =min(ide-2, ite)
-   i_end_f =ide-2
-   ENDIF
-
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   DO i =i_start_f, i_end_f
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40214(i,k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40215(i,k,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv40216(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv40217(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40217(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40218(i,k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40219(i,k,j) =Tmpv001
-   Tmpv40220(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40219(i,k,j)*Tmpv40220(i,k,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =flux3(field(i-2,k,j),field(i-1,k,j),field(i,k,j),field(i+1,k,j),vel)
-   Tmpv40221(i,k,j) =Tmpv001
-   Tmpv002 =vel*Tmpv40221(i,k,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-
-   IF( degrade_xs ) THEN
-   IF( i_start == ids+1 ) THEN
-   i =ids+1
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv3015(k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv3016(k,j) =mu
-
-   Tmpv001 =ru(i,k,j)/mu
-   vel =Tmpv001
-   Tmpv3017(k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   cr =Tmpv001
-   Tmpv3018(k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv3019(k,j) =Tmpv001
-   Tmpv3020(k,j) =Tmpv002
-   Tmpv003 =Tmpv3019(k,j)*Tmpv3020(k,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv3021(k,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv3021(k,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDIF
-
-   IF( degrade_xe ) THEN
-   IF( i_end == ide-2 ) THEN
-   i =ide-1
-
-   DO k =kts, ktf
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv3022(k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv3023(k,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv3024(k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv3025(k,j) =Tmpv001
-   Tmpv002 =Tmpv3025(k,j)/mu
-   cr =Tmpv002
-   Tmpv3026(k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv3027(k,j) =Tmpv001
-   Tmpv3028(k,j) =Tmpv002
-   Tmpv003 =Tmpv3027(k,j)*Tmpv3028(k,j)
-!  fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv3029(k,j) =Tmpv001
-   Tmpv002 =0.5*(ru(i,k,j))*Tmpv3029(k,j)
-!  fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-!  fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDIF
-   ENDIF
-   ENDDO
-
-   ELSE IF( horz_order == 2 ) THEN
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xs .or.  	       (its > ids+1)                ) THEN
-   degrade_xs =.false.
-   END IF
-   IF( config_flags%periodic_x   .or.  	       config_flags%symmetric_xe .or.  	       (ite < ide-2)                ) THEN
-   degrade_xe =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ys .or.  	       (jts > jds+1)                ) THEN
-   degrade_ys =.false.
-   END IF
-   IF( config_flags%periodic_y   .or.  	       config_flags%symmetric_ye .or.  	       (jte < jde-2)                ) THEN
-   degrade_ye =.false.
-   END IF
-   ktf =min(kte, kde-1)
-   i_start =its-1
-   Tmpv001 =min(ite, ide-1) +1
-   i_end =Tmpv001
-   j_start =jts-1
-   Tmpv001 =min(jte, jde-1) +1
-   j_end =Tmpv001
-   IF(degrade_xs) THEN
-   i_start =its
-   END IF
-   IF(degrade_xe) THEN
-   i_end =min(ite, ide-1)
-   END IF
-   IF(degrade_ys) THEN
-   j_start =max(jts, jds+1)
-   END IF
-   IF(degrade_ye) THEN
-   j_end =min(jte, jde-2)
-   END IF
-
-   DO j =j_start, j_end+1
-   DO k =kts, ktf
-   DO i =i_start, i_end
-   dy =2./(msftx(i,j)+msftx(i,j-1))/rdy
-   Tmpv40222(i,k,j) =dy
-
-   Tmpv001 =mut(i,j) +mut(i,j-1)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40223(i,k,j) =mu
-
-   vel =rv(i,k,j)
-   Tmpv40224(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dy
-   Tmpv40225(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40225(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40226(i,k,j) =cr
-
-   Tmpv001 =mu*(dy/dt)
-   Tmpv002 =flux_upwind(field_old(i,k,j-1),field_old(i,k,j),cr)
-   Tmpv40227(i,k,j) =Tmpv001
-   Tmpv40228(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40227(i,k,j)*Tmpv40228(i,k,j)
-   fqyl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i,k,j-1)
-   Tmpv40229(i,k,j) =Tmpv001
-   Tmpv002 =0.5*rv(i,k,j)*Tmpv40229(i,k,j)
-   fqy(i,k,j) =Tmpv002
-
-   Tmpv001 =fqy(i,k,j) -fqyl(i,k,j)
-   fqy(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j =j_start, j_end
-   DO k =kts, ktf
-   DO i =i_start, i_end+1
-   dx =2./(msfty(i,j)+msfty(i-1,j))/rdx
-   Tmpv40230(i,k,j) =dx
-
-   Tmpv001 =mut(i,j) +mut(i-1,j)
-   Tmpv002 =0.5*Tmpv001
-   mu =Tmpv002
-   Tmpv40231(i,k,j) =mu
-
-   vel =ru(i,k,j)
-   Tmpv40232(i,k,j) =vel
-
-   Tmpv001 =vel*dt/dx
-   Tmpv40233(i,k,j) =Tmpv001
-   Tmpv002 =Tmpv40233(i,k,j)/mu
-   cr =Tmpv002
-   Tmpv40234(i,k,j) =cr
-
-   Tmpv001 =mu*(dx/dt)
-   Tmpv002 =flux_upwind(field_old(i-1,k,j),field_old(i,k,j),cr)
-   Tmpv40235(i,k,j) =Tmpv001
-   Tmpv40236(i,k,j) =Tmpv002
-   Tmpv003 =Tmpv40235(i,k,j)*Tmpv40236(i,k,j)
-   fqxl(i,k,j) =Tmpv003
-
-   Tmpv001 =field(i,k,j) +field(i-1,k,j)
-   Tmpv40237(i,k,j) =Tmpv001
-   Tmpv002 =0.5*ru(i,k,j)*Tmpv40237(i,k,j)
-   fqx(i,k,j) =Tmpv002
-
-   Tmpv001 =fqx(i,k,j) -fqxl(i,k,j)
-   fqx(i,k,j) =Tmpv001
-
-   ENDDO
-   ENDDO
-   ENDDO
-   ELSE
-   CALL wrf_error_fatal(Trim(wrf_err_message))
-
-   ENDIF
-
-!ADDED BY WALLS
-
-     ktf=MIN(kte,kde-1)
-     horz_order = config_flags%h_sca_adv_order
-     vert_order = config_flags%v_sca_adv_order
-
-     degrade_xs = .true.
-     degrade_xe = .true.
-     degrade_ys = .true.
-     degrade_ye = .true.
-
-   IF( horz_order == 6 ) THEN
-!ADDED BY WALLS
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs = .false.
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-4)                ) degrade_xe = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye = .false.
-
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = MAX(its-1,ids)
-
-      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts-1,jds+1)
-           j_start_f = jds+3
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte+1,jde-2)
-           j_end_f = jde-3
-         ENDIF
-
-!ADDED BY WALLS
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         i_start_f = i_start
-         i_end_f   = i_end+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-      IF(degrade_ys) j_start = MAX(jts-1,jds)
-
-      IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
-
-      IF(degrade_xs) then
-
-           i_start = MAX(ids+1,its-1)
-           i_start_f = ids+3
-         ENDIF
-      IF(degrade_xe) then
-
-           i_end = MIN(ide-2,ite+1)
-           i_end_f = ide-3
-         ENDIF
-
-   DO j =j_end, j_start, -1
-
-   IF( degrade_xe ) THEN
-
-   DO i =i_end+1, i_end_f+1, -1
-
-   IF( i == ide-2 ) THEN
-
-   DO k =ktf, kts, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4075(k,i,j)
-   vel =Tmpv4073(k,i,j)
-   dx =Tmpv4071(k,i,j)
-   mu =Tmpv4072(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4078(k,i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
-   ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux4(field(i-2,k,j),1.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4077(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4076(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv4075(k,i,j)
-!  vel =Tmpv4073(k,i,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4074(k,i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv4072(k,i,j)
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-!  dx =Tmpv4071(k,i,j)
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   IF( i == ide-1 ) THEN
-
-   DO k =ktf, kts, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4067(k,i,j)
-   vel =Tmpv4065(k,i,j)
-   mu =Tmpv4064(k,i,j)
-   dx =Tmpv4063(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv4070(k,i,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4069(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4068(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4066(k,i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   DO i =i_start_f-1, i_start, -1
-
-   IF(i == ids+2) THEN
-
-   DO k =ktf, kts, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4059(k,i,j)
-   vel =Tmpv4057(k,i,j)
-   mu =Tmpv4056(k,i,j)
-   dx =Tmpv4055(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4062(k,i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
-   ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux4(field(i-2,k,j),1.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4061(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4060(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4058(k,i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   IF(i == ids+1) THEN
-
-   DO k =ktf, kts, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4051(k,i,j)
-   vel =Tmpv4050(k,i,j)
-   mu =Tmpv4049(k,i,j)
-   dx =Tmpv4048(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv4054(k,i,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4053(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4052(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv1 =a_cr
-   a_cr =0.0
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_Tmpv1 =a_vel
-   a_vel =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1/mu
-   a_mu =a_mu -ru(i,k,j)/(mu*mu)*a_Tmpv1
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4044(i,k,j)
-   vel =Tmpv4042(i,k,j)
-   mu =Tmpv4041(i,k,j)
-   dx =Tmpv4040(i,k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4047(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux6(field(i-3,k,j),0.0,field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+2,k,j) =a_field(i+2,k,j) +Diff_flux6(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,1.0,vel,0.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux6(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux6(field(i-3,k,j),0.0,field(i-2,k,j)  &
-   ,0.0,field(i-1,k,j),0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux6(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux6(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),1.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i-3,k,j) =a_field(i-3,k,j) +Diff_flux6(field(i-3,k,j),1.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4046(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4045(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4043(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF(degrade_xe) THEN
-
-   ENDIF
-
-   IF(degrade_xs) THEN
-
-   ENDIF
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-!ADDED BY WALLS
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = MAX(its-1,ids)
-
-      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts-1,jds+1)
-           j_start_f = jds+3
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte+1,jde-2)
-           j_end_f = jde-3
-         ENDIF
-
-   DO j =j_end+1, j_start, -1
-
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv404(i,k,j)
-   vel =Tmpv402(i,k,j)
-   mu =Tmpv401(i,k,j)
-   dy =Tmpv400(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv407(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux6(field(i,k,j-3),0.0,field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+2) =a_field(i,k,j+2) +Diff_flux6(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux6(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux6(field(i,k,j-3),0.0,field(i,k,j-2)  &
-   ,0.0,field(i,k,j-1),0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux6(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux6(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),1.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-3) =a_field(i,k,j-3) +Diff_flux6(field(i,k,j-3),1.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv406(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv405(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv403(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4012(i,k,j)
-   vel =Tmpv4010(i,k,j)
-   mu =Tmpv409(i,k,j)
-   dy =Tmpv408(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv4015(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4014(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4013(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4011(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+2 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4020(i,k,j)
-   vel =Tmpv4018(i,k,j)
-   mu =Tmpv4017(i,k,j)
-   dy =Tmpv4016(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4023(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
-   ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux4(field(i,k,j-2),1.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4022(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4021(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4019(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4028(i,k,j)
-   vel =Tmpv4026(i,k,j)
-   mu =Tmpv4025(i,k,j)
-   dy =Tmpv4024(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv4031(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4030(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4029(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4027(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-2 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv4036(i,k,j)
-   vel =Tmpv4034(i,k,j)
-   mu =Tmpv4033(i,k,j)
-   dy =Tmpv4032(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4039(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
-   ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux4(field(i,k,j-2),1.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4038(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4037(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4035(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   IF(degrade_ye) THEN
-
-   ENDIF
-
-   IF(degrade_ys) THEN
-
-   ENDIF
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ye .or.   &
-          (jte < jde-4)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ys .or.   &
-          (jts > jds+3)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xe .or.   &
-          (ite < ide-4)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xs .or.   &
-          (its > ids+3)                ) THEN
-
-   END IF
-
-   ELSE IF( horz_order == 5 ) THEN
-!ALL SCALARS IN THE FOLLOWING ARE REVISED BY WALLS
-!ALL SCALARS IN THE FOLLOWING ARE REVISED BY WALLS
-!ADDED BY WALLS
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xs .or.   &
-       (its > ids+3)                ) degrade_xs = .false.
-
-   IF( config_flags%periodic_x   .or.   &
-       config_flags%symmetric_xe .or.   &
-       (ite < ide-4)                ) degrade_xe = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ys .or.   &
-       (jts > jds+3)                ) degrade_ys = .false.
-
-   IF( config_flags%periodic_y   .or.   &
-       config_flags%symmetric_ye .or.   &
-       (jte < jde-4)                ) degrade_ye = .false.
-
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = MAX(its-1,ids)
-
-      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts-1,jds+1)
-           j_start_f = jds+3
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte+1,jde-2)
-           j_end_f = jde-3
-         ENDIF
-
-!ADDED BY WALLS
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         i_start_f = i_start
-         i_end_f   = i_end+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-      IF(degrade_ys) j_start = MAX(jts-1,jds)
-
-      IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
-
-      IF(degrade_xs) then
-
-           i_start = MAX(ids+1,its-1)
-           i_start_f = ids+3
-         ENDIF
-      IF(degrade_xe) then
-
-           i_end = MIN(ide-2,ite+1)
-           i_end_f = ide-3
-         ENDIF
-
-   DO j =j_end, j_start, -1
-
-   IF( degrade_xe ) THEN
-
-   DO i =i_end+1, i_end_f+1, -1
-
-   IF( i == ide-2 ) THEN
-
-   DO k =ktf, kts, -1
-   cr =Tmpv40154(k,i,j)
-   vel =Tmpv40152(k,i,j)
-   mu =Tmpv40151(k,i,j)
-   dx =Tmpv40150(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40157(k,i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
-   ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux3(field(i-2,k,j),1.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40156(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40155(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv40154(k,i,j)
-!  vel =Tmpv40152(k,i,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40153(k,i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv40151(k,i,j)
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-!  dx =Tmpv40150(k,i,j)
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   IF( i == ide-1 ) THEN
-
-   DO k =ktf, kts, -1
-   cr =Tmpv40146(k,i,j)
-   vel =Tmpv40144(k,i,j)
-   mu =Tmpv40143(k,i,j)
-   dx =Tmpv40142(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv40149(k,i,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40148(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40147(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40145(k,i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   DO i =i_start_f-1, i_start, -1
-
-   IF(i == ids+2) THEN
-
-   DO k =ktf, kts, -1
-   cr =Tmpv40138(k,i,j)
-   vel =Tmpv40136(k,i,j)
-   mu =Tmpv40135(k,i,j)
-   dx =Tmpv40134(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40141(k,i,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
-   ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux3(field(i-2,k,j),1.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40140(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40139(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40137(k,i,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   IF(i == ids+1) THEN
-
-   DO k =ktf, kts, -1
-   dx =Tmpv40127(k,i,j)
-   mu =Tmpv40128(k,i,j)
-   cr =Tmpv40130(k,i,j)
-   vel =Tmpv40129(k,i,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv40133(k,i,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40132(k,i,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40131(k,i,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv1 =a_cr
-   a_cr =0.0
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_Tmpv1 =a_vel
-   a_vel =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1/mu
-   a_mu =a_mu -ru(i,k,j)/(mu*mu)*a_Tmpv1
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-   dx =Tmpv40119(i,k,j)
-   mu =Tmpv40120(i,k,j)
-   cr =Tmpv40123(i,k,j)
-   vel =Tmpv40121(i,k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40126(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux5(field(i-3,k,j),0.0,field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+2,k,j) =a_field(i+2,k,j) +Diff_flux5(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,1.0,vel,0.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux5(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux5(field(i-3,k,j),0.0,field(i-2,k,j)  &
-   ,0.0,field(i-1,k,j),0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux5(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux5(field(i-3,k,j),0.0,field(i-2,k,  &
-   j),1.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i-3,k,j) =a_field(i-3,k,j) +Diff_flux5(field(i-3,k,j),1.0,field(i-2,k,  &
-   j),0.0,field(i-1,k,j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,field(i+2,k,j)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40125(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40124(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40122(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF(degrade_xe) THEN
-
-   ENDIF
-
-   IF(degrade_xs) THEN
-
-   ENDIF
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-!ADDED BY WALLS
-         ktf=MIN(kte,kde-1)
-         i_start = its-1
-         i_end   = MIN(ite,ide-1)+1
-         j_start = jts-1
-         j_end   = MIN(jte,jde-1)+1
-         j_start_f = j_start
-         j_end_f   = j_end+1
-      IF(degrade_xs) i_start = MAX(its-1,ids)
-
-      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
-
-      IF(degrade_ys) then
-
-           j_start = MAX(jts-1,jds+1)
-           j_start_f = jds+3
-         ENDIF
-      IF(degrade_ye) then
-
-           j_end = MIN(jte+1,jde-2)
-           j_end_f = jde-3
-         ENDIF
-
-   DO j =j_end+1, j_start, -1
-
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   dy =Tmpv4079(i,k,j)
-   cr =Tmpv4083(i,k,j)
-   vel =Tmpv4081(i,k,j)
-   mu =Tmpv4080(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv4086(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux5(field(i,k,j-3),0.0,field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+2) =a_field(i,k,j+2) +Diff_flux5(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux5(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux5(field(i,k,j-3),0.0,field(i,k,j-2)  &
-   ,0.0,field(i,k,j-1),0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux5(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux5(field(i,k,j-3),0.0,field(i,k,j-  &
-   2),1.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-3) =a_field(i,k,j-3) +Diff_flux5(field(i,k,j-3),1.0,field(i,k,j-  &
-   2),0.0,field(i,k,j-1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,field(i,k,j+2)  &
-   ,0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4085(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4084(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4082(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   cr =Tmpv4091(i,k,j)
-   vel =Tmpv4089(i,k,j)
-   dy =Tmpv4087(i,k,j)
-   mu =Tmpv4088(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv4094(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv4093(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv4092(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4090(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+2 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   dy =Tmpv4095(i,k,j)
-   cr =Tmpv4099(i,k,j)
-   vel =Tmpv4097(i,k,j)
-   mu =Tmpv4096(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40102(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
-   ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux3(field(i,k,j-2),1.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40101(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40100(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv4098(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   dy =Tmpv40103(i,k,j)
-   cr =Tmpv40107(i,k,j)
-   vel =Tmpv40105(i,k,j)
-   mu =Tmpv40104(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv40110(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40109(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40108(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40106(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-2 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   dy =Tmpv40111(i,k,j)
-   cr =Tmpv40115(i,k,j)
-   vel =Tmpv40113(i,k,j)
-   mu =Tmpv40112(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40118(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
-   ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux3(field(i,k,j-2),1.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40117(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40116(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40114(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   IF(degrade_ye) THEN
-
-   ENDIF
-
-   IF(degrade_ys) THEN
-
-   ENDIF
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ye .or.   &
-          (jte < jde-4)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ys .or.   &
-          (jts > jds+3)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xe .or.   &
-          (ite < ide-4)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xs .or.   &
-          (its > ids+3)                ) THEN
-
-   END IF
-
-   ELSE IF( horz_order == 4 ) THEN
-!ADDED BY WALLS
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-2)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
-
-      ktf=MIN(kte,kde-1)
-      i_start = its-1
-      i_end   = MIN(ite,ide-1)+1
-      j_start = jts-1
-      j_end   = MIN(jte,jde-1)+1
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-!--  modify loop bounds if open or specified
-
-      IF(degrade_xs) i_start = its
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-
-      IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
-        j_start_f = jds+2
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = MIN(jte,jde-2)
-        j_end_f = jde-2
-      ENDIF
-
-!ADDED BY WALLS
-      i_start = its-1
-      i_end   = MIN(ite,ide-1)+1
-      i_start_f = i_start
-      i_end_f   = i_end+1
-
-      j_start = jts-1
-      j_end   = MIN(jte,jde-1)+1
-
-!--  modify loop bounds for open and specified b.c
-
-      IF(degrade_ys) j_start = jts
-      IF(degrade_ye) j_end   = MIN(jte,jde-1)
-
-      IF(degrade_xs) then
-        i_start = MAX(ids+1,its)
-        i_start_f = i_start+1
-      ENDIF
-
-      IF(degrade_xe) then
-        i_end = MIN(ide-2,ite)
-        i_end_f = ide-2
-      ENDIF
-
-   DO j =j_end, j_start, -1
-
-   IF( degrade_xe ) THEN
-
-   IF( i_end == ide-2 ) THEN
-
-!ADDED AND REVISED BY WALLS
-   i = ide-1
-
-   DO k =ktf, kts, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv3011(k,j)
-   vel =Tmpv309(k,j)
-   mu =Tmpv308(k,j)
-   dx =Tmpv307(k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv3014(k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3013(k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3012(k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3010(k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   IF( i_start == ids+1 ) THEN
-
-!ADDED AND REVISED BY WALLS
-   i = ids+1
-
-   DO k =ktf, kts, -1
-!ADDED AND REVISED BY WALLS
-   cr =Tmpv303(k,j)
-   vel =Tmpv302(k,j)
-   mu =Tmpv301(k,j)
-   dx =Tmpv300(k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv306(k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv305(k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv304(k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv1 =a_cr
-   a_cr =0.0
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_Tmpv1 =a_vel
-   a_vel =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1/mu
-   a_mu =a_mu -ru(i,k,j)/(mu*mu)*a_Tmpv1
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   ENDIF
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-   cr =Tmpv40186(i,k,j)
-   vel =Tmpv40184(i,k,j)
-   mu =Tmpv40183(i,k,j)
-   dx =Tmpv40182(i,k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40189(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
-   ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux4(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux4(field(i-2,k,j),1.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40188(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40187(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40185(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF(degrade_xe) THEN
-
-   ENDIF
-
-   IF(degrade_xs) THEN
-
-   ENDIF
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-!ADDED BY WALLS
-      ktf=MIN(kte,kde-1)
-      i_start = its-1
-      i_end   = MIN(ite,ide-1)+1
-      j_start = jts-1
-      j_end   = MIN(jte,jde-1)+1
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-!--  modify loop bounds if open or specified
-
-      IF(degrade_xs) i_start = its
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-
-      IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
-        j_start_f = jds+2
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = MIN(jte,jde-2)
-        j_end_f = jde-2
-      ENDIF
-
-   DO j =j_end+1, j_start, -1
-
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   cr =Tmpv40162(i,k,j)
-   vel =Tmpv40160(i,k,j)
-   mu =Tmpv40159(i,k,j)
-   dy =Tmpv40158(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40165(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
-   ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux4(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux4(field(i,k,j-2),1.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40164(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40163(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40161(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   cr =Tmpv40170(i,k,j)
-   vel =Tmpv40168(i,k,j)
-   mu =Tmpv40167(i,k,j)
-   dy =Tmpv40166(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv40173(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40172(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40171(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40169(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   cr =Tmpv40178(i,k,j)
-   vel =Tmpv40176(i,k,j)
-   mu =Tmpv40175(i,k,j)
-   dy =Tmpv40174(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv40181(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40180(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40179(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40177(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   IF(degrade_ye) THEN
-
-   ENDIF
-
-   IF(degrade_ys) THEN
-
-   ENDIF
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ye .or.   &
-          (jte < jde-2)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ys .or.   &
-          (jts > jds+1)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xe .or.   &
-          (ite < ide-2)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xs .or.   &
-          (its > ids+1)                ) THEN
-
-   END IF
-
-   ELSE IF( horz_order == 3 ) THEN
-!ADDED BY WALLS
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-1)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-1)                ) degrade_ye = .false.
-
-      ktf=MIN(kte,kde-1)
-      i_start = its-1
-      i_end   = MIN(ite,ide-1)+1
-      j_start = jts-1
-      j_end   = MIN(jte,jde-1)+1
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-      IF(degrade_xs) i_start = its
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-
-      IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
-        j_start_f = jds+2
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = MIN(jte,jde-2)
-        j_end_f = jde-2
-      ENDIF
-
-!ADDED BY WALLS
-      i_start = its-1
-      i_end   = MIN(ite,ide-1)+1
-      i_start_f = i_start
-      i_end_f   = i_end+1
-
-      j_start = jts-1
-      j_end   = MIN(jte,jde-1)+1
-
-!--  modify loop bounds for open and specified b.c
-
-      IF(degrade_ys) j_start = jts
-      IF(degrade_ye) j_end   = MIN(jte,jde-1)
-
-      IF(degrade_xs) then
-        i_start = MAX(ids+1,its)
-        i_start_f = i_start+1
-      ENDIF
-
-      IF(degrade_xe) then
-        i_end = MIN(ide-2,ite)
-        i_end_f = ide-2
-      ENDIF
-
-   DO j =j_end, j_start, -1
-
-   IF( degrade_xe ) THEN
-
-   IF( i_end == ide-2 ) THEN
-
-!ADDED BY WALLS
-   i =ide-1
-
-   DO k =ktf, kts, -1
-!ADDED BY WALLS
-   cr =Tmpv3026(k,j)
-   vel =Tmpv3024(k,j)
-   mu =Tmpv3023(k,j)
-   dx =Tmpv3022(k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv3029(k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3028(k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3027(k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv3025(k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   IF( i_start == ids+1 ) THEN
-
-!ADDED BY WALLS
-   i =ids+1
-
-   DO k =ktf, kts, -1
-!ADDED BY WALLS
-   cr =Tmpv3018(k,j)
-   vel =Tmpv3017(k,j)
-   mu =Tmpv3016(k,j)
-   dx =Tmpv3015(k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv3021(k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*(ru(i,k,j))*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv3020(k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv3019(k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv1 =a_cr
-   a_cr =0.0
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_Tmpv1 =a_vel
-   a_vel =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1/mu
-   a_mu =a_mu -ru(i,k,j)/(mu*mu)*a_Tmpv1
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-
-   ENDIF
-
-   ENDIF
-
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-!REVISED AND ADDED BY WALLS
-   cr =Tmpv40218(i,k,j)
-   vel =Tmpv40216(i,k,j)
-   mu =Tmpv40215(i,k,j)
-   dx =Tmpv40214(i,k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40221(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j),0.0,field(i,k,j)  &
-   ,0.0,field(i+1,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_field(i+1,k,j) =a_field(i+1,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,j)  &
-   ,0.0,field(i,k,j),1.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +Diff_flux3(field(i-2,k,j),0.0,field(i-1,k,  &
-   j),1.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_field(i-2,k,j) =a_field(i-2,k,j) +Diff_flux3(field(i-2,k,j),1.0,field(i-1,k,  &
-   j),0.0,field(i,k,j),0.0,field(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40220(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40219(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40217(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF(degrade_xe) THEN
-
-   ENDIF
-
-   IF(degrade_xs) THEN
-
-   ENDIF
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-!ADDED BY WALLS
-      ktf=MIN(kte,kde-1)
-      i_start = its-1
-      i_end   = MIN(ite,ide-1)+1
-      j_start = jts-1
-      j_end   = MIN(jte,jde-1)+1
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-!--  modify loop bounds if open or specified
-
-      IF(degrade_xs) i_start = its
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-
-      IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
-        j_start_f = jds+2
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = MIN(jte,jde-2)
-        j_end_f = jde-2
-      ENDIF
-
-   DO j =j_end+1, j_start, -1
-
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!REVISED AND ADDED BY WALLS
-   cr =Tmpv40194(i,k,j)
-   vel =Tmpv40192(i,k,j)
-   mu =Tmpv40191(i,k,j)
-   dy =Tmpv40190(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_vel =a_vel +Tmpv40197(i,k,j)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1),0.0,field(i,k,j)  &
-   ,0.0,field(i,k,j+1),0.0,vel,1.0)*a_Tmpv1
-   a_field(i,k,j+1) =a_field(i,k,j+1) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j) =a_field(i,k,j) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-1)  &
-   ,0.0,field(i,k,j),1.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +Diff_flux3(field(i,k,j-2),0.0,field(i,k,j-  &
-   1),1.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_field(i,k,j-2) =a_field(i,k,j-2) +Diff_flux3(field(i,k,j-2),1.0,field(i,k,j-  &
-   1),0.0,field(i,k,j),0.0,field(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40196(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40195(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40193(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!REVISED AND ADDED BY WALLS
-   cr =Tmpv40202(i,k,j)
-   vel =Tmpv40200(i,k,j)
-   mu =Tmpv40199(i,k,j)
-   dy =Tmpv40198(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv40205(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40204(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40203(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40201(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-!REVISED AND ADDED BY WALLS
-   cr =Tmpv40210(i,k,j)
-   vel =Tmpv40208(i,k,j)
-   mu =Tmpv40207(i,k,j)
-   dy =Tmpv40206(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv40213(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40212(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40211(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40209(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   IF(degrade_ye) THEN
-
-   ENDIF
-
-   IF(degrade_ys) THEN
-
-   ENDIF
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ye .or.   &
-          (jte < jde-1)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ys .or.   &
-          (jts > jds+2)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xe .or.   &
-          (ite < ide-1)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xs .or.   &
-          (its > ids+2)                ) THEN
-
-   END IF
-
-   ELSE IF( horz_order == 2 ) THEN
-!ADDED BY WALLS
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-2)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
-
-!--  y flux compute; these bounds are for periodic and sym b.c.
-
-      ktf=MIN(kte,kde-1)
-      i_start = its-1
-      i_end   = MIN(ite,ide-1)+1
-      j_start = jts-1
-      j_end   = MIN(jte,jde-1)+1
-
-!--  modify loop bounds if open or specified
-
-      IF(degrade_xs) i_start = its
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
-      IF(degrade_ys) j_start = MAX(jts,jds+1)
-      IF(degrade_ye) j_end = MIN(jte,jde-2)
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end+1, i_start, -1
-   mu =Tmpv40231(i,k,j)
-   cr =Tmpv40234(i,k,j)
-   vel =Tmpv40232(i,k,j)
-   dx =Tmpv40230(i,k,j)
-
-   a_Tmpv1 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_fqx(i,k,j) =a_fqx(i,k,j) +a_Tmpv1
-   a_fqxl(i,k,j) =a_fqxl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqx(i,k,j)
-   a_fqx(i,k,j) =0.0
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*Tmpv40237(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*ru(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i-1,k,j) =a_field(i-1,k,j) +a_Tmpv1
-   a_Tmpv3 =a_fqxl(i,k,j)
-   a_fqxl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40236(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40235(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i-1,k,j),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i-1,k,j) =a_field_old(i-1,k,j) +Diff_flux_upwind(field_old(i-1,k,j)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dx/dt)*a_Tmpv1
-   a_dx =a_dx +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv40234(i,k,j)
-!  vel =Tmpv40232(i,k,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40233(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dx*a_Tmpv1
-   a_dx =a_dx -vel*dt/(dx*dx)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +a_vel
-   a_vel =0.0
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i-1,j) =a_mut(i-1,j) +a_Tmpv1
-
-   a_dx =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   DO j =j_end+1, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   cr =Tmpv40226(i,k,j)
-   vel =Tmpv40224(i,k,j)
-   mu =Tmpv40223(i,k,j)
-   dy =Tmpv40222(i,k,j)
-
-   a_Tmpv1 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_fqy(i,k,j) =a_fqy(i,k,j) +a_Tmpv1
-   a_fqyl(i,k,j) =a_fqyl(i,k,j) -a_Tmpv1
-   a_Tmpv2 =a_fqy(i,k,j)
-   a_fqy(i,k,j) =0.0
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*Tmpv40229(i,k,j)*a_Tmpv2
-   a_Tmpv1 =0.5*rv(i,k,j)*a_Tmpv2
-   a_field(i,k,j) =a_field(i,k,j) +a_Tmpv1
-   a_field(i,k,j-1) =a_field(i,k,j-1) +a_Tmpv1
-   a_Tmpv3 =a_fqyl(i,k,j)
-   a_fqyl(i,k,j) =0.0
-   a_Tmpv1 =Tmpv40228(i,k,j)*a_Tmpv3
-   a_Tmpv2 =Tmpv40227(i,k,j)*a_Tmpv3
-   a_cr =a_cr +Diff_flux_upwind(field_old(i,k,j-1),0.0,field_old(i,k,j)  &
-   ,0.0,cr,1.0)*a_Tmpv2
-   a_field_old(i,k,j) =a_field_old(i,k,j) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,0.0,field_old(i,k,j),1.0,cr,0.0)*a_Tmpv2
-   a_field_old(i,k,j-1) =a_field_old(i,k,j-1) +Diff_flux_upwind(field_old(i,k,j-1)  &
-   ,1.0,field_old(i,k,j),0.0,cr,0.0)*a_Tmpv2
-   a_Tmpv2 =0.0
-
-   a_mu =a_mu +(dy/dt)*a_Tmpv1
-   a_dy =a_dy +1.0/dt*mu*a_Tmpv1
-
-!  cr =Tmpv40226(i,k,j)
-!  vel =Tmpv40224(i,k,j)
-
-   a_Tmpv2 =a_cr
-   a_cr =0.0
-   a_Tmpv1 =a_Tmpv2/mu
-   a_mu =a_mu -Tmpv40225(i,k,j)/(mu*mu)*a_Tmpv2
-   a_vel =a_vel +dt/dy*a_Tmpv1
-   a_dy =a_dy -vel*dt/(dy*dy)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +a_vel
-   a_vel =0.0
-
-!  mu =Tmpv40223(i,k,j)
-
-   a_Tmpv2 =a_mu
-   a_mu =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_mut(i,j) =a_mut(i,j) +a_Tmpv1
-   a_mut(i,j-1) =a_mut(i,j-1) +a_Tmpv1
-
-!  dy =Tmpv40222(i,k,j)
-
-   a_dy =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   IF(degrade_ye) THEN
-
-   END IF
-
-   IF(degrade_ys) THEN
-
-   END IF
-
-   IF(degrade_xe) THEN
-
-   END IF
-
-   IF(degrade_xs) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ye .or.   &
-          (jte < jde-2)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_y   .or.   &
-          config_flags%symmetric_ys .or.   &
-          (jts > jds+1)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xe .or.   &
-          (ite < ide-2)                ) THEN
-
-   END IF
-
-   IF( config_flags%periodic_x   .or.   &
-          config_flags%symmetric_xs .or.   &
-          (its > ids+1)                ) THEN
-
-   END IF
-
-   ELSE
-
-   ENDIF
-
-   IF(config_flags%polar) THEN
-
-   a_fqzl(:,:,:) =0.0
-   a_fqyl(:,:,:) =0.0
-   a_fqxl(:,:,:) =0.0
-   a_fqz(:,:,:) =0.0
-   a_fqy(:,:,:) =0.0
-   a_fqx(:,:,:) =0.0
-
-   END IF
-
-!LPB[0]
-
-   END SUBROUTINE a_advect_scalar_pd
+    END IF
+  END IF
+  IF (degrade_ye) THEN
+    IF (jte .GT. jde - 2) THEN
+      j_end = jde - 2
+    ELSE
+      j_end = jte
+    END IF
+  END IF
+  DO j=j_start,j_end
+    CALL PUSHINTEGER4(k)
+    DO k=kts,ktf
+      CALL PUSHINTEGER4(i)
+    END DO
+  END DO
+  IF (tenddec) THEN
+    DO j=j_start,j_end
+      CALL PUSHINTEGER4(k)
+      DO k=kts,ktf
+        CALL PUSHINTEGER4(i)
+      END DO
+    END DO
+    fqylb = 0.0
+    fqyb = 0.0
+    DO j=j_end,j_start,-1
+      DO k=ktf,kts,-1
+        DO i=i_end,i_start,-1
+          temp47b18 = -(msftx(i, j)*rdy*h_tendencyb(i, k, j))
+          fqyb(i, k, j+1) = fqyb(i, k, j+1) + temp47b18
+          fqyb(i, k, j) = fqyb(i, k, j) - temp47b18
+          fqylb(i, k, j+1) = fqylb(i, k, j+1) + temp47b18
+          fqylb(i, k, j) = fqylb(i, k, j) - temp47b18
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+      CALL POPINTEGER4(k)
+    END DO
+  ELSE
+    fqylb = 0.0
+    fqyb = 0.0
+  END IF
+  DO j=j_end,j_start,-1
+    DO k=ktf,kts,-1
+      DO i=i_end,i_start,-1
+        temp47b17 = -(msftx(i, j)*rdy*tendencyb(i, k, j))
+        fqyb(i, k, j+1) = fqyb(i, k, j+1) + temp47b17
+        fqyb(i, k, j) = fqyb(i, k, j) - temp47b17
+        fqylb(i, k, j+1) = fqylb(i, k, j+1) + temp47b17
+        fqylb(i, k, j) = fqylb(i, k, j) - temp47b17
+      END DO
+      CALL POPINTEGER4(i)
+    END DO
+    CALL POPINTEGER4(k)
+  END DO
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    fqxlb = 0.0
+    fqxb = 0.0
+  ELSE
+    fqxlb = 0.0
+    fqxb = 0.0
+    CALL POPINTEGER4(ad_from63)
+    CALL POPINTEGER4(ad_to63)
+    DO j=ad_to63,ad_from63,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from62)
+        CALL POPINTEGER4(ad_to62)
+        DO i=ad_to62,ad_from62,-1
+          temp47b16 = -(msftx(i, j)*rdx*h_tendencyb(i, k, j))
+          fqxb(i+1, k, j) = fqxb(i+1, k, j) + temp47b16
+          fqxb(i, k, j) = fqxb(i, k, j) - temp47b16
+          fqxlb(i+1, k, j) = fqxlb(i+1, k, j) + temp47b16
+          fqxlb(i, k, j) = fqxlb(i, k, j) - temp47b16
+          h_tendencyb(i, k, j) = 0.0
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+      CALL POPINTEGER4(k)
+    END DO
+  END IF
+  CALL POPINTEGER4(ad_from61)
+  CALL POPINTEGER4(ad_to61)
+  DO j=ad_to61,ad_from61,-1
+    DO k=ktf,kts,-1
+      CALL POPINTEGER4(ad_from60)
+      CALL POPINTEGER4(ad_to60)
+      DO i=ad_to60,ad_from60,-1
+        temp47b15 = -(msftx(i, j)*rdx*tendencyb(i, k, j))
+        fqxb(i+1, k, j) = fqxb(i+1, k, j) + temp47b15
+        fqxb(i, k, j) = fqxb(i, k, j) - temp47b15
+        fqxlb(i+1, k, j) = fqxlb(i+1, k, j) + temp47b15
+        fqxlb(i, k, j) = fqxlb(i, k, j) - temp47b15
+      END DO
+      CALL POPINTEGER4(i)
+    END DO
+    CALL POPINTEGER4(k)
+  END DO
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    fqzb = 0.0
+    fqzlb = 0.0
+    CALL POPINTEGER4(ad_from59)
+    CALL POPINTEGER4(ad_to59)
+    DO j=ad_to59,ad_from59,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from58)
+        CALL POPINTEGER4(ad_to58)
+        DO i=ad_to58,ad_from58,-1
+          temp47b14 = -(rdzw(k)*z_tendencyb(i, k, j))
+          fqzb(i, k+1, j) = fqzb(i, k+1, j) + temp47b14
+          fqzb(i, k, j) = fqzb(i, k, j) - temp47b14
+          fqzlb(i, k+1, j) = fqzlb(i, k+1, j) + temp47b14
+          fqzlb(i, k, j) = fqzlb(i, k, j) - temp47b14
+          z_tendencyb(i, k, j) = 0.0
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+      CALL POPINTEGER4(k)
+    END DO
+  ELSE
+    fqzb = 0.0
+    fqzlb = 0.0
+  END IF
+  CALL POPINTEGER4(ad_from57)
+  CALL POPINTEGER4(ad_to57)
+  DO j=ad_to57,ad_from57,-1
+    DO k=ktf,kts,-1
+      CALL POPINTEGER4(ad_from56)
+      CALL POPINTEGER4(ad_to56)
+      DO i=ad_to56,ad_from56,-1
+        temp47b13 = -(rdzw(k)*tendencyb(i, k, j))
+        fqzb(i, k+1, j) = fqzb(i, k+1, j) + temp47b13
+        fqzb(i, k, j) = fqzb(i, k, j) - temp47b13
+        fqzlb(i, k+1, j) = fqzlb(i, k+1, j) + temp47b13
+        fqzlb(i, k, j) = fqzlb(i, k, j) - temp47b13
+      END DO
+      CALL POPINTEGER4(i)
+    END DO
+    CALL POPINTEGER4(k)
+  END DO
+  CALL POPCONTROL1B(branch)
+  IF (branch .NE. 0) THEN
+    CALL POPINTEGER4(ad_from55)
+    CALL POPINTEGER4(ad_to55)
+    DO j=ad_to55,ad_from55,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from54)
+        CALL POPINTEGER4(ad_to54)
+        DO i=ad_to54,ad_from54,-1
+          CALL POPCONTROL2B(branch)
+          IF (branch .EQ. 0) THEN
+            flux_outb = 0.0
+            ph_lowb = 0.0
+          ELSE
+            IF (branch .EQ. 1) THEN
+              scaleb = 0.0
+            ELSE
+              CALL POPREAL8(fqz(i, k, j))
+              scaleb = fqz(i, k, j)*fqzb(i, k, j)
+              fqzb(i, k, j) = scale*fqzb(i, k, j)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(fqz(i, k+1, j))
+              scaleb = scaleb + fqz(i, k+1, j)*fqzb(i, k+1, j)
+              fqzb(i, k+1, j) = scale*fqzb(i, k+1, j)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(fqy(i, k, j))
+              scaleb = scaleb + fqy(i, k, j)*fqyb(i, k, j)
+              fqyb(i, k, j) = scale*fqyb(i, k, j)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(fqy(i, k, j+1))
+              scaleb = scaleb + fqy(i, k, j+1)*fqyb(i, k, j+1)
+              fqyb(i, k, j+1) = scale*fqyb(i, k, j+1)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(fqx(i, k, j))
+              scaleb = scaleb + fqx(i, k, j)*fqxb(i, k, j)
+              fqxb(i, k, j) = scale*fqxb(i, k, j)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(fqx(i+1, k, j))
+              scaleb = scaleb + fqx(i+1, k, j)*fqxb(i+1, k, j)
+              fqxb(i+1, k, j) = scale*fqxb(i+1, k, j)
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(scale)
+              temp47b12 = scaleb/(eps+flux_out)
+              ph_lowb = temp47b12
+              flux_outb = -(ph_low*temp47b12/(eps+flux_out))
+            ELSE
+              CALL POPREAL8(scale)
+              flux_outb = 0.0
+              ph_lowb = 0.0
+            END IF
+          END IF
+          CALL POPREAL8(flux_out)
+          temp47b10 = dt*msftx(i, j)*msfty(i, j)*flux_outb
+          temp47b11 = msfty(i, j)*dt*rdzw(k)*flux_outb
+          max1b = rdx*temp47b10
+          min74b = -(rdx*temp47b10)
+          max53b = rdy*temp47b10
+          min75b = -(rdy*temp47b10)
+          min76b = temp47b11
+          max54b = -temp47b11
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) fqzb(i, k, j) = fqzb(i, k, j) + max54b
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) fqzb(i, k+1, j) = fqzb(i, k+1, j) + min76b
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) fqyb(i, k, j) = fqyb(i, k, j) + min75b
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) fqyb(i, k, j+1) = fqyb(i, k, j+1) + max53b
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) fqxb(i, k, j) = fqxb(i, k, j) + min74b
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) fqxb(i+1, k, j) = fqxb(i+1, k, j) + max1b
+          CALL POPREAL8(ph_low)
+          temp47b8 = -(dt*msftx(i, j)*msfty(i, j)*ph_lowb)
+          temp47b9 = -(dt*msfty(i, j)*rdzw(k)*ph_lowb)
+          mu_oldb(i, j) = mu_oldb(i, j) + field_old(i, k, j)*ph_lowb
+          field_oldb(i, k, j) = field_oldb(i, k, j) + (mub(i, j)+mu_old(&
+&            i, j))*ph_lowb
+          fqxlb(i+1, k, j) = fqxlb(i+1, k, j) + rdx*temp47b8
+          fqxlb(i, k, j) = fqxlb(i, k, j) - rdx*temp47b8
+          fqylb(i, k, j+1) = fqylb(i, k, j+1) + rdy*temp47b8
+          fqylb(i, k, j) = fqylb(i, k, j) - rdy*temp47b8
+          fqzlb(i, k+1, j) = fqzlb(i, k+1, j) + temp47b9
+          fqzlb(i, k, j) = fqzlb(i, k, j) - temp47b9
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+      CALL POPINTEGER4(k)
+    END DO
+  END IF
+  CALL POPCONTROL3B(branch)
+  IF (branch .LT. 3) THEN
+    IF (branch .EQ. 0) THEN
+      CALL POPINTEGER4(ad_from38)
+      CALL POPINTEGER4(ad_to38)
+      DO j=ad_to38,ad_from38,-1
+        CALL POPINTEGER4(ad_from37)
+        CALL POPINTEGER4(ad_to37)
+        DO i=ad_to37,ad_from37,-1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp31b74 = rom(i, k, j)*fqzb(i, k, j)
+          romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp31b74
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp31b74
+          fqzb(i, k, j) = 0.0
+          temp31b75 = dz*mu*fqzlb(i, k, j)/dt
+          min59b = 0.5*field_old(i, k-1, j)*temp31b75
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min59*&
+&            temp31b75
+          max40b = 0.5*field_old(i, k, j)*temp31b75
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max40*&
+&            temp31b75
+          mub0 = (0.5*(min59*field_old(i, k-1, j))+0.5*(max40*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max40)
+            y90b = max40b
+          ELSE
+            CALL POPREAL8(max40)
+            y90b = 0.0
+          END IF
+          crb = y90b
+          abs90b = -y90b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs90b
+          ELSE
+            crb = crb - abs90b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min59)
+            y39b = min59b
+          ELSE
+            CALL POPREAL8(min59)
+            y39b = 0.0
+          END IF
+          crb = crb + y39b
+          abs39b = y39b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs39b
+          ELSE
+            crb = crb - abs39b
+          END IF
+          temp31b70 = dt*crb/(dz*mu)
+          velb = temp31b70
+          mub0 = mub0 - vel*temp31b70/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL POPREAL8(dz)
+          k = ktf - 1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp31b71 = vel*fqzb(i, k, j)
+          temp31b72 = 7.*temp31b71/12.
+          velb = (7.*((field(i, k, j)+field(i, k-1, j))/12.)-(field(i, k&
+&            +1, j)+field(i, k-2, j))/12.)*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp31b72
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + temp31b72
+          fieldb(i, k+1, j) = fieldb(i, k+1, j) - temp31b71/12.
+          fieldb(i, k-2, j) = fieldb(i, k-2, j) - temp31b71/12.
+          fqzb(i, k, j) = 0.0
+          temp31b73 = dz*mu*fqzlb(i, k, j)/dt
+          min58b = 0.5*field_old(i, k-1, j)*temp31b73
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min58*&
+&            temp31b73
+          max39b = 0.5*field_old(i, k, j)*temp31b73
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max39*&
+&            temp31b73
+          mub0 = (0.5*(min58*field_old(i, k-1, j))+0.5*(max39*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max39)
+            y89b = max39b
+          ELSE
+            CALL POPREAL8(max39)
+            y89b = 0.0
+          END IF
+          crb = y89b
+          abs89b = -y89b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs89b
+          ELSE
+            crb = crb - abs89b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min58)
+            y38b = min58b
+          ELSE
+            CALL POPREAL8(min58)
+            y38b = 0.0
+          END IF
+          crb = crb + y38b
+          abs38b = y38b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs38b
+          ELSE
+            crb = crb - abs38b
+          END IF
+          temp31b66 = dt*crb/(dz*mu)
+          velb = velb + temp31b66
+          mub0 = mub0 - vel*temp31b66/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL POPREAL8(dz)
+          k = kts + 2
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp31b67 = vel*fqzb(i, k, j)
+          temp31b68 = 7.*temp31b67/12.
+          velb = (7.*((field(i, k, j)+field(i, k-1, j))/12.)-(field(i, k&
+&            +1, j)+field(i, k-2, j))/12.)*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp31b68
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + temp31b68
+          fieldb(i, k+1, j) = fieldb(i, k+1, j) - temp31b67/12.
+          fieldb(i, k-2, j) = fieldb(i, k-2, j) - temp31b67/12.
+          fqzb(i, k, j) = 0.0
+          temp31b69 = dz*mu*fqzlb(i, k, j)/dt
+          min57b = 0.5*field_old(i, k-1, j)*temp31b69
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min57*&
+&            temp31b69
+          max38b = 0.5*field_old(i, k, j)*temp31b69
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max38*&
+&            temp31b69
+          mub0 = (0.5*(min57*field_old(i, k-1, j))+0.5*(max38*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max38)
+            y88b = max38b
+          ELSE
+            CALL POPREAL8(max38)
+            y88b = 0.0
+          END IF
+          crb = y88b
+          abs88b = -y88b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs88b
+          ELSE
+            crb = crb - abs88b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min57)
+            y37b = min57b
+          ELSE
+            CALL POPREAL8(min57)
+            y37b = 0.0
+          END IF
+          crb = crb + y37b
+          abs37b = y37b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs37b
+          ELSE
+            crb = crb - abs37b
+          END IF
+          temp31b63 = dt*crb/(dz*mu)
+          velb = velb + temp31b63
+          mub0 = mub0 - vel*temp31b63/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL POPREAL8(dz)
+          k = kts + 1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp31b64 = rom(i, k, j)*fqzb(i, k, j)
+          romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp31b64
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp31b64
+          fqzb(i, k, j) = 0.0
+          temp31b65 = dz*mu*fqzlb(i, k, j)/dt
+          min56b = 0.5*field_old(i, k-1, j)*temp31b65
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min56*&
+&            temp31b65
+          max37b = 0.5*field_old(i, k, j)*temp31b65
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max37*&
+&            temp31b65
+          mub0 = (0.5*(min56*field_old(i, k-1, j))+0.5*(max37*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max37)
+            y87b = max37b
+          ELSE
+            CALL POPREAL8(max37)
+            y87b = 0.0
+          END IF
+          crb = y87b
+          abs87b = -y87b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs87b
+          ELSE
+            crb = crb - abs87b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min56)
+            y36b = min56b
+          ELSE
+            CALL POPREAL8(min56)
+            y36b = 0.0
+          END IF
+          crb = crb + y36b
+          abs36b = y36b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs36b
+          ELSE
+            crb = crb - abs36b
+          END IF
+          temp31b62 = dt*crb/(dz*mu)
+          velb = temp31b62
+          mub0 = mub0 - vel*temp31b62/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          CALL POPREAL8(dz)
+          CALL POPINTEGER4(k)
+        END DO
+        DO k=ktf-2,kts+3,-1
+          CALL POPINTEGER4(ad_from36)
+          CALL POPINTEGER4(ad_to36)
+          DO i=ad_to36,ad_from36,-1
+            fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+            temp31b58 = vel*fqzb(i, k, j)
+            temp31b59 = 37.*temp31b58/60.
+            temp31b60 = -(2.*temp31b58/15.)
+            velb = (37.*((field(i, k, j)+field(i, k-1, j))/60.)-2.*((&
+&              field(i, k+1, j)+field(i, k-2, j))/15.)+(field(i, k+2, j)+&
+&              field(i, k-3, j))/60.)*fqzb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp31b59
+            fieldb(i, k-1, j) = fieldb(i, k-1, j) + temp31b59
+            fieldb(i, k+1, j) = fieldb(i, k+1, j) + temp31b60
+            fieldb(i, k-2, j) = fieldb(i, k-2, j) + temp31b60
+            fieldb(i, k+2, j) = fieldb(i, k+2, j) + temp31b58/60.
+            fieldb(i, k-3, j) = fieldb(i, k-3, j) + temp31b58/60.
+            fqzb(i, k, j) = 0.0
+            temp31b61 = dz*mu*fqzlb(i, k, j)/dt
+            min55b = 0.5*field_old(i, k-1, j)*temp31b61
+            field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min55*&
+&              temp31b61
+            max36b = 0.5*field_old(i, k, j)*temp31b61
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max36*&
+&              temp31b61
+            mub0 = (0.5*(min55*field_old(i, k-1, j))+0.5*(max36*&
+&              field_old(i, k, j)))*dz*fqzlb(i, k, j)/dt
+            fqzlb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max36)
+              y86b = max36b
+            ELSE
+              CALL POPREAL8(max36)
+              y86b = 0.0
+            END IF
+            crb = y86b
+            abs86b = -y86b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs86b
+            ELSE
+              crb = crb - abs86b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min55)
+              y35b = min55b
+            ELSE
+              CALL POPREAL8(min55)
+              y35b = 0.0
+            END IF
+            crb = crb + y35b
+            abs35b = y35b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs35b
+            ELSE
+              crb = crb - abs35b
+            END IF
+            temp31b57 = dt*crb/(dz*mu)
+            velb = velb + temp31b57
+            mub0 = mub0 - vel*temp31b57/mu
+            CALL POPREAL8(vel)
+            romb(i, k, j) = romb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+            CALL POPREAL8(dz)
+          END DO
+        END DO
+        CALL POPINTEGER4(k)
+        CALL POPINTEGER4(ad_from35)
+        CALL POPINTEGER4(ad_to35)
+        DO i=ad_to35,ad_from35,-1
+          fqzlb(i, kde, j) = 0.0
+          fqzb(i, kde, j) = 0.0
+          fqzlb(i, 1, j) = 0.0
+          fqzb(i, 1, j) = 0.0
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+    ELSE IF (branch .EQ. 1) THEN
+      CALL POPINTEGER4(ad_from42)
+      CALL POPINTEGER4(ad_to42)
+      DO j=ad_to42,ad_from42,-1
+        CALL POPINTEGER4(ad_from41)
+        CALL POPINTEGER4(ad_to41)
+        DO i=ad_to41,ad_from41,-1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp43b0 = rom(i, k, j)*fqzb(i, k, j)
+          romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp43b0
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp43b0
+          fqzb(i, k, j) = 0.0
+          temp43b1 = dz*mu*fqzlb(i, k, j)/dt
+          min64b = 0.5*field_old(i, k-1, j)*temp43b1
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min64*&
+&            temp43b1
+          max45b = 0.5*field_old(i, k, j)*temp43b1
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max45*temp43b1
+          mub0 = (0.5*(min64*field_old(i, k-1, j))+0.5*(max45*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max45)
+            y95b = max45b
+          ELSE
+            CALL POPREAL8(max45)
+            y95b = 0.0
+          END IF
+          crb = y95b
+          abs95b = -y95b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs95b
+          ELSE
+            crb = crb - abs95b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min64)
+            y44b = min64b
+          ELSE
+            CALL POPREAL8(min64)
+            y44b = 0.0
+          END IF
+          crb = crb + y44b
+          abs44b = y44b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs44b
+          ELSE
+            crb = crb - abs44b
+          END IF
+          temp43b = dt*crb/(dz*mu)
+          velb = temp43b
+          mub0 = mub0 - vel*temp43b/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL POPREAL8(dz)
+          k = ktf - 1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp39 = field(i, k+1, j) - field(i, k-2, j) - 3.*(field(i, k&
+&            , j)-field(i, k-1, j))
+          temp42 = SIGN(1., -vel)
+          temp41 = temp42/12.
+          temp40 = SIGN(1, time_step)
+          temp39b0 = vel*fqzb(i, k, j)
+          temp39b1 = 7.*temp39b0/12.
+          temp39b2 = temp40*temp41*temp39b0
+          velb = (7.*((field(i, k, j)+field(i, k-1, j))/12.)-(field(i, k&
+&            +1, j)+field(i, k-2, j))/12.+temp40*(temp41*temp39))*fqzb(i&
+&            , k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp39b1 - 3.*temp39b2
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + 3.*temp39b2 + temp39b1
+          fieldb(i, k+1, j) = fieldb(i, k+1, j) + temp39b2 - temp39b0/&
+&            12.
+          fieldb(i, k-2, j) = fieldb(i, k-2, j) - temp39b2 - temp39b0/&
+&            12.
+          fqzb(i, k, j) = 0.0
+          temp39b3 = dz*mu*fqzlb(i, k, j)/dt
+          min63b = 0.5*field_old(i, k-1, j)*temp39b3
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min63*&
+&            temp39b3
+          max44b = 0.5*field_old(i, k, j)*temp39b3
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max44*temp39b3
+          mub0 = (0.5*(min63*field_old(i, k-1, j))+0.5*(max44*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max44)
+            y94b = max44b
+          ELSE
+            CALL POPREAL8(max44)
+            y94b = 0.0
+          END IF
+          crb = y94b
+          abs94b = -y94b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs94b
+          ELSE
+            crb = crb - abs94b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min63)
+            y43b = min63b
+          ELSE
+            CALL POPREAL8(min63)
+            y43b = 0.0
+          END IF
+          crb = crb + y43b
+          abs43b = y43b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs43b
+          ELSE
+            crb = crb - abs43b
+          END IF
+          temp39b = dt*crb/(dz*mu)
+          velb = velb + temp39b
+          mub0 = mub0 - vel*temp39b/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL POPREAL8(dz)
+          k = kts + 2
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp35 = field(i, k+1, j) - field(i, k-2, j) - 3.*(field(i, k&
+&            , j)-field(i, k-1, j))
+          temp38 = SIGN(1., -vel)
+          temp37 = temp38/12.
+          temp36 = SIGN(1, time_step)
+          temp35b3 = vel*fqzb(i, k, j)
+          temp35b4 = 7.*temp35b3/12.
+          temp35b5 = temp36*temp37*temp35b3
+          velb = (7.*((field(i, k, j)+field(i, k-1, j))/12.)-(field(i, k&
+&            +1, j)+field(i, k-2, j))/12.+temp36*(temp37*temp35))*fqzb(i&
+&            , k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp35b4 - 3.*temp35b5
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + 3.*temp35b5 + temp35b4
+          fieldb(i, k+1, j) = fieldb(i, k+1, j) + temp35b5 - temp35b3/&
+&            12.
+          fieldb(i, k-2, j) = fieldb(i, k-2, j) - temp35b5 - temp35b3/&
+&            12.
+          fqzb(i, k, j) = 0.0
+          temp35b6 = dz*mu*fqzlb(i, k, j)/dt
+          min62b = 0.5*field_old(i, k-1, j)*temp35b6
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min62*&
+&            temp35b6
+          max43b = 0.5*field_old(i, k, j)*temp35b6
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max43*temp35b6
+          mub0 = (0.5*(min62*field_old(i, k-1, j))+0.5*(max43*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max43)
+            y93b = max43b
+          ELSE
+            CALL POPREAL8(max43)
+            y93b = 0.0
+          END IF
+          crb = y93b
+          abs93b = -y93b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs93b
+          ELSE
+            crb = crb - abs93b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min62)
+            y42b = min62b
+          ELSE
+            CALL POPREAL8(min62)
+            y42b = 0.0
+          END IF
+          crb = crb + y42b
+          abs42b = y42b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs42b
+          ELSE
+            crb = crb - abs42b
+          END IF
+          temp35b0 = dt*crb/(dz*mu)
+          velb = velb + temp35b0
+          mub0 = mub0 - vel*temp35b0/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL POPREAL8(dz)
+          k = kts + 1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp35b1 = rom(i, k, j)*fqzb(i, k, j)
+          romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp35b1
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp35b1
+          fqzb(i, k, j) = 0.0
+          temp35b2 = dz*mu*fqzlb(i, k, j)/dt
+          min61b = 0.5*field_old(i, k-1, j)*temp35b2
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min61*&
+&            temp35b2
+          max42b = 0.5*field_old(i, k, j)*temp35b2
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max42*temp35b2
+          mub0 = (0.5*(min61*field_old(i, k-1, j))+0.5*(max42*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max42)
+            y92b = max42b
+          ELSE
+            CALL POPREAL8(max42)
+            y92b = 0.0
+          END IF
+          crb = y92b
+          abs92b = -y92b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs92b
+          ELSE
+            crb = crb - abs92b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min61)
+            y41b = min61b
+          ELSE
+            CALL POPREAL8(min61)
+            y41b = 0.0
+          END IF
+          crb = crb + y41b
+          abs41b = y41b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs41b
+          ELSE
+            crb = crb - abs41b
+          END IF
+          temp35b = dt*crb/(dz*mu)
+          velb = temp35b
+          mub0 = mub0 - vel*temp35b/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          CALL POPREAL8(dz)
+          CALL POPINTEGER4(k)
+        END DO
+        DO k=ktf-2,kts+3,-1
+          CALL POPINTEGER4(ad_from40)
+          CALL POPINTEGER4(ad_to40)
+          DO i=ad_to40,ad_from40,-1
+            fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+            temp31 = field(i, k+2, j) - field(i, k-3, j) + 10.*(field(i&
+&              , k, j)-field(i, k-1, j)) - 5.*(field(i, k+1, j)-field(i, &
+&              k-2, j))
+            temp34 = SIGN(1., -vel)
+            temp33 = temp34/60.
+            temp32 = SIGN(1, time_step)
+            temp31b77 = vel*fqzb(i, k, j)
+            temp31b78 = 37.*temp31b77/60.
+            temp31b79 = -(2.*temp31b77/15.)
+            temp31b80 = -(temp32*temp33*temp31b77)
+            velb = (37.*((field(i, k, j)+field(i, k-1, j))/60.)-2.*((&
+&              field(i, k+1, j)+field(i, k-2, j))/15.)+(field(i, k+2, j)+&
+&              field(i, k-3, j))/60.-temp32*(temp33*temp31))*fqzb(i, k, j&
+&              )
+            fieldb(i, k, j) = fieldb(i, k, j) + 10.*temp31b80 + &
+&              temp31b78
+            fieldb(i, k-1, j) = fieldb(i, k-1, j) + temp31b78 - 10.*&
+&              temp31b80
+            fieldb(i, k+1, j) = fieldb(i, k+1, j) + temp31b79 - 5.*&
+&              temp31b80
+            fieldb(i, k-2, j) = fieldb(i, k-2, j) + 5.*temp31b80 + &
+&              temp31b79
+            fieldb(i, k+2, j) = fieldb(i, k+2, j) + temp31b80 + &
+&              temp31b77/60.
+            fieldb(i, k-3, j) = fieldb(i, k-3, j) + temp31b77/60. - &
+&              temp31b80
+            fqzb(i, k, j) = 0.0
+            temp31b81 = dz*mu*fqzlb(i, k, j)/dt
+            min60b = 0.5*field_old(i, k-1, j)*temp31b81
+            field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min60*&
+&              temp31b81
+            max41b = 0.5*field_old(i, k, j)*temp31b81
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max41*&
+&              temp31b81
+            mub0 = (0.5*(min60*field_old(i, k-1, j))+0.5*(max41*&
+&              field_old(i, k, j)))*dz*fqzlb(i, k, j)/dt
+            fqzlb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max41)
+              y91b = max41b
+            ELSE
+              CALL POPREAL8(max41)
+              y91b = 0.0
+            END IF
+            crb = y91b
+            abs91b = -y91b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs91b
+            ELSE
+              crb = crb - abs91b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min60)
+              y40b = min60b
+            ELSE
+              CALL POPREAL8(min60)
+              y40b = 0.0
+            END IF
+            crb = crb + y40b
+            abs40b = y40b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs40b
+            ELSE
+              crb = crb - abs40b
+            END IF
+            temp31b76 = dt*crb/(dz*mu)
+            velb = velb + temp31b76
+            mub0 = mub0 - vel*temp31b76/mu
+            CALL POPREAL8(vel)
+            romb(i, k, j) = romb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+            CALL POPREAL8(dz)
+          END DO
+        END DO
+        CALL POPINTEGER4(k)
+        CALL POPINTEGER4(ad_from39)
+        CALL POPINTEGER4(ad_to39)
+        DO i=ad_to39,ad_from39,-1
+          fqzlb(i, kde, j) = 0.0
+          fqzb(i, kde, j) = 0.0
+          fqzlb(i, 1, j) = 0.0
+          fqzb(i, 1, j) = 0.0
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+    ELSE
+      CALL POPINTEGER4(ad_from46)
+      CALL POPINTEGER4(ad_to46)
+      DO j=ad_to46,ad_from46,-1
+        CALL POPINTEGER4(ad_from45)
+        CALL POPINTEGER4(ad_to45)
+        DO i=ad_to45,ad_from45,-1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp43b10 = rom(i, k, j)*fqzb(i, k, j)
+          romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp43b10
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp43b10
+          fqzb(i, k, j) = 0.0
+          temp43b11 = dz*mu*fqzlb(i, k, j)/dt
+          min67b = 0.5*field_old(i, k-1, j)*temp43b11
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min67*&
+&            temp43b11
+          max48b = 0.5*field_old(i, k, j)*temp43b11
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max48*&
+&            temp43b11
+          mub0 = (0.5*(min67*field_old(i, k-1, j))+0.5*(max48*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max48)
+            y98b = max48b
+          ELSE
+            CALL POPREAL8(max48)
+            y98b = 0.0
+          END IF
+          crb = y98b
+          abs98b = -y98b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs98b
+          ELSE
+            crb = crb - abs98b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min67)
+            y47b = min67b
+          ELSE
+            CALL POPREAL8(min67)
+            y47b = 0.0
+          END IF
+          crb = crb + y47b
+          abs47b = y47b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs47b
+          ELSE
+            crb = crb - abs47b
+          END IF
+          temp43b7 = dt*crb/(dz*mu)
+          velb = temp43b7
+          mub0 = mub0 - vel*temp43b7/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          mu = 0.5*(mut(i, j)+mut(i, j))
+          CALL POPREAL8(dz)
+          k = kts + 1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp43b8 = rom(i, k, j)*fqzb(i, k, j)
+          romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp43b8
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp43b8
+          fqzb(i, k, j) = 0.0
+          temp43b9 = dz*mu*fqzlb(i, k, j)/dt
+          min66b = 0.5*field_old(i, k-1, j)*temp43b9
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min66*&
+&            temp43b9
+          max47b = 0.5*field_old(i, k, j)*temp43b9
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max47*temp43b9
+          mub0 = (0.5*(min66*field_old(i, k-1, j))+0.5*(max47*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max47)
+            y97b = max47b
+          ELSE
+            CALL POPREAL8(max47)
+            y97b = 0.0
+          END IF
+          crb = y97b
+          abs97b = -y97b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs97b
+          ELSE
+            crb = crb - abs97b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min66)
+            y46b = min66b
+          ELSE
+            CALL POPREAL8(min66)
+            y46b = 0.0
+          END IF
+          crb = crb + y46b
+          abs46b = y46b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs46b
+          ELSE
+            crb = crb - abs46b
+          END IF
+          temp43b6 = dt*crb/(dz*mu)
+          velb = temp43b6
+          mub0 = mub0 - vel*temp43b6/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          CALL POPREAL8(dz)
+          CALL POPINTEGER4(k)
+        END DO
+        DO k=ktf-1,kts+2,-1
+          CALL POPINTEGER4(ad_from44)
+          CALL POPINTEGER4(ad_to44)
+          DO i=ad_to44,ad_from44,-1
+            fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+            temp43b3 = vel*fqzb(i, k, j)
+            temp43b4 = 7.*temp43b3/12.
+            velb = (7.*((field(i, k, j)+field(i, k-1, j))/12.)-(field(i&
+&              , k+1, j)+field(i, k-2, j))/12.)*fqzb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp43b4
+            fieldb(i, k-1, j) = fieldb(i, k-1, j) + temp43b4
+            fieldb(i, k+1, j) = fieldb(i, k+1, j) - temp43b3/12.
+            fieldb(i, k-2, j) = fieldb(i, k-2, j) - temp43b3/12.
+            fqzb(i, k, j) = 0.0
+            temp43b5 = dz*mu*fqzlb(i, k, j)/dt
+            min65b = 0.5*field_old(i, k-1, j)*temp43b5
+            field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min65*&
+&              temp43b5
+            max46b = 0.5*field_old(i, k, j)*temp43b5
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max46*&
+&              temp43b5
+            mub0 = (0.5*(min65*field_old(i, k-1, j))+0.5*(max46*&
+&              field_old(i, k, j)))*dz*fqzlb(i, k, j)/dt
+            fqzlb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max46)
+              y96b = max46b
+            ELSE
+              CALL POPREAL8(max46)
+              y96b = 0.0
+            END IF
+            crb = y96b
+            abs96b = -y96b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs96b
+            ELSE
+              crb = crb - abs96b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min65)
+              y45b = min65b
+            ELSE
+              CALL POPREAL8(min65)
+              y45b = 0.0
+            END IF
+            crb = crb + y45b
+            abs45b = y45b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs45b
+            ELSE
+              crb = crb - abs45b
+            END IF
+            temp43b2 = dt*crb/(dz*mu)
+            velb = velb + temp43b2
+            mub0 = mub0 - vel*temp43b2/mu
+            CALL POPREAL8(vel)
+            romb(i, k, j) = romb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+            CALL POPREAL8(dz)
+          END DO
+        END DO
+        CALL POPINTEGER4(k)
+        CALL POPINTEGER4(ad_from43)
+        CALL POPINTEGER4(ad_to43)
+        DO i=ad_to43,ad_from43,-1
+          fqzlb(i, kde, j) = 0.0
+          fqzb(i, kde, j) = 0.0
+          fqzlb(i, 1, j) = 0.0
+          fqzb(i, 1, j) = 0.0
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+    END IF
+  ELSE IF (branch .EQ. 3) THEN
+    CALL POPINTEGER4(ad_from50)
+    CALL POPINTEGER4(ad_to50)
+    DO j=ad_to50,ad_from50,-1
+      CALL POPINTEGER4(ad_from49)
+      CALL POPINTEGER4(ad_to49)
+      DO i=ad_to49,ad_from49,-1
+        fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+        temp47b3 = rom(i, k, j)*fqzb(i, k, j)
+        romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j))*fqzb(i, k, j)
+        fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp47b3
+        fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp47b3
+        fqzb(i, k, j) = 0.0
+        temp47b4 = dz*mu*fqzlb(i, k, j)/dt
+        min70b = 0.5*field_old(i, k-1, j)*temp47b4
+        field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min70*&
+&          temp47b4
+        max51b = 0.5*field_old(i, k, j)*temp47b4
+        field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max51*temp47b4
+        mub0 = (0.5*(min70*field_old(i, k-1, j))+0.5*(max51*field_old(i&
+&          , k, j)))*dz*fqzlb(i, k, j)/dt
+        fqzlb(i, k, j) = 0.0
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max51)
+          y101b = max51b
+        ELSE
+          CALL POPREAL8(max51)
+          y101b = 0.0
+        END IF
+        crb = y101b
+        abs101b = -y101b
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          crb = crb + abs101b
+        ELSE
+          crb = crb - abs101b
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(min70)
+          y50b = min70b
+        ELSE
+          CALL POPREAL8(min70)
+          y50b = 0.0
+        END IF
+        crb = crb + y50b
+        abs50b = y50b
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          crb = crb + abs50b
+        ELSE
+          crb = crb - abs50b
+        END IF
+        temp47b0 = dt*crb/(dz*mu)
+        velb = temp47b0
+        mub0 = mub0 - vel*temp47b0/mu
+        CALL POPREAL8(vel)
+        romb(i, k, j) = romb(i, k, j) + velb
+        mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+        mu = 0.5*(mut(i, j)+mut(i, j))
+        CALL POPREAL8(dz)
+        k = kts + 1
+        fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+        temp47b1 = rom(i, k, j)*fqzb(i, k, j)
+        romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&          field(i, k-1, j))*fqzb(i, k, j)
+        fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp47b1
+        fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp47b1
+        fqzb(i, k, j) = 0.0
+        temp47b2 = dz*mu*fqzlb(i, k, j)/dt
+        min69b = 0.5*field_old(i, k-1, j)*temp47b2
+        field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min69*&
+&          temp47b2
+        max50b = 0.5*field_old(i, k, j)*temp47b2
+        field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max50*temp47b2
+        mub0 = (0.5*(min69*field_old(i, k-1, j))+0.5*(max50*field_old(i&
+&          , k, j)))*dz*fqzlb(i, k, j)/dt
+        fqzlb(i, k, j) = 0.0
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(max50)
+          y100b = max50b
+        ELSE
+          CALL POPREAL8(max50)
+          y100b = 0.0
+        END IF
+        crb = y100b
+        abs100b = -y100b
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          crb = crb + abs100b
+        ELSE
+          crb = crb - abs100b
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(min69)
+          y49b = min69b
+        ELSE
+          CALL POPREAL8(min69)
+          y49b = 0.0
+        END IF
+        crb = crb + y49b
+        abs49b = y49b
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          crb = crb + abs49b
+        ELSE
+          crb = crb - abs49b
+        END IF
+        temp47b = dt*crb/(dz*mu)
+        velb = temp47b
+        mub0 = mub0 - vel*temp47b/mu
+        CALL POPREAL8(vel)
+        romb(i, k, j) = romb(i, k, j) + velb
+        CALL POPREAL8(mu)
+        mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+        CALL POPREAL8(dz)
+        CALL POPINTEGER4(k)
+      END DO
+      DO k=ktf-1,kts+2,-1
+        CALL POPINTEGER4(ad_from48)
+        CALL POPINTEGER4(ad_to48)
+        DO i=ad_to48,ad_from48,-1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp43 = field(i, k+1, j) - field(i, k-2, j) - 3.*(field(i, k&
+&            , j)-field(i, k-1, j))
+          temp46 = SIGN(1., -vel)
+          temp45 = temp46/12.
+          temp44 = SIGN(1, time_step)
+          temp43b13 = vel*fqzb(i, k, j)
+          temp43b14 = 7.*temp43b13/12.
+          temp43b15 = temp44*temp45*temp43b13
+          velb = (7.*((field(i, k, j)+field(i, k-1, j))/12.)-(field(i, k&
+&            +1, j)+field(i, k-2, j))/12.+temp44*(temp45*temp43))*fqzb(i&
+&            , k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp43b14 - 3.*temp43b15
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + 3.*temp43b15 + &
+&            temp43b14
+          fieldb(i, k+1, j) = fieldb(i, k+1, j) + temp43b15 - temp43b13/&
+&            12.
+          fieldb(i, k-2, j) = fieldb(i, k-2, j) - temp43b15 - temp43b13/&
+&            12.
+          fqzb(i, k, j) = 0.0
+          temp43b16 = dz*mu*fqzlb(i, k, j)/dt
+          min68b = 0.5*field_old(i, k-1, j)*temp43b16
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min68*&
+&            temp43b16
+          max49b = 0.5*field_old(i, k, j)*temp43b16
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max49*&
+&            temp43b16
+          mub0 = (0.5*(min68*field_old(i, k-1, j))+0.5*(max49*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max49)
+            y99b = max49b
+          ELSE
+            CALL POPREAL8(max49)
+            y99b = 0.0
+          END IF
+          crb = y99b
+          abs99b = -y99b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs99b
+          ELSE
+            crb = crb - abs99b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min68)
+            y48b = min68b
+          ELSE
+            CALL POPREAL8(min68)
+            y48b = 0.0
+          END IF
+          crb = crb + y48b
+          abs48b = y48b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs48b
+          ELSE
+            crb = crb - abs48b
+          END IF
+          temp43b12 = dt*crb/(dz*mu)
+          velb = velb + temp43b12
+          mub0 = mub0 - vel*temp43b12/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          CALL POPREAL8(dz)
+        END DO
+      END DO
+      CALL POPINTEGER4(k)
+      CALL POPINTEGER4(ad_from47)
+      CALL POPINTEGER4(ad_to47)
+      DO i=ad_to47,ad_from47,-1
+        fqzlb(i, kde, j) = 0.0
+        fqzb(i, kde, j) = 0.0
+        fqzlb(i, 1, j) = 0.0
+        fqzb(i, 1, j) = 0.0
+      END DO
+      CALL POPINTEGER4(i)
+    END DO
+  ELSE IF (branch .EQ. 4) THEN
+    CALL POPINTEGER4(ad_from53)
+    CALL POPINTEGER4(ad_to53)
+    DO j=ad_to53,ad_from53,-1
+      DO k=ktf,kts+1,-1
+        CALL POPINTEGER4(ad_from52)
+        CALL POPINTEGER4(ad_to52)
+        DO i=ad_to52,ad_from52,-1
+          fqzlb(i, k, j) = fqzlb(i, k, j) - fqzb(i, k, j)
+          temp47b6 = rom(i, k, j)*fqzb(i, k, j)
+          romb(i, k, j) = romb(i, k, j) + (fzm(k)*field(i, k, j)+fzp(k)*&
+&            field(i, k-1, j))*fqzb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + fzm(k)*temp47b6
+          fieldb(i, k-1, j) = fieldb(i, k-1, j) + fzp(k)*temp47b6
+          fqzb(i, k, j) = 0.0
+          temp47b7 = dz*mu*fqzlb(i, k, j)/dt
+          min71b = 0.5*field_old(i, k-1, j)*temp47b7
+          field_oldb(i, k-1, j) = field_oldb(i, k-1, j) + 0.5*min71*&
+&            temp47b7
+          max52b = 0.5*field_old(i, k, j)*temp47b7
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max52*temp47b7
+          mub0 = (0.5*(min71*field_old(i, k-1, j))+0.5*(max52*field_old(&
+&            i, k, j)))*dz*fqzlb(i, k, j)/dt
+          fqzlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max52)
+            y102b = max52b
+          ELSE
+            CALL POPREAL8(max52)
+            y102b = 0.0
+          END IF
+          crb = y102b
+          abs102b = -y102b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs102b
+          ELSE
+            crb = crb - abs102b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min71)
+            y51b = min71b
+          ELSE
+            CALL POPREAL8(min71)
+            y51b = 0.0
+          END IF
+          crb = crb + y51b
+          abs51b = y51b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs51b
+          ELSE
+            crb = crb - abs51b
+          END IF
+          temp47b5 = dt*crb/(dz*mu)
+          velb = temp47b5
+          mub0 = mub0 - vel*temp47b5/mu
+          CALL POPREAL8(vel)
+          romb(i, k, j) = romb(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*2*mub0
+          CALL POPREAL8(dz)
+        END DO
+      END DO
+      CALL POPINTEGER4(ad_from51)
+      CALL POPINTEGER4(ad_to51)
+      DO i=ad_to51,ad_from51,-1
+        fqzlb(i, kde, j) = 0.0
+        fqzb(i, kde, j) = 0.0
+        fqzlb(i, 1, j) = 0.0
+        fqzb(i, 1, j) = 0.0
+      END DO
+      CALL POPINTEGER4(i)
+    END DO
+  END IF
+  CALL POPINTEGER4(j_end)
+  CALL POPINTEGER4(i_end)
+  CALL POPCONTROL1B(branch)
+  IF (branch .NE. 0) THEN
+    CALL POPINTEGER4(ad_from34)
+    CALL POPINTEGER4(ad_to34)
+    DO i=ad_to34,ad_from34,-1
+      DO k=ktf,kts,-1
+        temp31b56 = -(rdy*tendencyb(i, k, j_end))
+        vbb = (field_old(i, k, j_end)-field_old(i, k, j_end-1))*&
+&          temp31b56
+        field_oldb(i, k, j_end) = field_oldb(i, k, j_end) + vb*temp31b56
+        field_oldb(i, k, j_end-1) = field_oldb(i, k, j_end-1) - vb*&
+&          temp31b56
+        fieldb(i, k, j_end) = fieldb(i, k, j_end) - rv(i, k, jte-1)*&
+&          temp31b56
+        rvb(i, k, jte-1) = rvb(i, k, jte-1) - field(i, k, j_end)*&
+&          temp31b56
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(vb)
+        ELSE
+          CALL POPREAL8(vb)
+          rvb(i, k, jte-1) = rvb(i, k, jte-1) + 0.5*vbb
+        END IF
+      END DO
+    END DO
+    CALL POPINTEGER4(i)
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(ad_from33)
+    CALL POPINTEGER4(ad_to33)
+    DO i=ad_to33,ad_from33,-1
+      DO k=ktf,kts,-1
+        temp31b55 = -(rdy*tendencyb(i, k, jts))
+        vbb = (field_old(i, k, jts+1)-field_old(i, k, jts))*temp31b55
+        field_oldb(i, k, jts+1) = field_oldb(i, k, jts+1) + vb*temp31b55
+        field_oldb(i, k, jts) = field_oldb(i, k, jts) - vb*temp31b55
+        fieldb(i, k, jts) = fieldb(i, k, jts) + rv(i, k, jts+1)*&
+&          temp31b55
+        rvb(i, k, jts+1) = rvb(i, k, jts+1) + field(i, k, jts)*temp31b55
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(vb)
+        ELSE
+          CALL POPREAL8(vb)
+          rvb(i, k, jts+1) = rvb(i, k, jts+1) + 0.5*vbb
+        END IF
+      END DO
+    END DO
+    CALL POPINTEGER4(i)
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(ad_from32)
+    CALL POPINTEGER4(ad_to32)
+    DO i=ad_to32,ad_from32,-1
+      DO k=ktf,kts,-1
+        temp31b53 = -(rdy*tendencyb(i, k, j_end))
+        temp31b54 = field(i, k, j_end)*temp31b53
+        vbb = (field_old(i, k, j_end)-field_old(i, k, j_end-1))*&
+&          temp31b53
+        field_oldb(i, k, j_end) = field_oldb(i, k, j_end) + vb*temp31b53
+        field_oldb(i, k, j_end-1) = field_oldb(i, k, j_end-1) - vb*&
+&          temp31b53
+        fieldb(i, k, j_end) = fieldb(i, k, j_end) + (rv(i, k, jte)-rv(i&
+&          , k, jte-1))*temp31b53
+        rvb(i, k, jte) = rvb(i, k, jte) + temp31b54
+        rvb(i, k, jte-1) = rvb(i, k, jte-1) - temp31b54
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(vb)
+        ELSE
+          CALL POPREAL8(vb)
+          rvb(i, k, jte-1) = rvb(i, k, jte-1) + 0.5*vbb
+          rvb(i, k, jte) = rvb(i, k, jte) + 0.5*vbb
+        END IF
+      END DO
+    END DO
+    CALL POPINTEGER4(i)
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(ad_from31)
+    CALL POPINTEGER4(ad_to31)
+    DO i=ad_to31,ad_from31,-1
+      DO k=ktf,kts,-1
+        temp31b51 = -(rdy*tendencyb(i, k, jts))
+        temp31b52 = field(i, k, jts)*temp31b51
+        vbb = (field_old(i, k, jts+1)-field_old(i, k, jts))*temp31b51
+        field_oldb(i, k, jts+1) = field_oldb(i, k, jts+1) + vb*temp31b51
+        field_oldb(i, k, jts) = field_oldb(i, k, jts) - vb*temp31b51
+        fieldb(i, k, jts) = fieldb(i, k, jts) + (rv(i, k, jts+1)-rv(i, k&
+&          , jts))*temp31b51
+        rvb(i, k, jts+1) = rvb(i, k, jts+1) + temp31b52
+        rvb(i, k, jts) = rvb(i, k, jts) - temp31b52
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(vb)
+        ELSE
+          CALL POPREAL8(vb)
+          rvb(i, k, jts) = rvb(i, k, jts) + 0.5*vbb
+          rvb(i, k, jts+1) = rvb(i, k, jts+1) + 0.5*vbb
+        END IF
+      END DO
+    END DO
+    CALL POPINTEGER4(i)
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(ad_from30)
+    CALL POPINTEGER4(ad_to30)
+    DO j=ad_to30,ad_from30,-1
+      DO k=ktf,kts,-1
+        temp31b49 = -(rdx*tendencyb(i_end, k, j))
+        temp31b50 = field(i_end, k, j)*temp31b49
+        ubb = (field_old(i_end, k, j)-field_old(i_end-1, k, j))*&
+&          temp31b49
+        field_oldb(i_end, k, j) = field_oldb(i_end, k, j) + ub*temp31b49
+        field_oldb(i_end-1, k, j) = field_oldb(i_end-1, k, j) - ub*&
+&          temp31b49
+        fieldb(i_end, k, j) = fieldb(i_end, k, j) + (ru(ite, k, j)-ru(&
+&          ite-1, k, j))*temp31b49
+        rub(ite, k, j) = rub(ite, k, j) + temp31b50
+        rub(ite-1, k, j) = rub(ite-1, k, j) - temp31b50
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(ub)
+        ELSE
+          CALL POPREAL8(ub)
+          rub(ite-1, k, j) = rub(ite-1, k, j) + 0.5*ubb
+          rub(ite, k, j) = rub(ite, k, j) + 0.5*ubb
+        END IF
+      END DO
+    END DO
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(ad_from29)
+    CALL POPINTEGER4(ad_to29)
+    DO j=ad_to29,ad_from29,-1
+      DO k=ktf,kts,-1
+        temp31b47 = -(rdx*tendencyb(its, k, j))
+        temp31b48 = field(its, k, j)*temp31b47
+        ubb = (field_old(its+1, k, j)-field_old(its, k, j))*temp31b47
+        field_oldb(its+1, k, j) = field_oldb(its+1, k, j) + ub*temp31b47
+        field_oldb(its, k, j) = field_oldb(its, k, j) - ub*temp31b47
+        fieldb(its, k, j) = fieldb(its, k, j) + (ru(its+1, k, j)-ru(its&
+&          , k, j))*temp31b47
+        rub(its+1, k, j) = rub(its+1, k, j) + temp31b48
+        rub(its, k, j) = rub(its, k, j) - temp31b48
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(ub)
+        ELSE
+          CALL POPREAL8(ub)
+          rub(its, k, j) = rub(its, k, j) + 0.5*ubb
+          rub(its+1, k, j) = rub(its+1, k, j) + 0.5*ubb
+        END IF
+      END DO
+    END DO
+  END IF
+  CALL POPCONTROL3B(branch)
+  IF (branch .LT. 3) THEN
+    IF (branch .NE. 0) THEN
+      IF (branch .EQ. 1) THEN
+        CALL POPINTEGER4(ad_from20)
+        CALL POPINTEGER4(ad_to20)
+        DO j=ad_to20,ad_from20,-1
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from19)
+            CALL POPINTEGER4(ad_to19)
+            DO i=ad_to19,ad_from19,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp31b8 = 0.5*ru(i, k, j)*fqxb(i, k, j)
+              rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-&
+&                1, k, j))*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp31b8
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b8
+              fqxb(i, k, j) = 0.0
+              temp31b9 = dx*mu*fqxlb(i, k, j)/dt
+              min52b = 0.5*field_old(i-1, k, j)*temp31b9
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min52*&
+&                temp31b9
+              max35b = 0.5*field_old(i, k, j)*temp31b9
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max35*&
+&                temp31b9
+              mub0 = (0.5*(min52*field_old(i-1, k, j))+0.5*(max35*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max35)
+                y85b = max35b
+              ELSE
+                CALL POPREAL8(max35)
+                y85b = 0.0
+              END IF
+              crb = y85b
+              abs85b = -y85b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs85b
+              ELSE
+                crb = crb - abs85b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min52)
+                y34b = min52b
+              ELSE
+                CALL POPREAL8(min52)
+                y34b = 0.0
+              END IF
+              crb = crb + y34b
+              abs34b = y34b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs34b
+              ELSE
+                crb = crb - abs34b
+              END IF
+              temp31b7 = dt*crb/(dx*mu)
+              velb = temp31b7
+              mub0 = mub0 - vel*temp31b7/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END DO
+        END DO
+        CALL POPINTEGER4(ad_from18)
+        CALL POPINTEGER4(ad_to18)
+        DO j=ad_to18,ad_from18,-1
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from17)
+            CALL POPINTEGER4(ad_to17)
+            DO i=ad_to17,ad_from17,-1
+              fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+              temp31b5 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+              rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(i&
+&                , k, j-1))*fqyb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp31b5
+              fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp31b5
+              fqyb(i, k, j) = 0.0
+              temp31b6 = dy*mu*fqylb(i, k, j)/dt
+              min51b = 0.5*field_old(i, k, j-1)*temp31b6
+              field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min51*&
+&                temp31b6
+              max34b = 0.5*field_old(i, k, j)*temp31b6
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max34*&
+&                temp31b6
+              mub0 = (0.5*(min51*field_old(i, k, j-1))+0.5*(max34*&
+&                field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+              fqylb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max34)
+                y84b = max34b
+              ELSE
+                CALL POPREAL8(max34)
+                y84b = 0.0
+              END IF
+              crb = y84b
+              abs84b = -y84b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs84b
+              ELSE
+                crb = crb - abs84b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min51)
+                y33b = min51b
+              ELSE
+                CALL POPREAL8(min51)
+                y33b = 0.0
+              END IF
+              crb = crb + y33b
+              abs33b = y33b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs33b
+              ELSE
+                crb = crb - abs33b
+              END IF
+              temp31b4 = dt*crb/(dy*mu)
+              velb = temp31b4
+              mub0 = mub0 - vel*temp31b4/mu
+              CALL POPREAL8(vel)
+              rvb(i, k, j) = rvb(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+              CALL POPREAL8(dy)
+            END DO
+          END DO
+        END DO
+      ELSE
+        CALL POPINTEGER4(ad_from16)
+        CALL POPINTEGER4(ad_to16)
+        DO j=ad_to16,ad_from16,-1
+          CALL POPCONTROL2B(branch)
+          IF (branch .NE. 0) THEN
+            IF (branch .NE. 1) THEN
+              DO k=ktf,kts,-1
+                fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+                temp31b2 = 0.5*ru(i, k, j)*fqxb(i, k, j)
+                rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(&
+&                  i-1, k, j))*fqxb(i, k, j)
+                fieldb(i, k, j) = fieldb(i, k, j) + temp31b2
+                fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b2
+                fqxb(i, k, j) = 0.0
+                temp31b3 = dx*mu*fqxlb(i, k, j)/dt
+                min48b = 0.5*field_old(i-1, k, j)*temp31b3
+                field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*&
+&                  min48*temp31b3
+                max33b = 0.5*field_old(i, k, j)*temp31b3
+                field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max33*&
+&                  temp31b3
+                mub0 = (0.5*(min48*field_old(i-1, k, j))+0.5*(max33*&
+&                  field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+                fqxlb(i, k, j) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(max33)
+                  y83b = max33b
+                ELSE
+                  CALL POPREAL8(max33)
+                  y83b = 0.0
+                END IF
+                crb = y83b
+                abs83b = -y83b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs83b
+                ELSE
+                  crb = crb - abs83b
+                END IF
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(min48)
+                  y32b = min48b
+                ELSE
+                  CALL POPREAL8(min48)
+                  y32b = 0.0
+                END IF
+                crb = crb + y32b
+                abs32b = y32b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs32b
+                ELSE
+                  crb = crb - abs32b
+                END IF
+                temp31b1 = dt*crb/(dx*mu)
+                velb = temp31b1
+                mub0 = mub0 - vel*temp31b1/mu
+                CALL POPREAL8(vel)
+                rub(i, k, j) = rub(i, k, j) + velb
+                CALL POPREAL8(mu)
+                mutb(i, j) = mutb(i, j) + 0.5*mub0
+                mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+                CALL POPREAL8(dx)
+              END DO
+              CALL POPINTEGER4(i)
+            END IF
+          END IF
+          CALL POPCONTROL2B(branch)
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp31b = 0.5*ru(i, k, j)*fqxb(i, k, j)
+              rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-&
+&                1, k, j))*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp31b
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b
+              fqxb(i, k, j) = 0.0
+              temp31b0 = dx*mu*fqxlb(i, k, j)/dt
+              min47b = 0.5*field_old(i-1, k, j)*temp31b0
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min47*&
+&                temp31b0
+              max32b = 0.5*field_old(i, k, j)*temp31b0
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max32*&
+&                temp31b0
+              mub0 = (0.5*(min47*field_old(i-1, k, j))+0.5*(max32*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max32)
+                y82b = max32b
+              ELSE
+                CALL POPREAL8(max32)
+                y82b = 0.0
+              END IF
+              crb = y82b
+              abs82b = -y82b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs82b
+              ELSE
+                crb = crb - abs82b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min47)
+                y31b = min47b
+              ELSE
+                CALL POPREAL8(min47)
+                y31b = 0.0
+              END IF
+              crb = crb + y31b
+              abs31b = y31b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs31b
+              ELSE
+                crb = crb - abs31b
+              END IF
+              velb = dt*crb/dx
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb/mu
+              mub0 = mub0 - ru(i, k, j)*velb/mu**2
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+            CALL POPINTEGER4(i)
+          END IF
+          DO k=ktf,kts,-1
+            DO i=i_end_f,i_start_f,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp27 = field(i+1, k, j) - field(i-2, k, j) - 3.*(field(i&
+&                , k, j)-field(i-1, k, j))
+              temp30 = SIGN(1., vel)
+              temp29 = temp30/12.
+              temp28 = SIGN(1, time_step)
+              temp27b6 = vel*fqxb(i, k, j)
+              temp27b7 = 7.*temp27b6/12.
+              temp27b8 = temp28*temp29*temp27b6
+              velb = (7.*((field(i, k, j)+field(i-1, k, j))/12.)-(field(&
+&                i+1, k, j)+field(i-2, k, j))/12.+temp28*(temp29*temp27))&
+&                *fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp27b7 - 3.*temp27b8
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + 3.*temp27b8 + &
+&                temp27b7
+              fieldb(i+1, k, j) = fieldb(i+1, k, j) + temp27b8 - &
+&                temp27b6/12.
+              fieldb(i-2, k, j) = fieldb(i-2, k, j) - temp27b8 - &
+&                temp27b6/12.
+              fqxb(i, k, j) = 0.0
+              temp27b9 = dx*mu*fqxlb(i, k, j)/dt
+              min46b = 0.5*field_old(i-1, k, j)*temp27b9
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min46*&
+&                temp27b9
+              max31b = 0.5*field_old(i, k, j)*temp27b9
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max31*&
+&                temp27b9
+              mub0 = (0.5*(min46*field_old(i-1, k, j))+0.5*(max31*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max31)
+                y81b = max31b
+              ELSE
+                CALL POPREAL8(max31)
+                y81b = 0.0
+              END IF
+              crb = y81b
+              abs81b = -y81b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs81b
+              ELSE
+                crb = crb - abs81b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min46)
+                y30b = min46b
+              ELSE
+                CALL POPREAL8(min46)
+                y30b = 0.0
+              END IF
+              crb = crb + y30b
+              abs30b = y30b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs30b
+              ELSE
+                crb = crb - abs30b
+              END IF
+              temp27b5 = dt*crb/(dx*mu)
+              velb = velb + temp27b5
+              mub0 = mub0 - vel*temp27b5/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+            CALL POPINTEGER4(i)
+          END DO
+        END DO
+        CALL POPINTEGER4(ad_from15)
+        CALL POPINTEGER4(ad_to15)
+        DO j=ad_to15,ad_from15,-1
+          CALL POPCONTROL2B(branch)
+          IF (branch .LT. 2) THEN
+            IF (branch .NE. 0) THEN
+              DO k=ktf,kts,-1
+                CALL POPINTEGER4(ad_from14)
+                CALL POPINTEGER4(ad_to14)
+                DO i=ad_to14,ad_from14,-1
+                  fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+                  temp27b3 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+                  rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+&
+&                    field(i, k, j-1))*fqyb(i, k, j)
+                  fieldb(i, k, j) = fieldb(i, k, j) + temp27b3
+                  fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp27b3
+                  fqyb(i, k, j) = 0.0
+                  temp27b4 = dy*mu*fqylb(i, k, j)/dt
+                  min43b = 0.5*field_old(i, k, j-1)*temp27b4
+                  field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*&
+&                    min43*temp27b4
+                  max30b = 0.5*field_old(i, k, j)*temp27b4
+                  field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max30*&
+&                    temp27b4
+                  mub0 = (0.5*(min43*field_old(i, k, j-1))+0.5*(max30*&
+&                    field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+                  fqylb(i, k, j) = 0.0
+                  CALL POPCONTROL1B(branch)
+                  IF (branch .EQ. 0) THEN
+                    CALL POPREAL8(max30)
+                    y80b = max30b
+                  ELSE
+                    CALL POPREAL8(max30)
+                    y80b = 0.0
+                  END IF
+                  crb = y80b
+                  abs80b = -y80b
+                  CALL POPCONTROL1B(branch)
+                  IF (branch .EQ. 0) THEN
+                    crb = crb + abs80b
+                  ELSE
+                    crb = crb - abs80b
+                  END IF
+                  CALL POPCONTROL1B(branch)
+                  IF (branch .EQ. 0) THEN
+                    CALL POPREAL8(min43)
+                    y29b = min43b
+                  ELSE
+                    CALL POPREAL8(min43)
+                    y29b = 0.0
+                  END IF
+                  crb = crb + y29b
+                  abs29b = y29b
+                  CALL POPCONTROL1B(branch)
+                  IF (branch .EQ. 0) THEN
+                    crb = crb + abs29b
+                  ELSE
+                    crb = crb - abs29b
+                  END IF
+                  temp27b2 = dt*crb/(dy*mu)
+                  velb = temp27b2
+                  mub0 = mub0 - vel*temp27b2/mu
+                  CALL POPREAL8(vel)
+                  rvb(i, k, j) = rvb(i, k, j) + velb
+                  CALL POPREAL8(mu)
+                  mutb(i, j) = mutb(i, j) + 0.5*mub0
+                  mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+                  CALL POPREAL8(dy)
+                END DO
+              END DO
+            END IF
+          ELSE IF (branch .EQ. 2) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from13)
+              CALL POPINTEGER4(ad_to13)
+              DO i=ad_to13,ad_from13,-1
+                fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+                temp27b0 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+                rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(&
+&                  i, k, j-1))*fqyb(i, k, j)
+                fieldb(i, k, j) = fieldb(i, k, j) + temp27b0
+                fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp27b0
+                fqyb(i, k, j) = 0.0
+                temp27b1 = dy*mu*fqylb(i, k, j)/dt
+                min42b = 0.5*field_old(i, k, j-1)*temp27b1
+                field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*&
+&                  min42*temp27b1
+                max29b = 0.5*field_old(i, k, j)*temp27b1
+                field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max29*&
+&                  temp27b1
+                mub0 = (0.5*(min42*field_old(i, k, j-1))+0.5*(max29*&
+&                  field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+                fqylb(i, k, j) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(max29)
+                  y79b = max29b
+                ELSE
+                  CALL POPREAL8(max29)
+                  y79b = 0.0
+                END IF
+                crb = y79b
+                abs79b = -y79b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs79b
+                ELSE
+                  crb = crb - abs79b
+                END IF
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(min42)
+                  y28b = min42b
+                ELSE
+                  CALL POPREAL8(min42)
+                  y28b = 0.0
+                END IF
+                crb = crb + y28b
+                abs28b = y28b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs28b
+                ELSE
+                  crb = crb - abs28b
+                END IF
+                temp27b = dt*crb/(dy*mu)
+                velb = temp27b
+                mub0 = mub0 - vel*temp27b/mu
+                CALL POPREAL8(vel)
+                rvb(i, k, j) = rvb(i, k, j) + velb
+                CALL POPREAL8(mu)
+                mutb(i, j) = mutb(i, j) + 0.5*mub0
+                mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+                CALL POPREAL8(dy)
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from12)
+              CALL POPINTEGER4(ad_to12)
+              DO i=ad_to12,ad_from12,-1
+                fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+                temp23 = field(i, k, j+1) - field(i, k, j-2) - 3.*(field&
+&                  (i, k, j)-field(i, k, j-1))
+                temp26 = SIGN(1., vel)
+                temp25 = temp26/12.
+                temp24 = SIGN(1, time_step)
+                temp23b19 = vel*fqyb(i, k, j)
+                temp23b20 = 7.*temp23b19/12.
+                temp23b21 = temp24*temp25*temp23b19
+                velb = (7.*((field(i, k, j)+field(i, k, j-1))/12.)-(&
+&                  field(i, k, j+1)+field(i, k, j-2))/12.+temp24*(temp25*&
+&                  temp23))*fqyb(i, k, j)
+                fieldb(i, k, j) = fieldb(i, k, j) + temp23b20 - 3.*&
+&                  temp23b21
+                fieldb(i, k, j-1) = fieldb(i, k, j-1) + 3.*temp23b21 + &
+&                  temp23b20
+                fieldb(i, k, j+1) = fieldb(i, k, j+1) + temp23b21 - &
+&                  temp23b19/12.
+                fieldb(i, k, j-2) = fieldb(i, k, j-2) - temp23b21 - &
+&                  temp23b19/12.
+                fqyb(i, k, j) = 0.0
+                temp23b22 = dy*mu*fqylb(i, k, j)/dt
+                min41b = 0.5*field_old(i, k, j-1)*temp23b22
+                field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*&
+&                  min41*temp23b22
+                max28b = 0.5*field_old(i, k, j)*temp23b22
+                field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max28*&
+&                  temp23b22
+                mub0 = (0.5*(min41*field_old(i, k, j-1))+0.5*(max28*&
+&                  field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+                fqylb(i, k, j) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(max28)
+                  y78b = max28b
+                ELSE
+                  CALL POPREAL8(max28)
+                  y78b = 0.0
+                END IF
+                crb = y78b
+                abs78b = -y78b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs78b
+                ELSE
+                  crb = crb - abs78b
+                END IF
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(min41)
+                  y27b = min41b
+                ELSE
+                  CALL POPREAL8(min41)
+                  y27b = 0.0
+                END IF
+                crb = crb + y27b
+                abs27b = y27b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs27b
+                ELSE
+                  crb = crb - abs27b
+                END IF
+                temp23b18 = dt*crb/(dy*mu)
+                velb = velb + temp23b18
+                mub0 = mub0 - vel*temp23b18/mu
+                CALL POPREAL8(vel)
+                rvb(i, k, j) = rvb(i, k, j) + velb
+                CALL POPREAL8(mu)
+                mutb(i, j) = mutb(i, j) + 0.5*mub0
+                mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+                CALL POPREAL8(dy)
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+    END IF
+  ELSE IF (branch .EQ. 3) THEN
+    CALL POPINTEGER4(ad_from11)
+    CALL POPINTEGER4(ad_to11)
+    DO j=ad_to11,ad_from11,-1
+      CALL POPCONTROL2B(branch)
+      IF (branch .NE. 0) THEN
+        IF (branch .NE. 1) THEN
+          DO k=ktf,kts,-1
+            fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+            temp23b16 = 0.5*ru(i, k, j)*fqxb(i, k, j)
+            rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-1&
+&              , k, j))*fqxb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp23b16
+            fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp23b16
+            fqxb(i, k, j) = 0.0
+            temp23b17 = dx*mu*fqxlb(i, k, j)/dt
+            min38b = 0.5*field_old(i-1, k, j)*temp23b17
+            field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min38*&
+&              temp23b17
+            max27b = 0.5*field_old(i, k, j)*temp23b17
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max27*&
+&              temp23b17
+            mub0 = (0.5*(min38*field_old(i-1, k, j))+0.5*(max27*&
+&              field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+            fqxlb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max27)
+              y77b = max27b
+            ELSE
+              CALL POPREAL8(max27)
+              y77b = 0.0
+            END IF
+            crb = y77b
+            abs77b = -y77b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs77b
+            ELSE
+              crb = crb - abs77b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min38)
+              y26b = min38b
+            ELSE
+              CALL POPREAL8(min38)
+              y26b = 0.0
+            END IF
+            crb = crb + y26b
+            abs26b = y26b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs26b
+            ELSE
+              crb = crb - abs26b
+            END IF
+            temp23b15 = dt*crb/(dx*mu)
+            velb = temp23b15
+            mub0 = mub0 - vel*temp23b15/mu
+            CALL POPREAL8(vel)
+            rub(i, k, j) = rub(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+            CALL POPREAL8(dx)
+          END DO
+          CALL POPINTEGER4(i)
+        END IF
+      END IF
+      CALL POPCONTROL2B(branch)
+      IF (branch .EQ. 0) THEN
+        DO k=ktf,kts,-1
+          fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+          temp23b13 = 0.5*ru(i, k, j)*fqxb(i, k, j)
+          rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-1, k&
+&            , j))*fqxb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp23b13
+          fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp23b13
+          fqxb(i, k, j) = 0.0
+          temp23b14 = dx*mu*fqxlb(i, k, j)/dt
+          min37b = 0.5*field_old(i-1, k, j)*temp23b14
+          field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min37*&
+&            temp23b14
+          max26b = 0.5*field_old(i, k, j)*temp23b14
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max26*&
+&            temp23b14
+          mub0 = (0.5*(min37*field_old(i-1, k, j))+0.5*(max26*field_old(&
+&            i, k, j)))*dx*fqxlb(i, k, j)/dt
+          fqxlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max26)
+            y76b = max26b
+          ELSE
+            CALL POPREAL8(max26)
+            y76b = 0.0
+          END IF
+          crb = y76b
+          abs76b = -y76b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs76b
+          ELSE
+            crb = crb - abs76b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min37)
+            y25b = min37b
+          ELSE
+            CALL POPREAL8(min37)
+            y25b = 0.0
+          END IF
+          crb = crb + y25b
+          abs25b = y25b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs25b
+          ELSE
+            crb = crb - abs25b
+          END IF
+          velb = dt*crb/dx
+          CALL POPREAL8(vel)
+          rub(i, k, j) = rub(i, k, j) + velb/mu
+          mub0 = mub0 - ru(i, k, j)*velb/mu**2
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*mub0
+          mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+          CALL POPREAL8(dx)
+        END DO
+        CALL POPINTEGER4(i)
+      END IF
+      DO k=ktf,kts,-1
+        DO i=i_end_f,i_start_f,-1
+          fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+          temp23b10 = vel*fqxb(i, k, j)
+          temp23b11 = 7.*temp23b10/12.
+          velb = (7.*((field(i, k, j)+field(i-1, k, j))/12.)-(field(i+1&
+&            , k, j)+field(i-2, k, j))/12.)*fqxb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp23b11
+          fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp23b11
+          fieldb(i+1, k, j) = fieldb(i+1, k, j) - temp23b10/12.
+          fieldb(i-2, k, j) = fieldb(i-2, k, j) - temp23b10/12.
+          fqxb(i, k, j) = 0.0
+          temp23b12 = dx*mu*fqxlb(i, k, j)/dt
+          min36b = 0.5*field_old(i-1, k, j)*temp23b12
+          field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min36*&
+&            temp23b12
+          max25b = 0.5*field_old(i, k, j)*temp23b12
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max25*&
+&            temp23b12
+          mub0 = (0.5*(min36*field_old(i-1, k, j))+0.5*(max25*field_old(&
+&            i, k, j)))*dx*fqxlb(i, k, j)/dt
+          fqxlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max25)
+            y75b = max25b
+          ELSE
+            CALL POPREAL8(max25)
+            y75b = 0.0
+          END IF
+          crb = y75b
+          abs75b = -y75b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs75b
+          ELSE
+            crb = crb - abs75b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min36)
+            y24b = min36b
+          ELSE
+            CALL POPREAL8(min36)
+            y24b = 0.0
+          END IF
+          crb = crb + y24b
+          abs24b = y24b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs24b
+          ELSE
+            crb = crb - abs24b
+          END IF
+          temp23b9 = dt*crb/(dx*mu)
+          velb = velb + temp23b9
+          mub0 = mub0 - vel*temp23b9/mu
+          CALL POPREAL8(vel)
+          rub(i, k, j) = rub(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*mub0
+          mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+          CALL POPREAL8(dx)
+        END DO
+        CALL POPINTEGER4(i)
+      END DO
+    END DO
+    CALL POPINTEGER4(ad_from10)
+    CALL POPINTEGER4(ad_to10)
+    DO j=ad_to10,ad_from10,-1
+      CALL POPCONTROL2B(branch)
+      IF (branch .LT. 2) THEN
+        IF (branch .NE. 0) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from9)
+            CALL POPINTEGER4(ad_to9)
+            DO i=ad_to9,ad_from9,-1
+              fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+              temp23b7 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+              rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(i&
+&                , k, j-1))*fqyb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp23b7
+              fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp23b7
+              fqyb(i, k, j) = 0.0
+              temp23b8 = dy*mu*fqylb(i, k, j)/dt
+              min33b = 0.5*field_old(i, k, j-1)*temp23b8
+              field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min33*&
+&                temp23b8
+              max24b = 0.5*field_old(i, k, j)*temp23b8
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max24*&
+&                temp23b8
+              mub0 = (0.5*(min33*field_old(i, k, j-1))+0.5*(max24*&
+&                field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+              fqylb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max24)
+                y74b = max24b
+              ELSE
+                CALL POPREAL8(max24)
+                y74b = 0.0
+              END IF
+              crb = y74b
+              abs74b = -y74b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs74b
+              ELSE
+                crb = crb - abs74b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min33)
+                y23b = min33b
+              ELSE
+                CALL POPREAL8(min33)
+                y23b = 0.0
+              END IF
+              crb = crb + y23b
+              abs23b = y23b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs23b
+              ELSE
+                crb = crb - abs23b
+              END IF
+              temp23b6 = dt*crb/(dy*mu)
+              velb = temp23b6
+              mub0 = mub0 - vel*temp23b6/mu
+              CALL POPREAL8(vel)
+              rvb(i, k, j) = rvb(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+              CALL POPREAL8(dy)
+            END DO
+          END DO
+        END IF
+      ELSE IF (branch .EQ. 2) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from8)
+          CALL POPINTEGER4(ad_to8)
+          DO i=ad_to8,ad_from8,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp23b4 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+            rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(i, k&
+&              , j-1))*fqyb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp23b4
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp23b4
+            fqyb(i, k, j) = 0.0
+            temp23b5 = dy*mu*fqylb(i, k, j)/dt
+            min32b = 0.5*field_old(i, k, j-1)*temp23b5
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min32*&
+&              temp23b5
+            max23b = 0.5*field_old(i, k, j)*temp23b5
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max23*&
+&              temp23b5
+            mub0 = (0.5*(min32*field_old(i, k, j-1))+0.5*(max23*&
+&              field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max23)
+              y73b = max23b
+            ELSE
+              CALL POPREAL8(max23)
+              y73b = 0.0
+            END IF
+            crb = y73b
+            abs73b = -y73b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs73b
+            ELSE
+              crb = crb - abs73b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min32)
+              y22b = min32b
+            ELSE
+              CALL POPREAL8(min32)
+              y22b = 0.0
+            END IF
+            crb = crb + y22b
+            abs22b = y22b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs22b
+            ELSE
+              crb = crb - abs22b
+            END IF
+            temp23b3 = dt*crb/(dy*mu)
+            velb = temp23b3
+            mub0 = mub0 - vel*temp23b3/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      ELSE
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from7)
+          CALL POPINTEGER4(ad_to7)
+          DO i=ad_to7,ad_from7,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp23b0 = vel*fqyb(i, k, j)
+            temp23b1 = 7.*temp23b0/12.
+            velb = (7.*((field(i, k, j)+field(i, k, j-1))/12.)-(field(i&
+&              , k, j+1)+field(i, k, j-2))/12.)*fqyb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp23b1
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp23b1
+            fieldb(i, k, j+1) = fieldb(i, k, j+1) - temp23b0/12.
+            fieldb(i, k, j-2) = fieldb(i, k, j-2) - temp23b0/12.
+            fqyb(i, k, j) = 0.0
+            temp23b2 = dy*mu*fqylb(i, k, j)/dt
+            min31b = 0.5*field_old(i, k, j-1)*temp23b2
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min31*&
+&              temp23b2
+            max22b = 0.5*field_old(i, k, j)*temp23b2
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max22*&
+&              temp23b2
+            mub0 = (0.5*(min31*field_old(i, k, j-1))+0.5*(max22*&
+&              field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max22)
+              y72b = max22b
+            ELSE
+              CALL POPREAL8(max22)
+              y72b = 0.0
+            END IF
+            crb = y72b
+            abs72b = -y72b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs72b
+            ELSE
+              crb = crb - abs72b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min31)
+              y21b = min31b
+            ELSE
+              CALL POPREAL8(min31)
+              y21b = 0.0
+            END IF
+            crb = crb + y21b
+            abs21b = y21b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs21b
+            ELSE
+              crb = crb - abs21b
+            END IF
+            temp23b = dt*crb/(dy*mu)
+            velb = velb + temp23b
+            mub0 = mub0 - vel*temp23b/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      END IF
+    END DO
+  ELSE IF (branch .EQ. 4) THEN
+    CALL POPINTEGER4(ad_from6)
+    CALL POPINTEGER4(ad_to6)
+    DO j=ad_to6,ad_from6,-1
+      CALL POPCONTROL1B(branch)
+      IF (branch .NE. 0) THEN
+        CALL POPINTEGER4(ad_to5)
+        DO i=ad_to5,i_end_f+1,-1
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp19 = field(i+1, k, j) - field(i-2, k, j) - 3.*(field(i&
+&                , k, j)-field(i-1, k, j))
+              temp22 = SIGN(1., vel)
+              temp21 = temp22/12.
+              temp20 = SIGN(1, time_step)
+              temp19b3 = vel*fqxb(i, k, j)
+              temp19b4 = 7.*temp19b3/12.
+              temp19b5 = temp20*temp21*temp19b3
+              velb = (7.*((field(i, k, j)+field(i-1, k, j))/12.)-(field(&
+&                i+1, k, j)+field(i-2, k, j))/12.+temp20*(temp21*temp19))&
+&                *fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp19b4 - 3.*temp19b5
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + 3.*temp19b5 + &
+&                temp19b4
+              fieldb(i+1, k, j) = fieldb(i+1, k, j) + temp19b5 - &
+&                temp19b3/12.
+              fieldb(i-2, k, j) = fieldb(i-2, k, j) - temp19b5 - &
+&                temp19b3/12.
+              fqxb(i, k, j) = 0.0
+              temp19b6 = dx*mu*fqxlb(i, k, j)/dt
+              min28b = 0.5*field_old(i-1, k, j)*temp19b6
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min28*&
+&                temp19b6
+              max21b = 0.5*field_old(i, k, j)*temp19b6
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max21*&
+&                temp19b6
+              mub0 = (0.5*(min28*field_old(i-1, k, j))+0.5*(max21*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max21)
+                y71b = max21b
+              ELSE
+                CALL POPREAL8(max21)
+                y71b = 0.0
+              END IF
+              crb = y71b
+              abs71b = -y71b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs71b
+              ELSE
+                crb = crb - abs71b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min28)
+                y20b = min28b
+              ELSE
+                CALL POPREAL8(min28)
+                y20b = 0.0
+              END IF
+              crb = crb + y20b
+              abs20b = y20b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs20b
+              ELSE
+                crb = crb - abs20b
+              END IF
+              temp19b2 = dt*crb/(dx*mu)
+              velb = velb + temp19b2
+              mub0 = mub0 - vel*temp19b2/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp19b0 = 0.5*ru(i, k, j)*fqxb(i, k, j)
+              rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-&
+&                1, k, j))*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp19b0
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp19b0
+              fqxb(i, k, j) = 0.0
+              temp19b1 = dx*mu*fqxlb(i, k, j)/dt
+              min27b = 0.5*field_old(i-1, k, j)*temp19b1
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min27*&
+&                temp19b1
+              max20b = 0.5*field_old(i, k, j)*temp19b1
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max20*&
+&                temp19b1
+              mub0 = (0.5*(min27*field_old(i-1, k, j))+0.5*(max20*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max20)
+                y70b = max20b
+              ELSE
+                CALL POPREAL8(max20)
+                y70b = 0.0
+              END IF
+              crb = y70b
+              abs70b = -y70b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs70b
+              ELSE
+                crb = crb - abs70b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min27)
+                y19b = min27b
+              ELSE
+                CALL POPREAL8(min27)
+                y19b = 0.0
+              END IF
+              crb = crb + y19b
+              abs19b = y19b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs19b
+              ELSE
+                crb = crb - abs19b
+              END IF
+              temp19b = dt*crb/(dx*mu)
+              velb = temp19b
+              mub0 = mub0 - vel*temp19b/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+        END DO
+      END IF
+      CALL POPCONTROL1B(branch)
+      IF (branch .EQ. 0) THEN
+        CALL POPINTEGER4(ad_from5)
+        DO i=i_start_f-1,ad_from5,-1
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp15 = field(i+1, k, j) - field(i-2, k, j) - 3.*(field(i&
+&                , k, j)-field(i-1, k, j))
+              temp18 = SIGN(1., vel)
+              temp17 = temp18/12.
+              temp16 = SIGN(1, time_step)
+              temp15b2 = vel*fqxb(i, k, j)
+              temp15b3 = 7.*temp15b2/12.
+              temp15b4 = temp16*temp17*temp15b2
+              velb = (7.*((field(i, k, j)+field(i-1, k, j))/12.)-(field(&
+&                i+1, k, j)+field(i-2, k, j))/12.+temp16*(temp17*temp15))&
+&                *fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp15b3 - 3.*temp15b4
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + 3.*temp15b4 + &
+&                temp15b3
+              fieldb(i+1, k, j) = fieldb(i+1, k, j) + temp15b4 - &
+&                temp15b2/12.
+              fieldb(i-2, k, j) = fieldb(i-2, k, j) - temp15b4 - &
+&                temp15b2/12.
+              fqxb(i, k, j) = 0.0
+              temp15b5 = dx*mu*fqxlb(i, k, j)/dt
+              min26b = 0.5*field_old(i-1, k, j)*temp15b5
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min26*&
+&                temp15b5
+              max19b = 0.5*field_old(i, k, j)*temp15b5
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max19*&
+&                temp15b5
+              mub0 = (0.5*(min26*field_old(i-1, k, j))+0.5*(max19*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max19)
+                y69b = max19b
+              ELSE
+                CALL POPREAL8(max19)
+                y69b = 0.0
+              END IF
+              crb = y69b
+              abs69b = -y69b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs69b
+              ELSE
+                crb = crb - abs69b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min26)
+                y18b = min26b
+              ELSE
+                CALL POPREAL8(min26)
+                y18b = 0.0
+              END IF
+              crb = crb + y18b
+              abs18b = y18b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs18b
+              ELSE
+                crb = crb - abs18b
+              END IF
+              temp15b1 = dt*crb/(dx*mu)
+              velb = velb + temp15b1
+              mub0 = mub0 - vel*temp15b1/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp15b = 0.5*ru(i, k, j)*fqxb(i, k, j)
+              rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-&
+&                1, k, j))*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp15b
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp15b
+              fqxb(i, k, j) = 0.0
+              temp15b0 = dx*mu*fqxlb(i, k, j)/dt
+              min25b = 0.5*field_old(i-1, k, j)*temp15b0
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min25*&
+&                temp15b0
+              max18b = 0.5*field_old(i, k, j)*temp15b0
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max18*&
+&                temp15b0
+              mub0 = (0.5*(min25*field_old(i-1, k, j))+0.5*(max18*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max18)
+                y68b = max18b
+              ELSE
+                CALL POPREAL8(max18)
+                y68b = 0.0
+              END IF
+              crb = y68b
+              abs68b = -y68b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs68b
+              ELSE
+                crb = crb - abs68b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min25)
+                y17b = min25b
+              ELSE
+                CALL POPREAL8(min25)
+                y17b = 0.0
+              END IF
+              crb = crb + y17b
+              abs17b = y17b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs17b
+              ELSE
+                crb = crb - abs17b
+              END IF
+              velb = dt*crb/dx
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb/mu
+              mub0 = mub0 - ru(i, k, j)*velb/mu**2
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+        END DO
+      END IF
+      DO k=ktf,kts,-1
+        DO i=i_end_f,i_start_f,-1
+          fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+          temp11 = field(i+2, k, j) - field(i-3, k, j) + 10.*(field(i, k&
+&            , j)-field(i-1, k, j)) - 5.*(field(i+1, k, j)-field(i-2, k, &
+&            j))
+          temp14 = SIGN(1., vel)
+          temp13 = temp14/60.
+          temp12 = SIGN(1, time_step)
+          temp11b0 = vel*fqxb(i, k, j)
+          temp11b1 = 37.*temp11b0/60.
+          temp11b2 = -(2.*temp11b0/15.)
+          temp11b3 = -(temp12*temp13*temp11b0)
+          velb = (37.*((field(i, k, j)+field(i-1, k, j))/60.)-2.*((field&
+&            (i+1, k, j)+field(i-2, k, j))/15.)+(field(i+2, k, j)+field(i&
+&            -3, k, j))/60.-temp12*(temp13*temp11))*fqxb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + 10.*temp11b3 + temp11b1
+          fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp11b1 - 10.*&
+&            temp11b3
+          fieldb(i+1, k, j) = fieldb(i+1, k, j) + temp11b2 - 5.*temp11b3
+          fieldb(i-2, k, j) = fieldb(i-2, k, j) + 5.*temp11b3 + temp11b2
+          fieldb(i+2, k, j) = fieldb(i+2, k, j) + temp11b3 + temp11b0/&
+&            60.
+          fieldb(i-3, k, j) = fieldb(i-3, k, j) + temp11b0/60. - &
+&            temp11b3
+          fqxb(i, k, j) = 0.0
+          temp11b4 = dx*mu*fqxlb(i, k, j)/dt
+          min24b = 0.5*field_old(i-1, k, j)*temp11b4
+          field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min24*&
+&            temp11b4
+          max17b = 0.5*field_old(i, k, j)*temp11b4
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max17*temp11b4
+          mub0 = (0.5*(min24*field_old(i-1, k, j))+0.5*(max17*field_old(&
+&            i, k, j)))*dx*fqxlb(i, k, j)/dt
+          fqxlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max17)
+            y67b = max17b
+          ELSE
+            CALL POPREAL8(max17)
+            y67b = 0.0
+          END IF
+          crb = y67b
+          abs67b = -y67b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs67b
+          ELSE
+            crb = crb - abs67b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min24)
+            y16b = min24b
+          ELSE
+            CALL POPREAL8(min24)
+            y16b = 0.0
+          END IF
+          crb = crb + y16b
+          abs16b = y16b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs16b
+          ELSE
+            crb = crb - abs16b
+          END IF
+          temp11b = dt*crb/(dx*mu)
+          velb = velb + temp11b
+          mub0 = mub0 - vel*temp11b/mu
+          CALL POPREAL8(vel)
+          rub(i, k, j) = rub(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*mub0
+          mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+          CALL POPREAL8(dx)
+        END DO
+      END DO
+    END DO
+    CALL POPINTEGER4(ad_from4)
+    CALL POPINTEGER4(ad_to4)
+    DO j=ad_to4,ad_from4,-1
+      CALL POPCONTROL3B(branch)
+      IF (branch .LT. 3) THEN
+        IF (branch .NE. 0) THEN
+          IF (branch .EQ. 1) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from3)
+              CALL POPINTEGER4(ad_to3)
+              DO i=ad_to3,ad_from3,-1
+                fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+                temp7 = field(i, k, j+1) - field(i, k, j-2) - 3.*(field(&
+&                  i, k, j)-field(i, k, j-1))
+                temp10 = SIGN(1., vel)
+                temp9 = temp10/12.
+                temp8 = SIGN(1, time_step)
+                temp7b3 = vel*fqyb(i, k, j)
+                temp7b4 = 7.*temp7b3/12.
+                temp7b5 = temp8*temp9*temp7b3
+                velb = (7.*((field(i, k, j)+field(i, k, j-1))/12.)-(&
+&                  field(i, k, j+1)+field(i, k, j-2))/12.+temp8*(temp9*&
+&                  temp7))*fqyb(i, k, j)
+                fieldb(i, k, j) = fieldb(i, k, j) + temp7b4 - 3.*temp7b5
+                fieldb(i, k, j-1) = fieldb(i, k, j-1) + 3.*temp7b5 + &
+&                  temp7b4
+                fieldb(i, k, j+1) = fieldb(i, k, j+1) + temp7b5 - &
+&                  temp7b3/12.
+                fieldb(i, k, j-2) = fieldb(i, k, j-2) - temp7b5 - &
+&                  temp7b3/12.
+                fqyb(i, k, j) = 0.0
+                temp7b6 = dy*mu*fqylb(i, k, j)/dt
+                min21b = 0.5*field_old(i, k, j-1)*temp7b6
+                field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*&
+&                  min21*temp7b6
+                max16b = 0.5*field_old(i, k, j)*temp7b6
+                field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max16*&
+&                  temp7b6
+                mub0 = (0.5*(min21*field_old(i, k, j-1))+0.5*(max16*&
+&                  field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+                fqylb(i, k, j) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(max16)
+                  y66b = max16b
+                ELSE
+                  CALL POPREAL8(max16)
+                  y66b = 0.0
+                END IF
+                crb = y66b
+                abs66b = -y66b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs66b
+                ELSE
+                  crb = crb - abs66b
+                END IF
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(min21)
+                  y15b = min21b
+                ELSE
+                  CALL POPREAL8(min21)
+                  y15b = 0.0
+                END IF
+                crb = crb + y15b
+                abs15b = y15b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs15b
+                ELSE
+                  crb = crb - abs15b
+                END IF
+                temp7b2 = dt*crb/(dy*mu)
+                velb = velb + temp7b2
+                mub0 = mub0 - vel*temp7b2/mu
+                CALL POPREAL8(vel)
+                rvb(i, k, j) = rvb(i, k, j) + velb
+                CALL POPREAL8(mu)
+                mutb(i, j) = mutb(i, j) + 0.5*mub0
+                mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+                CALL POPREAL8(dy)
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from2)
+              CALL POPINTEGER4(ad_to2)
+              DO i=ad_to2,ad_from2,-1
+                fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+                temp7b0 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+                rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(&
+&                  i, k, j-1))*fqyb(i, k, j)
+                fieldb(i, k, j) = fieldb(i, k, j) + temp7b0
+                fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp7b0
+                fqyb(i, k, j) = 0.0
+                temp7b1 = dy*mu*fqylb(i, k, j)/dt
+                min20b = 0.5*field_old(i, k, j-1)*temp7b1
+                field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*&
+&                  min20*temp7b1
+                max15b = 0.5*field_old(i, k, j)*temp7b1
+                field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max15*&
+&                  temp7b1
+                mub0 = (0.5*(min20*field_old(i, k, j-1))+0.5*(max15*&
+&                  field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+                fqylb(i, k, j) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(max15)
+                  y65b = max15b
+                ELSE
+                  CALL POPREAL8(max15)
+                  y65b = 0.0
+                END IF
+                crb = y65b
+                abs65b = -y65b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs65b
+                ELSE
+                  crb = crb - abs65b
+                END IF
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(min20)
+                  y14b = min20b
+                ELSE
+                  CALL POPREAL8(min20)
+                  y14b = 0.0
+                END IF
+                crb = crb + y14b
+                abs14b = y14b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs14b
+                ELSE
+                  crb = crb - abs14b
+                END IF
+                temp7b = dt*crb/(dy*mu)
+                velb = temp7b
+                mub0 = mub0 - vel*temp7b/mu
+                CALL POPREAL8(vel)
+                rvb(i, k, j) = rvb(i, k, j) + velb
+                CALL POPREAL8(mu)
+                mutb(i, j) = mutb(i, j) + 0.5*mub0
+                mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+                CALL POPREAL8(dy)
+              END DO
+            END DO
+          END IF
+        END IF
+      ELSE IF (branch .EQ. 3) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from1)
+          CALL POPINTEGER4(ad_to1)
+          DO i=ad_to1,ad_from1,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp3 = field(i, k, j+1) - field(i, k, j-2) - 3.*(field(i, k&
+&              , j)-field(i, k, j-1))
+            temp6 = SIGN(1., vel)
+            temp5 = temp6/12.
+            temp4 = SIGN(1, time_step)
+            temp3b3 = vel*fqyb(i, k, j)
+            temp3b4 = 7.*temp3b3/12.
+            temp3b5 = temp4*temp5*temp3b3
+            velb = (7.*((field(i, k, j)+field(i, k, j-1))/12.)-(field(i&
+&              , k, j+1)+field(i, k, j-2))/12.+temp4*(temp5*temp3))*fqyb(&
+&              i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp3b4 - 3.*temp3b5
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + 3.*temp3b5 + temp3b4
+            fieldb(i, k, j+1) = fieldb(i, k, j+1) + temp3b5 - temp3b3/&
+&              12.
+            fieldb(i, k, j-2) = fieldb(i, k, j-2) - temp3b5 - temp3b3/&
+&              12.
+            fqyb(i, k, j) = 0.0
+            temp3b6 = dy*mu*fqylb(i, k, j)/dt
+            min19b = 0.5*field_old(i, k, j-1)*temp3b6
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min19*&
+&              temp3b6
+            max14b = 0.5*field_old(i, k, j)*temp3b6
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max14*&
+&              temp3b6
+            mub0 = (0.5*(min19*field_old(i, k, j-1))+0.5*(max14*&
+&              field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max14)
+              y64b = max14b
+            ELSE
+              CALL POPREAL8(max14)
+              y64b = 0.0
+            END IF
+            crb = y64b
+            abs64b = -y64b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs64b
+            ELSE
+              crb = crb - abs64b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min19)
+              y13b = min19b
+            ELSE
+              CALL POPREAL8(min19)
+              y13b = 0.0
+            END IF
+            crb = crb + y13b
+            abs13b = y13b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs13b
+            ELSE
+              crb = crb - abs13b
+            END IF
+            temp3b2 = dt*crb/(dy*mu)
+            velb = velb + temp3b2
+            mub0 = mub0 - vel*temp3b2/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      ELSE IF (branch .EQ. 4) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from0)
+          CALL POPINTEGER4(ad_to0)
+          DO i=ad_to0,ad_from0,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp3b0 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+            rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(i, k&
+&              , j-1))*fqyb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp3b0
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp3b0
+            fqyb(i, k, j) = 0.0
+            temp3b1 = dy*mu*fqylb(i, k, j)/dt
+            min18b = 0.5*field_old(i, k, j-1)*temp3b1
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min18*&
+&              temp3b1
+            max13b = 0.5*field_old(i, k, j)*temp3b1
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max13*&
+&              temp3b1
+            mub0 = (0.5*(min18*field_old(i, k, j-1))+0.5*(max13*&
+&              field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max13)
+              y63b = max13b
+            ELSE
+              CALL POPREAL8(max13)
+              y63b = 0.0
+            END IF
+            crb = y63b
+            abs63b = -y63b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs63b
+            ELSE
+              crb = crb - abs63b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min18)
+              y12b = min18b
+            ELSE
+              CALL POPREAL8(min18)
+              y12b = 0.0
+            END IF
+            crb = crb + y12b
+            abs12b = y12b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs12b
+            ELSE
+              crb = crb - abs12b
+            END IF
+            temp3b = dt*crb/(dy*mu)
+            velb = temp3b
+            mub0 = mub0 - vel*temp3b/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      ELSE
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from)
+          CALL POPINTEGER4(ad_to)
+          DO i=ad_to,ad_from,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp = field(i, k, j+2) - field(i, k, j-3) + 10.*(field(i, k&
+&              , j)-field(i, k, j-1)) - 5.*(field(i, k, j+1)-field(i, k, &
+&              j-2))
+            temp2 = SIGN(1., vel)
+            temp1 = temp2/60.
+            temp0 = SIGN(1, time_step)
+            tempb0 = vel*fqyb(i, k, j)
+            tempb1 = 37.*tempb0/60.
+            tempb2 = -(2.*tempb0/15.)
+            tempb3 = -(temp0*temp1*tempb0)
+            velb = (37.*((field(i, k, j)+field(i, k, j-1))/60.)-2.*((&
+&              field(i, k, j+1)+field(i, k, j-2))/15.)+(field(i, k, j+2)+&
+&              field(i, k, j-3))/60.-temp0*(temp1*temp))*fqyb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + 10.*tempb3 + tempb1
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + tempb1 - 10.*tempb3
+            fieldb(i, k, j+1) = fieldb(i, k, j+1) + tempb2 - 5.*tempb3
+            fieldb(i, k, j-2) = fieldb(i, k, j-2) + 5.*tempb3 + tempb2
+            fieldb(i, k, j+2) = fieldb(i, k, j+2) + tempb3 + tempb0/60.
+            fieldb(i, k, j-3) = fieldb(i, k, j-3) + tempb0/60. - tempb3
+            fqyb(i, k, j) = 0.0
+            tempb4 = dy*mu*fqylb(i, k, j)/dt
+            min17b = 0.5*field_old(i, k, j-1)*tempb4
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min17*&
+&              tempb4
+            max12b = 0.5*field_old(i, k, j)*tempb4
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max12*tempb4
+            mub0 = (0.5*(min17*field_old(i, k, j-1))+0.5*(max12*&
+&              field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max12)
+              y62b = max12b
+            ELSE
+              CALL POPREAL8(max12)
+              y62b = 0.0
+            END IF
+            crb = y62b
+            abs62b = -y62b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs62b
+            ELSE
+              crb = crb - abs62b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min17)
+              y11b = min17b
+            ELSE
+              CALL POPREAL8(min17)
+              y11b = 0.0
+            END IF
+            crb = crb + y11b
+            abs11b = y11b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs11b
+            ELSE
+              crb = crb - abs11b
+            END IF
+            tempb = dt*crb/(dy*mu)
+            velb = velb + tempb
+            mub0 = mub0 - vel*tempb/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      END IF
+    END DO
+  ELSE
+    CALL POPINTEGER4(ad_from28)
+    CALL POPINTEGER4(ad_to28)
+    DO j=ad_to28,ad_from28,-1
+      CALL POPCONTROL1B(branch)
+      IF (branch .NE. 0) THEN
+        CALL POPINTEGER4(ad_to27)
+        DO i=ad_to27,i_end_f+1,-1
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp31b44 = vel*fqxb(i, k, j)
+              temp31b45 = 7.*temp31b44/12.
+              velb = (7.*((field(i, k, j)+field(i-1, k, j))/12.)-(field(&
+&                i+1, k, j)+field(i-2, k, j))/12.)*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp31b45
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b45
+              fieldb(i+1, k, j) = fieldb(i+1, k, j) - temp31b44/12.
+              fieldb(i-2, k, j) = fieldb(i-2, k, j) - temp31b44/12.
+              fqxb(i, k, j) = 0.0
+              temp31b46 = dx*mu*fqxlb(i, k, j)/dt
+              min14b = 0.5*field_old(i-1, k, j)*temp31b46
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min14*&
+&                temp31b46
+              max11b = 0.5*field_old(i, k, j)*temp31b46
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max11*&
+&                temp31b46
+              mub0 = (0.5*(min14*field_old(i-1, k, j))+0.5*(max11*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max11)
+                y61b = max11b
+              ELSE
+                CALL POPREAL8(max11)
+                y61b = 0.0
+              END IF
+              crb = y61b
+              abs61b = -y61b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs61b
+              ELSE
+                crb = crb - abs61b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min14)
+                y10b = min14b
+              ELSE
+                CALL POPREAL8(min14)
+                y10b = 0.0
+              END IF
+              crb = crb + y10b
+              abs10b = y10b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs10b
+              ELSE
+                crb = crb - abs10b
+              END IF
+              temp31b43 = dt*crb/(dx*mu)
+              velb = velb + temp31b43
+              mub0 = mub0 - vel*temp31b43/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp31b41 = 0.5*ru(i, k, j)*fqxb(i, k, j)
+              rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-&
+&                1, k, j))*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp31b41
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b41
+              fqxb(i, k, j) = 0.0
+              temp31b42 = dx*mu*fqxlb(i, k, j)/dt
+              min13b = 0.5*field_old(i-1, k, j)*temp31b42
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min13*&
+&                temp31b42
+              max10b = 0.5*field_old(i, k, j)*temp31b42
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max10*&
+&                temp31b42
+              mub0 = (0.5*(min13*field_old(i-1, k, j))+0.5*(max10*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max10)
+                y60b = max10b
+              ELSE
+                CALL POPREAL8(max10)
+                y60b = 0.0
+              END IF
+              crb = y60b
+              abs60b = -y60b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs60b
+              ELSE
+                crb = crb - abs60b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min13)
+                y9b = min13b
+              ELSE
+                CALL POPREAL8(min13)
+                y9b = 0.0
+              END IF
+              crb = crb + y9b
+              abs9b = y9b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs9b
+              ELSE
+                crb = crb - abs9b
+              END IF
+              temp31b40 = dt*crb/(dx*mu)
+              velb = temp31b40
+              mub0 = mub0 - vel*temp31b40/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+        END DO
+      END IF
+      CALL POPCONTROL1B(branch)
+      IF (branch .EQ. 0) THEN
+        CALL POPINTEGER4(ad_from27)
+        DO i=i_start_f-1,ad_from27,-1
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp31b37 = vel*fqxb(i, k, j)
+              temp31b38 = 7.*temp31b37/12.
+              velb = (7.*((field(i, k, j)+field(i-1, k, j))/12.)-(field(&
+&                i+1, k, j)+field(i-2, k, j))/12.)*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp31b38
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b38
+              fieldb(i+1, k, j) = fieldb(i+1, k, j) - temp31b37/12.
+              fieldb(i-2, k, j) = fieldb(i-2, k, j) - temp31b37/12.
+              fqxb(i, k, j) = 0.0
+              temp31b39 = dx*mu*fqxlb(i, k, j)/dt
+              min12b = 0.5*field_old(i-1, k, j)*temp31b39
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min12*&
+&                temp31b39
+              max9b = 0.5*field_old(i, k, j)*temp31b39
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max9*&
+&                temp31b39
+              mub0 = (0.5*(min12*field_old(i-1, k, j))+0.5*(max9*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max9)
+                y59b = max9b
+              ELSE
+                CALL POPREAL8(max9)
+                y59b = 0.0
+              END IF
+              crb = y59b
+              abs59b = -y59b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs59b
+              ELSE
+                crb = crb - abs59b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min12)
+                y8b = min12b
+              ELSE
+                CALL POPREAL8(min12)
+                y8b = 0.0
+              END IF
+              crb = crb + y8b
+              abs8b = y8b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs8b
+              ELSE
+                crb = crb - abs8b
+              END IF
+              temp31b36 = dt*crb/(dx*mu)
+              velb = velb + temp31b36
+              mub0 = mub0 - vel*temp31b36/mu
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+              temp31b34 = 0.5*ru(i, k, j)*fqxb(i, k, j)
+              rub(i, k, j) = rub(i, k, j) + 0.5*(field(i, k, j)+field(i-&
+&                1, k, j))*fqxb(i, k, j)
+              fieldb(i, k, j) = fieldb(i, k, j) + temp31b34
+              fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b34
+              fqxb(i, k, j) = 0.0
+              temp31b35 = dx*mu*fqxlb(i, k, j)/dt
+              min11b = 0.5*field_old(i-1, k, j)*temp31b35
+              field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min11*&
+&                temp31b35
+              max8b = 0.5*field_old(i, k, j)*temp31b35
+              field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max8*&
+&                temp31b35
+              mub0 = (0.5*(min11*field_old(i-1, k, j))+0.5*(max8*&
+&                field_old(i, k, j)))*dx*fqxlb(i, k, j)/dt
+              fqxlb(i, k, j) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(max8)
+                y58b = max8b
+              ELSE
+                CALL POPREAL8(max8)
+                y58b = 0.0
+              END IF
+              crb = y58b
+              abs58b = -y58b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs58b
+              ELSE
+                crb = crb - abs58b
+              END IF
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                CALL POPREAL8(min11)
+                y7b = min11b
+              ELSE
+                CALL POPREAL8(min11)
+                y7b = 0.0
+              END IF
+              crb = crb + y7b
+              abs7b = y7b
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                crb = crb + abs7b
+              ELSE
+                crb = crb - abs7b
+              END IF
+              velb = dt*crb/dx
+              CALL POPREAL8(vel)
+              rub(i, k, j) = rub(i, k, j) + velb/mu
+              mub0 = mub0 - ru(i, k, j)*velb/mu**2
+              CALL POPREAL8(mu)
+              mutb(i, j) = mutb(i, j) + 0.5*mub0
+              mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+              CALL POPREAL8(dx)
+            END DO
+          END IF
+        END DO
+      END IF
+      DO k=ktf,kts,-1
+        DO i=i_end_f,i_start_f,-1
+          fqxlb(i, k, j) = fqxlb(i, k, j) - fqxb(i, k, j)
+          temp31b30 = vel*fqxb(i, k, j)
+          temp31b31 = 37.*temp31b30/60.
+          temp31b32 = -(2.*temp31b30/15.)
+          velb = (37.*((field(i, k, j)+field(i-1, k, j))/60.)-2.*((field&
+&            (i+1, k, j)+field(i-2, k, j))/15.)+(field(i+2, k, j)+field(i&
+&            -3, k, j))/60.)*fqxb(i, k, j)
+          fieldb(i, k, j) = fieldb(i, k, j) + temp31b31
+          fieldb(i-1, k, j) = fieldb(i-1, k, j) + temp31b31
+          fieldb(i+1, k, j) = fieldb(i+1, k, j) + temp31b32
+          fieldb(i-2, k, j) = fieldb(i-2, k, j) + temp31b32
+          fieldb(i+2, k, j) = fieldb(i+2, k, j) + temp31b30/60.
+          fieldb(i-3, k, j) = fieldb(i-3, k, j) + temp31b30/60.
+          fqxb(i, k, j) = 0.0
+          temp31b33 = dx*mu*fqxlb(i, k, j)/dt
+          min10b = 0.5*field_old(i-1, k, j)*temp31b33
+          field_oldb(i-1, k, j) = field_oldb(i-1, k, j) + 0.5*min10*&
+&            temp31b33
+          max7b = 0.5*field_old(i, k, j)*temp31b33
+          field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max7*temp31b33
+          mub0 = (0.5*(min10*field_old(i-1, k, j))+0.5*(max7*field_old(i&
+&            , k, j)))*dx*fqxlb(i, k, j)/dt
+          fqxlb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(max7)
+            y57b = max7b
+          ELSE
+            CALL POPREAL8(max7)
+            y57b = 0.0
+          END IF
+          crb = y57b
+          abs57b = -y57b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs57b
+          ELSE
+            crb = crb - abs57b
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPREAL8(min10)
+            y6b = min10b
+          ELSE
+            CALL POPREAL8(min10)
+            y6b = 0.0
+          END IF
+          crb = crb + y6b
+          abs6b = y6b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            crb = crb + abs6b
+          ELSE
+            crb = crb - abs6b
+          END IF
+          temp31b29 = dt*crb/(dx*mu)
+          velb = velb + temp31b29
+          mub0 = mub0 - vel*temp31b29/mu
+          CALL POPREAL8(vel)
+          rub(i, k, j) = rub(i, k, j) + velb
+          CALL POPREAL8(mu)
+          mutb(i, j) = mutb(i, j) + 0.5*mub0
+          mutb(i-1, j) = mutb(i-1, j) + 0.5*mub0
+          CALL POPREAL8(dx)
+        END DO
+      END DO
+    END DO
+    CALL POPINTEGER4(ad_from26)
+    CALL POPINTEGER4(ad_to26)
+    DO j=ad_to26,ad_from26,-1
+      CALL POPCONTROL3B(branch)
+      IF (branch .LT. 3) THEN
+        IF (branch .NE. 0) THEN
+          IF (branch .EQ. 1) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from25)
+              CALL POPINTEGER4(ad_to25)
+              DO i=ad_to25,ad_from25,-1
+                fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+                temp31b26 = vel*fqyb(i, k, j)
+                temp31b27 = 7.*temp31b26/12.
+                velb = (7.*((field(i, k, j)+field(i, k, j-1))/12.)-(&
+&                  field(i, k, j+1)+field(i, k, j-2))/12.)*fqyb(i, k, j)
+                fieldb(i, k, j) = fieldb(i, k, j) + temp31b27
+                fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp31b27
+                fieldb(i, k, j+1) = fieldb(i, k, j+1) - temp31b26/12.
+                fieldb(i, k, j-2) = fieldb(i, k, j-2) - temp31b26/12.
+                fqyb(i, k, j) = 0.0
+                temp31b28 = dy*mu*fqylb(i, k, j)/dt
+                min7b = 0.5*field_old(i, k, j-1)*temp31b28
+                field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min7&
+&                  *temp31b28
+                max6b = 0.5*field_old(i, k, j)*temp31b28
+                field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max6*&
+&                  temp31b28
+                mub0 = (0.5*(min7*field_old(i, k, j-1))+0.5*(max6*&
+&                  field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+                fqylb(i, k, j) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(max6)
+                  y56b = max6b
+                ELSE
+                  CALL POPREAL8(max6)
+                  y56b = 0.0
+                END IF
+                crb = y56b
+                abs56b = -y56b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs56b
+                ELSE
+                  crb = crb - abs56b
+                END IF
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(min7)
+                  y5b = min7b
+                ELSE
+                  CALL POPREAL8(min7)
+                  y5b = 0.0
+                END IF
+                crb = crb + y5b
+                abs5b = y5b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs5b
+                ELSE
+                  crb = crb - abs5b
+                END IF
+                temp31b25 = dt*crb/(dy*mu)
+                velb = velb + temp31b25
+                mub0 = mub0 - vel*temp31b25/mu
+                CALL POPREAL8(vel)
+                rvb(i, k, j) = rvb(i, k, j) + velb
+                CALL POPREAL8(mu)
+                mutb(i, j) = mutb(i, j) + 0.5*mub0
+                mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+                CALL POPREAL8(dy)
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from24)
+              CALL POPINTEGER4(ad_to24)
+              DO i=ad_to24,ad_from24,-1
+                fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+                temp31b23 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+                rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(&
+&                  i, k, j-1))*fqyb(i, k, j)
+                fieldb(i, k, j) = fieldb(i, k, j) + temp31b23
+                fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp31b23
+                fqyb(i, k, j) = 0.0
+                temp31b24 = dy*mu*fqylb(i, k, j)/dt
+                min6b = 0.5*field_old(i, k, j-1)*temp31b24
+                field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min6&
+&                  *temp31b24
+                max5b = 0.5*field_old(i, k, j)*temp31b24
+                field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max5*&
+&                  temp31b24
+                mub0 = (0.5*(min6*field_old(i, k, j-1))+0.5*(max5*&
+&                  field_old(i, k, j)))*dy*fqylb(i, k, j)/dt
+                fqylb(i, k, j) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(max5)
+                  y55b = max5b
+                ELSE
+                  CALL POPREAL8(max5)
+                  y55b = 0.0
+                END IF
+                crb = y55b
+                abs55b = -y55b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs55b
+                ELSE
+                  crb = crb - abs55b
+                END IF
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  CALL POPREAL8(min6)
+                  y4b = min6b
+                ELSE
+                  CALL POPREAL8(min6)
+                  y4b = 0.0
+                END IF
+                crb = crb + y4b
+                abs4b = y4b
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  crb = crb + abs4b
+                ELSE
+                  crb = crb - abs4b
+                END IF
+                temp31b22 = dt*crb/(dy*mu)
+                velb = temp31b22
+                mub0 = mub0 - vel*temp31b22/mu
+                CALL POPREAL8(vel)
+                rvb(i, k, j) = rvb(i, k, j) + velb
+                CALL POPREAL8(mu)
+                mutb(i, j) = mutb(i, j) + 0.5*mub0
+                mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+                CALL POPREAL8(dy)
+              END DO
+            END DO
+          END IF
+        END IF
+      ELSE IF (branch .EQ. 3) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from23)
+          CALL POPINTEGER4(ad_to23)
+          DO i=ad_to23,ad_from23,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp31b19 = vel*fqyb(i, k, j)
+            temp31b20 = 7.*temp31b19/12.
+            velb = (7.*((field(i, k, j)+field(i, k, j-1))/12.)-(field(i&
+&              , k, j+1)+field(i, k, j-2))/12.)*fqyb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp31b20
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp31b20
+            fieldb(i, k, j+1) = fieldb(i, k, j+1) - temp31b19/12.
+            fieldb(i, k, j-2) = fieldb(i, k, j-2) - temp31b19/12.
+            fqyb(i, k, j) = 0.0
+            temp31b21 = dy*mu*fqylb(i, k, j)/dt
+            min5b = 0.5*field_old(i, k, j-1)*temp31b21
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min5*&
+&              temp31b21
+            max4b = 0.5*field_old(i, k, j)*temp31b21
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max4*&
+&              temp31b21
+            mub0 = (0.5*(min5*field_old(i, k, j-1))+0.5*(max4*field_old(&
+&              i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max4)
+              y54b = max4b
+            ELSE
+              CALL POPREAL8(max4)
+              y54b = 0.0
+            END IF
+            crb = y54b
+            abs54b = -y54b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs54b
+            ELSE
+              crb = crb - abs54b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min5)
+              y3b = min5b
+            ELSE
+              CALL POPREAL8(min5)
+              y3b = 0.0
+            END IF
+            crb = crb + y3b
+            abs3b = y3b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs3b
+            ELSE
+              crb = crb - abs3b
+            END IF
+            temp31b18 = dt*crb/(dy*mu)
+            velb = velb + temp31b18
+            mub0 = mub0 - vel*temp31b18/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      ELSE IF (branch .EQ. 4) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from22)
+          CALL POPINTEGER4(ad_to22)
+          DO i=ad_to22,ad_from22,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp31b16 = 0.5*rv(i, k, j)*fqyb(i, k, j)
+            rvb(i, k, j) = rvb(i, k, j) + 0.5*(field(i, k, j)+field(i, k&
+&              , j-1))*fqyb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp31b16
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp31b16
+            fqyb(i, k, j) = 0.0
+            temp31b17 = dy*mu*fqylb(i, k, j)/dt
+            min4b = 0.5*field_old(i, k, j-1)*temp31b17
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min4*&
+&              temp31b17
+            max3b = 0.5*field_old(i, k, j)*temp31b17
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max3*&
+&              temp31b17
+            mub0 = (0.5*(min4*field_old(i, k, j-1))+0.5*(max3*field_old(&
+&              i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max3)
+              y53b = max3b
+            ELSE
+              CALL POPREAL8(max3)
+              y53b = 0.0
+            END IF
+            crb = y53b
+            abs53b = -y53b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs53b
+            ELSE
+              crb = crb - abs53b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min4)
+              y2b = min4b
+            ELSE
+              CALL POPREAL8(min4)
+              y2b = 0.0
+            END IF
+            crb = crb + y2b
+            abs2b = y2b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs2b
+            ELSE
+              crb = crb - abs2b
+            END IF
+            temp31b15 = dt*crb/(dy*mu)
+            velb = temp31b15
+            mub0 = mub0 - vel*temp31b15/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      ELSE
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from21)
+          CALL POPINTEGER4(ad_to21)
+          DO i=ad_to21,ad_from21,-1
+            fqylb(i, k, j) = fqylb(i, k, j) - fqyb(i, k, j)
+            temp31b11 = vel*fqyb(i, k, j)
+            temp31b12 = 37.*temp31b11/60.
+            temp31b13 = -(2.*temp31b11/15.)
+            velb = (37.*((field(i, k, j)+field(i, k, j-1))/60.)-2.*((&
+&              field(i, k, j+1)+field(i, k, j-2))/15.)+(field(i, k, j+2)+&
+&              field(i, k, j-3))/60.)*fqyb(i, k, j)
+            fieldb(i, k, j) = fieldb(i, k, j) + temp31b12
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) + temp31b12
+            fieldb(i, k, j+1) = fieldb(i, k, j+1) + temp31b13
+            fieldb(i, k, j-2) = fieldb(i, k, j-2) + temp31b13
+            fieldb(i, k, j+2) = fieldb(i, k, j+2) + temp31b11/60.
+            fieldb(i, k, j-3) = fieldb(i, k, j-3) + temp31b11/60.
+            fqyb(i, k, j) = 0.0
+            temp31b14 = dy*mu*fqylb(i, k, j)/dt
+            min3b = 0.5*field_old(i, k, j-1)*temp31b14
+            field_oldb(i, k, j-1) = field_oldb(i, k, j-1) + 0.5*min3*&
+&              temp31b14
+            max2b = 0.5*field_old(i, k, j)*temp31b14
+            field_oldb(i, k, j) = field_oldb(i, k, j) + 0.5*max2*&
+&              temp31b14
+            mub0 = (0.5*(min3*field_old(i, k, j-1))+0.5*(max2*field_old(&
+&              i, k, j)))*dy*fqylb(i, k, j)/dt
+            fqylb(i, k, j) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(max2)
+              y52b = max2b
+            ELSE
+              CALL POPREAL8(max2)
+              y52b = 0.0
+            END IF
+            crb = y52b
+            abs52b = -y52b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs52b
+            ELSE
+              crb = crb - abs52b
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              CALL POPREAL8(min3)
+              y1b = min3b
+            ELSE
+              CALL POPREAL8(min3)
+              y1b = 0.0
+            END IF
+            crb = crb + y1b
+            abs1b = y1b
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              crb = crb + abs1b
+            ELSE
+              crb = crb - abs1b
+            END IF
+            temp31b10 = dt*crb/(dy*mu)
+            velb = velb + temp31b10
+            mub0 = mub0 - vel*temp31b10/mu
+            CALL POPREAL8(vel)
+            rvb(i, k, j) = rvb(i, k, j) + velb
+            CALL POPREAL8(mu)
+            mutb(i, j) = mutb(i, j) + 0.5*mub0
+            mutb(i, j-1) = mutb(i, j-1) + 0.5*mub0
+            CALL POPREAL8(dy)
+          END DO
+        END DO
+      END IF
+    END DO
+  END IF
+END SUBROUTINE A_ADVECT_SCALAR_PD
 
    SUBROUTINE a_advect_scalar_mono(field,a_field,field_old,a_field_old,tendency, &
    a_tendency,h_tendency,a_h_tendency,z_tendency,a_z_tendency,ru,a_ru,rv,a_rv,rom,a_rom,mut,a_mut,mub,mu_old,a_mu_old, &
